@@ -27,7 +27,7 @@ jobs:
       - name: Checkout exploration work branch
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-phase0-bootstrap-2026-10-01
+          ref: work/exploration-asset-pack-forest-v1-2026-10-01
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
