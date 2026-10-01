@@ -148,3 +148,25 @@ Aucun checkpoint GREEN fonctionnel avant :
 2. preview Pages GREEN ;
 3. validation utilisateur smartphone ;
 4. validation/fermeture cohérente du parent Material Pack v1.
+
+
+## État de validation technique — 2026-10-01
+- HEAD technique testé : `205dd0e13568f9250d9e62ce46cf0d391ea7315c` ;
+- CI : run `36894709021` — SUCCESS ;
+- preview Pages : run `36894823423` — SUCCESS ;
+- checkpoint infrastructure preview :
+  `checkpoint/exploration-preview-material-assets-forest-test-v1-green-2026-10-01`.
+
+## Test manuel requis
+Sur smartphone, vérifier :
+- texture forêt réellement visible ;
+- route texturée au centre de la géométrie validée ;
+- rivière texturée au centre de la géométrie validée ;
+- decals feuilles/racines visibles mais non envahissants ;
+- déplacement/caméra toujours fluides ;
+- aucune modification apparente des formes/largeurs de route/rivière ;
+- absence d'écran blanc ou de freeze.
+
+Le rendu des transitions edge/bank n'est pas un critère de ce test : leurs assets sont importés et résolus, mais leur mapping courbe est volontairement différé.
+
+Aucun checkpoint GREEN fonctionnel avant validation utilisateur.
