@@ -53,7 +53,7 @@ export const demoWorld = {
         width: 96
       },
       visual: {
-        assetId: null
+        assetId: 'object.bridge.wood.rustic_bank.01'
       },
       traversal: {
         enabled: true,
