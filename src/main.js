@@ -18,7 +18,10 @@ const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
 const terrainRenderer = createTerrainRenderer({
   biome: 'forest',
-  tileSize: config.render.terrainTileSize
+  patchSize: config.render.terrainPatchSize,
+  patchSpacing: config.render.terrainPatchSpacing,
+  patchOpacity: config.render.terrainPatchOpacity,
+  groundDetailSpacing: config.render.groundDetailSpacing
 });
 terrainRenderer.load();
 let last = performance.now();
