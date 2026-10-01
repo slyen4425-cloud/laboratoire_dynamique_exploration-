@@ -54,7 +54,25 @@ function hash2D(x, y) {
   return (hash ^ (hash >>> 16)) >>> 0;
 }
 
-function drawSurfaceMaterial(ctx, camera, viewport, material) {
+function worldPattern(ctx, image, camera) {
+  if (!image) return null;
+
+  const pattern = ctx.createPattern(image, 'repeat');
+  if (!pattern) return null;
+
+  if (
+    typeof pattern.setTransform === 'function' &&
+    typeof DOMMatrix !== 'undefined'
+  ) {
+    pattern.setTransform(
+      new DOMMatrix().translate(-camera.x, -camera.y)
+    );
+  }
+
+  return pattern;
+}
+
+function drawSurfaceFallback(ctx, camera, viewport, material) {
   const render = material.render;
   ctx.fillStyle = render.baseColor;
   ctx.fillRect(0, 0, viewport.width, viewport.height);
@@ -96,8 +114,31 @@ function drawSurfaceMaterial(ctx, camera, viewport, material) {
   }
 }
 
-function drawPathMaterial(ctx, path, camera, material) {
+function drawSurfaceMaterial(
+  ctx,
+  camera,
+  viewport,
+  material,
+  textureLoader
+) {
+  const image = textureLoader?.get(material.assets.base);
+  const pattern = worldPattern(ctx, image, camera);
+
+  if (!pattern) {
+    drawSurfaceFallback(ctx, camera, viewport, material);
+    return;
+  }
+
+  ctx.save();
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0, 0, viewport.width, viewport.height);
+  ctx.restore();
+}
+
+function drawPathMaterial(ctx, path, camera, material, textureLoader) {
   const render = material.render;
+  const centerImage = textureLoader?.get(material.assets.center);
+  const centerPattern = worldPattern(ctx, centerImage, camera);
 
   strokePath(
     ctx,
@@ -113,7 +154,13 @@ function drawPathMaterial(ctx, path, camera, material) {
     path.width + render.innerEdgePadding,
     render.innerEdgeColor
   );
-  strokePath(ctx, path, camera, path.width, render.centerColor);
+  strokePath(
+    ctx,
+    path,
+    camera,
+    path.width,
+    centerPattern ?? render.centerColor
+  );
   strokePath(
     ctx,
     path,
@@ -124,8 +171,10 @@ function drawPathMaterial(ctx, path, camera, material) {
   );
 }
 
-function drawWaterMaterial(ctx, river, camera, material) {
+function drawWaterMaterial(ctx, river, camera, material, textureLoader) {
   const render = material.render;
+  const centerImage = textureLoader?.get(material.assets.center);
+  const centerPattern = worldPattern(ctx, centerImage, camera);
 
   strokePath(
     ctx,
@@ -141,7 +190,13 @@ function drawWaterMaterial(ctx, river, camera, material) {
     river.width + render.innerBankPadding,
     render.innerBankColor
   );
-  strokePath(ctx, river, camera, river.width, render.waterColor);
+  strokePath(
+    ctx,
+    river,
+    camera,
+    river.width,
+    centerPattern ?? render.waterColor
+  );
   strokePath(
     ctx,
     river,
@@ -152,7 +207,10 @@ function drawWaterMaterial(ctx, river, camera, material) {
   );
 }
 
-export function createSurfaceRenderer({ materialRegistry }) {
+export function createSurfaceRenderer({
+  materialRegistry,
+  textureLoader = null
+}) {
   if (!materialRegistry) {
     throw new Error('Surface Renderer requires a Material Registry');
   }
@@ -164,16 +222,22 @@ export function createSurfaceRenderer({ materialRegistry }) {
         'surface'
       );
 
-      drawSurfaceMaterial(ctx, camera, viewport, baseMaterial);
+      drawSurfaceMaterial(
+        ctx,
+        camera,
+        viewport,
+        baseMaterial,
+        textureLoader
+      );
 
       for (const road of surface.routes) {
         const material = materialRegistry.require(road.materialId, 'path');
-        drawPathMaterial(ctx, road, camera, material);
+        drawPathMaterial(ctx, road, camera, material, textureLoader);
       }
 
       for (const river of surface.rivers) {
         const material = materialRegistry.require(river.materialId, 'water');
-        drawWaterMaterial(ctx, river, camera, material);
+        drawWaterMaterial(ctx, river, camera, material, textureLoader);
       }
     }
   });
