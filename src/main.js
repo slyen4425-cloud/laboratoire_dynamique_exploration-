@@ -3,6 +3,7 @@ import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js';
 import { materialPackV1 } from './materials/material-pack-v1.js';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
@@ -32,6 +33,7 @@ const surfaceRenderer = createSurfaceRenderer({
   materialRegistry,
   textureLoader
 });
+const worldObjectRenderer = createWorldObjectRenderer();
 let last = performance.now();
 
 function resize() {
@@ -113,6 +115,15 @@ function render() {
   drawGround();
 
   world.obstacles.forEach(drawObstacle);
+
+  worldObjectRenderer.draw(ctx, {
+    camera,
+    viewport: {
+      width: innerWidth,
+      height: innerHeight
+    },
+    objects: world.objects
+  });
 
   ctx.beginPath();
   ctx.arc(
