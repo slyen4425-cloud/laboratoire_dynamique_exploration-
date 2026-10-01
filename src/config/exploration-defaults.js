@@ -15,6 +15,9 @@ export const explorationDefaults = Object.freeze({
     maxDeltaSeconds: 0.033
   }),
   render: Object.freeze({
-    terrainTileSize: 96
+    terrainPatchSize: 176,
+    terrainPatchSpacing: 118,
+    terrainPatchOpacity: 0.62,
+    groundDetailSpacing: 180
   })
 });
