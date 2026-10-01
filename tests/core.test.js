@@ -23,7 +23,7 @@ test('world bounds are blocking', () => {
   assert.equal(isBlocked(world, entity, 100, 100), false);
 });
 
-test('movement stops on obstacle and remains continuous elsewhere', () => {
+test('movement reaches obstacle tangent without penetrating it', () => {
   const world = {
     width: 500,
     height: 500,
@@ -35,7 +35,10 @@ test('movement stops on obstacle and remains continuous elsewhere', () => {
   assert.equal(entity.x, 100);
 
   stepMovement(world, entity, { x: 1, y: 0 }, 0.1);
-  assert.equal(entity.x, 100);
+  assert.equal(entity.x, 110);
+
+  stepMovement(world, entity, { x: 1, y: 0 }, 0.1);
+  assert.equal(entity.x, 110);
 
   stepMovement(world, entity, { x: 0, y: 1 }, 0.1);
   assert.equal(entity.y, 130);
