@@ -12,6 +12,9 @@ Source de référence relue le 2026-10-01 :
 Branche GenSrpG de référence lors de l'alignement :
 `work/gensrpg-phase8-tactical-consolidation-preaudit-2026-10-01`.
 
+SHA exact relu :
+`9fd5a789180e26204833e9d6b330079352272ec6`.
+
 Si la charte principale évolue, le laboratoire doit être réconcilié avant le prochain lot fonctionnel.
 
 ## 1. Position dans GenSrpG
