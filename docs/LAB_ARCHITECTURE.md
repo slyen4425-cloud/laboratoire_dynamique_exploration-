@@ -69,7 +69,9 @@ Source de vérité du monde runtime :
 - entités ;
 - spawns ;
 - points d'intérêt ;
-- passages.
+- passages ;
+- Areas ;
+- Portals.
 
 ### world-surface-model
 Autorité sur la géométrie des surfaces :
@@ -80,6 +82,34 @@ Autorité sur la géométrie des surfaces :
 
 Une route/rivière est décrite par données X/Y, largeur et materialId.
 Aucune texture ne définit la géométrie canonique.
+
+### world-object-model
+Autorité sur les objets placés :
+- type d'objet ;
+- transform X/Y/rotation/scale ;
+- taille logique ;
+- référence visuelle sémantique ;
+- données de collision/interaction explicitement déclarées.
+
+Premier objet : `bridge`.
+
+Le renderer lit ce modèle mais ne le modifie pas.
+Le Collision World peut lire les corridors traversables déclarés, mais n'infère jamais la collision depuis l'image.
+
+### world-area-model
+Cible future pour les espaces liés :
+- `WorldArea` extérieure ou intérieure ;
+- `currentAreaId` dans l'état Exploration ;
+- objets/surface/collisions propres à chaque Area ;
+- chargement/changement d'Area sans reload de page.
+
+### portal-model
+Cible future :
+- relie une Area source à une Area cible ;
+- source trigger/anchor ;
+- targetAreaId ;
+- targetSpawnId ;
+- même contrat pour portes, escaliers, grottes et sorties.
 
 ### material-registry
 Autorité sur l'apparence sémantique :
@@ -264,3 +294,58 @@ L'intégration devra :
 5. remplacer l'Asset Adapter local par le resolver central ;
 6. conserver les materialId sémantiques ;
 7. retirer tout simulateur local devenu doublon.
+
+
+## WorldObject / Bridge v1
+
+Contrat cible :
+
+```text
+Bridge
+├─ id
+├─ kind = bridge
+├─ transform
+│  ├─ x
+│  ├─ y
+│  ├─ rotation
+│  ├─ scaleX
+│  └─ scaleY
+├─ baseSize
+│  ├─ length
+│  └─ width
+├─ visual
+│  └─ assetId
+└─ traversal
+   ├─ enabled
+   ├─ lengthRatio
+   ├─ widthRatio
+   └─ overridesObstacleIds[]
+```
+
+La taille traversable est dérivée de la taille logique et du transform.
+Elle n'est jamais dérivée des pixels de l'asset.
+
+Le scale X agit sur la longueur locale du pont.
+Le scale Y agit sur sa largeur locale.
+
+## Bâtiments et intérieurs
+
+Cible validée :
+
+```text
+Area extérieure
+   |
+Building WorldObject
+   |
+Door / Portal
+   |
+Area intérieure
+```
+
+Le bâtiment extérieur et son intérieur sont deux responsabilités différentes :
+- l'objet extérieur fournit présence/collision/porte ;
+- l'Area intérieure contient son propre monde explorable.
+
+Les étages réutilisent exactement le même mécanisme de Portal.
+
+Ce modèle est préféré en v1 à un système général concurrent de toiture dynamique/seamless.
