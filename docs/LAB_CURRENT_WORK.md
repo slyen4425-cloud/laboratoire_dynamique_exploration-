@@ -146,3 +146,57 @@ Preview smartphone requise :
 - collision strictement identique au Bridge v1 GREEN.
 
 Aucun checkpoint GREEN Bridge Visual Assets v1 avant validation utilisateur.
+
+
+## Régression preview — autorité visuelle multiple
+
+Retour utilisateur :
+- un chargement sans pont ;
+- un chargement montrant l'ancien visuel procédural ;
+- rappel explicite : aucune autorité multiple n'est acceptable.
+
+Cause confirmée :
+`world-object-renderer.js` utilisait encore le prototype procédural comme fallback lorsque l'asset déclaré n'était pas prêt.
+Le même WorldObject pouvait donc recevoir deux représentations possibles selon le timing réseau/cache.
+
+## Correction autorité unique
+
+Supprimé :
+- `drawBridgeFallback` ;
+- toute substitution procédurale du pont déclaré.
+
+Nouveau chemin :
+1. WorldDocument déclare `visual.assetId` ;
+2. World Object Asset Adapter résout cet identifiant ;
+3. Image Asset Loader charge l'asset ;
+4. bootstrap **attend** le résultat ;
+5. si l'asset est READY, le runtime démarre ;
+6. si l'asset est missing/error, le bootstrap échoue explicitement ;
+7. le renderer ne connaît qu'un seul visuel pour ce WorldObject.
+
+Le loader partagé expose désormais :
+- `load()` awaitable ;
+- `get()` ;
+- `state()` ;
+- `status()` ;
+- `dispose()`.
+
+Cache preview :
+- aucun Service Worker n'existe dans ce laboratoire ;
+- l'entrée `main.js` reçoit une révision de preview ;
+- les modules du pipeline WorldObject reçoivent aussi une révision d'URL ;
+- aucune ancienne version du renderer ne doit être réutilisée silencieusement par le navigateur.
+
+## Sentinelles ajoutées
+- renderer WorldObject sans `drawBridgeFallback` ;
+- renderer sans dessin procédural concurrent ;
+- bootstrap contient `await worldObjectImageLoader.load` ;
+- asset manquant reste explicite ;
+- cycle de chargement awaitable testé.
+
+CI correctif :
+- run `36918491099` — SUCCESS ;
+- run `36918498701` — SUCCESS ;
+- run `36918510668` — SUCCESS.
+
+Une nouvelle preview smartphone est requise avant GREEN.
