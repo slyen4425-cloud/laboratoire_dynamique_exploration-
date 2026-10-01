@@ -77,7 +77,7 @@ test('bridge manifest and semantic asset adapter stay in sync', async () => {
   assert.deepEqual(manifestIds, adapterIds);
 });
 
-test('shared image loader loads bridge visuals with explicit lifecycle', () => {
+test('shared image loader loads bridge visuals with explicit lifecycle', async () => {
   const images = [];
   const loader = createImageAssetLoader({
     resolveAsset: resolveWorldObjectAsset,
@@ -88,7 +88,7 @@ test('shared image loader loads bridge visuals with explicit lifecycle', () => {
     }
   });
 
-  loader.load(['object.bridge.wood.rustic_bank.01']);
+  const loading = loader.load(['object.bridge.wood.rustic_bank.01']);
 
   assert.equal(loader.status().loading, 1);
   assert.equal(
@@ -97,7 +97,9 @@ test('shared image loader loads bridge visuals with explicit lifecycle', () => {
   );
 
   images[0].onload();
+  const loadedStatus = await loading;
 
+  assert.equal(loadedStatus.ready, 1);
   assert.equal(loader.status().ready, 1);
   assert.equal(
     loader.get('object.bridge.wood.rustic_bank.01'),
@@ -143,4 +145,19 @@ test('changing bridge asset id never changes logical bridge geometry', () => {
 
   assert.deepEqual(bridgeVisualRect(wood), bridgeVisualRect(stone));
   assert.notEqual(wood.visual.assetId, stone.visual.assetId);
+});
+
+
+test('required WorldObject asset failure is explicit and never replaced by another visual', async () => {
+  const loader = createImageAssetLoader({
+    resolveAsset: resolveWorldObjectAsset,
+    imageFactory: () => ({ onload: null, onerror: null, src: '' })
+  });
+
+  const status = await loader.load(['object.bridge.unknown']);
+
+  assert.equal(status.missing, 1);
+  assert.equal(status.ready, 0);
+  assert.equal(loader.get('object.bridge.unknown'), null);
+  assert.equal(loader.state('object.bridge.unknown'), 'missing');
 });
