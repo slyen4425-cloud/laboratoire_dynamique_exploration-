@@ -4,7 +4,7 @@ export const demoWorld = {
   width: 2400,
   height: 1600,
   surface: normalizeWorldSurface({
-    baseMaterialId: 'ground.forest.base',
+    baseMaterialId: 'grass.forest',
     routes: [
       {
         id: 'forest-main-road',
@@ -25,7 +25,7 @@ export const demoWorld = {
       {
         id: 'forest-stream',
         width: 72,
-        materialId: 'water.stream',
+        materialId: 'water.forest_stream',
         points: [
           { x: 985, y: 805 },
           { x: 1085, y: 785 },
