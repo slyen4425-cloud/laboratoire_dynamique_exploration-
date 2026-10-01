@@ -94,3 +94,39 @@ test('architecture sentinel: material system does not hotlink other repositories
 
   assert.deepEqual(violations, []);
 });
+
+
+test('architecture sentinel: runtime has no cross-repository asset dependency', async () => {
+  const sources = await readSources();
+  const violations = [];
+
+  for (const file of sources) {
+    if (
+      /raw\.githubusercontent\.com|github\.com\/slyen4425-cloud\/Zombicide-40k|assets\/dungeon\//i.test(file.content)
+    ) {
+      violations.push(file.path);
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
+
+test('architecture sentinel: renderer never owns physical Material Pack paths', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/surface-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('assets/exploration/materials/'), false);
+  assert.equal(renderer.includes('.webp'), false);
+});
+
+test('architecture sentinel: Material Pack references semantic asset ids, not files', async () => {
+  const pack = await readFile(
+    new URL('../src/materials/material-pack-v1.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(pack.includes('assets/exploration/materials/'), false);
+  assert.equal(pack.includes('.webp'), false);
+});
