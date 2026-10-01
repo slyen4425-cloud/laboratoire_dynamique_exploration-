@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 
 import {
   listMaterialAssets,
@@ -105,4 +105,27 @@ test('missing semantic assets remain explicit and never fall back', () => {
 
   assert.equal(loader.status().missing, 1);
   assert.equal(loader.get('texture.unknown'), null);
+});
+
+
+test('forest manifest and semantic Asset Adapter stay in sync', async () => {
+  const manifest = JSON.parse(
+    await readFile(
+      new URL(
+        '../assets/exploration/materials/forest/manifest.v1.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.packId, 'forest-core-v1');
+  assert.equal(manifest.profile, 'mobile-test-128');
+  assert.equal(manifest.ownership, 'exploration-material-pack');
+
+  const manifestIds = new Set(manifest.files.map((item) => item.assetId));
+  const adapterIds = new Set(listMaterialAssets().map((item) => item.id));
+
+  assert.deepEqual(manifestIds, adapterIds);
 });
