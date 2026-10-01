@@ -2,6 +2,8 @@ import {
   bridgeTraversalRect
 } from '../world/world-object-model.js';
 
+const COLLISION_EPSILON = 1e-6;
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(value, max));
 }
@@ -12,6 +14,28 @@ export function circleIntersectsRect(x, y, radius, rect) {
   const dx = x - nearestX;
   const dy = y - nearestY;
   return dx * dx + dy * dy < radius * radius;
+}
+
+function orientedLocalPoint(x, y, rect) {
+  const dx = x - rect.x;
+  const dy = y - rect.y;
+  const cos = Math.cos(-rect.rotation);
+  const sin = Math.sin(-rect.rotation);
+
+  return {
+    x: dx * cos - dy * sin,
+    y: dx * sin + dy * cos
+  };
+}
+
+function orientedWorldPoint(localX, localY, rect) {
+  const cos = Math.cos(rect.rotation);
+  const sin = Math.sin(rect.rotation);
+
+  return {
+    x: rect.x + localX * cos - localY * sin,
+    y: rect.y + localX * sin + localY * cos
+  };
 }
 
 export function pointInOrientedRect(x, y, rect) {
@@ -28,16 +52,11 @@ export function pointInOrientedRect(x, y, rect) {
     return false;
   }
 
-  const dx = x - rect.x;
-  const dy = y - rect.y;
-  const cos = Math.cos(-rect.rotation);
-  const sin = Math.sin(-rect.rotation);
-  const localX = dx * cos - dy * sin;
-  const localY = dx * sin + dy * cos;
+  const local = orientedLocalPoint(x, y, rect);
 
   return (
-    Math.abs(localX) <= rect.length / 2 &&
-    Math.abs(localY) <= rect.width / 2
+    Math.abs(local.x) <= rect.length / 2 + COLLISION_EPSILON &&
+    Math.abs(local.y) <= rect.width / 2 + COLLISION_EPSILON
   );
 }
 
@@ -55,20 +74,17 @@ export function circleFitsOrientedRect(x, y, radius, rect) {
     return false;
   }
 
-  const dx = x - rect.x;
-  const dy = y - rect.y;
-  const cos = Math.cos(-rect.rotation);
-  const sin = Math.sin(-rect.rotation);
-  const localX = dx * cos - dy * sin;
-  const localY = dx * sin + dy * cos;
+  const local = orientedLocalPoint(x, y, rect);
 
   return (
-    Math.abs(localX) + radius <= rect.length / 2 &&
-    Math.abs(localY) + radius <= rect.width / 2
+    Math.abs(local.x) + radius <=
+      rect.length / 2 + COLLISION_EPSILON &&
+    Math.abs(local.y) + radius <=
+      rect.width / 2 + COLLISION_EPSILON
   );
 }
 
-function bridgeAllowsObstacle(world, obstacle, x, y, radius) {
+function bridgeAllowsObstacle(world, obstacle, x, y) {
   if (!obstacle?.id) return false;
 
   for (const object of Array.isArray(world.objects) ? world.objects : []) {
@@ -105,7 +121,7 @@ export function isBlocked(world, entity, x, y) {
       continue;
     }
 
-    if (bridgeAllowsObstacle(world, obstacle, x, y, entity.radius)) {
+    if (bridgeAllowsObstacle(world, obstacle, x, y)) {
       continue;
     }
 
@@ -113,4 +129,61 @@ export function isBlocked(world, entity, x, y) {
   }
 
   return false;
+}
+
+export function resolveBridgeGuidedPosition(
+  world,
+  entity,
+  targetX,
+  targetY
+) {
+  for (const object of Array.isArray(world.objects) ? world.objects : []) {
+    if (
+      object.kind !== 'bridge' ||
+      object.traversal?.enabled !== true
+    ) {
+      continue;
+    }
+
+    const passage = bridgeTraversalRect(object);
+    if (!passage) continue;
+
+    const touchesReferencedObstacle = world.obstacles.some((obstacle) =>
+      object.traversal.overridesObstacleIds.includes(obstacle.id) &&
+      circleIntersectsRect(
+        targetX,
+        targetY,
+        entity.radius,
+        obstacle
+      )
+    );
+
+    if (!touchesReferencedObstacle) continue;
+
+    const local = orientedLocalPoint(targetX, targetY, passage);
+    const halfLength = passage.length / 2;
+    const halfWidth = passage.width / 2;
+    const assistMargin =
+      passage.width * object.traversal.edgeAssistRatio;
+
+    if (
+      Math.abs(local.x) > halfLength + COLLISION_EPSILON ||
+      Math.abs(local.y) >
+        halfWidth + assistMargin + COLLISION_EPSILON
+    ) {
+      continue;
+    }
+
+    const guided = orientedWorldPoint(
+      local.x,
+      clamp(local.y, -halfWidth, halfWidth),
+      passage
+    );
+
+    if (!isBlocked(world, entity, guided.x, guided.y)) {
+      return Object.freeze(guided);
+    }
+  }
+
+  return null;
 }
