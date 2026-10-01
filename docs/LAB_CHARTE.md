@@ -297,7 +297,19 @@ Interdits :
 - fallback silencieux vers les assets d'un autre module ;
 - copie sans traçabilité de source.
 
-### 12.1 Autorité visuelle unique des WorldObjects
+### 12.1 Intégrité des assets binaires
+
+Tout asset binaire importé dans le dépôt doit être vérifié sur les **octets réellement commités**, pas uniquement sur le fichier source local.
+
+Pour chaque pack binaire versionné :
+- taille runtime enregistrée dans le manifeste ;
+- SHA-256 runtime enregistré dans le manifeste ;
+- CI recalcule taille + SHA-256 sur le fichier présent dans le dépôt ;
+- les formats structurés pertinents vérifient aussi leur intégrité minimale (par exemple RIFF/WEBP : taille déclarée = taille réelle) ;
+- un binaire tronqué ou incohérent bloque la CI et toute publication ;
+- la preview ne doit jamais masquer un asset invalide par une représentation concurrente.
+
+### 12.2 Autorité visuelle unique des WorldObjects
 
 Lorsqu'un WorldObject déclare un `visual.assetId`, cet assetId est **l'unique autorité visuelle** de l'objet.
 
