@@ -1,4 +1,4 @@
-const DEFAULT_BASE_MATERIAL = 'ground.forest.base';
+const DEFAULT_BASE_MATERIAL = 'grass.forest';
 
 function finite(value) {
   return Number.isFinite(value);
@@ -25,7 +25,7 @@ function normalizePathItem(item, prefix, index) {
   const materialId =
     typeof item.materialId === 'string' && item.materialId.trim()
       ? item.materialId.trim()
-      : `${prefix}.default`;
+      : prefix === 'river' ? 'water.forest_stream' : 'road.dirt';
 
   return Object.freeze({
     id,
