@@ -1,5 +1,6 @@
 import { normalize } from './core/vector.js';
 import { stepMovement } from './core/movement.js';
+import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { demoWorld as world } from './world/demo-world.js';
 
@@ -9,7 +10,8 @@ const coords = document.querySelector('#coords');
 const joystick = document.querySelector('#joystick');
 const stick = document.querySelector('#stick');
 
-const player = { x: 220, y: 220, radius: 18, speed: 230 };
+const config = normalizeExplorationConfig();
+const player = { x: 220, y: 220, radius: config.player.radius };
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
@@ -35,7 +37,7 @@ function keyboardVector() {
 }
 
 function currentInput() {
-  if (Math.hypot(touchInput.x, touchInput.y) > 0.05) {
+  if (Math.hypot(touchInput.x, touchInput.y) > config.input.deadzone) {
     return touchInput;
   }
   return keyboardVector();
@@ -53,7 +55,7 @@ function updateCamera() {
 }
 
 function update(dt) {
-  stepMovement(world, player, currentInput(), dt);
+  stepMovement(world, player, currentInput(), dt, config.movement);
   updateCamera();
   coords.textContent = `x: ${player.x.toFixed(1)}  y: ${player.y.toFixed(1)}`;
 }
@@ -129,7 +131,7 @@ function render() {
 }
 
 function frame(now) {
-  const dt = Math.min((now - last) / 1000, 0.033);
+  const dt = Math.min((now - last) / 1000, config.simulation.maxDeltaSeconds);
   last = now;
   update(dt);
   render();
