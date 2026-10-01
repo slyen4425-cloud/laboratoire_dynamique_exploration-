@@ -10,7 +10,7 @@ Règle :
 ## État actif — 2026-10-01
 
 Chantier :
-alignement gouvernance GenSrpG.
+alignement gouvernance GenSrpG — GREEN, checkpoint final à créer.
 
 Branche :
 `work/exploration-governance-alignment-2026-10-01`
@@ -23,6 +23,9 @@ Base :
 
 Dernier checkpoint fonctionnel :
 `checkpoint/exploration-phase0-bootstrap-green-2026-10-01`
+
+Source GenSrpG relue :
+`work/gensrpg-phase8-tactical-consolidation-preaudit-2026-10-01` au SHA `9fd5a789180e26204833e9d6b330079352272ec6`
 
 ## Invariants de coordination
 
