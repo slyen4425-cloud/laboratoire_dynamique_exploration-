@@ -5,7 +5,7 @@ import { normalizeWorldSurface } from '../src/world/surface-model.js';
 
 test('surface model preserves structured routes and rivers', () => {
   const source = {
-    baseMaterialId: 'ground.forest.base',
+    baseMaterialId: 'grass.forest',
     routes: [
       {
         id: 'main-road',
@@ -22,7 +22,7 @@ test('surface model preserves structured routes and rivers', () => {
       {
         id: 'river-1',
         width: 72,
-        materialId: 'water.stream',
+        materialId: 'water.forest_stream',
         points: [
           { x: 1000, y: 800 },
           { x: 1200, y: 785 },
@@ -35,7 +35,7 @@ test('surface model preserves structured routes and rivers', () => {
   const surface = normalizeWorldSurface(source);
 
   assert.equal(surface.version, 1);
-  assert.equal(surface.baseMaterialId, 'ground.forest.base');
+  assert.equal(surface.baseMaterialId, 'grass.forest');
   assert.equal(surface.routes.length, 1);
   assert.equal(surface.routes[0].width, 84);
   assert.deepEqual(
@@ -91,7 +91,7 @@ test('surface model applies explicit defaults', () => {
     ]
   });
 
-  assert.equal(surface.baseMaterialId, 'ground.forest.base');
+  assert.equal(surface.baseMaterialId, 'grass.forest');
   assert.equal(surface.routes[0].width, 64);
-  assert.equal(surface.routes[0].materialId, 'road.default');
+  assert.equal(surface.routes[0].materialId, 'road.dirt');
 });
