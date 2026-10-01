@@ -9,19 +9,28 @@ export const materialPackV1 = Object.freeze({
       kind: 'surface',
       label: 'Herbe de forêt',
       assets: Object.freeze({
-        base: null,
-        variants: Object.freeze([]),
+        base: 'texture.grass.forest.base.01',
+        variants: Object.freeze([
+          'texture.grass.forest.base.02'
+        ]),
         edge: null,
-        decals: Object.freeze([])
+        decals: Object.freeze([
+          'decal.forest.leaves.01',
+          'decal.forest.roots.01'
+        ])
       }),
       render: Object.freeze({
         baseColor: '#536247',
         variationColors: Object.freeze([
-          'rgba(111,92,57,0.14)',
-          'rgba(70,90,48,0.16)',
-          'rgba(91,78,50,0.12)'
+          'rgba(111,92,57,0.10)',
+          'rgba(70,90,48,0.12)',
+          'rgba(91,78,50,0.09)'
         ]),
-        detailSpacing: 260
+        detailSpacing: 260,
+        decalSpacing: 320,
+        decalMinSize: 54,
+        decalMaxSize: 92,
+        decalOpacity: 0.42
       })
     }),
     Object.freeze({
@@ -29,8 +38,8 @@ export const materialPackV1 = Object.freeze({
       kind: 'path',
       label: 'Chemin de terre',
       assets: Object.freeze({
-        center: null,
-        edge: null,
+        center: 'texture.road.dirt.base.01',
+        edge: 'transition.road.dirt.grass_forest.edge.01',
         decals: Object.freeze([])
       }),
       render: Object.freeze({
@@ -40,8 +49,8 @@ export const materialPackV1 = Object.freeze({
         highlightColor: '#b99a6b',
         outerEdgePadding: 18,
         innerEdgePadding: 10,
-        highlightRatio: 0.08,
-        highlightOpacity: 0.28
+        highlightRatio: 0.06,
+        highlightOpacity: 0.18
       })
     }),
     Object.freeze({
@@ -49,8 +58,8 @@ export const materialPackV1 = Object.freeze({
       kind: 'water',
       label: 'Rivière de forêt',
       assets: Object.freeze({
-        center: null,
-        bank: null,
+        center: 'texture.water.forest_stream.base.01',
+        bank: 'transition.water.forest_stream.grass_forest.bank.01',
         decals: Object.freeze([])
       }),
       render: Object.freeze({
@@ -60,11 +69,27 @@ export const materialPackV1 = Object.freeze({
         highlightColor: '#8fc0cb',
         outerBankPadding: 20,
         innerBankPadding: 10,
-        highlightRatio: 0.1,
-        highlightOpacity: 0.3
+        highlightRatio: 0.08,
+        highlightOpacity: 0.20
       })
     })
   ]),
-  transitions: Object.freeze([]),
-  decals: Object.freeze([])
+  transitions: Object.freeze([
+    Object.freeze({
+      id: 'transition.road.dirt.grass_forest.edge.01',
+      from: 'road.dirt',
+      to: 'grass.forest',
+      assetId: 'transition.road.dirt.grass_forest.edge.01'
+    }),
+    Object.freeze({
+      id: 'transition.water.forest_stream.grass_forest.bank.01',
+      from: 'water.forest_stream',
+      to: 'grass.forest',
+      assetId: 'transition.water.forest_stream.grass_forest.bank.01'
+    })
+  ]),
+  decals: Object.freeze([
+    'decal.forest.leaves.01',
+    'decal.forest.roots.01'
+  ])
 });
