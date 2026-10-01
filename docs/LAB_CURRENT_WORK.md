@@ -129,15 +129,53 @@ Le renderer ne possède plus les identifiants sémantiques des trois matériaux.
 
 ## Assets artistiques
 
-Dans ce contrat v1, les slots d'assets existent mais sont volontairement vides :
-- base/center ;
-- variants ;
-- edge/bank ;
-- decals.
+Les 8 assets pilotes générés sont importés localement sous :
+`assets/exploration/materials/forest/`.
 
-Le rendu actuel utilise les paramètres procéduraux du matériau comme fallback explicite.
+Profil actuel :
+`mobile-test-128` — volontairement léger pour la validation smartphone, pas une résolution de production finale.
 
-Aucune ancienne dalle forêt n'a été réintroduite.
+Organisation :
+- `surfaces/grass_forest_base_01.webp` ;
+- `surfaces/grass_forest_base_02.webp` ;
+- `paths/road_dirt_base_01.webp` ;
+- `water/water_forest_stream_base_01.webp` ;
+- `transitions/road_dirt_to_grass_forest_edge_01.webp` ;
+- `transitions/water_forest_stream_to_grass_forest_bank_01.webp` ;
+- `decals/leaves_forest_floor_decal_01.webp` ;
+- `decals/roots_forest_floor_decal_01.webp`.
+
+Traçabilité :
+- `manifest.v1.json` versionné ;
+- SHA-256 de chaque binaire ;
+- dimensions et taille ;
+- assetId sémantique ;
+- rôle ;
+- ownership Exploration Material Pack.
+
+Import :
+- workflow one-shot uniquement ;
+- archive SHA-256 contrôlée ;
+- chaque binaire contrôlé contre le manifeste ;
+- bootstrap et workflow temporaire supprimés après import ;
+- import final run `36894732106` — SUCCESS.
+
+Raccord runtime :
+- Material Pack référence uniquement des assetIds sémantiques ;
+- Material Asset Adapter est seul propriétaire des chemins physiques ;
+- loader explicite avec `load/get/status/dispose` ;
+- texture herbe active sur la surface ;
+- texture terre active au centre de la route ;
+- texture eau active au centre de la rivière ;
+- fallback procédural conservé si une image n'est pas prête.
+
+Les assets de transition route/herbe, berge eau/herbe et les deux decals sont **enregistrés et chargés**, mais leur application géométrique finale est volontairement reportée :
+- transition courbe route -> herbe ;
+- berge courbe ;
+- placement déterministe des decals.
+Ils ne seront pas plaqués artificiellement sur la géométrie avant le lot renderer correspondant.
+
+Aucune ancienne dalle forêt n'a été réintroduite et aucun hotlink inter-dépôt n'est utilisé.
 
 ## Garanties testées
 
@@ -151,8 +189,11 @@ Aucune ancienne dalle forêt n'a été réintroduite.
 - material system sans hotlink vers Zombicide-40k ;
 - tests historiques toujours GREEN.
 
-CI :
+CI contrat Material Pack :
 run `36884913815` — SUCCESS.
+
+CI raccord assets/textures :
+run `36895148817` — SUCCESS.
 
 ## Validation restante
 
