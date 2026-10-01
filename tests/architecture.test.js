@@ -149,3 +149,28 @@ test('architecture sentinel: collision never derives bridge rules from assets', 
 
   assert.equal(/assetId|\.webp|assets\//.test(collision), false);
 });
+
+
+test('architecture sentinel: WorldObject renderer owns no physical asset paths', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/world-object-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('assets/exploration/objects/'), false);
+  assert.equal(renderer.includes('.webp'), false);
+});
+
+test('architecture sentinel: WorldDocument owns semantic bridge ids only', async () => {
+  const demoWorld = await readFile(
+    new URL('../src/world/demo-world.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(demoWorld.includes('assets/exploration/objects/'), false);
+  assert.equal(demoWorld.includes('.webp'), false);
+  assert.equal(
+    demoWorld.includes('object.bridge.wood.rustic_bank.01'),
+    true
+  );
+});
