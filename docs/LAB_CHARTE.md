@@ -498,6 +498,10 @@ Le pont n'annule jamais globalement un type d'obstacle.
 Un pont peut être orienté et scalé.
 Le corridor traversable suit le même transform normalisé, avec éventuellement un inset/ratio propre pour conserver des rambardes non traversables.
 
+**Sémantique v1 du corridor** : il décrit la zone valide pour le **centre de l'entité**.
+Le Collision World ne retranche pas une seconde fois le rayon de l'entité à ce corridor, afin d'éviter les accroches invisibles sur les bords du pont.
+Hors corridor, l'obstacle sous-jacent reste bloquant.
+
 ### 26.2 Contrôles Builder des objets
 
 Le Builder doit pouvoir exposer pour les objets compatibles :
