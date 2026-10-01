@@ -108,3 +108,37 @@ Nouvelle validation smartphone :
 Sol forêt visible avec une échelle cohérente sur smartphone, sans modifier la fluidité ni les collisions.
 
 Le checkpoint GREEN fonctionnel du pack ne sera créé qu'après validation utilisateur.
+
+
+## Retour utilisateur — raccord naturel
+Après correction de l'échelle, le sol reste jugé trop artificiel :
+- intersections carrées visibles ;
+- raccords entre textures trop nets ;
+- impression de grille/mosaïque.
+
+## Correction en cours — Natural Ground Rendering
+Le même lot forêt est conservé car il n'est pas encore GREEN.
+
+Nouvelle stratégie :
+- abandon du dessin bord-à-bord des images ;
+- fond brun-vert continu, ancré aux coordonnées monde ;
+- variations organiques par gradients déterministes ;
+- les 6 textures deviennent des patchs décoratifs ;
+- bords des patchs fondus par masque ;
+- position, rotation et échelle des patchs déterministes ;
+- superposition contrôlée ;
+- culling conservé ;
+- aucune information de collision tirée des pixels.
+
+Paramètres configurables :
+- `render.terrainPatchSize` ;
+- `render.terrainPatchSpacing` ;
+- `render.terrainPatchOpacity` ;
+- `render.groundDetailSpacing`.
+
+Aucun changement :
+- mouvement ;
+- collision ;
+- caméra ;
+- taille du pion ;
+- vitesse.
