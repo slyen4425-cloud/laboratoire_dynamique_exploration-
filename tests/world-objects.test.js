@@ -249,3 +249,63 @@ test('regression: slightly off-center bridge crossing must not snag on invisible
   assert.equal(entity.y, 340);
   assert.equal(entity.x, 278);
 });
+
+
+test('regression: diagonal approach slides onto bridge instead of sticking to river bank', () => {
+  const bridge = normalizeWorldObjects([
+    {
+      id: 'bridge-diagonal-regression',
+      kind: 'bridge',
+      transform: {
+        x: 250,
+        y: 250,
+        rotationDeg: 90,
+        scaleX: 1,
+        scaleY: 1
+      },
+      baseSize: {
+        length: 170,
+        width: 96
+      },
+      traversal: {
+        enabled: true,
+        lengthRatio: 0.92,
+        widthRatio: 0.82,
+        overridesObstacleIds: ['river-diagonal']
+      }
+    }
+  ])[0];
+
+  const world = {
+    width: 600,
+    height: 600,
+    objects: [bridge],
+    obstacles: [
+      {
+        id: 'river-diagonal',
+        x: 100,
+        y: 205,
+        w: 300,
+        h: 90,
+        kind: 'river'
+      }
+    ]
+  };
+
+  const entity = { x: 220, y: 145, radius: 18 };
+
+  for (let step = 0; step < 20; step += 1) {
+    stepMovement(
+      world,
+      entity,
+      { x: -0.3, y: 1 },
+      0.1,
+      { maxSpeed: 100 }
+    );
+  }
+
+  assert.ok(
+    entity.y > 305,
+    `expected to cross river, stopped at y=${entity.y}`
+  );
+});
