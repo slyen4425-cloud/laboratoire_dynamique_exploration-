@@ -267,3 +267,23 @@ CI :
 run `36921543999` — **SUCCESS**.
 
 Le lot reste non GREEN jusqu'à une nouvelle validation smartphone sur une preview reconstruite avec ces blobs complets.
+
+
+## Sécurité cache mobile après réparation binaire
+
+Pour empêcher un navigateur ayant mis en cache un ancien WebP tronqué de le réutiliser :
+- l'Asset Adapter conserve le chemin canonique unique ;
+- le loader image accepte un `cacheRevision` explicite ;
+- seul le loader WorldObject passe `bridge-assets-v1-binary-repair` ;
+- l'URL réseau devient `<asset>.webp?rev=bridge-assets-v1-binary-repair` ;
+- l'identité sémantique `assetId`, le chemin canonique et le manifeste restent inchangés ;
+- aucun second resolver ni second asset n'est créé.
+
+Sentinelle :
+- le test vérifie l'URL révisée ;
+- le test vérifie que l'Adapter garde exactement le chemin canonique.
+
+CI :
+run `36921896270` — **SUCCESS**.
+
+La prochaine preview doit être reconstruite puis son artefact Pages inspecté avant nouveau test utilisateur.
