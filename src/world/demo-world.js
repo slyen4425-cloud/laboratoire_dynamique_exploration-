@@ -1,4 +1,5 @@
 import { normalizeWorldSurface } from './surface-model.js';
+import { normalizeWorldObjects } from './world-object-model.js';
 
 export const demoWorld = {
   width: 2400,
@@ -36,10 +37,45 @@ export const demoWorld = {
       }
     ]
   }),
+  objects: normalizeWorldObjects([
+    {
+      id: 'forest-bridge-01',
+      kind: 'bridge',
+      transform: {
+        x: 1190,
+        y: 805,
+        rotationDeg: 90,
+        scaleX: 1,
+        scaleY: 1
+      },
+      baseSize: {
+        length: 170,
+        width: 96
+      },
+      visual: {
+        assetId: null
+      },
+      traversal: {
+        enabled: true,
+        lengthRatio: 0.92,
+        widthRatio: 0.82,
+        overridesObstacleIds: [
+          'forest-stream-collision'
+        ]
+      }
+    }
+  ]),
   obstacles: [
-    { x: 480, y: 300, w: 240, h: 180, kind: 'rock' },
-    { x: 980, y: 760, w: 460, h: 90, kind: 'river' },
-    { x: 1650, y: 360, w: 220, h: 300, kind: 'trees' },
-    { x: 350, y: 1120, w: 520, h: 120, kind: 'trees' }
+    { id: 'rock-01', x: 480, y: 300, w: 240, h: 180, kind: 'rock' },
+    {
+      id: 'forest-stream-collision',
+      x: 980,
+      y: 760,
+      w: 460,
+      h: 90,
+      kind: 'river'
+    },
+    { id: 'trees-01', x: 1650, y: 360, w: 220, h: 300, kind: 'trees' },
+    { id: 'trees-02', x: 350, y: 1120, w: 520, h: 120, kind: 'trees' }
   ]
 };
