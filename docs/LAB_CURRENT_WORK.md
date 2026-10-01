@@ -1,51 +1,90 @@
-# LAB_CURRENT_WORK
+# LAB_CURRENT_WORK — Point de reprise unique
 
-Date d'ouverture : 2026-10-01
+Date : 2026-10-01
 
-## Lot actif
-Phase 0 — Bootstrap / socle mouvement fluide.
+## Chantier actif
+Alignement de gouvernance sur la charte officielle GenSrpG.
 
-## Branche de travail
-`work/exploration-phase0-bootstrap-2026-10-01`
+## Branche
+`work/exploration-governance-alignment-2026-10-01`
 
-## Baseline
-`main` initial au SHA `a911c54dab360d4b8a4738564e8a869c58dbda73`.
+## Checkpoint de départ
+`checkpoint/exploration-start-governance-alignment-2026-10-01`
 
-## Objectif
-Valider un prototype autonome avec :
-- déplacement continu ;
-- caméra de suivi ;
-- collisions avec obstacles ;
-- monde plus grand que l'écran ;
-- contrôles tactiles smartphone ;
-- aucune case visible.
+## SHA de base
+`35d4cf3666fd2f6d99eecdd34ba7b6ef37346063`
 
-## Hors périmètre
-- génération procédurale complète ;
-- IA créatures ;
-- combat ;
-- raccord au dépôt principal ;
-- raccord au laboratoire Combat Dynamique.
+## Dernier checkpoint GREEN fonctionnel
+`checkpoint/exploration-phase0-bootstrap-green-2026-10-01`
 
-## Validation Phase 0
-- déplacement 360° : GREEN ;
-- stick tactile smartphone : GREEN ;
-- diagonales normalisées : GREEN ;
-- collisions : GREEN ;
-- caméra : GREEN ;
-- absence de freeze signalé au test mobile : GREEN ;
-- tests core automatisés : GREEN ;
-- CI GitHub : GREEN ;
-- preview GitHub Pages : GREEN.
+SHA :
+`35d4cf3666fd2f6d99eecdd34ba7b6ef37346063`
 
-## Retour utilisateur
-2026-10-01 — test smartphone validé : « Parfait, ça répond bien ».
+## État fonctionnel gelé
+Phase 0 GREEN :
+- déplacement continu X/Y ;
+- stick tactile mobile ;
+- diagonales normalisées ;
+- collisions ;
+- caméra ;
+- aucune case comme autorité ;
+- CI GREEN ;
+- test smartphone validé ;
+- preview GitHub Pages fonctionnelle.
 
-## État
-Phase 0 prête pour checkpoint GREEN.
+## Périmètre du lot actuel
+Documentation et gouvernance uniquement :
+- aligner la charte ;
+- définir propriétaires ;
+- définir garde-fous ;
+- définir procédure checkpoint ;
+- définir règles de coordination ;
+- définir contrat d'intégration future.
 
-## Étape suivante autorisée
-Phase 1 — Exploration Core :
-- consolider le modèle mouvement ;
-- ajouter accélération/freinage léger configurables ;
-- préparer couches monde/culling sans modifier l'autorité X/Y.
+## Propriétaire
+Coordination/architecture du laboratoire Exploration.
+
+## Systèmes réutilisés
+- politique de gouvernance GenSrpG ;
+- principes Core/Shell/modules ;
+- stratégie de tests sentinelles ;
+- principe mobile-first.
+
+## Fonctions gelées / à ne pas toucher
+Tout le runtime Phase 0 :
+- mouvement ;
+- collision ;
+- caméra ;
+- input ;
+- renderer ;
+- demo world.
+
+## Fichiers runtime autorisés
+Aucun dans ce lot.
+
+## Tests prévus
+- aucun changement runtime ;
+- CI existante doit rester GREEN ;
+- revue du diff : documentation uniquement.
+
+## Risque inter-module
+Nul en runtime. Le but du lot est précisément de réduire le risque d'intégration future.
+
+## Source de gouvernance GenSrpG relue
+Branche :
+`work/gensrpg-phase8-tactical-consolidation-preaudit-2026-10-01`
+
+Documents :
+- GENSRPG_CHARTE ;
+- GENSRPG_DEVELOPMENT_RULES ;
+- GENSRPG_CHECKPOINT_POLICY ;
+- GENSRPG_COORDINATION ;
+- GENSRPG_TECHNICAL_GUARDRAILS ;
+- GENSRPG_MODULE_OWNERSHIP ;
+- GENSRPG_MANUAL_TEST_GATE ;
+- GENSRPG_RESTRUCTURATION_ROADMAP.
+
+## Prochaine étape
+Après checkpoint GREEN de ce lot :
+- créer un **nouveau checkpoint de départ Phase 1** ;
+- seulement ensuite reprendre le code Exploration Core.
