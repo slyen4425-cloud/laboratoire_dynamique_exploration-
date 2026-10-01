@@ -58,3 +58,17 @@ test('architecture sentinel: core remains DOM independent', async () => {
 
   assert.deepEqual(violations, []);
 });
+
+
+test('architecture sentinel: runtime never hotlinks or references Dungeon asset paths', async () => {
+  const sources = await readSources();
+  const violations = [];
+
+  for (const file of sources) {
+    if (/raw\.githubusercontent\.com|github\.com\/slyen4425-cloud\/Zombicide-40k|assets\/dungeon\//i.test(file.content)) {
+      violations.push(file.path);
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
