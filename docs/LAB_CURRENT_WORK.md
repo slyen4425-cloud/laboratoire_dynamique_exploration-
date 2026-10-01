@@ -42,8 +42,10 @@ Asset Pack Forêt v1 — premier raccord visuel Exploration.
 
 ## Fichiers runtime autorisés
 - `src/assets/` ;
-- `src/main.js` uniquement pour consommation du rendu sol ;
-- éventuellement un module renderer dédié si nécessaire ;
+- `src/render/` ;
+- `src/config/` pour paramètres de rendu ;
+- `src/core/config.js` pour normalisation ;
+- `src/main.js` uniquement pour consommation ;
 - tests ;
 - manifeste d'assets.
 
@@ -58,38 +60,51 @@ Asset Pack Forêt v1 — premier raccord visuel Exploration.
 - modification des collisions ;
 - modification d'un autre dépôt.
 
-## Tests requis
-- tous les tests Phase 0/1A restent GREEN ;
-- Asset Adapter résout les 6 variantes ;
-- aucune URL inter-dépôt dans le runtime ;
-- aucune référence `assets/dungeon/` dans `src/` ;
-- CI GREEN ;
-- preview mobile ;
-- validation utilisateur du rendu.
-
-## Risque
-Visuel uniquement. Risque principal : performance/culling et répétition visible de texture.
-
 ## État technique
 - 6 textures forêt importées localement et vérifiées par blob SHA ;
 - Asset Adapter local actif ;
 - terrain renderer avec culling actif ;
 - aucune URL inter-dépôt dans le runtime ;
 - aucune référence `assets/dungeon/` dans `src/` ;
-- CI technique GREEN au SHA `8f5b2040a9ae49a398705c5f72f341990d0d3507` ;
-- preview Pages déployée via main : run `36876722990` — SUCCESS ;
-- infrastructure preview checkpoint : `checkpoint/exploration-preview-forest-v1-green-2026-10-01`.
+- preview Pages active sur ce candidat.
+
+## Retour utilisateur — 2026-10-01
+Premier test visuel :
+**les dalles forêt sont beaucoup trop grandes par rapport au pion mobile.**
+
+Diagnostic :
+- `terrainTileSize` était à 320 px ;
+- le pion fait 36 px de diamètre (rayon 18) ;
+- le rapport visuel était donc disproportionné.
+
+Correction appliquée :
+- taille des dalles réduite de 320 px à **96 px** ;
+- paramètre déplacé dans `Exploration Config` sous `render.terrainTileSize` ;
+- valeur personnalisable ;
+- fallback validé ;
+- aucune modification du pion ;
+- aucune modification des collisions ;
+- aucune modification de la vitesse ou de la caméra.
+
+## Tests après correction
+- defaults config : GREEN ;
+- custom config : GREEN ;
+- fallback invalide : GREEN ;
+- déplacement/collision : GREEN ;
+- Asset Adapter : GREEN ;
+- sentinelles architecture : GREEN ;
+- CI run `36877625085` : SUCCESS.
 
 ## Test manuel requis
-En attente de validation smartphone :
+Nouvelle validation smartphone :
+- échelle des dalles plus cohérente avec le pion ;
 - sol forêt visible ;
-- pas de fond cassé/écran blanc ;
 - déplacement toujours fluide ;
 - collisions inchangées ;
 - caméra fluide ;
-- répétition des textures acceptable pour ce premier prototype.
+- répétition des textures acceptable.
 
 ## Critère GREEN
-Sol forêt visible en mobile sans modifier la fluidité ni les collisions.
+Sol forêt visible avec une échelle cohérente sur smartphone, sans modifier la fluidité ni les collisions.
 
 Le checkpoint GREEN fonctionnel du pack ne sera créé qu'après validation utilisateur.
