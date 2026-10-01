@@ -14,6 +14,7 @@ test('exploration config exposes the validated Phase 0 defaults', () => {
   assert.equal(config.movement.maxSpeed, 230);
   assert.equal(config.input.deadzone, 0.05);
   assert.equal(config.simulation.maxDeltaSeconds, 0.033);
+  assert.equal(config.render.terrainTileSize, 96);
 });
 
 test('custom exploration config wins over defaults', () => {
@@ -21,13 +22,15 @@ test('custom exploration config wins over defaults', () => {
     player: { radius: 24 },
     movement: { maxSpeed: 310 },
     input: { deadzone: 0.12 },
-    simulation: { maxDeltaSeconds: 0.02 }
+    simulation: { maxDeltaSeconds: 0.02 },
+    render: { terrainTileSize: 144 }
   });
 
   assert.equal(config.player.radius, 24);
   assert.equal(config.movement.maxSpeed, 310);
   assert.equal(config.input.deadzone, 0.12);
   assert.equal(config.simulation.maxDeltaSeconds, 0.02);
+  assert.equal(config.render.terrainTileSize, 144);
 });
 
 test('invalid exploration config falls back safely', () => {
@@ -35,13 +38,15 @@ test('invalid exploration config falls back safely', () => {
     player: { radius: 0 },
     movement: { maxSpeed: -1 },
     input: { deadzone: 2 },
-    simulation: { maxDeltaSeconds: 1 }
+    simulation: { maxDeltaSeconds: 1 },
+    render: { terrainTileSize: 12 }
   });
 
   assert.equal(config.player.radius, 18);
   assert.equal(config.movement.maxSpeed, 230);
   assert.equal(config.input.deadzone, 0.05);
   assert.equal(config.simulation.maxDeltaSeconds, 0.033);
+  assert.equal(config.render.terrainTileSize, 96);
 });
 
 test('normalize removes diagonal speed boost', () => {
