@@ -200,3 +200,70 @@ CI correctif :
 - run `36918510668` — SUCCESS.
 
 Une nouvelle preview smartphone est requise avant GREEN.
+
+
+## Régression réelle — WebP tronqués sur GitHub/Pages
+
+Retour utilisateur :
+- preview bloquée avec `Erreur asset WorldObject — voir console`.
+
+Le garde-fou d'autorité unique a correctement empêché l'ancien pont de réapparaître.
+L'échec venait ensuite des binaires eux-mêmes.
+
+### Diagnostic sur l'artefact Pages réellement déployé
+
+Artefact du run preview `36918697028` inspecté.
+
+Tailles réellement déployées avant correction :
+- bois rustique : **7 505 octets** au lieu de 40 978 ;
+- pierre médiévale : **11 222 octets** au lieu de 32 032 ;
+- bois/cordes : **15 069 octets** au lieu de 39 262 ;
+- pierre moussue : **7 503 octets** au lieu de 33 858.
+
+Les headers RIFF annonçaient les tailles complètes alors que les fichiers se terminaient prématurément.
+Le navigateur refusait donc correctement de décoder les WebP.
+
+### Reproduction permanente
+
+Test ajouté :
+`bridge WebP binaries are complete RIFF files, never truncated`.
+
+Le test vérifie :
+- signature `RIFF` ;
+- signature `WEBP` ;
+- taille déclarée RIFF + 8 = taille réelle du fichier.
+
+Avant réparation :
+- commit `0a39a28a37a02b5e3530ed4281e1189e8e4ced09` ;
+- CI run `36920236401` : **FAILURE attendue**.
+
+### Réparation des quatre binaires
+
+Les WebP ont été reconstruits depuis les PNG RGBA sources puis réinjectés comme blobs Git complets.
+
+Blobs exacts :
+- bois rustique : `78ec52a69ed03b2e08eb54bf1469ea8249207bca` ;
+- pierre médiévale : `258746de7eef44e35a94826e502ebde6356cedfb` ;
+- bois/cordes : `40c1eb23d447882ee85e65e4b65b41510ffde895` ;
+- pierre moussue : `938fbcb9be9301d0da76b9701db136651106b698`.
+
+Commit de réparation :
+`d14a55f625b91950c3dadcff1930b4756e7a6b06`.
+
+CI après restauration :
+run `36921493915` — **SUCCESS**.
+
+### Sentinelle manifeste renforcée
+
+La CI recalcule maintenant pour chaque bridge asset :
+- taille exacte ;
+- SHA-256 exact ;
+- cohérence avec `manifest.v1.json`.
+
+Commit :
+`34983198a7a9dfdc9bbdcf8b13c8fcc8ad3cd377`.
+
+CI :
+run `36921543999` — **SUCCESS**.
+
+Le lot reste non GREEN jusqu'à une nouvelle validation smartphone sur une preview reconstruite avec ces blobs complets.
