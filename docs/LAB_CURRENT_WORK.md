@@ -70,5 +70,26 @@ Asset Pack Forêt v1 — premier raccord visuel Exploration.
 ## Risque
 Visuel uniquement. Risque principal : performance/culling et répétition visible de texture.
 
+## État technique
+- 6 textures forêt importées localement et vérifiées par blob SHA ;
+- Asset Adapter local actif ;
+- terrain renderer avec culling actif ;
+- aucune URL inter-dépôt dans le runtime ;
+- aucune référence `assets/dungeon/` dans `src/` ;
+- CI technique GREEN au SHA `8f5b2040a9ae49a398705c5f72f341990d0d3507` ;
+- preview Pages déployée via main : run `36876722990` — SUCCESS ;
+- infrastructure preview checkpoint : `checkpoint/exploration-preview-forest-v1-green-2026-10-01`.
+
+## Test manuel requis
+En attente de validation smartphone :
+- sol forêt visible ;
+- pas de fond cassé/écran blanc ;
+- déplacement toujours fluide ;
+- collisions inchangées ;
+- caméra fluide ;
+- répétition des textures acceptable pour ce premier prototype.
+
 ## Critère GREEN
 Sol forêt visible en mobile sans modifier la fluidité ni les collisions.
+
+Le checkpoint GREEN fonctionnel du pack ne sera créé qu'après validation utilisateur.
