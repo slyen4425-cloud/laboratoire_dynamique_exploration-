@@ -70,12 +70,27 @@ Le Builder pourra changer `materialId` et les paramètres autorisés sans redess
 
 ## Fichiers autorisés
 - `src/materials/` ;
+- `src/assets/` pour résolution sémantique locale ;
 - `src/render/surface-renderer.js` ;
+- `src/main.js` uniquement pour installation explicite de l'Asset Adapter/loader ;
+- `assets/exploration/materials/forest/` ;
 - tests ;
 - documentation.
 
+## Extension de périmètre validée par l'utilisateur — 2026-10-01
+L'utilisateur a explicitement demandé de générer, nommer et intégrer les textures nécessaires au test de Material Pack v1.
+
+Cette extension reste homogène au même domaine **Material Pack / apparence**, sans modifier la géométrie, les collisions ou le gameplay.
+
+Assets pilotes autorisés :
+- 2 bases `grass.forest` ;
+- 1 base `road.dirt` ;
+- 1 base `water.forest_stream` ;
+- 1 transition route -> herbe ;
+- 1 berge eau -> herbe ;
+- 2 decals forêt.
+
 ## Hors périmètre
-- nouveaux binaires graphiques ;
 - import des anciennes dalles forêt ;
 - Builder UI ;
 - World Generator ;
