@@ -16,6 +16,29 @@ GenSrpG Shell
 
 Exploration ne possède ni le Shell, ni les services Core partagés, ni le moteur Combat Capture.
 
+## Flux monde / rendu
+
+```text
+World Generator ─┐
+                 ├─> WorldDocument
+Builder manuel ──┘       |
+                         v
+                 World Surface Model
+                         |
+                    materialId
+                         |
+                         v
+                  Material Registry
+                         |
+                         v
+                    Asset Adapter
+                         |
+                         v
+                      Renderer
+```
+
+Le même WorldDocument doit être utilisable par génération, édition, sauvegarde et runtime.
+
 ## Couches et propriétaires
 
 ### bootstrap
@@ -48,8 +71,29 @@ Source de vérité du monde runtime :
 - points d'intérêt ;
 - passages.
 
+### world-surface-model
+Autorité sur la géométrie des surfaces :
+- sol de base ;
+- routes ;
+- rivières ;
+- futures zones/falaises/plages.
+
+Une route/rivière est décrite par données X/Y, largeur et materialId.
+Aucune texture ne définit la géométrie canonique.
+
+### material-registry
+Autorité sur l'apparence sémantique :
+- matériaux de surface ;
+- matériaux linéaires ;
+- eau ;
+- paramètres visuels ;
+- transitions ;
+- decals disponibles.
+
+Il ne possède ni géométrie ni collision.
+
 ### world-generator
-Produit un `world-model` à partir de :
+Produit un `world-model` / `WorldDocument` à partir de :
 - seed ;
 - configuration normalisée ;
 - contraintes.
@@ -61,8 +105,13 @@ Transforme monde -> écran.
 Ne modifie jamais la position logique.
 
 ### renderer
-Affiche l'état fourni.
-Ne recalcule pas le gameplay.
+Affiche :
+- World Surface Model ;
+- matériaux résolus ;
+- objets/décor ;
+- entités.
+
+Il ne recalcule pas le gameplay et ne modifie pas le WorldDocument.
 
 ### input-adapter
 Transforme clavier/tactile/manette en intent de mouvement.
@@ -77,16 +126,95 @@ Reçoit `CaptureCombatResult v1`.
 Aucun accès arbitraire aux internes du moteur Combat.
 
 ### builder/data
-Produit des documents de monde/config validés.
-Ne devient jamais une autorité runtime.
+Produit ou modifie un WorldDocument validé.
+
+Le Builder peut :
+- créer à la main ;
+- ouvrir une carte générée ;
+- déplacer des points ;
+- changer largeur/materialId ;
+- placer objets/zones ;
+- sauvegarder.
+
+Il ne devient jamais une autorité runtime.
 
 ### storage-adapter
 Dans le laboratoire : interface isolée.
 À l'intégration : délègue au Core storage GenSrpG.
 
 ### asset-adapter
+Résout les fichiers physiques demandés par les Material Packs.
+
 Dans le laboratoire : résolution locale contrôlée.
 À l'intégration : délègue au resolver central GenSrpG.
+
+## Material Pack v1
+
+Un pack versionné peut fournir :
+
+```text
+MaterialPack
+├─ materials
+│  ├─ surface
+│  ├─ path
+│  └─ water
+├─ transitions
+├─ decals
+└─ visual object references
+```
+
+Exemple :
+
+```text
+grass.forest
+road.dirt
+water.forest_stream
+```
+
+Un matériau peut déclarer :
+- texture principale ;
+- variantes ;
+- textures/masks de bord ;
+- decals ;
+- densité ;
+- échelle ;
+- teinte ;
+- animation visuelle ;
+- fallback explicite.
+
+## Géométrie vs matériau
+
+Exemple :
+
+```text
+Route A
+points = [...]
+width = 82
+materialId = road.dirt
+```
+
+Changer en :
+
+```text
+materialId = road.stone
+```
+
+ne change ni les points ni la largeur.
+
+Même règle pour les rivières et zones de sol.
+
+## Decals vs objets
+
+Decal :
+- purement visuel ;
+- aucune collision ;
+- aucune interaction.
+
+Objet :
+- position canonique ;
+- peut avoir collision ;
+- peut avoir interaction ;
+- peut être persistant.
 
 ## Coordonnées
 
@@ -120,6 +248,8 @@ Après `dispose()`, aucun listener/timer/callback ne doit continuer à modifier 
 
 Les valeurs gameplay sont fournies par données normalisées.
 
+Les valeurs visuelles éditables appartiennent au Material Registry/Pack.
+
 Les valeurs codées dans un prototype ne sont que des défauts techniques de bootstrap et doivent sortir du moteur avant de devenir une règle éditable.
 
 ## Intégration future
@@ -131,4 +261,6 @@ L'intégration devra :
 2. mapper les adapters sur Core/Shell/Capture ;
 3. conserver les tests sentinelles ;
 4. introduire le sous-système par contrat public ;
-5. retirer tout simulateur local devenu doublon.
+5. remplacer l'Asset Adapter local par le resolver central ;
+6. conserver les materialId sémantiques ;
+7. retirer tout simulateur local devenu doublon.
