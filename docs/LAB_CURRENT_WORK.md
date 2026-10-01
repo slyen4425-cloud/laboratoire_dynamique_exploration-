@@ -150,3 +150,22 @@ Ce retour valide l'architecture de composition :
 - base compatible avec futur Builder et génération automatique.
 
 Le style artistique reste hors de ce jalon et fera l'objet d'un lot distinct.
+
+
+## Fermeture du jalon
+World Surface Model v1 : **GREEN / terminé**.
+
+Checkpoint :
+`checkpoint/exploration-world-surface-model-v1-green-2026-10-01`
+
+CI de validation :
+run `36883335006` — SUCCESS.
+
+## Prochaine étape autorisée
+Ouvrir un nouveau lot dédié au rendu visuel des matériaux :
+- herbe ;
+- route ;
+- rivière ;
+- transitions/bords.
+
+La géométrie du World Surface Model est désormais gelée et ne doit pas être modifiée dans le lot visuel.
