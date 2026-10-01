@@ -59,6 +59,7 @@ export const demoWorld = {
         enabled: true,
         lengthRatio: 0.92,
         widthRatio: 0.82,
+        edgeAssistRatio: 0.15,
         overridesObstacleIds: [
           'forest-stream-collision'
         ]
