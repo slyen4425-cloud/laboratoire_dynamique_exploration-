@@ -2,6 +2,7 @@ import { normalize } from './core/vector.js';
 import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
+import { createSurfaceRenderer } from './render/surface-renderer.js';
 import { demoWorld as world } from './world/demo-world.js';
 
 const canvas = document.querySelector('#game');
@@ -15,6 +16,7 @@ const player = { x: 220, y: 220, radius: config.player.radius };
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
+const surfaceRenderer = createSurfaceRenderer();
 let last = performance.now();
 
 function resize() {
@@ -61,29 +63,14 @@ function update(dt) {
 }
 
 function drawGround() {
-  ctx.fillStyle = '#426f3a';
-  ctx.fillRect(0, 0, innerWidth, innerHeight);
-
-  for (let x = 0; x < world.width; x += 160) {
-    for (let y = 0; y < world.height; y += 160) {
-      const screenX = x - camera.x;
-      const screenY = y - camera.y;
-      if (
-        screenX < -160 ||
-        screenY < -160 ||
-        screenX > innerWidth ||
-        screenY > innerHeight
-      ) {
-        continue;
-      }
-
-      ctx.fillStyle =
-        (x / 160 + y / 160) % 2 === 0
-          ? 'rgba(255,255,255,.015)'
-          : 'rgba(0,0,0,.015)';
-      ctx.fillRect(screenX, screenY, 160, 160);
-    }
-  }
+  surfaceRenderer.draw(ctx, {
+    camera,
+    viewport: {
+      width: innerWidth,
+      height: innerHeight
+    },
+    surface: world.surface
+  });
 }
 
 function drawObstacle(obstacle) {
@@ -99,8 +86,8 @@ function drawObstacle(obstacle) {
     return;
   }
 
-  if (obstacle.kind === 'river') ctx.fillStyle = '#397aa3';
-  else if (obstacle.kind === 'rock') ctx.fillStyle = '#666b62';
+  if (obstacle.kind === 'river') return;
+  if (obstacle.kind === 'rock') ctx.fillStyle = '#666b62';
   else ctx.fillStyle = '#244d2a';
 
   ctx.fillRect(x, y, obstacle.w, obstacle.h);
@@ -109,9 +96,6 @@ function drawObstacle(obstacle) {
 function render() {
   ctx.clearRect(0, 0, innerWidth, innerHeight);
   drawGround();
-
-  ctx.fillStyle = '#b58a54';
-  ctx.fillRect(-camera.x, 610 - camera.y, world.width, 92);
 
   world.obstacles.forEach(drawObstacle);
 
