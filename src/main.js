@@ -16,7 +16,10 @@ const player = { x: 220, y: 220, radius: config.player.radius };
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
-const terrainRenderer = createTerrainRenderer({ biome: 'forest' });
+const terrainRenderer = createTerrainRenderer({
+  biome: 'forest',
+  tileSize: config.render.terrainTileSize
+});
 terrainRenderer.load();
 let last = performance.now();
 
