@@ -3,96 +3,87 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Alignement de gouvernance sur la charte officielle GenSrpG — **GREEN / terminé**.
+Phase 1A — Core contract / configuration du mouvement sans changement de comportement.
 
 ## Branche
-`work/exploration-governance-alignment-2026-10-01`
+`work/exploration-phase1a-core-contract-2026-10-01`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-governance-alignment-2026-10-01`
+`checkpoint/exploration-start-phase1a-core-contract-2026-10-01`
 
 ## SHA de base
-`35d4cf3666fd2f6d99eecdd34ba7b6ef37346063`
+`a0804abc6b3c063538e1534ca833ed375f661a39`
 
-## Dernier checkpoint GREEN fonctionnel avant ce lot
-`checkpoint/exploration-phase0-bootstrap-green-2026-10-01`
+## Dernier checkpoint GREEN
+`checkpoint/exploration-governance-alignment-green-2026-10-01`
 
 SHA :
-`35d4cf3666fd2f6d99eecdd34ba7b6ef37346063`
+`a0804abc6b3c063538e1534ca833ed375f661a39`
 
-## État fonctionnel gelé
-Phase 0 GREEN :
+## État gelé à préserver
+Phase 0 :
 - déplacement continu X/Y ;
 - stick tactile mobile ;
+- vitesse ressentie actuellement validée ;
 - diagonales normalisées ;
 - collisions ;
 - caméra ;
 - aucune case comme autorité ;
-- test smartphone validé ;
-- preview GitHub Pages fonctionnelle.
+- preview mobile fonctionnelle.
 
-## Périmètre réalisé
-Gouvernance/architecture uniquement :
-- charte alignée sur GenSrpG ;
-- règles de développement strictes ;
-- matrice de propriétaires ;
-- garde-fous techniques ;
-- coordination ;
-- checkpoints ;
-- test manuel ;
-- contrat d'intégration future ;
-- roadmap avec gates ;
-- sentinelles CI d'architecture.
+## Périmètre Phase 1A
+- créer une configuration Exploration normalisée/versionnée ;
+- sortir du runtime les valeurs de mouvement actuellement codées en dur :
+  - vitesse maximale ;
+  - rayon joueur ;
+  - deadzone input ;
+  - delta simulation maximal ;
+- injecter la configuration dans le moteur ;
+- ajouter des tests valeurs par défaut + valeurs personnalisées ;
+- conserver exactement le comportement actuel avec les valeurs par défaut.
 
-Aucun fichier runtime `src/` n'a été modifié dans ce lot.
+## Propriétaires
+- config : Exploration Config ;
+- mouvement : Exploration Engine ;
+- collision : Collision World ;
+- input : Input Adapter.
 
-## Propriétaire
-Coordination/architecture du laboratoire Exploration.
+## Fichiers autorisés
+- `src/config/` ;
+- `src/core/config.js` ;
+- `src/core/movement.js` si nécessaire pour injection ;
+- `src/main.js` uniquement pour consommation de config ;
+- tests ;
+- documentation du lot.
 
-## Source de gouvernance GenSrpG
-Branche :
-`work/gensrpg-phase8-tactical-consolidation-preaudit-2026-10-01`
+## Hors périmètre
+- accélération/freinage ;
+- génération ;
+- assets/sols/murs ;
+- nouvelle UI ;
+- sauvegarde ;
+- combat ;
+- modification d'un autre dépôt.
 
-SHA :
-`9fd5a789180e26204833e9d6b330079352272ec6`
+## Fonctions protégées
+- collision existante ;
+- caméra ;
+- rendu ;
+- virtual stick ;
+- coordonnées X/Y ;
+- sensation de vitesse par défaut.
 
-Documents relus :
-- GENSRPG_CHARTE ;
-- GENSRPG_DEVELOPMENT_RULES ;
-- GENSRPG_CHECKPOINT_POLICY ;
-- GENSRPG_COORDINATION ;
-- GENSRPG_TECHNICAL_GUARDRAILS ;
-- GENSRPG_MODULE_OWNERSHIP ;
-- GENSRPG_MANUAL_TEST_GATE ;
-- GENSRPG_RESTRUCTURATION_ROADMAP.
-
-## Sentinelles ajoutées
-La CI refuse désormais dans `src/` :
-- MutationObserver ;
-- setInterval ;
-- stopImmediatePropagation ;
-- location.reload.
-
-Elle protège aussi l'indépendance DOM de `src/core/`.
-
-## Tests
-- Phase 0 core : GREEN ;
-- architecture sentinels : GREEN ;
-- CI GitHub : GREEN au SHA `32aa8d9e7f0d2b5636c8ae57fbb2987e2dfeebb6`.
+## Tests requis
+- défauts normalisés ;
+- custom config réellement utilisée ;
+- valeur personnalisée prioritaire sur le défaut ;
+- diagonale toujours normalisée ;
+- collision toujours GREEN ;
+- architecture sentinels GREEN ;
+- CI GREEN.
 
 ## Risque inter-module
-Aucun changement runtime.
-Le lot réduit le risque d'intégration future.
+Nul : laboratoire autonome, aucune dépendance ajoutée.
 
-## Checkpoint final
-`checkpoint/exploration-governance-alignment-green-2026-10-01`
-
-CI de fermeture validée : run `36874317470` — SUCCESS.
-
-## Prochaine étape autorisée
-1. repartir du checkpoint GREEN de ce lot ;
-2. créer un **checkpoint de départ Phase 1** ;
-3. créer une nouvelle branche Phase 1 ;
-4. seulement après, reprendre le code Exploration Core.
-
-Aucun code Phase 1 ne doit être écrit depuis cette branche.
+## Étape suivante si GREEN
+Lot séparé Phase 1B ou Phase 2 visuel/assets, avec nouveau checkpoint de départ.
