@@ -142,3 +142,32 @@ Aucun changement :
 - caméra ;
 - taille du pion ;
 - vitesse.
+
+
+## Décision d'architecture — 2026-10-01
+
+Le rendu forêt v1/v2 est **NON VALIDÉ**.
+
+Constat utilisateur :
+- v1 : grille/coutures visibles ;
+- v2 : coutures supprimées mais rendu encore peu esthétique ;
+- la stratégie de patchs de texture rendrait les futures routes, rivières et transitions difficiles à composer proprement.
+
+Décision :
+- ne pas continuer à polir ce renderer ;
+- ne pas créer de checkpoint GREEN pour ce lot ;
+- conserver cette branche comme historique d'expérience ;
+- repartir du dernier checkpoint GREEN avant le pack visuel :
+  `checkpoint/exploration-asset-audit-green-2026-10-01`.
+
+Cause :
+le problème n'est plus un réglage de taille ou d'opacité, mais le modèle de composition du terrain.
+
+Direction suivante :
+créer un **World Surface Model v1** où :
+- le sol de base est une couche continue ;
+- les routes sont une couche structurée indépendante ;
+- les rivières sont une couche structurée indépendante ;
+- les transitions/bords sont générés par le renderer ;
+- les obstacles/décors restent séparés ;
+- les textures servent à habiller les surfaces, jamais à définir la géométrie du monde.
