@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-visual-assets-v1
+# preview-revision: bridge-visual-assets-v1-single-authority
 
 on:
   push:
