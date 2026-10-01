@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 import {
   listWorldObjectAssets,
@@ -181,5 +182,30 @@ test('bridge WebP binaries are complete RIFF files, never truncated', async () =
       declaredFileSize,
       `${path}: truncated WebP binary`
     );
+  }
+});
+
+
+test('bridge manifest hashes and byte sizes match runtime binaries', async () => {
+  const manifest = JSON.parse(
+    await readFile(
+      new URL(
+        '../assets/exploration/objects/bridges/manifest.v1.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+
+  for (const item of manifest.files) {
+    const bytes = await readFile(
+      new URL(`../${item.path}`, import.meta.url)
+    );
+    const sha256 = createHash('sha256')
+      .update(bytes)
+      .digest('hex');
+
+    assert.equal(bytes.length, item.bytes, `${item.assetId}: byte size mismatch`);
+    assert.equal(sha256, item.sha256, `${item.assetId}: sha256 mismatch`);
   }
 });
