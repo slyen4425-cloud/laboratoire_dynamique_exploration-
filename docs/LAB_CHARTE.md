@@ -502,6 +502,11 @@ Le corridor traversable suit le même transform normalisé, avec éventuellement
 Le Collision World ne retranche pas une seconde fois le rayon de l'entité à ce corridor, afin d'éviter les accroches invisibles sur les bords du pont.
 Hors corridor, l'obstacle sous-jacent reste bloquant.
 
+Pour éviter les accroches lors d'une entrée diagonale, un bridge peut déclarer un `edgeAssistRatio` normalisé.
+Cette marge ne rend pas l'eau traversable : elle sert uniquement au Collision World à faire **glisser** le centre de l'entité jusqu'au bord du corridor lorsque le mouvement visé est très proche du pont.
+Aucun état persistant ou aimantation n'est autorisé : le calcul reste pur, frame par frame.
+Une petite tolérance numérique est autorisée aux frontières des formes transformées afin d'absorber les erreurs flottantes de rotation, jamais pour agrandir arbitrairement la géométrie.
+
 ### 26.2 Contrôles Builder des objets
 
 Le Builder doit pouvoir exposer pour les objets compatibles :
