@@ -1,6 +1,7 @@
 export function createImageAssetLoader({
   resolveAsset,
-  imageFactory = () => new Image()
+  imageFactory = () => new Image(),
+  cacheRevision = null
 }) {
   if (typeof resolveAsset !== 'function') {
     throw new Error('Image Asset Loader requires resolveAsset');
@@ -51,7 +52,10 @@ export function createImageAssetLoader({
       };
     });
 
-    image.src = asset.path;
+    const separator = asset.path.includes('?') ? '&' : '?';
+    image.src = cacheRevision
+      ? `${asset.path}${separator}rev=${encodeURIComponent(cacheRevision)}`
+      : asset.path;
     slots.set(assetId, slot);
     return slot.promise;
   }
