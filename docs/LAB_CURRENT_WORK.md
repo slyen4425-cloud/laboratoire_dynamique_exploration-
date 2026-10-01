@@ -3,54 +3,72 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Audit assets visuels Exploration — **GREEN / fermeture documentaire**.
+Asset Pack Forêt v1 — premier raccord visuel Exploration.
 
 ## Branche
-`work/exploration-asset-audit-2026-10-01`
+`work/exploration-asset-pack-forest-v1-2026-10-01`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-asset-audit-2026-10-01`
+`checkpoint/exploration-start-asset-pack-forest-v1-2026-10-01`
 
 ## SHA de base
-`b0fec182a1cf9f4e561e1c4e9ed21be7f3169886`
+`afe258c0fbf33d17c5741267930a8915869fe85b`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-phase1a-core-contract-green-2026-10-01`
+`checkpoint/exploration-asset-audit-green-2026-10-01`
 
-## Périmètre réalisé
-Lecture seule de `Zombicide-40k` :
-- 42 candidats terrain/mur tracés avec blob SHA ;
-- 36 variantes de sol :
-  - forêt 6 ;
-  - grotte 6 ;
-  - glace 6 ;
-  - lave 6 ;
-  - pierre 6 ;
-  - eau 6 ;
-- 2 références mur ;
-- 4 sols legacy ;
-- audit du Core Asset Resolver GenSrpG ;
-- contrat Asset Adapter Exploration défini ;
-- premier pack recommandé : forêt v1.
+## État gelé à préserver
+- moteur déplacement X/Y ;
+- config Phase 1A ;
+- collisions ;
+- caméra ;
+- stick tactile ;
+- architecture sentinels.
 
-## Constats
-- le resolver GenSrpG actuel ne gère pas sols/murs ;
-- aucun hotlink inter-dépôt ne sera utilisé ;
-- les chemins `assets/dungeon/` ne deviendront pas un contrat Exploration ;
-- les murs restent Dungeon-owned à revoir ;
-- forêt/eau sont des candidats génériques, ownership futur à décider lors de l'intégration.
+## Périmètre
+- importer uniquement les 6 textures forêt retenues par l'audit ;
+- les placer sous ownership Exploration ;
+- conserver leur traçabilité source SHA/blob ;
+- créer un Asset Adapter local par identifiants sémantiques ;
+- utiliser ces textures uniquement pour le rendu du sol ;
+- aucune collision dérivée de l'image ;
+- aucune dépendance runtime au dépôt Zombicide-40k ;
+- preview mobile ciblée.
 
-## Fichiers ajoutés
-- `docs/assets/SOURCE_ASSET_CANDIDATES_V1.json`
-- `docs/LAB_ASSET_AUDIT_2026-10-01.md`
-- `docs/LAB_ASSET_ADAPTER_CONTRACT.md`
+## Propriétaires
+- asset mapping : Exploration Asset Adapter ;
+- rendu : Exploration Renderer ;
+- monde/collision : inchangés.
 
-## Runtime
-Aucun fichier `src/` modifié.
+## Fichiers runtime autorisés
+- `src/assets/` ;
+- `src/main.js` uniquement pour consommation du rendu sol ;
+- éventuellement un module renderer dédié si nécessaire ;
+- tests ;
+- manifeste d'assets.
 
-## Étape suivante
-Créer le checkpoint GREEN de l'audit, puis ouvrir :
-`asset-pack-forest-v1`
+## Hors périmètre
+- murs ;
+- eau ;
+- routes ;
+- rivières ;
+- ponts ;
+- bâtiments ;
+- modification du World Generator ;
+- modification des collisions ;
+- modification d'un autre dépôt.
 
-Objectif :
-copier les 6 sols forêt sous ownership Exploration, créer l'Asset Adapter local et afficher le premier sol texturé sans toucher aux collisions.
+## Tests requis
+- tous les tests Phase 0/1A restent GREEN ;
+- Asset Adapter résout les 6 variantes ;
+- aucune URL inter-dépôt dans le runtime ;
+- aucune référence `assets/dungeon/` dans `src/` ;
+- CI GREEN ;
+- preview mobile ;
+- validation utilisateur du rendu.
+
+## Risque
+Visuel uniquement. Risque principal : performance/culling et répétition visible de texture.
+
+## Critère GREEN
+Sol forêt visible en mobile sans modifier la fluidité ni les collisions.
