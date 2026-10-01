@@ -8,6 +8,12 @@ import { materialPackV1 } from './materials/material-pack-v1.js';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
 import {
+  resolveWorldObjectAsset
+} from './assets/world-object-asset-adapter.js';
+import {
+  createImageAssetLoader
+} from './assets/image-asset-loader.js';
+import {
   collectMaterialAssetIds,
   createMaterialTextureLoader
 } from './render/material-texture-loader.js';
@@ -33,7 +39,20 @@ const surfaceRenderer = createSurfaceRenderer({
   materialRegistry,
   textureLoader
 });
-const worldObjectRenderer = createWorldObjectRenderer();
+
+const worldObjectImageLoader = createImageAssetLoader({
+  resolveAsset: resolveWorldObjectAsset
+});
+worldObjectImageLoader.load(
+  world.objects
+    .map((object) => object.visual?.assetId)
+    .filter(Boolean)
+);
+
+const worldObjectRenderer = createWorldObjectRenderer({
+  imageLoader: worldObjectImageLoader,
+  resolveVisualAsset: resolveWorldObjectAsset
+});
 let last = performance.now();
 
 function resize() {
