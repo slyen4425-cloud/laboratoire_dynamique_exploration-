@@ -99,3 +99,48 @@ Après contrat/code GREEN :
 - preview des trois matériaux ;
 - validation visuelle/ergonomique ;
 - ensuite mini Builder Surface sur un lot séparé.
+
+
+## État technique — 2026-10-01
+
+Material Pack v1 est raccordé au runtime :
+- `grass.forest` -> kind `surface` ;
+- `road.dirt` -> kind `path` ;
+- `water.forest_stream` -> kind `water`.
+
+Le Surface Renderer exige désormais un Material Registry.
+
+Le renderer ne possède plus les identifiants sémantiques des trois matériaux.
+
+## Assets artistiques
+
+Dans ce contrat v1, les slots d'assets existent mais sont volontairement vides :
+- base/center ;
+- variants ;
+- edge/bank ;
+- decals.
+
+Le rendu actuel utilise les paramètres procéduraux du matériau comme fallback explicite.
+
+Aucune ancienne dalle forêt n'a été réintroduite.
+
+## Garanties testées
+
+- les 3 ids se résolvent ;
+- id inconnu -> `null` ou erreur explicite ;
+- aucun fallback silencieux ;
+- kind contrôlé ;
+- définitions immutables ;
+- changement de materialId sans changement de géométrie ;
+- renderer sans materialId sémantique codé en dur ;
+- material system sans hotlink vers Zombicide-40k ;
+- tests historiques toujours GREEN.
+
+CI :
+run `36884913815` — SUCCESS.
+
+## Validation restante
+
+Une preview mobile est déployée afin de vérifier l'absence de régression visuelle/runtime.
+
+Le checkpoint GREEN Material Pack v1 reste en attente de cette validation.
