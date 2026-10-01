@@ -130,3 +130,22 @@ test('architecture sentinel: Material Pack references semantic asset ids, not fi
   assert.equal(pack.includes('assets/exploration/materials/'), false);
   assert.equal(pack.includes('.webp'), false);
 });
+
+
+test('architecture sentinel: WorldObject renderer never owns collision rules', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/world-object-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(/\bisBlocked\b|circleIntersects|overridesObstacleIds/.test(renderer), false);
+});
+
+test('architecture sentinel: collision never derives bridge rules from assets', async () => {
+  const collision = await readFile(
+    new URL('../src/core/collision.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(/assetId|\.webp|assets\//.test(collision), false);
+});
