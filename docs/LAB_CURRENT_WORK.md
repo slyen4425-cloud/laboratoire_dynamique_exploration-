@@ -3,7 +3,7 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Alignement de gouvernance sur la charte officielle GenSrpG — **GREEN, fermeture documentaire en cours**.
+Alignement de gouvernance sur la charte officielle GenSrpG — **GREEN / terminé**.
 
 ## Branche
 `work/exploration-governance-alignment-2026-10-01`
@@ -84,9 +84,15 @@ Elle protège aussi l'indépendance DOM de `src/core/`.
 Aucun changement runtime.
 Le lot réduit le risque d'intégration future.
 
+## Checkpoint final
+`checkpoint/exploration-governance-alignment-green-2026-10-01`
+
+CI de fermeture validée : run `36874317470` — SUCCESS.
+
 ## Prochaine étape autorisée
-1. créer le checkpoint GREEN de ce lot ;
-2. créer ensuite un **checkpoint de départ Phase 1** ;
-3. seulement après, reprendre le code Exploration Core.
+1. repartir du checkpoint GREEN de ce lot ;
+2. créer un **checkpoint de départ Phase 1** ;
+3. créer une nouvelle branche Phase 1 ;
+4. seulement après, reprendre le code Exploration Core.
 
 Aucun code Phase 1 ne doit être écrit depuis cette branche.
