@@ -104,6 +104,11 @@ function normalizeBridge(raw, index) {
         0.8,
         { min: 0.1, max: 1 }
       ),
+      edgeAssistRatio: finiteNumber(
+        traversal.edgeAssistRatio,
+        0.15,
+        { min: 0, max: 0.5 }
+      ),
       overridesObstacleIds: normalizeIds(
         traversal.overridesObstacleIds
       )
