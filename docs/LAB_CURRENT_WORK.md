@@ -185,3 +185,43 @@ Tests après correction :
 - regression off-center : GREEN.
 
 Nouvelle validation smartphone requise avant checkpoint GREEN Bridge v1.
+
+
+## Deuxième régression — entrée diagonale
+Retour utilisateur après première correction : le pont raccrochait encore.
+
+Reproduction ajoutée :
+- arrivée diagonale au bord du pont avec stick ;
+- l'axe vertical se bloquait contre la rivière ;
+- l'axe horizontal continuait, faisant glisser le joueur le long de la rive.
+
+CI de reproduction :
+run `36906566310` — FAILURE attendue.
+
+Cause :
+1. le resolver historique X puis Y ne savait pas guider un mouvement diagonal vers un corridor traversable ;
+2. sur une limite transformée, une valeur flottante pouvait dépasser la borne d'environ 1e-14 et faire basculer le test dedans/dehors.
+
+## Correction v2
+- résolution directe de la cible si libre ;
+- si la cible est bloquée près d'un bridge compatible : résolution pure `resolveBridgeGuidedPosition` ;
+- projection uniquement de l'axe latéral sur le bord du corridor ;
+- progression longitudinale conservée ;
+- `edgeAssistRatio` normalisé et configurable ;
+- tolérance numérique `1e-6` uniquement pour les comparaisons de frontière ;
+- fallback sur le slide X/Y historique pour tous les autres obstacles.
+
+Pont démo :
+- `edgeAssistRatio: 0.15`.
+
+Le comportement n'utilise :
+- ni timer ;
+- ni état de pont actif ;
+- ni snap permanent ;
+- ni désactivation globale d'eau.
+
+CI après correctif v2 :
+run `36906853458` — SUCCESS.
+
+Le test diagonal précédemment rouge est désormais GREEN.
+Nouvelle validation smartphone requise.
