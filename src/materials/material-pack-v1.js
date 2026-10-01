@@ -26,7 +26,12 @@ export const materialPackV1 = Object.freeze({
           'rgba(70,90,48,0.16)',
           'rgba(91,78,50,0.12)'
         ]),
-        detailSpacing: 260
+        detailSpacing: 260,
+        decalSpacing: 230,
+        decalDensity: 0.42,
+        decalMinSize: 48,
+        decalMaxSize: 82,
+        decalOpacity: 0.36
       })
     }),
     Object.freeze({
