@@ -54,16 +54,22 @@ Aucun changement gameplay/runtime.
 Critère de sortie :
 autorité unique et sentinelles Phase 0 toujours GREEN.
 
-## Phase 2 — Monde et caméra
+## Phase 2 — Monde, surfaces, matériaux et caméra
 
 - world model versionné ;
+- World Surface Model : sol/routes/rivières indépendants ;
+- Material Registry versionné ;
+- Material Packs extensibles ;
+- transitions et decals séparés de la géométrie ;
 - couches sol/décor/obstacles/interactions ;
 - culling ;
 - index spatial si nécessaire ;
 - caméra indépendante de l'état monde.
 
 Critère :
-le renderer ne devient jamais propriétaire du gameplay.
+- le renderer ne devient jamais propriétaire du gameplay ;
+- changer un materialId ne modifie pas la géométrie ;
+- Builder et Generator consomment/produisent le même WorldDocument.
 
 ## Phase 3 — Génération procédurale v1
 
@@ -83,12 +89,19 @@ le renderer ne devient jamais propriétaire du gameplay.
 - création manuelle ;
 - édition d'une carte générée ;
 - WorldDocument versionné ;
+- sélection du biome/sol ;
+- dessin et édition de routes ;
+- dessin et édition de rivières ;
+- largeur/materialId modifiables ;
+- placement d'objets ;
+- contrôle des decals/densités autorisés ;
 - validation ;
 - sauvegarde JSON ;
 - rechargement identique.
 
 Critère :
 Builder -> données -> runtime, jamais Builder -> mutation runtime.
+Le Builder et le World Generator utilisent le même format de carte.
 
 ## Phase 5 — Monde vivant
 
