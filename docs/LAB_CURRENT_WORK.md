@@ -3,54 +3,100 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Audit assets visuels Exploration — **GREEN / fermeture documentaire**.
+World Surface Model v1 — terrain structuré pour routes/rivières/transitions.
 
 ## Branche
-`work/exploration-asset-audit-2026-10-01`
+`work/exploration-world-surface-model-v1-2026-10-01`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-asset-audit-2026-10-01`
+`checkpoint/exploration-start-world-surface-model-v1-2026-10-01`
 
 ## SHA de base
-`b0fec182a1cf9f4e561e1c4e9ed21be7f3169886`
+`afe258c0fbf33d17c5741267930a8915869fe85b`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-phase1a-core-contract-green-2026-10-01`
+`checkpoint/exploration-asset-audit-green-2026-10-01`
 
-## Périmètre réalisé
-Lecture seule de `Zombicide-40k` :
-- 42 candidats terrain/mur tracés avec blob SHA ;
-- 36 variantes de sol :
-  - forêt 6 ;
-  - grotte 6 ;
-  - glace 6 ;
-  - lave 6 ;
-  - pierre 6 ;
-  - eau 6 ;
-- 2 références mur ;
-- 4 sols legacy ;
-- audit du Core Asset Resolver GenSrpG ;
-- contrat Asset Adapter Exploration défini ;
-- premier pack recommandé : forêt v1.
+## Contexte
+Le lot `asset-pack-forest-v1` a été rejeté :
+- v1 : mosaïque carrée visible ;
+- v2 : coutures masquées mais rendu encore artificiel ;
+- composition future des routes/rivières jugée fragile.
 
-## Constats
-- le resolver GenSrpG actuel ne gère pas sols/murs ;
-- aucun hotlink inter-dépôt ne sera utilisé ;
-- les chemins `assets/dungeon/` ne deviendront pas un contrat Exploration ;
-- les murs restent Dungeon-owned à revoir ;
-- forêt/eau sont des candidats génériques, ownership futur à décider lors de l'intégration.
+Aucun checkpoint GREEN n'a été créé pour ce renderer rejeté.
 
-## Fichiers ajoutés
-- `docs/assets/SOURCE_ASSET_CANDIDATES_V1.json`
-- `docs/LAB_ASSET_AUDIT_2026-10-01.md`
-- `docs/LAB_ASSET_ADAPTER_CONTRACT.md`
+## Objectif
+Créer une structure de surface indépendante des textures, utilisable plus tard par :
+- génération automatique ;
+- Builder manuel ;
+- rendu ;
+- sauvegarde.
 
-## Runtime
-Aucun fichier `src/` modifié.
+## Modèle cible
+```text
+World
+ ├─ surface.base
+ ├─ surface.routes[]
+ ├─ surface.rivers[]
+ ├─ obstacles[]
+ ├─ interactions[]   (futur)
+ └─ entities[]       (futur)
+```
 
-## Étape suivante
-Créer le checkpoint GREEN de l'audit, puis ouvrir :
-`asset-pack-forest-v1`
+### route
+- id ;
+- points monde X/Y ;
+- largeur ;
+- materialId.
 
-Objectif :
-copier les 6 sols forêt sous ownership Exploration, créer l'Asset Adapter local et afficher le premier sol texturé sans toucher aux collisions.
+### rivière
+- id ;
+- points monde X/Y ;
+- largeur ;
+- materialId.
+
+## Propriétaires
+- géométrie de surface : World Model ;
+- validation/normalisation : Surface Model ;
+- rendu : Surface Renderer ;
+- collisions : Collision World (inchangé dans ce lot).
+
+## Fichiers autorisés
+- `src/world/` ;
+- `src/render/` ;
+- `src/main.js` pour consommation du renderer ;
+- tests ;
+- documentation.
+
+## Invariants
+- aucune texture ne définit la géométrie ;
+- route/rivière en coordonnées monde continues ;
+- aucune case comme autorité ;
+- renderer lecture seule ;
+- collision séparée du visuel ;
+- même document utilisable par générateur et Builder ;
+- aucun asset/hotlink requis pour valider le modèle.
+
+## Hors périmètre
+- autotiling texturé final ;
+- import de nouveaux assets ;
+- génération procédurale ;
+- édition Builder ;
+- changement de collision ;
+- IA/rencontres ;
+- autre dépôt.
+
+## Tests requis
+- document surface validé ;
+- points invalides rejetés/normalisés explicitement ;
+- routes/rivières conservent ordre et largeur ;
+- renderer n'écrit pas le World Model ;
+- mouvement/collision Phase 0/1A toujours GREEN ;
+- architecture sentinels GREEN ;
+- CI GREEN ;
+- preview mobile.
+
+## Critère de sortie
+Une preview doit montrer un sol continu, une route et une rivière courbes et propres, sans grille, tout en conservant le déplacement/collisions existants.
+
+Ce jalon valide l'architecture de composition, pas le style artistique final.
