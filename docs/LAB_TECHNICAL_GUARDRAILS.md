@@ -8,6 +8,9 @@
 | mouvement | Exploration Engine |
 | collisions | Collision World |
 | monde runtime | World Model |
+| géométrie surface | World Surface Model |
+| apparence matériaux | Material Registry |
+| assets physiques | Asset Adapter / Core Resolver futur |
 | seed/config génération | World Generator input |
 | caméra | Camera |
 | intent tactile/clavier | Input Adapter |
@@ -25,7 +28,12 @@
 - import direct d'un runtime privé d'un autre module ;
 - déplacement écrit depuis renderer/input ;
 - doublon d'autorité de position ;
-- logique gameplay dans service worker/loader.
+- logique gameplay dans service worker/loader ;
+- texture utilisée comme géométrie canonique ;
+- collision déduite d'un pixel/alpha de texture ;
+- renderer qui modifie le WorldDocument ;
+- materialId avec fallback silencieux vers un autre module ;
+- formats Builder et Generator divergents.
 
 ## Cycle de vie
 
@@ -78,7 +86,11 @@ Une fois validés, conserver :
 - save/reload ;
 - encounter contract ;
 - dispose/no leaked listener ;
-- no forbidden globals.
+- no forbidden globals ;
+- geometry/material independence ;
+- material registry resolution ;
+- no cross-module asset fallback ;
+- Builder/Generator WorldDocument compatibility.
 
 ## Test invariant majeur
 
