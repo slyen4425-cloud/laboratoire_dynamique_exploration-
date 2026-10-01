@@ -37,26 +37,101 @@ Conformément à la charte, l'import d'assets est isolé dans un chantier distin
 - ownership Exploration local ;
 - manifeste avec provenance et rôle ;
 - raccorder les assetId dans Material Pack v1 ;
-- créer/raccorder l'Asset Adapter local nécessaire ;
+- Asset Adapter local sémantique ;
+- Texture Store de rendu ;
 - aucune géométrie modifiée ;
 - aucune collision dérivée des textures ;
 - preview mobile.
 
-## Assets prévus
-- `surfaces/grass_forest_base_01.png`
-- `surfaces/grass_forest_base_02.png`
-- `paths/road_dirt_base_01.png`
-- `water/water_forest_stream_base_01.png`
-- `transitions/road_dirt_to_grass_forest_edge_01.png`
-- `transitions/water_forest_stream_to_grass_forest_bank_01.png`
-- `decals/leaves_forest_floor_decal_01.png`
-- `decals/roots_forest_floor_decal_01.png`
-
-## Destination
+## Assets réellement importés
+Destination :
 `assets/exploration/materials/forest/`
 
+### surfaces
+- `surfaces/grass_forest_base_01.webp`
+- `surfaces/grass_forest_base_02.webp`
+
+### path
+- `paths/road_dirt_base_01.webp`
+
+### water
+- `water/water_forest_stream_base_01.webp`
+
+### transitions
+- `transitions/road_dirt_to_grass_forest_edge_01.webp`
+- `transitions/water_forest_stream_to_grass_forest_bank_01.webp`
+
+### decals
+- `decals/leaves_forest_floor_decal_01.webp`
+- `decals/roots_forest_floor_decal_01.webp`
+
+## Format test mobile
+Dérivés WebP de validation :
+- bases / decals : 96x96 ;
+- transitions : 144x48.
+
+Ces fichiers sont des **assets de test du pipeline**, pas la résolution artistique finale.
+Le manifeste conserve les IDs de génération source et les SHA-256 des dérivés.
+
+Fichiers de traçabilité :
+- `manifest-v1.json`
+- `SHA256SUMS.txt`
+
+## Import binaire
+Une première tentative par ZIP one-shot a échoué au décompactage (run `36893201714`) à cause du ZIP de transit tronqué.
+
+Cette voie a été abandonnée, non relancée et nettoyée :
+- ZIP temporaire supprimé ;
+- workflow temporaire supprimé.
+
+Import définitif :
+- 8 blobs GitHub binaires créés directement ;
+- commit d'import `6e4c1dd38b8a30850dc3c7f604dc97732c4d4d40` ;
+- aucune dépendance d'import permanente.
+
+## Raccord sémantique
+
+### grass.forest
+- base : `texture.grass.forest.base.01`
+- variante : `texture.grass.forest.base.02`
+- decals :
+  - `decal.forest.leaves.01`
+  - `decal.forest.roots.01`
+
+### road.dirt
+- center : `texture.road.dirt.base.01`
+- edge enregistré : `transition.road.dirt.grass_forest.edge.01`
+
+### water.forest_stream
+- center : `texture.water.forest_stream.base.01`
+- bank enregistré : `transition.water.forest_stream.grass_forest.bank.01`
+
+## Rendu actif
+Le renderer utilise maintenant :
+- texture répétée pour le sol forêt ;
+- texture au centre de la route ;
+- texture au centre de la rivière ;
+- decals forêt déterministes.
+
+Les assets `edge` et `bank` sont enregistrés/résolus, mais ne sont pas encore déformés sur les courbes.
+Cette étape est volontairement différée à un lot de transitions dédié afin d'éviter une fausse solution par étirement.
+
+Les couleurs procédurales restent des fallbacks visuels explicites pendant le chargement ou si un asset n'est pas prêt.
+
+## Garanties
+- asset id -> chemin local uniquement ;
+- aucun hotlink ;
+- aucun chemin Dungeon ;
+- id inconnu -> null, jamais fallback inter-module ;
+- texture indépendante de la géométrie ;
+- collision indépendante des pixels ;
+- renderer lecture seule vis-à-vis du World Model ;
+- checksums des 8 fichiers vérifiés automatiquement ;
+- architecture Material Pack parent conservée.
+
 ## Hors périmètre
-- génération de nouveaux visuels supplémentaires ;
+- nouveaux visuels supplémentaires ;
+- rendu final des transitions edge/bank ;
 - Builder UI ;
 - World Generator ;
 - modification de forme/largeur des routes/rivières ;
@@ -65,4 +140,11 @@ Conformément à la charte, l'import d'assets est isolé dans un chantier distin
 - autre dépôt.
 
 ## Critère
-Les 8 assets sont présents localement dans le dépôt, référencés par identifiants sémantiques, sans hotlink ni autorité gameplay, tests/CI GREEN et preview mobile fonctionnelle.
+Les 8 assets doivent être présents localement, référencés par identifiants sémantiques, utilisés sans modifier la géométrie, tests/CI GREEN et preview mobile fonctionnelle.
+
+## Checkpoint
+Aucun checkpoint GREEN fonctionnel avant :
+1. CI finale GREEN ;
+2. preview Pages GREEN ;
+3. validation utilisateur smartphone ;
+4. validation/fermeture cohérente du parent Material Pack v1.
