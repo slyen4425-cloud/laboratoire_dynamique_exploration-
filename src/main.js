@@ -41,7 +41,8 @@ const surfaceRenderer = createSurfaceRenderer({
 });
 
 const worldObjectImageLoader = createImageAssetLoader({
-  resolveAsset: resolveWorldObjectAsset
+  resolveAsset: resolveWorldObjectAsset,
+  cacheRevision: 'bridge-assets-v1-binary-repair'
 });
 const requiredWorldObjectAssetIds = Object.freeze([
   ...new Set(
