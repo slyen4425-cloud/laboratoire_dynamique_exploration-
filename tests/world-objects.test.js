@@ -9,7 +9,8 @@ import {
 } from '../src/world/world-object-model.js';
 import {
   circleFitsOrientedRect,
-  isBlocked
+  isBlocked,
+  pointInOrientedRect
 } from '../src/core/collision.js';
 import { stepMovement } from '../src/core/movement.js';
 
@@ -105,6 +106,8 @@ test('oriented passage respects bridge rotation', () => {
 
   assert.equal(circleFitsOrientedRect(250, 320, 10, passage), true);
   assert.equal(circleFitsOrientedRect(310, 250, 10, passage), false);
+  assert.equal(pointInOrientedRect(250, 320, passage), true);
+  assert.equal(pointInOrientedRect(310, 250, passage), false);
 });
 
 test('bridge only overrides explicitly referenced obstacles', () => {
