@@ -161,3 +161,25 @@ test('required WorldObject asset failure is explicit and never replaced by anoth
   assert.equal(loader.get('object.bridge.unknown'), null);
   assert.equal(loader.state('object.bridge.unknown'), 'missing');
 });
+
+
+test('bridge WebP binaries are complete RIFF files, never truncated', async () => {
+  for (const path of Object.values(EXPECTED)) {
+    const repositoryPath = path.replace(/^\.\//, '');
+    const bytes = await readFile(
+      new URL(`../${repositoryPath}`, import.meta.url)
+    );
+
+    assert.ok(bytes.length >= 12, `${path}: file too small`);
+    assert.equal(bytes.subarray(0, 4).toString('ascii'), 'RIFF');
+    assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP');
+
+    const declaredFileSize = bytes.readUInt32LE(4) + 8;
+
+    assert.equal(
+      bytes.length,
+      declaredFileSize,
+      `${path}: truncated WebP binary`
+    );
+  }
+});
