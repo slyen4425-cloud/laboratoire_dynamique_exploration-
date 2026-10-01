@@ -131,3 +131,30 @@ Preview smartphone requise :
 - aucune baisse de fluidité perceptible.
 
 Aucun checkpoint GREEN fonctionnel avant validation utilisateur.
+
+
+## Validation utilisateur — 2026-10-01
+Test smartphone validé.
+
+L'utilisateur valide :
+- Material Pack v1 ;
+- textures pilotes forêt / route / rivière ;
+- transitions route -> herbe ;
+- berge rivière -> herbe ;
+- decals forêt ;
+- fluidité et cohérence générale du rendu.
+
+Le parent Material Pack v1 est considéré validé à travers ce jalon descendant : aucun système concurrent n'est créé.
+
+## Fermeture
+Transition + Decals v1 : **GREEN / terminé**.
+
+Le prochain chantier autorisé est un lot distinct :
+**World Objects / Bridge v1**.
+
+Le modèle architectural suivant est aussi validé pour les chantiers futurs :
+- pont = WorldObject transformable ;
+- bâtiment extérieur = WorldObject ;
+- intérieur = WorldArea séparée ;
+- porte = Portal entre deux Areas ;
+- même mécanisme pour étages, grottes et autres espaces liés.
