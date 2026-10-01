@@ -3,72 +3,58 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Phase 1A — Core contract / configuration du mouvement — **GREEN / fermeture documentaire**.
+Audit des assets visuels réutilisables pour Exploration.
 
 ## Branche
-`work/exploration-phase1a-core-contract-2026-10-01`
+`work/exploration-asset-audit-2026-10-01`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-phase1a-core-contract-2026-10-01`
+`checkpoint/exploration-start-asset-audit-2026-10-01`
 
 ## SHA de base
-`a0804abc6b3c063538e1534ca833ed375f661a39`
+`b0fec182a1cf9f4e561e1c4e9ed21be7f3169886`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-governance-alignment-green-2026-10-01`
+`checkpoint/exploration-phase1a-core-contract-green-2026-10-01`
 
-## Périmètre réalisé
-- configuration Exploration versionnée ;
-- valeurs Phase 0 sorties de `main.js` :
-  - rayon joueur = 18 ;
-  - vitesse max = 230 ;
-  - deadzone = 0.05 ;
-  - delta max = 0.033 ;
-- injection de la vitesse dans Exploration Engine ;
-- comportement par défaut conservé ;
-- configuration personnalisée testée ;
-- fallback invalide testable et centralisé.
-
-## Propriétaires
-- config : Exploration Config ;
-- mouvement : Exploration Engine ;
-- collision : Collision World ;
-- input : Input Adapter.
-
-## Fonctions gelées respectées
-Aucun changement volontaire de :
-- sensation de déplacement par défaut ;
-- collision ;
+## État gelé à préserver
+- moteur X/Y Phase 0/1A ;
+- config versionnée ;
+- collisions ;
 - caméra ;
-- renderer ;
-- virtual stick ;
-- coordonnées X/Y.
+- stick tactile ;
+- CI architecture.
+
+## Périmètre
+Lecture seule de `slyen4425-cloud/Zombicide-40k` pour :
+- inventorier les sols/murs/éléments de décor réutilisables ;
+- relever leurs chemins et blobs/SHA ;
+- distinguer :
+  - asset Dungeon spécifique ;
+  - asset visuellement générique ;
+  - candidat futur `assets/common/` ;
+  - asset à exclure ;
+- auditer le resolver d'assets existant ;
+- définir le contrat d'Asset Adapter Exploration ;
+- documenter un premier pack visuel cible.
+
+## Propriétaire
+Asset Adapter / documentation Exploration.
+
+## Interdictions
+- aucun hotlink runtime vers `Zombicide-40k` ;
+- aucun import direct d'un resolver privé Dungeon ;
+- aucun fichier du dépôt principal modifié ;
+- aucun asset binaire copié avant classification ;
+- aucun changement du moteur Exploration dans ce lot.
 
 ## Tests
-CI au SHA technique `440917814739c61146bdeb3453e8c0494fa75cac` :
-run `36875054596` — SUCCESS.
+- diff du lot = documentation/manifest uniquement ;
+- CI existante GREEN ;
+- aucun fichier `src/` modifié.
 
-Couvre :
-- defaults ;
-- custom config ;
-- fallback invalide ;
-- vitesse injectée ;
-- diagonales ;
-- collision ;
-- limites monde ;
-- architecture sentinels.
+## Risque inter-module
+Lecture seule du dépôt principal. Aucun raccord runtime.
 
-## Test manuel
-Non requis pour ce micro-lot : aucune valeur par défaut ni aucun comportement utilisateur ne change.
-Le prochain lot visuel/assets fournira une preview mobile ciblée.
-
-## Hors périmètre respecté
-- aucune accélération/freinage ;
-- aucun asset ;
-- aucune génération ;
-- aucune sauvegarde ;
-- aucun combat ;
-- aucun autre dépôt modifié.
-
-## Prochaine étape
-Créer le checkpoint GREEN Phase 1A, puis ouvrir un lot séparé d'audit/raccord d'assets visuels.
+## Étape suivante si GREEN
+Ouvrir un nouveau lot `asset-pack-forest-v1` pour importer/copier un petit pack validé sous ownership Exploration, puis fournir une preview mobile.
