@@ -9,10 +9,15 @@ export const materialPackV1 = Object.freeze({
       kind: 'surface',
       label: 'Herbe de forêt',
       assets: Object.freeze({
-        base: null,
-        variants: Object.freeze([]),
+        base: 'texture.grass.forest.base.01',
+        variants: Object.freeze([
+          'texture.grass.forest.base.02'
+        ]),
         edge: null,
-        decals: Object.freeze([])
+        decals: Object.freeze([
+          'decal.forest.leaves.01',
+          'decal.forest.roots.01'
+        ])
       }),
       render: Object.freeze({
         baseColor: '#536247',
@@ -29,8 +34,8 @@ export const materialPackV1 = Object.freeze({
       kind: 'path',
       label: 'Chemin de terre',
       assets: Object.freeze({
-        center: null,
-        edge: null,
+        center: 'texture.road.dirt.center.01',
+        edge: 'transition.road.dirt_to_grass_forest.edge.01',
         decals: Object.freeze([])
       }),
       render: Object.freeze({
@@ -49,8 +54,8 @@ export const materialPackV1 = Object.freeze({
       kind: 'water',
       label: 'Rivière de forêt',
       assets: Object.freeze({
-        center: null,
-        bank: null,
+        center: 'texture.water.forest_stream.center.01',
+        bank: 'transition.water.forest_stream_to_grass_forest.bank.01',
         decals: Object.freeze([])
       }),
       render: Object.freeze({
