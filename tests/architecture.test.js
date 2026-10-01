@@ -94,3 +94,21 @@ test('architecture sentinel: material system does not hotlink other repositories
 
   assert.deepEqual(violations, []);
 });
+
+
+test('architecture sentinel: asset adapter remains local and semantic', async () => {
+  const adapter = await readFile(
+    new URL('../src/assets/material-asset-adapter.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(
+    /raw\.githubusercontent\.com|github\.com\/slyen4425-cloud|assets\/dungeon\//i.test(adapter),
+    false
+  );
+
+  assert.equal(
+    adapter.includes('./assets/exploration/materials/forest/'),
+    true
+  );
+});
