@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "packId": "forest-core-v1-test-assets",
+  "status": "test",
+  "ownership": "exploration",
+  "derivation": {
+    "purpose": "mobile Material Pack v1 validation",
+    "format": "webp",
+    "note": "Downscaled derivatives of ChatGPT-generated source images. Geometry and collision remain independent of pixels."
+  },
+  "assets": [
+    {
+      "assetId": "texture.grass.forest.base.01",
+      "path": "./assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp",
+      "role": "surface-base",
+      "materialId": "grass.forest",
+      "size": [96, 96],
+      "sourceGenerationId": "6fc53ef8-1f29-4716-bdad-6084b77c19f3",
+      "sha256": "1246b557d96a092f6f5584eeaa1c65101b111f7db439edc97cc9706c8079b697"
+    },
+    {
+      "assetId": "texture.grass.forest.base.02",
+      "path": "./assets/exploration/materials/forest/surfaces/grass_forest_base_02.webp",
+      "role": "surface-variant",
+      "materialId": "grass.forest",
+      "size": [96, 96],
+      "sourceGenerationId": "0518c805-7f30-40db-8373-a94424d7ad7c",
+      "sha256": "3794f72068827498b5563e7c591035552311daf18591dde0d81d54c1d905dd52"
+    },
+    {
+      "assetId": "texture.road.dirt.base.01",
+      "path": "./assets/exploration/materials/forest/paths/road_dirt_base_01.webp",
+      "role": "path-center",
+      "materialId": "road.dirt",
+      "size": [96, 96],
+      "sourceGenerationId": "41d4fd87-75db-41b8-820c-bea6a5ec9d50",
+      "sha256": "0041edccba3992559c27e638df642eaa68a606048298efcfb05fb530e2f4fbbd"
+    },
+    {
+      "assetId": "texture.water.forest_stream.base.01",
+      "path": "./assets/exploration/materials/forest/water/water_forest_stream_base_01.webp",
+      "role": "water-center",
+      "materialId": "water.forest_stream",
+      "size": [96, 96],
+      "sourceGenerationId": "df4c9e9a-621d-4c1b-a87e-ce4d07c08b68",
+      "sha256": "d8377f6e7b3fa7409fbf88ba27a592b4f75aa2d7927fd0988769a1bb9aa1ab0d"
+    },
+    {
+      "assetId": "transition.road.dirt.grass_forest.edge.01",
+      "path": "./assets/exploration/materials/forest/transitions/road_dirt_to_grass_forest_edge_01.webp",
+      "role": "path-edge",
+      "materialId": "road.dirt",
+      "size": [144, 48],
+      "sourceGenerationId": "f0d555e5-0138-4459-991c-161792ad9a4b",
+      "sha256": "787042b76ac7933e918c362f3353e921e1f68a70d107bf3ccd69e92becdf9969"
+    },
+    {
+      "assetId": "transition.water.forest_stream.grass_forest.bank.01",
+      "path": "./assets/exploration/materials/forest/transitions/water_forest_stream_to_grass_forest_bank_01.webp",
+      "role": "water-bank",
+      "materialId": "water.forest_stream",
+      "size": [144, 48],
+      "sourceGenerationId": "124eb5a3-144e-4755-8ffc-7e29980ecead",
+      "sha256": "e3a672561cc7dba77192d5bab48e954fab38fa0575937a9bfde638c3eb314c36"
+    },
+    {
+      "assetId": "decal.forest.leaves.01",
+      "path": "./assets/exploration/materials/forest/decals/leaves_forest_floor_decal_01.webp",
+      "role": "decal",
+      "materialId": "grass.forest",
+      "size": [96, 96],
+      "sourceGenerationId": "89eb5dd0-56f2-4326-877d-e401c078858a",
+      "sha256": "a95ad60db9fd0af571907dce88e6661fb0414cba9a459685f67f323edc1fc74b"
+    },
+    {
+      "assetId": "decal.forest.roots.01",
+      "path": "./assets/exploration/materials/forest/decals/roots_forest_floor_decal_01.webp",
+      "role": "decal",
+      "materialId": "grass.forest",
+      "size": [96, 96],
+      "sourceGenerationId": "90aa3fdc-1889-4c29-a303-f7c442c38104",
+      "sha256": "8d9194ffae2c0c4d1a820cb3a014567771b53ac7796aa229d215dc35a23752d7"
+    }
+  ]
+}
