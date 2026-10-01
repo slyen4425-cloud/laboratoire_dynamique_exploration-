@@ -14,6 +14,9 @@ test('Material Pack v1 exposes the three pilot materials', () => {
   assert.equal(registry.resolve('road.dirt')?.kind, 'path');
   assert.equal(registry.resolve('water.forest_stream')?.kind, 'water');
   assert.equal(registry.list().length, 3);
+  assert.equal(registry.resolve('grass.forest').assets.base, 'texture.grass.forest.base.01');
+  assert.equal(registry.resolve('road.dirt').assets.center, 'texture.road.dirt.base.01');
+  assert.equal(registry.resolve('water.forest_stream').assets.center, 'texture.water.forest_stream.base.01');
 });
 
 test('unknown material ids never silently fall back', () => {
