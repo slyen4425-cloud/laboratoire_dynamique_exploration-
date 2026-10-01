@@ -68,6 +68,7 @@ test('bridge WorldObject normalizes transform for future Builder editing', () =>
   assert.equal(bridge.transform.scaleY, 0.5);
   assert.equal(bridge.baseSize.length, 180);
   assert.equal(bridge.baseSize.width, 90);
+  assert.equal(bridge.traversal.edgeAssistRatio, 0.15);
   assert.equal(Object.isFrozen(bridge.transform), true);
 });
 
