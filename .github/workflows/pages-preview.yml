@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: forest-scale-96
+# preview-revision: natural-ground-v2
 
 on:
   push:
