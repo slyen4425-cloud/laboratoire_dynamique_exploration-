@@ -1,3 +1,8 @@
+import {
+  buildRibbonSegments,
+  ribbonTextureSlices
+} from './path-ribbon.js';
+
 function smoothPath(ctx, points, camera) {
   if (!points || points.length < 2) return;
 
@@ -48,10 +53,40 @@ function strokePath(ctx, item, camera, width, strokeStyle, alpha = 1) {
   ctx.restore();
 }
 
-function hash2D(x, y) {
-  let hash = Math.imul(x, 0x45d9f3b) ^ Math.imul(y, 0x27d4eb2d);
+function hash2D(x, y, salt = 0) {
+  let hash = Math.imul(x + salt * 101, 0x45d9f3b);
+  hash ^= Math.imul(y - salt * 53, 0x27d4eb2d);
   hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
   return (hash ^ (hash >>> 16)) >>> 0;
+}
+
+function unit(hash) {
+  return hash / 0xffffffff;
+}
+
+export function terrainDecalDescriptor(
+  cellX,
+  cellY,
+  assetCount,
+  density = 0.42
+) {
+  if (!Number.isInteger(assetCount) || assetCount <= 0) return null;
+
+  const safeDensity =
+    Number.isFinite(density)
+      ? Math.max(0, Math.min(1, density))
+      : 0.42;
+
+  if (unit(hash2D(cellX, cellY, 61)) > safeDensity) return null;
+
+  return Object.freeze({
+    assetIndex: hash2D(cellX, cellY, 67) % assetCount,
+    jitterX: unit(hash2D(cellX, cellY, 71)) - 0.5,
+    jitterY: unit(hash2D(cellX, cellY, 73)) - 0.5,
+    sizeT: unit(hash2D(cellX, cellY, 79)),
+    rotation: unit(hash2D(cellX, cellY, 83)) * Math.PI * 2,
+    opacityT: 0.72 + unit(hash2D(cellX, cellY, 89)) * 0.28
+  });
 }
 
 function worldPattern(ctx, image, camera) {
@@ -70,6 +105,61 @@ function worldPattern(ctx, image, camera) {
   }
 
   return pattern;
+}
+
+function drawTexturedRibbon(
+  ctx,
+  item,
+  camera,
+  image,
+  ribbonWidth,
+  opacity = 1
+) {
+  if (!image || !Number.isFinite(ribbonWidth) || ribbonWidth <= 0) {
+    return false;
+  }
+
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+
+  if (!sourceWidth || !sourceHeight) return false;
+
+  const segments = buildRibbonSegments(item.points, 16);
+
+  for (const segment of segments) {
+    const slices = ribbonTextureSlices({
+      distanceStart: segment.distanceStart,
+      segmentLength: segment.length,
+      sourceWidth,
+      sourceHeight,
+      ribbonWidth
+    });
+
+    ctx.save();
+    ctx.translate(segment.x - camera.x, segment.y - camera.y);
+    ctx.rotate(segment.angle);
+    ctx.globalAlpha = opacity;
+
+    for (const slice of slices) {
+      const overlap = 0.8;
+
+      ctx.drawImage(
+        image,
+        slice.sourceX,
+        0,
+        slice.sourceWidth,
+        sourceHeight,
+        -segment.length / 2 + slice.destOffset - overlap / 2,
+        -ribbonWidth / 2,
+        slice.destWidth + overlap,
+        ribbonWidth
+      );
+    }
+
+    ctx.restore();
+  }
+
+  return segments.length > 0;
 }
 
 function drawSurfaceFallback(ctx, camera, viewport, material) {
@@ -102,7 +192,8 @@ function drawSurfaceFallback(ctx, camera, viewport, material) {
       const x = cellX * spacing + spacing / 2 + jitterX - camera.x;
       const y = cellY * spacing + spacing / 2 + jitterY - camera.y;
       const radius = spacing * (0.56 + (((hash >>> 16) & 63) / 63) * 0.2);
-      const variation = variationColors[(hash >>> 22) % variationColors.length];
+      const variation =
+        variationColors[(hash >>> 22) % variationColors.length];
 
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
       gradient.addColorStop(0, variation);
@@ -135,25 +226,120 @@ function drawSurfaceMaterial(
   ctx.restore();
 }
 
+function drawSurfaceDecals(
+  ctx,
+  camera,
+  viewport,
+  material,
+  textureLoader
+) {
+  const ids = Array.isArray(material.assets.decals)
+    ? material.assets.decals
+    : [];
+
+  const render = material.render;
+  const spacing = render.decalSpacing;
+
+  if (
+    ids.length === 0 ||
+    !Number.isFinite(spacing) ||
+    spacing <= 0
+  ) {
+    return;
+  }
+
+  const minSize = Number.isFinite(render.decalMinSize)
+    ? render.decalMinSize
+    : 48;
+  const maxSize = Number.isFinite(render.decalMaxSize)
+    ? Math.max(minSize, render.decalMaxSize)
+    : minSize;
+  const opacity = Number.isFinite(render.decalOpacity)
+    ? Math.max(0, Math.min(1, render.decalOpacity))
+    : 0.36;
+
+  const minX = Math.floor(camera.x / spacing) - 1;
+  const minY = Math.floor(camera.y / spacing) - 1;
+  const maxX = Math.ceil((camera.x + viewport.width) / spacing) + 1;
+  const maxY = Math.ceil((camera.y + viewport.height) / spacing) + 1;
+
+  for (let cellY = minY; cellY <= maxY; cellY += 1) {
+    for (let cellX = minX; cellX <= maxX; cellX += 1) {
+      const descriptor = terrainDecalDescriptor(
+        cellX,
+        cellY,
+        ids.length,
+        render.decalDensity
+      );
+
+      if (!descriptor) continue;
+
+      const image = textureLoader?.get(ids[descriptor.assetIndex]);
+      if (!image) continue;
+
+      const x =
+        cellX * spacing +
+        spacing / 2 +
+        descriptor.jitterX * spacing * 0.72 -
+        camera.x;
+      const y =
+        cellY * spacing +
+        spacing / 2 +
+        descriptor.jitterY * spacing * 0.72 -
+        camera.y;
+      const size =
+        minSize + (maxSize - minSize) * descriptor.sizeT;
+
+      if (
+        x + size < 0 ||
+        y + size < 0 ||
+        x - size > viewport.width ||
+        y - size > viewport.height
+      ) {
+        continue;
+      }
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(descriptor.rotation);
+      ctx.globalAlpha = opacity * descriptor.opacityT;
+      ctx.drawImage(image, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    }
+  }
+}
+
 function drawPathMaterial(ctx, path, camera, material, textureLoader) {
   const render = material.render;
+  const edgeImage = textureLoader?.get(material.assets.edge);
   const centerImage = textureLoader?.get(material.assets.center);
   const centerPattern = worldPattern(ctx, centerImage, camera);
 
-  strokePath(
+  const hasTexturedEdge = drawTexturedRibbon(
     ctx,
     path,
     camera,
-    path.width + render.outerEdgePadding,
-    render.outerEdgeColor
+    edgeImage,
+    path.width + render.outerEdgePadding
   );
-  strokePath(
-    ctx,
-    path,
-    camera,
-    path.width + render.innerEdgePadding,
-    render.innerEdgeColor
-  );
+
+  if (!hasTexturedEdge) {
+    strokePath(
+      ctx,
+      path,
+      camera,
+      path.width + render.outerEdgePadding,
+      render.outerEdgeColor
+    );
+    strokePath(
+      ctx,
+      path,
+      camera,
+      path.width + render.innerEdgePadding,
+      render.innerEdgeColor
+    );
+  }
+
   strokePath(
     ctx,
     path,
@@ -173,23 +359,35 @@ function drawPathMaterial(ctx, path, camera, material, textureLoader) {
 
 function drawWaterMaterial(ctx, river, camera, material, textureLoader) {
   const render = material.render;
+  const bankImage = textureLoader?.get(material.assets.bank);
   const centerImage = textureLoader?.get(material.assets.center);
   const centerPattern = worldPattern(ctx, centerImage, camera);
 
-  strokePath(
+  const hasTexturedBank = drawTexturedRibbon(
     ctx,
     river,
     camera,
-    river.width + render.outerBankPadding,
-    render.outerBankColor
+    bankImage,
+    river.width + render.outerBankPadding
   );
-  strokePath(
-    ctx,
-    river,
-    camera,
-    river.width + render.innerBankPadding,
-    render.innerBankColor
-  );
+
+  if (!hasTexturedBank) {
+    strokePath(
+      ctx,
+      river,
+      camera,
+      river.width + render.outerBankPadding,
+      render.outerBankColor
+    );
+    strokePath(
+      ctx,
+      river,
+      camera,
+      river.width + render.innerBankPadding,
+      render.innerBankColor
+    );
+  }
+
   strokePath(
     ctx,
     river,
@@ -223,6 +421,14 @@ export function createSurfaceRenderer({
       );
 
       drawSurfaceMaterial(
+        ctx,
+        camera,
+        viewport,
+        baseMaterial,
+        textureLoader
+      );
+
+      drawSurfaceDecals(
         ctx,
         camera,
         viewport,
