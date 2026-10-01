@@ -41,10 +41,25 @@ export function normalizeExplorationConfig(raw = {}) {
       )
     },
     render: {
-      terrainTileSize: finiteNumber(
-        config.render?.terrainTileSize,
-        explorationDefaults.render.terrainTileSize,
-        { min: 48, max: 512 }
+      terrainPatchSize: finiteNumber(
+        config.render?.terrainPatchSize,
+        explorationDefaults.render.terrainPatchSize,
+        { min: 72, max: 384 }
+      ),
+      terrainPatchSpacing: finiteNumber(
+        config.render?.terrainPatchSpacing,
+        explorationDefaults.render.terrainPatchSpacing,
+        { min: 56, max: 320 }
+      ),
+      terrainPatchOpacity: finiteNumber(
+        config.render?.terrainPatchOpacity,
+        explorationDefaults.render.terrainPatchOpacity,
+        { min: 0.1, max: 1 }
+      ),
+      groundDetailSpacing: finiteNumber(
+        config.render?.groundDetailSpacing,
+        explorationDefaults.render.groundDetailSpacing,
+        { min: 96, max: 420 }
       )
     }
   };
