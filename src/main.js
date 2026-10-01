@@ -43,11 +43,29 @@ const surfaceRenderer = createSurfaceRenderer({
 const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset: resolveWorldObjectAsset
 });
-worldObjectImageLoader.load(
-  world.objects
-    .map((object) => object.visual?.assetId)
-    .filter(Boolean)
+const requiredWorldObjectAssetIds = Object.freeze([
+  ...new Set(
+    world.objects
+      .map((object) => object.visual?.assetId)
+      .filter(Boolean)
+  )
+]);
+
+const worldObjectAssetStatus = await worldObjectImageLoader.load(
+  requiredWorldObjectAssetIds
 );
+
+if (
+  worldObjectAssetStatus.ready !== requiredWorldObjectAssetIds.length ||
+  worldObjectAssetStatus.missing > 0 ||
+  worldObjectAssetStatus.errors > 0
+) {
+  coords.textContent =
+    'Erreur asset WorldObject — voir console';
+  throw new Error(
+    `WorldObject assets unavailable: ${JSON.stringify(worldObjectAssetStatus)}`
+  );
+}
 
 const worldObjectRenderer = createWorldObjectRenderer({
   imageLoader: worldObjectImageLoader,
