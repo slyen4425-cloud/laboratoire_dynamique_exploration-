@@ -7,6 +7,9 @@
 | Position/mouvement | Exploration Engine | intent + dt + world | position/velocity | input/renderer écrit x/y |
 | Collision | Collision World | trajectoire + obstacles | mouvement autorisé | renderer possède collision |
 | Monde runtime | World Model | document généré/chargé | état monde | UI duplique l'état |
+| Objets placés | World Object Model | données objet | transform/footprint/interaction | renderer possède transform |
+| Area active | World Area Model | areaId | contenu Area | Shell/renderer invente l'Area |
+| Portals | Portal Model | trigger + cible | changement d'Area intent | location.reload / navigation sauvage |
 | Géométrie surface | World Surface Model | WorldDocument | base/routes/rivières | texture définit géométrie |
 | Matériaux | Material Registry | materialId + pack | description visuelle | matériau possède collision |
 | Assets physiques | Asset Adapter / Core Resolver futur | asset ids | URL/resource | chemins inter-module sauvages |
