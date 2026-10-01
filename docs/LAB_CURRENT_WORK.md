@@ -100,3 +100,38 @@ World
 Une preview doit montrer un sol continu, une route et une rivière courbes et propres, sans grille, tout en conservant le déplacement/collisions existants.
 
 Ce jalon valide l'architecture de composition, pas le style artistique final.
+
+
+## État technique — 2026-10-01
+Implémentation v1 :
+- `World.surface` normalisé/versionné ;
+- `surface.baseMaterialId` ;
+- `surface.routes[]` avec points X/Y, largeur, materialId ;
+- `surface.rivers[]` avec points X/Y, largeur, materialId ;
+- Surface Renderer séparé ;
+- routes/rivières courbes via tracé lissé ;
+- sol de base sans grille ;
+- collisions existantes inchangées ;
+- l'obstacle rivière conserve son autorité de collision et n'est plus dessiné comme rectangle bleu ;
+- aucune texture requise pour la géométrie.
+
+## Tests
+CI technique au SHA `97c35974e56e4e0c18d0003f3806fa71c501737c` :
+run `36882087281` — SUCCESS.
+
+Tests surface :
+- conservation ordre/largeur/points ;
+- filtrage des paths invalides ;
+- aucun mutation de l'entrée ;
+- defaults explicites.
+
+## Test manuel requis
+Preview mobile à valider :
+- aucune grille/mosaïque ;
+- route lisible et naturelle ;
+- rivière lisible ;
+- échelle cohérente avec le pion ;
+- caméra/déplacement toujours fluides ;
+- collision rivière cohérente visuellement pour ce prototype.
+
+Ce jalon valide d'abord l'architecture de composition. Le style final viendra ensuite avec matériaux/textures adaptés à chaque couche.
