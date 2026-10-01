@@ -297,6 +297,21 @@ Interdits :
 - fallback silencieux vers les assets d'un autre module ;
 - copie sans traçabilité de source.
 
+### 12.1 Autorité visuelle unique des WorldObjects
+
+Lorsqu'un WorldObject déclare un `visual.assetId`, cet assetId est **l'unique autorité visuelle** de l'objet.
+
+Interdits :
+- dessiner un ancien sprite/prototype si l'asset déclaré est en chargement ;
+- substituer silencieusement un autre pont ou objet ;
+- conserver un rendu procédural concurrent pour le même WorldObject ;
+- démarrer le runtime utilisateur avec un asset WorldObject requis encore indéterminé.
+
+Le bootstrap charge explicitement les assets WorldObject requis avant le démarrage du runtime.
+Un asset manquant ou en erreur produit un état d'erreur explicite ; il ne déclenche jamais une deuxième représentation du même objet.
+
+Un WorldObject sans `assetId` peut être volontairement invisible, mais cette absence est une donnée explicite et non un fallback.
+
 À l'intégration GenSrpG :
 - les identifiants sémantiques restent stables ;
 - l'Asset Adapter local est remplacé par le resolver central ;
