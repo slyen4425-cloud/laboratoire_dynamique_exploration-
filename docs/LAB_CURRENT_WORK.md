@@ -3,144 +3,66 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Material Pack v1 — contrat de matériaux personnalisables.
+Material Assets Forest Test v1 — import graphique contrôlé pour Material Pack v1.
 
 ## Branche
-`work/exploration-material-pack-v1-2026-10-01`
+`work/exploration-material-assets-forest-test-v1-2026-10-01`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-material-pack-v1-2026-10-01`
+`checkpoint/exploration-start-material-assets-forest-test-v1-2026-10-01`
 
 ## SHA de base
-`795c22552abab14d8d7d6ae1da076ae62395e997`
+`f02e5bd1f27fcce569c040e3ac41d62efb35afd9`
 
-## Dernier checkpoint GREEN
-`checkpoint/exploration-world-surface-model-v1-green-2026-10-01`
+## Dépendance
+Ce sous-lot part du candidat Material Pack v1, qui n'est pas encore checkpoint GREEN fonctionnel.
+Il ne peut donc pas devenir GREEN indépendamment avant validation du parent.
+
+## Pourquoi ce sous-lot séparé
+Le lot Material Pack v1 avait explicitement exclu les nouveaux binaires graphiques.
+Conformément à la charte, l'import d'assets est isolé dans un chantier distinct au lieu d'élargir silencieusement le périmètre.
 
 ## État gelé
-World Surface Model v1 :
-- sol de base indépendant ;
-- route = points X/Y + largeur + materialId ;
-- rivière = points X/Y + largeur + materialId ;
-- aucune grille autoritaire ;
-- collisions séparées ;
-- caméra/déplacement validés.
-
-La géométrie ne doit pas être modifiée dans ce lot.
-
-## Objectif
-Créer le système qui transforme un `materialId` en apparence personnalisable, sans donner d'autorité gameplay aux textures.
-
-## Matériaux pilotes
-- `grass.forest`
-- `road.dirt`
-- `water.forest_stream`
+- géométrie World Surface Model v1 ;
+- routes/rivières X/Y + largeur ;
+- collisions ;
+- mouvement ;
+- caméra ;
+- Material Registry v1 ;
+- trois materialId pilotes.
 
 ## Périmètre
-- Material Pack schemaVersion 1 ;
-- Material Registry ;
-- trois matériaux pilotes ;
-- paramètres visuels versionnés ;
-- support des références texture/variants/edge/decals/transitions dans le contrat ;
-- renderer piloté par le registre au lieu de styles codés en dur ;
-- tests d'indépendance géométrie/matériau.
+- importer exactement 8 assets générés pour test ;
+- noms techniques stables ;
+- ownership Exploration local ;
+- manifeste avec provenance et rôle ;
+- raccorder les assetId dans Material Pack v1 ;
+- créer/raccorder l'Asset Adapter local nécessaire ;
+- aucune géométrie modifiée ;
+- aucune collision dérivée des textures ;
+- preview mobile.
 
-## Personnalisation cible
-Un matériau peut définir :
-- texture/base asset ;
-- variantes ;
-- edge asset/mask ;
-- decals ;
-- densité ;
-- échelle ;
-- teinte/couleurs ;
-- répétition ;
-- paramètres visuels d'animation ;
-- fallback procédural explicite.
+## Assets prévus
+- `surfaces/grass_forest_base_01.png`
+- `surfaces/grass_forest_base_02.png`
+- `paths/road_dirt_base_01.png`
+- `water/water_forest_stream_base_01.png`
+- `transitions/road_dirt_to_grass_forest_edge_01.png`
+- `transitions/water_forest_stream_to_grass_forest_bank_01.png`
+- `decals/leaves_forest_floor_decal_01.png`
+- `decals/roots_forest_floor_decal_01.png`
 
-Le Builder pourra changer `materialId` et les paramètres autorisés sans redessiner la géométrie.
-
-## Propriétaires
-- géométrie : World Surface Model ;
-- materialId dans le monde : WorldDocument ;
-- apparence : Material Registry ;
-- fichiers : Asset Adapter ;
-- pixels : Renderer ;
-- collisions : Collision World.
-
-## Fichiers autorisés
-- `src/materials/` ;
-- `src/render/surface-renderer.js` ;
-- tests ;
-- documentation.
+## Destination
+`assets/exploration/materials/forest/`
 
 ## Hors périmètre
-- nouveaux binaires graphiques ;
-- import des anciennes dalles forêt ;
+- génération de nouveaux visuels supplémentaires ;
 - Builder UI ;
 - World Generator ;
-- modification des routes/rivières ;
+- modification de forme/largeur des routes/rivières ;
 - collisions ;
-- ponts/bâtiments ;
+- gameplay ;
 - autre dépôt.
 
-## Tests requis
-- les 3 ids se résolvent ;
-- id inconnu = erreur/fallback explicite, jamais autre module ;
-- matériau immutable/normalisé ;
-- changer materialId ne modifie pas points/largeur ;
-- renderer ne modifie pas World Surface Model ;
-- tests historiques GREEN ;
-- CI GREEN ;
-- preview mobile avant checkpoint GREEN si rendu modifié.
-
-## Étape suivante
-Après contrat/code GREEN :
-- preview des trois matériaux ;
-- validation visuelle/ergonomique ;
-- ensuite mini Builder Surface sur un lot séparé.
-
-
-## État technique — 2026-10-01
-
-Material Pack v1 est raccordé au runtime :
-- `grass.forest` -> kind `surface` ;
-- `road.dirt` -> kind `path` ;
-- `water.forest_stream` -> kind `water`.
-
-Le Surface Renderer exige désormais un Material Registry.
-
-Le renderer ne possède plus les identifiants sémantiques des trois matériaux.
-
-## Assets artistiques
-
-Dans ce contrat v1, les slots d'assets existent mais sont volontairement vides :
-- base/center ;
-- variants ;
-- edge/bank ;
-- decals.
-
-Le rendu actuel utilise les paramètres procéduraux du matériau comme fallback explicite.
-
-Aucune ancienne dalle forêt n'a été réintroduite.
-
-## Garanties testées
-
-- les 3 ids se résolvent ;
-- id inconnu -> `null` ou erreur explicite ;
-- aucun fallback silencieux ;
-- kind contrôlé ;
-- définitions immutables ;
-- changement de materialId sans changement de géométrie ;
-- renderer sans materialId sémantique codé en dur ;
-- material system sans hotlink vers Zombicide-40k ;
-- tests historiques toujours GREEN.
-
-CI :
-run `36884913815` — SUCCESS.
-
-## Validation restante
-
-Une preview mobile est déployée afin de vérifier l'absence de régression visuelle/runtime.
-
-Le checkpoint GREEN Material Pack v1 reste en attente de cette validation.
+## Critère
+Les 8 assets sont présents localement dans le dépôt, référencés par identifiants sémantiques, sans hotlink ni autorité gameplay, tests/CI GREEN et preview mobile fonctionnelle.
