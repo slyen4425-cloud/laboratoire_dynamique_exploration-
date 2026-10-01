@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "packId": "bridge-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-01",
+  "runtimeProfile": "mobile-webp-256x512-q82",
+  "purpose": "Bridge WorldObject visual assets with transparent natural bank/embankment integration. Visuals never define collision.",
+  "sourceProfile": {
+    "format": "PNG RGBA",
+    "width": 887,
+    "height": 1774,
+    "alpha": true,
+    "modelGenerated": true
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 256,
+    "height": 512,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.bridge.wood.rustic_bank.01",
+      "path": "assets/exploration/objects/bridges/bridge_wood_rustic_bank_01.webp",
+      "role": "bridge-visual",
+      "family": "wood",
+      "variant": "rustic-bank",
+      "sourceFileId": "file_0000000008408210867852b77d75c22e",
+      "generationId": "f3da2fc3-8447-4d6a-afb3-7268f2e872f7",
+      "sourceSha256": "f1eedb1c758e66047fbdc8baffc3c8f7c3e50996f125440ce9151e13ca43ae04",
+      "sha256": "6f10e16ddd72f0a0ebc284c75226ded340a596eb669fbe024f649a5ac5772218",
+      "bytes": 40978
+    },
+    {
+      "assetId": "object.bridge.stone.medieval_bank.01",
+      "path": "assets/exploration/objects/bridges/bridge_stone_medieval_bank_01.webp",
+      "role": "bridge-visual",
+      "family": "stone",
+      "variant": "medieval-bank",
+      "sourceFileId": "file_0000000056248210868bfb8904e7c79f",
+      "generationId": "9df34d46-03d2-41f9-9018-3828bd89d01d",
+      "sourceSha256": "6727ae5352edf58683d090aaac86761a780e7f013d94a23a8a037fef638519fb",
+      "sha256": "6270a12eace7f618d87ac3d9635dd1d6f3b5168708c9dfff2234b61d7bfbb90d",
+      "bytes": 32032
+    },
+    {
+      "assetId": "object.bridge.wood.rope_bank.01",
+      "path": "assets/exploration/objects/bridges/bridge_wood_rope_bank_01.webp",
+      "role": "bridge-visual",
+      "family": "wood",
+      "variant": "rope-bank",
+      "sourceFileId": "file_00000000fdac81f4ab59fe08c008ea36",
+      "generationId": "658c3f84-2861-48c9-918c-abae3272dffa",
+      "sourceSha256": "7624d53b13ce96524af604178b90cc689b246ccc378d6ab90b878a328c10b7fc",
+      "sha256": "c505d65656606b2aabe504815ea91b7f16be777df3aa4406480ee83b4fcd2f63",
+      "bytes": 39262
+    },
+    {
+      "assetId": "object.bridge.stone.moss_bank.01",
+      "path": "assets/exploration/objects/bridges/bridge_stone_moss_bank_01.webp",
+      "role": "bridge-visual",
+      "family": "stone",
+      "variant": "moss-bank",
+      "sourceFileId": "file_00000000e61c8210babf03dcfca0a6da",
+      "generationId": "a9a25d7a-8a2e-4521-94de-b51eec3ebe3f",
+      "sourceSha256": "cffa1c5e997e2eef6612591489818fa2dbf63a3b5bd4fceb720e89b9ce8388e4",
+      "sha256": "7fa7e14c41c144714c30ed4c134783b58ac7a269ec6a2dc6346a7acc6aa3356e",
+      "bytes": 33858
+    }
+  ]
+}
