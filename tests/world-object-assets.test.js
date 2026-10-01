@@ -209,3 +209,34 @@ test('bridge manifest hashes and byte sizes match runtime binaries', async () =>
     assert.equal(sha256, item.sha256, `${item.assetId}: sha256 mismatch`);
   }
 });
+
+
+test('image loader can force a cache revision without changing adapter authority', async () => {
+  const images = [];
+  const loader = createImageAssetLoader({
+    resolveAsset: resolveWorldObjectAsset,
+    cacheRevision: 'bridge-assets-v1-binary-repair',
+    imageFactory: () => {
+      const image = { onload: null, onerror: null, src: '' };
+      images.push(image);
+      return image;
+    }
+  });
+
+  const loading = loader.load(['object.bridge.wood.rustic_bank.01']);
+
+  assert.equal(
+    images[0].src,
+    EXPECTED['object.bridge.wood.rustic_bank.01'] +
+      '?rev=bridge-assets-v1-binary-repair'
+  );
+
+  images[0].onload();
+  const status = await loading;
+
+  assert.equal(status.ready, 1);
+  assert.equal(
+    resolveWorldObjectAsset('object.bridge.wood.rustic_bank.01').path,
+    EXPECTED['object.bridge.wood.rustic_bank.01']
+  );
+});
