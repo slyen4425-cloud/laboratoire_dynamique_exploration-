@@ -13,5 +13,8 @@ export const explorationDefaults = Object.freeze({
   }),
   simulation: Object.freeze({
     maxDeltaSeconds: 0.033
+  }),
+  render: Object.freeze({
+    terrainTileSize: 96
   })
 });
