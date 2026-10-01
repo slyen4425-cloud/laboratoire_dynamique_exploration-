@@ -5,7 +5,10 @@ import {
   listTerrainAssets,
   resolveTerrainAsset
 } from '../src/assets/asset-adapter.js';
-import { terrainVariantIndex } from '../src/render/terrain-renderer.js';
+import {
+  terrainPatchDescriptor,
+  terrainVariantIndex
+} from '../src/render/terrain-renderer.js';
 
 test('forest asset adapter exposes exactly six local variants', () => {
   const assets = listTerrainAssets({ biome: 'forest' });
@@ -36,4 +39,19 @@ test('terrain variant selection is deterministic and stays in range', () => {
   assert.equal(first, second);
   assert.ok(first >= 0 && first < 6);
   assert.equal(terrainVariantIndex(0, 0, 0), -1);
+});
+
+test('terrain patch placement is deterministic and bounded', () => {
+  const first = terrainPatchDescriptor(8, 12, 6, 118);
+  const second = terrainPatchDescriptor(8, 12, 6, 118);
+
+  assert.deepEqual(first, second);
+  assert.ok(first.variantIndex >= 0 && first.variantIndex < 6);
+  assert.ok(Math.abs(first.jitterX) <= 118 * 0.29 + Number.EPSILON);
+  assert.ok(Math.abs(first.jitterY) <= 118 * 0.29 + Number.EPSILON);
+  assert.ok(first.scale >= 0.86 && first.scale <= 1.18);
+  assert.ok(
+    [0, Math.PI / 2, Math.PI, Math.PI * 1.5].includes(first.rotation)
+  );
+  assert.equal(terrainPatchDescriptor(0, 0, 0, 118), null);
 });
