@@ -96,10 +96,14 @@ Valeurs prévues :
 Un matériau peut référencer des asset ids sémantiques :
 
 ```text
-texture.grass.forest.base
-texture.road.dirt.center
-texture.road.dirt.edge
-decal.forest.leaf.01
+texture.grass.forest.base.01
+texture.grass.forest.base.02
+texture.road.dirt.center.01
+transition.road.dirt_to_grass_forest.edge.01
+texture.water.forest_stream.center.01
+transition.water.forest_stream_to_grass_forest.bank.01
+decal.forest.leaves.01
+decal.forest.roots.01
 ```
 
 Le Material Registry ne connaît pas forcément l'URL physique.
@@ -345,3 +349,21 @@ Material Pack v1 ne sera GREEN que si :
 - aucun asset inter-module sauvage ;
 - CI GREEN ;
 - preview mobile validée.
+
+
+## Pack graphique pilote — forest-core-v1
+
+Premier profil de test :
+`mobile-test-128`.
+
+Emplacement physique :
+`assets/exploration/materials/forest/`.
+
+Règle :
+- le Material Pack ne contient jamais de chemin de fichier ;
+- il ne contient que des assetIds sémantiques ;
+- `Material Asset Adapter` résout assetId -> fichier local ;
+- `Material Texture Loader` gère explicitement le cycle de chargement ;
+- le renderer consomme l'image prête ou le fallback procédural.
+
+Les fichiers de transition et decals sont présents dès v1 afin de stabiliser le contrat d'assets, mais ils ne doivent être rendus que lorsque leur algorithme de placement respecte réellement la géométrie courbe.
