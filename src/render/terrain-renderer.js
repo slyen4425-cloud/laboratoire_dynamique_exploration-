@@ -12,7 +12,7 @@ export function terrainVariantIndex(tileX, tileY, variantCount) {
 
 export function createTerrainRenderer({
   biome = 'forest',
-  tileSize = 320
+  tileSize = 96
 } = {}) {
   const assets = listTerrainAssets({ biome });
   let slots = [];
