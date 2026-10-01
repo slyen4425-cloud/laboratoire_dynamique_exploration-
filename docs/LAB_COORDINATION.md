@@ -10,7 +10,12 @@ Règle :
 ## État actif — 2026-10-01
 
 Chantier :
-alignement gouvernance GenSrpG — GREEN, checkpoint final à créer.
+alignement gouvernance GenSrpG — GREEN / terminé.
+
+Checkpoint final :
+`checkpoint/exploration-governance-alignment-green-2026-10-01`
+
+CI de fermeture : run `36874317470` — SUCCESS.
 
 Branche :
 `work/exploration-governance-alignment-2026-10-01`
