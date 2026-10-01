@@ -135,3 +135,18 @@ Preview mobile à valider :
 - collision rivière cohérente visuellement pour ce prototype.
 
 Ce jalon valide d'abord l'architecture de composition. Le style final viendra ensuite avec matériaux/textures adaptés à chaque couche.
+
+
+## Validation utilisateur — 2026-10-01
+Validation smartphone / structure :
+**la structure est jugée logique pour herbe / route / rivière.**
+
+Ce retour valide l'architecture de composition :
+- sol de base indépendant ;
+- route indépendante ;
+- rivière indépendante ;
+- aucune grille comme autorité ;
+- géométrie séparée des textures ;
+- base compatible avec futur Builder et génération automatique.
+
+Le style artistique reste hors de ce jalon et fera l'objet d'un lot distinct.
