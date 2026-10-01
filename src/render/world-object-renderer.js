@@ -2,7 +2,7 @@ import {
   bridgeVisualRect
 } from '../world/world-object-model.js';
 
-function drawBridgeFallback(ctx, bridge, camera) {
+function drawBridgeFallback(ctx, bridge, camera, viewport) {
   const rect = bridgeVisualRect(bridge);
   if (!rect) return;
 
@@ -13,8 +13,8 @@ function drawBridgeFallback(ctx, bridge, camera) {
   if (
     screenX + cullRadius < 0 ||
     screenY + cullRadius < 0 ||
-    screenX - cullRadius > innerWidth ||
-    screenY - cullRadius > innerHeight
+    screenX - cullRadius > viewport.width ||
+    screenY - cullRadius > viewport.height
   ) {
     return;
   }
@@ -72,11 +72,9 @@ function drawBridgeFallback(ctx, bridge, camera) {
 export function createWorldObjectRenderer() {
   return Object.freeze({
     draw(ctx, { camera, viewport, objects }) {
-      void viewport;
-
       for (const object of Array.isArray(objects) ? objects : []) {
         if (object.kind === 'bridge') {
-          drawBridgeFallback(ctx, object, camera);
+          drawBridgeFallback(ctx, object, camera, viewport);
         }
       }
     }
