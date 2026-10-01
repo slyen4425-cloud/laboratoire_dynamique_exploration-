@@ -225,3 +225,29 @@ run `36906853458` — SUCCESS.
 
 Le test diagonal précédemment rouge est désormais GREEN.
 Nouvelle validation smartphone requise.
+
+
+## Validation utilisateur — 2026-10-01
+Test smartphone final : **validé**.
+
+Retour utilisateur :
+- pont fonctionnel ;
+- traversée fluide ;
+- accrochage précédent corrigé.
+
+Sont donc validés :
+- WorldObject bridge v1 ;
+- rotation ;
+- scale X/Y ;
+- corridor de traversée ;
+- edge assist d'entrée diagonale ;
+- tolérance numérique de frontière ;
+- rivière bloquante hors pont ;
+- absence de régression perceptible sur mouvement/caméra/rendu.
+
+## Fermeture
+World Objects / Bridge v1 : **GREEN / terminé**.
+
+La suite doit être ouverte dans un lot séparé depuis le checkpoint GREEN exact :
+- assets visuels de pont ;
+- puis WorldArea / Building / Portal selon la roadmap validée.
