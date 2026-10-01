@@ -3,6 +3,11 @@ import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
+import { createMaterialTextureStore } from './render/material-texture-store.js';
+import {
+  listMaterialAssets,
+  resolveMaterialAsset
+} from './assets/material-asset-adapter.js';
 import { materialPackV1 } from './materials/material-pack-v1.js';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { demoWorld as world } from './world/demo-world.js';
@@ -19,7 +24,14 @@ const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
 const materialRegistry = createMaterialRegistry(materialPackV1);
-const surfaceRenderer = createSurfaceRenderer({ materialRegistry });
+const textureStore = createMaterialTextureStore({
+  assetAdapter: Object.freeze({ resolve: resolveMaterialAsset })
+});
+textureStore.load(listMaterialAssets().map((asset) => asset.id));
+const surfaceRenderer = createSurfaceRenderer({
+  materialRegistry,
+  textureStore
+});
 let last = performance.now();
 
 function resize() {
