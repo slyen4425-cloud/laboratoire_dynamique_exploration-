@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: surface-model-v1
+# preview-revision: material-pack-v1
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout exploration work branch
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-world-surface-model-v1-2026-10-01
+          ref: work/exploration-material-pack-v1-2026-10-01
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
