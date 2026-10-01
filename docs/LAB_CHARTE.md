@@ -53,6 +53,9 @@ Propriétaires du laboratoire :
 - mouvement : Exploration Core ;
 - collisions : Collision World ;
 - état du monde : World Model ;
+- géométrie de surface : World Surface Model ;
+- matériaux visuels : Material Registry ;
+- résolution des fichiers visuels : Asset Adapter ;
 - génération : World Generator ;
 - caméra : Camera ;
 - rendu : Exploration Renderer ;
@@ -76,7 +79,9 @@ Même règle pour :
 - entités ;
 - zones ;
 - spawns ;
-- état de rencontre.
+- état de rencontre ;
+- géométrie de surface ;
+- identifiants de matériaux.
 
 L'UI affiche ; elle ne possède pas le gameplay.
 
@@ -123,7 +128,181 @@ Interdit :
 Builder -> modification directe du runtime actif
 ```
 
-## 8. Pas de gameplay important codé en dur
+Le Builder manuel et le World Generator doivent produire le **même type de WorldDocument**. Une carte générée doit pouvoir être ouverte et modifiée dans le Builder sans conversion parallèle.
+
+## 8. Géométrie, matériaux, décor et gameplay sont séparés
+
+Règle permanente :
+
+```text
+WorldDocument
+  -> géométrie du monde
+  -> materialId
+  -> Material Registry
+  -> Asset Adapter
+  -> Renderer
+```
+
+La géométrie décrit **où** sont les choses.
+Le matériau décrit **à quoi elles ressemblent**.
+Les decals décrivent des détails purement visuels.
+Les objets décrivent des éléments placés dans le monde.
+Le gameplay/collision reste une autorité séparée.
+
+### 8.1 Géométrie
+
+Exemples :
+- route = points X/Y + largeur ;
+- rivière = points X/Y + largeur ;
+- zone de sol = surface/limites ;
+- pont = objet placé avec ancrage sur la géométrie.
+
+Une texture ne doit jamais définir la forme canonique d'une route, d'une rivière ou d'une zone.
+
+### 8.2 Material Registry
+
+Le WorldDocument stocke des identifiants sémantiques, par exemple :
+- `grass.forest`
+- `road.dirt`
+- `water.forest_stream`
+- `ground.snow`
+- `road.stone`
+
+Le Material Registry transforme ces identifiants en description visuelle versionnée.
+
+Changer `road.dirt` en `road.stone` ne modifie pas la trajectoire ni la largeur de la route.
+
+### 8.3 Composition d'un matériau
+
+Un matériau peut déclarer, selon son type :
+- texture principale ;
+- variantes ;
+- texture de bord ;
+- masque de transition ;
+- decals ;
+- densité de détails ;
+- teinte/contraste ;
+- paramètres d'animation visuelle ;
+- paramètres de répétition/échelle ;
+- fallback procédural explicite.
+
+Aucun de ces paramètres ne devient une règle de collision.
+
+### 8.4 Decals
+
+Les decals sont des détails visuels sans autorité gameplay :
+- feuilles ;
+- racines ;
+- fleurs ;
+- boue ;
+- petites pierres ;
+- fissures ;
+- traces.
+
+Ils sont placés de façon déterministe à partir du monde/seed quand ils sont générés.
+
+Un decal qui doit bloquer ou interagir devient un **objet** du World Model, pas un simple decal.
+
+### 8.5 Objets
+
+Exemples :
+- arbre ;
+- gros rocher ;
+- pont ;
+- maison ;
+- clôture ;
+- coffre.
+
+Ils sont distincts des matériaux de surface et peuvent avoir :
+- visuel ;
+- collision ;
+- interaction ;
+- état persistant.
+
+### 8.6 Transitions
+
+Les transitions entre matériaux sont une responsabilité du renderer/material system, à partir de la géométrie et des materialId.
+
+Exemples :
+- herbe -> terre ;
+- herbe -> sable ;
+- route -> herbe ;
+- eau -> berge ;
+- neige -> roche.
+
+Les transitions ne doivent jamais être codées en plaçant manuellement des carrés obligatoires dans le WorldDocument.
+
+## 9. Personnalisation Builder
+
+Le Builder doit permettre progressivement de modifier :
+- taille de carte ;
+- biome ;
+- matériau de sol ;
+- forme/largeur/matériau des routes ;
+- forme/largeur/matériau des rivières ;
+- ponts ;
+- objets ;
+- densité de decals/décor ;
+- zones de spawn ;
+- points d'intérêt ;
+- interactions ;
+- transitions de cartes ;
+- paramètres de génération autorisés.
+
+Le Builder manipule des données. Le renderer donne un aperçu, mais ne devient jamais l'autorité.
+
+## 10. Génération automatique et Builder partagent le même modèle
+
+Flux cible :
+
+```text
+World Generator ─┐
+                 ├─> WorldDocument -> Exploration runtime
+Builder manuel ──┘
+```
+
+Le générateur peut créer une carte complète ou partielle.
+Le joueur/créateur peut ensuite la modifier dans le Builder.
+
+Aucun système parallèle `GeneratedMap` vs `BuilderMap` n'est autorisé.
+
+## 11. Packs de matériaux extensibles
+
+Les matériaux doivent être regroupables en packs versionnés.
+
+Exemples futurs :
+- Forest Pack ;
+- Snow Pack ;
+- Desert Pack ;
+- Cave Pack ;
+- City Pack ;
+- Lava Pack.
+
+Un pack peut fournir :
+- matériaux de base ;
+- matériaux linéaires ;
+- transitions ;
+- decals ;
+- objets visuels compatibles.
+
+Un pack ne prend jamais l'autorité sur la géométrie ou les collisions.
+
+## 12. Assets : ownership et intégration
+
+Dans le laboratoire, les fichiers peuvent être locaux derrière l'Asset Adapter.
+
+Interdits :
+- hotlink runtime vers un autre dépôt ;
+- chemins `assets/dungeon/` utilisés comme contrat Exploration ;
+- fallback silencieux vers les assets d'un autre module ;
+- copie sans traçabilité de source.
+
+À l'intégration GenSrpG :
+- les identifiants sémantiques restent stables ;
+- l'Asset Adapter local est remplacé par le resolver central ;
+- les fichiers peuvent devenir `capture` ou `common` selon l'audit d'ownership.
+
+## 13. Pas de gameplay important codé en dur
 
 Les valeurs de gameplay doivent venir d'une configuration normalisée :
 - vitesse ;
@@ -137,9 +316,9 @@ Les valeurs de gameplay doivent venir d'une configuration normalisée :
 - rareté ;
 - comportement IA configurable.
 
-Les valeurs du prototype Phase 0 sont des **valeurs techniques de démonstration**. Le premier lot fonctionnel qui en fait des règles de jeu doit les sortir vers une configuration.
+Les valeurs visuelles éditables d'un matériau doivent venir du Material Registry ou du pack, pas être dispersées dans le renderer.
 
-## 9. Moteur pur, UI explicative
+## 14. Moteur pur, UI explicative
 
 Le cœur de mouvement, collision, génération et règles doit rester testable sans DOM.
 
@@ -147,7 +326,7 @@ Le renderer et les contrôles tactiles sont des adapters/UI.
 
 Aucun calcul métier important ne doit être dupliqué dans l'interface.
 
-## 10. Base connue avant tout changement
+## 15. Base connue avant tout changement
 
 Avant chaque chantier :
 1. identifier le dernier SHA GREEN ;
@@ -156,7 +335,7 @@ Avant chaque chantier :
 4. déclarer le périmètre dans `LAB_CURRENT_WORK.md` ;
 5. ne jamais développer directement sur `main`.
 
-## 11. Périmètre déclaré avant codage
+## 16. Périmètre déclaré avant codage
 
 Chaque lot déclare :
 - domaine concerné ;
@@ -171,17 +350,18 @@ Chaque lot déclare :
 
 Si le travail déborde, on arrête et on ouvre un autre lot.
 
-## 12. Tests du vrai chemin
+## 17. Tests du vrai chemin
 
 Un test ne doit pas injecter la réponse attendue à l'endroit même où le raccord doit être vérifié.
 
 Exemples :
 - input -> mouvement -> collision -> position ;
 - seed/config -> generator -> world model ;
+- WorldDocument.materialId -> Material Registry -> rendu ;
 - zone -> encounter -> snapshot ;
 - sauvegarde -> rechargement -> position/monde identiques.
 
-## 13. Tests sentinelles
+## 18. Tests sentinelles
 
 Les fonctions déclarées GREEN deviennent protégées.
 
@@ -196,10 +376,13 @@ Sentinelles minimales à construire progressivement :
 - save/reload ;
 - absence de double autorité de position ;
 - absence de globals interdits ;
+- géométrie indépendante des matériaux ;
+- materialId résolu sans fallback inter-module ;
+- Builder/Generator vers même WorldDocument ;
 - contrat rencontre ;
 - non-interférence avec les autres modules lors de l'intégration.
 
-## 14. Mobile d'abord
+## 19. Mobile d'abord
 
 Le smartphone/PWA est la cible prioritaire :
 - tactile ;
@@ -210,9 +393,17 @@ Le smartphone/PWA est la cible prioritaire :
 - cache ;
 - longue session.
 
+Pour les matériaux :
+- formats compressés adaptés au web, notamment WebP lorsque pertinent ;
+- tailles raisonnables ;
+- culling ;
+- chargement autour de la caméra ;
+- pas de mégatexture de carte complète par défaut ;
+- pas de duplication inutile des mêmes ressources.
+
 Un test Node GREEN ne remplace pas une validation navigateur/mobile lorsque l'UI ou la performance est concernée.
 
-## 15. Régression : pas de rustine
+## 20. Régression : pas de rustine
 
 En cas de régression :
 1. revenir au dernier checkpoint sûr ;
@@ -222,20 +413,20 @@ En cas de régression :
 5. préférer un correctif soustractif ;
 6. conserver le test comme garde permanent.
 
-## 16. Refactor progressif uniquement
+## 21. Refactor progressif uniquement
 
 Pas de big-bang.
 
 Ordre :
 documenter -> protéger par tests -> identifier le propriétaire -> déplacer une responsabilité -> retirer l'ancienne autorité -> comparer -> checkpoint GREEN.
 
-## 17. Diff minimal
+## 22. Diff minimal
 
 Un lot homogène modifie le minimum de fichiers nécessaires.
 
 Un lot qui commence à toucher plusieurs domaines doit être stoppé et recadré.
 
-## 18. Compatibilité et migrations
+## 23. Compatibilité et migrations
 
 Toute donnée persistante est versionnée.
 
@@ -245,7 +436,9 @@ Un changement de schéma fournit si nécessaire :
 - test ancien -> nouveau ;
 - test sauvegarde/reprise.
 
-## 19. Publication / preview
+Les Material Packs et WorldDocuments portent une version explicite.
+
+## 24. Publication / preview
 
 Une CI rouge bloque la publication.
 
@@ -258,7 +451,7 @@ Pour un comportement utilisateur :
 
 La production GenSrpG n'est jamais modifiée depuis ce dépôt.
 
-## 20. Critère de fin d'un chantier
+## 25. Critère de fin d'un chantier
 
 Un chantier n'est GREEN que si :
 - autorité unique ;
@@ -270,7 +463,7 @@ Un chantier n'est GREEN que si :
 - preview fonctionnelle si nécessaire ;
 - test utilisateur ciblé validé si nécessaire.
 
-## 21. Règle finale
+## 26. Règle finale
 
 La charte prime sur la solution la plus rapide.
 
