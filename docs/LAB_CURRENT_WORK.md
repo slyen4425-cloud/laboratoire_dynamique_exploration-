@@ -287,3 +287,33 @@ CI :
 run `36921896270` — **SUCCESS**.
 
 La prochaine preview doit être reconstruite puis son artefact Pages inspecté avant nouveau test utilisateur.
+
+
+## Vérification de la preview réellement publiée — 2026-10-01
+
+Preview :
+- main SHA infra : `3f4d980d8610437cbb3f9317fc728a8948b6057b` ;
+- run Pages : `36922055710` — **SUCCESS** ;
+- artifact Pages : `11192855823`.
+
+L'artefact publié a été téléchargé puis inspecté, pas seulement la branche source.
+
+Fichiers réellement présents dans l'artefact :
+- `bridge_wood_rustic_bank_01.webp` — 40 978 octets — SHA-256 `6f10e16ddd72f0a0ebc284c75226ded340a596eb669fbe024f649a5ac5772218` ;
+- `bridge_stone_medieval_bank_01.webp` — 32 032 octets — SHA-256 `6270a12eace7f618d87ac3d9635dd1d6f3b5168708c9dfff2234b61d7bfbb90d` ;
+- `bridge_wood_rope_bank_01.webp` — 39 262 octets — SHA-256 `c505d65656606b2aabe504815ea91b7f16be777df3aa4406480ee83b4fcd2f63` ;
+- `bridge_stone_moss_bank_01.webp` — 33 858 octets — SHA-256 `7fa7e14c41c144714c30ed4c134783b58ac7a269ec6a2dc6346a7acc6aa3356e`.
+
+Pour chacun :
+- signature RIFF OK ;
+- signature WEBP OK ;
+- taille RIFF déclarée = taille physique réelle.
+
+L'artefact contient également :
+- `cacheRevision: 'bridge-assets-v1-binary-repair'` dans le loader WorldObject ;
+- aucun `drawBridgeFallback` ;
+- aucun dessin procédural concurrent dans le renderer WorldObject.
+
+Conclusion technique :
+la preview publiée contient désormais les quatre binaires complets avec une seule autorité visuelle.
+La dernière gate restante est la validation smartphone utilisateur.
