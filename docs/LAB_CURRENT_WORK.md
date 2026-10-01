@@ -148,3 +148,40 @@ Preview smartphone :
 - rendu forêt/route/rivière/transitions inchangé.
 
 Aucun checkpoint GREEN Bridge v1 avant validation utilisateur.
+
+
+## Retour utilisateur — 2026-10-01
+Le pont fonctionne, mais le passage n'est pas toujours fluide :
+- sensation d'accrochage ;
+- parfois impression que le pont n'est pas parfaitement fixé ;
+- problème surtout lorsque le pion n'est pas parfaitement centré.
+
+## Régression reproduite
+Un test dédié a été ajouté avec un passage légèrement décentré.
+
+Avant correction :
+- test `off-center bridge crossing` : FAIL ;
+- CI run `36905731666` : FAILURE attendue.
+
+Cause confirmée :
+le corridor traversable était traité comme une zone dans laquelle **tout le cercle du pion** devait tenir.
+Avec un pont visuel de 96 px et un pion de 36 px de diamètre, la largeur de centre réellement utilisable devenait trop étroite, provoquant des accroches invisibles.
+
+## Correction
+Le contrat est clarifié :
+**le traversal corridor représente désormais la zone autorisée pour le centre de l'entité.**
+
+Conséquences :
+- plus de double réduction par le rayon du pion ;
+- passage légèrement décentré accepté tant que le centre reste dans le corridor ;
+- la rivière reste bloquante hors corridor ;
+- aucun état caché/hystérésis ;
+- aucun élargissement global de rivière ;
+- aucune dépendance au sprite.
+
+Tests après correction :
+- run `36905799154` : SUCCESS ;
+- run `36905806613` : SUCCESS ;
+- regression off-center : GREEN.
+
+Nouvelle validation smartphone requise avant checkpoint GREEN Bridge v1.
