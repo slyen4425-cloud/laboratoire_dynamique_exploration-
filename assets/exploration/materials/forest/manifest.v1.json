@@ -2,62 +2,81 @@
   "schemaVersion": 1,
   "packId": "forest-core-v1",
   "profile": "mobile-test-128",
+  "ownership": "exploration-material-pack",
+  "generatedAt": "2026-10-01",
+  "purpose": "Material Pack v1 mobile visual validation; not final production resolution.",
   "files": [
     {
       "path": "assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp",
       "sha256": "40bce93b48bd3bf262dd7d71baba5670fa8ee101e80d66ceba7c1dfbdaab2040",
       "bytes": 3056,
       "width": 128,
-      "height": 128
+      "height": 128,
+      "assetId": "texture.grass.forest.base.01",
+      "role": "surface-base"
     },
     {
       "path": "assets/exploration/materials/forest/surfaces/grass_forest_base_02.webp",
       "sha256": "a52911093e30e1077855e4458af6942d8000d4cea06e809d789d7bfa9c304918",
       "bytes": 3050,
       "width": 128,
-      "height": 128
+      "height": 128,
+      "assetId": "texture.grass.forest.base.02",
+      "role": "surface-variant"
     },
     {
       "path": "assets/exploration/materials/forest/paths/road_dirt_base_01.webp",
       "sha256": "da5db5508b674b9173fb9ed21dc23a54458037ca827e73735b373989b8ff5f5c",
       "bytes": 2330,
       "width": 128,
-      "height": 128
+      "height": 128,
+      "assetId": "texture.road.dirt.center.01",
+      "role": "path-center"
     },
     {
       "path": "assets/exploration/materials/forest/water/water_forest_stream_base_01.webp",
       "sha256": "a3d5ddeafbb3fa2904ec42103bd6f1fe68bab3509111e5c2d1baa42a0a793f29",
       "bytes": 3462,
       "width": 128,
-      "height": 128
+      "height": 128,
+      "assetId": "texture.water.forest_stream.center.01",
+      "role": "water-center"
     },
     {
       "path": "assets/exploration/materials/forest/transitions/road_dirt_to_grass_forest_edge_01.webp",
       "sha256": "7308795316d1878906dcf6ec04c4cb3834d01453256afe4b1c1cbbe9edf20c01",
       "bytes": 6366,
       "width": 192,
-      "height": 64
+      "height": 64,
+      "assetId": "transition.road.dirt_to_grass_forest.edge.01",
+      "role": "path-transition"
     },
     {
       "path": "assets/exploration/materials/forest/transitions/water_forest_stream_to_grass_forest_bank_01.webp",
       "sha256": "83499df8144d7af456543e313e63783144c6d89d9cc07458cd79c49f85008e15",
       "bytes": 5476,
       "width": 192,
-      "height": 64
+      "height": 64,
+      "assetId": "transition.water.forest_stream_to_grass_forest.bank.01",
+      "role": "water-bank-transition"
     },
     {
       "path": "assets/exploration/materials/forest/decals/leaves_forest_floor_decal_01.webp",
       "sha256": "f426c0e5cf93544ebd1499cb5b41f35cf0b9b4a508b653ceaefd4afcbb66acfb",
       "bytes": 12294,
       "width": 128,
-      "height": 128
+      "height": 128,
+      "assetId": "decal.forest.leaves.01",
+      "role": "decal"
     },
     {
       "path": "assets/exploration/materials/forest/decals/roots_forest_floor_decal_01.webp",
       "sha256": "2e50c2d8cb7d77727a4d7ea23418ecbdc44722455e52e0967f478c815aa11bd1",
       "bytes": 8930,
       "width": 128,
-      "height": 128
+      "height": 128,
+      "assetId": "decal.forest.roots.01",
+      "role": "decal"
     }
   ]
 }
