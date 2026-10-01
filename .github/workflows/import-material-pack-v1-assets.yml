@@ -6,6 +6,7 @@ on:
       - work/exploration-material-pack-v1-2026-10-01
     paths:
       - '.import/material-pack-v1/**'
+      - '.github/workflows/import-material-pack-v1-assets.yml'
 
 permissions:
   contents: write
@@ -24,8 +25,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .import/material-pack-v1/part-*.txt > /tmp/material-pack-v1.b64
+          cat             .import/material-pack-v1/part-000.txt             .import/material-pack-v1/part-001.txt             .import/material-pack-v1/part-002.txt             .import/material-pack-v1/part-003.txt             .import/material-pack-v1/part-004a.txt             .import/material-pack-v1/part-004b.txt             .import/material-pack-v1/part-005.txt             > /tmp/material-pack-v1.b64
+          test "$(wc -c < /tmp/material-pack-v1.b64)" -eq 63592
           base64 -d /tmp/material-pack-v1.b64 > /tmp/material-pack-v1.zip
+          echo "d2010f05942f8af93c12b3d47017a6e26a20b22bdf051eb3f708151fd46c1983  /tmp/material-pack-v1.zip" | sha256sum -c -
           unzip -o /tmp/material-pack-v1.zip -d .
 
       - name: Verify manifest hashes
