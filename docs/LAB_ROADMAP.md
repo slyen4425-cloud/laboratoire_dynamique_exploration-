@@ -112,15 +112,25 @@ Le Builder et le World Generator utilisent le même format de carte.
 - spawns par biome/zone ;
 - comportement piloté par config.
 
-## Phase 6 — Interactions
+## Phase 6 — World Objects, interactions et Areas
 
-- PNJ ;
+- WorldObject transformable ;
+- ponts orientables/scalables ;
 - objets ;
+- PNJ ;
 - coffres ;
-- portes ;
-- bâtiments ;
-- transitions entre cartes ;
+- bâtiments extérieurs ;
+- WorldArea intérieures ;
+- Door/Portal ;
+- escaliers via Portal ;
+- grottes via Portal ;
+- transitions entre Areas sans reload ;
 - événements persistants.
+
+Critère :
+- Builder peut modifier transform des objets ;
+- pont traversable sans supprimer la rivière ;
+- bâtiments/intérieurs utilisent un seul contrat WorldArea/Portal.
 
 ## Phase 7 — Encounter Bridge
 
