@@ -174,3 +174,24 @@ test('architecture sentinel: WorldDocument owns semantic bridge ids only', async
     true
   );
 });
+
+
+test('architecture sentinel: bridge renderer has no alternate visual fallback authority', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/world-object-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('drawBridgeFallback'), false);
+  assert.equal(renderer.includes('fillRect('), false);
+});
+
+test('architecture sentinel: bootstrap waits for required WorldObject visuals', async () => {
+  const main = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(main.includes('await worldObjectImageLoader.load'), true);
+  assert.equal(main.includes('WorldObject assets unavailable'), true);
+});
