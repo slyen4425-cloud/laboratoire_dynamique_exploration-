@@ -9,47 +9,72 @@ export function createImageAssetLoader({
   const slots = new Map();
   let disposed = false;
 
-  function load(assetIds) {
-    if (disposed) return;
+  function loadOne(assetId) {
+    if (slots.has(assetId)) {
+      return slots.get(assetId).promise;
+    }
 
-    for (const assetId of Array.isArray(assetIds) ? assetIds : []) {
-      if (slots.has(assetId)) continue;
+    const asset = resolveAsset(assetId);
 
-      const asset = resolveAsset(assetId);
-      if (!asset) {
-        slots.set(assetId, Object.freeze({
-          assetId,
-          asset: null,
-          image: null,
-          state: 'missing'
-        }));
-        continue;
-      }
-
-      const image = imageFactory();
+    if (!asset) {
       const slot = {
         assetId,
-        asset,
-        image,
-        state: 'loading'
+        asset: null,
+        image: null,
+        state: 'missing',
+        promise: null
       };
 
+      slot.promise = Promise.resolve(slot);
+      slots.set(assetId, slot);
+      return slot.promise;
+    }
+
+    const image = imageFactory();
+    const slot = {
+      assetId,
+      asset,
+      image,
+      state: 'loading',
+      promise: null
+    };
+
+    slot.promise = new Promise((resolve) => {
       image.onload = () => {
         if (!disposed) slot.state = 'ready';
+        resolve(slot);
       };
 
       image.onerror = () => {
         if (!disposed) slot.state = 'error';
+        resolve(slot);
       };
+    });
 
-      image.src = asset.path;
-      slots.set(assetId, slot);
+    image.src = asset.path;
+    slots.set(assetId, slot);
+    return slot.promise;
+  }
+
+  function load(assetIds) {
+    if (disposed) {
+      return Promise.resolve(status());
     }
+
+    const ids = Array.isArray(assetIds)
+      ? [...new Set(assetIds.filter((id) => typeof id === 'string' && id.trim()))]
+      : [];
+
+    return Promise.all(ids.map(loadOne)).then(() => status());
   }
 
   function get(assetId) {
     const slot = slots.get(assetId);
     return slot?.state === 'ready' ? slot.image : null;
+  }
+
+  function state(assetId) {
+    return slots.get(assetId)?.state ?? 'unloaded';
   }
 
   function status() {
@@ -80,6 +105,7 @@ export function createImageAssetLoader({
   return Object.freeze({
     load,
     get,
+    state,
     status,
     dispose
   });
