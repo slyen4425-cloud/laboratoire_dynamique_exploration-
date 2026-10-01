@@ -3,200 +3,88 @@
 Date : 2026-10-01
 
 ## Chantier actif
-Material Pack v1 — contrat de matériaux personnalisables.
+Transition + Decals v1 — raccord visuel organique du Material Pack.
 
 ## Branche
-`work/exploration-material-pack-v1-2026-10-01`
+`work/exploration-transition-decals-v1-2026-10-01`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-material-pack-v1-2026-10-01`
+`checkpoint/exploration-start-transition-decals-v1-2026-10-01`
 
 ## SHA de base
-`795c22552abab14d8d7d6ae1da076ae62395e997`
+`6da88bae513895510597bf9260293ac7b5c9775e`
 
-## Dernier checkpoint GREEN
-`checkpoint/exploration-world-surface-model-v1-green-2026-10-01`
+## Dépendance
+Ce lot part du candidat Material Pack v1, non encore checkpoint GREEN fonctionnel.
+Il reste donc dépendant de la validation visuelle finale du parent.
 
 ## État gelé
-World Surface Model v1 :
-- sol de base indépendant ;
-- route = points X/Y + largeur + materialId ;
-- rivière = points X/Y + largeur + materialId ;
-- aucune grille autoritaire ;
-- collisions séparées ;
-- caméra/déplacement validés.
+- World Surface Model v1 ;
+- géométrie routes/rivières ;
+- largeur routes/rivières ;
+- mouvement ;
+- collisions ;
+- caméra ;
+- Material Registry ;
+- Asset Adapter ;
+- assets locaux du pack forêt.
 
-La géométrie ne doit pas être modifiée dans ce lot.
+Aucune de ces autorités ne doit être modifiée.
 
 ## Objectif
-Créer le système qui transforme un `materialId` en apparence personnalisable, sans donner d'autorité gameplay aux textures.
+Appliquer proprement :
+- transition `road.dirt -> grass.forest` ;
+- berge `water.forest_stream -> grass.forest` ;
+- decals feuilles/racines sur le sol forêt.
 
-## Matériaux pilotes
-- `grass.forest`
-- `road.dirt`
-- `water.forest_stream`
+## Principe de rendu
+Les assets de transition ne sont pas étirés en une image unique sur toute la route/rivière.
 
-## Périmètre
-- Material Pack schemaVersion 1 ;
-- Material Registry ;
-- trois matériaux pilotes ;
-- paramètres visuels versionnés ;
-- support des références texture/variants/edge/decals/transitions dans le contrat ;
-- renderer piloté par le registre au lieu de styles codés en dur ;
-- tests d'indépendance géométrie/matériau.
+Le renderer :
+1. échantillonne la courbe déjà validée ;
+2. calcule tangente + longueur cumulée ;
+3. déroule la texture de transition le long de la courbe par petits segments ;
+4. dessine ensuite le centre texturé de la route/rivière ;
+5. place les decals de façon déterministe dans le monde.
 
-## Personnalisation cible
-Un matériau peut définir :
-- texture/base asset ;
-- variantes ;
-- edge asset/mask ;
-- decals ;
-- densité ;
-- échelle ;
-- teinte/couleurs ;
-- répétition ;
-- paramètres visuels d'animation ;
-- fallback procédural explicite.
+La géométrie reste en lecture seule.
 
-Le Builder pourra changer `materialId` et les paramètres autorisés sans redessiner la géométrie.
-
-## Propriétaires
-- géométrie : World Surface Model ;
-- materialId dans le monde : WorldDocument ;
-- apparence : Material Registry ;
-- fichiers : Asset Adapter ;
-- pixels : Renderer ;
-- collisions : Collision World.
+## Decals
+- placement déterministe ;
+- seed visuel dérivé des coordonnées monde ;
+- taille/rotation/opacité configurées dans le Material Pack ;
+- jamais de collision ;
+- jamais d'interaction ;
+- dessin avant route/rivière pour que celles-ci restent prioritaires visuellement.
 
 ## Fichiers autorisés
-- `src/materials/` ;
-- `src/assets/` pour résolution sémantique locale ;
 - `src/render/surface-renderer.js` ;
-- `src/main.js` uniquement pour installation explicite de l'Asset Adapter/loader ;
-- `assets/exploration/materials/forest/` ;
+- `src/render/path-ribbon.js` ;
+- `src/materials/material-pack-v1.js` ;
 - tests ;
 - documentation.
 
-## Extension de périmètre validée par l'utilisateur — 2026-10-01
-L'utilisateur a explicitement demandé de générer, nommer et intégrer les textures nécessaires au test de Material Pack v1.
-
-Cette extension reste homogène au même domaine **Material Pack / apparence**, sans modifier la géométrie, les collisions ou le gameplay.
-
-Assets pilotes autorisés :
-- 2 bases `grass.forest` ;
-- 1 base `road.dirt` ;
-- 1 base `water.forest_stream` ;
-- 1 transition route -> herbe ;
-- 1 berge eau -> herbe ;
-- 2 decals forêt.
-
 ## Hors périmètre
-- import des anciennes dalles forêt ;
-- Builder UI ;
+- nouveaux assets ;
+- ponts ;
+- bâtiments ;
+- Builder ;
 - World Generator ;
-- modification des routes/rivières ;
 - collisions ;
-- ponts/bâtiments ;
+- gameplay ;
+- modification du World Surface Model ;
 - autre dépôt.
 
 ## Tests requis
-- les 3 ids se résolvent ;
-- id inconnu = erreur/fallback explicite, jamais autre module ;
-- matériau immutable/normalisé ;
-- changer materialId ne modifie pas points/largeur ;
-- renderer ne modifie pas World Surface Model ;
+- sampling de courbe déterministe ;
+- ruban conserve ordre/longueur sans écrire le monde ;
+- layout decals déterministe ;
+- Material Pack reste sémantique ;
 - tests historiques GREEN ;
 - CI GREEN ;
-- preview mobile avant checkpoint GREEN si rendu modifié.
+- preview mobile.
 
-## Étape suivante
-Après contrat/code GREEN :
-- preview des trois matériaux ;
-- validation visuelle/ergonomique ;
-- ensuite mini Builder Surface sur un lot séparé.
+## Critère de sortie
+Routes/rivières doivent recevoir leurs transitions sans cassure visuelle majeure, les decals doivent enrichir le sol sans l'envahir, et déplacement/camera/collisions doivent rester inchangés.
 
-
-## État technique — 2026-10-01
-
-Material Pack v1 est raccordé au runtime :
-- `grass.forest` -> kind `surface` ;
-- `road.dirt` -> kind `path` ;
-- `water.forest_stream` -> kind `water`.
-
-Le Surface Renderer exige désormais un Material Registry.
-
-Le renderer ne possède plus les identifiants sémantiques des trois matériaux.
-
-## Assets artistiques
-
-Les 8 assets pilotes générés sont importés localement sous :
-`assets/exploration/materials/forest/`.
-
-Profil actuel :
-`mobile-test-128` — volontairement léger pour la validation smartphone, pas une résolution de production finale.
-
-Organisation :
-- `surfaces/grass_forest_base_01.webp` ;
-- `surfaces/grass_forest_base_02.webp` ;
-- `paths/road_dirt_base_01.webp` ;
-- `water/water_forest_stream_base_01.webp` ;
-- `transitions/road_dirt_to_grass_forest_edge_01.webp` ;
-- `transitions/water_forest_stream_to_grass_forest_bank_01.webp` ;
-- `decals/leaves_forest_floor_decal_01.webp` ;
-- `decals/roots_forest_floor_decal_01.webp`.
-
-Traçabilité :
-- `manifest.v1.json` versionné ;
-- SHA-256 de chaque binaire ;
-- dimensions et taille ;
-- assetId sémantique ;
-- rôle ;
-- ownership Exploration Material Pack.
-
-Import :
-- workflow one-shot uniquement ;
-- archive SHA-256 contrôlée ;
-- chaque binaire contrôlé contre le manifeste ;
-- bootstrap et workflow temporaire supprimés après import ;
-- import final run `36894732106` — SUCCESS.
-
-Raccord runtime :
-- Material Pack référence uniquement des assetIds sémantiques ;
-- Material Asset Adapter est seul propriétaire des chemins physiques ;
-- loader explicite avec `load/get/status/dispose` ;
-- texture herbe active sur la surface ;
-- texture terre active au centre de la route ;
-- texture eau active au centre de la rivière ;
-- fallback procédural conservé si une image n'est pas prête.
-
-Les assets de transition route/herbe, berge eau/herbe et les deux decals sont **enregistrés et chargés**, mais leur application géométrique finale est volontairement reportée :
-- transition courbe route -> herbe ;
-- berge courbe ;
-- placement déterministe des decals.
-Ils ne seront pas plaqués artificiellement sur la géométrie avant le lot renderer correspondant.
-
-Aucune ancienne dalle forêt n'a été réintroduite et aucun hotlink inter-dépôt n'est utilisé.
-
-## Garanties testées
-
-- les 3 ids se résolvent ;
-- id inconnu -> `null` ou erreur explicite ;
-- aucun fallback silencieux ;
-- kind contrôlé ;
-- définitions immutables ;
-- changement de materialId sans changement de géométrie ;
-- renderer sans materialId sémantique codé en dur ;
-- material system sans hotlink vers Zombicide-40k ;
-- tests historiques toujours GREEN.
-
-CI contrat Material Pack :
-run `36884913815` — SUCCESS.
-
-CI raccord assets/textures :
-run `36895148817` — SUCCESS.
-
-## Validation restante
-
-Une preview mobile est déployée afin de vérifier l'absence de régression visuelle/runtime.
-
-Le checkpoint GREEN Material Pack v1 reste en attente de cette validation.
+Aucun checkpoint GREEN fonctionnel avant validation smartphone.
