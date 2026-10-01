@@ -77,3 +77,15 @@ test('changing materialId does not change route geometry', () => {
   assert.deepEqual(dirt.routes[0].points, stone.routes[0].points);
   assert.notEqual(dirt.routes[0].materialId, stone.routes[0].materialId);
 });
+
+
+test('forest material owns configurable decal rendering values', () => {
+  const registry = createMaterialRegistry(materialPackV1);
+  const grass = registry.require('grass.forest', 'surface');
+
+  assert.equal(grass.render.decalSpacing, 230);
+  assert.equal(grass.render.decalDensity, 0.42);
+  assert.equal(grass.render.decalMinSize, 48);
+  assert.equal(grass.render.decalMaxSize, 82);
+  assert.equal(grass.render.decalOpacity, 0.36);
+});
