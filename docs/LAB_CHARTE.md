@@ -463,7 +463,115 @@ Un chantier n'est GREEN que si :
 - preview fonctionnelle si nécessaire ;
 - test utilisateur ciblé validé si nécessaire.
 
-## 26. Règle finale
+## 26. World Objects transformables
+
+Les objets placés dans le monde utilisent un contrat commun versionné.
+
+Un WorldObject transformable expose au minimum :
+- `id` ;
+- `kind` ;
+- position monde `x/y` ;
+- rotation explicite ;
+- `scaleX/scaleY` ;
+- taille logique indépendante des pixels ;
+- référence visuelle sémantique optionnelle ;
+- données gameplay explicites si nécessaire.
+
+Le Builder doit pouvoir modifier position, rotation et scale sans réécrire l'asset.
+
+La collision ne se déduit jamais du sprite.
+
+### 26.1 Pont
+
+Un pont est un WorldObject, pas une texture de rivière.
+
+Il possède :
+- transform ;
+- taille logique ;
+- visuel ;
+- corridor traversable ;
+- liste explicite des obstacles qu'il peut franchir.
+
+La rivière continue d'exister sous le pont.
+Le pont n'annule jamais globalement un type d'obstacle.
+
+Un pont peut être orienté et scalé.
+Le corridor traversable suit le même transform normalisé, avec éventuellement un inset/ratio propre pour conserver des rambardes non traversables.
+
+### 26.2 Contrôles Builder des objets
+
+Le Builder doit pouvoir exposer pour les objets compatibles :
+- déplacement X/Y ;
+- rotation ;
+- scale uniforme si souhaité ;
+- scale longueur/largeur séparé ;
+- duplication ;
+- changement d'assetId ;
+- suppression.
+
+Les plages min/max de scale doivent être normalisées/configurables, pas cachées dans l'UI.
+
+## 27. WorldArea, bâtiments et Portals
+
+Le modèle v1 validé pour les intérieurs est :
+
+```text
+WorldArea extérieure
+       |
+   Door / Portal
+       |
+       v
+WorldArea intérieure
+```
+
+Un bâtiment extérieur est un WorldObject placé dans une Area.
+Son intérieur est une autre WorldArea.
+
+Une porte/entrée utilise un Portal explicite contenant notamment :
+- sourceAreaId ;
+- source trigger/anchor ;
+- targetAreaId ;
+- targetSpawnId ;
+- transition visuelle éventuelle.
+
+Même mécanisme pour :
+- maison ;
+- boutique ;
+- centre de soin ;
+- grotte ;
+- étage ;
+- cave ;
+- tour ;
+- sortie vers une autre zone.
+
+Le changement d'Area ne recharge jamais la page et ne crée pas un nouveau module.
+
+### 27.1 Retour exact
+
+L'état Exploration conserve au minimum :
+- `currentAreaId` ;
+- position X/Y dans l'Area courante.
+
+Un Portal de retour replace le joueur sur un spawn/anchor explicite associé à la sortie.
+
+### 27.2 Structures sans intérieur séparé
+
+Les structures ouvertes peuvent rester dans la même Area :
+- pont ;
+- ruines ouvertes ;
+- campement ;
+- kiosque ;
+- éléments de décor traversables ou semi-ouverts.
+
+On ne crée pas une Area séparée sans besoin réel.
+
+### 27.3 Pas de système intérieur concurrent en v1
+
+Le laboratoire n'ajoute pas en parallèle un second système général de toiture qui révèle un intérieur seamless dans la même Area.
+
+Un tel mode pourrait être étudié plus tard comme capacité spécialisée, mais il ne doit pas concurrencer le contrat WorldArea/Portal tant qu'un besoin concret ne le justifie pas.
+
+## 28. Règle finale
 
 La charte prime sur la solution la plus rapide.
 
