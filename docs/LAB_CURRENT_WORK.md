@@ -90,3 +90,61 @@ Aucune analyse de pixel/sprite.
 
 ## Critère de sortie
 Un pont de test visible, tourné/scalé depuis les données du WorldObject, permet de traverser la rivière uniquement sur son corridor, sans modifier la rivière ni les systèmes GREEN précédents.
+
+
+## État technique — 2026-10-01
+
+Implémenté :
+- `WorldObject schemaVersion 1` ;
+- type `bridge` ;
+- transform `x/y/rotationDeg/scaleX/scaleY` ;
+- taille logique `length/width` indépendante des pixels ;
+- assetId visuel optionnel ;
+- corridor traversable orienté ;
+- ratios de corridor séparés du visuel ;
+- liste `overridesObstacleIds` explicite ;
+- rendu procédural bois de test ;
+- culling du bridge ;
+- rivière conservée comme obstacle ;
+- Collision World autorise le passage uniquement à l'intérieur du corridor du pont.
+
+Pont de démonstration :
+- centre : x=1190, y=805 ;
+- rotation : 90° ;
+- longueur logique : 170 ;
+- largeur logique : 96 ;
+- scale X/Y : 1 / 1 ;
+- obstacle franchi : `forest-stream-collision`.
+
+## Garanties
+- aucun pixel/sprite n'est lu pour décider la collision ;
+- renderer ne possède aucune règle de passage ;
+- le pont ne désactive pas globalement les rivières ;
+- un autre obstacle non référencé reste bloquant ;
+- rotation et scale sont normalisés dans le WorldObject ;
+- l'UI Builder future pourra écrire ces valeurs dans le document puis normaliser.
+
+## Tests
+CI :
+run `36904615141` — SUCCESS.
+
+Tests ajoutés :
+- rotation 450° -> 90° normalisée ;
+- scale indépendant X/Y ;
+- limites de scale centralisées ;
+- dimensions visuelles/traversables dérivées des données logiques ;
+- passage orienté ;
+- override seulement de l'obstacle référencé ;
+- mouvement réel à travers une rivière via un pont ;
+- sentinelles renderer/collision.
+
+## Test manuel requis
+Preview smartphone :
+- pont visible sur la rivière vers x=1190 / y=805 ;
+- orientation verticale cohérente avec la traversée ;
+- possibilité de traverser la rivière en restant dans la largeur du pont ;
+- impossibilité de traverser la rivière à côté du pont ;
+- déplacement/caméra fluides ;
+- rendu forêt/route/rivière/transitions inchangé.
+
+Aucun checkpoint GREEN Bridge v1 avant validation utilisateur.
