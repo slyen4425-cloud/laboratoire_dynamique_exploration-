@@ -14,7 +14,10 @@ test('exploration config exposes the validated Phase 0 defaults', () => {
   assert.equal(config.movement.maxSpeed, 230);
   assert.equal(config.input.deadzone, 0.05);
   assert.equal(config.simulation.maxDeltaSeconds, 0.033);
-  assert.equal(config.render.terrainTileSize, 96);
+  assert.equal(config.render.terrainPatchSize, 176);
+  assert.equal(config.render.terrainPatchSpacing, 118);
+  assert.equal(config.render.terrainPatchOpacity, 0.62);
+  assert.equal(config.render.groundDetailSpacing, 180);
 });
 
 test('custom exploration config wins over defaults', () => {
@@ -23,14 +26,22 @@ test('custom exploration config wins over defaults', () => {
     movement: { maxSpeed: 310 },
     input: { deadzone: 0.12 },
     simulation: { maxDeltaSeconds: 0.02 },
-    render: { terrainTileSize: 144 }
+    render: {
+      terrainPatchSize: 210,
+      terrainPatchSpacing: 132,
+      terrainPatchOpacity: 0.7,
+      groundDetailSpacing: 220
+    }
   });
 
   assert.equal(config.player.radius, 24);
   assert.equal(config.movement.maxSpeed, 310);
   assert.equal(config.input.deadzone, 0.12);
   assert.equal(config.simulation.maxDeltaSeconds, 0.02);
-  assert.equal(config.render.terrainTileSize, 144);
+  assert.equal(config.render.terrainPatchSize, 210);
+  assert.equal(config.render.terrainPatchSpacing, 132);
+  assert.equal(config.render.terrainPatchOpacity, 0.7);
+  assert.equal(config.render.groundDetailSpacing, 220);
 });
 
 test('invalid exploration config falls back safely', () => {
@@ -39,14 +50,22 @@ test('invalid exploration config falls back safely', () => {
     movement: { maxSpeed: -1 },
     input: { deadzone: 2 },
     simulation: { maxDeltaSeconds: 1 },
-    render: { terrainTileSize: 12 }
+    render: {
+      terrainPatchSize: 12,
+      terrainPatchSpacing: 10,
+      terrainPatchOpacity: 2,
+      groundDetailSpacing: 20
+    }
   });
 
   assert.equal(config.player.radius, 18);
   assert.equal(config.movement.maxSpeed, 230);
   assert.equal(config.input.deadzone, 0.05);
   assert.equal(config.simulation.maxDeltaSeconds, 0.033);
-  assert.equal(config.render.terrainTileSize, 96);
+  assert.equal(config.render.terrainPatchSize, 176);
+  assert.equal(config.render.terrainPatchSpacing, 118);
+  assert.equal(config.render.terrainPatchOpacity, 0.62);
+  assert.equal(config.render.groundDetailSpacing, 180);
 });
 
 test('normalize removes diagonal speed boost', () => {
