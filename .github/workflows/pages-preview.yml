@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-v1-snagfix
+# preview-revision: bridge-v1-snagfix-v2
 
 on:
   push:
