@@ -39,6 +39,13 @@ export function normalizeExplorationConfig(raw = {}) {
         explorationDefaults.simulation.maxDeltaSeconds,
         { min: 0.001, max: 0.25 }
       )
+    },
+    render: {
+      terrainTileSize: finiteNumber(
+        config.render?.terrainTileSize,
+        explorationDefaults.render.terrainTileSize,
+        { min: 48, max: 512 }
+      )
     }
   };
 }
