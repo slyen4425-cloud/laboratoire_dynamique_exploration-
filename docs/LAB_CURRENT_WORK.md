@@ -88,3 +88,46 @@ La géométrie reste en lecture seule.
 Routes/rivières doivent recevoir leurs transitions sans cassure visuelle majeure, les decals doivent enrichir le sol sans l'envahir, et déplacement/camera/collisions doivent rester inchangés.
 
 Aucun checkpoint GREEN fonctionnel avant validation smartphone.
+
+
+## État technique — 2026-10-01
+
+Implémentation :
+- sampling déterministe des courbes ;
+- ruban texturé segmenté pour route -> herbe ;
+- ruban texturé segmenté pour eau -> berge ;
+- continuité de phase texture par longueur cumulée ;
+- centre route/rivière redessiné par-dessus la transition ;
+- decals feuilles/racines déterministes ;
+- paramètres decals dans Material Pack ;
+- fallback procédural conservé si un asset n'est pas prêt.
+
+Aucune modification :
+- points des routes ;
+- largeur des routes ;
+- points des rivières ;
+- largeur des rivières ;
+- collision ;
+- mouvement ;
+- caméra.
+
+## Tests
+CI finale technique :
+run `36901333447` — SUCCESS.
+
+Sentinelles ajoutées :
+- sampling conserve les endpoints ;
+- distance cumulée croissante ;
+- découpe texture couvre exactement le segment ;
+- layout decal déterministe/borné ;
+- configuration decal protégée.
+
+## Validation restante
+Preview smartphone requise :
+- bord route/herbe naturel ;
+- berge rivière/herbe naturelle ;
+- absence de cassures importantes dans les virages ;
+- decals visibles mais discrets ;
+- aucune baisse de fluidité perceptible.
+
+Aucun checkpoint GREEN fonctionnel avant validation utilisateur.
