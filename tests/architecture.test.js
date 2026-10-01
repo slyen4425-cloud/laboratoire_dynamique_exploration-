@@ -58,3 +58,39 @@ test('architecture sentinel: core remains DOM independent', async () => {
 
   assert.deepEqual(violations, []);
 });
+
+
+test('architecture sentinel: renderer does not own semantic material ids', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/surface-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  const forbiddenIds = [
+    'grass.forest',
+    'road.dirt',
+    'water.forest_stream'
+  ];
+
+  const violations = forbiddenIds.filter((id) => renderer.includes(id));
+  assert.deepEqual(violations, []);
+});
+
+test('architecture sentinel: material system does not hotlink other repositories', async () => {
+  const materialsUrl = new URL('../src/materials/', import.meta.url);
+  const entries = await readdir(materialsUrl, { withFileTypes: true });
+  const violations = [];
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
+    const content = await readFile(new URL(entry.name, materialsUrl), 'utf8');
+
+    if (
+      /raw\.githubusercontent\.com|github\.com\/slyen4425-cloud\/Zombicide-40k|assets\/dungeon\//i.test(content)
+    ) {
+      violations.push(entry.name);
+    }
+  }
+
+  assert.deepEqual(violations, []);
+});
