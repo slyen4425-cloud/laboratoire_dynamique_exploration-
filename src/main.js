@@ -3,6 +3,8 @@ import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
+import { materialPackV1 } from './materials/material-pack-v1.js';
+import { createMaterialRegistry } from './materials/material-registry.js';
 import { demoWorld as world } from './world/demo-world.js';
 
 const canvas = document.querySelector('#game');
@@ -16,7 +18,8 @@ const player = { x: 220, y: 220, radius: config.player.radius };
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
-const surfaceRenderer = createSurfaceRenderer();
+const materialRegistry = createMaterialRegistry(materialPackV1);
+const surfaceRenderer = createSurfaceRenderer({ materialRegistry });
 let last = performance.now();
 
 function resize() {
