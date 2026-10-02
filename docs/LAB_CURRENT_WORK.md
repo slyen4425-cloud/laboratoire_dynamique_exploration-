@@ -829,3 +829,25 @@ CI après correction :
 
 Gate restante :
 nouvelle preview Pages puis validation smartphone qu'une rivière dessinée bloque bien hors pont.
+
+
+## Preview — collision rivière canonique — 2026-10-02
+
+Infrastructure main uniquement :
+- PR #31 ;
+- main SHA : `ee116709d49fc85281e49a5402fd0096fccd6ede` ;
+- Pages run : `37041673850` — **SUCCESS** ;
+- artifact Pages : `11242812433`.
+
+Artefact réellement téléchargé et inspecté :
+- `src/core/collision.js` publié contient `circleIntersectsStroke` ;
+- la collision consomme directement `surface.rivers` ;
+- `src/world/demo-world.js` publié ne contient plus `forest-stream-collision` ;
+- le pont de démonstration référence directement `forest-stream`.
+
+Gate restante :
+validation smartphone :
+- eau dessinée bloquante ;
+- hors pont, impossible de traverser ;
+- sur le pont, traversée toujours fluide ;
+- aucune régression zoom / Builder.
