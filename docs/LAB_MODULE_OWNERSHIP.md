@@ -11,6 +11,7 @@
 | Area active | World Area Model | areaId | contenu Area | Shell/renderer invente l'Area |
 | Portals | Portal Model | trigger + cible | changement d'Area intent | location.reload / navigation sauvage |
 | Géométrie surface | World Surface Model | WorldDocument | base/routes/rivières | texture définit géométrie |
+| Traversée surface | Surface Traversal Resolver | géométrie + traversalRuleId + locomotion | passabilité + multiplicateur | Material Registry/renderer décide gameplay |
 | Matériaux | Material Registry | materialId + pack | description visuelle | matériau possède collision |
 | Assets physiques | Asset Adapter / Core Resolver futur | asset ids | URL/resource | chemins inter-module sauvages |
 | Génération | World Generator | seed + config | WorldDocument | renderer génère des règles |
