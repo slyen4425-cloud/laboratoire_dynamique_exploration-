@@ -1,7 +1,14 @@
 const DEFAULT_BASE_MATERIAL = 'grass.forest';
+const DEFAULT_BASE_TRAVERSAL_RULE = 'terrain.ground';
 
 function finite(value) {
   return Number.isFinite(value);
+}
+
+function normalizedString(value, fallback) {
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : fallback;
 }
 
 function normalizePoint(point) {
@@ -19,18 +26,21 @@ function normalizePathItem(item, prefix, index) {
   if (points.length < 2) return null;
 
   const width = finite(item.width) && item.width > 0 ? item.width : 64;
-  const id = typeof item.id === 'string' && item.id.trim()
-    ? item.id.trim()
-    : `${prefix}-${index + 1}`;
-  const materialId =
-    typeof item.materialId === 'string' && item.materialId.trim()
-      ? item.materialId.trim()
-      : prefix === 'river' ? 'water.forest_stream' : 'road.dirt';
+  const id = normalizedString(item.id, `${prefix}-${index + 1}`);
+  const materialId = normalizedString(
+    item.materialId,
+    prefix === 'river' ? 'water.forest_stream' : 'road.dirt'
+  );
+  const traversalRuleId = normalizedString(
+    item.traversalRuleId,
+    prefix === 'river' ? 'terrain.water' : 'terrain.road'
+  );
 
   return Object.freeze({
     id,
     width,
     materialId,
+    traversalRuleId,
     points: Object.freeze(points)
   });
 }
@@ -50,14 +60,16 @@ export function normalizeWorldSurface(raw = {}) {
         .filter(Boolean)
     : [];
 
-  const baseMaterialId =
-    typeof source.baseMaterialId === 'string' && source.baseMaterialId.trim()
-      ? source.baseMaterialId.trim()
-      : DEFAULT_BASE_MATERIAL;
-
   return Object.freeze({
-    version: 1,
-    baseMaterialId,
+    version: 2,
+    baseMaterialId: normalizedString(
+      source.baseMaterialId,
+      DEFAULT_BASE_MATERIAL
+    ),
+    baseTraversalRuleId: normalizedString(
+      source.baseTraversalRuleId,
+      DEFAULT_BASE_TRAVERSAL_RULE
+    ),
     routes: Object.freeze(routes),
     rivers: Object.freeze(rivers)
   });
