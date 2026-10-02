@@ -98,3 +98,62 @@ Sur smartphone :
 - constater les changements immédiatement ;
 - exporter un MapActorVisual v1 valide ;
 - aucune régression Builder existant.
+
+
+## État technique — Map Actor Editor v1 — 2026-10-02
+
+Implémenté :
+- onglet Builder `Acteurs` ;
+- rôles Héros / PNJ / Créature ;
+- aperçu du vrai MapActorVisual sur la map ;
+- déplacement du point d'aperçu au doigt/souris ;
+- point d'aperçu strictement éphémère et non exporté ;
+- hauteur visuelle `targetHeight` ;
+- anchor auto ou override X/Y ;
+- ombre configurable ;
+- miroir gauche/droite ;
+- direction d'aperçu ;
+- idle et mouvement visuels configurables ;
+- test animation fini, sans timer global permanent ;
+- export `MapActorVisual v1` JSON ;
+- import local d'un visuel unique pour aperçu ;
+- import raccordé au même Asset Adapter / Image Loader / Visual Preparer ;
+- aucun renderer Map Actor concurrent.
+
+Correction de contrat :
+- `normalizeMapActorVisual` est maintenant idempotent pour les anchor overrides.
+
+TDD / sentinelles :
+- contrat UI Map Actor Editor ;
+- réutilisation obligatoire de `createMapActorRenderer` ;
+- réutilisation obligatoire de `createMapActorVisualPreparer` ;
+- extension du même resolver d'assets ;
+- absence de collision fictive dans l'aperçu ;
+- sentinelles World Builder historiques toujours GREEN.
+
+CI technique :
+- HEAD publié : `691b5f048d6336b51ca0e49e6f34504a2e626ea1` ;
+- run `37055982923` — **SUCCESS**.
+
+## Preview smartphone — Map Actor Editor v1
+
+Infrastructure uniquement :
+- checkpoint start preview :
+  `checkpoint/exploration-start-preview-map-actor-editor-v1-2026-10-02` ;
+- branche infra :
+  `infra/pages-preview-map-actor-editor-v1-2026-10-02` ;
+- PR #32 ;
+- main SHA : `8471725c1f010578728f8bd71035abd652244dd7` ;
+- Pages run : `37056274018` — **SUCCESS** ;
+- artifact Pages : `11248353296`.
+
+Le workflow Pages checkout explicitement :
+`work/exploration-map-actor-editor-v1-2026-10-02`.
+
+URL :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html`
+
+Gate restante :
+validation smartphone utilisateur de l'onglet Acteurs, de l'aperçu sur map, des réglages et de l'import visuel.
+
+Le lot reste non GREEN jusqu'à cette validation.
