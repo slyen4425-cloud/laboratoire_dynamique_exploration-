@@ -35,6 +35,31 @@ export const materialPackV1 = Object.freeze({
       })
     }),
     Object.freeze({
+      id: 'floor.wood.house',
+      kind: 'surface',
+      label: 'Plancher bois intérieur',
+      assets: Object.freeze({
+        base: null,
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#7d5d3d',
+        variationColors: Object.freeze([
+          'rgba(112,78,47,0.18)',
+          'rgba(151,112,70,0.14)',
+          'rgba(78,54,35,0.12)'
+        ]),
+        detailSpacing: 150,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
       id: 'road.dirt',
       kind: 'path',
       label: 'Chemin de terre',
