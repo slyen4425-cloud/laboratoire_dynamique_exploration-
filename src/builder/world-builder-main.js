@@ -703,7 +703,7 @@ function drawBuilderOverlays(area, document, camera) {
   );
   ctx.setLineDash([]);
 
-  const handleSize = 18 / zoom;
+  const handleSize = (mapTool === 'area-size' ? 28 : 18) / zoom;
   ctx.fillStyle =
     mapTool === 'area-size'
       ? 'rgba(133,225,255,0.98)'
@@ -766,11 +766,16 @@ function drawBuilderOverlays(area, document, camera) {
         object.kind === 'bridge' ? rect.length : rect.width;
       const height =
         object.kind === 'bridge' ? rect.width : rect.height;
+      const handleSize = 18 / zoom;
+      const handleHalf = handleSize / 2;
+      const rotateOffset = 42 / zoom;
+      const rotateRadius = 10 / zoom;
 
       ctx.save();
       ctx.translate(rect.x - camera.x, rect.y - camera.y);
       ctx.rotate(rect.rotation);
-      ctx.strokeStyle = 'rgba(255,236,130,0.95)';
+
+      ctx.strokeStyle = 'rgba(255,236,130,0.98)';
       ctx.lineWidth = 3 / zoom;
       ctx.setLineDash([10 / zoom, 6 / zoom]);
       ctx.strokeRect(
@@ -779,8 +784,66 @@ function drawBuilderOverlays(area, document, camera) {
         width,
         height
       );
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(255,236,130,0.98)';
+      for (const [x, y] of [
+        [-width / 2, -height / 2],
+        [width / 2, -height / 2],
+        [width / 2, height / 2],
+        [-width / 2, height / 2]
+      ]) {
+        ctx.fillRect(
+          x - handleHalf,
+          y - handleHalf,
+          handleSize,
+          handleSize
+        );
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(0, -height / 2);
+      ctx.lineTo(0, -height / 2 - rotateOffset);
+      ctx.strokeStyle = 'rgba(255,189,98,0.98)';
+      ctx.lineWidth = 3 / zoom;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(
+        0,
+        -height / 2 - rotateOffset,
+        rotateRadius,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle = 'rgba(255,189,98,0.98)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(58,38,18,0.95)';
+      ctx.lineWidth = 2 / zoom;
+      ctx.stroke();
+
       ctx.restore();
     }
+  }
+
+  if (mapTool === 'terrain' && hoverWorldPoint) {
+    const brushSize = numberValue($('terrain-brush-size'), 180);
+
+    ctx.beginPath();
+    ctx.arc(
+      hoverWorldPoint.x - camera.x,
+      hoverWorldPoint.y - camera.y,
+      brushSize / 2,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = 'rgba(133,225,255,0.12)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(133,225,255,0.96)';
+    ctx.lineWidth = 3 / zoom;
+    ctx.setLineDash([8 / zoom, 6 / zoom]);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
   const portal = document.portals.find(
