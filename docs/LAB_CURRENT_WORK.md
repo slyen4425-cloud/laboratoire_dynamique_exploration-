@@ -90,3 +90,47 @@ Sur smartphone :
 - pont, bâtiment et Portal restent fonctionnels.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## État technique Map Actor Visual System v1 — 2026-10-02
+
+Implémenté :
+- contrat `MapActorVisual v1` ;
+- mode simple à **un seul assetId** ;
+- rôles visuels `hero / npc / creature` avec tailles automatiques ;
+- Asset Adapter dédié ;
+- analyse alpha pure/testable ;
+- crop automatique des marges transparentes ;
+- suppression automatique d'un fond opaque uniquement s'il est uniforme et identifié de façon sûre ;
+- état explicite `opaque-unresolved` pour un fond complexe non détachable localement ;
+- anchor bas-centre automatique ;
+- ombre automatique ;
+- miroir gauche/droite depuis `facingX` gameplay ;
+- idle et bounce de marche purement visuels sans spritesheet ;
+- préparateur d'image avec cache ;
+- renderer Map Actor sans mutation gameplay ;
+- visuel technique de démonstration unique en SVG transparent ;
+- ancien cercle joueur supprimé dès qu'un MapActorVisual est déclaré.
+
+Autorités :
+- X/Y restent dans l'acteur gameplay ;
+- Collision World reste propriétaire de la collision ;
+- le préparateur ne produit que des pixels/metadata visuels ;
+- le renderer ne possède ni stats, ni IA, ni interaction, ni mouvement.
+
+Tests ajoutés :
+- defaults one-image ;
+- tailles automatiques par rôle ;
+- crop alpha ;
+- fond uniforme retiré ;
+- fond complexe préservé et signalé ;
+- asset sémantique ;
+- miroir/ombre/animation sans mutation acteur ;
+- sentinelles architecture sans seconde autorité ;
+- bootstrap attend chargement + préparation avant runtime.
+
+CI :
+- run `37001394091` — **SUCCESS** sur le HEAD de tests d'architecture.
+
+Prochaine gate :
+publier une preview Pages depuis cette branche puis validation smartphone du héros Map Actor et des régressions historiques.
