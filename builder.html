@@ -24,6 +24,7 @@
       <div class="map-tools" aria-label="Outils directs de carte">
         <button id="map-tool-select" data-map-tool="select" type="button" class="active">Déplacer</button>
         <button id="map-tool-area" data-map-tool="area-size" type="button">Taille Area</button>
+        <button id="map-tool-terrain" data-map-tool="terrain" type="button">Peindre terrain</button>
         <button id="map-tool-route" data-map-tool="route" type="button">Tracer route</button>
         <button id="map-tool-river" data-map-tool="river" type="button">Tracer rivière</button>
       </div>
@@ -84,6 +85,23 @@
         <p class="builder-hint">
           Choisis Route ou Rivière puis dessine directement sur la carte. Le tracé est enregistré dans la surface de la WorldArea.
         </p>
+
+        <div class="terrain-brush-panel">
+          <label>
+            Matériau paysage
+            <select id="terrain-paint-material"></select>
+          </label>
+          <label>
+            Taille pinceau
+            <div class="brush-size-row">
+              <input id="terrain-brush-size" type="range" min="24" max="600" step="4" value="180" />
+              <output id="terrain-brush-size-value" for="terrain-brush-size">180</output>
+            </div>
+          </label>
+          <p class="builder-hint">
+            Active « Peindre terrain » puis glisse sur la map. Le cercle indique exactement le diamètre du pinceau.
+          </p>
+        </div>
 
         <div class="grid-2">
           <label>
@@ -240,6 +258,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-direct-edit"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-gizmos-brush"></script>
 </body>
 </html>
