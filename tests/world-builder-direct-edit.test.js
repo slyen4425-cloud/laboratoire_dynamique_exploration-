@@ -374,3 +374,72 @@ test('Surface Renderer consumes canonical terrain zones before linear paths', as
   assert.match(renderer, /for \(const zone of surface\.zones/);
   assert.match(renderer, /materialRegistry\.require\([\s\S]*zone\.materialId,[\s\S]*'surface'/);
 });
+
+
+test('route and river widths use brush sliders with live values and large water range', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    html,
+    /id="terrain-route-width"[^>]*type="range"[^>]*max="600"/
+  );
+  assert.equal(html.includes('id="terrain-route-width-value"'), true);
+
+  assert.match(
+    html,
+    /id="terrain-river-width"[^>]*type="range"[^>]*max="2400"/
+  );
+  assert.equal(html.includes('id="terrain-river-width-value"'), true);
+
+  assert.match(
+    main,
+    /mapTool === 'terrain' \|\|[\s\S]*mapTool === 'route' \|\|[\s\S]*mapTool === 'river'/
+  );
+  assert.match(main, /terrain-route-width-value/);
+  assert.match(main, /terrain-river-width-value/);
+});
+
+test('very wide river remains canonical through export and import', () => {
+  let draft = createWorldBuilderDraft(demoWorldDocument);
+  const areaId = draft.initialAreaId;
+
+  draft = addSurfacePath(
+    draft,
+    areaId,
+    'river',
+    {
+      width: 1800,
+      materialId: 'water.forest_stream',
+      points: [
+        { x: 200, y: 300 },
+        { x: 800, y: 300 }
+      ]
+    }
+  );
+
+  const validation = validateWorldBuilderDraft(draft);
+  assert.equal(validation.valid, true);
+
+  const river = validation.document.areas
+    .find((area) => area.id === areaId)
+    .surface.rivers.at(-1);
+
+  assert.equal(river.width, 1800);
+
+  const imported = importWorldBuilderDocument(
+    serializeWorldBuilderDraft(draft)
+  );
+  const importedRiver = imported.areas
+    .find((area) => area.id === areaId)
+    .surface.rivers.at(-1);
+
+  assert.equal(importedRiver.width, 1800);
+  assert.deepEqual(importedRiver, river);
+});
