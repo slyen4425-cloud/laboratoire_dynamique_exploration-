@@ -442,3 +442,42 @@ Tests requis :
 - le preview du pinceau existe pour les trois outils ;
 - une Rivière large survit export/import sans modification ;
 - aucune régression du modèle Surface/WorldDocument.
+
+
+## Correction — pinceaux Route / Rivière — 2026-10-02
+
+Régression ergonomique reproduite par sentinelle :
+- commit test `11b99313342f674b11490f5b9817978376d91965` ;
+- CI run `37019467681` — **FAILURE attendue**.
+
+Correction :
+- Route : largeur transformée en slider/pinceau 8 → 600 ;
+- Rivière : largeur transformée en slider/pinceau 8 → 2400 ;
+- valeur numérique visible en direct pour les deux ;
+- le cercle de prévisualisation sur la map affiche maintenant le diamètre réel pour Terrain, Route et Rivière ;
+- modifier la largeur d'un tracé sélectionné met à jour directement la donnée canonique `WorldArea.surface.*[].width` ;
+- aucune donnée parallèle Builder ;
+- Rivière large conservée à l'identique par export/import (test à 1800).
+
+CI après correction :
+- HEAD code : `1d33a76b284024079303d141c55d09c0fc402693` ;
+- run `37019674818` — **SUCCESS**.
+
+## Preview pinceaux Surface — 2026-10-02
+
+Infrastructure main uniquement :
+- PR #26 ;
+- main SHA `fb9f759981e8633ebd80261c1a8f4b5ef4ee3493` ;
+- Pages run `37019818293` — **SUCCESS** ;
+- artifact `11232268381`.
+
+Artefact Pages réellement contrôlé :
+- slider Route présent ;
+- slider Rivière présent ;
+- Rivière max 2400 ;
+- outputs Route/Rivière présents ;
+- script Builder versionné `world-builder-dynamique-ui-v1-surface-brushes` ;
+- logique de prévisualisation Route/Rivière publiée.
+
+Gate restante :
+validation smartphone/tablette utilisateur de la largeur des pinceaux Route/Rivière et d'une grande étendue d'eau.
