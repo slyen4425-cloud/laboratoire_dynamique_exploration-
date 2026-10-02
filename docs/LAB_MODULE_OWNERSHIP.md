@@ -16,6 +16,9 @@
 | Génération | World Generator | seed + config | WorldDocument | renderer génère des règles |
 | Caméra | Camera | position + viewport | transform écran | caméra écrit position monde |
 | Rendu | Renderer | world + materials + camera | pixels | calcul gameplay |
+| Visuel Map Actor | Map Actor Visual Model | assetId + réglages visuels | contrat visuel | posséder x/y/collision/stats |
+| Préparation Map Actor | Map Actor Visual Preparer | image source | visuel préparé | modifier gameplay |
+| Rendu Map Actor | Map Actor Renderer | état acteur + visuel préparé + camera | pixels | écrire état acteur |
 | Input | Input Adapter | tactile/clavier | intent normalisé | déplacement direct |
 | Rencontre | Encounter Controller | world + entités | encounter intent | Combat décide le monde |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
