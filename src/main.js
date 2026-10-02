@@ -17,6 +17,7 @@ import {
   createImageAssetLoader
 } from './assets/image-asset-loader.js?rev=map-actor-visual-v1';
 import {
+  createMapActorAssetResolver,
   resolveMapActorAsset
 } from './assets/map-actor-asset-adapter.js?rev=map-actor-visual-v1';
 import {
@@ -36,7 +37,8 @@ import {
 } from './world/portal-model.js?rev=builder-dynamic-return-v1';
 import { demoWorldDocument } from './world/demo-world.js?rev=builder-dynamic-return-v1';
 import {
-  readWorldBuilderTestHandoff
+  readWorldBuilderTestHandoff,
+  readWorldBuilderTestSession
 } from './builder/world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
 
 const canvas = document.querySelector('#game');
@@ -48,9 +50,16 @@ const stick = document.querySelector('#stick');
 const config = normalizeExplorationConfig();
 const runtimeParams = new URL(document.URL).searchParams;
 const builderTest = runtimeParams.get('builderTest') === '1';
-const builderTestDocument = builderTest
-  ? readWorldBuilderTestHandoff(window.sessionStorage)
+const builderTestSession = builderTest
+  ? readWorldBuilderTestSession(window.sessionStorage)
   : null;
+const builderTestDocument =
+  builderTestSession?.document ??
+  (
+    builderTest
+      ? readWorldBuilderTestHandoff(window.sessionStorage)
+      : null
+  );
 
 if (builderTest && !builderTestDocument) {
   throw new Error(
@@ -81,10 +90,12 @@ const player = {
   viaPortalId: null,
   facingX: 1,
   moving: false,
-  mapVisual: normalizeMapActorVisual({
-    assetId: 'actor.demo.hero.traveler.01',
-    role: 'hero'
-  })
+  mapVisual:
+    builderTestSession?.actorVisual ??
+    normalizeMapActorVisual({
+      assetId: 'actor.demo.hero.traveler.01',
+      role: 'hero'
+    })
 };
 
 const camera = { x: 0, y: 0 };
@@ -135,8 +146,16 @@ const worldObjectRenderer = createWorldObjectRenderer({
   resolveVisualAsset: resolveWorldObjectAsset
 });
 
+const resolveRuntimeMapActorAsset = createMapActorAssetResolver(
+  builderTestSession?.actorAsset
+    ? [builderTestSession.actorAsset]
+    : []
+);
+
 const mapActorImageLoader = createImageAssetLoader({
-  resolveAsset: resolveMapActorAsset,
+  resolveAsset: builderTestSession?.actorAsset
+    ? resolveRuntimeMapActorAsset
+    : resolveMapActorAsset,
   cacheRevision: 'map-actor-visual-v1-2026-10-02'
 });
 const requiredMapActorAssetIds = Object.freeze([
