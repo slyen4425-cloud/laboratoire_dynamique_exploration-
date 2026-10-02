@@ -212,3 +212,44 @@ Gate smartphone :
 6. vérifier que les réglages sont toujours présents.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## Régression — asset Map Actor importé invalide en runtime — 2026-10-02
+
+Retour smartphone utilisateur :
+- écran runtime vide ;
+- message : `Erreur asset Map Actor — voir console` ;
+- survenait après import d'un visuel acteur puis « Tester en jeu ».
+
+Cause racine confirmée :
+- `createImageAssetLoader` ajoutait systématiquement le suffixe de cache `?rev=...` à `asset.path` ;
+- ce comportement est correct pour les chemins de fichiers / URL classiques ;
+- mais il corrompait les sources `data:image/...` transportées par la session de test ;
+- le Builder chargeait l'image sans cache revision, alors que le runtime appliquait une cache revision, d'où la différence de comportement.
+
+Correction :
+- le chargeur partagé reste l'unique autorité de chargement ;
+- `cacheRevision` continue d'être appliquée aux chemins classiques ;
+- aucune révision n'est ajoutée aux sources `data:` ou `blob:` ;
+- aucune exception spécifique n'a été ajoutée dans le runtime ou le Builder.
+
+TDD :
+- reproduction : commit `0e8426d0afdd179f9c961f84ffdd5228adc68049` ;
+- CI de reproduction : run `37059166186` — **FAILURE attendue** ;
+- correction : commit `a5a2a05bac42267c365ebf16696dce5e8a390d7d` ;
+- CI correction : run `37059209076` — **SUCCESS**.
+
+Preview :
+- PR #35 ;
+- main SHA : `1afb3150fd3de9a7bec32e52a4d8799845f8cb0c` ;
+- Pages run : `37059297803` — **SUCCESS** ;
+- artifact : `11249507717`.
+
+Gate smartphone :
+- importer une image acteur ;
+- « Tester en jeu » ;
+- vérifier disparition de l'erreur asset ;
+- vérifier que le bon visuel et ses réglages sont utilisés ;
+- revenir au Builder et vérifier la restauration de session.
+
+Le lot reste non GREEN jusqu'à cette validation.
