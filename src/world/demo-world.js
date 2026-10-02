@@ -64,6 +64,44 @@ export const demoWorld = {
           'forest-stream-collision'
         ]
       }
+    },
+    {
+      id: 'forest-house-01',
+      kind: 'building',
+      transform: {
+        x: 820,
+        y: 930,
+        rotationDeg: 0,
+        scaleX: 1,
+        scaleY: 1
+      },
+      baseSize: {
+        width: 300,
+        height: 300
+      },
+      visual: {
+        assetId: 'object.building.house.fantasy_wood_stone.01'
+      },
+      footprint: {
+        enabled: true,
+        widthRatio: 0.78,
+        heightRatio: 0.62,
+        offsetX: 0,
+        offsetY: -0.08
+      },
+      doorAnchors: [
+        {
+          id: 'main-door',
+          x: 0,
+          y: 0.38
+        }
+      ],
+      portalRefs: [
+        {
+          doorAnchorId: 'main-door',
+          portalId: null
+        }
+      ]
     }
   ]),
   obstacles: [
