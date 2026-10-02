@@ -119,6 +119,7 @@ let lastView = null;
 let mapTool = 'select';
 let pointerSession = null;
 let pinchState = null;
+let hoverWorldPoint = null;
 const activePointers = new Map();
 
 canvas.dataset.tool = mapTool;
@@ -168,7 +169,9 @@ function currentSurfacePathRaw() {
   const items =
     selectedSurfaceKind === 'river'
       ? area.surface?.rivers
-      : area.surface?.routes;
+      : selectedSurfaceKind === 'terrain'
+        ? area.surface?.zones
+        : area.surface?.routes;
 
   return items?.find(
     (item) => item.id === selectedSurfacePathId
@@ -179,6 +182,11 @@ function surfacePathItems(area = currentAreaRaw()) {
   if (!area) return [];
 
   return [
+    ...(area.surface?.zones ?? []).map((item) => ({
+      ...item,
+      kind: 'terrain',
+      key: `terrain:${item.id}`
+    })),
     ...(area.surface?.routes ?? []).map((item) => ({
       ...item,
       kind: 'route',
@@ -1064,7 +1072,7 @@ function activateTab(tabName) {
 }
 
 function setMapTool(tool) {
-  mapTool = ['select', 'area-size', 'route', 'river'].includes(tool)
+  mapTool = ['select', 'area-size', 'terrain', 'route', 'river'].includes(tool)
     ? tool
     : 'select';
   canvas.dataset.tool = mapTool;
@@ -1076,7 +1084,11 @@ function setMapTool(tool) {
     );
   }
 
-  if (mapTool === 'route' || mapTool === 'river') {
+  if (
+    mapTool === 'terrain' ||
+    mapTool === 'route' ||
+    mapTool === 'river'
+  ) {
     activateTab('terrain');
   } else if (mapTool === 'area-size') {
     activateTab('area');
@@ -1196,11 +1208,15 @@ function beginSurfacePath(kind, point) {
   const width =
     kind === 'river'
       ? numberValue($('terrain-river-width'), 72)
-      : numberValue($('terrain-route-width'), 82);
+      : kind === 'terrain'
+        ? numberValue($('terrain-brush-size'), 180)
+        : numberValue($('terrain-route-width'), 82);
   const materialId =
     kind === 'river'
       ? $('terrain-river-material').value
-      : $('terrain-route-material').value;
+      : kind === 'terrain'
+        ? $('terrain-paint-material').value
+        : $('terrain-route-material').value;
 
   draft = addSurfacePath(
     draft,
@@ -1867,7 +1883,11 @@ canvas.addEventListener('pointerdown', (event) => {
 
   canvas.dataset.dragging = 'true';
 
-  if (mapTool === 'route' || mapTool === 'river') {
+  if (
+    mapTool === 'terrain' ||
+    mapTool === 'route' ||
+    mapTool === 'river'
+  ) {
     pointerSession = {
       pointerId: event.pointerId,
       mode: 'pending-draw',
