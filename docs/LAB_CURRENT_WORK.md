@@ -102,3 +102,43 @@ Sur smartphone :
 - aucun matériau visuel ne possède la règle gameplay.
 
 Le lot reste non GREEN jusqu'à validation utilisateur si le comportement est exposé en preview.
+
+
+## État technique — Surface Traversal Rules v1
+
+Implémenté :
+- Surface schema v2 avec `baseTraversalRuleId` ;
+- `traversalRuleId` sur routes et rivières ;
+- Traversal Rule Registry injectable ;
+- modes de locomotion partagés `ground / swim / fly` ;
+- resolver géométrique pur ;
+- route ground = x1.25 via data pack ;
+- eau ground = bloquée ;
+- eau swim = x0.75 ;
+- eau fly = x1.00 ;
+- pont = `terrain.bridge` et override local d'une feature surface explicitement référencée ;
+- migration de lecture de l'ancien champ Bridge `overridesObstacleIds` vers `overridesSurfaceFeatureIds`, sans conserver l'ancien champ dans l'objet normalisé ;
+- suppression du faux obstacle rectangulaire `forest-stream-collision` dans la démo ;
+- Collision World consulte le resolver de traversée ;
+- Movement Core applique le multiplicateur retourné par le resolver ;
+- géométrie commune factorisée dans `core/geometry.js` ;
+- contrôle mobile de démonstration Marche / Nage / Vol ;
+- HUD affiche la règle active et le multiplicateur.
+
+Tests :
+- séparation `materialId` / `traversalRuleId` ;
+- registry configurable ;
+- profil locomotion partagé ;
+- bonus route ;
+- eau bloquée ground ;
+- eau traversable swim/fly ;
+- bridge override local ;
+- vrai mouvement avec multiplicateur ;
+- migration Bridge sans double champ ;
+- sentinelles Material/Renderer/Movement/river authority.
+
+CI technique avant preview :
+- run `37051046607` — **SUCCESS**.
+
+Gate restante :
+publication preview + test smartphone.
