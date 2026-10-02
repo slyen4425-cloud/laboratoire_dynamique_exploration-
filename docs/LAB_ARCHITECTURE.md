@@ -21,7 +21,7 @@ Exploration ne possède ni le Shell, ni les services Core partagés, ni le moteu
 ```text
 World Generator ─┐
                  ├─> WorldDocument
-Builder manuel ──┘       |
+World Builder Dynamique ──┘       |
                          v
                  World Surface Model
                          |
@@ -155,10 +155,10 @@ Convertit l'état en `CaptureEncounterSnapshot v1`.
 Reçoit `CaptureCombatResult v1`.
 Aucun accès arbitraire aux internes du moteur Combat.
 
-### builder/data
+### world-builder-dynamique/data
 Produit ou modifie un WorldDocument validé.
 
-Le Builder peut :
+Le World Builder Dynamique peut :
 - créer à la main ;
 - ouvrir une carte générée ;
 - déplacer des points ;
@@ -349,3 +349,24 @@ Le bâtiment extérieur et son intérieur sont deux responsabilités différente
 Les étages réutilisent exactement le même mécanisme de Portal.
 
 Ce modèle est préféré en v1 à un système général concurrent de toiture dynamique/seamless.
+
+
+## World Builder Dynamique — contrat d'édition des WorldObjects
+
+Le World Builder Dynamique édite les données normalisées du WorldDocument.
+
+Pour un WorldObject compatible, l'éditeur doit pouvoir exposer :
+- `transform.x/y` ;
+- `transform.rotationDeg` ;
+- `transform.scaleX/scaleY` ;
+- `visual.assetId` ;
+- footprint/taille logique ;
+- propriétés d'interaction ;
+- liens Portal lorsqu'ils existent.
+
+Pour un Building WorldObject :
+- le sprite extérieur ne définit pas la collision ;
+- `doorAnchor` est exprimé en coordonnées locales du bâtiment ;
+- le transform du bâtiment transforme aussi la position monde de ses anchors ;
+- le Portal référence l'anchor mais reste une autorité distincte ;
+- changer l'asset visuel ne doit pas modifier footprint, anchor ou Portal.
