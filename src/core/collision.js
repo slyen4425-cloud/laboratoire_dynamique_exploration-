@@ -2,135 +2,37 @@ import {
   bridgeTraversalRect,
   buildingFootprintRect
 } from '../world/world-object-model.js';
+import {
+  clamp,
+  circleFitsOrientedRect,
+  circleIntersectsOrientedRect,
+  circleIntersectsRect,
+  orientedLocalPoint,
+  orientedWorldPoint,
+  pointInOrientedRect
+} from './geometry.js';
+import {
+  defaultTraversalRuleRegistry,
+  resolveBaseSurfaceFeature,
+  resolveSurfaceTraversal
+} from './surface-traversal.js';
 
 const COLLISION_EPSILON = 1e-6;
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(value, max));
-}
+export {
+  circleFitsOrientedRect,
+  circleIntersectsOrientedRect,
+  circleIntersectsRect,
+  pointInOrientedRect
+};
 
-export function circleIntersectsRect(x, y, radius, rect) {
-  const nearestX = clamp(x, rect.x, rect.x + rect.w);
-  const nearestY = clamp(y, rect.y, rect.y + rect.h);
-  const dx = x - nearestX;
-  const dy = y - nearestY;
-  return dx * dx + dy * dy < radius * radius;
-}
-
-function orientedLocalPoint(x, y, rect) {
-  const dx = x - rect.x;
-  const dy = y - rect.y;
-  const cos = Math.cos(-rect.rotation);
-  const sin = Math.sin(-rect.rotation);
-
-  return {
-    x: dx * cos - dy * sin,
-    y: dx * sin + dy * cos
-  };
-}
-
-function orientedWorldPoint(localX, localY, rect) {
-  const cos = Math.cos(rect.rotation);
-  const sin = Math.sin(rect.rotation);
-
-  return {
-    x: rect.x + localX * cos - localY * sin,
-    y: rect.y + localX * sin + localY * cos
-  };
-}
-
-export function pointInOrientedRect(x, y, rect) {
-  if (
-    !rect ||
-    !Number.isFinite(rect.x) ||
-    !Number.isFinite(rect.y) ||
-    !Number.isFinite(rect.rotation) ||
-    !Number.isFinite(rect.length) ||
-    !Number.isFinite(rect.width) ||
-    rect.length <= 0 ||
-    rect.width <= 0
-  ) {
-    return false;
-  }
-
-  const local = orientedLocalPoint(x, y, rect);
-
-  return (
-    Math.abs(local.x) <= rect.length / 2 + COLLISION_EPSILON &&
-    Math.abs(local.y) <= rect.width / 2 + COLLISION_EPSILON
-  );
-}
-
-export function circleIntersectsOrientedRect(x, y, radius, rect) {
-  if (
-    !rect ||
-    !Number.isFinite(rect.x) ||
-    !Number.isFinite(rect.y) ||
-    !Number.isFinite(rect.rotation) ||
-    !Number.isFinite(rect.length) ||
-    !Number.isFinite(rect.width) ||
-    rect.length <= 0 ||
-    rect.width <= 0
-  ) {
-    return false;
-  }
-
-  const local = orientedLocalPoint(x, y, rect);
-  const nearestX = clamp(local.x, -rect.length / 2, rect.length / 2);
-  const nearestY = clamp(local.y, -rect.width / 2, rect.width / 2);
-  const dx = local.x - nearestX;
-  const dy = local.y - nearestY;
-
-  return dx * dx + dy * dy < radius * radius;
-}
-
-export function circleFitsOrientedRect(x, y, radius, rect) {
-  if (
-    !rect ||
-    !Number.isFinite(rect.x) ||
-    !Number.isFinite(rect.y) ||
-    !Number.isFinite(rect.rotation) ||
-    !Number.isFinite(rect.length) ||
-    !Number.isFinite(rect.width) ||
-    rect.length <= 0 ||
-    rect.width <= 0
-  ) {
-    return false;
-  }
-
-  const local = orientedLocalPoint(x, y, rect);
-
-  return (
-    Math.abs(local.x) + radius <=
-      rect.length / 2 + COLLISION_EPSILON &&
-    Math.abs(local.y) + radius <=
-      rect.width / 2 + COLLISION_EPSILON
-  );
-}
-
-function bridgeAllowsObstacle(world, obstacle, x, y) {
-  if (!obstacle?.id) return false;
-
-  for (const object of Array.isArray(world.objects) ? world.objects : []) {
-    if (
-      object.kind !== 'bridge' ||
-      object.traversal?.enabled !== true ||
-      !object.traversal.overridesObstacleIds.includes(obstacle.id)
-    ) {
-      continue;
-    }
-
-    const passage = bridgeTraversalRect(object);
-
-    if (pointInOrientedRect(x, y, passage)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-export function isBlocked(world, entity, x, y) {
+export function isBlocked(
+  world,
+  entity,
+  x,
+  y,
+  traversalRegistry = defaultTraversalRuleRegistry
+) {
   if (
     x - entity.radius < 0 ||
     y - entity.radius < 0 ||
@@ -140,16 +42,10 @@ export function isBlocked(world, entity, x, y) {
     return true;
   }
 
-  for (const obstacle of world.obstacles) {
-    if (!circleIntersectsRect(x, y, entity.radius, obstacle)) {
-      continue;
+  for (const obstacle of Array.isArray(world.obstacles) ? world.obstacles : []) {
+    if (circleIntersectsRect(x, y, entity.radius, obstacle)) {
+      return true;
     }
-
-    if (bridgeAllowsObstacle(world, obstacle, x, y)) {
-      continue;
-    }
-
-    return true;
   }
 
   for (const object of Array.isArray(world.objects) ? world.objects : []) {
@@ -170,19 +66,43 @@ export function isBlocked(world, entity, x, y) {
     }
   }
 
-  return false;
+  const traversal = resolveSurfaceTraversal(
+    world,
+    entity,
+    x,
+    y,
+    traversalRegistry,
+    { padding: entity.radius }
+  );
+
+  return traversal.passable !== true;
 }
 
 export function resolveBridgeGuidedPosition(
   world,
   entity,
   targetX,
-  targetY
+  targetY,
+  traversalRegistry = defaultTraversalRuleRegistry
 ) {
+  const targetFeature = resolveBaseSurfaceFeature(
+    world,
+    targetX,
+    targetY,
+    entity.radius
+  );
+
+  if (!targetFeature || targetFeature.kind === 'base') {
+    return null;
+  }
+
   for (const object of Array.isArray(world.objects) ? world.objects : []) {
     if (
       object.kind !== 'bridge' ||
-      object.traversal?.enabled !== true
+      object.traversal?.enabled !== true ||
+      !object.traversal.overridesSurfaceFeatureIds.includes(
+        targetFeature.id
+      )
     ) {
       continue;
     }
@@ -190,19 +110,11 @@ export function resolveBridgeGuidedPosition(
     const passage = bridgeTraversalRect(object);
     if (!passage) continue;
 
-    const touchesReferencedObstacle = world.obstacles.some((obstacle) =>
-      object.traversal.overridesObstacleIds.includes(obstacle.id) &&
-      circleIntersectsRect(
-        targetX,
-        targetY,
-        entity.radius,
-        obstacle
-      )
+    const local = orientedLocalPoint(
+      targetX,
+      targetY,
+      passage
     );
-
-    if (!touchesReferencedObstacle) continue;
-
-    const local = orientedLocalPoint(targetX, targetY, passage);
     const halfLength = passage.length / 2;
     const halfWidth = passage.width / 2;
     const assistMargin =
@@ -222,8 +134,16 @@ export function resolveBridgeGuidedPosition(
       passage
     );
 
-    if (!isBlocked(world, entity, guided.x, guided.y)) {
-      return Object.freeze(guided);
+    if (
+      !isBlocked(
+        world,
+        entity,
+        guided.x,
+        guided.y,
+        traversalRegistry
+      )
+    ) {
+      return guided;
     }
   }
 
