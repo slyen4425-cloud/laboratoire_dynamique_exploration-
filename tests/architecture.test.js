@@ -249,3 +249,47 @@ test('architecture sentinel: Portal marker position comes from Portal Model reso
 
   assert.equal(renderer.includes('resolvePortalTriggerPoint'), true);
 });
+
+
+test('architecture sentinel: surface traversal resolver never reads visual material ids', async () => {
+  const traversal = await readFile(
+    new URL('../src/core/surface-traversal.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(traversal.includes('materialId'), false);
+  assert.equal(traversal.includes('materialRegistry'), false);
+});
+
+test('architecture sentinel: renderer never owns traversal gameplay ids', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/surface-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('traversalRuleId'), false);
+  assert.equal(renderer.includes('locomotion'), false);
+});
+
+test('architecture sentinel: movement engine owns no terrain-specific multipliers', async () => {
+  const movement = await readFile(
+    new URL('../src/core/movement.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(movement.includes('terrain.road'), false);
+  assert.equal(movement.includes('terrain.water'), false);
+  assert.equal(movement.includes('1.25'), false);
+  assert.equal(movement.includes('0.75'), false);
+});
+
+test('architecture sentinel: demo river collision has one surface authority', async () => {
+  const demo = await readFile(
+    new URL('../src/world/demo-world.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(demo.includes('forest-stream-collision'), false);
+  assert.equal(demo.includes('overridesObstacleIds'), false);
+  assert.equal(demo.includes("overridesSurfaceFeatureIds"), true);
+});
