@@ -197,3 +197,21 @@ test('regression: returning from runtime restores actor visual test settings in 
   assert.match(builderMain, /resumedTestSession\?\.actorVisual/);
   assert.match(builderMain, /resumedTestSession\?\.actorAsset/);
 });
+
+
+test('regression: restored actor asset is initialized only after resumed test session', async () => {
+  const builderMain = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  const sessionIndex = builderMain.indexOf(
+    'const resumedTestSession ='
+  );
+  const restoreIndex = builderMain.indexOf(
+    'importedActorAsset =\n  resumedTestSession?.actorAsset ?? null;'
+  );
+
+  assert.ok(sessionIndex >= 0);
+  assert.ok(restoreIndex > sessionIndex);
+});
