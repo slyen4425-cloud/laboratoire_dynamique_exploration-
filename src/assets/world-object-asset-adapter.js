@@ -38,6 +38,16 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
       lengthScale: 1.4,
       widthScale: 1.25
     })
+  }),
+  'object.building.house.fantasy_wood_stone.01': Object.freeze({
+    id: 'object.building.house.fantasy_wood_stone.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp',
+    render: Object.freeze({
+      rotationOffsetDeg: 0,
+      widthScale: 1.12,
+      heightScale: 1.12
+    })
   })
 });
 
