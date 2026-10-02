@@ -1,4 +1,4 @@
-import { normalizeWorldDocument } from './world-document-model.js?rev=worldarea-portal-v1-exit-marker';
+import { normalizeWorldDocument } from './world-document-model.js?rev=builder-dynamic-return-v1';
 
 export const demoWorldDocument = normalizeWorldDocument({
   id: 'forest-demo-world',
@@ -119,7 +119,15 @@ export const demoWorldDocument = normalizeWorldDocument({
       ],
       spawns: [
         { id: 'start', x: 220, y: 220 },
-        { id: 'house-return-exterior', x: 820, y: 1100 }
+        {
+          id: 'house-return-exterior',
+          anchor: {
+            kind: 'building-door',
+            objectId: 'forest-house-01',
+            anchorId: 'main-door',
+            offset: 56
+          }
+        }
       ]
     },
     {
