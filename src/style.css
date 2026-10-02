@@ -49,3 +49,23 @@ body {
   background: rgba(255, 255, 255, .42);
   transform: translate(0, 0);
 }
+
+
+.builder-shortcut {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  right: 10px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 10px;
+  background: rgba(20, 34, 24, .82);
+  color: #f4f7f2;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  touch-action: manipulation;
+}
