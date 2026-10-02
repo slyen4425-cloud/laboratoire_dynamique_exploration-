@@ -202,3 +202,45 @@ CI après correction métier :
 - run `36989364751` — **SUCCESS**.
 
 Une nouvelle preview Pages est requise avant validation smartphone.
+
+
+## Régression UX — sortie intérieure invisible — 2026-10-02
+
+Retour smartphone :
+- entrée dans la maison : OK ;
+- intérieur visible : OK ;
+- collision du mobilier : OK ;
+- sortie fonctionnelle mais invisible, donc impossible de savoir où ressortir.
+
+Cause :
+- le Portal de sortie possédait bien un trigger gameplay `point` à `x=360, y=510, radius=30` ;
+- aucune donnée visuelle n'était déclarée pour ce Portal ;
+- le runtime déclenchait donc correctement la sortie dès que le joueur entrait dans la zone, mais sans indication graphique.
+
+Reproduction permanente :
+- test `regression: interior exit Portal declares an explicit visible marker` ;
+- commit `bd13ae6ce228df1fff99f011944976de08a323ed` ;
+- CI run `36990493619` — **FAILURE attendue**.
+
+Correction :
+- `Portal.visual` ajouté au contrat Portal v1 ;
+- `visible / marker / label` sont des données du Portal ;
+- la sortie de la maison déclare `marker: exit`, `label: Sortie` ;
+- nouveau `Portal Renderer` purement visuel ;
+- le renderer récupère la position exclusivement via `resolvePortalTriggerPoint` ;
+- aucune coordonnée graphique dupliquée ;
+- aucune transition, targetSpawn ou mutation d'état dans le renderer ;
+- cache mobile versionné `worldarea-portal-v1-exit-marker`.
+
+Tests :
+- position affichée = position exacte du trigger Portal ;
+- rayon affiché = rayon exact du trigger ;
+- label `Sortie` rendu ;
+- aucun marqueur d'une autre Area ;
+- sentinelle renderer visuel uniquement ;
+- sentinelle position issue du Portal Model.
+
+CI après correction :
+run `36990712277` — **SUCCESS**.
+
+Une nouvelle preview Pages doit être publiée avant validation smartphone.
