@@ -263,3 +263,34 @@ Gate restante :
 validation smartphone utilisateur du marqueur visuel de sortie et de la sortie effective.
 
 Le lot reste non GREEN jusqu'à cette validation.
+
+
+## Validation utilisateur finale — 2026-10-02
+
+Test smartphone : **validé**.
+
+Retour utilisateur :
+- entrée maison : OK ;
+- intérieur : OK ;
+- collision intérieure : OK ;
+- sortie : OK ;
+- marqueur de sortie visible : OK ;
+- retour extérieur : OK.
+
+Remarque visuelle conservée pour la suite :
+- la zone de sortie devra être habillée avec une vraie porte/élément visuel cohérent ;
+- ce point relève d'un futur lot de dressing visuel/asset et ne modifie pas le contrat Portal v1.
+
+## Fermeture
+WorldArea / Portal v1 : **GREEN / terminé**.
+
+SHA technique validé avant document de fermeture :
+`045da062690a6807836d82c24a7cff3197fe627d`
+
+CI :
+run `36991148105` — **SUCCESS**.
+
+Suite validée :
+1. Map Actor Visual System v1 ;
+2. World Builder Dynamique UI v1 ;
+3. enrichissements visuels (portes/sorties/intérieurs) dans des lots séparés.
