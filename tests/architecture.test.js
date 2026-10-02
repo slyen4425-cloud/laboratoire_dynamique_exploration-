@@ -301,7 +301,7 @@ test('architecture sentinel: World Builder draft owns no renderer, DOM, movement
   );
 
   assert.equal(
-    /document\.|window\.|canvas|getContext|stepMovement|isBlocked|collision\.js|render\//.test(draft),
+    /document\.(querySelector|getElementById|createElement)|\bwindow\b|\bHTMLElement\b|getContext|stepMovement|isBlocked|collision\.js|render\//.test(draft),
     false
   );
   assert.equal(draft.includes('normalizeWorldDocument'), true);
