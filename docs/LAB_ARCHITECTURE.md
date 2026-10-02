@@ -446,3 +446,42 @@ Il ne peut jamais :
 
 Le mode simple requiert seulement un asset visuel.
 Les modes multi-vues ou animés pourront étendre le contrat sans remplacer cette base.
+
+
+## World Builder Dynamique UI v1
+
+Le Builder est une surface d'édition séparée du runtime Exploration.
+
+Flux :
+
+```text
+builder.html
+   -> World Builder UI
+   -> mutable draft WorldDocument
+   -> validation via les modèles canoniques
+   -> WorldDocument v1
+   -> export JSON / import JSON / preview
+```
+
+Règles :
+- aucun format `BuilderMap` ;
+- le draft n'est pas une autorité runtime ;
+- le Builder ne déplace jamais le joueur actif ;
+- le Builder ne possède ni collision, ni mouvement, ni Portal runtime ;
+- la preview réutilise les Surface / WorldObject / Portal Renderers existants ;
+- les données éditées restent celles de WorldArea, WorldObject, Spawn et Portal ;
+- l'export est un WorldDocument v1 normalisé ;
+- une référence invalide bloque l'export au lieu d'être supprimée silencieusement.
+
+### Périmètre UI v1
+
+Édition disponible :
+- WorldArea : largeur / hauteur / matériau de base ;
+- Spawns : X/Y, ajout et suppression protégée ;
+- WorldObjects : ajout, duplication, suppression protégée, transform, assetId ;
+- Building : baseSize, footprint, doorAnchor ;
+- Bridge : baseSize, corridor traversable, obstacles explicitement franchis ;
+- Portals : Area source, trigger point/building-door, Area cible, Spawn cible, marqueur visuel ;
+- import/export JSON.
+
+La création graphique de routes/rivières et l'import de Map Actors restent des lots séparés.
