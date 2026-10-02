@@ -10,22 +10,32 @@ Règle :
 ## État actif — 2026-10-02
 
 Chantier :
-WorldArea / Portal v1 — implémenté, CI GREEN, preview publiée, validation smartphone requise.
+World Builder Dynamique UI v1 — **validation smartphone GREEN obtenue** ; fermeture documentaire et checkpoint GREEN.
 
-Branche :
-`work/exploration-worldarea-portal-v1-2026-10-02`
+Branche source :
+`work/exploration-world-builder-dynamique-ui-v1-2026-10-02`
 
 Checkpoint de départ :
-`checkpoint/exploration-start-worldarea-portal-v1-2026-10-02`
+`checkpoint/exploration-start-world-builder-dynamique-ui-v1-2026-10-02`
 
 Base GREEN :
-`bb8cad37400ba6853e3aba76ffc633303c263bcb`
+`745b13bd550893b5ae21c351fa1f511acb2bdc16`
 
-Dernier checkpoint fonctionnel :
-`checkpoint/exploration-building-world-object-v1-green-2026-10-02`
+Dernier checkpoint fonctionnel avant ce lot :
+`checkpoint/exploration-map-actor-visual-v1-green-2026-10-02`
 
-Plan suivant validé :
-WorldArea/Portal -> Map Actor Visual System -> World Builder Dynamique UI.
+Preview validée :
+- main `ee116709d49fc85281e49a5402fd0096fccd6ede` ;
+- Pages run `37041673850` — SUCCESS ;
+- Builder : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html`.
+
+Validation utilisateur finale :
+- rivière canonique bloquante hors pont : OK ;
+- pont traversable : OK ;
+- Builder/zoom : OK.
+
+Prochain lot autorisé après checkpoint GREEN :
+**Map Actor Editor v1** — édition/placement héros, PNJ et créatures sur la map en réutilisant le Map Actor Visual System GREEN.
 
 ## Invariants de coordination
 
