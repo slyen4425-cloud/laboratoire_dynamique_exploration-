@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-visual-assets-v1-binary-repair
+# preview-revision: building-world-object-v1
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout exploration work branch
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-bridge-visual-assets-v1-2026-10-01
+          ref: work/exploration-building-visual-asset-v1-2026-10-02
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
