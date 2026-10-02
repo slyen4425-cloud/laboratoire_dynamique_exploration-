@@ -15,7 +15,7 @@ import {
 } from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';
 import {
   createImageAssetLoader
-} from './assets/image-asset-loader.js?rev=map-actor-visual-v1';
+} from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
 import {
   createMapActorAssetResolver,
   resolveMapActorAsset
