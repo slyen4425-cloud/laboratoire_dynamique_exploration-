@@ -116,3 +116,84 @@ test('mobile Builder keeps primary map tools reachable without page scrolling', 
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.map-tools[\s\S]*position:\s*sticky/);
   assert.match(css, /\.map-tools[\s\S]*overflow-x:\s*auto/);
 });
+
+
+test('regression: Builder test session preserves MapActorVisual and optional imported asset source', async () => {
+  const {
+    createWorldBuilderTestHandoff,
+    restoreWorldBuilderTestSession
+  } = await import('../src/builder/world-builder-test-handoff.js');
+
+  const actorVisual = {
+    assetId: 'actor.user.preview.01',
+    role: 'creature',
+    targetHeight: 133,
+    mirrorHorizontal: false,
+    anchorX: 0.44,
+    anchorY: 0.92,
+    shadow: {
+      enabled: true,
+      widthRatio: 0.72,
+      heightRatio: 0.18,
+      opacity: 0.31
+    },
+    motion: {
+      idleAmplitude: 2.4,
+      idleFrequency: 1.8,
+      walkAmplitude: 5.6,
+      walkFrequency: 6.2
+    }
+  };
+  const actorAsset = {
+    id: 'actor.user.preview.01',
+    kind: 'map-actor-source',
+    path: 'data:image/png;base64,VEVTVA==',
+    label: 'creature-test.png'
+  };
+
+  const payload = createWorldBuilderTestHandoff(
+    demoWorldDocument,
+    { actorVisual, actorAsset }
+  );
+  const session = restoreWorldBuilderTestSession(payload);
+
+  assert.ok(session);
+  assert.equal(session.document.id, demoWorldDocument.id);
+  assert.equal(session.actorVisual.assetId, actorAsset.id);
+  assert.equal(session.actorVisual.role, 'creature');
+  assert.equal(session.actorVisual.targetHeight, 133);
+  assert.equal(session.actorVisual.anchorOverride.x, 0.44);
+  assert.equal(session.actorVisual.anchorOverride.y, 0.92);
+  assert.equal(session.actorAsset.path, actorAsset.path);
+  assert.equal(session.actorAsset.id, actorAsset.id);
+});
+
+test('regression: runtime test uses actor visual from Builder handoff instead of hardcoded demo visual', async () => {
+  const builderMain = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+  const runtimeMain = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(builderMain, /actorVisual/);
+  assert.match(builderMain, /actorAsset/);
+  assert.match(builderMain, /saveWorldBuilderTestHandoff\([\s\S]*actorVisual/);
+
+  assert.match(runtimeMain, /readWorldBuilderTestSession/);
+  assert.match(runtimeMain, /builderTestSession\.actorVisual/);
+  assert.match(runtimeMain, /createMapActorAssetResolver/);
+});
+
+test('regression: returning from runtime restores actor visual test settings in Builder', async () => {
+  const builderMain = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(builderMain, /readWorldBuilderTestSession/);
+  assert.match(builderMain, /resumedTestSession\.actorVisual/);
+  assert.match(builderMain, /resumedTestSession\.actorAsset/);
+});
