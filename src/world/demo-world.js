@@ -171,7 +171,12 @@ export const demoWorldDocument = normalizeWorldDocument({
         radius: 30
       },
       targetAreaId: 'forest-exterior',
-      targetSpawnId: 'house-return-exterior'
+      targetSpawnId: 'house-return-exterior',
+      visual: {
+        visible: true,
+        marker: 'exit',
+        label: 'Sortie'
+      }
     }
   ]
 });
