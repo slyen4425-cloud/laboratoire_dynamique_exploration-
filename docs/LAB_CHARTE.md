@@ -653,6 +653,18 @@ L'état Exploration conserve au minimum :
 
 Un Portal de retour replace le joueur sur un spawn/anchor explicite associé à la sortie.
 
+Un Spawn possède une seule autorité de position :
+- Spawn statique : `x/y` ;
+- Spawn ancré : référence explicite vers un anchor, par exemple `building-door`, avec offset éventuel.
+
+Pour un Spawn ancré à une porte de Building :
+- aucun X/Y persistant concurrent n'est autorisé ;
+- la position monde est résolue à partir du transform courant du Building + doorAnchor ;
+- déplacer, tourner ou scaler le Building déplace donc automatiquement le Spawn ;
+- le Builder ne synchronise jamais des coordonnées dérivées après coup.
+
+Le Portal conserve une seule cible, `targetSpawnId`. Il ne duplique pas la logique de position du Spawn.
+
 ### 27.2 Structures sans intérieur séparé
 
 Les structures ouvertes peuvent rester dans la même Area :
