@@ -324,3 +324,53 @@ test('direct gestures mutate canonical draft through Builder mutation helpers on
     'terrain drawing must update canonical surface paths'
   );
 });
+
+
+test('terrain brush zones survive canonical WorldDocument export/import', () => {
+  let draft = createWorldBuilderDraft(demoWorldDocument);
+  const areaId = draft.initialAreaId;
+
+  draft = addSurfacePath(
+    draft,
+    areaId,
+    'terrain',
+    {
+      width: 220,
+      materialId: 'ground.sand',
+      points: [
+        { x: 120, y: 180 },
+        { x: 220, y: 250 },
+        { x: 340, y: 300 }
+      ]
+    }
+  );
+
+  const validation = validateWorldBuilderDraft(draft);
+  assert.equal(validation.valid, true);
+
+  const zone = validation.document.areas
+    .find((area) => area.id === areaId)
+    .surface.zones.at(-1);
+
+  assert.equal(zone.width, 220);
+  assert.equal(zone.materialId, 'ground.sand');
+
+  const imported = importWorldBuilderDocument(
+    serializeWorldBuilderDraft(draft)
+  );
+  const importedZone = imported.areas
+    .find((area) => area.id === areaId)
+    .surface.zones.at(-1);
+
+  assert.deepEqual(importedZone, zone);
+});
+
+test('Surface Renderer consumes canonical terrain zones before linear paths', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/surface-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(renderer, /for \(const zone of surface\.zones/);
+  assert.match(renderer, /materialRegistry\.require\([\s\S]*zone\.materialId,[\s\S]*'surface'/);
+});
