@@ -134,3 +134,26 @@ CI :
 
 Prochaine gate :
 publier une preview Pages depuis cette branche puis validation smartphone du héros Map Actor et des régressions historiques.
+
+
+## Preview Map Actor Visual System v1 — 2026-10-02
+
+Infrastructure main uniquement :
+- main SHA : `aba0cc604fe9867eb5a88ab5ba28b1810dfed61f` ;
+- Pages run : `37001556953` — **SUCCESS** ;
+- artifact Pages : `11223847222`.
+
+Artefact réellement inspecté :
+- `index.html` charge `main.js?rev=map-actor-visual-v1` ;
+- `map_actor_demo_hero.svg` est bien présent ;
+- `map-actor-visual-model.js` est présent ;
+- `map-actor-image-analysis.js` est présent ;
+- `map-actor-visual-preparer.js` est présent ;
+- `map-actor-renderer.js` est présent ;
+- le bootstrap charge et prépare l'asset Map Actor avant démarrage ;
+- l'ancien cercle joueur n'est plus l'autorité visuelle.
+
+Gate restante :
+validation smartphone utilisateur du Map Actor, du miroir gauche/droite, du mouvement visuel, et des régressions pont/bâtiment/Portal.
+
+Le lot reste non GREEN jusqu'à cette validation.
