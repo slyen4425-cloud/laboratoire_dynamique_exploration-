@@ -251,6 +251,28 @@ Le **World Builder Dynamique** doit permettre progressivement de modifier :
 
 Le World Builder Dynamique manipule des données. Le renderer donne un aperçu, mais ne devient jamais l'autorité.
 
+### 9.2 Autorité canonique du World Builder Dynamique
+
+Dans le World Builder Dynamique, l'unique état persistant de carte est le **draft au format WorldDocument**.
+
+Les états UI suivants sont autorisés uniquement comme état éphémère :
+- sélection courante ;
+- outil actif ;
+- zoom/centre de viewport ;
+- pointeurs tactiles ;
+- offset temporaire d'un drag/pinch.
+
+Ils ne sont jamais sérialisés et ne deviennent jamais une seconde géométrie ou une seconde position d'objet.
+
+Règles obligatoires :
+- un geste direct sur la map modifie le draft via les fonctions de mutation du Builder ;
+- les champs numériques modifient le même draft via les mêmes contrats ;
+- la preview rend uniquement le WorldDocument normalisé dérivé du draft ;
+- aucune copie persistante des transforms, Spawns, Portals, routes, rivières ou dimensions d'Area n'est maintenue dans l'UI ;
+- aucun format `BuilderMap`, `PreviewWorld` ou géométrie Builder parallèle n'est autorisé.
+
+Ainsi, doigt/souris, champs précis, import/export et runtime convergent tous vers une seule source de vérité : le WorldDocument.
+
 ### 9.1 Paramétrage des WorldObjects
 
 Tout WorldObject éditable doit exposer ses paramètres dans son contrat de données, jamais uniquement dans l'UI.
