@@ -17,6 +17,7 @@ import {
   resolvePortalTriggerPoint
 } from '../src/world/portal-model.js';
 import { demoWorldDocument } from '../src/world/demo-world.js';
+import { stepMovement } from '../src/core/movement.js';
 
 function makeDocument() {
   return normalizeWorldDocument({
@@ -271,4 +272,48 @@ test('demo uses one Portal contract for entering and leaving the Building', () =
   assert.equal(exit.trigger.kind, 'point');
   assert.equal(enter.targetAreaId, 'house-interior-01');
   assert.equal(exit.targetAreaId, 'forest-exterior');
+});
+
+
+test('true path: movement reaches Building door, Portal changes Area, and target Spawn owns arrival', () => {
+  const document = demoWorldDocument;
+  const outside = findWorldAreaById(document, 'forest-exterior');
+  const player = {
+    currentAreaId: 'forest-exterior',
+    x: 820,
+    y: 1100,
+    radius: 18
+  };
+
+  let transition = null;
+
+  for (let step = 0; step < 12; step += 1) {
+    stepMovement(
+      outside,
+      player,
+      { x: 0, y: -1 },
+      0.1,
+      { maxSpeed: 100 }
+    );
+
+    const portal = findTriggeredPortal(
+      document,
+      player.currentAreaId,
+      player
+    );
+
+    if (portal) {
+      transition = applyPortalTransition(
+        document,
+        player,
+        portal
+      );
+      break;
+    }
+  }
+
+  assert.ok(transition, 'expected to reach the house entrance Portal');
+  assert.equal(transition.currentAreaId, 'house-interior-01');
+  assert.equal(transition.x, 360);
+  assert.equal(transition.y, 390);
 });
