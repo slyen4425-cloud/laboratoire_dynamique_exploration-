@@ -387,3 +387,29 @@ CI après correctif :
 - run `37010065971` — **SUCCESS**.
 
 Une nouvelle preview smartphone/tablette est requise avant validation GREEN.
+
+
+## Preview gizmos + pinceau terrain — 2026-10-02
+
+HEAD technique avant publication :
+`f944982a5d126078b4740e7c1d3b78b95e79814c`
+
+CI exacte :
+run `37010194996` — **SUCCESS**.
+
+Infrastructure preview uniquement :
+- PR #25 ;
+- main SHA `9c59b76edb7a33a84ef9046e8eb2e02272078384` ;
+- Pages run `37010306799` — **SUCCESS** ;
+- artifact `11227611289`.
+
+Artefact Pages réellement téléchargé et contrôlé :
+- bouton `Peindre terrain` présent ;
+- `terrain-brush-size` présent, plage 24 → 600 ;
+- script Builder versionné `world-builder-dynamique-ui-v1-gizmos-brush` ;
+- modes `rotate-object` et `scale-object` présents ;
+- `hitAreaResizeHandle` présent ;
+- Surface Renderer publié consomme `surface.zones`.
+
+Gate restante :
+validation smartphone/tablette utilisateur des poignées, de la rotation, du resize Area et du pinceau terrain.
