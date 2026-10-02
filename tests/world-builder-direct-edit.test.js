@@ -443,3 +443,23 @@ test('very wide river remains canonical through export and import', () => {
   assert.equal(importedRiver.width, 1800);
   assert.deepEqual(importedRiver, river);
 });
+
+
+test('regression: Builder zoom uses gestures/wheel without redundant plus-minus controls', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(html.includes('id="preview-zoom-in"'), false);
+  assert.equal(html.includes('id="preview-zoom-out"'), false);
+  assert.equal(html.includes('id="preview-zoom"'), false);
+
+  assert.match(main, /canvas\.addEventListener\(\s*'wheel'/);
+  assert.match(main, /beginPinch\(\)/);
+  assert.match(main, /updatePinch\(\)/);
+});
