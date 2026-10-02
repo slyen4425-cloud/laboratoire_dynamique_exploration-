@@ -35,6 +35,9 @@ import {
   findTriggeredPortal
 } from './world/portal-model.js?rev=worldarea-portal-v1-exit-marker';
 import { demoWorldDocument } from './world/demo-world.js?rev=worldarea-portal-v1-exit-marker';
+import {
+  readWorldBuilderTestHandoff
+} from './builder/world-builder-test-handoff.js';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
@@ -43,7 +46,28 @@ const joystick = document.querySelector('#joystick');
 const stick = document.querySelector('#stick');
 
 const config = normalizeExplorationConfig();
-const initialState = createInitialExplorationState(demoWorldDocument);
+const runtimeParams = new URLSearchParams(window.location.search);
+const builderTest = runtimeParams.get('builderTest') === '1';
+const builderTestDocument = builderTest
+  ? readWorldBuilderTestHandoff(window.sessionStorage)
+  : null;
+
+if (builderTest && !builderTestDocument) {
+  throw new Error(
+    'Session de test World Builder introuvable ou invalide'
+  );
+}
+
+const activeWorldDocument =
+  builderTestDocument ?? demoWorldDocument;
+
+const builderShortcut = document.querySelector('#builder-shortcut');
+if (builderShortcut && builderTest) {
+  builderShortcut.href = './builder.html?resumeBuilderTest=1';
+  builderShortcut.textContent = 'Retour World Builder';
+}
+
+const initialState = createInitialExplorationState(activeWorldDocument);
 
 if (!initialState) {
   throw new Error('WorldDocument has no valid initial Area/Spawn');
@@ -83,7 +107,7 @@ const worldObjectImageLoader = createImageAssetLoader({
 
 const requiredWorldObjectAssetIds = Object.freeze([
   ...new Set(
-    demoWorldDocument.areas
+    activeWorldDocument.areas
       .flatMap((area) => area.objects)
       .map((object) => object.visual?.assetId)
       .filter(Boolean)
@@ -161,7 +185,7 @@ let last = performance.now();
 
 function currentArea() {
   const area = findWorldAreaById(
-    demoWorldDocument,
+    activeWorldDocument,
     player.currentAreaId
   );
 
@@ -221,7 +245,7 @@ function updateCamera() {
 
 function applyTriggeredPortal() {
   const portal = findTriggeredPortal(
-    demoWorldDocument,
+    activeWorldDocument,
     player.currentAreaId,
     player
   );
@@ -229,7 +253,7 @@ function applyTriggeredPortal() {
   if (!portal) return false;
 
   const next = applyPortalTransition(
-    demoWorldDocument,
+    activeWorldDocument,
     player,
     portal
   );
@@ -327,7 +351,7 @@ function render(timeSeconds = 0) {
 
   portalRenderer.draw(ctx, {
     camera,
-    worldDocument: demoWorldDocument,
+    worldDocument: activeWorldDocument,
     currentAreaId: player.currentAreaId
   });
 
