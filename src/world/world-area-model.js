@@ -1,7 +1,10 @@
 import { normalizeWorldSurface } from './surface-model.js';
-import { normalizeWorldObjects } from './world-object-model.js';
+import {
+  buildingDoorArrivalWorld,
+  normalizeWorldObjects
+} from './world-object-model.js?rev=builder-dynamic-return-v1';
 
-export const WORLD_AREA_SCHEMA_VERSION = 1;
+export const WORLD_AREA_SCHEMA_VERSION = 2;
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max
@@ -15,11 +18,45 @@ function normalizeId(value, fallback) {
     : fallback;
 }
 
+function normalizeSpawnAnchor(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  if (raw.kind !== 'building-door') return null;
+
+  const objectId =
+    typeof raw.objectId === 'string' && raw.objectId.trim()
+      ? raw.objectId.trim()
+      : null;
+  const anchorId =
+    typeof raw.anchorId === 'string' && raw.anchorId.trim()
+      ? raw.anchorId.trim()
+      : null;
+
+  if (!objectId || !anchorId) return null;
+
+  return Object.freeze({
+    kind: 'building-door',
+    objectId,
+    anchorId,
+    offset: finiteNumber(raw.offset, 56, { min: 0, max: 1000 })
+  });
+}
+
 function normalizeSpawn(raw, index) {
   if (!raw || typeof raw !== 'object') return null;
 
+  const id = normalizeId(raw.id, `spawn-${index + 1}`);
+  const anchor = normalizeSpawnAnchor(raw.anchor);
+
+  if (anchor) {
+    return Object.freeze({
+      id,
+      anchor
+    });
+  }
+
   return Object.freeze({
-    id: normalizeId(raw.id, `spawn-${index + 1}`),
+    id,
     x: finiteNumber(raw.x, 0),
     y: finiteNumber(raw.y, 0)
   });
@@ -102,4 +139,39 @@ export function findWorldArea(areas, areaId) {
 export function findWorldAreaSpawn(area, spawnId) {
   if (!area || typeof spawnId !== 'string') return null;
   return area.spawns.find((spawn) => spawn.id === spawnId) ?? null;
+}
+
+export function resolveWorldAreaSpawnPoint(area, spawnId) {
+  const spawn = findWorldAreaSpawn(area, spawnId);
+  if (!spawn) return null;
+
+  if (spawn.anchor?.kind === 'building-door') {
+    const building = area.objects.find(
+      (object) =>
+        object.kind === 'building' &&
+        object.id === spawn.anchor.objectId
+    );
+
+    if (!building) return null;
+
+    const point = buildingDoorArrivalWorld(
+      building,
+      spawn.anchor.anchorId,
+      spawn.anchor.offset
+    );
+
+    if (!point) return null;
+
+    return Object.freeze({
+      id: spawn.id,
+      x: point.x,
+      y: point.y
+    });
+  }
+
+  return Object.freeze({
+    id: spawn.id,
+    x: spawn.x,
+    y: spawn.y
+  });
 }
