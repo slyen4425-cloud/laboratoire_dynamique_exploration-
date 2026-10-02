@@ -4,7 +4,7 @@ import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=worldarea-portal-v1-interior-surface-fix';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
 import {
@@ -25,7 +25,7 @@ import {
   applyPortalTransition,
   findTriggeredPortal
 } from './world/portal-model.js';
-import { demoWorldDocument } from './world/demo-world.js';
+import { demoWorldDocument } from './world/demo-world.js?rev=worldarea-portal-v1-interior-surface-fix';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
