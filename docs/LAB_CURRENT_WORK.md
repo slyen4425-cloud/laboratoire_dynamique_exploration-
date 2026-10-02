@@ -64,10 +64,39 @@ Le Builder ne modifie jamais la partie Exploration active.
 - lien runtime ↔ Builder ;
 - tests du modèle de draft et sentinelles architecture.
 
+
+## Retour utilisateur — ergonomie directe requise — 2026-10-02
+
+Le premier jet UI est techniquement fonctionnel mais jugé trop complexe et peu intuitif.
+
+Décisions utilisateur à intégrer avant toute validation GREEN :
+- les bâtiments et autres WorldObjects doivent pouvoir être **sélectionnés et déplacés directement sur la map** au doigt/souris ;
+- les champs X/Y restent disponibles uniquement pour le réglage précis ;
+- la taille de la WorldArea doit pouvoir être ajustée **directement depuis la map** avec une poignée de redimensionnement, sans créer une seconde géométrie d'Area ;
+- navigation preview : **pan direct**, molette, boutons +/- et **pinch zoom centré sur la zone visée** ;
+- ajout d'un vrai onglet **Terrain** ;
+- les routes doivent pouvoir être tracées directement sur la map ;
+- les rivières doivent pouvoir être tracées directement sur la map avec le matériau `water.forest_stream` ;
+- les tracés utilisent directement `WorldArea.surface.routes/rivers` du WorldDocument, jamais un format Builder parallèle.
+
+### Extension de périmètre v1 validée
+
+Le lot World Builder UI v1 inclut désormais :
+- manipulation directe des WorldObjects ;
+- sélection par tap/clic sur la preview ;
+- pan/zoom tactile et souris ;
+- resize direct de la WorldArea rectangulaire ;
+- outils de dessin Route et Rivière ;
+- réglage largeur et matériau des tracés ;
+- suppression d'un tracé sélectionné ;
+- tests des transformations écran/monde et des mutations du draft.
+
+La sémantique WorldArea reste inchangée : une WorldArea est un espace explorable indépendant, pas une zone polygonale dessinée à l'intérieur d'une autre Area.
+Le resize direct agit donc sur `width/height` de l'Area courante.
+
 ## Hors périmètre
 - mutation directe du runtime actif ;
 - sauvegarde IndexedDB/Core Storage ;
-- routes/rivières dessinées à la main ;
 - génération procédurale UI ;
 - import visuel utilisateur Map Actor ;
 - édition gameplay PNJ/créatures ;
