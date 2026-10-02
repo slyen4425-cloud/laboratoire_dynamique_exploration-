@@ -481,3 +481,91 @@ Artefact Pages réellement contrôlé :
 
 Gate restante :
 validation smartphone/tablette utilisateur de la largeur des pinceaux Route/Rivière et d'une grande étendue d'eau.
+
+
+## Régression — Test en jeu perdait le WorldDocument édité — 2026-10-02
+
+Retour utilisateur :
+- l'ergonomie mobile oblige encore à trop scroller pour changer d'outil ;
+- surtout, « Tester en jeu » ouvrait le runtime statique de démonstration ;
+- au retour Builder, le draft était recréé depuis la démo ;
+- bâtiments, tracés et modifications semblaient donc réinitialisés.
+
+Cause confirmée :
+- le bouton de test était un simple lien direct vers `index.html` ;
+- aucun WorldDocument canonique n'était transmis au runtime ;
+- aucun snapshot de session n'était disponible pour reprendre le même document au retour ;
+- le runtime restait autoritaire sur `demoWorldDocument` uniquement.
+
+Ce comportement ne venait pas des helpers Draft ni des renderers : le raccord Builder -> runtime de test était absent.
+
+### Reproduction permanente
+
+Sentinelles ajoutées dans :
+`tests/world-builder-test-handoff-regression.test.js`
+
+Commit de reproduction :
+`4c678600b42ed6e5afffa6da7aa4d021337a1faf`
+
+CI :
+run `37024557319` — **FAILURE attendue**.
+
+La reproduction protège notamment :
+- bâtiment déplacé/scalé ;
+- zone terrain peinte ;
+- passage test runtime ;
+- retour au Builder sans perte.
+
+### Correction — handoff canonique unique
+
+Nouveau contrat :
+`src/builder/world-builder-test-handoff.js`
+
+Chaîne unique :
+
+```text
+World Builder Draft
+      ↓ validateWorldBuilderDraft
+WorldDocument v1 canonique
+      ↓ snapshot sessionStorage explicite
+Runtime Exploration en mode ?builderTest=1
+      ↓
+Retour ?resumeBuilderTest=1
+      ↓
+World Builder Draft recréé depuis le même WorldDocument
+```
+
+Règles :
+- le runtime de test ne lit jamais le draft mutable ;
+- le Builder ne modifie jamais le runtime actif ;
+- le snapshot est un handoff de session, pas un second format de carte ;
+- aucune structure BuilderMap/PreviewWorld concurrente ;
+- si `builderTest=1` est demandé sans snapshot valide, erreur explicite, jamais fallback silencieux vers la démo ;
+- les transitions WorldArea restent sans navigation/reload et sont inchangées.
+
+Le lien « Tester en jeu » sauvegarde le WorldDocument validé avant la navigation native.
+Le runtime choisit explicitement ce document en mode test.
+Le lien runtime devient « Retour World Builder » et reprend la même session.
+
+### Ergonomie mobile primaire
+
+Révision également appliquée dans le même lot UI :
+- onglets principaux placés avant la preview sur mobile ;
+- outils carte placés au-dessus du canvas ;
+- barre d'outils horizontale sans wrapping, scrollable latéralement ;
+- barre outils sticky dans la preview ;
+- commandes zoom compactes horizontalement.
+
+Objectif : accéder aux outils principaux sans devoir parcourir toute la page.
+
+### État CI
+
+Correctif final avant documentation :
+- HEAD : `3c3d9eb2530d4a90469ff7e08bb41427dfb69987`
+- CI run `37025260004` — **SUCCESS**.
+
+Gate restante :
+nouvelle preview smartphone/tablette et validation utilisateur du chemin complet :
+**modifier -> Tester en jeu -> voir les modifications -> Retour World Builder -> modifications toujours présentes**.
+
+Le lot reste non GREEN.
