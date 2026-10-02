@@ -676,3 +676,35 @@ CI après correction :
 
 Gate restante :
 nouvelle preview smartphone/tablette puis validation utilisateur.
+
+
+## Preview — retour Building dynamique + zoom gestes — 2026-10-02
+
+HEAD work avant publication :
+`faa15bffc3bafeb6b130829783cc70f5104bedd7`
+
+CI exacte :
+run `37030587200` — **SUCCESS**.
+
+Infrastructure preview uniquement :
+- PR #29 ;
+- main SHA `04aabbd72f817df54b1b0385c286672403b98107` ;
+- Pages run `37030758364` — **SUCCESS** ;
+- artifact `11237427113`.
+
+Artefact Pages réellement téléchargé et contrôlé :
+- `house-return-exterior` est bien un Spawn ancré à `forest-house-01/main-door` avec offset 56 ;
+- `WORLD_AREA_SCHEMA_VERSION = 2` publié ;
+- Portal résout bien `targetSpawnId` via `resolveWorldAreaSpawnPoint` ;
+- aucun bouton `preview-zoom-in` / `preview-zoom-out` ;
+- aucun slider `preview-zoom` ;
+- aide publiée : pinch mobile + molette/trackpad ordinateur ;
+- cache revisions runtime/Builder actualisées.
+
+Gate restante :
+validation smartphone utilisateur :
+1. déplacer/scaler la maison ;
+2. Tester en jeu ;
+3. entrer puis ressortir ;
+4. vérifier le retour devant la nouvelle porte ;
+5. vérifier le zoom Builder au pinch sans contrôles cassés.
