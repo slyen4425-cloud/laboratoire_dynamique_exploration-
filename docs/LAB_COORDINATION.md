@@ -10,32 +10,33 @@ Règle :
 ## État actif — 2026-10-02
 
 Chantier :
-World Builder Dynamique UI v1 — **validation smartphone GREEN obtenue** ; fermeture documentaire et checkpoint GREEN.
+**Map Actor Editor v1** — édition visuelle héros / PNJ / créatures avec aperçu map.
 
-Branche source :
-`work/exploration-world-builder-dynamique-ui-v1-2026-10-02`
+Branche :
+`work/exploration-map-actor-editor-v1-2026-10-02`
 
 Checkpoint de départ :
-`checkpoint/exploration-start-world-builder-dynamique-ui-v1-2026-10-02`
+`checkpoint/exploration-start-map-actor-editor-v1-2026-10-02`
 
 Base GREEN :
-`745b13bd550893b5ae21c351fa1f511acb2bdc16`
+`80e6468eda0261e0f7db12c81f98beb13df339ab`
 
-Dernier checkpoint fonctionnel avant ce lot :
-`checkpoint/exploration-map-actor-visual-v1-green-2026-10-02`
+Dernier checkpoint GREEN :
+`checkpoint/exploration-world-builder-dynamique-ui-v1-green-2026-10-02`
 
-Preview validée :
-- main `ee116709d49fc85281e49a5402fd0096fccd6ede` ;
-- Pages run `37041673850` — SUCCESS ;
-- Builder : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html`.
+Systèmes réutilisés :
+- Map Actor Visual System v1 GREEN ;
+- Map Actor Visual Preparer ;
+- Map Actor Renderer ;
+- Map Actor Asset Adapter ;
+- viewport/preview du World Builder GREEN.
 
-Validation utilisateur finale :
-- rivière canonique bloquante hors pont : OK ;
-- pont traversable : OK ;
-- Builder/zoom : OK.
-
-Prochain lot autorisé après checkpoint GREEN :
-**Map Actor Editor v1** — édition/placement héros, PNJ et créatures sur la map en réutilisant le Map Actor Visual System GREEN.
+Interdictions du lot :
+- aucune position gameplay parallèle ;
+- aucune collision acteur ;
+- aucune stat/IA ;
+- aucun nouveau renderer acteur ;
+- aucun hotlink inter-dépôt.
 
 ## Invariants de coordination
 
@@ -44,22 +45,16 @@ Prochain lot autorisé après checkpoint GREEN :
 - ne jamais toucher au labo Combat depuis ce labo ;
 - pas de rustine globale ;
 - pas de double autorité ;
-- pas de gameplay important codé en dur ;
 - mobile prioritaire ;
 - chaque régression devient un test ;
-- tout jalon GREEN possède un checkpoint ;
-- aucun nouveau lot avant son checkpoint de départ.
+- tout jalon GREEN possède un checkpoint.
 
 ## Preview
 
 Le mécanisme Pages est une infrastructure de test.
-Il ne devient pas le propriétaire du runtime et ne justifie aucune fusion du code de travail dans main.
+Il ne devient pas une autorité runtime.
 
 ## Intégration future
 
-L'intégration à GenSrpG sera un chantier distinct, ouvert seulement lorsque :
-- le sous-système est suffisamment stable ;
-- ses contrats sont versionnés ;
-- ses dépendances Core/Shell sont identifiées ;
-- les tests sentinelles sont portables ;
-- un checkpoint GREEN d'intégration est créé côté GenSrpG.
+À l'intégration GenSrpG, le visuel du héros proviendra du contexte Capture et les assets du resolver central.
+Le laboratoire ne doit donc pas transformer son éditeur visuel en propriétaire des stats, de la session Capture ou du monde vivant.
