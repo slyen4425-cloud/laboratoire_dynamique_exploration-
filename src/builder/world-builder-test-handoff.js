@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js';
+} from '../world/world-document-model.js?rev=builder-dynamic-return-v1';
 
 export const WORLD_BUILDER_TEST_HANDOFF_VERSION = 1;
 export const WORLD_BUILDER_TEST_HANDOFF_KEY =
