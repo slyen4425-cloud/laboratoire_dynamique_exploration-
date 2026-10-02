@@ -153,3 +153,33 @@ run `37003537250` — **SUCCESS**.
 
 Prochaine gate :
 publication preview Pages puis validation smartphone/tablette.
+
+
+## Preview World Builder Dynamique UI v1 — 2026-10-02
+
+CI exacte du lot avant publication :
+- HEAD technique : `ab1f30e18829ccee6dfa7181e4a3848b91e0dca1` ;
+- run `37003642577` — **SUCCESS**.
+
+Infrastructure main uniquement :
+- PR preview : #23 ;
+- main SHA : `f6e2df00734981152c1be3324d97d0e2d339af36` ;
+- Pages run : `37003736721` — **SUCCESS** ;
+- artifact Pages : `11225505055`.
+
+Artefact Pages réellement téléchargé et inspecté :
+- `builder.html` présent ;
+- `src/builder/world-builder-main.js` présent ;
+- `src/builder/world-builder-draft.js` présent ;
+- `src/builder/world-builder.css` présent ;
+- les modèles/renderers historiques sont présents ;
+- `index.html` contient le raccourci vers le World Builder.
+
+URLs de validation :
+- runtime : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/`
+- builder : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html`
+
+Gate restante :
+validation smartphone/tablette utilisateur de l'UI Builder, de la preview et du round-trip export/import.
+
+Le lot reste non GREEN jusqu'à cette validation.
