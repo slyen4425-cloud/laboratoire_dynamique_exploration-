@@ -1588,10 +1588,7 @@ $('area-select').addEventListener('change', () => {
   selectedSurfacePathId = null;
   fitRequested = true;
   setMapTool('select');
-refreshControls();
-if (resumeBuilderTest) {
-  setStatus('Session de test restaurée dans le World Builder');
-}
+  refreshControls();
 });
 
 for (const id of ['area-width', 'area-height', 'area-material']) {
