@@ -65,6 +65,9 @@ export function validateWorldBuilderDraft(draft) {
     const rawSpawns = Array.isArray(rawArea.spawns)
       ? rawArea.spawns
       : [];
+    const rawZones = Array.isArray(rawArea.surface?.zones)
+      ? rawArea.surface.zones
+      : [];
     const rawRoutes = Array.isArray(rawArea.surface?.routes)
       ? rawArea.surface.routes
       : [];
@@ -78,6 +81,10 @@ export function validateWorldBuilderDraft(draft) {
 
     if (normalizedArea.spawns.length !== rawSpawns.length) {
       errors.push(`spawn-invalid-or-duplicate:${rawArea.id}`);
+    }
+
+    if (normalizedArea.surface.zones.length !== rawZones.length) {
+      errors.push(`terrain-zone-invalid:${rawArea.id}`);
     }
 
     if (normalizedArea.surface.routes.length !== rawRoutes.length) {
@@ -130,7 +137,12 @@ export function updateAreaProperties(
 
 function surfaceCollection(area, kind) {
   area.surface ??= {};
-  const key = kind === 'river' ? 'rivers' : 'routes';
+  const key =
+    kind === 'river'
+      ? 'rivers'
+      : kind === 'terrain'
+        ? 'zones'
+        : 'routes';
   area.surface[key] ??= [];
   return area.surface[key];
 }
@@ -147,13 +159,22 @@ export function addSurfacePath(
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
-  if (!area || !['route', 'river'].includes(kind)) return next;
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
 
   const items = surfaceCollection(area, kind);
-  const prefix = kind === 'river' ? 'river' : 'road';
+  const prefix =
+    kind === 'river'
+      ? 'river'
+      : kind === 'terrain'
+        ? 'zone'
+        : 'road';
   const id = uniqueId(prefix, items);
   const fallbackMaterial =
-    kind === 'river' ? 'water.forest_stream' : 'road.dirt';
+    kind === 'river'
+      ? 'water.forest_stream'
+      : kind === 'terrain'
+        ? 'grass.forest'
+        : 'road.dirt';
 
   const safePoints = Array.isArray(points)
     ? points
@@ -176,7 +197,10 @@ export function addSurfacePath(
 
   items.push({
     id,
-    width: finite(width, kind === 'river' ? 72 : 82),
+    width: finite(
+      width,
+      kind === 'river' ? 72 : kind === 'terrain' ? 180 : 82
+    ),
     materialId:
       typeof materialId === 'string' && materialId.trim()
         ? materialId.trim()
@@ -196,7 +220,7 @@ export function updateSurfacePath(
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
-  if (!area || !['route', 'river'].includes(kind)) return next;
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
 
   const item = surfaceCollection(area, kind)
     .find((path) => path.id === pathId);
@@ -240,7 +264,7 @@ export function appendSurfacePathPoint(
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
-  if (!area || !['route', 'river'].includes(kind)) return next;
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
 
   const item = surfaceCollection(area, kind)
     .find((path) => path.id === pathId);
@@ -270,7 +294,7 @@ export function deleteSurfacePath(
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
-  if (!area || !['route', 'river'].includes(kind)) return next;
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
 
   const items = surfaceCollection(area, kind);
   const index = items.findIndex((path) => path.id === pathId);
