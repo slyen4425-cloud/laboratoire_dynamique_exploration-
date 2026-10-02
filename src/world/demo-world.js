@@ -12,11 +12,13 @@ export const demoWorldDocument = normalizeWorldDocument({
       height: 1600,
       surface: {
         baseMaterialId: 'grass.forest',
+        baseTraversalRuleId: 'terrain.ground',
         routes: [
           {
             id: 'forest-main-road',
             width: 82,
             materialId: 'road.dirt',
+            traversalRuleId: 'terrain.road',
             points: [
               { x: -80, y: 650 },
               { x: 320, y: 620 },
@@ -33,6 +35,7 @@ export const demoWorldDocument = normalizeWorldDocument({
             id: 'forest-stream',
             width: 72,
             materialId: 'water.forest_stream',
+            traversalRuleId: 'terrain.water',
             points: [
               { x: 985, y: 805 },
               { x: 1085, y: 785 },
@@ -66,8 +69,9 @@ export const demoWorldDocument = normalizeWorldDocument({
             lengthRatio: 0.92,
             widthRatio: 0.82,
             edgeAssistRatio: 0.15,
-            overridesObstacleIds: [
-              'forest-stream-collision'
+            traversalRuleId: 'terrain.bridge',
+            overridesSurfaceFeatureIds: [
+              'forest-stream'
             ]
           }
         },
@@ -106,14 +110,6 @@ export const demoWorldDocument = normalizeWorldDocument({
       ],
       obstacles: [
         { id: 'rock-01', x: 480, y: 300, w: 240, h: 180, kind: 'rock' },
-        {
-          id: 'forest-stream-collision',
-          x: 980,
-          y: 760,
-          w: 460,
-          h: 90,
-          kind: 'river'
-        },
         { id: 'trees-01', x: 1650, y: 360, w: 220, h: 300, kind: 'trees' },
         { id: 'trees-02', x: 350, y: 1120, w: 520, h: 120, kind: 'trees' }
       ],
@@ -129,6 +125,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       height: 560,
       surface: {
         baseMaterialId: 'floor.wood.house',
+        baseTraversalRuleId: 'terrain.ground',
         routes: [],
         rivers: []
       },
