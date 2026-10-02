@@ -343,20 +343,14 @@ function refreshTerrainControls() {
   const selected = currentSurfacePathRaw();
   $('terrain-path-delete').disabled = !selected;
 
-  if (selected?.kind === 'route' || selectedSurfaceKind === 'route') {
-    const route = selectedSurfaceKind === 'route' ? selected : null;
-    if (route) {
-      $('terrain-route-width').value = route.width;
-      $('terrain-route-material').value = route.materialId;
-    }
+  if (selected && selectedSurfaceKind === 'route') {
+    $('terrain-route-width').value = selected.width;
+    $('terrain-route-material').value = selected.materialId;
   }
 
-  if (selected?.kind === 'river' || selectedSurfaceKind === 'river') {
-    const river = selectedSurfaceKind === 'river' ? selected : null;
-    if (river) {
-      $('terrain-river-width').value = river.width;
-      $('terrain-river-material').value = river.materialId;
-    }
+  if (selected && selectedSurfaceKind === 'river') {
+    $('terrain-river-width').value = selected.width;
+    $('terrain-river-material').value = selected.materialId;
   }
 }
 
@@ -1349,7 +1343,8 @@ $('area-select').addEventListener('change', () => {
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
   fitRequested = true;
-  refreshControls();
+  setMapTool('select');
+refreshControls();
 });
 
 for (const id of ['area-width', 'area-height', 'area-material']) {
@@ -1365,6 +1360,80 @@ for (const id of ['area-width', 'area-height', 'area-material']) {
     );
     fitRequested = true;
     refreshControls();
+  });
+}
+
+
+$('terrain-path-select').addEventListener('change', () => {
+  const value = $('terrain-path-select').value;
+
+  if (!value) {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  } else {
+    const separator = value.indexOf(':');
+    selectedSurfaceKind = value.slice(0, separator);
+    selectedSurfacePathId = value.slice(separator + 1);
+  }
+
+  renderPreview();
+});
+
+$('terrain-path-delete').addEventListener('click', () => {
+  if (!selectedSurfaceKind || !selectedSurfacePathId) return;
+
+  draft = deleteSurfacePath(
+    draft,
+    selectedAreaId,
+    selectedSurfaceKind,
+    selectedSurfacePathId
+  );
+
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  refreshControls();
+});
+
+for (const [kind, widthId, materialId] of [
+  ['route', 'terrain-route-width', 'terrain-route-material'],
+  ['river', 'terrain-river-width', 'terrain-river-material']
+]) {
+  $(widthId).addEventListener('change', () => {
+    if (
+      selectedSurfaceKind !== kind ||
+      !selectedSurfacePathId
+    ) {
+      return;
+    }
+
+    draft = updateSurfacePath(
+      draft,
+      selectedAreaId,
+      kind,
+      selectedSurfacePathId,
+      { width: numberValue($(widthId)) }
+    );
+    refreshJson();
+    renderPreview();
+  });
+
+  $(materialId).addEventListener('change', () => {
+    if (
+      selectedSurfaceKind !== kind ||
+      !selectedSurfacePathId
+    ) {
+      return;
+    }
+
+    draft = updateSurfacePath(
+      draft,
+      selectedAreaId,
+      kind,
+      selectedSurfacePathId,
+      { materialId: $(materialId).value }
+    );
+    refreshJson();
+    renderPreview();
   });
 }
 
@@ -1736,6 +1805,330 @@ $('preview-zoom').addEventListener('input', () => {
   renderPreview();
 });
 
+
+for (const button of document.querySelectorAll('[data-map-tool]')) {
+  button.addEventListener('click', () => {
+    setMapTool(button.dataset.mapTool);
+  });
+}
+
+$('preview-zoom-in').addEventListener('click', () => {
+  applyZoomAtCanvasPoint(
+    zoom * 1.25,
+    {
+      x: canvas.clientWidth / 2,
+      y: canvas.clientHeight / 2
+    }
+  );
+});
+
+$('preview-zoom-out').addEventListener('click', () => {
+  applyZoomAtCanvasPoint(
+    zoom / 1.25,
+    {
+      x: canvas.clientWidth / 2,
+      y: canvas.clientHeight / 2
+    }
+  );
+});
+
+canvas.addEventListener(
+  'wheel',
+  (event) => {
+    event.preventDefault();
+    const point = canvasCoordinates(event);
+    const factor = Math.exp(-event.deltaY * 0.0015);
+    applyZoomAtCanvasPoint(zoom * factor, point);
+  },
+  { passive: false }
+);
+
+canvas.addEventListener('pointerdown', (event) => {
+  const point = canvasCoordinates(event);
+  activePointers.set(event.pointerId, point);
+
+  try {
+    canvas.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is optional; interaction remains local to the canvas.
+  }
+
+  if (activePointers.size === 2) {
+    beginPinch();
+    canvas.dataset.dragging = 'true';
+    return;
+  }
+
+  if (activePointers.size > 1) return;
+
+  const world = eventWorldPoint(event);
+  const area = currentAreaNormalized();
+  if (!world || !area) return;
+
+  canvas.dataset.dragging = 'true';
+
+  if (mapTool === 'route' || mapTool === 'river') {
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'pending-draw',
+      kind: mapTool,
+      startCanvas: point,
+      startWorld: world
+    };
+    return;
+  }
+
+  if (mapTool === 'area-size') {
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'resize-area'
+    };
+    return;
+  }
+
+  const object = hitWorldObject(area, world);
+  if (object) {
+    selectedObjectId = object.id;
+    selectedSpawnId = null;
+    activateTab('objects');
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'drag-object',
+      offsetX: world.x - object.transform.x,
+      offsetY: world.y - object.transform.y
+    };
+    refreshObjectControls();
+    renderPreview();
+    return;
+  }
+
+  const spawn = hitSpawn(area, world);
+  if (spawn) {
+    selectedSpawnId = spawn.id;
+    selectedObjectId = null;
+    activateTab('area');
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'drag-spawn',
+      offsetX: world.x - spawn.x,
+      offsetY: world.y - spawn.y
+    };
+    refreshAreaControls();
+    renderPreview();
+    return;
+  }
+
+  pointerSession = {
+    pointerId: event.pointerId,
+    mode: 'pan',
+    startCanvas: point,
+    startCenter: { ...center },
+    startZoom: zoom
+  };
+});
+
+canvas.addEventListener('pointermove', (event) => {
+  if (!activePointers.has(event.pointerId)) return;
+
+  const canvasPoint = canvasCoordinates(event);
+  activePointers.set(event.pointerId, canvasPoint);
+
+  if (activePointers.size === 2) {
+    if (!pinchState) beginPinch();
+    updatePinch();
+    return;
+  }
+
+  if (
+    !pointerSession ||
+    pointerSession.pointerId !== event.pointerId
+  ) {
+    return;
+  }
+
+  const area = currentAreaRaw();
+  const world = eventWorldPoint(event);
+  if (!area || !world) return;
+
+  if (pointerSession.mode === 'pending-draw') {
+    const distance = Math.hypot(
+      canvasPoint.x - pointerSession.startCanvas.x,
+      canvasPoint.y - pointerSession.startCanvas.y
+    );
+
+    if (distance < 4) return;
+
+    const pathId = beginSurfacePath(
+      pointerSession.kind,
+      pointerSession.startWorld
+    );
+    if (!pathId) return;
+
+    appendDrawPoint(
+      pointerSession.kind,
+      pathId,
+      world,
+      true
+    );
+
+    pointerSession = {
+      ...pointerSession,
+      mode: 'draw-path',
+      pathId
+    };
+
+    refreshTerrainControls();
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'draw-path') {
+    appendDrawPoint(
+      pointerSession.kind,
+      pointerSession.pathId,
+      world
+    );
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'drag-object') {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x - pointerSession.offsetX
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y - pointerSession.offsetY
+      )
+    );
+
+    draft = updateWorldObjectTransform(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      { x, y }
+    );
+
+    $('object-x').value = Math.round(x * 10) / 10;
+    $('object-y').value = Math.round(y * 10) / 10;
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'drag-spawn') {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x - pointerSession.offsetX
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y - pointerSession.offsetY
+      )
+    );
+
+    draft = updateSpawn(
+      draft,
+      selectedAreaId,
+      selectedSpawnId,
+      { x, y }
+    );
+
+    $('spawn-x').value = Math.round(x * 10) / 10;
+    $('spawn-y').value = Math.round(y * 10) / 10;
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'resize-area') {
+    const width = Math.max(128, world.x);
+    const height = Math.max(128, world.y);
+
+    draft = updateAreaProperties(
+      draft,
+      selectedAreaId,
+      { width, height }
+    );
+
+    $('area-width').value = Math.round(width);
+    $('area-height').value = Math.round(height);
+    fitRequested = false;
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'pan') {
+    center = {
+      ...panBuilderCenter({
+        center: pointerSession.startCenter,
+        deltaCanvasX:
+          canvasPoint.x - pointerSession.startCanvas.x,
+        deltaCanvasY:
+          canvasPoint.y - pointerSession.startCanvas.y,
+        zoom: pointerSession.startZoom
+      })
+    };
+    fitRequested = false;
+    renderPreview();
+  }
+});
+
+function endPointer(event) {
+  const wasTracked = activePointers.has(event.pointerId);
+  activePointers.delete(event.pointerId);
+
+  if (!wasTracked) return;
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId &&
+    pointerSession.mode === 'draw-path'
+  ) {
+    const world = eventWorldPoint(event);
+    if (world) {
+      appendDrawPoint(
+        pointerSession.kind,
+        pointerSession.pathId,
+        world,
+        true
+      );
+    }
+  }
+
+  if (activePointers.size < 2) {
+    pinchState = null;
+  }
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId
+  ) {
+    pointerSession = null;
+    finishPointerEditing();
+  } else if (activePointers.size === 0) {
+    canvas.dataset.dragging = 'false';
+  }
+
+  try {
+    canvas.releasePointerCapture(event.pointerId);
+  } catch {
+    // Ignore browsers that already released pointer capture.
+  }
+}
+
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+
 $('export-json').addEventListener('click', () => {
   try {
     const json = serializeWorldBuilderDraft(draft);
@@ -1787,7 +2180,6 @@ $('reset-demo').addEventListener('click', () => {
 });
 
 addEventListener('resize', () => {
-  fitRequested = true;
   renderPreview();
 });
 
