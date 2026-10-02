@@ -157,3 +157,35 @@ Gate restante :
 validation smartphone utilisateur du Map Actor, du miroir gauche/droite, du mouvement visuel, et des régressions pont/bâtiment/Portal.
 
 Le lot reste non GREEN jusqu'à cette validation.
+
+
+## Validation utilisateur finale — 2026-10-02
+
+Test smartphone : **validé**.
+
+Retour utilisateur :
+> C est ok 😂 , rigolo se petit bonhomme.... Haha
+
+Cette validation confirme :
+- Map Actor visible sur la map ;
+- déplacement toujours fonctionnel ;
+- représentation map unique à la place de l'ancien cercle joueur ;
+- comportement visuel suffisamment lisible pour la validation v1 ;
+- pont / bâtiment / Portal restent utilisables dans la preview.
+
+Le visuel de démonstration reste volontairement temporaire et sera remplacé par le flux utilisateur réel :
+**1 visuel fourni -> préparation automatique -> MapActorVisual**.
+
+## Fermeture
+Map Actor Visual System v1 : **GREEN / terminé**.
+
+SHA technique validé avant document de fermeture :
+`6937b0bf35eec81998ad91276961d7fcd3149c79`
+
+CI :
+run `37001704879` — **SUCCESS**.
+
+Suite validée :
+1. World Builder Dynamique UI v1 ;
+2. intégration du flux d'import utilisateur Map Actor dans un lot dédié ;
+3. enrichissements visuels avancés seulement ensuite.
