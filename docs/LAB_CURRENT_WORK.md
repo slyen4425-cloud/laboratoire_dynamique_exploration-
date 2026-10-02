@@ -131,3 +131,53 @@ Valeurs attendues du manifeste :
 - format : WebP RGBA 384×384.
 
 Une nouvelle CI complète est requise sur un commit utilisateur après cet import bot avant toute preview.
+
+
+## État technique Building WorldObject v1 — 2026-10-02
+
+Implémenté :
+- `kind: building` dans le WorldObject Model ;
+- transform partagé `x/y/rotationDeg/scaleX/scaleY` ;
+- `baseSize.width/height` logique ;
+- `visual.assetId` comme autorité visuelle unique ;
+- footprint logique orienté, avec ratios et offsets configurables ;
+- `doorAnchors[]` en coordonnées locales normalisées ;
+- transformation automatique des doorAnchors vers les coordonnées monde ;
+- `portalRefs[]` validés uniquement contre des anchors existants, mais runtime Portal toujours hors périmètre ;
+- rendu image Building via le WorldObject Renderer ;
+- collision Building exclusivement via Collision World + footprint logique ;
+- bâtiment de démonstration `forest-house-01` près de la route.
+
+Paramètres déjà éditables par données pour le World Builder Dynamique :
+- position X/Y ;
+- rotation ;
+- scale X/Y ;
+- largeur/hauteur logique ;
+- assetId ;
+- activation du footprint ;
+- ratios largeur/hauteur du footprint ;
+- offsets X/Y du footprint ;
+- liste des doorAnchors ;
+- références Portal préparées.
+
+Garanties :
+- changer `assetId` ne modifie ni footprint ni doorAnchor ;
+- le renderer ne possède pas la collision ;
+- la collision ne lit aucun asset/sprite ;
+- un Portal ref vers un anchor inexistant est rejeté à la normalisation ;
+- aucun fallback visuel concurrent.
+
+Tests dédiés :
+`tests/building-world-object.test.js`
+- normalisation des paramètres d'édition ;
+- doorAnchor suit position/rotation/scale ;
+- footprint suit les données logiques et le transform ;
+- changement d'asset sans effet gameplay ;
+- collision pilotée par Collision World ;
+- validation des portalRefs.
+
+CI complète après restauration binaire :
+run `36950025990` — **SUCCESS**.
+
+Prochaine gate :
+preview smartphone avec asset réel + collision Building.
