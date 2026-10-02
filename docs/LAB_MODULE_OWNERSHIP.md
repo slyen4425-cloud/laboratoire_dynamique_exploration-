@@ -23,7 +23,7 @@
 | Rencontre | Encounter Controller | world + entités | encounter intent | Combat décide le monde |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
 | Combat Capture | Capture Combat (futur) | Snapshot | Result | Exploration calcule le combat |
-| World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |
+| World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |\n| Draft World Builder | World Builder Draft Model | WorldDocument source + edits | draft sérialisable | devenir état runtime / posséder renderer |\n| Preview Builder | Renderers Exploration existants | draft normalisé + caméra preview | pixels | écrire données/collision/mouvement |
 | Stockage | Core Storage (futur) | document versionné | persisted data | stockage dispersé |
 | Cache PWA | Service worker | version/assets | cache | logique gameplay |
 
