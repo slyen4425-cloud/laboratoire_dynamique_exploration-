@@ -13,8 +13,9 @@ import {
   pointInOrientedRect
 } from '../src/core/collision.js';
 import { stepMovement } from '../src/core/movement.js';
+import { normalizeWorldSurface } from '../src/world/surface-model.js';
 
-function makeBridge(overridesObstacleIds = ['river-1']) {
+function makeBridge(overridesSurfaceFeatureIds = ['river-1']) {
   return normalizeWorldObjects([
     {
       id: 'bridge-1',
@@ -37,7 +38,7 @@ function makeBridge(overridesObstacleIds = ['river-1']) {
         enabled: true,
         lengthRatio: 0.9,
         widthRatio: 0.75,
-        overridesObstacleIds
+        overridesSurfaceFeatureIds
       }
     }
   ])[0];
@@ -111,31 +112,54 @@ test('oriented passage respects bridge rotation', () => {
   assert.equal(pointInOrientedRect(310, 250, passage), false);
 });
 
-test('bridge only overrides explicitly referenced obstacles', () => {
+test('bridge only overrides explicitly referenced surface features', () => {
   const bridge = makeBridge(['river-1']);
   const world = {
     width: 600,
     height: 600,
+    surface: normalizeWorldSurface({
+      rivers: [
+        {
+          id: 'river-1',
+          width: 60,
+          traversalRuleId: 'terrain.water',
+          points: [
+            { x: 100, y: 250 },
+            { x: 400, y: 250 }
+          ]
+        }
+      ]
+    }),
     objects: [bridge],
-    obstacles: [
-      { id: 'river-1', x: 190, y: 220, w: 120, h: 60, kind: 'river' }
-    ]
+    obstacles: []
   };
-  const entity = { radius: 10 };
+  const entity = {
+    radius: 10,
+    locomotion: { modes: ['ground'] }
+  };
 
   assert.equal(isBlocked(world, entity, 250, 250), false);
   assert.equal(isBlocked(world, entity, 310, 250), true);
 
-  const wrongObstacleWorld = {
+  const wrongFeatureWorld = {
     ...world,
-    obstacles: [
-      { id: 'river-2', x: 190, y: 220, w: 120, h: 60, kind: 'river' }
-    ]
+    surface: normalizeWorldSurface({
+      rivers: [
+        {
+          id: 'river-2',
+          width: 60,
+          traversalRuleId: 'terrain.water',
+          points: [
+            { x: 100, y: 250 },
+            { x: 400, y: 250 }
+          ]
+        }
+      ]
+    })
   };
 
-  assert.equal(isBlocked(wrongObstacleWorld, entity, 250, 250), true);
+  assert.equal(isBlocked(wrongFeatureWorld, entity, 250, 250), true);
 });
-
 test('real movement can cross a blocking river through a rotated bridge corridor', () => {
   const bridge = normalizeWorldObjects([
     {
@@ -156,7 +180,7 @@ test('real movement can cross a blocking river through a rotated bridge corridor
         enabled: true,
         lengthRatio: 1,
         widthRatio: 0.9,
-        overridesObstacleIds: ['river-crossing']
+        overridesSurfaceFeatureIds: ['river-crossing']
       }
     }
   ])[0];
@@ -164,17 +188,21 @@ test('real movement can cross a blocking river through a rotated bridge corridor
   const world = {
     width: 600,
     height: 600,
+    surface: normalizeWorldSurface({
+      rivers: [
+        {
+          id: 'river-crossing',
+          width: 60,
+          traversalRuleId: 'terrain.water',
+          points: [
+            { x: 100, y: 250 },
+            { x: 400, y: 250 }
+          ]
+        }
+      ]
+    }),
     objects: [bridge],
-    obstacles: [
-      {
-        id: 'river-crossing',
-        x: 100,
-        y: 220,
-        w: 300,
-        h: 60,
-        kind: 'river'
-      }
-    ]
+    obstacles: []
   };
 
   const entity = { x: 250, y: 190, radius: 10 };
@@ -214,7 +242,7 @@ test('regression: slightly off-center bridge crossing must not snag on invisible
         enabled: true,
         lengthRatio: 0.92,
         widthRatio: 0.82,
-        overridesObstacleIds: ['river-snag']
+        overridesSurfaceFeatureIds: ['river-snag']
       }
     }
   ])[0];
@@ -222,17 +250,21 @@ test('regression: slightly off-center bridge crossing must not snag on invisible
   const world = {
     width: 600,
     height: 600,
+    surface: normalizeWorldSurface({
+      rivers: [
+        {
+          id: 'river-snag',
+          width: 90,
+          traversalRuleId: 'terrain.water',
+          points: [
+            { x: 100, y: 250 },
+            { x: 400, y: 250 }
+          ]
+        }
+      ]
+    }),
     objects: [bridge],
-    obstacles: [
-      {
-        id: 'river-snag',
-        x: 100,
-        y: 205,
-        w: 300,
-        h: 90,
-        kind: 'river'
-      }
-    ]
+    obstacles: []
   };
 
   const entity = { x: 278, y: 180, radius: 18 };
@@ -272,7 +304,7 @@ test('regression: diagonal approach slides onto bridge instead of sticking to ri
         enabled: true,
         lengthRatio: 0.92,
         widthRatio: 0.82,
-        overridesObstacleIds: ['river-diagonal']
+        overridesSurfaceFeatureIds: ['river-diagonal']
       }
     }
   ])[0];
@@ -280,17 +312,21 @@ test('regression: diagonal approach slides onto bridge instead of sticking to ri
   const world = {
     width: 600,
     height: 600,
+    surface: normalizeWorldSurface({
+      rivers: [
+        {
+          id: 'river-diagonal',
+          width: 90,
+          traversalRuleId: 'terrain.water',
+          points: [
+            { x: 100, y: 250 },
+            { x: 400, y: 250 }
+          ]
+        }
+      ]
+    }),
     objects: [bridge],
-    obstacles: [
-      {
-        id: 'river-diagonal',
-        x: 100,
-        y: 205,
-        w: 300,
-        h: 90,
-        kind: 'river'
-      }
-    ]
+    obstacles: []
   };
 
   const entity = { x: 220, y: 145, radius: 18 };
