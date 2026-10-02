@@ -16,6 +16,43 @@ function normalizeRotationDegrees(value) {
   return ((degrees % 360) + 360) % 360;
 }
 
+function normalizeTransform(raw) {
+  const transform = raw && typeof raw === 'object' ? raw : {};
+
+  return Object.freeze({
+    x: finiteNumber(transform.x, 0),
+    y: finiteNumber(transform.y, 0),
+    rotationDeg: normalizeRotationDegrees(transform.rotationDeg),
+    scaleX: finiteNumber(
+      transform.scaleX,
+      1,
+      {
+        min: WORLD_OBJECT_LIMITS.minScale,
+        max: WORLD_OBJECT_LIMITS.maxScale
+      }
+    ),
+    scaleY: finiteNumber(
+      transform.scaleY,
+      1,
+      {
+        min: WORLD_OBJECT_LIMITS.minScale,
+        max: WORLD_OBJECT_LIMITS.maxScale
+      }
+    )
+  });
+}
+
+function normalizeVisual(raw) {
+  const visual = raw && typeof raw === 'object' ? raw : {};
+
+  return Object.freeze({
+    assetId:
+      typeof visual.assetId === 'string' && visual.assetId.trim()
+        ? visual.assetId.trim()
+        : null
+  });
+}
+
 function normalizeIds(values) {
   if (!Array.isArray(values)) return Object.freeze([]);
 
@@ -35,14 +72,8 @@ function normalizeIds(values) {
 
 function normalizeBridge(raw, index) {
   const source = raw && typeof raw === 'object' ? raw : {};
-  const transform = source.transform && typeof source.transform === 'object'
-    ? source.transform
-    : {};
   const baseSize = source.baseSize && typeof source.baseSize === 'object'
     ? source.baseSize
-    : {};
-  const visual = source.visual && typeof source.visual === 'object'
-    ? source.visual
     : {};
   const traversal =
     source.traversal && typeof source.traversal === 'object'
@@ -54,44 +85,16 @@ function normalizeBridge(raw, index) {
       ? source.id.trim()
       : `bridge-${index + 1}`;
 
-  const scaleX = finiteNumber(
-    transform.scaleX,
-    1,
-    {
-      min: WORLD_OBJECT_LIMITS.minScale,
-      max: WORLD_OBJECT_LIMITS.maxScale
-    }
-  );
-  const scaleY = finiteNumber(
-    transform.scaleY,
-    1,
-    {
-      min: WORLD_OBJECT_LIMITS.minScale,
-      max: WORLD_OBJECT_LIMITS.maxScale
-    }
-  );
-
   return Object.freeze({
     schemaVersion: WORLD_OBJECT_SCHEMA_VERSION,
     id,
     kind: 'bridge',
-    transform: Object.freeze({
-      x: finiteNumber(transform.x, 0),
-      y: finiteNumber(transform.y, 0),
-      rotationDeg: normalizeRotationDegrees(transform.rotationDeg),
-      scaleX,
-      scaleY
-    }),
+    transform: normalizeTransform(source.transform),
     baseSize: Object.freeze({
       length: finiteNumber(baseSize.length, 160, { min: 24, max: 1600 }),
       width: finiteNumber(baseSize.width, 80, { min: 24, max: 800 })
     }),
-    visual: Object.freeze({
-      assetId:
-        typeof visual.assetId === 'string' && visual.assetId.trim()
-          ? visual.assetId.trim()
-          : null
-    }),
+    visual: normalizeVisual(source.visual),
     traversal: Object.freeze({
       enabled: traversal.enabled !== false,
       lengthRatio: finiteNumber(
@@ -116,11 +119,133 @@ function normalizeBridge(raw, index) {
   });
 }
 
+function normalizeDoorAnchors(rawAnchors) {
+  if (!Array.isArray(rawAnchors)) return Object.freeze([]);
+
+  const anchors = [];
+  const seen = new Set();
+
+  for (const raw of rawAnchors) {
+    if (!raw || typeof raw !== 'object') continue;
+
+    const id =
+      typeof raw.id === 'string' && raw.id.trim()
+        ? raw.id.trim()
+        : null;
+
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+
+    anchors.push(Object.freeze({
+      id,
+      x: finiteNumber(raw.x, 0, { min: -0.75, max: 0.75 }),
+      y: finiteNumber(raw.y, 0, { min: -0.75, max: 0.75 })
+    }));
+  }
+
+  return Object.freeze(anchors);
+}
+
+function normalizePortalRefs(rawRefs, doorAnchors) {
+  if (!Array.isArray(rawRefs)) return Object.freeze([]);
+
+  const validAnchors = new Set(doorAnchors.map((anchor) => anchor.id));
+  const refs = [];
+  const seen = new Set();
+
+  for (const raw of rawRefs) {
+    if (!raw || typeof raw !== 'object') continue;
+
+    const doorAnchorId =
+      typeof raw.doorAnchorId === 'string' && raw.doorAnchorId.trim()
+        ? raw.doorAnchorId.trim()
+        : null;
+
+    if (
+      !doorAnchorId ||
+      !validAnchors.has(doorAnchorId) ||
+      seen.has(doorAnchorId)
+    ) {
+      continue;
+    }
+
+    seen.add(doorAnchorId);
+
+    refs.push(Object.freeze({
+      doorAnchorId,
+      portalId:
+        typeof raw.portalId === 'string' && raw.portalId.trim()
+          ? raw.portalId.trim()
+          : null
+    }));
+  }
+
+  return Object.freeze(refs);
+}
+
+function normalizeBuilding(raw, index) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const baseSize = source.baseSize && typeof source.baseSize === 'object'
+    ? source.baseSize
+    : {};
+  const footprint =
+    source.footprint && typeof source.footprint === 'object'
+      ? source.footprint
+      : {};
+  const doorAnchors = normalizeDoorAnchors(source.doorAnchors);
+
+  const id =
+    typeof source.id === 'string' && source.id.trim()
+      ? source.id.trim()
+      : `building-${index + 1}`;
+
+  return Object.freeze({
+    schemaVersion: WORLD_OBJECT_SCHEMA_VERSION,
+    id,
+    kind: 'building',
+    transform: normalizeTransform(source.transform),
+    baseSize: Object.freeze({
+      width: finiteNumber(baseSize.width, 260, { min: 24, max: 1600 }),
+      height: finiteNumber(baseSize.height, 260, { min: 24, max: 1600 })
+    }),
+    visual: normalizeVisual(source.visual),
+    footprint: Object.freeze({
+      enabled: footprint.enabled !== false,
+      widthRatio: finiteNumber(
+        footprint.widthRatio,
+        0.78,
+        { min: 0.1, max: 1 }
+      ),
+      heightRatio: finiteNumber(
+        footprint.heightRatio,
+        0.62,
+        { min: 0.1, max: 1 }
+      ),
+      offsetX: finiteNumber(
+        footprint.offsetX,
+        0,
+        { min: -0.5, max: 0.5 }
+      ),
+      offsetY: finiteNumber(
+        footprint.offsetY,
+        -0.08,
+        { min: -0.5, max: 0.5 }
+      )
+    }),
+    doorAnchors,
+    portalRefs: normalizePortalRefs(source.portalRefs, doorAnchors)
+  });
+}
+
 export function normalizeWorldObject(raw, index = 0) {
   if (!raw || typeof raw !== 'object') return null;
 
   if (raw.kind === 'bridge') {
     return normalizeBridge(raw, index);
+  }
+
+  if (raw.kind === 'building') {
+    return normalizeBuilding(raw, index);
   }
 
   return null;
@@ -139,6 +264,17 @@ export function normalizeWorldObjects(rawObjects = []) {
 export function worldObjectRotationRadians(object) {
   const degrees = object?.transform?.rotationDeg;
   return Number.isFinite(degrees) ? degrees * Math.PI / 180 : 0;
+}
+
+function localPointToWorld(object, localX, localY) {
+  const rotation = worldObjectRotationRadians(object);
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+
+  return Object.freeze({
+    x: object.transform.x + localX * cos - localY * sin,
+    y: object.transform.y + localX * sin + localY * cos
+  });
 }
 
 export function bridgeVisualRect(bridge) {
@@ -170,5 +306,65 @@ export function bridgeTraversalRect(bridge) {
     rotation: visual.rotation,
     length: visual.length * bridge.traversal.lengthRatio,
     width: visual.width * bridge.traversal.widthRatio
+  });
+}
+
+export function buildingVisualRect(building) {
+  if (!building || building.kind !== 'building') return null;
+
+  return Object.freeze({
+    x: building.transform.x,
+    y: building.transform.y,
+    rotation: worldObjectRotationRadians(building),
+    width: building.baseSize.width * building.transform.scaleX,
+    height: building.baseSize.height * building.transform.scaleY
+  });
+}
+
+export function buildingFootprintRect(building) {
+  if (
+    !building ||
+    building.kind !== 'building' ||
+    building.footprint?.enabled !== true
+  ) {
+    return null;
+  }
+
+  const width = building.baseSize.width * building.transform.scaleX;
+  const height = building.baseSize.height * building.transform.scaleY;
+  const center = localPointToWorld(
+    building,
+    width * building.footprint.offsetX,
+    height * building.footprint.offsetY
+  );
+
+  return Object.freeze({
+    x: center.x,
+    y: center.y,
+    rotation: worldObjectRotationRadians(building),
+    length: width * building.footprint.widthRatio,
+    width: height * building.footprint.heightRatio
+  });
+}
+
+export function buildingDoorAnchorWorld(building, anchorId) {
+  if (!building || building.kind !== 'building') return null;
+
+  const anchor = building.doorAnchors.find((item) => item.id === anchorId);
+  if (!anchor) return null;
+
+  const width = building.baseSize.width * building.transform.scaleX;
+  const height = building.baseSize.height * building.transform.scaleY;
+
+  const point = localPointToWorld(
+    building,
+    width * anchor.x,
+    height * anchor.y
+  );
+
+  return Object.freeze({
+    id: anchor.id,
+    x: point.x,
+    y: point.y
   });
 }
