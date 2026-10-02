@@ -101,12 +101,6 @@ export const demoWorldDocument = normalizeWorldDocument({
               x: 0,
               y: 0.38
             }
-          ],
-          portalRefs: [
-            {
-              doorAnchorId: 'main-door',
-              portalId: 'portal-house-enter'
-            }
           ]
         }
       ],
