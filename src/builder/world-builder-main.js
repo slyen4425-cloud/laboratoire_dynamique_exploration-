@@ -2503,10 +2503,11 @@ function endPointer(event) {
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
 
-$('test-exploration').addEventListener('click', () => {
+$('test-exploration').addEventListener('click', (event) => {
   const result = currentValidation();
 
   if (!result.valid || !result.document) {
+    event.preventDefault();
     setStatus(
       `Impossible de tester : ${result.errors.join(' · ')}`,
       true
@@ -2519,8 +2520,8 @@ $('test-exploration').addEventListener('click', () => {
       window.sessionStorage,
       result.document
     );
-    window.location.assign('./index.html?builderTest=1');
   } catch (error) {
+    event.preventDefault();
     setStatus(
       `Impossible de préparer le test : ${error.message}`,
       true
@@ -2583,3 +2584,6 @@ addEventListener('resize', () => {
 });
 
 refreshControls();
+if (resumeBuilderTest) {
+  setStatus('Session de test restaurée dans le World Builder');
+}
