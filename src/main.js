@@ -46,7 +46,7 @@ const joystick = document.querySelector('#joystick');
 const stick = document.querySelector('#stick');
 
 const config = normalizeExplorationConfig();
-const runtimeParams = new URLSearchParams(window.location.search);
+const runtimeParams = new URL(document.URL).searchParams;
 const builderTest = runtimeParams.get('builderTest') === '1';
 const builderTestDocument = builderTest
   ? readWorldBuilderTestHandoff(window.sessionStorage)
