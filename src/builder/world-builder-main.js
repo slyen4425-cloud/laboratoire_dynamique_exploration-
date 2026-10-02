@@ -1587,7 +1587,6 @@ function updatePinch() {
   zoom = view.zoom;
   center = { ...view.center };
   fitRequested = false;
-  syncZoomInput();
   renderPreview();
 }
 
