@@ -266,3 +266,61 @@ test('World Builder direct-edit UI exposes map tools and intuitive zoom controls
   assert.match(main, /addSurfacePath/);
   assert.match(main, /mode: 'resize-area'/);
 });
+
+
+test('direct-edit UI keeps WorldDocument draft as the only persistent map authority', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(
+    /\bdraft\.areas(?:\[[^\]]+\])?\s*=/.test(main),
+    false,
+    'UI must not assign draft.areas directly'
+  );
+  assert.equal(
+    /\bdraft\.portals(?:\[[^\]]+\])?\s*=/.test(main),
+    false,
+    'UI must not assign draft.portals directly'
+  );
+  assert.equal(
+    /\bBuilderMap\b|\bPreviewWorld\b/.test(main),
+    false,
+    'no parallel Builder/preview world format'
+  );
+
+  assert.match(
+    main,
+    /const result = currentValidation\(\);[\s\S]*const document = result\.document;/,
+    'preview must render the normalized document derived from the draft'
+  );
+});
+
+test('direct gestures mutate canonical draft through Builder mutation helpers only', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    main,
+    /mode === 'drag-object'[\s\S]*draft = updateWorldObjectTransform\(/,
+    'object drag must update canonical WorldObject transform'
+  );
+  assert.match(
+    main,
+    /mode === 'drag-spawn'[\s\S]*draft = updateSpawn\(/,
+    'spawn drag must update canonical Spawn'
+  );
+  assert.match(
+    main,
+    /mode === 'resize-area'[\s\S]*draft = updateAreaProperties\(/,
+    'area resize must update canonical WorldArea dimensions'
+  );
+  assert.match(
+    main,
+    /draft = addSurfacePath\([\s\S]*draft = appendSurfacePathPoint\(/,
+    'terrain drawing must update canonical surface paths'
+  );
+});
