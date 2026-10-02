@@ -38,9 +38,6 @@ function makeBuilding(assetId = 'object.building.house.fantasy_wood_stone.01') {
       },
       doorAnchors: [
         { id: 'main-door', x: 0, y: 0.4 }
-      ],
-      portalRefs: [
-        { doorAnchorId: 'main-door', portalId: 'portal-house-1' }
       ]
     }
   ])[0];
@@ -62,7 +59,6 @@ test('Building WorldObject normalizes editor-facing parameters', () => {
   assert.equal(building.footprint.offsetX, 0.1);
   assert.equal(building.footprint.offsetY, -0.05);
   assert.equal(building.doorAnchors[0].id, 'main-door');
-  assert.equal(building.portalRefs[0].portalId, 'portal-house-1');
   assert.equal(Object.isFrozen(building.transform), true);
   assert.equal(Object.isFrozen(building.footprint), true);
   assert.equal(Object.isFrozen(building.doorAnchors), true);
@@ -149,7 +145,7 @@ test('Building collision is owned by Collision World logical footprint', () => {
   assert.equal(isBlocked(world, entity, 500, 500), false);
 });
 
-test('Portal refs cannot target nonexistent Building door anchors', () => {
+test('Building owns door anchors but never Portal links', () => {
   const building = normalizeWorldObjects([
     {
       kind: 'building',
@@ -157,12 +153,11 @@ test('Portal refs cannot target nonexistent Building door anchors', () => {
         { id: 'front', x: 0, y: 0.4 }
       ],
       portalRefs: [
-        { doorAnchorId: 'front', portalId: 'portal-front' },
-        { doorAnchorId: 'missing', portalId: 'portal-invalid' }
+        { doorAnchorId: 'front', portalId: 'legacy-should-not-survive' }
       ]
     }
   ])[0];
 
-  assert.equal(building.portalRefs.length, 1);
-  assert.equal(building.portalRefs[0].doorAnchorId, 'front');
+  assert.equal(building.doorAnchors.length, 1);
+  assert.equal('portalRefs' in building, false);
 });
