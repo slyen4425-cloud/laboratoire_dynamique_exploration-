@@ -118,3 +118,54 @@ Pendant le raccord v1, une duplication potentielle a été retirée avant public
 
 Motif :
 éviter deux autorités décrivant la même relation porte -> Portal.
+
+
+## État technique WorldArea / Portal v1 — 2026-10-02
+
+Implémenté :
+- `WorldArea v1` avec id/kind/dimensions/surface/objects/obstacles/spawns ;
+- `WorldDocument v1` multi-Areas ;
+- `Portal v1` avec source Area, trigger, target Area et target Spawn ;
+- trigger `building-door` résolu depuis le `doorAnchor` Building GREEN ;
+- trigger `point` générique pour sortie/escaliers/grottes futurs ;
+- références Area/Spawn/door invalides rejetées à la normalisation ;
+- runtime unique `currentAreaId + x/y` sur le joueur ;
+- passage Area -> Area sans reload ;
+- arrivée uniquement par Spawn explicite ;
+- maison extérieure -> intérieur -> retour extérieur dans la démo ;
+- chargement des assets WorldObject de toutes les Areas avant démarrage.
+
+Autorité consolidée :
+- Building ne contient plus de `portalRefs` ;
+- Portal Model est l'unique propriétaire du lien entre Areas ;
+- aucun sprite/renderer ne fournit de coordonnées Portal.
+
+Tests :
+- normalisation Areas/Spawns/Portals ;
+- références invalides ;
+- doorAnchor transformé ;
+- point trigger ;
+- transition vers Spawn ;
+- vrai chemin mouvement -> porte -> Portal ;
+- sentinelle aucune navigation/reload ;
+- sentinelle Portal unique authority.
+
+CI runtime avant publication :
+run `36979274962` — **SUCCESS**.
+
+## Preview WorldArea / Portal v1
+
+Infrastructure main uniquement :
+- main SHA : `a01044d5c5c226545c82eb8cd15a477a88b81291` ;
+- Pages run : `36979384285` ;
+- job deploy : **SUCCESS** ;
+- artifact Pages : `11215195727`.
+
+Artefact réellement inspecté :
+- `index.html` charge `main.js?rev=worldarea-portal-v1` ;
+- runtime contient `findTriggeredPortal` + `applyPortalTransition` ;
+- Portal Model publié contient `building-door`, `targetAreaId`, `targetSpawnId` ;
+- démo publiée contient `house-interior-01`, `portal-house-enter`, `portal-house-exit`.
+
+Gate restante :
+validation smartphone utilisateur.
