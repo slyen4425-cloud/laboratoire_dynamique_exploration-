@@ -851,3 +851,23 @@ validation smartphone :
 - hors pont, impossible de traverser ;
 - sur le pont, traversée toujours fluide ;
 - aucune régression zoom / Builder.
+
+
+## Validation utilisateur finale — World Builder Dynamique UI v1 — 2026-10-02
+
+Validation smartphone utilisateur : **GREEN**.
+
+Confirmé sur la preview publiée :
+- rivière dessinée dans le Builder bloquante hors pont ;
+- grande surface d'eau raccordée à la géométrie canonique ;
+- pont toujours traversable et fluide ;
+- pinch zoom Builder fonctionnel ;
+- handoff Builder -> test runtime -> retour Builder conserve le WorldDocument ;
+- retour Building dynamique déjà validé ;
+- aucune régression utilisateur signalée sur le lot.
+
+La gate manuelle du lot World Builder Dynamique UI v1 est donc fermée.
+
+Suite autorisée :
+ouvrir un lot séparé **Map Actor Editor v1** depuis le checkpoint GREEN exact du présent lot.
+Ce prochain lot réutilise le Map Actor Visual System déjà GREEN et n'introduit aucune seconde autorité de position, collision ou gameplay.
