@@ -29,15 +29,15 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js';
+} from './world/world-document-model.js?rev=builder-dynamic-return-v1';
 import {
   applyPortalTransition,
   findTriggeredPortal
-} from './world/portal-model.js?rev=worldarea-portal-v1-exit-marker';
-import { demoWorldDocument } from './world/demo-world.js?rev=worldarea-portal-v1-exit-marker';
+} from './world/portal-model.js?rev=builder-dynamic-return-v1';
+import { demoWorldDocument } from './world/demo-world.js?rev=builder-dynamic-return-v1';
 import {
   readWorldBuilderTestHandoff
-} from './builder/world-builder-test-handoff.js';
+} from './builder/world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
