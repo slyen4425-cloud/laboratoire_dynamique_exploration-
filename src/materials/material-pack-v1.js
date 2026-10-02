@@ -35,6 +35,81 @@ export const materialPackV1 = Object.freeze({
       })
     }),
     Object.freeze({
+      id: 'ground.dirt',
+      kind: 'surface',
+      label: 'Terre',
+      assets: Object.freeze({
+        base: null,
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#7f6546',
+        variationColors: Object.freeze([
+          'rgba(107,78,48,0.18)',
+          'rgba(151,116,72,0.14)',
+          'rgba(83,68,48,0.13)'
+        ]),
+        detailSpacing: 180,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'ground.sand',
+      kind: 'surface',
+      label: 'Sable',
+      assets: Object.freeze({
+        base: null,
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#c9ad73',
+        variationColors: Object.freeze([
+          'rgba(226,201,142,0.17)',
+          'rgba(171,140,82,0.13)',
+          'rgba(239,220,169,0.12)'
+        ]),
+        detailSpacing: 200,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'ground.snow',
+      kind: 'surface',
+      label: 'Neige',
+      assets: Object.freeze({
+        base: null,
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#dce6e8',
+        variationColors: Object.freeze([
+          'rgba(255,255,255,0.18)',
+          'rgba(181,207,215,0.13)',
+          'rgba(218,232,237,0.15)'
+        ]),
+        detailSpacing: 220,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
       id: 'floor.wood.house',
       kind: 'surface',
       label: 'Plancher bois intérieur',
