@@ -232,6 +232,19 @@ Exemples :
 
 Les transitions ne doivent jamais être codées en plaçant manuellement des carrés obligatoires dans le WorldDocument.
 
+### 8.7 Collision des surfaces canoniques
+
+Lorsqu'une surface canonique possède une sémantique gameplay bloquante, le Collision World lit directement sa géométrie canonique.
+
+Pour les rivières v1 :
+- `WorldArea.surface.rivers[].points + width` est l'unique géométrie de rivière ;
+- le Collision World utilise cette géométrie pour le blocage ;
+- il est interdit de créer un second rectangle/polygone de collision décrivant la même rivière ;
+- le Builder ne génère donc aucun obstacle secondaire lorsqu'il dessine de l'eau ;
+- un Bridge peut explicitement autoriser la traversée d'une rivière par son id canonique et uniquement dans son corridor GREEN.
+
+Le renderer ne possède jamais cette règle et aucune texture ne définit la collision.
+
 ## 9. World Builder Dynamique
 
 Le **World Builder Dynamique** doit permettre progressivement de modifier :
