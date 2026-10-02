@@ -23,6 +23,10 @@ import {
   validateWorldBuilderDraft
 } from './world-builder-draft.js';
 import {
+  readWorldBuilderTestHandoff,
+  saveWorldBuilderTestHandoff
+} from './world-builder-test-handoff.js';
+import {
   clampBuilderZoom,
   computeBuilderView,
   canvasPointToWorld,
@@ -106,7 +110,22 @@ const objectRenderer = createWorldObjectRenderer({
 });
 const portalRenderer = createPortalRenderer();
 
-let draft = createWorldBuilderDraft(demoWorldDocument);
+const builderParams = new URLSearchParams(window.location.search);
+const resumeBuilderTest =
+  builderParams.get('resumeBuilderTest') === '1';
+const resumedTestDocument = resumeBuilderTest
+  ? readWorldBuilderTestHandoff(window.sessionStorage)
+  : null;
+
+if (resumeBuilderTest && !resumedTestDocument) {
+  throw new Error(
+    'Session de test World Builder introuvable ou invalide'
+  );
+}
+
+let draft = createWorldBuilderDraft(
+  resumedTestDocument ?? demoWorldDocument
+);
 let selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
 let selectedSpawnId = null;
 let selectedObjectId = null;
@@ -1570,6 +1589,9 @@ $('area-select').addEventListener('change', () => {
   fitRequested = true;
   setMapTool('select');
 refreshControls();
+if (resumeBuilderTest) {
+  setStatus('Session de test restaurée dans le World Builder');
+}
 });
 
 for (const id of ['area-width', 'area-height', 'area-material']) {
@@ -2480,6 +2502,31 @@ function endPointer(event) {
 
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
+
+$('test-exploration').addEventListener('click', () => {
+  const result = currentValidation();
+
+  if (!result.valid || !result.document) {
+    setStatus(
+      `Impossible de tester : ${result.errors.join(' · ')}`,
+      true
+    );
+    return;
+  }
+
+  try {
+    saveWorldBuilderTestHandoff(
+      window.sessionStorage,
+      result.document
+    );
+    window.location.assign('./index.html?builderTest=1');
+  } catch (error) {
+    setStatus(
+      `Impossible de préparer le test : ${error.message}`,
+      true
+    );
+  }
+});
 
 $('export-json').addEventListener('click', () => {
   try {
