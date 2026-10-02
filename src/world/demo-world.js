@@ -128,7 +128,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       width: 720,
       height: 560,
       surface: {
-        baseMaterialId: 'road.dirt',
+        baseMaterialId: 'floor.wood.house',
         routes: [],
         rivers: []
       },
