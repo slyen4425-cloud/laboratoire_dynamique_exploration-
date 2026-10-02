@@ -232,9 +232,9 @@ Exemples :
 
 Les transitions ne doivent jamais être codées en plaçant manuellement des carrés obligatoires dans le WorldDocument.
 
-## 9. Personnalisation Builder
+## 9. World Builder Dynamique
 
-Le Builder doit permettre progressivement de modifier :
+Le **World Builder Dynamique** doit permettre progressivement de modifier :
 - taille de carte ;
 - biome ;
 - matériau de sol ;
@@ -249,7 +249,23 @@ Le Builder doit permettre progressivement de modifier :
 - transitions de cartes ;
 - paramètres de génération autorisés.
 
-Le Builder manipule des données. Le renderer donne un aperçu, mais ne devient jamais l'autorité.
+Le World Builder Dynamique manipule des données. Le renderer donne un aperçu, mais ne devient jamais l'autorité.
+
+### 9.1 Paramétrage des WorldObjects
+
+Tout WorldObject éditable doit exposer ses paramètres dans son contrat de données, jamais uniquement dans l'UI.
+
+Paramètres génériques :
+- position X/Y ;
+- rotation ;
+- scale X/Y ;
+- assetId ;
+- activation/visibilité si pertinente ;
+- footprint/collision logique ;
+- interaction ;
+- liens vers autres contrats, par exemple Portal.
+
+Le World Builder Dynamique ne possède pas ces valeurs : il les édite dans le WorldDocument.
 
 ## 10. Génération automatique et Builder partagent le même modèle
 
@@ -534,9 +550,9 @@ Cette marge ne rend pas l'eau traversable : elle sert uniquement au Collision Wo
 Aucun état persistant ou aimantation n'est autorisé : le calcul reste pur, frame par frame.
 Une petite tolérance numérique est autorisée aux frontières des formes transformées afin d'absorber les erreurs flottantes de rotation, jamais pour agrandir arbitrairement la géométrie.
 
-### 26.2 Contrôles Builder des objets
+### 26.2 Contrôles World Builder Dynamique des objets
 
-Le Builder doit pouvoir exposer pour les objets compatibles :
+Le World Builder Dynamique doit pouvoir exposer pour les objets compatibles :
 - déplacement X/Y ;
 - rotation ;
 - scale uniforme si souhaité ;
@@ -562,6 +578,15 @@ WorldArea intérieure
 
 Un bâtiment extérieur est un WorldObject placé dans une Area.
 Son intérieur est une autre WorldArea.
+
+Un Building WorldObject doit pouvoir déclarer au minimum :
+- transform X/Y/rotation/scale ;
+- baseSize/footprint logique ;
+- visual.assetId ;
+- un ou plusieurs `doorAnchor` locaux ;
+- identifiant de Portal optionnel par porte.
+
+Le World Builder Dynamique doit permettre d'éditer ces propriétés sans déplacer ou redéfinir l'intérieur lui-même.
 
 Une porte/entrée utilise un Portal explicite contenant notamment :
 - sourceAreaId ;
