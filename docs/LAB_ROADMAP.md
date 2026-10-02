@@ -84,7 +84,7 @@ Critère :
 - validation d'accessibilité ;
 - déterminisme testé.
 
-## Phase 4 — Builder Exploration
+## Phase 4 — World Builder Dynamique
 
 - création manuelle ;
 - édition d'une carte générée ;
@@ -100,8 +100,8 @@ Critère :
 - rechargement identique.
 
 Critère :
-Builder -> données -> runtime, jamais Builder -> mutation runtime.
-Le Builder et le World Generator utilisent le même format de carte.
+World Builder Dynamique -> données -> runtime, jamais World Builder Dynamique -> mutation runtime.
+Le World Builder Dynamique et le World Generator utilisent le même format de carte.
 
 ## Phase 5 — Monde vivant
 
@@ -128,7 +128,7 @@ Le Builder et le World Generator utilisent le même format de carte.
 - événements persistants.
 
 Critère :
-- Builder peut modifier transform des objets ;
+- World Builder Dynamique peut modifier transform des objets ;
 - pont traversable sans supprimer la rivière ;
 - bâtiments/intérieurs utilisent un seul contrat WorldArea/Portal.
 
