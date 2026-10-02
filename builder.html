@@ -16,11 +16,10 @@
         <strong>World Builder Dynamique</strong>
         <span id="builder-status">Initialisation…</span>
       </div>
-      <a class="header-link" href="./index.html">Tester Exploration</a>
+      <button id="test-exploration" class="header-link" type="button">Tester en jeu</button>
     </header>
 
     <section class="preview-panel">
-      <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
       <div class="map-tools" aria-label="Outils directs de carte">
         <button id="map-tool-select" data-map-tool="select" type="button" class="active">Déplacer</button>
         <button id="map-tool-area" data-map-tool="area-size" type="button">Taille Area</button>
@@ -28,6 +27,7 @@
         <button id="map-tool-route" data-map-tool="route" type="button">Tracer route</button>
         <button id="map-tool-river" data-map-tool="river" type="button">Tracer rivière</button>
       </div>
+      <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
       <div class="preview-tools">
         <button id="preview-fit" type="button">Vue Area</button>
         <button id="preview-focus" type="button">Centrer sélection</button>
@@ -264,6 +264,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-surface-brushes"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-test-handoff"></script>
 </body>
 </html>
