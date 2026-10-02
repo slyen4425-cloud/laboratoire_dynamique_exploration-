@@ -485,3 +485,44 @@ Règles :
 - import/export JSON.
 
 La création graphique de routes/rivières et l'import de Map Actors restent des lots séparés.
+
+
+## World Builder Dynamique — manipulation directe
+
+Les contrôles directs restent des adapters d'édition du WorldDocument.
+
+Chaîne unique :
+```text
+geste / poignée / pinceau
+        ↓
+World Builder Draft helper
+        ↓
+draft WorldDocument
+        ↓
+normalizeWorldDocument
+        ↓
+preview renderer
+```
+
+Les poignées de déplacement, scale et rotation ne possèdent jamais un transform parallèle.
+Elles écrivent dans `WorldObject.transform`.
+
+La poignée de taille d'Area écrit uniquement dans `WorldArea.width/height`.
+
+### Zones de terrain peintes
+
+Le pinceau paysage écrit directement dans :
+
+```text
+WorldArea.surface.zones[]
+```
+
+Chaque zone v1 contient :
+- id ;
+- materialId de kind `surface` ;
+- largeur/diamètre ;
+- points X/Y du trait.
+
+Le Surface Renderer lit ces zones directement.
+Les zones sont purement visuelles et ne deviennent jamais collision ou gameplay.
+Routes et rivières restent leurs contrats linéaires existants.
