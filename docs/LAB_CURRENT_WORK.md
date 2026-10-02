@@ -157,3 +157,58 @@ Gate restante :
 validation smartphone utilisateur de l'onglet Acteurs, de l'aperçu sur map, des réglages et de l'import visuel.
 
 Le lot reste non GREEN jusqu'à cette validation.
+
+
+## Régression — Tester en jeu perdait le MapActorVisual — 2026-10-02
+
+Retour smartphone utilisateur :
+- les réglages Acteur étaient visibles dans le Builder ;
+- « Tester en jeu » lançait le runtime avec le héros visuel par défaut ;
+- au retour Builder, les réglages Acteur revenaient également aux valeurs par défaut.
+
+Cause confirmée :
+- le handoff Builder -> runtime transportait uniquement le WorldDocument ;
+- le runtime recréait `player.mapVisual` avec `actor.demo.hero.traveler.01` ;
+- l'import local était un blob URL local au document Builder et ne survivait pas comme source explicite de session.
+
+Correction architecturale :
+- le contrat de session de test transporte désormais :
+  - le WorldDocument canonique ;
+  - un `MapActorVisual v1` optionnel ;
+  - la source image importée optionnelle uniquement si elle correspond à l'asset du MapActorVisual ;
+- le WorldDocument reste inchangé et demeure l'unique autorité du monde ;
+- le MapActorVisual reste l'unique autorité visuelle de l'acteur ;
+- le runtime utilise le même Map Actor Asset Adapter / Image Loader / Visual Preparer / Renderer ;
+- aucune position acteur Builder n'est transportée ;
+- aucune collision, stat ou IA n'est ajoutée au handoff ;
+- l'image utilisateur de test est transportée en data URL de session afin de survivre à la navigation ;
+- le retour runtime -> Builder restaure le même MapActorVisual et, si nécessaire, la même source image de session.
+
+TDD :
+- reproduction : commit `d5e568933bd4c4b4196f4fa7b92e50e9f72cfc29` — FAILURE attendue ;
+- handoff session étendu ;
+- runtime raccordé au MapActorVisual de session ;
+- retour Builder raccordé à la même session ;
+- sentinelle d'ordre d'initialisation navigateur ajoutée.
+
+Correction finale :
+- HEAD technique : `b89b2a3ed802b9cbe54daca9c4d044f40997a200` ;
+- CI : run `37058114695` — **SUCCESS**.
+
+## Preview finale — handoff Map Actor — 2026-10-02
+
+Infrastructure uniquement :
+- PR #34 ;
+- main SHA : `59793448594bf4f92bb32d2579f758376cc49732` ;
+- Pages run : `37058199291` — **SUCCESS** ;
+- artifact : `11249131978`.
+
+Gate smartphone :
+1. régler taille/anchor/ombre/mouvement de l'acteur ;
+2. éventuellement importer une image ;
+3. « Tester en jeu » ;
+4. vérifier que le runtime utilise bien ce visuel et ces réglages ;
+5. « Retour World Builder » ;
+6. vérifier que les réglages sont toujours présents.
+
+Le lot reste non GREEN jusqu'à validation utilisateur.
