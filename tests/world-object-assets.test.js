@@ -345,3 +345,35 @@ test('image loader can force cache revision without changing adapter authority',
   assert.equal(status.ready, 1);
   assert.equal(resolveWorldObjectAsset(id).path, BUILDING_EXPECTED[id]);
 });
+
+
+test('image loader never appends cache revision to data URLs', async () => {
+  const dataUrl = 'data:image/png;base64,VEVTVA==';
+  const images = [];
+  const loader = createImageAssetLoader({
+    resolveAsset: (assetId) =>
+      assetId === 'actor.user.preview.01'
+        ? {
+            id: assetId,
+            kind: 'map-actor-source',
+            path: dataUrl
+          }
+        : null,
+    cacheRevision: 'runtime-map-actor-v1',
+    imageFactory: () => {
+      const image = { onload: null, onerror: null, src: '' };
+      images.push(image);
+      return image;
+    }
+  });
+
+  const loading = loader.load(['actor.user.preview.01']);
+
+  assert.equal(images[0].src, dataUrl);
+
+  images[0].onload();
+  const status = await loading;
+
+  assert.equal(status.ready, 1);
+  assert.equal(status.errors, 0);
+});
