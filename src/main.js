@@ -3,21 +3,29 @@ import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=building-v1-single-authority';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1';
 import { materialPackV1 } from './materials/material-pack-v1.js';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
 import {
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=building-v1-single-authority';
+} from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';
 import {
   createImageAssetLoader
-} from './assets/image-asset-loader.js?rev=building-v1-single-authority';
+} from './assets/image-asset-loader.js?rev=worldarea-portal-v1';
 import {
   collectMaterialAssetIds,
   createMaterialTextureLoader
 } from './render/material-texture-loader.js';
-import { demoWorld as world } from './world/demo-world.js';
+import {
+  createInitialExplorationState,
+  findWorldAreaById
+} from './world/world-document-model.js';
+import {
+  applyPortalTransition,
+  findTriggeredPortal
+} from './world/portal-model.js';
+import { demoWorldDocument } from './world/demo-world.js';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
@@ -26,7 +34,20 @@ const joystick = document.querySelector('#joystick');
 const stick = document.querySelector('#stick');
 
 const config = normalizeExplorationConfig();
-const player = { x: 220, y: 220, radius: config.player.radius };
+const initialState = createInitialExplorationState(demoWorldDocument);
+
+if (!initialState) {
+  throw new Error('WorldDocument has no valid initial Area/Spawn');
+}
+
+const player = {
+  currentAreaId: initialState.currentAreaId,
+  x: initialState.x,
+  y: initialState.y,
+  radius: config.player.radius,
+  viaPortalId: null
+};
+
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
@@ -42,11 +63,13 @@ const surfaceRenderer = createSurfaceRenderer({
 
 const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset: resolveWorldObjectAsset,
-  cacheRevision: 'building-v1-assets-2026-10-02'
+  cacheRevision: 'worldarea-portal-v1-2026-10-02'
 });
+
 const requiredWorldObjectAssetIds = Object.freeze([
   ...new Set(
-    world.objects
+    demoWorldDocument.areas
+      .flatMap((area) => area.objects)
       .map((object) => object.visual?.assetId)
       .filter(Boolean)
   )
@@ -73,6 +96,21 @@ const worldObjectRenderer = createWorldObjectRenderer({
   resolveVisualAsset: resolveWorldObjectAsset
 });
 let last = performance.now();
+
+function currentArea() {
+  const area = findWorldAreaById(
+    demoWorldDocument,
+    player.currentAreaId
+  );
+
+  if (!area) {
+    throw new Error(
+      `Unknown current WorldArea: ${player.currentAreaId}`
+    );
+  }
+
+  return area;
+}
 
 function resize() {
   const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -101,30 +139,76 @@ function currentInput() {
 }
 
 function updateCamera() {
+  const area = currentArea();
+
   camera.x = Math.max(
     0,
-    Math.min(Math.max(0, world.width - innerWidth), player.x - innerWidth / 2)
+    Math.min(
+      Math.max(0, area.width - innerWidth),
+      player.x - innerWidth / 2
+    )
   );
   camera.y = Math.max(
     0,
-    Math.min(Math.max(0, world.height - innerHeight), player.y - innerHeight / 2)
+    Math.min(
+      Math.max(0, area.height - innerHeight),
+      player.y - innerHeight / 2
+    )
   );
 }
 
+function applyTriggeredPortal() {
+  const portal = findTriggeredPortal(
+    demoWorldDocument,
+    player.currentAreaId,
+    player
+  );
+
+  if (!portal) return false;
+
+  const next = applyPortalTransition(
+    demoWorldDocument,
+    player,
+    portal
+  );
+
+  if (!next) return false;
+
+  player.currentAreaId = next.currentAreaId;
+  player.x = next.x;
+  player.y = next.y;
+  player.viaPortalId = next.viaPortalId;
+  return true;
+}
+
 function update(dt) {
-  stepMovement(world, player, currentInput(), dt, config.movement);
+  const area = currentArea();
+
+  stepMovement(
+    area,
+    player,
+    currentInput(),
+    dt,
+    config.movement
+  );
+
+  applyTriggeredPortal();
   updateCamera();
-  coords.textContent = `x: ${player.x.toFixed(1)}  y: ${player.y.toFixed(1)}`;
+
+  coords.textContent =
+    `${player.currentAreaId} · x: ${player.x.toFixed(1)}  y: ${player.y.toFixed(1)}`;
 }
 
 function drawGround() {
+  const area = currentArea();
+
   surfaceRenderer.draw(ctx, {
     camera,
     viewport: {
       width: innerWidth,
       height: innerHeight
     },
-    surface: world.surface
+    surface: area.surface
   });
 }
 
@@ -142,17 +226,25 @@ function drawObstacle(obstacle) {
   }
 
   if (obstacle.kind === 'river') return;
-  if (obstacle.kind === 'rock') ctx.fillStyle = '#666b62';
-  else ctx.fillStyle = '#244d2a';
+
+  if (obstacle.kind === 'rock') {
+    ctx.fillStyle = '#666b62';
+  } else if (obstacle.kind === 'furniture') {
+    ctx.fillStyle = '#6f4d32';
+  } else {
+    ctx.fillStyle = '#244d2a';
+  }
 
   ctx.fillRect(x, y, obstacle.w, obstacle.h);
 }
 
 function render() {
+  const area = currentArea();
+
   ctx.clearRect(0, 0, innerWidth, innerHeight);
   drawGround();
 
-  world.obstacles.forEach(drawObstacle);
+  area.obstacles.forEach(drawObstacle);
 
   worldObjectRenderer.draw(ctx, {
     camera,
@@ -160,7 +252,7 @@ function render() {
       width: innerWidth,
       height: innerHeight
     },
-    objects: world.objects
+    objects: area.objects
   });
 
   ctx.beginPath();
@@ -179,7 +271,10 @@ function render() {
 }
 
 function frame(now) {
-  const dt = Math.min((now - last) / 1000, config.simulation.maxDeltaSeconds);
+  const dt = Math.min(
+    (now - last) / 1000,
+    config.simulation.maxDeltaSeconds
+  );
   last = now;
   update(dt);
   render();
@@ -191,4 +286,5 @@ addEventListener('keydown', (event) => keys.add(event.key.toLowerCase()));
 addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
 
 resize();
+updateCamera();
 requestAnimationFrame(frame);
