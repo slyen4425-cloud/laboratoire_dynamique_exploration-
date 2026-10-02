@@ -52,10 +52,16 @@ export function createImageAssetLoader({
       };
     });
 
+    const revisionablePath =
+      typeof asset.path === 'string' &&
+      !asset.path.startsWith('data:') &&
+      !asset.path.startsWith('blob:');
     const separator = asset.path.includes('?') ? '&' : '?';
-    image.src = cacheRevision
-      ? `${asset.path}${separator}rev=${encodeURIComponent(cacheRevision)}`
-      : asset.path;
+
+    image.src =
+      cacheRevision && revisionablePath
+        ? `${asset.path}${separator}rev=${encodeURIComponent(cacheRevision)}`
+        : asset.path;
     slots.set(assetId, slot);
     return slot.promise;
   }
