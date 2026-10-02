@@ -1,13 +1,14 @@
 import {
-  bridgeVisualRect
+  bridgeVisualRect,
+  buildingVisualRect
 } from '../world/world-object-model.js';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
 }
 
-function cullRadius(length, width) {
-  return Math.hypot(length, width) / 2;
+function cullRadius(width, height) {
+  return Math.hypot(width, height) / 2;
 }
 
 function isOffscreen(screenX, screenY, radius, viewport) {
@@ -19,6 +20,26 @@ function isOffscreen(screenX, screenY, radius, viewport) {
   );
 }
 
+function requireVisualAsset(object, imageLoader, resolveVisualAsset) {
+  const assetId = object.visual?.assetId;
+
+  if (!assetId) return null;
+
+  const asset =
+    typeof resolveVisualAsset === 'function'
+      ? resolveVisualAsset(assetId)
+      : null;
+  const image = imageLoader?.get(assetId);
+
+  if (!asset || !image) {
+    throw new Error(
+      `WorldObject visual asset not ready: ${assetId}`
+    );
+  }
+
+  return Object.freeze({ assetId, asset, image });
+}
+
 function drawBridgeImage(
   ctx,
   bridge,
@@ -28,7 +49,7 @@ function drawBridgeImage(
   asset
 ) {
   const rect = bridgeVisualRect(bridge);
-  if (!rect || !image || !asset?.render) return false;
+  if (!rect || !image || !asset?.render) return;
 
   const lengthScale =
     Number.isFinite(asset.render.lengthScale) &&
@@ -53,7 +74,7 @@ function drawBridgeImage(
       viewport
     )
   ) {
-    return true;
+    return;
   }
 
   ctx.save();
@@ -70,8 +91,59 @@ function drawBridgeImage(
     renderLength
   );
   ctx.restore();
+}
 
-  return true;
+function drawBuildingImage(
+  ctx,
+  building,
+  camera,
+  viewport,
+  image,
+  asset
+) {
+  const rect = buildingVisualRect(building);
+  if (!rect || !image || !asset?.render) return;
+
+  const widthScale =
+    Number.isFinite(asset.render.widthScale) &&
+    asset.render.widthScale > 0
+      ? asset.render.widthScale
+      : 1;
+  const heightScale =
+    Number.isFinite(asset.render.heightScale) &&
+    asset.render.heightScale > 0
+      ? asset.render.heightScale
+      : 1;
+  const renderWidth = rect.width * widthScale;
+  const renderHeight = rect.height * heightScale;
+  const screenX = rect.x - camera.x;
+  const screenY = rect.y - camera.y;
+
+  if (
+    isOffscreen(
+      screenX,
+      screenY,
+      cullRadius(renderWidth, renderHeight),
+      viewport
+    )
+  ) {
+    return;
+  }
+
+  ctx.save();
+  ctx.translate(screenX, screenY);
+  ctx.rotate(
+    rect.rotation +
+    degreesToRadians(asset.render.rotationOffsetDeg)
+  );
+  ctx.drawImage(
+    image,
+    -renderWidth / 2,
+    -renderHeight / 2,
+    renderWidth,
+    renderHeight
+  );
+  ctx.restore();
 }
 
 export function createWorldObjectRenderer({
@@ -81,30 +153,40 @@ export function createWorldObjectRenderer({
   return Object.freeze({
     draw(ctx, { camera, viewport, objects }) {
       for (const object of Array.isArray(objects) ? objects : []) {
-        if (object.kind !== 'bridge') continue;
-
-        const assetId = object.visual?.assetId;
-        const asset =
-          typeof resolveVisualAsset === 'function'
-            ? resolveVisualAsset(assetId)
-            : null;
-        const image = imageLoader?.get(assetId);
-
-        if (!assetId) continue;
-
-        if (!asset || !image) {
-          throw new Error(
-            `WorldObject visual asset not ready: ${assetId}`
-          );
+        if (
+          object.kind !== 'bridge' &&
+          object.kind !== 'building'
+        ) {
+          continue;
         }
 
-        drawBridgeImage(
+        const visual = requireVisualAsset(
+          object,
+          imageLoader,
+          resolveVisualAsset
+        );
+
+        if (!visual) continue;
+
+        if (object.kind === 'bridge') {
+          drawBridgeImage(
+            ctx,
+            object,
+            camera,
+            viewport,
+            visual.image,
+            visual.asset
+          );
+          continue;
+        }
+
+        drawBuildingImage(
           ctx,
           object,
           camera,
           viewport,
-          image,
-          asset
+          visual.image,
+          visual.asset
         );
       }
     }
