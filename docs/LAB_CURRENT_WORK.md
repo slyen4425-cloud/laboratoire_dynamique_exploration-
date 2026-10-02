@@ -351,3 +351,39 @@ Tests requis avant correctif :
 - Surface Renderer consomme les zones ;
 - UI expose taille de pinceau et outil peinture ;
 - resize Area démarre depuis la poignée, pas depuis n'importe quel point de la map.
+
+
+## Correction ergonomie — gizmos + pinceau terrain — 2026-10-02
+
+Régression utilisateur reproduite par sentinelles :
+- commit `675d304124a9e06226557d7fe6116fdcba07eb2b` ;
+- CI run `37009253141` — **FAILURE attendue**.
+
+Corrections implémentées :
+- sélection WorldObject -> contour + 4 poignées de scale ;
+- poignée dédiée de rotation ;
+- scale/rotation écrits uniquement via `updateWorldObjectTransform` ;
+- limites de scale réutilisent `WORLD_OBJECT_LIMITS` ;
+- outil `Taille Area` recentre la vue et exige la poignée de resize explicite ;
+- outil `Peindre terrain` ;
+- cercle de pinceau visible sur la map ;
+- diamètre réglable 24 → 600 ;
+- matériau paysage sélectionnable ;
+- nouvelles surfaces procédurales explicites : terre, sable, neige ;
+- peinture enregistrée directement dans `WorldArea.surface.zones[]` ;
+- Surface Renderer consomme directement ces zones canoniques avant routes/rivières ;
+- aucun `BuilderMap`, aucune géométrie UI parallèle.
+
+Sentinelles :
+- gizmo scale ;
+- gizmo rotation ;
+- Area resize via poignée ;
+- outil terrain + taille de pinceau présents dans l'UI ;
+- `WorldSurface.zones` préservé ;
+- export/import conserve les zones peintes ;
+- Surface Renderer consomme `surface.zones`.
+
+CI après correctif :
+- run `37010065971` — **SUCCESS**.
+
+Une nouvelle preview smartphone/tablette est requise avant validation GREEN.
