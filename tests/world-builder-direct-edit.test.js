@@ -236,7 +236,7 @@ test('direct object hit test supports rotated WorldObjects', () => {
   );
 });
 
-test('World Builder direct-edit UI exposes map tools and intuitive zoom controls', async () => {
+test('World Builder direct-edit UI exposes map tools and direct zoom gestures', async () => {
   const html = await readFile(
     new URL('../builder.html', import.meta.url),
     'utf8'
@@ -251,8 +251,6 @@ test('World Builder direct-edit UI exposes map tools and intuitive zoom controls
     'map-tool-area',
     'map-tool-route',
     'map-tool-river',
-    'preview-zoom-in',
-    'preview-zoom-out',
     'terrain-route-material',
     'terrain-river-material',
     'terrain-path-select'
