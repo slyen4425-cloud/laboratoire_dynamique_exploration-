@@ -128,8 +128,7 @@ const objectRenderer = createWorldObjectRenderer({
 const portalRenderer = createPortalRenderer();
 
 const registeredMapActorAssets = listMapActorAssets();
-let importedActorAsset =
-  resumedTestSession?.actorAsset ?? null;
+let importedActorAsset = null;
 let mapActorImageLoader = null;
 let mapActorVisualPreparer = null;
 let mapActorRenderer = null;
@@ -202,6 +201,9 @@ if (resumeBuilderTest && !resumedTestDocument) {
     'Session de test World Builder introuvable ou invalide'
   );
 }
+
+importedActorAsset =
+  resumedTestSession?.actorAsset ?? null;
 
 let draft = createWorldBuilderDraft(
   resumedTestDocument ?? demoWorldDocument
