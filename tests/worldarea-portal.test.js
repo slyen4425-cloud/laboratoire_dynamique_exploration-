@@ -331,3 +331,24 @@ test('regression: every demo WorldArea base material must resolve as a surface m
     );
   }
 });
+
+
+test('regression: interior exit Portal declares an explicit visible marker', () => {
+  const exit = demoWorldDocument.portals.find(
+    (portal) => portal.id === 'portal-house-exit'
+  );
+
+  assert.ok(exit, 'missing interior exit Portal');
+  assert.equal(exit.visual?.visible, true);
+  assert.equal(exit.visual?.marker, 'exit');
+  assert.equal(exit.visual?.label, 'Sortie');
+
+  const point = resolvePortalTriggerPoint(
+    demoWorldDocument.areas,
+    exit
+  );
+
+  assert.equal(point.x, 360);
+  assert.equal(point.y, 510);
+  assert.equal(point.radius, 30);
+});
