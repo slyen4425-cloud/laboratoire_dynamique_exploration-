@@ -319,3 +319,7 @@ Sentinelles ajoutées :
 - dessin Terrain -> `addSurfacePath/appendSurfacePathPoint`.
 
 Aucun changement de contrat gameplay/runtime n'est ajouté par cette consolidation.
+
+CI consolidation autorité unique :
+- SHA : `989a42a7f6416a549376ea7348f638e533e2f874` ;
+- run `37007397302` — **SUCCESS**.
