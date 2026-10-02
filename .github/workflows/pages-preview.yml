@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: world-builder-gizmos-brush-v1
+# preview-revision: world-builder-surface-brushes-v1
 
 on:
   push:
