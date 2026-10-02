@@ -24,6 +24,7 @@ import {
 } from './world-builder-draft.js?rev=builder-dynamic-return-v1';
 import {
   readWorldBuilderTestHandoff,
+  readWorldBuilderTestSession,
   saveWorldBuilderTestHandoff
 } from './world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
 import {
@@ -127,8 +128,8 @@ const objectRenderer = createWorldObjectRenderer({
 const portalRenderer = createPortalRenderer();
 
 const registeredMapActorAssets = listMapActorAssets();
-let importedActorAsset = null;
-let importedActorObjectUrl = null;
+let importedActorAsset =
+  resumedTestSession?.actorAsset ?? null;
 let mapActorImageLoader = null;
 let mapActorVisualPreparer = null;
 let mapActorRenderer = null;
@@ -185,9 +186,16 @@ async function rebuildMapActorPipeline() {
 const builderParams = new URLSearchParams(window.location.search);
 const resumeBuilderTest =
   builderParams.get('resumeBuilderTest') === '1';
-const resumedTestDocument = resumeBuilderTest
-  ? readWorldBuilderTestHandoff(window.sessionStorage)
+const resumedTestSession = resumeBuilderTest
+  ? readWorldBuilderTestSession(window.sessionStorage)
   : null;
+const resumedTestDocument =
+  resumedTestSession?.document ??
+  (
+    resumeBuilderTest
+      ? readWorldBuilderTestHandoff(window.sessionStorage)
+      : null
+  );
 
 if (resumeBuilderTest && !resumedTestDocument) {
   throw new Error(
@@ -218,10 +226,12 @@ const initialActorAssetId =
   registeredMapActorAssets[0]?.id ??
   resolveMapActorAsset('actor.demo.hero.traveler.01')?.id ??
   null;
-let actorVisual = normalizeMapActorVisual({
-  assetId: initialActorAssetId,
-  role: 'hero'
-});
+let actorVisual =
+  resumedTestSession?.actorVisual ??
+  normalizeMapActorVisual({
+    assetId: initialActorAssetId,
+    role: 'hero'
+  });
 const initialActorArea =
   draft.areas.find((area) => area.id === selectedAreaId) ??
   draft.areas[0] ??
@@ -2114,15 +2124,21 @@ $('actor-image-import').addEventListener('change', async () => {
   if (!file) return;
 
   try {
-    if (importedActorObjectUrl) {
-      URL.revokeObjectURL(importedActorObjectUrl);
-    }
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () =>
+        typeof reader.result === 'string'
+          ? resolve(reader.result)
+          : reject(new Error('Lecture image invalide'));
+      reader.onerror = () =>
+        reject(reader.error ?? new Error('Lecture image impossible'));
+      reader.readAsDataURL(file);
+    });
 
-    importedActorObjectUrl = URL.createObjectURL(file);
     importedActorAsset = Object.freeze({
       id: 'actor.user.preview.01',
       kind: 'map-actor-source',
-      path: importedActorObjectUrl,
+      path: dataUrl,
       label: file.name || 'Visuel importé'
     });
 
@@ -2922,7 +2938,14 @@ $('test-exploration').addEventListener('click', (event) => {
   try {
     saveWorldBuilderTestHandoff(
       window.sessionStorage,
-      result.document
+      result.document,
+      {
+        actorVisual,
+        actorAsset:
+          importedActorAsset?.id === actorVisual.assetId
+            ? importedActorAsset
+            : null
+      }
     );
   } catch (error) {
     event.preventDefault();
@@ -2989,5 +3012,9 @@ addEventListener('resize', () => {
 
 refreshControls();
 if (resumeBuilderTest) {
-  setStatus('Session de test restaurée dans le World Builder');
+  setStatus(
+    resumedTestSession?.actorVisual
+      ? 'Session de test restaurée : monde + visuel acteur'
+      : 'Session de test restaurée dans le World Builder'
+  );
 }
