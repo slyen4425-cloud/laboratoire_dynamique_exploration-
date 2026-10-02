@@ -569,3 +569,28 @@ nouvelle preview smartphone/tablette et validation utilisateur du chemin complet
 **modifier -> Tester en jeu -> voir les modifications -> Retour World Builder -> modifications toujours présentes**.
 
 Le lot reste non GREEN.
+
+
+## Preview correctif handoff Builder -> jeu -> Builder — 2026-10-02
+
+HEAD work final du correctif :
+`6b19f2e6003cbb4f8109dac9bf3004892c6ce73c`
+
+CI exacte :
+run `37025818443` — **SUCCESS**.
+
+Infrastructure preview uniquement :
+- PR #28 ;
+- main SHA `707f8f710d2ccb2f687fdd9ebbe7fabb32782452` ;
+- Pages run `37025969019` — **SUCCESS**.
+
+La preview déployée contient :
+- action `Tester en jeu` gardée par validation ;
+- snapshot session du WorldDocument canonique ;
+- runtime `?builderTest=1` utilisant ce WorldDocument ;
+- lien `Retour World Builder` vers `?resumeBuilderTest=1` ;
+- restauration du même document au retour ;
+- outils principaux repositionnés pour limiter le scrolling mobile.
+
+Gate restante :
+validation smartphone utilisateur du scénario complet de non-perte.
