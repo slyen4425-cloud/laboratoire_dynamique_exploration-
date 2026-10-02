@@ -406,3 +406,43 @@ Aucune navigation de page n'est impliquée.
 
 Pour un trigger `building-door`, le Portal Model résout le `doorAnchor` du Building.
 Le Building ne contient aucune copie du lien vers le Portal.
+
+
+## Map Actor Visual System v1
+
+Un Map Actor est une **représentation visuelle** d'un acteur gameplay, pas une seconde entité.
+
+Flux :
+
+```text
+visuel unique fourni
+        |
+Map Actor Asset Adapter
+        |
+Map Actor Visual Preparer
+(trim/alpha/anchor)
+        |
+PreparedMapVisual cache
+        |
+Map Actor Renderer
+        ^
+        |
+acteur gameplay (x/y/facing/moving)
+```
+
+Le Map Actor Renderer peut appliquer :
+- ombre ;
+- miroir horizontal ;
+- idle ;
+- bounce de marche ;
+- scale visuel.
+
+Il ne peut jamais :
+- écrire x/y ;
+- définir la collision ;
+- modifier les stats ;
+- déclencher l'IA ;
+- posséder une interaction.
+
+Le mode simple requiert seulement un asset visuel.
+Les modes multi-vues ou animés pourront étendre le contrat sans remplacer cette base.
