@@ -146,43 +146,6 @@ function normalizeDoorAnchors(rawAnchors) {
   return Object.freeze(anchors);
 }
 
-function normalizePortalRefs(rawRefs, doorAnchors) {
-  if (!Array.isArray(rawRefs)) return Object.freeze([]);
-
-  const validAnchors = new Set(doorAnchors.map((anchor) => anchor.id));
-  const refs = [];
-  const seen = new Set();
-
-  for (const raw of rawRefs) {
-    if (!raw || typeof raw !== 'object') continue;
-
-    const doorAnchorId =
-      typeof raw.doorAnchorId === 'string' && raw.doorAnchorId.trim()
-        ? raw.doorAnchorId.trim()
-        : null;
-
-    if (
-      !doorAnchorId ||
-      !validAnchors.has(doorAnchorId) ||
-      seen.has(doorAnchorId)
-    ) {
-      continue;
-    }
-
-    seen.add(doorAnchorId);
-
-    refs.push(Object.freeze({
-      doorAnchorId,
-      portalId:
-        typeof raw.portalId === 'string' && raw.portalId.trim()
-          ? raw.portalId.trim()
-          : null
-    }));
-  }
-
-  return Object.freeze(refs);
-}
-
 function normalizeBuilding(raw, index) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const baseSize = source.baseSize && typeof source.baseSize === 'object'
@@ -232,8 +195,7 @@ function normalizeBuilding(raw, index) {
         { min: -0.5, max: 0.5 }
       )
     }),
-    doorAnchors,
-    portalRefs: normalizePortalRefs(source.portalRefs, doorAnchors)
+    doorAnchors
   });
 }
 
