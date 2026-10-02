@@ -34,6 +34,7 @@ import { createSurfaceRenderer } from '../render/surface-renderer.js';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import {
+  WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
   buildingVisualRect
 } from '../world/world-object-model.js';
@@ -1180,6 +1181,7 @@ function setMapTool(tool) {
     activateTab('terrain');
   } else if (mapTool === 'area-size') {
     activateTab('area');
+    fitRequested = true;
   }
 
   renderPreview();
