@@ -1176,6 +1176,107 @@ function worldObjectRectForHit(object) {
   };
 }
 
+function pointToObjectLocal(point, rect) {
+  const dx = point.x - rect.x;
+  const dy = point.y - rect.y;
+  const cos = Math.cos(-rect.rotation);
+  const sin = Math.sin(-rect.rotation);
+
+  return {
+    x: dx * cos - dy * sin,
+    y: dx * sin + dy * cos
+  };
+}
+
+function hitSelectedObjectGizmo(area, point) {
+  const object = area?.objects?.find(
+    (item) => item.id === selectedObjectId
+  );
+  if (!object) return null;
+
+  const rect = worldObjectRectForHit(object);
+  if (!rect) return null;
+
+  const local = pointToObjectLocal(point, rect);
+  const hitRadius = 26 / Math.max(zoom, 0.05);
+  const halfWidth = rect.width / 2;
+  const halfHeight = rect.height / 2;
+  const rotateOffset = 42 / Math.max(zoom, 0.05);
+
+  const rotationHandle = {
+    x: 0,
+    y: -halfHeight - rotateOffset
+  };
+
+  if (
+    Math.hypot(
+      local.x - rotationHandle.x,
+      local.y - rotationHandle.y
+    ) <= hitRadius
+  ) {
+    return {
+      kind: 'rotate',
+      object,
+      rect
+    };
+  }
+
+  const corners = [
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight }
+  ];
+
+  if (
+    corners.some(
+      (corner) =>
+        Math.hypot(
+          local.x - corner.x,
+          local.y - corner.y
+        ) <= hitRadius
+    )
+  ) {
+    return {
+      kind: 'scale',
+      object,
+      rect
+    };
+  }
+
+  return null;
+}
+
+function hitAreaResizeHandle(area, point) {
+  if (!area || !point) return false;
+
+  const hitRadius = 30 / Math.max(zoom, 0.05);
+  return (
+    Math.hypot(
+      point.x - area.width,
+      point.y - area.height
+    ) <= hitRadius
+  );
+}
+
+function objectBaseDimensions(object) {
+  if (object?.kind === 'bridge') {
+    return {
+      width: object.baseSize?.length ?? 160,
+      height: object.baseSize?.width ?? 80
+    };
+  }
+
+  if (object?.kind === 'building') {
+    return {
+      width: object.baseSize?.width ?? 260,
+      height: object.baseSize?.height ?? 260
+    };
+  }
+
+  return null;
+}
+
 function hitWorldObject(area, point) {
   const objects = [...(area?.objects ?? [])].reverse();
 
