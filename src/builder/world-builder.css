@@ -328,7 +328,7 @@ input:focus, select:focus, textarea:focus {
 
 .map-tools {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   padding: 8px 9px 0;
   background: #18221b;
@@ -372,3 +372,41 @@ input:focus, select:focus, textarea:focus {
   cursor: crosshair;
 }
 
+
+
+.terrain-brush-panel {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 12px;
+  padding: 10px;
+  border: 1px solid #3c5140;
+  border-radius: 10px;
+  background: rgba(29, 45, 32, 0.72);
+}
+
+.brush-size-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 8px;
+}
+
+.brush-size-row output {
+  display: grid;
+  place-items: center;
+  min-height: 40px;
+  border: 1px solid #465548;
+  border-radius: 8px;
+  background: #0f1711;
+  color: #f1f5ef;
+  font-variant-numeric: tabular-nums;
+}
+
+#terrain-brush-size {
+  min-height: 40px;
+  padding-inline: 0;
+}
+
+#builder-preview[data-tool="terrain"] {
+  cursor: crosshair;
+}
