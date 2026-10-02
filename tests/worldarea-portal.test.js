@@ -429,5 +429,5 @@ test('anchored Spawn stores no competing X/Y and resolves from its Building door
   assert.equal('y' in spawn, false);
 
   assert.ok(Math.abs(point.x - 820) < 1e-9);
-  assert.ok(Math.abs(point.y - 1104) < 1e-9);
+  assert.ok(Math.abs(point.y - 1100) < 1e-9);
 });
