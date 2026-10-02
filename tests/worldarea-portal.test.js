@@ -1,0 +1,274 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  normalizeWorldArea,
+  normalizeWorldAreas,
+  findWorldAreaSpawn
+} from '../src/world/world-area-model.js';
+import {
+  normalizeWorldDocument,
+  createInitialExplorationState,
+  findWorldAreaById
+} from '../src/world/world-document-model.js';
+import {
+  applyPortalTransition,
+  findTriggeredPortal,
+  resolvePortalTriggerPoint
+} from '../src/world/portal-model.js';
+import { demoWorldDocument } from '../src/world/demo-world.js';
+
+function makeDocument() {
+  return normalizeWorldDocument({
+    id: 'portal-test-world',
+    initialAreaId: 'outside',
+    initialSpawnId: 'start',
+    areas: [
+      {
+        id: 'outside',
+        kind: 'exterior',
+        width: 800,
+        height: 600,
+        surface: { baseMaterialId: 'grass.forest' },
+        spawns: [
+          { id: 'start', x: 80, y: 80 },
+          { id: 'return', x: 300, y: 420 }
+        ],
+        objects: [
+          {
+            id: 'house-1',
+            kind: 'building',
+            transform: {
+              x: 300,
+              y: 300,
+              rotationDeg: 90,
+              scaleX: 1,
+              scaleY: 1
+            },
+            baseSize: {
+              width: 200,
+              height: 160
+            },
+            doorAnchors: [
+              {
+                id: 'main-door',
+                x: 0,
+                y: 0.5
+              }
+            ],
+            portalRefs: [
+              {
+                doorAnchorId: 'main-door',
+                portalId: 'enter'
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'inside',
+        kind: 'interior',
+        width: 500,
+        height: 400,
+        surface: { baseMaterialId: 'road.dirt' },
+        spawns: [
+          { id: 'entry', x: 250, y: 280 }
+        ]
+      }
+    ],
+    portals: [
+      {
+        id: 'enter',
+        sourceAreaId: 'outside',
+        trigger: {
+          kind: 'building-door',
+          objectId: 'house-1',
+          anchorId: 'main-door',
+          radius: 30
+        },
+        targetAreaId: 'inside',
+        targetSpawnId: 'entry'
+      },
+      {
+        id: 'exit',
+        sourceAreaId: 'inside',
+        trigger: {
+          kind: 'point',
+          x: 250,
+          y: 360,
+          radius: 24
+        },
+        targetAreaId: 'outside',
+        targetSpawnId: 'return'
+      }
+    ]
+  });
+}
+
+test('WorldArea v1 normalizes dimensions, surface, objects and named spawns', () => {
+  const area = normalizeWorldArea({
+    id: 'home',
+    kind: 'interior',
+    width: 640,
+    height: 480,
+    surface: { baseMaterialId: 'road.dirt' },
+    spawns: [
+      { id: 'entry', x: 320, y: 400 }
+    ]
+  });
+
+  assert.equal(area.schemaVersion, 1);
+  assert.equal(area.id, 'home');
+  assert.equal(area.kind, 'interior');
+  assert.equal(area.width, 640);
+  assert.equal(area.height, 480);
+  assert.equal(area.surface.baseMaterialId, 'road.dirt');
+  assert.deepEqual(findWorldAreaSpawn(area, 'entry'), {
+    id: 'entry',
+    x: 320,
+    y: 400
+  });
+  assert.equal(Object.isFrozen(area), true);
+});
+
+test('WorldArea list rejects duplicate area ids', () => {
+  const areas = normalizeWorldAreas([
+    { id: 'same', spawns: [{ id: 'a', x: 1, y: 1 }] },
+    { id: 'same', spawns: [{ id: 'b', x: 2, y: 2 }] }
+  ]);
+
+  assert.equal(areas.length, 1);
+});
+
+test('WorldDocument keeps only Portals with valid Area, Spawn and trigger references', () => {
+  const document = normalizeWorldDocument({
+    areas: [
+      {
+        id: 'a',
+        spawns: [{ id: 'a-start', x: 20, y: 20 }]
+      },
+      {
+        id: 'b',
+        spawns: [{ id: 'b-start', x: 30, y: 30 }]
+      }
+    ],
+    portals: [
+      {
+        id: 'valid',
+        sourceAreaId: 'a',
+        trigger: { kind: 'point', x: 50, y: 50, radius: 20 },
+        targetAreaId: 'b',
+        targetSpawnId: 'b-start'
+      },
+      {
+        id: 'missing-target-spawn',
+        sourceAreaId: 'a',
+        trigger: { kind: 'point', x: 50, y: 50, radius: 20 },
+        targetAreaId: 'b',
+        targetSpawnId: 'nope'
+      }
+    ]
+  });
+
+  assert.deepEqual(
+    document.portals.map((portal) => portal.id),
+    ['valid']
+  );
+});
+
+test('building-door Portal resolves from the GREEN Building doorAnchor, never from pixels', () => {
+  const document = makeDocument();
+  const portal = document.portals.find((item) => item.id === 'enter');
+  const point = resolvePortalTriggerPoint(document.areas, portal);
+
+  // Building is rotated 90°. Local door (0, +80) becomes world (-80, 0).
+  assert.ok(Math.abs(point.x - 220) < 1e-9);
+  assert.ok(Math.abs(point.y - 300) < 1e-9);
+  assert.equal(point.radius, 30);
+});
+
+test('findTriggeredPortal detects only the active Area trigger', () => {
+  const document = makeDocument();
+
+  const enter = findTriggeredPortal(
+    document,
+    'outside',
+    { x: 220, y: 300 }
+  );
+  assert.equal(enter?.id, 'enter');
+
+  const wrongArea = findTriggeredPortal(
+    document,
+    'inside',
+    { x: 220, y: 300 }
+  );
+  assert.equal(wrongArea, null);
+
+  const exit = findTriggeredPortal(
+    document,
+    'inside',
+    { x: 250, y: 360 }
+  );
+  assert.equal(exit?.id, 'exit');
+});
+
+test('Portal transition changes currentAreaId and X/Y only from explicit target Spawn', () => {
+  const document = makeDocument();
+  const state = {
+    currentAreaId: 'outside',
+    x: 220,
+    y: 300
+  };
+  const portal = document.portals.find((item) => item.id === 'enter');
+
+  const next = applyPortalTransition(document, state, portal);
+
+  assert.deepEqual(next, {
+    currentAreaId: 'inside',
+    x: 250,
+    y: 280,
+    viaPortalId: 'enter'
+  });
+});
+
+test('initial Exploration state comes from explicit initial Area and Spawn', () => {
+  const document = makeDocument();
+  const state = createInitialExplorationState(document);
+
+  assert.deepEqual(state, {
+    currentAreaId: 'outside',
+    x: 80,
+    y: 80,
+    viaPortalId: null
+  });
+});
+
+test('demo uses one Portal contract for entering and leaving the Building', () => {
+  assert.equal(demoWorldDocument.areas.length, 2);
+  assert.equal(demoWorldDocument.portals.length, 2);
+
+  const outside = findWorldAreaById(
+    demoWorldDocument,
+    'forest-exterior'
+  );
+  const inside = findWorldAreaById(
+    demoWorldDocument,
+    'house-interior-01'
+  );
+
+  assert.ok(outside);
+  assert.ok(inside);
+  assert.equal(inside.kind, 'interior');
+
+  const enter = demoWorldDocument.portals.find(
+    (portal) => portal.id === 'portal-house-enter'
+  );
+  const exit = demoWorldDocument.portals.find(
+    (portal) => portal.id === 'portal-house-exit'
+  );
+
+  assert.equal(enter.trigger.kind, 'building-door');
+  assert.equal(exit.trigger.kind, 'point');
+  assert.equal(enter.targetAreaId, 'house-interior-01');
+  assert.equal(exit.targetAreaId, 'forest-exterior');
+});
