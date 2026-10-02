@@ -318,6 +318,10 @@ function refreshTerrainControls() {
 
   $('terrain-brush-size-value').value =
     String(numberValue($('terrain-brush-size'), 180));
+  $('terrain-route-width-value').value =
+    String(numberValue($('terrain-route-width'), 82));
+  $('terrain-river-width-value').value =
+    String(numberValue($('terrain-river-width'), 72));
 
   setOptions(
     $('terrain-route-material'),
@@ -379,11 +383,13 @@ function refreshTerrainControls() {
 
   if (selected && selectedSurfaceKind === 'route') {
     $('terrain-route-width').value = selected.width;
+    $('terrain-route-width-value').value = String(selected.width);
     $('terrain-route-material').value = selected.materialId;
   }
 
   if (selected && selectedSurfaceKind === 'river') {
     $('terrain-river-width').value = selected.width;
+    $('terrain-river-width-value').value = String(selected.width);
     $('terrain-river-material').value = selected.materialId;
   }
 }
@@ -827,8 +833,20 @@ function drawBuilderOverlays(area, document, camera) {
     }
   }
 
-  if (mapTool === 'terrain' && hoverWorldPoint) {
-    const brushSize = numberValue($('terrain-brush-size'), 180);
+  if (
+    (
+      mapTool === 'terrain' ||
+      mapTool === 'route' ||
+      mapTool === 'river'
+    ) &&
+    hoverWorldPoint
+  ) {
+    const brushSize =
+      mapTool === 'river'
+        ? numberValue($('terrain-river-width'), 72)
+        : mapTool === 'route'
+          ? numberValue($('terrain-route-width'), 82)
+          : numberValue($('terrain-brush-size'), 180);
 
     ctx.beginPath();
     ctx.arc(
@@ -1601,34 +1619,32 @@ $('terrain-path-delete').addEventListener('click', () => {
   refreshControls();
 });
 
-$('terrain-brush-size').addEventListener('input', () => {
-  $('terrain-brush-size-value').value =
-    String(numberValue($('terrain-brush-size'), 180));
-  if (mapTool === 'terrain') renderPreview();
-});
-
-for (const [kind, widthId, materialId] of [
-  ['terrain', 'terrain-brush-size', 'terrain-paint-material'],
-  ['route', 'terrain-route-width', 'terrain-route-material'],
-  ['river', 'terrain-river-width', 'terrain-river-material']
+for (const [kind, widthId, valueId, materialId, fallbackWidth] of [
+  ['terrain', 'terrain-brush-size', 'terrain-brush-size-value', 'terrain-paint-material', 180],
+  ['route', 'terrain-route-width', 'terrain-route-width-value', 'terrain-route-material', 82],
+  ['river', 'terrain-river-width', 'terrain-river-width-value', 'terrain-river-material', 72]
 ]) {
-  $(widthId).addEventListener('change', () => {
+  $(widthId).addEventListener('input', () => {
+    const width = numberValue($(widthId), fallbackWidth);
+    $(valueId).value = String(width);
+
     if (
-      selectedSurfaceKind !== kind ||
-      !selectedSurfacePathId
+      selectedSurfaceKind === kind &&
+      selectedSurfacePathId
     ) {
-      return;
+      draft = updateSurfacePath(
+        draft,
+        selectedAreaId,
+        kind,
+        selectedSurfacePathId,
+        { width }
+      );
+      refreshJson();
     }
 
-    draft = updateSurfacePath(
-      draft,
-      selectedAreaId,
-      kind,
-      selectedSurfacePathId,
-      { width: numberValue($(widthId)) }
-    );
-    refreshJson();
-    renderPreview();
+    if (mapTool === kind || selectedSurfaceKind === kind) {
+      renderPreview();
+    }
   });
 
   $(materialId).addEventListener('change', () => {
