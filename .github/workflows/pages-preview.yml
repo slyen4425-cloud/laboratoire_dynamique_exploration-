@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: world-builder-river-collision-v1
+# preview-revision: map-actor-editor-v1
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout exploration work branch
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-world-builder-dynamique-ui-v1-2026-10-02
+          ref: work/exploration-map-actor-editor-v1-2026-10-02
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
