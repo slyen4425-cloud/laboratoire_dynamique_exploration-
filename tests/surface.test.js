@@ -3,9 +3,20 @@ import assert from 'node:assert/strict';
 
 import { normalizeWorldSurface } from '../src/world/surface-model.js';
 
-test('surface model preserves structured routes and rivers', () => {
+test('surface model preserves structured terrain zones, routes and rivers', () => {
   const source = {
     baseMaterialId: 'grass.forest',
+    zones: [
+      {
+        id: 'painted-ground',
+        width: 180,
+        materialId: 'ground.dirt',
+        points: [
+          { x: 50, y: 80 },
+          { x: 180, y: 150 }
+        ]
+      }
+    ],
     routes: [
       {
         id: 'main-road',
@@ -36,6 +47,9 @@ test('surface model preserves structured routes and rivers', () => {
 
   assert.equal(surface.version, 1);
   assert.equal(surface.baseMaterialId, 'grass.forest');
+  assert.equal(surface.zones.length, 1);
+  assert.equal(surface.zones[0].width, 180);
+  assert.equal(surface.zones[0].materialId, 'ground.dirt');
   assert.equal(surface.routes.length, 1);
   assert.equal(surface.routes[0].width, 84);
   assert.deepEqual(
@@ -72,6 +86,7 @@ test('surface model filters invalid paths without mutating the source', () => {
 
   const surface = normalizeWorldSurface(source);
 
+  assert.equal(surface.zones.length, 0);
   assert.equal(surface.routes.length, 1);
   assert.equal(surface.routes[0].id, 'valid');
   assert.equal(surface.rivers.length, 0);
@@ -92,6 +107,7 @@ test('surface model applies explicit defaults', () => {
   });
 
   assert.equal(surface.baseMaterialId, 'grass.forest');
+  assert.deepEqual(surface.zones, []);
   assert.equal(surface.routes[0].width, 64);
   assert.equal(surface.routes[0].materialId, 'road.dirt');
 });
