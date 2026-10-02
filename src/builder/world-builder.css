@@ -250,8 +250,8 @@ input:focus, select:focus, textarea:focus {
     grid-template-columns: 1fr;
     grid-template-areas:
       "header"
-      "preview"
       "tabs"
+      "preview"
       "controls";
     padding: 8px;
     gap: 8px;
@@ -274,10 +274,27 @@ input:focus, select:focus, textarea:focus {
 
   .builder-tabs {
     position: sticky;
-    top: 70px;
-    z-index: 9;
+    top: 66px;
+    z-index: 12;
     background: #111713;
     padding-block: 3px;
+  }
+
+  .map-tools {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding-bottom: 8px;
+  }
+
+  .map-tools button {
+    flex: 0 0 auto;
+    min-width: max-content;
   }
 
   .map-tools {
@@ -411,4 +428,26 @@ input:focus, select:focus, textarea:focus {
 
 #builder-preview[data-tool="terrain"] {
   cursor: crosshair;
+}
+
+
+@media (max-width: 760px) {
+  #test-exploration {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .preview-tools {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .preview-tools > * {
+    flex: 0 0 auto;
+  }
+
+  .preview-tools label {
+    min-width: 140px;
+  }
 }
