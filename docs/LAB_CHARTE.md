@@ -632,6 +632,15 @@ Le laboratoire n'ajoute pas en parallèle un second système général de toitur
 
 Un tel mode pourrait être étudié plus tard comme capacité spécialisée, mais il ne doit pas concurrencer le contrat WorldArea/Portal tant qu'un besoin concret ne le justifie pas.
 
+## 28.1 Création simple des acteurs de map
+
+Pour les futurs héros, PNJ et créatures visibles en Exploration :
+- un seul visuel fourni par le joueur doit suffire pour obtenir un acteur utilisable sur la map ;
+- les traitements automatiques (détourage, recadrage, scale, anchor, ombre, miroir, mouvement visuel) produisent uniquement une représentation visuelle ;
+- position, collision, vitesse, interaction, IA et statistiques restent dans leurs propriétaires gameplay ;
+- vues arrière, directions multiples et spritesheets sont des améliorations facultatives, jamais une exigence de création ;
+- aucun traitement visuel ne doit devenir une seconde autorité gameplay.
+
 ## 28. Règle finale
 
 La charte prime sur la solution la plus rapide.
