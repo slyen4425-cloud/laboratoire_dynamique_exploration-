@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: world-builder-dynamique-ui-v1
+# preview-revision: world-builder-direct-edit-v1
 
 on:
   push:
