@@ -1,4 +1,4 @@
-export const WORLD_OBJECT_SCHEMA_VERSION = 1;
+export const WORLD_OBJECT_SCHEMA_VERSION = 2;
 
 export const WORLD_OBJECT_LIMITS = Object.freeze({
   minScale: 0.25,
@@ -112,8 +112,15 @@ function normalizeBridge(raw, index) {
         0.15,
         { min: 0, max: 0.5 }
       ),
-      overridesObstacleIds: normalizeIds(
-        traversal.overridesObstacleIds
+      traversalRuleId:
+        typeof traversal.traversalRuleId === 'string' &&
+        traversal.traversalRuleId.trim()
+          ? traversal.traversalRuleId.trim()
+          : 'terrain.bridge',
+      overridesSurfaceFeatureIds: normalizeIds(
+        Array.isArray(traversal.overridesSurfaceFeatureIds)
+          ? traversal.overridesSurfaceFeatureIds
+          : traversal.overridesObstacleIds
       )
     })
   });
