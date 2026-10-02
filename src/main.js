@@ -3,16 +3,16 @@ import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=bridge-assets-v1-single-authority';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=building-v1-single-authority';
 import { materialPackV1 } from './materials/material-pack-v1.js';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
 import {
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=bridge-assets-v1-single-authority';
+} from './assets/world-object-asset-adapter.js?rev=building-v1-single-authority';
 import {
   createImageAssetLoader
-} from './assets/image-asset-loader.js?rev=bridge-assets-v1-single-authority';
+} from './assets/image-asset-loader.js?rev=building-v1-single-authority';
 import {
   collectMaterialAssetIds,
   createMaterialTextureLoader
@@ -42,7 +42,7 @@ const surfaceRenderer = createSurfaceRenderer({
 
 const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset: resolveWorldObjectAsset,
-  cacheRevision: 'bridge-assets-v1-binary-repair'
+  cacheRevision: 'building-v1-assets-2026-10-02'
 });
 const requiredWorldObjectAssetIds = Object.freeze([
   ...new Set(
