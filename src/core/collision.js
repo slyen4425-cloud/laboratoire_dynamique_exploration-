@@ -1,5 +1,6 @@
 import {
-  bridgeTraversalRect
+  bridgeTraversalRect,
+  buildingFootprintRect
 } from '../world/world-object-model.js';
 
 const COLLISION_EPSILON = 1e-6;
@@ -58,6 +59,29 @@ export function pointInOrientedRect(x, y, rect) {
     Math.abs(local.x) <= rect.length / 2 + COLLISION_EPSILON &&
     Math.abs(local.y) <= rect.width / 2 + COLLISION_EPSILON
   );
+}
+
+export function circleIntersectsOrientedRect(x, y, radius, rect) {
+  if (
+    !rect ||
+    !Number.isFinite(rect.x) ||
+    !Number.isFinite(rect.y) ||
+    !Number.isFinite(rect.rotation) ||
+    !Number.isFinite(rect.length) ||
+    !Number.isFinite(rect.width) ||
+    rect.length <= 0 ||
+    rect.width <= 0
+  ) {
+    return false;
+  }
+
+  const local = orientedLocalPoint(x, y, rect);
+  const nearestX = clamp(local.x, -rect.length / 2, rect.length / 2);
+  const nearestY = clamp(local.y, -rect.width / 2, rect.width / 2);
+  const dx = local.x - nearestX;
+  const dy = local.y - nearestY;
+
+  return dx * dx + dy * dy < radius * radius;
 }
 
 export function circleFitsOrientedRect(x, y, radius, rect) {
@@ -126,6 +150,24 @@ export function isBlocked(world, entity, x, y) {
     }
 
     return true;
+  }
+
+  for (const object of Array.isArray(world.objects) ? world.objects : []) {
+    if (object.kind !== 'building') continue;
+
+    const footprint = buildingFootprintRect(object);
+
+    if (
+      footprint &&
+      circleIntersectsOrientedRect(
+        x,
+        y,
+        entity.radius,
+        footprint
+      )
+    ) {
+      return true;
+    }
   }
 
   return false;
