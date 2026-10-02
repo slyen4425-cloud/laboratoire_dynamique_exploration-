@@ -106,3 +106,15 @@ Depuis la preview mobile, le joueur peut :
 5. retrouver une position extérieure explicite sûre.
 
 Le lot reste non GREEN jusqu'à validation smartphone.
+
+
+## Décision d'autorité Portal — 2026-10-02
+
+Pendant le raccord v1, une duplication potentielle a été retirée avant publication :
+- Building conserve uniquement ses `doorAnchors` ;
+- Portal Model possède seul `sourceAreaId + trigger + targetAreaId + targetSpawnId` ;
+- l'ancien champ préparatoire `Building.portalRefs` n'est plus normalisé ;
+- le World Builder Dynamique éditera le Portal lui-même lorsqu'une porte est reliée.
+
+Motif :
+éviter deux autorités décrivant la même relation porte -> Portal.
