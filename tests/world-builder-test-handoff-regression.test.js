@@ -83,12 +83,12 @@ test('regression: test-in-game action is not a blind link to static demo runtime
   );
 
   assert.equal(html.includes('id="test-exploration"'), true);
-  assert.match(builderMain, /createWorldBuilderTestHandoff/);
+  assert.match(builderMain, /saveWorldBuilderTestHandoff/);
   assert.match(builderMain, /sessionStorage/);
   assert.match(builderMain, /builderTest=1/);
 
   assert.match(runtimeMain, /builderTest/);
-  assert.match(runtimeMain, /restoreWorldBuilderTestHandoff/);
+  assert.match(runtimeMain, /readWorldBuilderTestHandoff/);
   assert.match(runtimeMain, /sessionStorage/);
 });
 
