@@ -1,6 +1,6 @@
 import {
   resolvePortalTriggerPoint
-} from '../world/portal-model.js';
+} from '../world/portal-model.js?rev=worldarea-portal-v1-exit-marker';
 
 function drawExitMarker(ctx, point, visual, camera) {
   const x = point.x - camera.x;
