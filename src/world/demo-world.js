@@ -67,7 +67,7 @@ export const demoWorldDocument = normalizeWorldDocument({
             widthRatio: 0.82,
             edgeAssistRatio: 0.15,
             overridesObstacleIds: [
-              'forest-stream-collision'
+              'forest-stream'
             ]
           }
         },
@@ -106,14 +106,6 @@ export const demoWorldDocument = normalizeWorldDocument({
       ],
       obstacles: [
         { id: 'rock-01', x: 480, y: 300, w: 240, h: 180, kind: 'rock' },
-        {
-          id: 'forest-stream-collision',
-          x: 980,
-          y: 760,
-          w: 460,
-          h: 90,
-          kind: 'river'
-        },
         { id: 'trees-01', x: 1650, y: 360, w: 220, h: 300, kind: 'trees' },
         { id: 'trees-02', x: 350, y: 1120, w: 520, h: 120, kind: 'trees' }
       ],
