@@ -5,6 +5,8 @@ import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
+import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-visual-v1';
+import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-visual-v1';
 import { materialPackV1 } from './materials/material-pack-v1.js?rev=worldarea-portal-v1-interior-surface-fix';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
@@ -13,7 +15,13 @@ import {
 } from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';
 import {
   createImageAssetLoader
-} from './assets/image-asset-loader.js?rev=worldarea-portal-v1';
+} from './assets/image-asset-loader.js?rev=map-actor-visual-v1';
+import {
+  resolveMapActorAsset
+} from './assets/map-actor-asset-adapter.js?rev=map-actor-visual-v1';
+import {
+  createMapActorVisualPreparer
+} from './assets/map-actor-visual-preparer.js?rev=map-actor-visual-v1';
 import {
   collectMaterialAssetIds,
   createMaterialTextureLoader
@@ -46,7 +54,13 @@ const player = {
   x: initialState.x,
   y: initialState.y,
   radius: config.player.radius,
-  viaPortalId: null
+  viaPortalId: null,
+  facingX: 1,
+  moving: false,
+  mapVisual: normalizeMapActorVisual({
+    assetId: 'actor.demo.hero.traveler.01',
+    role: 'hero'
+  })
 };
 
 const camera = { x: 0, y: 0 };
@@ -95,6 +109,52 @@ if (
 const worldObjectRenderer = createWorldObjectRenderer({
   imageLoader: worldObjectImageLoader,
   resolveVisualAsset: resolveWorldObjectAsset
+});
+
+const mapActorImageLoader = createImageAssetLoader({
+  resolveAsset: resolveMapActorAsset,
+  cacheRevision: 'map-actor-visual-v1-2026-10-02'
+});
+const requiredMapActorAssetIds = Object.freeze([
+  player.mapVisual.assetId
+]);
+
+const mapActorAssetStatus = await mapActorImageLoader.load(
+  requiredMapActorAssetIds
+);
+
+if (
+  mapActorAssetStatus.ready !== requiredMapActorAssetIds.length ||
+  mapActorAssetStatus.missing > 0 ||
+  mapActorAssetStatus.errors > 0
+) {
+  coords.textContent =
+    'Erreur asset Map Actor — voir console';
+  throw new Error(
+    `Map Actor assets unavailable: ${JSON.stringify(mapActorAssetStatus)}`
+  );
+}
+
+const mapActorVisualPreparer = createMapActorVisualPreparer({
+  imageLoader: mapActorImageLoader
+});
+const mapActorPreparationStatus = mapActorVisualPreparer.prepare(
+  requiredMapActorAssetIds
+);
+
+if (
+  mapActorPreparationStatus.ready !== requiredMapActorAssetIds.length ||
+  mapActorPreparationStatus.errors > 0
+) {
+  coords.textContent =
+    'Erreur préparation Map Actor — voir console';
+  throw new Error(
+    `Map Actor preparation failed: ${JSON.stringify(mapActorPreparationStatus)}`
+  );
+}
+
+const mapActorRenderer = createMapActorRenderer({
+  preparedVisuals: mapActorVisualPreparer
 });
 const portalRenderer = createPortalRenderer();
 let last = performance.now();
@@ -185,11 +245,19 @@ function applyTriggeredPortal() {
 
 function update(dt) {
   const area = currentArea();
+  const input = currentInput();
+
+  player.moving =
+    Math.hypot(input.x, input.y) > config.input.deadzone;
+
+  if (Math.abs(input.x) > 0.05) {
+    player.facingX = input.x < 0 ? -1 : 1;
+  }
 
   stepMovement(
     area,
     player,
-    currentInput(),
+    input,
     dt,
     config.movement
   );
@@ -240,7 +308,7 @@ function drawObstacle(obstacle) {
   ctx.fillRect(x, y, obstacle.w, obstacle.h);
 }
 
-function render() {
+function render(timeSeconds = 0) {
   const area = currentArea();
 
   ctx.clearRect(0, 0, innerWidth, innerHeight);
@@ -263,19 +331,11 @@ function render() {
     currentAreaId: player.currentAreaId
   });
 
-  ctx.beginPath();
-  ctx.arc(
-    player.x - camera.x,
-    player.y - camera.y,
-    player.radius,
-    0,
-    Math.PI * 2
-  );
-  ctx.fillStyle = '#f1d36a';
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = '#2a2516';
-  ctx.stroke();
+  mapActorRenderer.draw(ctx, {
+    camera,
+    actors: [player],
+    timeSeconds
+  });
 }
 
 function frame(now) {
@@ -285,7 +345,7 @@ function frame(now) {
   );
   last = now;
   update(dt);
-  render();
+  render(now / 1000);
   requestAnimationFrame(frame);
 }
 
