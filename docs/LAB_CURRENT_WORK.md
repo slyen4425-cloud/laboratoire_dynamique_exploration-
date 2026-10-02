@@ -323,3 +323,31 @@ Aucun changement de contrat gameplay/runtime n'est ajouté par cette consolidati
 CI consolidation autorité unique :
 - SHA : `989a42a7f6416a549376ea7348f638e533e2f874` ;
 - run `37007397302` — **SUCCESS**.
+
+
+## Retour utilisateur — gizmos et pinceau terrain requis — 2026-10-02
+
+Constat utilisateur sur la preview directe :
+- aucun contrôle visuel évident pour redimensionner un WorldObject ;
+- aucune poignée de rotation ;
+- le resize d'Area n'est pas assez visible/intuitif ;
+- Terrain ne fournit pas encore un vrai pinceau de paysage à taille réglable.
+
+Décision :
+- compléter le lot World Builder UI v1 avant toute validation GREEN ;
+- la sélection d'un WorldObject affiche des poignées de scale + une poignée de rotation ;
+- ces poignées modifient uniquement `WorldObject.transform` via les helpers Draft existants ;
+- le resize WorldArea utilise une poignée explicite visible et modifie uniquement `WorldArea.width/height` ;
+- ajouter un outil `Peindre terrain` avec diamètre réglable ;
+- le pinceau écrit dans une collection canonique `WorldArea.surface.zones[]` du WorldDocument ;
+- aucune géométrie Builder parallèle, aucun state gameplay concurrent ;
+- les routes/rivières existantes restent inchangées.
+
+Tests requis avant correctif :
+- présence des modes de geste scale/rotation ;
+- gestes scale/rotation -> `updateWorldObjectTransform` ;
+- zone terrain -> WorldSurface canonique ;
+- export/import conserve les zones ;
+- Surface Renderer consomme les zones ;
+- UI expose taille de pinceau et outil peinture ;
+- resize Area démarre depuis la poignée, pas depuis n'importe quel point de la map.
