@@ -210,3 +210,32 @@ La preview publiée contient aussi :
 
 Gate restante :
 validation smartphone utilisateur du rendu Building + collision logique.
+
+
+## Validation utilisateur finale — 2026-10-02
+
+Test smartphone : **validé**.
+
+Retour utilisateur :
+> Yes, c est magnifique. ❤️
+
+Cette validation couvre :
+- rendu du bâtiment réel ;
+- intégration visuelle dans l'environnement ;
+- absence de régression perceptible du pont/mouvement ;
+- cohérence du footprint de collision observé en preview ;
+- asset Building chargé correctement ;
+- autorité visuelle unique respectée.
+
+## Fermeture
+Building WorldObject v1 : **GREEN / terminé**.
+
+SHA technique validé avant document de fermeture :
+`50baa1e83a9fdff106130beb93a83c46e6b99c92`
+
+CI :
+run `36950297203` — **SUCCESS**.
+
+La suite doit repartir d'un checkpoint GREEN exact dans un lot séparé, notamment :
+- WorldArea / Portal v1 ;
+- ou World Builder Dynamique UI dans un lot dédié.
