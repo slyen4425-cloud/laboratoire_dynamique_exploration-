@@ -212,3 +212,45 @@ Gate restante :
 validation smartphone/tablette utilisateur de l'UI Builder, de la preview et du round-trip export/import.
 
 Le lot reste non GREEN jusqu'à cette validation.
+
+
+## Révision ergonomie directe v1 — 2026-10-02
+
+Retour utilisateur traité avant validation GREEN.
+
+Implémenté :
+- sélection directe des WorldObjects sur la preview ;
+- déplacement bâtiment/pont au doigt ou à la souris ;
+- déplacement direct des Spawns ;
+- pan de la carte sur zone vide ;
+- zoom molette centré sur la zone pointée ;
+- zoom +/- ;
+- pinch zoom tactile centré sur les doigts avec pan simultané ;
+- plage de zoom élargie à 0.05 → 4 ;
+- outil `Taille Area` : redimensionnement direct de la WorldArea courante depuis la map ;
+- contour et poignée visuelle de l'Area ;
+- nouvel onglet `Terrain` ;
+- outil `Tracer route` ;
+- outil `Tracer rivière` ;
+- largeur et matériau configurables ;
+- rivière raccordée à `water.forest_stream` ;
+- sélection/suppression des tracés ;
+- routes/rivières écrites directement dans `WorldArea.surface.routes/rivers` ;
+- aucun format Builder parallèle.
+
+Le WorldArea Model reste l'autorité : l'outil Taille Area modifie uniquement `width/height`.
+Le Surface Model reste l'autorité : les outils Route/Rivière modifient uniquement les données surface canoniques.
+
+Sentinelles ajoutées :
+- dessin Terrain -> vrai WorldDocument ;
+- export/import conserve une rivière dessinée ;
+- zoom centré conserve le point monde sous le curseur ;
+- pan en unités monde ;
+- hit-test WorldObject orienté ;
+- présence des outils directs dans l'UI.
+
+CI :
+run `37005753534` — **SUCCESS**.
+
+Gate restante :
+nouvelle preview smartphone/tablette puis validation utilisateur de l'ergonomie directe.
