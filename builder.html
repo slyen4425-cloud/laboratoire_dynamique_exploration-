@@ -22,6 +22,7 @@
     <section class="preview-panel">
       <div class="map-tools" aria-label="Outils directs de carte">
         <button id="map-tool-select" data-map-tool="select" type="button" class="active">Déplacer</button>
+        <button id="map-tool-actor" data-map-tool="actor-preview" type="button">Aperçu acteur</button>
         <button id="map-tool-area" data-map-tool="area-size" type="button">Taille Area</button>
         <button id="map-tool-terrain" data-map-tool="terrain" type="button">Peindre terrain</button>
         <button id="map-tool-route" data-map-tool="route" type="button">Tracer route</button>
@@ -39,6 +40,7 @@
       <button type="button" data-tab="area" class="active">Area</button>
       <button type="button" data-tab="terrain">Terrain</button>
       <button type="button" data-tab="objects">Objets</button>
+      <button type="button" data-tab="actors">Acteurs</button>
       <button type="button" data-tab="portals">Portals</button>
       <button type="button" data-tab="json">JSON</button>
     </nav>
@@ -192,6 +194,100 @@
         </div>
       </section>
 
+
+      <section class="builder-tab" data-panel="actors">
+        <h2>Acteurs de map</h2>
+        <p class="builder-hint">
+          Cet onglet édite uniquement la représentation visuelle MapActorVisual v1.
+          Le point placé sur la map est un aperçu temporaire : il ne devient jamais une position gameplay.
+        </p>
+
+        <div class="grid-2">
+          <label>
+            Rôle
+            <select id="actor-role">
+              <option value="hero">Héros</option>
+              <option value="npc">PNJ</option>
+              <option value="creature">Créature</option>
+            </select>
+          </label>
+          <label>
+            Asset enregistré
+            <select id="actor-asset"></select>
+          </label>
+        </div>
+
+        <label class="file-button actor-file-button">
+          Importer un visuel pour l'aperçu
+          <input id="actor-image-import" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/*" />
+        </label>
+        <p id="actor-import-status" class="builder-hint">
+          Un seul visuel suffit : détourage/recadrage/anchor automatiques utilisent le pipeline Map Actor GREEN.
+        </p>
+
+        <h3>Taille et orientation</h3>
+        <label>
+          Hauteur sur la map
+          <div class="brush-size-row">
+            <input id="actor-target-height" type="range" min="24" max="240" step="1" value="78" />
+            <output id="actor-target-height-value" for="actor-target-height">78</output>
+          </div>
+        </label>
+        <div class="grid-2">
+          <label class="checkbox-line">
+            <input id="actor-mirror" type="checkbox" checked />
+            Miroir automatique gauche/droite
+          </label>
+          <label>
+            Direction aperçu
+            <select id="actor-facing">
+              <option value="1">Droite</option>
+              <option value="-1">Gauche</option>
+            </select>
+          </label>
+        </div>
+
+        <h3>Anchor</h3>
+        <label class="checkbox-line">
+          <input id="actor-anchor-auto" type="checkbox" checked />
+          Anchor automatique
+        </label>
+        <div class="grid-2">
+          <label>Anchor X <input id="actor-anchor-x" type="number" min="0" max="1" step="0.01" value="0.5" /></label>
+          <label>Anchor Y <input id="actor-anchor-y" type="number" min="0" max="1" step="0.01" value="0.96" /></label>
+        </div>
+
+        <h3>Ombre</h3>
+        <label class="checkbox-line">
+          <input id="actor-shadow-enabled" type="checkbox" checked />
+          Ombre activée
+        </label>
+        <div class="grid-3">
+          <label>Largeur <input id="actor-shadow-width" type="number" min="0.1" max="1.5" step="0.01" value="0.58" /></label>
+          <label>Hauteur <input id="actor-shadow-height" type="number" min="0.05" max="0.6" step="0.01" value="0.16" /></label>
+          <label>Opacité <input id="actor-shadow-opacity" type="number" min="0" max="0.8" step="0.01" value="0.24" /></label>
+        </div>
+
+        <h3>Mouvement visuel</h3>
+        <div class="grid-2">
+          <label>Idle amplitude <input id="actor-idle-amplitude" type="number" min="0" max="8" step="0.1" value="1.2" /></label>
+          <label>Idle fréquence <input id="actor-idle-frequency" type="number" min="0.1" max="8" step="0.05" value="1.25" /></label>
+          <label>Marche amplitude <input id="actor-walk-amplitude" type="number" min="0" max="12" step="0.1" value="3.2" /></label>
+          <label>Marche fréquence <input id="actor-walk-frequency" type="number" min="0.5" max="16" step="0.1" value="5.4" /></label>
+        </div>
+        <div class="row">
+          <label class="checkbox-line actor-moving-line">
+            <input id="actor-moving" type="checkbox" />
+            Aperçu en mouvement
+          </label>
+          <button id="actor-animate" type="button">Tester animation</button>
+          <button id="actor-export" type="button">Exporter MapActorVisual JSON</button>
+        </div>
+        <p id="actor-preview-position" class="builder-hint">
+          Aperçu : utilise « Aperçu acteur » puis touche/glisse sur la map.
+        </p>
+      </section>
+
       <section class="builder-tab" data-panel="portals">
         <h2>Portals</h2>
         <div class="row">
@@ -259,6 +355,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-dynamic-return"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=map-actor-editor-v1"></script>
 </body>
 </html>
