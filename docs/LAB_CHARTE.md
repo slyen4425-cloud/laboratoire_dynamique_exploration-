@@ -583,10 +583,13 @@ Un Building WorldObject doit pouvoir déclarer au minimum :
 - transform X/Y/rotation/scale ;
 - baseSize/footprint logique ;
 - visual.assetId ;
-- un ou plusieurs `doorAnchor` locaux ;
-- identifiant de Portal optionnel par porte.
+- un ou plusieurs `doorAnchor` locaux.
+
+Le Building ne stocke **aucun lien Portal autoritaire**.
+Le `Portal Model` est l'unique propriétaire de la relation entre une source (par exemple un `building-door`) et une Area cible.
 
 Le World Builder Dynamique doit permettre d'éditer ces propriétés sans déplacer ou redéfinir l'intérieur lui-même.
+Lorsqu'une porte est reliée à un Portal, l'éditeur modifie le contrat Portal ; il ne duplique pas ce lien dans le Building.
 
 Une porte/entrée utilise un Portal explicite contenant notamment :
 - sourceAreaId ;
