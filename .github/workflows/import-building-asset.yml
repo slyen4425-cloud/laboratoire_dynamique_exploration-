@@ -1,0 +1,48 @@
+name: Import Building Asset Once
+
+on:
+  push:
+    branches:
+      - work/exploration-building-visual-asset-v1-2026-10-02
+
+permissions:
+  contents: write
+
+jobs:
+  import-building:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/exploration-building-visual-asset-v1-2026-10-02
+          fetch-depth: 0
+
+      - name: Decode and verify Building v1 asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/exploration/objects/buildings
+          cat .asset-import/building/chunk_* > /tmp/building.b64
+          base64 -d /tmp/building.b64 > assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp
+          test "$(wc -c < assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp)" -eq 52898
+          echo "cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f  assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp" | sha256sum -c -
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp")
+          b = p.read_bytes()
+          assert b[:4] == b"RIFF"
+          assert b[8:12] == b"WEBP"
+          assert int.from_bytes(b[4:8], "little") + 8 == len(b)
+          PY
+
+      - name: Remove one-shot importer and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .asset-import/building
+          rm -f .github/workflows/import-building-asset.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "assets: import complete Building v1 runtime WebP"
+          git push origin HEAD:work/exploration-building-visual-asset-v1-2026-10-02
