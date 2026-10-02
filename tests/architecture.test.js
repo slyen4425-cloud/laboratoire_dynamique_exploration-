@@ -292,3 +292,52 @@ test('architecture sentinel: configured player has no concurrent circle fallback
   assert.equal(main.includes("fillStyle = '#f1d36a'"), false);
   assert.equal(main.includes('mapActorRenderer.draw'), true);
 });
+
+
+test('architecture sentinel: World Builder draft owns no renderer, DOM, movement or collision authority', async () => {
+  const draft = await readFile(
+    new URL('../src/builder/world-builder-draft.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(
+    /document\.|window\.|canvas|getContext|stepMovement|isBlocked|collision\.js|render\//.test(draft),
+    false
+  );
+  assert.equal(draft.includes('normalizeWorldDocument'), true);
+});
+
+test('architecture sentinel: World Builder UI never imports gameplay movement or collision', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(
+    /core\/movement|core\/collision|stepMovement|isBlocked/.test(main),
+    false
+  );
+  assert.equal(main.includes('world-builder-draft.js'), true);
+});
+
+test('architecture sentinel: World Builder exports the canonical WorldDocument and no BuilderMap format', async () => {
+  const draft = await readFile(
+    new URL('../src/builder/world-builder-draft.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(draft.includes('BuilderMap'), false);
+  assert.equal(draft.includes('normalizeWorldDocument'), true);
+  assert.equal(draft.includes('serializeWorldBuilderDraft'), true);
+});
+
+test('architecture sentinel: Builder preview reuses Exploration renderers', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(main.includes('createSurfaceRenderer'), true);
+  assert.equal(main.includes('createWorldObjectRenderer'), true);
+  assert.equal(main.includes('createPortalRenderer'), true);
+});
