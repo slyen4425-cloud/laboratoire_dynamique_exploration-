@@ -5,7 +5,7 @@ import { materialPackV1 } from '../src/materials/material-pack-v1.js';
 import { createMaterialRegistry } from '../src/materials/material-registry.js';
 import { normalizeWorldSurface } from '../src/world/surface-model.js';
 
-test('Material Pack v1 exposes the three pilot materials', () => {
+test('Material Pack v1 exposes the pilot materials plus explicit house floor surface', () => {
   const registry = createMaterialRegistry(materialPackV1);
 
   assert.equal(registry.schemaVersion, 1);
@@ -13,7 +13,8 @@ test('Material Pack v1 exposes the three pilot materials', () => {
   assert.equal(registry.resolve('grass.forest')?.kind, 'surface');
   assert.equal(registry.resolve('road.dirt')?.kind, 'path');
   assert.equal(registry.resolve('water.forest_stream')?.kind, 'water');
-  assert.equal(registry.list().length, 3);
+  assert.equal(registry.resolve('floor.wood.house')?.kind, 'surface');
+  assert.equal(registry.list().length, 4);
 });
 
 test('unknown material ids never silently fall back', () => {
