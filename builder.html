@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
+  />
+  <title>GenSrpG — World Builder Dynamique</title>
+  <link rel="stylesheet" href="./src/builder/world-builder.css" />
+</head>
+<body>
+  <main class="builder-shell">
+    <header class="builder-header">
+      <div>
+        <strong>World Builder Dynamique</strong>
+        <span id="builder-status">Initialisation…</span>
+      </div>
+      <a class="header-link" href="./index.html">Tester Exploration</a>
+    </header>
+
+    <section class="preview-panel">
+      <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
+      <div class="preview-tools">
+        <button id="preview-fit" type="button">Vue Area</button>
+        <button id="preview-focus" type="button">Centrer sélection</button>
+        <label>
+          Zoom
+          <input id="preview-zoom" type="range" min="0.1" max="2" step="0.05" value="0.35" />
+        </label>
+      </div>
+    </section>
+
+    <nav class="builder-tabs" aria-label="Sections du World Builder">
+      <button type="button" data-tab="area" class="active">Area</button>
+      <button type="button" data-tab="objects">Objets</button>
+      <button type="button" data-tab="portals">Portals</button>
+      <button type="button" data-tab="json">JSON</button>
+    </nav>
+
+    <section class="builder-controls">
+      <section class="builder-tab active" data-panel="area">
+        <h2>WorldArea</h2>
+        <label>
+          Area
+          <select id="area-select"></select>
+        </label>
+        <div class="grid-2">
+          <label>Largeur <input id="area-width" type="number" min="128" step="10" /></label>
+          <label>Hauteur <input id="area-height" type="number" min="128" step="10" /></label>
+        </div>
+        <label>
+          Sol
+          <select id="area-material"></select>
+        </label>
+
+        <h3>Spawns</h3>
+        <div class="row">
+          <select id="spawn-select"></select>
+          <button id="spawn-add" type="button">+ Spawn</button>
+          <button id="spawn-delete" type="button" class="danger">Supprimer</button>
+        </div>
+        <div class="grid-2">
+          <label>X <input id="spawn-x" type="number" step="1" /></label>
+          <label>Y <input id="spawn-y" type="number" step="1" /></label>
+        </div>
+      </section>
+
+      <section class="builder-tab" data-panel="objects">
+        <h2>WorldObjects</h2>
+        <div class="row">
+          <select id="object-select"></select>
+          <button id="object-add-building" type="button">+ Bâtiment</button>
+          <button id="object-add-bridge" type="button">+ Pont</button>
+        </div>
+        <div class="row">
+          <button id="object-duplicate" type="button">Dupliquer</button>
+          <button id="object-delete" type="button" class="danger">Supprimer</button>
+        </div>
+
+        <label>
+          Asset
+          <select id="object-asset"></select>
+        </label>
+
+        <h3>Transform</h3>
+        <div class="grid-2">
+          <label>X <input id="object-x" type="number" step="1" /></label>
+          <label>Y <input id="object-y" type="number" step="1" /></label>
+          <label>Rotation° <input id="object-rotation" type="number" step="1" /></label>
+          <label>Scale X <input id="object-scale-x" type="number" min="0.25" max="4" step="0.05" /></label>
+          <label>Scale Y <input id="object-scale-y" type="number" min="0.25" max="4" step="0.05" /></label>
+        </div>
+
+        <div id="building-fields" class="kind-fields">
+          <h3>Bâtiment</h3>
+          <div class="grid-2">
+            <label>Largeur logique <input id="building-width" type="number" min="24" step="1" /></label>
+            <label>Hauteur logique <input id="building-height" type="number" min="24" step="1" /></label>
+            <label>Footprint largeur <input id="building-footprint-width" type="number" min="0.1" max="1" step="0.01" /></label>
+            <label>Footprint hauteur <input id="building-footprint-height" type="number" min="0.1" max="1" step="0.01" /></label>
+            <label>Offset X <input id="building-footprint-x" type="number" min="-0.5" max="0.5" step="0.01" /></label>
+            <label>Offset Y <input id="building-footprint-y" type="number" min="-0.5" max="0.5" step="0.01" /></label>
+          </div>
+          <h3>Porte principale</h3>
+          <div class="grid-2">
+            <label>Anchor X <input id="building-door-x" type="number" min="-0.75" max="0.75" step="0.01" /></label>
+            <label>Anchor Y <input id="building-door-y" type="number" min="-0.75" max="0.75" step="0.01" /></label>
+          </div>
+        </div>
+
+        <div id="bridge-fields" class="kind-fields">
+          <h3>Pont</h3>
+          <div class="grid-2">
+            <label>Longueur <input id="bridge-length" type="number" min="24" step="1" /></label>
+            <label>Largeur <input id="bridge-width" type="number" min="24" step="1" /></label>
+            <label>Passage longueur <input id="bridge-passage-length" type="number" min="0.1" max="1" step="0.01" /></label>
+            <label>Passage largeur <input id="bridge-passage-width" type="number" min="0.1" max="1" step="0.01" /></label>
+            <label>Aide bord <input id="bridge-edge-assist" type="number" min="0" max="0.5" step="0.01" /></label>
+          </div>
+          <label>
+            Obstacles franchis (ids séparés par virgules)
+            <input id="bridge-obstacles" type="text" />
+          </label>
+        </div>
+      </section>
+
+      <section class="builder-tab" data-panel="portals">
+        <h2>Portals</h2>
+        <div class="row">
+          <select id="portal-select"></select>
+          <button id="portal-add" type="button">+ Portal</button>
+          <button id="portal-delete" type="button" class="danger">Supprimer</button>
+        </div>
+
+        <div class="grid-2">
+          <label>Area source <select id="portal-source-area"></select></label>
+          <label>Type trigger
+            <select id="portal-trigger-kind">
+              <option value="point">Point</option>
+              <option value="building-door">Porte bâtiment</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="portal-point-fields" class="grid-3">
+          <label>X <input id="portal-point-x" type="number" step="1" /></label>
+          <label>Y <input id="portal-point-y" type="number" step="1" /></label>
+          <label>Rayon <input id="portal-radius" type="number" min="4" max="240" step="1" /></label>
+        </div>
+
+        <div id="portal-building-fields" class="grid-2">
+          <label>Bâtiment <select id="portal-building"></select></label>
+          <label>Door anchor <select id="portal-anchor"></select></label>
+        </div>
+
+        <div class="grid-2">
+          <label>Area cible <select id="portal-target-area"></select></label>
+          <label>Spawn cible <select id="portal-target-spawn"></select></label>
+        </div>
+
+        <h3>Repère visuel</h3>
+        <label class="checkbox-line">
+          <input id="portal-visible" type="checkbox" />
+          Afficher sur la map
+        </label>
+        <div class="grid-2">
+          <label>Marker
+            <select id="portal-marker">
+              <option value="portal">Portal</option>
+              <option value="entry">Entrée</option>
+              <option value="exit">Sortie</option>
+            </select>
+          </label>
+          <label>Label <input id="portal-label" type="text" /></label>
+        </div>
+      </section>
+
+      <section class="builder-tab" data-panel="json">
+        <h2>WorldDocument</h2>
+        <div class="row">
+          <button id="export-json" type="button">Exporter JSON</button>
+          <label class="file-button">
+            Importer JSON
+            <input id="import-json" type="file" accept=".json,application/json" />
+          </label>
+          <button id="reset-demo" type="button">Recharger la démo</button>
+        </div>
+        <p id="validation-summary"></p>
+        <textarea id="json-preview" readonly spellcheck="false"></textarea>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1"></script>
+</body>
+</html>
