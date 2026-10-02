@@ -1601,6 +1601,12 @@ $('terrain-path-delete').addEventListener('click', () => {
   refreshControls();
 });
 
+$('terrain-brush-size').addEventListener('input', () => {
+  $('terrain-brush-size-value').value =
+    String(numberValue($('terrain-brush-size'), 180));
+  if (mapTool === 'terrain') renderPreview();
+});
+
 for (const [kind, widthId, materialId] of [
   ['terrain', 'terrain-brush-size', 'terrain-paint-material'],
   ['route', 'terrain-route-width', 'terrain-route-material'],
