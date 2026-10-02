@@ -289,6 +289,19 @@ Paramètres génériques :
 
 Le World Builder Dynamique ne possède pas ces valeurs : il les édite dans le WorldDocument.
 
+### 9.2 Manipulation directe et pinceau terrain
+
+Les poignées de déplacement, rotation, scale et taille d'Area sont uniquement des contrôles d'édition :
+- elles ne conservent aucune géométrie parallèle ;
+- elles écrivent via les helpers du Draft dans les données canoniques ;
+- le preview renderer reste en lecture seule.
+
+Le pinceau paysage écrit dans `WorldArea.surface.zones[]`.
+Une zone peinte déclare matériel de surface, largeur et points X/Y.
+Elle est visuelle uniquement : aucune collision ou règle gameplay ne peut être déduite du trait peint.
+
+La taille du pinceau est une donnée d'édition utilisée pour produire la largeur canonique de la zone, jamais un état runtime concurrent.
+
 ## 10. Génération automatique et Builder partagent le même modèle
 
 Flux cible :
