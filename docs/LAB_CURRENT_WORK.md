@@ -708,3 +708,35 @@ validation smartphone utilisateur :
 3. entrer puis ressortir ;
 4. vérifier le retour devant la nouvelle porte ;
 5. vérifier le zoom Builder au pinch sans contrôles cassés.
+
+
+## Régression — pinch zoom tactile cassé après simplification — 2026-10-02
+
+Retour smartphone :
+- sortie de maison dynamique : OK ;
+- pinch zoom Builder : ne répond plus ou très mal.
+
+Cause confirmée :
+- la simplification zoom a retiré les contrôles + / − / slider et leur synchroniseur ;
+- `updatePinch()` appelait encore `syncZoomInput()` ;
+- cette fonction n'existe plus ;
+- au premier mouvement pinch, une `ReferenceError` interrompait le geste.
+
+Reproduction permanente :
+- test `regression: pinch zoom has no stale dependency on removed zoom controls` ;
+- commit `472e903770b7318122f7c1a6b7880bf0232f44da` ;
+- CI run `37032164888` — **FAILURE attendue**.
+
+Correction :
+- suppression de l'appel fantôme `syncZoomInput()` ;
+- aucun contrôle zoom réintroduit ;
+- aucune seconde autorité viewport ;
+- le pinch continue d'écrire uniquement `zoom + center` éphémères du viewport Builder ;
+- molette/trackpad inchangés.
+
+CI après correction :
+- SHA `6bfd43d6b3c2efff6b0efab6d076377528e79604` ;
+- run `37032220029` — **SUCCESS**.
+
+Gate restante :
+nouvelle preview smartphone et validation du pinch.
