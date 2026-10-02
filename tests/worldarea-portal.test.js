@@ -399,3 +399,35 @@ test('regression: Building return follows the moved and scaled door instead of a
   assert.ok(Math.abs(next.x - 1350) < 1e-9);
   assert.ok(Math.abs(next.y - 892.8) < 1e-9);
 });
+
+
+test('anchored Spawn stores no competing X/Y and resolves from its Building door', async () => {
+  const {
+    findWorldArea,
+    findWorldAreaSpawn,
+    resolveWorldAreaSpawnPoint
+  } = await import('../src/world/world-area-model.js');
+
+  const outside = findWorldArea(
+    demoWorldDocument.areas,
+    'forest-exterior'
+  );
+  const spawn = findWorldAreaSpawn(
+    outside,
+    'house-return-exterior'
+  );
+  const point = resolveWorldAreaSpawnPoint(
+    outside,
+    'house-return-exterior'
+  );
+
+  assert.equal(spawn.anchor.kind, 'building-door');
+  assert.equal(spawn.anchor.objectId, 'forest-house-01');
+  assert.equal(spawn.anchor.anchorId, 'main-door');
+  assert.equal(spawn.anchor.offset, 56);
+  assert.equal('x' in spawn, false);
+  assert.equal('y' in spawn, false);
+
+  assert.ok(Math.abs(point.x - 820) < 1e-9);
+  assert.ok(Math.abs(point.y - 1104) < 1e-9);
+});
