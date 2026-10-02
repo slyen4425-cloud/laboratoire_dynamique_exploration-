@@ -1,6 +1,13 @@
 import { normalize } from './core/vector.js';
 import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
+import {
+  createTraversalRuleRegistry,
+  resolveSurfaceTraversal
+} from './core/surface-traversal.js?rev=surface-traversal-v1';
+import {
+  traversalRulePackV1
+} from './core/traversal-rule-pack-v1.js?rev=surface-traversal-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
@@ -33,6 +40,9 @@ const ctx = canvas.getContext('2d');
 const coords = document.querySelector('#coords');
 const joystick = document.querySelector('#joystick');
 const stick = document.querySelector('#stick');
+const locomotionButtons = [
+  ...document.querySelectorAll('[data-locomotion]')
+];
 
 const config = normalizeExplorationConfig();
 const initialState = createInitialExplorationState(demoWorldDocument);
@@ -46,12 +56,16 @@ const player = {
   x: initialState.x,
   y: initialState.y,
   radius: config.player.radius,
+  locomotion: { modes: ['ground'] },
   viaPortalId: null
 };
 
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
+const traversalRegistry = createTraversalRuleRegistry(
+  traversalRulePackV1
+);
 const materialRegistry = createMaterialRegistry(materialPackV1);
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
@@ -191,14 +205,23 @@ function update(dt) {
     player,
     currentInput(),
     dt,
-    config.movement
+    config.movement,
+    traversalRegistry
   );
 
   applyTriggeredPortal();
   updateCamera();
 
+  const traversal = resolveSurfaceTraversal(
+    currentArea(),
+    player,
+    player.x,
+    player.y,
+    traversalRegistry
+  );
+
   coords.textContent =
-    `${player.currentAreaId} · x: ${player.x.toFixed(1)}  y: ${player.y.toFixed(1)}`;
+    `${player.currentAreaId} · x: ${player.x.toFixed(1)} y: ${player.y.toFixed(1)} · ${traversal.ruleId} ×${traversal.speedMultiplier.toFixed(2)}`;
 }
 
 function drawGround() {
@@ -238,6 +261,23 @@ function drawObstacle(obstacle) {
   }
 
   ctx.fillRect(x, y, obstacle.w, obstacle.h);
+}
+
+function setLocomotionMode(mode) {
+  if (mode === 'swim') {
+    player.locomotion = { modes: ['ground', 'swim'] };
+  } else if (mode === 'fly') {
+    player.locomotion = { modes: ['fly'] };
+  } else {
+    player.locomotion = { modes: ['ground'] };
+  }
+
+  for (const button of locomotionButtons) {
+    button.classList.toggle(
+      'active',
+      button.dataset.locomotion === mode
+    );
+  }
 }
 
 function render() {
@@ -293,6 +333,13 @@ addEventListener('resize', resize);
 addEventListener('keydown', (event) => keys.add(event.key.toLowerCase()));
 addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
 
+for (const button of locomotionButtons) {
+  button.addEventListener('click', () => {
+    setLocomotionMode(button.dataset.locomotion);
+  });
+}
+
+setLocomotionMode('ground');
 resize();
 updateCamera();
 requestAnimationFrame(frame);
