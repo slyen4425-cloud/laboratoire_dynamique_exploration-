@@ -111,7 +111,7 @@ button.danger {
 .builder-tabs {
   grid-area: tabs;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 6px;
 }
 
@@ -333,7 +333,7 @@ input:focus, select:focus, textarea:focus {
 
 .map-tools {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   padding: 8px 9px 0;
   background: #18221b;
@@ -372,7 +372,8 @@ input:focus, select:focus, textarea:focus {
 
 #builder-preview[data-tool="route"],
 #builder-preview[data-tool="river"],
-#builder-preview[data-tool="area-size"] {
+#builder-preview[data-tool="area-size"],
+#builder-preview[data-tool="actor-preview"] {
   cursor: crosshair;
 }
 
@@ -431,4 +432,24 @@ input:focus, select:focus, textarea:focus {
   .preview-gesture-hint {
     flex: 1 1 180px;
   }
+}
+
+
+.actor-file-button {
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.actor-moving-line {
+  align-self: center;
+  min-height: 42px;
+}
+
+#actor-target-height {
+  min-height: 40px;
+  padding-inline: 0;
+}
+
+#actor-preview-position {
+  font-variant-numeric: tabular-nums;
 }
