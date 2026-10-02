@@ -183,3 +183,25 @@ Aucune intégration au dépôt principal depuis ce laboratoire.
 Chantier séparé dans `Zombicide-40k`, soumis à sa charte et à ses checkpoints.
 
 Le laboratoire devient une source de référence technique, pas une autorité parallèle.
+
+
+## Lot suivant validé — Map Actor Visual System v1
+
+Après WorldArea / Portal v1, construire un système unique de représentation des héros, PNJ et créatures sur la map.
+
+Règle produit :
+**le joueur fournit un seul visuel ; GenSrpG prépare automatiquement la représentation map nécessaire.**
+
+Le mode de base doit fonctionner avec une seule image :
+- recadrage/détourage si nécessaire ;
+- scale et anchor automatiques avec possibilité d'ajustement ;
+- ombre ;
+- miroir gauche/droite ;
+- idle/mouvement visuel léger généré par le runtime.
+
+Les vues supplémentaires ou vraies animations restent facultatives.
+Le visuel ne possède jamais position, collision, statistiques ou interaction.
+
+Ensuite seulement :
+## World Builder Dynamique UI v1
+Le Builder éditera le même WorldDocument et les mêmes contrats WorldObject/WorldArea/Portal/MapActor que le runtime.
