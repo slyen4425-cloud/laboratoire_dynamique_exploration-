@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "packId": "building-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-02",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "purpose": "First top-down Building WorldObject visual for World Builder Dynamique. Visuals never define collision, footprint, door anchors or portals.",
+  "sourceProfile": {
+    "fileId": "file_00000000caa481f48cb5603bfdc0a907",
+    "generationId": "82a85817-f79e-4562-8cee-de81d1f2f5c5",
+    "format": "PNG RGBA",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "sha256": "704f8f41e52dc7c515b76c2666b48bca354cd8a75df3628d284f046469033e7f"
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 384,
+    "height": 384,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.building.house.fantasy_wood_stone.01",
+      "path": "assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "fantasy-wood-stone",
+      "view": "top-down",
+      "sha256": "cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f",
+      "bytes": 52898
+    }
+  ]
+}
