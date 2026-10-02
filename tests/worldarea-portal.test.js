@@ -317,3 +317,17 @@ test('true path: movement reaches Building door, Portal changes Area, and target
   assert.equal(transition.x, 360);
   assert.equal(transition.y, 390);
 });
+
+
+test('regression: every demo WorldArea base material must resolve as a surface material', async () => {
+  const { materialPackV1 } = await import('../src/materials/material-pack-v1.js');
+  const { createMaterialRegistry } = await import('../src/materials/material-registry.js');
+  const registry = createMaterialRegistry(materialPackV1);
+
+  for (const area of demoWorldDocument.areas) {
+    assert.doesNotThrow(
+      () => registry.require(area.surface.baseMaterialId, 'surface'),
+      `${area.id}: invalid base surface material ${area.surface.baseMaterialId}`
+    );
+  }
+});
