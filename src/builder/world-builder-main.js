@@ -2183,7 +2183,13 @@ canvas.addEventListener('pointerdown', (event) => {
 });
 
 canvas.addEventListener('pointermove', (event) => {
-  if (!activePointers.has(event.pointerId)) return;
+  const hover = eventWorldPoint(event);
+  if (hover) hoverWorldPoint = hover;
+
+  if (!activePointers.has(event.pointerId)) {
+    if (mapTool === 'terrain') renderPreview();
+    return;
+  }
 
   const canvasPoint = canvasCoordinates(event);
   activePointers.set(event.pointerId, canvasPoint);
@@ -2202,7 +2208,7 @@ canvas.addEventListener('pointermove', (event) => {
   }
 
   const area = currentAreaRaw();
-  const world = eventWorldPoint(event);
+  const world = hover ?? eventWorldPoint(event);
   if (!area || !world) return;
 
   if (pointerSession.mode === 'pending-draw') {
@@ -2243,6 +2249,69 @@ canvas.addEventListener('pointermove', (event) => {
       pointerSession.pathId,
       world
     );
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'rotate-object') {
+    const pointerAngle = Math.atan2(
+      world.y - pointerSession.centerY,
+      world.x - pointerSession.centerX
+    );
+    let degrees =
+      (pointerAngle - pointerSession.angleOffset) *
+      180 / Math.PI;
+    degrees = ((degrees % 360) + 360) % 360;
+
+    draft = updateWorldObjectTransform(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      { rotationDeg: degrees }
+    );
+
+    $('object-rotation').value =
+      Math.round(degrees * 10) / 10;
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'scale-object') {
+    const dx = world.x - pointerSession.centerX;
+    const dy = world.y - pointerSession.centerY;
+    const cos = Math.cos(-pointerSession.rotation);
+    const sin = Math.sin(-pointerSession.rotation);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+
+    const scaleX = Math.max(
+      WORLD_OBJECT_LIMITS.minScale,
+      Math.min(
+        WORLD_OBJECT_LIMITS.maxScale,
+        Math.abs(localX) * 2 /
+          Math.max(1, pointerSession.baseWidth)
+      )
+    );
+    const scaleY = Math.max(
+      WORLD_OBJECT_LIMITS.minScale,
+      Math.min(
+        WORLD_OBJECT_LIMITS.maxScale,
+        Math.abs(localY) * 2 /
+          Math.max(1, pointerSession.baseHeight)
+      )
+    );
+
+    draft = updateWorldObjectTransform(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      { scaleX, scaleY }
+    );
+
+    $('object-scale-x').value =
+      Math.round(scaleX * 100) / 100;
+    $('object-scale-y').value =
+      Math.round(scaleY * 100) / 100;
     renderPreview();
     return;
   }
@@ -2336,6 +2405,12 @@ canvas.addEventListener('pointermove', (event) => {
     fitRequested = false;
     renderPreview();
   }
+});
+
+canvas.addEventListener('pointerleave', () => {
+  if (activePointers.size > 0) return;
+  hoverWorldPoint = null;
+  if (mapTool === 'terrain') renderPreview();
 });
 
 function endPointer(event) {
