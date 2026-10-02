@@ -461,3 +461,19 @@ test('regression: Builder zoom uses gestures/wheel without redundant plus-minus 
   assert.match(main, /beginPinch\(\)/);
   assert.match(main, /updatePinch\(\)/);
 });
+
+
+test('regression: pinch zoom has no stale dependency on removed zoom controls', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(
+    main.includes('syncZoomInput()'),
+    false,
+    'pinch must not call the removed zoom-control synchronizer'
+  );
+  assert.match(main, /function beginPinch\(\)/);
+  assert.match(main, /function updatePinch\(\)/);
+});
