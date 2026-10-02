@@ -83,7 +83,7 @@
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
         <p class="builder-hint">
-          Choisis Route ou Rivière puis dessine directement sur la carte. Le tracé est enregistré dans la surface de la WorldArea.
+          Choisis Terrain, Route ou Rivière puis dessine directement sur la carte. Les trois outils affichent leur largeur réelle comme un pinceau.
         </p>
 
         <div class="terrain-brush-panel">
@@ -109,16 +109,22 @@
             <select id="terrain-route-material"></select>
           </label>
           <label>
-            Largeur route
-            <input id="terrain-route-width" type="number" min="8" max="600" step="2" value="82" />
+            Largeur route / pinceau
+            <div class="brush-size-row">
+              <input id="terrain-route-width" type="range" min="8" max="600" step="2" value="82" />
+              <output id="terrain-route-width-value" for="terrain-route-width">82</output>
+            </div>
           </label>
           <label>
             Matériau rivière
             <select id="terrain-river-material"></select>
           </label>
           <label>
-            Largeur rivière
-            <input id="terrain-river-width" type="number" min="8" max="600" step="2" value="72" />
+            Largeur rivière / pinceau
+            <div class="brush-size-row">
+              <input id="terrain-river-width" type="range" min="8" max="2400" step="4" value="72" />
+              <output id="terrain-river-width-value" for="terrain-river-width">72</output>
+            </div>
           </label>
         </div>
 
@@ -128,7 +134,7 @@
           <button id="terrain-path-delete" type="button" class="danger">Supprimer tracé</button>
         </div>
         <p class="builder-hint">
-          Astuce : utilise deux doigts pour zoomer/déplacer la carte sans quitter l’outil de dessin.
+          Astuce : la Rivière peut monter jusqu’à 2400 pour créer de très larges étendues d’eau (lac/mer). Utilise deux doigts pour zoomer/déplacer la carte sans quitter l’outil.
         </p>
       </section>
 
