@@ -98,3 +98,36 @@ La porte extérieure devient un Door/Portal explicite dans le lot runtime corres
 Le bâtiment est visible en preview, paramétré par WorldObject, bloque via son footprint logique, expose un doorAnchor transformé correctement et reste entièrement éditable par données pour le World Builder Dynamique.
 
 Aucune autorité visuelle/collision concurrente n'est tolérée.
+
+
+## Import binaire Building v1 — 2026-10-02
+
+Le premier envoi direct du WebP était tronqué et a été bloqué par les sentinelles d'intégrité.
+
+Réparation appliquée par import one-shot contrôlé :
+- staging en chunks texte temporaires ;
+- décodage Base64 dans GitHub Actions ;
+- vérification avant commit ;
+- suppression automatique des chunks et du workflow d'import ;
+- commit final du binaire uniquement.
+
+Workflow d'import :
+- run `36949973145` — **SUCCESS**.
+
+Commit produit :
+`225b3cdf9874c45e14bf4a5df76645b2c5f6d630`
+(`assets: import complete Building v1 runtime WebP`)
+
+Vérification de l'arbre Git réel :
+- chemin : `assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp` ;
+- blob : `233e7e36a8c933c564c51e45e3abe26b605c5527` ;
+- taille Git : **52 898 octets** ;
+- aucun fichier `.asset-import/building/*` restant ;
+- aucun workflow one-shot restant.
+
+Valeurs attendues du manifeste :
+- SHA-256 : `cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f` ;
+- taille : **52 898 octets** ;
+- format : WebP RGBA 384×384.
+
+Une nouvelle CI complète est requise sur un commit utilisateur après cet import bot avant toute preview.
