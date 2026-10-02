@@ -318,3 +318,25 @@ test('Invalid Portal references block export instead of being silently lost', ()
     /Invalid World Builder draft/
   );
 });
+
+
+test('Builder cannot independently move a Spawn anchored to a Building door', () => {
+  const source = draft();
+  const before = source.areas[0].spawns.find(
+    (spawn) => spawn.id === 'house-return-exterior'
+  );
+
+  const next = updateSpawn(
+    source,
+    'forest-exterior',
+    'house-return-exterior',
+    { x: 12, y: 34 }
+  );
+  const after = next.areas[0].spawns.find(
+    (spawn) => spawn.id === 'house-return-exterior'
+  );
+
+  assert.deepEqual(after.anchor, before.anchor);
+  assert.equal('x' in after, false);
+  assert.equal('y' in after, false);
+});
