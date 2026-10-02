@@ -309,6 +309,25 @@ function drawSurfaceDecals(
   }
 }
 
+function drawSurfaceZoneMaterial(
+  ctx,
+  zone,
+  camera,
+  material,
+  textureLoader
+) {
+  const image = textureLoader?.get(material.assets.base);
+  const pattern = worldPattern(ctx, image, camera);
+
+  strokePath(
+    ctx,
+    zone,
+    camera,
+    zone.width,
+    pattern ?? material.render.baseColor
+  );
+}
+
 function drawPathMaterial(ctx, path, camera, material, textureLoader) {
   const render = material.render;
   const edgeImage = textureLoader?.get(material.assets.edge);
@@ -435,6 +454,20 @@ export function createSurfaceRenderer({
         baseMaterial,
         textureLoader
       );
+
+      for (const zone of surface.zones ?? []) {
+        const material = materialRegistry.require(
+          zone.materialId,
+          'surface'
+        );
+        drawSurfaceZoneMaterial(
+          ctx,
+          zone,
+          camera,
+          material,
+          textureLoader
+        );
+      }
 
       for (const road of surface.routes) {
         const material = materialRegistry.require(road.materialId, 'path');
