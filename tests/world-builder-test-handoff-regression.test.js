@@ -183,7 +183,7 @@ test('regression: runtime test uses actor visual from Builder handoff instead of
   assert.match(builderMain, /saveWorldBuilderTestHandoff\([\s\S]*actorVisual/);
 
   assert.match(runtimeMain, /readWorldBuilderTestSession/);
-  assert.match(runtimeMain, /builderTestSession\.actorVisual/);
+  assert.match(runtimeMain, /builderTestSession\?\.actorVisual/);
   assert.match(runtimeMain, /createMapActorAssetResolver/);
 });
 
@@ -194,6 +194,6 @@ test('regression: returning from runtime restores actor visual test settings in 
   );
 
   assert.match(builderMain, /readWorldBuilderTestSession/);
-  assert.match(builderMain, /resumedTestSession\.actorVisual/);
-  assert.match(builderMain, /resumedTestSession\.actorAsset/);
+  assert.match(builderMain, /resumedTestSession\?\.actorVisual/);
+  assert.match(builderMain, /resumedTestSession\?\.actorAsset/);
 });
