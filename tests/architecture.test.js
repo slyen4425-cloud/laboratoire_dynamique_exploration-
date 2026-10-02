@@ -249,3 +249,46 @@ test('architecture sentinel: Portal marker position comes from Portal Model reso
 
   assert.equal(renderer.includes('resolvePortalTriggerPoint'), true);
 });
+
+
+test('architecture sentinel: Map Actor Renderer never owns gameplay or collision', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/map-actor-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(
+    /stepMovement|isBlocked|collision|stats|health|currentAreaId\s*=/.test(renderer),
+    false
+  );
+});
+
+test('architecture sentinel: Map Actor visual model owns no position authority', async () => {
+  const model = await readFile(
+    new URL('../src/actors/map-actor-visual-model.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(/\bx:\s*finiteNumber\(source\.x|\by:\s*finiteNumber\(source\.y/.test(model), false);
+});
+
+test('architecture sentinel: bootstrap waits for Map Actor source and preparation', async () => {
+  const main = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(main.includes('await mapActorImageLoader.load'), true);
+  assert.equal(main.includes('mapActorVisualPreparer.prepare'), true);
+  assert.equal(main.includes('Map Actor preparation failed'), true);
+});
+
+test('architecture sentinel: configured player has no concurrent circle fallback', async () => {
+  const main = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(main.includes("fillStyle = '#f1d36a'"), false);
+  assert.equal(main.includes('mapActorRenderer.draw'), true);
+});
