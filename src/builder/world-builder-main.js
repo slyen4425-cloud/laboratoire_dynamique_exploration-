@@ -1,4 +1,4 @@
-import { demoWorldDocument } from '../world/demo-world.js?rev=world-builder-dynamique-ui-v1';
+import { demoWorldDocument } from '../world/demo-world.js?rev=builder-dynamic-return-v1';
 import {
   addPortal,
   addSpawn,
@@ -21,11 +21,11 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
-} from './world-builder-draft.js';
+} from './world-builder-draft.js?rev=builder-dynamic-return-v1';
 import {
   readWorldBuilderTestHandoff,
   saveWorldBuilderTestHandoff
-} from './world-builder-test-handoff.js';
+} from './world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
 import {
   clampBuilderZoom,
   computeBuilderView,
@@ -44,7 +44,10 @@ import {
 } from '../world/world-object-model.js';
 import {
   resolvePortalTriggerPoint
-} from '../world/portal-model.js';
+} from '../world/portal-model.js?rev=builder-dynamic-return-v1';
+import {
+  resolveWorldAreaSpawnPoint
+} from '../world/world-area-model.js?rev=builder-dynamic-return-v1';
 import {
   materialPackV1
 } from '../materials/material-pack-v1.js';
@@ -314,10 +317,16 @@ function refreshAreaControls() {
   if (selectedSpawnId) $('spawn-select').value = selectedSpawnId;
 
   const spawn = currentSpawnRaw();
-  $('spawn-x').value = spawn?.x ?? '';
-  $('spawn-y').value = spawn?.y ?? '';
-  $('spawn-x').disabled = !spawn;
-  $('spawn-y').disabled = !spawn;
+  const normalizedArea = currentAreaNormalized();
+  const spawnPoint = spawn && normalizedArea
+    ? resolveWorldAreaSpawnPoint(normalizedArea, spawn.id)
+    : null;
+  const anchored = Boolean(spawn?.anchor);
+
+  $('spawn-x').value = spawnPoint?.x ?? '';
+  $('spawn-y').value = spawnPoint?.y ?? '';
+  $('spawn-x').disabled = !spawn || anchored;
+  $('spawn-y').disabled = !spawn || anchored;
   $('spawn-delete').disabled = !spawn;
 }
 
@@ -596,7 +605,13 @@ function refreshPortalControls() {
   setOptions(
     $('portal-target-spawn'),
     targetArea?.spawns ?? [],
-    portal.targetSpawnId
+    portal.targetSpawnId,
+    {
+      label: (spawn) =>
+        spawn.anchor
+          ? `${spawn.id} · lié à la porte`
+          : spawn.id
+    }
   );
   $('portal-target-spawn').value = portal.targetSpawnId;
 
@@ -645,7 +660,10 @@ function selectedWorldPoint(document, area) {
   const spawn = area?.spawns?.find(
     (item) => item.id === selectedSpawnId
   );
-  if (spawn) return { x: spawn.x, y: spawn.y };
+  if (spawn) {
+    const point = resolveWorldAreaSpawnPoint(area, spawn.id);
+    if (point) return { x: point.x, y: point.y };
+  }
 
   const portal = document?.portals?.find(
     (item) =>
@@ -677,7 +695,6 @@ function fitArea() {
     x: area.width / 2,
     y: area.height / 2
   };
-  $('preview-zoom').value = zoom;
   fitRequested = false;
 }
 
@@ -688,7 +705,6 @@ function focusSelection() {
 
   center = selectedWorldPoint(document, area);
   zoom = clampBuilderZoom(Math.max(0.35, Math.min(1.4, zoom)));
-  $('preview-zoom').value = zoom;
   fitRequested = false;
   renderPreview();
 }
@@ -758,12 +774,15 @@ function drawBuilderOverlays(area, document, camera) {
   }
 
   for (const spawn of area.spawns) {
+    const point = resolveWorldAreaSpawnPoint(area, spawn.id);
+    if (!point) continue;
+
     const selected = spawn.id === selectedSpawnId;
 
     ctx.beginPath();
     ctx.arc(
-      spawn.x - camera.x,
-      spawn.y - camera.y,
+      point.x - camera.x,
+      point.y - camera.y,
       selected ? 11 : 7,
       0,
       Math.PI * 2
@@ -1392,15 +1411,23 @@ function hitSpawn(area, point) {
   const radius = 18 / Math.max(zoom, 0.05);
   const radiusSq = radius * radius;
 
-  return (area?.spawns ?? []).find((spawn) => {
-    const dx = point.x - spawn.x;
-    const dy = point.y - spawn.y;
-    return dx * dx + dy * dy <= radiusSq;
-  }) ?? null;
-}
+  for (const spawn of area?.spawns ?? []) {
+    const resolved = resolveWorldAreaSpawnPoint(area, spawn.id);
+    if (!resolved) continue;
 
-function syncZoomInput() {
-  $('preview-zoom').value = String(zoom);
+    const dx = point.x - resolved.x;
+    const dy = point.y - resolved.y;
+
+    if (dx * dx + dy * dy <= radiusSq) {
+      return Object.freeze({
+        ...spawn,
+        x: resolved.x,
+        y: resolved.y
+      });
+    }
+  }
+
+  return null;
 }
 
 function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
@@ -1421,7 +1448,6 @@ function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
   zoom = view.zoom;
   center = { ...view.center };
   fitRequested = false;
-  syncZoomInput();
   renderPreview();
 }
 
@@ -2046,40 +2072,11 @@ $('preview-fit').addEventListener('click', () => {
 
 $('preview-focus').addEventListener('click', focusSelection);
 
-$('preview-zoom').addEventListener('input', () => {
-  zoom = clampBuilderZoom(
-    numberValue($('preview-zoom'), zoom)
-  );
-  fitRequested = false;
-  renderPreview();
-});
-
-
 for (const button of document.querySelectorAll('[data-map-tool]')) {
   button.addEventListener('click', () => {
     setMapTool(button.dataset.mapTool);
   });
 }
-
-$('preview-zoom-in').addEventListener('click', () => {
-  applyZoomAtCanvasPoint(
-    zoom * 1.25,
-    {
-      x: canvas.clientWidth / 2,
-      y: canvas.clientHeight / 2
-    }
-  );
-});
-
-$('preview-zoom-out').addEventListener('click', () => {
-  applyZoomAtCanvasPoint(
-    zoom / 1.25,
-    {
-      x: canvas.clientWidth / 2,
-      y: canvas.clientHeight / 2
-    }
-  );
-});
 
 canvas.addEventListener(
   'wheel',
@@ -2203,12 +2200,16 @@ canvas.addEventListener('pointerdown', (event) => {
     selectedSpawnId = spawn.id;
     selectedObjectId = null;
     activateTab('area');
-    pointerSession = {
-      pointerId: event.pointerId,
-      mode: 'drag-spawn',
-      offsetX: world.x - spawn.x,
-      offsetY: world.y - spawn.y
-    };
+
+    pointerSession = spawn.anchor
+      ? null
+      : {
+          pointerId: event.pointerId,
+          mode: 'drag-spawn',
+          offsetX: world.x - spawn.x,
+          offsetY: world.y - spawn.y
+        };
+
     refreshAreaControls();
     renderPreview();
     return;
