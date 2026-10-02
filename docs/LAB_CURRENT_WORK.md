@@ -181,3 +181,32 @@ run `36950025990` — **SUCCESS**.
 
 Prochaine gate :
 preview smartphone avec asset réel + collision Building.
+
+
+## Preview Building WorldObject v1 — 2026-10-02
+
+Publication infrastructure uniquement :
+- main SHA : `3d937b2f2590829fe8c467ec8bb85be33fc3f8c8` ;
+- Pages run : `36950205590` — **SUCCESS** ;
+- artifact Pages : `11204325238`.
+
+L'artefact Pages réellement publié a été téléchargé et contrôlé.
+
+Building WebP déployé :
+- taille : **52 898 octets** ;
+- SHA-256 : `cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f` ;
+- signature RIFF : OK ;
+- signature WEBP : OK ;
+- taille RIFF déclarée = taille physique : OK ;
+- dimensions : **384×384** ;
+- mode : **RGBA** ;
+- transparence réelle présente.
+
+La preview publiée contient aussi :
+- `main.js?rev=building-v1-single-authority` ;
+- modules WorldObject versionnés `building-v1-single-authority` ;
+- cache asset `building-v1-assets-2026-10-02` ;
+- aucune autorité visuelle de secours.
+
+Gate restante :
+validation smartphone utilisateur du rendu Building + collision logique.
