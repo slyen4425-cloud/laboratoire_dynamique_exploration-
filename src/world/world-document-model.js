@@ -6,7 +6,7 @@ import {
 import {
   normalizePortals,
   portalReferencesAreValid
-} from './portal-model.js';
+} from './portal-model.js?rev=worldarea-portal-v1-exit-marker';
 
 export const WORLD_DOCUMENT_SCHEMA_VERSION = 1;
 
