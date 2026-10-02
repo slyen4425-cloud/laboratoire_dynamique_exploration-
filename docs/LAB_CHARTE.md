@@ -232,6 +232,37 @@ Exemples :
 
 Les transitions ne doivent jamais être codées en plaçant manuellement des carrés obligatoires dans le WorldDocument.
 
+### 8.7 Règles de traversée de surface
+
+Les effets gameplay du terrain sont séparés des matériaux visuels.
+
+Le World Surface Model peut déclarer un identifiant sémantique `traversalRuleId` distinct de `materialId`.
+
+Flux obligatoire :
+
+```text
+géométrie surface
+  -> traversalRuleId
+  -> Traversal Rule Registry
+  -> modes de locomotion de l'acteur
+  -> passabilité + multiplicateur de vitesse
+```
+
+Interdits :
+- déduire la vitesse depuis `materialId` ;
+- déduire la nage depuis une texture d'eau ;
+- coder les multiplicateurs directement dans le renderer ;
+- créer une logique différente pour héros, PNJ et monstres.
+
+Héros, PNJ et monstres utilisent le même resolver. Seules leurs données de locomotion diffèrent.
+
+Modes v1 :
+- `ground` ;
+- `swim` ;
+- `fly`.
+
+Un pont peut remplacer localement la règle de traversée d'une feature de surface explicitement référencée. Il ne désactive jamais globalement l'eau.
+
 ## 9. World Builder Dynamique
 
 Le **World Builder Dynamique** doit permettre progressivement de modifier :
