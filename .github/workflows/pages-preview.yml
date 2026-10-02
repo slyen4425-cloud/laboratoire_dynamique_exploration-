@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: world-builder-pinchfix-v1
+# preview-revision: world-builder-river-collision-v1
 
 on:
   push:
