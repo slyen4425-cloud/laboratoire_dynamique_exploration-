@@ -20,6 +20,22 @@ function normalizedString(value) {
     : null;
 }
 
+function normalizePortalVisual(raw) {
+  const visual = raw && typeof raw === 'object' ? raw : {};
+  const marker =
+    visual.marker === 'exit' ||
+    visual.marker === 'entry' ||
+    visual.marker === 'portal'
+      ? visual.marker
+      : 'portal';
+
+  return Object.freeze({
+    visible: visual.visible === true,
+    marker,
+    label: normalizedString(visual.label)
+  });
+}
+
 function normalizeTrigger(raw) {
   if (!raw || typeof raw !== 'object') return null;
 
@@ -68,7 +84,8 @@ export function normalizePortal(raw, index = 0) {
     sourceAreaId,
     trigger,
     targetAreaId,
-    targetSpawnId
+    targetSpawnId,
+    visual: normalizePortalVisual(raw.visual)
   });
 }
 
