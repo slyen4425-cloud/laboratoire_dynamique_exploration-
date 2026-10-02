@@ -317,3 +317,35 @@ L'artefact contient également :
 Conclusion technique :
 la preview publiée contient désormais les quatre binaires complets avec une seule autorité visuelle.
 La dernière gate restante est la validation smartphone utilisateur.
+
+
+## Validation utilisateur finale — 2026-10-02
+
+Test smartphone : **validé**.
+
+Retour utilisateur :
+- nouveau pont visible ;
+- asset correctement chargé ;
+- aucun ancien visuel procédural ;
+- intégration visuelle satisfaisante.
+
+Le lot valide donc :
+- les quatre Bridge Visual Assets v1 ;
+- l'autorité visuelle unique par `visual.assetId` ;
+- le chargement explicite/awaitable ;
+- l'absence de fallback concurrent ;
+- l'intégrité binaire WebP protégée par sentinelle RIFF + SHA-256 + taille manifeste ;
+- le cacheRevision mobile du pipeline WorldObject ;
+- le raccord du pont bois réel au WorldObject Bridge v1 GREEN ;
+- l'absence de modification collision/mouvement/traversal.
+
+## Fermeture
+Bridge Visual Assets v1 : **GREEN / terminé**.
+
+SHA technique validé avant document de fermeture :
+`afc873e785c0262335d7721f922a7c18d8464480`
+
+CI :
+run `36922229835` — **SUCCESS**.
+
+La suite doit repartir d'un checkpoint GREEN exact dans un lot séparé.
