@@ -244,3 +244,22 @@ CI après correction :
 run `36990712277` — **SUCCESS**.
 
 Une nouvelle preview Pages doit être publiée avant validation smartphone.
+
+
+## Preview finale — sortie Portal visible — 2026-10-02
+
+Infrastructure main uniquement :
+- main SHA : `0c2117053b7fdad0c888b1ad07c05a301176a393` ;
+- Pages run : `36991060194` — **SUCCESS** ;
+- artifact Pages : `11219577905`.
+
+Artefact réellement inspecté :
+- `index.html` charge `main.js?rev=worldarea-portal-v1-exit-marker` ;
+- la démo publiée contient `portal-house-exit` avec `marker: exit` et `label: Sortie` ;
+- le Portal Renderer publié utilise `resolvePortalTriggerPoint` ;
+- aucune coordonnée de sortie dupliquée dans le renderer.
+
+Gate restante :
+validation smartphone utilisateur du marqueur visuel de sortie et de la sortie effective.
+
+Le lot reste non GREEN jusqu'à cette validation.
