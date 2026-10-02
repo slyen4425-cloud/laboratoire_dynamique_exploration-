@@ -169,3 +169,36 @@ Artefact réellement inspecté :
 
 Gate restante :
 validation smartphone utilisateur.
+
+
+## Régression preview — intérieur noir — 2026-10-02
+
+Retour smartphone :
+- le Portal maison s'active correctement ;
+- `house-interior-01` devient l'Area active ;
+- rendu intérieur noir.
+
+Cause reproduite :
+- `house-interior-01.surface.baseMaterialId = road.dirt` ;
+- `road.dirt` est un matériau `path`, pas `surface` ;
+- le Surface Renderer exige explicitement `surface` pour le matériau de base ;
+- l'exception survenait après effacement du canvas, d'où l'écran noir.
+
+Sentinelle permanente ajoutée :
+`every demo WorldArea base material must resolve as a surface material`.
+
+Reproduction :
+- commit `7b4d324bdf19ffb10c30a8a3ec075f256daeafe0` ;
+- CI `36989216161` — **FAILURE attendue**.
+
+Correction :
+- ajout du matériau explicite `floor.wood.house`, kind `surface` ;
+- intérieur raccordé à `floor.wood.house` ;
+- aucune tolérance ajoutée au renderer ;
+- aucun fallback silencieux vers un matériau d'un autre kind ;
+- cache mobile versionné pour `main.js`, `material-pack-v1.js` et `demo-world.js`.
+
+CI après correction métier :
+- run `36989364751` — **SUCCESS**.
+
+Une nouvelle preview Pages est requise avant validation smartphone.
