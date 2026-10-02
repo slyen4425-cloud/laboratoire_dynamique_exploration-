@@ -20,7 +20,7 @@
 | Rencontre | Encounter Controller | world + entités | encounter intent | Combat décide le monde |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
 | Combat Capture | Capture Combat (futur) | Snapshot | Result | Exploration calcule le combat |
-| Builder | Editor/Data | WorldDocument | document validé | modifier runtime actif |
+| World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |
 | Stockage | Core Storage (futur) | document versionné | persisted data | stockage dispersé |
 | Cache PWA | Service worker | version/assets | cache | logique gameplay |
 
@@ -28,9 +28,9 @@
 
 Si une nouvelle fonction ne rentre pas clairement dans une ligne, ne pas coder avant d'avoir défini son propriétaire.
 
-## Builder et Generator
+## World Builder Dynamique et Generator
 
-Le Builder et le World Generator sont deux **producteurs du même WorldDocument**.
+Le World Builder Dynamique et le World Generator sont deux **producteurs du même WorldDocument**.
 
 Ils n'ont pas le droit de produire deux formats de carte concurrents.
 
