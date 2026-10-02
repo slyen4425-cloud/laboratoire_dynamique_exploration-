@@ -1,10 +1,11 @@
 import {
   findWorldArea,
-  findWorldAreaSpawn
-} from './world-area-model.js';
+  findWorldAreaSpawn,
+  resolveWorldAreaSpawnPoint
+} from './world-area-model.js?rev=builder-dynamic-return-v1';
 import {
   buildingDoorAnchorWorld
-} from './world-object-model.js';
+} from './world-object-model.js?rev=builder-dynamic-return-v1';
 
 export const PORTAL_SCHEMA_VERSION = 1;
 
@@ -154,12 +155,17 @@ export function portalReferencesAreValid(areas, portal) {
     targetArea,
     portal.targetSpawnId
   );
+  const targetPoint = resolveWorldAreaSpawnPoint(
+    targetArea,
+    portal.targetSpawnId
+  );
   const triggerPoint = resolvePortalTriggerPoint(areas, portal);
 
   return Boolean(
     sourceArea &&
     targetArea &&
     targetSpawn &&
+    targetPoint &&
     triggerPoint
   );
 }
@@ -226,13 +232,17 @@ export function applyPortalTransition(
     targetArea,
     portal.targetSpawnId
   );
+  const targetPoint = resolveWorldAreaSpawnPoint(
+    targetArea,
+    portal.targetSpawnId
+  );
 
-  if (!targetArea || !targetSpawn) return null;
+  if (!targetArea || !targetSpawn || !targetPoint) return null;
 
   return Object.freeze({
     currentAreaId: targetArea.id,
-    x: targetSpawn.x,
-    y: targetSpawn.y,
+    x: targetPoint.x,
+    y: targetPoint.y,
     viaPortalId: portal.id
   });
 }
