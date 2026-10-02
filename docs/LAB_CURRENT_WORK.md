@@ -413,3 +413,32 @@ Artefact Pages réellement téléchargé et contrôlé :
 
 Gate restante :
 validation smartphone/tablette utilisateur des poignées, de la rotation, du resize Area et du pinceau terrain.
+
+
+## Retour utilisateur — largeur pinceau Route / Rivière — 2026-10-02
+
+Validation partielle de la preview gizmos + pinceau terrain :
+- amélioration jugée nette ;
+- demande supplémentaire avant GREEN : Route et Rivière doivent disposer du même réglage intuitif de largeur qu'un pinceau.
+
+Décision :
+- remplacer les champs de largeur Route/Rivière par des sliders avec valeur visible ;
+- afficher sur la map un cercle de prévisualisation correspondant exactement à la largeur active pour Terrain, Route et Rivière ;
+- conserver les champs comme données canoniques `surface.routes[].width` et `surface.rivers[].width` ;
+- ne créer aucun format Builder parallèle ;
+- autoriser une largeur Rivière beaucoup plus grande afin de peindre de grandes étendues d'eau (lac/mer) avec le même système de surface v1 ;
+- la largeur reste une donnée du WorldDocument, jamais un état caché de l'UI.
+
+Limites UI v1 retenues :
+- Route : 8 → 600 ;
+- Rivière : 8 → 2400 ;
+- Terrain : 24 → 600.
+
+Ces limites sont des bornes d'édition du Builder, pas une nouvelle autorité gameplay.
+
+Tests requis :
+- Route/Rivière exposent des sliders avec output ;
+- la valeur active est reflétée en direct ;
+- le preview du pinceau existe pour les trois outils ;
+- une Rivière large survit export/import sans modification ;
+- aucune régression du modèle Surface/WorldDocument.
