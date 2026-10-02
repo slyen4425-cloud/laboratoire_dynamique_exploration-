@@ -254,3 +254,30 @@ run `37005753534` — **SUCCESS**.
 
 Gate restante :
 nouvelle preview smartphone/tablette puis validation utilisateur de l'ergonomie directe.
+
+
+## Preview ergonomie directe — 2026-10-02
+
+HEAD work :
+`45f101cf68a7225d4b3a69f91585d8f1198aa0b1`
+
+CI exacte :
+run `37005835290` — **SUCCESS**.
+
+Infrastructure preview uniquement :
+- PR #24 ;
+- main SHA `78832ce7c0dabde72335a5088f0eed4409dbe54a` ;
+- Pages run `37005933426` — **SUCCESS** ;
+- artifact `11225364874`.
+
+Artefact Pages réellement contrôlé :
+- outils `Déplacer / Taille Area / Tracer route / Tracer rivière` présents ;
+- zoom +/- présent ;
+- matériau rivière présent ;
+- gestion `pointerdown` présente ;
+- zoom molette présent ;
+- `addSurfacePath` et resize Area présents ;
+- module viewport pur présent.
+
+Gate restante :
+validation smartphone/tablette utilisateur.
