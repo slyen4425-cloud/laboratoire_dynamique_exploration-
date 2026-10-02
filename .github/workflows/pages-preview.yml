@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: builder-dynamic-return-v1
+# preview-revision: world-builder-pinchfix-v1
 
 on:
   push:
