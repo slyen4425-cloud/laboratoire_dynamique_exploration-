@@ -1,12 +1,13 @@
 import {
   findWorldArea,
   findWorldAreaSpawn,
-  normalizeWorldAreas
-} from './world-area-model.js';
+  normalizeWorldAreas,
+  resolveWorldAreaSpawnPoint
+} from './world-area-model.js?rev=builder-dynamic-return-v1';
 import {
   normalizePortals,
   portalReferencesAreValid
-} from './portal-model.js?rev=worldarea-portal-v1-exit-marker';
+} from './portal-model.js?rev=builder-dynamic-return-v1';
 
 export const WORLD_DOCUMENT_SCHEMA_VERSION = 1;
 
@@ -71,13 +72,17 @@ export function createInitialExplorationState(worldDocument) {
     area,
     worldDocument?.initialSpawnId
   );
+  const point = resolveWorldAreaSpawnPoint(
+    area,
+    worldDocument?.initialSpawnId
+  );
 
-  if (!area || !spawn) return null;
+  if (!area || !spawn || !point) return null;
 
   return Object.freeze({
     currentAreaId: area.id,
-    x: spawn.x,
-    y: spawn.y,
+    x: point.x,
+    y: point.y,
     viaPortalId: null
   });
 }
