@@ -526,3 +526,28 @@ Chaque zone v1 contient :
 Le Surface Renderer lit ces zones directement.
 Les zones sont purement visuelles et ne deviennent jamais collision ou gameplay.
 Routes et rivières restent leurs contrats linéaires existants.
+
+
+### Spawn ancré à un Building
+
+Pour les retours liés à un objet transformable :
+
+```text
+Building transform + doorAnchor
+              ↓
+      Anchored WorldArea Spawn
+              ↓
+        Portal targetSpawnId
+              ↓
+      Exploration position X/Y
+```
+
+Le Spawn ancré ne stocke pas de X/Y concurrent.
+Il stocke :
+- `anchor.kind = building-door` ;
+- `objectId` ;
+- `anchorId` ;
+- `offset`.
+
+La résolution de la position monde est pure et se fait depuis le WorldDocument courant.
+Le World Builder Dynamique déplace uniquement le Building ; il ne répare ni ne synchronise le Spawn.
