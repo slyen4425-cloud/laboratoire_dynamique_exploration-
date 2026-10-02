@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: map-actor-editor-v1
+# preview-revision: map-actor-editor-handoff-fix-v1
 
 on:
   push:
