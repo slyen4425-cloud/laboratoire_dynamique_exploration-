@@ -281,3 +281,41 @@ Artefact Pages réellement contrôlé :
 
 Gate restante :
 validation smartphone/tablette utilisateur.
+
+
+## Consolidation autorité unique — 2026-10-02
+
+À la demande explicite : **pas de rustine / pas de multi-autorité**.
+
+Le raccord ergonomie directe est confirmé sur une seule chaîne :
+
+```text
+geste map / champ précis / import
+          ↓
+World Builder Draft mutations
+          ↓
+draft WorldDocument
+          ↓ normalizeWorldDocument
+WorldDocument v1
+          ↓
+preview renderers
+```
+
+États UI autorisés :
+- sélection ;
+- outil ;
+- viewport ;
+- session tactile temporaire.
+
+Ils sont strictement éphémères et ne décrivent jamais une seconde position, une seconde géométrie ou une seconde relation Portal.
+
+Sentinelles ajoutées :
+- aucune mutation directe de `draft.areas` ou `draft.portals` dans l'UI ;
+- aucune structure `BuilderMap` / `PreviewWorld` parallèle ;
+- preview obligatoirement issue de `validateWorldBuilderDraft(draft).document` ;
+- drag WorldObject -> `updateWorldObjectTransform` ;
+- drag Spawn -> `updateSpawn` ;
+- resize Area -> `updateAreaProperties` ;
+- dessin Terrain -> `addSurfacePath/appendSurfacePathPoint`.
+
+Aucun changement de contrat gameplay/runtime n'est ajouté par cette consolidation.
