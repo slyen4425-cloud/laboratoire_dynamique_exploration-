@@ -3,7 +3,8 @@ import { stepMovement } from './core/movement.js';
 import { normalizeExplorationConfig } from './core/config.js';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
+import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { materialPackV1 } from './materials/material-pack-v1.js?rev=worldarea-portal-v1-interior-surface-fix';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
@@ -24,8 +25,8 @@ import {
 import {
   applyPortalTransition,
   findTriggeredPortal
-} from './world/portal-model.js';
-import { demoWorldDocument } from './world/demo-world.js?rev=worldarea-portal-v1-interior-surface-fix';
+} from './world/portal-model.js?rev=worldarea-portal-v1-exit-marker';
+import { demoWorldDocument } from './world/demo-world.js?rev=worldarea-portal-v1-exit-marker';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
@@ -95,6 +96,7 @@ const worldObjectRenderer = createWorldObjectRenderer({
   imageLoader: worldObjectImageLoader,
   resolveVisualAsset: resolveWorldObjectAsset
 });
+const portalRenderer = createPortalRenderer();
 let last = performance.now();
 
 function currentArea() {
@@ -253,6 +255,12 @@ function render() {
       height: innerHeight
     },
     objects: area.objects
+  });
+
+  portalRenderer.draw(ctx, {
+    camera,
+    worldDocument: demoWorldDocument,
+    currentAreaId: player.currentAreaId
   });
 
   ctx.beginPath();
