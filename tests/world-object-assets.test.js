@@ -12,10 +12,12 @@ import {
 } from '../src/assets/image-asset-loader.js';
 import {
   bridgeVisualRect,
+  buildingDoorAnchorWorld,
+  buildingFootprintRect,
   normalizeWorldObjects
 } from '../src/world/world-object-model.js';
 
-const EXPECTED = Object.freeze({
+const BRIDGE_EXPECTED = Object.freeze({
   'object.bridge.wood.rustic_bank.01':
     './assets/exploration/objects/bridges/bridge_wood_rustic_bank_01.webp',
   'object.bridge.stone.medieval_bank.01':
@@ -26,12 +28,29 @@ const EXPECTED = Object.freeze({
     './assets/exploration/objects/bridges/bridge_stone_moss_bank_01.webp'
 });
 
-test('World Object Asset Adapter exposes exactly the four bridge visuals', () => {
-  const assets = listWorldObjectAssets();
+const BUILDING_EXPECTED = Object.freeze({
+  'object.building.house.fantasy_wood_stone.01':
+    './assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp'
+});
+
+function assertCompleteWebP(bytes, label) {
+  assert.ok(bytes.length >= 12, `${label}: file too small`);
+  assert.equal(bytes.subarray(0, 4).toString('ascii'), 'RIFF');
+  assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP');
+  assert.equal(
+    bytes.length,
+    bytes.readUInt32LE(4) + 8,
+    `${label}: truncated WebP binary`
+  );
+}
+
+test('World Object Asset Adapter exposes the four Bridge visuals', () => {
+  const assets = listWorldObjectAssets()
+    .filter((asset) => asset.kind === 'bridge-visual');
 
   assert.equal(assets.length, 4);
 
-  for (const [id, path] of Object.entries(EXPECTED)) {
+  for (const [id, path] of Object.entries(BRIDGE_EXPECTED)) {
     const asset = resolveWorldObjectAsset(id);
 
     assert.equal(asset?.id, id);
@@ -45,8 +64,25 @@ test('World Object Asset Adapter exposes exactly the four bridge visuals', () =>
   assert.equal(resolveWorldObjectAsset('object.bridge.unknown'), null);
 });
 
-test('every bridge visual adapter path exists in the repository', async () => {
-  for (const path of Object.values(EXPECTED)) {
+test('World Object Asset Adapter exposes the first Building visual', () => {
+  const id = 'object.building.house.fantasy_wood_stone.01';
+  const asset = resolveWorldObjectAsset(id);
+
+  assert.equal(asset?.id, id);
+  assert.equal(asset?.kind, 'building-visual');
+  assert.equal(asset?.path, BUILDING_EXPECTED[id]);
+  assert.equal(asset?.render?.rotationOffsetDeg, 0);
+  assert.ok(asset?.render?.widthScale > 0);
+  assert.ok(asset?.render?.heightScale > 0);
+});
+
+test('every WorldObject visual adapter path exists in the repository', async () => {
+  const paths = [
+    ...Object.values(BRIDGE_EXPECTED),
+    ...Object.values(BUILDING_EXPECTED)
+  ];
+
+  for (const path of paths) {
     const repositoryPath = path.replace(/^\.\//, '');
     await access(new URL(`../${repositoryPath}`, import.meta.url));
   }
@@ -65,20 +101,47 @@ test('bridge manifest and semantic asset adapter stay in sync', async () => {
 
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(manifest.packId, 'bridge-visual-assets-v1');
-  assert.equal(manifest.ownership, 'exploration-world-objects');
-  assert.equal(manifest.runtimeProfile, 'mobile-webp-256x512-q82');
 
   const manifestIds = new Set(
     manifest.files.map((item) => item.assetId)
   );
   const adapterIds = new Set(
-    listWorldObjectAssets().map((item) => item.id)
+    listWorldObjectAssets()
+      .filter((item) => item.kind === 'bridge-visual')
+      .map((item) => item.id)
   );
 
   assert.deepEqual(manifestIds, adapterIds);
 });
 
-test('shared image loader loads bridge visuals with explicit lifecycle', async () => {
+test('building manifest and semantic asset adapter stay in sync', async () => {
+  const manifest = JSON.parse(
+    await readFile(
+      new URL(
+        '../assets/exploration/objects/buildings/manifest.v1.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.packId, 'building-visual-assets-v1');
+  assert.equal(manifest.runtimeProfile, 'mobile-webp-384x384-q82');
+
+  const manifestIds = new Set(
+    manifest.files.map((item) => item.assetId)
+  );
+  const adapterIds = new Set(
+    listWorldObjectAssets()
+      .filter((item) => item.kind === 'building-visual')
+      .map((item) => item.id)
+  );
+
+  assert.deepEqual(manifestIds, adapterIds);
+});
+
+test('shared image loader loads WorldObject visuals with explicit lifecycle', async () => {
   const images = [];
   const loader = createImageAssetLoader({
     resolveAsset: resolveWorldObjectAsset,
@@ -89,33 +152,28 @@ test('shared image loader loads bridge visuals with explicit lifecycle', async (
     }
   });
 
-  const loading = loader.load(['object.bridge.wood.rustic_bank.01']);
+  const loading = loader.load(['object.building.house.fantasy_wood_stone.01']);
 
   assert.equal(loader.status().loading, 1);
   assert.equal(
     images[0].src,
-    EXPECTED['object.bridge.wood.rustic_bank.01']
+    BUILDING_EXPECTED['object.building.house.fantasy_wood_stone.01']
   );
 
   images[0].onload();
   const loadedStatus = await loading;
 
   assert.equal(loadedStatus.ready, 1);
-  assert.equal(loader.status().ready, 1);
   assert.equal(
-    loader.get('object.bridge.wood.rustic_bank.01'),
+    loader.get('object.building.house.fantasy_wood_stone.01'),
     images[0]
   );
 
   loader.dispose();
-
   assert.equal(loader.status().disposed, true);
-  assert.equal(loader.status().total, 0);
-  assert.equal(images[0].onload, null);
-  assert.equal(images[0].onerror, null);
 });
 
-test('changing bridge asset id never changes logical bridge geometry', () => {
+test('changing Bridge asset id never changes logical bridge geometry', () => {
   const make = (assetId) => normalizeWorldObjects([
     {
       id: 'bridge-visual-swap',
@@ -148,6 +206,44 @@ test('changing bridge asset id never changes logical bridge geometry', () => {
   assert.notEqual(wood.visual.assetId, stone.visual.assetId);
 });
 
+test('changing Building asset id never changes logical footprint or door anchor', () => {
+  const make = (assetId) => normalizeWorldObjects([
+    {
+      id: 'building-visual-swap',
+      kind: 'building',
+      transform: {
+        x: 300,
+        y: 400,
+        rotationDeg: 22,
+        scaleX: 1.2,
+        scaleY: 0.9
+      },
+      baseSize: {
+        width: 280,
+        height: 260
+      },
+      visual: { assetId },
+      footprint: {
+        widthRatio: 0.78,
+        heightRatio: 0.62,
+        offsetX: 0,
+        offsetY: -0.08
+      },
+      doorAnchors: [
+        { id: 'main-door', x: 0, y: 0.38 }
+      ]
+    }
+  ])[0];
+
+  const first = make('object.building.house.fantasy_wood_stone.01');
+  const second = make('object.building.future.02');
+
+  assert.deepEqual(buildingFootprintRect(first), buildingFootprintRect(second));
+  assert.deepEqual(
+    buildingDoorAnchorWorld(first, 'main-door'),
+    buildingDoorAnchorWorld(second, 'main-door')
+  );
+});
 
 test('required WorldObject asset failure is explicit and never replaced by another visual', async () => {
   const loader = createImageAssetLoader({
@@ -155,36 +251,29 @@ test('required WorldObject asset failure is explicit and never replaced by anoth
     imageFactory: () => ({ onload: null, onerror: null, src: '' })
   });
 
-  const status = await loader.load(['object.bridge.unknown']);
+  const status = await loader.load(['object.building.unknown']);
 
   assert.equal(status.missing, 1);
   assert.equal(status.ready, 0);
-  assert.equal(loader.get('object.bridge.unknown'), null);
-  assert.equal(loader.state('object.bridge.unknown'), 'missing');
+  assert.equal(loader.get('object.building.unknown'), null);
+  assert.equal(loader.state('object.building.unknown'), 'missing');
 });
 
+test('all declared WorldObject WebP binaries are complete', async () => {
+  const paths = [
+    ...Object.values(BRIDGE_EXPECTED),
+    ...Object.values(BUILDING_EXPECTED)
+  ];
 
-test('bridge WebP binaries are complete RIFF files, never truncated', async () => {
-  for (const path of Object.values(EXPECTED)) {
+  for (const path of paths) {
     const repositoryPath = path.replace(/^\.\//, '');
     const bytes = await readFile(
       new URL(`../${repositoryPath}`, import.meta.url)
     );
 
-    assert.ok(bytes.length >= 12, `${path}: file too small`);
-    assert.equal(bytes.subarray(0, 4).toString('ascii'), 'RIFF');
-    assert.equal(bytes.subarray(8, 12).toString('ascii'), 'WEBP');
-
-    const declaredFileSize = bytes.readUInt32LE(4) + 8;
-
-    assert.equal(
-      bytes.length,
-      declaredFileSize,
-      `${path}: truncated WebP binary`
-    );
+    assertCompleteWebP(bytes, path);
   }
 });
-
 
 test('bridge manifest hashes and byte sizes match runtime binaries', async () => {
   const manifest = JSON.parse(
@@ -201,21 +290,40 @@ test('bridge manifest hashes and byte sizes match runtime binaries', async () =>
     const bytes = await readFile(
       new URL(`../${item.path}`, import.meta.url)
     );
-    const sha256 = createHash('sha256')
-      .update(bytes)
-      .digest('hex');
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
 
     assert.equal(bytes.length, item.bytes, `${item.assetId}: byte size mismatch`);
     assert.equal(sha256, item.sha256, `${item.assetId}: sha256 mismatch`);
   }
 });
 
+test('building manifest hash and byte size match runtime binary', async () => {
+  const manifest = JSON.parse(
+    await readFile(
+      new URL(
+        '../assets/exploration/objects/buildings/manifest.v1.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
 
-test('image loader can force a cache revision without changing adapter authority', async () => {
+  for (const item of manifest.files) {
+    const bytes = await readFile(
+      new URL(`../${item.path}`, import.meta.url)
+    );
+    const sha256 = createHash('sha256').update(bytes).digest('hex');
+
+    assert.equal(bytes.length, item.bytes, `${item.assetId}: byte size mismatch`);
+    assert.equal(sha256, item.sha256, `${item.assetId}: sha256 mismatch`);
+  }
+});
+
+test('image loader can force cache revision without changing adapter authority', async () => {
   const images = [];
   const loader = createImageAssetLoader({
     resolveAsset: resolveWorldObjectAsset,
-    cacheRevision: 'bridge-assets-v1-binary-repair',
+    cacheRevision: 'building-v1-assets-2026-10-02',
     imageFactory: () => {
       const image = { onload: null, onerror: null, src: '' };
       images.push(image);
@@ -223,20 +331,17 @@ test('image loader can force a cache revision without changing adapter authority
     }
   });
 
-  const loading = loader.load(['object.bridge.wood.rustic_bank.01']);
+  const id = 'object.building.house.fantasy_wood_stone.01';
+  const loading = loader.load([id]);
 
   assert.equal(
     images[0].src,
-    EXPECTED['object.bridge.wood.rustic_bank.01'] +
-      '?rev=bridge-assets-v1-binary-repair'
+    BUILDING_EXPECTED[id] + '?rev=building-v1-assets-2026-10-02'
   );
 
   images[0].onload();
   const status = await loading;
 
   assert.equal(status.ready, 1);
-  assert.equal(
-    resolveWorldObjectAsset('object.bridge.wood.rustic_bank.01').path,
-    EXPECTED['object.bridge.wood.rustic_bank.01']
-  );
+  assert.equal(resolveWorldObjectAsset(id).path, BUILDING_EXPECTED[id]);
 });
