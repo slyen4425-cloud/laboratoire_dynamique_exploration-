@@ -594,3 +594,40 @@ La preview déployée contient :
 
 Gate restante :
 validation smartphone utilisateur du scénario complet de non-perte.
+
+
+## Retour utilisateur — sortie dynamique + simplification zoom — 2026-10-02
+
+Validation partielle :
+- le handoff Builder -> test runtime conserve maintenant correctement les modifications ;
+- maison déplacée et scale modifié restent bien présents en test.
+
+Régression confirmée :
+- la sortie de l'intérieur cible encore le spawn statique `house-return-exterior` ;
+- après déplacement/scale de la maison, le retour extérieur reste donc à l'ancienne position.
+
+Cause architecturale :
+- l'entrée est déjà liée au `building-door` réel ;
+- l'arrivée de retour repose encore sur X/Y persistants indépendants du Building ;
+- ces coordonnées deviennent une seconde vérité dès que le Building est transformable.
+
+Décision :
+- ne jamais synchroniser/réparer le spawn à chaque déplacement du Building ;
+- faire évoluer le Spawn canonique pour autoriser un spawn **ancré à un building-door** ;
+- un spawn ancré stocke uniquement la référence Building/doorAnchor + un offset de sortie ;
+- sa position monde est résolue à la demande depuis le Building WorldObject ;
+- le Portal continue de cibler un seul `targetSpawnId` : aucune seconde autorité Portal.
+
+UI Builder :
+- supprimer les boutons zoom +/- et le slider de zoom de la barre preview ;
+- mobile : pinch directement sur la map ;
+- ordinateur : molette/trackpad centré sous le pointeur ;
+- conserver uniquement `Vue Area` et `Centrer sélection` comme actions de cadrage ;
+- un spawn ancré affiche sa position résolue mais ses X/Y ne sont pas éditables/draggables indépendamment.
+
+Tests requis avant correction :
+- déplacer/scaler la maison puis entrer/sortir doit revenir devant la nouvelle porte ;
+- le retour ne dépend plus de l'ancien X/Y ;
+- export/import/handoff conservent l'ancrage ;
+- l'UI ne contient plus zoom +/−/slider ;
+- wheel + pinch restent présents.
