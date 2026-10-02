@@ -631,3 +631,48 @@ Tests requis avant correction :
 - export/import/handoff conservent l'ancrage ;
 - l'UI ne contient plus zoom +/−/slider ;
 - wheel + pinch restent présents.
+
+
+## Correction — retour Building dynamique + zoom simplifié — 2026-10-02
+
+Régressions reproduites avant correction :
+- retour maison après déplacement/scale : run `37029640138` — **FAILURE attendue** ;
+- contrôles zoom redondants : run `37029646867` — **FAILURE attendue**.
+
+Cause du retour incorrect :
+- `portal-house-exit` ciblait bien `house-return-exterior` ;
+- mais ce Spawn conservait des X/Y fixes correspondant à l'ancienne position de la maison ;
+- le Building transformable et le Spawn fixe devenaient donc deux vérités incompatibles.
+
+Correction architecturale :
+- WorldArea Spawn passe en contrat v2, rétrocompatible avec les Spawns X/Y ;
+- `house-return-exterior` est maintenant un Spawn ancré à :
+  - Building `forest-house-01` ;
+  - anchor `main-door` ;
+  - offset extérieur 56 ;
+- un Spawn ancré ne stocke aucun X/Y concurrent ;
+- la position est résolue depuis le transform courant du Building ;
+- Portal conserve uniquement `targetSpawnId` ;
+- déplacement / rotation / scale du Building déplacent automatiquement le retour ;
+- le Builder interdit l'édition X/Y indépendante d'un Spawn ancré.
+
+UI zoom :
+- boutons + / − supprimés ;
+- slider zoom supprimé ;
+- mobile : pinch directement sur la map ;
+- ordinateur : molette/trackpad centré sous le pointeur ;
+- `Vue Area` et `Centrer sélection` restent disponibles.
+
+Sentinelles :
+- maison déplacée/scalée -> sortie devant la nouvelle porte ;
+- Spawn ancré sans X/Y concurrent ;
+- Builder ne peut pas déplacer indépendamment ce Spawn ;
+- wheel + pinch toujours présents ;
+- absence des anciens contrôles zoom.
+
+CI après correction :
+- SHA : `6d0ab16d9d7ff881bbf1b28aac1fec1f1e846b67` ;
+- run `37030391738` — **SUCCESS**.
+
+Gate restante :
+nouvelle preview smartphone/tablette puis validation utilisateur.
