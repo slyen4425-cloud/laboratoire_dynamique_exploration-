@@ -65,6 +65,12 @@ export function validateWorldBuilderDraft(draft) {
     const rawSpawns = Array.isArray(rawArea.spawns)
       ? rawArea.spawns
       : [];
+    const rawRoutes = Array.isArray(rawArea.surface?.routes)
+      ? rawArea.surface.routes
+      : [];
+    const rawRivers = Array.isArray(rawArea.surface?.rivers)
+      ? rawArea.surface.rivers
+      : [];
 
     if (normalizedArea.objects.length !== rawObjects.length) {
       errors.push(`object-invalid:${rawArea.id}`);
@@ -72,6 +78,14 @@ export function validateWorldBuilderDraft(draft) {
 
     if (normalizedArea.spawns.length !== rawSpawns.length) {
       errors.push(`spawn-invalid-or-duplicate:${rawArea.id}`);
+    }
+
+    if (normalizedArea.surface.routes.length !== rawRoutes.length) {
+      errors.push(`route-invalid:${rawArea.id}`);
+    }
+
+    if (normalizedArea.surface.rivers.length !== rawRivers.length) {
+      errors.push(`river-invalid:${rawArea.id}`);
     }
   }
 
@@ -109,6 +123,158 @@ export function updateAreaProperties(
     area.surface ??= {};
     area.surface.baseMaterialId = baseMaterialId.trim();
   }
+
+  return next;
+}
+
+
+function surfaceCollection(area, kind) {
+  area.surface ??= {};
+  const key = kind === 'river' ? 'rivers' : 'routes';
+  area.surface[key] ??= [];
+  return area.surface[key];
+}
+
+export function addSurfacePath(
+  draft,
+  areaId,
+  kind,
+  {
+    width,
+    materialId,
+    points
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river'].includes(kind)) return next;
+
+  const items = surfaceCollection(area, kind);
+  const prefix = kind === 'river' ? 'river' : 'road';
+  const id = uniqueId(prefix, items);
+  const fallbackMaterial =
+    kind === 'river' ? 'water.forest_stream' : 'road.dirt';
+
+  const safePoints = Array.isArray(points)
+    ? points
+        .filter((point) =>
+          point &&
+          Number.isFinite(Number(point.x)) &&
+          Number.isFinite(Number(point.y))
+        )
+        .map((point) => ({
+          x: Number(point.x),
+          y: Number(point.y)
+        }))
+    : [];
+
+  if (safePoints.length === 1) {
+    safePoints.push({ ...safePoints[0] });
+  }
+
+  if (safePoints.length < 2) return next;
+
+  items.push({
+    id,
+    width: finite(width, kind === 'river' ? 72 : 82),
+    materialId:
+      typeof materialId === 'string' && materialId.trim()
+        ? materialId.trim()
+        : fallbackMaterial,
+    points: safePoints
+  });
+
+  return next;
+}
+
+export function updateSurfacePath(
+  draft,
+  areaId,
+  kind,
+  pathId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river'].includes(kind)) return next;
+
+  const item = surfaceCollection(area, kind)
+    .find((path) => path.id === pathId);
+  if (!item) return next;
+
+  if (patch.width !== undefined) {
+    item.width = Math.max(1, finite(patch.width, item.width));
+  }
+
+  if (
+    typeof patch.materialId === 'string' &&
+    patch.materialId.trim()
+  ) {
+    item.materialId = patch.materialId.trim();
+  }
+
+  if (Array.isArray(patch.points)) {
+    const points = patch.points
+      .filter((point) =>
+        point &&
+        Number.isFinite(Number(point.x)) &&
+        Number.isFinite(Number(point.y))
+      )
+      .map((point) => ({
+        x: Number(point.x),
+        y: Number(point.y)
+      }));
+
+    if (points.length >= 2) item.points = points;
+  }
+
+  return next;
+}
+
+export function appendSurfacePathPoint(
+  draft,
+  areaId,
+  kind,
+  pathId,
+  point
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river'].includes(kind)) return next;
+
+  const item = surfaceCollection(area, kind)
+    .find((path) => path.id === pathId);
+  if (
+    !item ||
+    !point ||
+    !Number.isFinite(Number(point.x)) ||
+    !Number.isFinite(Number(point.y))
+  ) {
+    return next;
+  }
+
+  item.points ??= [];
+  item.points.push({
+    x: Number(point.x),
+    y: Number(point.y)
+  });
+
+  return next;
+}
+
+export function deleteSurfacePath(
+  draft,
+  areaId,
+  kind,
+  pathId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river'].includes(kind)) return next;
+
+  const items = surfaceCollection(area, kind);
+  const index = items.findIndex((path) => path.id === pathId);
+  if (index >= 0) items.splice(index, 1);
 
   return next;
 }
