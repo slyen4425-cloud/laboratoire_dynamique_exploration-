@@ -2,10 +2,13 @@ import { demoWorldDocument } from '../world/demo-world.js?rev=world-builder-dyna
 import {
   addPortal,
   addSpawn,
+  addSurfacePath,
   addWorldObject,
+  appendSurfacePathPoint,
   createWorldBuilderDraft,
   deletePortal,
   deleteSpawn,
+  deleteSurfacePath,
   deleteWorldObject,
   duplicateWorldObject,
   importWorldBuilderDocument,
@@ -14,10 +17,19 @@ import {
   updateAreaProperties,
   updatePortal,
   updateSpawn,
+  updateSurfacePath,
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
 } from './world-builder-draft.js';
+import {
+  clampBuilderZoom,
+  computeBuilderView,
+  canvasPointToWorld,
+  panBuilderCenter,
+  pointInRotatedRect,
+  zoomBuilderAtCanvasPoint
+} from './world-builder-viewport.js';
 import { createSurfaceRenderer } from '../render/surface-renderer.js';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
@@ -61,6 +73,12 @@ const materialRegistry = createMaterialRegistry(materialPackV1);
 const surfaceMaterials = materialRegistry
   .list()
   .filter((material) => material.kind === 'surface');
+const pathMaterials = materialRegistry
+  .list()
+  .filter((material) => material.kind === 'path');
+const waterMaterials = materialRegistry
+  .list()
+  .filter((material) => material.kind === 'water');
 
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
@@ -92,9 +110,18 @@ let selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
 let selectedSpawnId = null;
 let selectedObjectId = null;
 let selectedPortalId = draft.portals[0]?.id ?? null;
+let selectedSurfaceKind = null;
+let selectedSurfacePathId = null;
 let zoom = 0.35;
 let center = { x: 0, y: 0 };
 let fitRequested = true;
+let lastView = null;
+let mapTool = 'select';
+let pointerSession = null;
+let pinchState = null;
+const activePointers = new Map();
+
+canvas.dataset.tool = mapTool;
 
 function currentValidation() {
   return validateWorldBuilderDraft(draft);
@@ -130,6 +157,39 @@ function currentPortalRaw() {
   return draft.portals?.find(
     (portal) => portal.id === selectedPortalId
   ) ?? null;
+}
+
+function currentSurfacePathRaw() {
+  const area = currentAreaRaw();
+  if (!area || !selectedSurfaceKind || !selectedSurfacePathId) {
+    return null;
+  }
+
+  const items =
+    selectedSurfaceKind === 'river'
+      ? area.surface?.rivers
+      : area.surface?.routes;
+
+  return items?.find(
+    (item) => item.id === selectedSurfacePathId
+  ) ?? null;
+}
+
+function surfacePathItems(area = currentAreaRaw()) {
+  if (!area) return [];
+
+  return [
+    ...(area.surface?.routes ?? []).map((item) => ({
+      ...item,
+      kind: 'route',
+      key: `route:${item.id}`
+    })),
+    ...(area.surface?.rivers ?? []).map((item) => ({
+      ...item,
+      kind: 'river',
+      key: `river:${item.id}`
+    }))
+  ];
 }
 
 function setStatus(message, invalid = false) {
@@ -178,6 +238,18 @@ function ensureSelections() {
   if (!draft.portals?.some((portal) => portal.id === selectedPortalId)) {
     selectedPortalId = draft.portals?.[0]?.id ?? null;
   }
+
+  if (
+    selectedSurfacePathId &&
+    !surfacePathItems(area).some(
+      (item) =>
+        item.id === selectedSurfacePathId &&
+        item.kind === selectedSurfaceKind
+    )
+  ) {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
 }
 
 function numberValue(input, fallback = 0) {
@@ -219,6 +291,73 @@ function refreshAreaControls() {
   $('spawn-x').disabled = !spawn;
   $('spawn-y').disabled = !spawn;
   $('spawn-delete').disabled = !spawn;
+}
+
+
+function refreshTerrainControls() {
+  const area = currentAreaRaw();
+
+  setOptions(
+    $('terrain-route-material'),
+    pathMaterials,
+    $('terrain-route-material').value,
+    { label: (material) => material.label }
+  );
+  if (!$('terrain-route-material').value && pathMaterials[0]) {
+    $('terrain-route-material').value = pathMaterials[0].id;
+  }
+
+  setOptions(
+    $('terrain-river-material'),
+    waterMaterials,
+    $('terrain-river-material').value,
+    { label: (material) => material.label }
+  );
+  if (!$('terrain-river-material').value && waterMaterials[0]) {
+    $('terrain-river-material').value = waterMaterials[0].id;
+  }
+
+  const select = $('terrain-path-select');
+  const selectedKey =
+    selectedSurfaceKind && selectedSurfacePathId
+      ? `${selectedSurfaceKind}:${selectedSurfacePathId}`
+      : '';
+
+  select.replaceChildren();
+
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = 'Aucun tracé sélectionné';
+  select.append(empty);
+
+  for (const item of surfacePathItems(area)) {
+    const option = document.createElement('option');
+    option.value = item.key;
+    option.textContent =
+      `${item.kind === 'river' ? 'Rivière' : 'Route'} · ${item.id}`;
+    select.append(option);
+  }
+
+  select.value = selectedKey;
+
+  const selected = currentSurfacePathRaw();
+  $('terrain-path-delete').disabled = !selected;
+
+  if (selected?.kind === 'route' || selectedSurfaceKind === 'route') {
+    const route = selectedSurfaceKind === 'route' ? selected : null;
+    if (route) {
+      $('terrain-route-width').value = route.width;
+      $('terrain-route-material').value = route.materialId;
+    }
+  }
+
+  if (selected?.kind === 'river' || selectedSurfaceKind === 'river') {
+    const river = selectedSurfaceKind === 'river' ? selected : null;
+    if (river) {
+      $('terrain-river-width').value = river.width;
+      $('terrain-river-material').value = river.materialId;
+    }
+  }
 }
 
 function compatibleAssets(object) {
@@ -432,6 +571,7 @@ function refreshJson() {
 function refreshControls() {
   ensureSelections();
   refreshAreaControls();
+  refreshTerrainControls();
   refreshObjectControls();
   refreshPortalControls();
   refreshJson();
@@ -476,13 +616,10 @@ function fitArea() {
 
   const width = Math.max(canvas.clientWidth, 1);
   const height = Math.max(canvas.clientHeight, 1);
-  zoom = Math.max(
-    0.1,
-    Math.min(2, Math.min(
-      (width - 24) / area.width,
-      (height - 24) / area.height
-    ))
-  );
+  zoom = clampBuilderZoom(Math.min(
+    (width - 24) / area.width,
+    (height - 24) / area.height
+  ));
   center = {
     x: area.width / 2,
     y: area.height / 2
@@ -497,7 +634,7 @@ function focusSelection() {
   if (!document || !area) return;
 
   center = selectedWorldPoint(document, area);
-  zoom = Math.max(0.35, Math.min(1.2, zoom));
+  zoom = clampBuilderZoom(Math.max(0.35, Math.min(1.4, zoom)));
   $('preview-zoom').value = zoom;
   fitRequested = false;
   renderPreview();
@@ -524,6 +661,48 @@ function drawObstacle(obstacle, camera) {
 
 function drawBuilderOverlays(area, document, camera) {
   ctx.save();
+
+  ctx.strokeStyle =
+    mapTool === 'area-size'
+      ? 'rgba(133,225,255,0.98)'
+      : 'rgba(160,205,175,0.58)';
+  ctx.lineWidth = (mapTool === 'area-size' ? 4 : 2) / zoom;
+  ctx.setLineDash(mapTool === 'area-size' ? [] : [8 / zoom, 6 / zoom]);
+  ctx.strokeRect(
+    -camera.x,
+    -camera.y,
+    area.width,
+    area.height
+  );
+  ctx.setLineDash([]);
+
+  const handleSize = 18 / zoom;
+  ctx.fillStyle =
+    mapTool === 'area-size'
+      ? 'rgba(133,225,255,0.98)'
+      : 'rgba(133,225,255,0.7)';
+  ctx.fillRect(
+    area.width - camera.x - handleSize / 2,
+    area.height - camera.y - handleSize / 2,
+    handleSize,
+    handleSize
+  );
+
+  const selectedPath = currentSurfacePathRaw();
+  if (selectedPath?.points?.length >= 2) {
+    ctx.beginPath();
+    selectedPath.points.forEach((point, index) => {
+      const x = point.x - camera.x;
+      const y = point.y - camera.y;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = 'rgba(255,236,130,0.98)';
+    ctx.lineWidth = 4 / zoom;
+    ctx.setLineDash([10 / zoom, 6 / zoom]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
   for (const spawn of area.spawns) {
     const selected = spawn.id === selectedSpawnId;
@@ -626,27 +805,17 @@ function renderPreview() {
 
   if (fitRequested) fitArea();
 
-  const viewport = {
-    width: cssWidth / zoom,
-    height: cssHeight / zoom
-  };
-
-  const camera = {
-    x: Math.max(
-      0,
-      Math.min(
-        Math.max(0, area.width - viewport.width),
-        center.x - viewport.width / 2
-      )
-    ),
-    y: Math.max(
-      0,
-      Math.min(
-        Math.max(0, area.height - viewport.height),
-        center.y - viewport.height / 2
-      )
-    )
-  };
+  lastView = computeBuilderView({
+    area,
+    center,
+    zoom,
+    canvasWidth: cssWidth,
+    canvasHeight: cssHeight
+  });
+  zoom = lastView.zoom;
+  center = { ...lastView.center };
+  const viewport = lastView.viewport;
+  const camera = lastView.camera;
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -883,20 +1052,293 @@ function applyPortalInputs() {
   renderPreview();
 }
 
+
+function activateTab(tabName) {
+  for (const other of document.querySelectorAll('[data-tab]')) {
+    other.classList.toggle(
+      'active',
+      other.dataset.tab === tabName
+    );
+  }
+
+  for (const panel of document.querySelectorAll('[data-panel]')) {
+    panel.classList.toggle(
+      'active',
+      panel.dataset.panel === tabName
+    );
+  }
+}
+
+function setMapTool(tool) {
+  mapTool = ['select', 'area-size', 'route', 'river'].includes(tool)
+    ? tool
+    : 'select';
+  canvas.dataset.tool = mapTool;
+
+  for (const button of document.querySelectorAll('[data-map-tool]')) {
+    button.classList.toggle(
+      'active',
+      button.dataset.mapTool === mapTool
+    );
+  }
+
+  if (mapTool === 'route' || mapTool === 'river') {
+    activateTab('terrain');
+  } else if (mapTool === 'area-size') {
+    activateTab('area');
+  }
+
+  renderPreview();
+}
+
+function canvasCoordinates(event) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+}
+
+function viewForInput() {
+  const area = currentAreaNormalized();
+  if (!area) return null;
+
+  return computeBuilderView({
+    area,
+    center,
+    zoom,
+    canvasWidth: Math.max(canvas.clientWidth, 1),
+    canvasHeight: Math.max(canvas.clientHeight, 1)
+  });
+}
+
+function eventWorldPoint(event) {
+  const view = viewForInput();
+  if (!view) return null;
+  const point = canvasCoordinates(event);
+
+  return canvasPointToWorld({
+    canvasX: point.x,
+    canvasY: point.y,
+    camera: view.camera,
+    zoom: view.zoom
+  });
+}
+
+function worldObjectRectForHit(object) {
+  const rect =
+    object.kind === 'bridge'
+      ? bridgeVisualRect(object)
+      : object.kind === 'building'
+        ? buildingVisualRect(object)
+        : null;
+
+  if (!rect) return null;
+
+  return {
+    x: rect.x,
+    y: rect.y,
+    rotation: rect.rotation,
+    width: object.kind === 'bridge' ? rect.length : rect.width,
+    height: object.kind === 'bridge' ? rect.width : rect.height
+  };
+}
+
+function hitWorldObject(area, point) {
+  const objects = [...(area?.objects ?? [])].reverse();
+
+  return objects.find((object) => {
+    const rect = worldObjectRectForHit(object);
+    return rect && pointInRotatedRect(point, rect);
+  }) ?? null;
+}
+
+function hitSpawn(area, point) {
+  const radius = 18 / Math.max(zoom, 0.05);
+  const radiusSq = radius * radius;
+
+  return (area?.spawns ?? []).find((spawn) => {
+    const dx = point.x - spawn.x;
+    const dy = point.y - spawn.y;
+    return dx * dx + dy * dy <= radiusSq;
+  }) ?? null;
+}
+
+function syncZoomInput() {
+  $('preview-zoom').value = String(zoom);
+}
+
+function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
+  const area = currentAreaNormalized();
+  if (!area) return;
+
+  const view = zoomBuilderAtCanvasPoint({
+    area,
+    center,
+    oldZoom: zoom,
+    newZoom: nextZoom,
+    canvasWidth: Math.max(canvas.clientWidth, 1),
+    canvasHeight: Math.max(canvas.clientHeight, 1),
+    canvasX: canvasPoint.x,
+    canvasY: canvasPoint.y
+  });
+
+  zoom = view.zoom;
+  center = { ...view.center };
+  fitRequested = false;
+  syncZoomInput();
+  renderPreview();
+}
+
+function beginSurfacePath(kind, point) {
+  const area = currentAreaRaw();
+  if (!area) return null;
+
+  const before = surfacePathItems(area)
+    .filter((item) => item.kind === kind)
+    .map((item) => item.id);
+
+  const width =
+    kind === 'river'
+      ? numberValue($('terrain-river-width'), 72)
+      : numberValue($('terrain-route-width'), 82);
+  const materialId =
+    kind === 'river'
+      ? $('terrain-river-material').value
+      : $('terrain-route-material').value;
+
+  draft = addSurfacePath(
+    draft,
+    selectedAreaId,
+    kind,
+    {
+      width,
+      materialId,
+      points: [point, point]
+    }
+  );
+
+  const created = surfacePathItems(currentAreaRaw())
+    .find((item) => item.kind === kind && !before.includes(item.id));
+
+  if (!created) return null;
+
+  selectedSurfaceKind = kind;
+  selectedSurfacePathId = created.id;
+  return created.id;
+}
+
+function appendDrawPoint(kind, pathId, point, force = false) {
+  const path = surfacePathItems(currentAreaRaw())
+    .find((item) => item.kind === kind && item.id === pathId);
+  const last = path?.points?.at(-1);
+  if (!last) return;
+
+  const distance = Math.hypot(point.x - last.x, point.y - last.y);
+  const threshold = Math.max(5, 14 / Math.max(zoom, 0.05));
+
+  if (!force && distance < threshold) return;
+
+  draft = appendSurfacePathPoint(
+    draft,
+    selectedAreaId,
+    kind,
+    pathId,
+    point
+  );
+}
+
+function beginPinch() {
+  if (activePointers.size !== 2) return;
+
+  const points = [...activePointers.values()];
+  const mid = {
+    x: (points[0].x + points[1].x) / 2,
+    y: (points[0].y + points[1].y) / 2
+  };
+  const distance = Math.hypot(
+    points[1].x - points[0].x,
+    points[1].y - points[0].y
+  );
+  const view = viewForInput();
+  if (!view || distance <= 0) return;
+
+  pinchState = {
+    startDistance: distance,
+    startZoom: zoom,
+    worldMid: canvasPointToWorld({
+      canvasX: mid.x,
+      canvasY: mid.y,
+      camera: view.camera,
+      zoom: view.zoom
+    })
+  };
+
+  pointerSession = null;
+}
+
+function updatePinch() {
+  if (!pinchState || activePointers.size !== 2) return;
+
+  const area = currentAreaNormalized();
+  if (!area) return;
+
+  const points = [...activePointers.values()];
+  const mid = {
+    x: (points[0].x + points[1].x) / 2,
+    y: (points[0].y + points[1].y) / 2
+  };
+  const distance = Math.hypot(
+    points[1].x - points[0].x,
+    points[1].y - points[0].y
+  );
+
+  const nextZoom = clampBuilderZoom(
+    pinchState.startZoom *
+    (distance / Math.max(1, pinchState.startDistance))
+  );
+  const viewportWidth = Math.max(canvas.clientWidth, 1) / nextZoom;
+  const viewportHeight = Math.max(canvas.clientHeight, 1) / nextZoom;
+
+  const desiredCenter = {
+    x:
+      pinchState.worldMid.x -
+      mid.x / nextZoom +
+      viewportWidth / 2,
+    y:
+      pinchState.worldMid.y -
+      mid.y / nextZoom +
+      viewportHeight / 2
+  };
+
+  const view = computeBuilderView({
+    area,
+    center: desiredCenter,
+    zoom: nextZoom,
+    canvasWidth: Math.max(canvas.clientWidth, 1),
+    canvasHeight: Math.max(canvas.clientHeight, 1)
+  });
+
+  zoom = view.zoom;
+  center = { ...view.center };
+  fitRequested = false;
+  syncZoomInput();
+  renderPreview();
+}
+
+function finishPointerEditing() {
+  canvas.dataset.dragging = 'false';
+  refreshAreaControls();
+  refreshTerrainControls();
+  refreshObjectControls();
+  refreshJson();
+  renderPreview();
+}
+
 for (const button of document.querySelectorAll('[data-tab]')) {
   button.addEventListener('click', () => {
-    for (const other of document.querySelectorAll('[data-tab]')) {
-      other.classList.toggle(
-        'active',
-        other === button
-      );
-    }
-    for (const panel of document.querySelectorAll('[data-panel]')) {
-      panel.classList.toggle(
-        'active',
-        panel.dataset.panel === button.dataset.tab
-      );
-    }
+    activateTab(button.dataset.tab);
   });
 }
 
@@ -904,6 +1346,8 @@ $('area-select').addEventListener('change', () => {
   selectedAreaId = $('area-select').value;
   selectedSpawnId = null;
   selectedObjectId = null;
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
   fitRequested = true;
   refreshControls();
 });
@@ -1285,7 +1729,9 @@ $('preview-fit').addEventListener('click', () => {
 $('preview-focus').addEventListener('click', focusSelection);
 
 $('preview-zoom').addEventListener('input', () => {
-  zoom = numberValue($('preview-zoom'), zoom);
+  zoom = clampBuilderZoom(
+    numberValue($('preview-zoom'), zoom)
+  );
   fitRequested = false;
   renderPreview();
 });
@@ -1316,6 +1762,8 @@ $('import-json').addEventListener('change', async () => {
     selectedSpawnId = null;
     selectedObjectId = null;
     selectedPortalId = draft.portals?.[0]?.id ?? null;
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
     fitRequested = true;
     refreshControls();
     setStatus('WorldDocument importé et validé');
@@ -1332,6 +1780,8 @@ $('reset-demo').addEventListener('click', () => {
   selectedSpawnId = null;
   selectedObjectId = null;
   selectedPortalId = draft.portals?.[0]?.id ?? null;
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
   fitRequested = true;
   refreshControls();
 });
