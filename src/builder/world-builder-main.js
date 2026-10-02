@@ -77,7 +77,7 @@ import {
 } from '../assets/world-object-asset-adapter.js';
 import {
   createImageAssetLoader
-} from '../assets/image-asset-loader.js';
+} from '../assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
 import {
   collectMaterialAssetIds,
   createMaterialTextureLoader
