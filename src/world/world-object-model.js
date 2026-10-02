@@ -330,3 +330,44 @@ export function buildingDoorAnchorWorld(building, anchorId) {
     y: point.y
   });
 }
+
+
+export function buildingDoorArrivalWorld(
+  building,
+  anchorId,
+  offset = 0
+) {
+  if (!building || building.kind !== 'building') return null;
+
+  const anchor = building.doorAnchors.find(
+    (item) => item.id === anchorId
+  );
+  if (!anchor) return null;
+
+  const width =
+    building.baseSize.width * building.transform.scaleX;
+  const height =
+    building.baseSize.height * building.transform.scaleY;
+  const localX = width * anchor.x;
+  const localY = height * anchor.y;
+  const distance = Math.max(
+    0,
+    Number.isFinite(offset) ? offset : 0
+  );
+  const magnitude = Math.hypot(localX, localY);
+
+  const outwardX = magnitude > 1e-9 ? localX / magnitude : 0;
+  const outwardY = magnitude > 1e-9 ? localY / magnitude : 1;
+
+  const point = localPointToWorld(
+    building,
+    localX + outwardX * distance,
+    localY + outwardY * distance
+  );
+
+  return Object.freeze({
+    id: anchor.id,
+    x: point.x,
+    y: point.y
+  });
+}
