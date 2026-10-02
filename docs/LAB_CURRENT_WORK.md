@@ -764,3 +764,68 @@ Correction publiée :
 
 Gate restante :
 validation smartphone utilisateur du pinch zoom fluide.
+
+
+## Régression — rivière dessinée traversable — 2026-10-02
+
+Retour smartphone :
+- zoom Builder : de nouveau fonctionnel ;
+- une rivière dessinée dans le World Builder pouvait être traversée en test runtime.
+
+Cause confirmée :
+- la géométrie canonique existe dans `WorldArea.surface.rivers[]` ;
+- le Collision World ne lisait que `world.obstacles[]` ;
+- la démo historique compensait avec un rectangle `forest-stream-collision`, donc deux géométries distinctes décrivaient la même rivière ;
+- toute nouvelle rivière créée par le Builder n'avait naturellement aucun obstacle dupliqué.
+
+Cette duplication est supprimée au lieu d'être reproduite dans le Builder.
+
+### Reproduction permanente
+
+Tests :
+`tests/surface-river-collision-regression.test.js`
+
+Commit de reproduction :
+`9b9f37b817a0659996e6fcd2c09d9d0164c213af`
+
+CI :
+run `37041256689` — **FAILURE attendue**.
+
+Protège :
+- rivière canonique bloquante sans obstacle dupliqué ;
+- grande largeur d'eau bloquante ;
+- traversée uniquement par Bridge explicitement raccordé au même id de rivière.
+
+### Correction d'autorité
+
+Chaîne unique :
+
+```text
+WorldArea.surface.rivers[]
+        ↓ géométrie canonique
+Collision World
+        ↓
+blocage entité
+```
+
+Le Collision World calcule directement l'intersection cercle / ruban polyline à partir de :
+- `river.points` ;
+- `river.width`.
+
+Le renderer et le Builder ne possèdent aucune collision.
+
+Bridge :
+- conserve son corridor GREEN ;
+- référence directement l'id canonique de la rivière dans son mécanisme d'override existant ;
+- aucune géométrie de rivière n'est recopiée.
+
+Démo nettoyée :
+- suppression de l'ancien rectangle `forest-stream-collision` ;
+- Bridge raccordé directement à `forest-stream`.
+
+CI après correction :
+- code collision : run `37041397622` — **SUCCESS** ;
+- démo sans géométrie dupliquée : run `37041423133` — **SUCCESS**.
+
+Gate restante :
+nouvelle preview Pages puis validation smartphone qu'une rivière dessinée bloque bien hors pont.
