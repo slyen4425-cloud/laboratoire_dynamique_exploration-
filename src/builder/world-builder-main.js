@@ -37,6 +37,19 @@ import {
 import { createSurfaceRenderer } from '../render/surface-renderer.js';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
+import { createMapActorRenderer } from '../render/map-actor-renderer.js';
+import {
+  MAP_ACTOR_ROLE_DEFAULTS,
+  normalizeMapActorVisual
+} from '../actors/map-actor-visual-model.js';
+import {
+  createMapActorAssetResolver,
+  listMapActorAssets,
+  resolveMapActorAsset
+} from '../assets/map-actor-asset-adapter.js';
+import {
+  createMapActorVisualPreparer
+} from '../assets/map-actor-visual-preparer.js';
 import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
@@ -113,6 +126,62 @@ const objectRenderer = createWorldObjectRenderer({
 });
 const portalRenderer = createPortalRenderer();
 
+const registeredMapActorAssets = listMapActorAssets();
+let importedActorAsset = null;
+let importedActorObjectUrl = null;
+let mapActorImageLoader = null;
+let mapActorVisualPreparer = null;
+let mapActorRenderer = null;
+
+async function rebuildMapActorPipeline() {
+  mapActorVisualPreparer?.dispose?.();
+  mapActorImageLoader?.dispose?.();
+
+  const extraAssets = importedActorAsset
+    ? [importedActorAsset]
+    : [];
+  const resolveActorAsset = createMapActorAssetResolver(extraAssets);
+  const assets = [
+    ...registeredMapActorAssets,
+    ...extraAssets
+  ];
+
+  mapActorImageLoader = createImageAssetLoader({
+    resolveAsset: resolveActorAsset
+  });
+
+  const assetIds = assets.map((asset) => asset.id);
+  const loadStatus = await mapActorImageLoader.load(assetIds);
+
+  if (
+    loadStatus.ready !== assetIds.length ||
+    loadStatus.missing > 0 ||
+    loadStatus.errors > 0
+  ) {
+    throw new Error(
+      `Map Actor Editor assets unavailable: ${JSON.stringify(loadStatus)}`
+    );
+  }
+
+  mapActorVisualPreparer = createMapActorVisualPreparer({
+    imageLoader: mapActorImageLoader
+  });
+
+  const prepareStatus = mapActorVisualPreparer.prepare(assetIds);
+  if (
+    prepareStatus.ready !== assetIds.length ||
+    prepareStatus.errors > 0
+  ) {
+    throw new Error(
+      `Map Actor Editor preparation failed: ${JSON.stringify(prepareStatus)}`
+    );
+  }
+
+  mapActorRenderer = createMapActorRenderer({
+    preparedVisuals: mapActorVisualPreparer
+  });
+}
+
 const builderParams = new URLSearchParams(window.location.search);
 const resumeBuilderTest =
   builderParams.get('resumeBuilderTest') === '1';
@@ -144,6 +213,30 @@ let pointerSession = null;
 let pinchState = null;
 let hoverWorldPoint = null;
 const activePointers = new Map();
+
+const initialActorAssetId =
+  registeredMapActorAssets[0]?.id ??
+  resolveMapActorAsset('actor.demo.hero.traveler.01')?.id ??
+  null;
+let actorVisual = normalizeMapActorVisual({
+  assetId: initialActorAssetId,
+  role: 'hero'
+});
+const initialActorArea =
+  draft.areas.find((area) => area.id === selectedAreaId) ??
+  draft.areas[0] ??
+  null;
+const actorPreview = {
+  x: initialActorArea?.width / 2 ?? 0,
+  y: initialActorArea?.height / 2 ?? 0,
+  facingX: 1,
+  moving: false,
+  mapVisual: actorVisual
+};
+let actorAnimationUntil = 0;
+let actorAnimationFrame = null;
+
+await rebuildMapActorPipeline();
 
 canvas.dataset.tool = mapTool;
 
@@ -530,6 +623,100 @@ function refreshObjectControls() {
   }
 }
 
+function currentActorAssetList() {
+  return importedActorAsset
+    ? [...registeredMapActorAssets, importedActorAsset]
+    : [...registeredMapActorAssets];
+}
+
+function ensureActorPreviewInArea() {
+  const area = currentAreaNormalized();
+  if (!area) return;
+
+  actorPreview.x = Math.max(
+    0,
+    Math.min(
+      area.width,
+      Number.isFinite(actorPreview.x)
+        ? actorPreview.x
+        : area.width / 2
+    )
+  );
+  actorPreview.y = Math.max(
+    0,
+    Math.min(
+      area.height,
+      Number.isFinite(actorPreview.y)
+        ? actorPreview.y
+        : area.height / 2
+    )
+  );
+}
+
+function refreshActorControls() {
+  ensureActorPreviewInArea();
+
+  const assets = currentActorAssetList();
+  setOptions(
+    $('actor-asset'),
+    assets,
+    actorVisual.assetId,
+    {
+      label: (asset) => asset.label ?? asset.id
+    }
+  );
+
+  if (actorVisual.assetId) {
+    $('actor-asset').value = actorVisual.assetId;
+  }
+
+  $('actor-role').value = actorVisual.role;
+  $('actor-target-height').value = actorVisual.targetHeight;
+  $('actor-target-height-value').value =
+    String(actorVisual.targetHeight);
+  $('actor-mirror').checked = actorVisual.mirrorHorizontal;
+  $('actor-facing').value = actorPreview.facingX < 0 ? '-1' : '1';
+  $('actor-moving').checked = actorPreview.moving === true;
+
+  const automaticAnchor =
+    !Number.isFinite(actorVisual.anchorOverride?.x) &&
+    !Number.isFinite(actorVisual.anchorOverride?.y);
+  $('actor-anchor-auto').checked = automaticAnchor;
+  $('actor-anchor-x').disabled = automaticAnchor;
+  $('actor-anchor-y').disabled = automaticAnchor;
+  $('actor-anchor-x').value =
+    Number.isFinite(actorVisual.anchorOverride?.x)
+      ? actorVisual.anchorOverride.x
+      : 0.5;
+  $('actor-anchor-y').value =
+    Number.isFinite(actorVisual.anchorOverride?.y)
+      ? actorVisual.anchorOverride.y
+      : 0.96;
+
+  $('actor-shadow-enabled').checked = actorVisual.shadow.enabled;
+  $('actor-shadow-width').value = actorVisual.shadow.widthRatio;
+  $('actor-shadow-height').value = actorVisual.shadow.heightRatio;
+  $('actor-shadow-opacity').value = actorVisual.shadow.opacity;
+  $('actor-idle-amplitude').value = actorVisual.motion.idleAmplitude;
+  $('actor-idle-frequency').value = actorVisual.motion.idleFrequency;
+  $('actor-walk-amplitude').value = actorVisual.motion.walkAmplitude;
+  $('actor-walk-frequency').value = actorVisual.motion.walkFrequency;
+
+  $('actor-preview-position').textContent =
+    `Aperçu non gameplay · x ${actorPreview.x.toFixed(1)} · y ${actorPreview.y.toFixed(1)}`;
+
+  const prepared = actorVisual.assetId
+    ? mapActorVisualPreparer?.get(actorVisual.assetId)
+    : null;
+
+  if (prepared) {
+    $('actor-import-status').textContent =
+      importedActorAsset?.id === actorVisual.assetId
+        ? `Visuel local prêt · traitement ${prepared.backgroundMode}`
+        : `Asset prêt · traitement ${prepared.backgroundMode}`;
+  }
+}
+
 function sourceBuildings(portal) {
   const area = draft.areas.find(
     (item) => item.id === portal?.sourceAreaId
@@ -641,12 +828,20 @@ function refreshControls() {
   refreshAreaControls();
   refreshTerrainControls();
   refreshObjectControls();
+  refreshActorControls();
   refreshPortalControls();
   refreshJson();
   renderPreview();
 }
 
 function selectedWorldPoint(document, area) {
+  if (mapTool === 'actor-preview') {
+    return {
+      x: actorPreview.x,
+      y: actorPreview.y
+    };
+  }
+
   const object = area?.objects?.find(
     (item) => item.id === selectedObjectId
   );
@@ -928,7 +1123,7 @@ function drawBuilderOverlays(area, document, camera) {
   ctx.restore();
 }
 
-function renderPreview() {
+function renderPreview(timeSeconds = performance.now() / 1000) {
   const result = currentValidation();
   if (!result.document) return;
 
@@ -991,6 +1186,15 @@ function renderPreview() {
       currentAreaId: area.id
     });
 
+    if (mapActorRenderer && actorVisual.assetId) {
+      actorPreview.mapVisual = actorVisual;
+      mapActorRenderer.draw(ctx, {
+        camera,
+        actors: [actorPreview],
+        timeSeconds
+      });
+    }
+
     drawBuilderOverlays(area, document, camera);
   } catch (error) {
     setStatus(
@@ -1000,6 +1204,88 @@ function renderPreview() {
   }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function applyActorInputs() {
+  const autoAnchor = $('actor-anchor-auto').checked;
+
+  actorVisual = normalizeMapActorVisual({
+    assetId: $('actor-asset').value || actorVisual.assetId,
+    role: $('actor-role').value,
+    targetHeight: numberValue(
+      $('actor-target-height'),
+      actorVisual.targetHeight
+    ),
+    mirrorHorizontal: $('actor-mirror').checked,
+    anchorX: autoAnchor
+      ? null
+      : numberValue($('actor-anchor-x'), 0.5),
+    anchorY: autoAnchor
+      ? null
+      : numberValue($('actor-anchor-y'), 0.96),
+    shadow: {
+      enabled: $('actor-shadow-enabled').checked,
+      widthRatio: numberValue(
+        $('actor-shadow-width'),
+        actorVisual.shadow.widthRatio
+      ),
+      heightRatio: numberValue(
+        $('actor-shadow-height'),
+        actorVisual.shadow.heightRatio
+      ),
+      opacity: numberValue(
+        $('actor-shadow-opacity'),
+        actorVisual.shadow.opacity
+      )
+    },
+    motion: {
+      idleAmplitude: numberValue(
+        $('actor-idle-amplitude'),
+        actorVisual.motion.idleAmplitude
+      ),
+      idleFrequency: numberValue(
+        $('actor-idle-frequency'),
+        actorVisual.motion.idleFrequency
+      ),
+      walkAmplitude: numberValue(
+        $('actor-walk-amplitude'),
+        actorVisual.motion.walkAmplitude
+      ),
+      walkFrequency: numberValue(
+        $('actor-walk-frequency'),
+        actorVisual.motion.walkFrequency
+      )
+    }
+  });
+
+  actorPreview.mapVisual = actorVisual;
+  actorPreview.facingX =
+    Number($('actor-facing').value) < 0 ? -1 : 1;
+  actorPreview.moving = $('actor-moving').checked;
+
+  refreshActorControls();
+  renderPreview();
+}
+
+function animateActorPreview(now) {
+  if (now >= actorAnimationUntil) {
+    actorAnimationFrame = null;
+    renderPreview(now / 1000);
+    return;
+  }
+
+  renderPreview(now / 1000);
+  actorAnimationFrame =
+    requestAnimationFrame(animateActorPreview);
+}
+
+function startActorPreviewAnimation() {
+  actorAnimationUntil = performance.now() + 3000;
+
+  if (actorAnimationFrame === null) {
+    actorAnimationFrame =
+      requestAnimationFrame(animateActorPreview);
+  }
 }
 
 function applyTransformInputs() {
@@ -1217,7 +1503,14 @@ function activateTab(tabName) {
 }
 
 function setMapTool(tool) {
-  mapTool = ['select', 'area-size', 'terrain', 'route', 'river'].includes(tool)
+  mapTool = [
+    'select',
+    'actor-preview',
+    'area-size',
+    'terrain',
+    'route',
+    'river'
+  ].includes(tool)
     ? tool
     : 'select';
   canvas.dataset.tool = mapTool;
@@ -1235,6 +1528,8 @@ function setMapTool(tool) {
     mapTool === 'river'
   ) {
     activateTab('terrain');
+  } else if (mapTool === 'actor-preview') {
+    activateTab('actors');
   } else if (mapTool === 'area-size') {
     activateTab('area');
     fitRequested = true;
@@ -1761,6 +2056,98 @@ $('spawn-delete').addEventListener('click', () => {
   refreshControls();
 });
 
+$('actor-role').addEventListener('change', () => {
+  const role = $('actor-role').value;
+  $('actor-target-height').value =
+    MAP_ACTOR_ROLE_DEFAULTS[role]?.targetHeight ??
+    MAP_ACTOR_ROLE_DEFAULTS.hero.targetHeight;
+  applyActorInputs();
+});
+
+$('actor-asset').addEventListener('change', applyActorInputs);
+
+$('actor-target-height').addEventListener('input', () => {
+  $('actor-target-height-value').value =
+    $('actor-target-height').value;
+  applyActorInputs();
+});
+
+for (const id of [
+  'actor-mirror',
+  'actor-facing',
+  'actor-anchor-auto',
+  'actor-anchor-x',
+  'actor-anchor-y',
+  'actor-shadow-enabled',
+  'actor-shadow-width',
+  'actor-shadow-height',
+  'actor-shadow-opacity',
+  'actor-idle-amplitude',
+  'actor-idle-frequency',
+  'actor-walk-amplitude',
+  'actor-walk-frequency',
+  'actor-moving'
+]) {
+  $(id).addEventListener('change', applyActorInputs);
+}
+
+$('actor-animate').addEventListener('click', () => {
+  applyActorInputs();
+  startActorPreviewAnimation();
+});
+
+$('actor-export').addEventListener('click', () => {
+  const json = JSON.stringify(actorVisual, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download =
+    `map-actor-${actorVisual.role}.visual.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  setStatus('MapActorVisual v1 exporté');
+});
+
+$('actor-image-import').addEventListener('change', async () => {
+  const file = $('actor-image-import').files?.[0];
+  if (!file) return;
+
+  try {
+    if (importedActorObjectUrl) {
+      URL.revokeObjectURL(importedActorObjectUrl);
+    }
+
+    importedActorObjectUrl = URL.createObjectURL(file);
+    importedActorAsset = Object.freeze({
+      id: 'actor.user.preview.01',
+      kind: 'map-actor-source',
+      path: importedActorObjectUrl,
+      label: file.name || 'Visuel importé'
+    });
+
+    await rebuildMapActorPipeline();
+
+    actorVisual = normalizeMapActorVisual({
+      ...actorVisual,
+      assetId: importedActorAsset.id,
+      anchorX: actorVisual.anchorOverride?.x,
+      anchorY: actorVisual.anchorOverride?.y
+    });
+    actorPreview.mapVisual = actorVisual;
+    refreshActorControls();
+    renderPreview();
+    setStatus('Visuel acteur importé pour aperçu');
+  } catch (error) {
+    setStatus(
+      `Import acteur impossible : ${error.message}`,
+      true
+    );
+  } finally {
+    $('actor-image-import').value = '';
+  }
+});
+
 $('object-select').addEventListener('change', () => {
   selectedObjectId = $('object-select').value;
   refreshObjectControls();
@@ -2128,6 +2515,18 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
+  if (mapTool === 'actor-preview') {
+    actorPreview.x = Math.max(0, Math.min(area.width, world.x));
+    actorPreview.y = Math.max(0, Math.min(area.height, world.y));
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'drag-actor-preview'
+    };
+    refreshActorControls();
+    renderPreview();
+    return;
+  }
+
   if (mapTool === 'area-size') {
     if (hitAreaResizeHandle(area, world)) {
       pointerSession = {
@@ -2290,6 +2689,14 @@ canvas.addEventListener('pointermove', (event) => {
       pointerSession.pathId,
       world
     );
+    renderPreview();
+    return;
+  }
+
+  if (pointerSession.mode === 'drag-actor-preview') {
+    actorPreview.x = Math.max(0, Math.min(area.width, world.x));
+    actorPreview.y = Math.max(0, Math.min(area.height, world.y));
+    refreshActorControls();
     renderPreview();
     return;
   }
