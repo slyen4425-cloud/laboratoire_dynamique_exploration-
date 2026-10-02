@@ -7,30 +7,25 @@ Un seul fil directeur coordonne le chantier.
 Règle :
 **1 lot = 1 branche = 1 périmètre homogène.**
 
-## État actif — 2026-10-01
+## État actif — 2026-10-02
 
 Chantier :
-alignement gouvernance GenSrpG — GREEN / terminé.
-
-Checkpoint final :
-`checkpoint/exploration-governance-alignment-green-2026-10-01`
-
-CI de fermeture : run `36874317470` — SUCCESS.
+WorldArea / Portal v1 — implémenté, CI GREEN, preview publiée, validation smartphone requise.
 
 Branche :
-`work/exploration-governance-alignment-2026-10-01`
+`work/exploration-worldarea-portal-v1-2026-10-02`
 
 Checkpoint de départ :
-`checkpoint/exploration-start-governance-alignment-2026-10-01`
+`checkpoint/exploration-start-worldarea-portal-v1-2026-10-02`
 
-Base :
-`35d4cf3666fd2f6d99eecdd34ba7b6ef37346063`
+Base GREEN :
+`bb8cad37400ba6853e3aba76ffc633303c263bcb`
 
 Dernier checkpoint fonctionnel :
-`checkpoint/exploration-phase0-bootstrap-green-2026-10-01`
+`checkpoint/exploration-building-world-object-v1-green-2026-10-02`
 
-Source GenSrpG relue :
-`work/gensrpg-phase8-tactical-consolidation-preaudit-2026-10-01` au SHA `9fd5a789180e26204833e9d6b330079352272ec6`
+Plan suivant validé :
+WorldArea/Portal -> Map Actor Visual System -> World Builder Dynamique UI.
 
 ## Invariants de coordination
 
