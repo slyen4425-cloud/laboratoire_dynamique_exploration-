@@ -195,3 +195,35 @@ test('architecture sentinel: bootstrap waits for required WorldObject visuals', 
   assert.equal(main.includes('await worldObjectImageLoader.load'), true);
   assert.equal(main.includes('WorldObject assets unavailable'), true);
 });
+
+
+test('architecture sentinel: Portal Model is the sole owner of Area links', async () => {
+  const objectModel = await readFile(
+    new URL('../src/world/world-object-model.js', import.meta.url),
+    'utf8'
+  );
+  const portalModel = await readFile(
+    new URL('../src/world/portal-model.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(objectModel.includes('portalRefs'), false);
+  assert.equal(
+    /assets\/|\.webp|render\//.test(portalModel),
+    false
+  );
+});
+
+test('architecture sentinel: WorldArea transitions never navigate or reload the page', async () => {
+  const main = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+  const portalModel = await readFile(
+    new URL('../src/world/portal-model.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(/location\.|window\.location|reload\s*\(/.test(main), false);
+  assert.equal(/location\.|window\.location|reload\s*\(/.test(portalModel), false);
+});
