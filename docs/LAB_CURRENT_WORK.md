@@ -3,7 +3,7 @@
 Date : 2026-10-02
 
 ## Chantier actif
-Building Visual Asset v1 — premier bâtiment extérieur pour World Builder Dynamique.
+Building WorldObject v1 — premier bâtiment extérieur paramétrable pour World Builder Dynamique.
 
 ## Branche
 `work/exploration-building-visual-asset-v1-2026-10-02`
@@ -25,8 +25,16 @@ Le mode d'édition Exploration porte désormais le nom :
 Il reste un producteur de WorldDocument validé.
 Il ne modifie jamais directement le runtime actif.
 
+## Extension de périmètre validée — 2026-10-02
+L'utilisateur demande explicitement de déposer le modèle validé sur GitHub et de construire le système Building dans ce même chantier.
+
+Cette extension reste homogène :
+**Building WorldObject v1 = asset + contrat de données + rendu + footprint/collision + paramètres d'édition.**
+
+Aucun Portal/WorldArea runtime n'est inclus.
+
 ## Objectif du lot
-Créer et préparer le premier asset de bâtiment extérieur :
+Importer et raccorder le premier asset de bâtiment extérieur :
 - petite maison fantasy bois/pierre ;
 - vue du dessus légèrement inclinée ;
 - fond transparent ;
@@ -59,13 +67,23 @@ La porte extérieure devient un Door/Portal explicite dans le lot runtime corres
 
 ## Périmètre
 - documentation World Builder Dynamique ;
-- définition du premier besoin visuel bâtiment ;
-- génération artistique du premier asset ;
-- validation visuelle par l'utilisateur ;
-- préparation du futur assetId sémantique.
+- import du premier asset bâtiment validé ;
+- conversion WebP RGBA optimisée smartphone ;
+- manifeste + SHA-256 + taille ;
+- Asset Adapter ;
+- Building WorldObject v1 ;
+- transform X/Y/rotation/scaleX/scaleY ;
+- footprint logique indépendant du sprite ;
+- doorAnchors locaux ;
+- portalRefs préparés mais inactifs ;
+- transformation locale -> monde des doorAnchors ;
+- collision bâtiment pilotée uniquement par Collision World ;
+- renderer WorldObject building ;
+- chargement asset explicite/awaitable ;
+- bâtiment de démonstration ;
+- tests/CI/preview mobile.
 
 ## Hors périmètre
-- collision bâtiment ;
 - Portal runtime ;
 - WorldArea runtime ;
 - Builder UI ;
@@ -77,4 +95,6 @@ La porte extérieure devient un Door/Portal explicite dans le lot runtime corres
 `object.building.house.fantasy_wood_stone.01`
 
 ## Critère de sortie
-Un visuel de bâtiment validé, cohérent avec l'environnement Exploration, prêt à être importé dans un lot d'asset/runtime séparé.
+Le bâtiment est visible en preview, paramétré par WorldObject, bloque via son footprint logique, expose un doorAnchor transformé correctement et reste entièrement éditable par données pour le World Builder Dynamique.
+
+Aucune autorité visuelle/collision concurrente n'est tolérée.
