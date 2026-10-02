@@ -227,3 +227,25 @@ test('architecture sentinel: WorldArea transitions never navigate or reload the 
   assert.equal(/location\.|window\.location|reload\s*\(/.test(main), false);
   assert.equal(/location\.|window\.location|reload\s*\(/.test(portalModel), false);
 });
+
+
+test('architecture sentinel: Portal renderer is visual only and never owns transitions', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/portal-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('applyPortalTransition'), false);
+  assert.equal(renderer.includes('targetSpawnId'), false);
+  assert.equal(renderer.includes('currentAreaId ='), false);
+  assert.equal(renderer.includes('location.reload'), false);
+});
+
+test('architecture sentinel: Portal marker position comes from Portal Model resolver', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/portal-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('resolvePortalTriggerPoint'), true);
+});
