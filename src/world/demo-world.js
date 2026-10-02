@@ -1,4 +1,4 @@
-import { normalizeWorldDocument } from './world-document-model.js';
+import { normalizeWorldDocument } from './world-document-model.js?rev=worldarea-portal-v1-exit-marker';
 
 export const demoWorldDocument = normalizeWorldDocument({
   id: 'forest-demo-world',
