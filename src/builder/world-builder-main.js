@@ -306,6 +306,19 @@ function refreshTerrainControls() {
   const area = currentAreaRaw();
 
   setOptions(
+    $('terrain-paint-material'),
+    surfaceMaterials,
+    $('terrain-paint-material').value,
+    { label: (material) => material.label }
+  );
+  if (!$('terrain-paint-material').value && surfaceMaterials[0]) {
+    $('terrain-paint-material').value = surfaceMaterials[0].id;
+  }
+
+  $('terrain-brush-size-value').value =
+    String(numberValue($('terrain-brush-size'), 180));
+
+  setOptions(
     $('terrain-route-material'),
     pathMaterials,
     $('terrain-route-material').value,
@@ -342,7 +355,13 @@ function refreshTerrainControls() {
     const option = document.createElement('option');
     option.value = item.key;
     option.textContent =
-      `${item.kind === 'river' ? 'Rivière' : 'Route'} · ${item.id}`;
+      `${
+        item.kind === 'river'
+          ? 'Rivière'
+          : item.kind === 'terrain'
+            ? 'Terrain'
+            : 'Route'
+      } · ${item.id}`;
     select.append(option);
   }
 
@@ -350,6 +369,12 @@ function refreshTerrainControls() {
 
   const selected = currentSurfacePathRaw();
   $('terrain-path-delete').disabled = !selected;
+
+  if (selected && selectedSurfaceKind === 'terrain') {
+    $('terrain-brush-size').value = selected.width;
+    $('terrain-brush-size-value').value = String(selected.width);
+    $('terrain-paint-material').value = selected.materialId;
+  }
 
   if (selected && selectedSurfaceKind === 'route') {
     $('terrain-route-width').value = selected.width;
@@ -1411,6 +1436,7 @@ $('terrain-path-delete').addEventListener('click', () => {
 });
 
 for (const [kind, widthId, materialId] of [
+  ['terrain', 'terrain-brush-size', 'terrain-paint-material'],
   ['route', 'terrain-route-width', 'terrain-route-material'],
   ['river', 'terrain-river-width', 'terrain-river-material']
 ]) {
