@@ -2,18 +2,49 @@ import {
   isBlocked,
   resolveBridgeGuidedPosition
 } from './collision.js';
+import {
+  defaultTraversalRuleRegistry,
+  resolveSurfaceTraversal
+} from './surface-traversal.js';
 import { normalize } from './vector.js';
 
-export function stepMovement(world, entity, input, dt, movementConfig) {
+export function stepMovement(
+  world,
+  entity,
+  input,
+  dt,
+  movementConfig,
+  traversalRegistry = defaultTraversalRuleRegistry
+) {
   const direction = normalize(input.x, input.y);
-  const speed = movementConfig.maxSpeed;
+
+  const traversal = resolveSurfaceTraversal(
+    world,
+    entity,
+    entity.x,
+    entity.y,
+    traversalRegistry
+  );
+
+  const speed =
+    movementConfig.maxSpeed *
+    (traversal.passable ? traversal.speedMultiplier : 0);
+
   const dx = direction.x * speed * dt;
   const dy = direction.y * speed * dt;
 
   const targetX = entity.x + dx;
   const targetY = entity.y + dy;
 
-  if (!isBlocked(world, entity, targetX, targetY)) {
+  if (
+    !isBlocked(
+      world,
+      entity,
+      targetX,
+      targetY,
+      traversalRegistry
+    )
+  ) {
     entity.x = targetX;
     entity.y = targetY;
     return entity;
@@ -23,7 +54,8 @@ export function stepMovement(world, entity, input, dt, movementConfig) {
     world,
     entity,
     targetX,
-    targetY
+    targetY,
+    traversalRegistry
   );
 
   if (guided) {
@@ -33,12 +65,28 @@ export function stepMovement(world, entity, input, dt, movementConfig) {
   }
 
   const nextX = entity.x + dx;
-  if (!isBlocked(world, entity, nextX, entity.y)) {
+  if (
+    !isBlocked(
+      world,
+      entity,
+      nextX,
+      entity.y,
+      traversalRegistry
+    )
+  ) {
     entity.x = nextX;
   }
 
   const nextY = entity.y + dy;
-  if (!isBlocked(world, entity, entity.x, nextY)) {
+  if (
+    !isBlocked(
+      world,
+      entity,
+      entity.x,
+      nextY,
+      traversalRegistry
+    )
+  ) {
     entity.y = nextY;
   }
 
