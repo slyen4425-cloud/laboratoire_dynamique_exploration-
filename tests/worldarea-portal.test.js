@@ -352,3 +352,50 @@ test('regression: interior exit Portal declares an explicit visible marker', () 
   assert.equal(point.y, 510);
   assert.equal(point.radius, 30);
 });
+
+
+test('regression: Building return follows the moved and scaled door instead of an old fixed spawn', async () => {
+  const {
+    createWorldBuilderDraft,
+    updateWorldObjectTransform,
+    validateWorldBuilderDraft
+  } = await import('../src/builder/world-builder-draft.js');
+
+  let draft = createWorldBuilderDraft(demoWorldDocument);
+
+  draft = updateWorldObjectTransform(
+    draft,
+    'forest-exterior',
+    'forest-house-01',
+    {
+      x: 1350,
+      y: 700,
+      rotationDeg: 0,
+      scaleX: 1.4,
+      scaleY: 1.2
+    }
+  );
+
+  const validation = validateWorldBuilderDraft(draft);
+  assert.equal(validation.valid, true);
+
+  const document = validation.document;
+  const exit = document.portals.find(
+    (portal) => portal.id === 'portal-house-exit'
+  );
+
+  const next = applyPortalTransition(
+    document,
+    {
+      currentAreaId: 'house-interior-01',
+      x: 360,
+      y: 510
+    },
+    exit
+  );
+
+  // main-door: y = 700 + (300 * 1.2 * 0.38) = 836.8
+  // safe exterior offset: +56 world units = 892.8
+  assert.ok(Math.abs(next.x - 1350) < 1e-9);
+  assert.ok(Math.abs(next.y - 892.8) < 1e-9);
+});
