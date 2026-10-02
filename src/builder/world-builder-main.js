@@ -2073,6 +2073,7 @@ canvas.addEventListener('pointerdown', (event) => {
   const area = currentAreaNormalized();
   if (!world || !area) return;
 
+  hoverWorldPoint = world;
   canvas.dataset.dragging = 'true';
 
   if (
@@ -2091,11 +2092,53 @@ canvas.addEventListener('pointerdown', (event) => {
   }
 
   if (mapTool === 'area-size') {
+    if (hitAreaResizeHandle(area, world)) {
+      pointerSession = {
+        pointerId: event.pointerId,
+        mode: 'resize-area'
+      };
+    } else {
+      pointerSession = {
+        pointerId: event.pointerId,
+        mode: 'pan',
+        startCanvas: point,
+        startCenter: { ...center },
+        startZoom: zoom
+      };
+    }
+    return;
+  }
+
+  const gizmo = hitSelectedObjectGizmo(area, world);
+  if (gizmo?.kind === 'rotate') {
     pointerSession = {
       pointerId: event.pointerId,
-      mode: 'resize-area'
+      mode: 'rotate-object',
+      centerX: gizmo.rect.x,
+      centerY: gizmo.rect.y,
+      angleOffset:
+        Math.atan2(
+          world.y - gizmo.rect.y,
+          world.x - gizmo.rect.x
+        ) - gizmo.rect.rotation
     };
     return;
+  }
+
+  if (gizmo?.kind === 'scale') {
+    const base = objectBaseDimensions(gizmo.object);
+    if (base) {
+      pointerSession = {
+        pointerId: event.pointerId,
+        mode: 'scale-object',
+        centerX: gizmo.rect.x,
+        centerY: gizmo.rect.y,
+        rotation: gizmo.rect.rotation,
+        baseWidth: base.width,
+        baseHeight: base.height
+      };
+      return;
+    }
   }
 
   const object = hitWorldObject(area, world);
