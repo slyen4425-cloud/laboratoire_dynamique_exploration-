@@ -205,3 +205,27 @@ Le visuel ne possède jamais position, collision, statistiques ou interaction.
 Ensuite seulement :
 ## World Builder Dynamique UI v1
 Le Builder éditera le même WorldDocument et les mêmes contrats WorldObject/WorldArea/Portal/MapActor que le runtime.
+
+
+## Lot validé à faire — Surface Traversal Rules v1
+
+Ordre : avant Map Actor Visual System v1.
+
+But :
+- règles de déplacement communes aux héros, PNJ et monstres ;
+- vitesse route configurable ;
+- eau selon locomotion ;
+- pont comme override géométrique local ;
+- aucune règle gameplay dans Material Registry.
+
+Contrat cible :
+`surface.traversalRuleId -> Traversal Rule Registry -> actor locomotion -> resolver -> mouvement/collision`.
+
+Modes v1 :
+- ground ;
+- swim ;
+- fly.
+
+Après ce lot :
+1. Map Actor Visual System v1 ;
+2. World Builder Dynamique UI v1.
