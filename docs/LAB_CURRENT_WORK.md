@@ -3,239 +3,106 @@
 Date : 2026-10-02
 
 ## Chantier actif
-Building WorldObject v1 — premier bâtiment extérieur paramétrable pour World Builder Dynamique.
+WorldArea / Portal v1.
 
 ## Branche
-`work/exploration-building-visual-asset-v1-2026-10-02`
+`work/exploration-worldarea-portal-v1-2026-10-02`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-building-visual-asset-v1-2026-10-02`
+`checkpoint/exploration-start-worldarea-portal-v1-2026-10-02`
 
 ## SHA de base GREEN
-`01302edfc0b0764f174e0c286d93a92b80192f9c`
+`bb8cad37400ba6853e3aba76ffc633303c263bcb`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-bridge-visual-assets-v1-green-2026-10-02`
+`checkpoint/exploration-building-world-object-v1-green-2026-10-02`
 
-## Nom officiel de l'éditeur
-Le mode d'édition Exploration porte désormais le nom :
+## Plan validé
+Ordre confirmé :
+1. WorldArea / Portal v1 ;
+2. Map Actor Visual System v1 ;
+3. World Builder Dynamique UI v1.
 
-**World Builder Dynamique**
-
-Il reste un producteur de WorldDocument validé.
-Il ne modifie jamais directement le runtime actif.
-
-## Extension de périmètre validée — 2026-10-02
-L'utilisateur demande explicitement de déposer le modèle validé sur GitHub et de construire le système Building dans ce même chantier.
-
-Cette extension reste homogène :
-**Building WorldObject v1 = asset + contrat de données + rendu + footprint/collision + paramètres d'édition.**
-
-Aucun Portal/WorldArea runtime n'est inclus.
+Décision Map Actor déjà validée pour le prochain lot :
+**un seul visuel fourni par le joueur doit suffire pour rendre héros, PNJ ou créature utilisable sur la map ; GenSrpG prépare automatiquement le visuel map.**
 
 ## Objectif du lot
-Importer et raccorder le premier asset de bâtiment extérieur :
-- petite maison fantasy bois/pierre ;
-- vue du dessus légèrement inclinée ;
-- fond transparent ;
-- silhouette claire sur smartphone ;
-- porte extérieure très lisible ;
-- petit raccord de terrain au seuil ;
-- asset visuel séparé du footprint/collision ;
-- compatible avec un futur Door/Portal ;
-- compatible avec position/rotation/scale dans World Builder Dynamique.
+Mettre en place l'unique contrat Area/Portal pour :
+- entrer dans un bâtiment ;
+- revenir à l'extérieur ;
+- réutiliser ensuite le même mécanisme pour étage, cave, grotte, boutique, tour et changement de zone.
 
-## Paramètres Builder futurs à prévoir pour Building WorldObject
-- position X/Y ;
-- rotation ;
-- scale X/Y ;
-- assetId ;
-- footprint logique ;
-- doorAnchor local ;
-- portalId optionnel ;
-- targetAreaId via Portal ;
-- visible/enabled si besoin ;
-- catégorie/template ;
-- duplication/suppression.
+## Propriétaires
+- WorldArea : World Area Model ;
+- Portal : Portal Model ;
+- currentAreaId + position X/Y : Exploration state/runtime ;
+- collision : Collision World ;
+- Building doorAnchor : Building WorldObject déjà GREEN ;
+- rendu : Renderer uniquement.
 
-Aucun de ces paramètres ne doit être caché dans le renderer.
+## Systèmes réutilisés / gelés
+- Building WorldObject v1 GREEN ;
+- doorAnchors Building GREEN ;
+- Bridge v1 GREEN ;
+- mouvement continu X/Y GREEN ;
+- Collision World GREEN ;
+- Material/World Surface system GREEN ;
+- WorldObject renderer + asset authority GREEN.
 
-## Règle bâtiment/intérieur
-Le bâtiment extérieur reste un WorldObject.
-L'intérieur reste une WorldArea séparée.
-La porte extérieure devient un Door/Portal explicite dans le lot runtime correspondant.
+Aucune de ces autorités ne doit être recréée.
 
 ## Périmètre
-- documentation World Builder Dynamique ;
-- import du premier asset bâtiment validé ;
-- conversion WebP RGBA optimisée smartphone ;
-- manifeste + SHA-256 + taille ;
-- Asset Adapter ;
-- Building WorldObject v1 ;
-- transform X/Y/rotation/scaleX/scaleY ;
-- footprint logique indépendant du sprite ;
-- doorAnchors locaux ;
-- portalRefs préparés mais inactifs ;
-- transformation locale -> monde des doorAnchors ;
-- collision bâtiment pilotée uniquement par Collision World ;
-- renderer WorldObject building ;
-- chargement asset explicite/awaitable ;
-- bâtiment de démonstration ;
-- tests/CI/preview mobile.
+- `WorldArea v1` versionné ;
+- spawns nommés par Area ;
+- `Portal v1` versionné ;
+- source trigger explicite ;
+- source possible depuis un `building-door` ou un point ;
+- targetAreaId + targetSpawnId ;
+- validation des références ;
+- résolution pure du trigger Portal ;
+- transition Area sans reload ;
+- conservation de `currentAreaId` + X/Y ;
+- démo maison extérieure -> intérieur -> retour extérieur ;
+- tests du vrai chemin ;
+- preview smartphone.
 
 ## Hors périmètre
-- Portal runtime ;
-- WorldArea runtime ;
-- Builder UI ;
-- sauvegarde ;
-- placement runtime ;
+- UI World Builder Dynamique ;
+- Map Actor runtime ;
+- génération IA de sprites ;
+- sauvegarde persistante ;
+- étages multiples réels ;
+- combat Capture ;
 - autre dépôt.
 
-## AssetId prévu
-`object.building.house.fantasy_wood_stone.01`
+## Règles
+- un seul mécanisme Portal pour portes/escaliers/grottes/sorties ;
+- aucun `location.reload()` ;
+- aucun second système d'intérieur seamless ;
+- le Portal ne possède jamais le bâtiment ;
+- le Building ne possède jamais le changement d'Area ;
+- l'Area ne possède jamais la position globale du Shell ;
+- target spawn explicite obligatoire ;
+- aucune coordonnée dérivée d'un sprite.
+
+## Tests requis
+- normalisation WorldArea ;
+- normalisation Spawn ;
+- normalisation Portal ;
+- références invalides rejetées ;
+- building-door résolu depuis doorAnchor réel ;
+- point trigger résolu ;
+- transition change uniquement currentAreaId + X/Y ;
+- retour exact via spawn explicite ;
+- collision/mouvement historiques toujours GREEN ;
+- architecture : aucune reload / aucune seconde autorité.
 
 ## Critère de sortie
-Le bâtiment est visible en preview, paramétré par WorldObject, bloque via son footprint logique, expose un doorAnchor transformé correctement et reste entièrement éditable par données pour le World Builder Dynamique.
+Depuis la preview mobile, le joueur peut :
+1. rejoindre la porte de la maison ;
+2. entrer dans une WorldArea intérieure sans reload ;
+3. se déplacer dans l'intérieur ;
+4. ressortir ;
+5. retrouver une position extérieure explicite sûre.
 
-Aucune autorité visuelle/collision concurrente n'est tolérée.
-
-
-## Import binaire Building v1 — 2026-10-02
-
-Le premier envoi direct du WebP était tronqué et a été bloqué par les sentinelles d'intégrité.
-
-Réparation appliquée par import one-shot contrôlé :
-- staging en chunks texte temporaires ;
-- décodage Base64 dans GitHub Actions ;
-- vérification avant commit ;
-- suppression automatique des chunks et du workflow d'import ;
-- commit final du binaire uniquement.
-
-Workflow d'import :
-- run `36949973145` — **SUCCESS**.
-
-Commit produit :
-`225b3cdf9874c45e14bf4a5df76645b2c5f6d630`
-(`assets: import complete Building v1 runtime WebP`)
-
-Vérification de l'arbre Git réel :
-- chemin : `assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp` ;
-- blob : `233e7e36a8c933c564c51e45e3abe26b605c5527` ;
-- taille Git : **52 898 octets** ;
-- aucun fichier `.asset-import/building/*` restant ;
-- aucun workflow one-shot restant.
-
-Valeurs attendues du manifeste :
-- SHA-256 : `cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f` ;
-- taille : **52 898 octets** ;
-- format : WebP RGBA 384×384.
-
-Une nouvelle CI complète est requise sur un commit utilisateur après cet import bot avant toute preview.
-
-
-## État technique Building WorldObject v1 — 2026-10-02
-
-Implémenté :
-- `kind: building` dans le WorldObject Model ;
-- transform partagé `x/y/rotationDeg/scaleX/scaleY` ;
-- `baseSize.width/height` logique ;
-- `visual.assetId` comme autorité visuelle unique ;
-- footprint logique orienté, avec ratios et offsets configurables ;
-- `doorAnchors[]` en coordonnées locales normalisées ;
-- transformation automatique des doorAnchors vers les coordonnées monde ;
-- `portalRefs[]` validés uniquement contre des anchors existants, mais runtime Portal toujours hors périmètre ;
-- rendu image Building via le WorldObject Renderer ;
-- collision Building exclusivement via Collision World + footprint logique ;
-- bâtiment de démonstration `forest-house-01` près de la route.
-
-Paramètres déjà éditables par données pour le World Builder Dynamique :
-- position X/Y ;
-- rotation ;
-- scale X/Y ;
-- largeur/hauteur logique ;
-- assetId ;
-- activation du footprint ;
-- ratios largeur/hauteur du footprint ;
-- offsets X/Y du footprint ;
-- liste des doorAnchors ;
-- références Portal préparées.
-
-Garanties :
-- changer `assetId` ne modifie ni footprint ni doorAnchor ;
-- le renderer ne possède pas la collision ;
-- la collision ne lit aucun asset/sprite ;
-- un Portal ref vers un anchor inexistant est rejeté à la normalisation ;
-- aucun fallback visuel concurrent.
-
-Tests dédiés :
-`tests/building-world-object.test.js`
-- normalisation des paramètres d'édition ;
-- doorAnchor suit position/rotation/scale ;
-- footprint suit les données logiques et le transform ;
-- changement d'asset sans effet gameplay ;
-- collision pilotée par Collision World ;
-- validation des portalRefs.
-
-CI complète après restauration binaire :
-run `36950025990` — **SUCCESS**.
-
-Prochaine gate :
-preview smartphone avec asset réel + collision Building.
-
-
-## Preview Building WorldObject v1 — 2026-10-02
-
-Publication infrastructure uniquement :
-- main SHA : `3d937b2f2590829fe8c467ec8bb85be33fc3f8c8` ;
-- Pages run : `36950205590` — **SUCCESS** ;
-- artifact Pages : `11204325238`.
-
-L'artefact Pages réellement publié a été téléchargé et contrôlé.
-
-Building WebP déployé :
-- taille : **52 898 octets** ;
-- SHA-256 : `cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f` ;
-- signature RIFF : OK ;
-- signature WEBP : OK ;
-- taille RIFF déclarée = taille physique : OK ;
-- dimensions : **384×384** ;
-- mode : **RGBA** ;
-- transparence réelle présente.
-
-La preview publiée contient aussi :
-- `main.js?rev=building-v1-single-authority` ;
-- modules WorldObject versionnés `building-v1-single-authority` ;
-- cache asset `building-v1-assets-2026-10-02` ;
-- aucune autorité visuelle de secours.
-
-Gate restante :
-validation smartphone utilisateur du rendu Building + collision logique.
-
-
-## Validation utilisateur finale — 2026-10-02
-
-Test smartphone : **validé**.
-
-Retour utilisateur :
-> Yes, c est magnifique. ❤️
-
-Cette validation couvre :
-- rendu du bâtiment réel ;
-- intégration visuelle dans l'environnement ;
-- absence de régression perceptible du pont/mouvement ;
-- cohérence du footprint de collision observé en preview ;
-- asset Building chargé correctement ;
-- autorité visuelle unique respectée.
-
-## Fermeture
-Building WorldObject v1 : **GREEN / terminé**.
-
-SHA technique validé avant document de fermeture :
-`50baa1e83a9fdff106130beb93a83c46e6b99c92`
-
-CI :
-run `36950297203` — **SUCCESS**.
-
-La suite doit repartir d'un checkpoint GREEN exact dans un lot séparé, notamment :
-- WorldArea / Portal v1 ;
-- ou World Builder Dynamique UI dans un lot dédié.
+Le lot reste non GREEN jusqu'à validation smartphone.
