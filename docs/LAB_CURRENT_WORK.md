@@ -253,3 +253,32 @@ Gate smartphone :
 - revenir au Builder et vérifier la restauration de session.
 
 Le lot reste non GREEN jusqu'à cette validation.
+
+
+## Cache mobile — Map Actor asset fix final — 2026-10-02
+
+Après correction du chargeur partagé, les URLs de modules ont reçu une révision explicite pour éviter qu'un smartphone réutilise l'ancien loader :
+- runtime entry ;
+- Builder entry ;
+- import du shared Image Asset Loader côté runtime ;
+- import du shared Image Asset Loader côté Builder.
+
+CI finale cache-bust :
+- HEAD : `3f6cc88b39d99e62589182cdee28f89538e7f3e8` ;
+- run `37059461116` — **SUCCESS**.
+
+Preview finale :
+- PR #37 ;
+- main SHA : `87c8886af8b7d118549f3900b22b076b1f4151c3` ;
+- Pages run : `37059948321` — **SUCCESS** ;
+- artifact : `11250173901`.
+
+L'ancien run #37059545104 a été annulé par la relance d'infrastructure conformément à `cancel-in-progress`.
+
+Gate smartphone :
+- importer un visuel acteur ;
+- Tester en jeu ;
+- vérifier absence de `Erreur asset Map Actor` ;
+- vérifier visuel/réglages ;
+- Retour World Builder ;
+- vérifier restauration.
