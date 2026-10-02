@@ -368,5 +368,41 @@ Pour un Building WorldObject :
 - le sprite extérieur ne définit pas la collision ;
 - `doorAnchor` est exprimé en coordonnées locales du bâtiment ;
 - le transform du bâtiment transforme aussi la position monde de ses anchors ;
-- le Portal référence l'anchor mais reste une autorité distincte ;
-- changer l'asset visuel ne doit pas modifier footprint, anchor ou Portal.
+- le Portal référence l'anchor et est l'unique autorité du lien entre Areas ;
+- changer l'asset visuel ne doit pas modifier footprint ou anchor ;
+- le Building ne stocke pas de `portalRefs` autoritaires : les liens vivent uniquement dans le Portal Model.
+
+
+## WorldArea / Portal v1
+
+Contrat :
+
+```text
+WorldDocument
+├─ areas[]
+│  ├─ id
+│  ├─ kind: exterior | interior
+│  ├─ width / height
+│  ├─ surface
+│  ├─ objects
+│  ├─ obstacles
+│  └─ spawns[]
+└─ portals[]
+   ├─ id
+   ├─ sourceAreaId
+   ├─ trigger
+   │  ├─ point
+   │  └─ building-door
+   ├─ targetAreaId
+   └─ targetSpawnId
+```
+
+Le runtime conserve une seule position Exploration avec :
+- `currentAreaId` ;
+- `x/y`.
+
+Une transition Portal remplace ces trois valeurs à partir d'un target Spawn explicite.
+Aucune navigation de page n'est impliquée.
+
+Pour un trigger `building-door`, le Portal Model résout le `doorAnchor` du Building.
+Le Building ne contient aucune copie du lien vers le Portal.
