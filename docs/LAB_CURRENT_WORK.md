@@ -142,3 +142,26 @@ CI technique avant preview :
 
 Gate restante :
 publication preview + test smartphone.
+
+
+## Garde de coordination — branche isolée, non publiable
+
+Contrôle de la source de vérité GitHub effectué après implémentation technique :
+
+- Map Actor Visual System v1 est déjà GREEN :
+  `checkpoint/exploration-map-actor-visual-v1-green-2026-10-02`
+  SHA `745b13bd550893b5ae21c351fa1f511acb2bdc16`.
+- le chantier actif le plus avancé est :
+  `work/exploration-world-builder-dynamique-ui-v1-2026-10-02`.
+- sa preview courante contient déjà la collision rivière canonique issue de `surface.rivers[]` et attend encore validation smartphone.
+- ce chantier Surface Traversal a été ouvert depuis le checkpoint WorldArea/Portal antérieur et **ne doit donc pas être publié, mergé ou devenir nouveau point de reprise** tant que la lignée World Builder n'a pas obtenu son prochain checkpoint GREEN.
+
+Cette branche sert uniquement de validation technique isolée du contrat Surface Traversal.
+Après validation du chantier World Builder courant :
+1. créer son checkpoint GREEN exact ;
+2. ouvrir un nouveau lot Surface Traversal depuis ce SHA ;
+3. reporter les changements utiles sans écraser Map Actor ni World Builder ;
+4. relancer toutes les sentinelles ;
+5. publier seulement cette nouvelle lignée.
+
+Aucun runtime de preview n'est redirigé vers cette branche.
