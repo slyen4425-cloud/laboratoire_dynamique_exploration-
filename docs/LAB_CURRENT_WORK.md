@@ -740,3 +740,27 @@ CI après correction :
 
 Gate restante :
 nouvelle preview smartphone et validation du pinch.
+
+
+## Preview — correctif pinch zoom tactile — 2026-10-02
+
+HEAD work documenté :
+`2e024310c9691fa3122970ad5e4566753ed2699b`
+
+CI :
+run `37032298060` — **SUCCESS**.
+
+Infrastructure preview uniquement :
+- PR #30 ;
+- main SHA `c13727cb3fc1f3a7dec2fd81a7d32e8f4414ab72` ;
+- Pages run `37032435736` ;
+- job deploy : **SUCCESS**.
+
+Correction publiée :
+- aucun appel `syncZoomInput()` résiduel ;
+- pinch tactile conserve uniquement l'autorité viewport `zoom + center` ;
+- aucun bouton/slider zoom réintroduit ;
+- wheel/trackpad inchangé.
+
+Gate restante :
+validation smartphone utilisateur du pinch zoom fluide.
