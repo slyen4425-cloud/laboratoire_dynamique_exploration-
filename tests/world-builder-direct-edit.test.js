@@ -1,0 +1,268 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+
+import { demoWorldDocument } from '../src/world/demo-world.js';
+import {
+  addSurfacePath,
+  createWorldBuilderDraft,
+  deleteSurfacePath,
+  importWorldBuilderDocument,
+  serializeWorldBuilderDraft,
+  updateSurfacePath,
+  validateWorldBuilderDraft
+} from '../src/builder/world-builder-draft.js';
+import {
+  canvasPointToWorld,
+  computeBuilderView,
+  panBuilderCenter,
+  pointInRotatedRect,
+  zoomBuilderAtCanvasPoint
+} from '../src/builder/world-builder-viewport.js';
+
+test('direct Terrain drawing writes routes and rivers into the canonical WorldDocument surface', () => {
+  const source = demoWorldDocument;
+  const initial = createWorldBuilderDraft(source);
+  const areaId = initial.initialAreaId;
+  const beforeSourceRoutes =
+    source.areas.find((area) => area.id === areaId).surface.routes.length;
+
+  let draft = addSurfacePath(
+    initial,
+    areaId,
+    'river',
+    {
+      width: 96,
+      materialId: 'water.forest_stream',
+      points: [
+        { x: 100, y: 120 },
+        { x: 240, y: 260 },
+        { x: 390, y: 220 }
+      ]
+    }
+  );
+
+  const area = draft.areas.find((item) => item.id === areaId);
+  const created = area.surface.rivers.at(-1);
+
+  assert.equal(created.width, 96);
+  assert.equal(created.materialId, 'water.forest_stream');
+  assert.equal(created.points.length, 3);
+  assert.equal(
+    source.areas.find((item) => item.id === areaId).surface.routes.length,
+    beforeSourceRoutes
+  );
+
+  const validation = validateWorldBuilderDraft(draft);
+  assert.equal(validation.valid, true);
+  assert.equal(
+    validation.document.areas
+      .find((item) => item.id === areaId)
+      .surface.rivers
+      .some((river) => river.id === created.id),
+    true
+  );
+});
+
+test('surface path editing and deletion stay inside World Builder draft helpers', () => {
+  let draft = createWorldBuilderDraft(demoWorldDocument);
+  const areaId = draft.initialAreaId;
+
+  draft = addSurfacePath(
+    draft,
+    areaId,
+    'route',
+    {
+      width: 70,
+      materialId: 'road.dirt',
+      points: [
+        { x: 20, y: 20 },
+        { x: 120, y: 100 }
+      ]
+    }
+  );
+
+  const area = draft.areas.find((item) => item.id === areaId);
+  const created = area.surface.routes.at(-1);
+
+  draft = updateSurfacePath(
+    draft,
+    areaId,
+    'route',
+    created.id,
+    { width: 110 }
+  );
+
+  assert.equal(
+    draft.areas
+      .find((item) => item.id === areaId)
+      .surface.routes
+      .find((item) => item.id === created.id)
+      .width,
+    110
+  );
+
+  draft = deleteSurfacePath(
+    draft,
+    areaId,
+    'route',
+    created.id
+  );
+
+  assert.equal(
+    draft.areas
+      .find((item) => item.id === areaId)
+      .surface.routes
+      .some((item) => item.id === created.id),
+    false
+  );
+});
+
+test('Terrain drawing survives WorldDocument export/import round-trip', () => {
+  let draft = createWorldBuilderDraft(demoWorldDocument);
+  const areaId = draft.initialAreaId;
+
+  draft = addSurfacePath(
+    draft,
+    areaId,
+    'river',
+    {
+      width: 88,
+      materialId: 'water.forest_stream',
+      points: [
+        { x: 90, y: 100 },
+        { x: 180, y: 160 }
+      ]
+    }
+  );
+
+  const json = serializeWorldBuilderDraft(draft);
+  const imported = importWorldBuilderDocument(json);
+
+  assert.equal(
+    imported.areas
+      .find((item) => item.id === areaId)
+      .surface.rivers
+      .some((river) => river.width === 88),
+    true
+  );
+});
+
+test('zoom around a map point keeps the same world position under the cursor', () => {
+  const area = { width: 2400, height: 1600 };
+  const center = { x: 1000, y: 700 };
+  const canvasWidth = 700;
+  const canvasHeight = 500;
+  const canvasX = 520;
+  const canvasY = 210;
+
+  const before = computeBuilderView({
+    area,
+    center,
+    zoom: 0.5,
+    canvasWidth,
+    canvasHeight
+  });
+  const worldBefore = canvasPointToWorld({
+    canvasX,
+    canvasY,
+    camera: before.camera,
+    zoom: before.zoom
+  });
+
+  const after = zoomBuilderAtCanvasPoint({
+    area,
+    center,
+    oldZoom: 0.5,
+    newZoom: 1.1,
+    canvasWidth,
+    canvasHeight,
+    canvasX,
+    canvasY
+  });
+  const worldAfter = canvasPointToWorld({
+    canvasX,
+    canvasY,
+    camera: after.camera,
+    zoom: after.zoom
+  });
+
+  assert.ok(Math.abs(worldBefore.x - worldAfter.x) < 1e-9);
+  assert.ok(Math.abs(worldBefore.y - worldAfter.y) < 1e-9);
+});
+
+test('pan gesture moves view center in world units', () => {
+  assert.deepEqual(
+    panBuilderCenter({
+      center: { x: 500, y: 400 },
+      deltaCanvasX: 100,
+      deltaCanvasY: -50,
+      zoom: 0.5
+    }),
+    {
+      x: 300,
+      y: 500
+    }
+  );
+});
+
+test('direct object hit test supports rotated WorldObjects', () => {
+  assert.equal(
+    pointInRotatedRect(
+      { x: 100, y: 125 },
+      {
+        x: 100,
+        y: 100,
+        rotation: Math.PI / 2,
+        width: 100,
+        height: 40
+      }
+    ),
+    true
+  );
+
+  assert.equal(
+    pointInRotatedRect(
+      { x: 160, y: 100 },
+      {
+        x: 100,
+        y: 100,
+        rotation: Math.PI / 2,
+        width: 100,
+        height: 40
+      }
+    ),
+    false
+  );
+});
+
+test('World Builder direct-edit UI exposes map tools and intuitive zoom controls', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  for (const id of [
+    'map-tool-select',
+    'map-tool-area',
+    'map-tool-route',
+    'map-tool-river',
+    'preview-zoom-in',
+    'preview-zoom-out',
+    'terrain-route-material',
+    'terrain-river-material',
+    'terrain-path-select'
+  ]) {
+    assert.equal(html.includes(`id="${id}"`), true, id);
+  }
+
+  assert.match(main, /canvas\.addEventListener\('pointerdown'/);
+  assert.match(main, /canvas\.addEventListener\(\s*'wheel'/);
+  assert.match(main, /updateWorldObjectTransform/);
+  assert.match(main, /addSurfacePath/);
+  assert.match(main, /mode: 'resize-area'/);
+});
