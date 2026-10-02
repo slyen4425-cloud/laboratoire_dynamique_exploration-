@@ -123,7 +123,7 @@ button.danger {
 .builder-tabs {
   grid-area: tabs;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 6px;
 }
 
@@ -280,6 +280,10 @@ input:focus, select:focus, textarea:focus {
     padding-block: 3px;
   }
 
+  .map-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .builder-controls {
     padding: 10px;
   }
@@ -313,6 +317,58 @@ input:focus, select:focus, textarea:focus {
   }
 
   .builder-tabs button {
+    font-size: 0.72rem;
+  }
+
+  .map-tools button {
     font-size: 0.78rem;
   }
 }
+
+
+.map-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px 9px 0;
+  background: #18221b;
+}
+
+.map-tools button {
+  min-width: 0;
+  padding-inline: 8px;
+}
+
+.map-tools button.active {
+  background: #5b744f;
+  border-color: #91ad83;
+}
+
+.preview-tools > button#preview-zoom-in,
+.preview-tools > button#preview-zoom-out {
+  min-width: 44px;
+  padding-inline: 10px;
+  font-size: 1.15rem;
+}
+
+.builder-hint {
+  margin: 8px 0;
+  color: #9fb09e;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+#builder-preview[data-tool="select"] {
+  cursor: grab;
+}
+
+#builder-preview[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+#builder-preview[data-tool="route"],
+#builder-preview[data-tool="river"],
+#builder-preview[data-tool="area-size"] {
+  cursor: crosshair;
+}
+
