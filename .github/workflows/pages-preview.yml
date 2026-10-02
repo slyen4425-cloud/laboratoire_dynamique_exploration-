@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: worldarea-portal-v1-interior-surface-fix
+# preview-revision: worldarea-portal-v1-exit-marker
 
 on:
   push:
