@@ -17,6 +17,67 @@ export function circleIntersectsRect(x, y, radius, rect) {
   return dx * dx + dy * dy < radius * radius;
 }
 
+function squaredDistancePointToSegment(px, py, a, b) {
+  const abX = b.x - a.x;
+  const abY = b.y - a.y;
+  const lengthSquared = abX * abX + abY * abY;
+
+  if (lengthSquared <= COLLISION_EPSILON) {
+    const dx = px - a.x;
+    const dy = py - a.y;
+    return dx * dx + dy * dy;
+  }
+
+  const apX = px - a.x;
+  const apY = py - a.y;
+  const t = clamp(
+    (apX * abX + apY * abY) / lengthSquared,
+    0,
+    1
+  );
+  const nearestX = a.x + abX * t;
+  const nearestY = a.y + abY * t;
+  const dx = px - nearestX;
+  const dy = py - nearestY;
+
+  return dx * dx + dy * dy;
+}
+
+export function circleIntersectsStroke(
+  x,
+  y,
+  radius,
+  stroke
+) {
+  if (
+    !stroke ||
+    !Number.isFinite(stroke.width) ||
+    stroke.width <= 0 ||
+    !Array.isArray(stroke.points) ||
+    stroke.points.length < 2
+  ) {
+    return false;
+  }
+
+  const effectiveRadius = radius + stroke.width / 2;
+  const maxDistanceSquared =
+    effectiveRadius * effectiveRadius;
+
+  for (let index = 1; index < stroke.points.length; index += 1) {
+    const a = stroke.points[index - 1];
+    const b = stroke.points[index];
+
+    if (
+      squaredDistancePointToSegment(x, y, a, b) <
+      maxDistanceSquared
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function orientedLocalPoint(x, y, rect) {
   const dx = x - rect.x;
   const dy = y - rect.y;
@@ -108,14 +169,20 @@ export function circleFitsOrientedRect(x, y, radius, rect) {
   );
 }
 
-function bridgeAllowsObstacle(world, obstacle, x, y) {
-  if (!obstacle?.id) return false;
+function worldRivers(world) {
+  return Array.isArray(world?.surface?.rivers)
+    ? world.surface.rivers
+    : [];
+}
+
+function bridgeAllowsBlocker(world, blockerId, x, y) {
+  if (!blockerId) return false;
 
   for (const object of Array.isArray(world.objects) ? world.objects : []) {
     if (
       object.kind !== 'bridge' ||
       object.traversal?.enabled !== true ||
-      !object.traversal.overridesObstacleIds.includes(obstacle.id)
+      !object.traversal.overridesObstacleIds.includes(blockerId)
     ) {
       continue;
     }
@@ -130,6 +197,40 @@ function bridgeAllowsObstacle(world, obstacle, x, y) {
   return false;
 }
 
+function touchesReferencedBridgeBlocker(
+  world,
+  bridge,
+  entity,
+  x,
+  y
+) {
+  const ids = bridge.traversal.overridesObstacleIds;
+
+  const touchesObstacle = (
+    Array.isArray(world.obstacles) ? world.obstacles : []
+  ).some((obstacle) =>
+    ids.includes(obstacle.id) &&
+    circleIntersectsRect(
+      x,
+      y,
+      entity.radius,
+      obstacle
+    )
+  );
+
+  if (touchesObstacle) return true;
+
+  return worldRivers(world).some((river) =>
+    ids.includes(river.id) &&
+    circleIntersectsStroke(
+      x,
+      y,
+      entity.radius,
+      river
+    )
+  );
+}
+
 export function isBlocked(world, entity, x, y) {
   if (
     x - entity.radius < 0 ||
@@ -140,12 +241,33 @@ export function isBlocked(world, entity, x, y) {
     return true;
   }
 
-  for (const obstacle of world.obstacles) {
+  // River geometry is canonical in WorldSurface. Collision World reads that
+  // geometry directly; there is no duplicate river collision rectangle.
+  for (const river of worldRivers(world)) {
+    if (
+      !circleIntersectsStroke(
+        x,
+        y,
+        entity.radius,
+        river
+      )
+    ) {
+      continue;
+    }
+
+    if (bridgeAllowsBlocker(world, river.id, x, y)) {
+      continue;
+    }
+
+    return true;
+  }
+
+  for (const obstacle of Array.isArray(world.obstacles) ? world.obstacles : []) {
     if (!circleIntersectsRect(x, y, entity.radius, obstacle)) {
       continue;
     }
 
-    if (bridgeAllowsObstacle(world, obstacle, x, y)) {
+    if (bridgeAllowsBlocker(world, obstacle.id, x, y)) {
       continue;
     }
 
@@ -190,17 +312,17 @@ export function resolveBridgeGuidedPosition(
     const passage = bridgeTraversalRect(object);
     if (!passage) continue;
 
-    const touchesReferencedObstacle = world.obstacles.some((obstacle) =>
-      object.traversal.overridesObstacleIds.includes(obstacle.id) &&
-      circleIntersectsRect(
+    if (
+      !touchesReferencedBridgeBlocker(
+        world,
+        object,
+        entity,
         targetX,
-        targetY,
-        entity.radius,
-        obstacle
+        targetY
       )
-    );
-
-    if (!touchesReferencedObstacle) continue;
+    ) {
+      continue;
+    }
 
     const local = orientedLocalPoint(targetX, targetY, passage);
     const halfLength = passage.length / 2;
