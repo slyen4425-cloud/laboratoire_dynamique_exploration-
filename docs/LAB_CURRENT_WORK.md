@@ -110,3 +110,46 @@ Sur smartphone/tablette :
 - réimporter ce JSON sans perte.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## État technique World Builder Dynamique UI v1 — 2026-10-02
+
+Implémenté :
+- page dédiée `builder.html` ;
+- UI mobile/tablette ;
+- draft indépendant créé depuis le WorldDocument GREEN ;
+- validation systématique par `normalizeWorldDocument` ;
+- export JSON du WorldDocument canonique ;
+- import JSON avec rejet explicite des références invalides ;
+- sélection WorldArea ;
+- édition dimensions et matériau de base ;
+- édition/ajout/suppression protégée des Spawns ;
+- édition transform WorldObject X/Y/rotation/scale ;
+- changement d'assetId compatible ;
+- ajout Building / Bridge ;
+- duplication WorldObject ;
+- suppression interdite si un Portal dépend du Building ;
+- paramètres Building : baseSize / footprint / doorAnchor ;
+- paramètres Bridge : baseSize / passage / edge assist / obstacle IDs ;
+- édition Portal comme autorité unique ;
+- trigger point ou building-door ;
+- target Area / target Spawn ;
+- marker/label Portal ;
+- preview avec les renderers Exploration existants ;
+- overlays Builder uniquement pour sélection/Spawns ;
+- raccourci Exploration -> World Builder.
+
+Sentinelles :
+- draft sans DOM/renderer/mouvement/collision ;
+- UI Builder sans import du moteur mouvement/collision ;
+- aucun format `BuilderMap` parallèle ;
+- tous les IDs DOM utilisés sont présents dans `builder.html` ;
+- preview réutilise Surface / WorldObject / Portal Renderer ;
+- syntaxe du point d'entrée Builder vérifiée par CI ;
+- export/import round-trip testé.
+
+CI après raccord UI :
+run `37003537250` — **SUCCESS**.
+
+Prochaine gate :
+publication preview Pages puis validation smartphone/tablette.
