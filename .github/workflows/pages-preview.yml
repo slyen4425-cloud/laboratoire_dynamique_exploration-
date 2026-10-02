@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: map-actor-editor-dataurl-fix-v1
+# preview-revision: map-actor-editor-cachebust-final-v1
 
 on:
   push:
