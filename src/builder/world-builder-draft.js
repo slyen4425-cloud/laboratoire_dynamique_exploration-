@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js';
+} from '../world/world-document-model.js?rev=builder-dynamic-return-v1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -312,7 +312,7 @@ export function updateSpawn(
   const next = clone(draft);
   const area = findArea(next, areaId);
   const spawn = area?.spawns?.find((item) => item.id === spawnId);
-  if (!spawn) return next;
+  if (!spawn || spawn.anchor) return next;
 
   if (patch.x !== undefined) spawn.x = finite(patch.x, spawn.x);
   if (patch.y !== undefined) spawn.y = finite(patch.y, spawn.y);
