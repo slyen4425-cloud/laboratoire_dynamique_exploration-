@@ -60,6 +60,13 @@ import {
   snapshotFromEncounterIntent
 } from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';
 import {
+  saveCombatHandoff,
+  consumeCombatResult
+} from './encounters/combat-handoff-store.js?rev=phase7-combat-handoff-v1';
+import {
+  resolveExplorationCombatReturn
+} from './encounters/combat-return.js?rev=phase7-combat-handoff-v1';
+import {
   demoLivingWorldConfig
 } from './living/demo-living-world.js?rev=phase5-wild-wander-territory-v1';
 import {
@@ -84,6 +91,8 @@ const encounterPreview =
   document.querySelector('#encounter-preview');
 const encounterPreviewSummary =
   document.querySelector('#encounter-preview-summary');
+const encounterPreviewCombat =
+  document.querySelector('#encounter-preview-combat');
 const encounterPreviewContinue =
   document.querySelector('#encounter-preview-continue');
 
@@ -92,6 +101,12 @@ const runtimeParams = new URL(document.URL).searchParams;
 const builderTest = runtimeParams.get('builderTest') === '1';
 const encounterTest =
   runtimeParams.get('encounterTest') === '1';
+const combatReturn =
+  runtimeParams.get('combatReturn') === '1';
+const returnedCombatEnvelope =
+  combatReturn
+    ? consumeCombatResult(window.sessionStorage)
+    : null;
 const builderTestSession = builderTest
   ? readWorldBuilderTestSession(window.sessionStorage)
   : null;
@@ -141,6 +156,35 @@ const player = {
     })
 };
 
+let lastCombatOutcome = null;
+
+if (returnedCombatEnvelope) {
+  const restored =
+    resolveExplorationCombatReturn({
+      envelope: returnedCombatEnvelope,
+      worldDocument: activeWorldDocument
+    });
+
+  player.currentAreaId =
+    restored.currentAreaId;
+  player.x = restored.x;
+  player.y = restored.y;
+  lastCombatOutcome =
+    restored.outcome;
+
+  const cleanUrl = new URL(
+    window.location.href
+  );
+  cleanUrl.searchParams.delete(
+    'combatReturn'
+  );
+  window.history.replaceState(
+    null,
+    '',
+    cleanUrl.href
+  );
+}
+
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
@@ -163,6 +207,11 @@ const encounterRandom =
     : Math.random;
 
 let pendingEncounterSnapshot = null;
+
+if (encounterPreviewContinue) {
+  encounterPreviewContinue.hidden =
+    !encounterTest;
+}
 
 const livingWorldConfig = demoLivingWorldConfig;
 let wildCreatures = createInitialWildlife(
@@ -322,6 +371,50 @@ function showEncounterPreview(snapshot) {
   encounterPreview.hidden = false;
 }
 
+function explorationReturnUrl() {
+  const url = new URL(
+    window.location.href
+  );
+  url.searchParams.set(
+    'combatReturn',
+    '1'
+  );
+  return url.href;
+}
+
+function combatBridgeUrl() {
+  return new URL(
+    '/GenSrpg_labo_combat_dynamique/examples/dom-demo/exploration-encounter.html',
+    window.location.origin
+  ).href;
+}
+
+function launchPendingEncounterCombat() {
+  if (!pendingEncounterSnapshot) {
+    return false;
+  }
+
+  saveCombatHandoff(
+    window.sessionStorage,
+    {
+      snapshot: pendingEncounterSnapshot,
+      returnState: {
+        areaId: player.currentAreaId,
+        x: player.x,
+        y: player.y,
+        returnUrl:
+          explorationReturnUrl()
+      }
+    }
+  );
+
+  window.location.assign(
+    combatBridgeUrl()
+  );
+
+  return true;
+}
+
 function clearEncounterPreview() {
   if (!pendingEncounterSnapshot) return false;
 
@@ -473,7 +566,12 @@ function update(dt) {
   ).length;
 
   coords.textContent =
-    `${player.currentAreaId} · x: ${player.x.toFixed(1)} y: ${player.y.toFixed(1)} · ${traversal.ruleId} ×${traversal.speedMultiplier.toFixed(2)} · sauvages: ${activeWildCount}`;
+    `${player.currentAreaId} · x: ${player.x.toFixed(1)} y: ${player.y.toFixed(1)} · ${traversal.ruleId} ×${traversal.speedMultiplier.toFixed(2)} · sauvages: ${activeWildCount}` +
+    (
+      lastCombatOutcome
+        ? ` · combat: ${lastCombatOutcome}`
+        : ''
+    );
 }
 
 function drawGround() {
@@ -597,6 +695,11 @@ for (const button of locomotionButtons) {
     setLocomotionMode(button.dataset.locomotion);
   });
 }
+
+encounterPreviewCombat.addEventListener(
+  'click',
+  launchPendingEncounterCombat
+);
 
 encounterPreviewContinue.addEventListener(
   'click',
