@@ -45,9 +45,6 @@ import {
   updateEncounterPaintPreset
 } from './encounter-layer-editor-state.js?rev=encounter-layers-v3';
 import {
-  encounterEditorAvailability
-} from './encounter-editor-state.js?rev=encounter-layers-v3';
-import {
   clampBuilderZoom,
   computeBuilderView,
   canvasPointToWorld,
