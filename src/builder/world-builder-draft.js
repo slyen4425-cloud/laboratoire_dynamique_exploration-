@@ -1,9 +1,9 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=encounter-layers-v1';
+} from '../world/world-document-model.js?rev=encounter-layers-v2';
 import {
   ENCOUNTER_LAYER_SCHEMA_VERSION
-} from '../encounters/encounter-layer-model.js?rev=encounter-layers-v1';
+} from '../encounters/encounter-layer-model.js?rev=encounter-layers-v2';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
