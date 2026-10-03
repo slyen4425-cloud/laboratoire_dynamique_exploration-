@@ -358,3 +358,26 @@ Gate smartphone :
 5. vérifier absence de régression import/handoff/retour Builder.
 
 Le lot reste non GREEN jusqu'à validation utilisateur de cette orientation.
+
+
+## Validation utilisateur finale — Map Actor calibration GREEN — 2026-10-03
+
+Validation smartphone utilisateur : **GREEN**.
+
+Confirmé :
+- import visuel : OK ;
+- handoff Builder -> runtime : OK ;
+- retour Builder : OK ;
+- orientation native « regarde à gauche / regarde à droite » : OK ;
+- miroir automatique selon le sens réel du déplacement : OK ;
+- absence de régression signalée sur les réglages Map Actor et le test runtime.
+
+Décision produit conservée :
+- le panneau complet actuel reste un outil de calibration technique du laboratoire ;
+- les réglages visuels intrinsèques appartiendront à l'éditeur Héros/PNJ/Créatures ;
+- le World Builder final ne fera que sélectionner une définition d'acteur et la placer/référencer.
+
+Le lot **Map Actor Editor v1 — calibration technique** est donc fermé GREEN.
+
+Prochaine étape imposée par le garde de coordination GitHub :
+rejouer **Surface Traversal Rules v1** depuis ce nouveau checkpoint GREEN, sans utiliser l'ancienne branche isolée comme point de reprise.
