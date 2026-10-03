@@ -1,7 +1,7 @@
 import {
   bridgeTraversalRect,
   buildingFootprintRect
-} from '../world/world-object-model.js';
+} from '../world/world-object-model.js?rev=surface-traversal-replay-v1';
 import {
   clamp,
   circleFitsOrientedRect,
@@ -11,12 +11,12 @@ import {
   orientedLocalPoint,
   orientedWorldPoint,
   pointInOrientedRect
-} from './geometry.js';
+} from './geometry.js?rev=surface-traversal-replay-v1';
 import {
   defaultTraversalRuleRegistry,
   resolveBaseSurfaceFeature,
   resolveSurfaceTraversal
-} from './surface-traversal.js';
+} from './surface-traversal.js?rev=surface-traversal-replay-v1';
 
 const COLLISION_EPSILON = 1e-6;
 
