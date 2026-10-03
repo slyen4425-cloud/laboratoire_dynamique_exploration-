@@ -15,6 +15,8 @@ import {
   patchWorldObject,
   serializeWorldBuilderDraft,
   updateAreaProperties,
+  updateTerrainFamilyEncounterProfile,
+  updateTerrainFamilyElementChance,
   updatePortal,
   updateSpawn,
   updateSurfacePath,
@@ -66,6 +68,15 @@ import {
   materialPackV1
 } from '../materials/material-pack-v1.js';
 import {
+  terrainFamilyRegistry
+} from '../world/terrain-family-registry.js?rev=terrain-family-encounters-v1';
+import {
+  createCaptureCreatureCatalogProvider
+} from '../capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
+import {
+  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+} from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
+import {
   createMaterialRegistry
 } from '../materials/material-registry.js';
 import {
@@ -101,6 +112,15 @@ const pathMaterials = materialRegistry
 const waterMaterials = materialRegistry
   .list()
   .filter((material) => material.kind === 'water');
+
+const terrainFamilies = terrainFamilyRegistry.list();
+const surfaceTerrainFamilies = terrainFamilies.filter(
+  (family) => family.materialKind === 'surface'
+);
+const captureCreatureCatalog =
+  createCaptureCreatureCatalogProvider(
+    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
 
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
@@ -214,6 +234,7 @@ let selectedObjectId = null;
 let selectedPortalId = draft.portals[0]?.id ?? null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
+let selectedEncounterFamilyId = 'forest';
 let zoom = 0.35;
 let center = { x: 0, y: 0 };
 let fitRequested = true;
