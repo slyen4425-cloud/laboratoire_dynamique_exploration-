@@ -20,13 +20,15 @@ test('EncounterLayer v1 keeps gameplay geometry independent from surface/materia
     priority: 10,
     table: [
       {
-        id: 'earth-grass',
-        tags: ['element.earth', 'element.grass'],
+        id: 'earth',
+        selectorKind: 'element',
+        selectorId: 'earth',
         weight: 80
       },
       {
-        id: 'neutral',
-        tags: ['element.neutral'],
+        id: 'fire-creature',
+        selectorKind: 'creature',
+        selectorId: 'crea_braiseau',
         weight: 20
       }
     ],
@@ -39,10 +41,8 @@ test('EncounterLayer v1 keeps gameplay geometry independent from surface/materia
   assert.equal(layer.priority, 10);
   assert.equal(layer.width, 420);
   assert.equal(layer.table[0].weight, 80);
-  assert.deepEqual(layer.table[0].tags, [
-    'element.earth',
-    'element.grass'
-  ]);
+  assert.equal(layer.table[0].selectorKind, 'element');
+  assert.equal(layer.table[0].selectorId, 'earth');
   assert.equal('materialId' in layer, false);
 });
 
@@ -57,7 +57,12 @@ test('EncounterLayer chance and check distance are normalized safely', () => {
     encounterChancePercent: 150,
     checkDistance: -4,
     table: [
-      { id: 'x', actorDefinitionId: 'capture.creature.x', weight: 100 }
+      {
+        id: 'x',
+        selectorKind: 'creature',
+        selectorId: 'crea_x',
+        weight: 100
+      }
     ]
   });
 
@@ -66,7 +71,7 @@ test('EncounterLayer chance and check distance are normalized safely', () => {
   assert.equal(layer.width, 8);
 });
 
-test('EncounterLayer table accepts opaque actorDefinitionId or tag pools only', () => {
+test('EncounterLayer table stores only typed Capture creature or element selectors', () => {
   const [layer] = normalizeEncounterLayers([
     {
       id: 'mixed',
@@ -77,27 +82,28 @@ test('EncounterLayer table accepts opaque actorDefinitionId or tag pools only', 
       table: [
         {
           id: 'specific',
-          actorDefinitionId: 'capture.creature.braiseau',
+          selectorKind: 'creature',
+          selectorId: 'crea_braiseau',
           weight: 30,
           stats: { hp: 999 },
           mapVisual: { assetId: 'forbidden' }
         },
         {
           id: 'pool',
-          tags: ['element.fire', 'biome.forest'],
+          selectorKind: 'element',
+          selectorId: 'fire',
           weight: 70
         }
       ]
     }
   ]);
 
-  assert.equal(layer.table[0].actorDefinitionId, 'capture.creature.braiseau');
+  assert.equal(layer.table[0].selectorKind, 'creature');
+  assert.equal(layer.table[0].selectorId, 'crea_braiseau');
   assert.equal('stats' in layer.table[0], false);
   assert.equal('mapVisual' in layer.table[0], false);
-  assert.deepEqual(layer.table[1].tags, [
-    'element.fire',
-    'biome.forest'
-  ]);
+  assert.equal(layer.table[1].selectorKind, 'element');
+  assert.equal(layer.table[1].selectorId, 'fire');
 });
 
 test('EncounterLayer list rejects duplicate ids and invalid geometry', () => {
@@ -105,17 +111,17 @@ test('EncounterLayer list rejects duplicate ids and invalid geometry', () => {
     {
       id: 'same',
       points: [{ x: 0, y: 0 }, { x: 20, y: 20 }],
-      table: [{ id: 'a', tags: ['x'], weight: 100 }]
+      table: [{ id: 'a', selectorKind: 'element', selectorId: 'earth', weight: 100 }]
     },
     {
       id: 'same',
       points: [{ x: 0, y: 0 }, { x: 30, y: 30 }],
-      table: [{ id: 'b', tags: ['y'], weight: 100 }]
+      table: [{ id: 'b', selectorKind: 'element', selectorId: 'fire', weight: 100 }]
     },
     {
       id: 'invalid',
       points: [{ x: 0, y: 0 }],
-      table: [{ id: 'c', tags: ['z'], weight: 100 }]
+      table: [{ id: 'c', selectorKind: 'element', selectorId: 'water', weight: 100 }]
     }
   ]);
 
