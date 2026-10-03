@@ -865,99 +865,81 @@ function refreshEncounterControls() {
 
   const area = currentAreaRaw();
   const layers = area?.encounterLayers ?? [];
+  const layer = currentEncounterLayerRaw();
+  const availability =
+    encounterEditorAvailability(Boolean(layer));
 
   setOptions(
     $('encounter-layer-select'),
     layers,
     selectedEncounterLayerId,
     {
-      label: (layer) =>
-        `${layer.label ?? layer.id} · ${layer.encounterChancePercent ?? 0}%`
+      label: (item) =>
+        `${item.label ?? item.id} · ${item.encounterChancePercent ?? 0}%`
     }
   );
+  $('encounter-layer-select').disabled =
+    layers.length === 0;
 
   if (selectedEncounterLayerId) {
     $('encounter-layer-select').value =
       selectedEncounterLayerId;
   }
 
-  const layer = currentEncounterLayerRaw();
-  const entry = currentEncounterEntryRaw();
-  const availability = encounterEditorAvailability({
-    hasLayer: Boolean(layer),
-    hasEntry: Boolean(entry)
-  });
-
   $('encounter-layer-delete').disabled =
-    !availability.layerDelete;
-  $('encounter-enabled').disabled =
-    !availability.layerSettings;
-  $('encounter-width').disabled =
-    !availability.layerSettings;
-  $('encounter-chance').disabled =
-    !availability.layerSettings;
-  $('encounter-check-distance').disabled =
-    !availability.layerSettings;
-  $('encounter-priority').disabled =
-    !availability.layerSettings;
-  $('encounter-entry-select').disabled =
-    !availability.entryAdd;
+    !availability.deleteLayerEnabled;
+  $('encounter-enabled').disabled = !layer;
+  $('encounter-entry-select').disabled = !layer;
   $('encounter-entry-add').disabled =
-    !availability.entryAdd;
+    !availability.addTableEntryEnabled;
   $('encounter-entry-delete').disabled =
-    !availability.entryDelete;
-  $('encounter-entry-kind').disabled =
-    !availability.selectorKind;
-  $('encounter-entry-value').disabled =
-    !availability.selectorValue;
-  $('encounter-entry-weight').disabled =
-    !availability.entryWeight;
+    !currentEncounterEntryRaw();
 
-  if (!layer) {
-    $('encounter-label').value = 'Nouvelle zone';
-    $('encounter-chance-value').value =
-      `${Math.round(numberValue($('encounter-chance'), 20))} %`;
-    $('encounter-width-value').value =
-      String(Math.round(numberValue($('encounter-width'), 260)));
-
-    const defaultKind =
-      $('encounter-entry-kind').value === 'creature'
-        ? 'creature'
-        : 'element';
-    const defaultOptions =
-      encounterSelectorOptions(defaultKind);
-
-    setOptions(
-      $('encounter-entry-value'),
-      defaultOptions,
-      $('encounter-entry-value').value || defaultOptions[0]?.id,
-      { label: (item) => item.label }
-    );
-
-    if (!$('encounter-entry-value').value && defaultOptions[0]) {
-      $('encounter-entry-value').value = defaultOptions[0].id;
-    }
-
-    $('encounter-entry-weight-value').value =
-      String(Math.round(numberValue($('encounter-entry-weight'), 100)));
-    $('encounter-entry-share').value = '100 %';
-    return;
+  for (const id of [
+    'encounter-width',
+    'encounter-chance',
+    'encounter-check-distance',
+    'encounter-priority',
+    'encounter-entry-kind',
+    'encounter-entry-value',
+    'encounter-entry-weight'
+  ]) {
+    $(id).disabled = false;
   }
 
-  $('encounter-label').value = layer.label ?? layer.id;
-  $('encounter-enabled').checked = layer.enabled !== false;
-  $('encounter-width').value = layer.width ?? 180;
-  $('encounter-width-value').value =
-    String(Math.round(layer.width ?? 180));
-  $('encounter-chance').value =
-    layer.encounterChancePercent ?? 0;
-  $('encounter-chance-value').value =
-    `${Math.round(layer.encounterChancePercent ?? 0)} %`;
-  $('encounter-check-distance').value =
-    layer.checkDistance ?? 160;
-  $('encounter-priority').value = layer.priority ?? 0;
+  const source = layer ?? encounterPaintPreset;
 
-  const entries = layer.table ?? [];
+  $('encounter-label').value =
+    layer?.label ?? 'Nouvelle zone';
+  $('encounter-enabled').checked =
+    layer?.enabled !== false;
+
+  $('encounter-width').value =
+    source.width ?? encounterPaintPreset.width;
+  $('encounter-width-value').value =
+    String(
+      Math.round(
+        source.width ?? encounterPaintPreset.width
+      )
+    );
+
+  $('encounter-chance').value =
+    source.encounterChancePercent ??
+    encounterPaintPreset.encounterChancePercent;
+  $('encounter-chance-value').value =
+    `${Math.round(
+      source.encounterChancePercent ??
+      encounterPaintPreset.encounterChancePercent
+    )} %`;
+
+  $('encounter-check-distance').value =
+    source.checkDistance ??
+    encounterPaintPreset.checkDistance;
+  $('encounter-priority').value =
+    source.priority ??
+    encounterPaintPreset.priority;
+
+  const entries = layer?.table ?? [];
   setOptions(
     $('encounter-entry-select'),
     entries,
@@ -973,30 +955,43 @@ function refreshEncounterControls() {
       selectedEncounterEntryId;
   }
 
-  if (!entry) {
-    $('encounter-entry-kind').value = 'element';
-    $('encounter-entry-value').replaceChildren();
-    $('encounter-entry-weight-value').value = '—';
-    $('encounter-entry-share').value = '—';
-    return;
-  }
+  const entry = currentEncounterEntryRaw();
+  const selectorSource = entry ?? encounterPaintPreset;
+  const selectorKind =
+    selectorSource.selectorKind === 'creature'
+      ? 'creature'
+      : 'element';
 
-  $('encounter-entry-kind').value = entry.selectorKind;
+  $('encounter-entry-kind').value = selectorKind;
 
-  const options = encounterSelectorOptions(entry.selectorKind);
+  const options =
+    encounterSelectorOptions(selectorKind);
   setOptions(
     $('encounter-entry-value'),
     options,
-    entry.selectorId,
+    selectorSource.selectorId,
     { label: (item) => item.label }
   );
-  $('encounter-entry-value').value = entry.selectorId;
 
-  $('encounter-entry-weight').value = entry.weight ?? 100;
+  const selectedValue =
+    options.some(
+      (item) => item.id === selectorSource.selectorId
+    )
+      ? selectorSource.selectorId
+      : options[0]?.id ?? '';
+
+  $('encounter-entry-value').value = selectedValue;
+  $('encounter-entry-weight').value =
+    selectorSource.weight ?? 100;
   $('encounter-entry-weight-value').value =
-    String(Math.round(entry.weight ?? 100));
+    String(
+      Math.round(selectorSource.weight ?? 100)
+    );
+
   $('encounter-entry-share').value =
-    `${encounterEntryShare(layer, entry)} %`;
+    entry && layer
+      ? `${encounterEntryShare(layer, entry)} %`
+      : '100 %';
 }
 
 function sourceBuildings(portal) {
