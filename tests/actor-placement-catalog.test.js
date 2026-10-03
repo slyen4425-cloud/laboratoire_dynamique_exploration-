@@ -37,7 +37,7 @@ function loupTransfer() {
             assetId: 'pack:capture:creature-loup-volcanique-opponent-01'
           },
           back: {
-            assetId: 'pack:capture:creature-loup-volcanique-opponent-01'
+            assetId: 'pack:capture:creature-loup-volcanique-player-01'
           },
           icon: {
             assetId: 'pack:capture:creature-loup-volcanique-icon-01'
@@ -53,9 +53,9 @@ function visualCatalog() {
     version: 1,
     assets: [
       {
-        id: 'pack:capture:creature-loup-volcanique-opponent-01',
+        id: 'pack:capture:creature-loup-volcanique-player-01',
         resource: {
-          file: 'capture/creatures/loup_volcanique/runtime/loup_volcanique_opponent.webp'
+          file: 'capture/creatures/loup_volcanique/runtime/loup_volcanique_player.webp'
         }
       },
       {
