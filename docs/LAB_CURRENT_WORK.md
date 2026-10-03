@@ -232,3 +232,27 @@ Le même lien public charge désormais des URLs versionnées `actor-opponent-vie
 
 Gate restante : validation utilisateur visuelle du Loup volcanique en vue opponent/front.
 
+## Validation utilisateur finale — Actor Placement Catalog v1
+
+Retour utilisateur du 2026-10-03 :
+- Loup volcanique présent sur la map ;
+- placement / lien Builder -> runtime validé ;
+- vue `opponent/front` correctement affichée après cache-bust du graphe ES modules ;
+- verdict utilisateur : **good**.
+
+Le lot est donc validé fonctionnellement, visuellement et ergonomiquement.
+
+État final :
+- placement monde : référence uniquement ;
+- données visuelles : autorité Actor/Capture ;
+- asset physique : global-assets ;
+- Builder : sélection + placement uniquement ;
+- runtime : même resolver que le Builder ;
+- aucune seconde autorité visuelle ;
+- aucune modification de `Zombicide-40k`.
+
+CI du HEAD avant clôture :
+- `37149427368` — **SUCCESS**.
+
+État : **GREEN utilisateur**.
+
