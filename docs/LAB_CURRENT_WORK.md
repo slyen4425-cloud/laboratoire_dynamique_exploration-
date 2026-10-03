@@ -3,115 +3,74 @@
 Date : 2026-10-03
 
 ## Chantier actif
-Phase 5 — Monde vivant — micro-lot 1 :
-**Wild Creature Entity + Spawn Contract v1**.
+Phase 5 — Monde vivant — micro-lot 2 :
+**Spawn Planner / Activation déterministe v1**.
 
 ## Branche
-`work/exploration-phase5-wild-creature-spawn-v1-2026-10-03`
+`work/exploration-phase5-spawn-planner-v1-2026-10-03`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-phase5-wild-creature-spawn-v1-2026-10-03`
+`checkpoint/exploration-start-phase5-spawn-planner-v1-2026-10-03`
 
 ## SHA de base GREEN
-`08b42ccbbffe76b6e81384d52824bb9c2ecc2777`
+`d0a17f8ebc479733e5690bc358fb55c60ffd1785`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-surface-traversal-rules-v1-replay-green-2026-10-03`
+`checkpoint/exploration-phase5-wild-creature-spawn-v1-green-2026-10-03`
 
 ## Objectif
-Poser les contrats canoniques du monde vivant avant toute IA :
-- identité runtime d'une créature sauvage ;
-- zones gameplay de spawn ;
-- règles de spawn pilotées par données ;
-- référence opaque vers une définition d'acteur.
+Produire une intention de spawn déterministe depuis les contrats Living World sans prendre l'autorité sur collision, traversal ou capacités acteur.
 
 ## Chaîne cible
 ```text
-World Living Config
-  -> Spawn Zone gameplay
-  -> Spawn Rule(actorDefinitionId)
-  -> Wild Creature Entity runtime
-  -> futurs systèmes errance / poursuite / fuite
+LivingWorldConfig
+  -> règles éligibles (maxActive / weight)
+  -> Spawn Planner déterministe
+  -> candidat x/y dans WildSpawnZone
+  -> canSpawn injecté
+  -> WildSpawnIntent
+  -> futur système d'activation runtime
 ```
 
 ## Autorités
-- définition Héros/Créature/stats/visuel/capacités : Capture/Actor Definition futur ;
-- règles et zones de spawn monde vivant : Living World Model ;
-- position runtime d'une créature sauvage : Living World runtime entity ;
-- déplacement futur : Exploration Engine ;
-- traversée : Surface Traversal Resolver ;
-- rendu : Map Actor Renderer en lecture seule.
+- sélection/pondération/point candidat : Spawn Planner ;
+- passabilité réelle : callback injecté provenant des autorités gameplay/collision/traversal ;
+- actorDefinitionId : référence opaque ;
+- création/mutation des entités runtime : hors périmètre du planner.
 
-## Règles absolues
-Un Spawn Rule ne copie jamais :
-- stats ;
-- PV ;
-- compétences ;
-- MapActorVisual ;
-- assetId ;
-- locomotion autorisée.
-
-Il stocke un `actorDefinitionId` opaque.
-
-Les zones de spawn gameplay sont distinctes de `surface.zones[]`, qui restent purement visuelles.
-
-## Périmètre v1
-- `WildSpawnZone v1` cercle : id, areaId, x/y, radius, tags ;
-- `WildSpawnRule v1` : id, zoneId, actorDefinitionId, maxActive, weight ;
-- normalisation/dédoublonnage ;
-- validation des références zone/rule ;
-- `WildCreatureEntity v1` : id, actorDefinitionId, areaId, x/y, homeZoneId, facingX, moving ;
-- aucune donnée de combat/stat dans l'entité ;
-- tests purs Node.
+## Périmètre
+- seed déterministe ;
+- activationIndex explicite ;
+- activeCounts par règle ;
+- maxActive respecté ;
+- weight respecté ;
+- point déterministe dans zone circulaire ;
+- nombre d'essais local borné ;
+- callback `canSpawn` obligatoire pour le vrai raccord ultérieur ;
+- sortie `WildSpawnIntent v1` immuable ;
+- aucun timer / aucune boucle permanente.
 
 ## Hors périmètre
+- respawn temporel ;
 - errance ;
-- territoire dynamique ;
 - poursuite/fuite ;
 - pathfinding ;
+- création/mutation directe des entités ;
 - rencontre/combat ;
-- respawn timers ;
-- persistence Core ;
-- Builder UI ;
-- éditeur Héros/Créatures ;
+- UI ;
 - autre dépôt.
 
 ## Tests requis
-- ids uniques ;
-- règle invalide si zone absente ;
-- actorDefinitionId obligatoire ;
-- aucune dépendance materialId ;
-- aucune copie MapActorVisual/stats/locomotion dans Spawn Rule ;
-- entité runtime minimale ;
-- sentinelles Builder/Map Actor/Traversal restent GREEN.
+- même seed + même activationIndex = même intent ;
+- activationIndex différent peut produire un autre point ;
+- maxActive bloque une règle pleine ;
+- pondération déterministe ;
+- point toujours dans la zone ;
+- canSpawn peut rejeter puis accepter ;
+- échec propre après essais bornés ;
+- aucune dépendance materialId / visuel / stats ;
+- sentinelles Phase 5 micro-lot 1 et Traversal restent GREEN.
 
 ## Suite prévue
-Après GREEN de ce micro-lot :
-**Phase 5 micro-lot 2 — spawn planner / activation déterministe**, puis seulement errance/territoires.
-
-
-## État technique — Wild Creature Entity + Spawn Contract v1 — 2026-10-03
-
-Implémenté :
-- `LivingWorldConfig v1` ;
-- `WildSpawnZone v1` circulaire ;
-- `WildSpawnRule v1` ;
-- `WildCreatureEntity v1` minimal ;
-- références `actorDefinitionId` opaques ;
-- `biomeId` sémantique optionnel sur zone ;
-- tags gameplay dédupliqués ;
-- règles invalides ou zones dupliquées rejetées ;
-- validation des `areaId` contre les WorldAreas ;
-- aucune dépendance à `materialId` ;
-- aucune copie de stats / MapActorVisual / assetId / locomotion dans les règles ou entités.
-
-TDD :
-- contrat : commit `ebd868e2c882f1b50a6be3902afb065b28845914` — FAILURE attendue ;
-- modèle : commit `fbf0d630a1eb75b4b85fde4cf80559c7148901ad` ;
-- CI : run `37100368986` — **SUCCESS**.
-
-Ce micro-lot est purement contractuel et sans UI/runtime visible :
-aucune gate smartphone supplémentaire requise.
-
-Suite :
-**Phase 5 micro-lot 2 — Spawn Planner / Activation déterministe v1**.
+Après GREEN :
+**Phase 5 micro-lot 3 — activation runtime minimale / présence de créatures sur la map**, puis errance/territoires.
