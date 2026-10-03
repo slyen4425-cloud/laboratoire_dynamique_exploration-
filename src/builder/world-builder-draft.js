@@ -74,6 +74,9 @@ export function validateWorldBuilderDraft(draft) {
     const rawRivers = Array.isArray(rawArea.surface?.rivers)
       ? rawArea.surface.rivers
       : [];
+    const rawEncounterLayers = Array.isArray(rawArea.encounterLayers)
+      ? rawArea.encounterLayers
+      : [];
 
     if (normalizedArea.objects.length !== rawObjects.length) {
       errors.push(`object-invalid:${rawArea.id}`);
@@ -93,6 +96,21 @@ export function validateWorldBuilderDraft(draft) {
 
     if (normalizedArea.surface.rivers.length !== rawRivers.length) {
       errors.push(`river-invalid:${rawArea.id}`);
+    }
+
+    if (normalizedArea.encounterLayers.length !== rawEncounterLayers.length) {
+      errors.push(`encounter-layer-invalid-or-duplicate:${rawArea.id}`);
+    }
+
+    for (const layer of normalizedArea.encounterLayers) {
+      if (
+        layer.encounterChancePercent > 0 &&
+        layer.table.length === 0
+      ) {
+        errors.push(
+          `encounter-layer-table-empty:${rawArea.id}:${layer.id}`
+        );
+      }
     }
   }
 
@@ -299,6 +317,302 @@ export function deleteSurfacePath(
   const items = surfaceCollection(area, kind);
   const index = items.findIndex((path) => path.id === pathId);
   if (index >= 0) items.splice(index, 1);
+
+  return next;
+}
+
+function encounterLayerCollection(area) {
+  area.encounterLayers ??= [];
+  return area.encounterLayers;
+}
+
+function normalizeTagInput(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
+export function addEncounterLayer(
+  draft,
+  areaId,
+  {
+    id = null,
+    label = null,
+    width = 180,
+    points = [],
+    encounterChancePercent = 10,
+    checkDistance = 160,
+    priority = 0,
+    table = []
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area) return next;
+
+  const layers = encounterLayerCollection(area);
+  const layerId =
+    typeof id === 'string' &&
+    id.trim() &&
+    !layers.some((layer) => layer.id === id.trim())
+      ? id.trim()
+      : uniqueId('encounter-layer', layers);
+
+  const safePoints = Array.isArray(points)
+    ? points
+        .filter((point) =>
+          point &&
+          Number.isFinite(Number(point.x)) &&
+          Number.isFinite(Number(point.y))
+        )
+        .map((point) => ({
+          x: Number(point.x),
+          y: Number(point.y)
+        }))
+    : [];
+
+  if (safePoints.length === 1) {
+    safePoints.push({ ...safePoints[0] });
+  }
+  if (safePoints.length < 2) return next;
+
+  layers.push({
+    id: layerId,
+    label:
+      typeof label === 'string' && label.trim()
+        ? label.trim()
+        : layerId,
+    enabled: true,
+    priority: finite(priority, 0),
+    width: Math.max(8, finite(width, 180)),
+    points: safePoints,
+    encounterChancePercent: Math.max(
+      0,
+      Math.min(100, finite(encounterChancePercent, 10))
+    ),
+    checkDistance: Math.max(1, finite(checkDistance, 160)),
+    table: Array.isArray(table) ? clone(table) : []
+  });
+
+  return next;
+}
+
+export function updateEncounterLayer(
+  draft,
+  areaId,
+  layerId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const layer = area?.encounterLayers?.find(
+    (item) => item.id === layerId
+  );
+  if (!layer) return next;
+
+  if (typeof patch.label === 'string') {
+    layer.label = patch.label.trim() || layer.id;
+  }
+  if (patch.enabled !== undefined) {
+    layer.enabled = patch.enabled !== false;
+  }
+  if (patch.priority !== undefined) {
+    layer.priority = finite(patch.priority, layer.priority ?? 0);
+  }
+  if (patch.width !== undefined) {
+    layer.width = Math.max(8, finite(patch.width, layer.width));
+  }
+  if (patch.encounterChancePercent !== undefined) {
+    layer.encounterChancePercent = Math.max(
+      0,
+      Math.min(
+        100,
+        finite(
+          patch.encounterChancePercent,
+          layer.encounterChancePercent
+        )
+      )
+    );
+  }
+  if (patch.checkDistance !== undefined) {
+    layer.checkDistance = Math.max(
+      1,
+      finite(patch.checkDistance, layer.checkDistance)
+    );
+  }
+  if (Array.isArray(patch.points)) {
+    const points = patch.points
+      .filter((point) =>
+        point &&
+        Number.isFinite(Number(point.x)) &&
+        Number.isFinite(Number(point.y))
+      )
+      .map((point) => ({
+        x: Number(point.x),
+        y: Number(point.y)
+      }));
+    if (points.length >= 2) layer.points = points;
+  }
+
+  return next;
+}
+
+export function appendEncounterLayerPoint(
+  draft,
+  areaId,
+  layerId,
+  point
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const layer = area?.encounterLayers?.find(
+    (item) => item.id === layerId
+  );
+
+  if (
+    !layer ||
+    !point ||
+    !Number.isFinite(Number(point.x)) ||
+    !Number.isFinite(Number(point.y))
+  ) {
+    return next;
+  }
+
+  layer.points ??= [];
+  layer.points.push({
+    x: Number(point.x),
+    y: Number(point.y)
+  });
+
+  return next;
+}
+
+export function deleteEncounterLayer(
+  draft,
+  areaId,
+  layerId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area) return next;
+
+  area.encounterLayers = (area.encounterLayers ?? [])
+    .filter((layer) => layer.id !== layerId);
+
+  return next;
+}
+
+export function addEncounterTableEntry(
+  draft,
+  areaId,
+  layerId,
+  {
+    id = null,
+    actorDefinitionId = null,
+    tags = [],
+    weight = 100
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const layer = area?.encounterLayers?.find(
+    (item) => item.id === layerId
+  );
+  if (!layer) return next;
+
+  layer.table ??= [];
+  const entryId =
+    typeof id === 'string' &&
+    id.trim() &&
+    !layer.table.some((entry) => entry.id === id.trim())
+      ? id.trim()
+      : uniqueId('entry', layer.table);
+
+  const cleanActorId =
+    typeof actorDefinitionId === 'string' &&
+    actorDefinitionId.trim()
+      ? actorDefinitionId.trim()
+      : null;
+  const cleanTags = normalizeTagInput(tags);
+
+  if (!cleanActorId && cleanTags.length === 0) {
+    cleanTags.push('element.neutral');
+  }
+
+  layer.table.push({
+    id: entryId,
+    actorDefinitionId: cleanActorId,
+    tags: cleanTags,
+    weight: Math.max(0.001, finite(weight, 100))
+  });
+
+  return next;
+}
+
+export function updateEncounterTableEntry(
+  draft,
+  areaId,
+  layerId,
+  entryId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const layer = area?.encounterLayers?.find(
+    (item) => item.id === layerId
+  );
+  const entry = layer?.table?.find(
+    (item) => item.id === entryId
+  );
+  if (!entry) return next;
+
+  if (patch.actorDefinitionId !== undefined) {
+    entry.actorDefinitionId =
+      typeof patch.actorDefinitionId === 'string' &&
+      patch.actorDefinitionId.trim()
+        ? patch.actorDefinitionId.trim()
+        : null;
+  }
+  if (patch.tags !== undefined) {
+    entry.tags = normalizeTagInput(patch.tags);
+  }
+  if (patch.weight !== undefined) {
+    entry.weight = Math.max(0.001, finite(patch.weight, entry.weight));
+  }
+
+  if (!entry.actorDefinitionId && entry.tags.length === 0) {
+    entry.tags = ['element.neutral'];
+  }
+
+  return next;
+}
+
+export function deleteEncounterTableEntry(
+  draft,
+  areaId,
+  layerId,
+  entryId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const layer = area?.encounterLayers?.find(
+    (item) => item.id === layerId
+  );
+  if (!layer) return next;
+
+  layer.table = (layer.table ?? [])
+    .filter((entry) => entry.id !== entryId);
 
   return next;
 }
