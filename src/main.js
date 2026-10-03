@@ -48,6 +48,18 @@ import {
   readWorldBuilderTestSession
 } from './builder/world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
 import {
+  createCaptureCreatureCatalogProvider
+} from './capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
+import {
+  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+} from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
+import {
+  createEncounterController
+} from './encounters/encounter-controller.js?rev=phase7-snapshot-v1';
+import {
+  snapshotFromEncounterIntent
+} from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';
+import {
   demoLivingWorldConfig
 } from './living/demo-living-world.js?rev=phase5-wild-wander-territory-v1';
 import {
@@ -68,10 +80,18 @@ const stick = document.querySelector('#stick');
 const locomotionButtons = [
   ...document.querySelectorAll('[data-locomotion]')
 ];
+const encounterPreview =
+  document.querySelector('#encounter-preview');
+const encounterPreviewSummary =
+  document.querySelector('#encounter-preview-summary');
+const encounterPreviewContinue =
+  document.querySelector('#encounter-preview-continue');
 
 const config = normalizeExplorationConfig();
 const runtimeParams = new URL(document.URL).searchParams;
 const builderTest = runtimeParams.get('builderTest') === '1';
+const encounterTest =
+  runtimeParams.get('encounterTest') === '1';
 const builderTestSession = builderTest
   ? readWorldBuilderTestSession(window.sessionStorage)
   : null;
@@ -127,6 +147,22 @@ const touchInput = createVirtualStick(joystick, stick);
 const traversalRegistry = createTraversalRuleRegistry(
   traversalRulePackV1
 );
+
+const captureCreatureCatalog =
+  createCaptureCreatureCatalogProvider(
+    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
+
+const encounterController = createEncounterController({
+  checkDistance: encounterTest ? 80 : 160
+});
+
+const encounterRandom =
+  encounterTest
+    ? () => 0
+    : Math.random;
+
+let pendingEncounterSnapshot = null;
 
 const livingWorldConfig = demoLivingWorldConfig;
 let wildCreatures = createInitialWildlife(
@@ -272,6 +308,35 @@ function currentArea() {
   return area;
 }
 
+function showEncounterPreview(snapshot) {
+  pendingEncounterSnapshot = snapshot;
+
+  const creatureId =
+    snapshot.opponents[0]?.creatureId ?? '';
+  const creature =
+    captureCreatureCatalog.resolveCreature(creatureId);
+
+  encounterPreviewSummary.textContent =
+    `${creature?.name ?? creatureId} · élément ${snapshot.context.elementId} · famille ${snapshot.context.terrainFamilyId}`;
+
+  encounterPreview.hidden = false;
+}
+
+function clearEncounterPreview() {
+  if (!pendingEncounterSnapshot) return false;
+
+  const released = encounterController.release(
+    pendingEncounterSnapshot.encounterId
+  );
+
+  if (!released) return false;
+
+  pendingEncounterSnapshot = null;
+  encounterPreview.hidden = true;
+  encounterPreviewSummary.textContent = '';
+  return true;
+}
+
 function resize() {
   const dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.floor(innerWidth * dpr);
@@ -345,6 +410,12 @@ function update(dt) {
   const area = currentArea();
   const input = currentInput();
 
+  if (pendingEncounterSnapshot) {
+    player.moving = false;
+    updateCamera();
+    return;
+  }
+
   player.moving =
     Math.hypot(input.x, input.y) > config.input.deadzone;
 
@@ -362,6 +433,25 @@ function update(dt) {
   );
 
   applyTriggeredPortal();
+
+  const encounterIntent = encounterController.step({
+    area: currentArea(),
+    player,
+    encounterConfig: activeWorldDocument.encounterConfig,
+    captureCatalog: captureCreatureCatalog,
+    playerPartyRef: 'capture-party-preview',
+    rulesetId: 'capture.standard.1v1',
+    random: encounterRandom
+  });
+
+  if (encounterIntent) {
+    player.moving = false;
+    showEncounterPreview(
+      snapshotFromEncounterIntent(encounterIntent)
+    );
+    updateCamera();
+    return;
+  }
 
   wildCreatures = wildWanderController.step(
     wildCreatures,
@@ -507,6 +597,11 @@ for (const button of locomotionButtons) {
     setLocomotionMode(button.dataset.locomotion);
   });
 }
+
+encounterPreviewContinue.addEventListener(
+  'click',
+  clearEncounterPreview
+);
 
 setLocomotionMode('ground');
 resize();
