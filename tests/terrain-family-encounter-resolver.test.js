@@ -53,9 +53,9 @@ function config(chance = 100) {
       {
         terrainFamilyId: 'forest',
         encounterChancePercent: chance,
-        elementWeights: [
-          { elementId: 'fire', weight: 80 },
-          { elementId: 'water', weight: 20 }
+        elementChances: [
+          { elementId: 'fire', chancePercent: 80 },
+          { elementId: 'water', chancePercent: 20 }
         ]
       }
     ]
@@ -100,8 +100,8 @@ test('intrinsic Capture spawnChance remains the creature rarity authority', () =
         {
           terrainFamilyId: 'forest',
           encounterChancePercent: 100,
-          elementWeights: [
-            { elementId: 'fire', weight: 100 }
+          elementChances: [
+            { elementId: 'fire', chancePercent: 100 }
           ]
         }
       ]
@@ -124,9 +124,9 @@ test('configured element with no eligible Capture creature is ignored', () => {
         {
           terrainFamilyId: 'forest',
           encounterChancePercent: 100,
-          elementWeights: [
-            { elementId: 'shadow', weight: 999 },
-            { elementId: 'water', weight: 1 }
+          elementChances: [
+            { elementId: 'shadow', chancePercent: 999 },
+            { elementId: 'water', chancePercent: 1 }
           ]
         }
       ]
@@ -164,8 +164,8 @@ test('zero-spawn creatures are never selected', () => {
         {
           terrainFamilyId: 'forest',
           encounterChancePercent: 100,
-          elementWeights: [
-            { elementId: 'fire', weight: 100 }
+          elementChances: [
+            { elementId: 'fire', chancePercent: 100 }
           ]
         }
       ]
