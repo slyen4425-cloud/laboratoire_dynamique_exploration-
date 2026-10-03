@@ -631,7 +631,7 @@ function refreshObjectControls() {
     $('bridge-edge-assist').value =
       object.traversal?.edgeAssistRatio ?? 0.15;
     $('bridge-obstacles').value =
-      object.traversal?.overridesObstacleIds?.join(', ') ?? '';
+      object.traversal?.overridesSurfaceFeatureIds?.join(', ') ?? '';
   }
 }
 
@@ -1402,7 +1402,7 @@ function applyBridgeInputs() {
         $('bridge-edge-assist'),
         bridge.traversal.edgeAssistRatio
       );
-      bridge.traversal.overridesObstacleIds = $('bridge-obstacles')
+      bridge.traversal.overridesSurfaceFeatureIds = $('bridge-obstacles')
         .value
         .split(',')
         .map((value) => value.trim())
@@ -2295,7 +2295,8 @@ $('object-add-bridge').addEventListener('click', () => {
         lengthRatio: 0.92,
         widthRatio: 0.82,
         edgeAssistRatio: 0.15,
-        overridesObstacleIds: []
+        traversalRuleId: 'terrain.bridge',
+        overridesSurfaceFeatureIds: []
       }
     }
   );
