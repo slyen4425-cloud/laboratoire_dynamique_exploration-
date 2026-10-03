@@ -2366,6 +2366,107 @@ for (const [kind, widthId, valueId, materialId, fallbackWidth] of [
   });
 }
 
+$('encounter-layer-select').addEventListener('change', () => {
+  selectedEncounterLayerId =
+    $('encounter-layer-select').value || null;
+  selectedEncounterEntryId =
+    currentEncounterLayerRaw()?.table?.[0]?.id ?? null;
+  refreshEncounterControls();
+  renderPreview();
+});
+
+$('encounter-layer-delete').addEventListener('click', () => {
+  if (!selectedEncounterLayerId) return;
+
+  draft = deleteEncounterLayer(
+    draft,
+    selectedAreaId,
+    selectedEncounterLayerId
+  );
+
+  selectedEncounterLayerId = null;
+  selectedEncounterEntryId = null;
+  refreshControls();
+});
+
+for (const id of [
+  'encounter-enabled',
+  'encounter-label',
+  'encounter-width',
+  'encounter-chance',
+  'encounter-check-distance',
+  'encounter-priority'
+]) {
+  $(id).addEventListener(
+    id === 'encounter-width' || id === 'encounter-chance'
+      ? 'input'
+      : 'change',
+    applyEncounterLayerInputs
+  );
+}
+
+$('encounter-entry-select').addEventListener('change', () => {
+  selectedEncounterEntryId =
+    $('encounter-entry-select').value || null;
+  refreshEncounterControls();
+});
+
+$('encounter-entry-add').addEventListener('click', () => {
+  if (!selectedEncounterLayerId) return;
+
+  const before = new Set(
+    currentEncounterLayerRaw()?.table?.map((entry) => entry.id) ?? []
+  );
+
+  draft = addEncounterTableEntry(
+    draft,
+    selectedAreaId,
+    selectedEncounterLayerId,
+    {
+      tags: ['element.neutral'],
+      weight: 100
+    }
+  );
+
+  selectedEncounterEntryId =
+    currentEncounterLayerRaw()?.table?.find(
+      (entry) => !before.has(entry.id)
+    )?.id ?? selectedEncounterEntryId;
+
+  refreshEncounterControls();
+  refreshJson();
+  renderPreview();
+});
+
+$('encounter-entry-delete').addEventListener('click', () => {
+  if (!selectedEncounterLayerId || !selectedEncounterEntryId) return;
+
+  draft = deleteEncounterTableEntry(
+    draft,
+    selectedAreaId,
+    selectedEncounterLayerId,
+    selectedEncounterEntryId
+  );
+
+  selectedEncounterEntryId =
+    currentEncounterLayerRaw()?.table?.[0]?.id ?? null;
+
+  refreshEncounterControls();
+  refreshJson();
+  renderPreview();
+});
+
+for (const id of [
+  'encounter-entry-actor',
+  'encounter-entry-tags',
+  'encounter-entry-weight'
+]) {
+  $(id).addEventListener(
+    id === 'encounter-entry-weight' ? 'input' : 'change',
+    applyEncounterEntryInputs
+  );
+}
+
 $('spawn-select').addEventListener('change', () => {
   selectedSpawnId = $('spawn-select').value;
   refreshAreaControls();
