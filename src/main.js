@@ -14,6 +14,12 @@ import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
+import {
+  createPlacedMapActorView
+} from './actors/placed-map-actor-view.js';
+import {
+  createCaptureActorPreviewProviderV1
+} from './capture/capture-actor-preview-loader-v1.js';
 import { materialPackV1 } from './materials/material-pack-v1.js?rev=worldarea-portal-v1-interior-surface-fix';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
@@ -199,6 +205,9 @@ const captureCreatureCatalog =
     CAPTURE_CREATURE_CATALOG_PREVIEW_V1
   );
 
+const captureActorDefinitionProvider =
+  await createCaptureActorPreviewProviderV1();
+
 const encounterController = createEncounterController({
   checkDistance: encounterTest ? 80 : 160
 });
@@ -282,27 +291,52 @@ const worldObjectRenderer = createWorldObjectRenderer({
   resolveVisualAsset: resolveWorldObjectAsset
 });
 
-const resolveRuntimeMapActorAsset = createMapActorAssetResolver(
-  builderTestSession?.actorAsset
-    ? [builderTestSession.actorAsset]
-    : []
-);
+const captureMapActorAssets =
+  captureActorDefinitionProvider
+    .listAssets();
 
-const mapActorImageLoader = createImageAssetLoader({
-  resolveAsset: builderTestSession?.actorAsset
-    ? resolveRuntimeMapActorAsset
-    : resolveMapActorAsset,
-  cacheRevision: 'map-actor-visual-v1-2026-10-02'
-});
-const requiredMapActorAssetIds = Object.freeze([
-  ...new Set([
-    player.mapVisual.assetId,
-    ...collectLivingMapActorAssetIds(
-      livingWorldConfig,
-      resolveDemoLivingActorDefinition
+const resolveRuntimeMapActorAsset =
+  createMapActorAssetResolver([
+    ...captureMapActorAssets,
+    ...(builderTestSession?.actorAsset
+      ? [builderTestSession.actorAsset]
+      : [])
+  ]);
+
+const mapActorImageLoader =
+  createImageAssetLoader({
+    resolveAsset:
+      resolveRuntimeMapActorAsset,
+    cacheRevision:
+      'actor-placement-catalog-v1-2026-10-03'
+  });
+
+const placedActorAssetIds =
+  activeWorldDocument.areas
+    .flatMap(
+      (area) =>
+        area.actors ?? []
     )
-  ])
-]);
+    .map((placement) =>
+      captureActorDefinitionProvider
+        .resolveDefinition(
+          placement.actorDefinitionId
+        )
+        ?.mapVisual?.assetId
+    )
+    .filter(Boolean);
+
+const requiredMapActorAssetIds =
+  Object.freeze([
+    ...new Set([
+      player.mapVisual.assetId,
+      ...collectLivingMapActorAssetIds(
+        livingWorldConfig,
+        resolveDemoLivingActorDefinition
+      ),
+      ...placedActorAssetIds
+    ])
+  ]);
 
 const mapActorAssetStatus = await mapActorImageLoader.load(
   requiredMapActorAssetIds
@@ -611,9 +645,25 @@ function currentWildMapActors() {
     .filter(Boolean);
 }
 
+function currentPlacedMapActors() {
+  return (
+    currentArea()?.actors ?? []
+  )
+    .map((placement) =>
+      createPlacedMapActorView(
+        placement,
+        captureActorDefinitionProvider
+          .resolveDefinition
+      )
+    )
+    .filter(Boolean);
+}
+
 function render(timeSeconds = 0) {
   const area = currentArea();
   const wildMapActors = currentWildMapActors();
+  const placedMapActors =
+    currentPlacedMapActors();
 
   ctx.clearRect(0, 0, innerWidth, innerHeight);
   drawGround();
@@ -637,7 +687,11 @@ function render(timeSeconds = 0) {
 
   mapActorRenderer.draw(ctx, {
     camera,
-    actors: [...wildMapActors, player],
+    actors: [
+      ...placedMapActors,
+      ...wildMapActors,
+      player
+    ],
     timeSeconds
   });
 }
