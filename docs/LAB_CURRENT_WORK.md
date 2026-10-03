@@ -269,3 +269,33 @@ CI après nettoyage :
 - `37120505850` — **SUCCESS**.
 
 Le lot reste non GREEN jusqu'à validation smartphone de la preview republiée.
+
+
+## Preview republiée — Encounter Layers v4 — 2026-10-03
+
+Correction finale du Builder inerte publiée.
+
+- work HEAD publié : `3c139b1e272bc082cdac7d7c7d6b17382493d869` ;
+- CI : `37120542525` — **SUCCESS** ;
+- PR infra : #45 ;
+- main preview : `e2bf26667a121c241963c47c564b744332bbdab3` ;
+- Pages : `37120587307` — **SUCCESS** ;
+- checkout Pages confirmé sur `3c139b1e272bc082cdac7d7c7d6b17382493d869`.
+
+Corrections présentes dans cette preview :
+- un seul Encounter editor state ;
+- un seul bouton `encounter-start-paint` ;
+- aucun id DOM dupliqué ;
+- sélecteurs Élément / Créature actifs avant le premier layer ;
+- preset de création UI non autoritaire ;
+- bouton « Peindre cette zone » ;
+- toucher simple ou glissement crée la première zone ;
+- cache-bust Builder/editor state v4.
+
+Gate smartphone à refaire :
+1. ouvrir Rencontres ;
+2. vérifier les listes Élément/Créature cliquables immédiatement ;
+3. choisir Feu ou une créature ;
+4. appuyer « Peindre cette zone » ;
+5. toucher ou glisser sur la map ;
+6. vérifier création du layer et possibilité de modifier chance/poids.
