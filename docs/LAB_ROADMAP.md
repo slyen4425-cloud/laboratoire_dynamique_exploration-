@@ -103,26 +103,26 @@ Critère :
 World Builder Dynamique -> données -> runtime, jamais World Builder Dynamique -> mutation runtime.
 Le World Builder Dynamique et le World Generator utilisent le même format de carte.
 
-## Phase 5 — Monde vivant
+## Phase 5 — Rencontres et monde vivant
 
+Validé :
 - créatures sauvages visibles ;
 - errance ;
 - territoires ;
-- poursuite/fuite pour les acteurs visibles ;
-- spawns par biome/zone ;
-- comportement piloté par config.
+- profils terrestre / aquatique / volant.
 
-Règle produit :
-les créatures visibles sur la map servent surtout aux rencontres spéciales/scénarisées/rares/boss/quêtes.
-Les rencontres sauvages ordinaires utiliseront prioritairement des **Encounter Zones + tables pondérées**.
+Décision produit :
+les créatures visibles restent surtout destinées aux rencontres spéciales, scénarisées, rares, boss et quêtes.
+**Perception / poursuite / fuite n'est plus une étape requise du plan courant.**
 
-Un lot dédié devra définir avant l'Encounter Bridge :
-- zone de rencontre gameplay ;
-- chance de rencontre ;
-- table pondérée ;
-- sélection par actorDefinitionId ou catégories/tags du catalogue Capture ;
-- modificateur de route/feature, notamment route sûre ;
-- aucune dépendance à materialId ou aux textures.
+Priorité suivante :
+- Encounter Layers éditables dans le World Builder ;
+- chance globale de rencontre par layer ;
+- fréquence de contrôle explicite ;
+- table pondérée par actorDefinitionId ou tags/pools ;
+- priorité de superposition permettant notamment des routes/zones sûres à 0 % ;
+- aucun lien implicite avec materialId, texture ou surface.zones ;
+- Random Encounter Runtime v1 après validation de l'éditeur.
 
 ## Phase 6 — World Objects, interactions et Areas
 
