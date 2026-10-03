@@ -94,11 +94,11 @@ function definitionFromTransfer(
 
   const sourceAssetId =
     text(
-      presentation.visual?.back
+      presentation.visual?.front
         ?.assetId
     ) ??
     text(
-      presentation.visual?.front
+      presentation.visual?.back
         ?.assetId
     );
 
