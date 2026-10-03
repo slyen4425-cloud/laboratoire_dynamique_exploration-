@@ -28,7 +28,9 @@
 | Édition Encounter Layers | World Builder Draft/UI | Encounter Layer Model | WorldDocument | déclencher une rencontre |
 | Config rencontre aléatoire | Encounter World Config | Encounter Layers + tables + modificateurs gameplay | règles configurées | déduire depuis materialId/texture |
 | Déclenchement rencontre | Encounter Controller | position + Encounter World Config + acteur visible optionnel | encounter intent | renderer/Combat décide le monde |
-| Sélection créature rencontre | Encounter Table Resolver (futur) | table pondérée + Actor Catalog | actorDefinitionId | copier stats/visuels dans la zone |
+| Sélection créature rencontre | Encounter Table Resolver (futur) | table pondérée + Capture Creature Catalog | creatureId canonique | copier stats/visuels dans la zone |
+| Catalogue créatures Capture | CaptureDatabaseV1 / provider Capture | Creature Drafts + elements + presentation | listes/résolution lecture seule | Exploration édite/recrée les créatures |
+| Adaptation créature visible | Capture -> Map Actor Adapter | presentation Capture | MapActorVisual dérivé | copier stats/éléments dans MapActorVisual |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
 | Combat Capture | Capture Combat (futur) | Snapshot | Result | Exploration calcule le combat |
 | World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |\n| Draft World Builder | World Builder Draft Model | WorldDocument source + edits | draft sérialisable | devenir état runtime / posséder renderer |\n| Preview Builder | Renderers Exploration existants | draft normalisé + caméra preview | pixels | écrire données/collision/mouvement |
