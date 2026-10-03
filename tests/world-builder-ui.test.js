@@ -78,9 +78,10 @@ test('World Builder exposes Encounter Layers as a dedicated gameplay layer edito
     'encounter-entry-select',
     'encounter-entry-add',
     'encounter-entry-delete',
-    'encounter-entry-actor',
-    'encounter-entry-tags',
+    'encounter-entry-kind',
+    'encounter-entry-value',
     'encounter-entry-weight',
+    'encounter-entry-weight-value',
     'encounter-entry-share'
   ]) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
@@ -104,7 +105,7 @@ test('Encounter editor uses lists instead of typed ids or tags', async () => {
   ]) {
     assert.match(
       html,
-      new RegExp('<select[^>]+id=["\\']' + id + '["\\']')
+      new RegExp("<select[^>]+id=[\\\"']" + id + "[\\\"']")
     );
   }
 
