@@ -686,6 +686,8 @@ function refreshActorControls() {
   $('actor-target-height').value = actorVisual.targetHeight;
   $('actor-target-height-value').value =
     String(actorVisual.targetHeight);
+  $('actor-source-facing').value =
+    actorVisual.sourceFacingX === -1 ? '-1' : '1';
   $('actor-mirror').checked = actorVisual.mirrorHorizontal;
   $('actor-facing').value = actorPreview.facingX < 0 ? '-1' : '1';
   $('actor-moving').checked = actorPreview.moving === true;
@@ -1229,6 +1231,8 @@ function applyActorInputs() {
       actorVisual.targetHeight
     ),
     mirrorHorizontal: $('actor-mirror').checked,
+    sourceFacingX:
+      Number($('actor-source-facing').value) < 0 ? -1 : 1,
     anchorX: autoAnchor
       ? null
       : numberValue($('actor-anchor-x'), 0.5),
@@ -2085,6 +2089,7 @@ $('actor-target-height').addEventListener('input', () => {
 });
 
 for (const id of [
+  'actor-source-facing',
   'actor-mirror',
   'actor-facing',
   'actor-anchor-auto',
