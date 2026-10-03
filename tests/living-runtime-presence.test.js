@@ -33,6 +33,7 @@ function definition(id, modes = ['ground']) {
 
 const definitions = new Map([
   ['capture.creature.ground', definition('capture.creature.ground')],
+  ['capture.creature.swim', definition('capture.creature.swim', ['swim'])],
   ['capture.creature.fly', definition('capture.creature.fly', ['fly'])]
 ]);
 
@@ -229,4 +230,40 @@ test('required living Map Actor assets are collected through actor definitions',
     collectLivingMapActorAssetIds(config, resolveDefinition),
     ['actor.demo.hero.traveler.01']
   );
+});
+
+
+test('actual Collision/Traversal allows a swim creature inside the same water surface', () => {
+  const config = normalizeLivingWorldConfig({
+    spawnZones: [
+      {
+        id: 'water-zone',
+        areaId: 'forest-exterior',
+        x: 1320,
+        y: 795,
+        radius: 8
+      }
+    ],
+    spawnRules: [
+      {
+        id: 'swim-water',
+        zoneId: 'water-zone',
+        actorDefinitionId: 'capture.creature.swim'
+      }
+    ]
+  });
+
+  const entities = createInitialWildlife(config, {
+    worldDocument: demoWorldDocument,
+    resolveActorDefinition: resolveDefinition,
+    seed: 'swim-in-water',
+    activationCount: 1
+  });
+
+  assert.equal(entities.length, 1);
+  assert.equal(
+    entities[0].actorDefinitionId,
+    'capture.creature.swim'
+  );
+  assert.equal('locomotion' in entities[0], false);
 });
