@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=surface-traversal-replay-v1';
+} from '../world/world-document-model.js?rev=encounter-layers-v1';
 import {
   ENCOUNTER_LAYER_SCHEMA_VERSION
 } from '../encounters/encounter-layer-model.js?rev=encounter-layers-v1';
