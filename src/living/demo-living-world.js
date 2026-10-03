@@ -9,9 +9,9 @@ export const demoLivingWorldConfig = normalizeLivingWorldConfig({
     {
       id: 'demo-ground-zone',
       areaId: 'forest-exterior',
-      x: 1500,
-      y: 1000,
-      radius: 120,
+      x: 320,
+      y: 520,
+      radius: 60,
       biomeId: 'biome.forest',
       tags: ['demo', 'forest', 'ground']
     },
