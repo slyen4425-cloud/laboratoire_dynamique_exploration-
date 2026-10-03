@@ -3,7 +3,7 @@ import {
   findWorldAreaSpawn,
   normalizeWorldAreas,
   resolveWorldAreaSpawnPoint
-} from './world-area-model.js?rev=builder-dynamic-return-v1';
+} from './world-area-model.js?rev=surface-traversal-replay-v1';
 import {
   normalizePortals,
   portalReferencesAreValid
