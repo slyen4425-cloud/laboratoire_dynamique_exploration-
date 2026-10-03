@@ -75,7 +75,7 @@ import {
 } from './encounters/combat-handoff-store.js?rev=phase7-combat-handoff-v1';
 import {
   launchCombatHandoffNavigation
-} from './encounters/combat-handoff-navigation.js?rev=phase7-combat-handoff-v1';
+} from './encounters/combat-handoff-navigation.js?rev=combat-document-revision-v1';
 import {
   resolveExplorationCombatReturn
 } from './encounters/combat-return.js?rev=phase7-combat-handoff-v1';
