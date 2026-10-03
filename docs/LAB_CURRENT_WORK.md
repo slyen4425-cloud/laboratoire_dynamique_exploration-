@@ -94,3 +94,31 @@ Exemple :
 - cooldown / anti-spam ;
 - éditeur de créature ;
 - modification du dépôt Combat.
+
+## Preview smartphone — Terrain Family Encounters v1 — 2026-10-03
+
+État avant publication :
+- HEAD gouvernance/technique : `8bea643508bfaf6b4a7d395bce9e87c07d6d034a` ;
+- CI : `37129148827` — **SUCCESS**.
+
+Publication :
+- checkpoint infra départ : `checkpoint/exploration-start-preview-terrain-family-encounters-v1-2026-10-03` ;
+- branche infra : `infra/pages-preview-terrain-family-encounters-v1-2026-10-03` ;
+- PR : #48 ;
+- main preview : `396b6fe7aac53ab8043dda947c4fec9198e71d97` ;
+- Pages run : `37129219666` — **SUCCESS** ;
+- artifact : `11275827917`.
+
+Gate smartphone :
+1. Builder > Area : choisir Famille du sol puis vérifier que Texture du sol ne propose que les textures de cette famille ;
+2. Terrain : choisir Plaine / Forêt / Montagne / Volcan / Neige / Sable puis peindre ;
+3. vérifier qu'une texture identique peut servir plusieurs familles sans changer leur famille gameplay ;
+4. Route reste famille Route ;
+5. Mer/eau reste famille Mer ;
+6. Rencontres par famille : choisir une des 8 familles ;
+7. régler chance globale de rencontre ;
+8. répartir les éléments Capture avec total exact 100 % pour une famille active ;
+9. tester Route à 0 % ;
+10. export/réimport : vérifier conservation des familles et réglages.
+
+Le lot reste **NON GREEN** jusqu'à validation utilisateur smartphone.
