@@ -88,3 +88,30 @@ Les zones de spawn gameplay sont distinctes de `surface.zones[]`, qui restent pu
 ## Suite prévue
 Après GREEN de ce micro-lot :
 **Phase 5 micro-lot 2 — spawn planner / activation déterministe**, puis seulement errance/territoires.
+
+
+## État technique — Wild Creature Entity + Spawn Contract v1 — 2026-10-03
+
+Implémenté :
+- `LivingWorldConfig v1` ;
+- `WildSpawnZone v1` circulaire ;
+- `WildSpawnRule v1` ;
+- `WildCreatureEntity v1` minimal ;
+- références `actorDefinitionId` opaques ;
+- `biomeId` sémantique optionnel sur zone ;
+- tags gameplay dédupliqués ;
+- règles invalides ou zones dupliquées rejetées ;
+- validation des `areaId` contre les WorldAreas ;
+- aucune dépendance à `materialId` ;
+- aucune copie de stats / MapActorVisual / assetId / locomotion dans les règles ou entités.
+
+TDD :
+- contrat : commit `ebd868e2c882f1b50a6be3902afb065b28845914` — FAILURE attendue ;
+- modèle : commit `fbf0d630a1eb75b4b85fde4cf80559c7148901ad` ;
+- CI : run `37100368986` — **SUCCESS**.
+
+Ce micro-lot est purement contractuel et sans UI/runtime visible :
+aucune gate smartphone supplémentaire requise.
+
+Suite :
+**Phase 5 micro-lot 2 — Spawn Planner / Activation déterministe v1**.
