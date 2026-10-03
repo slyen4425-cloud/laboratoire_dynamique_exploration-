@@ -1,11 +1,11 @@
 import {
   isBlocked,
   resolveBridgeGuidedPosition
-} from './collision.js';
+} from './collision.js?rev=surface-traversal-replay-v1';
 import {
   defaultTraversalRuleRegistry,
   resolveSurfaceTraversal
-} from './surface-traversal.js';
+} from './surface-traversal.js?rev=surface-traversal-replay-v1';
 import { normalize } from './vector.js';
 
 export function stepMovement(
