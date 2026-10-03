@@ -414,6 +414,42 @@ function numberValue(input, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
+function familyLabel(familyId) {
+  return terrainFamilyRegistry.get(familyId)?.label ?? familyId;
+}
+
+function materialsForTerrainFamily(familyId) {
+  const family = terrainFamilyRegistry.get(familyId);
+  if (!family) return [];
+
+  return family.materialIds
+    .map((materialId) => materialRegistry.resolve(materialId))
+    .filter(
+      (material) =>
+        material &&
+        material.kind === family.materialKind
+    );
+}
+
+function encounterProfile(familyId = selectedEncounterFamilyId) {
+  return draft.encounterConfig?.families?.find(
+    (profile) => profile.terrainFamilyId === familyId
+  ) ?? null;
+}
+
+function encounterElementChance(profile, elementId) {
+  return profile?.elementChances?.find(
+    (entry) => entry.elementId === elementId
+  )?.chancePercent ?? 0;
+}
+
+function encounterElementTotal(profile) {
+  return (profile?.elementChances ?? []).reduce(
+    (sum, entry) => sum + Number(entry.chancePercent || 0),
+    0
+  );
+}
+
 function refreshAreaControls() {
   ensureSelections();
   setOptions($('area-select'), draft.areas, selectedAreaId);
@@ -425,15 +461,35 @@ function refreshAreaControls() {
   $('area-width').value = area.width;
   $('area-height').value = area.height;
 
+  const familyId =
+    terrainFamilyRegistry.get(area.surface?.baseTerrainFamilyId)
+      ? area.surface.baseTerrainFamilyId
+      : 'forest';
+
+  setOptions(
+    $('area-family'),
+    surfaceTerrainFamilies,
+    familyId,
+    { label: (family) => family.label }
+  );
+  $('area-family').value = familyId;
+
+  const familyMaterials = materialsForTerrainFamily(familyId);
   setOptions(
     $('area-material'),
-    surfaceMaterials,
+    familyMaterials,
     area.surface?.baseMaterialId,
-    {
-      label: (material) => material.label
-    }
+    { label: (material) => material.label }
   );
-  $('area-material').value = area.surface?.baseMaterialId ?? '';
+  if (
+    familyMaterials.some(
+      (material) => material.id === area.surface?.baseMaterialId
+    )
+  ) {
+    $('area-material').value = area.surface.baseMaterialId;
+  } else if (familyMaterials[0]) {
+    $('area-material').value = familyMaterials[0].id;
+  }
 
   setOptions(
     $('spawn-select'),
@@ -455,19 +511,48 @@ function refreshAreaControls() {
   $('spawn-y').disabled = !spawn || anchored;
   $('spawn-delete').disabled = !spawn;
 }
-
-
 function refreshTerrainControls() {
   const area = currentAreaRaw();
+  const selected = currentSurfacePathRaw();
+
+  const currentTerrainFamily =
+    selected && selectedSurfaceKind === 'terrain'
+      ? selected.terrainFamilyId
+      : (
+          terrainFamilyRegistry.get($('terrain-family').value)
+            ? $('terrain-family').value
+            : area?.surface?.baseTerrainFamilyId ?? 'forest'
+        );
+
+  setOptions(
+    $('terrain-family'),
+    surfaceTerrainFamilies,
+    currentTerrainFamily,
+    { label: (family) => family.label }
+  );
+  $('terrain-family').value = currentTerrainFamily;
+
+  const terrainMaterials =
+    materialsForTerrainFamily(currentTerrainFamily);
+  const requestedTerrainMaterial =
+    selected && selectedSurfaceKind === 'terrain'
+      ? selected.materialId
+      : $('terrain-paint-material').value;
 
   setOptions(
     $('terrain-paint-material'),
-    surfaceMaterials,
-    $('terrain-paint-material').value,
+    terrainMaterials,
+    requestedTerrainMaterial,
     { label: (material) => material.label }
   );
-  if (!$('terrain-paint-material').value && surfaceMaterials[0]) {
-    $('terrain-paint-material').value = surfaceMaterials[0].id;
+  if (
+    terrainMaterials.some(
+      (material) => material.id === requestedTerrainMaterial
+    )
+  ) {
+    $('terrain-paint-material').value = requestedTerrainMaterial;
+  } else if (terrainMaterials[0]) {
+    $('terrain-paint-material').value = terrainMaterials[0].id;
   }
 
   $('terrain-brush-size-value').value =
@@ -477,24 +562,30 @@ function refreshTerrainControls() {
   $('terrain-river-width-value').value =
     String(numberValue($('terrain-river-width'), 72));
 
+  const routeMaterials = materialsForTerrainFamily('road');
   setOptions(
     $('terrain-route-material'),
-    pathMaterials,
-    $('terrain-route-material').value,
+    routeMaterials,
+    selectedSurfaceKind === 'route'
+      ? selected?.materialId
+      : $('terrain-route-material').value,
     { label: (material) => material.label }
   );
-  if (!$('terrain-route-material').value && pathMaterials[0]) {
-    $('terrain-route-material').value = pathMaterials[0].id;
+  if (!$('terrain-route-material').value && routeMaterials[0]) {
+    $('terrain-route-material').value = routeMaterials[0].id;
   }
 
+  const seaMaterials = materialsForTerrainFamily('sea');
   setOptions(
     $('terrain-river-material'),
-    waterMaterials,
-    $('terrain-river-material').value,
+    seaMaterials,
+    selectedSurfaceKind === 'river'
+      ? selected?.materialId
+      : $('terrain-river-material').value,
     { label: (material) => material.label }
   );
-  if (!$('terrain-river-material').value && waterMaterials[0]) {
-    $('terrain-river-material').value = waterMaterials[0].id;
+  if (!$('terrain-river-material').value && seaMaterials[0]) {
+    $('terrain-river-material').value = seaMaterials[0].id;
   }
 
   const select = $('terrain-path-select');
@@ -516,23 +607,20 @@ function refreshTerrainControls() {
     option.textContent =
       `${
         item.kind === 'river'
-          ? 'Rivière'
+          ? 'Mer / eau'
           : item.kind === 'terrain'
-            ? 'Terrain'
+            ? familyLabel(item.terrainFamilyId)
             : 'Route'
       } · ${item.id}`;
     select.append(option);
   }
 
   select.value = selectedKey;
-
-  const selected = currentSurfacePathRaw();
   $('terrain-path-delete').disabled = !selected;
 
   if (selected && selectedSurfaceKind === 'terrain') {
     $('terrain-brush-size').value = selected.width;
     $('terrain-brush-size-value').value = String(selected.width);
-    $('terrain-paint-material').value = selected.materialId;
   }
 
   if (selected && selectedSurfaceKind === 'route') {
@@ -548,6 +636,92 @@ function refreshTerrainControls() {
   }
 }
 
+function refreshFamilyEncounterControls() {
+  setOptions(
+    $('family-encounter-family'),
+    terrainFamilies,
+    selectedEncounterFamilyId,
+    { label: (family) => family.label }
+  );
+
+  if (
+    !terrainFamilyRegistry.get(selectedEncounterFamilyId)
+  ) {
+    selectedEncounterFamilyId = 'forest';
+  }
+  $('family-encounter-family').value =
+    selectedEncounterFamilyId;
+
+  const profile = encounterProfile();
+  if (!profile) return;
+
+  $('family-encounter-chance').value =
+    profile.encounterChancePercent;
+  $('family-encounter-chance-value').value =
+    `${Math.round(profile.encounterChancePercent)} %`;
+
+  $('family-encounter-catalog-summary').textContent =
+    `Catalogue Capture · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} éléments · rareté propre conservée`;
+
+  const container = $('family-encounter-elements');
+  container.replaceChildren();
+
+  for (const element of captureCreatureCatalog.listElements()) {
+    const row = document.createElement('label');
+    row.className = 'family-element-row';
+
+    const name = document.createElement('span');
+    const candidateCount =
+      captureCreatureCatalog.findByElement(element.id).length;
+    name.textContent =
+      `${element.label} · ${candidateCount} créature(s)`;
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.max = '100';
+    input.step = '1';
+    input.value = String(
+      encounterElementChance(profile, element.id)
+    );
+    input.dataset.elementId = element.id;
+    input.setAttribute(
+      'aria-label',
+      `Pourcentage ${element.label}`
+    );
+
+    input.addEventListener('input', () => {
+      draft = updateTerrainFamilyElementChance(
+        draft,
+        selectedEncounterFamilyId,
+        element.id,
+        numberValue(input, 0)
+      );
+      const nextProfile = encounterProfile();
+      const total = encounterElementTotal(nextProfile);
+      $('family-encounter-total').value =
+        `${Math.round(total * 100) / 100} %`;
+      $('family-encounter-total').classList.toggle(
+        'invalid',
+        nextProfile?.encounterChancePercent > 0 &&
+          Math.abs(total - 100) > 0.001
+      );
+      refreshJson();
+    });
+
+    row.append(name, input);
+    container.append(row);
+  }
+
+  const total = encounterElementTotal(profile);
+  $('family-encounter-total').value =
+    `${Math.round(total * 100) / 100} %`;
+  $('family-encounter-total').classList.toggle(
+    'invalid',
+    profile.encounterChancePercent > 0 &&
+      Math.abs(total - 100) > 0.001
+  );
+}
 function compatibleAssets(object) {
   if (!object) return [];
 
