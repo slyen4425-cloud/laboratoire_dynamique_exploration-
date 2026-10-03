@@ -1,6 +1,6 @@
 import {
   createCaptureActorDefinitionProviderV1
-} from './capture-actor-definition-provider-v1.js';
+} from './capture-actor-definition-provider-v1.js?rev=actor-opponent-view-v1';
 
 const LOUP_TRANSFER_URL =
   new URL(
