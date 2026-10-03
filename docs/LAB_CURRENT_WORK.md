@@ -335,3 +335,109 @@ Le workflow public utilise explicitement :
 
 Gate restant : validation utilisateur du vrai Player Party dans le combat Encounter.
 
+---
+
+# Micro-lot correctif — Combat Document Revision v1 — 2026-10-03
+
+## Base
+- checkpoint publié Player Party Ref : `f021460a7cf49143bceb9a0f48dbb37bbead4798`
+- checkpoint départ : `checkpoint/exploration-start-combat-document-revision-v1-2026-10-03`
+- branche : `work/exploration-combat-document-revision-v1-2026-10-03`
+
+## Régression utilisateur
+Après publication du correctif Recall Runtime :
+- le comportement navigateur reste identique ;
+- Rappel termine puis aucun changement de créature n'est visible.
+
+## Cause de publication démontrée
+Exploration navigue vers :
+`./combat-preview/examples/dom-demo/exploration-encounter.html`
+sans révision d'URL.
+
+Même si le HTML publié référence les nouveaux modules corrigés, un navigateur peut réutiliser un document HTML antérieur sous la même URL et ne jamais découvrir les nouvelles URLs de modules.
+
+## Correction cible
+Versionner le **document Combat lui-même** au point de navigation :
+`exploration-encounter.html?rev=player-party-recall-runtime-fix-v1`.
+
+Versionner aussi le graphe Exploration qui possède cette navigation :
+- index -> main.js ;
+- main.js -> combat-handoff-navigation.js.
+
+## Interdits
+- aucun reload forcé ;
+- aucun service worker ;
+- aucun timer/cache gameplay ;
+- aucune modification du Combat Runtime ;
+- aucune modification du Roster Session ;
+- aucune modification de Zombicide-40k.
+
+## Gate
+TDD -> CI -> preview Pages -> validation utilisateur.
+
+## Résultat technique — Combat Document Revision v1
+
+### Cause
+Le correctif Combat Recall était bien publié, mais Exploration naviguait toujours vers le document :
+
+`./combat-preview/examples/dom-demo/exploration-encounter.html`
+
+sans query de révision.
+
+Le navigateur pouvait donc réutiliser un ancien HTML en cache. Dans ce cas, il ne découvrait jamais les nouveaux modules / JSON corrigés, même si Pages avait correctement déployé le nouveau Combat.
+
+### Correction
+Navigation publique :
+
+`exploration-encounter.html?rev=player-party-recall-runtime-fix-v1`
+
+Le graphe propriétaire est également versionné :
+- `index.html -> main.js?rev=combat-document-revision-v1` ;
+- `main.js -> combat-handoff-navigation.js?rev=combat-document-revision-v1`.
+
+Aucun reload forcé, service worker, timer ou cache gameplay ajouté.
+
+### TDD
+`combat-handoff-navigation.test.js` vérifie désormais :
+- partyRef réelle ;
+- URL Combat complète avec révision ;
+- conservation du returnUrl ;
+- versionnement du graphe Exploration.
+
+La sentinelle Actor conserve sa propre révision indépendante.
+
+### HEAD
+`e649f8e115ae7beaa357c2078051347f9477e225`
+
+CI :
+`37154391923` — **SUCCESS**.
+
+État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
+
+## Publication preview — Combat Document Revision v1
+
+Preview Exploration :
+`preview/exploration-combat-document-revision-v1-2026-10-03`
+
+Preview Combat :
+`preview/lab-player-party-recall-runtime-fix-v1-2026-10-03`
+
+Publication :
+- PR infra : #64 ;
+- main infra : `d36b7680750b9ce763d01bf7d2153e94eb851440` ;
+- Pages run : `37154502478` — **SUCCESS**.
+
+Le job confirme :
+- Checkout Exploration Combat Document Revision preview — SUCCESS ;
+- Checkout Combat Recall Runtime Fix preview — SUCCESS ;
+- Checkout Capture global visual assets — SUCCESS ;
+- Upload preview — SUCCESS ;
+- Deploy preview — SUCCESS.
+
+Le document Combat est désormais ouvert avec :
+`exploration-encounter.html?rev=player-party-recall-runtime-fix-v1`.
+
+Gate restante : validation utilisateur du vrai changement Loup -> Moussados après Rappel puis Invocation.
+
+État : **PUBLISHED PREVALIDATION GREEN**.
+
