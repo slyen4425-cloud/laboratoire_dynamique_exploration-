@@ -27,4 +27,12 @@ Dernier checkpoint GREEN :
 
 ## Suite
 Après GREEN :
-micro-lot 5 — perception / poursuite / fuite v1.
+micro-lot 5 — perception / poursuite / fuite v1 **uniquement pour les créatures visibles**.
+
+Décision produit 2026-10-03 :
+- rencontres ordinaires = Encounter Zones + tables pondérées ;
+- routes sûres = modificateur gameplay explicite de chance ;
+- créatures visibles = rencontres spéciales/scénarisées/rares/boss/quêtes ;
+- aucune chance de rencontre dérivée de materialId/texture.
+
+Le contrat Random Encounter Zone / Table v1 sera traité avant le raccord Encounter Bridge.
