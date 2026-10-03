@@ -132,3 +132,45 @@ test('Encounter paint starts immediately from the map pointer path', async () =>
   assert.match(main, /createEncounterPaintPreset/);
   assert.match(main, /updateEncounterPaintPreset/);
 });
+
+
+test('World Builder never declares duplicate DOM ids', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+
+  const ids = [
+    ...html.matchAll(/\bid="([^"]+)"/g)
+  ].map((match) => match[1]);
+
+  const duplicates = ids.filter(
+    (id, index) => ids.indexOf(id) !== index
+  );
+
+  assert.deepEqual(duplicates, []);
+});
+
+test('Encounter editor has one state authority import', async () => {
+  const main = await readFile(
+    new URL(
+      '../src/builder/world-builder-main.js',
+      import.meta.url
+    ),
+    'utf8'
+  );
+
+  assert.equal(
+    (
+      main.match(
+        /from '\.\/encounter-layer-editor-state\.js/g
+      ) ?? []
+    ).length,
+    1
+  );
+
+  assert.equal(
+    main.includes("from './encounter-editor-state.js"),
+    false
+  );
+});
