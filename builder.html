@@ -155,64 +155,75 @@
           Layer actif
         </label>
 
-        <label>
-          Nom
-          <input id="encounter-label" type="text" placeholder="Forêt nord" />
-        </label>
-
-        <div class="grid-2">
-          <label>
-            Chance de rencontre (%)
-            <input id="encounter-chance" type="number" min="0" max="100" step="1" />
-          </label>
-          <label>
-            Largeur du layer
-            <input id="encounter-width" type="number" min="8" max="10000" step="4" value="260" />
-          </label>
-          <label>
-            Contrôle tous les...
-            <input id="encounter-check-distance" type="number" min="1" max="10000" step="1" value="160" />
-          </label>
-          <label>
-            Priorité
-            <input id="encounter-priority" type="number" step="1" value="0" />
-          </label>
-        </div>
-
         <p class="builder-hint">
-          Exemple : forêt à 25 %. Une route sûre peut être peinte par-dessus avec 0 % et une priorité plus élevée.
-          La distance indique après combien d’unités parcourues un nouveau contrôle de rencontre pourra être effectué.
+          Zone sélectionnée : <output id="encounter-label">—</output>
         </p>
 
-        <h3>Table pondérée</h3>
+        <label>
+          Chance de combat
+          <div class="brush-size-row">
+            <input id="encounter-chance" type="range" min="0" max="100" step="1" value="20" />
+            <output id="encounter-chance-value" for="encounter-chance">20 %</output>
+          </div>
+        </label>
+
+        <label>
+          Taille du pinceau
+          <div class="brush-size-row">
+            <input id="encounter-width" type="range" min="24" max="1200" step="4" value="260" />
+            <output id="encounter-width-value" for="encounter-width">260</output>
+          </div>
+        </label>
+
+        <details>
+          <summary>Options avancées du layer</summary>
+          <div class="grid-2">
+            <label>
+              Distance entre contrôles
+              <input id="encounter-check-distance" type="range" min="20" max="800" step="10" value="160" />
+            </label>
+            <label>
+              Priorité de superposition
+              <input id="encounter-priority" type="range" min="0" max="100" step="1" value="0" />
+            </label>
+          </div>
+          <p class="builder-hint">
+            Une route sûre peut utiliser 0 % de rencontre avec une priorité plus haute que la zone traversée.
+          </p>
+        </details>
+
+        <h3>Créatures possibles</h3>
         <div class="row">
           <select id="encounter-entry-select"></select>
-          <button id="encounter-entry-add" type="button">+ Entrée</button>
+          <button id="encounter-entry-add" type="button">+ Ajouter</button>
           <button id="encounter-entry-delete" type="button" class="danger">Supprimer</button>
         </div>
 
         <div class="grid-2">
           <label>
-            Créature précise (actorDefinitionId)
-            <input id="encounter-entry-actor" type="text" placeholder="capture.creature..." />
+            Sélectionner par
+            <select id="encounter-entry-kind">
+              <option value="element">Élément / type</option>
+              <option value="creature">Créature précise</option>
+            </select>
           </label>
           <label>
-            Pool / tags (séparés par virgules)
-            <input id="encounter-entry-tags" type="text" placeholder="element.earth, element.grass" />
-          </label>
-          <label>
-            Poids relatif
-            <input id="encounter-entry-weight" type="number" min="0.001" step="1" value="100" />
-          </label>
-          <label>
-            Part effective
-            <output id="encounter-entry-share">100 %</output>
+            Valeur
+            <select id="encounter-entry-value"></select>
           </label>
         </div>
 
+        <label>
+          Poids dans cette zone
+          <div class="brush-size-row">
+            <input id="encounter-entry-weight" type="range" min="1" max="100" step="1" value="100" />
+            <output id="encounter-entry-weight-value" for="encounter-entry-weight">100</output>
+          </div>
+        </label>
+
         <p class="builder-hint">
-          Exemple : poids 80 pour Terre/Herbe et 20 pour Neutre = 80 % / 20 %.
-          Les poids sont normalisés automatiquement ; aucune statistique ou visuel de créature n’est copié dans le layer.
+          Part actuelle : <output id="encounter-entry-share">100 %</output>.
+          En mode « Élément », toutes les créatures Capture qui déclarent cet élément sont éligibles automatiquement.
         </p>
       </section>
 
