@@ -19,6 +19,8 @@
 | Visuel Map Actor | Map Actor Visual Model | assetId + réglages visuels | contrat visuel | posséder x/y/collision/stats |
 | Préparation Map Actor | Map Actor Visual Preparer | image source | visuel préparé | modifier gameplay |
 | Rendu Map Actor | Map Actor Renderer | état acteur + visuel préparé + camera | pixels | écrire état acteur |
+| Authoring profil acteur | Éditeur Héros/PNJ/Créatures (futur, hors World Builder) | asset + réglages visuels | définition acteur / MapActorVisual | posséder placement monde |
+| Placement acteur | World Builder / World Model | actorDefinitionId + placement | référence placée dans WorldDocument | éditer/copier le profil visuel intrinsèque |
 | Input | Input Adapter | tactile/clavier | intent normalisé | déplacement direct |
 | Rencontre | Encounter Controller | world + entités | encounter intent | Combat décide le monde |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
