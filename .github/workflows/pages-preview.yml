@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: phase7-showcase-duel-moussados-loup-v1
+# preview-revision: phase7-real-encounter-combat-energy-v1
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-showcase-duel-moussados-loup-energy-v1-2026-10-03
+          ref: preview/lab-exploration-encounter-energy-ruleset-v1-2026-10-03
           path: combat-preview
 
       - name: Configure Pages
