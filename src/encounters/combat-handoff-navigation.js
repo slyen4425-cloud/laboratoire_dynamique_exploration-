@@ -24,8 +24,8 @@ export function launchCombatHandoffNavigation({
   );
 
   const bridgeUrl = new URL(
-    '/GenSrpg_labo_combat_dynamique/examples/dom-demo/exploration-encounter.html',
-    currentUrl.origin
+    './combat-preview/examples/dom-demo/exploration-encounter.html',
+    currentUrl
   );
 
   saveCombatHandoff(
