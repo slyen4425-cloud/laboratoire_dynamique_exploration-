@@ -1,5 +1,5 @@
 import { normalize } from './core/vector.js';
-import { stepMovement } from './core/movement.js';
+import { stepMovement } from './core/movement.js?rev=surface-traversal-replay-v1';
 import { normalizeExplorationConfig } from './core/config.js';
 import {
   createTraversalRuleRegistry,
@@ -37,12 +37,12 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=builder-dynamic-return-v1';
+} from './world/world-document-model.js?rev=surface-traversal-replay-v1';
 import {
   applyPortalTransition,
   findTriggeredPortal
 } from './world/portal-model.js?rev=builder-dynamic-return-v1';
-import { demoWorldDocument } from './world/demo-world.js?rev=builder-dynamic-return-v1';
+import { demoWorldDocument } from './world/demo-world.js?rev=surface-traversal-replay-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession
