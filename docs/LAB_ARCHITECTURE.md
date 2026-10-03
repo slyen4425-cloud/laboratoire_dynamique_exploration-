@@ -442,6 +442,34 @@ Map Actor Renderer
 acteur gameplay (x/y/facing/moving)
 ```
 
+### Accès aux modes de locomotion
+
+Le Surface Traversal Resolver **ne donne jamais** à un acteur le droit de nager ou voler.
+
+Chaîne cible :
+
+```text
+Actor/Capture gameplay capabilities
+        ↓
+capacité active / monture / effet autorisé
+        ↓
+profil de locomotion courant de l'acteur
+        ↓
+Surface Traversal Resolver
+        ↓
+passabilité + multiplicateur
+```
+
+Exemples :
+- héros normal -> `ground` ;
+- héros possédant/activant une monture volante -> `fly` tant que cette condition est valide ;
+- créature aquatique ou capacité de nage -> `swim` ;
+- effet retiré / monture quittée -> retour au profil autorisé par le gameplay.
+
+Le laboratoire peut exposer Marche/Nage/Vol dans une UI de **test**, mais cette UI n'est pas une mécanique produit et ne doit jamais devenir l'autorité des capacités.
+
+Le resolver consomme un profil de locomotion ; il ne possède ni inventaire, ni créatures possédées, ni compétences, ni montures.
+
 Le Map Actor Renderer peut appliquer :
 - ombre ;
 - miroir horizontal ;
