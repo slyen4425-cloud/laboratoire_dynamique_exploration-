@@ -447,6 +447,46 @@ Il ne peut jamais :
 Le mode simple requiert seulement un asset visuel.
 Les modes multi-vues ou animés pourront étendre le contrat sans remplacer cette base.
 
+### Orientation native du visuel
+
+`MapActorVisual` déclare l'orientation native de l'image :
+- `sourceFacingX = 1` : le visuel regarde naturellement à droite ;
+- `sourceFacingX = -1` : le visuel regarde naturellement à gauche.
+
+Le sens réel de déplacement reste `actor.facingX`, propriété de l'état gameplay.
+Le renderer applique un miroir seulement lorsque le sens voulu diffère de l'orientation native.
+
+Il ne déduit jamais cette orientation depuis les pixels et ne modifie jamais `facingX`.
+
+### Séparation authoring acteur / placement Builder
+
+Les réglages intrinsèques du `MapActorVisual` appartiennent à l'éditeur Héros/PNJ/Créatures, pas au World Builder final.
+
+Chaîne cible :
+
+```text
+Éditeur Héros/Créatures
+        ↓
+Actor Definition + MapActorVisual
+        ↓
+Actor Catalog
+        ↓
+World Builder sélectionne actorDefinitionId
+        ↓
+placement/référence dans WorldDocument
+        ↓
+runtime Exploration
+```
+
+Le World Builder final ne duplique pas :
+- sourceFacingX ;
+- targetHeight ;
+- anchor ;
+- ombre ;
+- paramètres de mouvement visuel ;
+- configuration de miroir.
+
+Le panneau Map Actor complet du laboratoire est un banc de calibration technique temporaire.
 
 ## World Builder Dynamique UI v1
 
