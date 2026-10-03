@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: map-actor-editor-cachebust-retry-v2
+# preview-revision: map-actor-source-facing-v1
 
 on:
   push:
