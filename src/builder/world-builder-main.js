@@ -835,100 +835,165 @@ function refreshObjectControls() {
   }
 }
 
-function currentActorAssetList() {
-  return importedActorAsset
-    ? [...registeredMapActorAssets, importedActorAsset]
-    : [...registeredMapActorAssets];
+function currentActorPlacements() {
+  return (
+    currentAreaRaw()?.actors ??
+    []
+  );
 }
 
-function ensureActorPreviewInArea() {
-  const area = currentAreaNormalized();
-  if (!area) return;
+function currentActorPlacement() {
+  return (
+    currentActorPlacements().find(
+      (actor) =>
+        actor.id ===
+        selectedActorPlacementId
+    ) ?? null
+  );
+}
 
-  actorPreview.x = Math.max(
-    0,
-    Math.min(
-      area.width,
-      Number.isFinite(actorPreview.x)
-        ? actorPreview.x
-        : area.width / 2
+function currentPlacedMapActors(
+  area = currentAreaNormalized()
+) {
+  if (!area) {
+    return [];
+  }
+
+  return area.actors
+    .map((placement) =>
+      createPlacedMapActorView(
+        placement,
+        captureActorDefinitionProvider
+          .resolveDefinition
+      )
     )
+    .filter(Boolean);
+}
+
+function actorDefinitionLabel(
+  definition
+) {
+  const roleLabel =
+    definition.role === 'hero'
+      ? 'Héros'
+      : definition.role === 'npc'
+        ? 'PNJ'
+        : 'Créature';
+
+  return (
+    `${definition.displayName} · ${roleLabel}`
   );
-  actorPreview.y = Math.max(
-    0,
-    Math.min(
-      area.height,
-      Number.isFinite(actorPreview.y)
-        ? actorPreview.y
-        : area.height / 2
-    )
-  );
+}
+
+function actorPlacementLabel(
+  placement
+) {
+  const definition =
+    captureActorDefinitionProvider
+      .resolveDefinition(
+        placement.actorDefinitionId
+      );
+
+  return definition
+    ? `${definition.displayName} · ${placement.id}`
+    : `${placement.actorDefinitionId} · ${placement.id}`;
 }
 
 function refreshActorControls() {
-  ensureActorPreviewInArea();
+  const placements =
+    currentActorPlacements();
 
-  const assets = currentActorAssetList();
+  if (
+    selectedActorPlacementId &&
+    !placements.some(
+      (actor) =>
+        actor.id ===
+        selectedActorPlacementId
+    )
+  ) {
+    selectedActorPlacementId =
+      placements[0]?.id ?? null;
+  }
+
+  if (
+    !selectedActorPlacementId &&
+    placements.length > 0
+  ) {
+    selectedActorPlacementId =
+      placements[0].id;
+  }
+
   setOptions(
-    $('actor-asset'),
-    assets,
-    actorVisual.assetId,
+    $('actor-definition'),
+    actorDefinitions,
+    $('actor-definition').value ||
+      actorDefinitions[0]?.id ||
+      '',
     {
-      label: (asset) => asset.label ?? asset.id
+      label:
+        actorDefinitionLabel
     }
   );
 
-  if (actorVisual.assetId) {
-    $('actor-asset').value = actorVisual.assetId;
+  setOptions(
+    $('actor-placement-select'),
+    placements,
+    selectedActorPlacementId,
+    {
+      label:
+        actorPlacementLabel
+    }
+  );
+
+  if (selectedActorPlacementId) {
+    $('actor-placement-select').value =
+      selectedActorPlacementId;
   }
 
-  $('actor-role').value = actorVisual.role;
-  $('actor-target-height').value = actorVisual.targetHeight;
-  $('actor-target-height-value').value =
-    String(actorVisual.targetHeight);
-  $('actor-source-facing').value =
-    actorVisual.sourceFacingX === -1 ? '-1' : '1';
-  $('actor-mirror').checked = actorVisual.mirrorHorizontal;
-  $('actor-facing').value = actorPreview.facingX < 0 ? '-1' : '1';
-  $('actor-moving').checked = actorPreview.moving === true;
+  const placement =
+    currentActorPlacement();
+  const disabled =
+    !placement;
 
-  const automaticAnchor =
-    !Number.isFinite(actorVisual.anchorOverride?.x) &&
-    !Number.isFinite(actorVisual.anchorOverride?.y);
-  $('actor-anchor-auto').checked = automaticAnchor;
-  $('actor-anchor-x').disabled = automaticAnchor;
-  $('actor-anchor-y').disabled = automaticAnchor;
-  $('actor-anchor-x').value =
-    Number.isFinite(actorVisual.anchorOverride?.x)
-      ? actorVisual.anchorOverride.x
-      : 0.5;
-  $('actor-anchor-y').value =
-    Number.isFinite(actorVisual.anchorOverride?.y)
-      ? actorVisual.anchorOverride.y
-      : 0.96;
-
-  $('actor-shadow-enabled').checked = actorVisual.shadow.enabled;
-  $('actor-shadow-width').value = actorVisual.shadow.widthRatio;
-  $('actor-shadow-height').value = actorVisual.shadow.heightRatio;
-  $('actor-shadow-opacity').value = actorVisual.shadow.opacity;
-  $('actor-idle-amplitude').value = actorVisual.motion.idleAmplitude;
-  $('actor-idle-frequency').value = actorVisual.motion.idleFrequency;
-  $('actor-walk-amplitude').value = actorVisual.motion.walkAmplitude;
-  $('actor-walk-frequency').value = actorVisual.motion.walkFrequency;
-
-  $('actor-preview-position').textContent =
-    `Aperçu non gameplay · x ${actorPreview.x.toFixed(1)} · y ${actorPreview.y.toFixed(1)}`;
-
-  const prepared = actorVisual.assetId
-    ? mapActorVisualPreparer?.get(actorVisual.assetId)
-    : null;
-
-  if (prepared) {
-    $('actor-import-status').textContent =
-      importedActorAsset?.id === actorVisual.assetId
-        ? `Visuel local prêt · traitement ${prepared.backgroundMode}`
-        : `Asset prêt · traitement ${prepared.backgroundMode}`;
+  for (const id of [
+    'actor-x',
+    'actor-y',
+    'actor-facing',
+    'actor-delete'
+  ]) {
+    $(id).disabled = disabled;
   }
+
+  if (!placement) {
+    $('actor-x').value = '';
+    $('actor-y').value = '';
+    $('actor-facing').value = '1';
+    $('actor-source-status').textContent =
+      actorDefinitions.length > 0
+        ? 'Sélectionner une définition puis placer sur la map.'
+        : 'Aucune définition acteur disponible.';
+    return;
+  }
+
+  $('actor-x').value =
+    placement.x;
+  $('actor-y').value =
+    placement.y;
+  $('actor-facing').value =
+    placement.facingX === -1
+      ? '-1'
+      : '1';
+
+  const definition =
+    captureActorDefinitionProvider
+      .resolveDefinition(
+        placement.actorDefinitionId
+      );
+
+  $('actor-source-status').textContent =
+    definition
+      ? `Visuel résolu depuis la définition ${definition.displayName} · ${definition.mapVisual.assetId}`
+      : `Définition introuvable : ${placement.actorDefinitionId}`;
 }
 
 function sourceBuildings(portal) {
