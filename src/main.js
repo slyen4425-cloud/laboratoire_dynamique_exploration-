@@ -59,6 +59,12 @@ import {
   CAPTURE_CREATURE_CATALOG_PREVIEW_V1
 } from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
+  resolveActiveCapturePartyRefV1
+} from './capture/capture-party-ref-adapter-v1.js';
+import {
+  CAPTURE_SESSION_PREVIEW_V1
+} from './capture/capture-session-preview-v1.js';
+import {
   createEncounterController
 } from './encounters/encounter-controller.js?rev=phase7-snapshot-v1';
 import {
@@ -201,6 +207,11 @@ const traversalRegistry = createTraversalRuleRegistry(
 const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
     CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
+
+const activeCapturePartyRef =
+  resolveActiveCapturePartyRefV1(
+    CAPTURE_SESSION_PREVIEW_V1
   );
 
 const captureActorDefinitionProvider =
@@ -528,7 +539,7 @@ function update(dt) {
     player,
     encounterConfig: activeWorldDocument.encounterConfig,
     captureCatalog: captureCreatureCatalog,
-    playerPartyRef: 'capture-party-preview',
+    playerPartyRef: activeCapturePartyRef,
     rulesetId: 'capture.standard.1v1',
     random: encounterRandom
   });
