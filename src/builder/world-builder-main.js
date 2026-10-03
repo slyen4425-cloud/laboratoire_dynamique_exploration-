@@ -846,6 +846,9 @@ function encounterSelectorOptions(kind) {
 function refreshEncounterControls() {
   ensureSelections();
 
+  $('encounter-catalog-summary').textContent =
+    `Catalogue Capture · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} éléments`;
+
   const area = currentAreaRaw();
   const layers = area?.encounterLayers ?? [];
 
