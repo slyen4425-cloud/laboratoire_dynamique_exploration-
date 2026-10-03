@@ -1,24 +1,23 @@
 # GenSrpG Exploration — Coordination
 
 ## État actif — 2026-10-03
-Phase 5 — **Terrain Family Encounters v1**.
+Phase 7 — **Encounter Controller + CaptureEncounterSnapshot v1**.
 
 Branche :
-`work/exploration-terrain-family-encounters-v1-2026-10-03`
+`work/exploration-phase7-encounter-controller-snapshot-v1-2026-10-03`
 
 Base GREEN :
-`97eaec1e9de5750d89918629a42a6387f9e4eb82`
-
-## Décision
-Le chantier Encounter Layers séparé est abandonné.
-
-Nouvelle chaîne unique :
-`surface canonique -> terrainFamilyId -> config rencontre famille -> CaptureDatabaseV1`.
+`e39e00f906ab4ba9ee2b87d4f9efeeeaecbcd0fa`
 
 ## Invariants
-- 8 familles canoniques ;
-- materialId reste visuel ;
-- terrainFamilyId reste gameplay ;
-- CaptureDatabaseV1 reste propriétaire de `elements` et `capture.spawnChance` ;
-- aucune géométrie Encounter parallèle ;
-- aucun autre dépôt modifié.
+- Encounter Controller seul décide du déclenchement ;
+- aucune boucle/timer propre aux rencontres ;
+- Terrain Family Resolver seul résout la famille locale ;
+- CaptureDatabaseV1 seul possède créatures/éléments/rareté ;
+- Encounter Bridge ne connaît que les contrats publics ;
+- aucun accès direct au labo Combat ;
+- aucun second état de position.
+
+## Suite
+Après GREEN :
+**CaptureCombatResult v1 + retour/apply-once**.
