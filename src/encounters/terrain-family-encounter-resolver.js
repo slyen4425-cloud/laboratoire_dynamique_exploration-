@@ -8,18 +8,18 @@ function boundedRandom(random) {
   return Math.max(0, Math.min(0.999999999999, value));
 }
 
-function weightedPick(items, weightOf, random) {
+function weightedPick(items, chanceOf, random) {
   const weighted = items
     .map((item) => ({
       item,
-      weight: Number(weightOf(item))
+      chance: Number(chanceOf(item))
     }))
-    .filter(({ weight }) =>
-      Number.isFinite(weight) && weight > 0
+    .filter(({ chance }) =>
+      Number.isFinite(weight) && chance > 0
     );
 
   const total = weighted.reduce(
-    (sum, entry) => sum + entry.weight,
+    (sum, entry) => sum + entry.chance,
     0
   );
 
@@ -29,7 +29,7 @@ function weightedPick(items, weightOf, random) {
   let cursor = 0;
 
   for (const entry of weighted) {
-    cursor += entry.weight;
+    cursor += entry.chance;
     if (target < cursor) return entry.item;
   }
 
@@ -65,7 +65,7 @@ export function resolveTerrainFamilyEncounter({
     });
   }
 
-  const eligibleElements = profile.elementWeights.filter(
+  const eligibleElements = profile.elementChances.filter(
     ({ elementId }) =>
       captureCatalog
         .findByElement(elementId)
@@ -74,7 +74,7 @@ export function resolveTerrainFamilyEncounter({
 
   const selectedElement = weightedPick(
     eligibleElements,
-    (entry) => entry.weight,
+    (entry) => entry.chancePercent,
     random
   );
 
