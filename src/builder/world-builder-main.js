@@ -2467,6 +2467,13 @@ for (const [kind, widthId, valueId, materialId, fallbackWidth] of [
   });
 }
 
+$('encounter-start-paint').addEventListener('click', () => {
+  setMapTool('encounter');
+  setStatus(
+    'Peinture rencontres active : touche ou glisse sur la carte'
+  );
+});
+
 $('encounter-layer-select').addEventListener('change', () => {
   selectedEncounterLayerId =
     $('encounter-layer-select').value || null;
