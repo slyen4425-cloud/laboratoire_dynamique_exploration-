@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: phase7-loup-configured-v1
+# preview-revision: phase7-loup-configured-presentation-fix-v1
 
 on:
   push:
