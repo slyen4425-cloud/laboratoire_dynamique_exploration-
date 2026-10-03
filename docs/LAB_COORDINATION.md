@@ -1,88 +1,56 @@
 # GenSrpG Exploration — Coordination
 
 ## Coordinateur unique
-
 Un seul fil directeur coordonne le chantier.
 
 Règle :
 **1 lot = 1 branche = 1 périmètre homogène.**
 
-## État actif — 2026-10-02
-
+## État actif — 2026-10-03
 Chantier :
-**Map Actor Editor v1 — calibration technique — GREEN**.
-
-Validation smartphone finale obtenue le 2026-10-03 :
-- import/handoff/retour Builder : OK ;
-- orientation native gauche/droite : OK ;
-- miroir automatique au déplacement : OK.
-
-Décision produit 2026-10-03 :
-ce panneau complet n'est pas l'éditeur produit final.
-Les réglages visuels intrinsèques appartiendront à l'éditeur Héros/PNJ/Créatures.
-Le World Builder final sélectionnera une définition d'acteur dans un catalogue et éditera uniquement son placement/référence dans le WorldDocument.
+**Surface Traversal Rules v1 — replay**.
 
 Branche :
-`work/exploration-map-actor-editor-v1-2026-10-02`
+`work/exploration-surface-traversal-rules-v1-replay-2026-10-03`
 
 Checkpoint de départ :
-`checkpoint/exploration-start-map-actor-editor-v1-2026-10-02`
+`checkpoint/exploration-start-surface-traversal-rules-v1-replay-2026-10-03`
 
 Base GREEN :
-`80e6468eda0261e0f7db12c81f98beb13df339ab`
+`ecdf28ba33fac409e7a2411ba2fd6592a34dc0b7`
 
 Dernier checkpoint GREEN :
-`checkpoint/exploration-world-builder-dynamique-ui-v1-green-2026-10-02`
+`checkpoint/exploration-map-actor-editor-v1-green-2026-10-03`
 
-Systèmes réutilisés :
-- Map Actor Visual System v1 GREEN ;
-- Map Actor Visual Preparer ;
-- Map Actor Renderer ;
-- Map Actor Asset Adapter ;
-- viewport/preview du World Builder GREEN.
+Ancienne branche technique :
+`work/exploration-surface-traversal-rules-v1-2026-10-02`
+HEAD `0293c3ab114f30313eba55b2a5b1255c4bca81d1`.
 
-Interdictions du lot :
-- aucune position gameplay parallèle ;
-- aucune collision acteur ;
-- aucune stat/IA ;
-- aucun nouveau renderer acteur ;
-- aucun hotlink inter-dépôt.
+Règle :
+**report sélectif uniquement**. Aucun merge de cette ancienne lignée.
 
-## Invariants de coordination
+## Systèmes GREEN à protéger
+- WorldArea / Portal ;
+- Building WorldObject ;
+- Spawn ancré ;
+- Map Actor Visual + sourceFacingX ;
+- World Builder Dynamique ;
+- handoff Builder/runtime ;
+- rivière canonique consommée directement depuis `surface.rivers[]`.
 
+## Invariants
 - ne jamais développer directement sur main ;
-- ne jamais toucher au dépôt principal depuis ce labo ;
-- ne jamais toucher au labo Combat depuis ce labo ;
-- pas de rustine globale ;
+- ne jamais toucher au dépôt principal ;
+- ne jamais toucher au labo Combat ;
 - pas de double autorité ;
+- materialId purement visuel ;
+- aucune seconde géométrie rivière ;
+- pas de rustine globale ;
 - mobile prioritaire ;
 - chaque régression devient un test ;
-- tout jalon GREEN possède un checkpoint.
+- CI rouge bloque publication ;
+- checkpoint GREEN avant lot suivant.
 
-## Prochaine étape coordonnée
-
-L'ancienne branche `work/exploration-surface-traversal-rules-v1-2026-10-02` reste une validation technique isolée et **ne doit pas être reprise telle quelle**.
-
-Suite obligatoire :
-1. checkpoint GREEN exact du lot Map Actor actuel ;
-2. nouveau checkpoint de départ Surface Traversal ;
-3. nouvelle branche Surface Traversal depuis ce GREEN ;
-4. report sélectif des changements utiles de l'ancienne branche ;
-5. relance de toutes les sentinelles Builder + Map Actor + Traversal ;
-6. publication seulement depuis cette nouvelle lignée.
-
-## Preview
-
-Le mécanisme Pages est une infrastructure de test.
-Il ne devient pas une autorité runtime.
-
-## Intégration future
-
-À l'intégration GenSrpG :
-- le profil visuel sera configuré dans l'éditeur Héros/PNJ/Créatures ;
-- le visuel du héros proviendra du contexte Capture ;
-- le catalogue d'acteurs fournira les définitions sélectionnables au World Builder ;
-- les assets passeront par le resolver central ;
-- le World Builder ne recopiera pas les réglages MapActorVisual dans les placements.
-
-Le laboratoire ne doit donc pas transformer son panneau de calibration visuelle en propriétaire des stats, de la session Capture, du catalogue ou du monde vivant.
+## Suite après ce lot
+Une fois Surface Traversal GREEN :
+**Phase 5 — Monde vivant**.
