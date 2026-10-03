@@ -60,10 +60,10 @@ import {
 } from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   resolveActiveCapturePartyRefV1
-} from './capture/capture-party-ref-adapter-v1.js';
+} from './capture/capture-party-ref-adapter-v1.js?rev=player-party-ref-v1';
 import {
   CAPTURE_SESSION_PREVIEW_V1
-} from './capture/capture-session-preview-v1.js';
+} from './capture/capture-session-preview-v1.js?rev=player-party-ref-v1';
 import {
   createEncounterController
 } from './encounters/encounter-controller.js?rev=phase7-snapshot-v1';
