@@ -149,3 +149,30 @@ La sentinelle Loup ne possède aucun chemin physique dans le WorldDocument :
 
 Gate restante : **validation utilisateur visuelle/ergonomique** du Loup sur la map et du panneau Builder placement-only.
 
+## Retour utilisateur — vue acteur placé — 2026-10-03
+
+Validation utilisateur :
+- le Loup volcanique est bien présent sur la map ;
+- le chemin de résolution d'asset est validé ;
+- le lien / placement est considéré correct.
+
+Correction demandée :
+- la map affichait la vue `player/back`, donc le Loup était vu de dos ;
+- pour une créature placée dans le monde, utiliser la vue `opponent/front` en priorité.
+
+Correction appliquée :
+- le provider Actor Definition Capture choisit désormais `presentation.visual.front.assetId` ;
+- fallback explicite vers `back` uniquement si `front` est absent ;
+- aucune modification du WorldDocument, du placement, du renderer ou des assets ;
+- aucun assetId du Loup copié dans la map.
+
+TDD :
+- fixture conserve bien deux vues distinctes : front=opponent, back=player ;
+- les tests exigent maintenant que la définition et la vue placée utilisent l'asset opponent.
+
+CI :
+- run `37148839946` — **SUCCESS**.
+
+Gate restante :
+- revalidation visuelle rapide du Loup de face dans la preview publique.
+
