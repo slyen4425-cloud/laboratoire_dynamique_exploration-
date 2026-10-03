@@ -57,6 +57,7 @@ test('World Builder exposes Map Actor Editor controls and uses the GREEN rendere
     'actor-asset',
     'actor-image-import',
     'actor-target-height',
+    'actor-source-facing',
     'actor-anchor-auto',
     'actor-shadow-enabled',
     'actor-mirror',
