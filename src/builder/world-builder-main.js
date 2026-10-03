@@ -28,7 +28,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=encounter-layers-v1';
+} from './world-builder-draft.js?rev=encounter-layers-v2';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -79,7 +79,7 @@ import {
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
 import {
   resolveWorldAreaSpawnPoint
-} from '../world/world-area-model.js?rev=builder-dynamic-return-v1';
+} from '../world/world-area-model.js?rev=encounter-layers-v2';
 import {
   materialPackV1
 } from '../materials/material-pack-v1.js';
