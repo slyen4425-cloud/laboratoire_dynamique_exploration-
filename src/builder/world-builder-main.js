@@ -1,4 +1,4 @@
-import { demoWorldDocument } from '../world/demo-world.js?rev=surface-traversal-replay-v1';
+import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-encounters-v1';
 import {
   addPortal,
   addSpawn,
@@ -23,7 +23,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=surface-traversal-replay-v1';
+} from './world-builder-draft.js?rev=terrain-family-encounters-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -63,7 +63,7 @@ import {
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
 import {
   resolveWorldAreaSpawnPoint
-} from '../world/world-area-model.js?rev=builder-dynamic-return-v1';
+} from '../world/world-area-model.js?rev=terrain-family-encounters-v1';
 import {
   materialPackV1
 } from '../materials/material-pack-v1.js';
@@ -1036,6 +1036,7 @@ function refreshControls() {
   ensureSelections();
   refreshAreaControls();
   refreshTerrainControls();
+  refreshFamilyEncounterControls();
   refreshObjectControls();
   refreshActorControls();
   refreshPortalControls();
@@ -1977,6 +1978,12 @@ function beginSurfacePath(kind, point) {
       : kind === 'terrain'
         ? $('terrain-paint-material').value
         : $('terrain-route-material').value;
+  const terrainFamilyId =
+    kind === 'river'
+      ? 'sea'
+      : kind === 'route'
+        ? 'road'
+        : $('terrain-family').value;
 
   draft = addSurfacePath(
     draft,
@@ -1984,6 +1991,7 @@ function beginSurfacePath(kind, point) {
     kind,
     {
       width,
+      terrainFamilyId,
       materialId,
       points: [point, point]
     }
@@ -2122,15 +2130,14 @@ $('area-select').addEventListener('change', () => {
   refreshControls();
 });
 
-for (const id of ['area-width', 'area-height', 'area-material']) {
+for (const id of ['area-width', 'area-height']) {
   $(id).addEventListener('change', () => {
     draft = updateAreaProperties(
       draft,
       selectedAreaId,
       {
         width: numberValue($('area-width')),
-        height: numberValue($('area-height')),
-        baseMaterialId: $('area-material').value
+        height: numberValue($('area-height'))
       }
     );
     fitRequested = true;
@@ -2138,6 +2145,105 @@ for (const id of ['area-width', 'area-height', 'area-material']) {
   });
 }
 
+$('area-family').addEventListener('change', () => {
+  const familyId = $('area-family').value;
+  const materials = materialsForTerrainFamily(familyId);
+  const materialId = materials[0]?.id ?? null;
+
+  draft = updateAreaProperties(
+    draft,
+    selectedAreaId,
+    {
+      baseTerrainFamilyId: familyId,
+      baseMaterialId: materialId
+    }
+  );
+  refreshControls();
+});
+
+$('area-material').addEventListener('change', () => {
+  draft = updateAreaProperties(
+    draft,
+    selectedAreaId,
+    {
+      baseMaterialId: $('area-material').value
+    }
+  );
+  refreshJson();
+  renderPreview();
+});
+
+
+$('terrain-family').addEventListener('change', () => {
+  const familyId = $('terrain-family').value;
+  const materials = materialsForTerrainFamily(familyId);
+  const materialId = materials[0]?.id ?? '';
+
+  setOptions(
+    $('terrain-paint-material'),
+    materials,
+    materialId,
+    { label: (material) => material.label }
+  );
+  $('terrain-paint-material').value = materialId;
+
+  if (
+    selectedSurfaceKind === 'terrain' &&
+    selectedSurfacePathId
+  ) {
+    draft = updateSurfacePath(
+      draft,
+      selectedAreaId,
+      'terrain',
+      selectedSurfacePathId,
+      {
+        terrainFamilyId: familyId,
+        materialId
+      }
+    );
+    refreshJson();
+    renderPreview();
+  }
+});
+
+$('family-encounter-family').addEventListener(
+  'change',
+  () => {
+    selectedEncounterFamilyId =
+      $('family-encounter-family').value;
+    refreshFamilyEncounterControls();
+  }
+);
+
+$('family-encounter-chance').addEventListener(
+  'input',
+  () => {
+    draft = updateTerrainFamilyEncounterProfile(
+      draft,
+      selectedEncounterFamilyId,
+      {
+        encounterChancePercent: numberValue(
+          $('family-encounter-chance'),
+          0
+        )
+      }
+    );
+
+    $('family-encounter-chance-value').value =
+      `${Math.round(
+        numberValue($('family-encounter-chance'), 0)
+      )} %`;
+
+    const profile = encounterProfile();
+    const total = encounterElementTotal(profile);
+    $('family-encounter-total').classList.toggle(
+      'invalid',
+      profile?.encounterChancePercent > 0 &&
+        Math.abs(total - 100) > 0.001
+    );
+    refreshJson();
+  }
+);
 
 $('terrain-path-select').addEventListener('change', () => {
   const value = $('terrain-path-select').value;
@@ -2151,6 +2257,7 @@ $('terrain-path-select').addEventListener('change', () => {
     selectedSurfacePathId = value.slice(separator + 1);
   }
 
+  refreshTerrainControls();
   renderPreview();
 });
 
