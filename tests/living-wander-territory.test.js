@@ -10,6 +10,9 @@ import {
   advanceWildCreatureTowardTarget
 } from '../src/living/wander-planner.js';
 import {
+  createWildWanderController
+} from '../src/living/living-runtime.js';
+import {
   normalizeMapActorVisual
 } from '../src/actors/map-actor-visual-model.js';
 import { demoWorldDocument } from '../src/world/demo-world.js';
@@ -228,4 +231,53 @@ test('wild advancement never copies visual or locomotion profile into the runtim
   assert.equal('locomotion' in next, false);
   assert.equal('stats' in next, false);
   assert.equal(next.actorDefinitionId, entity.actorDefinitionId);
+});
+
+
+test('wander runtime never lets an entity leave its home territory', () => {
+  const config = configWithZones();
+  const fastGroundDefinition = Object.freeze({
+    ...groundDefinition,
+    exploration: Object.freeze({
+      ...groundDefinition.exploration,
+      maxSpeed: 500
+    })
+  });
+  const definitions = new Map([
+    [fastGroundDefinition.id, fastGroundDefinition]
+  ]);
+  const controller = createWildWanderController(
+    config,
+    {
+      worldDocument: demoWorldDocument,
+      resolveActorDefinition: (id) =>
+        definitions.get(id) ?? null,
+      seed: 'territory-boundary'
+    }
+  );
+
+  let entities = Object.freeze([
+    createWildCreatureEntity({
+      id: 'wild-fast-ground',
+      actorDefinitionId: fastGroundDefinition.id,
+      areaId: 'forest-exterior',
+      x: 320,
+      y: 520,
+      homeZoneId: 'ground-zone'
+    })
+  ]);
+
+  for (let step = 0; step < 12; step += 1) {
+    entities = controller.step(entities, 1);
+    const entity = entities[0];
+    const distance = Math.hypot(
+      entity.x - 320,
+      entity.y - 520
+    );
+
+    assert.ok(
+      distance <= 60 + 1e-9,
+      `entity escaped territory at step ${step}: ${distance}`
+    );
+  }
 });
