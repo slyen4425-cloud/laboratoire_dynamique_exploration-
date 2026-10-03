@@ -1,38 +1,29 @@
 # GenSrpG Exploration — Coordination
 
-## Coordinateur unique
-Un seul fil directeur coordonne le chantier.
-
-Règle :
-**1 lot = 1 branche = 1 périmètre homogène.**
-
 ## État actif — 2026-10-03
-Phase 5 — Monde vivant.
-
-Micro-lot :
-**Spawn Planner / Activation déterministe v1**.
+Phase 5 — Monde vivant — **Wild Runtime Presence v1**.
 
 Branche :
-`work/exploration-phase5-spawn-planner-v1-2026-10-03`
-
-Checkpoint de départ :
-`checkpoint/exploration-start-phase5-spawn-planner-v1-2026-10-03`
+`work/exploration-phase5-wild-runtime-presence-v1-2026-10-03`
 
 Base GREEN :
-`d0a17f8ebc479733e5690bc358fb55c60ffd1785`
+`8336e27164bfd5b573219a2b6d65ae749f98dc57`
+
+Checkpoint de départ :
+`checkpoint/exploration-start-phase5-wild-runtime-presence-v1-2026-10-03`
 
 Dernier checkpoint GREEN :
-`checkpoint/exploration-phase5-wild-creature-spawn-v1-green-2026-10-03`
+`checkpoint/exploration-phase5-spawn-planner-v1-green-2026-10-03`
 
 ## Invariants
-- planner pur et déterministe ;
-- aucune décision de collision/traversal dans le planner ;
-- actorDefinitionId opaque ;
-- aucun timer global ;
-- aucune mutation runtime ;
-- materialId purement visuel ;
-- autre dépôt interdit ;
-- CI rouge bloque le lot.
+- aucun nouveau moteur de mouvement ;
+- aucun second renderer Map Actor ;
+- aucune copie stats/visuel dans WildCreatureEntity ;
+- locomotion vient de Actor Definition ;
+- Collision/Traversal seules autorités de passabilité ;
+- activation bornée au bootstrap, sans timer ;
+- autre dépôt interdit.
 
 ## Suite
-Activation runtime minimale seulement après GREEN.
+Après validation GREEN :
+micro-lot 4 — errance/territoire v1.
