@@ -68,6 +68,7 @@ test('World Builder exposes Encounter Layers as a dedicated gameplay layer edito
 
   for (const id of [
     'map-tool-encounter',
+    'encounter-start-paint',
     'encounter-layer-select',
     'encounter-layer-delete',
     'encounter-label',
