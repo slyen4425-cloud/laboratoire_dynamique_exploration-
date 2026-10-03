@@ -36,7 +36,7 @@ test('family profile stores encounter chance and element distribution only', () 
 
   assert.equal(forest.encounterChancePercent, 30);
   assert.deepEqual(
-    forest.elementChances.map(({ elementId, chancePercent }) => [elementId, weight]),
+    forest.elementChances.map(({ elementId, chancePercent }) => [elementId, chancePercent]),
     [['nature',60],['earth',25],['fire',15]]
   );
   assert.equal('materialId' in forest, false);
@@ -61,7 +61,7 @@ test('road can be configured as a safe family with zero encounters', () => {
   assert.deepEqual(road.elementChances, []);
 });
 
-test('chance is clamped and invalid element weights are discarded', () => {
+test('chance is clamped and invalid element percentages are discarded', () => {
   const config = normalizeTerrainFamilyEncounterConfig({
     families: [
       {
