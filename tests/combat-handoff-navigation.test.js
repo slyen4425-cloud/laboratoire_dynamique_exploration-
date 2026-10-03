@@ -56,7 +56,7 @@ test('combat navigation adapter owns page navigation outside Exploration bootstr
   assert.equal(launched, true);
   assert.equal(
     target,
-    'https://slyen4425-cloud.github.io/GenSrpg_labo_combat_dynamique/examples/dom-demo/exploration-encounter.html'
+    'https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/combat-preview/examples/dom-demo/exploration-encounter.html'
   );
 
   const handoff = readCombatHandoff(store);
