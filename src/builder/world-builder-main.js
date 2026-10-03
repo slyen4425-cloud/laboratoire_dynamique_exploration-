@@ -64,6 +64,12 @@ import {
   createMapActorVisualPreparer
 } from '../assets/map-actor-visual-preparer.js';
 import {
+  createCaptureCreatureCatalogProvider
+} from '../capture/capture-creature-catalog-provider.js?rev=encounter-layers-v2';
+import {
+  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+} from '../capture/capture-creature-catalog-preview-v1.js?rev=encounter-layers-v2';
+import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
   buildingVisualRect
@@ -113,6 +119,11 @@ const pathMaterials = materialRegistry
 const waterMaterials = materialRegistry
   .list()
   .filter((material) => material.kind === 'water');
+
+const captureCreatureCatalog =
+  createCaptureCreatureCatalogProvider(
+    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
 
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
@@ -795,6 +806,43 @@ function encounterEntryShare(layer, entry) {
   );
 }
 
+function encounterSelectorLabel(entry) {
+  if (!entry) return '';
+
+  if (entry.selectorKind === 'creature') {
+    return (
+      captureCreatureCatalog.resolveCreature(entry.selectorId)?.name ??
+      entry.selectorId
+    );
+  }
+
+  const element =
+    captureCreatureCatalog
+      .listElements()
+      .find((item) => item.id === entry.selectorId);
+
+  return element?.label ?? entry.selectorId;
+}
+
+function encounterSelectorOptions(kind) {
+  if (kind === 'creature') {
+    return captureCreatureCatalog
+      .listCreatures()
+      .map((creature) => ({
+        id: creature.id,
+        label: creature.name
+      }));
+  }
+
+  return captureCreatureCatalog
+    .listElements()
+    .map((element) => ({
+      id: element.id,
+      label:
+        `${element.label} · ${captureCreatureCatalog.findByElement(element.id).length} créature(s)`
+    }));
+}
+
 function refreshEncounterControls() {
   ensureSelections();
 
@@ -822,7 +870,6 @@ function refreshEncounterControls() {
   for (const id of [
     'encounter-layer-delete',
     'encounter-enabled',
-    'encounter-label',
     'encounter-width',
     'encounter-chance',
     'encounter-check-distance',
@@ -830,23 +877,31 @@ function refreshEncounterControls() {
     'encounter-entry-select',
     'encounter-entry-add',
     'encounter-entry-delete',
-    'encounter-entry-actor',
-    'encounter-entry-tags',
+    'encounter-entry-kind',
+    'encounter-entry-value',
     'encounter-entry-weight'
   ]) {
     $(id).disabled = disabled;
   }
 
   if (!layer) {
+    $('encounter-label').value = '—';
+    $('encounter-chance-value').value = '—';
+    $('encounter-width-value').value = '—';
+    $('encounter-entry-weight-value').value = '—';
     $('encounter-entry-share').value = '—';
     return;
   }
 
-  $('encounter-enabled').checked = layer.enabled !== false;
   $('encounter-label').value = layer.label ?? layer.id;
+  $('encounter-enabled').checked = layer.enabled !== false;
   $('encounter-width').value = layer.width ?? 180;
+  $('encounter-width-value').value =
+    String(Math.round(layer.width ?? 180));
   $('encounter-chance').value =
     layer.encounterChancePercent ?? 0;
+  $('encounter-chance-value').value =
+    `${Math.round(layer.encounterChancePercent ?? 0)} %`;
   $('encounter-check-distance').value =
     layer.checkDistance ?? 160;
   $('encounter-priority').value = layer.priority ?? 0;
@@ -857,13 +912,8 @@ function refreshEncounterControls() {
     entries,
     selectedEncounterEntryId,
     {
-      label: (entry) => {
-        const target =
-          entry.actorDefinitionId ||
-          entry.tags?.join(', ') ||
-          entry.id;
-        return `${target} · ${encounterEntryShare(layer, entry)}%`;
-      }
+      label: (entry) =>
+        `${encounterSelectorLabel(entry)} · ${encounterEntryShare(layer, entry)}%`
     }
   );
 
@@ -877,23 +927,37 @@ function refreshEncounterControls() {
 
   for (const id of [
     'encounter-entry-delete',
-    'encounter-entry-actor',
-    'encounter-entry-tags',
+    'encounter-entry-kind',
+    'encounter-entry-value',
     'encounter-entry-weight'
   ]) {
     $(id).disabled = entryDisabled;
   }
 
-  $('encounter-entry-actor').value =
-    entry?.actorDefinitionId ?? '';
-  $('encounter-entry-tags').value =
-    entry?.tags?.join(', ') ?? '';
-  $('encounter-entry-weight').value =
-    entry?.weight ?? '';
+  if (!entry) {
+    $('encounter-entry-kind').value = 'element';
+    $('encounter-entry-value').replaceChildren();
+    $('encounter-entry-weight-value').value = '—';
+    $('encounter-entry-share').value = '—';
+    return;
+  }
+
+  $('encounter-entry-kind').value = entry.selectorKind;
+
+  const options = encounterSelectorOptions(entry.selectorKind);
+  setOptions(
+    $('encounter-entry-value'),
+    options,
+    entry.selectorId,
+    { label: (item) => item.label }
+  );
+  $('encounter-entry-value').value = entry.selectorId;
+
+  $('encounter-entry-weight').value = entry.weight ?? 100;
+  $('encounter-entry-weight-value').value =
+    String(Math.round(entry.weight ?? 100));
   $('encounter-entry-share').value =
-    entry
-      ? `${encounterEntryShare(layer, entry)} %`
-      : '—';
+    `${encounterEntryShare(layer, entry)} %`;
 }
 
 function sourceBuildings(portal) {
@@ -1456,7 +1520,6 @@ function applyEncounterLayerInputs() {
     selectedAreaId,
     selectedEncounterLayerId,
     {
-      label: $('encounter-label').value,
       enabled: $('encounter-enabled').checked,
       width: numberValue($('encounter-width'), 260),
       encounterChancePercent: numberValue(
@@ -1485,8 +1548,8 @@ function applyEncounterEntryInputs() {
     selectedEncounterLayerId,
     selectedEncounterEntryId,
     {
-      actorDefinitionId: $('encounter-entry-actor').value,
-      tags: $('encounter-entry-tags').value,
+      selectorKind: $('encounter-entry-kind').value,
+      selectorId: $('encounter-entry-value').value,
       weight: numberValue($('encounter-entry-weight'), 100)
     }
   );
@@ -2106,7 +2169,9 @@ function beginEncounterLayer(point) {
       table: [
         {
           id: 'entry-1',
-          tags: ['element.neutral'],
+          selectorKind: 'element',
+          selectorId:
+            captureCreatureCatalog.listElements()[0]?.id ?? 'fire',
           weight: 100
         }
       ]
@@ -2379,7 +2444,6 @@ $('encounter-layer-delete').addEventListener('click', () => {
 
 for (const id of [
   'encounter-enabled',
-  'encounter-label',
   'encounter-width',
   'encounter-chance',
   'encounter-check-distance',
@@ -2411,7 +2475,9 @@ $('encounter-entry-add').addEventListener('click', () => {
     selectedAreaId,
     selectedEncounterLayerId,
     {
-      tags: ['element.neutral'],
+      selectorKind: 'element',
+      selectorId:
+        captureCreatureCatalog.listElements()[0]?.id ?? 'fire',
       weight: 100
     }
   );
@@ -2444,16 +2510,34 @@ $('encounter-entry-delete').addEventListener('click', () => {
   renderPreview();
 });
 
-for (const id of [
-  'encounter-entry-actor',
-  'encounter-entry-tags',
-  'encounter-entry-weight'
-]) {
-  $(id).addEventListener(
-    id === 'encounter-entry-weight' ? 'input' : 'change',
-    applyEncounterEntryInputs
+$('encounter-entry-kind').addEventListener('change', () => {
+  const options = encounterSelectorOptions(
+    $('encounter-entry-kind').value
   );
-}
+
+  setOptions(
+    $('encounter-entry-value'),
+    options,
+    options[0]?.id ?? null,
+    { label: (item) => item.label }
+  );
+
+  if (options[0]) {
+    $('encounter-entry-value').value = options[0].id;
+  }
+
+  applyEncounterEntryInputs();
+});
+
+$('encounter-entry-value').addEventListener(
+  'change',
+  applyEncounterEntryInputs
+);
+
+$('encounter-entry-weight').addEventListener(
+  'input',
+  applyEncounterEntryInputs
+);
 
 $('spawn-select').addEventListener('change', () => {
   selectedSpawnId = $('spawn-select').value;
