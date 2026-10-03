@@ -1,7 +1,14 @@
 const DEFAULT_BASE_MATERIAL = 'grass.forest';
+const DEFAULT_BASE_TRAVERSAL_RULE = 'terrain.ground';
 
 function finite(value) {
   return Number.isFinite(value);
+}
+
+function normalizedString(value, fallback) {
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : fallback;
 }
 
 function normalizePoint(point) {
@@ -15,7 +22,9 @@ function normalizeStrokeItem(
   index,
   {
     defaultWidth,
-    defaultMaterialId
+    defaultMaterialId,
+    defaultTraversalRuleId = null,
+    includeTraversalRule = false
   }
 ) {
   if (!item || typeof item !== 'object') return null;
@@ -26,25 +35,27 @@ function normalizeStrokeItem(
 
   if (points.length < 2) return null;
 
-  const width =
-    finite(item.width) && item.width > 0
-      ? item.width
-      : defaultWidth;
-  const id =
-    typeof item.id === 'string' && item.id.trim()
-      ? item.id.trim()
-      : `${prefix}-${index + 1}`;
-  const materialId =
-    typeof item.materialId === 'string' && item.materialId.trim()
-      ? item.materialId.trim()
-      : defaultMaterialId;
-
-  return Object.freeze({
-    id,
-    width,
-    materialId,
+  const normalized = {
+    id: normalizedString(item.id, `${prefix}-${index + 1}`),
+    width:
+      finite(item.width) && item.width > 0
+        ? item.width
+        : defaultWidth,
+    materialId: normalizedString(
+      item.materialId,
+      defaultMaterialId
+    ),
     points: Object.freeze(points)
-  });
+  };
+
+  if (includeTraversalRule) {
+    normalized.traversalRuleId = normalizedString(
+      item.traversalRuleId,
+      defaultTraversalRuleId
+    );
+  }
+
+  return Object.freeze(normalized);
 }
 
 export function normalizeWorldSurface(raw = {}) {
@@ -59,7 +70,9 @@ export function normalizeWorldSurface(raw = {}) {
             index,
             {
               defaultWidth: 64,
-              defaultMaterialId: 'road.dirt'
+              defaultMaterialId: 'road.dirt',
+              defaultTraversalRuleId: 'terrain.road',
+              includeTraversalRule: true
             }
           )
         )
@@ -75,7 +88,9 @@ export function normalizeWorldSurface(raw = {}) {
             index,
             {
               defaultWidth: 72,
-              defaultMaterialId: 'water.forest_stream'
+              defaultMaterialId: 'water.forest_stream',
+              defaultTraversalRuleId: 'terrain.water',
+              includeTraversalRule: true
             }
           )
         )
@@ -98,14 +113,16 @@ export function normalizeWorldSurface(raw = {}) {
         .filter(Boolean)
     : [];
 
-  const baseMaterialId =
-    typeof source.baseMaterialId === 'string' && source.baseMaterialId.trim()
-      ? source.baseMaterialId.trim()
-      : DEFAULT_BASE_MATERIAL;
-
   return Object.freeze({
-    version: 1,
-    baseMaterialId,
+    version: 2,
+    baseMaterialId: normalizedString(
+      source.baseMaterialId,
+      DEFAULT_BASE_MATERIAL
+    ),
+    baseTraversalRuleId: normalizedString(
+      source.baseTraversalRuleId,
+      DEFAULT_BASE_TRAVERSAL_RULE
+    ),
     zones: Object.freeze(zones),
     routes: Object.freeze(routes),
     rivers: Object.freeze(rivers)
