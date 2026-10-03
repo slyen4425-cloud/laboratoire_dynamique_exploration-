@@ -316,3 +316,22 @@ CI : `37152638356` — **SUCCESS**.
 
 État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
 
+## Publication preview coordonnée — 2026-10-03
+
+Preview fonctionnelle figée :
+- branche Exploration : `preview/exploration-player-party-ref-v1-2026-10-03` ;
+- SHA Exploration : `ed606a047d8238c524aba67cf736a275fd4ef2ec` ;
+- checkpoint : `checkpoint/exploration-player-party-ref-v1-prevalidation-green-2026-10-03`.
+
+Publication Pages :
+- PR infra : #61 ;
+- main infra : `81c6a2aee3e1d89bc1dc179ea58e29358332255d` ;
+- Pages run : `37152774027` — **SUCCESS**.
+
+Le workflow public utilise explicitement :
+- `preview/exploration-player-party-ref-v1-2026-10-03` ;
+- `preview/lab-exploration-player-party-v1-2026-10-03` ;
+- `global-assets`.
+
+Gate restant : validation utilisateur du vrai Player Party dans le combat Encounter.
+
