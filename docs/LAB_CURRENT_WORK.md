@@ -414,3 +414,30 @@ CI :
 
 État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
 
+## Publication preview — Combat Document Revision v1
+
+Preview Exploration :
+`preview/exploration-combat-document-revision-v1-2026-10-03`
+
+Preview Combat :
+`preview/lab-player-party-recall-runtime-fix-v1-2026-10-03`
+
+Publication :
+- PR infra : #64 ;
+- main infra : `d36b7680750b9ce763d01bf7d2153e94eb851440` ;
+- Pages run : `37154502478` — **SUCCESS**.
+
+Le job confirme :
+- Checkout Exploration Combat Document Revision preview — SUCCESS ;
+- Checkout Combat Recall Runtime Fix preview — SUCCESS ;
+- Checkout Capture global visual assets — SUCCESS ;
+- Upload preview — SUCCESS ;
+- Deploy preview — SUCCESS.
+
+Le document Combat est désormais ouvert avec :
+`exploration-encounter.html?rev=player-party-recall-runtime-fix-v1`.
+
+Gate restante : validation utilisateur du vrai changement Loup -> Moussados après Rappel puis Invocation.
+
+État : **PUBLISHED PREVALIDATION GREEN**.
+
