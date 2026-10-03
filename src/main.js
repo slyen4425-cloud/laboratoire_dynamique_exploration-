@@ -19,7 +19,7 @@ import {
 } from './actors/placed-map-actor-view.js';
 import {
   createCaptureActorPreviewProviderV1
-} from './capture/capture-actor-preview-loader-v1.js';
+} from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
 import { materialPackV1 } from './materials/material-pack-v1.js?rev=worldarea-portal-v1-interior-surface-fix';
 import { createMaterialRegistry } from './materials/material-registry.js';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
