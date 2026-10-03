@@ -1,10 +1,13 @@
 import { normalizeWorldSurface } from './surface-model.js?rev=surface-traversal-replay-v1';
 import {
+  normalizeEncounterLayers
+} from '../encounters/encounter-layer-model.js?rev=encounter-layers-v1';
+import {
   buildingDoorArrivalWorld,
   normalizeWorldObjects
 } from './world-object-model.js?rev=surface-traversal-replay-v1';
 
-export const WORLD_AREA_SCHEMA_VERSION = 2;
+export const WORLD_AREA_SCHEMA_VERSION = 3;
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max
@@ -109,6 +112,7 @@ export function normalizeWorldArea(raw, index = 0) {
     width: finiteNumber(raw.width, 1200, { min: 128, max: 20000 }),
     height: finiteNumber(raw.height, 800, { min: 128, max: 20000 }),
     surface: normalizeWorldSurface(raw.surface),
+    encounterLayers: normalizeEncounterLayers(raw.encounterLayers),
     objects: normalizeWorldObjects(raw.objects),
     obstacles: Object.freeze(obstacles),
     spawns: Object.freeze(uniqueSpawns)
