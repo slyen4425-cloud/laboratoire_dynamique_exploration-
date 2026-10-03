@@ -282,3 +282,43 @@ Gate smartphone :
 - vérifier visuel/réglages ;
 - Retour World Builder ;
 - vérifier restauration.
+
+
+## Validation utilisateur — handoff Map Actor — 2026-10-03
+
+Validation smartphone utilisateur : **OK**.
+
+Confirmé :
+- image importée chargée dans le runtime ;
+- disparition de l'erreur asset Map Actor ;
+- handoff Builder -> runtime fonctionnel.
+
+Cette validation ferme la régression d'asset/handoff précédemment ouverte.
+
+## Ajustement produit — orientation native + séparation éditeurs — 2026-10-03
+
+Retour utilisateur :
+- le visuel peut être naturellement tourné dans le mauvais sens gauche/droite ;
+- il faut pouvoir déclarer simplement l'orientation de l'image source ;
+- les réglages visuels complets Héros/Créatures ne doivent pas rester dans le World Builder produit ;
+- le World Builder doit à terme seulement choisir un acteur/monstre dans une liste et le placer.
+
+Décision :
+- ajout de `sourceFacingX` au `MapActorVisual v1`, backward-compatible :
+  - `1` = source regarde à droite ;
+  - `-1` = source regarde à gauche ;
+- `actor.facingX` reste l'autorité du sens de déplacement ;
+- le Map Actor Renderer miroir automatiquement si le sens demandé diffère du sens natif ;
+- le panneau actuel du Builder reste une **surface de calibration du laboratoire** ;
+- cible produit :
+  `Éditeur Héros/Créatures -> Actor Definition + MapActorVisual -> catalogue -> Builder sélection/placement -> runtime`.
+
+TDD :
+- sentinelle native-facing : commit `f60ad32813d5ed0a4e700339f1c45c6717787389` — FAILURE attendue ;
+- modèle : `2e7bd506186a05388737ba6d21364b4de4bee156` ;
+- renderer : `929bdf7f4c48dc6c2a2b28ae1479440d1bc30442` ;
+- UI calibration : `b980e137414de85bc7c317b1d3705663148d34e8` ;
+- sentinelle UI : `bd11b3ea08269d3294a683e496cdea8a8d5e5e11`.
+
+Gate restante :
+validation smartphone du réglage « Orientation du visuel source » et du miroir automatique pendant le déplacement.
