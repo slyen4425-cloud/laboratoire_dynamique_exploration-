@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: phase5-encounter-layers-v2-capture-catalog
+# preview-revision: phase5-encounter-prepaint-v3
 
 on:
   push:
