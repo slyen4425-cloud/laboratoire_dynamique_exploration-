@@ -56,8 +56,9 @@ import {
 import {
   collectLivingMapActorAssetIds,
   createInitialWildlife,
-  createWildMapActorView
-} from './living/living-runtime.js?rev=phase5-wild-runtime-presence-v1';
+  createWildMapActorView,
+  createWildWanderController
+} from './living/living-runtime.js?rev=phase5-wild-wander-territory-v1';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
@@ -128,13 +129,23 @@ const traversalRegistry = createTraversalRuleRegistry(
 );
 
 const livingWorldConfig = demoLivingWorldConfig;
-const wildCreatures = createInitialWildlife(
+let wildCreatures = createInitialWildlife(
   livingWorldConfig,
   {
     worldDocument: activeWorldDocument,
     resolveActorDefinition: resolveDemoLivingActorDefinition,
     seed: `${activeWorldDocument.id}:wildlife:v1`,
-    activationCount: 2,
+    activationCount: 3,
+    traversalRegistry
+  }
+);
+
+const wildWanderController = createWildWanderController(
+  livingWorldConfig,
+  {
+    worldDocument: activeWorldDocument,
+    resolveActorDefinition: resolveDemoLivingActorDefinition,
+    seed: `${activeWorldDocument.id}:wander:v1`,
     traversalRegistry
   }
 );
@@ -351,6 +362,12 @@ function update(dt) {
   );
 
   applyTriggeredPortal();
+
+  wildCreatures = wildWanderController.step(
+    wildCreatures,
+    dt
+  );
+
   updateCamera();
 
   const traversal = resolveSurfaceTraversal(
