@@ -234,15 +234,22 @@
           </div>
         </label>
         <div class="grid-2">
+          <label>
+            Orientation du visuel source
+            <select id="actor-source-facing">
+              <option value="1">Regarde à droite</option>
+              <option value="-1">Regarde à gauche</option>
+            </select>
+          </label>
           <label class="checkbox-line">
             <input id="actor-mirror" type="checkbox" checked />
-            Miroir automatique gauche/droite
+            Retourner automatiquement selon le déplacement
           </label>
           <label>
             Direction aperçu
             <select id="actor-facing">
-              <option value="1">Droite</option>
-              <option value="-1">Gauche</option>
+              <option value="1">Déplacement vers la droite</option>
+              <option value="-1">Déplacement vers la gauche</option>
             </select>
           </label>
         </div>
