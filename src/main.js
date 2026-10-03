@@ -58,7 +58,7 @@ import {
   createInitialWildlife,
   createWildMapActorView,
   createWildWanderController
-} from './living/living-runtime.js?rev=phase5-wild-wander-territory-v1';
+} from './living/living-runtime.js?rev=phase5-wild-wander-territory-v1-boundary';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
