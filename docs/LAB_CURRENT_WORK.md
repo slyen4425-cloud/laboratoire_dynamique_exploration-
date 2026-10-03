@@ -92,3 +92,45 @@ WildCreatureEntity
 - volant visible et se déplace sans être bloqué par l'eau ;
 - aucune créature ne sort de son territoire ;
 - joueur/Builder/Portal/Traversal sans régression.
+
+
+## État technique — Errance / Territoire v1 — 2026-10-03
+
+Implémenté :
+- Wander Planner déterministe ;
+- destination toujours choisie dans `homeZoneId` ;
+- essais locaux bornés ;
+- passabilité injectée depuis Collision/Traversal ;
+- contrôleur d'errance runtime sans timer global ;
+- mouvement via `stepMovement` existant ;
+- nouvelle destination à l'arrivée ou si une destination devient bloquée ;
+- WildCreatureEntity reste minimal et immuable ;
+- état éphémère de destination séparé de la position canonique ;
+- définition aquatique demo `capture.creature.demo.swim` ;
+- locomotion aquatique fournie par Actor Definition : `swim` ;
+- zone/règle de spawn aquatique dans la rivière ;
+- trois profils runtime : ground / swim / fly ;
+- activation démo portée à 3 créatures ;
+- rendu toujours via Map Actor Renderer GREEN.
+
+TDD :
+- contrat Errance/Territoire : commit `b8d5ca30a5ffbbfff5c2da9abc3358dccdd629d9` — **FAILURE attendue** ;
+- Wander Planner : `f10dee8ae6cf51124551c68ff33493a63181e9f1` ;
+- Actor Definition aquatique : `be518b0728f55f6b4389e04bea2572454aa6862d` ;
+- zone/règle aquatique : `2c87866cf5a30feaa19997e72cdefe2f0e4cea8e` ;
+- contrôleur runtime : `5ef1d2af812d38a4ac0d25cdfae173756689f05a` ;
+- raccord boucle runtime : `bc6d105518c9b4ae4b88cf03fbb3f3b436c9cf7f` ;
+- sentinelles aquatiques : `85dd5f7aa4e2a32b4e5903535e044685ad4061da`, `8b8746e92270da7a25490cc4f08a8502d4cbeb02` ;
+- cache/versioning runtime : `20b34b31df96b7dfadbc87eb467b91ad3628edd6` ;
+- CI technique finale : run `37102746795` — **SUCCESS**.
+
+Invariants conservés :
+- aucun second moteur de mouvement ;
+- aucun `setInterval` ;
+- aucune capacité de locomotion copiée dans WildCreatureEntity ;
+- `materialId` ne décide jamais terrestre/aquatique/volant ;
+- le territoire utilise la zone gameplay Living World, pas `surface.zones[]` ;
+- pas de poursuite/fuite/Encounter dans ce lot.
+
+Gate restante :
+publication Pages puis validation smartphone des trois profils en errance.
