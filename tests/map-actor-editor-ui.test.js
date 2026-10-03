@@ -81,7 +81,7 @@ test('Actor placement UI states that visual settings belong to entity editors', 
 
   assert.match(
     html,
-    /visuel.*définition.*Héros.*PNJ.*Créature/is
+    /définition.*Héros.*PNJ.*Créature[\s\S]*visuel/is
   );
   assert.match(
     html,
