@@ -30,8 +30,7 @@ import {
   createImageAssetLoader
 } from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
 import {
-  createMapActorAssetResolver,
-  resolveMapActorAsset
+  createMapActorAssetResolver
 } from './assets/map-actor-asset-adapter.js?rev=map-actor-visual-v1';
 import {
   createMapActorVisualPreparer
@@ -157,7 +156,6 @@ const player = {
   facingX: 1,
   moving: false,
   mapVisual:
-    builderTestSession?.actorVisual ??
     normalizeMapActorVisual({
       assetId: 'actor.demo.hero.traveler.01',
       role: 'hero'
@@ -296,12 +294,9 @@ const captureMapActorAssets =
     .listAssets();
 
 const resolveRuntimeMapActorAsset =
-  createMapActorAssetResolver([
-    ...captureMapActorAssets,
-    ...(builderTestSession?.actorAsset
-      ? [builderTestSession.actorAsset]
-      : [])
-  ]);
+  createMapActorAssetResolver(
+    captureMapActorAssets
+  );
 
 const mapActorImageLoader =
   createImageAssetLoader({
