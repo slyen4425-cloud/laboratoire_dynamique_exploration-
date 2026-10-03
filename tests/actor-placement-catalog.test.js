@@ -37,7 +37,7 @@ function loupTransfer() {
             assetId: 'pack:capture:creature-loup-volcanique-opponent-01'
           },
           back: {
-            assetId: 'pack:capture:creature-loup-volcanique-player-01'
+            assetId: 'pack:capture:creature-loup-volcanique-opponent-01'
           },
           icon: {
             assetId: 'pack:capture:creature-loup-volcanique-icon-01'
@@ -53,9 +53,15 @@ function visualCatalog() {
     version: 1,
     assets: [
       {
-        id: 'pack:capture:creature-loup-volcanique-player-01',
+        id: 'pack:capture:creature-loup-volcanique-opponent-01',
         resource: {
-          file: 'capture/creatures/loup_volcanique/runtime/loup_volcanique_player.webp'
+          file: 'capture/creatures/loup_volcanique/runtime/loup_volcanique_opponent.webp'
+        }
+      },
+      {
+        id: 'pack:capture:creature-loup-volcanique-opponent-01',
+        resource: {
+          file: 'capture/creatures/loup_volcanique/runtime/loup_volcanique_opponent.webp'
         }
       }
     ]
@@ -104,13 +110,13 @@ test('Capture Actor Definition resolves Loup visual from transfer asset id + glo
   assert.equal(definition.role, 'creature');
   assert.equal(
     definition.mapVisual.assetId,
-    'pack:capture:creature-loup-volcanique-player-01'
+    'pack:capture:creature-loup-volcanique-opponent-01'
   );
   assert.equal(
     provider.resolveAsset(
       definition.mapVisual.assetId
     ).path,
-    './capture-assets/assets/library/capture/creatures/loup_volcanique/runtime/loup_volcanique_player.webp'
+    './capture-assets/assets/library/capture/creatures/loup_volcanique/runtime/loup_volcanique_opponent.webp'
   );
 });
 
@@ -142,7 +148,7 @@ test('Placed map actor view gets visual only from resolved Actor Definition', ()
   assert.equal(view.moving, false);
   assert.equal(
     view.mapVisual.assetId,
-    'pack:capture:creature-loup-volcanique-player-01'
+    'pack:capture:creature-loup-volcanique-opponent-01'
   );
 });
 
