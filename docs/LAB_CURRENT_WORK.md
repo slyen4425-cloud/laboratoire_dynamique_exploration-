@@ -375,3 +375,42 @@ Versionner aussi le graphe Exploration qui possède cette navigation :
 ## Gate
 TDD -> CI -> preview Pages -> validation utilisateur.
 
+## Résultat technique — Combat Document Revision v1
+
+### Cause
+Le correctif Combat Recall était bien publié, mais Exploration naviguait toujours vers le document :
+
+`./combat-preview/examples/dom-demo/exploration-encounter.html`
+
+sans query de révision.
+
+Le navigateur pouvait donc réutiliser un ancien HTML en cache. Dans ce cas, il ne découvrait jamais les nouveaux modules / JSON corrigés, même si Pages avait correctement déployé le nouveau Combat.
+
+### Correction
+Navigation publique :
+
+`exploration-encounter.html?rev=player-party-recall-runtime-fix-v1`
+
+Le graphe propriétaire est également versionné :
+- `index.html -> main.js?rev=combat-document-revision-v1` ;
+- `main.js -> combat-handoff-navigation.js?rev=combat-document-revision-v1`.
+
+Aucun reload forcé, service worker, timer ou cache gameplay ajouté.
+
+### TDD
+`combat-handoff-navigation.test.js` vérifie désormais :
+- partyRef réelle ;
+- URL Combat complète avec révision ;
+- conservation du returnUrl ;
+- versionnement du graphe Exploration.
+
+La sentinelle Actor conserve sa propre révision indépendante.
+
+### HEAD
+`e649f8e115ae7beaa357c2078051347f9477e225`
+
+CI :
+`37154391923` — **SUCCESS**.
+
+État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
+
