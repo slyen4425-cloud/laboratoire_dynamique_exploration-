@@ -3,8 +3,11 @@ import {
   buildingDoorArrivalWorld,
   normalizeWorldObjects
 } from './world-object-model.js?rev=surface-traversal-replay-v1';
+import {
+  normalizeWorldActorPlacements
+} from '../actors/world-actor-placement-model.js';
 
-export const WORLD_AREA_SCHEMA_VERSION = 2;
+export const WORLD_AREA_SCHEMA_VERSION = 3;
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max
@@ -110,6 +113,7 @@ export function normalizeWorldArea(raw, index = 0) {
     height: finiteNumber(raw.height, 800, { min: 128, max: 20000 }),
     surface: normalizeWorldSurface(raw.surface),
     objects: normalizeWorldObjects(raw.objects),
+    actors: normalizeWorldActorPlacements(raw.actors),
     obstacles: Object.freeze(obstacles),
     spawns: Object.freeze(uniqueSpawns)
   });
