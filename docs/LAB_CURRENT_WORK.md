@@ -192,3 +192,37 @@ Gate smartphone :
 7. vérifier rapidement que le World Builder s'ouvre sans régression.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## Validation utilisateur finale — Surface Traversal replay — 2026-10-03
+
+Validation smartphone utilisateur : **GREEN**.
+
+Confirmé :
+- Marche : bonus route fonctionnel ;
+- Marche : eau bloquante hors pont ;
+- pont traversable ;
+- Nage : traversée eau fonctionnelle ;
+- Vol : traversée eau fonctionnelle ;
+- Map Actor / orientation sans régression signalée ;
+- Builder sans régression signalée.
+
+### Règle produit ajoutée lors de la validation
+
+Les modes `swim` / `fly` ne sont **jamais librement accessibles au joueur** dans le produit final.
+
+Le sélecteur Marche/Nage/Vol actuel est un **harnais de test du laboratoire**.
+
+Autorité cible :
+```text
+gameplay acteur / Capture
+  -> compétences / créature possédée / monture / effet
+  -> locomotion autorisée
+  -> Surface Traversal Resolver
+```
+
+Exemple validé :
+une créature possédée disposant du vol peut fournir une capacité de monture volante ; le héros peut alors recevoir temporairement le profil `fly`.
+Le resolver de traversée consomme ce profil mais ne l'accorde jamais lui-même.
+
+Le lot **Surface Traversal Rules v1 — replay** est fermé GREEN après checkpoint documentaire.
