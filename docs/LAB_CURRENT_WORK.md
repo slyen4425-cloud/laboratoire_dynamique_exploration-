@@ -236,3 +236,36 @@ L'EncounterLayer conserve seulement son sélecteur ; il ne devient jamais propri
 8. vérifier import/export WorldDocument sans perte.
 
 Le lot reste **non GREEN** jusqu'à validation utilisateur de cette preview corrective.
+
+
+## Régression smartphone — Builder Encounter totalement inerte — 2026-10-03
+
+Retour utilisateur :
+« Rien ne marche, je ne peux rien sélectionner ».
+
+Cause racine reproduite :
+- deux autorités UI avaient été introduites pour l'état Encounter :
+  - `encounter-layer-editor-state.js` ;
+  - `encounter-editor-state.js` ;
+- `encounterEditorAvailability` était donc importé deux fois dans le même module ;
+- résultat navigateur : `SyntaxError: Identifier 'encounterEditorAvailability' has already been declared` ;
+- le script Builder s'arrêtait avant initialisation, rendant l'interface entière inerte ;
+- deux boutons partageaient aussi le même id `encounter-start-paint`.
+
+Correction conforme charte :
+- suppression complète du helper d'état dupliqué ;
+- conservation de `encounter-layer-editor-state.js` comme unique autorité UI de pré-peinture ;
+- suppression du test dupliqué ;
+- un seul bouton `encounter-start-paint` ;
+- une seule liaison événement ;
+- sentinelles :
+  - aucun id DOM dupliqué ;
+  - une seule importation de l'autorité Encounter editor state ;
+- sélecteurs et presets disponibles avant création d'un layer ;
+- un toucher simple ou un glissement peut créer la première zone ;
+- le bouton « Peindre cette zone » active explicitement l'outil Encounter.
+
+CI après nettoyage :
+- `37120505850` — **SUCCESS**.
+
+Le lot reste non GREEN jusqu'à validation smartphone de la preview republiée.
