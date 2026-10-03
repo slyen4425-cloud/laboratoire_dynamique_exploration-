@@ -1,4 +1,4 @@
-import { demoWorldDocument } from '../world/demo-world.js?rev=builder-dynamic-return-v1';
+import { demoWorldDocument } from '../world/demo-world.js?rev=surface-traversal-replay-v1';
 import {
   addPortal,
   addSpawn,
@@ -21,12 +21,12 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=builder-dynamic-return-v1';
+} from './world-builder-draft.js?rev=surface-traversal-replay-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
   saveWorldBuilderTestHandoff
-} from './world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
+} from './world-builder-test-handoff.js?rev=surface-traversal-replay-v1';
 import {
   clampBuilderZoom,
   computeBuilderView,
@@ -55,7 +55,7 @@ import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
   buildingVisualRect
-} from '../world/world-object-model.js';
+} from '../world/world-object-model.js?rev=surface-traversal-replay-v1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
