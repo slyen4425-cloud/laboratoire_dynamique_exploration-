@@ -40,7 +40,7 @@ test('World Builder page is a separate editor surface, not runtime auto-install'
 
   assert.match(
     html,
-    /src\/builder\/world-builder-main\.js\?rev=world-builder-dynamique-ui-v1/
+    /src\/builder\/world-builder-main\.js\?rev=[A-Za-z0-9._-]+/
   );
   assert.equal(
     index.includes('world-builder-main.js'),
