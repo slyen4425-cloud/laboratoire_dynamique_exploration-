@@ -15,7 +15,7 @@ function weightedPick(items, chanceOf, random) {
       chance: Number(chanceOf(item))
     }))
     .filter(({ chance }) =>
-      Number.isFinite(weight) && chance > 0
+      Number.isFinite(chance) && chance > 0
     );
 
   const total = weighted.reduce(
