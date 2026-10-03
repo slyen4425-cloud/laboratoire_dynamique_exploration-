@@ -45,7 +45,7 @@ test('surface model preserves structured terrain zones, routes and rivers', () =
 
   const surface = normalizeWorldSurface(source);
 
-  assert.equal(surface.version, 2);
+  assert.equal(surface.version, 3);
   assert.equal(surface.baseMaterialId, 'grass.forest');
   assert.equal(surface.baseTraversalRuleId, 'terrain.ground');
   assert.equal(surface.zones.length, 1);
