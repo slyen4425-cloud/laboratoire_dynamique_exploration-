@@ -133,3 +133,30 @@ l'asset visuel de démonstration est temporairement partagé avec l'acteur demo 
 Ce micro-lot valide la présence runtime et l'ownership, pas l'art final.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## Validation utilisateur finale — Wild Runtime Presence v1 — 2026-10-03
+
+Validation smartphone utilisateur : **GREEN**.
+
+Confirmé :
+- créature sauvage visible près du départ ;
+- compteur `sauvages` cohérent ;
+- déplacement joueur sans régression ;
+- route / eau / pont sans régression ;
+- World Builder accessible ;
+- Map Actor / orientation sans régression.
+
+Le micro-lot **Wild Runtime Presence v1** est donc fermé GREEN.
+
+Demande produit suivante :
+ajouter le profil **aquatique** au monde vivant, en plus des profils terrestre et volant.
+
+Règle d'architecture :
+- terrestre / aquatique / volant proviennent des capacités de locomotion de l'Actor Definition ;
+- Living World ne recopie pas ces capacités dans WildCreatureEntity ;
+- Surface Traversal reste l'unique autorité de passabilité ;
+- l'errance future doit respecter le territoire et la locomotion réelle de chaque créature.
+
+Suite :
+**Phase 5 micro-lot 4 — Errance / Territoire v1**, avec profils ground / swim / fly.
