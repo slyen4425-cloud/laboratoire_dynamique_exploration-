@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: map-actor-source-facing-v1
+# preview-revision: surface-traversal-replay-v1
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout exploration work branch
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-map-actor-editor-v1-2026-10-02
+          ref: work/exploration-surface-traversal-rules-v1-replay-2026-10-03
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
