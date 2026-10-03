@@ -1,8 +1,8 @@
-import { normalizeWorldSurface } from './surface-model.js';
+import { normalizeWorldSurface } from './surface-model.js?rev=surface-traversal-replay-v1';
 import {
   buildingDoorArrivalWorld,
   normalizeWorldObjects
-} from './world-object-model.js?rev=builder-dynamic-return-v1';
+} from './world-object-model.js?rev=surface-traversal-replay-v1';
 
 export const WORLD_AREA_SCHEMA_VERSION = 2;
 
