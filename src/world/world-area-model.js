@@ -1,4 +1,4 @@
-import { normalizeWorldSurface } from './surface-model.js?rev=surface-traversal-replay-v1';
+import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {
   buildingDoorArrivalWorld,
   normalizeWorldObjects
