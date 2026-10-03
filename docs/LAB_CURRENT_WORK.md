@@ -134,3 +134,55 @@ La gate restante concerne :
 - résultat appliqué une seule fois.
 
 Le lot reste NON GREEN jusqu'à validation complète.
+
+
+## Incident de validation — showcase direct exclu — 2026-10-03
+
+Retour utilisateur :
+- ouverture directe sur un duel Combat ;
+- énergie locale ne montait pas ;
+- adversaire n'attaquait pas ;
+- ce comportement ne validait pas le vrai flux Exploration -> Encounter -> Combat.
+
+Cause :
+- la preview Pages avait été basculée temporairement sur la branche Combat
+  `preview/lab-showcase-duel-moussados-loup-energy-v1-2026-10-03` ;
+- ce showcase est une page de duel autonome ;
+- son adapter n'applique pas le ruleset `capture.standard.1v1` du raccord Exploration ;
+- il ne doit donc pas servir de gate d'intégration.
+
+Décision :
+- showcase direct retiré du chemin de validation ;
+- la preview imbriquée Combat revient à
+  `preview/lab-exploration-encounter-energy-ruleset-v1-2026-10-03` ;
+- cette branche applique le ruleset Combat avant création des FighterConfig :
+  - maxEnergy = 12 ;
+  - initialEnergy = 2 ;
+  - energyChargeAmount = 1 ;
+  - energyChargeIntervalMs = 1800 ;
+- le runtime Combat existant reste seul propriétaire de la recharge ;
+- l'IA existante reste seule propriétaire de ses décisions et utilise le même runtime.
+
+Validation automatique Combat :
+- branche preview énergie : SHA `25897307799d741710dfd9435854f7d813da1b33` ;
+- CI `37140788133` — SUCCESS ;
+- test d'intégration : énergie Fighter > 0 et recharge après `advanceMs` ;
+- sentinelles IA historiques toujours présentes.
+
+Preview Exploration restaurée :
+- PR infra #53 ;
+- main : `f958b559da4404dc31a2c3ed05d60f237d657526` ;
+- Pages run `37144544743` — SUCCESS.
+
+Nouvelle gate smartphone :
+1. ouvrir Exploration à la racine, jamais la page showcase ;
+2. marcher jusqu'à une rencontre ;
+3. toucher « Lancer le combat » ;
+4. le Combat doit démarrer à 2/12 énergie ;
+5. l'énergie doit augmenter de 1 toutes les 1,8 s jusqu'à 12 ;
+6. l'adversaire doit commencer à agir quand une capacité est utilisable ;
+7. fin de combat -> retour automatique Exploration ;
+8. même Area / même position ;
+9. résultat appliqué une seule fois.
+
+Le lot reste NON GREEN jusqu'à cette validation.
