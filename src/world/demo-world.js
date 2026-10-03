@@ -1,4 +1,4 @@
-import { normalizeWorldDocument } from './world-document-model.js?rev=builder-dynamic-return-v1';
+import { normalizeWorldDocument } from './world-document-model.js?rev=surface-traversal-replay-v1';
 
 export const demoWorldDocument = normalizeWorldDocument({
   id: 'forest-demo-world',
