@@ -105,3 +105,31 @@ Ce n'est pas une définition graphique produit et cela ne change pas l'ownership
 
 Gate restante :
 publication Pages + validation smartphone de la présence runtime.
+
+
+## Preview mobile — Wild Runtime Presence v1 — 2026-10-03
+
+Infrastructure uniquement :
+- PR #40 ;
+- main SHA : `167667b5f5fc34aedc4c74406145d4c3bb464143` ;
+- Pages run : `37100996891` — **SUCCESS** ;
+- artifact : `11265124140`.
+
+Le workflow Pages checkout explicitement :
+`work/exploration-phase5-wild-runtime-presence-v1-2026-10-03`.
+
+URL runtime :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/`
+
+Gate smartphone :
+1. constater une créature sauvage statique près du départ ;
+2. HUD `sauvages` cohérent ;
+3. vérifier que joueur / déplacement / route / eau / pont fonctionnent toujours ;
+4. vérifier que le World Builder reste accessible ;
+5. aucune régression Map Actor / orientation.
+
+Note :
+l'asset visuel de démonstration est temporairement partagé avec l'acteur demo existant.
+Ce micro-lot valide la présence runtime et l'ownership, pas l'art final.
+
+Le lot reste non GREEN jusqu'à validation utilisateur.
