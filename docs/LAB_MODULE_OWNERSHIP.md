@@ -10,7 +10,8 @@
 | Objets placés | World Object Model | données objet | transform/footprint/interaction | renderer possède transform |
 | Area active | World Area Model | areaId | contenu Area | Shell/renderer invente l'Area |
 | Portals | Portal Model | trigger + cible | changement d'Area intent | location.reload / navigation sauvage |
-| Géométrie surface | World Surface Model | WorldDocument | base/routes/rivières | texture définit géométrie |
+| Géométrie surface | World Surface Model | WorldDocument | base/zones/routes/rivières | texture définit géométrie |
+| Famille terrain | World Surface Model | terrainFamilyId explicite | sémantique terrain gameplay | Material Registry/texture déduit la famille |
 | Autorisation locomotion | Capture/Actor gameplay (futur) | compétences, créatures possédées, monture, effets | profil locomotion autorisé | Traversal/UI accorde swim/fly |
 | Traversée surface | Surface Traversal Resolver | géométrie + traversalRuleId + locomotion autorisée | passabilité + multiplicateur | accorder une capacité / Material Registry/renderer décide gameplay |
 | Matériaux | Material Registry | materialId + pack | description visuelle | matériau possède collision |
@@ -24,9 +25,11 @@
 | Authoring profil acteur | Éditeur Héros/PNJ/Créatures (futur, hors World Builder) | asset + réglages visuels | définition acteur / MapActorVisual | posséder placement monde |
 | Placement acteur | World Builder / World Model | actorDefinitionId + placement | référence placée dans WorldDocument | éditer/copier le profil visuel intrinsèque |
 | Input | Input Adapter | tactile/clavier | intent normalisé | déplacement direct |
-| Config rencontre aléatoire | Encounter World Config | Encounter Zones + tables + modificateurs gameplay | règles configurées | déduire depuis materialId/texture |
-| Déclenchement rencontre | Encounter Controller | position + Encounter World Config + acteur visible optionnel | encounter intent | renderer/Combat décide le monde |
-| Sélection créature rencontre | Encounter Table Resolver (futur) | table pondérée + Actor Catalog | actorDefinitionId | copier stats/visuels dans la zone |
+| Config rencontre famille | Terrain Family Encounter Config | terrainFamilyId + chance + pourcentages élémentaires | règles par famille | créer géométrie Encounter parallèle |
+| Résolution famille locale | Terrain Family Resolver | World Surface + position | terrainFamilyId | lire materialId comme gameplay |
+| Catalogue créatures Capture | CaptureDatabaseV1 / provider lecture seule | id + elements + capture.spawnChance | candidats/rareté | Exploration recrée le catalogue |
+| Sélection créature rencontre | Terrain Family Encounter Resolver | famille + config + Capture catalog | creatureId canonique | copier stats/visuels/rareté dans le monde |
+| Déclenchement rencontre | Encounter Controller | position + résolution famille + acteur visible optionnel | encounter intent | renderer/Combat décide le monde |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
 | Combat Capture | Capture Combat (futur) | Snapshot | Result | Exploration calcule le combat |
 | World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |\n| Draft World Builder | World Builder Draft Model | WorldDocument source + edits | draft sérialisable | devenir état runtime / posséder renderer |\n| Preview Builder | Renderers Exploration existants | draft normalisé + caméra preview | pixels | écrire données/collision/mouvement |
