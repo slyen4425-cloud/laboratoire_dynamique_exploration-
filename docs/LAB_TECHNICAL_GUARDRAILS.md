@@ -9,6 +9,7 @@
 | collisions | Collision World |
 | monde runtime | World Model |
 | géométrie surface | World Surface Model |
+| traversée surface | Surface Traversal Resolver + Traversal Rule Registry |
 | apparence matériaux | Material Registry |
 | assets physiques | Asset Adapter / Core Resolver futur |
 | seed/config génération | World Generator input |
@@ -33,7 +34,9 @@
 - collision déduite d'un pixel/alpha de texture ;
 - renderer qui modifie le WorldDocument ;
 - materialId avec fallback silencieux vers un autre module ;
-- formats Builder et Generator divergents.
+- formats Builder et Generator divergents ;
+- materialId utilisé comme règle de traversée ;
+- multiplicateur terrain codé dans renderer ou Material Registry.
 
 ## Cycle de vie
 
