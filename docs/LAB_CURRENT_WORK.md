@@ -134,3 +134,49 @@ Invariants conservés :
 
 Gate restante :
 publication Pages puis validation smartphone des trois profils en errance.
+
+
+## Régression protégée — frontière de territoire
+
+Sentinelle :
+- commit `95b6063523f6b585aba46f1ebf073d58cf3b28d5` ;
+- run `37102897942` — **FAILURE attendue** ;
+- reproduction : une créature très rapide pouvait dépasser une destination et sortir de son `homeZone` en un seul pas.
+
+Correction :
+- vitesse bornée pour ne jamais dépasser la destination ;
+- contrôle explicite de la position finale contre le cercle `homeZone` ;
+- en cas de sortie impossible : position précédente conservée, cible abandonnée puis recalculée ;
+- aucun clamp silencieux vers une autre géométrie.
+
+Commits :
+- `979eeb85b38e42955fcc49377d15292224a35a2f` — prévention overshoot ;
+- `61c7b7d83a899ac13e2e364b8f5e163c5ca3a45d` — garde territoire ;
+- run `37102944988` — **SUCCESS**.
+
+Cache mobile final :
+- runtime : `1f79b4586e60e28d69b6cd176ad2b2ea8786caaa` ;
+- wander planner : `41edfcaa3deb17e182ce91829d02cd4860a29d5e` ;
+- entry : `248966e18132c7826dfd9e72352a4243590ed681` ;
+- CI finale : `37102975365` — **SUCCESS**.
+
+## Preview mobile — Errance / Territoire v1
+
+Infrastructure uniquement :
+- PR #42 ;
+- main SHA : `c354c38f3e29b34af44d891022e848f586d8e80c` ;
+- Pages run : `37103039046` — **SUCCESS** ;
+- artifact : `11266883587`.
+
+URL :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/`
+
+Gate smartphone :
+1. créature terrestre : errance dans sa zone au sol ;
+2. créature aquatique : présence + errance dans la rivière ;
+3. créature volante : errance au-dessus de l'eau ;
+4. aucune ne doit sortir de son territoire ;
+5. mouvements/orientations visuels cohérents ;
+6. joueur, route, eau, pont, Portal, Builder sans régression.
+
+Le lot reste non GREEN jusqu'à validation utilisateur.
