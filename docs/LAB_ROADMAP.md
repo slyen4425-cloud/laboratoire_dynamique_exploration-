@@ -119,7 +119,7 @@ Priorité suivante :
 - Encounter Layers éditables dans le World Builder ;
 - chance globale de rencontre par layer ;
 - fréquence de contrôle explicite ;
-- table pondérée par actorDefinitionId ou tags/pools ;
+- table pondérée par **créature Capture canonique** ou **élément déclaré sur la créature** ;
 - priorité de superposition permettant notamment des routes/zones sûres à 0 % ;
 - aucun lien implicite avec materialId, texture ou surface.zones ;
 - Random Encounter Runtime v1 après validation de l'éditeur.
