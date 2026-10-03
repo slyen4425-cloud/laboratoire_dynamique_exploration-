@@ -30,6 +30,37 @@ const DEMO_LIVING_ACTOR_DEFINITIONS = new Map([
     })
   ],
   [
+    'capture.creature.demo.swim',
+    Object.freeze({
+      id: 'capture.creature.demo.swim',
+      mapVisual: normalizeMapActorVisual({
+        assetId: 'actor.demo.hero.traveler.01',
+        role: 'creature',
+        targetHeight: 42,
+        sourceFacingX: 1,
+        shadow: {
+          enabled: true,
+          widthRatio: 0.5,
+          heightRatio: 0.12,
+          opacity: 0.18
+        },
+        motion: {
+          idleAmplitude: 1.8,
+          idleFrequency: 0.9,
+          walkAmplitude: 2.2,
+          walkFrequency: 2.8
+        }
+      }),
+      exploration: Object.freeze({
+        radius: 10,
+        maxSpeed: 60,
+        locomotion: Object.freeze({
+          modes: Object.freeze(['swim'])
+        })
+      })
+    })
+  ],
+  [
     'capture.creature.demo.fly',
     Object.freeze({
       id: 'capture.creature.demo.fly',
