@@ -322,3 +322,39 @@ TDD :
 
 Gate restante :
 validation smartphone du réglage « Orientation du visuel source » et du miroir automatique pendant le déplacement.
+
+
+## Preview — orientation native Map Actor — 2026-10-03
+
+Implémentation :
+- `MapActorVisual.sourceFacingX` ;
+- `1` = visuel source regarde à droite ;
+- `-1` = visuel source regarde à gauche ;
+- `actor.facingX` reste l'autorité gameplay ;
+- le renderer miroir uniquement si direction déplacement != orientation source ;
+- contrôle de calibration « Orientation du visuel source » ajouté ;
+- cache-bust explicite modèle/renderer/runtime/Builder.
+
+Architecture produit figée :
+- réglages visuels intrinsèques -> éditeur Héros/PNJ/Créatures ;
+- World Builder final -> catalogue + sélection + placement uniquement ;
+- panneau actuel -> calibration laboratoire temporaire.
+
+CI finale avant preview :
+- HEAD UI/calibration : `c3feeec41e663157a93b84e33cbb3938314767fc` ;
+- run `37092728326` — **SUCCESS**.
+
+Preview :
+- PR #38 ;
+- main SHA : `610aa7b61dcf2a4ec0c3b5078516d53946b72110` ;
+- Pages run : `37092783843` — **SUCCESS** ;
+- artifact : `11263361848`.
+
+Gate smartphone :
+1. choisir « Regarde à gauche » ou « Regarde à droite » selon le PNG ;
+2. Tester en jeu ;
+3. se déplacer à gauche puis à droite ;
+4. vérifier que le personnage se retourne dans le bon sens ;
+5. vérifier absence de régression import/handoff/retour Builder.
+
+Le lot reste non GREEN jusqu'à validation utilisateur de cette orientation.
