@@ -335,3 +335,43 @@ Le workflow public utilise explicitement :
 
 Gate restant : validation utilisateur du vrai Player Party dans le combat Encounter.
 
+---
+
+# Micro-lot correctif — Combat Document Revision v1 — 2026-10-03
+
+## Base
+- checkpoint publié Player Party Ref : `f021460a7cf49143bceb9a0f48dbb37bbead4798`
+- checkpoint départ : `checkpoint/exploration-start-combat-document-revision-v1-2026-10-03`
+- branche : `work/exploration-combat-document-revision-v1-2026-10-03`
+
+## Régression utilisateur
+Après publication du correctif Recall Runtime :
+- le comportement navigateur reste identique ;
+- Rappel termine puis aucun changement de créature n'est visible.
+
+## Cause de publication démontrée
+Exploration navigue vers :
+`./combat-preview/examples/dom-demo/exploration-encounter.html`
+sans révision d'URL.
+
+Même si le HTML publié référence les nouveaux modules corrigés, un navigateur peut réutiliser un document HTML antérieur sous la même URL et ne jamais découvrir les nouvelles URLs de modules.
+
+## Correction cible
+Versionner le **document Combat lui-même** au point de navigation :
+`exploration-encounter.html?rev=player-party-recall-runtime-fix-v1`.
+
+Versionner aussi le graphe Exploration qui possède cette navigation :
+- index -> main.js ;
+- main.js -> combat-handoff-navigation.js.
+
+## Interdits
+- aucun reload forcé ;
+- aucun service worker ;
+- aucun timer/cache gameplay ;
+- aucune modification du Combat Runtime ;
+- aucune modification du Roster Session ;
+- aucune modification de Zombicide-40k.
+
+## Gate
+TDD -> CI -> preview Pages -> validation utilisateur.
+
