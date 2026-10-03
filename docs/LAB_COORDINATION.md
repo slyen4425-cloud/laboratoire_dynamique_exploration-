@@ -16,6 +16,9 @@ Dernier checkpoint GREEN :
 `checkpoint/exploration-phase5-wild-wander-territory-v1-green-2026-10-03`
 
 ## Invariants
+- CaptureDatabaseV1 reste l'autorité des créatures ;
+- Encounter UI ne contient aucun ID/tag libre à saisir ;
+- sélection par listes : créature canonique ou élément déclaré ;
 - Encounter Layers distincts de `surface.zones[]` ;
 - materialId/texture sans autorité encounter ;
 - Builder édite les données, ne déclenche rien ;
