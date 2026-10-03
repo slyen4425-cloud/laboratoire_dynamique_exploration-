@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: phase5-wild-wander-territory-v1
+# preview-revision: phase5-wild-wander-territory-boundary-v1
 
 on:
   push:
