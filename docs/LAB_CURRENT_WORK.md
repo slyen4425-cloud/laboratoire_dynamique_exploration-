@@ -3,198 +3,256 @@
 Date : 2026-10-03
 
 ## Chantier actif
-Phase 7 — micro-lot 2 :
-**Combat Handoff + CaptureCombatResult v1 + retour apply-once**.
+Actor Placement Catalog v1 — World Builder + sentinelle Loup volcanique.
 
 ## Branche
-`work/exploration-phase7-combat-handoff-v1-2026-10-03`
+`work/exploration-actor-placement-catalog-v1-2026-10-03`
 
 ## Base GREEN
-`a3670b2bbeb069bb18b410d6e7debd77efe4545e`
+`806d9e9a78dbfdb4728b0344c8afcb6e3b8b9afc`
 
-## Dernier checkpoint GREEN
-`checkpoint/exploration-phase7-encounter-controller-snapshot-v1-green-2026-10-03`
+## Checkpoint de départ
+`checkpoint/exploration-start-actor-placement-catalog-v1-2026-10-03`
 
 ## Objectif
+Remplacer le banc de calibration Actor du World Builder par le flux produit validé :
+
 ```text
-Encounter Controller
- -> CaptureEncounterSnapshot v1
- -> transport same-origin versionné
- -> Capture Combat
- -> CaptureCombatResult v1
- -> retour Exploration
- -> application exactement une fois
+Actor Definition authority
+ -> Actor Catalog
+ -> World Builder : sélectionner + placer
+ -> WorldArea.actors[] : actorDefinitionId + placement seulement
+ -> résolution Actor Definition
+ -> MapActorVisual dérivé
+ -> Asset Adapter
+ -> Map Actor Renderer
 ```
 
 ## Autorités
-- Exploration : position, monde, encounterId actif, retour ;
-- Encounter Bridge : contrats publics uniquement ;
-- Combat : résolution du combat ;
-- CaptureDatabaseV1 : créatures/compétences/présentation ;
-- transport : sessionStorage uniquement comme canal, jamais comme gameplay authority.
-
-## Invariants
-- Combat ne repositionne jamais le joueur ;
-- résultat accepté seulement si encounterId + returnToken correspondent ;
-- résultat consommé exactement une fois ;
-- aucune copie de WorldDocument vers Combat ;
-- aucune importation de fichiers internes du dépôt Combat ;
-- aucun fallback silencieux vers une autre créature ;
-- playerPartyRef reste opaque ; le labo Combat peut fournir un provider preview explicite pour capture-party-preview.
+- placement monde : WorldDocument / WorldArea ;
+- définition Héros/PNJ/Créature : module propriétaire de l'entité ;
+- créatures Capture : CaptureDatabase/transfer provider lecture seule ;
+- visuel intrinsèque : Actor Definition / présentation de l'entité ;
+- asset physique : catalogue global / Asset Adapter ;
+- préparation du visuel map : Map Actor Visual Preparer ;
+- rendu : Map Actor Renderer, lecture seule.
 
 ## Périmètre
-- contrat CaptureCombatResult v1 ;
-- enveloppe transport handoff v1 ;
-- sauvegarde du point de retour Exploration hors snapshot Combat ;
-- bouton lancer le combat ;
-- lecture retour + apply-once ;
-- résultat minimal victoire/défaite/fuite ;
-- preview smartphone.
+- ajouter un contrat minimal de placement acteur dans WorldArea ;
+- Builder : catalogue + ajout + sélection + X/Y + direction + suppression ;
+- supprimer du Builder les réglages intrinsèques Actor :
+  - import image ;
+  - asset manuel ;
+  - rôle manuel ;
+  - targetHeight ;
+  - sourceFacing / miroir ;
+  - anchor ;
+  - ombre ;
+  - animation ;
+  - export MapActorVisual ;
+- provider générique Capture -> Actor Definition ;
+- preview loader lisant la vraie définition `crea-loup` depuis le dépôt Combat imbriqué ;
+- résolution de son asset depuis le vrai catalogue global imbriqué ;
+- placer `capture:creature:crea-loup` dans la map démo ;
+- rendu Builder et runtime via le pipeline MapActorVisual GREEN existant ;
+- tests anti-duplication de données visuelles.
 
 ## Hors périmètre
-- persistance production Core ;
-- capture/reward définitifs ;
-- vraie équipe Capture utilisateur ;
-- modification Zombicide-40k.
+- édition des visuels Héros/Créatures ;
+- création d'un second catalogue Capture ;
+- vraie équipe joueur Capture ;
+- IA/comportement du Loup placé ;
+- collision/gameplay propre au placement ;
+- modification de Zombicide-40k.
 
+## Critères GREEN techniques
+- WorldDocument conserve seulement actorDefinitionId + x/y/facingX ;
+- aucun assetId/mapVisual dans le placement ;
+- Builder ne propose plus aucun réglage visuel intrinsèque ;
+- Loup placé résout son asset depuis la source Capture globale ;
+- aucune URL physique du Loup codée dans le Builder ;
+- Builder/runtime utilisent le même resolver de définition ;
+- sentinelles historiques GREEN ;
+- CI SUCCESS.
 
-## Preview intégrée — Exploration → Combat → retour — 2026-10-03
+## Gate utilisateur
+Sur la preview publique :
+1. voir le Loup volcanique sur la map ;
+2. ouvrir le Builder > Acteurs ;
+3. vérifier que l'UI ne permet que choix/placement ;
+4. déplacer le Loup via X/Y ou sur la map ;
+5. lancer le test runtime ;
+6. vérifier que le même visuel est conservé.
 
-### Code Exploration
-- branche : `work/exploration-phase7-combat-handoff-v1-2026-10-03` ;
-- HEAD code validé : `b71c132937b267044f5a31a2c68c3110d9a9d5be` ;
-- CI : `37137766467` — **SUCCESS**.
+## Prévalidation technique — Actor Placement Catalog v1
 
-### Code Combat
-- preview : `preview/lab-exploration-encounter-bridge-v1-2026-10-03` ;
-- SHA : `bf28ba7e5466177eff936e8a412c655b2c16cfa8` ;
-- CI : `37137395260` — **SUCCESS**.
+Implémenté :
+- `WorldArea.schemaVersion = 3` avec `actors[]` canonique ;
+- placement strict : `id + actorDefinitionId + x/y + facingX` ;
+- aucun `assetId` / `mapVisual` / réglage visuel sérialisé dans la map ;
+- panneau Actor du Builder réduit à sélection / ajout / X-Y / direction / suppression ;
+- suppression de l'import image, scale, anchor, ombre, animation, miroir, export MapActorVisual ;
+- Builder et runtime résolvent tous deux le visuel depuis la définition d'acteur ;
+- l'ancien handoff `builderTestSession.actorVisual/actorAsset` n'est plus consommé par le runtime ;
+- sentinelle `capture:creature:crea-loup` placée dans `forest-exterior` ;
+- provider Capture générique : presentation assetId -> catalogue visuel global -> MapActorVisual -> renderer ;
+- aucune URL physique du Loup dans le WorldDocument ou le Builder.
 
-### Déploiement d'intégration
-Le workflow Pages déploie côte à côte :
-- Exploration à la racine ;
-- Combat sous `combat-preview/`.
+TDD :
+- frontière placement sans données visuelles ;
+- provider Capture -> Actor Definition ;
+- projection vers MapActor renderer ;
+- mutations Builder add/update/delete ;
+- présence Loup par référence seulement ;
+- UI Actor placement-only ;
+- handoff Builder/runtime sans autorité visuelle parallèle.
 
-Cela garantit la même origine navigateur sans merger les branches gameplay dans `main`.
+CI :
+- premier run `37148172504` : FAILURE sur 2 sentinelles de contrat obsolètes ;
+- causes corrigées :
+  - wording UI du nouveau panneau ;
+  - attente WorldArea v2 -> v3 ;
+- run `37148318702` : SUCCESS ;
+- après retrait définitif de l'ancien handoff actorVisual/actorAsset :
+  run `37148360401` : SUCCESS.
 
-- PR infra : #50 ;
-- main infra : `8aeaef9b6ee37e327276d321687013500c65adb0` ;
-- Pages run : `37137861112` — **SUCCESS** ;
-- artifact : `11278119826`.
+État : **TECHNIQUE GREEN — publication preview et validation utilisateur restantes**.
 
-### Vrai chemin
-```text
-rencontre terrain
- -> CaptureEncounterSnapshot v1
- -> bouton Lancer le combat
- -> handoff versionné sessionStorage
- -> Combat bridge 1v1
- -> vraie creatureId adverse
- -> Combat Runtime existant
- -> CaptureCombatResult v1
- -> retour URL Exploration
- -> restauration position Exploration
- -> résultat consommé une seule fois
-```
+## Publication preview — 2026-10-03
 
-Le provider labo `capture-party-preview` utilise explicitement Maraileron tant que la vraie équipe Capture n'est pas raccordée.
+Preview fonctionnelle figée :
+- branche : `preview/exploration-actor-placement-catalog-v1-2026-10-03` ;
+- SHA : `ea6bf020618209cd6f77baab9cbc4fe195a9c8db` ;
+- checkpoint : `checkpoint/exploration-actor-placement-catalog-v1-prevalidation-green-2026-10-03` ;
+- Exploration CI finale : `37148500636` — **SUCCESS** ;
+- push/checkpoint CI : `37148531984` — **SUCCESS**.
 
-Pour une créature sans asset Combat lié :
-- creatureId/stats/skills restent réels ;
-- seule la présentation utilise un fallback générique explicitement marqué ;
-- aucune substitution silencieuse par une autre créature.
+Publication Pages :
+- PR infra : #57 ;
+- main infra : `0e1ba866df511597decbb92bfd83a315037f091e` ;
+- Pages run : `37148567676` — **SUCCESS** ;
+- artifact : `11282993699` (~32,2 Mo).
 
-### Gate smartphone
-1. marcher jusqu'à une rencontre ;
-2. toucher « Lancer le combat » ;
-3. vérifier que le nom adverse correspond à la rencontre ;
-4. jouer le combat réel ;
-5. victoire/défaite doit revenir automatiquement à Exploration ;
-6. vérifier même Area et même position ;
-7. vérifier que le résultat n'est pas appliqué deux fois ;
-8. reprendre la marche et obtenir de nouvelles rencontres normalement.
+Le workflow Pages embarque côte à côte :
+- Exploration depuis la branche preview Actor Catalog ;
+- Combat depuis la preview Loup configurée validée ;
+- `global-assets` sous `capture-assets/`.
 
-Statut : **PREVALIDATION smartphone — NON GREEN**.
+La sentinelle Loup ne possède aucun chemin physique dans le WorldDocument :
+`capture:creature:crea-loup`
+-> transfer Capture
+-> assetId de présentation
+-> catalogue global
+-> asset physique
+-> MapActorVisual dérivé
+-> Map Actor Renderer.
 
+Gate restante : **validation utilisateur visuelle/ergonomique** du Loup sur la map et du panneau Builder placement-only.
 
-## Validation utilisateur partielle — Combat handoff — 2026-10-03
+## Retour utilisateur — vue acteur placé — 2026-10-03
 
-Test utilisateur depuis PC :
-- la page Combat s'ouvre correctement depuis Exploration ;
-- la créature adverse affichée correspond bien à la rencontre déclenchée ;
-- l'identité adverse est donc validée sur le vrai chemin same-origin.
+Validation utilisateur :
+- le Loup volcanique est bien présent sur la map ;
+- le chemin de résolution d'asset est validé ;
+- le lien / placement est considéré correct.
 
-La gate restante concerne :
-- énergie initiale ;
-- recharge énergie ;
-- utilisation d'une capacité ;
-- fin de combat ;
-- retour automatique Exploration ;
-- même Area / même position ;
-- résultat appliqué une seule fois.
+Correction demandée :
+- la map affichait la vue `player/back`, donc le Loup était vu de dos ;
+- pour une créature placée dans le monde, utiliser la vue `opponent/front` en priorité.
 
-Le lot reste NON GREEN jusqu'à validation complète.
+Correction appliquée :
+- le provider Actor Definition Capture choisit désormais `presentation.visual.front.assetId` ;
+- fallback explicite vers `back` uniquement si `front` est absent ;
+- aucune modification du WorldDocument, du placement, du renderer ou des assets ;
+- aucun assetId du Loup copié dans la map.
 
+TDD :
+- fixture conserve bien deux vues distinctes : front=opponent, back=player ;
+- les tests exigent maintenant que la définition et la vue placée utilisent l'asset opponent.
 
-## Incident de validation — showcase direct exclu — 2026-10-03
+CI :
+- run `37148839946` — **SUCCESS**.
 
-Retour utilisateur :
-- ouverture directe sur un duel Combat ;
-- énergie locale ne montait pas ;
-- adversaire n'attaquait pas ;
-- ce comportement ne validait pas le vrai flux Exploration -> Encounter -> Combat.
+Gate restante :
+- revalidation visuelle rapide du Loup de face dans la preview publique.
 
-Cause :
-- la preview Pages avait été basculée temporairement sur la branche Combat
-  `preview/lab-showcase-duel-moussados-loup-energy-v1-2026-10-03` ;
-- ce showcase est une page de duel autonome ;
-- son adapter n'applique pas le ruleset `capture.standard.1v1` du raccord Exploration ;
-- il ne doit donc pas servir de gate d'intégration.
+## Incident preview — vue opponent toujours affichée de dos — 2026-10-03
 
-Décision :
-- showcase direct retiré du chemin de validation ;
-- la preview imbriquée Combat revient à
-  `preview/lab-exploration-encounter-energy-ruleset-v1-2026-10-03` ;
-- cette branche applique le ruleset Combat avant création des FighterConfig :
-  - maxEnergy = 12 ;
-  - initialEnergy = 2 ;
-  - energyChargeAmount = 1 ;
-  - energyChargeIntervalMs = 1800 ;
-- le runtime Combat existant reste seul propriétaire de la recharge ;
-- l'IA existante reste seule propriétaire de ses décisions et utilise le même runtime.
+Retour utilisateur après déploiement opponent/front :
+- la map affichait encore visuellement la vue de dos.
 
-Validation automatique Combat :
-- branche preview énergie : SHA `25897307799d741710dfd9435854f7d813da1b33` ;
-- CI `37140788133` — SUCCESS ;
-- test d'intégration : énergie Fighter > 0 et recharge après `advanceMs` ;
-- sentinelles IA historiques toujours présentes.
+Audit :
+- binaire `global-assets` inspecté :
+  - `loup_volcanique_opponent.webp` = vraie vue 3/4 face ;
+  - `loup_volcanique_player.webp` = vraie vue 3/4 dos ;
+- métadonnées globales cohérentes ;
+- règle provider corrigée cohérente : `front` avant `back` ;
+- Pages run précédent SUCCESS.
 
-Preview Exploration restaurée :
-- PR infra #53 ;
-- main : `f958b559da4404dc31a2c3ed05d60f237d657526` ;
-- Pages run `37144544743` — SUCCESS.
+Cause racine :
+- après la correction provider, les URLs publiques du graphe ES modules étaient restées identiques ;
+- `index.html` chargeait toujours `main.js?rev=actor-placement-catalog-v1` ;
+- `main.js` / Builder chargeaient le preview loader sans revision ;
+- le preview loader chargeait le provider sans revision ;
+- un navigateur pouvait donc continuer à réutiliser l'ancien module provider depuis son cache malgré le nouveau déploiement.
 
-Nouvelle gate smartphone :
-1. ouvrir Exploration à la racine, jamais la page showcase ;
-2. marcher jusqu'à une rencontre ;
-3. toucher « Lancer le combat » ;
-4. le Combat doit démarrer à 2/12 énergie ;
-5. l'énergie doit augmenter de 1 toutes les 1,8 s jusqu'à 12 ;
-6. l'adversaire doit commencer à agir quand une capacité est utilisable ;
-7. fin de combat -> retour automatique Exploration ;
-8. même Area / même position ;
-9. résultat appliqué une seule fois.
+Correction :
+- version publique unique `actor-opponent-view-v1` appliquée à :
+  - `index.html -> main.js` ;
+  - `builder.html -> world-builder-main.js` ;
+  - runtime -> `capture-actor-preview-loader-v1.js` ;
+  - Builder -> `capture-actor-preview-loader-v1.js` ;
+  - loader -> `capture-actor-definition-provider-v1.js`.
+- aucune stratégie de reload forcé ;
+- aucun service worker ;
+- aucun cache gameplay ;
+- uniquement une révision d'URL d'asset/module, conforme au pipeline existant.
 
-Le lot reste NON GREEN jusqu'à cette validation.
+Sentinelle :
+- nouveau test `actor-placement-public-cache.test.js` exige la révision sur toute la chaîne.
 
-## Validation utilisateur finale — Combat Handoff — 2026-10-03
+CI :
+- HEAD fonctionnel `13a24f25fef384eb315ca68899f2fa88f1760b3c` ;
+- run `37149293418` — **SUCCESS**.
 
-Retour utilisateur explicite :
-- le test réel Exploration -> Encounter -> Combat a déjà été effectué ;
-- le comportement est validé ;
-- énergie / combat / retour Exploration sont considérés OK sur le chemin réel.
+Gate restante :
+- republier Pages sur ce HEAD puis revalider visuellement le Loup opponent/front.
 
-La gate smartphone/utilisateur du lot est donc levée.
+## Preview cache-bustée publiée — 2026-10-03
 
-État :
-**GREEN utilisateur — le lot Combat Handoff v1 peut être clôturé et servir de base au lot suivant.**
+Publication finale de la correction opponent/front :
+- preview SHA : `5603930d07274ea9f5c5ba52ffea72a7e81501f4` ;
+- checkpoint : `checkpoint/exploration-actor-opponent-view-cachefix-v1-prevalidation-green-2026-10-03` ;
+- CI : `37149329864` — **SUCCESS** ;
+- PR infra : #59 ;
+- main infra : `2e470c8e04a64c4fcd189547eec55aad2b335bb8` ;
+- Pages run : `37149384770` — **SUCCESS**.
+
+Le même lien public charge désormais des URLs versionnées `actor-opponent-view-v1` sur toute la chaîne runtime/Builder/loader/provider.
+
+Gate restante : validation utilisateur visuelle du Loup volcanique en vue opponent/front.
+
+## Validation utilisateur finale — Actor Placement Catalog v1
+
+Retour utilisateur du 2026-10-03 :
+- Loup volcanique présent sur la map ;
+- placement / lien Builder -> runtime validé ;
+- vue `opponent/front` correctement affichée après cache-bust du graphe ES modules ;
+- verdict utilisateur : **good**.
+
+Le lot est donc validé fonctionnellement, visuellement et ergonomiquement.
+
+État final :
+- placement monde : référence uniquement ;
+- données visuelles : autorité Actor/Capture ;
+- asset physique : global-assets ;
+- Builder : sélection + placement uniquement ;
+- runtime : même resolver que le Builder ;
+- aucune seconde autorité visuelle ;
+- aucune modification de `Zombicide-40k`.
+
+CI du HEAD avant clôture :
+- `37149427368` — **SUCCESS**.
+
+État : **GREEN utilisateur**.
+

@@ -1,11 +1,13 @@
 import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-encounters-v1';
 import {
+  addActorPlacement,
   addPortal,
   addSpawn,
   addSurfacePath,
   addWorldObject,
   appendSurfacePathPoint,
   createWorldBuilderDraft,
+  deleteActorPlacement,
   deletePortal,
   deleteSpawn,
   deleteSurfacePath,
@@ -14,6 +16,7 @@ import {
   importWorldBuilderDocument,
   patchWorldObject,
   serializeWorldBuilderDraft,
+  updateActorPlacement,
   updateAreaProperties,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
@@ -42,17 +45,17 @@ import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
-  MAP_ACTOR_ROLE_DEFAULTS,
-  normalizeMapActorVisual
-} from '../actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
+  createPlacedMapActorView
+} from '../actors/placed-map-actor-view.js';
 import {
-  createMapActorAssetResolver,
-  listMapActorAssets,
-  resolveMapActorAsset
+  createMapActorAssetResolver
 } from '../assets/map-actor-asset-adapter.js';
 import {
   createMapActorVisualPreparer
 } from '../assets/map-actor-visual-preparer.js';
+import {
+  createCaptureActorPreviewProviderV1
+} from '../capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
 import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
@@ -147,8 +150,11 @@ const objectRenderer = createWorldObjectRenderer({
 });
 const portalRenderer = createPortalRenderer();
 
-const registeredMapActorAssets = listMapActorAssets();
-let importedActorAsset = null;
+const captureActorDefinitionProvider =
+  await createCaptureActorPreviewProviderV1();
+const actorDefinitions =
+  captureActorDefinitionProvider.listDefinitions();
+
 let mapActorImageLoader = null;
 let mapActorVisualPreparer = null;
 let mapActorRenderer = null;
@@ -157,49 +163,60 @@ async function rebuildMapActorPipeline() {
   mapActorVisualPreparer?.dispose?.();
   mapActorImageLoader?.dispose?.();
 
-  const extraAssets = importedActorAsset
-    ? [importedActorAsset]
-    : [];
-  const resolveActorAsset = createMapActorAssetResolver(extraAssets);
-  const assets = [
-    ...registeredMapActorAssets,
-    ...extraAssets
-  ];
+  const assets =
+    captureActorDefinitionProvider.listAssets();
+  const resolveActorAsset =
+    createMapActorAssetResolver(assets);
 
-  mapActorImageLoader = createImageAssetLoader({
-    resolveAsset: resolveActorAsset
-  });
+  mapActorImageLoader =
+    createImageAssetLoader({
+      resolveAsset: resolveActorAsset
+    });
 
-  const assetIds = assets.map((asset) => asset.id);
-  const loadStatus = await mapActorImageLoader.load(assetIds);
+  const assetIds =
+    assets.map((asset) => asset.id);
+  const loadStatus =
+    await mapActorImageLoader.load(
+      assetIds
+    );
 
   if (
-    loadStatus.ready !== assetIds.length ||
+    loadStatus.ready !==
+      assetIds.length ||
     loadStatus.missing > 0 ||
     loadStatus.errors > 0
   ) {
     throw new Error(
-      `Map Actor Editor assets unavailable: ${JSON.stringify(loadStatus)}`
+      `Actor Catalog assets unavailable: ${JSON.stringify(loadStatus)}`
     );
   }
 
-  mapActorVisualPreparer = createMapActorVisualPreparer({
-    imageLoader: mapActorImageLoader
-  });
+  mapActorVisualPreparer =
+    createMapActorVisualPreparer({
+      imageLoader:
+        mapActorImageLoader
+    });
 
-  const prepareStatus = mapActorVisualPreparer.prepare(assetIds);
+  const prepareStatus =
+    mapActorVisualPreparer.prepare(
+      assetIds
+    );
+
   if (
-    prepareStatus.ready !== assetIds.length ||
+    prepareStatus.ready !==
+      assetIds.length ||
     prepareStatus.errors > 0
   ) {
     throw new Error(
-      `Map Actor Editor preparation failed: ${JSON.stringify(prepareStatus)}`
+      `Actor Catalog preparation failed: ${JSON.stringify(prepareStatus)}`
     );
   }
 
-  mapActorRenderer = createMapActorRenderer({
-    preparedVisuals: mapActorVisualPreparer
-  });
+  mapActorRenderer =
+    createMapActorRenderer({
+      preparedVisuals:
+        mapActorVisualPreparer
+    });
 }
 
 const builderParams = new URLSearchParams(window.location.search);
@@ -222,16 +239,17 @@ if (resumeBuilderTest && !resumedTestDocument) {
   );
 }
 
-importedActorAsset =
-  resumedTestSession?.actorAsset ?? null;
-
 let draft = createWorldBuilderDraft(
   resumedTestDocument ?? demoWorldDocument
 );
-let selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
+let selectedAreaId =
+  draft.initialAreaId ??
+  draft.areas[0]?.id ??
+  null;
 let selectedSpawnId = null;
 let selectedObjectId = null;
-let selectedPortalId = draft.portals[0]?.id ?? null;
+let selectedPortalId =
+  draft.portals[0]?.id ?? null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
 let selectedEncounterFamilyId = 'forest';
@@ -245,29 +263,16 @@ let pinchState = null;
 let hoverWorldPoint = null;
 const activePointers = new Map();
 
-const initialActorAssetId =
-  registeredMapActorAssets[0]?.id ??
-  resolveMapActorAsset('actor.demo.hero.traveler.01')?.id ??
-  null;
-let actorVisual =
-  resumedTestSession?.actorVisual ??
-  normalizeMapActorVisual({
-    assetId: initialActorAssetId,
-    role: 'hero'
-  });
 const initialActorArea =
-  draft.areas.find((area) => area.id === selectedAreaId) ??
+  draft.areas.find(
+    (area) =>
+      area.id === selectedAreaId
+  ) ??
   draft.areas[0] ??
   null;
-const actorPreview = {
-  x: initialActorArea?.width / 2 ?? 0,
-  y: initialActorArea?.height / 2 ?? 0,
-  facingX: 1,
-  moving: false,
-  mapVisual: actorVisual
-};
-let actorAnimationUntil = 0;
-let actorAnimationFrame = null;
+let selectedActorPlacementId =
+  initialActorArea?.actors?.[0]?.id ??
+  null;
 
 await rebuildMapActorPipeline();
 
@@ -390,6 +395,10 @@ function ensureSelections() {
 
   if (!area.objects?.some((object) => object.id === selectedObjectId)) {
     selectedObjectId = area.objects?.[0]?.id ?? null;
+  }
+
+  if (!area.actors?.some((actor) => actor.id === selectedActorPlacementId)) {
+    selectedActorPlacementId = area.actors?.[0]?.id ?? null;
   }
 
   if (!draft.portals?.some((portal) => portal.id === selectedPortalId)) {
@@ -830,100 +839,165 @@ function refreshObjectControls() {
   }
 }
 
-function currentActorAssetList() {
-  return importedActorAsset
-    ? [...registeredMapActorAssets, importedActorAsset]
-    : [...registeredMapActorAssets];
+function currentActorPlacements() {
+  return (
+    currentAreaRaw()?.actors ??
+    []
+  );
 }
 
-function ensureActorPreviewInArea() {
-  const area = currentAreaNormalized();
-  if (!area) return;
+function currentActorPlacement() {
+  return (
+    currentActorPlacements().find(
+      (actor) =>
+        actor.id ===
+        selectedActorPlacementId
+    ) ?? null
+  );
+}
 
-  actorPreview.x = Math.max(
-    0,
-    Math.min(
-      area.width,
-      Number.isFinite(actorPreview.x)
-        ? actorPreview.x
-        : area.width / 2
+function currentPlacedMapActors(
+  area = currentAreaNormalized()
+) {
+  if (!area) {
+    return [];
+  }
+
+  return area.actors
+    .map((placement) =>
+      createPlacedMapActorView(
+        placement,
+        captureActorDefinitionProvider
+          .resolveDefinition
+      )
     )
+    .filter(Boolean);
+}
+
+function actorDefinitionLabel(
+  definition
+) {
+  const roleLabel =
+    definition.role === 'hero'
+      ? 'Héros'
+      : definition.role === 'npc'
+        ? 'PNJ'
+        : 'Créature';
+
+  return (
+    `${definition.displayName} · ${roleLabel}`
   );
-  actorPreview.y = Math.max(
-    0,
-    Math.min(
-      area.height,
-      Number.isFinite(actorPreview.y)
-        ? actorPreview.y
-        : area.height / 2
-    )
-  );
+}
+
+function actorPlacementLabel(
+  placement
+) {
+  const definition =
+    captureActorDefinitionProvider
+      .resolveDefinition(
+        placement.actorDefinitionId
+      );
+
+  return definition
+    ? `${definition.displayName} · ${placement.id}`
+    : `${placement.actorDefinitionId} · ${placement.id}`;
 }
 
 function refreshActorControls() {
-  ensureActorPreviewInArea();
+  const placements =
+    currentActorPlacements();
 
-  const assets = currentActorAssetList();
+  if (
+    selectedActorPlacementId &&
+    !placements.some(
+      (actor) =>
+        actor.id ===
+        selectedActorPlacementId
+    )
+  ) {
+    selectedActorPlacementId =
+      placements[0]?.id ?? null;
+  }
+
+  if (
+    !selectedActorPlacementId &&
+    placements.length > 0
+  ) {
+    selectedActorPlacementId =
+      placements[0].id;
+  }
+
   setOptions(
-    $('actor-asset'),
-    assets,
-    actorVisual.assetId,
+    $('actor-definition'),
+    actorDefinitions,
+    $('actor-definition').value ||
+      actorDefinitions[0]?.id ||
+      '',
     {
-      label: (asset) => asset.label ?? asset.id
+      label:
+        actorDefinitionLabel
     }
   );
 
-  if (actorVisual.assetId) {
-    $('actor-asset').value = actorVisual.assetId;
+  setOptions(
+    $('actor-placement-select'),
+    placements,
+    selectedActorPlacementId,
+    {
+      label:
+        actorPlacementLabel
+    }
+  );
+
+  if (selectedActorPlacementId) {
+    $('actor-placement-select').value =
+      selectedActorPlacementId;
   }
 
-  $('actor-role').value = actorVisual.role;
-  $('actor-target-height').value = actorVisual.targetHeight;
-  $('actor-target-height-value').value =
-    String(actorVisual.targetHeight);
-  $('actor-source-facing').value =
-    actorVisual.sourceFacingX === -1 ? '-1' : '1';
-  $('actor-mirror').checked = actorVisual.mirrorHorizontal;
-  $('actor-facing').value = actorPreview.facingX < 0 ? '-1' : '1';
-  $('actor-moving').checked = actorPreview.moving === true;
+  const placement =
+    currentActorPlacement();
+  const disabled =
+    !placement;
 
-  const automaticAnchor =
-    !Number.isFinite(actorVisual.anchorOverride?.x) &&
-    !Number.isFinite(actorVisual.anchorOverride?.y);
-  $('actor-anchor-auto').checked = automaticAnchor;
-  $('actor-anchor-x').disabled = automaticAnchor;
-  $('actor-anchor-y').disabled = automaticAnchor;
-  $('actor-anchor-x').value =
-    Number.isFinite(actorVisual.anchorOverride?.x)
-      ? actorVisual.anchorOverride.x
-      : 0.5;
-  $('actor-anchor-y').value =
-    Number.isFinite(actorVisual.anchorOverride?.y)
-      ? actorVisual.anchorOverride.y
-      : 0.96;
-
-  $('actor-shadow-enabled').checked = actorVisual.shadow.enabled;
-  $('actor-shadow-width').value = actorVisual.shadow.widthRatio;
-  $('actor-shadow-height').value = actorVisual.shadow.heightRatio;
-  $('actor-shadow-opacity').value = actorVisual.shadow.opacity;
-  $('actor-idle-amplitude').value = actorVisual.motion.idleAmplitude;
-  $('actor-idle-frequency').value = actorVisual.motion.idleFrequency;
-  $('actor-walk-amplitude').value = actorVisual.motion.walkAmplitude;
-  $('actor-walk-frequency').value = actorVisual.motion.walkFrequency;
-
-  $('actor-preview-position').textContent =
-    `Aperçu non gameplay · x ${actorPreview.x.toFixed(1)} · y ${actorPreview.y.toFixed(1)}`;
-
-  const prepared = actorVisual.assetId
-    ? mapActorVisualPreparer?.get(actorVisual.assetId)
-    : null;
-
-  if (prepared) {
-    $('actor-import-status').textContent =
-      importedActorAsset?.id === actorVisual.assetId
-        ? `Visuel local prêt · traitement ${prepared.backgroundMode}`
-        : `Asset prêt · traitement ${prepared.backgroundMode}`;
+  for (const id of [
+    'actor-x',
+    'actor-y',
+    'actor-facing',
+    'actor-delete'
+  ]) {
+    $(id).disabled = disabled;
   }
+
+  if (!placement) {
+    $('actor-x').value = '';
+    $('actor-y').value = '';
+    $('actor-facing').value = '1';
+    $('actor-source-status').textContent =
+      actorDefinitions.length > 0
+        ? 'Sélectionner une définition puis placer sur la map.'
+        : 'Aucune définition acteur disponible.';
+    return;
+  }
+
+  $('actor-x').value =
+    placement.x;
+  $('actor-y').value =
+    placement.y;
+  $('actor-facing').value =
+    placement.facingX === -1
+      ? '-1'
+      : '1';
+
+  const definition =
+    captureActorDefinitionProvider
+      .resolveDefinition(
+        placement.actorDefinitionId
+      );
+
+  $('actor-source-status').textContent =
+    definition
+      ? `Visuel résolu depuis la définition ${definition.displayName} · ${definition.mapVisual.assetId}`
+      : `Définition introuvable : ${placement.actorDefinitionId}`;
 }
 
 function sourceBuildings(portal) {
@@ -1045,11 +1119,19 @@ function refreshControls() {
 }
 
 function selectedWorldPoint(document, area) {
-  if (mapTool === 'actor-preview') {
-    return {
-      x: actorPreview.x,
-      y: actorPreview.y
-    };
+  if (mapTool === 'actor-placement') {
+    const actor = area?.actors?.find(
+      (item) =>
+        item.id ===
+        selectedActorPlacementId
+    );
+
+    if (actor) {
+      return {
+        x: actor.x,
+        y: actor.y
+      };
+    }
   }
 
   const object = area?.objects?.find(
@@ -1396,11 +1478,11 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
       currentAreaId: area.id
     });
 
-    if (mapActorRenderer && actorVisual.assetId) {
-      actorPreview.mapVisual = actorVisual;
+    if (mapActorRenderer) {
       mapActorRenderer.draw(ctx, {
         camera,
-        actors: [actorPreview],
+        actors:
+          currentPlacedMapActors(area),
         timeSeconds
       });
     }
@@ -1414,90 +1496,6 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
   }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-}
-
-function applyActorInputs() {
-  const autoAnchor = $('actor-anchor-auto').checked;
-
-  actorVisual = normalizeMapActorVisual({
-    assetId: $('actor-asset').value || actorVisual.assetId,
-    role: $('actor-role').value,
-    targetHeight: numberValue(
-      $('actor-target-height'),
-      actorVisual.targetHeight
-    ),
-    mirrorHorizontal: $('actor-mirror').checked,
-    sourceFacingX:
-      Number($('actor-source-facing').value) < 0 ? -1 : 1,
-    anchorX: autoAnchor
-      ? null
-      : numberValue($('actor-anchor-x'), 0.5),
-    anchorY: autoAnchor
-      ? null
-      : numberValue($('actor-anchor-y'), 0.96),
-    shadow: {
-      enabled: $('actor-shadow-enabled').checked,
-      widthRatio: numberValue(
-        $('actor-shadow-width'),
-        actorVisual.shadow.widthRatio
-      ),
-      heightRatio: numberValue(
-        $('actor-shadow-height'),
-        actorVisual.shadow.heightRatio
-      ),
-      opacity: numberValue(
-        $('actor-shadow-opacity'),
-        actorVisual.shadow.opacity
-      )
-    },
-    motion: {
-      idleAmplitude: numberValue(
-        $('actor-idle-amplitude'),
-        actorVisual.motion.idleAmplitude
-      ),
-      idleFrequency: numberValue(
-        $('actor-idle-frequency'),
-        actorVisual.motion.idleFrequency
-      ),
-      walkAmplitude: numberValue(
-        $('actor-walk-amplitude'),
-        actorVisual.motion.walkAmplitude
-      ),
-      walkFrequency: numberValue(
-        $('actor-walk-frequency'),
-        actorVisual.motion.walkFrequency
-      )
-    }
-  });
-
-  actorPreview.mapVisual = actorVisual;
-  actorPreview.facingX =
-    Number($('actor-facing').value) < 0 ? -1 : 1;
-  actorPreview.moving = $('actor-moving').checked;
-
-  refreshActorControls();
-  renderPreview();
-}
-
-function animateActorPreview(now) {
-  if (now >= actorAnimationUntil) {
-    actorAnimationFrame = null;
-    renderPreview(now / 1000);
-    return;
-  }
-
-  renderPreview(now / 1000);
-  actorAnimationFrame =
-    requestAnimationFrame(animateActorPreview);
-}
-
-function startActorPreviewAnimation() {
-  actorAnimationUntil = performance.now() + 3000;
-
-  if (actorAnimationFrame === null) {
-    actorAnimationFrame =
-      requestAnimationFrame(animateActorPreview);
-  }
 }
 
 function applyTransformInputs() {
@@ -1717,7 +1715,7 @@ function activateTab(tabName) {
 function setMapTool(tool) {
   mapTool = [
     'select',
-    'actor-preview',
+    'actor-placement',
     'area-size',
     'terrain',
     'route',
@@ -1740,7 +1738,7 @@ function setMapTool(tool) {
     mapTool === 'river'
   ) {
     activateTab('terrain');
-  } else if (mapTool === 'actor-preview') {
+  } else if (mapTool === 'actor-placement') {
     activateTab('actors');
   } else if (mapTool === 'area-size') {
     activateTab('area');
@@ -2374,104 +2372,130 @@ $('spawn-delete').addEventListener('click', () => {
   refreshControls();
 });
 
-$('actor-role').addEventListener('change', () => {
-  const role = $('actor-role').value;
-  $('actor-target-height').value =
-    MAP_ACTOR_ROLE_DEFAULTS[role]?.targetHeight ??
-    MAP_ACTOR_ROLE_DEFAULTS.hero.targetHeight;
-  applyActorInputs();
-});
-
-$('actor-asset').addEventListener('change', applyActorInputs);
-
-$('actor-target-height').addEventListener('input', () => {
-  $('actor-target-height-value').value =
-    $('actor-target-height').value;
-  applyActorInputs();
-});
-
-for (const id of [
-  'actor-source-facing',
-  'actor-mirror',
-  'actor-facing',
-  'actor-anchor-auto',
-  'actor-anchor-x',
-  'actor-anchor-y',
-  'actor-shadow-enabled',
-  'actor-shadow-width',
-  'actor-shadow-height',
-  'actor-shadow-opacity',
-  'actor-idle-amplitude',
-  'actor-idle-frequency',
-  'actor-walk-amplitude',
-  'actor-walk-frequency',
-  'actor-moving'
-]) {
-  $(id).addEventListener('change', applyActorInputs);
-}
-
-$('actor-animate').addEventListener('click', () => {
-  applyActorInputs();
-  startActorPreviewAnimation();
-});
-
-$('actor-export').addEventListener('click', () => {
-  const json = JSON.stringify(actorVisual, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download =
-    `map-actor-${actorVisual.role}.visual.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  setStatus('MapActorVisual v1 exporté');
-});
-
-$('actor-image-import').addEventListener('change', async () => {
-  const file = $('actor-image-import').files?.[0];
-  if (!file) return;
-
-  try {
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        typeof reader.result === 'string'
-          ? resolve(reader.result)
-          : reject(new Error('Lecture image invalide'));
-      reader.onerror = () =>
-        reject(reader.error ?? new Error('Lecture image impossible'));
-      reader.readAsDataURL(file);
-    });
-
-    importedActorAsset = Object.freeze({
-      id: 'actor.user.preview.01',
-      kind: 'map-actor-source',
-      path: dataUrl,
-      label: file.name || 'Visuel importé'
-    });
-
-    await rebuildMapActorPipeline();
-
-    actorVisual = normalizeMapActorVisual({
-      ...actorVisual,
-      assetId: importedActorAsset.id,
-      anchorX: actorVisual.anchorOverride?.x,
-      anchorY: actorVisual.anchorOverride?.y
-    });
-    actorPreview.mapVisual = actorVisual;
+$('actor-placement-select').addEventListener(
+  'change',
+  () => {
+    selectedActorPlacementId =
+      $('actor-placement-select').value ||
+      null;
     refreshActorControls();
     renderPreview();
-    setStatus('Visuel acteur importé pour aperçu');
-  } catch (error) {
-    setStatus(
-      `Import acteur impossible : ${error.message}`,
-      true
-    );
-  } finally {
-    $('actor-image-import').value = '';
   }
-});
+);
+
+$('actor-add').addEventListener(
+  'click',
+  () => {
+    const area =
+      currentAreaRaw();
+    const actorDefinitionId =
+      $('actor-definition').value;
+
+    if (
+      !area ||
+      !actorDefinitionId
+    ) {
+      return;
+    }
+
+    const before =
+      new Set(
+        area.actors?.map(
+          (actor) => actor.id
+        ) ?? []
+      );
+
+    draft = addActorPlacement(
+      draft,
+      selectedAreaId,
+      {
+        actorDefinitionId,
+        x: area.width / 2,
+        y: area.height / 2,
+        facingX: 1
+      }
+    );
+
+    selectedActorPlacementId =
+      currentAreaRaw()
+        ?.actors?.find(
+          (actor) =>
+            !before.has(actor.id)
+        )?.id ??
+      selectedActorPlacementId;
+
+    setMapTool(
+      'actor-placement'
+    );
+    refreshControls();
+  }
+);
+
+$('actor-delete').addEventListener(
+  'click',
+  () => {
+    if (
+      !selectedActorPlacementId
+    ) {
+      return;
+    }
+
+    draft =
+      deleteActorPlacement(
+        draft,
+        selectedAreaId,
+        selectedActorPlacementId
+      );
+    selectedActorPlacementId =
+      currentAreaRaw()
+        ?.actors?.[0]?.id ??
+      null;
+    refreshControls();
+  }
+);
+
+for (const id of [
+  'actor-x',
+  'actor-y',
+  'actor-facing'
+]) {
+  $(id).addEventListener(
+    'change',
+    () => {
+      if (
+        !selectedActorPlacementId
+      ) {
+        return;
+      }
+
+      draft =
+        updateActorPlacement(
+          draft,
+          selectedAreaId,
+          selectedActorPlacementId,
+          {
+            x: numberValue(
+              $('actor-x')
+            ),
+            y: numberValue(
+              $('actor-y')
+            ),
+            facingX:
+              Number(
+                $('actor-facing')
+                  .value
+              ) < 0
+                ? -1
+                : 1
+          }
+        );
+
+      refreshActorControls();
+      refreshJson();
+      renderPreview();
+    }
+  );
+}
 
 $('object-select').addEventListener('change', () => {
   selectedObjectId = $('object-select').value;
@@ -2841,14 +2865,73 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
-  if (mapTool === 'actor-preview') {
-    actorPreview.x = Math.max(0, Math.min(area.width, world.x));
-    actorPreview.y = Math.max(0, Math.min(area.height, world.y));
+  if (mapTool === 'actor-placement') {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y
+      )
+    );
+
+    if (
+      selectedActorPlacementId
+    ) {
+      draft =
+        updateActorPlacement(
+          draft,
+          selectedAreaId,
+          selectedActorPlacementId,
+          { x, y }
+        );
+    } else {
+      const actorDefinitionId =
+        $('actor-definition').value;
+      const before =
+        new Set(
+          currentActorPlacements()
+            .map(
+              (actor) =>
+                actor.id
+            )
+        );
+
+      draft =
+        addActorPlacement(
+          draft,
+          selectedAreaId,
+          {
+            actorDefinitionId,
+            x,
+            y
+          }
+        );
+
+      selectedActorPlacementId =
+        currentActorPlacements()
+          .find(
+            (actor) =>
+              !before.has(
+                actor.id
+              )
+          )?.id ??
+        null;
+    }
+
     pointerSession = {
       pointerId: event.pointerId,
-      mode: 'drag-actor-preview'
+      mode:
+        'drag-actor-placement'
     };
     refreshActorControls();
+    refreshJson();
     renderPreview();
     return;
   }
@@ -3019,10 +3102,35 @@ canvas.addEventListener('pointermove', (event) => {
     return;
   }
 
-  if (pointerSession.mode === 'drag-actor-preview') {
-    actorPreview.x = Math.max(0, Math.min(area.width, world.x));
-    actorPreview.y = Math.max(0, Math.min(area.height, world.y));
+  if (
+    pointerSession.mode ===
+      'drag-actor-placement' &&
+    selectedActorPlacementId
+  ) {
+    draft =
+      updateActorPlacement(
+        draft,
+        selectedAreaId,
+        selectedActorPlacementId,
+        {
+          x: Math.max(
+            0,
+            Math.min(
+              area.width,
+              world.x
+            )
+          ),
+          y: Math.max(
+            0,
+            Math.min(
+              area.height,
+              world.y
+            )
+          )
+        }
+      );
     refreshActorControls();
+    refreshJson();
     renderPreview();
     return;
   }
@@ -3248,14 +3356,7 @@ $('test-exploration').addEventListener('click', (event) => {
   try {
     saveWorldBuilderTestHandoff(
       window.sessionStorage,
-      result.document,
-      {
-        actorVisual,
-        actorAsset:
-          importedActorAsset?.id === actorVisual.assetId
-            ? importedActorAsset
-            : null
-      }
+      result.document
     );
   } catch (error) {
     event.preventDefault();
@@ -3291,6 +3392,12 @@ $('import-json').addEventListener('change', async () => {
     selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
     selectedSpawnId = null;
     selectedObjectId = null;
+    selectedActorPlacementId =
+      draft.areas.find(
+        (area) =>
+          area.id === selectedAreaId
+      )?.actors?.[0]?.id ??
+      null;
     selectedPortalId = draft.portals?.[0]?.id ?? null;
     selectedSurfaceKind = null;
     selectedSurfacePathId = null;
@@ -3309,6 +3416,12 @@ $('reset-demo').addEventListener('click', () => {
   selectedAreaId = draft.initialAreaId;
   selectedSpawnId = null;
   selectedObjectId = null;
+  selectedActorPlacementId =
+    draft.areas.find(
+      (area) =>
+        area.id === selectedAreaId
+    )?.actors?.[0]?.id ??
+    null;
   selectedPortalId = draft.portals?.[0]?.id ?? null;
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
@@ -3323,8 +3436,6 @@ addEventListener('resize', () => {
 refreshControls();
 if (resumeBuilderTest) {
   setStatus(
-    resumedTestSession?.actorVisual
-      ? 'Session de test restaurée : monde + visuel acteur'
-      : 'Session de test restaurée dans le World Builder'
+    'Session de test restaurée dans le World Builder'
   );
 }

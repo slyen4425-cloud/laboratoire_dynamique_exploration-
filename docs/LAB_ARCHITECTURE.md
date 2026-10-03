@@ -450,6 +450,11 @@ WorldDocument
 │  ├─ width / height
 │  ├─ surface
 │  ├─ objects
+│  ├─ actors[]
+│  │  ├─ id
+│  │  ├─ actorDefinitionId
+│  │  ├─ x / y
+│  │  └─ facingX
 │  ├─ obstacles
 │  └─ spawns[]
 └─ portals[]
@@ -579,7 +584,49 @@ Le World Builder final ne duplique pas :
 - paramètres de mouvement visuel ;
 - configuration de miroir.
 
-Le panneau Map Actor complet du laboratoire est un banc de calibration technique temporaire.
+Le banc de calibration Map Actor a été retiré du World Builder produit.
+
+Le contrat de placement canonique est désormais :
+
+```text
+WorldArea.actors[]
+  -> id
+  -> actorDefinitionId
+  -> x / y
+  -> facingX
+```
+
+Il est interdit d'y sérialiser :
+- assetId ;
+- MapActorVisual ;
+- targetHeight ;
+- sourceFacingX ;
+- anchor ;
+- ombre ;
+- animation/motion ;
+- stats, compétences ou données Capture.
+
+Au rendu, `actorDefinitionId` est résolu par l'Actor Catalog. La définition fournit son `MapActorVisual`, puis l'Asset Adapter résout l'asset physique. Builder et runtime utilisent exactement cette même chaîne.
+
+Pour une créature Capture :
+
+```text
+WorldArea.actors[].actorDefinitionId
+        ↓
+Capture Actor Definition provider
+        ↓
+Capture creature presentation.assetId
+        ↓
+Global Visual Asset Catalog
+        ↓
+MapActorVisual dérivé
+        ↓
+Map Actor Visual Preparer
+        ↓
+Map Actor Renderer
+```
+
+Le World Builder ne connaît donc jamais le chemin physique d'un visuel Capture.
 
 ## World Builder Dynamique UI v1
 

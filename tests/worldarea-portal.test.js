@@ -106,7 +106,7 @@ function makeDocument() {
   });
 }
 
-test('WorldArea v1 normalizes dimensions, surface, objects and named spawns', () => {
+test('WorldArea v3 normalizes dimensions, surface, objects, actors and named spawns', () => {
   const area = normalizeWorldArea({
     id: 'home',
     kind: 'interior',
@@ -118,7 +118,7 @@ test('WorldArea v1 normalizes dimensions, surface, objects and named spawns', ()
     ]
   });
 
-  assert.equal(area.schemaVersion, 2);
+  assert.equal(area.schemaVersion, 3);
   assert.equal(area.id, 'home');
   assert.equal(area.kind, 'interior');
   assert.equal(area.width, 640);
