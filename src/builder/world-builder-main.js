@@ -28,7 +28,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=surface-traversal-replay-v1';
+} from './world-builder-draft.js?rev=encounter-layers-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
