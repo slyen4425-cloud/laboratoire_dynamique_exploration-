@@ -43,7 +43,7 @@ import {
   createEncounterPaintPreset,
   encounterEditorAvailability,
   updateEncounterPaintPreset
-} from './encounter-layer-editor-state.js?rev=encounter-layers-v3';
+} from './encounter-layer-editor-state.js?rev=encounter-layers-v4';
 import {
   clampBuilderZoom,
   computeBuilderView,
