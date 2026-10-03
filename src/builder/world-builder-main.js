@@ -1,11 +1,13 @@
 import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-encounters-v1';
 import {
+  addActorPlacement,
   addPortal,
   addSpawn,
   addSurfacePath,
   addWorldObject,
   appendSurfacePathPoint,
   createWorldBuilderDraft,
+  deleteActorPlacement,
   deletePortal,
   deleteSpawn,
   deleteSurfacePath,
@@ -14,6 +16,7 @@ import {
   importWorldBuilderDocument,
   patchWorldObject,
   serializeWorldBuilderDraft,
+  updateActorPlacement,
   updateAreaProperties,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
@@ -42,17 +45,17 @@ import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
-  MAP_ACTOR_ROLE_DEFAULTS,
-  normalizeMapActorVisual
-} from '../actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
+  createPlacedMapActorView
+} from '../actors/placed-map-actor-view.js';
 import {
-  createMapActorAssetResolver,
-  listMapActorAssets,
-  resolveMapActorAsset
+  createMapActorAssetResolver
 } from '../assets/map-actor-asset-adapter.js';
 import {
   createMapActorVisualPreparer
 } from '../assets/map-actor-visual-preparer.js';
+import {
+  createCaptureActorPreviewProviderV1
+} from '../capture/capture-actor-preview-loader-v1.js';
 import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
@@ -147,8 +150,11 @@ const objectRenderer = createWorldObjectRenderer({
 });
 const portalRenderer = createPortalRenderer();
 
-const registeredMapActorAssets = listMapActorAssets();
-let importedActorAsset = null;
+const captureActorDefinitionProvider =
+  await createCaptureActorPreviewProviderV1();
+const actorDefinitions =
+  captureActorDefinitionProvider.listDefinitions();
+
 let mapActorImageLoader = null;
 let mapActorVisualPreparer = null;
 let mapActorRenderer = null;
@@ -157,49 +163,60 @@ async function rebuildMapActorPipeline() {
   mapActorVisualPreparer?.dispose?.();
   mapActorImageLoader?.dispose?.();
 
-  const extraAssets = importedActorAsset
-    ? [importedActorAsset]
-    : [];
-  const resolveActorAsset = createMapActorAssetResolver(extraAssets);
-  const assets = [
-    ...registeredMapActorAssets,
-    ...extraAssets
-  ];
+  const assets =
+    captureActorDefinitionProvider.listAssets();
+  const resolveActorAsset =
+    createMapActorAssetResolver(assets);
 
-  mapActorImageLoader = createImageAssetLoader({
-    resolveAsset: resolveActorAsset
-  });
+  mapActorImageLoader =
+    createImageAssetLoader({
+      resolveAsset: resolveActorAsset
+    });
 
-  const assetIds = assets.map((asset) => asset.id);
-  const loadStatus = await mapActorImageLoader.load(assetIds);
+  const assetIds =
+    assets.map((asset) => asset.id);
+  const loadStatus =
+    await mapActorImageLoader.load(
+      assetIds
+    );
 
   if (
-    loadStatus.ready !== assetIds.length ||
+    loadStatus.ready !==
+      assetIds.length ||
     loadStatus.missing > 0 ||
     loadStatus.errors > 0
   ) {
     throw new Error(
-      `Map Actor Editor assets unavailable: ${JSON.stringify(loadStatus)}`
+      `Actor Catalog assets unavailable: ${JSON.stringify(loadStatus)}`
     );
   }
 
-  mapActorVisualPreparer = createMapActorVisualPreparer({
-    imageLoader: mapActorImageLoader
-  });
+  mapActorVisualPreparer =
+    createMapActorVisualPreparer({
+      imageLoader:
+        mapActorImageLoader
+    });
 
-  const prepareStatus = mapActorVisualPreparer.prepare(assetIds);
+  const prepareStatus =
+    mapActorVisualPreparer.prepare(
+      assetIds
+    );
+
   if (
-    prepareStatus.ready !== assetIds.length ||
+    prepareStatus.ready !==
+      assetIds.length ||
     prepareStatus.errors > 0
   ) {
     throw new Error(
-      `Map Actor Editor preparation failed: ${JSON.stringify(prepareStatus)}`
+      `Actor Catalog preparation failed: ${JSON.stringify(prepareStatus)}`
     );
   }
 
-  mapActorRenderer = createMapActorRenderer({
-    preparedVisuals: mapActorVisualPreparer
-  });
+  mapActorRenderer =
+    createMapActorRenderer({
+      preparedVisuals:
+        mapActorVisualPreparer
+    });
 }
 
 const builderParams = new URLSearchParams(window.location.search);
@@ -222,16 +239,17 @@ if (resumeBuilderTest && !resumedTestDocument) {
   );
 }
 
-importedActorAsset =
-  resumedTestSession?.actorAsset ?? null;
-
 let draft = createWorldBuilderDraft(
   resumedTestDocument ?? demoWorldDocument
 );
-let selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
+let selectedAreaId =
+  draft.initialAreaId ??
+  draft.areas[0]?.id ??
+  null;
 let selectedSpawnId = null;
 let selectedObjectId = null;
-let selectedPortalId = draft.portals[0]?.id ?? null;
+let selectedPortalId =
+  draft.portals[0]?.id ?? null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
 let selectedEncounterFamilyId = 'forest';
@@ -245,29 +263,16 @@ let pinchState = null;
 let hoverWorldPoint = null;
 const activePointers = new Map();
 
-const initialActorAssetId =
-  registeredMapActorAssets[0]?.id ??
-  resolveMapActorAsset('actor.demo.hero.traveler.01')?.id ??
-  null;
-let actorVisual =
-  resumedTestSession?.actorVisual ??
-  normalizeMapActorVisual({
-    assetId: initialActorAssetId,
-    role: 'hero'
-  });
 const initialActorArea =
-  draft.areas.find((area) => area.id === selectedAreaId) ??
+  draft.areas.find(
+    (area) =>
+      area.id === selectedAreaId
+  ) ??
   draft.areas[0] ??
   null;
-const actorPreview = {
-  x: initialActorArea?.width / 2 ?? 0,
-  y: initialActorArea?.height / 2 ?? 0,
-  facingX: 1,
-  moving: false,
-  mapVisual: actorVisual
-};
-let actorAnimationUntil = 0;
-let actorAnimationFrame = null;
+let selectedActorPlacementId =
+  initialActorArea?.actors?.[0]?.id ??
+  null;
 
 await rebuildMapActorPipeline();
 
