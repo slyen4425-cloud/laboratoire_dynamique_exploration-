@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: work/lab-exploration-encounter-bridge-v1-2026-10-03
+          ref: preview/lab-exploration-encounter-bridge-v1-2026-10-03
           path: combat-preview
 
       - name: Configure Pages
