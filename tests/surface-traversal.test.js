@@ -73,7 +73,7 @@ function makeWorld() {
   };
 }
 
-test('Surface schema v2 keeps traversal ids separate from visual material ids', () => {
+test('Surface schema v3 keeps traversal ids separate from visual material ids', () => {
   const surface = normalizeWorldSurface({
     baseMaterialId: 'visual.base.custom',
     baseTraversalRuleId: 'terrain.ground',
@@ -97,7 +97,7 @@ test('Surface schema v2 keeps traversal ids separate from visual material ids', 
     ]
   });
 
-  assert.equal(surface.version, 2);
+  assert.equal(surface.version, 3);
   assert.equal(surface.baseMaterialId, 'visual.base.custom');
   assert.equal(surface.baseTraversalRuleId, 'terrain.ground');
   assert.equal(surface.routes[0].materialId, 'visual.road.custom');
@@ -274,7 +274,7 @@ test('legacy bridge obstacle ids migrate to surface feature ids without dual nor
 });
 
 
-test('Surface schema v2 preserves Builder terrain zones without giving them traversal authority', () => {
+test('Surface schema v3 preserves Builder terrain zones without giving them traversal authority', () => {
   const surface = normalizeWorldSurface({
     baseMaterialId: 'grass.forest',
     baseTraversalRuleId: 'terrain.ground',
@@ -291,7 +291,7 @@ test('Surface schema v2 preserves Builder terrain zones without giving them trav
     ]
   });
 
-  assert.equal(surface.version, 2);
+  assert.equal(surface.version, 3);
   assert.equal(surface.zones.length, 1);
   assert.equal(surface.zones[0].id, 'painted-zone-1');
   assert.equal(surface.zones[0].materialId, 'ground.snow');
