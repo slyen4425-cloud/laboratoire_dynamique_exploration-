@@ -1,6 +1,9 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=surface-traversal-replay-v1';
+} from '../world/world-document-model.js?rev=terrain-family-encounters-v1';
+import {
+  terrainFamilyRegistry
+} from '../world/terrain-family-registry.js?rev=terrain-family-encounters-v1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -104,6 +107,21 @@ export function validateWorldBuilderDraft(draft) {
     errors.push('initial-area-or-spawn-missing');
   }
 
+  for (const profile of document.encounterConfig?.families ?? []) {
+    if (profile.encounterChancePercent <= 0) continue;
+
+    const total = profile.elementChances.reduce(
+      (sum, entry) => sum + entry.chancePercent,
+      0
+    );
+
+    if (Math.abs(total - 100) > 0.001) {
+      errors.push(
+        `encounter-element-total:${profile.terrainFamilyId}`
+      );
+    }
+  }
+
   return Object.freeze({
     valid: errors.length === 0,
     errors: Object.freeze(errors),
@@ -114,7 +132,12 @@ export function validateWorldBuilderDraft(draft) {
 export function updateAreaProperties(
   draft,
   areaId,
-  { width, height, baseMaterialId } = {}
+  {
+    width,
+    height,
+    baseTerrainFamilyId,
+    baseMaterialId
+  } = {}
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
@@ -122,6 +145,15 @@ export function updateAreaProperties(
 
   if (width !== undefined) area.width = finite(width, area.width);
   if (height !== undefined) area.height = finite(height, area.height);
+
+  if (
+    typeof baseTerrainFamilyId === 'string' &&
+    terrainFamilyRegistry.get(baseTerrainFamilyId)
+  ) {
+    area.surface ??= {};
+    area.surface.baseTerrainFamilyId =
+      baseTerrainFamilyId.trim();
+  }
 
   if (
     typeof baseMaterialId === 'string' &&
@@ -153,6 +185,7 @@ export function addSurfacePath(
   kind,
   {
     width,
+    terrainFamilyId,
     materialId,
     points
   } = {}
@@ -175,6 +208,23 @@ export function addSurfacePath(
       : kind === 'terrain'
         ? 'grass.forest'
         : 'road.dirt';
+  const fallbackFamily =
+    kind === 'river'
+      ? 'sea'
+      : kind === 'route'
+        ? 'road'
+        : area.surface?.baseTerrainFamilyId ?? 'forest';
+  const resolvedFamily =
+    kind === 'river'
+      ? 'sea'
+      : kind === 'route'
+        ? 'road'
+        : (
+            typeof terrainFamilyId === 'string' &&
+            terrainFamilyRegistry.get(terrainFamilyId)
+              ? terrainFamilyId.trim()
+              : fallbackFamily
+          );
 
   const safePoints = Array.isArray(points)
     ? points
@@ -201,6 +251,7 @@ export function addSurfacePath(
       width,
       kind === 'river' ? 72 : kind === 'terrain' ? 180 : 82
     ),
+    terrainFamilyId: resolvedFamily,
     materialId:
       typeof materialId === 'string' && materialId.trim()
         ? materialId.trim()
@@ -228,6 +279,17 @@ export function updateSurfacePath(
 
   if (patch.width !== undefined) {
     item.width = Math.max(1, finite(patch.width, item.width));
+  }
+
+  if (kind === 'route') {
+    item.terrainFamilyId = 'road';
+  } else if (kind === 'river') {
+    item.terrainFamilyId = 'sea';
+  } else if (
+    typeof patch.terrainFamilyId === 'string' &&
+    terrainFamilyRegistry.get(patch.terrainFamilyId)
+  ) {
+    item.terrainFamilyId = patch.terrainFamilyId.trim();
   }
 
   if (
@@ -299,6 +361,93 @@ export function deleteSurfacePath(
   const items = surfaceCollection(area, kind);
   const index = items.findIndex((path) => path.id === pathId);
   if (index >= 0) items.splice(index, 1);
+
+  return next;
+}
+
+function findEncounterProfile(draft, terrainFamilyId) {
+  return draft.encounterConfig?.families?.find(
+    (profile) =>
+      profile.terrainFamilyId === terrainFamilyId
+  ) ?? null;
+}
+
+export function updateTerrainFamilyEncounterProfile(
+  draft,
+  terrainFamilyId,
+  {
+    encounterChancePercent
+  } = {}
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(
+    next,
+    terrainFamilyId
+  );
+
+  if (!profile) return next;
+
+  if (encounterChancePercent !== undefined) {
+    profile.encounterChancePercent = Math.max(
+      0,
+      Math.min(
+        100,
+        finite(
+          encounterChancePercent,
+          profile.encounterChancePercent
+        )
+      )
+    );
+  }
+
+  return next;
+}
+
+export function updateTerrainFamilyElementChance(
+  draft,
+  terrainFamilyId,
+  elementId,
+  chancePercent
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(
+    next,
+    terrainFamilyId
+  );
+
+  if (
+    !profile ||
+    typeof elementId !== 'string' ||
+    !elementId.trim()
+  ) {
+    return next;
+  }
+
+  profile.elementChances ??= [];
+  const id = elementId.trim();
+  const chance = Math.max(
+    0,
+    Math.min(100, finite(chancePercent, 0))
+  );
+  const index = profile.elementChances.findIndex(
+    (entry) => entry.elementId === id
+  );
+
+  if (chance <= 0) {
+    if (index >= 0) {
+      profile.elementChances.splice(index, 1);
+    }
+    return next;
+  }
+
+  if (index >= 0) {
+    profile.elementChances[index].chancePercent = chance;
+  } else {
+    profile.elementChances.push({
+      elementId: id,
+      chancePercent: chance
+    });
+  }
 
   return next;
 }
