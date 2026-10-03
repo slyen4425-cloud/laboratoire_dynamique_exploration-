@@ -118,3 +118,34 @@ CI :
 
 État : **TECHNIQUE GREEN — publication preview et validation utilisateur restantes**.
 
+## Publication preview — 2026-10-03
+
+Preview fonctionnelle figée :
+- branche : `preview/exploration-actor-placement-catalog-v1-2026-10-03` ;
+- SHA : `ea6bf020618209cd6f77baab9cbc4fe195a9c8db` ;
+- checkpoint : `checkpoint/exploration-actor-placement-catalog-v1-prevalidation-green-2026-10-03` ;
+- Exploration CI finale : `37148500636` — **SUCCESS** ;
+- push/checkpoint CI : `37148531984` — **SUCCESS**.
+
+Publication Pages :
+- PR infra : #57 ;
+- main infra : `0e1ba866df511597decbb92bfd83a315037f091e` ;
+- Pages run : `37148567676` — **SUCCESS** ;
+- artifact : `11282993699` (~32,2 Mo).
+
+Le workflow Pages embarque côte à côte :
+- Exploration depuis la branche preview Actor Catalog ;
+- Combat depuis la preview Loup configurée validée ;
+- `global-assets` sous `capture-assets/`.
+
+La sentinelle Loup ne possède aucun chemin physique dans le WorldDocument :
+`capture:creature:crea-loup`
+-> transfer Capture
+-> assetId de présentation
+-> catalogue global
+-> asset physique
+-> MapActorVisual dérivé
+-> Map Actor Renderer.
+
+Gate restante : **validation utilisateur visuelle/ergonomique** du Loup sur la map et du panneau Builder placement-only.
+
