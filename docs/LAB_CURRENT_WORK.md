@@ -122,3 +122,14 @@ Gate smartphone :
 10. export/réimport : vérifier conservation des familles et réglages.
 
 Le lot reste **NON GREEN** jusqu'à validation utilisateur smartphone.
+
+
+## Fermeture GREEN — Terrain Family Encounters v1 — 2026-10-03
+
+Validation utilisateur positive sur smartphone de la nouvelle architecture famille -> pourcentages éléments -> rareté Capture.
+
+Checkpoint :
+`docs/checkpoints/EXPLORATION_TERRAIN_FAMILY_ENCOUNTERS_V1_GREEN_2026-10-03.md`
+
+Suite :
+**Phase 7 — Encounter Bridge**.
