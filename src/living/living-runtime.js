@@ -14,7 +14,7 @@ import {
 import {
   advanceWildCreatureTowardTarget,
   planWildWanderTarget
-} from './wander-planner.js?rev=phase5-wild-wander-territory-v1';
+} from './wander-planner.js?rev=phase5-wild-wander-territory-v1-boundary';
 
 function findArea(worldDocument, areaId) {
   return Array.isArray(worldDocument?.areas)
