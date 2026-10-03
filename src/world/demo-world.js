@@ -1,4 +1,4 @@
-import { normalizeWorldDocument } from './world-document-model.js?rev=surface-traversal-replay-v1';
+import { normalizeWorldDocument } from './world-document-model.js?rev=encounter-layers-v3';
 
 export const demoWorldDocument = normalizeWorldDocument({
   id: 'forest-demo-world',
