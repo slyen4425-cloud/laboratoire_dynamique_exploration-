@@ -22,7 +22,7 @@ const snapshot = {
   version: 1,
   encounterId: 'e1',
   source: 'terrain-random',
-  player: { partyRef: 'capture-party-preview' },
+  player: { partyRef: 'capture-party-player-v1' },
   opponents: [{ creatureId: 'crea_nat_3' }],
   rules: { rulesetId: 'capture.standard.1v1' },
   context: {
@@ -56,7 +56,7 @@ test('combat navigation adapter owns page navigation outside Exploration bootstr
   assert.equal(launched, true);
   assert.equal(
     target,
-    'https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/combat-preview/examples/dom-demo/exploration-encounter.html'
+    'https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/combat-preview/examples/dom-demo/exploration-encounter.html?rev=player-party-recall-runtime-fix-v1'
   );
 
   const handoff = readCombatHandoff(store);
@@ -70,5 +70,30 @@ test('combat navigation adapter owns page navigation outside Exploration bootstr
     new URL(handoff.returnState.returnUrl)
       .searchParams.get('encounterTest'),
     '1'
+  );
+});
+
+
+test('public Exploration entry versions the navigation module that owns Combat document revision', async () => {
+  const { readFile } = await import('node:fs/promises');
+
+  const [index, main] = await Promise.all([
+    readFile(
+      new URL('../index.html', import.meta.url),
+      'utf8'
+    ),
+    readFile(
+      new URL('../src/main.js', import.meta.url),
+      'utf8'
+    )
+  ]);
+
+  assert.match(
+    index,
+    /src\/main\.js\?rev=combat-document-revision-v1/
+  );
+  assert.match(
+    main,
+    /combat-handoff-navigation\.js\?rev=combat-document-revision-v1/
   );
 });
