@@ -79,7 +79,7 @@ test('family encounter chance can reject before element/creature selection', () 
   assert.equal(result.reason, 'chance');
 });
 
-test('family element weights select a Capture element before choosing a creature', () => {
+test('family element percentages select a Capture element before choosing a creature', () => {
   const result = resolveTerrainFamilyEncounter({
     terrainFamilyId: 'forest',
     config: config(),
