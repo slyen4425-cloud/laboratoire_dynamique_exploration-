@@ -49,10 +49,10 @@ import {
 } from './builder/world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
 import {
   demoLivingWorldConfig
-} from './living/demo-living-world.js?rev=phase5-wild-runtime-presence-v1';
+} from './living/demo-living-world.js?rev=phase5-wild-wander-territory-v1';
 import {
   resolveDemoLivingActorDefinition
-} from './living/demo-living-actor-adapter.js?rev=phase5-wild-runtime-presence-v1';
+} from './living/demo-living-actor-adapter.js?rev=phase5-wild-wander-territory-v1';
 import {
   collectLivingMapActorAssetIds,
   createInitialWildlife,
