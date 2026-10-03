@@ -40,6 +40,9 @@ import {
   normalizeBuilderMapTool
 } from './world-builder-map-tool.js?rev=encounter-layers-v2';
 import {
+  encounterEditorAvailability
+} from './encounter-editor-state.js?rev=encounter-layers-v3';
+import {
   clampBuilderZoom,
   computeBuilderView,
   canvasPointToWorld,
@@ -868,31 +871,65 @@ function refreshEncounterControls() {
   }
 
   const layer = currentEncounterLayerRaw();
-  const disabled = !layer;
+  const entry = currentEncounterEntryRaw();
+  const availability = encounterEditorAvailability({
+    hasLayer: Boolean(layer),
+    hasEntry: Boolean(entry)
+  });
 
-  for (const id of [
-    'encounter-layer-delete',
-    'encounter-enabled',
-    'encounter-width',
-    'encounter-chance',
-    'encounter-check-distance',
-    'encounter-priority',
-    'encounter-entry-select',
-    'encounter-entry-add',
-    'encounter-entry-delete',
-    'encounter-entry-kind',
-    'encounter-entry-value',
-    'encounter-entry-weight'
-  ]) {
-    $(id).disabled = disabled;
-  }
+  $('encounter-layer-delete').disabled =
+    !availability.layerDelete;
+  $('encounter-enabled').disabled =
+    !availability.layerSettings;
+  $('encounter-width').disabled =
+    !availability.layerSettings;
+  $('encounter-chance').disabled =
+    !availability.layerSettings;
+  $('encounter-check-distance').disabled =
+    !availability.layerSettings;
+  $('encounter-priority').disabled =
+    !availability.layerSettings;
+  $('encounter-entry-select').disabled =
+    !availability.entryAdd;
+  $('encounter-entry-add').disabled =
+    !availability.entryAdd;
+  $('encounter-entry-delete').disabled =
+    !availability.entryDelete;
+  $('encounter-entry-kind').disabled =
+    !availability.selectorKind;
+  $('encounter-entry-value').disabled =
+    !availability.selectorValue;
+  $('encounter-entry-weight').disabled =
+    !availability.entryWeight;
 
   if (!layer) {
-    $('encounter-label').value = '—';
-    $('encounter-chance-value').value = '—';
-    $('encounter-width-value').value = '—';
-    $('encounter-entry-weight-value').value = '—';
-    $('encounter-entry-share').value = '—';
+    $('encounter-label').value = 'Nouvelle zone';
+    $('encounter-chance-value').value =
+      `${Math.round(numberValue($('encounter-chance'), 20))} %`;
+    $('encounter-width-value').value =
+      String(Math.round(numberValue($('encounter-width'), 260)));
+
+    const defaultKind =
+      $('encounter-entry-kind').value === 'creature'
+        ? 'creature'
+        : 'element';
+    const defaultOptions =
+      encounterSelectorOptions(defaultKind);
+
+    setOptions(
+      $('encounter-entry-value'),
+      defaultOptions,
+      $('encounter-entry-value').value || defaultOptions[0]?.id,
+      { label: (item) => item.label }
+    );
+
+    if (!$('encounter-entry-value').value && defaultOptions[0]) {
+      $('encounter-entry-value').value = defaultOptions[0].id;
+    }
+
+    $('encounter-entry-weight-value').value =
+      String(Math.round(numberValue($('encounter-entry-weight'), 100)));
+    $('encounter-entry-share').value = '100 %';
     return;
   }
 
@@ -923,18 +960,6 @@ function refreshEncounterControls() {
   if (selectedEncounterEntryId) {
     $('encounter-entry-select').value =
       selectedEncounterEntryId;
-  }
-
-  const entry = currentEncounterEntryRaw();
-  const entryDisabled = !entry;
-
-  for (const id of [
-    'encounter-entry-delete',
-    'encounter-entry-kind',
-    'encounter-entry-value',
-    'encounter-entry-weight'
-  ]) {
-    $(id).disabled = entryDisabled;
   }
 
   if (!entry) {
@@ -2166,16 +2191,30 @@ function beginEncounterLayer(point) {
     {
       width: numberValue($('encounter-width'), 260),
       points: [point, point],
-      encounterChancePercent: 20,
-      checkDistance: 160,
-      priority: 0,
+      encounterChancePercent: numberValue(
+        $('encounter-chance'),
+        20
+      ),
+      checkDistance: numberValue(
+        $('encounter-check-distance'),
+        160
+      ),
+      priority: numberValue($('encounter-priority'), 0),
       table: [
         {
           id: 'entry-1',
-          selectorKind: 'element',
+          selectorKind:
+            $('encounter-entry-kind').value === 'creature'
+              ? 'creature'
+              : 'element',
           selectorId:
-            captureCreatureCatalog.listElements()[0]?.id ?? 'fire',
-          weight: 100
+            $('encounter-entry-value').value ||
+            captureCreatureCatalog.listElements()[0]?.id ||
+            'fire',
+          weight: numberValue(
+            $('encounter-entry-weight'),
+            100
+          )
         }
       ]
     }
@@ -3434,6 +3473,39 @@ function endPointer(event) {
   activePointers.delete(event.pointerId);
 
   if (!wasTracked) return;
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId &&
+    pointerSession.mode === 'pending-draw' &&
+    pointerSession.kind === 'encounter'
+  ) {
+    const pathId =
+      beginEncounterLayer(pointerSession.startWorld);
+
+    if (pathId) {
+      const endWorld =
+        eventWorldPoint(event) ??
+        pointerSession.startWorld;
+
+      appendEncounterDrawPoint(
+        pathId,
+        {
+          x: endWorld.x + 0.5,
+          y: endWorld.y
+        },
+        true
+      );
+
+      selectedEncounterLayerId = pathId;
+      selectedEncounterEntryId =
+        currentEncounterLayerRaw()?.table?.[0]?.id ??
+        null;
+      refreshEncounterControls();
+      refreshJson();
+      renderPreview();
+    }
+  }
 
   if (
     pointerSession &&
