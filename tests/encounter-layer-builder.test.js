@@ -83,7 +83,8 @@ test('Builder edits layer chance, priority and table percentages', () => {
     'forest-exterior',
     layerId,
     {
-      tags: ['element.earth', 'element.grass'],
+      selectorKind: 'element',
+      selectorId: 'earth',
       weight: 80
     }
   );
@@ -97,7 +98,8 @@ test('Builder edits layer chance, priority and table percentages', () => {
     layerId,
     entryId,
     {
-      tags: ['element.neutral'],
+      selectorKind: 'element',
+      selectorId: 'fire',
       weight: 20
     }
   );
@@ -107,7 +109,8 @@ test('Builder edits layer chance, priority and table percentages', () => {
   assert.equal(layer.encounterChancePercent, 35);
   assert.equal(layer.checkDistance, 140);
   assert.equal(layer.priority, 5);
-  assert.deepEqual(layer.table[0].tags, ['element.neutral']);
+  assert.equal(layer.table[0].selectorKind, 'element');
+  assert.equal(layer.table[0].selectorId, 'fire');
   assert.equal(layer.table[0].weight, 20);
 });
 
@@ -164,7 +167,8 @@ test('Encounter Layers survive WorldDocument export/import', () => {
     'forest-exterior',
     layerId,
     {
-      actorDefinitionId: 'capture.creature.demo.ground',
+      selectorKind: 'creature',
+      selectorId: 'crea_braiseau',
       weight: 100
     }
   );
