@@ -27,6 +27,7 @@
         <button id="map-tool-terrain" data-map-tool="terrain" type="button">Peindre terrain</button>
         <button id="map-tool-route" data-map-tool="route" type="button">Tracer route</button>
         <button id="map-tool-river" data-map-tool="river" type="button">Tracer rivière</button>
+        <button id="map-tool-encounter" data-map-tool="encounter" type="button">Peindre rencontres</button>
       </div>
       <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
       <div class="preview-tools">
@@ -39,6 +40,7 @@
     <nav class="builder-tabs" aria-label="Sections du World Builder">
       <button type="button" data-tab="area" class="active">Area</button>
       <button type="button" data-tab="terrain">Terrain</button>
+      <button type="button" data-tab="encounters">Rencontres</button>
       <button type="button" data-tab="objects">Objets</button>
       <button type="button" data-tab="actors">Acteurs</button>
       <button type="button" data-tab="portals">Portals</button>
@@ -132,6 +134,85 @@
         </div>
         <p class="builder-hint">
           Astuce : la Rivière peut monter jusqu’à 2400 pour créer de très larges étendues d’eau (lac/mer). Utilise deux doigts pour zoomer/déplacer la carte sans quitter l’outil.
+        </p>
+      </section>
+
+
+      <section class="builder-tab" data-panel="encounters">
+        <h2>Layers de rencontres</h2>
+        <p class="builder-hint">
+          Ces zones sont des données gameplay dédiées. Elles ne réutilisent ni les textures ni les zones visuelles du terrain.
+          Active « Peindre rencontres » puis trace directement la zone sur la carte.
+        </p>
+
+        <div class="row">
+          <select id="encounter-layer-select"></select>
+          <button id="encounter-layer-delete" type="button" class="danger">Supprimer layer</button>
+        </div>
+
+        <label class="checkbox-line">
+          <input id="encounter-enabled" type="checkbox" checked />
+          Layer actif
+        </label>
+
+        <label>
+          Nom
+          <input id="encounter-label" type="text" placeholder="Forêt nord" />
+        </label>
+
+        <div class="grid-2">
+          <label>
+            Chance de rencontre (%)
+            <input id="encounter-chance" type="number" min="0" max="100" step="1" />
+          </label>
+          <label>
+            Largeur du layer
+            <input id="encounter-width" type="number" min="8" max="10000" step="4" value="260" />
+          </label>
+          <label>
+            Contrôle tous les...
+            <input id="encounter-check-distance" type="number" min="1" max="10000" step="1" value="160" />
+          </label>
+          <label>
+            Priorité
+            <input id="encounter-priority" type="number" step="1" value="0" />
+          </label>
+        </div>
+
+        <p class="builder-hint">
+          Exemple : forêt à 25 %. Une route sûre peut être peinte par-dessus avec 0 % et une priorité plus élevée.
+          La distance indique après combien d’unités parcourues un nouveau contrôle de rencontre pourra être effectué.
+        </p>
+
+        <h3>Table pondérée</h3>
+        <div class="row">
+          <select id="encounter-entry-select"></select>
+          <button id="encounter-entry-add" type="button">+ Entrée</button>
+          <button id="encounter-entry-delete" type="button" class="danger">Supprimer</button>
+        </div>
+
+        <div class="grid-2">
+          <label>
+            Créature précise (actorDefinitionId)
+            <input id="encounter-entry-actor" type="text" placeholder="capture.creature..." />
+          </label>
+          <label>
+            Pool / tags (séparés par virgules)
+            <input id="encounter-entry-tags" type="text" placeholder="element.earth, element.grass" />
+          </label>
+          <label>
+            Poids relatif
+            <input id="encounter-entry-weight" type="number" min="0.001" step="1" value="100" />
+          </label>
+          <label>
+            Part effective
+            <output id="encounter-entry-share">100 %</output>
+          </label>
+        </div>
+
+        <p class="builder-hint">
+          Exemple : poids 80 pour Terre/Herbe et 20 pour Neutre = 80 % / 20 %.
+          Les poids sont normalisés automatiquement ; aucune statistique ou visuel de créature n’est copié dans le layer.
         </p>
       </section>
 
@@ -364,6 +445,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-mapactor-surface-traversal-replay-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-mapactor-surface-traversal-replay-v1-encounter-layers-v1"></script>
 </body>
 </html>
