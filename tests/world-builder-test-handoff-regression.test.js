@@ -118,57 +118,47 @@ test('mobile Builder keeps primary map tools reachable without page scrolling', 
 });
 
 
-test('regression: Builder test session preserves MapActorVisual and optional imported asset source', async () => {
+test('regression: Builder test handoff preserves canonical actor placements inside WorldDocument', async () => {
   const {
     createWorldBuilderTestHandoff,
     restoreWorldBuilderTestSession
   } = await import('../src/builder/world-builder-test-handoff.js');
 
-  const actorVisual = {
-    assetId: 'actor.user.preview.01',
-    role: 'creature',
-    targetHeight: 133,
-    mirrorHorizontal: false,
-    anchorX: 0.44,
-    anchorY: 0.92,
-    shadow: {
-      enabled: true,
-      widthRatio: 0.72,
-      heightRatio: 0.18,
-      opacity: 0.31
-    },
-    motion: {
-      idleAmplitude: 2.4,
-      idleFrequency: 1.8,
-      walkAmplitude: 5.6,
-      walkFrequency: 6.2
-    }
-  };
-  const actorAsset = {
-    id: 'actor.user.preview.01',
-    kind: 'map-actor-source',
-    path: 'data:image/png;base64,VEVTVA==',
-    label: 'creature-test.png'
-  };
-
-  const payload = createWorldBuilderTestHandoff(
-    demoWorldDocument,
-    { actorVisual, actorAsset }
-  );
-  const session = restoreWorldBuilderTestSession(payload);
+  const payload =
+    createWorldBuilderTestHandoff(
+      demoWorldDocument
+    );
+  const session =
+    restoreWorldBuilderTestSession(
+      payload
+    );
 
   assert.ok(session);
-  assert.equal(session.document.id, demoWorldDocument.id);
-  assert.equal(session.actorVisual.assetId, actorAsset.id);
-  assert.equal(session.actorVisual.role, 'creature');
-  assert.equal(session.actorVisual.targetHeight, 133);
-  assert.equal(session.actorVisual.anchorOverride.x, 0.44);
-  assert.equal(session.actorVisual.anchorOverride.y, 0.92);
-  assert.equal(session.actorAsset.path, actorAsset.path);
-  assert.equal(session.actorAsset.id, actorAsset.id);
+  const loup =
+    session.document.areas
+      .find(
+        (area) =>
+          area.id ===
+          'forest-exterior'
+      )
+      .actors.find(
+        (actor) =>
+          actor.actorDefinitionId ===
+          'capture:creature:crea-loup'
+      );
+
+  assert.ok(loup);
+  assert.equal(
+    'mapVisual' in loup,
+    false
+  );
+  assert.equal(
+    'assetId' in loup,
+    false
+  );
 });
 
-test('regression: runtime test uses actor visual from Builder handoff instead of hardcoded demo visual', async () => {
+test('regression: Builder hands off only WorldDocument while runtime resolves placed actor visuals from Actor Catalog', async () => {
   const builderMain = await readFile(
     new URL('../src/builder/world-builder-main.js', import.meta.url),
     'utf8'
@@ -178,40 +168,54 @@ test('regression: runtime test uses actor visual from Builder handoff instead of
     'utf8'
   );
 
-  assert.match(builderMain, /actorVisual/);
-  assert.match(builderMain, /actorAsset/);
-  assert.match(builderMain, /saveWorldBuilderTestHandoff\([\s\S]*actorVisual/);
+  assert.match(
+    builderMain,
+    /saveWorldBuilderTestHandoff\([\s\S]*result\.document\s*\)/
+  );
+  assert.doesNotMatch(
+    builderMain,
+    /actorVisual/
+  );
+  assert.doesNotMatch(
+    builderMain,
+    /actorAsset/
+  );
 
-  assert.match(runtimeMain, /readWorldBuilderTestSession/);
-  assert.match(runtimeMain, /builderTestSession\?\.actorVisual/);
-  assert.match(runtimeMain, /createMapActorAssetResolver/);
+  assert.match(
+    runtimeMain,
+    /createCaptureActorPreviewProviderV1/
+  );
+  assert.match(
+    runtimeMain,
+    /createPlacedMapActorView/
+  );
+  assert.match(
+    runtimeMain,
+    /currentPlacedMapActors/
+  );
 });
 
-test('regression: returning from runtime restores actor visual test settings in Builder', async () => {
+test('regression: returning from runtime restores actor placements from the WorldDocument session', async () => {
   const builderMain = await readFile(
     new URL('../src/builder/world-builder-main.js', import.meta.url),
     'utf8'
   );
 
-  assert.match(builderMain, /readWorldBuilderTestSession/);
-  assert.match(builderMain, /resumedTestSession\?\.actorVisual/);
-  assert.match(builderMain, /resumedTestSession\?\.actorAsset/);
+  assert.match(
+    builderMain,
+    /readWorldBuilderTestSession/
+  );
+  assert.match(
+    builderMain,
+    /resumedTestSession\?\.document/
+  );
+  assert.match(
+    builderMain,
+    /selectedActorPlacementId/
+  );
+  assert.doesNotMatch(
+    builderMain,
+    /importedActorAsset/
+  );
 });
 
-
-test('regression: restored actor asset is initialized only after resumed test session', async () => {
-  const builderMain = await readFile(
-    new URL('../src/builder/world-builder-main.js', import.meta.url),
-    'utf8'
-  );
-
-  const sessionIndex = builderMain.indexOf(
-    'const resumedTestSession ='
-  );
-  const restoreIndex = builderMain.indexOf(
-    'importedActorAsset =\n  resumedTestSession?.actorAsset ?? null;'
-  );
-
-  assert.ok(sessionIndex >= 0);
-  assert.ok(restoreIndex > sessionIndex);
-});
