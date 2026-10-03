@@ -20,10 +20,10 @@ test('family profile stores encounter chance and element distribution only', () 
       {
         terrainFamilyId: 'forest',
         encounterChancePercent: 30,
-        elementWeights: [
-          { elementId: 'nature', weight: 60 },
-          { elementId: 'earth', weight: 25 },
-          { elementId: 'fire', weight: 15 }
+        elementChances: [
+          { elementId: 'nature', chancePercent: 60 },
+          { elementId: 'earth', chancePercent: 25 },
+          { elementId: 'fire', chancePercent: 15 }
         ],
         materialId: 'must-not-own-encounters'
       }
@@ -36,7 +36,7 @@ test('family profile stores encounter chance and element distribution only', () 
 
   assert.equal(forest.encounterChancePercent, 30);
   assert.deepEqual(
-    forest.elementWeights.map(({ elementId, weight }) => [elementId, weight]),
+    forest.elementChances.map(({ elementId, chancePercent }) => [elementId, weight]),
     [['nature',60],['earth',25],['fire',15]]
   );
   assert.equal('materialId' in forest, false);
@@ -48,7 +48,7 @@ test('road can be configured as a safe family with zero encounters', () => {
       {
         terrainFamilyId: 'road',
         encounterChancePercent: 0,
-        elementWeights: []
+        elementChances: []
       }
     ]
   });
@@ -58,7 +58,7 @@ test('road can be configured as a safe family with zero encounters', () => {
   );
 
   assert.equal(road.encounterChancePercent, 0);
-  assert.deepEqual(road.elementWeights, []);
+  assert.deepEqual(road.elementChances, []);
 });
 
 test('chance is clamped and invalid element weights are discarded', () => {
@@ -67,10 +67,10 @@ test('chance is clamped and invalid element weights are discarded', () => {
       {
         terrainFamilyId: 'volcano',
         encounterChancePercent: 180,
-        elementWeights: [
-          { elementId: 'fire', weight: 80 },
-          { elementId: '', weight: 10 },
-          { elementId: 'earth', weight: 0 }
+        elementChances: [
+          { elementId: 'fire', chancePercent: 80 },
+          { elementId: '', chancePercent: 10 },
+          { elementId: 'earth', chancePercent: 0 }
         ]
       }
     ]
@@ -82,7 +82,7 @@ test('chance is clamped and invalid element weights are discarded', () => {
 
   assert.equal(volcano.encounterChancePercent, 100);
   assert.deepEqual(
-    volcano.elementWeights,
-    [{ elementId: 'fire', weight: 80 }]
+    volcano.elementChances,
+    [{ elementId: 'fire', chancePercent: 80 }]
   );
 });
