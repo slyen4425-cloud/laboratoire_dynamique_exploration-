@@ -1547,24 +1547,37 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
 }
 
 function applyEncounterLayerInputs() {
-  if (!selectedEncounterLayerId) return;
+  const patch = {
+    width: numberValue($('encounter-width'), 260),
+    encounterChancePercent: numberValue(
+      $('encounter-chance'),
+      20
+    ),
+    checkDistance: numberValue(
+      $('encounter-check-distance'),
+      160
+    ),
+    priority: numberValue($('encounter-priority'), 0)
+  };
+
+  if (!selectedEncounterLayerId) {
+    encounterPaintPreset =
+      updateEncounterPaintPreset(
+        encounterPaintPreset,
+        patch
+      );
+    refreshEncounterControls();
+    renderPreview();
+    return;
+  }
 
   draft = updateEncounterLayer(
     draft,
     selectedAreaId,
     selectedEncounterLayerId,
     {
-      enabled: $('encounter-enabled').checked,
-      width: numberValue($('encounter-width'), 260),
-      encounterChancePercent: numberValue(
-        $('encounter-chance'),
-        0
-      ),
-      checkDistance: numberValue(
-        $('encounter-check-distance'),
-        160
-      ),
-      priority: numberValue($('encounter-priority'), 0)
+      ...patch,
+      enabled: $('encounter-enabled').checked
     }
   );
 
@@ -1574,18 +1587,32 @@ function applyEncounterLayerInputs() {
 }
 
 function applyEncounterEntryInputs() {
-  if (!selectedEncounterLayerId || !selectedEncounterEntryId) return;
+  const patch = {
+    selectorKind: $('encounter-entry-kind').value,
+    selectorId: $('encounter-entry-value').value,
+    weight: numberValue($('encounter-entry-weight'), 100)
+  };
+
+  if (
+    !selectedEncounterLayerId ||
+    !selectedEncounterEntryId
+  ) {
+    encounterPaintPreset =
+      updateEncounterPaintPreset(
+        encounterPaintPreset,
+        patch
+      );
+    refreshEncounterControls();
+    renderPreview();
+    return;
+  }
 
   draft = updateEncounterTableEntry(
     draft,
     selectedAreaId,
     selectedEncounterLayerId,
     selectedEncounterEntryId,
-    {
-      selectorKind: $('encounter-entry-kind').value,
-      selectorId: $('encounter-entry-value').value,
-      weight: numberValue($('encounter-entry-weight'), 100)
-    }
+    patch
   );
 
   refreshEncounterControls();
@@ -2195,32 +2222,29 @@ function beginEncounterLayer(point) {
     draft,
     selectedAreaId,
     {
-      width: numberValue($('encounter-width'), 260),
-      points: [point, point],
-      encounterChancePercent: numberValue(
-        $('encounter-chance'),
-        20
-      ),
-      checkDistance: numberValue(
-        $('encounter-check-distance'),
-        160
-      ),
-      priority: numberValue($('encounter-priority'), 0),
+      width: encounterPaintPreset.width,
+      points: [
+        point,
+        {
+          x: point.x + 0.01,
+          y: point.y
+        }
+      ],
+      encounterChancePercent:
+        encounterPaintPreset.encounterChancePercent,
+      checkDistance:
+        encounterPaintPreset.checkDistance,
+      priority:
+        encounterPaintPreset.priority,
       table: [
         {
           id: 'entry-1',
           selectorKind:
-            $('encounter-entry-kind').value === 'creature'
-              ? 'creature'
-              : 'element',
+            encounterPaintPreset.selectorKind,
           selectorId:
-            $('encounter-entry-value').value ||
-            captureCreatureCatalog.listElements()[0]?.id ||
-            'fire',
-          weight: numberValue(
-            $('encounter-entry-weight'),
-            100
-          )
+            encounterPaintPreset.selectorId,
+          weight:
+            encounterPaintPreset.weight
         }
       ]
     }
@@ -2530,10 +2554,12 @@ $('encounter-entry-add').addEventListener('click', () => {
     selectedAreaId,
     selectedEncounterLayerId,
     {
-      selectorKind: 'element',
+      selectorKind:
+        encounterPaintPreset.selectorKind,
       selectorId:
-        captureCreatureCatalog.listElements()[0]?.id ?? 'fire',
-      weight: 100
+        encounterPaintPreset.selectorId,
+      weight:
+        encounterPaintPreset.weight
     }
   );
 
@@ -3097,6 +3123,32 @@ canvas.addEventListener('pointerdown', (event) => {
   canvas.dataset.dragging = 'true';
 
   const paintKind = builderPaintKindForMapTool(mapTool);
+
+  if (paintKind === 'encounter') {
+    const pathId = beginEncounterLayer(world);
+    if (!pathId) {
+      setStatus(
+        'Impossible de créer la zone de rencontre',
+        true
+      );
+      return;
+    }
+
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'draw-path',
+      kind: 'encounter',
+      pathId,
+      startCanvas: point,
+      startWorld: world
+    };
+
+    refreshEncounterControls();
+    refreshJson();
+    renderPreview();
+    return;
+  }
+
   if (paintKind) {
     pointerSession = {
       pointerId: event.pointerId,
