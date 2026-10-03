@@ -14,7 +14,7 @@ const DEFINITIONS = Object.freeze([
     id: 'plain',
     label: 'Plaine',
     materialKind: 'surface',
-    materialIds: Object.freeze(['ground.dirt'])
+    materialIds: Object.freeze(['ground.dirt', 'floor.wood.house'])
   }),
   Object.freeze({
     id: 'forest',
