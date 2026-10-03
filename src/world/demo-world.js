@@ -200,6 +200,15 @@ export const demoWorldDocument = normalizeWorldDocument({
           ]
         }
       ],
+      actors: [
+        {
+          id: 'capture-loup-volcanique-sentry',
+          actorDefinitionId: 'capture:creature:crea-loup',
+          x: 360,
+          y: 240,
+          facingX: 1
+        }
+      ],
       obstacles: [
         { id: 'rock-01', x: 480, y: 300, w: 240, h: 180, kind: 'rock' },
         { id: 'trees-01', x: 1650, y: 360, w: 220, h: 300, kind: 'trees' },
