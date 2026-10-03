@@ -138,7 +138,7 @@ test('architecture sentinel: WorldObject renderer never owns collision rules', a
     'utf8'
   );
 
-  assert.equal(/\bisBlocked\b|circleIntersects|overridesObstacleIds/.test(renderer), false);
+  assert.equal(/\bisBlocked\b|circleIntersects|overridesObstacleIds|overridesSurfaceFeatureIds/.test(renderer), false);
 });
 
 test('architecture sentinel: collision never derives bridge rules from assets', async () => {
@@ -340,4 +340,58 @@ test('architecture sentinel: Builder preview reuses Exploration renderers', asyn
   assert.equal(main.includes('createSurfaceRenderer'), true);
   assert.equal(main.includes('createWorldObjectRenderer'), true);
   assert.equal(main.includes('createPortalRenderer'), true);
+});
+
+
+test('architecture sentinel: surface traversal resolver never reads visual material ids', async () => {
+  const traversal = await readFile(
+    new URL('../src/core/surface-traversal.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(traversal.includes('materialId'), false);
+  assert.equal(traversal.includes('materialRegistry'), false);
+});
+
+test('architecture sentinel: renderer never owns traversal gameplay ids', async () => {
+  const renderer = await readFile(
+    new URL('../src/render/surface-renderer.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(renderer.includes('traversalRuleId'), false);
+  assert.equal(renderer.includes('locomotion'), false);
+});
+
+test('architecture sentinel: movement engine owns no terrain-specific multipliers', async () => {
+  const movement = await readFile(
+    new URL('../src/core/movement.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(movement.includes('terrain.road'), false);
+  assert.equal(movement.includes('terrain.water'), false);
+  assert.equal(movement.includes('1.25'), false);
+  assert.equal(movement.includes('0.75'), false);
+});
+
+test('architecture sentinel: demo river collision has one surface authority', async () => {
+  const demo = await readFile(
+    new URL('../src/world/demo-world.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(demo.includes('forest-stream-collision'), false);
+  assert.equal(demo.includes('overridesObstacleIds'), false);
+  assert.equal(demo.includes('overridesSurfaceFeatureIds'), true);
+});
+
+test('architecture sentinel: Builder edits canonical Bridge surface references only', async () => {
+  const builder = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(builder.includes('overridesObstacleIds'), false);
+  assert.equal(builder.includes('overridesSurfaceFeatureIds'), true);
 });
