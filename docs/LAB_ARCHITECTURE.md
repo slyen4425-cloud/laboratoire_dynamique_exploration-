@@ -164,39 +164,53 @@ Décide qu'une rencontre doit commencer à partir du monde Exploration.
 
 Deux sources de rencontre sont prévues, sans double autorité :
 
-1. **Rencontre aléatoire de zone** — cas ordinaire
-   - Encounter Zone gameplay explicite ;
-   - chance de déclenchement configurable ;
-   - table pondérée de créatures / catégories ;
-   - modificateurs explicites de route ou de feature ;
+1. **Rencontre aléatoire par famille de terrain** — cas ordinaire
+   - la surface canonique porte un `terrainFamilyId` ;
+   - la config rencontre possède une chance globale par famille ;
+   - cette même config possède une répartition en pourcentages par élément Capture ;
+   - le catalogue Capture fournit les créatures éligibles et leur `capture.spawnChance` intrinsèque ;
    - sortie : Encounter Intent.
 
 2. **Rencontre avec acteur visible** — cas spécial
    - WildCreatureEntity / acteur explicitement placé ;
-   - contact, proximité ou scénario ;
+   - contact ou scénario explicite ;
    - sortie vers le même Encounter Intent.
 
 Chaîne cible pour les rencontres ordinaires :
 
 ```text
 position Exploration
-  -> Encounter Zone
-  -> Encounter Rule / chance
-  -> modificateur gameplay de route/feature
-  -> Encounter Table pondérée
-  -> Actor Catalog / actorDefinitionId
+  -> World Surface Resolver
+  -> terrainFamilyId
+  -> Terrain Family Encounter Config
+  -> chance globale de rencontre
+  -> pourcentage élément Capture
+  -> CaptureDatabaseV1
+  -> creature.capture.spawnChance
   -> Encounter Intent
   -> Encounter Bridge
 ```
 
+Familles canoniques :
+`plain / forest / sea / mountain / volcano / snow / road / sand`.
+
 Exemple :
-une zone forêt peut pondérer 80 % un pool Terre/Herbe et 20 % un pool Neutre.
-Une route déclarée `safe` peut appliquer un multiplicateur de chance réduit ou nul.
+une famille Forêt peut définir 22 % de chance de rencontre, puis 50 % Nature, 20 % Terre, 10 % Eau, 10 % Feu, 10 % Ombre.
+Après choix de l'élément, les créatures Capture compatibles restent pondérées par leur propre `spawnChance`.
+
+Une Route sûre est simplement la famille `road` configurée à 0 % de rencontre.
+
+Séparation obligatoire :
+- `terrainFamilyId` = sémantique gameplay ;
+- `materialId` = variante visuelle ;
+- plusieurs textures peuvent appartenir à une même famille ;
+- changer la texture ne change jamais la famille.
 
 Interdictions :
+- aucun Encounter Layer géométrique parallèle ;
 - `materialId` ne détermine jamais le taux de rencontre ;
-- une texture ne détermine jamais le pool ;
-- `surface.zones[]` visuelles ne deviennent pas des Encounter Zones implicitement ;
+- une texture ne détermine jamais la famille au runtime ;
+- Exploration ne duplique pas les créatures ni leur rareté ;
 - le renderer ne déclenche aucune rencontre.
 
 Les créatures visibles sont conservées pour les rencontres scénarisées, rares, boss, quêtes ou autres cas explicitement placés.
