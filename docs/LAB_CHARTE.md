@@ -704,6 +704,49 @@ Pour les futurs héros, PNJ et créatures visibles en Exploration :
 - vues arrière, directions multiples et spritesheets sont des améliorations facultatives, jamais une exigence de création ;
 - aucun traitement visuel ne doit devenir une seconde autorité gameplay.
 
+### 28.2 Séparation éditeur Héros/Créatures et World Builder
+
+Décision produit figée :
+
+Les réglages intrinsèques d'un acteur visible sur la map ne sont **pas** la responsabilité finale du World Builder.
+
+Ils appartiennent à la définition de l'acteur et seront édités dans l'éditeur Héros / PNJ / Créatures concerné :
+- visuel source ;
+- orientation native du visuel (gauche/droite) ;
+- scale/hauteur map ;
+- anchor ;
+- ombre ;
+- miroir automatique ;
+- paramètres d'animation visuelle ;
+- futures vues multiples/spritesheets éventuelles.
+
+Le World Builder :
+- consomme une liste de définitions d'acteurs déjà configurées ;
+- permet de sélectionner un héros, PNJ ou monstre ;
+- place/référence cette définition dans le monde ;
+- édite uniquement les données de placement appartenant au WorldDocument ;
+- ne réécrit jamais le profil visuel intrinsèque de l'acteur.
+
+L'interface de calibration Map Actor actuellement présente dans le laboratoire est un **outil de validation technique temporaire**. Elle ne définit pas l'architecture produit finale.
+
+Chaîne cible :
+
+```text
+Éditeur Héros/Créatures
+        ↓
+définition acteur + MapActorVisual
+        ↓
+catalogue/référence acteur
+        ↓
+World Builder
+        ↓
+placement/référence dans WorldDocument
+        ↓
+runtime Exploration
+```
+
+Aucune copie des réglages visuels n'est stockée dans le placement Builder.
+
 ## 28. Règle finale
 
 La charte prime sur la solution la plus rapide.
