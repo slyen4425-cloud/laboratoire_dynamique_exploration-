@@ -74,3 +74,29 @@ LivingWorldConfig
 ## Suite prévue
 Après GREEN :
 **Phase 5 micro-lot 3 — activation runtime minimale / présence de créatures sur la map**, puis errance/territoires.
+
+
+## État technique — Spawn Planner / Activation déterministe v1 — 2026-10-03
+
+Implémenté :
+- sélection pondérée déterministe ;
+- respect de `maxActive` ;
+- seed + `activationIndex` explicites ;
+- point candidat uniforme dans zone circulaire ;
+- `canSpawn(candidate)` injecté comme autorité externe ;
+- aucun accès direct collision/traversal ;
+- essais locaux bornés (1..64) ;
+- sortie `WildSpawnIntent v1` immuable ;
+- aucun timer ;
+- aucune mutation d'entité.
+
+TDD :
+- contrat : commit `1d45d815f90c9dbf0161b94539168176f3221fe7` — FAILURE attendue ;
+- implémentation : commit `4397ef0930834eb9625c24bad3da76036f6b952b` ;
+- CI : run `37100519079` — **SUCCESS**.
+
+Aucune gate mobile requise :
+ce micro-lot reste pur et sans comportement utilisateur visible.
+
+Suite :
+**Phase 5 micro-lot 3 — activation runtime minimale / présence de créatures sauvages sur la map**.
