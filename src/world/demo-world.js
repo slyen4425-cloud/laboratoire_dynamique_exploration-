@@ -1,9 +1,98 @@
-import { normalizeWorldDocument } from './world-document-model.js?rev=surface-traversal-replay-v1';
+import { normalizeWorldDocument } from './world-document-model.js?rev=terrain-family-encounters-v1';
 
 export const demoWorldDocument = normalizeWorldDocument({
   id: 'forest-demo-world',
   initialAreaId: 'forest-exterior',
   initialSpawnId: 'start',
+  encounterConfig: {
+    families: [
+      {
+        terrainFamilyId: 'plain',
+        encounterChancePercent: 12,
+        elementChances: [
+          { elementId: 'nature', chancePercent: 30 },
+          { elementId: 'earth', chancePercent: 25 },
+          { elementId: 'air', chancePercent: 20 },
+          { elementId: 'electric', chancePercent: 10 },
+          { elementId: 'fire', chancePercent: 10 },
+          { elementId: 'water', chancePercent: 5 }
+        ]
+      },
+      {
+        terrainFamilyId: 'forest',
+        encounterChancePercent: 22,
+        elementChances: [
+          { elementId: 'nature', chancePercent: 50 },
+          { elementId: 'earth', chancePercent: 20 },
+          { elementId: 'water', chancePercent: 10 },
+          { elementId: 'fire', chancePercent: 10 },
+          { elementId: 'shadow', chancePercent: 10 }
+        ]
+      },
+      {
+        terrainFamilyId: 'sea',
+        encounterChancePercent: 18,
+        elementChances: [
+          { elementId: 'water', chancePercent: 70 },
+          { elementId: 'ice', chancePercent: 15 },
+          { elementId: 'electric', chancePercent: 10 },
+          { elementId: 'air', chancePercent: 5 }
+        ]
+      },
+      {
+        terrainFamilyId: 'mountain',
+        encounterChancePercent: 16,
+        elementChances: [
+          { elementId: 'earth', chancePercent: 50 },
+          { elementId: 'air', chancePercent: 25 },
+          { elementId: 'steel', chancePercent: 15 },
+          { elementId: 'electric', chancePercent: 10 }
+        ]
+      },
+      {
+        terrainFamilyId: 'volcano',
+        encounterChancePercent: 24,
+        elementChances: [
+          { elementId: 'fire', chancePercent: 70 },
+          { elementId: 'earth', chancePercent: 20 },
+          { elementId: 'steel', chancePercent: 10 }
+        ]
+      },
+      {
+        terrainFamilyId: 'snow',
+        encounterChancePercent: 18,
+        elementChances: [
+          { elementId: 'ice', chancePercent: 65 },
+          { elementId: 'water', chancePercent: 15 },
+          { elementId: 'air', chancePercent: 10 },
+          { elementId: 'light', chancePercent: 10 }
+        ]
+      },
+      {
+        terrainFamilyId: 'road',
+        encounterChancePercent: 4,
+        elementChances: [
+          { elementId: 'nature', chancePercent: 25 },
+          { elementId: 'earth', chancePercent: 25 },
+          { elementId: 'air', chancePercent: 20 },
+          { elementId: 'fire', chancePercent: 10 },
+          { elementId: 'water', chancePercent: 10 },
+          { elementId: 'electric', chancePercent: 10 }
+        ]
+      },
+      {
+        terrainFamilyId: 'sand',
+        encounterChancePercent: 14,
+        elementChances: [
+          { elementId: 'earth', chancePercent: 35 },
+          { elementId: 'fire', chancePercent: 25 },
+          { elementId: 'air', chancePercent: 20 },
+          { elementId: 'poison', chancePercent: 10 },
+          { elementId: 'light', chancePercent: 10 }
+        ]
+      }
+    ]
+  },
   areas: [
     {
       id: 'forest-exterior',
@@ -11,12 +100,14 @@ export const demoWorldDocument = normalizeWorldDocument({
       width: 2400,
       height: 1600,
       surface: {
+        baseTerrainFamilyId: 'forest',
         baseMaterialId: 'grass.forest',
         baseTraversalRuleId: 'terrain.ground',
         routes: [
           {
             id: 'forest-main-road',
             width: 82,
+            terrainFamilyId: 'road',
             materialId: 'road.dirt',
             traversalRuleId: 'terrain.road',
             points: [
@@ -34,6 +125,7 @@ export const demoWorldDocument = normalizeWorldDocument({
           {
             id: 'forest-stream',
             width: 72,
+            terrainFamilyId: 'sea',
             materialId: 'water.forest_stream',
             traversalRuleId: 'terrain.water',
             points: [
@@ -132,6 +224,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       width: 720,
       height: 560,
       surface: {
+        baseTerrainFamilyId: 'plain',
         baseMaterialId: 'floor.wood.house',
         baseTraversalRuleId: 'terrain.ground',
         routes: [],
