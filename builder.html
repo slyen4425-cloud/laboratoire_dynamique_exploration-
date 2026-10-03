@@ -56,10 +56,16 @@
           <label>Largeur <input id="area-width" type="number" min="128" step="10" /></label>
           <label>Hauteur <input id="area-height" type="number" min="128" step="10" /></label>
         </div>
-        <label>
-          Sol
-          <select id="area-material"></select>
-        </label>
+        <div class="grid-2">
+          <label>
+            Famille du sol
+            <select id="area-family"></select>
+          </label>
+          <label>
+            Texture du sol
+            <select id="area-material"></select>
+          </label>
+        </div>
         <p class="builder-hint">
           Pour redimensionner directement : active « Taille Area » puis fais glisser le coin inférieur droit sur la map.
         </p>
@@ -84,10 +90,16 @@
         </p>
 
         <div class="terrain-brush-panel">
-          <label>
-            Matériau paysage
-            <select id="terrain-paint-material"></select>
-          </label>
+          <div class="grid-2">
+            <label>
+              Famille terrain
+              <select id="terrain-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-paint-material"></select>
+            </label>
+          </div>
           <label>
             Taille pinceau
             <div class="brush-size-row">
@@ -102,8 +114,9 @@
 
         <div class="grid-2">
           <label>
-            Matériau route
+            Route — texture
             <select id="terrain-route-material"></select>
+            <small>Famille fixe : Route</small>
           </label>
           <label>
             Largeur route / pinceau
@@ -113,8 +126,9 @@
             </div>
           </label>
           <label>
-            Matériau rivière
+            Mer / eau — texture
             <select id="terrain-river-material"></select>
+            <small>Famille fixe : Mer</small>
           </label>
           <label>
             Largeur rivière / pinceau
@@ -124,6 +138,38 @@
             </div>
           </label>
         </div>
+
+        <section class="terrain-encounter-panel">
+          <h3>Rencontres par famille</h3>
+          <p class="builder-hint">
+            Configure une fois chaque famille. Toutes les textures de cette famille utilisent automatiquement ces règles.
+            La rareté propre de chaque créature reste celle définie dans Capture.
+          </p>
+
+          <label>
+            Famille à configurer
+            <select id="family-encounter-family"></select>
+          </label>
+
+          <label>
+            Chance de rencontre
+            <div class="brush-size-row">
+              <input id="family-encounter-chance" type="range" min="0" max="100" step="1" value="0" />
+              <output id="family-encounter-chance-value" for="family-encounter-chance">0 %</output>
+            </div>
+          </label>
+
+          <h4>Répartition des éléments Capture</h4>
+          <div id="family-encounter-elements"></div>
+          <p class="builder-hint">
+            Total éléments :
+            <output id="family-encounter-total">0 %</output>
+            — le total doit faire 100 % quand la famille peut déclencher un combat.
+          </p>
+          <p id="family-encounter-catalog-summary" class="builder-hint">
+            Catalogue Capture en cours de chargement…
+          </p>
+        </section>
 
         <h3>Tracés</h3>
         <div class="row">
@@ -364,6 +410,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-mapactor-surface-traversal-replay-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-builder-dynamique-ui-v1-mapactor-surface-traversal-replay-v1-terrain-family-encounters-v1"></script>
 </body>
 </html>
