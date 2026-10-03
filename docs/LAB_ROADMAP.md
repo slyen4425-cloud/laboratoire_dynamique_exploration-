@@ -204,4 +204,12 @@ Le visuel ne possède jamais position, collision, statistiques ou interaction.
 
 Ensuite seulement :
 ## World Builder Dynamique UI v1
-Le Builder éditera le même WorldDocument et les mêmes contrats WorldObject/WorldArea/Portal/MapActor que le runtime.
+Le Builder édite le même WorldDocument et les mêmes contrats WorldObject/WorldArea/Portal que le runtime.
+
+Décision produit figée :
+- les réglages intrinsèques MapActor sont réalisés dans l'éditeur Héros/PNJ/Créatures ;
+- le Builder consomme un catalogue de définitions déjà configurées ;
+- dans le Builder, l'utilisateur choisit l'acteur/monstre dans une liste puis le place sur la map ;
+- le placement référence la définition d'acteur sans recopier ses réglages visuels.
+
+Le panneau Map Actor complet actuellement utilisé dans le laboratoire reste un banc de calibration technique jusqu'à l'arrivée de l'éditeur Héros/Créatures et du catalogue.
