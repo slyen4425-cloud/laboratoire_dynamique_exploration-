@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=builder-dynamic-return-v1';
+} from '../world/world-document-model.js?rev=surface-traversal-replay-v1';
 import {
   normalizeMapActorVisual
 } from '../actors/map-actor-visual-model.js';
