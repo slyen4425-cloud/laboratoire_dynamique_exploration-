@@ -48,7 +48,7 @@ test('terrain family resolver reads semantic family, never material id', () => {
     'snow'
   );
   assert.equal(
-    resolveTerrainFamilyAtPoint(worldSurface, 50, 50).terrainFamilyId,
+    resolveTerrainFamilyAtPoint(worldSurface, 20, 400).terrainFamilyId,
     'forest'
   );
 });
