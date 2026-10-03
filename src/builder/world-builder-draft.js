@@ -329,23 +329,6 @@ function encounterLayerCollection(area) {
   return area.encounterLayers;
 }
 
-function normalizeTagInput(value) {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item).trim())
-      .filter(Boolean);
-  }
-
-  if (typeof value === 'string') {
-    return value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [];
-}
-
 export function addEncounterLayer(
   draft,
   areaId,
@@ -523,8 +506,8 @@ export function addEncounterTableEntry(
   layerId,
   {
     id = null,
-    actorDefinitionId = null,
-    tags = [],
+    selectorKind = 'element',
+    selectorId = 'fire',
     weight = 100
   } = {}
 ) {
@@ -543,21 +526,19 @@ export function addEncounterTableEntry(
       ? id.trim()
       : uniqueId('entry', layer.table);
 
-  const cleanActorId =
-    typeof actorDefinitionId === 'string' &&
-    actorDefinitionId.trim()
-      ? actorDefinitionId.trim()
+  const kind =
+    selectorKind === 'creature' ? 'creature' : 'element';
+  const value =
+    typeof selectorId === 'string' && selectorId.trim()
+      ? selectorId.trim()
       : null;
-  const cleanTags = normalizeTagInput(tags);
 
-  if (!cleanActorId && cleanTags.length === 0) {
-    cleanTags.push('element.neutral');
-  }
+  if (!value) return next;
 
   layer.table.push({
     id: entryId,
-    actorDefinitionId: cleanActorId,
-    tags: cleanTags,
+    selectorKind: kind,
+    selectorId: value,
     weight: Math.max(0.001, finite(weight, 100))
   });
 
@@ -581,22 +562,20 @@ export function updateEncounterTableEntry(
   );
   if (!entry) return next;
 
-  if (patch.actorDefinitionId !== undefined) {
-    entry.actorDefinitionId =
-      typeof patch.actorDefinitionId === 'string' &&
-      patch.actorDefinitionId.trim()
-        ? patch.actorDefinitionId.trim()
-        : null;
+  if (patch.selectorKind !== undefined) {
+    entry.selectorKind =
+      patch.selectorKind === 'creature'
+        ? 'creature'
+        : 'element';
   }
-  if (patch.tags !== undefined) {
-    entry.tags = normalizeTagInput(patch.tags);
+  if (
+    typeof patch.selectorId === 'string' &&
+    patch.selectorId.trim()
+  ) {
+    entry.selectorId = patch.selectorId.trim();
   }
   if (patch.weight !== undefined) {
     entry.weight = Math.max(0.001, finite(patch.weight, entry.weight));
-  }
-
-  if (!entry.actorDefinitionId && entry.tags.length === 0) {
-    entry.tags = ['element.neutral'];
   }
 
   return next;
