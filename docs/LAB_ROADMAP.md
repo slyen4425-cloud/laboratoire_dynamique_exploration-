@@ -105,24 +105,27 @@ Le World Builder Dynamique et le World Generator utilisent le même format de ca
 
 ## Phase 5 — Monde vivant
 
-- créatures sauvages visibles ;
-- errance ;
-- territoires ;
-- poursuite/fuite pour les acteurs visibles ;
-- spawns par biome/zone ;
-- comportement piloté par config.
+- créatures sauvages visibles pour cas spéciaux/scénarisés ;
+- errance/territoire déjà validés comme capacité optionnelle ;
+- rencontres sauvages ordinaires pilotées par **familles de terrain** ;
+- configuration simple et éditable ;
+- catalogue/rareté venant de Capture.
 
 Règle produit :
-les créatures visibles sur la map servent surtout aux rencontres spéciales/scénarisées/rares/boss/quêtes.
-Les rencontres sauvages ordinaires utiliseront prioritairement des **Encounter Zones + tables pondérées**.
+les rencontres ordinaires n'utilisent pas de géométrie Encounter parallèle.
 
-Un lot dédié devra définir avant l'Encounter Bridge :
-- zone de rencontre gameplay ;
-- chance de rencontre ;
-- table pondérée ;
-- sélection par actorDefinitionId ou catégories/tags du catalogue Capture ;
-- modificateur de route/feature, notamment route sûre ;
-- aucune dépendance à materialId ou aux textures.
+Contrat courant :
+- 8 familles canoniques : Plaine, Forêt, Mer, Montagne, Volcan, Neige, Route, Sable ;
+- chaque surface porte `terrainFamilyId` + `materialId` séparément ;
+- `terrainFamilyId` pilote les rencontres ;
+- `materialId` reste visuel ;
+- chance globale configurable par famille ;
+- répartition élémentaire configurable en pourcentages exacts ;
+- créature finale résolue dans CaptureDatabaseV1 ;
+- rareté finale = `capture.spawnChance` de la créature ;
+- Route peut être configurée à 0 % pour être sûre.
+
+Les créatures visibles restent réservées aux rencontres spéciales/scénarisées/rares/boss/quêtes.
 
 ## Phase 6 — World Objects, interactions et Areas
 
@@ -146,7 +149,7 @@ Critère :
 
 ## Phase 7 — Encounter Bridge
 
-Prérequis : **Random Encounter Zone / Table Contract v1**.
+Prérequis : **Terrain Family Encounters v1 GREEN**.
 
 - Encounter Controller ;
 - `CaptureEncounterSnapshot v1` ;
