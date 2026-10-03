@@ -37,7 +37,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=surface-traversal-replay-v1';
+} from './world/world-document-model.js?rev=encounter-layers-v2';
 import {
   applyPortalTransition,
   findTriggeredPortal
