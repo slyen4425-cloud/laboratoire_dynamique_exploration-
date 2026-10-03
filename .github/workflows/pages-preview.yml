@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: player-party-v1
+# preview-revision: player-party-recall-runtime-fix-v1
 
 on:
   push:
@@ -28,11 +28,11 @@ jobs:
         with:
           ref: preview/exploration-player-party-ref-v1-2026-10-03
 
-      - name: Checkout Combat Player Party preview
+      - name: Checkout Combat Recall Runtime Fix preview
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-exploration-player-party-v1-2026-10-03
+          ref: preview/lab-player-party-recall-runtime-fix-v1-2026-10-03
           path: combat-preview
 
       - name: Checkout Capture global visual assets
