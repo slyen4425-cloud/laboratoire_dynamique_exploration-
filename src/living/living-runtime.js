@@ -11,6 +11,10 @@ import {
 import {
   planWildSpawnIntent
 } from './spawn-planner.js';
+import {
+  advanceWildCreatureTowardTarget,
+  planWildWanderTarget
+} from './wander-planner.js';
 
 function findArea(worldDocument, areaId) {
   return Array.isArray(worldDocument?.areas)
@@ -181,4 +185,145 @@ export function collectLivingMapActorAssetIds(
   }
 
   return Object.freeze(ids);
+}
+
+
+export function createWildWanderController(
+  rawConfig,
+  {
+    worldDocument,
+    resolveActorDefinition,
+    seed = 'wild-wander',
+    traversalRegistry = defaultTraversalRuleRegistry,
+    collisionCheck = isBlocked
+  } = {}
+) {
+  const config = normalizeLivingWorldConfig(rawConfig);
+  const stateByEntityId = new Map();
+
+  function canOccupy(entity, definition, candidate) {
+    const area = findArea(worldDocument, candidate.areaId);
+    const probe = actorProbeFromDefinition(definition);
+
+    if (!area || !probe) return false;
+
+    return !collisionCheck(
+      area,
+      probe,
+      candidate.x,
+      candidate.y,
+      traversalRegistry
+    );
+  }
+
+  function nextTarget(entity, definition, state) {
+    const target = planWildWanderTarget(
+      config,
+      entity,
+      {
+        seed,
+        wanderIndex: state.wanderIndex,
+        maxAttempts: 12,
+        canOccupy(candidate) {
+          return canOccupy(entity, definition, candidate);
+        }
+      }
+    );
+
+    state.wanderIndex += 1;
+    state.target = target;
+    return target;
+  }
+
+  return Object.freeze({
+    step(entities, dt) {
+      const source = Array.isArray(entities) ? entities : [];
+      const next = [];
+
+      for (const entity of source) {
+        const definition =
+          typeof resolveActorDefinition === 'function'
+            ? resolveActorDefinition(entity?.actorDefinitionId)
+            : null;
+        const area = findArea(worldDocument, entity?.areaId);
+
+        if (!entity || !definition || !area) {
+          if (entity) next.push(entity);
+          continue;
+        }
+
+        let state = stateByEntityId.get(entity.id);
+
+        if (!state) {
+          state = {
+            wanderIndex: 0,
+            target: null
+          };
+          stateByEntityId.set(entity.id, state);
+        }
+
+        const radius =
+          Number.isFinite(definition.exploration?.radius) &&
+          definition.exploration.radius > 0
+            ? definition.exploration.radius
+            : 12;
+        const arrived =
+          state.target &&
+          Math.hypot(
+            entity.x - state.target.x,
+            entity.y - state.target.y
+          ) <= Math.max(6, radius * 0.6);
+
+        if (!state.target || arrived) {
+          nextTarget(entity, definition, state);
+        }
+
+        if (!state.target) {
+          next.push(
+            createWildCreatureEntity({
+              ...entity,
+              moving: false
+            }) ?? entity
+          );
+          continue;
+        }
+
+        const advanced = advanceWildCreatureTowardTarget(
+          entity,
+          definition,
+          area,
+          state.target,
+          dt,
+          traversalRegistry
+        );
+
+        if (
+          advanced &&
+          advanced.x === entity.x &&
+          advanced.y === entity.y &&
+          advanced.moving === false
+        ) {
+          state.target = null;
+        }
+
+        next.push(advanced ?? entity);
+      }
+
+      return Object.freeze(next);
+    },
+
+    status(entityId) {
+      const state = stateByEntityId.get(entityId);
+      if (!state) return null;
+
+      return Object.freeze({
+        wanderIndex: state.wanderIndex,
+        target: state.target
+      });
+    },
+
+    dispose() {
+      stateByEntityId.clear();
+    }
+  });
 }
