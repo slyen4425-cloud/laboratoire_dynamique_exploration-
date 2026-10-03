@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: phase5-encounter-layers-v3-ui-repair
+# preview-revision: phase5-encounter-prepaint-v3-retry
 
 on:
   push:
