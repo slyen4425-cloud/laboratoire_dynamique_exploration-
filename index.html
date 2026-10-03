@@ -13,10 +13,16 @@
       <strong>GenSrpG Exploration — Phase 0</strong>
       <span id="coords">x: 0 y: 0</span>
     </section>
-    <a id="builder-shortcut" class="builder-shortcut" href="./builder.html">World Builder</a>\n    <div id="joystick" class="joystick" aria-label="Stick de déplacement">
+    <a id="builder-shortcut" class="builder-shortcut" href="./builder.html">World Builder</a>
+    <section class="locomotion-controls" aria-label="Profil de locomotion">
+      <button type="button" data-locomotion="ground" class="active">Marche</button>
+      <button type="button" data-locomotion="swim">Nage</button>
+      <button type="button" data-locomotion="fly">Vol</button>
+    </section>
+    <div id="joystick" class="joystick" aria-label="Stick de déplacement">
       <div id="stick" class="stick"></div>
     </div>
   </main>
-  <script type="module" src="./src/main.js?rev=builder-dynamic-return-v1-map-actor-source-facing-v1"></script>
+  <script type="module" src="./src/main.js?rev=builder-mapactor-surface-traversal-replay-v1"></script>
 </body>
 </html>
