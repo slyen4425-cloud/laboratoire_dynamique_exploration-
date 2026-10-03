@@ -1,13 +1,13 @@
 import {
   pointInOrientedRect,
   pointToPathDistance
-} from './geometry.js';
+} from './geometry.js?rev=surface-traversal-replay-v1';
 import {
   bridgeTraversalRect
-} from '../world/world-object-model.js';
+} from '../world/world-object-model.js?rev=surface-traversal-replay-v1';
 import {
   traversalRulePackV1
-} from './traversal-rule-pack-v1.js';
+} from './traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 
 const VALID_MODES = Object.freeze(['ground', 'swim', 'fly']);
 
