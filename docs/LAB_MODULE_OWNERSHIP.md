@@ -24,7 +24,9 @@
 | Authoring profil acteur | Éditeur Héros/PNJ/Créatures (futur, hors World Builder) | asset + réglages visuels | définition acteur / MapActorVisual | posséder placement monde |
 | Placement acteur | World Builder / World Model | actorDefinitionId + placement | référence placée dans WorldDocument | éditer/copier le profil visuel intrinsèque |
 | Input | Input Adapter | tactile/clavier | intent normalisé | déplacement direct |
-| Rencontre | Encounter Controller | world + entités | encounter intent | Combat décide le monde |
+| Config rencontre aléatoire | Encounter World Config | Encounter Zones + tables + modificateurs gameplay | règles configurées | déduire depuis materialId/texture |
+| Déclenchement rencontre | Encounter Controller | position + Encounter World Config + acteur visible optionnel | encounter intent | renderer/Combat décide le monde |
+| Sélection créature rencontre | Encounter Table Resolver (futur) | table pondérée + Actor Catalog | actorDefinitionId | copier stats/visuels dans la zone |
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
 | Combat Capture | Capture Combat (futur) | Snapshot | Result | Exploration calcule le combat |
 | World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |\n| Draft World Builder | World Builder Draft Model | WorldDocument source + edits | draft sérialisable | devenir état runtime / posséder renderer |\n| Preview Builder | Renderers Exploration existants | draft normalisé + caméra preview | pixels | écrire données/collision/mouvement |
