@@ -186,3 +186,53 @@ Lien visuel :
 - EncounterLayer ne copie jamais presentation/stats/elements.
 
 Le lot reste non GREEN jusqu'à nouvelle validation smartphone de la peinture et de l'UI simplifiée.
+
+
+## Preview corrective — Encounter Layers v2 — 2026-10-03
+
+Correction publiée après retour utilisateur.
+
+### Autorité créatures
+- source produit : `CaptureDatabaseV1` ;
+- provider Exploration : lecture seule ;
+- preview : projection figée et traçable du catalogue Capture canonique ;
+- 102 créatures ;
+- 13 éléments ;
+- aucune édition de créature dans Exploration ;
+- aucune copie de stats/skills/presentation dans EncounterLayer.
+
+### UX
+- peinture Encounter réparée à la racine ;
+- onglet Rencontres ouvert automatiquement par l'outil ;
+- aucun ID/tag à saisir ;
+- sélection par liste :
+  - Élément / type ;
+  - Créature précise ;
+- choix alimentés par le catalogue Capture ;
+- « Feu » sélectionne le pool de toutes les créatures dont `elements` contient `fire`;
+- chance et poids via curseurs ;
+- options techniques repliées en avancé.
+
+### Lien Map Actor
+`Capture -> Map Actor Adapter` dérive un MapActorVisual uniquement lorsqu'une créature doit devenir visible.
+L'EncounterLayer conserve seulement son sélecteur ; il ne devient jamais propriétaire du visuel.
+
+### CI / preview
+- code final avant preview : `2067156e11e2472db69e7efb6f1da63235843baa` ;
+- CI : `37115907511` — **SUCCESS** ;
+- PR infra : #44 ;
+- main preview : `a01da444bec417b6c1f6e398854f29ae4e0eaf94` ;
+- Pages : `37115973600` — **SUCCESS** ;
+- artifact : `11272010117`.
+
+### Gate smartphone
+1. ouvrir Builder > Rencontres ;
+2. vérifier « Catalogue Capture · 102 créatures · 13 éléments » ;
+3. activer « Peindre rencontres » et tracer ;
+4. vérifier que le layer apparaît ;
+5. choisir « Élément / type » puis « Feu » dans la liste ;
+6. passer sur « Créature précise » et vérifier la liste des créatures ;
+7. régler chance/poids sans saisir aucun identifiant ;
+8. vérifier import/export WorldDocument sans perte.
+
+Le lot reste **non GREEN** jusqu'à validation utilisateur de cette preview corrective.
