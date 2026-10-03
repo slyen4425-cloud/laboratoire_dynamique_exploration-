@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=builder-dynamic-return-v1';
+} from '../world/world-document-model.js?rev=surface-traversal-replay-v1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
