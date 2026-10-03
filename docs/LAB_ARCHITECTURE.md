@@ -162,6 +162,45 @@ Ne déplace jamais directement l'entité.
 ### encounter-controller
 Décide qu'une rencontre doit commencer à partir du monde Exploration.
 
+Deux sources de rencontre sont prévues, sans double autorité :
+
+1. **Rencontre aléatoire de zone** — cas ordinaire
+   - Encounter Zone gameplay explicite ;
+   - chance de déclenchement configurable ;
+   - table pondérée de créatures / catégories ;
+   - modificateurs explicites de route ou de feature ;
+   - sortie : Encounter Intent.
+
+2. **Rencontre avec acteur visible** — cas spécial
+   - WildCreatureEntity / acteur explicitement placé ;
+   - contact, proximité ou scénario ;
+   - sortie vers le même Encounter Intent.
+
+Chaîne cible pour les rencontres ordinaires :
+
+```text
+position Exploration
+  -> Encounter Zone
+  -> Encounter Rule / chance
+  -> modificateur gameplay de route/feature
+  -> Encounter Table pondérée
+  -> Actor Catalog / actorDefinitionId
+  -> Encounter Intent
+  -> Encounter Bridge
+```
+
+Exemple :
+une zone forêt peut pondérer 80 % un pool Terre/Herbe et 20 % un pool Neutre.
+Une route déclarée `safe` peut appliquer un multiplicateur de chance réduit ou nul.
+
+Interdictions :
+- `materialId` ne détermine jamais le taux de rencontre ;
+- une texture ne détermine jamais le pool ;
+- `surface.zones[]` visuelles ne deviennent pas des Encounter Zones implicitement ;
+- le renderer ne déclenche aucune rencontre.
+
+Les créatures visibles sont conservées pour les rencontres scénarisées, rares, boss, quêtes ou autres cas explicitement placés.
+
 ### encounter-bridge
 Convertit l'état en `CaptureEncounterSnapshot v1`.
 Reçoit `CaptureCombatResult v1`.
