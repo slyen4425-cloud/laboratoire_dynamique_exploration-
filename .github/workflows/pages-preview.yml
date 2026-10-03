@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: terrain-family-encounters-v1
+# preview-revision: phase7-encounter-snapshot-v1
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout exploration work branch
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-terrain-family-encounters-v1-2026-10-03
+          ref: work/exploration-phase7-encounter-controller-snapshot-v1-2026-10-03
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
