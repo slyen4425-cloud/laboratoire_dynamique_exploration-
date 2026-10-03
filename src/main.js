@@ -60,9 +60,11 @@ import {
   snapshotFromEncounterIntent
 } from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';
 import {
-  saveCombatHandoff,
   consumeCombatResult
 } from './encounters/combat-handoff-store.js?rev=phase7-combat-handoff-v1';
+import {
+  launchCombatHandoffNavigation
+} from './encounters/combat-handoff-navigation.js?rev=phase7-combat-handoff-v1';
 import {
   resolveExplorationCombatReturn
 } from './encounters/combat-return.js?rev=phase7-combat-handoff-v1';
@@ -173,7 +175,7 @@ if (returnedCombatEnvelope) {
     restored.outcome;
 
   const cleanUrl = new URL(
-    window.location.href
+    document.URL
   );
   cleanUrl.searchParams.delete(
     'combatReturn'
@@ -371,48 +373,13 @@ function showEncounterPreview(snapshot) {
   encounterPreview.hidden = false;
 }
 
-function explorationReturnUrl() {
-  const url = new URL(
-    window.location.href
-  );
-  url.searchParams.set(
-    'combatReturn',
-    '1'
-  );
-  return url.href;
-}
-
-function combatBridgeUrl() {
-  return new URL(
-    '/GenSrpg_labo_combat_dynamique/examples/dom-demo/exploration-encounter.html',
-    window.location.origin
-  ).href;
-}
-
 function launchPendingEncounterCombat() {
-  if (!pendingEncounterSnapshot) {
-    return false;
-  }
-
-  saveCombatHandoff(
-    window.sessionStorage,
-    {
-      snapshot: pendingEncounterSnapshot,
-      returnState: {
-        areaId: player.currentAreaId,
-        x: player.x,
-        y: player.y,
-        returnUrl:
-          explorationReturnUrl()
-      }
-    }
-  );
-
-  window.location.assign(
-    combatBridgeUrl()
-  );
-
-  return true;
+  return launchCombatHandoffNavigation({
+    snapshot: pendingEncounterSnapshot,
+    player,
+    storage: window.sessionStorage,
+    documentUrl: document.URL
+  });
 }
 
 function clearEncounterPreview() {
