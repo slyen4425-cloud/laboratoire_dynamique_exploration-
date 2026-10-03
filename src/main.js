@@ -37,12 +37,12 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=surface-traversal-replay-v1';
+} from './world/world-document-model.js?rev=terrain-family-encounters-v1';
 import {
   applyPortalTransition,
   findTriggeredPortal
 } from './world/portal-model.js?rev=builder-dynamic-return-v1';
-import { demoWorldDocument } from './world/demo-world.js?rev=surface-traversal-replay-v1';
+import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-encounters-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession
