@@ -397,6 +397,10 @@ function ensureSelections() {
     selectedObjectId = area.objects?.[0]?.id ?? null;
   }
 
+  if (!area.actors?.some((actor) => actor.id === selectedActorPlacementId)) {
+    selectedActorPlacementId = area.actors?.[0]?.id ?? null;
+  }
+
   if (!draft.portals?.some((portal) => portal.id === selectedPortalId)) {
     selectedPortalId = draft.portals?.[0]?.id ?? null;
   }
@@ -1115,11 +1119,19 @@ function refreshControls() {
 }
 
 function selectedWorldPoint(document, area) {
-  if (mapTool === 'actor-preview') {
-    return {
-      x: actorPreview.x,
-      y: actorPreview.y
-    };
+  if (mapTool === 'actor-placement') {
+    const actor = area?.actors?.find(
+      (item) =>
+        item.id ===
+        selectedActorPlacementId
+    );
+
+    if (actor) {
+      return {
+        x: actor.x,
+        y: actor.y
+      };
+    }
   }
 
   const object = area?.objects?.find(
@@ -1466,11 +1478,11 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
       currentAreaId: area.id
     });
 
-    if (mapActorRenderer && actorVisual.assetId) {
-      actorPreview.mapVisual = actorVisual;
+    if (mapActorRenderer) {
       mapActorRenderer.draw(ctx, {
         camera,
-        actors: [actorPreview],
+        actors:
+          currentPlacedMapActors(area),
         timeSeconds
       });
     }
@@ -1484,90 +1496,6 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
   }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-}
-
-function applyActorInputs() {
-  const autoAnchor = $('actor-anchor-auto').checked;
-
-  actorVisual = normalizeMapActorVisual({
-    assetId: $('actor-asset').value || actorVisual.assetId,
-    role: $('actor-role').value,
-    targetHeight: numberValue(
-      $('actor-target-height'),
-      actorVisual.targetHeight
-    ),
-    mirrorHorizontal: $('actor-mirror').checked,
-    sourceFacingX:
-      Number($('actor-source-facing').value) < 0 ? -1 : 1,
-    anchorX: autoAnchor
-      ? null
-      : numberValue($('actor-anchor-x'), 0.5),
-    anchorY: autoAnchor
-      ? null
-      : numberValue($('actor-anchor-y'), 0.96),
-    shadow: {
-      enabled: $('actor-shadow-enabled').checked,
-      widthRatio: numberValue(
-        $('actor-shadow-width'),
-        actorVisual.shadow.widthRatio
-      ),
-      heightRatio: numberValue(
-        $('actor-shadow-height'),
-        actorVisual.shadow.heightRatio
-      ),
-      opacity: numberValue(
-        $('actor-shadow-opacity'),
-        actorVisual.shadow.opacity
-      )
-    },
-    motion: {
-      idleAmplitude: numberValue(
-        $('actor-idle-amplitude'),
-        actorVisual.motion.idleAmplitude
-      ),
-      idleFrequency: numberValue(
-        $('actor-idle-frequency'),
-        actorVisual.motion.idleFrequency
-      ),
-      walkAmplitude: numberValue(
-        $('actor-walk-amplitude'),
-        actorVisual.motion.walkAmplitude
-      ),
-      walkFrequency: numberValue(
-        $('actor-walk-frequency'),
-        actorVisual.motion.walkFrequency
-      )
-    }
-  });
-
-  actorPreview.mapVisual = actorVisual;
-  actorPreview.facingX =
-    Number($('actor-facing').value) < 0 ? -1 : 1;
-  actorPreview.moving = $('actor-moving').checked;
-
-  refreshActorControls();
-  renderPreview();
-}
-
-function animateActorPreview(now) {
-  if (now >= actorAnimationUntil) {
-    actorAnimationFrame = null;
-    renderPreview(now / 1000);
-    return;
-  }
-
-  renderPreview(now / 1000);
-  actorAnimationFrame =
-    requestAnimationFrame(animateActorPreview);
-}
-
-function startActorPreviewAnimation() {
-  actorAnimationUntil = performance.now() + 3000;
-
-  if (actorAnimationFrame === null) {
-    actorAnimationFrame =
-      requestAnimationFrame(animateActorPreview);
-  }
 }
 
 function applyTransformInputs() {
@@ -1787,7 +1715,7 @@ function activateTab(tabName) {
 function setMapTool(tool) {
   mapTool = [
     'select',
-    'actor-preview',
+    'actor-placement',
     'area-size',
     'terrain',
     'route',
@@ -1810,7 +1738,7 @@ function setMapTool(tool) {
     mapTool === 'river'
   ) {
     activateTab('terrain');
-  } else if (mapTool === 'actor-preview') {
+  } else if (mapTool === 'actor-placement') {
     activateTab('actors');
   } else if (mapTool === 'area-size') {
     activateTab('area');
@@ -2444,104 +2372,130 @@ $('spawn-delete').addEventListener('click', () => {
   refreshControls();
 });
 
-$('actor-role').addEventListener('change', () => {
-  const role = $('actor-role').value;
-  $('actor-target-height').value =
-    MAP_ACTOR_ROLE_DEFAULTS[role]?.targetHeight ??
-    MAP_ACTOR_ROLE_DEFAULTS.hero.targetHeight;
-  applyActorInputs();
-});
-
-$('actor-asset').addEventListener('change', applyActorInputs);
-
-$('actor-target-height').addEventListener('input', () => {
-  $('actor-target-height-value').value =
-    $('actor-target-height').value;
-  applyActorInputs();
-});
-
-for (const id of [
-  'actor-source-facing',
-  'actor-mirror',
-  'actor-facing',
-  'actor-anchor-auto',
-  'actor-anchor-x',
-  'actor-anchor-y',
-  'actor-shadow-enabled',
-  'actor-shadow-width',
-  'actor-shadow-height',
-  'actor-shadow-opacity',
-  'actor-idle-amplitude',
-  'actor-idle-frequency',
-  'actor-walk-amplitude',
-  'actor-walk-frequency',
-  'actor-moving'
-]) {
-  $(id).addEventListener('change', applyActorInputs);
-}
-
-$('actor-animate').addEventListener('click', () => {
-  applyActorInputs();
-  startActorPreviewAnimation();
-});
-
-$('actor-export').addEventListener('click', () => {
-  const json = JSON.stringify(actorVisual, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download =
-    `map-actor-${actorVisual.role}.visual.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  setStatus('MapActorVisual v1 exporté');
-});
-
-$('actor-image-import').addEventListener('change', async () => {
-  const file = $('actor-image-import').files?.[0];
-  if (!file) return;
-
-  try {
-    const dataUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () =>
-        typeof reader.result === 'string'
-          ? resolve(reader.result)
-          : reject(new Error('Lecture image invalide'));
-      reader.onerror = () =>
-        reject(reader.error ?? new Error('Lecture image impossible'));
-      reader.readAsDataURL(file);
-    });
-
-    importedActorAsset = Object.freeze({
-      id: 'actor.user.preview.01',
-      kind: 'map-actor-source',
-      path: dataUrl,
-      label: file.name || 'Visuel importé'
-    });
-
-    await rebuildMapActorPipeline();
-
-    actorVisual = normalizeMapActorVisual({
-      ...actorVisual,
-      assetId: importedActorAsset.id,
-      anchorX: actorVisual.anchorOverride?.x,
-      anchorY: actorVisual.anchorOverride?.y
-    });
-    actorPreview.mapVisual = actorVisual;
+$('actor-placement-select').addEventListener(
+  'change',
+  () => {
+    selectedActorPlacementId =
+      $('actor-placement-select').value ||
+      null;
     refreshActorControls();
     renderPreview();
-    setStatus('Visuel acteur importé pour aperçu');
-  } catch (error) {
-    setStatus(
-      `Import acteur impossible : ${error.message}`,
-      true
-    );
-  } finally {
-    $('actor-image-import').value = '';
   }
-});
+);
+
+$('actor-add').addEventListener(
+  'click',
+  () => {
+    const area =
+      currentAreaRaw();
+    const actorDefinitionId =
+      $('actor-definition').value;
+
+    if (
+      !area ||
+      !actorDefinitionId
+    ) {
+      return;
+    }
+
+    const before =
+      new Set(
+        area.actors?.map(
+          (actor) => actor.id
+        ) ?? []
+      );
+
+    draft = addActorPlacement(
+      draft,
+      selectedAreaId,
+      {
+        actorDefinitionId,
+        x: area.width / 2,
+        y: area.height / 2,
+        facingX: 1
+      }
+    );
+
+    selectedActorPlacementId =
+      currentAreaRaw()
+        ?.actors?.find(
+          (actor) =>
+            !before.has(actor.id)
+        )?.id ??
+      selectedActorPlacementId;
+
+    setMapTool(
+      'actor-placement'
+    );
+    refreshControls();
+  }
+);
+
+$('actor-delete').addEventListener(
+  'click',
+  () => {
+    if (
+      !selectedActorPlacementId
+    ) {
+      return;
+    }
+
+    draft =
+      deleteActorPlacement(
+        draft,
+        selectedAreaId,
+        selectedActorPlacementId
+      );
+    selectedActorPlacementId =
+      currentAreaRaw()
+        ?.actors?.[0]?.id ??
+      null;
+    refreshControls();
+  }
+);
+
+for (const id of [
+  'actor-x',
+  'actor-y',
+  'actor-facing'
+]) {
+  $(id).addEventListener(
+    'change',
+    () => {
+      if (
+        !selectedActorPlacementId
+      ) {
+        return;
+      }
+
+      draft =
+        updateActorPlacement(
+          draft,
+          selectedAreaId,
+          selectedActorPlacementId,
+          {
+            x: numberValue(
+              $('actor-x')
+            ),
+            y: numberValue(
+              $('actor-y')
+            ),
+            facingX:
+              Number(
+                $('actor-facing')
+                  .value
+              ) < 0
+                ? -1
+                : 1
+          }
+        );
+
+      refreshActorControls();
+      refreshJson();
+      renderPreview();
+    }
+  );
+}
 
 $('object-select').addEventListener('change', () => {
   selectedObjectId = $('object-select').value;
@@ -2911,14 +2865,73 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
-  if (mapTool === 'actor-preview') {
-    actorPreview.x = Math.max(0, Math.min(area.width, world.x));
-    actorPreview.y = Math.max(0, Math.min(area.height, world.y));
+  if (mapTool === 'actor-placement') {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y
+      )
+    );
+
+    if (
+      selectedActorPlacementId
+    ) {
+      draft =
+        updateActorPlacement(
+          draft,
+          selectedAreaId,
+          selectedActorPlacementId,
+          { x, y }
+        );
+    } else {
+      const actorDefinitionId =
+        $('actor-definition').value;
+      const before =
+        new Set(
+          currentActorPlacements()
+            .map(
+              (actor) =>
+                actor.id
+            )
+        );
+
+      draft =
+        addActorPlacement(
+          draft,
+          selectedAreaId,
+          {
+            actorDefinitionId,
+            x,
+            y
+          }
+        );
+
+      selectedActorPlacementId =
+        currentActorPlacements()
+          .find(
+            (actor) =>
+              !before.has(
+                actor.id
+              )
+          )?.id ??
+        null;
+    }
+
     pointerSession = {
       pointerId: event.pointerId,
-      mode: 'drag-actor-preview'
+      mode:
+        'drag-actor-placement'
     };
     refreshActorControls();
+    refreshJson();
     renderPreview();
     return;
   }
@@ -3089,10 +3102,35 @@ canvas.addEventListener('pointermove', (event) => {
     return;
   }
 
-  if (pointerSession.mode === 'drag-actor-preview') {
-    actorPreview.x = Math.max(0, Math.min(area.width, world.x));
-    actorPreview.y = Math.max(0, Math.min(area.height, world.y));
+  if (
+    pointerSession.mode ===
+      'drag-actor-placement' &&
+    selectedActorPlacementId
+  ) {
+    draft =
+      updateActorPlacement(
+        draft,
+        selectedAreaId,
+        selectedActorPlacementId,
+        {
+          x: Math.max(
+            0,
+            Math.min(
+              area.width,
+              world.x
+            )
+          ),
+          y: Math.max(
+            0,
+            Math.min(
+              area.height,
+              world.y
+            )
+          )
+        }
+      );
     refreshActorControls();
+    refreshJson();
     renderPreview();
     return;
   }
@@ -3318,14 +3356,7 @@ $('test-exploration').addEventListener('click', (event) => {
   try {
     saveWorldBuilderTestHandoff(
       window.sessionStorage,
-      result.document,
-      {
-        actorVisual,
-        actorAsset:
-          importedActorAsset?.id === actorVisual.assetId
-            ? importedActorAsset
-            : null
-      }
+      result.document
     );
   } catch (error) {
     event.preventDefault();
@@ -3361,6 +3392,12 @@ $('import-json').addEventListener('change', async () => {
     selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
     selectedSpawnId = null;
     selectedObjectId = null;
+    selectedActorPlacementId =
+      draft.areas.find(
+        (area) =>
+          area.id === selectedAreaId
+      )?.actors?.[0]?.id ??
+      null;
     selectedPortalId = draft.portals?.[0]?.id ?? null;
     selectedSurfaceKind = null;
     selectedSurfacePathId = null;
@@ -3379,6 +3416,12 @@ $('reset-demo').addEventListener('click', () => {
   selectedAreaId = draft.initialAreaId;
   selectedSpawnId = null;
   selectedObjectId = null;
+  selectedActorPlacementId =
+    draft.areas.find(
+      (area) =>
+        area.id === selectedAreaId
+    )?.actors?.[0]?.id ??
+    null;
   selectedPortalId = draft.portals?.[0]?.id ?? null;
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
@@ -3393,8 +3436,6 @@ addEventListener('resize', () => {
 refreshControls();
 if (resumeBuilderTest) {
   setStatus(
-    resumedTestSession?.actorVisual
-      ? 'Session de test restaurée : monde + visuel acteur'
-      : 'Session de test restaurée dans le World Builder'
+    'Session de test restaurée dans le World Builder'
   );
 }
