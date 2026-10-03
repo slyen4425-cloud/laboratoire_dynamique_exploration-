@@ -83,3 +83,38 @@ Sur la preview publique :
 4. déplacer le Loup via X/Y ou sur la map ;
 5. lancer le test runtime ;
 6. vérifier que le même visuel est conservé.
+
+## Prévalidation technique — Actor Placement Catalog v1
+
+Implémenté :
+- `WorldArea.schemaVersion = 3` avec `actors[]` canonique ;
+- placement strict : `id + actorDefinitionId + x/y + facingX` ;
+- aucun `assetId` / `mapVisual` / réglage visuel sérialisé dans la map ;
+- panneau Actor du Builder réduit à sélection / ajout / X-Y / direction / suppression ;
+- suppression de l'import image, scale, anchor, ombre, animation, miroir, export MapActorVisual ;
+- Builder et runtime résolvent tous deux le visuel depuis la définition d'acteur ;
+- l'ancien handoff `builderTestSession.actorVisual/actorAsset` n'est plus consommé par le runtime ;
+- sentinelle `capture:creature:crea-loup` placée dans `forest-exterior` ;
+- provider Capture générique : presentation assetId -> catalogue visuel global -> MapActorVisual -> renderer ;
+- aucune URL physique du Loup dans le WorldDocument ou le Builder.
+
+TDD :
+- frontière placement sans données visuelles ;
+- provider Capture -> Actor Definition ;
+- projection vers MapActor renderer ;
+- mutations Builder add/update/delete ;
+- présence Loup par référence seulement ;
+- UI Actor placement-only ;
+- handoff Builder/runtime sans autorité visuelle parallèle.
+
+CI :
+- premier run `37148172504` : FAILURE sur 2 sentinelles de contrat obsolètes ;
+- causes corrigées :
+  - wording UI du nouveau panneau ;
+  - attente WorldArea v2 -> v3 ;
+- run `37148318702` : SUCCESS ;
+- après retrait définitif de l'ancien handoff actorVisual/actorAsset :
+  run `37148360401` : SUCCESS.
+
+État : **TECHNIQUE GREEN — publication preview et validation utilisateur restantes**.
+
