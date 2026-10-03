@@ -299,3 +299,20 @@ Capture session/bootstrap adapter
 - aucune persistence GenSrpG finale ;
 - aucune modification de Zombicide-40k.
 
+## Prévalidation technique — Player Party Ref v1
+
+Implémenté :
+- le bootstrap Exploration ne contient plus `capture-party-preview` ;
+- `activePartyRef` provient d'un adapter Capture de laboratoire ;
+- valeur preview : `capture-party-player-v1` ;
+- Encounter Intent transporte uniquement cette référence opaque ;
+- `CaptureEncounterSnapshot v1` reste inchangé ;
+- aucun `creatureId`, stat, loadout ou asset joueur n'est introduit dans Exploration ;
+- cache-bust runtime `player-party-ref-v1` ;
+- sentinelle Actor cache adaptée pour distinguer révision d'entrée et sous-graphe Actor.
+
+HEAD : `db197f34a5b1ae5399b76ec6f8b4fbcdbd497801`
+CI : `37152638356` — **SUCCESS**.
+
+État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
+
