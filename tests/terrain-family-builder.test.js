@@ -5,6 +5,8 @@ import { demoWorldDocument } from '../src/world/demo-world.js';
 import {
   addSurfacePath,
   createWorldBuilderDraft,
+  importWorldBuilderDocument,
+  serializeWorldBuilderDraft,
   updateAreaProperties,
   updateSurfacePath,
   updateTerrainFamilyEncounterProfile,
@@ -162,5 +164,77 @@ test('active family blocks export when element percentages do not total 100', ()
     validation.errors.includes(
       'encounter-element-total:forest'
     )
+  );
+});
+
+
+test('route and river keep their canonical terrain families regardless of texture', () => {
+  let next = addSurfacePath(
+    draft(),
+    'forest-exterior',
+    'route',
+    {
+      terrainFamilyId: 'volcano',
+      materialId: 'road.dirt',
+      points: [
+        { x: 10, y: 10 },
+        { x: 200, y: 10 }
+      ]
+    }
+  );
+
+  next = addSurfacePath(
+    next,
+    'forest-exterior',
+    'river',
+    {
+      terrainFamilyId: 'forest',
+      materialId: 'water.forest_stream',
+      points: [
+        { x: 10, y: 50 },
+        { x: 200, y: 50 }
+      ]
+    }
+  );
+
+  const area = next.areas[0];
+  assert.equal(area.surface.routes.at(-1).terrainFamilyId, 'road');
+  assert.equal(area.surface.rivers.at(-1).terrainFamilyId, 'sea');
+});
+
+test('terrain families and encounter config survive Builder export/import', () => {
+  let next = addSurfacePath(
+    draft(),
+    'forest-exterior',
+    'terrain',
+    {
+      terrainFamilyId: 'volcano',
+      materialId: 'ground.dirt',
+      width: 240,
+      points: [
+        { x: 200, y: 200 },
+        { x: 500, y: 240 }
+      ]
+    }
+  );
+
+  next = updateTerrainFamilyEncounterProfile(
+    next,
+    'volcano',
+    { encounterChancePercent: 31 }
+  );
+
+  const json = serializeWorldBuilderDraft(next);
+  const imported = importWorldBuilderDocument(json);
+
+  assert.equal(
+    imported.areas[0].surface.zones.at(-1).terrainFamilyId,
+    'volcano'
+  );
+  assert.equal(
+    imported.encounterConfig.families.find(
+      (entry) => entry.terrainFamilyId === 'volcano'
+    ).encounterChancePercent,
+    31
   );
 });
