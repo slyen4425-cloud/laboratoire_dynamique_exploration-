@@ -100,3 +100,46 @@ body {
   color: #211d12;
   border-color: rgba(255, 255, 255, .5);
 }
+
+
+.encounter-preview {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  width: min(360px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 14px;
+  background: rgba(10, 18, 13, .94);
+  box-shadow: 0 16px 48px rgba(0,0,0,.45);
+  color: #f4f7f2;
+  text-align: center;
+  touch-action: manipulation;
+}
+
+.encounter-preview[hidden] {
+  display: none;
+}
+
+.encounter-preview strong {
+  font-size: 18px;
+}
+
+.encounter-preview span {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.encounter-preview button {
+  min-height: 44px;
+  border: 1px solid rgba(255,255,255,.32);
+  border-radius: 10px;
+  background: rgba(241,211,106,.92);
+  color: #211d12;
+  font: inherit;
+  font-weight: 700;
+  touch-action: manipulation;
+}
