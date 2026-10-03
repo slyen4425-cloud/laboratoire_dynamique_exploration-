@@ -78,10 +78,15 @@ export function createMapActorRenderer({
           ctx.restore();
         }
 
+        const desiredFacingX =
+          Number.isFinite(actor.facingX) && actor.facingX < 0
+            ? -1
+            : 1;
+        const sourceFacingX =
+          visual.sourceFacingX === -1 ? -1 : 1;
         const shouldMirror =
           visual.mirrorHorizontal &&
-          Number.isFinite(actor.facingX) &&
-          actor.facingX < 0;
+          desiredFacingX !== sourceFacingX;
 
         ctx.save();
         ctx.translate(screenX, screenY - bob);
