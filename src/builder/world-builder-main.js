@@ -1017,6 +1017,12 @@ function selectedWorldPoint(document, area) {
     };
   }
 
+  if (mapTool === 'encounter') {
+    const layer = currentEncounterLayerRaw();
+    const point = layer?.points?.[0];
+    if (point) return { x: point.x, y: point.y };
+  }
+
   const object = area?.objects?.find(
     (item) => item.id === selectedObjectId
   );
@@ -1143,6 +1149,53 @@ function drawBuilderOverlays(area, document, camera) {
     ctx.setLineDash([]);
   }
 
+  for (const layer of area.encounterLayers ?? []) {
+    if (!Array.isArray(layer.points) || layer.points.length < 2) continue;
+
+    const selected = layer.id === selectedEncounterLayerId;
+    const chance = Math.max(
+      0,
+      Math.min(100, Number(layer.encounterChancePercent) || 0)
+    );
+
+    ctx.save();
+    ctx.beginPath();
+    layer.points.forEach((point, index) => {
+      const x = point.x - camera.x;
+      const y = point.y - camera.y;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = layer.width;
+    ctx.strokeStyle =
+      chance === 0
+        ? 'rgba(92,214,255,0.16)'
+        : selected
+          ? 'rgba(255,120,92,0.24)'
+          : 'rgba(255,120,92,0.13)';
+    ctx.stroke();
+
+    ctx.beginPath();
+    layer.points.forEach((point, index) => {
+      const x = point.x - camera.x;
+      const y = point.y - camera.y;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.lineWidth = (selected ? 4 : 2) / zoom;
+    ctx.strokeStyle =
+      chance === 0
+        ? 'rgba(92,214,255,0.92)'
+        : selected
+          ? 'rgba(255,223,116,0.98)'
+          : 'rgba(255,150,112,0.82)';
+    ctx.setLineDash([10 / zoom, 7 / zoom]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   for (const spawn of area.spawns) {
     const point = resolveWorldAreaSpawnPoint(area, spawn.id);
     if (!point) continue;
@@ -1245,16 +1298,19 @@ function drawBuilderOverlays(area, document, camera) {
     (
       mapTool === 'terrain' ||
       mapTool === 'route' ||
-      mapTool === 'river'
+      mapTool === 'river' ||
+      mapTool === 'encounter'
     ) &&
     hoverWorldPoint
   ) {
     const brushSize =
-      mapTool === 'river'
-        ? numberValue($('terrain-river-width'), 72)
-        : mapTool === 'route'
-          ? numberValue($('terrain-route-width'), 82)
-          : numberValue($('terrain-brush-size'), 180);
+      mapTool === 'encounter'
+        ? numberValue($('encounter-width'), 260)
+        : mapTool === 'river'
+          ? numberValue($('terrain-river-width'), 72)
+          : mapTool === 'route'
+            ? numberValue($('terrain-route-width'), 82)
+            : numberValue($('terrain-brush-size'), 180);
 
     ctx.beginPath();
     ctx.arc(
@@ -1264,9 +1320,15 @@ function drawBuilderOverlays(area, document, camera) {
       0,
       Math.PI * 2
     );
-    ctx.fillStyle = 'rgba(133,225,255,0.12)';
+    ctx.fillStyle =
+      mapTool === 'encounter'
+        ? 'rgba(255,120,92,0.12)'
+        : 'rgba(133,225,255,0.12)';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(133,225,255,0.96)';
+    ctx.strokeStyle =
+      mapTool === 'encounter'
+        ? 'rgba(255,150,112,0.96)'
+        : 'rgba(133,225,255,0.96)';
     ctx.lineWidth = 3 / zoom;
     ctx.setLineDash([8 / zoom, 6 / zoom]);
     ctx.stroke();
@@ -1379,6 +1441,54 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
   }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function applyEncounterLayerInputs() {
+  if (!selectedEncounterLayerId) return;
+
+  draft = updateEncounterLayer(
+    draft,
+    selectedAreaId,
+    selectedEncounterLayerId,
+    {
+      label: $('encounter-label').value,
+      enabled: $('encounter-enabled').checked,
+      width: numberValue($('encounter-width'), 260),
+      encounterChancePercent: numberValue(
+        $('encounter-chance'),
+        0
+      ),
+      checkDistance: numberValue(
+        $('encounter-check-distance'),
+        160
+      ),
+      priority: numberValue($('encounter-priority'), 0)
+    }
+  );
+
+  refreshEncounterControls();
+  refreshJson();
+  renderPreview();
+}
+
+function applyEncounterEntryInputs() {
+  if (!selectedEncounterLayerId || !selectedEncounterEntryId) return;
+
+  draft = updateEncounterTableEntry(
+    draft,
+    selectedAreaId,
+    selectedEncounterLayerId,
+    selectedEncounterEntryId,
+    {
+      actorDefinitionId: $('encounter-entry-actor').value,
+      tags: $('encounter-entry-tags').value,
+      weight: numberValue($('encounter-entry-weight'), 100)
+    }
+  );
+
+  refreshEncounterControls();
+  refreshJson();
+  renderPreview();
 }
 
 function applyActorInputs() {
@@ -1686,7 +1796,8 @@ function setMapTool(tool) {
     'area-size',
     'terrain',
     'route',
-    'river'
+    'river',
+    'encounter'
   ].includes(tool)
     ? tool
     : 'select';
@@ -1702,9 +1813,12 @@ function setMapTool(tool) {
   if (
     mapTool === 'terrain' ||
     mapTool === 'route' ||
-    mapTool === 'river'
+    mapTool === 'river' ||
+    mapTool === 'encounter'
   ) {
     activateTab('terrain');
+  } else if (mapTool === 'encounter') {
+    activateTab('encounters');
   } else if (mapTool === 'actor-preview') {
     activateTab('actors');
   } else if (mapTool === 'area-size') {
@@ -1985,6 +2099,72 @@ function appendDrawPoint(kind, pathId, point, force = false) {
   );
 }
 
+function beginEncounterLayer(point) {
+  const area = currentAreaRaw();
+  if (!area) return null;
+
+  const before = (area.encounterLayers ?? [])
+    .map((layer) => layer.id);
+
+  draft = addEncounterLayer(
+    draft,
+    selectedAreaId,
+    {
+      width: numberValue($('encounter-width'), 260),
+      points: [point, point],
+      encounterChancePercent: 20,
+      checkDistance: 160,
+      priority: 0,
+      table: [
+        {
+          id: 'entry-1',
+          tags: ['element.neutral'],
+          weight: 100
+        }
+      ]
+    }
+  );
+
+  const created = (currentAreaRaw()?.encounterLayers ?? [])
+    .find((layer) => !before.includes(layer.id));
+
+  if (!created) return null;
+
+  selectedEncounterLayerId = created.id;
+  selectedEncounterEntryId = created.table?.[0]?.id ?? null;
+  return created.id;
+}
+
+function appendEncounterDrawPoint(
+  layerId,
+  point,
+  force = false
+) {
+  const layer = currentAreaRaw()?.encounterLayers?.find(
+    (item) => item.id === layerId
+  );
+  const last = layer?.points?.at(-1);
+  if (!last) return;
+
+  const distance = Math.hypot(
+    point.x - last.x,
+    point.y - last.y
+  );
+  const threshold = Math.max(
+    5,
+    14 / Math.max(zoom, 0.05)
+  );
+
+  if (!force && distance < threshold) return;
+
+  draft = appendEncounterLayerPoint(
+    draft,
+    selectedAreaId,
+    layerId,
+    point
+  );
+}
+
 function beginPinch() {
   if (activePointers.size !== 2) return;
 
@@ -2066,6 +2246,7 @@ function finishPointerEditing() {
   canvas.dataset.dragging = 'false';
   refreshAreaControls();
   refreshTerrainControls();
+  refreshEncounterControls();
   refreshObjectControls();
   refreshJson();
   renderPreview();
@@ -2081,6 +2262,8 @@ $('area-select').addEventListener('change', () => {
   selectedAreaId = $('area-select').value;
   selectedSpawnId = null;
   selectedObjectId = null;
+  selectedEncounterLayerId = null;
+  selectedEncounterEntryId = null;
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
   fitRequested = true;
@@ -2812,7 +2995,14 @@ canvas.addEventListener('pointermove', (event) => {
   if (hover) hoverWorldPoint = hover;
 
   if (!activePointers.has(event.pointerId)) {
-    if (mapTool === 'terrain') renderPreview();
+    if (
+      mapTool === 'terrain' ||
+      mapTool === 'route' ||
+      mapTool === 'river' ||
+      mapTool === 'encounter'
+    ) {
+      renderPreview();
+    }
     return;
   }
 
@@ -2844,18 +3034,25 @@ canvas.addEventListener('pointermove', (event) => {
 
     if (distance < 4) return;
 
-    const pathId = beginSurfacePath(
-      pointerSession.kind,
-      pointerSession.startWorld
-    );
+    const pathId =
+      pointerSession.kind === 'encounter'
+        ? beginEncounterLayer(pointerSession.startWorld)
+        : beginSurfacePath(
+            pointerSession.kind,
+            pointerSession.startWorld
+          );
     if (!pathId) return;
 
-    appendDrawPoint(
-      pointerSession.kind,
-      pathId,
-      world,
-      true
-    );
+    if (pointerSession.kind === 'encounter') {
+      appendEncounterDrawPoint(pathId, world, true);
+    } else {
+      appendDrawPoint(
+        pointerSession.kind,
+        pathId,
+        world,
+        true
+      );
+    }
 
     pointerSession = {
       ...pointerSession,
@@ -2863,17 +3060,28 @@ canvas.addEventListener('pointermove', (event) => {
       pathId
     };
 
-    refreshTerrainControls();
+    if (pointerSession.kind === 'encounter') {
+      refreshEncounterControls();
+    } else {
+      refreshTerrainControls();
+    }
     renderPreview();
     return;
   }
 
   if (pointerSession.mode === 'draw-path') {
-    appendDrawPoint(
-      pointerSession.kind,
-      pointerSession.pathId,
-      world
-    );
+    if (pointerSession.kind === 'encounter') {
+      appendEncounterDrawPoint(
+        pointerSession.pathId,
+        world
+      );
+    } else {
+      appendDrawPoint(
+        pointerSession.kind,
+        pointerSession.pathId,
+        world
+      );
+    }
     renderPreview();
     return;
   }
@@ -3043,7 +3251,14 @@ canvas.addEventListener('pointermove', (event) => {
 canvas.addEventListener('pointerleave', () => {
   if (activePointers.size > 0) return;
   hoverWorldPoint = null;
-  if (mapTool === 'terrain') renderPreview();
+  if (
+    mapTool === 'terrain' ||
+    mapTool === 'route' ||
+    mapTool === 'river' ||
+    mapTool === 'encounter'
+  ) {
+    renderPreview();
+  }
 });
 
 function endPointer(event) {
@@ -3059,12 +3274,20 @@ function endPointer(event) {
   ) {
     const world = eventWorldPoint(event);
     if (world) {
-      appendDrawPoint(
-        pointerSession.kind,
-        pointerSession.pathId,
-        world,
-        true
-      );
+      if (pointerSession.kind === 'encounter') {
+        appendEncounterDrawPoint(
+          pointerSession.pathId,
+          world,
+          true
+        );
+      } else {
+        appendDrawPoint(
+          pointerSession.kind,
+          pointerSession.pathId,
+          world,
+          true
+        );
+      }
     }
   }
 
@@ -3151,6 +3374,8 @@ $('import-json').addEventListener('change', async () => {
     selectedSpawnId = null;
     selectedObjectId = null;
     selectedPortalId = draft.portals?.[0]?.id ?? null;
+    selectedEncounterLayerId = null;
+    selectedEncounterEntryId = null;
     selectedSurfaceKind = null;
     selectedSurfacePathId = null;
     fitRequested = true;
@@ -3169,6 +3394,8 @@ $('reset-demo').addEventListener('click', () => {
   selectedSpawnId = null;
   selectedObjectId = null;
   selectedPortalId = draft.portals?.[0]?.id ?? null;
+  selectedEncounterLayerId = null;
+  selectedEncounterEntryId = null;
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
   fitRequested = true;
