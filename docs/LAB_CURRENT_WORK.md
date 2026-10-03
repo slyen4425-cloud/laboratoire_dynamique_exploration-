@@ -115,3 +115,22 @@ Pour une créature sans asset Combat lié :
 8. reprendre la marche et obtenir de nouvelles rencontres normalement.
 
 Statut : **PREVALIDATION smartphone — NON GREEN**.
+
+
+## Validation utilisateur partielle — Combat handoff — 2026-10-03
+
+Test utilisateur depuis PC :
+- la page Combat s'ouvre correctement depuis Exploration ;
+- la créature adverse affichée correspond bien à la rencontre déclenchée ;
+- l'identité adverse est donc validée sur le vrai chemin same-origin.
+
+La gate restante concerne :
+- énergie initiale ;
+- recharge énergie ;
+- utilisation d'une capacité ;
+- fin de combat ;
+- retour automatique Exploration ;
+- même Area / même position ;
+- résultat appliqué une seule fois.
+
+Le lot reste NON GREEN jusqu'à validation complète.
