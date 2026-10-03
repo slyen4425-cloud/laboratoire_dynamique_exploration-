@@ -1,11 +1,16 @@
 import { demoWorldDocument } from '../world/demo-world.js?rev=surface-traversal-replay-v1';
 import {
+  addEncounterLayer,
+  addEncounterTableEntry,
   addPortal,
   addSpawn,
   addSurfacePath,
   addWorldObject,
+  appendEncounterLayerPoint,
   appendSurfacePathPoint,
   createWorldBuilderDraft,
+  deleteEncounterLayer,
+  deleteEncounterTableEntry,
   deletePortal,
   deleteSpawn,
   deleteSurfacePath,
@@ -15,6 +20,8 @@ import {
   patchWorldObject,
   serializeWorldBuilderDraft,
   updateAreaProperties,
+  updateEncounterLayer,
+  updateEncounterTableEntry,
   updatePortal,
   updateSpawn,
   updateSurfacePath,
@@ -212,6 +219,8 @@ let selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
 let selectedSpawnId = null;
 let selectedObjectId = null;
 let selectedPortalId = draft.portals[0]?.id ?? null;
+let selectedEncounterLayerId = null;
+let selectedEncounterEntryId = null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
 let zoom = 0.35;
@@ -285,6 +294,18 @@ function currentSpawnRaw() {
 function currentPortalRaw() {
   return draft.portals?.find(
     (portal) => portal.id === selectedPortalId
+  ) ?? null;
+}
+
+function currentEncounterLayerRaw() {
+  return currentAreaRaw()?.encounterLayers?.find(
+    (layer) => layer.id === selectedEncounterLayerId
+  ) ?? null;
+}
+
+function currentEncounterEntryRaw() {
+  return currentEncounterLayerRaw()?.table?.find(
+    (entry) => entry.id === selectedEncounterEntryId
   ) ?? null;
 }
 
@@ -373,6 +394,25 @@ function ensureSelections() {
 
   if (!draft.portals?.some((portal) => portal.id === selectedPortalId)) {
     selectedPortalId = draft.portals?.[0]?.id ?? null;
+  }
+
+  if (
+    !area.encounterLayers?.some(
+      (layer) => layer.id === selectedEncounterLayerId
+    )
+  ) {
+    selectedEncounterLayerId =
+      area.encounterLayers?.[0]?.id ?? null;
+  }
+
+  const encounterLayer = currentEncounterLayerRaw();
+  if (
+    !encounterLayer?.table?.some(
+      (entry) => entry.id === selectedEncounterEntryId
+    )
+  ) {
+    selectedEncounterEntryId =
+      encounterLayer?.table?.[0]?.id ?? null;
   }
 
   if (
@@ -731,6 +771,126 @@ function refreshActorControls() {
   }
 }
 
+function encounterEntryShare(layer, entry) {
+  if (!layer || !entry || !Array.isArray(layer.table)) return 0;
+
+  const total = layer.table.reduce(
+    (sum, item) =>
+      sum + (
+        Number.isFinite(Number(item.weight))
+          ? Math.max(0, Number(item.weight))
+          : 0
+      ),
+    0
+  );
+
+  if (total <= 0) return 0;
+  return Math.round(
+    Math.max(0, Number(entry.weight) || 0) / total * 100
+  );
+}
+
+function refreshEncounterControls() {
+  ensureSelections();
+
+  const area = currentAreaRaw();
+  const layers = area?.encounterLayers ?? [];
+
+  setOptions(
+    $('encounter-layer-select'),
+    layers,
+    selectedEncounterLayerId,
+    {
+      label: (layer) =>
+        `${layer.label ?? layer.id} · ${layer.encounterChancePercent ?? 0}%`
+    }
+  );
+
+  if (selectedEncounterLayerId) {
+    $('encounter-layer-select').value =
+      selectedEncounterLayerId;
+  }
+
+  const layer = currentEncounterLayerRaw();
+  const disabled = !layer;
+
+  for (const id of [
+    'encounter-layer-delete',
+    'encounter-enabled',
+    'encounter-label',
+    'encounter-width',
+    'encounter-chance',
+    'encounter-check-distance',
+    'encounter-priority',
+    'encounter-entry-select',
+    'encounter-entry-add',
+    'encounter-entry-delete',
+    'encounter-entry-actor',
+    'encounter-entry-tags',
+    'encounter-entry-weight'
+  ]) {
+    $(id).disabled = disabled;
+  }
+
+  if (!layer) {
+    $('encounter-entry-share').value = '—';
+    return;
+  }
+
+  $('encounter-enabled').checked = layer.enabled !== false;
+  $('encounter-label').value = layer.label ?? layer.id;
+  $('encounter-width').value = layer.width ?? 180;
+  $('encounter-chance').value =
+    layer.encounterChancePercent ?? 0;
+  $('encounter-check-distance').value =
+    layer.checkDistance ?? 160;
+  $('encounter-priority').value = layer.priority ?? 0;
+
+  const entries = layer.table ?? [];
+  setOptions(
+    $('encounter-entry-select'),
+    entries,
+    selectedEncounterEntryId,
+    {
+      label: (entry) => {
+        const target =
+          entry.actorDefinitionId ||
+          entry.tags?.join(', ') ||
+          entry.id;
+        return `${target} · ${encounterEntryShare(layer, entry)}%`;
+      }
+    }
+  );
+
+  if (selectedEncounterEntryId) {
+    $('encounter-entry-select').value =
+      selectedEncounterEntryId;
+  }
+
+  const entry = currentEncounterEntryRaw();
+  const entryDisabled = !entry;
+
+  for (const id of [
+    'encounter-entry-delete',
+    'encounter-entry-actor',
+    'encounter-entry-tags',
+    'encounter-entry-weight'
+  ]) {
+    $(id).disabled = entryDisabled;
+  }
+
+  $('encounter-entry-actor').value =
+    entry?.actorDefinitionId ?? '';
+  $('encounter-entry-tags').value =
+    entry?.tags?.join(', ') ?? '';
+  $('encounter-entry-weight').value =
+    entry?.weight ?? '';
+  $('encounter-entry-share').value =
+    entry
+      ? `${encounterEntryShare(layer, entry)} %`
+      : '—';
+}
+
 function sourceBuildings(portal) {
   const area = draft.areas.find(
     (item) => item.id === portal?.sourceAreaId
@@ -843,6 +1003,7 @@ function refreshControls() {
   refreshTerrainControls();
   refreshObjectControls();
   refreshActorControls();
+  refreshEncounterControls();
   refreshPortalControls();
   refreshJson();
   renderPreview();
