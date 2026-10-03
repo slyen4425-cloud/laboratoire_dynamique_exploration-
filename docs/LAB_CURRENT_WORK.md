@@ -122,3 +122,23 @@ Gate smartphone :
 7. tester la route : la config normale reste celle du WorldDocument.
 
 Le lot reste **NON GREEN** jusqu'à validation utilisateur de cette preview.
+
+
+## Validation utilisateur finale — Encounter Controller + Snapshot v1 — 2026-10-03
+
+Validation smartphone utilisateur : **GREEN**.
+
+Confirmé :
+- rencontres déclenchées uniquement pendant le déplacement ;
+- cadence après correction jugée cohérente ;
+- plusieurs créatures différentes rencontrées ;
+- popup affiche la créature, l'élément et la famille ;
+- reprise de l'exploration fonctionnelle ;
+- le Terrain Family Resolver / Capture spawnChance restent utilisés ;
+- aucun timer global de rencontre ;
+- aucun second état de position.
+
+Le micro-lot **Encounter Controller + CaptureEncounterSnapshot v1** est fermé GREEN.
+
+Suite :
+**Phase 7 micro-lot 2 — Combat Handoff + CaptureCombatResult v1 + retour/apply-once**.
