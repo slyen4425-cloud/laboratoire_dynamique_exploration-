@@ -3,7 +3,7 @@ import {
   findWorldAreaSpawn,
   normalizeWorldAreas,
   resolveWorldAreaSpawnPoint
-} from './world-area-model.js?rev=encounter-layers-v1';
+} from './world-area-model.js?rev=encounter-layers-v2';
 import {
   normalizePortals,
   portalReferencesAreValid
