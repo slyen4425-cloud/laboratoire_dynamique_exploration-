@@ -47,6 +47,17 @@ import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession
 } from './builder/world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
+import {
+  demoLivingWorldConfig
+} from './living/demo-living-world.js?rev=phase5-wild-runtime-presence-v1';
+import {
+  resolveDemoLivingActorDefinition
+} from './living/demo-living-actor-adapter.js?rev=phase5-wild-runtime-presence-v1';
+import {
+  collectLivingMapActorAssetIds,
+  createInitialWildlife,
+  createWildMapActorView
+} from './living/living-runtime.js?rev=phase5-wild-runtime-presence-v1';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
@@ -115,6 +126,19 @@ const touchInput = createVirtualStick(joystick, stick);
 const traversalRegistry = createTraversalRuleRegistry(
   traversalRulePackV1
 );
+
+const livingWorldConfig = demoLivingWorldConfig;
+const wildCreatures = createInitialWildlife(
+  livingWorldConfig,
+  {
+    worldDocument: activeWorldDocument,
+    resolveActorDefinition: resolveDemoLivingActorDefinition,
+    seed: `${activeWorldDocument.id}:wildlife:v1`,
+    activationCount: 2,
+    traversalRegistry
+  }
+);
+
 const materialRegistry = createMaterialRegistry(materialPackV1);
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
@@ -173,7 +197,13 @@ const mapActorImageLoader = createImageAssetLoader({
   cacheRevision: 'map-actor-visual-v1-2026-10-02'
 });
 const requiredMapActorAssetIds = Object.freeze([
-  player.mapVisual.assetId
+  ...new Set([
+    player.mapVisual.assetId,
+    ...collectLivingMapActorAssetIds(
+      livingWorldConfig,
+      resolveDemoLivingActorDefinition
+    )
+  ])
 ]);
 
 const mapActorAssetStatus = await mapActorImageLoader.load(
@@ -331,8 +361,12 @@ function update(dt) {
     traversalRegistry
   );
 
+  const activeWildCount = wildCreatures.filter(
+    (entity) => entity.areaId === player.currentAreaId
+  ).length;
+
   coords.textContent =
-    `${player.currentAreaId} · x: ${player.x.toFixed(1)} y: ${player.y.toFixed(1)} · ${traversal.ruleId} ×${traversal.speedMultiplier.toFixed(2)}`;
+    `${player.currentAreaId} · x: ${player.x.toFixed(1)} y: ${player.y.toFixed(1)} · ${traversal.ruleId} ×${traversal.speedMultiplier.toFixed(2)} · sauvages: ${activeWildCount}`;
 }
 
 function drawGround() {
@@ -391,8 +425,23 @@ function setLocomotionMode(mode) {
   }
 }
 
+function currentWildMapActors() {
+  return wildCreatures
+    .filter(
+      (entity) => entity.areaId === player.currentAreaId
+    )
+    .map((entity) =>
+      createWildMapActorView(
+        entity,
+        resolveDemoLivingActorDefinition
+      )
+    )
+    .filter(Boolean);
+}
+
 function render(timeSeconds = 0) {
   const area = currentArea();
+  const wildMapActors = currentWildMapActors();
 
   ctx.clearRect(0, 0, innerWidth, innerHeight);
   drawGround();
@@ -416,7 +465,7 @@ function render(timeSeconds = 0) {
 
   mapActorRenderer.draw(ctx, {
     camera,
-    actors: [player],
+    actors: [...wildMapActors, player],
     timeSeconds
   });
 }
