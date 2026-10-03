@@ -120,3 +120,49 @@ Sur smartphone :
 6. Builder et Map Actor ne régressent pas.
 
 Le lot reste non GREEN jusqu'à CI + preview + validation smartphone.
+
+
+## État technique — Surface Traversal replay — 2026-10-03
+
+Report sélectif réalisé depuis l'ancienne branche isolée, sans merge de l'ancienne lignée.
+
+Implémenté sur la base GREEN actuelle :
+- WorldSurface schema v2 ;
+- `baseTraversalRuleId` ;
+- `traversalRuleId` routes/rivières ;
+- `surface.zones[]` du Builder conservé et purement visuel ;
+- Traversal Rule Registry v1 injectable ;
+- locomotion partagée `ground / swim / fly` ;
+- resolver géométrique pur ;
+- route ground x1.25 via data pack ;
+- eau ground bloquée ;
+- eau swim x0.75 ;
+- eau fly x1.00 ;
+- Bridge `terrain.bridge` avec override local d'une feature surface ;
+- migration `overridesObstacleIds` -> `overridesSurfaceFeatureIds` sans double champ normalisé ;
+- Builder raccordé au nouveau champ canonique ;
+- Collision World consulte le resolver ;
+- Movement Core applique le multiplicateur ;
+- géométrie partagée dans `core/geometry.js` ;
+- runtime de test Marche / Nage / Vol ;
+- HUD règle active + multiplicateur ;
+- chaîne de cache mobile versionnée.
+
+Régressions protégées :
+- rivière canonique reste l'unique géométrie eau ;
+- pont traversable sans faux obstacle rivière ;
+- rivière large dessinée Builder reste bloquante en ground ;
+- zones peintes Builder conservées ;
+- World Builder reste sans autorité gameplay ;
+- Map Actor Visual/sourceFacingX reste intact ;
+- Building/Portal/Spawn ancré restent intacts ;
+- handoff Builder/runtime reste intact.
+
+TDD :
+- contrat replay : commit `cd7d50427cd966777ed85c6e0890984c77a10d9f` — FAILURE attendue ;
+- convergence technique : run `37094377193` — SUCCESS ;
+- cache/versioning final : run `37094556304` — **SUCCESS** ;
+- HEAD technique avant documentation : `99354ec9d7f830d0f502112063dbd924ccf761f5`.
+
+Gate restante :
+publication Pages puis validation smartphone Marche/Nage/Vol.
