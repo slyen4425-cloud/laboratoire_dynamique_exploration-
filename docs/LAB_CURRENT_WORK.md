@@ -218,3 +218,17 @@ CI :
 Gate restante :
 - republier Pages sur ce HEAD puis revalider visuellement le Loup opponent/front.
 
+## Preview cache-bustée publiée — 2026-10-03
+
+Publication finale de la correction opponent/front :
+- preview SHA : `5603930d07274ea9f5c5ba52ffea72a7e81501f4` ;
+- checkpoint : `checkpoint/exploration-actor-opponent-view-cachefix-v1-prevalidation-green-2026-10-03` ;
+- CI : `37149329864` — **SUCCESS** ;
+- PR infra : #59 ;
+- main infra : `2e470c8e04a64c4fcd189547eec55aad2b335bb8` ;
+- Pages run : `37149384770` — **SUCCESS**.
+
+Le même lien public charge désormais des URLs versionnées `actor-opponent-view-v1` sur toute la chaîne runtime/Builder/loader/provider.
+
+Gate restante : validation utilisateur visuelle du Loup volcanique en vue opponent/front.
+
