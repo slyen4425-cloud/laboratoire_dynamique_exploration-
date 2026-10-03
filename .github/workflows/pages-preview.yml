@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: actor-opponent-view-cachefix-v1
+# preview-revision: player-party-v1
 
 on:
   push:
@@ -23,16 +23,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Actor Catalog preview
+      - name: Checkout Exploration Player Party preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-actor-placement-catalog-v1-2026-10-03
+          ref: preview/exploration-player-party-ref-v1-2026-10-03
 
-      - name: Checkout Combat bridge preview
+      - name: Checkout Combat Player Party preview
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-exploration-preview-loup-configured-v1-2026-10-03
+          ref: preview/lab-exploration-player-party-v1-2026-10-03
           path: combat-preview
 
       - name: Checkout Capture global visual assets
