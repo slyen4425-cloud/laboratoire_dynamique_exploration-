@@ -90,3 +90,30 @@ test('World Builder exposes Encounter Layers as a dedicated gameplay layer edito
   assert.match(html, /data-panel="encounters"/);
   assert.match(html, /Peindre rencontres/);
 });
+
+
+test('Encounter editor uses lists instead of typed ids or tags', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+
+  for (const id of [
+    'encounter-entry-kind',
+    'encounter-entry-value'
+  ]) {
+    assert.match(
+      html,
+      new RegExp('<select[^>]+id=["\\']' + id + '["\\']')
+    );
+  }
+
+  assert.equal(
+    /id=["']encounter-entry-actor["']/.test(html),
+    false
+  );
+  assert.equal(
+    /id=["']encounter-entry-tags["']/.test(html),
+    false
+  );
+});
