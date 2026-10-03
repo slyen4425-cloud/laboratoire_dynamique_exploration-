@@ -3,100 +3,71 @@
 Date : 2026-10-03
 
 ## Chantier actif
-Phase 5 — Monde vivant — micro-lot 2 :
-**Spawn Planner / Activation déterministe v1**.
+Phase 5 — Monde vivant — micro-lot 3 :
+**Wild Runtime Presence v1**.
 
 ## Branche
-`work/exploration-phase5-spawn-planner-v1-2026-10-03`
+`work/exploration-phase5-wild-runtime-presence-v1-2026-10-03`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-phase5-spawn-planner-v1-2026-10-03`
+`checkpoint/exploration-start-phase5-wild-runtime-presence-v1-2026-10-03`
 
 ## SHA de base GREEN
-`d0a17f8ebc479733e5690bc358fb55c60ffd1785`
+`8336e27164bfd5b573219a2b6d65ae749f98dc57`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-phase5-wild-creature-spawn-v1-green-2026-10-03`
+`checkpoint/exploration-phase5-spawn-planner-v1-green-2026-10-03`
 
 ## Objectif
-Produire une intention de spawn déterministe depuis les contrats Living World sans prendre l'autorité sur collision, traversal ou capacités acteur.
+Activer quelques créatures sauvages au bootstrap depuis le Spawn Planner et les rendre visibles dans Exploration, sans encore ajouter d'IA.
 
-## Chaîne cible
+## Chaîne
 ```text
-LivingWorldConfig
-  -> règles éligibles (maxActive / weight)
-  -> Spawn Planner déterministe
-  -> candidat x/y dans WildSpawnZone
-  -> canSpawn injecté
-  -> WildSpawnIntent
-  -> futur système d'activation runtime
+LivingWorldConfig demo
+ -> Spawn Planner
+ -> validation via Collision/Traversal existants
+ -> WildCreatureEntity runtime
+ -> Actor Definition adapter demo
+ -> Map Actor Renderer GREEN
 ```
 
 ## Autorités
-- sélection/pondération/point candidat : Spawn Planner ;
-- passabilité réelle : callback injecté provenant des autorités gameplay/collision/traversal ;
-- actorDefinitionId : référence opaque ;
-- création/mutation des entités runtime : hors périmètre du planner.
+- position/présence runtime créature : Living runtime entity ;
+- profil acteur/visuel/locomotion : Actor Definition adapter demo (temporaire, futur Capture) ;
+- collision : Collision World ;
+- traversal : Surface Traversal Resolver ;
+- rendu : Map Actor Renderer ;
+- spawn : Spawn Planner.
+
+## Règles
+- WildCreatureEntity ne contient ni stats ni MapActorVisual ;
+- le rendu résout MapActorVisual depuis actorDefinitionId ;
+- le spawn consulte les capacités de locomotion de la définition pour tester la passabilité ;
+- aucun timer de respawn ;
+- aucune errance/poursuite ;
+- aucun second renderer.
 
 ## Périmètre
-- seed déterministe ;
-- activationIndex explicite ;
-- activeCounts par règle ;
-- maxActive respecté ;
-- weight respecté ;
-- point déterministe dans zone circulaire ;
-- nombre d'essais local borné ;
-- callback `canSpawn` obligatoire pour le vrai raccord ultérieur ;
-- sortie `WildSpawnIntent v1` immuable ;
-- aucun timer / aucune boucle permanente.
+- adapter local de définitions de démonstration ;
+- config Living World de démonstration ;
+- activation initiale bornée ;
+- validation Collision/Traversal ;
+- rendu des entités dans leur Area ;
+- compteur HUD minimal ;
+- tests purs + preview mobile.
 
 ## Hors périmètre
-- respawn temporel ;
-- errance ;
+- déplacement autonome ;
+- territoire dynamique ;
 - poursuite/fuite ;
-- pathfinding ;
-- création/mutation directe des entités ;
 - rencontre/combat ;
-- UI ;
+- capture ;
+- persistence ;
+- Builder UI ;
 - autre dépôt.
 
-## Tests requis
-- même seed + même activationIndex = même intent ;
-- activationIndex différent peut produire un autre point ;
-- maxActive bloque une règle pleine ;
-- pondération déterministe ;
-- point toujours dans la zone ;
-- canSpawn peut rejeter puis accepter ;
-- échec propre après essais bornés ;
-- aucune dépendance materialId / visuel / stats ;
-- sentinelles Phase 5 micro-lot 1 et Traversal restent GREEN.
-
-## Suite prévue
-Après GREEN :
-**Phase 5 micro-lot 3 — activation runtime minimale / présence de créatures sur la map**, puis errance/territoires.
-
-
-## État technique — Spawn Planner / Activation déterministe v1 — 2026-10-03
-
-Implémenté :
-- sélection pondérée déterministe ;
-- respect de `maxActive` ;
-- seed + `activationIndex` explicites ;
-- point candidat uniforme dans zone circulaire ;
-- `canSpawn(candidate)` injecté comme autorité externe ;
-- aucun accès direct collision/traversal ;
-- essais locaux bornés (1..64) ;
-- sortie `WildSpawnIntent v1` immuable ;
-- aucun timer ;
-- aucune mutation d'entité.
-
-TDD :
-- contrat : commit `1d45d815f90c9dbf0161b94539168176f3221fe7` — FAILURE attendue ;
-- implémentation : commit `4397ef0930834eb9625c24bad3da76036f6b952b` ;
-- CI : run `37100519079` — **SUCCESS**.
-
-Aucune gate mobile requise :
-ce micro-lot reste pur et sans comportement utilisateur visible.
-
-Suite :
-**Phase 5 micro-lot 3 — activation runtime minimale / présence de créatures sauvages sur la map**.
+## Gate
+Sur smartphone :
+- créatures visibles sur la map ;
+- aucune créature dans zone bloquée/eau pour profil ground ;
+- joueur/Builder/Portal/Traversal sans régression.
