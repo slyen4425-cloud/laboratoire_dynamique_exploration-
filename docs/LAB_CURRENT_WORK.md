@@ -3,226 +3,88 @@
 Date : 2026-10-03
 
 ## Chantier actif
-Surface Traversal Rules v1 — replay sur la lignée Builder + Map Actor GREEN.
+Phase 5 — Monde vivant — micro-lot 1 :
+**Wild Creature Entity + Spawn Contract v1**.
 
 ## Branche
-`work/exploration-surface-traversal-rules-v1-replay-2026-10-03`
+`work/exploration-phase5-wild-creature-spawn-v1-2026-10-03`
 
 ## Checkpoint de départ
-`checkpoint/exploration-start-surface-traversal-rules-v1-replay-2026-10-03`
+`checkpoint/exploration-start-phase5-wild-creature-spawn-v1-2026-10-03`
 
 ## SHA de base GREEN
-`ecdf28ba33fac409e7a2411ba2fd6592a34dc0b7`
+`08b42ccbbffe76b6e81384d52824bb9c2ecc2777`
 
 ## Dernier checkpoint GREEN
-`checkpoint/exploration-map-actor-editor-v1-green-2026-10-03`
-
-## Source technique à reporter, jamais à reprendre comme base
-Ancienne branche isolée :
-`work/exploration-surface-traversal-rules-v1-2026-10-02`
-
-Ancien HEAD :
-`0293c3ab114f30313eba55b2a5b1255c4bca81d1`
-
-Cette branche ancienne sert uniquement de référence de diff.
-Elle ne doit être ni publiée, ni mergée, ni utilisée comme point de reprise.
+`checkpoint/exploration-surface-traversal-rules-v1-replay-green-2026-10-03`
 
 ## Objectif
-Introduire des règles de traversée de surface configurables pour héros, PNJ et créatures sans perdre les systèmes GREEN ajoutés depuis :
-- Map Actor Visual + sourceFacingX ;
-- World Builder Dynamique ;
-- collision rivière canonique depuis `surface.rivers[]` ;
-- Building/Portal/Spawn ancré ;
-- handoff Builder -> runtime -> Builder.
+Poser les contrats canoniques du monde vivant avant toute IA :
+- identité runtime d'une créature sauvage ;
+- zones gameplay de spawn ;
+- règles de spawn pilotées par données ;
+- référence opaque vers une définition d'acteur.
 
-Cas v1 :
-- sol normal : x1.00 ;
-- route : bonus configurable ;
-- eau : bloquée pour ground ;
-- eau : traversable pour swim ;
-- eau : traversable pour fly ;
-- pont : override local de la surface eau via le corridor GREEN.
+## Chaîne cible
+```text
+World Living Config
+  -> Spawn Zone gameplay
+  -> Spawn Rule(actorDefinitionId)
+  -> Wild Creature Entity runtime
+  -> futurs systèmes errance / poursuite / fuite
+```
 
 ## Autorités
-- géométrie routes/rivières/zones : World Surface Model ;
-- identifiant de règle : World Surface Model ;
-- valeurs des règles : Traversal Rule Registry ;
-- modes locomotion acteur : données gameplay acteur ;
-- résolution passable + multiplicateur : Surface Traversal Resolver ;
-- mouvement final : Exploration Core ;
-- collisions statiques : Collision World ;
-- visuel : Material Registry / Renderer uniquement.
+- définition Héros/Créature/stats/visuel/capacités : Capture/Actor Definition futur ;
+- règles et zones de spawn monde vivant : Living World Model ;
+- position runtime d'une créature sauvage : Living World runtime entity ;
+- déplacement futur : Exploration Engine ;
+- traversée : Surface Traversal Resolver ;
+- rendu : Map Actor Renderer en lecture seule.
 
-## Règle absolue
-Interdit :
-`materialId -> vitesse/collision`
+## Règles absolues
+Un Spawn Rule ne copie jamais :
+- stats ;
+- PV ;
+- compétences ;
+- MapActorVisual ;
+- assetId ;
+- locomotion autorisée.
 
-Obligatoire :
-`surface geometry -> traversalRuleId -> Traversal Rule Registry -> locomotion actor -> resolver -> mouvement/collision`
+Il stocke un `actorDefinitionId` opaque.
 
-## Périmètre
-- Surface schema v2, en conservant `surface.zones[]` du Builder actuel ;
-- `baseTraversalRuleId` ;
-- `traversalRuleId` sur routes/rivières ;
-- Traversal Rule Registry configurable ;
-- locomotion `ground / swim / fly` ;
-- resolver géométrique pur ;
-- bonus route ;
-- eau ground bloquée ;
-- swim/fly sur eau ;
-- pont override local d'une feature surface ;
-- migration Bridge `overridesObstacleIds` -> `overridesSurfaceFeatureIds` sans double champ normalisé ;
-- mouvement applique le multiplicateur ;
-- collision consulte le resolver pour la traversée surface ;
-- démo mobile Marche/Nage/Vol ;
-- HUD règle/multiplicateur ;
-- tests de régression complets Builder + Map Actor.
+Les zones de spawn gameplay sont distinctes de `surface.zones[]`, qui restent purement visuelles.
 
-## Compatibilité Builder
-Le Builder actuel reste GREEN.
-Aucune UI de réglage des Traversal Rules n'est ajoutée dans ce lot.
-
-Si la migration Bridge exige un raccord Builder, il doit uniquement écrire le nouveau champ canonique et conserver la même ergonomie de placement existante.
+## Périmètre v1
+- `WildSpawnZone v1` cercle : id, areaId, x/y, radius, tags ;
+- `WildSpawnRule v1` : id, zoneId, actorDefinitionId, maxActive, weight ;
+- normalisation/dédoublonnage ;
+- validation des références zone/rule ;
+- `WildCreatureEntity v1` : id, actorDefinitionId, areaId, x/y, homeZoneId, facingX, moving ;
+- aucune donnée de combat/stat dans l'entité ;
+- tests purs Node.
 
 ## Hors périmètre
-- IA PNJ/monstres ;
+- errance ;
+- territoire dynamique ;
+- poursuite/fuite ;
 - pathfinding ;
-- monde vivant ;
-- endurance/stamina ;
-- animation nage/vol ;
-- éditeur Héros/Créatures final ;
-- persistance Core ;
-- Encounter Bridge ;
+- rencontre/combat ;
+- respawn timers ;
+- persistence Core ;
+- Builder UI ;
+- éditeur Héros/Créatures ;
 - autre dépôt.
 
 ## Tests requis
-- materialId indépendant de traversalRuleId ;
-- registry configurable ;
-- locomotion normalisée ;
-- route ground bonus ;
-- eau ground bloquée ;
-- eau swim/fly ;
-- bridge override local ;
-- surface.zones Builder préservées ;
-- rivière canonique reste l'unique géométrie eau ;
-- migration Bridge sans double autorité ;
-- vrai chemin mouvement -> traversal -> collision -> position ;
-- Map Actor et Builder sentinelles historiques GREEN ;
-- aucune nouvelle autorité renderer/material.
+- ids uniques ;
+- règle invalide si zone absente ;
+- actorDefinitionId obligatoire ;
+- aucune dépendance materialId ;
+- aucune copie MapActorVisual/stats/locomotion dans Spawn Rule ;
+- entité runtime minimale ;
+- sentinelles Builder/Map Actor/Traversal restent GREEN.
 
-## Critère de sortie
-Sur smartphone :
-1. Marche : route accélère ;
-2. Marche : eau bloque hors pont ;
-3. pont reste traversable ;
-4. Nage : eau traversable avec multiplicateur ;
-5. Vol : eau traversable ;
-6. Builder et Map Actor ne régressent pas.
-
-Le lot reste non GREEN jusqu'à CI + preview + validation smartphone.
-
-
-## État technique — Surface Traversal replay — 2026-10-03
-
-Report sélectif réalisé depuis l'ancienne branche isolée, sans merge de l'ancienne lignée.
-
-Implémenté sur la base GREEN actuelle :
-- WorldSurface schema v2 ;
-- `baseTraversalRuleId` ;
-- `traversalRuleId` routes/rivières ;
-- `surface.zones[]` du Builder conservé et purement visuel ;
-- Traversal Rule Registry v1 injectable ;
-- locomotion partagée `ground / swim / fly` ;
-- resolver géométrique pur ;
-- route ground x1.25 via data pack ;
-- eau ground bloquée ;
-- eau swim x0.75 ;
-- eau fly x1.00 ;
-- Bridge `terrain.bridge` avec override local d'une feature surface ;
-- migration `overridesObstacleIds` -> `overridesSurfaceFeatureIds` sans double champ normalisé ;
-- Builder raccordé au nouveau champ canonique ;
-- Collision World consulte le resolver ;
-- Movement Core applique le multiplicateur ;
-- géométrie partagée dans `core/geometry.js` ;
-- runtime de test Marche / Nage / Vol ;
-- HUD règle active + multiplicateur ;
-- chaîne de cache mobile versionnée.
-
-Régressions protégées :
-- rivière canonique reste l'unique géométrie eau ;
-- pont traversable sans faux obstacle rivière ;
-- rivière large dessinée Builder reste bloquante en ground ;
-- zones peintes Builder conservées ;
-- World Builder reste sans autorité gameplay ;
-- Map Actor Visual/sourceFacingX reste intact ;
-- Building/Portal/Spawn ancré restent intacts ;
-- handoff Builder/runtime reste intact.
-
-TDD :
-- contrat replay : commit `cd7d50427cd966777ed85c6e0890984c77a10d9f` — FAILURE attendue ;
-- convergence technique : run `37094377193` — SUCCESS ;
-- cache/versioning final : run `37094556304` — **SUCCESS** ;
-- HEAD technique avant documentation : `99354ec9d7f830d0f502112063dbd924ccf761f5`.
-
-Gate restante :
-publication Pages puis validation smartphone Marche/Nage/Vol.
-
-
-## Preview mobile — Surface Traversal replay — 2026-10-03
-
-Infrastructure uniquement :
-- PR #39 ;
-- main SHA : `ea5920e03cf32ceac268359a88b3821756cda58a` ;
-- Pages run : `37094636663` — **SUCCESS** ;
-- artifact : `11262639570`.
-
-Le workflow Pages checkout explicitement :
-`work/exploration-surface-traversal-rules-v1-replay-2026-10-03`.
-
-URL runtime :
-`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/`
-
-Gate smartphone :
-1. **Marche** : constater le bonus de vitesse sur la route ;
-2. **Marche** : eau bloquante hors pont ;
-3. **Marche** : pont traversable ;
-4. **Nage** : eau traversable avec vitesse x0.75 ;
-5. **Vol** : eau traversable avec vitesse x1.00 ;
-6. vérifier que le Map Actor garde son orientation gauche/droite correcte ;
-7. vérifier rapidement que le World Builder s'ouvre sans régression.
-
-Le lot reste non GREEN jusqu'à validation utilisateur.
-
-
-## Validation utilisateur finale — Surface Traversal replay — 2026-10-03
-
-Validation smartphone utilisateur : **GREEN**.
-
-Confirmé :
-- Marche : bonus route fonctionnel ;
-- Marche : eau bloquante hors pont ;
-- pont traversable ;
-- Nage : traversée eau fonctionnelle ;
-- Vol : traversée eau fonctionnelle ;
-- Map Actor / orientation sans régression signalée ;
-- Builder sans régression signalée.
-
-### Règle produit ajoutée lors de la validation
-
-Les modes `swim` / `fly` ne sont **jamais librement accessibles au joueur** dans le produit final.
-
-Le sélecteur Marche/Nage/Vol actuel est un **harnais de test du laboratoire**.
-
-Autorité cible :
-```text
-gameplay acteur / Capture
-  -> compétences / créature possédée / monture / effet
-  -> locomotion autorisée
-  -> Surface Traversal Resolver
-```
-
-Exemple validé :
-une créature possédée disposant du vol peut fournir une capacité de monture volante ; le héros peut alors recevoir temporairement le profil `fly`.
-Le resolver de traversée consomme ce profil mais ne l'accorde jamais lui-même.
-
-Le lot **Surface Traversal Rules v1 — replay** est fermé GREEN après checkpoint documentaire.
+## Suite prévue
+Après GREEN de ce micro-lot :
+**Phase 5 micro-lot 2 — spawn planner / activation déterministe**, puis seulement errance/territoires.
