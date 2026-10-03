@@ -119,3 +119,16 @@ test('Encounter editor uses lists instead of typed ids or tags', async () => {
     false
   );
 });
+
+
+test('Encounter paint starts immediately from the map pointer path', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(main, /paintKind === 'encounter'/);
+  assert.match(main, /beginEncounterLayer\(world\)/);
+  assert.match(main, /createEncounterPaintPreset/);
+  assert.match(main, /updateEncounterPaintPreset/);
+});
