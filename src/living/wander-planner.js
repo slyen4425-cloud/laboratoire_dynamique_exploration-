@@ -176,13 +176,19 @@ export function advanceWildCreatureTowardTarget(
     definition.exploration.maxSpeed > 0
       ? definition.exploration.maxSpeed
       : 70;
+  const safeDt =
+    Number.isFinite(dt) && dt > 0 ? dt : 0;
+  const boundedSpeed =
+    safeDt > 0
+      ? Math.min(maxSpeed, distance / safeDt)
+      : maxSpeed;
 
   stepMovement(
     area,
     probe,
     { x: dx, y: dy },
-    Number.isFinite(dt) && dt > 0 ? dt : 0,
-    { maxSpeed },
+    safeDt,
+    { maxSpeed: boundedSpeed },
     traversalRegistry
   );
 
