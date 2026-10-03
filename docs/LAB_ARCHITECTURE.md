@@ -111,6 +111,18 @@ Cible future :
 - targetSpawnId ;
 - même contrat pour portes, escaliers, grottes et sorties.
 
+### surface-traversal
+Autorité pure sur la traversée des surfaces :
+- lit la géométrie du World Surface Model ;
+- lit `traversalRuleId` ;
+- résout la règle dans Traversal Rule Registry ;
+- lit le profil de locomotion de l'acteur ;
+- retourne passabilité, mode retenu et multiplicateur.
+
+Il ne lit jamais `materialId`.
+Il ne modifie jamais la position.
+Le mouvement final reste propriété de l'Exploration Engine et la collision statique reste propriété du Collision World.
+
 ### material-registry
 Autorité sur l'apparence sémantique :
 - matériaux de surface ;
