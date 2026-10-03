@@ -105,12 +105,24 @@ Le World Builder Dynamique et le World Generator utilisent le même format de ca
 
 ## Phase 5 — Monde vivant
 
-- créatures sauvages ;
+- créatures sauvages visibles ;
 - errance ;
 - territoires ;
-- poursuite/fuite ;
+- poursuite/fuite pour les acteurs visibles ;
 - spawns par biome/zone ;
 - comportement piloté par config.
+
+Règle produit :
+les créatures visibles sur la map servent surtout aux rencontres spéciales/scénarisées/rares/boss/quêtes.
+Les rencontres sauvages ordinaires utiliseront prioritairement des **Encounter Zones + tables pondérées**.
+
+Un lot dédié devra définir avant l'Encounter Bridge :
+- zone de rencontre gameplay ;
+- chance de rencontre ;
+- table pondérée ;
+- sélection par actorDefinitionId ou catégories/tags du catalogue Capture ;
+- modificateur de route/feature, notamment route sûre ;
+- aucune dépendance à materialId ou aux textures.
 
 ## Phase 6 — World Objects, interactions et Areas
 
@@ -133,6 +145,8 @@ Critère :
 - bâtiments/intérieurs utilisent un seul contrat WorldArea/Portal.
 
 ## Phase 7 — Encounter Bridge
+
+Prérequis : **Random Encounter Zone / Table Contract v1**.
 
 - Encounter Controller ;
 - `CaptureEncounterSnapshot v1` ;
