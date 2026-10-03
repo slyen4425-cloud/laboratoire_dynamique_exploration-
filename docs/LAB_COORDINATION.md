@@ -10,7 +10,12 @@ Règle :
 ## État actif — 2026-10-02
 
 Chantier :
-**Map Actor Editor v1** — édition visuelle héros / PNJ / créatures avec aperçu map.
+**Map Actor Editor v1 — calibration technique** — validation du contrat visuel héros / PNJ / créatures avec aperçu map.
+
+Décision produit 2026-10-03 :
+ce panneau complet n'est pas l'éditeur produit final.
+Les réglages visuels intrinsèques appartiendront à l'éditeur Héros/PNJ/Créatures.
+Le World Builder final sélectionnera une définition d'acteur dans un catalogue et éditera uniquement son placement/référence dans le WorldDocument.
 
 Branche :
 `work/exploration-map-actor-editor-v1-2026-10-02`
@@ -56,5 +61,11 @@ Il ne devient pas une autorité runtime.
 
 ## Intégration future
 
-À l'intégration GenSrpG, le visuel du héros proviendra du contexte Capture et les assets du resolver central.
-Le laboratoire ne doit donc pas transformer son éditeur visuel en propriétaire des stats, de la session Capture ou du monde vivant.
+À l'intégration GenSrpG :
+- le profil visuel sera configuré dans l'éditeur Héros/PNJ/Créatures ;
+- le visuel du héros proviendra du contexte Capture ;
+- le catalogue d'acteurs fournira les définitions sélectionnables au World Builder ;
+- les assets passeront par le resolver central ;
+- le World Builder ne recopiera pas les réglages MapActorVisual dans les placements.
+
+Le laboratoire ne doit donc pas transformer son panneau de calibration visuelle en propriétaire des stats, de la session Capture, du catalogue ou du monde vivant.
