@@ -1,7 +1,7 @@
 import { normalizeWorldSurface } from './surface-model.js?rev=surface-traversal-replay-v1';
 import {
   normalizeEncounterLayers
-} from '../encounters/encounter-layer-model.js?rev=encounter-layers-v1';
+} from '../encounters/encounter-layer-model.js?rev=encounter-layers-v2';
 import {
   buildingDoorArrivalWorld,
   normalizeWorldObjects
