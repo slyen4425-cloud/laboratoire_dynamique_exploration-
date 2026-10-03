@@ -193,6 +193,14 @@ test('regression: Builder hands off only WorldDocument while runtime resolves pl
     runtimeMain,
     /currentPlacedMapActors/
   );
+  assert.doesNotMatch(
+    runtimeMain,
+    /builderTestSession\?\.actorVisual/
+  );
+  assert.doesNotMatch(
+    runtimeMain,
+    /builderTestSession\?\.actorAsset/
+  );
 });
 
 test('regression: returning from runtime restores actor placements from the WorldDocument session', async () => {
