@@ -35,6 +35,11 @@ import {
   saveWorldBuilderTestHandoff
 } from './world-builder-test-handoff.js?rev=surface-traversal-replay-v1';
 import {
+  builderPaintKindForMapTool,
+  builderPanelForMapTool,
+  normalizeBuilderMapTool
+} from './world-builder-map-tool.js?rev=encounter-layers-v2';
+import {
   clampBuilderZoom,
   computeBuilderView,
   canvasPointToWorld,
@@ -1790,17 +1795,7 @@ function activateTab(tabName) {
 }
 
 function setMapTool(tool) {
-  mapTool = [
-    'select',
-    'actor-preview',
-    'area-size',
-    'terrain',
-    'route',
-    'river',
-    'encounter'
-  ].includes(tool)
-    ? tool
-    : 'select';
+  mapTool = normalizeBuilderMapTool(tool);
   canvas.dataset.tool = mapTool;
 
   for (const button of document.querySelectorAll('[data-map-tool]')) {
@@ -1810,19 +1805,12 @@ function setMapTool(tool) {
     );
   }
 
-  if (
-    mapTool === 'terrain' ||
-    mapTool === 'route' ||
-    mapTool === 'river' ||
-    mapTool === 'encounter'
-  ) {
-    activateTab('terrain');
-  } else if (mapTool === 'encounter') {
-    activateTab('encounters');
-  } else if (mapTool === 'actor-preview') {
-    activateTab('actors');
-  } else if (mapTool === 'area-size') {
-    activateTab('area');
+  const panel = builderPanelForMapTool(mapTool);
+  if (panel) {
+    activateTab(panel);
+  }
+
+  if (mapTool === 'area-size') {
     fitRequested = true;
   }
 
@@ -2969,15 +2957,12 @@ canvas.addEventListener('pointerdown', (event) => {
   hoverWorldPoint = world;
   canvas.dataset.dragging = 'true';
 
-  if (
-    mapTool === 'terrain' ||
-    mapTool === 'route' ||
-    mapTool === 'river'
-  ) {
+  const paintKind = builderPaintKindForMapTool(mapTool);
+  if (paintKind) {
     pointerSession = {
       pointerId: event.pointerId,
       mode: 'pending-draw',
-      kind: mapTool,
+      kind: paintKind,
       startCanvas: point,
       startWorld: world
     };
@@ -3352,12 +3337,7 @@ canvas.addEventListener('pointermove', (event) => {
 canvas.addEventListener('pointerleave', () => {
   if (activePointers.size > 0) return;
   hoverWorldPoint = null;
-  if (
-    mapTool === 'terrain' ||
-    mapTool === 'route' ||
-    mapTool === 'river' ||
-    mapTool === 'encounter'
-  ) {
+  if (builderPaintKindForMapTool(mapTool)) {
     renderPreview();
   }
 });
