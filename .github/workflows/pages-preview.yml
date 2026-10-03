@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: phase7-loup-configured-presentation-fix-v1
+# preview-revision: actor-placement-catalog-loup-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout exploration work branch
+      - name: Checkout Exploration Actor Catalog preview
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-phase7-combat-handoff-v1-2026-10-03
+          ref: preview/exploration-actor-placement-catalog-v1-2026-10-03
 
       - name: Checkout Combat bridge preview
         uses: actions/checkout@v4
@@ -34,6 +34,13 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: preview/lab-exploration-preview-loup-configured-v1-2026-10-03
           path: combat-preview
+
+      - name: Checkout Capture global visual assets
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: global-assets
+          path: capture-assets
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
