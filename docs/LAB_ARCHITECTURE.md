@@ -168,7 +168,12 @@ Contrat v1 :
 - `checkDistance` ;
 - `priority` ;
 - table pondérée ;
-- entrées par `actorDefinitionId` opaque ou tags/pool.
+- entrées par sélecteur typé :
+  - `creature + creatureId` canonique Capture ;
+  - `element + elementId` lu depuis `CaptureDatabaseV1.creatures[].draft.elements`.
+
+Aucun tag libre n'est saisi par l'utilisateur.
+Exploration ne maintient aucun second catalogue de créatures.
 
 Le layer ne contient jamais :
 - stats ;
@@ -207,7 +212,7 @@ position Exploration
   -> Encounter Rule / chance
   -> modificateur gameplay de route/feature
   -> Encounter Table pondérée
-  -> Actor Catalog / actorDefinitionId
+  -> Capture Creature Catalog / creatureId
   -> Encounter Intent
   -> Encounter Bridge
 ```
