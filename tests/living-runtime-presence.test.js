@@ -122,8 +122,8 @@ test('actual Collision/Traversal rejects a ground creature spawned entirely insi
       {
         id: 'water-zone',
         areaId: 'forest-exterior',
-        x: 1190,
-        y: 820,
+        x: 1035,
+        y: 795,
         radius: 8
       }
     ],
@@ -152,8 +152,8 @@ test('actual Collision/Traversal allows a flying creature over the same water zo
       {
         id: 'water-zone',
         areaId: 'forest-exterior',
-        x: 1190,
-        y: 820,
+        x: 1035,
+        y: 795,
         radius: 8
       }
     ],
