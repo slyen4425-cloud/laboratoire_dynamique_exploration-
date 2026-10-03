@@ -55,7 +55,7 @@ import {
 } from '../assets/map-actor-visual-preparer.js';
 import {
   createCaptureActorPreviewProviderV1
-} from '../capture/capture-actor-preview-loader-v1.js';
+} from '../capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
 import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
