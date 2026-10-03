@@ -10,7 +10,12 @@ Règle :
 ## État actif — 2026-10-02
 
 Chantier :
-**Map Actor Editor v1 — calibration technique** — validation du contrat visuel héros / PNJ / créatures avec aperçu map.
+**Map Actor Editor v1 — calibration technique — GREEN**.
+
+Validation smartphone finale obtenue le 2026-10-03 :
+- import/handoff/retour Builder : OK ;
+- orientation native gauche/droite : OK ;
+- miroir automatique au déplacement : OK.
 
 Décision produit 2026-10-03 :
 ce panneau complet n'est pas l'éditeur produit final.
@@ -53,6 +58,18 @@ Interdictions du lot :
 - mobile prioritaire ;
 - chaque régression devient un test ;
 - tout jalon GREEN possède un checkpoint.
+
+## Prochaine étape coordonnée
+
+L'ancienne branche `work/exploration-surface-traversal-rules-v1-2026-10-02` reste une validation technique isolée et **ne doit pas être reprise telle quelle**.
+
+Suite obligatoire :
+1. checkpoint GREEN exact du lot Map Actor actuel ;
+2. nouveau checkpoint de départ Surface Traversal ;
+3. nouvelle branche Surface Traversal depuis ce GREEN ;
+4. report sélectif des changements utiles de l'ancienne branche ;
+5. relance de toutes les sentinelles Builder + Map Actor + Traversal ;
+6. publication seulement depuis cette nouvelle lignée.
 
 ## Preview
 
