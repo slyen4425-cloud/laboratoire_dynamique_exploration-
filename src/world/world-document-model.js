@@ -1,4 +1,8 @@
 import {
+  normalizeTerrainFamilyEncounterConfig
+} from '../encounters/terrain-family-encounter-config.js?rev=terrain-family-encounters-v1';
+
+import {
   findWorldArea,
   findWorldAreaSpawn,
   normalizeWorldAreas,
@@ -43,6 +47,10 @@ export function normalizeWorldDocument(raw = {}) {
   return Object.freeze({
     schemaVersion: WORLD_DOCUMENT_SCHEMA_VERSION,
     id: normalizedString(source.id) ?? 'world-document',
+    encounterConfig:
+      normalizeTerrainFamilyEncounterConfig(
+        source.encounterConfig
+      ),
     areas,
     portals: Object.freeze(validPortals),
     initialAreaId: initialArea?.id ?? null,
