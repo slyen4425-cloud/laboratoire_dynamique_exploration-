@@ -23,7 +23,7 @@ function text(value) {
     : null;
 }
 
-function normalizeElementWeights(raw = []) {
+function normalizeElementChances(raw = []) {
   if (!Array.isArray(raw)) return Object.freeze([]);
 
   const seen = new Set();
@@ -33,9 +33,9 @@ function normalizeElementWeights(raw = []) {
     if (!entry || typeof entry !== 'object') continue;
 
     const elementId = text(entry.elementId);
-    const chancePercent = positiveNumber(entry.chancePercent);
+    const chancePercent = finitePercent(entry.chancePercent, 0);
 
-    if (!elementId || !chancePercent || seen.has(elementId)) continue;
+    if (!elementId || chancePercent <= 0 || seen.has(elementId)) continue;
     seen.add(elementId);
     result.push(Object.freeze({ elementId, chancePercent }));
   }
@@ -72,7 +72,7 @@ export function normalizeTerrainFamilyEncounterConfig(raw = {}) {
         profile.encounterChancePercent,
         0
       ),
-      elementChances: normalizeElementWeights(
+      elementChances: normalizeElementChances(
         profile.elementChances
       )
     });
