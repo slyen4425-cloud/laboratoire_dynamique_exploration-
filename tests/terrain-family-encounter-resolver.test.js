@@ -175,5 +175,5 @@ test('zero-spawn creatures are never selected', () => {
   });
 
   assert.equal(result.triggered, false);
-  assert.equal(result.reason, 'no-creature');
+  assert.equal(result.reason, 'no-element');
 });
