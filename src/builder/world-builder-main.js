@@ -1,4 +1,4 @@
-import { demoWorldDocument } from '../world/demo-world.js?rev=surface-traversal-replay-v1';
+import { demoWorldDocument } from '../world/demo-world.js?rev=encounter-layers-v3';
 import {
   addEncounterLayer,
   addEncounterTableEntry,
