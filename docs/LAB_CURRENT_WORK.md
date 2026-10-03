@@ -166,3 +166,29 @@ TDD :
 
 Gate restante :
 publication Pages puis validation smartphone Marche/Nage/Vol.
+
+
+## Preview mobile — Surface Traversal replay — 2026-10-03
+
+Infrastructure uniquement :
+- PR #39 ;
+- main SHA : `ea5920e03cf32ceac268359a88b3821756cda58a` ;
+- Pages run : `37094636663` — **SUCCESS** ;
+- artifact : `11262639570`.
+
+Le workflow Pages checkout explicitement :
+`work/exploration-surface-traversal-rules-v1-replay-2026-10-03`.
+
+URL runtime :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/`
+
+Gate smartphone :
+1. **Marche** : constater le bonus de vitesse sur la route ;
+2. **Marche** : eau bloquante hors pont ;
+3. **Marche** : pont traversable ;
+4. **Nage** : eau traversable avec vitesse x0.75 ;
+5. **Vol** : eau traversable avec vitesse x1.00 ;
+6. vérifier que le Map Actor garde son orientation gauche/droite correcte ;
+7. vérifier rapidement que le World Builder s'ouvre sans régression.
+
+Le lot reste non GREEN jusqu'à validation utilisateur.
