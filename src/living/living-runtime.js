@@ -288,7 +288,7 @@ export function createWildWanderController(
           continue;
         }
 
-        const advanced = advanceWildCreatureTowardTarget(
+        let advanced = advanceWildCreatureTowardTarget(
           entity,
           definition,
           area,
@@ -297,8 +297,27 @@ export function createWildWanderController(
           traversalRegistry
         );
 
-        if (
+        const homeZone = config.spawnZones.find(
+          (zone) =>
+            zone.id === entity.homeZoneId &&
+            zone.areaId === entity.areaId
+        );
+        const insideTerritory =
           advanced &&
+          homeZone &&
+          Math.hypot(
+            advanced.x - homeZone.x,
+            advanced.y - homeZone.y
+          ) <= homeZone.radius + 1e-9;
+
+        if (!insideTerritory) {
+          advanced =
+            createWildCreatureEntity({
+              ...entity,
+              moving: false
+            }) ?? entity;
+          state.target = null;
+        } else if (
           advanced.x === entity.x &&
           advanced.y === entity.y &&
           advanced.moving === false
