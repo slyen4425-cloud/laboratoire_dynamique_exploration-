@@ -453,3 +453,39 @@ input:focus, select:focus, textarea:focus {
 #actor-preview-position {
   font-variant-numeric: tabular-nums;
 }
+
+
+.terrain-encounter-panel {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+#family-encounter-elements {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.family-element-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 44px;
+}
+
+.family-element-row input {
+  width: 100%;
+  min-height: 44px;
+}
+
+#family-encounter-total.invalid {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+  .family-element-row {
+    grid-template-columns: minmax(0, 1fr) 78px;
+  }
+}
