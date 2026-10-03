@@ -58,3 +58,35 @@ test('World Builder mobile CSS keeps controls touch-sized', async () => {
   assert.equal(css.includes('min-height: 44px'), true);
   assert.equal(css.includes('touch-action: none'), true);
 });
+
+
+test('World Builder exposes Encounter Layers as a dedicated gameplay layer editor', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+
+  for (const id of [
+    'map-tool-encounter',
+    'encounter-layer-select',
+    'encounter-layer-delete',
+    'encounter-label',
+    'encounter-width',
+    'encounter-chance',
+    'encounter-check-distance',
+    'encounter-priority',
+    'encounter-entry-select',
+    'encounter-entry-add',
+    'encounter-entry-delete',
+    'encounter-entry-actor',
+    'encounter-entry-tags',
+    'encounter-entry-weight',
+    'encounter-entry-share'
+  ]) {
+    assert.match(html, new RegExp(`id=["']${id}["']`));
+  }
+
+  assert.match(html, /data-tab="encounters"/);
+  assert.match(html, /data-panel="encounters"/);
+  assert.match(html, /Peindre rencontres/);
+});
