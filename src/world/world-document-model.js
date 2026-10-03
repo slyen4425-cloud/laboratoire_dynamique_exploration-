@@ -7,7 +7,7 @@ import {
   findWorldAreaSpawn,
   normalizeWorldAreas,
   resolveWorldAreaSpawnPoint
-} from './world-area-model.js?rev=surface-traversal-replay-v1';
+} from './world-area-model.js?rev=terrain-family-encounters-v1';
 import {
   normalizePortals,
   portalReferencesAreValid
