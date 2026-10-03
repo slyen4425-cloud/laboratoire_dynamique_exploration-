@@ -1,4 +1,9 @@
+import {
+  terrainFamilyRegistry
+} from './terrain-family-registry.js?rev=terrain-family-encounters-v1';
+
 const DEFAULT_BASE_MATERIAL = 'grass.forest';
+const DEFAULT_BASE_TERRAIN_FAMILY = 'forest';
 const DEFAULT_BASE_TRAVERSAL_RULE = 'terrain.ground';
 
 function finite(value) {
@@ -8,6 +13,17 @@ function finite(value) {
 function normalizedString(value, fallback) {
   return typeof value === 'string' && value.trim()
     ? value.trim()
+    : fallback;
+}
+
+function normalizedTerrainFamilyId(value, fallback) {
+  const id =
+    typeof value === 'string' && value.trim()
+      ? value.trim()
+      : null;
+
+  return id && terrainFamilyRegistry.get(id)
+    ? id
     : fallback;
 }
 
@@ -23,6 +39,7 @@ function normalizeStrokeItem(
   {
     defaultWidth,
     defaultMaterialId,
+    defaultTerrainFamilyId,
     defaultTraversalRuleId = null,
     includeTraversalRule = false
   }
@@ -41,6 +58,10 @@ function normalizeStrokeItem(
       finite(item.width) && item.width > 0
         ? item.width
         : defaultWidth,
+    terrainFamilyId: normalizedTerrainFamilyId(
+      item.terrainFamilyId,
+      defaultTerrainFamilyId
+    ),
     materialId: normalizedString(
       item.materialId,
       defaultMaterialId
@@ -60,6 +81,10 @@ function normalizeStrokeItem(
 
 export function normalizeWorldSurface(raw = {}) {
   const source = raw && typeof raw === 'object' ? raw : {};
+  const baseTerrainFamilyId = normalizedTerrainFamilyId(
+    source.baseTerrainFamilyId,
+    DEFAULT_BASE_TERRAIN_FAMILY
+  );
 
   const routes = Array.isArray(source.routes)
     ? source.routes
@@ -71,6 +96,7 @@ export function normalizeWorldSurface(raw = {}) {
             {
               defaultWidth: 64,
               defaultMaterialId: 'road.dirt',
+              defaultTerrainFamilyId: 'road',
               defaultTraversalRuleId: 'terrain.road',
               includeTraversalRule: true
             }
@@ -89,6 +115,7 @@ export function normalizeWorldSurface(raw = {}) {
             {
               defaultWidth: 72,
               defaultMaterialId: 'water.forest_stream',
+              defaultTerrainFamilyId: 'sea',
               defaultTraversalRuleId: 'terrain.water',
               includeTraversalRule: true
             }
@@ -106,7 +133,8 @@ export function normalizeWorldSurface(raw = {}) {
             index,
             {
               defaultWidth: 180,
-              defaultMaterialId: DEFAULT_BASE_MATERIAL
+              defaultMaterialId: DEFAULT_BASE_MATERIAL,
+              defaultTerrainFamilyId: baseTerrainFamilyId
             }
           )
         )
@@ -114,7 +142,8 @@ export function normalizeWorldSurface(raw = {}) {
     : [];
 
   return Object.freeze({
-    version: 2,
+    version: 3,
+    baseTerrainFamilyId,
     baseMaterialId: normalizedString(
       source.baseMaterialId,
       DEFAULT_BASE_MATERIAL
