@@ -36,6 +36,7 @@ export function normalizeMapActorVisual(raw = {}) {
       { min: 24, max: 240 }
     ),
     mirrorHorizontal: source.mirrorHorizontal !== false,
+    sourceFacingX: source.sourceFacingX === -1 ? -1 : 1,
     anchorOverride: Object.freeze({
       x: finiteNumber(
         source.anchorX ?? source.anchorOverride?.x,
