@@ -232,7 +232,38 @@ Exemples :
 
 Les transitions ne doivent jamais être codées en plaçant manuellement des carrés obligatoires dans le WorldDocument.
 
-### 8.7 Collision des surfaces canoniques
+### 8.7 Règles de traversée de surface
+
+Les effets gameplay du terrain sont séparés des matériaux visuels.
+
+Le World Surface Model peut déclarer un identifiant sémantique `traversalRuleId` distinct de `materialId`.
+
+Flux obligatoire :
+
+```text
+géométrie surface
+  -> traversalRuleId
+  -> Traversal Rule Registry
+  -> modes de locomotion de l'acteur
+  -> passabilité + multiplicateur de vitesse
+```
+
+Interdits :
+- déduire la vitesse depuis `materialId` ;
+- déduire la nage depuis une texture d'eau ;
+- coder les multiplicateurs directement dans le renderer ;
+- créer une logique différente pour héros, PNJ et monstres.
+
+Héros, PNJ et monstres utilisent le même resolver. Seules leurs données de locomotion diffèrent.
+
+Modes v1 :
+- `ground` ;
+- `swim` ;
+- `fly`.
+
+Un pont peut remplacer localement la règle de traversée d'une feature de surface explicitement référencée. Il ne désactive jamais globalement l'eau.
+
+### 8.8 Collision des surfaces canoniques
 
 Lorsqu'une surface canonique possède une sémantique gameplay bloquante, le Collision World lit directement sa géométrie canonique.
 
@@ -581,7 +612,7 @@ Il possède :
 - taille logique ;
 - visuel ;
 - corridor traversable ;
-- liste explicite des obstacles qu'il peut franchir.
+- liste explicite des features de surface qu'il peut franchir.
 
 La rivière continue d'exister sous le pont.
 Le pont n'annule jamais globalement un type d'obstacle.
@@ -591,7 +622,7 @@ Le corridor traversable suit le même transform normalisé, avec éventuellement
 
 **Sémantique v1 du corridor** : il décrit la zone valide pour le **centre de l'entité**.
 Le Collision World ne retranche pas une seconde fois le rayon de l'entité à ce corridor, afin d'éviter les accroches invisibles sur les bords du pont.
-Hors corridor, l'obstacle sous-jacent reste bloquant.
+Hors corridor, la feature de surface sous-jacente conserve sa règle de traversée.
 
 Pour éviter les accroches lors d'une entrée diagonale, un bridge peut déclarer un `edgeAssistRatio` normalisé.
 Cette marge ne rend pas l'eau traversable : elle sert uniquement au Collision World à faire **glisser** le centre de l'entité jusqu'au bord du corridor lorsque le mouvement visé est très proche du pont.
