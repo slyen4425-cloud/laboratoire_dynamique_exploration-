@@ -69,3 +69,34 @@ body {
   text-decoration: none;
   touch-action: manipulation;
 }
+
+
+.locomotion-controls {
+  position: fixed;
+  top: calc(max(10px, env(safe-area-inset-top)) + 52px);
+  right: 10px;
+  z-index: 6;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .45);
+}
+
+.locomotion-controls button {
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, .24);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  touch-action: manipulation;
+}
+
+.locomotion-controls button.active {
+  background: rgba(241, 211, 106, .9);
+  color: #211d12;
+  border-color: rgba(255, 255, 255, .5);
+}
