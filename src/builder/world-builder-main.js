@@ -38,11 +38,11 @@ import {
 import { createSurfaceRenderer } from '../render/surface-renderer.js';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
-import { createMapActorRenderer } from '../render/map-actor-renderer.js';
+import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
   MAP_ACTOR_ROLE_DEFAULTS,
   normalizeMapActorVisual
-} from '../actors/map-actor-visual-model.js';
+} from '../actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
 import {
   createMapActorAssetResolver,
   listMapActorAssets,
