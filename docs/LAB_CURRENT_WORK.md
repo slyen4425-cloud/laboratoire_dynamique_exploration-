@@ -176,3 +176,45 @@ CI :
 Gate restante :
 - revalidation visuelle rapide du Loup de face dans la preview publique.
 
+## Incident preview — vue opponent toujours affichée de dos — 2026-10-03
+
+Retour utilisateur après déploiement opponent/front :
+- la map affichait encore visuellement la vue de dos.
+
+Audit :
+- binaire `global-assets` inspecté :
+  - `loup_volcanique_opponent.webp` = vraie vue 3/4 face ;
+  - `loup_volcanique_player.webp` = vraie vue 3/4 dos ;
+- métadonnées globales cohérentes ;
+- règle provider corrigée cohérente : `front` avant `back` ;
+- Pages run précédent SUCCESS.
+
+Cause racine :
+- après la correction provider, les URLs publiques du graphe ES modules étaient restées identiques ;
+- `index.html` chargeait toujours `main.js?rev=actor-placement-catalog-v1` ;
+- `main.js` / Builder chargeaient le preview loader sans revision ;
+- le preview loader chargeait le provider sans revision ;
+- un navigateur pouvait donc continuer à réutiliser l'ancien module provider depuis son cache malgré le nouveau déploiement.
+
+Correction :
+- version publique unique `actor-opponent-view-v1` appliquée à :
+  - `index.html -> main.js` ;
+  - `builder.html -> world-builder-main.js` ;
+  - runtime -> `capture-actor-preview-loader-v1.js` ;
+  - Builder -> `capture-actor-preview-loader-v1.js` ;
+  - loader -> `capture-actor-definition-provider-v1.js`.
+- aucune stratégie de reload forcé ;
+- aucun service worker ;
+- aucun cache gameplay ;
+- uniquement une révision d'URL d'asset/module, conforme au pipeline existant.
+
+Sentinelle :
+- nouveau test `actor-placement-public-cache.test.js` exige la révision sur toute la chaîne.
+
+CI :
+- HEAD fonctionnel `13a24f25fef384eb315ca68899f2fa88f1760b3c` ;
+- run `37149293418` — **SUCCESS**.
+
+Gate restante :
+- republier Pages sur ce HEAD puis revalider visuellement le Loup opponent/front.
+
