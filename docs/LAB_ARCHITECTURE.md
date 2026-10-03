@@ -159,6 +159,29 @@ Il ne recalcule pas le gameplay et ne modifie pas le WorldDocument.
 Transforme clavier/tactile/manette en intent de mouvement.
 Ne déplace jamais directement l'entité.
 
+### encounter-layer-model
+Autorité sur les zones gameplay éditables de rencontre dans une WorldArea.
+
+Contrat v1 :
+- géométrie de type path/brush : `points[] + width` ;
+- `encounterChancePercent` ;
+- `checkDistance` ;
+- `priority` ;
+- table pondérée ;
+- entrées par `actorDefinitionId` opaque ou tags/pool.
+
+Le layer ne contient jamais :
+- stats ;
+- MapActorVisual ;
+- asset physique ;
+- règle de collision ;
+- materialId.
+
+Il est distinct de `WorldArea.surface.zones[]`.
+
+Le World Builder édite ce contrat directement dans le WorldDocument.
+Le runtime futur le consommera en lecture seule.
+
 ### encounter-controller
 Décide qu'une rencontre doit commencer à partir du monde Exploration.
 
