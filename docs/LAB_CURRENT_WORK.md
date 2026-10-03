@@ -256,3 +256,82 @@ CI du HEAD avant clôture :
 
 État : **GREEN utilisateur**.
 
+---
+
+# Lot actif — Player Party Ref v1 — 2026-10-03
+
+## Branche
+`work/exploration-player-party-ref-v1-2026-10-03`
+
+## Base GREEN
+`baec0fecede7b9117c3f58d801add3ea593d2796`
+
+## Checkpoint de départ
+`checkpoint/exploration-start-player-party-ref-v1-2026-10-03`
+
+## Objectif
+Exploration transporte uniquement la référence de party Capture.
+
+```text
+Capture session/bootstrap adapter
+  -> active partyRef
+  -> Encounter Intent
+  -> CaptureEncounterSnapshot.player.partyRef
+  -> Combat/Capture
+```
+
+## Règles
+- aucune créature joueur copiée dans Exploration ;
+- aucune stat/loadout/asset joueur dans le snapshot ;
+- le WorldDocument ne possède pas la party ;
+- Exploration transporte une référence opaque ;
+- Combat/Capture la résout.
+
+## Périmètre
+- retirer le literal `capture-party-preview` du bootstrap ;
+- isoler le partyRef actif derrière un adapter Capture de laboratoire ;
+- conserver `CaptureEncounterSnapshot v1` inchangé ;
+- tests de frontière.
+
+## Interdictions
+- aucun roster Combat dans Exploration ;
+- aucune édition de party ici ;
+- aucune persistence GenSrpG finale ;
+- aucune modification de Zombicide-40k.
+
+## Prévalidation technique — Player Party Ref v1
+
+Implémenté :
+- le bootstrap Exploration ne contient plus `capture-party-preview` ;
+- `activePartyRef` provient d'un adapter Capture de laboratoire ;
+- valeur preview : `capture-party-player-v1` ;
+- Encounter Intent transporte uniquement cette référence opaque ;
+- `CaptureEncounterSnapshot v1` reste inchangé ;
+- aucun `creatureId`, stat, loadout ou asset joueur n'est introduit dans Exploration ;
+- cache-bust runtime `player-party-ref-v1` ;
+- sentinelle Actor cache adaptée pour distinguer révision d'entrée et sous-graphe Actor.
+
+HEAD : `db197f34a5b1ae5399b76ec6f8b4fbcdbd497801`
+CI : `37152638356` — **SUCCESS**.
+
+État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
+
+## Publication preview coordonnée — 2026-10-03
+
+Preview fonctionnelle figée :
+- branche Exploration : `preview/exploration-player-party-ref-v1-2026-10-03` ;
+- SHA Exploration : `ed606a047d8238c524aba67cf736a275fd4ef2ec` ;
+- checkpoint : `checkpoint/exploration-player-party-ref-v1-prevalidation-green-2026-10-03`.
+
+Publication Pages :
+- PR infra : #61 ;
+- main infra : `81c6a2aee3e1d89bc1dc179ea58e29358332255d` ;
+- Pages run : `37152774027` — **SUCCESS**.
+
+Le workflow public utilise explicitement :
+- `preview/exploration-player-party-ref-v1-2026-10-03` ;
+- `preview/lab-exploration-player-party-v1-2026-10-03` ;
+- `global-assets`.
+
+Gate restant : validation utilisateur du vrai Player Party dans le combat Encounter.
+
