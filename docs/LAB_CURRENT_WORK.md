@@ -180,3 +180,47 @@ Gate smartphone :
 6. joueur, route, eau, pont, Portal, Builder sans régression.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## Validation utilisateur finale — Errance / Territoire v1 — 2026-10-03
+
+Validation smartphone utilisateur : **GREEN**.
+
+Confirmé :
+- créature terrestre en errance ;
+- créature aquatique visible et mobile dans la rivière ;
+- créature volante mobile au-dessus de l'eau ;
+- aucune sortie de territoire observée ;
+- orientations/mouvements visuels cohérents ;
+- joueur / route / eau / pont / Portal / Builder sans régression signalée.
+
+Le micro-lot **Errance / Territoire v1** est fermé GREEN.
+
+## Décision produit — rencontres ordinaires vs créatures visibles
+
+Les rencontres sauvages ordinaires utiliseront prioritairement un système de **zones de rencontre + tables pondérées**.
+
+Exemple produit :
+- forêt : 80 % pool Terre/Herbe, 20 % pool Neutre ;
+- route sûre : multiplicateur de rencontre réduit ou nul ;
+- autres biomes/zones : tables configurables équivalentes.
+
+Les créatures visibles sur la map restent utiles pour :
+- rencontres scénarisées ;
+- combats spéciaux ;
+- boss ;
+- quêtes ;
+- rencontres rares ;
+- acteurs explicitement placés.
+
+Règles d'architecture :
+- aucune chance de rencontre déduite de `materialId` ;
+- aucune chance de rencontre déduite d'une texture ;
+- Encounter Controller futur possède le déclenchement ;
+- Actor Definition / catalogue Capture fournit les créatures éligibles ;
+- World/Encounter config fournit zones, tables et modificateurs ;
+- le système visible Living World reste distinct et optionnel.
+
+Conséquence sur la suite :
+le futur lot perception/poursuite/fuite ne concerne que les **créatures visibles**.
+Les rencontres aléatoires ordinaires seront traitées par un contrat dédié avant le raccord Encounter Bridge.
