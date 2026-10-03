@@ -45,19 +45,22 @@ test('surface model preserves structured terrain zones, routes and rivers', () =
 
   const surface = normalizeWorldSurface(source);
 
-  assert.equal(surface.version, 1);
+  assert.equal(surface.version, 2);
   assert.equal(surface.baseMaterialId, 'grass.forest');
+  assert.equal(surface.baseTraversalRuleId, 'terrain.ground');
   assert.equal(surface.zones.length, 1);
   assert.equal(surface.zones[0].width, 180);
   assert.equal(surface.zones[0].materialId, 'ground.dirt');
   assert.equal(surface.routes.length, 1);
   assert.equal(surface.routes[0].width, 84);
+  assert.equal(surface.routes[0].traversalRuleId, 'terrain.road');
   assert.deepEqual(
     surface.routes[0].points.map(({ x, y }) => [x, y]),
     [[0, 620], [500, 590], [900, 650]]
   );
   assert.equal(surface.rivers.length, 1);
   assert.equal(surface.rivers[0].width, 72);
+  assert.equal(surface.rivers[0].traversalRuleId, 'terrain.water');
 });
 
 test('surface model filters invalid paths without mutating the source', () => {
@@ -110,4 +113,5 @@ test('surface model applies explicit defaults', () => {
   assert.deepEqual(surface.zones, []);
   assert.equal(surface.routes[0].width, 64);
   assert.equal(surface.routes[0].materialId, 'road.dirt');
+  assert.equal(surface.routes[0].traversalRuleId, 'terrain.road');
 });
