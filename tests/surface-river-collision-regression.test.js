@@ -7,40 +7,49 @@ import {
 import {
   normalizeWorldObjects
 } from '../src/world/world-object-model.js';
+import {
+  normalizeWorldSurface
+} from '../src/world/surface-model.js';
 import { stepMovement } from '../src/core/movement.js';
 
 function canonicalRiverWorld({
-  objects = []
+  objects = [],
+  width = 80
 } = {}) {
   return {
     width: 600,
     height: 600,
-    surface: {
+    surface: normalizeWorldSurface({
+      baseTraversalRuleId: 'terrain.ground',
       rivers: [
         {
           id: 'river-canonical',
-          width: 80,
+          width,
           materialId: 'water.forest_stream',
+          traversalRuleId: 'terrain.water',
           points: [
             { x: 100, y: 250 },
             { x: 500, y: 250 }
           ]
         }
       ]
-    },
+    }),
     objects,
     obstacles: []
   };
 }
 
-test('regression: canonical WorldSurface river blocks movement without duplicate obstacle geometry', () => {
+test('regression: canonical WorldSurface river blocks ground movement without duplicate obstacle geometry', () => {
   const world = canonicalRiverWorld();
-  const entity = { radius: 18 };
+  const entity = {
+    radius: 18,
+    locomotion: { modes: ['ground'] }
+  };
 
   assert.equal(
     isBlocked(world, entity, 300, 250),
     true,
-    'river geometry itself must be blocking'
+    'river geometry itself must be blocking through traversal'
   );
 
   assert.equal(
@@ -50,7 +59,7 @@ test('regression: canonical WorldSurface river blocks movement without duplicate
   );
 });
 
-test('regression: Bridge traversal overrides the canonical river id without a duplicate river obstacle', () => {
+test('regression: Bridge traversal overrides the canonical river id without duplicate river geometry', () => {
   const bridge = normalizeWorldObjects([
     {
       id: 'bridge-canonical-river',
@@ -71,7 +80,8 @@ test('regression: Bridge traversal overrides the canonical river id without a du
         lengthRatio: 1,
         widthRatio: 0.9,
         edgeAssistRatio: 0.15,
-        overridesObstacleIds: ['river-canonical']
+        traversalRuleId: 'terrain.bridge',
+        overridesSurfaceFeatureIds: ['river-canonical']
       }
     }
   ])[0];
@@ -82,7 +92,8 @@ test('regression: Bridge traversal overrides the canonical river id without a du
   const entity = {
     x: 300,
     y: 170,
-    radius: 18
+    radius: 18,
+    locomotion: { modes: ['ground'] }
   };
 
   for (let step = 0; step < 18; step += 1) {
@@ -105,23 +116,28 @@ test('regression: a Builder-style wide river remains blocking across its configu
   const world = {
     width: 2400,
     height: 1600,
-    surface: {
+    surface: normalizeWorldSurface({
+      baseTraversalRuleId: 'terrain.ground',
       rivers: [
         {
           id: 'builder-wide-water',
           width: 600,
           materialId: 'water.forest_stream',
+          traversalRuleId: 'terrain.water',
           points: [
             { x: 300, y: 800 },
             { x: 2100, y: 800 }
           ]
         }
       ]
-    },
+    }),
     objects: [],
     obstacles: []
   };
-  const entity = { radius: 18 };
+  const entity = {
+    radius: 18,
+    locomotion: { modes: ['ground'] }
+  };
 
   assert.equal(isBlocked(world, entity, 1200, 800), true);
   assert.equal(isBlocked(world, entity, 1200, 480), false);
