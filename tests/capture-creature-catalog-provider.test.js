@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import {
   createCaptureCreatureCatalogProvider
 } from '../src/capture/capture-creature-catalog-provider.js';
+import {
+  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+} from '../src/capture/capture-creature-catalog-preview-v1.js';
 
 function captureDatabase() {
   return {
@@ -117,4 +120,23 @@ test('provider accepts the preview projection shape but never mutates it', () =>
   assert.deepEqual(provider.findByElement('fire').map((entry) => entry.id), [
     'crea_braiseau'
   ]);
+});
+
+
+test('pinned preview projection exposes the canonical Capture catalog for Builder lists', () => {
+  const provider = createCaptureCreatureCatalogProvider(
+    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
+
+  assert.equal(provider.listCreatures().length, 102);
+  assert.equal(provider.listElements().length, 13);
+
+  const fireIds = provider
+    .findByElement('fire')
+    .map((entry) => entry.id);
+
+  assert.ok(fireIds.includes('crea_braiseau'));
+  assert.ok(
+    provider.resolveCreature('crea_aquafin')?.elements.includes('water')
+  );
 });
