@@ -65,6 +65,9 @@ export function validateWorldBuilderDraft(draft) {
     const rawObjects = Array.isArray(rawArea.objects)
       ? rawArea.objects
       : [];
+    const rawActors = Array.isArray(rawArea.actors)
+      ? rawArea.actors
+      : [];
     const rawSpawns = Array.isArray(rawArea.spawns)
       ? rawArea.spawns
       : [];
@@ -80,6 +83,10 @@ export function validateWorldBuilderDraft(draft) {
 
     if (normalizedArea.objects.length !== rawObjects.length) {
       errors.push(`object-invalid:${rawArea.id}`);
+    }
+
+    if (normalizedArea.actors.length !== rawActors.length) {
+      errors.push(`actor-invalid-or-duplicate:${rawArea.id}`);
     }
 
     if (normalizedArea.spawns.length !== rawSpawns.length) {
@@ -451,6 +458,121 @@ export function updateTerrainFamilyElementChance(
 
   return next;
 }
+
+export function addActorPlacement(
+  draft,
+  areaId,
+  {
+    id = null,
+    actorDefinitionId,
+    x = null,
+    y = null,
+    facingX = 1
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+
+  if (
+    !area ||
+    typeof actorDefinitionId !== 'string' ||
+    !actorDefinitionId.trim()
+  ) {
+    return next;
+  }
+
+  area.actors ??= [];
+  const actorId =
+    typeof id === 'string' && id.trim()
+      ? id.trim()
+      : uniqueId('actor', area.actors);
+
+  if (
+    area.actors.some(
+      (actor) => actor.id === actorId
+    )
+  ) {
+    return next;
+  }
+
+  area.actors.push({
+    id: actorId,
+    actorDefinitionId:
+      actorDefinitionId.trim(),
+    x: finite(x, area.width / 2),
+    y: finite(y, area.height / 2),
+    facingX:
+      Number(facingX) < 0 ? -1 : 1
+  });
+
+  return next;
+}
+
+export function updateActorPlacement(
+  draft,
+  areaId,
+  actorId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const actor = area?.actors?.find(
+    (item) => item.id === actorId
+  );
+
+  if (!actor) {
+    return next;
+  }
+
+  if (
+    typeof patch.actorDefinitionId ===
+      'string' &&
+    patch.actorDefinitionId.trim()
+  ) {
+    actor.actorDefinitionId =
+      patch.actorDefinitionId.trim();
+  }
+
+  if (patch.x !== undefined) {
+    actor.x = finite(patch.x, actor.x);
+  }
+
+  if (patch.y !== undefined) {
+    actor.y = finite(patch.y, actor.y);
+  }
+
+  if (patch.facingX !== undefined) {
+    actor.facingX =
+      Number(patch.facingX) < 0
+        ? -1
+        : 1;
+  }
+
+  return next;
+}
+
+export function deleteActorPlacement(
+  draft,
+  areaId,
+  actorId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+
+  if (
+    !area ||
+    !Array.isArray(area.actors)
+  ) {
+    return next;
+  }
+
+  area.actors = area.actors.filter(
+    (actor) => actor.id !== actorId
+  );
+
+  return next;
+}
+
 
 export function updateSpawn(
   draft,
