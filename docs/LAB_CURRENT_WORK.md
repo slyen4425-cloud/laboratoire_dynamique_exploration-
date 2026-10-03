@@ -38,7 +38,7 @@ Exemple :
 - chance/table/priorité : Encounter Layer Model ;
 - édition : World Builder Draft/UI ;
 - déclenchement runtime futur : Encounter Controller ;
-- sélection Actor Definition future : Encounter Table Resolver + catalogue Capture ;
+- sélection créature : Encounter Table Resolver futur + catalogue Capture / CaptureDatabaseV1 ;
 - surface/materials : aucune autorité sur les rencontres.
 
 ## Règle absolue
@@ -54,7 +54,7 @@ Interdit :
 - distance de contrôle explicite ;
 - priorité de layer ;
 - table d'entrées pondérées ;
-- entrée par tags/pool ou actorDefinitionId ;
+- entrée par sélecteur typé `creature` ou `element` ;
 - normalisation et validation ;
 - stockage canonique dans WorldArea ;
 - édition Builder ;
@@ -67,7 +67,7 @@ Interdit :
 - cooldown anti-spam ;
 - Encounter Bridge ;
 - Capture Combat ;
-- catalogue Capture réel ;
+- injection runtime de la CaptureDatabaseV1 active ;
 - autre dépôt.
 
 ## Tests
@@ -102,7 +102,7 @@ Implémenté :
 - distance de contrôle explicite ;
 - priorité de layer ;
 - table pondérée ;
-- entrées par `actorDefinitionId` opaque ou tags/pool ;
+- entrées par `selectorKind + selectorId` : créature Capture ou élément ;
 - aucun `materialId` dans EncounterLayer ;
 - aucune copie stats/MapActorVisual/assets ;
 - safe layer 0 % valide sans table ;
@@ -141,3 +141,48 @@ Gate smartphone :
 8. exporter puis réimporter le WorldDocument et vérifier l'absence de perte.
 
 Le lot reste non GREEN jusqu'à validation utilisateur.
+
+
+## Correction utilisateur — Encounter Layers simplifiés + raccord Capture — 2026-10-03
+
+Retour smartphone :
+- l'outil « Peindre rencontres » ne peignait pas ;
+- l'UI demandait des IDs/tags à taper manuellement ;
+- aucun catalogue réel n'était visible ;
+- la cible produit doit réutiliser les créatures créées dans Capture.
+
+Cause racine peinture :
+- `encounter` était routé vers le panneau Terrain dans `setMapTool` ;
+- surtout, `pointerdown` n'incluait pas `encounter` dans le chemin de dessin ;
+- `pointermove` savait déjà traiter encounter, mais le mode de dessin n'était donc jamais initialisé.
+
+Correction :
+- routage des outils centralisé dans `world-builder-map-tool.js` ;
+- `encounter` ouvre désormais uniquement le panneau Rencontres ;
+- le même helper détermine le chemin de peinture pour pointerdown/move/leave ;
+- aucune rustine DOM ni observer.
+
+Raccord Capture :
+- contrat source confirmé dans le labo Combat : `CaptureDatabaseV1` ;
+- créature : `draft.id`, `draft.displayName`, `draft.elements`, `draft.presentation` ;
+- provider Exploration **lecture seule** capable de consommer directement CaptureDatabaseV1 ;
+- preview locale alimentée par une projection traçable du checkpoint Combat
+  `checkpoint/lab-creature-natural-elements-reconcile-v1-prevalidation-green-2026-09-30`
+  SHA `54f38051f4aab7593f233a30f26d9f608e00ad08` ;
+- projection : 102 créatures canoniques, 13 éléments ;
+- cette projection n'est pas une autorité d'édition et sera remplacée à l'intégration par la CaptureDatabaseV1 active.
+
+UI simplifiée :
+- aucun champ texte pour creatureId/tags ;
+- choix `Élément / type` ou `Créature précise` ;
+- deuxième liste alimentée automatiquement par le catalogue Capture ;
+- choisir « Feu » rend éligibles toutes les créatures dont `draft.elements` contient `fire` ;
+- poids éditable par curseur ;
+- chance de combat et taille du layer par curseurs ;
+- options techniques reléguées dans « Options avancées ».
+
+Lien visuel :
+- `Capture -> Map Actor Adapter` lit `draft.presentation.visual.front.assetId` lorsqu'un acteur visible est nécessaire ;
+- EncounterLayer ne copie jamais presentation/stats/elements.
+
+Le lot reste non GREEN jusqu'à nouvelle validation smartphone de la peinture et de l'UI simplifiée.
