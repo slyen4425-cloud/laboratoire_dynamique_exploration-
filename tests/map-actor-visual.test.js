@@ -211,3 +211,77 @@ test('Map Actor Renderer mirrors and animates visually without mutating gameplay
     before
   );
 });
+
+
+test('source-facing orientation controls automatic movement mirroring', () => {
+  const scales = [];
+  const ctx = {
+    globalAlpha: 1,
+    fillStyle: '',
+    save() {},
+    restore() {},
+    beginPath() {},
+    ellipse() {},
+    fill() {},
+    translate() {},
+    scale(x, y) { scales.push([x, y]); },
+    drawImage() {}
+  };
+
+  const prepared = {
+    get() {
+      return {
+        source: { id: 'prepared-source' },
+        width: 60,
+        height: 100,
+        aspectRatio: 0.6,
+        anchor: { x: 0.5, y: 0.96 }
+      };
+    }
+  };
+  const renderer = createMapActorRenderer({
+    preparedVisuals: prepared
+  });
+
+  const leftFacingSource = normalizeMapActorVisual({
+    assetId: 'actor.demo.hero.traveler.01',
+    sourceFacingX: -1
+  });
+
+  renderer.draw(ctx, {
+    camera: { x: 0, y: 0 },
+    actors: [{
+      x: 0,
+      y: 0,
+      facingX: 1,
+      moving: true,
+      mapVisual: leftFacingSource
+    }],
+    timeSeconds: 0
+  });
+
+  assert.equal(leftFacingSource.sourceFacingX, -1);
+  assert.ok(
+    scales.some(([x, y]) => x === -1 && y === 1),
+    'a source that natively looks left must mirror when moving right'
+  );
+
+  scales.length = 0;
+
+  renderer.draw(ctx, {
+    camera: { x: 0, y: 0 },
+    actors: [{
+      x: 0,
+      y: 0,
+      facingX: -1,
+      moving: true,
+      mapVisual: leftFacingSource
+    }],
+    timeSeconds: 0
+  });
+
+  assert.ok(
+    scales.some(([x, y]) => x === 1 && y === 1),
+    'a source that natively looks left must stay unmirrored when moving left'
+  );
+});
