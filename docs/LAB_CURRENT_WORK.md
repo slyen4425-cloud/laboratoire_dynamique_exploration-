@@ -186,3 +186,15 @@ Nouvelle gate smartphone :
 9. résultat appliqué une seule fois.
 
 Le lot reste NON GREEN jusqu'à cette validation.
+
+## Validation utilisateur finale — Combat Handoff — 2026-10-03
+
+Retour utilisateur explicite :
+- le test réel Exploration -> Encounter -> Combat a déjà été effectué ;
+- le comportement est validé ;
+- énergie / combat / retour Exploration sont considérés OK sur le chemin réel.
+
+La gate smartphone/utilisateur du lot est donc levée.
+
+État :
+**GREEN utilisateur — le lot Combat Handoff v1 peut être clôturé et servir de base au lot suivant.**
