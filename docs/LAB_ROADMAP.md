@@ -213,3 +213,23 @@ Décision produit figée :
 - le placement référence la définition d'acteur sans recopier ses réglages visuels.
 
 Le panneau Map Actor complet actuellement utilisé dans le laboratoire reste un banc de calibration technique jusqu'à l'arrivée de l'éditeur Héros/Créatures et du catalogue.
+
+## Lot de convergence requis avant Phase 5 — Surface Traversal Rules v1
+
+L'implémentation technique initiale Surface Traversal a été réalisée sur une lignée antérieure puis volontairement isolée.
+
+Le lot courant la rejoue depuis le checkpoint GREEN Builder + Map Actor afin de préserver :
+- World Builder Dynamique ;
+- Map Actor Visual ;
+- rivière canonique ;
+- Portal/Building/Spawn ancré.
+
+Contrat :
+`surface geometry -> traversalRuleId -> Traversal Rule Registry -> actor locomotion -> resolver -> mouvement/collision`.
+
+Modes v1 :
+- ground ;
+- swim ;
+- fly.
+
+Après validation GREEN de ce replay, la suite normale reprend avec **Phase 5 — Monde vivant**.
