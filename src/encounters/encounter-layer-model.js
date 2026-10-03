@@ -15,22 +15,6 @@ function finiteNumber(
   return Math.max(min, Math.min(max, Number(value)));
 }
 
-function normalizeTags(rawTags) {
-  if (!Array.isArray(rawTags)) return Object.freeze([]);
-
-  const seen = new Set();
-  const tags = [];
-
-  for (const raw of rawTags) {
-    const tag = normalizedString(raw);
-    if (!tag || seen.has(tag)) continue;
-    seen.add(tag);
-    tags.push(tag);
-  }
-
-  return Object.freeze(tags);
-}
-
 function normalizePoint(raw) {
   if (!raw || typeof raw !== 'object') return null;
   if (!Number.isFinite(Number(raw.x)) || !Number.isFinite(Number(raw.y))) {
@@ -49,18 +33,21 @@ function normalizeEncounterTableEntry(raw, index) {
   const id =
     normalizedString(raw.id) ??
     `entry-${index + 1}`;
-  const actorDefinitionId =
-    normalizedString(raw.actorDefinitionId);
-  const tags = normalizeTags(raw.tags);
+  const selectorKind =
+    raw.selectorKind === 'creature' ||
+    raw.selectorKind === 'element'
+      ? raw.selectorKind
+      : null;
+  const selectorId = normalizedString(raw.selectorId);
 
-  if (!actorDefinitionId && tags.length === 0) {
+  if (!selectorKind || !selectorId) {
     return null;
   }
 
   return Object.freeze({
     id,
-    actorDefinitionId,
-    tags,
+    selectorKind,
+    selectorId,
     weight: finiteNumber(
       raw.weight,
       1,
