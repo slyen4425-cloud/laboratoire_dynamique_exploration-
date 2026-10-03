@@ -40,6 +40,11 @@ import {
   normalizeBuilderMapTool
 } from './world-builder-map-tool.js?rev=encounter-layers-v2';
 import {
+  createEncounterPaintPreset,
+  encounterEditorAvailability,
+  updateEncounterPaintPreset
+} from './encounter-layer-editor-state.js?rev=encounter-layers-v3';
+import {
   encounterEditorAvailability
 } from './encounter-editor-state.js?rev=encounter-layers-v3';
 import {
@@ -127,6 +132,12 @@ const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
     CAPTURE_CREATURE_CATALOG_PREVIEW_V1
   );
+
+let encounterPaintPreset =
+  createEncounterPaintPreset({
+    defaultElementId:
+      captureCreatureCatalog.listElements()[0]?.id ?? 'fire'
+  });
 
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
