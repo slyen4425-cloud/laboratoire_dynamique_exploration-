@@ -2,6 +2,30 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Modular Authoring Architecture v1 — documentation**
+>
+> Branche : `work/exploration-modular-authoring-architecture-v1-2026-10-04`
+>
+> Base GREEN : `480d6858f53170ed5ff6f1b82db13eb074ca791a`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-modular-authoring-architecture-v1-2026-10-04`
+>
+> Périmètre : architecture documentaire uniquement ; séparer éditeurs de définitions, Level/World Builder, règles générales Capture et futurs éditeurs globaux.
+>
+> Décisions utilisateur validées :
+> - XP / loot / capture = paramètres généraux Capture, hors Builder ;
+> - création d'objets de monde = éditeur séparé du placement Builder ;
+> - architecture ouverte à de futurs World Editor / Campaign Editor / autres surfaces ;
+> - composition par références versionnées, jamais copie d'autorité.
+>
+> Document : `docs/LAB_MODULAR_AUTHORING_ARCHITECTURE_V1.md`
+>
+> Aucun changement gameplay/runtime. Aucun changement de `Zombicide-40k`.
+
+---
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Capture Rewards / XP / Progression — audit de récupération v1**
 >
 > Branche : `work/exploration-capture-rewards-progression-audit-v1-2026-10-04`
