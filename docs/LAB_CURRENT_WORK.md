@@ -121,7 +121,43 @@
 > - ajouter une boîte de dialogue runtime et un intent `Interagir` explicite ;
 > - garder l'état `once` en mémoire runtime seulement dans ce lot, sans persistance save.
 >
-> État : **GATE UTILISATEUR REFUSÉ — révision UX/fonctionnelle en cours, aucun GREEN final**.
+> Révision UX/fonctionnelle réalisée :
+> - action locale v1 : `message` avec texte éditable directement dans le WorldEvent ;
+> - `eventDefinitionId` retiré de l'interface créateur ;
+> - Builder simplifié : `Quand ? / Où ? / Que faire ? / Message / Fréquence` ;
+> - action visible : `Afficher un message` ;
+> - déclenchement `on-enter` réel via Event Controller unique ;
+> - déclenchement `on-interact` réel via bouton `Interagir` affiché seulement à portée ;
+> - boîte de dialogue runtime avec bouton `Continuer` ;
+> - déplacement/rencontres suspendus pendant le dialogue ;
+> - `once` consommé en mémoire runtime uniquement ; aucune persistance ajoutée au WorldDocument ;
+> - `repeatable` on-enter se réarme uniquement après sortie puis nouvelle entrée dans la zone ;
+> - géométrie toujours fournie exclusivement par World Trigger Geometry GREEN.
+>
+> TDD révision :
+> - RED : `676ce5531ec7fab7def9567bfd305868acb7a82b` ;
+> - CI RED : `37206668034` — FAILURE attendue ;
+> - HEAD fonctionnel révisé : `2d847ddec8f89aede3b7728d4b9d4fd935fc694a` ;
+> - CI complète : `37206951303` — **SUCCESS**.
+>
+> Nouvelle prévalidation :
+> - checkpoint : `checkpoint/exploration-world-event-message-v1-prevalidation-green-2026-10-04` ;
+> - preview : `preview/exploration-world-event-message-v1-2026-10-04` @ `2d847ddec8f89aede3b7728d4b9d4fd935fc694a` ;
+> - PR infra Pages #71 — MERGED ;
+> - main infra : `5246c88d9dc7700d25aefd2098874e1d6f07c36e` ;
+> - Pages run : `37207029640` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=world-event-message-v1`.
+>
+> Gate utilisateur simplifié :
+> 1. Builder > Événements > `+ Événement` ;
+> 2. laisser `Le joueur entre dans la zone` + `Afficher un message` ;
+> 3. écrire un texte dans `Message` ;
+> 4. lancer `Tester en jeu` ;
+> 5. marcher dans le cercle de l'événement ;
+> 6. vérifier que le message apparaît et bloque le déplacement jusqu'à `Continuer` ;
+> 7. optionnel : choisir `Le joueur interagit`, tester le bouton `Interagir`.
+>
+> État : **TECHNIQUE GREEN — nouvelle gate utilisateur requise avant GREEN final**.
 
 ---
 
