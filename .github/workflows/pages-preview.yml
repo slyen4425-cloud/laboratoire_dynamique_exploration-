@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: multicombat-partyref-combat-presentation-integrity-v1
+# preview-revision: multicombat-partyref-roster-target-availability-v1
 
 on:
   push:
@@ -28,11 +28,11 @@ jobs:
         with:
           ref: preview/exploration-multicombat-partyref-v1-2026-10-04
 
-      - name: Checkout Combat Exploration Bridge Presentation Integrity preview
+      - name: Checkout Combat Exploration Roster Target Availability preview
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-exploration-bridge-presentation-integrity-v1-2026-10-04
+          ref: preview/lab-exploration-roster-target-availability-v1-2026-10-04
           path: combat-preview
 
       - name: Checkout Capture global visual assets
