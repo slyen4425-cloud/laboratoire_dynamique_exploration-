@@ -127,6 +127,32 @@ Contrat courant :
 
 Les créatures visibles restent réservées aux rencontres spéciales/scénarisées/rares/boss/quêtes.
 
+### Extensibilité obligatoire des familles et éléments de rencontre
+
+Les 8 familles canoniques actuelles sont des **presets par défaut**, pas une enum fermée.
+
+Le système cible doit permettre au créateur de définir de nouvelles familles de terrain sans modifier le moteur :
+- id stable ;
+- nom ;
+- chance globale de rencontre ;
+- répartition par éléments ;
+- association via `terrainFamilyId` ;
+- sauvegarde/export/import.
+
+La liste des éléments proposée pour la répartition des rencontres doit être fournie dynamiquement par l'autorité Capture. Si Capture ajoute un nouvel élément, l'éditeur Exploration doit l'exposer automatiquement.
+
+Interdits :
+- liste locale figée des éléments Capture dans Exploration ;
+- liste fermée de familles imposée par le runtime ;
+- règle spéciale par nom de famille ;
+- duplication du catalogue Capture.
+
+Sentinelles futures :
+- ajout d'un élément Capture fictif -> visible automatiquement dans la config rencontre ;
+- création d'une famille utilisateur -> utilisable sans modification moteur ;
+- round-trip sauvegarde/export/import de la famille et de ses répartitions ;
+- anciens mondes restent lisibles lorsqu'un nouvel élément est ajouté.
+
 ## Phase 6 — World Objects, interactions et Areas
 
 - WorldObject transformable ;
