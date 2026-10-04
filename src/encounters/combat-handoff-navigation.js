@@ -27,6 +27,10 @@ export function launchCombatHandoffNavigation({
     './combat-preview/examples/dom-demo/exploration-encounter.html',
     currentUrl
   );
+  bridgeUrl.searchParams.set(
+    'rev',
+    'player-party-recall-runtime-fix-v1'
+  );
 
   saveCombatHandoff(
     storage,
