@@ -2,6 +2,57 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Object Catalog + Generic Placement v1**
+>
+> Branche : `work/exploration-object-catalog-placement-v1-2026-10-04`
+>
+> Base GREEN : `4ce31dfe5acb35ca492835383ed9c6bd2236c0d5`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-object-catalog-placement-v1-2026-10-04`
+>
+> Mission unique :
+> - créer une autorité `ObjectDefinition Catalog` pour les données intrinsèques des WorldObjects ;
+> - migrer `WorldArea.objects[]` vers des placements par référence : `objectDefinitionId + transform + overrides locaux` ;
+> - conserver ponts/maison existants via résolution du catalogue ;
+> - faire du Builder un outil de sélection/placement uniquement, sans recopier taille/visuel/footprint/anchors.
+>
+> Propriétaires :
+> - définition intrinsèque : Object Definition Catalog ;
+> - placement : WorldDocument / WorldArea ;
+> - rendu : WorldObject Renderer en lecture seule sur objet résolu ;
+> - collision/traversée : Collision World / Surface Traversal sur objet résolu ;
+> - Portal : références de placement + anchor fourni par définition.
+>
+> Hors périmètre :
+> - Trigger/Event runtime ;
+> - coffre interactif fonctionnel ;
+> - nouvel asset binaire ;
+> - éditeur complet de définitions ;
+> - XP/loot/Capture Rules ;
+> - Combat / Roster ;
+> - `Zombicide-40k`.
+>
+> Invariants :
+> - aucune donnée intrinsèque d'objet copiée dans le placement ;
+> - aucun fallback visuel ;
+> - aucun deuxième catalogue ;
+> - le Builder ne modifie pas la définition ;
+> - import/export conserve uniquement les références et overrides autorisés ;
+> - ponts et bâtiment existants restent fonctionnels.
+>
+> TDD :
+> - RED avant runtime ;
+> - sentinelle placement-only ;
+> - résolution catalogue -> objet runtime ;
+> - Portal/bridge/collision non-régression ;
+> - Builder ajoute par `objectDefinitionId`.
+>
+> État : **START — TDD RED à constater**.
+
+---
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Terrain Family Extensibility v1**
 >
 > Branche : `work/exploration-terrain-family-extensibility-v1-2026-10-04`
