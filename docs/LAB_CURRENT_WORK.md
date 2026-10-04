@@ -84,7 +84,12 @@
 > - Capture/Combat/XP/loot ;
 > - `Zombicide-40k`.
 >
-> État : **TECHNIQUE GREEN — gate utilisateur requise avant GREEN final**.
+> Validation utilisateur — 2026-10-04 :
+> - retour : « Ça a l'air de fonctionner » ;
+> - aucun défaut Portal signalé ;
+> - poursuite du plan autorisée.
+>
+> État : **GREEN utilisateur — clôture CI/checkpoint final en cours**.
 
 ---
 
