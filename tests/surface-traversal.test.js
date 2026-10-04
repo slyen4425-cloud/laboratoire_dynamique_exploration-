@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { normalizeWorldSurface } from '../src/world/surface-model.js';
-import { normalizeWorldObjects } from '../src/world/world-object-model.js';
+import { normalizeWorldObjectPlacements } from '../src/world/world-object-placement-model.js';
 import {
   createTraversalRuleRegistry,
   normalizeLocomotionProfile,
@@ -44,10 +44,11 @@ function makeWorld() {
         }
       ]
     }),
-    objects: normalizeWorldObjects([
+    objects: normalizeWorldObjectPlacements([
       {
         id: 'bridge-1',
-        kind: 'bridge',
+        objectDefinitionId:
+          'objectdef.bridge.wood.rustic_bank.01',
         transform: {
           x: 400,
           y: 200,
@@ -55,17 +56,10 @@ function makeWorld() {
           scaleX: 1,
           scaleY: 1
         },
-        baseSize: {
-          length: 180,
-          width: 100
-        },
-        traversal: {
-          enabled: true,
-          lengthRatio: 1,
-          widthRatio: 0.9,
-          edgeAssistRatio: 0.15,
-          traversalRuleId: 'terrain.bridge',
-          overridesSurfaceFeatureIds: ['river-1']
+        overrides: {
+          traversalSurfaceFeatureIds: [
+            'river-1'
+          ]
         }
       }
     ]),
@@ -253,22 +247,29 @@ test('real movement applies road speed multiplier without changing movement API 
   assert.equal(road.x, 225);
 });
 
-test('legacy bridge obstacle ids migrate to surface feature ids without dual normalized fields', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      kind: 'bridge',
-      traversal: {
-        overridesObstacleIds: ['legacy-river']
+test('bridge placement normalizes local surface override ids without duplicate fields', () => {
+  const bridge =
+    normalizeWorldObjectPlacements([
+      {
+        objectDefinitionId:
+          'objectdef.bridge.wood.rustic_bank.01',
+        overrides: {
+          traversalSurfaceFeatureIds: [
+            'river-1',
+            'river-1',
+            ' river-2 '
+          ]
+        }
       }
-    }
-  ])[0];
+    ])[0];
 
   assert.deepEqual(
-    bridge.traversal.overridesSurfaceFeatureIds,
-    ['legacy-river']
+    bridge.overrides
+      .traversalSurfaceFeatureIds,
+    ['river-1', 'river-2']
   );
   assert.equal(
-    Object.hasOwn(bridge.traversal, 'overridesObstacleIds'),
+    'traversal' in bridge,
     false
   );
 });
