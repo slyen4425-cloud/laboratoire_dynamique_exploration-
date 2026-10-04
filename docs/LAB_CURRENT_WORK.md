@@ -96,7 +96,15 @@
 > - peindre une zone avec Sol cendre & lave ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview + gate visuel utilisateur requis**.
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-water-lava-materials-v1-prevalidation-green-2026-10-04` @ `46f44169f73b617e2874a888b8a448a6bd583eec` ;
+> - preview : `preview/exploration-water-lava-materials-v1-2026-10-04` @ même SHA ;
+> - PR infrastructure Pages : #80 — **MERGED** ;
+> - main infrastructure : `54921c3fb3776d99c064bf48399e35e8a18959f1` ;
+> - Pages : `37233124149` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=water-lava-materials-v1`.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
 
 ---
 
