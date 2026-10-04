@@ -1633,11 +1633,84 @@ function refreshWorldEventControls() {
   );
 }
 
-function switchWorldEventTrigger(kind) {
+function switchWorldEventActivation(
+  activation
+) {
   const event =
     currentWorldEventRaw();
 
   if (!event) return;
+
+  draft = updateWorldEvent(
+    draft,
+    event.id,
+    (nextEvent) => {
+      nextEvent.activation =
+        activation;
+
+      if (
+        activation ===
+          'on-portal-enter'
+      ) {
+        const portal =
+          draft.portals?.find(
+            (item) =>
+              item.id ===
+                nextEvent.portalId
+          ) ??
+          draft.portals?.[0];
+
+        delete nextEvent.trigger;
+
+        if (portal) {
+          nextEvent.portalId =
+            portal.id;
+          nextEvent.sourceAreaId =
+            portal.targetAreaId;
+        }
+        return;
+      }
+
+      delete nextEvent.portalId;
+
+      const area =
+        draft.areas.find(
+          (item) =>
+            item.id ===
+              nextEvent.sourceAreaId
+        ) ??
+        currentAreaRaw();
+
+      if (!nextEvent.trigger) {
+        nextEvent.sourceAreaId =
+          area?.id ??
+          nextEvent.sourceAreaId;
+        nextEvent.trigger = {
+          kind: 'point',
+          x: area?.width / 2 ?? 0,
+          y: area?.height / 2 ?? 0,
+          radius: 48
+        };
+      }
+    }
+  );
+
+  refreshWorldEventControls();
+  refreshJson();
+  renderPreview();
+}
+
+function switchWorldEventTrigger(kind) {
+  const event =
+    currentWorldEventRaw();
+
+  if (
+    !event ||
+    event.activation ===
+      'on-portal-enter'
+  ) {
+    return;
+  }
 
   draft = updateWorldEvent(
     draft,
@@ -1677,7 +1750,7 @@ function switchWorldEventTrigger(kind) {
         y: area?.height / 2 ?? 0,
         radius:
           nextEvent.trigger?.radius ??
-          28
+          48
       };
     }
   );
@@ -1699,8 +1772,6 @@ function applyWorldEventInputs() {
     (nextEvent) => {
       nextEvent.enabled =
         $('event-enabled').checked;
-      nextEvent.sourceAreaId =
-        $('event-source-area').value;
       nextEvent.activation =
         $('event-activation').value;
       nextEvent.repeatPolicy =
@@ -1714,10 +1785,37 @@ function applyWorldEventInputs() {
             .trim()
       };
 
+      if (
+        nextEvent.activation ===
+          'on-portal-enter'
+      ) {
+        const portal =
+          draft.portals?.find(
+            (item) =>
+              item.id ===
+                $('event-portal').value
+          );
+
+        delete nextEvent.trigger;
+
+        if (portal) {
+          nextEvent.portalId =
+            portal.id;
+          nextEvent.sourceAreaId =
+            portal.targetAreaId;
+        }
+
+        return;
+      }
+
+      delete nextEvent.portalId;
+      nextEvent.sourceAreaId =
+        $('event-source-area').value;
+
       const radius =
         numberValue(
           $('event-radius'),
-          28
+          48
         );
 
       if (
@@ -1749,6 +1847,7 @@ function applyWorldEventInputs() {
     }
   );
 
+  refreshWorldEventControls();
   refreshJson();
   renderPreview();
 }
