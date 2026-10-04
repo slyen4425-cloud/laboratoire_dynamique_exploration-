@@ -89,8 +89,8 @@
     },
     {
       "path": "assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp",
-      "sha256": "c982ea195c4e639f86c2888fba6e0bcf343cc97ab2d7af5e246b9f56c6d406f7",
-      "bytes": 3750,
+      "sha256": "2019bb9d19edd69c03c2725336e8c6bd5094fd95b37c06de451859ca8d174a71",
+      "bytes": 6386,
       "width": 128,
       "height": 128,
       "assetId": "texture.water.turquoise.stylized.01",
