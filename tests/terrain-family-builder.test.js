@@ -156,6 +156,20 @@ test('Builder edits encounter chance and exact element percentages per family', 
       'fire',
       15
     );
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'forest',
+      'water',
+      0
+    );
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'forest',
+      'shadow',
+      0
+    );
 
   const forest =
     next.encounterConfig.families.find(
