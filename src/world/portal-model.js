@@ -5,8 +5,10 @@ import {
   resolveWorldAreaSpawnPoint
 } from './world-area-model.js?rev=builder-dynamic-return-v1';
 import {
-  buildingDoorAnchorWorld
-} from './world-object-model.js?rev=builder-dynamic-return-v1';
+  normalizeWorldTriggerGeometry,
+  resolveWorldTriggerPoint,
+  worldTriggerContainsPoint
+} from './world-trigger-geometry.js?rev=trigger-geometry-v1';
 
 export const PORTAL_SCHEMA_VERSION = 1;
 
@@ -38,42 +40,13 @@ function normalizePortalVisual(raw) {
   });
 }
 
-function normalizeTrigger(raw) {
-  if (!raw || typeof raw !== 'object') return null;
-
-  if (raw.kind === 'point') {
-    return Object.freeze({
-      kind: 'point',
-      x: finiteNumber(raw.x, 0),
-      y: finiteNumber(raw.y, 0),
-      radius: finiteNumber(raw.radius, 28, { min: 4, max: 240 })
-    });
-  }
-
-  if (raw.kind === 'building-door') {
-    const objectId = normalizedString(raw.objectId);
-    const anchorId = normalizedString(raw.anchorId);
-
-    if (!objectId || !anchorId) return null;
-
-    return Object.freeze({
-      kind: 'building-door',
-      objectId,
-      anchorId,
-      radius: finiteNumber(raw.radius, 32, { min: 4, max: 240 })
-    });
-  }
-
-  return null;
-}
-
 export function normalizePortal(raw, index = 0) {
   if (!raw || typeof raw !== 'object') return null;
 
   const sourceAreaId = normalizedString(raw.sourceAreaId);
   const targetAreaId = normalizedString(raw.targetAreaId);
   const targetSpawnId = normalizedString(raw.targetSpawnId);
-  const trigger = normalizeTrigger(raw.trigger);
+  const trigger = normalizeWorldTriggerGeometry(raw.trigger);
 
   if (!sourceAreaId || !targetAreaId || !targetSpawnId || !trigger) {
     return null;
@@ -113,41 +86,11 @@ export function resolvePortalTriggerPoint(areas, portal) {
   const area = findWorldArea(areas, portal.sourceAreaId);
   if (!area) return null;
 
-  if (portal.trigger.kind === 'point') {
-    return Object.freeze({
-      x: portal.trigger.x,
-      y: portal.trigger.y,
-      radius: portal.trigger.radius
-    });
-  }
-
-  if (portal.trigger.kind === 'building-door') {
-    const building =
-      resolveWorldAreaObjects(area).find(
-        (object) =>
-          object.kind === 'building' &&
-          object.id === portal.trigger.objectId
-      );
-
-    if (!building) return null;
-
-    const anchor = buildingDoorAnchorWorld(
-      building,
-      portal.trigger.anchorId
-    );
-
-    if (!anchor) return null;
-
-    return Object.freeze({
-      x: anchor.x,
-      y: anchor.y,
-      radius: portal.trigger.radius
-    });
-  }
-
-  return null;
+  return resolveWorldTriggerPoint(
+    area,
+    portal.trigger
+  );
 }
-
 export function portalReferencesAreValid(areas, portal) {
   if (!portal) return false;
 
@@ -201,10 +144,7 @@ export function findTriggeredPortal(
     );
     if (!point) continue;
 
-    const dx = entity.x - point.x;
-    const dy = entity.y - point.y;
-
-    if (dx * dx + dy * dy <= point.radius * point.radius) {
+    if (worldTriggerContainsPoint(entity, point)) {
       return portal;
     }
   }
