@@ -1,21 +1,28 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { demoWorldDocument } from '../src/world/demo-world.js';
+import {
+  demoWorldDocument
+} from '../src/world/demo-world.js';
 import {
   addSurfacePath,
+  addTerrainFamilyDefinition,
   createWorldBuilderDraft,
+  deleteTerrainFamilyDefinition,
   importWorldBuilderDocument,
   serializeWorldBuilderDraft,
   updateAreaProperties,
   updateSurfacePath,
+  updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
   validateWorldBuilderDraft
 } from '../src/builder/world-builder-draft.js';
 
 function draft() {
-  return createWorldBuilderDraft(demoWorldDocument);
+  return createWorldBuilderDraft(
+    demoWorldDocument
+  );
 }
 
 test('Builder edits base terrain family independently from base material', () => {
@@ -24,14 +31,22 @@ test('Builder edits base terrain family independently from base material', () =>
     'forest-exterior',
     {
       baseTerrainFamilyId: 'plain',
-      baseMaterialId: 'ground.dirt'
+      baseMaterialId:
+        'ground.dirt'
     }
   );
 
-  const surface = next.areas[0].surface;
+  const surface =
+    next.areas[0].surface;
 
-  assert.equal(surface.baseTerrainFamilyId, 'plain');
-  assert.equal(surface.baseMaterialId, 'ground.dirt');
+  assert.equal(
+    surface.baseTerrainFamilyId,
+    'plain'
+  );
+  assert.equal(
+    surface.baseMaterialId,
+    'ground.dirt'
+  );
 });
 
 test('painted terrain path stores family and material separately', () => {
@@ -50,10 +65,17 @@ test('painted terrain path stores family and material separately', () => {
     }
   );
 
-  const zone = next.areas[0].surface.zones.at(-1);
+  const zone =
+    next.areas[0].surface.zones.at(-1);
 
-  assert.equal(zone.terrainFamilyId, 'snow');
-  assert.equal(zone.materialId, 'ground.snow');
+  assert.equal(
+    zone.terrainFamilyId,
+    'snow'
+  );
+  assert.equal(
+    zone.materialId,
+    'ground.snow'
+  );
 });
 
 test('changing texture does not rewrite an existing terrain family', () => {
@@ -62,8 +84,10 @@ test('changing texture does not rewrite an existing terrain family', () => {
     'forest-exterior',
     'terrain',
     {
-      terrainFamilyId: 'mountain',
-      materialId: 'ground.dirt',
+      terrainFamilyId:
+        'mountain',
+      materialId:
+        'ground.dirt',
       points: [
         { x: 100, y: 100 },
         { x: 400, y: 100 }
@@ -71,95 +95,129 @@ test('changing texture does not rewrite an existing terrain family', () => {
     }
   );
 
-  const id = next.areas[0].surface.zones.at(-1).id;
+  const id =
+    next.areas[0]
+      .surface.zones.at(-1).id;
 
   next = updateSurfacePath(
     next,
     'forest-exterior',
     'terrain',
     id,
-    { materialId: 'ground.snow' }
+    {
+      materialId: 'ground.snow'
+    }
   );
 
-  const zone = next.areas[0].surface.zones.find(
-    (item) => item.id === id
-  );
+  const zone =
+    next.areas[0]
+      .surface.zones.find(
+        (item) => item.id === id
+      );
 
-  assert.equal(zone.terrainFamilyId, 'mountain');
-  assert.equal(zone.materialId, 'ground.snow');
+  assert.equal(
+    zone.terrainFamilyId,
+    'mountain'
+  );
+  assert.equal(
+    zone.materialId,
+    'ground.snow'
+  );
 });
 
 test('Builder edits encounter chance and exact element percentages per family', () => {
-  let next = updateTerrainFamilyEncounterProfile(
-    draft(),
-    'forest',
-    { encounterChancePercent: 30 }
-  );
+  let next =
+    updateTerrainFamilyEncounterProfile(
+      draft(),
+      'forest',
+      {
+        encounterChancePercent: 30
+      }
+    );
 
-  next = updateTerrainFamilyElementChance(
-    next,
-    'forest',
-    'nature',
-    60
-  );
-  next = updateTerrainFamilyElementChance(
-    next,
-    'forest',
-    'earth',
-    25
-  );
-  next = updateTerrainFamilyElementChance(
-    next,
-    'forest',
-    'fire',
-    15
-  );
-  next = updateTerrainFamilyElementChance(
-    next,
-    'forest',
-    'water',
-    0
-  );
-  next = updateTerrainFamilyElementChance(
-    next,
-    'forest',
-    'shadow',
-    0
-  );
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'forest',
+      'nature',
+      60
+    );
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'forest',
+      'earth',
+      25
+    );
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'forest',
+      'fire',
+      15
+    );
 
-  const forest = next.encounterConfig.families.find(
-    (entry) => entry.terrainFamilyId === 'forest'
-  );
+  const forest =
+    next.encounterConfig.families.find(
+      (entry) =>
+        entry.terrainFamilyId ===
+        'forest'
+    );
 
-  assert.equal(forest.encounterChancePercent, 30);
+  assert.equal(
+    forest.encounterChancePercent,
+    30
+  );
   assert.deepEqual(
     forest.elementChances,
     [
-      { elementId: 'nature', chancePercent: 60 },
-      { elementId: 'earth', chancePercent: 25 },
-      { elementId: 'fire', chancePercent: 15 }
+      {
+        elementId: 'nature',
+        chancePercent: 60
+      },
+      {
+        elementId: 'earth',
+        chancePercent: 25
+      },
+      {
+        elementId: 'fire',
+        chancePercent: 15
+      }
     ]
   );
 
-  assert.equal(validateWorldBuilderDraft(next).valid, true);
+  assert.equal(
+    validateWorldBuilderDraft(next)
+      .valid,
+    true
+  );
 });
 
 test('active family blocks export when element percentages do not total 100', () => {
-  let next = updateTerrainFamilyEncounterProfile(
-    draft(),
-    'forest',
-    { encounterChancePercent: 30 }
-  );
-  next = updateTerrainFamilyElementChance(
-    next,
-    'forest',
-    'fire',
-    50
-  );
+  let next =
+    updateTerrainFamilyEncounterProfile(
+      draft(),
+      'forest',
+      {
+        encounterChancePercent: 30
+      }
+    );
 
-  const validation = validateWorldBuilderDraft(next);
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'forest',
+      'fire',
+      50
+    );
 
-  assert.equal(validation.valid, false);
+  const validation =
+    validateWorldBuilderDraft(next);
+
+  assert.equal(
+    validation.valid,
+    false
+  );
   assert.ok(
     validation.errors.includes(
       'encounter-element-total:forest'
@@ -167,15 +225,16 @@ test('active family blocks export when element percentages do not total 100', ()
   );
 });
 
-
-test('route and river keep their canonical terrain families regardless of texture', () => {
+test('route and river terrain families are editable independently from geometry and texture kind', () => {
   let next = addSurfacePath(
     draft(),
     'forest-exterior',
     'route',
     {
-      terrainFamilyId: 'volcano',
-      materialId: 'road.dirt',
+      terrainFamilyId:
+        'volcano',
+      materialId:
+        'road.dirt',
       points: [
         { x: 10, y: 10 },
         { x: 200, y: 10 }
@@ -188,8 +247,10 @@ test('route and river keep their canonical terrain families regardless of textur
     'forest-exterior',
     'river',
     {
-      terrainFamilyId: 'forest',
-      materialId: 'water.forest_stream',
+      terrainFamilyId:
+        'forest',
+      materialId:
+        'water.forest_stream',
       points: [
         { x: 10, y: 50 },
         { x: 200, y: 50 }
@@ -198,18 +259,191 @@ test('route and river keep their canonical terrain families regardless of textur
   );
 
   const area = next.areas[0];
-  assert.equal(area.surface.routes.at(-1).terrainFamilyId, 'road');
-  assert.equal(area.surface.rivers.at(-1).terrainFamilyId, 'sea');
+
+  assert.equal(
+    area.surface.routes.at(-1)
+      .terrainFamilyId,
+    'volcano'
+  );
+  assert.equal(
+    area.surface.rivers.at(-1)
+      .terrainFamilyId,
+    'forest'
+  );
+
+  const routeId =
+    area.surface.routes.at(-1).id;
+  const riverId =
+    area.surface.rivers.at(-1).id;
+
+  next = updateSurfacePath(
+    next,
+    'forest-exterior',
+    'route',
+    routeId,
+    {
+      terrainFamilyId: 'snow'
+    }
+  );
+  next = updateSurfacePath(
+    next,
+    'forest-exterior',
+    'river',
+    riverId,
+    {
+      terrainFamilyId: 'plain'
+    }
+  );
+
+  assert.equal(
+    next.areas[0].surface.routes
+      .find(
+        (item) =>
+          item.id === routeId
+      ).terrainFamilyId,
+    'snow'
+  );
+  assert.equal(
+    next.areas[0].surface.rivers
+      .find(
+        (item) =>
+          item.id === riverId
+      ).terrainFamilyId,
+    'plain'
+  );
 });
 
-test('terrain families and encounter config survive Builder export/import', () => {
-  let next = addSurfacePath(
+test('Builder can add and rename a custom terrain family with a safe encounter profile', () => {
+  let next = addTerrainFamilyDefinition(
     draft(),
+    {
+      id: 'swamp',
+      label: 'Marais'
+    }
+  );
+
+  assert.ok(
+    next.terrainFamilies.some(
+      (family) =>
+        family.id === 'swamp' &&
+        family.label === 'Marais'
+    )
+  );
+  assert.deepEqual(
+    next.encounterConfig.families
+      .find(
+        (profile) =>
+          profile.terrainFamilyId ===
+          'swamp'
+      ),
+    {
+      terrainFamilyId: 'swamp',
+      encounterChancePercent: 0,
+      elementChances: []
+    }
+  );
+
+  next =
+    updateTerrainFamilyDefinition(
+      next,
+      'swamp',
+      {
+        label: 'Marais sombre'
+      }
+    );
+
+  assert.equal(
+    next.terrainFamilies.find(
+      (family) =>
+        family.id === 'swamp'
+    ).label,
+    'Marais sombre'
+  );
+});
+
+test('deleting a terrain family is protected while it is used and allowed when unused', () => {
+  let next = addTerrainFamilyDefinition(
+    draft(),
+    {
+      id: 'swamp',
+      label: 'Marais'
+    }
+  );
+
+  next = updateAreaProperties(
+    next,
+    'forest-exterior',
+    {
+      baseTerrainFamilyId:
+        'swamp'
+    }
+  );
+
+  const protectedDelete =
+    deleteTerrainFamilyDefinition(
+      next,
+      'swamp'
+    );
+
+  assert.ok(
+    protectedDelete.terrainFamilies
+      .some(
+        (family) =>
+          family.id === 'swamp'
+      )
+  );
+
+  let unused =
+    addTerrainFamilyDefinition(
+      draft(),
+      {
+        id: 'crystal',
+        label: 'Cristal'
+      }
+    );
+
+  unused =
+    deleteTerrainFamilyDefinition(
+      unused,
+      'crystal'
+    );
+
+  assert.equal(
+    unused.terrainFamilies.some(
+      (family) =>
+        family.id === 'crystal'
+    ),
+    false
+  );
+  assert.equal(
+    unused.encounterConfig.families
+      .some(
+        (profile) =>
+          profile.terrainFamilyId ===
+          'crystal'
+      ),
+    false
+  );
+});
+
+test('custom terrain family and encounter config survive Builder export/import', () => {
+  let next = addTerrainFamilyDefinition(
+    draft(),
+    {
+      id: 'swamp',
+      label: 'Marais'
+    }
+  );
+
+  next = addSurfacePath(
+    next,
     'forest-exterior',
     'terrain',
     {
-      terrainFamilyId: 'volcano',
-      materialId: 'ground.dirt',
+      terrainFamilyId:
+        'swamp',
+      materialId:
+        'grass.forest',
       width: 240,
       points: [
         { x: 200, y: 200 },
@@ -218,23 +452,54 @@ test('terrain families and encounter config survive Builder export/import', () =
     }
   );
 
-  next = updateTerrainFamilyEncounterProfile(
-    next,
-    'volcano',
-    { encounterChancePercent: 31 }
-  );
+  next =
+    updateTerrainFamilyEncounterProfile(
+      next,
+      'swamp',
+      {
+        encounterChancePercent: 31
+      }
+    );
 
-  const json = serializeWorldBuilderDraft(next);
-  const imported = importWorldBuilderDocument(json);
+  next =
+    updateTerrainFamilyElementChance(
+      next,
+      'swamp',
+      'water',
+      100
+    );
+
+  const json =
+    serializeWorldBuilderDraft(next);
+  const imported =
+    importWorldBuilderDocument(json);
 
   assert.equal(
-    imported.areas[0].surface.zones.at(-1).terrainFamilyId,
-    'volcano'
+    imported.terrainFamilies.find(
+      (family) =>
+        family.id === 'swamp'
+    ).label,
+    'Marais'
   );
   assert.equal(
-    imported.encounterConfig.families.find(
-      (entry) => entry.terrainFamilyId === 'volcano'
-    ).encounterChancePercent,
+    imported.areas[0]
+      .surface.zones.at(-1)
+      .terrainFamilyId,
+    'swamp'
+  );
+  assert.equal(
+    imported.encounterConfig.families
+      .find(
+        (entry) =>
+          entry.terrainFamilyId ===
+          'swamp'
+      ).encounterChancePercent,
     31
+  );
+  assert.equal(
+    validateWorldBuilderDraft(
+      imported
+    ).valid,
+    true
   );
 });
