@@ -10,44 +10,56 @@
 >
 > Checkpoint de départ : `checkpoint/exploration-start-object-catalog-placement-v1-2026-10-04`
 >
-> Mission unique :
-> - créer une autorité `ObjectDefinition Catalog` pour les données intrinsèques des WorldObjects ;
-> - migrer `WorldArea.objects[]` vers des placements par référence : `objectDefinitionId + transform + overrides locaux` ;
-> - conserver ponts/maison existants via résolution du catalogue ;
-> - faire du Builder un outil de sélection/placement uniquement, sans recopier taille/visuel/footprint/anchors.
+> Prévalidation technique : `checkpoint/exploration-object-catalog-placement-v1-prevalidation-green-2026-10-04`
 >
-> Propriétaires :
-> - définition intrinsèque : Object Definition Catalog ;
-> - placement : WorldDocument / WorldArea ;
-> - rendu : WorldObject Renderer en lecture seule sur objet résolu ;
-> - collision/traversée : Collision World / Surface Traversal sur objet résolu ;
-> - Portal : références de placement + anchor fourni par définition.
+> SHA technique validé : `f659e89bb3275c188b1c2506edbdba944c9cf513`
 >
-> Hors périmètre :
+> Résultat :
+> - `ObjectDefinition Catalog v1` possède désormais les données intrinsèques des WorldObjects ;
+> - `WorldArea.objects[]` persiste uniquement `objectDefinitionId + transform + overrides locaux` ;
+> - aucun `visual/baseSize/footprint/doorAnchors/kind` n'est copié dans le placement ;
+> - ponts/maison existants sont résolus depuis le catalogue ;
+> - collision, traversée, rendu et Portal consomment l'objet résolu ;
+> - Builder : sélection d'une définition, placement, X/Y, rotation, scale, duplication/suppression ;
+> - Builder ne permet plus d'éditer asset, taille logique, footprint, anchors ou paramètres intrinsèques ;
+> - seul override local v1 : ids de surfaces franchies par un placement de pont ;
+> - WorldArea passe en schéma v4.
+>
+> TDD :
+> - RED dédié : `c0c4afd7c1e3725944c66ba1784dda659f4d76b9`, CI `37193976216` — FAILURE attendue ;
+> - migration des sentinelles Portal/collision/traversée/Builder/assets ;
+> - CI technique finale : `37194847351` — **SUCCESS** ;
+> - 261/261 tests + `npm run check` GREEN.
+>
+> Preview :
+> - `preview/exploration-object-catalog-placement-v1-2026-10-04` @ `f659e89bb3275c188b1c2506edbdba944c9cf513` ;
+> - PR infra Pages #68 — MERGED ;
+> - main infra : `2c15cb874f1e7138c2f1d25ee0cbdccd53b2fb44` ;
+> - Pages run : `37194940662` — en cours au moment de cette consignation.
+>
+> Gate utilisateur requise avant GREEN final :
+> 1. ouvrir Builder > Objets ;
+> 2. choisir une définition (pont ou maison) ;
+> 3. « Placer l'objet » ;
+> 4. déplacer directement sur la carte puis modifier X/Y ;
+> 5. tester rotation + scale ;
+> 6. dupliquer puis supprimer ;
+> 7. pour un pont, vérifier que « surfaces franchies » reste éditable ;
+> 8. vérifier qu'aucun réglage intrinsèque (asset/taille/footprint/anchors) n'apparaît dans le Builder ;
+> 9. lancer « Tester en jeu » et vérifier que les mêmes objets sont rendus/collisionnés.
+>
+> Hors périmètre confirmé :
 > - Trigger/Event runtime ;
 > - coffre interactif fonctionnel ;
 > - nouvel asset binaire ;
 > - éditeur complet de définitions ;
 > - XP/loot/Capture Rules ;
-> - Combat / Roster ;
+> - Combat/Roster ;
 > - `Zombicide-40k`.
 >
-> Invariants :
-> - aucune donnée intrinsèque d'objet copiée dans le placement ;
-> - aucun fallback visuel ;
-> - aucun deuxième catalogue ;
-> - le Builder ne modifie pas la définition ;
-> - import/export conserve uniquement les références et overrides autorisés ;
-> - ponts et bâtiment existants restent fonctionnels.
+> Suite après validation : **Trigger/Event v1** (zones/anchors logiques + onEnter/onInteract + persistance), puis enrichissement du catalogue/Material Packs par assets contrôlés.
 >
-> TDD :
-> - RED avant runtime ;
-> - sentinelle placement-only ;
-> - résolution catalogue -> objet runtime ;
-> - Portal/bridge/collision non-régression ;
-> - Builder ajoute par `objectDefinitionId`.
->
-> État : **START — TDD RED à constater**.
+> État : **TECHNIQUE GREEN — preview/gate utilisateur avant GREEN final**.
 
 ---
 
