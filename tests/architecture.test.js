@@ -161,17 +161,107 @@ test('architecture sentinel: WorldObject renderer owns no physical asset paths',
   assert.equal(renderer.includes('.webp'), false);
 });
 
-test('architecture sentinel: WorldDocument owns semantic bridge ids only', async () => {
+test('architecture sentinel: Object Catalog is the single owner of intrinsic WorldObject data', async () => {
+  const catalog = await readFile(
+    new URL(
+      '../src/objects/object-definition-catalog.js',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const placement = await readFile(
+    new URL(
+      '../src/world/world-object-placement-model.js',
+      import.meta.url
+    ),
+    'utf8'
+  );
+
+  assert.match(catalog, /visual:/);
+  assert.match(catalog, /baseSize:/);
+  assert.match(catalog, /doorAnchors:/);
+
+  assert.equal(
+    /visual\s*:|baseSize\s*:|doorAnchors\s*:|footprint\s*:/.test(
+      placement.split(
+        'export function resolveWorldObjectPlacement'
+      )[0]
+    ),
+    false
+  );
+});
+
+test('architecture sentinel: Builder placement UI cannot edit intrinsic Object Definition fields', async () => {
+  const html = await readFile(
+    new URL('../builder.html', import.meta.url),
+    'utf8'
+  );
+
+  for (const forbiddenId of [
+    'object-asset',
+    'building-width',
+    'building-height',
+    'building-footprint-width',
+    'building-door-x',
+    'bridge-length',
+    'bridge-width',
+    'bridge-passage-length',
+    'bridge-edge-assist'
+  ]) {
+    assert.equal(
+      html.includes(`id="${forbiddenId}"`),
+      false,
+      forbiddenId
+    );
+  }
+
+  assert.equal(
+    html.includes('id="object-definition"'),
+    true
+  );
+  assert.equal(
+    html.includes('id="object-add"'),
+    true
+  );
+});
+
+test('architecture sentinel: WorldDocument owns Object Definition references, never intrinsic object visuals', async () => {
   const demoWorld = await readFile(
     new URL('../src/world/demo-world.js', import.meta.url),
     'utf8'
   );
 
-  assert.equal(demoWorld.includes('assets/exploration/objects/'), false);
-  assert.equal(demoWorld.includes('.webp'), false);
   assert.equal(
-    demoWorld.includes('object.bridge.wood.rustic_bank.01'),
+    demoWorld.includes('assets/exploration/objects/'),
+    false
+  );
+  assert.equal(
+    demoWorld.includes('.webp'),
+    false
+  );
+  assert.equal(
+    demoWorld.includes(
+      'objectdef.bridge.wood.rustic_bank.01'
+    ),
     true
+  );
+  assert.equal(
+    demoWorld.includes(
+      'object.bridge.wood.rustic_bank.01'
+    ),
+    false
+  );
+  assert.equal(
+    /objects:\s*\[[\s\S]*?visual\s*:/.test(
+      demoWorld
+    ),
+    false
+  );
+  assert.equal(
+    /objects:\s*\[[\s\S]*?baseSize\s*:/.test(
+      demoWorld
+    ),
+    false
   );
 });
 
@@ -375,23 +465,56 @@ test('architecture sentinel: movement engine owns no terrain-specific multiplier
   assert.equal(movement.includes('0.75'), false);
 });
 
-test('architecture sentinel: demo river collision has one surface authority', async () => {
+test('architecture sentinel: demo bridge placement references canonical river without duplicate collision geometry', async () => {
   const demo = await readFile(
     new URL('../src/world/demo-world.js', import.meta.url),
     'utf8'
   );
 
-  assert.equal(demo.includes('forest-stream-collision'), false);
-  assert.equal(demo.includes('overridesObstacleIds'), false);
-  assert.equal(demo.includes('overridesSurfaceFeatureIds'), true);
+  assert.equal(
+    demo.includes('forest-stream-collision'),
+    false
+  );
+  assert.equal(
+    demo.includes('overridesObstacleIds'),
+    false
+  );
+  assert.equal(
+    demo.includes(
+      'traversalSurfaceFeatureIds'
+    ),
+    true
+  );
 });
 
-test('architecture sentinel: Builder edits canonical Bridge surface references only', async () => {
+test('architecture sentinel: Builder edits only placement-local Bridge surface references', async () => {
   const builder = await readFile(
     new URL('../src/builder/world-builder-main.js', import.meta.url),
     'utf8'
   );
 
-  assert.equal(builder.includes('overridesObstacleIds'), false);
-  assert.equal(builder.includes('overridesSurfaceFeatureIds'), true);
+  assert.equal(
+    builder.includes(
+      'overridesObstacleIds'
+    ),
+    false
+  );
+  assert.equal(
+    builder.includes(
+      'traversalSurfaceFeatureIds'
+    ),
+    true
+  );
+  assert.equal(
+    builder.includes(
+      'updateWorldObjectVisual'
+    ),
+    false
+  );
+  assert.equal(
+    builder.includes(
+      'patchWorldObject'
+    ),
+    false
+  );
 });
