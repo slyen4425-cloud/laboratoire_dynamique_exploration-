@@ -417,3 +417,36 @@ CI :
 
 État : **TECHNIQUE GREEN — publication preview et validation utilisateur restantes**.
 
+
+
+## Publication preview — Combat Document Cache Fix v1
+
+Preview Exploration :
+`preview/exploration-combat-document-cachefix-v1-2026-10-04`
+
+État fonctionnel publié avant documentation :
+- SHA : `94ca5f378cb6f98edfd75c065298502379439e91` ;
+- CI Exploration : `37174969538` — **SUCCESS**.
+
+Publication Pages :
+- PR infra : #66 — **MERGED** ;
+- main infra : `07e8feebec6a18c01be0294ba42a930b6c1a2e69` ;
+- Pages run : `37179303078` — **SUCCESS**.
+
+Le job Pages confirme :
+- Checkout Exploration Combat Document Cache Fix preview — SUCCESS ;
+- Checkout Combat Recall Runtime Fix preview — SUCCESS ;
+- Checkout Capture global visual assets — SUCCESS ;
+- Upload preview — SUCCESS ;
+- Deploy preview — SUCCESS.
+
+Gate utilisateur restante :
+1. partir du lien public Exploration ;
+2. entrer dans le vrai Encounter ;
+3. sélectionner Moussados ;
+4. lancer Rappel et attendre sa fin ;
+5. vérifier qu’Invocation est disponible ;
+6. lancer Invocation ;
+7. vérifier que Moussados remplace visiblement le Loup.
+
+État : **PUBLISHED PREVALIDATION GREEN — validation utilisateur requise avant GREEN final Player Party**.
