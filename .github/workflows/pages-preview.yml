@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: world-event-building-entry-drag-v1
+# preview-revision: multicombat-revalidation-v1
 
 on:
   push:
@@ -28,11 +28,11 @@ jobs:
         with:
           ref: preview/exploration-world-event-building-entry-drag-v1-2026-10-04
 
-      - name: Checkout Combat Recall Runtime Fix preview
+      - name: Checkout Combat Tactics Switch Travel preview
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-player-party-recall-runtime-fix-v1-2026-10-03
+          ref: preview/lab-combat-tactics-switch-travel-v1-2026-10-04
           path: combat-preview
 
       - name: Checkout Capture global visual assets
