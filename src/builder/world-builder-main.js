@@ -1429,6 +1429,38 @@ function eventSourceObjects(event) {
   );
 }
 
+function eventPortalOptions() {
+  return (draft.portals ?? [])
+    .map((portal) => {
+      const area = draft.areas.find(
+        (item) =>
+          item.id === portal.sourceAreaId
+      );
+      const objectId =
+        portal.trigger?.kind ===
+          'object-anchor'
+          ? portal.trigger.objectId
+          : null;
+      const object =
+        objectId
+          ? resolveWorldObjectPlacements(
+              area?.objects ?? []
+            ).find(
+              (item) =>
+                item.id === objectId
+            )
+          : null;
+
+      return {
+        id: portal.id,
+        label:
+          object
+            ? `${object.id} → ${portal.targetAreaId}`
+            : `${portal.id} → ${portal.targetAreaId}`
+      };
+    });
+}
+
 function refreshWorldEventControls() {
   const events = draft.events ?? [];
 
@@ -1437,8 +1469,18 @@ function refreshWorldEventControls() {
     events,
     selectedEventId,
     {
-      label: (event) =>
-        `${event.id} · ${event.activation ?? 'on-enter'}`
+      label: (event) => {
+        const label =
+          event.activation ===
+            'on-portal-enter'
+            ? 'Entrée lieu'
+            : event.activation ===
+                'on-interact'
+              ? 'Interaction'
+              : 'Zone';
+
+        return `${event.id} · ${label}`;
+      }
     }
   );
 
@@ -1462,6 +1504,7 @@ function refreshWorldEventControls() {
     'event-radius',
     'event-object',
     'event-anchor',
+    'event-portal',
     'event-action-kind',
     'event-message',
     'event-repeat-policy'
@@ -1472,6 +1515,10 @@ function refreshWorldEventControls() {
   if (!event) {
     $('event-point-fields').hidden = false;
     $('event-object-fields').hidden = true;
+    $('event-portal-fields').hidden = true;
+    $('event-trigger-kind-field').hidden = false;
+    $('event-position-details').hidden = false;
+    $('event-drag-hint').hidden = false;
     $('event-action-kind').value = 'message';
     $('event-message').value = '';
     return;
@@ -1495,6 +1542,43 @@ function refreshWorldEventControls() {
   $('event-message').value =
     event.action?.text ?? '';
 
+  const isPortalEntry =
+    event.activation ===
+      'on-portal-enter';
+
+  $('event-portal-fields').hidden =
+    !isPortalEntry;
+  $('event-trigger-kind-field').hidden =
+    isPortalEntry;
+  $('event-position-details').hidden =
+    isPortalEntry;
+  $('event-drag-hint').hidden =
+    isPortalEntry;
+
+  const portalOptions =
+    eventPortalOptions();
+
+  setOptions(
+    $('event-portal'),
+    portalOptions,
+    event.portalId,
+    {
+      label: (portal) =>
+        portal.label
+    }
+  );
+
+  if (event.portalId) {
+    $('event-portal').value =
+      event.portalId;
+  }
+
+  if (isPortalEntry) {
+    $('event-point-fields').hidden = true;
+    $('event-object-fields').hidden = true;
+    return;
+  }
+
   const triggerKind =
     event.trigger?.kind === 'object-anchor'
       ? 'object-anchor'
@@ -1510,6 +1594,8 @@ function refreshWorldEventControls() {
     !isPoint;
   $('event-object-fields').hidden =
     isPoint;
+  $('event-drag-hint').hidden =
+    !isPoint;
 
   $('event-point-x').value =
     isPoint
