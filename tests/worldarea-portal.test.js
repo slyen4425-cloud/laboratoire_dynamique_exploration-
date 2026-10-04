@@ -38,7 +38,8 @@ function makeDocument() {
         objects: [
           {
             id: 'house-1',
-            kind: 'building',
+            objectDefinitionId:
+              'objectdef.building.house.fantasy_wood_stone.01',
             transform: {
               x: 300,
               y: 300,
@@ -46,23 +47,9 @@ function makeDocument() {
               scaleX: 1,
               scaleY: 1
             },
-            baseSize: {
-              width: 200,
-              height: 160
-            },
-            doorAnchors: [
-              {
-                id: 'main-door',
-                x: 0,
-                y: 0.5
-              }
-            ],
-            portalRefs: [
-              {
-                doorAnchorId: 'main-door',
-                portalId: 'enter'
-              }
-            ]
+            overrides: {
+              traversalSurfaceFeatureIds: []
+            }
           }
         ]
       },
@@ -106,7 +93,7 @@ function makeDocument() {
   });
 }
 
-test('WorldArea v3 normalizes dimensions, surface, objects, actors and named spawns', () => {
+test('WorldArea v4 normalizes dimensions, surface, object placements, actors and named spawns', () => {
   const area = normalizeWorldArea({
     id: 'home',
     kind: 'interior',
@@ -118,7 +105,7 @@ test('WorldArea v3 normalizes dimensions, surface, objects, actors and named spa
     ]
   });
 
-  assert.equal(area.schemaVersion, 3);
+  assert.equal(area.schemaVersion, 4);
   assert.equal(area.id, 'home');
   assert.equal(area.kind, 'interior');
   assert.equal(area.width, 640);
@@ -182,8 +169,9 @@ test('building-door Portal resolves from the GREEN Building doorAnchor, never fr
   const portal = document.portals.find((item) => item.id === 'enter');
   const point = resolvePortalTriggerPoint(document.areas, portal);
 
-  // Building is rotated 90°. Local door (0, +80) becomes world (-80, 0).
-  assert.ok(Math.abs(point.x - 220) < 1e-9);
+  // Definition: local door Y = 300 * 0.38 = 114.
+  // Building is rotated 90°: local +Y becomes world -X.
+  assert.ok(Math.abs(point.x - 186) < 1e-9);
   assert.ok(Math.abs(point.y - 300) < 1e-9);
   assert.equal(point.radius, 30);
 });
@@ -194,14 +182,14 @@ test('findTriggeredPortal detects only the active Area trigger', () => {
   const enter = findTriggeredPortal(
     document,
     'outside',
-    { x: 220, y: 300 }
+    { x: 186, y: 300 }
   );
   assert.equal(enter?.id, 'enter');
 
   const wrongArea = findTriggeredPortal(
     document,
     'inside',
-    { x: 220, y: 300 }
+    { x: 186, y: 300 }
   );
   assert.equal(wrongArea, null);
 
@@ -217,7 +205,7 @@ test('Portal transition changes currentAreaId and X/Y only from explicit target 
   const document = makeDocument();
   const state = {
     currentAreaId: 'outside',
-    x: 220,
+    x: 186,
     y: 300
   };
   const portal = document.portals.find((item) => item.id === 'enter');
