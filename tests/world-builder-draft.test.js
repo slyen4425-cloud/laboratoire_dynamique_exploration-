@@ -182,7 +182,7 @@ test('Builder can duplicate an object with unique id and offset', () => {
   );
 });
 
-test('Builder refuses to delete Building used by a building-door Portal', () => {
+test('Builder refuses to delete Building used by an object-anchor Portal', () => {
   const next = deleteWorldObject(
     draft(),
     'forest-exterior',
