@@ -60,7 +60,12 @@
 >
 > Suite après validation : **Trigger/Event v1** (zones/anchors logiques + onEnter/onInteract + persistance), puis enrichissement du catalogue/Material Packs par assets contrôlés.
 >
-> État : **TECHNIQUE GREEN — preview/gate utilisateur avant GREEN final**.
+> Validation utilisateur — 2026-10-04 :
+> - aucun défaut fonctionnel de placement signalé ;
+> - retour utilisateur : la fonction semblait déjà présente, différence comprise comme une consolidation d'autorité ;
+> - placement pont/maison accepté pour poursuite du plan.
+>
+> État : **GREEN utilisateur — clôture CI/checkpoint final en cours**.
 
 ---
 
