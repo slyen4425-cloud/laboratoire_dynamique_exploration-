@@ -1,73 +1,87 @@
-export const TERRAIN_FAMILY_IDS = Object.freeze([
-  'plain',
-  'forest',
-  'sea',
-  'mountain',
-  'volcano',
-  'snow',
-  'road',
-  'sand'
-]);
+export const DEFAULT_TERRAIN_FAMILY_DEFINITIONS =
+  Object.freeze([
+    Object.freeze({ id: 'plain', label: 'Plaine' }),
+    Object.freeze({ id: 'forest', label: 'Forêt' }),
+    Object.freeze({ id: 'sea', label: 'Mer' }),
+    Object.freeze({ id: 'mountain', label: 'Montagne' }),
+    Object.freeze({ id: 'volcano', label: 'Volcan' }),
+    Object.freeze({ id: 'snow', label: 'Neige' }),
+    Object.freeze({ id: 'road', label: 'Route' }),
+    Object.freeze({ id: 'sand', label: 'Sable' })
+  ]);
 
-const DEFINITIONS = Object.freeze([
-  Object.freeze({
-    id: 'plain',
-    label: 'Plaine',
-    materialKind: 'surface',
-    materialIds: Object.freeze(['ground.dirt', 'floor.wood.house'])
-  }),
-  Object.freeze({
-    id: 'forest',
-    label: 'Forêt',
-    materialKind: 'surface',
-    materialIds: Object.freeze(['grass.forest'])
-  }),
-  Object.freeze({
-    id: 'sea',
-    label: 'Mer',
-    materialKind: 'water',
-    materialIds: Object.freeze(['water.forest_stream'])
-  }),
-  Object.freeze({
-    id: 'mountain',
-    label: 'Montagne',
-    materialKind: 'surface',
-    materialIds: Object.freeze(['ground.dirt'])
-  }),
-  Object.freeze({
-    id: 'volcano',
-    label: 'Volcan',
-    materialKind: 'surface',
-    materialIds: Object.freeze(['ground.dirt'])
-  }),
-  Object.freeze({
-    id: 'snow',
-    label: 'Neige',
-    materialKind: 'surface',
-    materialIds: Object.freeze(['ground.snow'])
-  }),
-  Object.freeze({
-    id: 'road',
-    label: 'Route',
-    materialKind: 'path',
-    materialIds: Object.freeze(['road.dirt'])
-  }),
-  Object.freeze({
-    id: 'sand',
-    label: 'Sable',
-    materialKind: 'surface',
-    materialIds: Object.freeze(['ground.sand'])
-  })
-]);
+export const TERRAIN_FAMILY_IDS = Object.freeze(
+  DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(
+    (definition) => definition.id
+  )
+);
 
-export function createTerrainFamilyRegistry() {
+function text(value) {
+  return typeof value === 'string' && value.trim()
+    ? value.trim()
+    : null;
+}
+
+export function normalizeTerrainFamilyDefinitions(
+  rawDefinitions
+) {
+  const source =
+    Array.isArray(rawDefinitions) &&
+    rawDefinitions.length > 0
+      ? rawDefinitions
+      : DEFAULT_TERRAIN_FAMILY_DEFINITIONS;
+
+  const seen = new Set();
+  const result = [];
+
+  for (const raw of source) {
+    const id = text(raw?.id);
+    const label = text(raw?.label);
+
+    if (!id || !label || seen.has(id)) {
+      continue;
+    }
+
+    seen.add(id);
+    result.push(
+      Object.freeze({
+        id,
+        label
+      })
+    );
+  }
+
+  if (result.length === 0) {
+    return Object.freeze(
+      [...DEFAULT_TERRAIN_FAMILY_DEFINITIONS]
+    );
+  }
+
+  return Object.freeze(result);
+}
+
+export function createTerrainFamilyRegistry(
+  rawDefinitions =
+    DEFAULT_TERRAIN_FAMILY_DEFINITIONS
+) {
+  const definitions =
+    normalizeTerrainFamilyDefinitions(
+      rawDefinitions
+    );
   const byId = new Map(
-    DEFINITIONS.map((definition) => [definition.id, definition])
+    definitions.map(
+      (definition) => [
+        definition.id,
+        definition
+      ]
+    )
   );
 
   return Object.freeze({
     list() {
-      return Object.freeze([...DEFINITIONS]);
+      return Object.freeze(
+        [...definitions]
+      );
     },
 
     get(id) {
@@ -79,7 +93,9 @@ export function createTerrainFamilyRegistry() {
     require(id) {
       const definition = this.get(id);
       if (!definition) {
-        throw new Error(`Unknown terrain family: ${id}`);
+        throw new Error(
+          `Unknown terrain family: ${id}`
+        );
       }
       return definition;
     }
