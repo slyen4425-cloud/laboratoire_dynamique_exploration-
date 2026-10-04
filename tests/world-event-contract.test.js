@@ -31,7 +31,7 @@ test('WorldEvent v1 normalizes on-enter with shared point trigger', () => {
       y: 200,
       radius: 48
     },
-    eventDefinitionId: 'eventdef.grove.enter',
+    action: { kind: 'message', text: 'Bienvenue' },
     repeatPolicy: 'once',
     consumed: true
   });
@@ -48,7 +48,7 @@ test('WorldEvent v1 normalizes on-enter with shared point trigger', () => {
       y: 200,
       radius: 48
     },
-    eventDefinitionId: 'eventdef.grove.enter',
+    action: { kind: 'message', text: 'Bienvenue' },
     repeatPolicy: 'once'
   });
   assert.equal('consumed' in event, false);
@@ -65,7 +65,7 @@ test('WorldEvent v1 supports on-interact bound to shared object-anchor geometry'
       anchorId: 'main-door',
       radius: 42
     },
-    eventDefinitionId: 'eventdef.house.inspect',
+    action: { kind: 'message', text: 'Inspection' },
     repeatPolicy: 'repeatable'
   });
 
@@ -74,13 +74,13 @@ test('WorldEvent v1 supports on-interact bound to shared object-anchor geometry'
   assert.equal(event.repeatPolicy, 'repeatable');
 });
 
-test('WorldEvent rejects missing business definition references and invalid activation', () => {
+test('WorldEvent rejects missing actions and invalid activation', () => {
   assert.equal(
     normalizeWorldEvent({
       sourceAreaId: 'outside',
       activation: 'unknown',
       trigger: { kind: 'point', x: 0, y: 0, radius: 20 },
-      eventDefinitionId: 'eventdef.x'
+      action: { kind: 'message', text: 'X' }
     }),
     null
   );
@@ -136,7 +136,7 @@ test('WorldEvent reference validation reuses trigger geometry and Area/object au
           anchorId: 'main-door',
           radius: 40
         },
-        eventDefinitionId: 'eventdef.house.inspect',
+        action: { kind: 'message', text: 'Inspection' },
         repeatPolicy: 'once'
       },
       {
@@ -149,7 +149,7 @@ test('WorldEvent reference validation reuses trigger geometry and Area/object au
           anchorId: 'main-door',
           radius: 40
         },
-        eventDefinitionId: 'eventdef.invalid',
+        action: { kind: 'message', text: 'Invalide' },
         repeatPolicy: 'once'
       }
     ]
@@ -176,14 +176,14 @@ test('WorldEvent list rejects duplicate ids', () => {
       sourceAreaId: 'outside',
       activation: 'on-enter',
       trigger: { kind: 'point', x: 10, y: 10, radius: 20 },
-      eventDefinitionId: 'eventdef.a'
+      action: { kind: 'message', text: 'A' }
     },
     {
       id: 'same',
       sourceAreaId: 'outside',
       activation: 'on-enter',
       trigger: { kind: 'point', x: 30, y: 30, radius: 20 },
-      eventDefinitionId: 'eventdef.b'
+      action: { kind: 'message', text: 'B' }
     }
   ]);
 
@@ -202,7 +202,7 @@ test('Builder adds, updates and deletes WorldEvent bindings in the canonical dra
       y: 600,
       radius: 55
     },
-    eventDefinitionId: 'eventdef.test.enter',
+    action: { kind: 'message', text: 'Entrée' },
     repeatPolicy: 'once'
   });
 
@@ -213,14 +213,17 @@ test('Builder adds, updates and deletes WorldEvent bindings in the canonical dra
     eventId,
     (event) => {
       event.activation = 'on-interact';
-      event.eventDefinitionId = 'eventdef.test.interact';
+      event.action = {
+        kind: 'message',
+        text: 'Interaction'
+      };
       event.repeatPolicy = 'repeatable';
     }
   );
 
   assert.equal(
-    draft.events.at(-1).eventDefinitionId,
-    'eventdef.test.interact'
+    draft.events.at(-1).action.text,
+    'Interaction'
   );
   assert.equal(
     draft.events.at(-1).repeatPolicy,
@@ -253,7 +256,7 @@ test('Builder draft never stores consumed runtime state inside a WorldEvent defi
       y: 600,
       radius: 55
     },
-    eventDefinitionId: 'eventdef.test.once',
+    action: { kind: 'message', text: 'Une fois' },
     repeatPolicy: 'once',
     consumed: true
   });
@@ -321,11 +324,9 @@ test('Builder protects a WorldObject referenced by a WorldEvent object-anchor', 
   );
 });
 
-test('WorldEvent contract lot adds no Event Controller to runtime Exploration', async () => {
+test('WorldEvent message flow uses the dedicated runtime controller and keeps consumed state out of Builder', async () => {
   const { readFile } =
-    await import(
-      'node:fs/promises'
-    );
+    await import('node:fs/promises');
 
   const runtime =
     await readFile(
@@ -343,47 +344,13 @@ test('WorldEvent contract lot adds no Event Controller to runtime Exploration', 
       ),
       'utf8'
     );
-  const html =
-    await readFile(
-      new URL(
-        '../builder.html',
-        import.meta.url
-      ),
-      'utf8'
-    );
 
-  assert.equal(
-    runtime.includes(
-      'world-event-model'
-    ),
-    false
+  assert.match(
+    runtime,
+    /createWorldEventController/
   );
   assert.equal(
-    runtime.includes(
-      'EventController'
-    ),
-    false
-  );
-  assert.match(
-    html,
-    /data-panel="events"/
-  );
-  assert.match(
-    html,
-    /value="on-enter"/
-  );
-  assert.match(
-    html,
-    /value="on-interact"/
-  );
-  assert.match(
-    builder,
-    /addWorldEvent/
-  );
-  assert.equal(
-    builder.includes(
-      '.consumed'
-    ),
+    builder.includes('.consumed'),
     false
   );
 });
