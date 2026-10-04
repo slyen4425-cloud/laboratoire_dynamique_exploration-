@@ -17,6 +17,14 @@ const EXPECTED = Object.freeze({
     './assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp',
   'texture.grass.forest.base.02':
     './assets/exploration/materials/forest/surfaces/grass_forest_base_02.webp',
+  'texture.ground.forest_floor.stylized.01':
+    './assets/exploration/materials/forest/surfaces/forest_floor_stylized_01.webp',
+  'texture.ground.snow.stylized.01':
+    './assets/exploration/materials/forest/surfaces/snow_ground_stylized_01.webp',
+  'texture.ground.sand.stylized.01':
+    './assets/exploration/materials/forest/surfaces/sand_ground_stylized_01.webp',
+  'texture.ground.mountain_rock.stylized.01':
+    './assets/exploration/materials/forest/surfaces/mountain_rock_stylized_01.webp',
   'texture.road.dirt.center.01':
     './assets/exploration/materials/forest/paths/road_dirt_base_01.webp',
   'texture.water.forest_stream.center.01':
@@ -31,10 +39,10 @@ const EXPECTED = Object.freeze({
     './assets/exploration/materials/forest/decals/roots_forest_floor_decal_01.webp'
 });
 
-test('Material Asset Adapter exposes exactly the eight local pilot assets', () => {
+test('Material Asset Adapter exposes the pilot assets plus stylized terrain surfaces', () => {
   const assets = listMaterialAssets();
 
-  assert.equal(assets.length, 8);
+  assert.equal(assets.length, 12);
 
   for (const [id, path] of Object.entries(EXPECTED)) {
     const asset = resolveMaterialAsset(id);
