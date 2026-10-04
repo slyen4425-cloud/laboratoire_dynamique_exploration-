@@ -3,6 +3,7 @@ import {
   addActorPlacement,
   addPortal,
   addSpawn,
+  addWorldEvent,
   addSurfacePath,
   addTerrainFamilyDefinition,
   addWorldObject,
@@ -11,6 +12,7 @@ import {
   deleteActorPlacement,
   deletePortal,
   deleteSpawn,
+  deleteWorldEvent,
   deleteSurfacePath,
   deleteTerrainFamilyDefinition,
   deleteWorldObject,
@@ -24,11 +26,12 @@ import {
   updateTerrainFamilyElementChance,
   updatePortal,
   updateSpawn,
+  updateWorldEvent,
   updateSurfacePath,
   updateWorldObjectTransform,
   updateWorldObjectOverrides,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=object-catalog-placement-v1';
+} from './world-builder-draft.js?rev=world-event-contract-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -73,6 +76,9 @@ import {
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
+import {
+  resolveWorldTriggerPoint
+} from '../world/world-trigger-geometry.js?rev=world-event-contract-v1';
 import {
   resolveWorldAreaSpawnPoint
 } from '../world/world-area-model.js?rev=terrain-family-encounters-v1';
@@ -258,6 +264,8 @@ let selectedSpawnId = null;
 let selectedObjectId = null;
 let selectedPortalId =
   draft.portals[0]?.id ?? null;
+let selectedEventId =
+  draft.events?.[0]?.id ?? null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
 let selectedTerrainFamilyDefinitionId =
@@ -340,6 +348,12 @@ function currentSpawnRaw() {
 function currentPortalRaw() {
   return draft.portals?.find(
     (portal) => portal.id === selectedPortalId
+  ) ?? null;
+}
+
+function currentWorldEventRaw() {
+  return draft.events?.find(
+    (event) => event.id === selectedEventId
   ) ?? null;
 }
 
@@ -432,6 +446,10 @@ function ensureSelections() {
 
   if (!draft.portals?.some((portal) => portal.id === selectedPortalId)) {
     selectedPortalId = draft.portals?.[0]?.id ?? null;
+  }
+
+  if (!draft.events?.some((event) => event.id === selectedEventId)) {
+    selectedEventId = draft.events?.[0]?.id ?? null;
   }
 
   const families = terrainFamilies();
@@ -1395,6 +1413,252 @@ function refreshPortalControls() {
   $('portal-label').value = portal.visual?.label ?? '';
 }
 
+
+function eventSourceObjects(event) {
+  const area = draft.areas.find(
+    (item) =>
+      item.id === event?.sourceAreaId
+  );
+
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  ).filter(
+    (object) =>
+      Array.isArray(object.doorAnchors) &&
+      object.doorAnchors.length > 0
+  );
+}
+
+function refreshWorldEventControls() {
+  const events = draft.events ?? [];
+
+  setOptions(
+    $('event-select'),
+    events,
+    selectedEventId,
+    {
+      label: (event) =>
+        `${event.id} · ${event.activation ?? 'on-enter'}`
+    }
+  );
+
+  if (selectedEventId) {
+    $('event-select').value =
+      selectedEventId;
+  }
+
+  const event =
+    currentWorldEventRaw();
+  const disabled = !event;
+
+  for (const id of [
+    'event-delete',
+    'event-enabled',
+    'event-source-area',
+    'event-activation',
+    'event-trigger-kind',
+    'event-point-x',
+    'event-point-y',
+    'event-radius',
+    'event-object',
+    'event-anchor',
+    'event-definition-id',
+    'event-repeat-policy'
+  ]) {
+    $(id).disabled = disabled;
+  }
+
+  if (!event) {
+    $('event-point-fields').hidden = false;
+    $('event-object-fields').hidden = true;
+    $('event-definition-id').value = '';
+    return;
+  }
+
+  setOptions(
+    $('event-source-area'),
+    draft.areas,
+    event.sourceAreaId
+  );
+  $('event-source-area').value =
+    event.sourceAreaId;
+  $('event-enabled').checked =
+    event.enabled !== false;
+  $('event-activation').value =
+    event.activation ?? 'on-enter';
+  $('event-repeat-policy').value =
+    event.repeatPolicy ?? 'once';
+  $('event-definition-id').value =
+    event.eventDefinitionId ?? '';
+
+  const triggerKind =
+    event.trigger?.kind === 'object-anchor'
+      ? 'object-anchor'
+      : 'point';
+
+  $('event-trigger-kind').value =
+    triggerKind;
+
+  const isPoint =
+    triggerKind === 'point';
+
+  $('event-point-fields').hidden =
+    !isPoint;
+  $('event-object-fields').hidden =
+    isPoint;
+
+  $('event-point-x').value =
+    isPoint
+      ? event.trigger?.x ?? ''
+      : '';
+  $('event-point-y').value =
+    isPoint
+      ? event.trigger?.y ?? ''
+      : '';
+  $('event-radius').value =
+    event.trigger?.radius ?? 28;
+
+  const objects =
+    eventSourceObjects(event);
+
+  setOptions(
+    $('event-object'),
+    objects,
+    event.trigger?.objectId,
+    {
+      label: (object) => object.id
+    }
+  );
+
+  const object = objects.find(
+    (item) =>
+      item.id ===
+      $('event-object').value
+  );
+
+  setOptions(
+    $('event-anchor'),
+    object?.doorAnchors ?? [],
+    event.trigger?.anchorId
+  );
+}
+
+function switchWorldEventTrigger(kind) {
+  const event =
+    currentWorldEventRaw();
+
+  if (!event) return;
+
+  draft = updateWorldEvent(
+    draft,
+    event.id,
+    (nextEvent) => {
+      const area = draft.areas.find(
+        (item) =>
+          item.id === nextEvent.sourceAreaId
+      );
+
+      if (kind === 'object-anchor') {
+        const object =
+          eventSourceObjects(
+            nextEvent
+          )[0];
+        const anchor =
+          object?.doorAnchors?.[0];
+
+        if (!object || !anchor) {
+          return;
+        }
+
+        nextEvent.trigger = {
+          kind: 'object-anchor',
+          objectId: object.id,
+          anchorId: anchor.id,
+          radius:
+            nextEvent.trigger?.radius ??
+            32
+        };
+        return;
+      }
+
+      nextEvent.trigger = {
+        kind: 'point',
+        x: area?.width / 2 ?? 0,
+        y: area?.height / 2 ?? 0,
+        radius:
+          nextEvent.trigger?.radius ??
+          28
+      };
+    }
+  );
+
+  refreshWorldEventControls();
+  refreshJson();
+  renderPreview();
+}
+
+function applyWorldEventInputs() {
+  const event =
+    currentWorldEventRaw();
+
+  if (!event) return;
+
+  draft = updateWorldEvent(
+    draft,
+    event.id,
+    (nextEvent) => {
+      nextEvent.enabled =
+        $('event-enabled').checked;
+      nextEvent.sourceAreaId =
+        $('event-source-area').value;
+      nextEvent.activation =
+        $('event-activation').value;
+      nextEvent.repeatPolicy =
+        $('event-repeat-policy').value;
+      nextEvent.eventDefinitionId =
+        $('event-definition-id')
+          .value
+          .trim();
+
+      const radius =
+        numberValue(
+          $('event-radius'),
+          28
+        );
+
+      if (
+        $('event-trigger-kind').value ===
+        'object-anchor'
+      ) {
+        nextEvent.trigger = {
+          kind: 'object-anchor',
+          objectId:
+            $('event-object').value,
+          anchorId:
+            $('event-anchor').value,
+          radius
+        };
+      } else {
+        nextEvent.trigger = {
+          kind: 'point',
+          x: numberValue(
+            $('event-point-x'),
+            0
+          ),
+          y: numberValue(
+            $('event-point-y'),
+            0
+          ),
+          radius
+        };
+      }
+    }
+  );
+
+  refreshJson();
+  renderPreview();
+}
+
 function refreshJson() {
   const result = currentValidation();
 
@@ -1420,6 +1684,7 @@ function refreshControls() {
   refreshObjectControls();
   refreshActorControls();
   refreshPortalControls();
+  refreshWorldEventControls();
   refreshJson();
   renderPreview();
 }
@@ -1719,6 +1984,44 @@ function drawBuilderOverlays(area, document, camera) {
       ctx.lineWidth = 3 / zoom;
       ctx.strokeStyle = 'rgba(255,146,232,0.95)';
       ctx.stroke();
+    }
+  }
+
+  const worldEvent =
+    document.events?.find(
+      (item) =>
+        item.id === selectedEventId &&
+        item.sourceAreaId === area.id
+    );
+
+  if (worldEvent) {
+    const point =
+      resolveWorldTriggerPoint(
+        area,
+        worldEvent.trigger
+      );
+
+    if (point) {
+      ctx.beginPath();
+      ctx.arc(
+        point.x - camera.x,
+        point.y - camera.y,
+        point.radius,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle =
+        'rgba(255,214,105,0.10)';
+      ctx.fill();
+      ctx.lineWidth = 3 / zoom;
+      ctx.strokeStyle =
+        'rgba(255,214,105,0.98)';
+      ctx.setLineDash([
+        8 / zoom,
+        6 / zoom
+      ]);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 
@@ -3122,6 +3425,160 @@ for (const id of [
   'portal-label'
 ]) {
   $(id).addEventListener('change', applyPortalInputs);
+}
+
+
+$('event-select').addEventListener('change', () => {
+  selectedEventId =
+    $('event-select').value || null;
+  refreshWorldEventControls();
+  renderPreview();
+});
+
+$('event-add').addEventListener('click', () => {
+  const area =
+    currentAreaRaw();
+
+  if (!area) return;
+
+  const before =
+    new Set(
+      (draft.events ?? [])
+        .map((event) => event.id)
+    );
+
+  draft = addWorldEvent(
+    draft,
+    {
+      sourceAreaId: area.id,
+      enabled: true,
+      activation: 'on-enter',
+      trigger: {
+        kind: 'point',
+        x: area.width / 2,
+        y: area.height / 2,
+        radius: 48
+      },
+      eventDefinitionId:
+        'eventdef.new',
+      repeatPolicy: 'once'
+    }
+  );
+
+  selectedEventId =
+    draft.events?.find(
+      (event) =>
+        !before.has(event.id)
+    )?.id ??
+    selectedEventId;
+
+  refreshControls();
+});
+
+$('event-delete').addEventListener('click', () => {
+  if (!selectedEventId) return;
+
+  draft =
+    deleteWorldEvent(
+      draft,
+      selectedEventId
+    );
+
+  selectedEventId =
+    draft.events?.[0]?.id ??
+    null;
+
+  refreshControls();
+});
+
+$('event-trigger-kind').addEventListener(
+  'change',
+  () => {
+    switchWorldEventTrigger(
+      $('event-trigger-kind').value
+    );
+  }
+);
+
+$('event-source-area').addEventListener(
+  'change',
+  () => {
+    const event =
+      currentWorldEventRaw();
+
+    if (!event) return;
+
+    draft = updateWorldEvent(
+      draft,
+      event.id,
+      (nextEvent) => {
+        nextEvent.sourceAreaId =
+          $('event-source-area').value;
+      }
+    );
+
+    switchWorldEventTrigger(
+      $('event-trigger-kind').value
+    );
+  }
+);
+
+$('event-object').addEventListener(
+  'change',
+  () => {
+    const event =
+      currentWorldEventRaw();
+
+    if (!event) return;
+
+    const object =
+      eventSourceObjects(event)
+        .find(
+          (item) =>
+            item.id ===
+            $('event-object').value
+        );
+    const anchor =
+      object?.doorAnchors?.[0];
+
+    draft = updateWorldEvent(
+      draft,
+      event.id,
+      (nextEvent) => {
+        if (
+          nextEvent.trigger?.kind !==
+          'object-anchor'
+        ) {
+          return;
+        }
+
+        nextEvent.trigger.objectId =
+          object?.id ?? '';
+        nextEvent.trigger.anchorId =
+          anchor?.id ?? '';
+      }
+    );
+
+    refreshWorldEventControls();
+    refreshJson();
+    renderPreview();
+  }
+);
+
+for (const id of [
+  'event-enabled',
+  'event-activation',
+  'event-point-x',
+  'event-point-y',
+  'event-radius',
+  'event-anchor',
+  'event-definition-id',
+  'event-repeat-policy'
+]) {
+  $(id).addEventListener(
+    'change',
+    applyWorldEventInputs
+  );
 }
 
 $('preview-fit').addEventListener('click', () => {
