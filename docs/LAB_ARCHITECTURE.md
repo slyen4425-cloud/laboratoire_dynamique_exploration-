@@ -731,3 +731,21 @@ Il stocke :
 
 La résolution de la position monde est pure et se fait depuis le WorldDocument courant.
 Le World Builder Dynamique déplace uniquement le Building ; il ne répare ni ne synchronise le Spawn.
+
+## Architecture modulaire des éditeurs
+
+Référence normative :
+`docs/LAB_MODULAR_AUTHORING_ARCHITECTURE_V1.md`.
+
+Le World Builder Dynamique est un **éditeur de composition locale**, pas l'éditeur universel de GenSrpG.
+
+Règle permanente :
+- les éditeurs de définitions produisent des catalogues/documents versionnés ;
+- les éditeurs de composition consomment ces définitions par références stables ;
+- les règles générales d'un mode restent chez l'autorité de ce mode ;
+- les futurs World Editor / Campaign Editor composent des documents existants par référence ;
+- ajouter un nouvel éditeur ne doit jamais créer une seconde autorité sur un domaine existant.
+
+La création intrinsèque d'un WorldObject appartient à un futur **Object Definition Editor** séparé. Le World Builder conserve le placement et les overrides explicitement autorisés par contrat.
+
+Les familles/éléments/types destinés à être extensibles par les créateurs doivent provenir de registres/catalogues de données. Les valeurs livrées par défaut sont des presets, pas une enum moteur fermée.
