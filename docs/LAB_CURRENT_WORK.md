@@ -71,7 +71,58 @@
 > - lever la note historique `Player Party / Rappel -> Invocation FROZEN` ;
 > - clôturer ce lot en GREEN sans ajouter de code Exploration.
 >
-> État : **TECHNIQUE GREEN — gate multi-combat utilisateur requis**.
+> Incident gate — 404 au lancement Combat :
+> - reproduction utilisateur : validation de la rencontre -> GitHub Pages 404 ;
+> - cause racine : la lignée Combat récente corrigée ne contenait plus `examples/dom-demo/exploration-encounter.html` ni les contrats Exploration/Party associés ;
+> - le chemin construit par Encounter Bridge Exploration était correct ;
+> - aucun correctif de navigation Builder/Exploration n'était requis.
+>
+> Convergence Combat réalisée dans :
+> `work/lab-exploration-bridge-convergence-v1-2026-10-04`
+>
+> Base Combat conservée :
+> `794b80d3deecac4705faf5c9d581f130074d5c0c`
+> (correctifs récents Rappel/Invocation/zone, CI `37214761522` SUCCESS).
+>
+> Restauré côté Combat uniquement :
+> - page/adaptateur public Exploration Encounter ;
+> - `CaptureEncounterSnapshot v1` ;
+> - `CaptureCombatResult v1` ;
+> - `CaptureParty v1` + party data ;
+> - catalogue ruleset requis ;
+> - tests bridge/party/handoff/visual ;
+> - sentinelle de présence de la page publique.
+>
+> Aucun changement :
+> - Combat Runtime ;
+> - Roster Session ;
+> - Recall/Summon ;
+> - logique de rencontre Exploration ;
+> - Builder ;
+> - `Zombicide-40k`.
+>
+> Combat convergence :
+> - HEAD fonctionnel : `0b20b59c10a2b71d5653408c3d3bfdf2c5b4811c` ;
+> - CI complète Combat : `37216176389` — **SUCCESS** ;
+> - preview : `preview/lab-exploration-bridge-convergence-v1-2026-10-04`.
+>
+> Publication Exploration :
+> - PR infra #74 — **MERGED** ;
+> - main infra : `95591b29b4c9443a7cdd2c0c81e9d8924ea795a6` ;
+> - Pages : `37216263793` — **SUCCESS** ;
+> - `combat-preview` utilise désormais la preview Combat de convergence.
+>
+> Nouveau lien gate :
+> `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=combat-bridge-convergence-v1`
+>
+> Gate utilisateur :
+> 1. Tester en jeu ;
+> 2. déclencher une rencontre puis lancer Combat — **plus de 404 attendu** ;
+> 3. terminer le combat et revenir à Exploration ;
+> 4. déclencher un second combat ;
+> 5. vérifier équipe + Rappel/Invocation/changement de créature.
+>
+> État : **BRIDGE TECHNIQUE GREEN — gate réel multi-combat utilisateur requis**.
 
 ---
 
