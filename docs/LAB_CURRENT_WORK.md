@@ -10,32 +10,43 @@
 >
 > Checkpoint de départ : `checkpoint/exploration-start-terrain-family-extensibility-v1-2026-10-04`
 >
-> Objectif : transformer les 8 familles actuelles en presets par défaut et permettre au World Builder d'ajouter/renommer/supprimer des familles utilisateur, tout en gardant `terrainFamilyId` indépendant des textures.
+> Objectif atteint techniquement :
+> - les 8 familles historiques sont des presets de données, pas une enum produit fermée ;
+> - `WorldDocument.terrainFamilies[]` possède les définitions du monde ;
+> - le Builder peut ajouter, renommer et supprimer une famille non utilisée ;
+> - une famille utilisée par une Area/zone/route/rivière est protégée contre la suppression ;
+> - route et rivière ont désormais une famille éditable ;
+> - famille gameplay et texture visuelle sont découplées ;
+> - les textures proposées dépendent du type de géométrie (surface/path/water), jamais du nom de famille ;
+> - la config de rencontre suit automatiquement les familles du WorldDocument ;
+> - les éléments restent fournis dynamiquement par le catalogue Capture ;
+> - les anciens WorldDocuments sans `terrainFamilies` récupèrent les 8 presets.
 >
 > Autorités :
-> - définitions de familles du monde : WorldDocument ;
-> - placement/usage local : World Surface Model ;
-> - configuration rencontre par famille : Terrain Family Encounter Config ;
-> - éléments/créatures : autorité Capture lecture seule ;
+> - familles du monde : WorldDocument ;
+> - usage local : World Surface Model ;
+> - rencontres : Terrain Family Encounter Config ;
+> - éléments/créatures : Capture en lecture seule ;
 > - textures : Material Registry.
 >
-> Invariants :
-> - aucune famille déduite depuis `materialId` ;
-> - route/rivière ne forcent plus respectivement `road` / `sea` ;
-> - les textures compatibles dépendent du type de géométrie (surface/path/water), pas de la famille ;
-> - import/export conserve familles + rencontres ;
-> - aucun XP/loot/capture dans ce lot ;
-> - aucun changement Combat / Roster / `Zombicide-40k`.
+> CI :
+> - premier HEAD complet : `37189367867` — FAILURE sur 2 sentinelles obsolètes ;
+> - causes : révision Builder trop spécifique dans sentinelle Actor + test héritant des pourcentages démo ;
+> - correction soustractive des sentinelles ;
+> - HEAD technique : `72c51bdbbc5d3056f41ec00275bab43d3b936d00` ;
+> - run `37189417237` — **SUCCESS** (`npm test` + `npm run check`).
 >
-> Tests attendus :
-> - famille utilisateur créée et réutilisable partout ;
-> - famille route/rivière éditable ;
-> - famille + config rencontre survivent export/import ;
-> - suppression protégée si famille utilisée ;
-> - anciens WorldDocuments sans registre explicite conservent les 8 presets ;
-> - éléments Capture restent dynamiques.
+> Gate utilisateur requise avant GREEN final :
+> 1. ouvrir le World Builder > Terrain ;
+> 2. ajouter une famille et la renommer ;
+> 3. vérifier qu’elle apparaît pour le sol, terrain peint, route, rivière et rencontres ;
+> 4. choisir la famille d’une route/rivière sans que sa texture soit forcée ;
+> 5. utiliser la famille sur la carte puis vérifier que sa suppression est protégée ;
+> 6. vérifier que les réglages de rencontre de cette famille restent éditables.
 >
-> État : **WORK — TDD requis avant GREEN**.
+> Hors périmètre confirmé : XP / loot / capture, Combat, Roster, `Zombicide-40k`.
+>
+> État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
 
 ---
 
