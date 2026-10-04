@@ -1,3 +1,82 @@
+# NOTE PRODUIT — Extensibilité des rencontres / familles de terrain — 2026-10-04
+
+Base GREEN :
+`checkpoint/exploration-capture-rewards-progression-audit-v1-green-2026-10-04`
+
+SHA de base :
+`480d6858f53170ed5ff6f1b82db13eb074ca791a`
+
+Checkpoint de départ :
+`checkpoint/exploration-start-encounter-config-extensibility-note-v1-2026-10-04`
+
+Branche :
+`work/exploration-encounter-config-extensibility-note-v1-2026-10-04`
+
+Statut : **NOTE PRODUIT / CONTRAINTE À AUDITER AVANT LE PROCHAIN LOT RENCONTRES**.
+
+## Principe
+
+Le système de rencontres par terrain doit rester entièrement **data-driven et extensible par le créateur**.
+
+Les listes présentes dans l'éditeur ne doivent jamais devenir des enums fermées codées en dur si elles appartiennent au contenu du jeu.
+
+## 1. Éléments Capture dynamiques dans la configuration des rencontres
+
+Dans l'UI où le joueur règle, pour une famille de terrain, les chances d'apparition / répartitions par élément :
+
+- la liste des éléments doit être alimentée depuis l'autorité canonique des éléments Capture ;
+- si un nouvel élément est créé/ajouté au système Capture, il doit apparaître automatiquement dans cette liste sans modification du code de l'éditeur Exploration ;
+- aucun tableau local figé du type Feu/Eau/Terre/etc. ne doit être l'autorité de l'UI ;
+- les pourcentages/chances restent des données configurables du profil/monde ;
+- une migration/version de données doit préserver les anciennes configurations lorsqu'un nouvel élément apparaît.
+
+À auditer avant GREEN :
+1. source réelle de la liste d'éléments dans le Builder/éditeur ;
+2. absence de liste dupliquée dans Exploration ;
+3. comportement quand un élément nouveau est ajouté ;
+4. sauvegarde/export/import des répartitions ;
+5. traitement explicite d'un élément inconnu d'une ancienne sauvegarde.
+
+## 2. Familles de terrain créables par l'utilisateur
+
+Les 8 familles actuelles sont des **familles par défaut**, pas une limite du moteur :
+
+- Plaine (`plain`) ;
+- Forêt (`forest`) ;
+- Mer (`sea`) ;
+- Montagne (`mountain`) ;
+- Volcan (`volcano`) ;
+- Neige (`snow`) ;
+- Route (`road`) ;
+- Sable (`sand`).
+
+Le créateur doit pouvoir, s'il le souhaite :
+
+- créer une nouvelle famille de terrain ;
+- lui donner un identifiant stable et un nom affiché ;
+- configurer sa chance globale de rencontre ;
+- configurer sa répartition par éléments Capture disponibles ;
+- l'associer aux surfaces/zones appropriées via `terrainFamilyId` ;
+- la sauvegarder, l'exporter et la réimporter avec le monde/profil.
+
+Exemples futurs possibles : marais, jungle, ruines, ville, ciel, profondeur marine, etc.
+
+## Contraintes d'architecture
+
+- `terrainFamilyId` reste une sémantique gameplay distincte de `materialId` ;
+- une texture ne crée jamais implicitement une famille ;
+- plusieurs matériaux peuvent partager la même famille ;
+- Terrain Family Registry/config = propriétaire des familles ;
+- Capture = propriétaire des éléments/créatures/raretés ;
+- Exploration Encounter Controller consomme ces données mais ne les duplique pas ;
+- aucune deuxième base locale d'éléments ou de créatures ;
+- aucune branche `if (terrain === "...")` nécessaire pour qu'une famille utilisateur fonctionne.
+
+Critère cible :
+**ajouter un nouvel élément Capture ou une nouvelle famille de terrain ne doit nécessiter aucun changement du moteur Exploration.**
+
+---
+
 # LAB_CURRENT_WORK — Point de reprise unique
 
 > ÉTAT ACTIF — 2026-10-04
