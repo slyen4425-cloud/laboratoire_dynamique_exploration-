@@ -96,7 +96,15 @@
 > - vérifier base d'Area + pinceau terrain sur smartphone/desktop ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview + gate visuel utilisateur requis**.
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-stylized-terrain-surfaces-v1-prevalidation-green-2026-10-04` @ `1c6a88808412b5ee28a4d9495cd68271f802aff1` ;
+> - preview : `preview/exploration-stylized-terrain-surfaces-v1-2026-10-04` @ même SHA ;
+> - PR infrastructure Pages : #79 — **MERGED** ;
+> - main infrastructure : `25f784c4e9ee60e156b1ed73bcc6522e2b7fe6f0` ;
+> - Pages : `37230562737` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=stylized-terrain-surfaces-v1`.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
 
 ---
 
