@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: combat-bridge-convergence-v1-bootstrap-v2
+# preview-revision: multicombat-partyref-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration World Event Building Entry Drag preview
+      - name: Checkout Exploration Multi-combat PartyRef preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-world-event-building-entry-drag-v1-2026-10-04
+          ref: preview/exploration-multicombat-partyref-v1-2026-10-04
 
       - name: Checkout Combat Exploration Bridge Convergence preview
         uses: actions/checkout@v4
