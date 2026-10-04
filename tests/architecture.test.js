@@ -251,15 +251,26 @@ test('architecture sentinel: WorldDocument owns Object Definition references, ne
     ),
     false
   );
+  const objectBlock =
+    demoWorld.match(
+      /objects:\s*\[([\s\S]*?)\],\s*actors:/
+    )?.[1] ?? '';
+
   assert.equal(
-    /objects:\s*\[[\s\S]*?visual\s*:/.test(
-      demoWorld
+    /\bvisual\s*:/.test(
+      objectBlock
     ),
     false
   );
   assert.equal(
-    /objects:\s*\[[\s\S]*?baseSize\s*:/.test(
-      demoWorld
+    /\bbaseSize\s*:/.test(
+      objectBlock
+    ),
+    false
+  );
+  assert.equal(
+    /\bfootprint\s*:|\bdoorAnchors\s*:|\bkind\s*:/.test(
+      objectBlock
     ),
     false
   );
