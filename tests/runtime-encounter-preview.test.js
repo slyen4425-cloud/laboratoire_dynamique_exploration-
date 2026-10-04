@@ -45,3 +45,20 @@ test('encounter test mode injects deterministic RNG instead of bypassing resolve
   assert.match(source, /random:\s*encounterRandom/);
   assert.equal(/opponentCreatureId\s*=/.test(source), false);
 });
+
+
+test('runtime publishes the canonical Capture player party reference and forbids the retired preview id', async () => {
+  const source = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    source,
+    /playerPartyRef:\s*['"]capture-party-player-v1['"]/
+  );
+  assert.equal(
+    source.includes('capture-party-preview'),
+    false
+  );
+});
