@@ -1,8 +1,11 @@
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {
-  buildingDoorArrivalWorld,
-  normalizeWorldObjects
-} from './world-object-model.js?rev=surface-traversal-replay-v1';
+  buildingDoorArrivalWorld
+} from './world-object-model.js?rev=object-catalog-placement-v1';
+import {
+  normalizeWorldObjectPlacements,
+  resolveWorldObjectPlacements
+} from './world-object-placement-model.js?rev=object-catalog-placement-v1';
 import {
   normalizeWorldActorPlacements
 } from '../actors/world-actor-placement-model.js';
@@ -112,7 +115,7 @@ export function normalizeWorldArea(raw, index = 0) {
     width: finiteNumber(raw.width, 1200, { min: 128, max: 20000 }),
     height: finiteNumber(raw.height, 800, { min: 128, max: 20000 }),
     surface: normalizeWorldSurface(raw.surface),
-    objects: normalizeWorldObjects(raw.objects),
+    objects: normalizeWorldObjectPlacements(raw.objects),
     actors: normalizeWorldActorPlacements(raw.actors),
     obstacles: Object.freeze(obstacles),
     spawns: Object.freeze(uniqueSpawns)
@@ -145,16 +148,23 @@ export function findWorldAreaSpawn(area, spawnId) {
   return area.spawns.find((spawn) => spawn.id === spawnId) ?? null;
 }
 
+export function resolveWorldAreaObjects(area) {
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  );
+}
+
 export function resolveWorldAreaSpawnPoint(area, spawnId) {
   const spawn = findWorldAreaSpawn(area, spawnId);
   if (!spawn) return null;
 
   if (spawn.anchor?.kind === 'building-door') {
-    const building = area.objects.find(
-      (object) =>
-        object.kind === 'building' &&
-        object.id === spawn.anchor.objectId
-    );
+    const building =
+      resolveWorldAreaObjects(area).find(
+        (object) =>
+          object.kind === 'building' &&
+          object.id === spawn.anchor.objectId
+      );
 
     if (!building) return null;
 
