@@ -5,8 +5,8 @@ import {
   isBlocked
 } from '../src/core/collision.js';
 import {
-  normalizeWorldObjects
-} from '../src/world/world-object-model.js';
+  normalizeWorldObjectPlacements
+} from '../src/world/world-object-placement-model.js';
 import {
   normalizeWorldSurface
 } from '../src/world/surface-model.js';
@@ -60,31 +60,26 @@ test('regression: canonical WorldSurface river blocks ground movement without du
 });
 
 test('regression: Bridge traversal overrides the canonical river id without duplicate river geometry', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      id: 'bridge-canonical-river',
-      kind: 'bridge',
-      transform: {
-        x: 300,
-        y: 250,
-        rotationDeg: 90,
-        scaleX: 1,
-        scaleY: 1
-      },
-      baseSize: {
-        length: 180,
-        width: 100
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 1,
-        widthRatio: 0.9,
-        edgeAssistRatio: 0.15,
-        traversalRuleId: 'terrain.bridge',
-        overridesSurfaceFeatureIds: ['river-canonical']
+  const bridge =
+    normalizeWorldObjectPlacements([
+      {
+        id: 'bridge-canonical-river',
+        objectDefinitionId:
+          'objectdef.bridge.wood.rustic_bank.01',
+        transform: {
+          x: 300,
+          y: 250,
+          rotationDeg: 90,
+          scaleX: 1,
+          scaleY: 1
+        },
+        overrides: {
+          traversalSurfaceFeatureIds: [
+            'river-canonical'
+          ]
+        }
       }
-    }
-  ])[0];
+    ])[0];
 
   const world = canonicalRiverWorld({
     objects: [bridge]
