@@ -1079,7 +1079,7 @@ export function deleteWorldObject(
   const referencedByPortal = next.portals?.some(
     (portal) =>
       portal.sourceAreaId === areaId &&
-      portal.trigger?.kind === 'building-door' &&
+      portal.trigger?.kind === 'object-anchor' &&
       portal.trigger.objectId === objectId
   );
 
