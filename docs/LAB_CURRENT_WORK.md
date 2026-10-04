@@ -2,6 +2,45 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Terrain Family Extensibility v1**
+>
+> Branche : `work/exploration-terrain-family-extensibility-v1-2026-10-04`
+>
+> Base GREEN : `e8fd5a6e1588ecf200fb03454e9f1be5ff47791e`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-terrain-family-extensibility-v1-2026-10-04`
+>
+> Objectif : transformer les 8 familles actuelles en presets par défaut et permettre au World Builder d'ajouter/renommer/supprimer des familles utilisateur, tout en gardant `terrainFamilyId` indépendant des textures.
+>
+> Autorités :
+> - définitions de familles du monde : WorldDocument ;
+> - placement/usage local : World Surface Model ;
+> - configuration rencontre par famille : Terrain Family Encounter Config ;
+> - éléments/créatures : autorité Capture lecture seule ;
+> - textures : Material Registry.
+>
+> Invariants :
+> - aucune famille déduite depuis `materialId` ;
+> - route/rivière ne forcent plus respectivement `road` / `sea` ;
+> - les textures compatibles dépendent du type de géométrie (surface/path/water), pas de la famille ;
+> - import/export conserve familles + rencontres ;
+> - aucun XP/loot/capture dans ce lot ;
+> - aucun changement Combat / Roster / `Zombicide-40k`.
+>
+> Tests attendus :
+> - famille utilisateur créée et réutilisable partout ;
+> - famille route/rivière éditable ;
+> - famille + config rencontre survivent export/import ;
+> - suppression protégée si famille utilisée ;
+> - anciens WorldDocuments sans registre explicite conservent les 8 presets ;
+> - éléments Capture restent dynamiques.
+>
+> État : **WORK — TDD requis avant GREEN**.
+
+---
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Modular Authoring Architecture v1 — documentation**
 >
 > Branche : `work/exploration-modular-authoring-architecture-v1-2026-10-04`
