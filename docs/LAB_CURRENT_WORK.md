@@ -2,6 +2,80 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Water + Lava Materials v1**
+>
+> Branche : `work/exploration-water-lava-materials-v1-2026-10-04`
+>
+> Base GREEN : `924a35460eac27bed649c9d0be29f2408099b830`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-water-lava-materials-v1-2026-10-04`
+>
+> Dernier GREEN : `checkpoint/exploration-stylized-terrain-surfaces-v1-green-2026-10-04`
+>
+> Mission unique :
+> - conserver `water.forest_stream` comme choix existant ;
+> - ajouter trois textures d'eau stylisées distinctes dans le même Material Registry ;
+> - ajouter une lave visuelle utilisable avec l'outil Rivière / eau ;
+> - ajouter un sol volcanique cendre + fissures de lave comme matériau `surface` ;
+> - rendre automatiquement ces choix disponibles dans le Builder via les listes existantes `waterMaterials` / `surfaceMaterials` ;
+> - conserver la géométrie rivière/zone et les familles gameplay séparées des matériaux visuels.
+>
+> Assets source validés :
+> - eau claire bleue ;
+> - eau turquoise ;
+> - eau sombre / marais ;
+> - lave fluide ;
+> - sol cendre / lave.
+>
+> Propriétaires :
+> - Material Pack / Material Registry : ids, labels, paramètres visuels ;
+> - Material Asset Adapter : assetId -> fichier local ;
+> - Material Texture Loader : chargement ;
+> - Surface Renderer existant : rendu ;
+> - Builder : projection des matériaux depuis le registry, aucune liste parallèle.
+>
+> Invariants / fonctions gelées :
+> - `terrainFamilyId` et `traversalRuleId` restent indépendants de `materialId` ;
+> - une lave choisie comme matériau de rivière ne crée aucune règle de dégâts/traversée implicite ;
+> - aucune texture ne définit la collision ;
+> - aucun second catalogue de matériaux ;
+> - aucun nouveau renderer ;
+> - géométrie routes/rivières/zones inchangée ;
+> - Portals/Events/Combat/Encounter gelés ;
+> - aucun changement `Zombicide-40k`.
+>
+> Tests :
+> - sentinelle RED puis GREEN sur 5 nouveaux assetIds ;
+> - Material Registry : 3 nouvelles eaux + 1 lave `water` + 1 sol volcanique `surface` ;
+> - manifeste : dimensions, bytes et SHA-256 réels ;
+> - les listes Builder continuent de provenir uniquement du Material Registry ;
+> - CI complète ;
+> - preview + gate visuel utilisateur avant GREEN final.
+>
+> Risques :
+> - texture d'eau trop détaillée/repetitive à l'échelle du ruban ;
+> - lave visuellement confondue avec une règle gameplay ;
+> - sol volcanique trop chargé sur smartphone.
+>
+> Hors périmètre du lot :
+> - gameplay lave/dégâts ;
+> - nouveau type de géométrie ;
+> - moteur de transition entre surfaces ;
+> - import utilisateur de textures ;
+> - multi-zone / World Assembly.
+>
+> Décision transition déjà validée pour un lot futur :
+> - priorité à un **feather/blend automatique** au bord des zones peintes, adapté au smartphone ;
+> - pas de textures de transition dédiées pour l'instant ;
+> - ce futur raccord doit rester une responsabilité Renderer/Material System et ne jamais écrire de géométrie secondaire dans le WorldDocument.
+>
+> État : **LOT OUVERT — TDD RED requis avant intégration des assets**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Stylized Terrain Surfaces v1**
 >
 > Branche : `work/exploration-stylized-terrain-surfaces-v1-2026-10-04`
