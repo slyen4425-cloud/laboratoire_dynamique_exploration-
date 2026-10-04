@@ -61,6 +61,13 @@
 >
 > CI HEAD avant clôture : `37189669243` — **SUCCESS**.
 >
+> CI de clôture après consignation validation utilisateur :
+> - run `37192867237` — **SUCCESS** ;
+> - SHA validé : `4ce31dfe5acb35ca492835383ed9c6bd2236c0d5` ;
+> - checkpoint GREEN final : `checkpoint/exploration-terrain-family-extensibility-v1-green-2026-10-04`.
+>
+> Lot fermé : **GREEN utilisateur + CI GREEN**.
+>
 > Publication preview :
 > - preview : `preview/exploration-terrain-family-extensibility-v1-2026-10-04` ;
 > - SHA preview : `5018ae4ba6936f13d4d88e671df9bb9c2202a25c` ;
