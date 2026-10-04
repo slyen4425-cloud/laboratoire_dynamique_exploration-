@@ -60,7 +60,8 @@ export function normalizeWorldDocument(raw = {}) {
         (event) =>
           worldEventReferencesAreValid(
             areas,
-            event
+            event,
+            validPortals
           )
       );
 
