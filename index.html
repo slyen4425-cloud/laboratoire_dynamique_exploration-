@@ -24,6 +24,16 @@
         Ignorer (test labo)
       </button>
     </section>
+    <section id="world-event-dialog" class="world-event-dialog" hidden aria-live="polite">
+      <strong>Message</strong>
+      <p id="world-event-message"></p>
+      <button id="world-event-close" type="button">Continuer</button>
+    </section>
+
+    <button id="world-interact" class="world-interact" type="button" hidden>
+      Interagir
+    </button>
+
     <section class="locomotion-controls" aria-label="Harnais de test locomotion" data-test-harness="locomotion">
       <span class="test-harness-label">TEST locomotion labo</span>
       <button type="button" data-locomotion="ground" class="active">Marche</button>
@@ -34,6 +44,6 @@
       <div id="stick" class="stick"></div>
     </div>
   </main>
-  <script type="module" src="./src/main.js?rev=actor-opponent-view-v1"></script>
+  <script type="module" src="./src/main.js?rev=world-event-message-v1"></script>
 </body>
 </html>
