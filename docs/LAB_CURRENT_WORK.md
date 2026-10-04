@@ -205,7 +205,19 @@
 > - Pages run : `37209570349` — **SUCCESS** ;
 > - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=world-event-building-entry-drag-v1`.
 >
-> État : **TECHNIQUE GREEN — gate utilisateur requise avant GREEN final**.
+> Validation utilisateur — 2026-10-04 :
+> - verdict : « Parfait tout fonctionne bien » ;
+> - zone libre déplaçable validée ;
+> - entrée lieu/bâtiment via Portal validée ;
+> - message runtime validé ;
+> - aucune régression signalée.
+>
+> Suite produit consignée (hors lot courant) :
+> - personnaliser la présentation des messages sans toucher au moteur Event ;
+> - exemples de profils visuels : `standard`, `parchemin`, `lettre`, `papier` ;
+> - ce futur choix devra rester une donnée de présentation du message, jamais une seconde logique d'événement.
+>
+> État : **GREEN utilisateur — clôture CI/checkpoint final en cours**.
 
 ---
 
