@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: multicombat-revalidation-v1
+# preview-revision: combat-bridge-convergence-v1
 
 on:
   push:
@@ -28,11 +28,11 @@ jobs:
         with:
           ref: preview/exploration-world-event-building-entry-drag-v1-2026-10-04
 
-      - name: Checkout Combat Tactics Switch Travel preview
+      - name: Checkout Combat Exploration Bridge Convergence preview
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-combat-tactics-switch-travel-v1-2026-10-04
+          ref: preview/lab-exploration-bridge-convergence-v1-2026-10-04
           path: combat-preview
 
       - name: Checkout Capture global visual assets
