@@ -66,7 +66,7 @@ test('Material Pack v1 references every generated pilot asset semantically', () 
   const ids = collectMaterialAssetIds(materialPackV1.materials);
 
   assert.deepEqual(new Set(ids), new Set(Object.keys(EXPECTED)));
-  assert.equal(ids.length, 8);
+  assert.equal(ids.length, 12);
 });
 
 test('Material Texture Loader has explicit load/get/dispose lifecycle', () => {
