@@ -197,7 +197,15 @@
 > 5. entrer réellement dans la maison via sa porte ;
 > 6. vérifier que le message apparaît après la transition intérieure, sans cercle artificiel.
 >
-> État : **TECHNIQUE GREEN — publication preview de la seconde révision en cours**.
+> Publication seconde révision :
+> - checkpoint : `checkpoint/exploration-world-event-building-entry-drag-v1-prevalidation-green-2026-10-04` @ `7a5183ea9f6a2705436ed334391bf3180cc43b74` ;
+> - preview : `preview/exploration-world-event-building-entry-drag-v1-2026-10-04` @ `7a5183ea9f6a2705436ed334391bf3180cc43b74` ;
+> - PR infra Pages #72 — MERGED ;
+> - main infra : `9653b848431ab05a5a112bfcab3a53551bbf3b8c` ;
+> - Pages run : `37209570349` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=world-event-building-entry-drag-v1`.
+>
+> État : **TECHNIQUE GREEN — gate utilisateur requise avant GREEN final**.
 
 ---
 
