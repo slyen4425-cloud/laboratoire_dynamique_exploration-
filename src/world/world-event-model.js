@@ -10,6 +10,7 @@ export const WORLD_EVENT_SCHEMA_VERSION = 1;
 
 const VALID_ACTIVATIONS = Object.freeze([
   'on-enter',
+  'on-portal-enter',
   'on-interact'
 ]);
 
@@ -60,8 +61,14 @@ export function normalizeWorldEvent(
     VALID_ACTIVATIONS.includes(raw.activation)
       ? raw.activation
       : null;
+  const portalId =
+    normalizedString(raw.portalId);
   const trigger =
-    normalizeWorldTriggerGeometry(raw.trigger);
+    activation === 'on-portal-enter'
+      ? null
+      : normalizeWorldTriggerGeometry(
+          raw.trigger
+        );
   const action =
     normalizeWorldEventAction(
       raw.action
@@ -70,8 +77,12 @@ export function normalizeWorldEvent(
   if (
     !sourceAreaId ||
     !activation ||
-    !trigger ||
-    !action
+    !action ||
+    (
+      activation === 'on-portal-enter'
+        ? !portalId
+        : !trigger
+    )
   ) {
     return null;
   }
@@ -83,7 +94,7 @@ export function normalizeWorldEvent(
       ? raw.repeatPolicy
       : 'once';
 
-  return Object.freeze({
+  const event = {
     schemaVersion: WORLD_EVENT_SCHEMA_VERSION,
     id:
       normalizedString(raw.id) ??
@@ -91,10 +102,17 @@ export function normalizeWorldEvent(
     enabled: raw.enabled !== false,
     sourceAreaId,
     activation,
-    trigger,
     action,
     repeatPolicy
-  });
+  };
+
+  if (activation === 'on-portal-enter') {
+    event.portalId = portalId;
+  } else {
+    event.trigger = trigger;
+  }
+
+  return Object.freeze(event);
 }
 
 export function normalizeWorldEvents(
@@ -124,7 +142,8 @@ export function normalizeWorldEvents(
 
 export function worldEventReferencesAreValid(
   areas,
-  event
+  event,
+  portals = []
 ) {
   if (!event) return false;
 
@@ -134,6 +153,21 @@ export function worldEventReferencesAreValid(
   );
 
   if (!area) return false;
+
+  if (
+    event.activation ===
+      'on-portal-enter'
+  ) {
+    return Boolean(
+      portals.find(
+        (portal) =>
+          portal.id ===
+            event.portalId &&
+          portal.targetAreaId ===
+            event.sourceAreaId
+      )
+    );
+  }
 
   return Boolean(
     resolveWorldTriggerPoint(
