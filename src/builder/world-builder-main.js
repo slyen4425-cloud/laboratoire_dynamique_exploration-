@@ -1302,11 +1302,16 @@ function refreshActorControls() {
 
 function sourceBuildings(portal) {
   const area = draft.areas.find(
-    (item) => item.id === portal?.sourceAreaId
+    (item) =>
+      item.id === portal?.sourceAreaId
   );
-  return area?.objects?.filter(
-    (object) => object.kind === 'building'
-  ) ?? [];
+
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  ).filter(
+    (object) =>
+      object.kind === 'building'
+  );
 }
 
 function refreshPortalControls() {
