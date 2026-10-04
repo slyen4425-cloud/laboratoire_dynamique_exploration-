@@ -2,6 +2,51 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Trigger Geometry v1**
+>
+> Branche : `work/exploration-trigger-geometry-v1-2026-10-04`
+>
+> Base GREEN : `2487923d67c6629b4fcd8668783b2d805b0fcc62`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-trigger-geometry-v1-2026-10-04`
+>
+> Dernier GREEN : `checkpoint/exploration-object-catalog-placement-v1-green-2026-10-04`
+>
+> Mission unique :
+> - extraire de Portal une géométrie de trigger commune ;
+> - supporter au minimum un point libre et une référence d'objet/anchor ;
+> - faire consommer cette autorité commune par Portal ;
+> - préserver les anciens documents Portal `building-door` via migration normalisée ;
+> - préparer le raccord futur Event/Interaction sans l'implémenter ici.
+>
+> Propriétaires :
+> - géométrie de déclenchement : World Trigger Geometry ;
+> - Portal : transition d'Area uniquement ;
+> - WorldObject : transform + anchors intrinsèques résolus depuis Object Catalog ;
+> - Input/Interaction/Event : hors périmètre.
+>
+> Invariants :
+> - aucune seconde détection de zone ;
+> - Portal ne possède plus sa propre formule distance/résolution anchor ;
+> - aucune lecture de pixels/alpha PNG ;
+> - aucun listener/timer/observer ajouté ;
+> - aucune mutation Capture/Combat/XP/loot ;
+> - `Zombicide-40k` intact.
+>
+> TDD :
+> - RED avant runtime ;
+> - point trigger commun ;
+> - object-anchor trigger commun ;
+> - migration `building-door -> object-anchor` ;
+> - Portal conserve transition vraie Area/Spawn ;
+> - tests Portal historiques GREEN.
+>
+> État : **START — TDD RED à constater**.
+
+---
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Object Catalog + Generic Placement v1**
 >
 > Branche : `work/exploration-object-catalog-placement-v1-2026-10-04`
