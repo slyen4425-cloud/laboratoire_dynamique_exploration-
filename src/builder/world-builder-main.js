@@ -16,7 +16,6 @@ import {
   deleteWorldObject,
   duplicateWorldObject,
   importWorldBuilderDocument,
-  patchWorldObject,
   serializeWorldBuilderDraft,
   updateActorPlacement,
   updateAreaProperties,
@@ -27,9 +26,9 @@ import {
   updateSpawn,
   updateSurfacePath,
   updateWorldObjectTransform,
-  updateWorldObjectVisual,
+  updateWorldObjectOverrides,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=terrain-family-extensibility-v1';
+} from './world-builder-draft.js?rev=object-catalog-placement-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -63,7 +62,14 @@ import {
   WORLD_OBJECT_LIMITS,
   bridgeVisualRect,
   buildingVisualRect
-} from '../world/world-object-model.js?rev=surface-traversal-replay-v1';
+} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+import {
+  resolveWorldObjectPlacement,
+  resolveWorldObjectPlacements
+} from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
+import {
+  objectDefinitionCatalogV1
+} from '../objects/object-definition-catalog.js?rev=object-catalog-placement-v1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
@@ -123,6 +129,9 @@ const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
     CAPTURE_CREATURE_CATALOG_PREVIEW_V1
   );
+
+const objectDefinitions =
+  objectDefinitionCatalogV1.list();
 
 const textureLoader = createMaterialTextureLoader({
   resolveAsset: resolveMaterialAsset
