@@ -10,7 +10,7 @@ import {
   normalizeWorldActorPlacements
 } from '../actors/world-actor-placement-model.js';
 
-export const WORLD_AREA_SCHEMA_VERSION = 3;
+export const WORLD_AREA_SCHEMA_VERSION = 4;
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max
