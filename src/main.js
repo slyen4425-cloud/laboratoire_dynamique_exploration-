@@ -226,6 +226,9 @@ const captureCreatureCatalog =
 const captureActorDefinitionProvider =
   await createCaptureActorPreviewProviderV1();
 
+const CAPTURE_PLAYER_PARTY_REF =
+  'capture-party-player-v1';
+
 const encounterController = createEncounterController({
   checkDistance: encounterTest ? 80 : 160
 });
@@ -647,7 +650,7 @@ function update(dt) {
     player,
     encounterConfig: activeWorldDocument.encounterConfig,
     captureCatalog: captureCreatureCatalog,
-    playerPartyRef: 'capture-party-preview',
+    playerPartyRef: CAPTURE_PLAYER_PARTY_REF,
     rulesetId: 'capture.standard.1v1',
     random: encounterRandom
   });
