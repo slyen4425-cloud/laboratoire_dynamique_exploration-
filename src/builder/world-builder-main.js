@@ -1451,12 +1451,19 @@ function eventPortalOptions() {
             )
           : null;
 
+      const definition =
+        object
+          ? objectDefinitionCatalogV1.get(
+              object.objectDefinitionId
+            )
+          : null;
+
       return {
         id: portal.id,
         label:
           object
-            ? `${object.id} → ${portal.targetAreaId}`
-            : `${portal.id} → ${portal.targetAreaId}`
+            ? `${definition?.label ?? 'Bâtiment'} · ${object.id}`
+            : `Lieu · ${portal.targetAreaId}`
       };
     });
 }
