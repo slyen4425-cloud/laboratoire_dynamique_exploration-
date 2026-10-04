@@ -17,7 +17,6 @@ import {
   updatePortal,
   updateSpawn,
   updateWorldObjectTransform,
-  updateWorldObjectVisual,
   validateWorldBuilderDraft
 } from '../src/builder/world-builder-draft.js';
 
@@ -133,24 +132,30 @@ test('Builder transform edits use WorldObject data, not renderer state', () => {
   });
 });
 
-test('Changing visual asset never changes Building gameplay data', () => {
-  const before = draft();
-  const houseBefore = before.areas[0].objects.find(
-    (item) => item.id === 'forest-house-01'
+test('Builder placement never owns intrinsic visual or geometry data', () => {
+  const source = draft();
+  const house = source.areas[0].objects.find(
+    (item) =>
+      item.id === 'forest-house-01'
   );
 
-  const after = updateWorldObjectVisual(
-    before,
-    'forest-exterior',
-    'forest-house-01',
-    'object.building.house.fantasy_wood_stone.01'
-  );
-  const houseAfter = after.areas[0].objects.find(
-    (item) => item.id === 'forest-house-01'
+  assert.equal(
+    house.objectDefinitionId,
+    'objectdef.building.house.fantasy_wood_stone.01'
   );
 
-  assert.deepEqual(houseAfter.footprint, houseBefore.footprint);
-  assert.deepEqual(houseAfter.doorAnchors, houseBefore.doorAnchors);
+  for (const key of [
+    'visual',
+    'baseSize',
+    'footprint',
+    'doorAnchors',
+    'kind'
+  ]) {
+    assert.equal(
+      key in house,
+      false
+    );
+  }
 });
 
 test('Builder can duplicate an object with unique id and offset', () => {
@@ -160,7 +165,9 @@ test('Builder can duplicate an object with unique id and offset', () => {
     'forest-house-01'
   );
   const houses = next.areas[0].objects.filter(
-    (item) => item.kind === 'building'
+    (item) =>
+      item.objectDefinitionId ===
+      'objectdef.building.house.fantasy_wood_stone.01'
   );
 
   assert.equal(houses.length, 2);
@@ -195,7 +202,8 @@ test('Builder adds a raw WorldObject without inventing a parallel map format', (
     draft(),
     'forest-exterior',
     {
-      kind: 'bridge',
+      objectDefinitionId:
+        'objectdef.bridge.wood.rustic_bank.01',
       transform: {
         x: 400,
         y: 400,
@@ -203,19 +211,8 @@ test('Builder adds a raw WorldObject without inventing a parallel map format', (
         scaleX: 1,
         scaleY: 1
       },
-      baseSize: {
-        length: 160,
-        width: 80
-      },
-      visual: {
-        assetId: 'object.bridge.wood.rustic_bank.01'
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 0.9,
-        widthRatio: 0.8,
-        edgeAssistRatio: 0.15,
-        overridesObstacleIds: []
+      overrides: {
+        traversalSurfaceFeatureIds: []
       }
     }
   );
