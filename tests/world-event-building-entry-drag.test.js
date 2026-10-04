@@ -180,7 +180,7 @@ test('Builder supports direct drag of selected free event circle', async () => {
   );
   assert.match(
     source,
-    /event\.trigger\?\.kind === 'point'/
+    /event\?\.trigger\?\.kind === 'point'/
   );
   assert.match(
     source,
