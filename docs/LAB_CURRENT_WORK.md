@@ -157,7 +157,21 @@
 > 6. vérifier que le message apparaît et bloque le déplacement jusqu'à `Continuer` ;
 > 7. optionnel : choisir `Le joueur interagit`, tester le bouton `Interagir`.
 >
-> État : **TECHNIQUE GREEN — nouvelle gate utilisateur requise avant GREEN final**.
+> Gate utilisateur — seconde révision requise 2026-10-04 :
+> - ambiguïté confirmée entre « entrer dans une zone » et « entrer dans une maison » ;
+> - décision produit : distinguer clairement `zone libre`, `entrée dans un lieu/bâtiment` et `interaction` ;
+> - l'entrée dans un bâtiment doit consommer le Portal existant comme fait d'entrée, sans recréer une détection de porte ;
+> - le cercle de zone libre doit être déplaçable directement au doigt/souris dans le Builder, comme les autres éléments, sans imposer X/Y.
+>
+> Révision du même lot avant GREEN :
+> - ajouter une activation canonique `on-portal-enter` référencée par `portalId` ;
+> - Event Controller observe uniquement `viaPortalId` produit par Portal ;
+> - UI créateur : « Entrer dans une zone / Entrer dans un lieu ou bâtiment / Interagir » ;
+> - sélection du lieu/bâtiment par Portal entrant, avec libellé lisible ;
+> - cercle point sélectionné draggable directement dans la preview Builder ;
+> - coordonnées X/Y conservées uniquement dans les détails avancés.
+>
+> État : **GATE UTILISATEUR REFUSÉ — seconde révision UX/fonctionnelle en cours**.
 
 ---
 
