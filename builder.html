@@ -86,8 +86,33 @@
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
         <p class="builder-hint">
-          Choisis Terrain, Route ou Rivière puis dessine directement sur la carte. Les trois outils affichent leur largeur réelle comme un pinceau.
+          Choisis Terrain, Route ou Rivière puis dessine directement sur la carte. Famille gameplay et texture visuelle restent indépendantes.
         </p>
+
+        <section class="terrain-family-definition-panel">
+          <h3>Familles de terrain</h3>
+          <p class="builder-hint">
+            Les familles fournies par défaut sont des presets. Tu peux en ajouter et les renommer pour ce monde.
+          </p>
+          <div class="row">
+            <select id="terrain-family-definition-select"></select>
+            <button id="terrain-family-add" type="button">+ Famille</button>
+            <button id="terrain-family-delete" type="button" class="danger">Supprimer</button>
+          </div>
+          <div class="grid-2">
+            <label>
+              ID stable
+              <output id="terrain-family-id"></output>
+            </label>
+            <label>
+              Nom
+              <input id="terrain-family-label" type="text" />
+            </label>
+          </div>
+          <p id="terrain-family-delete-status" class="builder-hint">
+            Une famille utilisée par une surface ne peut pas être supprimée.
+          </p>
+        </section>
 
         <div class="terrain-brush-panel">
           <div class="grid-2">
@@ -112,11 +137,15 @@
           </p>
         </div>
 
+        <h3>Route</h3>
         <div class="grid-2">
           <label>
-            Route — texture
+            Famille
+            <select id="terrain-route-family"></select>
+          </label>
+          <label>
+            Texture
             <select id="terrain-route-material"></select>
-            <small>Famille fixe : Route</small>
           </label>
           <label>
             Largeur route / pinceau
@@ -125,10 +154,17 @@
               <output id="terrain-route-width-value" for="terrain-route-width">82</output>
             </div>
           </label>
+        </div>
+
+        <h3>Rivière / eau</h3>
+        <div class="grid-2">
           <label>
-            Mer / eau — texture
+            Famille
+            <select id="terrain-river-family"></select>
+          </label>
+          <label>
+            Texture
             <select id="terrain-river-material"></select>
-            <small>Famille fixe : Mer</small>
           </label>
           <label>
             Largeur rivière / pinceau
@@ -142,7 +178,7 @@
         <section class="terrain-encounter-panel">
           <h3>Rencontres par famille</h3>
           <p class="builder-hint">
-            Configure une fois chaque famille. Toutes les textures de cette famille utilisent automatiquement ces règles.
+            Configure une fois chaque famille. Toutes les surfaces portant cette famille utilisent automatiquement ces règles.
             La rareté propre de chaque créature reste celle définie dans Capture.
           </p>
 
@@ -347,6 +383,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=actor-opponent-view-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=terrain-family-extensibility-v1"></script>
 </body>
 </html>
