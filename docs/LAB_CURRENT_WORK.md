@@ -169,7 +169,22 @@
 > Nouveau gate :
 > `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=multicombat-partyref-v1`
 >
-> État : **BRIDGE + BOOTSTRAP + PARTY REF TECHNIQUES GREEN — gate réel multi-combat utilisateur requis**.
+> État : **GREEN FINAL — multi-combat / Player Party validé utilisateur le 2026-10-04**.
+>
+> Clôture finale du gate historique :
+> - correction finale propriétaire côté Combat : `RosterController.ownsSlot(actorId)`, sans ID ennemi codé en dur et sans seconde autorité ;
+> - preview Combat validée : `preview/lab-exploration-roster-target-availability-v1-2026-10-04` @ `1b7f20305ac47baabef6fabe06930566f09a973d` ;
+> - CI Combat : `37224863232` — **SUCCESS** ;
+> - infrastructure Pages Exploration : `main` @ `dd2898efd511a54a7116b440cbb9a37967345d06` ;
+> - Pages : `37224937771` — **SUCCESS** ;
+> - verdict utilisateur sur le vrai chemin : « ok ca marche » ;
+> - chemin validé : Exploration -> rencontre -> Combat -> Rappel / Invocation / changement de créature -> retour Exploration -> second Combat ;
+> - équipe reconnue et utilisable au second combat ;
+> - aucune correction gameplay Exploration ajoutée pour contourner Roster/Party ;
+> - la note historique `Player Party / Rappel -> Invocation FROZEN` est levée.
+>
+> Checkpoint final prévu après CI de cette clôture documentaire :
+> `checkpoint/exploration-multicombat-revalidation-v1-green-2026-10-04`.
 
 ---
 
