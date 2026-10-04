@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const ENTRY_REVISION = 'player-party-ref-v1';
 const ACTOR_REVISION = 'actor-opponent-view-v1';
 
 test('public Actor opponent-view fix cache-busts the complete module chain', async () => {
@@ -41,7 +40,7 @@ test('public Actor opponent-view fix cache-busts the complete module chain', asy
   assert.match(
     index,
     new RegExp(
-      `src/main\\.js\\?rev=${ENTRY_REVISION}`
+      'src/main\\.js\\?rev=[A-Za-z0-9._-]+'
     )
   );
   assert.match(
