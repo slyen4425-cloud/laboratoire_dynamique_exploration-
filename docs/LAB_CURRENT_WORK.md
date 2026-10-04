@@ -55,7 +55,59 @@
 > - Capture/Combat/XP/loot ;
 > - `Zombicide-40k`.
 >
-> État : **START — TDD RED à constater**.
+> Résultat technique :
+> - `WorldDocument.schemaVersion = 3` avec `events[]` ;
+> - `WorldEvent v1` : `id + enabled + sourceAreaId + activation + trigger + eventDefinitionId + repeatPolicy` ;
+> - activation : `on-enter` ou `on-interact` ;
+> - trigger : réutilise exclusivement `WorldTriggerGeometry` GREEN (`point` / `object-anchor`) ;
+> - `repeatPolicy` : `once` ou `repeatable` ;
+> - `consumed` n'est jamais sérialisé dans la carte ;
+> - références Area/object-anchor invalides filtrées par le WorldDocument ;
+> - suppression d'un WorldObject référencé par un Event object-anchor protégée ;
+> - Builder > Événements : ajout, suppression, activation, Area, mode, trigger, rayon, objet/ancre, répétition, `eventDefinitionId` ;
+> - preview Builder affiche la zone de l'Event sélectionné ;
+> - aucun Event Controller/import runtime ajouté à `src/main.js`.
+>
+> TDD :
+> - RED : `b0514d6d5b5d67416dfefa80eec703ccfe6b6186` ;
+> - CI RED : `37201008275` — FAILURE attendue ;
+> - HEAD fonctionnel : `2c643da48a2696e6c0c5dff15e50ccd3b8eb874d` ;
+> - CI fonctionnelle/sentinelles : `37201249241` — **SUCCESS**.
+>
+> Prévalidation :
+> - checkpoint : `checkpoint/exploration-world-event-contract-v1-prevalidation-green-2026-10-04` ;
+> - preview : `preview/exploration-world-event-contract-v1-2026-10-04` @ `2c643da48a2696e6c0c5dff15e50ccd3b8eb874d` ;
+> - PR infra Pages #70 — MERGED ;
+> - main infra : `b04892c5244d38c7a2ce533ec20d21a9eeb22cd2` ;
+> - Pages run : `37201323247` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=world-event-contract-v1`.
+>
+> Gate utilisateur avant GREEN final :
+> 1. ouvrir Builder > Événements ;
+> 2. créer un événement ;
+> 3. tester `Entrée dans la zone` avec Point / X / Y / Rayon ;
+> 4. tester `Interaction` avec `Ancre objet`, maison + `main-door` ;
+> 5. tester `Une fois` / `Répétable` et Activé ;
+> 6. modifier `eventDefinitionId` ;
+> 7. déplacer/rotationner/scaler la maison et vérifier que le cercle Event object-anchor suit l'ancre ;
+> 8. vérifier le JSON : Event présent, aucun champ `consumed`.
+>
+> Important :
+> - ce lot n'exécute volontairement encore aucun événement ;
+> - `on-enter` / `on-interact` sont des bindings de données authorés ;
+> - le prochain lot après gate sera `Interaction/Event Controller v1`, raccordé à ces données sans nouvelle géométrie.
+>
+> Hors périmètre confirmé :
+> - exécution Event ;
+> - bouton Interagir/Input ;
+> - coffre fonctionnel ;
+> - Event Action Catalog ;
+> - persistance `consumed` ;
+> - nouveaux assets ;
+> - Capture/Combat/XP/loot ;
+> - `Zombicide-40k`.
+>
+> État : **TECHNIQUE GREEN — preview/gate utilisateur avant GREEN final**.
 
 ---
 
