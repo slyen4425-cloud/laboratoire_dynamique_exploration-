@@ -4,160 +4,188 @@ import assert from 'node:assert/strict';
 import {
   buildingDoorAnchorWorld,
   buildingFootprintRect,
-  buildingVisualRect,
-  normalizeWorldObjects
+  buildingVisualRect
 } from '../src/world/world-object-model.js';
+import {
+  normalizeWorldObjectPlacements,
+  resolveWorldObjectPlacement
+} from '../src/world/world-object-placement-model.js';
 import {
   circleIntersectsOrientedRect,
   isBlocked
 } from '../src/core/collision.js';
 
-function makeBuilding(assetId = 'object.building.house.fantasy_wood_stone.01') {
-  return normalizeWorldObjects([
+function makeBuildingPlacement(
+  transform = {}
+) {
+  return normalizeWorldObjectPlacements([
     {
       id: 'house-1',
-      kind: 'building',
+      objectDefinitionId:
+        'objectdef.building.house.fantasy_wood_stone.01',
       transform: {
         x: 300,
         y: 240,
         rotationDeg: 90,
         scaleX: 1.5,
-        scaleY: 0.75
-      },
-      baseSize: {
-        width: 200,
-        height: 160
-      },
-      visual: { assetId },
-      footprint: {
-        enabled: true,
-        widthRatio: 0.8,
-        heightRatio: 0.6,
-        offsetX: 0.1,
-        offsetY: -0.05
-      },
-      doorAnchors: [
-        { id: 'main-door', x: 0, y: 0.4 }
-      ]
+        scaleY: 0.75,
+        ...transform
+      }
     }
   ])[0];
 }
 
-test('Building WorldObject normalizes editor-facing parameters', () => {
-  const building = makeBuilding();
-
-  assert.equal(building.kind, 'building');
-  assert.equal(building.transform.x, 300);
-  assert.equal(building.transform.y, 240);
-  assert.equal(building.transform.rotationDeg, 90);
-  assert.equal(building.transform.scaleX, 1.5);
-  assert.equal(building.transform.scaleY, 0.75);
-  assert.equal(building.baseSize.width, 200);
-  assert.equal(building.baseSize.height, 160);
-  assert.equal(building.footprint.widthRatio, 0.8);
-  assert.equal(building.footprint.heightRatio, 0.6);
-  assert.equal(building.footprint.offsetX, 0.1);
-  assert.equal(building.footprint.offsetY, -0.05);
-  assert.equal(building.doorAnchors[0].id, 'main-door');
-  assert.equal(Object.isFrozen(building.transform), true);
-  assert.equal(Object.isFrozen(building.footprint), true);
-  assert.equal(Object.isFrozen(building.doorAnchors), true);
-});
-
-test('Building door anchors follow position rotation and scale', () => {
-  const building = makeBuilding();
-  const anchor = buildingDoorAnchorWorld(building, 'main-door');
-
-  // Local Y = 160 * 0.75 * 0.4 = 48.
-  // A +90° rotation moves local +Y to world -X.
-  assert.ok(Math.abs(anchor.x - 252) < 1e-9);
-  assert.ok(Math.abs(anchor.y - 240) < 1e-9);
-});
-
-test('Building footprint derives from logical data and transform', () => {
-  const building = makeBuilding();
-  const visual = buildingVisualRect(building);
-  const footprint = buildingFootprintRect(building);
-
-  assert.equal(visual.width, 300);
-  assert.equal(visual.height, 120);
-  assert.equal(footprint.length, 240);
-  assert.equal(footprint.width, 72);
-
-  // Local offset (30, -6), rotated +90° => world (+6, +30).
-  assert.ok(Math.abs(footprint.x - 306) < 1e-9);
-  assert.ok(Math.abs(footprint.y - 270) < 1e-9);
-});
-
-test('Changing Building assetId never changes footprint or door anchors', () => {
-  const first = makeBuilding('object.building.house.fantasy_wood_stone.01');
-  const second = makeBuilding('object.building.house.future_variant.99');
-
-  assert.deepEqual(buildingFootprintRect(first), buildingFootprintRect(second));
-  assert.deepEqual(
-    buildingDoorAnchorWorld(first, 'main-door'),
-    buildingDoorAnchorWorld(second, 'main-door')
+function makeBuilding(
+  transform = {}
+) {
+  return resolveWorldObjectPlacement(
+    makeBuildingPlacement(transform)
   );
-  assert.notEqual(first.visual.assetId, second.visual.assetId);
+}
+
+test('Building placement keeps only reference and transform', () => {
+  const placement =
+    makeBuildingPlacement();
+
+  assert.equal(
+    placement.objectDefinitionId,
+    'objectdef.building.house.fantasy_wood_stone.01'
+  );
+  assert.equal(placement.transform.x, 300);
+  assert.equal(
+    placement.transform.rotationDeg,
+    90
+  );
+
+  for (const key of [
+    'kind',
+    'visual',
+    'baseSize',
+    'footprint',
+    'doorAnchors'
+  ]) {
+    assert.equal(
+      key in placement,
+      false
+    );
+  }
 });
 
-test('Building collision is owned by Collision World logical footprint', () => {
-  const building = normalizeWorldObjects([
-    {
-      id: 'house-collision',
-      kind: 'building',
-      transform: {
-        x: 250,
-        y: 250,
-        rotationDeg: 30,
-        scaleX: 1,
-        scaleY: 1
-      },
-      baseSize: {
-        width: 200,
-        height: 160
-      },
-      footprint: {
-        enabled: true,
-        widthRatio: 0.8,
-        heightRatio: 0.6,
-        offsetX: 0,
-        offsetY: 0
-      }
-    }
-  ])[0];
+test('Building door anchors come from definition and follow placement transform', () => {
+  const building =
+    makeBuilding();
+  const anchor =
+    buildingDoorAnchorWorld(
+      building,
+      'main-door'
+    );
 
+  // Definition: height 300 * scaleY .75 * anchor .38 = 85.5.
+  // +90° rotation moves local +Y to world -X.
+  assert.ok(
+    Math.abs(anchor.x - 214.5) <
+      1e-9
+  );
+  assert.ok(
+    Math.abs(anchor.y - 240) <
+      1e-9
+  );
+});
+
+test('Building footprint derives from definition and placement', () => {
+  const building =
+    makeBuilding();
+  const visual =
+    buildingVisualRect(building);
+  const footprint =
+    buildingFootprintRect(building);
+
+  assert.equal(visual.width, 450);
+  assert.equal(visual.height, 225);
+  assert.equal(
+    footprint.length,
+    450 * 0.78
+  );
+  assert.equal(
+    footprint.width,
+    225 * 0.62
+  );
+});
+
+test('Building collision uses resolved logical footprint while WorldArea stores placement', () => {
+  const placement =
+    makeBuildingPlacement({
+      x: 250,
+      y: 250,
+      rotationDeg: 30,
+      scaleX: 1,
+      scaleY: 1
+    });
+  const building =
+    resolveWorldObjectPlacement(
+      placement
+    );
   const world = {
     width: 700,
     height: 700,
     obstacles: [],
-    objects: [building]
+    objects: [placement]
   };
-  const entity = { radius: 18 };
+  const entity = {
+    radius: 18
+  };
 
-  const footprint = buildingFootprintRect(building);
+  const footprint =
+    buildingFootprintRect(building);
 
   assert.equal(
-    circleIntersectsOrientedRect(250, 250, entity.radius, footprint),
+    circleIntersectsOrientedRect(
+      250,
+      250,
+      entity.radius,
+      footprint
+    ),
     true
   );
-  assert.equal(isBlocked(world, entity, 250, 250), true);
-  assert.equal(isBlocked(world, entity, 500, 500), false);
+  assert.equal(
+    isBlocked(
+      world,
+      entity,
+      250,
+      250
+    ),
+    true
+  );
+  assert.equal(
+    isBlocked(
+      world,
+      entity,
+      500,
+      500
+    ),
+    false
+  );
 });
 
-test('Building owns door anchors but never Portal links', () => {
-  const building = normalizeWorldObjects([
-    {
-      kind: 'building',
-      doorAnchors: [
-        { id: 'front', x: 0, y: 0.4 }
-      ],
-      portalRefs: [
-        { doorAnchorId: 'front', portalId: 'legacy-should-not-survive' }
-      ]
-    }
-  ])[0];
+test('Building definition owns anchors and placement owns no Portal links', () => {
+  const placement =
+    makeBuildingPlacement();
 
-  assert.equal(building.doorAnchors.length, 1);
-  assert.equal('portalRefs' in building, false);
+  assert.equal(
+    'doorAnchors' in placement,
+    false
+  );
+  assert.equal(
+    'portalRefs' in placement,
+    false
+  );
+
+  const building =
+    resolveWorldObjectPlacement(
+      placement
+    );
+  assert.equal(
+    building.doorAnchors[0].id,
+    'main-door'
+  );
 });
