@@ -89,7 +89,14 @@
 > - aucun défaut Portal signalé ;
 > - poursuite du plan autorisée.
 >
-> État : **GREEN utilisateur — clôture CI/checkpoint final en cours**.
+> CI de clôture utilisateur :
+> - run `37200896889` — **SUCCESS** ;
+> - SHA validé : `d257f7c0f4479cc78eb4d3e5aef71a60998405f1`.
+>
+> Checkpoint final :
+> `checkpoint/exploration-trigger-geometry-v1-green-2026-10-04`.
+>
+> État : **GREEN utilisateur + CI GREEN**.
 
 ---
 
