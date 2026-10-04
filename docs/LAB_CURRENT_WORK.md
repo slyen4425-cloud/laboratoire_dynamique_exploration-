@@ -122,7 +122,25 @@
 > 4. déclencher un second combat ;
 > 5. vérifier équipe + Rappel/Invocation/changement de créature.
 >
-> État : **BRIDGE TECHNIQUE GREEN — gate réel multi-combat utilisateur requis**.
+> Seconde correction bridge — gel avant apparition des créatures :
+> - cause démontrée : `exploration-encounter.js` importait un ancien adaptateur `capture-runtime-presentation-assets-v1.js` absent de la lignée Combat récente ;
+> - correction réalisée côté Combat uniquement : utilisation du propriétaire canonique existant `capture-skill-presentation-assets-v2.js` ;
+> - aucun Combat Runtime / Roster / Recall / Summon modifié ;
+> - sentinelle bootstrap : chaque import statique local de la page publique doit exister ;
+> - Combat SHA publié : `b641b6c7836d04a174e6431e8be80e2532344801` ;
+> - CI Combat : `37216711034` — **SUCCESS** ;
+> - checkpoint : `checkpoint/lab-exploration-bridge-convergence-v1-bootstrap-green-2026-10-04`.
+>
+> Redéploiement propre :
+> - PR infra #75 — **MERGED** ;
+> - main infra : `5c037b7c01b624089c4830f602ad88da66037694` ;
+> - Pages : `37216893988` — **SUCCESS** ;
+> - le log Pages confirme le checkout exact de `b641b6c7836d04a174e6431e8be80e2532344801`.
+>
+> Nouveau gate :
+> `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=combat-bridge-bootstrap-v2`
+>
+> État : **BRIDGE + BOOTSTRAP TECHNIQUES GREEN — gate réel multi-combat utilisateur requis**.
 
 ---
 
