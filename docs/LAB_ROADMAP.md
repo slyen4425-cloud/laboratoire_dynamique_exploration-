@@ -157,6 +157,7 @@ La validation utilisateur mobile/ergonomique du Builder reste requise avant GREE
 - grottes via Portal ;
 - transitions entre Areas sans reload ;
 - événements persistants.
+- présentation des messages d'événement configurable par profil visuel (ex. standard / parchemin / lettre / papier), séparée de la logique de déclenchement et d'action.
 
 Critère :
 - World Builder Dynamique peut modifier transform des objets ;
