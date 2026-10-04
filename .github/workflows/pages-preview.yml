@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: object-catalog-placement-v1
+# preview-revision: trigger-geometry-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Object Catalog Placement preview
+      - name: Checkout Exploration Trigger Geometry preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-object-catalog-placement-v1-2026-10-04
+          ref: preview/exploration-trigger-geometry-v1-2026-10-04
 
       - name: Checkout Combat Recall Runtime Fix preview
         uses: actions/checkout@v4
