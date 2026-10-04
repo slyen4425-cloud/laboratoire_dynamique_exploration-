@@ -3,13 +3,13 @@
   "packId": "forest-core-v1",
   "profile": "mobile-test-128",
   "ownership": "exploration-material-pack",
-  "generatedAt": "2026-10-01",
-  "purpose": "Material Pack v1 mobile visual validation; not final production resolution.",
+  "generatedAt": "2026-10-04",
+  "purpose": "Material Pack v1 mobile visual validation with stylized terrain surfaces; not final production resolution.",
   "files": [
     {
       "path": "assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp",
-      "sha256": "40bce93b48bd3bf262dd7d71baba5670fa8ee101e80d66ceba7c1dfbdaab2040",
-      "bytes": 3056,
+      "sha256": "336cdf2b17c1dfdf20fe25689e6c89184e04881412f77495ab6a0d4ae5c19206",
+      "bytes": 5030,
       "width": 128,
       "height": 128,
       "assetId": "texture.grass.forest.base.01",
@@ -23,6 +23,42 @@
       "height": 128,
       "assetId": "texture.grass.forest.base.02",
       "role": "surface-variant"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/forest_floor_stylized_01.webp",
+      "sha256": "67079c0f1ba478f13c9c27bcd669c4bcf6fbbdf03cf8aed5d1443f817a5ced23",
+      "bytes": 6296,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.forest_floor.stylized.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/snow_ground_stylized_01.webp",
+      "sha256": "1be750c7d43a915d550d451c6a1ba9026040596549452193379c451af0b5b00c",
+      "bytes": 3676,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.snow.stylized.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/sand_ground_stylized_01.webp",
+      "sha256": "d1a5d22daffac504252939d899dde2061678cd59db79fb92cf86b9b0fc8a6059",
+      "bytes": 2310,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.sand.stylized.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/mountain_rock_stylized_01.webp",
+      "sha256": "1c61d5f28ae92a197bdaaa1ee429343e01c48794342a22f71d9f222bea6801ac",
+      "bytes": 5342,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.mountain_rock.stylized.01",
+      "role": "surface-base"
     },
     {
       "path": "assets/exploration/materials/forest/paths/road_dirt_base_01.webp",

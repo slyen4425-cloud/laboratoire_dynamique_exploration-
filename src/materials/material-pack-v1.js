@@ -7,7 +7,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'grass.forest',
       kind: 'surface',
-      label: 'Herbe de forêt',
+      label: 'Herbe cartoon',
       assets: Object.freeze({
         base: 'texture.grass.forest.base.01',
         variants: Object.freeze([
@@ -64,7 +64,7 @@ export const materialPackV1 = Object.freeze({
       kind: 'surface',
       label: 'Sable',
       assets: Object.freeze({
-        base: null,
+        base: 'texture.ground.sand.stylized.01',
         variants: Object.freeze([]),
         edge: null,
         decals: Object.freeze([])
@@ -89,7 +89,7 @@ export const materialPackV1 = Object.freeze({
       kind: 'surface',
       label: 'Neige',
       assets: Object.freeze({
-        base: null,
+        base: 'texture.ground.snow.stylized.01',
         variants: Object.freeze([]),
         edge: null,
         decals: Object.freeze([])
@@ -102,6 +102,56 @@ export const materialPackV1 = Object.freeze({
           'rgba(218,232,237,0.15)'
         ]),
         detailSpacing: 220,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'ground.forest_floor',
+      kind: 'surface',
+      label: 'Sol de forêt',
+      assets: Object.freeze({
+        base: 'texture.ground.forest_floor.stylized.01',
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#40572e',
+        variationColors: Object.freeze([
+          'rgba(67,95,42,0.16)',
+          'rgba(83,66,38,0.12)',
+          'rgba(45,74,35,0.14)'
+        ]),
+        detailSpacing: 220,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'ground.mountain_rock',
+      kind: 'surface',
+      label: 'Montagne rocheuse',
+      assets: Object.freeze({
+        base: 'texture.ground.mountain_rock.stylized.01',
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#887f70',
+        variationColors: Object.freeze([
+          'rgba(116,107,92,0.16)',
+          'rgba(151,138,115,0.12)',
+          'rgba(91,86,77,0.14)'
+        ]),
+        detailSpacing: 210,
         decalSpacing: 0,
         decalDensity: 0,
         decalMinSize: 0,

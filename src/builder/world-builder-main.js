@@ -84,7 +84,7 @@ import {
 } from '../world/world-area-model.js?rev=terrain-family-encounters-v1';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js';
+} from '../materials/material-pack-v1.js?rev=stylized-terrain-surfaces-v1';
 import {
   createTerrainFamilyRegistry
 } from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
@@ -96,10 +96,10 @@ import {
 } from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   createMaterialRegistry
-} from '../materials/material-registry.js';
+} from '../materials/material-registry.js?rev=stylized-terrain-surfaces-v1';
 import {
   resolveMaterialAsset
-} from '../assets/material-asset-adapter.js';
+} from '../assets/material-asset-adapter.js?rev=stylized-terrain-surfaces-v1';
 import {
   listWorldObjectAssets,
   resolveWorldObjectAsset

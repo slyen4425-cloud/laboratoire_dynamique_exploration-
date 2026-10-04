@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 import {
   listMaterialAssets,
@@ -136,4 +137,28 @@ test('forest manifest and semantic Asset Adapter stay in sync', async () => {
   const adapterIds = new Set(listMaterialAssets().map((item) => item.id));
 
   assert.deepEqual(manifestIds, adapterIds);
+});
+
+test('material manifest hashes and byte sizes match committed binaries', async () => {
+  const manifest = JSON.parse(
+    await readFile(
+      new URL(
+        '../assets/exploration/materials/forest/manifest.v1.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+
+  for (const item of manifest.files) {
+    const bytes = await readFile(
+      new URL(`../${item.path}`, import.meta.url)
+    );
+    assert.equal(bytes.byteLength, item.bytes, item.path);
+    assert.equal(
+      createHash('sha256').update(bytes).digest('hex'),
+      item.sha256,
+      item.path
+    );
+  }
 });

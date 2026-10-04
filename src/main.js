@@ -20,9 +20,9 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=worldarea-portal-v1-interior-surface-fix';
-import { createMaterialRegistry } from './materials/material-registry.js';
-import { resolveMaterialAsset } from './assets/material-asset-adapter.js';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=stylized-terrain-surfaces-v1';
+import { createMaterialRegistry } from './materials/material-registry.js?rev=stylized-terrain-surfaces-v1';
+import { resolveMaterialAsset } from './assets/material-asset-adapter.js?rev=stylized-terrain-surfaces-v1';
 import {
   resolveWorldObjectAsset
 } from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';

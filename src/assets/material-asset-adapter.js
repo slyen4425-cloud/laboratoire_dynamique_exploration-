@@ -9,6 +9,26 @@ const MATERIAL_ASSETS = Object.freeze({
     kind: 'texture',
     path: './assets/exploration/materials/forest/surfaces/grass_forest_base_02.webp'
   }),
+  'texture.ground.forest_floor.stylized.01': Object.freeze({
+    id: 'texture.ground.forest_floor.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/surfaces/forest_floor_stylized_01.webp'
+  }),
+  'texture.ground.snow.stylized.01': Object.freeze({
+    id: 'texture.ground.snow.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/surfaces/snow_ground_stylized_01.webp'
+  }),
+  'texture.ground.sand.stylized.01': Object.freeze({
+    id: 'texture.ground.sand.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/surfaces/sand_ground_stylized_01.webp'
+  }),
+  'texture.ground.mountain_rock.stylized.01': Object.freeze({
+    id: 'texture.ground.mountain_rock.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/surfaces/mountain_rock_stylized_01.webp'
+  }),
   'texture.road.dirt.center.01': Object.freeze({
     id: 'texture.road.dirt.center.01',
     kind: 'texture',
