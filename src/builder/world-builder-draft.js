@@ -1,9 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=terrain-family-encounters-v1';
-import {
-  terrainFamilyRegistry
-} from '../world/terrain-family-registry.js?rev=terrain-family-encounters-v1';
+} from '../world/world-document-model.js?rev=terrain-family-extensibility-v1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -31,6 +28,165 @@ function uniqueId(prefix, items) {
   return candidate;
 }
 
+function terrainFamilyExists(draft, terrainFamilyId) {
+  const id =
+    typeof terrainFamilyId === 'string'
+      ? terrainFamilyId.trim()
+      : '';
+
+  return Boolean(
+    id &&
+    draft?.terrainFamilies?.some(
+      (family) => family.id === id
+    )
+  );
+}
+
+function terrainFamilyIsUsed(draft, terrainFamilyId) {
+  for (const area of draft?.areas ?? []) {
+    const surface = area.surface ?? {};
+
+    if (
+      surface.baseTerrainFamilyId ===
+      terrainFamilyId
+    ) {
+      return true;
+    }
+
+    for (const collection of [
+      surface.zones,
+      surface.routes,
+      surface.rivers
+    ]) {
+      if (
+        collection?.some(
+          (item) =>
+            item.terrainFamilyId ===
+            terrainFamilyId
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function addTerrainFamilyDefinition(
+  draft,
+  {
+    id = null,
+    label = 'Nouvelle famille'
+  } = {}
+) {
+  const next = clone(draft);
+  next.terrainFamilies ??= [];
+
+  const familyId =
+    typeof id === 'string' && id.trim()
+      ? id.trim()
+      : uniqueId(
+          'terrain-family',
+          next.terrainFamilies
+        );
+
+  if (
+    next.terrainFamilies.some(
+      (family) => family.id === familyId
+    )
+  ) {
+    return next;
+  }
+
+  next.terrainFamilies.push({
+    id: familyId,
+    label:
+      typeof label === 'string' &&
+      label.trim()
+        ? label.trim()
+        : familyId
+  });
+
+  next.encounterConfig ??= {
+    version: 1,
+    families: []
+  };
+  next.encounterConfig.families ??= [];
+  next.encounterConfig.families.push({
+    terrainFamilyId: familyId,
+    encounterChancePercent: 0,
+    elementChances: []
+  });
+
+  return next;
+}
+
+export function updateTerrainFamilyDefinition(
+  draft,
+  terrainFamilyId,
+  {
+    label
+  } = {}
+) {
+  const next = clone(draft);
+  const family =
+    next.terrainFamilies?.find(
+      (entry) =>
+        entry.id === terrainFamilyId
+    );
+
+  if (!family) return next;
+
+  if (
+    typeof label === 'string' &&
+    label.trim()
+  ) {
+    family.label = label.trim();
+  }
+
+  return next;
+}
+
+export function deleteTerrainFamilyDefinition(
+  draft,
+  terrainFamilyId
+) {
+  const next = clone(draft);
+
+  if (
+    !Array.isArray(next.terrainFamilies) ||
+    next.terrainFamilies.length <= 1 ||
+    terrainFamilyIsUsed(
+      next,
+      terrainFamilyId
+    )
+  ) {
+    return next;
+  }
+
+  next.terrainFamilies =
+    next.terrainFamilies.filter(
+      (family) =>
+        family.id !== terrainFamilyId
+    );
+
+  if (
+    Array.isArray(
+      next.encounterConfig?.families
+    )
+  ) {
+    next.encounterConfig.families =
+      next.encounterConfig.families.filter(
+        (profile) =>
+          profile.terrainFamilyId !==
+          terrainFamilyId
+      );
+  }
+
+  return next;
+}
+
 export function createWorldBuilderDraft(sourceDocument) {
   const normalized = normalizeWorldDocument(sourceDocument);
   return clone(normalized);
@@ -49,7 +205,25 @@ export function validateWorldBuilderDraft(draft) {
 
   const rawAreas = Array.isArray(draft.areas) ? draft.areas : [];
   const rawPortals = Array.isArray(draft.portals) ? draft.portals : [];
+  const rawTerrainFamilies =
+    Array.isArray(draft.terrainFamilies)
+      ? draft.terrainFamilies
+      : [];
   const document = normalizeWorldDocument(draft);
+  const terrainFamilyIds = new Set(
+    document.terrainFamilies.map(
+      (family) => family.id
+    )
+  );
+
+  if (
+    document.terrainFamilies.length !==
+      rawTerrainFamilies.length
+  ) {
+    errors.push(
+      'terrain-family-invalid-or-duplicate'
+    );
+  }
 
   if (document.areas.length !== rawAreas.length) {
     errors.push('area-invalid-or-duplicate');
@@ -104,6 +278,27 @@ export function validateWorldBuilderDraft(draft) {
     if (normalizedArea.surface.rivers.length !== rawRivers.length) {
       errors.push(`river-invalid:${rawArea.id}`);
     }
+
+    const familyRefs = [
+      rawArea.surface?.baseTerrainFamilyId,
+      ...rawZones.map(
+        (item) => item.terrainFamilyId
+      ),
+      ...rawRoutes.map(
+        (item) => item.terrainFamilyId
+      ),
+      ...rawRivers.map(
+        (item) => item.terrainFamilyId
+      )
+    ].filter(Boolean);
+
+    for (const familyId of familyRefs) {
+      if (!terrainFamilyIds.has(familyId)) {
+        errors.push(
+          `terrain-family-unknown:${familyId}`
+        );
+      }
+    }
   }
 
   if (document.portals.length !== rawPortals.length) {
@@ -155,7 +350,10 @@ export function updateAreaProperties(
 
   if (
     typeof baseTerrainFamilyId === 'string' &&
-    terrainFamilyRegistry.get(baseTerrainFamilyId)
+    terrainFamilyExists(
+      next,
+      baseTerrainFamilyId
+    )
   ) {
     area.surface ??= {};
     area.surface.baseTerrainFamilyId =
@@ -215,23 +413,34 @@ export function addSurfacePath(
       : kind === 'terrain'
         ? 'grass.forest'
         : 'road.dirt';
+  const preferredFallback =
+    kind === 'river'
+      ? 'sea'
+      : kind === 'route'
+        ? 'road'
+        : area.surface?.baseTerrainFamilyId;
   const fallbackFamily =
-    kind === 'river'
-      ? 'sea'
-      : kind === 'route'
-        ? 'road'
-        : area.surface?.baseTerrainFamilyId ?? 'forest';
+    terrainFamilyExists(
+      next,
+      preferredFallback
+    )
+      ? preferredFallback
+      : (
+          terrainFamilyExists(
+            next,
+            area.surface?.baseTerrainFamilyId
+          )
+            ? area.surface.baseTerrainFamilyId
+            : next.terrainFamilies?.[0]?.id
+        );
   const resolvedFamily =
-    kind === 'river'
-      ? 'sea'
-      : kind === 'route'
-        ? 'road'
-        : (
-            typeof terrainFamilyId === 'string' &&
-            terrainFamilyRegistry.get(terrainFamilyId)
-              ? terrainFamilyId.trim()
-              : fallbackFamily
-          );
+    typeof terrainFamilyId === 'string' &&
+    terrainFamilyExists(
+      next,
+      terrainFamilyId
+    )
+      ? terrainFamilyId.trim()
+      : fallbackFamily;
 
   const safePoints = Array.isArray(points)
     ? points
@@ -288,15 +497,15 @@ export function updateSurfacePath(
     item.width = Math.max(1, finite(patch.width, item.width));
   }
 
-  if (kind === 'route') {
-    item.terrainFamilyId = 'road';
-  } else if (kind === 'river') {
-    item.terrainFamilyId = 'sea';
-  } else if (
+  if (
     typeof patch.terrainFamilyId === 'string' &&
-    terrainFamilyRegistry.get(patch.terrainFamilyId)
+    terrainFamilyExists(
+      next,
+      patch.terrainFamilyId
+    )
   ) {
-    item.terrainFamilyId = patch.terrainFamilyId.trim();
+    item.terrainFamilyId =
+      patch.terrainFamilyId.trim();
   }
 
   if (
