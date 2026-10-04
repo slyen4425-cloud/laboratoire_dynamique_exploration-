@@ -317,6 +317,20 @@ function currentObjectRaw() {
   ) ?? null;
 }
 
+function resolvedObjects(
+  area = currentAreaRaw()
+) {
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  );
+}
+
+function currentObjectResolved() {
+  return resolveWorldObjectPlacement(
+    currentObjectRaw()
+  );
+}
+
 function currentSpawnRaw() {
   return currentAreaRaw()?.spawns?.find(
     (spawn) => spawn.id === selectedSpawnId
