@@ -143,6 +143,62 @@ La famille reste une sémantique gameplay indépendante du matériau. Les textur
 
 La validation utilisateur mobile/ergonomique du Builder reste requise avant GREEN final.
 
+
+
+## Chantier futur — User Texture Import v1
+
+Objectif produit :
+- permettre au créateur d'importer facilement ses propres textures pour construire son monde ;
+- les textures utilisateur doivent rejoindre la même chaîne d'autorité que les textures natives, jamais un système parallèle.
+
+Architecture cible :
+
+```text
+Fichier image utilisateur
+  -> validation / préparation
+  -> stockage local versionné
+  -> assetId utilisateur
+  -> Material Definition
+  -> Material Registry
+  -> Asset Adapter
+  -> Builder / Renderer
+```
+
+Règles :
+- aucune géométrie ou règle gameplay déduite de l'image ;
+- `terrainFamilyId` reste indépendant du matériau importé ;
+- pas de second catalogue UI ;
+- stockage local via l'adapter de storage prévu, IndexedDB dans le laboratoire si nécessaire ;
+- métadonnées minimales : nom, catégorie, assetId, dimensions, format, provenance locale ;
+- export/import de projet devra transporter les références et médias utilisateur de façon versionnée ;
+- suppression d'une texture encore référencée doit être explicitement protégée ;
+- mobile-first : validation format/taille et message d'erreur explicite.
+
+## Chantier futur — Multi-Zone / World Assembly
+
+Objectif produit :
+- reprendre le principe Dungeon « éditeur de pièce -> éditeur de donjon » pour le Builder Dynamique ;
+- séparer l'édition interne d'une zone de la composition d'un monde avec plusieurs zones.
+
+Architecture cible :
+
+```text
+Area / Zone Editor
+  -> AreaDefinition versionnée
+  -> AreaInstance
+  -> World / Region Assembly Editor
+  -> raccords par Portal / Connector explicites
+```
+
+Le World/Region Assembly Editor :
+- place et référence des zones réutilisables ;
+- raccorde leurs entrées/sorties compatibles ;
+- ne réécrit jamais la géométrie interne d'une zone ;
+- réutilise Portal/WorldArea lorsqu'ils couvrent déjà le besoin ;
+- n'introduit un contrat Connector supplémentaire que si son ownership est démontré avant codage.
+
+Cette composition doit pouvoir servir aux extérieurs, bâtiments/intérieurs, grottes, étages et futures régions sans créer de formats concurrents.
+
 ## Phase 6 — World Objects, interactions et Areas
 
 - WorldObject transformable ;
