@@ -50,6 +50,9 @@ import {
   applyPortalTransition,
   findTriggeredPortal
 } from './world/portal-model.js?rev=builder-dynamic-return-v1';
+import {
+  createWorldEventController
+} from './world/world-event-controller.js?rev=world-event-message-v1';
 import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-encounters-v1';
 import {
   readWorldBuilderTestHandoff,
@@ -105,6 +108,14 @@ const encounterPreviewCombat =
   document.querySelector('#encounter-preview-combat');
 const encounterPreviewContinue =
   document.querySelector('#encounter-preview-continue');
+const worldEventDialog =
+  document.querySelector('#world-event-dialog');
+const worldEventMessage =
+  document.querySelector('#world-event-message');
+const worldEventClose =
+  document.querySelector('#world-event-close');
+const worldInteract =
+  document.querySelector('#world-interact');
 
 const config = normalizeExplorationConfig();
 const runtimeParams = new URL(document.URL).searchParams;
@@ -136,6 +147,12 @@ if (builderTest && !builderTestDocument) {
 
 const activeWorldDocument =
   builderTestDocument ?? demoWorldDocument;
+
+const worldEventController =
+  createWorldEventController(
+    activeWorldDocument
+  );
+let activeWorldEventIntent = null;
 
 const builderShortcut = document.querySelector('#builder-shortcut');
 if (builderShortcut && builderTest) {
@@ -435,6 +452,74 @@ function clearEncounterPreview() {
   return true;
 }
 
+function showWorldEventIntent(intent) {
+  if (
+    !intent ||
+    intent.action?.kind !== 'message'
+  ) {
+    return false;
+  }
+
+  activeWorldEventIntent = intent;
+  worldEventMessage.textContent =
+    intent.action.text;
+  worldEventDialog.hidden = false;
+  worldInteract.hidden = true;
+  return true;
+}
+
+function closeWorldEventDialog() {
+  if (!activeWorldEventIntent) {
+    return false;
+  }
+
+  activeWorldEventIntent = null;
+  worldEventDialog.hidden = true;
+  worldEventMessage.textContent = '';
+  return true;
+}
+
+function refreshInteractionAvailability() {
+  if (
+    activeWorldEventIntent ||
+    pendingEncounterSnapshot
+  ) {
+    worldInteract.hidden = true;
+    return null;
+  }
+
+  const intent =
+    worldEventController
+      .peekInteractable({
+        currentAreaId:
+          player.currentAreaId,
+        entity: player
+      });
+
+  worldInteract.hidden = !intent;
+  return intent;
+}
+
+function triggerWorldInteraction() {
+  if (
+    activeWorldEventIntent ||
+    pendingEncounterSnapshot
+  ) {
+    return false;
+  }
+
+  const intent =
+    worldEventController.interact({
+      currentAreaId:
+        player.currentAreaId,
+      entity: player
+    });
+
+  return showWorldEventIntent(
+    intent
+  );
+}
+
 function resize() {
   const dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.floor(innerWidth * dpr);
@@ -508,8 +593,12 @@ function update(dt) {
   const area = currentArea();
   const input = currentInput();
 
-  if (pendingEncounterSnapshot) {
+  if (
+    pendingEncounterSnapshot ||
+    activeWorldEventIntent
+  ) {
     player.moving = false;
+    worldInteract.hidden = true;
     updateCamera();
     return;
   }
@@ -530,7 +619,25 @@ function update(dt) {
     traversalRegistry
   );
 
+  const worldEventIntent =
+    worldEventController.step({
+      currentAreaId:
+        player.currentAreaId,
+      entity: player
+    });
+
+  if (
+    showWorldEventIntent(
+      worldEventIntent
+    )
+  ) {
+    player.moving = false;
+    updateCamera();
+    return;
+  }
+
   applyTriggeredPortal();
+  refreshInteractionAvailability();
 
   const encounterIntent = encounterController.step({
     area: currentArea(),
@@ -729,6 +836,16 @@ encounterPreviewCombat.addEventListener(
 encounterPreviewContinue.addEventListener(
   'click',
   clearEncounterPreview
+);
+
+worldEventClose.addEventListener(
+  'click',
+  closeWorldEventDialog
+);
+
+worldInteract.addEventListener(
+  'click',
+  triggerWorldInteraction
 );
 
 setLocomotionMode('ground');
