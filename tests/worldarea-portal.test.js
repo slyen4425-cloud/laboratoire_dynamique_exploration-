@@ -164,7 +164,7 @@ test('WorldDocument keeps only Portals with valid Area, Spawn and trigger refere
   );
 });
 
-test('building-door Portal resolves from the GREEN Building doorAnchor, never from pixels', () => {
+test('object-anchor Portal resolves from the GREEN Building doorAnchor, never from pixels', () => {
   const document = makeDocument();
   const portal = document.portals.find((item) => item.id === 'enter');
   const point = resolvePortalTriggerPoint(document.areas, portal);
@@ -256,7 +256,7 @@ test('demo uses one Portal contract for entering and leaving the Building', () =
     (portal) => portal.id === 'portal-house-exit'
   );
 
-  assert.equal(enter.trigger.kind, 'building-door');
+  assert.equal(enter.trigger.kind, 'object-anchor');
   assert.equal(exit.trigger.kind, 'point');
   assert.equal(enter.targetAreaId, 'house-interior-01');
   assert.equal(exit.targetAreaId, 'forest-exterior');
