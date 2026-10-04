@@ -1,6 +1,6 @@
 import {
   TERRAIN_FAMILY_IDS
-} from '../world/terrain-family-registry.js?rev=terrain-family-encounters-v1';
+} from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
 
 export const TERRAIN_FAMILY_ENCOUNTER_CONFIG_VERSION = 1;
 
@@ -8,13 +8,6 @@ function finitePercent(value, fallback = 0) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.max(0, Math.min(100, number));
-}
-
-function positiveNumber(value) {
-  const number = Number(value);
-  return Number.isFinite(number) && number > 0
-    ? number
-    : null;
 }
 
 function text(value) {
@@ -33,53 +26,114 @@ function normalizeElementChances(raw = []) {
     if (!entry || typeof entry !== 'object') continue;
 
     const elementId = text(entry.elementId);
-    const chancePercent = finitePercent(entry.chancePercent, 0);
+    const chancePercent = finitePercent(
+      entry.chancePercent,
+      0
+    );
 
-    if (!elementId || chancePercent <= 0 || seen.has(elementId)) continue;
+    if (
+      !elementId ||
+      chancePercent <= 0 ||
+      seen.has(elementId)
+    ) {
+      continue;
+    }
+
     seen.add(elementId);
-    result.push(Object.freeze({ elementId, chancePercent }));
+    result.push(
+      Object.freeze({
+        elementId,
+        chancePercent
+      })
+    );
   }
 
   return Object.freeze(result);
 }
 
-function profileById(rawFamilies) {
-  const byId = new Map();
+function normalizeFamilyIds(rawIds) {
+  const source =
+    Array.isArray(rawIds) && rawIds.length > 0
+      ? rawIds
+      : TERRAIN_FAMILY_IDS;
+  const seen = new Set();
+  const ids = [];
 
-  if (!Array.isArray(rawFamilies)) return byId;
+  for (const raw of source) {
+    const id = text(raw);
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+
+  return ids.length > 0
+    ? ids
+    : [...TERRAIN_FAMILY_IDS];
+}
+
+function profileById(
+  rawFamilies,
+  allowedIds
+) {
+  const byId = new Map();
+  const allowed = new Set(allowedIds);
+
+  if (!Array.isArray(rawFamilies)) {
+    return byId;
+  }
 
   for (const raw of rawFamilies) {
     const id = text(raw?.terrainFamilyId);
-    if (!id || !TERRAIN_FAMILY_IDS.includes(id) || byId.has(id)) {
+    if (
+      !id ||
+      !allowed.has(id) ||
+      byId.has(id)
+    ) {
       continue;
     }
+
     byId.set(id, raw);
   }
 
   return byId;
 }
 
-export function normalizeTerrainFamilyEncounterConfig(raw = {}) {
-  const source = raw && typeof raw === 'object' ? raw : {};
-  const byId = profileById(source.families);
+export function normalizeTerrainFamilyEncounterConfig(
+  raw = {},
+  terrainFamilyIds = TERRAIN_FAMILY_IDS
+) {
+  const source =
+    raw && typeof raw === 'object'
+      ? raw
+      : {};
+  const ids =
+    normalizeFamilyIds(terrainFamilyIds);
+  const byId =
+    profileById(source.families, ids);
 
-  const families = TERRAIN_FAMILY_IDS.map((terrainFamilyId) => {
-    const profile = byId.get(terrainFamilyId) ?? {};
+  const families = ids.map(
+    (terrainFamilyId) => {
+      const profile =
+        byId.get(terrainFamilyId) ?? {};
 
-    return Object.freeze({
-      terrainFamilyId,
-      encounterChancePercent: finitePercent(
-        profile.encounterChancePercent,
-        0
-      ),
-      elementChances: normalizeElementChances(
-        profile.elementChances
-      )
-    });
-  });
+      return Object.freeze({
+        terrainFamilyId,
+        encounterChancePercent:
+          finitePercent(
+            profile.encounterChancePercent,
+            0
+          ),
+        elementChances:
+          normalizeElementChances(
+            profile.elementChances
+          )
+      });
+    }
+  );
 
   return Object.freeze({
-    version: TERRAIN_FAMILY_ENCOUNTER_CONFIG_VERSION,
+    version:
+      TERRAIN_FAMILY_ENCOUNTER_CONFIG_VERSION,
     families: Object.freeze(families)
   });
 }
@@ -89,6 +143,8 @@ export function findTerrainFamilyEncounterProfile(
   terrainFamilyId
 ) {
   return config?.families?.find(
-    (profile) => profile.terrainFamilyId === terrainFamilyId
+    (profile) =>
+      profile.terrainFamilyId ===
+      terrainFamilyId
   ) ?? null;
 }
