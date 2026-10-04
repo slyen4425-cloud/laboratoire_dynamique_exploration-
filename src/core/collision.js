@@ -1,7 +1,10 @@
 import {
   bridgeTraversalRect,
   buildingFootprintRect
-} from '../world/world-object-model.js?rev=surface-traversal-replay-v1';
+} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+import {
+  resolveWorldObjectPlacements
+} from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
 import {
   clamp,
   circleFitsOrientedRect,
@@ -50,7 +53,7 @@ export function isBlocked(
     }
   }
 
-  for (const object of Array.isArray(world.objects) ? world.objects : []) {
+  for (const object of resolveWorldObjectPlacements(world?.objects ?? [])) {
     if (object.kind !== 'building') continue;
 
     const footprint = buildingFootprintRect(object);
@@ -98,7 +101,7 @@ export function resolveBridgeGuidedPosition(
     return null;
   }
 
-  for (const object of Array.isArray(world.objects) ? world.objects : []) {
+  for (const object of resolveWorldObjectPlacements(world?.objects ?? [])) {
     if (
       object.kind !== 'bridge' ||
       object.traversal?.enabled !== true ||
