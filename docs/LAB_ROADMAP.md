@@ -164,6 +164,35 @@ Critère :
 - pont traversable sans supprimer la rivière ;
 - bâtiments/intérieurs utilisent un seul contrat WorldArea/Portal.
 
+## Chantier futur transversal — Dialogue System générique
+
+Objectif :
+- fournir un système de dialogue réutilisable par Exploration, Dungeon, Capture et les futurs World/Campaign Editors ;
+- ne jamais enfermer la logique de dialogue dans un Builder particulier.
+
+Architecture cible :
+- `DialogueDefinition` versionnée et réutilisable ;
+- `DialogueController` comme autorité d'exécution ;
+- les Builders et WorldEvents ne stockent qu'une référence stable `dialogueId` ;
+- les conséquences passent par des contrats/actions explicites vers leurs propriétaires respectifs, jamais par mutation directe.
+
+Évolutions prévues :
+- message simple ;
+- plusieurs pages/répliques ;
+- nom et portrait du locuteur ;
+- présentation configurable (standard / parchemin / lettre / papier / autres profils) ;
+- réponses multiples ;
+- embranchements selon la réponse ;
+- conditions configurables (objet possédé, quête, niveau, faction, état du monde, etc.) ;
+- conséquences configurables : donner/retirer un objet, ouvrir/fermer une porte, déclencher un combat, activer une quête, modifier un état déclaré du monde ;
+- dialogues répétables ou consommables ;
+- persistance des choix via l'autorité de save, pas dans la définition du dialogue.
+
+Règle d'autorité :
+`Builder/Event -> dialogueId -> Dialogue Controller -> actions contractuelles`.
+
+Le système doit être exploitable notamment par le Builder Dungeon pour PNJ, énigmes dialoguées, portes scénarisées, marchands, prisonniers, choix narratifs et embranchements.
+
 ## Phase 7 — Encounter Bridge
 
 Prérequis : **Terrain Family Encounters v1 GREEN**.
