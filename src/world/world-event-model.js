@@ -18,6 +18,30 @@ const VALID_REPEAT_POLICIES = Object.freeze([
   'repeatable'
 ]);
 
+function normalizeWorldEventAction(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+
+  if (raw.kind !== 'message') {
+    return null;
+  }
+
+  const text =
+    typeof raw.text === 'string'
+      ? raw.text.trim()
+      : '';
+
+  if (!text) {
+    return null;
+  }
+
+  return Object.freeze({
+    kind: 'message',
+    text
+  });
+}
+
 function normalizedString(value) {
   return typeof value === 'string' && value.trim()
     ? value.trim()
@@ -38,14 +62,16 @@ export function normalizeWorldEvent(
       : null;
   const trigger =
     normalizeWorldTriggerGeometry(raw.trigger);
-  const eventDefinitionId =
-    normalizedString(raw.eventDefinitionId);
+  const action =
+    normalizeWorldEventAction(
+      raw.action
+    );
 
   if (
     !sourceAreaId ||
     !activation ||
     !trigger ||
-    !eventDefinitionId
+    !action
   ) {
     return null;
   }
@@ -66,7 +92,7 @@ export function normalizeWorldEvent(
     sourceAreaId,
     activation,
     trigger,
-    eventDefinitionId,
+    action,
     repeatPolicy
   });
 }
