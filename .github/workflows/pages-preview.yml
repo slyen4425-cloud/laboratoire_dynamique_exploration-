@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: combat-bridge-convergence-v1
+# preview-revision: combat-bridge-convergence-v1-bootstrap-v2
 
 on:
   push:
