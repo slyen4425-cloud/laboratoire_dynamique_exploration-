@@ -277,3 +277,22 @@ CI du HEAD avant clôture :
 
 État : **GREEN utilisateur**.
 
+
+
+## Clôture audit Capture Rewards / Progression — 2026-10-04
+
+Audit historique terminé sans mutation gameplay.
+
+Constats structurants :
+- l'ancien Capture calculait déjà l'XP depuis niveau ennemi + rapport niveau ennemi/niveau allié + bonus de type de combat ;
+- le profil exposait déjà un multiplicateur XP et des paramètres de progression ;
+- le labo Combat courant ne possède encore que le déblocage des slots de compétences par niveau ;
+- loot et capture historiques comportent des constantes et, pour la capture, deux formules concurrentes ;
+- la refonte doit donc centraliser XP / niveau / loot / capture dans une autorité Capture configurable ;
+- Exploration reste hors calcul XP/loot.
+
+CI audit :
+- `37180318992` — SUCCESS ;
+- `37180332902` — SUCCESS sur HEAD documentaire précédent.
+
+État : **AUDIT TECHNIQUE GREEN**.
