@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: stylized-terrain-surfaces-v1
+# preview-revision: water-lava-materials-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Stylized Terrain Surfaces preview
+      - name: Checkout Exploration Water + Lava Materials preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-stylized-terrain-surfaces-v1-2026-10-04
+          ref: preview/exploration-water-lava-materials-v1-2026-10-04
 
       - name: Checkout Combat Exploration Roster Target Availability preview
         uses: actions/checkout@v4
