@@ -1868,7 +1868,7 @@ function switchPortalTrigger(kind) {
     draft,
     portal.id,
     (nextPortal) => {
-      if (kind === 'building-door') {
+      if (kind === 'object-anchor') {
         const area = draft.areas.find(
           (item) => item.id === nextPortal.sourceAreaId
         );
@@ -1884,7 +1884,7 @@ function switchPortalTrigger(kind) {
 
         if (building && anchor) {
           nextPortal.trigger = {
-            kind: 'building-door',
+            kind: 'object-anchor',
             objectId: building.id,
             anchorId: anchor.id,
             radius: nextPortal.trigger?.radius ?? 32
@@ -1933,7 +1933,7 @@ function applyPortalInputs() {
         };
       } else {
         nextPortal.trigger = {
-          kind: 'building-door',
+          kind: 'object-anchor',
           objectId: $('portal-building').value,
           anchorId: $('portal-anchor').value,
           radius
@@ -3100,7 +3100,7 @@ $('portal-building').addEventListener('change', () => {
     draft,
     portal.id,
     (nextPortal) => {
-      if (nextPortal.trigger?.kind !== 'building-door') return;
+      if (nextPortal.trigger?.kind !== 'object-anchor') return;
       nextPortal.trigger.objectId = building?.id ?? '';
       nextPortal.trigger.anchorId = anchor?.id ?? '';
     }
