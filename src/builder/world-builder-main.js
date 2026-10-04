@@ -1847,7 +1847,6 @@ function applyWorldEventInputs() {
     }
   );
 
-  refreshWorldEventControls();
   refreshJson();
   renderPreview();
 }
@@ -1883,6 +1882,29 @@ function refreshControls() {
 }
 
 function selectedWorldPoint(document, area) {
+  const selectedEvent =
+    document?.events?.find(
+      (item) =>
+        item.id === selectedEventId &&
+        item.sourceAreaId === area?.id &&
+        item.trigger?.kind === 'point'
+    );
+
+  if (selectedEvent) {
+    const point =
+      resolveWorldTriggerPoint(
+        area,
+        selectedEvent.trigger
+      );
+
+    if (point) {
+      return {
+        x: point.x,
+        y: point.y
+      };
+    }
+  }
+
   if (mapTool === 'actor-placement') {
     const actor = area?.actors?.find(
       (item) =>
@@ -2215,6 +2237,27 @@ function drawBuilderOverlays(area, document, camera) {
       ]);
       ctx.stroke();
       ctx.setLineDash([]);
+
+      if (
+        worldEvent.trigger?.kind ===
+          'point'
+      ) {
+        ctx.beginPath();
+        ctx.arc(
+          point.x - camera.x,
+          point.y - camera.y,
+          9 / zoom,
+          0,
+          Math.PI * 2
+        );
+        ctx.fillStyle =
+          'rgba(255,214,105,0.98)';
+        ctx.fill();
+        ctx.strokeStyle =
+          'rgba(66,49,12,0.95)';
+        ctx.lineWidth = 2 / zoom;
+        ctx.stroke();
+      }
     }
   }
 
@@ -2640,6 +2683,56 @@ function hitAreaResizeHandle(area, point) {
       point.y - area.height
     ) <= hitRadius
   );
+}
+
+function eventsTabActive() {
+  return Boolean(
+    document.querySelector(
+      '[data-tab="events"].active'
+    )
+  );
+}
+
+function hitSelectedEventTrigger(
+  area,
+  point
+) {
+  if (
+    !eventsTabActive() ||
+    !area ||
+    !point
+  ) {
+    return null;
+  }
+
+  const event =
+    currentWorldEventRaw();
+
+  if (
+    !event ||
+    event.sourceAreaId !== area.id ||
+    event.trigger?.kind !== 'point'
+  ) {
+    return null;
+  }
+
+  const hitPadding =
+    12 / Math.max(zoom, 0.05);
+  const radius =
+    Math.max(
+      4,
+      Number(event.trigger.radius) || 0
+    );
+
+  return (
+    Math.hypot(
+      point.x - event.trigger.x,
+      point.y - event.trigger.y
+    ) <=
+    radius + hitPadding
+  )
+    ? event
+    : null;
 }
 
 function objectBaseDimensions(object) {
@@ -3934,6 +4027,26 @@ canvas.addEventListener('pointerdown', (event) => {
     return;
   }
 
+  const eventTrigger =
+    hitSelectedEventTrigger(
+      area,
+      world
+    );
+
+  if (eventTrigger) {
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'drag-event-trigger',
+      offsetX:
+        world.x -
+        eventTrigger.trigger.x,
+      offsetY:
+        world.y -
+        eventTrigger.trigger.y
+    };
+    return;
+  }
+
   const gizmo = hitSelectedObjectGizmo(area, world);
   if (gizmo?.kind === 'rotate') {
     pointerSession = {
@@ -4110,6 +4223,53 @@ canvas.addEventListener('pointermove', (event) => {
         }
       );
     refreshActorControls();
+    refreshJson();
+    renderPreview();
+    return;
+  }
+
+  if (
+    pointerSession.mode ===
+      'drag-event-trigger' &&
+    selectedEventId
+  ) {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x -
+          pointerSession.offsetX
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y -
+          pointerSession.offsetY
+      )
+    );
+
+    draft = updateWorldEvent(
+      draft,
+      selectedEventId,
+      (nextEvent) => {
+        if (
+          nextEvent.trigger?.kind !==
+            'point'
+        ) {
+          return;
+        }
+
+        nextEvent.trigger.x = x;
+        nextEvent.trigger.y = y;
+      }
+    );
+
+    $('event-point-x').value =
+      Math.round(x * 10) / 10;
+    $('event-point-y').value =
+      Math.round(y * 10) / 10;
     refreshJson();
     renderPreview();
     return;
