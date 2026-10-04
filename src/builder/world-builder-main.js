@@ -1462,7 +1462,8 @@ function refreshWorldEventControls() {
     'event-radius',
     'event-object',
     'event-anchor',
-    'event-definition-id',
+    'event-action-kind',
+    'event-message',
     'event-repeat-policy'
   ]) {
     $(id).disabled = disabled;
@@ -1471,7 +1472,8 @@ function refreshWorldEventControls() {
   if (!event) {
     $('event-point-fields').hidden = false;
     $('event-object-fields').hidden = true;
-    $('event-definition-id').value = '';
+    $('event-action-kind').value = 'message';
+    $('event-message').value = '';
     return;
   }
 
@@ -1488,7 +1490,7 @@ function refreshWorldEventControls() {
     event.activation ?? 'on-enter';
   $('event-repeat-policy').value =
     event.repeatPolicy ?? 'once';
-  $('event-definition-id').value =
+  $('event-message').value =
     event.eventDefinitionId ?? '';
 
   const triggerKind =
@@ -1616,7 +1618,7 @@ function applyWorldEventInputs() {
       nextEvent.repeatPolicy =
         $('event-repeat-policy').value;
       nextEvent.eventDefinitionId =
-        $('event-definition-id')
+        $('event-message')
           .value
           .trim();
 
@@ -3459,8 +3461,10 @@ $('event-add').addEventListener('click', () => {
         y: area.height / 2,
         radius: 48
       },
-      eventDefinitionId:
-        'eventdef.new',
+      action: {
+        kind: 'message',
+        text: 'Nouveau message'
+      },
       repeatPolicy: 'once'
     }
   );
@@ -3572,7 +3576,7 @@ for (const id of [
   'event-point-y',
   'event-radius',
   'event-anchor',
-  'event-definition-id',
+  'event-message',
   'event-repeat-policy'
 ]) {
   $(id).addEventListener(
@@ -3580,6 +3584,11 @@ for (const id of [
     applyWorldEventInputs
   );
 }
+
+$('event-message').addEventListener(
+  'input',
+  applyWorldEventInputs
+);
 
 $('preview-fit').addEventListener('click', () => {
   fitRequested = true;
