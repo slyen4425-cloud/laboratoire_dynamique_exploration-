@@ -145,6 +145,26 @@ La validation utilisateur mobile/ergonomique du Builder reste requise avant GREE
 
 
 
+## Chantier futur — Surface Feather Blend v1
+
+Objectif produit :
+- éviter les coupures visuelles nettes lorsque le créateur peint deux textures de terrain adjacentes, en particulier sur smartphone ;
+- privilégier un raccord automatique plutôt que demander au joueur de placer manuellement des textures de transition.
+
+Décision v1 :
+- solution **feather / blend automatique** au bord des zones peintes ;
+- la frontière canonique reste celle de `WorldArea.surface.zones[]` ;
+- le blend est calculé par le Renderer / Material System à partir de la géométrie et des `materialId` ;
+- aucune géométrie secondaire, aucun masque persistant concurrent et aucune règle gameplay ne sont ajoutés au WorldDocument ;
+- `terrainFamilyId` et `traversalRuleId` restent totalement indépendants du rendu ;
+- l'édition doit rester simple au doigt : le créateur peint normalement et le raccord est automatique.
+
+Hors v1 :
+- textures de transition dédiées couple par couple (herbe -> neige, sable -> roche, etc.) ;
+- édition manuelle des frontières de transition.
+
+Les textures de transition dédiées pourront être ajoutées ultérieurement comme amélioration visuelle du même système, sans remplacer l'autorité du feather/blend.
+
 ## Chantier futur — User Texture Import v1
 
 Objectif produit :
