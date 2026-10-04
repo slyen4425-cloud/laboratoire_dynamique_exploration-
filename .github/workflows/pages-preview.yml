@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: combat-document-revision-v1
+# preview-revision: combat-document-cachefix-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Combat Document Revision preview
+      - name: Checkout Exploration Combat Document Cache Fix preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-combat-document-revision-v1-2026-10-03
+          ref: preview/exploration-combat-document-cachefix-v1-2026-10-04
 
       - name: Checkout Combat Recall Runtime Fix preview
         uses: actions/checkout@v4
