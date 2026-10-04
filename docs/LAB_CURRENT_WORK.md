@@ -46,7 +46,22 @@
 >
 > Hors périmètre confirmé : XP / loot / capture, Combat, Roster, `Zombicide-40k`.
 >
-> État : **TECHNIQUE GREEN — publication preview + validation utilisateur restantes**.
+> État : **PUBLISHED PREVALIDATION GREEN — validation utilisateur requise avant GREEN final**.
+>
+> Publication preview :
+> - preview : `preview/exploration-terrain-family-extensibility-v1-2026-10-04` ;
+> - SHA preview : `5018ae4ba6936f13d4d88e671df9bb9c2202a25c` ;
+> - checkpoint prévalidation : `checkpoint/exploration-terrain-family-extensibility-v1-prevalidation-green-2026-10-04` ;
+> - CI fonctionnelle : `37189417237` — **SUCCESS** ;
+> - CI docs prépublication : `37189487868` — **SUCCESS** ;
+> - PR infra : #67 — **MERGED** ;
+> - main infra : `c9bee8238a0c76ceb1a3c28dbb873795bb61a324` ;
+> - Pages run : `37189621459` — **SUCCESS**.
+>
+> Lien gate :
+> `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=terrain-family-extensibility-v1`
+>
+> Aucun code fonctionnel n'a été mergé dans main ; seule la référence Pages a changé.
 
 ---
 
