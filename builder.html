@@ -378,12 +378,13 @@
         <div class="grid-2">
           <label>Quand ?
             <select id="event-activation">
-              <option value="on-enter">Le joueur entre dans la zone</option>
-              <option value="on-interact">Le joueur interagit</option>
+              <option value="on-enter">Entrer dans une zone</option>
+              <option value="on-portal-enter">Entrer dans un lieu ou bâtiment</option>
+              <option value="on-interact">Interagir</option>
             </select>
           </label>
 
-          <label>Où ?
+          <label id="event-trigger-kind-field">Où ?
             <select id="event-trigger-kind">
               <option value="point">Dans une zone de la carte</option>
               <option value="object-anchor">Sur un objet</option>
@@ -411,7 +412,20 @@
           <textarea id="event-message" rows="4" placeholder="Ex. : Une inscription ancienne est gravée sur la pierre…"></textarea>
         </label>
 
-        <details>
+        <div id="event-portal-fields" hidden>
+          <label>Lieu / bâtiment
+            <select id="event-portal"></select>
+          </label>
+          <p class="builder-hint">
+            Le message se déclenche quand le joueur franchit l'entrée de ce lieu.
+          </p>
+        </div>
+
+        <p id="event-drag-hint" class="builder-hint">
+          Zone libre : fais glisser directement le cercle jaune sur la carte pour le placer.
+        </p>
+
+        <details id="event-position-details">
           <summary>Position du déclencheur</summary>
 
           <label>
@@ -452,6 +466,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-event-message-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-event-building-entry-drag-v1"></script>
 </body>
 </html>
