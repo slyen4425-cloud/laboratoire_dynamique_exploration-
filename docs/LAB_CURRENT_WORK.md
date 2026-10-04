@@ -22,6 +22,19 @@
 >
 > Aucun changement gameplay/runtime. Aucun changement de `Zombicide-40k`.
 
+> Validation architecture :
+> - organisation validée par l'utilisateur ;
+> - Object Definition Editor séparé du World Builder ;
+> - schéma ouvert aux futurs World Editor / Campaign Editor ;
+> - composition par références versionnées ;
+> - presets extensibles, pas d'enum produit fermée pour les domaines créateur.
+>
+> CI : `37184264109` — **SUCCESS** (`npm test` + `npm run check`).
+>
+> État : **ARCHITECTURE DOCUMENTAIRE GREEN**.
+>
+> Suite : traiter séparément la note d'extensibilité du Builder (familles de terrain), puis construire l'autorité Capture configurable XP/loot/capture sans la placer dans Exploration.
+
 ---
 
 > ÉTAT ACTIF — 2026-10-04
