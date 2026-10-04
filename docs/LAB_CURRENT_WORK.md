@@ -35,7 +35,8 @@
 > - `preview/exploration-object-catalog-placement-v1-2026-10-04` @ `f659e89bb3275c188b1c2506edbdba944c9cf513` ;
 > - PR infra Pages #68 — MERGED ;
 > - main infra : `2c15cb874f1e7138c2f1d25ee0cbdccd53b2fb44` ;
-> - Pages run : `37194940662` — en cours au moment de cette consignation.
+> - Pages run : `37194940662` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=object-catalog-placement-v1`.
 >
 > Gate utilisateur requise avant GREEN final :
 > 1. ouvrir Builder > Objets ;
