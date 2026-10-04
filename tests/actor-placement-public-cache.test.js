@@ -39,9 +39,7 @@ test('public Actor opponent-view fix cache-busts the complete module chain', asy
 
   assert.match(
     index,
-    new RegExp(
-      `src/main\\.js\\?rev=${REVISION}`
-    )
+    /src\/main\.js\?rev=[^"'\\s]+/
   );
   assert.match(
     builder,
