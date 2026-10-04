@@ -2714,11 +2714,13 @@ function hitSelectedEventTrigger(
 
   const event =
     currentWorldEventRaw();
+  const isPointTrigger =
+    event?.trigger?.kind === 'point';
 
   if (
     !event ||
     event.sourceAreaId !== area.id ||
-    event.trigger?.kind !== 'point'
+    !isPointTrigger
   ) {
     return null;
   }
