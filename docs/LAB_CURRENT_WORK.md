@@ -46,7 +46,20 @@
 >
 > Hors périmètre confirmé : XP / loot / capture, Combat, Roster, `Zombicide-40k`.
 >
-> État : **PUBLISHED PREVALIDATION GREEN — validation utilisateur requise avant GREEN final**.
+> État : **GREEN utilisateur**.
+>
+> Validation utilisateur — 2026-10-04 :
+> - ajout / édition des familles de terrain jugés corrects ;
+> - séparation famille / texture jugée cohérente ;
+> - verdict : « ça a l'air bon ».
+>
+> Limite observée pendant le test :
+> - impossible d'enchaîner plusieurs combats car le jeu ne reconnaît plus correctement l'équipe après le premier combat ;
+> - ce défaut appartient au lot Player Party / Rappel -> Invocation déjà gelé ;
+> - il n'est pas causé par Terrain Family Extensibility et n'est pas corrigé dans ce lot ;
+> - aucun contournement, retry ou seconde autorité n'est ajouté.
+>
+> CI HEAD avant clôture : `37189669243` — **SUCCESS**.
 >
 > Publication preview :
 > - preview : `preview/exploration-terrain-family-extensibility-v1-2026-10-04` ;
