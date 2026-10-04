@@ -39,11 +39,11 @@ test('public Actor opponent-view fix cache-busts the complete module chain', asy
 
   assert.match(
     index,
-    /src\/main\.js\?rev=[^"'\\s]+/
+    /src\/main\.js\?rev=[^"'\s]+/
   );
   assert.match(
     builder,
-    /src\/builder\/world-builder-main\.js\?rev=[^"'\\s]+/
+    /src\/builder\/world-builder-main\.js\?rev=[^"'\s]+/
   );
   assert.match(
     main,
