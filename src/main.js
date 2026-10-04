@@ -623,6 +623,8 @@ function update(dt) {
     worldEventController.step({
       currentAreaId:
         player.currentAreaId,
+      viaPortalId:
+        player.viaPortalId,
       entity: player
     });
 
