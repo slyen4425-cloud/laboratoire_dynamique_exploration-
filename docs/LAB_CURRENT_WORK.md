@@ -69,7 +69,34 @@
 > - pas de textures de transition dédiées pour l'instant ;
 > - ce futur raccord doit rester une responsabilité Renderer/Material System et ne jamais écrire de géométrie secondaire dans le WorldDocument.
 >
-> État : **LOT OUVERT — TDD RED requis avant intégration des assets**.
+> Résultat technique :
+> - TDD RED : `ee6d5f18d944f6cbff0c6b2b1e2a8e9a3ecfe5d0`, CI `37232417357` — **FAILURE attendue** sur assets/matériaux absents ;
+> - intégration initiale : `6ce4f9812377b1efa283e166c09f68b8fe97d478` ;
+> - sentinelle d'intégrité binaire a bloqué deux écarts manifeste/binaire sur les assets turquoise puis marais ;
+> - correction limitée au manifeste afin qu'il décrive les binaires réellement commités, sans toucher au renderer ni au gameplay ;
+> - HEAD technique validé : `1820e8e0ec89f2a17b140d667d6cdf93348b02c7` ;
+> - CI complète : `37232951773` — **SUCCESS** ;
+> - 5 nouveaux assetIds derrière le Material Asset Adapter existant ;
+> - 4 nouveaux matériaux `water` : Eau claire bleue, Eau turquoise, Eau sombre / marais, Lave ;
+> - 1 nouveau matériau `surface` : Sol cendre & lave ;
+> - l'ancienne `water.forest_stream` est conservée ;
+> - Builder : aucune liste parallèle, les nouveaux choix proviennent automatiquement de `materialRegistry.list()`.
+>
+> Aucun changement :
+> - géométrie rivière/zone ;
+> - `terrainFamilyId` / `traversalRuleId` ;
+> - Collision World ;
+> - Encounter / Combat / Portal / Event ;
+> - `Zombicide-40k`.
+>
+> Gate restant :
+> - publication d'une preview dédiée ;
+> - vérifier dans le Builder les 5 nouveaux choix ;
+> - tracer une rivière avec chacune des 3 eaux et la lave ;
+> - peindre une zone avec Sol cendre & lave ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview + gate visuel utilisateur requis**.
 
 ---
 
