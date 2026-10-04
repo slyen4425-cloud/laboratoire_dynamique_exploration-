@@ -619,6 +619,8 @@ function update(dt) {
     traversalRegistry
   );
 
+  applyTriggeredPortal();
+
   const worldEventIntent =
     worldEventController.step({
       currentAreaId:
@@ -638,7 +640,6 @@ function update(dt) {
     return;
   }
 
-  applyTriggeredPortal();
   refreshInteractionAvailability();
 
   const encounterIntent = encounterController.step({
