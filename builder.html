@@ -359,9 +359,9 @@
       </section>
 
       <section class="builder-tab" data-panel="events">
-        <h2>Événements monde</h2>
+        <h2>Événements</h2>
         <p class="builder-hint">
-          Ce panneau crée uniquement le binding local (où/quand). L'action métier reste référencée par eventDefinitionId et sera fournie par l'autorité Event dédiée.
+          Crée simplement ce qui doit se passer à un endroit de la carte. Pour l'instant, l'action disponible est « Afficher un message ».
         </p>
 
         <div class="row">
@@ -372,52 +372,67 @@
 
         <label class="checkbox-line">
           <input id="event-enabled" type="checkbox" />
-          Activé
+          Événement actif
         </label>
 
         <div class="grid-2">
-          <label>Area source <select id="event-source-area"></select></label>
-          <label>Activation
+          <label>Quand ?
             <select id="event-activation">
-              <option value="on-enter">Entrée dans la zone</option>
-              <option value="on-interact">Interaction</option>
+              <option value="on-enter">Le joueur entre dans la zone</option>
+              <option value="on-interact">Le joueur interagit</option>
+            </select>
+          </label>
+
+          <label>Où ?
+            <select id="event-trigger-kind">
+              <option value="point">Dans une zone de la carte</option>
+              <option value="object-anchor">Sur un objet</option>
             </select>
           </label>
         </div>
 
         <div class="grid-2">
-          <label>Type trigger
-            <select id="event-trigger-kind">
-              <option value="point">Point / zone circulaire</option>
-              <option value="object-anchor">Ancre objet</option>
+          <label>Que faire ?
+            <select id="event-action-kind">
+              <option value="message">Afficher un message</option>
             </select>
           </label>
-          <label>Répétition
+
+          <label>Fréquence
             <select id="event-repeat-policy">
-              <option value="once">Une fois</option>
-              <option value="repeatable">Répétable</option>
+              <option value="once">Une seule fois</option>
+              <option value="repeatable">À chaque fois</option>
             </select>
           </label>
-        </div>
-
-        <div id="event-point-fields" class="grid-3">
-          <label>X <input id="event-point-x" type="number" step="1" /></label>
-          <label>Y <input id="event-point-y" type="number" step="1" /></label>
-          <label>Rayon <input id="event-radius" type="number" min="4" max="240" step="1" /></label>
-        </div>
-
-        <div id="event-object-fields" class="grid-2">
-          <label>Objet <select id="event-object"></select></label>
-          <label>Ancre <select id="event-anchor"></select></label>
         </div>
 
         <label>
-          Event definition ID
-          <input id="event-definition-id" type="text" placeholder="eventdef.exemple" />
+          Message
+          <textarea id="event-message" rows="4" placeholder="Ex. : Une inscription ancienne est gravée sur la pierre…"></textarea>
         </label>
 
+        <details>
+          <summary>Position du déclencheur</summary>
+
+          <label>
+            Lieu
+            <select id="event-source-area"></select>
+          </label>
+
+          <div id="event-point-fields" class="grid-3">
+            <label>Position X <input id="event-point-x" type="number" step="1" /></label>
+            <label>Position Y <input id="event-point-y" type="number" step="1" /></label>
+            <label>Taille de la zone <input id="event-radius" type="number" min="4" max="240" step="1" /></label>
+          </div>
+
+          <div id="event-object-fields" class="grid-2">
+            <label>Objet <select id="event-object"></select></label>
+            <label>Point d'interaction <select id="event-anchor"></select></label>
+          </div>
+        </details>
+
         <p class="builder-hint">
-          Aucun état « consommé » n'est stocké dans la carte : cette persistance appartiendra au save runtime.
+          « Tester en jeu » permet de vérifier immédiatement le déclenchement et le message.
         </p>
       </section>
 
@@ -437,6 +452,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=world-event-contract-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-event-message-v1"></script>
 </body>
 </html>
