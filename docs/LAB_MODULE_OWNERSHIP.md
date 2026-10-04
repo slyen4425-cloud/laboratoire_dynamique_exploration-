@@ -66,3 +66,18 @@ Il ne possède jamais :
 Les services Core absents peuvent être simulés localement uniquement via adapter clairement nommé.
 
 Lors de l'intégration GenSrpG, le simulateur doit être retiré ou remplacé dans le même chantier de raccord afin d'éviter deux autorités.
+
+## Extensions d'authoring
+
+Les futurs éditeurs suivent la séparation définie dans
+`LAB_MODULAR_AUTHORING_ARCHITECTURE_V1.md`.
+
+| Responsabilité | Propriétaire cible | Entrées | Sorties | Interdictions |
+|---|---|---|---|---|
+| Définition WorldObject | Object Definition Editor / Object Catalog | données intrinsèques objet | ObjectDefinition versionnée | posséder placement monde |
+| Placement WorldObject | World Builder / WorldDocument | objectDefinitionId + transform + overrides autorisés | placement dans le niveau | recopier la définition complète |
+| Règles générales Capture | Capture Rules Authority | configuration créateur | règles XP/loot/capture/progression | World Builder ou Combat possèdent ces règles |
+| Composition monde global future | World Editor | références niveaux/mondes | WorldDocument global/versionné futur | réécrire géométrie interne des niveaux |
+| Composition campagne future | Campaign Editor | références mondes/niveaux/quêtes/règles | CampaignDocument versionné futur | devenir propriétaire des ressources référencées |
+
+Tout nouvel éditeur doit être classé comme producteur de **définitions** ou de **composition par références** avant implémentation.
