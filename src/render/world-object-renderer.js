@@ -1,7 +1,10 @@
 import {
   bridgeVisualRect,
   buildingVisualRect
-} from '../world/world-object-model.js';
+} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+import {
+  resolveWorldObjectPlacements
+} from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
@@ -152,7 +155,7 @@ export function createWorldObjectRenderer({
 } = {}) {
   return Object.freeze({
     draw(ctx, { camera, viewport, objects }) {
-      for (const object of Array.isArray(objects) ? objects : []) {
+      for (const object of resolveWorldObjectPlacements(objects ?? [])) {
         if (
           object.kind !== 'bridge' &&
           object.kind !== 'building'
