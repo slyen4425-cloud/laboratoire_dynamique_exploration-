@@ -42,6 +42,7 @@
       <button type="button" data-tab="objects">Objets</button>
       <button type="button" data-tab="actors">Acteurs</button>
       <button type="button" data-tab="portals">Portals</button>
+      <button type="button" data-tab="events">Événements</button>
       <button type="button" data-tab="json">JSON</button>
     </nav>
 
@@ -357,6 +358,69 @@
         </div>
       </section>
 
+      <section class="builder-tab" data-panel="events">
+        <h2>Événements monde</h2>
+        <p class="builder-hint">
+          Ce panneau crée uniquement le binding local (où/quand). L'action métier reste référencée par eventDefinitionId et sera fournie par l'autorité Event dédiée.
+        </p>
+
+        <div class="row">
+          <select id="event-select"></select>
+          <button id="event-add" type="button">+ Événement</button>
+          <button id="event-delete" type="button" class="danger">Supprimer</button>
+        </div>
+
+        <label class="checkbox-line">
+          <input id="event-enabled" type="checkbox" />
+          Activé
+        </label>
+
+        <div class="grid-2">
+          <label>Area source <select id="event-source-area"></select></label>
+          <label>Activation
+            <select id="event-activation">
+              <option value="on-enter">Entrée dans la zone</option>
+              <option value="on-interact">Interaction</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label>Type trigger
+            <select id="event-trigger-kind">
+              <option value="point">Point / zone circulaire</option>
+              <option value="object-anchor">Ancre objet</option>
+            </select>
+          </label>
+          <label>Répétition
+            <select id="event-repeat-policy">
+              <option value="once">Une fois</option>
+              <option value="repeatable">Répétable</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="event-point-fields" class="grid-3">
+          <label>X <input id="event-point-x" type="number" step="1" /></label>
+          <label>Y <input id="event-point-y" type="number" step="1" /></label>
+          <label>Rayon <input id="event-radius" type="number" min="4" max="240" step="1" /></label>
+        </div>
+
+        <div id="event-object-fields" class="grid-2">
+          <label>Objet <select id="event-object"></select></label>
+          <label>Ancre <select id="event-anchor"></select></label>
+        </div>
+
+        <label>
+          Event definition ID
+          <input id="event-definition-id" type="text" placeholder="eventdef.exemple" />
+        </label>
+
+        <p class="builder-hint">
+          Aucun état « consommé » n'est stocké dans la carte : cette persistance appartiendra au save runtime.
+        </p>
+      </section>
+
       <section class="builder-tab" data-panel="json">
         <h2>WorldDocument</h2>
         <div class="row">
@@ -373,6 +437,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=trigger-geometry-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-event-contract-v1"></script>
 </body>
 </html>
