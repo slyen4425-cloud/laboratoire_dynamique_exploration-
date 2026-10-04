@@ -4,6 +4,7 @@ import {
   addPortal,
   addSpawn,
   addSurfacePath,
+  addTerrainFamilyDefinition,
   addWorldObject,
   appendSurfacePathPoint,
   createWorldBuilderDraft,
@@ -11,6 +12,7 @@ import {
   deletePortal,
   deleteSpawn,
   deleteSurfacePath,
+  deleteTerrainFamilyDefinition,
   deleteWorldObject,
   duplicateWorldObject,
   importWorldBuilderDocument,
@@ -18,6 +20,7 @@ import {
   serializeWorldBuilderDraft,
   updateActorPlacement,
   updateAreaProperties,
+  updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
   updatePortal,
@@ -26,7 +29,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectVisual,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=terrain-family-encounters-v1';
+} from './world-builder-draft.js?rev=terrain-family-extensibility-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -71,8 +74,8 @@ import {
   materialPackV1
 } from '../materials/material-pack-v1.js';
 import {
-  terrainFamilyRegistry
-} from '../world/terrain-family-registry.js?rev=terrain-family-encounters-v1';
+  createTerrainFamilyRegistry
+} from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
 import {
   createCaptureCreatureCatalogProvider
 } from '../capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
@@ -116,10 +119,6 @@ const waterMaterials = materialRegistry
   .list()
   .filter((material) => material.kind === 'water');
 
-const terrainFamilies = terrainFamilyRegistry.list();
-const surfaceTerrainFamilies = terrainFamilies.filter(
-  (family) => family.materialKind === 'surface'
-);
 const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
     CAPTURE_CREATURE_CATALOG_PREVIEW_V1
@@ -252,7 +251,14 @@ let selectedPortalId =
   draft.portals[0]?.id ?? null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
-let selectedEncounterFamilyId = 'forest';
+let selectedTerrainFamilyDefinitionId =
+  draft.terrainFamilies?.[0]?.id ?? null;
+let selectedEncounterFamilyId =
+  draft.terrainFamilies?.some(
+    (family) => family.id === 'forest'
+  )
+    ? 'forest'
+    : draft.terrainFamilies?.[0]?.id ?? null;
 let zoom = 0.35;
 let center = { x: 0, y: 0 };
 let fitRequested = true;
@@ -405,6 +411,34 @@ function ensureSelections() {
     selectedPortalId = draft.portals?.[0]?.id ?? null;
   }
 
+  const families = terrainFamilies();
+
+  if (
+    !families.some(
+      (family) =>
+        family.id ===
+        selectedTerrainFamilyDefinitionId
+    )
+  ) {
+    selectedTerrainFamilyDefinitionId =
+      families[0]?.id ?? null;
+  }
+
+  if (
+    !families.some(
+      (family) =>
+        family.id ===
+        selectedEncounterFamilyId
+    )
+  ) {
+    selectedEncounterFamilyId =
+      families.some(
+        (family) => family.id === 'forest'
+      )
+        ? 'forest'
+        : families[0]?.id ?? null;
+  }
+
   if (
     selectedSurfacePathId &&
     !surfacePathItems(area).some(
@@ -423,21 +457,41 @@ function numberValue(input, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-function familyLabel(familyId) {
-  return terrainFamilyRegistry.get(familyId)?.label ?? familyId;
+function terrainFamilyRegistryForDraft() {
+  return createTerrainFamilyRegistry(
+    draft.terrainFamilies
+  );
 }
 
-function materialsForTerrainFamily(familyId) {
-  const family = terrainFamilyRegistry.get(familyId);
-  if (!family) return [];
+function terrainFamilies() {
+  return terrainFamilyRegistryForDraft().list();
+}
 
-  return family.materialIds
-    .map((materialId) => materialRegistry.resolve(materialId))
-    .filter(
-      (material) =>
-        material &&
-        material.kind === family.materialKind
+function familyLabel(familyId) {
+  return terrainFamilyRegistryForDraft()
+    .get(familyId)?.label ?? familyId;
+}
+
+function terrainFamilyUsedInDraft(
+  terrainFamilyId
+) {
+  return draft.areas.some((area) => {
+    const surface = area.surface ?? {};
+
+    return (
+      surface.baseTerrainFamilyId ===
+        terrainFamilyId ||
+      [
+        ...(surface.zones ?? []),
+        ...(surface.routes ?? []),
+        ...(surface.rivers ?? [])
+      ].some(
+        (item) =>
+          item.terrainFamilyId ===
+          terrainFamilyId
+      )
     );
+  });
 }
 
 function encounterProfile(familyId = selectedEncounterFamilyId) {
@@ -470,34 +524,42 @@ function refreshAreaControls() {
   $('area-width').value = area.width;
   $('area-height').value = area.height;
 
+  const families = terrainFamilies();
+  const familyRegistry =
+    terrainFamilyRegistryForDraft();
   const familyId =
-    terrainFamilyRegistry.get(area.surface?.baseTerrainFamilyId)
+    familyRegistry.get(
+      area.surface?.baseTerrainFamilyId
+    )
       ? area.surface.baseTerrainFamilyId
-      : 'forest';
+      : families[0]?.id ?? '';
 
   setOptions(
     $('area-family'),
-    surfaceTerrainFamilies,
+    families,
     familyId,
     { label: (family) => family.label }
   );
   $('area-family').value = familyId;
 
-  const familyMaterials = materialsForTerrainFamily(familyId);
   setOptions(
     $('area-material'),
-    familyMaterials,
+    surfaceMaterials,
     area.surface?.baseMaterialId,
     { label: (material) => material.label }
   );
   if (
-    familyMaterials.some(
-      (material) => material.id === area.surface?.baseMaterialId
+    surfaceMaterials.some(
+      (material) =>
+        material.id ===
+        area.surface?.baseMaterialId
     )
   ) {
-    $('area-material').value = area.surface.baseMaterialId;
-  } else if (familyMaterials[0]) {
-    $('area-material').value = familyMaterials[0].id;
+    $('area-material').value =
+      area.surface.baseMaterialId;
+  } else if (surfaceMaterials[0]) {
+    $('area-material').value =
+      surfaceMaterials[0].id;
   }
 
   setOptions(
@@ -523,143 +585,347 @@ function refreshAreaControls() {
 function refreshTerrainControls() {
   const area = currentAreaRaw();
   const selected = currentSurfacePathRaw();
+  const families = terrainFamilies();
+  const registry =
+    terrainFamilyRegistryForDraft();
+  const fallbackFamily =
+    registry.get(
+      area?.surface?.baseTerrainFamilyId
+    )
+      ? area.surface.baseTerrainFamilyId
+      : families[0]?.id ?? '';
 
   const currentTerrainFamily =
-    selected && selectedSurfaceKind === 'terrain'
+    selected &&
+    selectedSurfaceKind === 'terrain'
       ? selected.terrainFamilyId
       : (
-          terrainFamilyRegistry.get($('terrain-family').value)
+          registry.get(
+            $('terrain-family').value
+          )
             ? $('terrain-family').value
-            : area?.surface?.baseTerrainFamilyId ?? 'forest'
+            : fallbackFamily
         );
 
   setOptions(
     $('terrain-family'),
-    surfaceTerrainFamilies,
+    families,
     currentTerrainFamily,
     { label: (family) => family.label }
   );
-  $('terrain-family').value = currentTerrainFamily;
+  $('terrain-family').value =
+    currentTerrainFamily;
 
-  const terrainMaterials =
-    materialsForTerrainFamily(currentTerrainFamily);
   const requestedTerrainMaterial =
-    selected && selectedSurfaceKind === 'terrain'
+    selected &&
+    selectedSurfaceKind === 'terrain'
       ? selected.materialId
       : $('terrain-paint-material').value;
 
   setOptions(
     $('terrain-paint-material'),
-    terrainMaterials,
+    surfaceMaterials,
     requestedTerrainMaterial,
     { label: (material) => material.label }
   );
   if (
-    terrainMaterials.some(
-      (material) => material.id === requestedTerrainMaterial
+    surfaceMaterials.some(
+      (material) =>
+        material.id ===
+        requestedTerrainMaterial
     )
   ) {
-    $('terrain-paint-material').value = requestedTerrainMaterial;
-  } else if (terrainMaterials[0]) {
-    $('terrain-paint-material').value = terrainMaterials[0].id;
+    $('terrain-paint-material').value =
+      requestedTerrainMaterial;
+  } else if (surfaceMaterials[0]) {
+    $('terrain-paint-material').value =
+      surfaceMaterials[0].id;
   }
 
   $('terrain-brush-size-value').value =
-    String(numberValue($('terrain-brush-size'), 180));
+    String(
+      numberValue(
+        $('terrain-brush-size'),
+        180
+      )
+    );
   $('terrain-route-width-value').value =
-    String(numberValue($('terrain-route-width'), 82));
+    String(
+      numberValue(
+        $('terrain-route-width'),
+        82
+      )
+    );
   $('terrain-river-width-value').value =
-    String(numberValue($('terrain-river-width'), 72));
+    String(
+      numberValue(
+        $('terrain-river-width'),
+        72
+      )
+    );
 
-  const routeMaterials = materialsForTerrainFamily('road');
+  const routeFamily =
+    selected &&
+    selectedSurfaceKind === 'route'
+      ? selected.terrainFamilyId
+      : (
+          registry.get(
+            $('terrain-route-family').value
+          )
+            ? $('terrain-route-family').value
+            : (
+                registry.get('road')
+                  ? 'road'
+                  : fallbackFamily
+              )
+        );
+
+  setOptions(
+    $('terrain-route-family'),
+    families,
+    routeFamily,
+    { label: (family) => family.label }
+  );
+  $('terrain-route-family').value =
+    routeFamily;
+
+  const requestedRouteMaterial =
+    selected &&
+    selectedSurfaceKind === 'route'
+      ? selected.materialId
+      : $('terrain-route-material').value;
+
   setOptions(
     $('terrain-route-material'),
-    routeMaterials,
-    selectedSurfaceKind === 'route'
-      ? selected?.materialId
-      : $('terrain-route-material').value,
+    pathMaterials,
+    requestedRouteMaterial,
     { label: (material) => material.label }
   );
-  if (!$('terrain-route-material').value && routeMaterials[0]) {
-    $('terrain-route-material').value = routeMaterials[0].id;
+  if (
+    pathMaterials.some(
+      (material) =>
+        material.id ===
+        requestedRouteMaterial
+    )
+  ) {
+    $('terrain-route-material').value =
+      requestedRouteMaterial;
+  } else if (pathMaterials[0]) {
+    $('terrain-route-material').value =
+      pathMaterials[0].id;
   }
 
-  const seaMaterials = materialsForTerrainFamily('sea');
+  const riverFamily =
+    selected &&
+    selectedSurfaceKind === 'river'
+      ? selected.terrainFamilyId
+      : (
+          registry.get(
+            $('terrain-river-family').value
+          )
+            ? $('terrain-river-family').value
+            : (
+                registry.get('sea')
+                  ? 'sea'
+                  : fallbackFamily
+              )
+        );
+
+  setOptions(
+    $('terrain-river-family'),
+    families,
+    riverFamily,
+    { label: (family) => family.label }
+  );
+  $('terrain-river-family').value =
+    riverFamily;
+
+  const requestedRiverMaterial =
+    selected &&
+    selectedSurfaceKind === 'river'
+      ? selected.materialId
+      : $('terrain-river-material').value;
+
   setOptions(
     $('terrain-river-material'),
-    seaMaterials,
-    selectedSurfaceKind === 'river'
-      ? selected?.materialId
-      : $('terrain-river-material').value,
+    waterMaterials,
+    requestedRiverMaterial,
     { label: (material) => material.label }
   );
-  if (!$('terrain-river-material').value && seaMaterials[0]) {
-    $('terrain-river-material').value = seaMaterials[0].id;
+  if (
+    waterMaterials.some(
+      (material) =>
+        material.id ===
+        requestedRiverMaterial
+    )
+  ) {
+    $('terrain-river-material').value =
+      requestedRiverMaterial;
+  } else if (waterMaterials[0]) {
+    $('terrain-river-material').value =
+      waterMaterials[0].id;
   }
 
   const select = $('terrain-path-select');
   const selectedKey =
-    selectedSurfaceKind && selectedSurfacePathId
+    selectedSurfaceKind &&
+    selectedSurfacePathId
       ? `${selectedSurfaceKind}:${selectedSurfacePathId}`
       : '';
 
   select.replaceChildren();
 
-  const empty = document.createElement('option');
+  const empty =
+    document.createElement('option');
   empty.value = '';
-  empty.textContent = 'Aucun tracé sélectionné';
+  empty.textContent =
+    'Aucun tracé sélectionné';
   select.append(empty);
 
-  for (const item of surfacePathItems(area)) {
-    const option = document.createElement('option');
+  for (
+    const item of surfacePathItems(area)
+  ) {
+    const option =
+      document.createElement('option');
     option.value = item.key;
+    const kindLabel =
+      item.kind === 'river'
+        ? 'Rivière'
+        : item.kind === 'route'
+          ? 'Route'
+          : 'Terrain';
     option.textContent =
-      `${
-        item.kind === 'river'
-          ? 'Mer / eau'
-          : item.kind === 'terrain'
-            ? familyLabel(item.terrainFamilyId)
-            : 'Route'
-      } · ${item.id}`;
+      `${kindLabel} · ${familyLabel(item.terrainFamilyId)} · ${item.id}`;
     select.append(option);
   }
 
   select.value = selectedKey;
-  $('terrain-path-delete').disabled = !selected;
+  $('terrain-path-delete').disabled =
+    !selected;
 
-  if (selected && selectedSurfaceKind === 'terrain') {
-    $('terrain-brush-size').value = selected.width;
-    $('terrain-brush-size-value').value = String(selected.width);
+  if (
+    selected &&
+    selectedSurfaceKind === 'terrain'
+  ) {
+    $('terrain-family').value =
+      selected.terrainFamilyId;
+    $('terrain-brush-size').value =
+      selected.width;
+    $('terrain-brush-size-value').value =
+      String(selected.width);
   }
 
-  if (selected && selectedSurfaceKind === 'route') {
-    $('terrain-route-width').value = selected.width;
-    $('terrain-route-width-value').value = String(selected.width);
-    $('terrain-route-material').value = selected.materialId;
+  if (
+    selected &&
+    selectedSurfaceKind === 'route'
+  ) {
+    $('terrain-route-family').value =
+      selected.terrainFamilyId;
+    $('terrain-route-width').value =
+      selected.width;
+    $('terrain-route-width-value').value =
+      String(selected.width);
+    $('terrain-route-material').value =
+      selected.materialId;
   }
 
-  if (selected && selectedSurfaceKind === 'river') {
-    $('terrain-river-width').value = selected.width;
-    $('terrain-river-width-value').value = String(selected.width);
-    $('terrain-river-material').value = selected.materialId;
+  if (
+    selected &&
+    selectedSurfaceKind === 'river'
+  ) {
+    $('terrain-river-family').value =
+      selected.terrainFamilyId;
+    $('terrain-river-width').value =
+      selected.width;
+    $('terrain-river-width-value').value =
+      String(selected.width);
+    $('terrain-river-material').value =
+      selected.materialId;
   }
 }
 
+function refreshTerrainFamilyDefinitionControls() {
+  const families = terrainFamilies();
+
+  if (
+    !families.some(
+      (family) =>
+        family.id ===
+        selectedTerrainFamilyDefinitionId
+    )
+  ) {
+    selectedTerrainFamilyDefinitionId =
+      families[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('terrain-family-definition-select'),
+    families,
+    selectedTerrainFamilyDefinitionId,
+    { label: (family) => family.label }
+  );
+
+  const family =
+    families.find(
+      (entry) =>
+        entry.id ===
+        selectedTerrainFamilyDefinitionId
+    ) ?? null;
+
+  $('terrain-family-id').value =
+    family?.id ?? '';
+  $('terrain-family-label').value =
+    family?.label ?? '';
+  $('terrain-family-label').disabled =
+    !family;
+
+  const used =
+    family
+      ? terrainFamilyUsedInDraft(
+          family.id
+        )
+      : false;
+
+  $('terrain-family-delete').disabled =
+    !family ||
+    families.length <= 1 ||
+    used;
+
+  $('terrain-family-delete-status').textContent =
+    !family
+      ? 'Aucune famille sélectionnée.'
+      : used
+        ? 'Famille utilisée dans le monde : suppression protégée.'
+        : families.length <= 1
+          ? 'Le monde doit conserver au moins une famille.'
+          : 'Famille non utilisée : suppression autorisée.';
+}
+
 function refreshFamilyEncounterControls() {
+  const families = terrainFamilies();
+  const registry =
+    terrainFamilyRegistryForDraft();
+
+  if (
+    !registry.get(
+      selectedEncounterFamilyId
+    )
+  ) {
+    selectedEncounterFamilyId =
+      registry.get('forest')
+        ? 'forest'
+        : families[0]?.id ?? null;
+  }
+
   setOptions(
     $('family-encounter-family'),
-    terrainFamilies,
+    families,
     selectedEncounterFamilyId,
     { label: (family) => family.label }
   );
 
-  if (
-    !terrainFamilyRegistry.get(selectedEncounterFamilyId)
-  ) {
-    selectedEncounterFamilyId = 'forest';
-  }
   $('family-encounter-family').value =
-    selectedEncounterFamilyId;
+    selectedEncounterFamilyId ?? '';
 
   const profile = encounterProfile();
   if (!profile) return;
@@ -1109,6 +1375,7 @@ function refreshJson() {
 function refreshControls() {
   ensureSelections();
   refreshAreaControls();
+  refreshTerrainFamilyDefinitionControls();
   refreshTerrainControls();
   refreshFamilyEncounterControls();
   refreshObjectControls();
@@ -1978,9 +2245,9 @@ function beginSurfacePath(kind, point) {
         : $('terrain-route-material').value;
   const terrainFamilyId =
     kind === 'river'
-      ? 'sea'
+      ? $('terrain-river-family').value
       : kind === 'route'
-        ? 'road'
+        ? $('terrain-route-family').value
         : $('terrain-family').value;
 
   draft = addSurfacePath(
@@ -2144,16 +2411,12 @@ for (const id of ['area-width', 'area-height']) {
 }
 
 $('area-family').addEventListener('change', () => {
-  const familyId = $('area-family').value;
-  const materials = materialsForTerrainFamily(familyId);
-  const materialId = materials[0]?.id ?? null;
-
   draft = updateAreaProperties(
     draft,
     selectedAreaId,
     {
-      baseTerrainFamilyId: familyId,
-      baseMaterialId: materialId
+      baseTerrainFamilyId:
+        $('area-family').value
     }
   );
   refreshControls();
@@ -2173,18 +2436,6 @@ $('area-material').addEventListener('change', () => {
 
 
 $('terrain-family').addEventListener('change', () => {
-  const familyId = $('terrain-family').value;
-  const materials = materialsForTerrainFamily(familyId);
-  const materialId = materials[0]?.id ?? '';
-
-  setOptions(
-    $('terrain-paint-material'),
-    materials,
-    materialId,
-    { label: (material) => material.label }
-  );
-  $('terrain-paint-material').value = materialId;
-
   if (
     selectedSurfaceKind === 'terrain' &&
     selectedSurfacePathId
@@ -2195,14 +2446,139 @@ $('terrain-family').addEventListener('change', () => {
       'terrain',
       selectedSurfacePathId,
       {
-        terrainFamilyId: familyId,
-        materialId
+        terrainFamilyId:
+          $('terrain-family').value
       }
     );
     refreshJson();
     renderPreview();
   }
 });
+
+$('terrain-family-definition-select').addEventListener(
+  'change',
+  () => {
+    selectedTerrainFamilyDefinitionId =
+      $('terrain-family-definition-select').value;
+    refreshTerrainFamilyDefinitionControls();
+  }
+);
+
+$('terrain-family-add').addEventListener(
+  'click',
+  () => {
+    const before = new Set(
+      terrainFamilies().map(
+        (family) => family.id
+      )
+    );
+
+    draft = addTerrainFamilyDefinition(
+      draft
+    );
+
+    const created =
+      terrainFamilies().find(
+        (family) =>
+          !before.has(family.id)
+      );
+
+    selectedTerrainFamilyDefinitionId =
+      created?.id ??
+      selectedTerrainFamilyDefinitionId;
+    selectedEncounterFamilyId =
+      created?.id ??
+      selectedEncounterFamilyId;
+
+    refreshControls();
+  }
+);
+
+$('terrain-family-label').addEventListener(
+  'change',
+  () => {
+    if (
+      !selectedTerrainFamilyDefinitionId
+    ) {
+      return;
+    }
+
+    draft = updateTerrainFamilyDefinition(
+      draft,
+      selectedTerrainFamilyDefinitionId,
+      {
+        label:
+          $('terrain-family-label').value
+      }
+    );
+
+    refreshControls();
+  }
+);
+
+$('terrain-family-delete').addEventListener(
+  'click',
+  () => {
+    if (
+      !selectedTerrainFamilyDefinitionId
+    ) {
+      return;
+    }
+
+    const before =
+      terrainFamilies().length;
+    draft =
+      deleteTerrainFamilyDefinition(
+        draft,
+        selectedTerrainFamilyDefinitionId
+      );
+
+    if (
+      terrainFamilies().length === before
+    ) {
+      setStatus(
+        'Famille protégée : encore utilisée dans le monde',
+        true
+      );
+      refreshTerrainFamilyDefinitionControls();
+      return;
+    }
+
+    selectedTerrainFamilyDefinitionId =
+      terrainFamilies()[0]?.id ?? null;
+    refreshControls();
+  }
+);
+
+for (const [kind, selectId] of [
+  ['route', 'terrain-route-family'],
+  ['river', 'terrain-river-family']
+]) {
+  $(selectId).addEventListener(
+    'change',
+    () => {
+      if (
+        selectedSurfaceKind !== kind ||
+        !selectedSurfacePathId
+      ) {
+        return;
+      }
+
+      draft = updateSurfacePath(
+        draft,
+        selectedAreaId,
+        kind,
+        selectedSurfacePathId,
+        {
+          terrainFamilyId:
+            $(selectId).value
+        }
+      );
+      refreshJson();
+      renderPreview();
+    }
+  );
+}
 
 $('family-encounter-family').addEventListener(
   'change',
