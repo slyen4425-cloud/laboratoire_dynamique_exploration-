@@ -17,7 +17,29 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
   assert.equal(registry.resolve('ground.dirt')?.kind, 'surface');
   assert.equal(registry.resolve('ground.sand')?.kind, 'surface');
   assert.equal(registry.resolve('ground.snow')?.kind, 'surface');
-  assert.equal(registry.list().length, 7);
+  assert.equal(registry.resolve('ground.forest_floor')?.kind, 'surface');
+  assert.equal(registry.resolve('ground.mountain_rock')?.kind, 'surface');
+  assert.equal(
+    registry.resolve('grass.forest')?.assets.base,
+    'texture.grass.forest.base.01'
+  );
+  assert.equal(
+    registry.resolve('ground.sand')?.assets.base,
+    'texture.ground.sand.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('ground.snow')?.assets.base,
+    'texture.ground.snow.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('ground.forest_floor')?.assets.base,
+    'texture.ground.forest_floor.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('ground.mountain_rock')?.assets.base,
+    'texture.ground.mountain_rock.stylized.01'
+  );
+  assert.equal(registry.list().length, 9);
 });
 
 test('unknown material ids never silently fall back', () => {
