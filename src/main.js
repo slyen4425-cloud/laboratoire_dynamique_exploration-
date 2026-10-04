@@ -27,6 +27,9 @@ import {
   resolveWorldObjectAsset
 } from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';
 import {
+  resolveWorldObjectPlacements
+} from './world/world-object-placement-model.js?rev=object-catalog-placement-v1';
+import {
   createImageAssetLoader
 } from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
 import {
@@ -262,8 +265,14 @@ const worldObjectImageLoader = createImageAssetLoader({
 const requiredWorldObjectAssetIds = Object.freeze([
   ...new Set(
     activeWorldDocument.areas
-      .flatMap((area) => area.objects)
-      .map((object) => object.visual?.assetId)
+      .flatMap((area) =>
+        resolveWorldObjectPlacements(
+          area.objects
+        )
+      )
+      .map((object) =>
+        object.visual?.assetId
+      )
       .filter(Boolean)
   )
 ]);
