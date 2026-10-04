@@ -1823,92 +1823,34 @@ function applyTransformInputs() {
   renderPreview();
 }
 
-function applyBuildingInputs() {
-  const object = currentObjectRaw();
-  if (!object || object.kind !== 'building') return;
-
-  draft = patchWorldObject(
-    draft,
-    selectedAreaId,
-    selectedObjectId,
-    (building) => {
-      building.baseSize.width = numberValue(
-        $('building-width'),
-        building.baseSize.width
-      );
-      building.baseSize.height = numberValue(
-        $('building-height'),
-        building.baseSize.height
-      );
-      building.footprint.widthRatio = numberValue(
-        $('building-footprint-width'),
-        building.footprint.widthRatio
-      );
-      building.footprint.heightRatio = numberValue(
-        $('building-footprint-height'),
-        building.footprint.heightRatio
-      );
-      building.footprint.offsetX = numberValue(
-        $('building-footprint-x'),
-        building.footprint.offsetX
-      );
-      building.footprint.offsetY = numberValue(
-        $('building-footprint-y'),
-        building.footprint.offsetY
-      );
-
-      const door =
-        building.doorAnchors.find(
-          (anchor) => anchor.id === 'main-door'
-        ) ?? building.doorAnchors[0];
-
-      if (door) {
-        door.x = numberValue($('building-door-x'), door.x);
-        door.y = numberValue($('building-door-y'), door.y);
-      }
-    }
-  );
-
-  refreshJson();
-  renderPreview();
-}
-
 function applyBridgeInputs() {
-  const object = currentObjectRaw();
-  if (!object || object.kind !== 'bridge') return;
+  const object =
+    currentObjectResolved();
 
-  draft = patchWorldObject(
-    draft,
-    selectedAreaId,
-    selectedObjectId,
-    (bridge) => {
-      bridge.baseSize.length = numberValue(
-        $('bridge-length'),
-        bridge.baseSize.length
-      );
-      bridge.baseSize.width = numberValue(
-        $('bridge-width'),
-        bridge.baseSize.width
-      );
-      bridge.traversal.lengthRatio = numberValue(
-        $('bridge-passage-length'),
-        bridge.traversal.lengthRatio
-      );
-      bridge.traversal.widthRatio = numberValue(
-        $('bridge-passage-width'),
-        bridge.traversal.widthRatio
-      );
-      bridge.traversal.edgeAssistRatio = numberValue(
-        $('bridge-edge-assist'),
-        bridge.traversal.edgeAssistRatio
-      );
-      bridge.traversal.overridesSurfaceFeatureIds = $('bridge-obstacles')
-        .value
-        .split(',')
-        .map((value) => value.trim())
-        .filter(Boolean);
-    }
-  );
+  if (
+    !object ||
+    object.kind !== 'bridge'
+  ) {
+    return;
+  }
+
+  draft =
+    updateWorldObjectOverrides(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      {
+        traversalSurfaceFeatureIds:
+          $('bridge-obstacles')
+            .value
+            .split(',')
+            .map(
+              (value) =>
+                value.trim()
+            )
+            .filter(Boolean)
+      }
+    );
 
   refreshJson();
   renderPreview();
@@ -1926,10 +1868,15 @@ function switchPortalTrigger(kind) {
         const area = draft.areas.find(
           (item) => item.id === nextPortal.sourceAreaId
         );
-        const building = area?.objects?.find(
-          (object) => object.kind === 'building'
-        );
-        const anchor = building?.doorAnchors?.[0];
+        const building =
+          resolveWorldObjectPlacements(
+            area?.objects ?? []
+          ).find(
+            (object) =>
+              object.kind === 'building'
+          );
+        const anchor =
+          building?.doorAnchors?.[0];
 
         if (building && anchor) {
           nextPortal.trigger = {
