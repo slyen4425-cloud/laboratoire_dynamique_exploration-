@@ -13,6 +13,7 @@ import {
   addWorldEvent,
   createWorldBuilderDraft,
   deleteWorldEvent,
+  deleteWorldObject,
   serializeWorldBuilderDraft,
   updateWorldEvent
 } from '../src/builder/world-builder-draft.js';
@@ -263,6 +264,126 @@ test('Builder draft never stores consumed runtime state inside a WorldEvent defi
 
   assert.equal(
     'consumed' in serialized.events.at(-1),
+    false
+  );
+});
+
+
+test('Builder protects a WorldObject referenced by a WorldEvent object-anchor', () => {
+  let draft = createWorldBuilderDraft(
+    demoWorldDocument
+  );
+
+  draft = addWorldEvent(
+    draft,
+    {
+      id: 'house-event',
+      sourceAreaId:
+        'forest-exterior',
+      activation:
+        'on-interact',
+      trigger: {
+        kind: 'object-anchor',
+        objectId:
+          'forest-house-01',
+        anchorId:
+          'main-door',
+        radius: 40
+      },
+      eventDefinitionId:
+        'eventdef.house.inspect',
+      repeatPolicy:
+        'repeatable'
+    }
+  );
+
+  const next =
+    deleteWorldObject(
+      draft,
+      'forest-exterior',
+      'forest-house-01'
+    );
+
+  assert.equal(
+    next.areas
+      .find(
+        (area) =>
+          area.id ===
+          'forest-exterior'
+      )
+      .objects
+      .some(
+        (object) =>
+          object.id ===
+          'forest-house-01'
+      ),
+    true
+  );
+});
+
+test('WorldEvent contract lot adds no Event Controller to runtime Exploration', async () => {
+  const { readFile } =
+    await import(
+      'node:fs/promises'
+    );
+
+  const runtime =
+    await readFile(
+      new URL(
+        '../src/main.js',
+        import.meta.url
+      ),
+      'utf8'
+    );
+  const builder =
+    await readFile(
+      new URL(
+        '../src/builder/world-builder-main.js',
+        import.meta.url
+      ),
+      'utf8'
+    );
+  const html =
+    await readFile(
+      new URL(
+        '../builder.html',
+        import.meta.url
+      ),
+      'utf8'
+    );
+
+  assert.equal(
+    runtime.includes(
+      'world-event-model'
+    ),
+    false
+  );
+  assert.equal(
+    runtime.includes(
+      'EventController'
+    ),
+    false
+  );
+  assert.match(
+    html,
+    /data-panel="events"/
+  );
+  assert.match(
+    html,
+    /value="on-enter"/
+  );
+  assert.match(
+    html,
+    /value="on-interact"/
+  );
+  assert.match(
+    builder,
+    /addWorldEvent/
+  );
+  assert.equal(
+    builder.includes(
+      '.consumed'
+    ),
     false
   );
 });
