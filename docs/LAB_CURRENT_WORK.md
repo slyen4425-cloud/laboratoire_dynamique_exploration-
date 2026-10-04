@@ -140,7 +140,36 @@
 > Nouveau gate :
 > `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=combat-bridge-bootstrap-v2`
 >
-> État : **BRIDGE + BOOTSTRAP TECHNIQUES GREEN — gate réel multi-combat utilisateur requis**.
+> Incident suivant observé — équipe inconnue :
+> - message runtime : `unknown Capture partyRef: capture-party-preview` ;
+> - cause racine : Exploration envoyait encore l'ancien identifiant de preview depuis `src/main.js` ;
+> - le bridge Combat refusait correctement cette référence inconnue.
+>
+> Correction :
+> - ID canonique CaptureParty confirmé côté Combat : `capture-party-player-v1` ;
+> - Exploration transporte uniquement cette référence opaque via `CAPTURE_PLAYER_PARTY_REF` ;
+> - aucun alias/fallback de party ;
+> - aucune copie du roster dans Exploration ;
+> - aucune modification Combat Runtime / Roster / Recall / Summon.
+>
+> TDD :
+> - RED : `c2e5017fa33d0096a6c4f32099c32dda315f9757` ;
+> - CI RED : `37221798981` — FAILURE attendue ;
+> - HEAD fonctionnel : `df163a3295d19996de902206bd8075cf67962ac8` ;
+> - CI fonctionnelle : `37221868131` — **SUCCESS**.
+>
+> Publication :
+> - checkpoint : `checkpoint/exploration-multicombat-partyref-v1-prevalidation-green-2026-10-04` ;
+> - preview : `preview/exploration-multicombat-partyref-v1-2026-10-04` ;
+> - PR infra #76 — **MERGED** ;
+> - main infra : `d122bad5644f2dc0f473c9d4166dd79299e3f58f` ;
+> - Pages : `37221941656` — **SUCCESS** ;
+> - Combat preview : `preview/lab-exploration-bridge-convergence-v1-2026-10-04`.
+>
+> Nouveau gate :
+> `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=multicombat-partyref-v1`
+>
+> État : **BRIDGE + BOOTSTRAP + PARTY REF TECHNIQUES GREEN — gate réel multi-combat utilisateur requis**.
 
 ---
 
