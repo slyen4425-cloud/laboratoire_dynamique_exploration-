@@ -2871,22 +2871,15 @@ for (const id of [
   );
 }
 
-$('object-select').addEventListener('change', () => {
-  selectedObjectId = $('object-select').value;
-  refreshObjectControls();
-  renderPreview();
-});
-
-$('object-asset').addEventListener('change', () => {
-  draft = updateWorldObjectVisual(
-    draft,
-    selectedAreaId,
-    selectedObjectId,
-    $('object-asset').value
-  );
-  refreshJson();
-  renderPreview();
-});
+$('object-select').addEventListener(
+  'change',
+  () => {
+    selectedObjectId =
+      $('object-select').value;
+    refreshObjectControls();
+    renderPreview();
+  }
+);
 
 for (const id of [
   'object-x',
@@ -2895,116 +2888,66 @@ for (const id of [
   'object-scale-x',
   'object-scale-y'
 ]) {
-  $(id).addEventListener('change', applyTransformInputs);
+  $(id).addEventListener(
+    'change',
+    applyTransformInputs
+  );
 }
 
-for (const id of [
-  'building-width',
-  'building-height',
-  'building-footprint-width',
-  'building-footprint-height',
-  'building-footprint-x',
-  'building-footprint-y',
-  'building-door-x',
-  'building-door-y'
-]) {
-  $(id).addEventListener('change', applyBuildingInputs);
-}
+$('bridge-obstacles').addEventListener(
+  'change',
+  applyBridgeInputs
+);
 
-for (const id of [
-  'bridge-length',
-  'bridge-width',
-  'bridge-passage-length',
-  'bridge-passage-width',
-  'bridge-edge-assist',
-  'bridge-obstacles'
-]) {
-  $(id).addEventListener('change', applyBridgeInputs);
-}
+$('object-add').addEventListener(
+  'click',
+  () => {
+    const area = currentAreaRaw();
+    const objectDefinitionId =
+      $('object-definition').value;
 
-$('object-add-building').addEventListener('click', () => {
-  const area = currentAreaRaw();
-  if (!area) return;
+    if (!area || !objectDefinitionId) {
+      return;
+    }
 
-  draft = addWorldObject(
-    draft,
-    selectedAreaId,
-    {
-      kind: 'building',
-      transform: {
-        x: area.width / 2,
-        y: area.height / 2,
-        rotationDeg: 0,
-        scaleX: 1,
-        scaleY: 1
-      },
-      baseSize: {
-        width: 300,
-        height: 300
-      },
-      visual: {
-        assetId: 'object.building.house.fantasy_wood_stone.01'
-      },
-      footprint: {
-        enabled: true,
-        widthRatio: 0.78,
-        heightRatio: 0.62,
-        offsetX: 0,
-        offsetY: -0.08
-      },
-      doorAnchors: [
-        {
-          id: 'main-door',
-          x: 0,
-          y: 0.38
+    const before = new Set(
+      area.objects?.map(
+        (object) => object.id
+      ) ?? []
+    );
+
+    draft = addWorldObject(
+      draft,
+      selectedAreaId,
+      {
+        objectDefinitionId,
+        transform: {
+          x: area.width / 2,
+          y: area.height / 2,
+          rotationDeg: 0,
+          scaleX: 1,
+          scaleY: 1
+        },
+        overrides: {
+          traversalSurfaceFeatureIds: []
         }
-      ]
-    }
-  );
-
-  selectedObjectId = currentAreaRaw()?.objects?.at(-1)?.id ?? null;
-  focusSelection();
-  refreshControls();
-});
-
-$('object-add-bridge').addEventListener('click', () => {
-  const area = currentAreaRaw();
-  if (!area) return;
-
-  draft = addWorldObject(
-    draft,
-    selectedAreaId,
-    {
-      kind: 'bridge',
-      transform: {
-        x: area.width / 2,
-        y: area.height / 2,
-        rotationDeg: 0,
-        scaleX: 1,
-        scaleY: 1
-      },
-      baseSize: {
-        length: 170,
-        width: 96
-      },
-      visual: {
-        assetId: 'object.bridge.wood.rustic_bank.01'
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 0.92,
-        widthRatio: 0.82,
-        edgeAssistRatio: 0.15,
-        traversalRuleId: 'terrain.bridge',
-        overridesSurfaceFeatureIds: []
       }
-    }
-  );
+    );
 
-  selectedObjectId = currentAreaRaw()?.objects?.at(-1)?.id ?? null;
-  focusSelection();
-  refreshControls();
-});
+    selectedObjectId =
+      currentAreaRaw()
+        ?.objects
+        ?.find(
+          (object) =>
+            !before.has(object.id)
+        )
+        ?.id ??
+      selectedObjectId;
+
+    focusSelection();
+    refreshControls();
+  }
+);
 
 $('object-duplicate').addEventListener('click', () => {
   const before = currentAreaRaw()?.objects?.map((object) => object.id) ?? [];
