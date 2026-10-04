@@ -3717,8 +3717,17 @@ for (const id of [
 $('event-select').addEventListener('change', () => {
   selectedEventId =
     $('event-select').value || null;
-  refreshWorldEventControls();
-  renderPreview();
+
+  const event =
+    currentWorldEventRaw();
+
+  if (event?.sourceAreaId) {
+    selectedAreaId =
+      event.sourceAreaId;
+    fitRequested = true;
+  }
+
+  refreshControls();
 });
 
 $('event-add').addEventListener('click', () => {
@@ -3779,12 +3788,39 @@ $('event-delete').addEventListener('click', () => {
   refreshControls();
 });
 
+$('event-activation').addEventListener(
+  'change',
+  () => {
+    switchWorldEventActivation(
+      $('event-activation').value
+    );
+  }
+);
+
 $('event-trigger-kind').addEventListener(
   'change',
   () => {
     switchWorldEventTrigger(
       $('event-trigger-kind').value
     );
+  }
+);
+
+$('event-portal').addEventListener(
+  'change',
+  () => {
+    applyWorldEventInputs();
+
+    const event =
+      currentWorldEventRaw();
+
+    if (event?.sourceAreaId) {
+      selectedAreaId =
+        event.sourceAreaId;
+      fitRequested = true;
+    }
+
+    refreshControls();
   }
 );
 
@@ -3855,11 +3891,11 @@ $('event-object').addEventListener(
 
 for (const id of [
   'event-enabled',
-  'event-activation',
   'event-point-x',
   'event-point-y',
   'event-radius',
   'event-anchor',
+  'event-action-kind',
   'event-message',
   'event-repeat-policy'
 ]) {
