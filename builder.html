@@ -218,23 +218,29 @@
       </section>
 
       <section class="builder-tab" data-panel="objects">
-        <h2>WorldObjects</h2>
+        <h2>Objets placés</h2>
+        <p class="builder-hint">
+          Le World Builder référence une définition d’objet existante.
+          Le visuel, la taille logique, le footprint et les anchors appartiennent à l’Object Catalog.
+        </p>
+
+        <label>
+          Définition à placer
+          <select id="object-definition"></select>
+        </label>
+
         <div class="row">
-          <select id="object-select"></select>
-          <button id="object-add-building" type="button">+ Bâtiment</button>
-          <button id="object-add-bridge" type="button">+ Pont</button>
-        </div>
-        <div class="row">
+          <button id="object-add" type="button">+ Placer l’objet</button>
           <button id="object-duplicate" type="button">Dupliquer</button>
           <button id="object-delete" type="button" class="danger">Supprimer</button>
         </div>
 
         <label>
-          Asset
-          <select id="object-asset"></select>
+          Objet placé
+          <select id="object-select"></select>
         </label>
 
-        <h3>Transform</h3>
+        <h3>Placement</h3>
         <div class="grid-2">
           <label>X <input id="object-x" type="number" step="1" /></label>
           <label>Y <input id="object-y" type="number" step="1" /></label>
@@ -243,37 +249,21 @@
           <label>Scale Y <input id="object-scale-y" type="number" min="0.25" max="4" step="0.05" /></label>
         </div>
 
-        <div id="building-fields" class="kind-fields">
-          <h3>Bâtiment</h3>
-          <div class="grid-2">
-            <label>Largeur logique <input id="building-width" type="number" min="24" step="1" /></label>
-            <label>Hauteur logique <input id="building-height" type="number" min="24" step="1" /></label>
-            <label>Footprint largeur <input id="building-footprint-width" type="number" min="0.1" max="1" step="0.01" /></label>
-            <label>Footprint hauteur <input id="building-footprint-height" type="number" min="0.1" max="1" step="0.01" /></label>
-            <label>Offset X <input id="building-footprint-x" type="number" min="-0.5" max="0.5" step="0.01" /></label>
-            <label>Offset Y <input id="building-footprint-y" type="number" min="-0.5" max="0.5" step="0.01" /></label>
-          </div>
-          <h3>Porte principale</h3>
-          <div class="grid-2">
-            <label>Anchor X <input id="building-door-x" type="number" min="-0.75" max="0.75" step="0.01" /></label>
-            <label>Anchor Y <input id="building-door-y" type="number" min="-0.75" max="0.75" step="0.01" /></label>
-          </div>
-        </div>
-
         <div id="bridge-fields" class="kind-fields">
-          <h3>Pont</h3>
-          <div class="grid-2">
-            <label>Longueur <input id="bridge-length" type="number" min="24" step="1" /></label>
-            <label>Largeur <input id="bridge-width" type="number" min="24" step="1" /></label>
-            <label>Passage longueur <input id="bridge-passage-length" type="number" min="0.1" max="1" step="0.01" /></label>
-            <label>Passage largeur <input id="bridge-passage-width" type="number" min="0.1" max="1" step="0.01" /></label>
-            <label>Aide bord <input id="bridge-edge-assist" type="number" min="0" max="0.5" step="0.01" /></label>
-          </div>
+          <h3>Override local du pont</h3>
           <label>
             Surfaces franchies (ids rivière, séparés par virgules)
             <input id="bridge-obstacles" type="text" />
           </label>
+          <p class="builder-hint">
+            La géométrie et le corridor du pont viennent de sa définition.
+            Ici on indique seulement quelles surfaces ce placement franchit.
+          </p>
         </div>
+
+        <p id="object-source-status" class="builder-hint">
+          Sélectionner une définition puis placer l’objet.
+        </p>
       </section>
 
 
