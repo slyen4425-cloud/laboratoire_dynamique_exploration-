@@ -134,3 +134,17 @@ test('Portal normalization consumes shared trigger geometry', async () => {
 
   assert.equal(portal.trigger.kind, 'object-anchor');
 });
+
+
+test('Portal model contains no private trigger distance or Building anchor resolver', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(
+    new URL('../src/world/portal-model.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.equal(source.includes('buildingDoorAnchorWorld'), false);
+  assert.equal(source.includes('dx * dx + dy * dy'), false);
+  assert.match(source, /resolveWorldTriggerPoint/);
+  assert.match(source, /worldTriggerContainsPoint/);
+});
