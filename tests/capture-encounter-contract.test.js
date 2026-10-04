@@ -11,7 +11,7 @@ test('CaptureEncounterSnapshot v1 exposes only the public combat contract', () =
   const snapshot = createCaptureEncounterSnapshot({
     encounterId: 'encounter-7',
     source: 'terrain-random',
-    playerPartyRef: 'capture-party-preview',
+    playerPartyRef: 'capture-party-player-v1',
     opponentCreatureId: 'crea_braiseau',
     rulesetId: 'capture.standard.1v1',
     areaId: 'forest-exterior',
@@ -29,7 +29,7 @@ test('CaptureEncounterSnapshot v1 exposes only the public combat contract', () =
     encounterId: 'encounter-7',
     source: 'terrain-random',
     player: {
-      partyRef: 'capture-party-preview'
+      partyRef: 'capture-party-player-v1'
     },
     opponents: [
       {
