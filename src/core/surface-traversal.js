@@ -4,7 +4,10 @@ import {
 } from './geometry.js?rev=surface-traversal-replay-v1';
 import {
   bridgeTraversalRect
-} from '../world/world-object-model.js?rev=surface-traversal-replay-v1';
+} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+import {
+  resolveWorldObjectPlacements
+} from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
 import {
   traversalRulePackV1
 } from './traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
@@ -222,7 +225,7 @@ export function resolveBaseSurfaceFeature(
 function bridgeOverrideAt(world, feature, x, y) {
   if (!feature || feature.kind === 'base') return null;
 
-  for (const object of Array.isArray(world?.objects) ? world.objects : []) {
+  for (const object of resolveWorldObjectPlacements(world?.objects ?? [])) {
     const overridden =
       object?.traversal?.overridesSurfaceFeatureIds ?? [];
 
