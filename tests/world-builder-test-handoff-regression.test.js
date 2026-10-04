@@ -21,7 +21,11 @@ test('regression: Builder test handoff preserves edited canonical WorldDocument'
   const building = draft.areas
     .find((area) => area.id === areaId)
     .objects
-    .find((object) => object.kind === 'building');
+    .find(
+      (object) =>
+        object.objectDefinitionId ===
+        'objectdef.building.house.fantasy_wood_stone.01'
+    );
 
   draft = updateWorldObjectTransform(
     draft,
