@@ -41,7 +41,50 @@
 > - Portal conserve transition vraie Area/Spawn ;
 > - tests Portal historiques GREEN.
 >
-> État : **START — TDD RED à constater**.
+> Résultat technique :
+> - nouvelle autorité `src/world/world-trigger-geometry.js` ;
+> - géométrie canonique v1 : `point` et `object-anchor` ;
+> - anciens triggers Portal `building-door` migrés à la normalisation vers `object-anchor` ;
+> - résolution d'ancre depuis le WorldObject résolu/Object Catalog, jamais depuis les pixels ;
+> - test de distance possédé uniquement par World Trigger Geometry ;
+> - Portal conserve uniquement validation de références + transition Area/Spawn ;
+> - Builder édite désormais `point` ou `object-anchor` ;
+> - suppression d'un objet référencé par un Portal object-anchor reste protégée.
+>
+> TDD :
+> - RED : `749f2c3be694c889a46190ef7c3222fb944a9a9f` ;
+> - CI RED : `37196766622` — FAILURE attendue ;
+> - HEAD fonctionnel : `2028bcd4dc9de0806750b3be232c236708d40d21` ;
+> - CI finale : `37196884803` — **SUCCESS** ;
+> - sentinelle : Portal ne contient plus `buildingDoorAnchorWorld` ni sa propre formule de distance.
+>
+> Prévalidation :
+> - checkpoint : `checkpoint/exploration-trigger-geometry-v1-prevalidation-green-2026-10-04` ;
+> - preview : `preview/exploration-trigger-geometry-v1-2026-10-04` @ `2028bcd4dc9de0806750b3be232c236708d40d21` ;
+> - PR infra Pages #69 — MERGED ;
+> - main infra : `a0179bc3436ae9b13e395c370a1261862ecd640c` ;
+> - Pages run : `37196966027` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=trigger-geometry-v1`.
+>
+> Gate utilisateur avant GREEN final :
+> 1. ouvrir Builder > Portals ;
+> 2. vérifier qu'un trigger peut être `Point` ou `Ancre objet (porte)` ;
+> 3. sélectionner la maison + `main-door` ;
+> 4. déplacer/rotationner/scaler la maison et vérifier que le Portal suit toujours sa porte ;
+> 5. lancer « Tester en jeu » ;
+> 6. entrer dans la maison puis ressortir ;
+> 7. vérifier qu'aucun comportement Portal n'a régressé.
+>
+> Hors périmètre confirmé :
+> - Event Controller ;
+> - onEnter/onInteract produit ;
+> - bouton Interaction/Input ;
+> - persistance d'événements ;
+> - coffre fonctionnel ;
+> - Capture/Combat/XP/loot ;
+> - `Zombicide-40k`.
+>
+> État : **TECHNIQUE GREEN — gate utilisateur requise avant GREEN final**.
 
 ---
 
