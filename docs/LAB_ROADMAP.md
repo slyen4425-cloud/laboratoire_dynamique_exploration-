@@ -127,6 +127,22 @@ Contrat courant :
 
 Les créatures visibles restent réservées aux rencontres spéciales/scénarisées/rares/boss/quêtes.
 
+
+### Terrain Family Extensibility v1 — implémenté techniquement
+
+Les 8 familles historiques sont désormais des presets de données.
+
+Le `WorldDocument` porte un registre `terrainFamilies[]` extensible. Le World Builder peut ajouter/renommer/supprimer une famille non utilisée et la réutiliser pour :
+- sol d'Area ;
+- terrain peint ;
+- route ;
+- rivière ;
+- configuration de rencontres.
+
+La famille reste une sémantique gameplay indépendante du matériau. Les textures compatibles sont choisies selon le type de géométrie (`surface / path / water`) et non selon le nom de famille.
+
+La validation utilisateur mobile/ergonomique du Builder reste requise avant GREEN final.
+
 ## Phase 6 — World Objects, interactions et Areas
 
 - WorldObject transformable ;
