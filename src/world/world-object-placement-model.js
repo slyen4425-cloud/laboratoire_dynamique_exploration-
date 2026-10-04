@@ -108,7 +108,8 @@ function normalizeOverrides(raw) {
 
 export function normalizeWorldObjectPlacement(
   raw,
-  index = 0
+  index = 0,
+  catalog = objectDefinitionCatalogV1
 ) {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -119,7 +120,10 @@ export function normalizeWorldObjectPlacement(
       raw.objectDefinitionId
     );
 
-  if (!objectDefinitionId) {
+  if (
+    !objectDefinitionId ||
+    !catalog?.get?.(objectDefinitionId)
+  ) {
     return null;
   }
 
@@ -138,7 +142,8 @@ export function normalizeWorldObjectPlacement(
 }
 
 export function normalizeWorldObjectPlacements(
-  rawPlacements = []
+  rawPlacements = [],
+  catalog = objectDefinitionCatalogV1
 ) {
   if (!Array.isArray(rawPlacements)) {
     return Object.freeze([]);
@@ -152,7 +157,8 @@ export function normalizeWorldObjectPlacements(
       const placement =
         normalizeWorldObjectPlacement(
           raw,
-          index
+          index,
+          catalog
         );
 
       if (
