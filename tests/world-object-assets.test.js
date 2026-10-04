@@ -13,9 +13,12 @@ import {
 import {
   bridgeVisualRect,
   buildingDoorAnchorWorld,
-  buildingFootprintRect,
-  normalizeWorldObjects
+  buildingFootprintRect
 } from '../src/world/world-object-model.js';
+import {
+  normalizeWorldObjectPlacements,
+  resolveWorldObjectPlacement
+} from '../src/world/world-object-placement-model.js';
 
 const BRIDGE_EXPECTED = Object.freeze({
   'object.bridge.wood.rustic_bank.01':
@@ -173,75 +176,84 @@ test('shared image loader loads WorldObject visuals with explicit lifecycle', as
   assert.equal(loader.status().disposed, true);
 });
 
-test('changing Bridge asset id never changes logical bridge geometry', () => {
-  const make = (assetId) => normalizeWorldObjects([
-    {
-      id: 'bridge-visual-swap',
-      kind: 'bridge',
-      transform: {
-        x: 100,
-        y: 200,
-        rotationDeg: 37,
-        scaleX: 1.7,
-        scaleY: 0.8
-      },
-      baseSize: {
-        length: 180,
-        width: 90
-      },
-      visual: { assetId },
-      traversal: {
-        enabled: true,
-        lengthRatio: 0.9,
-        widthRatio: 0.8,
-        overridesObstacleIds: ['river-1']
-      }
-    }
-  ])[0];
+test('changing Bridge definition visual never changes placement-owned transform', () => {
+  const make = (objectDefinitionId) =>
+    resolveWorldObjectPlacement(
+      normalizeWorldObjectPlacements([
+        {
+          id: 'bridge-visual-swap',
+          objectDefinitionId,
+          transform: {
+            x: 100,
+            y: 200,
+            rotationDeg: 37,
+            scaleX: 1.7,
+            scaleY: 0.8
+          },
+          overrides: {
+            traversalSurfaceFeatureIds: [
+              'river-1'
+            ]
+          }
+        }
+      ])[0]
+    );
 
-  const wood = make('object.bridge.wood.rustic_bank.01');
-  const stone = make('object.bridge.stone.moss_bank.01');
+  const wood = make(
+    'objectdef.bridge.wood.rustic_bank.01'
+  );
+  const stone = make(
+    'objectdef.bridge.stone.moss_bank.01'
+  );
 
-  assert.deepEqual(bridgeVisualRect(wood), bridgeVisualRect(stone));
-  assert.notEqual(wood.visual.assetId, stone.visual.assetId);
+  assert.deepEqual(
+    bridgeVisualRect(wood),
+    bridgeVisualRect(stone)
+  );
+  assert.notEqual(
+    wood.visual.assetId,
+    stone.visual.assetId
+  );
 });
 
-test('changing Building asset id never changes logical footprint or door anchor', () => {
-  const make = (assetId) => normalizeWorldObjects([
-    {
-      id: 'building-visual-swap',
-      kind: 'building',
-      transform: {
-        x: 300,
-        y: 400,
-        rotationDeg: 22,
-        scaleX: 1.2,
-        scaleY: 0.9
-      },
-      baseSize: {
-        width: 280,
-        height: 260
-      },
-      visual: { assetId },
-      footprint: {
-        widthRatio: 0.78,
-        heightRatio: 0.62,
-        offsetX: 0,
-        offsetY: -0.08
-      },
-      doorAnchors: [
-        { id: 'main-door', x: 0, y: 0.38 }
-      ]
-    }
-  ])[0];
+test('Building intrinsic visual, footprint and anchors come from one catalog definition', () => {
+  const placement =
+    normalizeWorldObjectPlacements([
+      {
+        id: 'building-visual-source',
+        objectDefinitionId:
+          'objectdef.building.house.fantasy_wood_stone.01',
+        transform: {
+          x: 300,
+          y: 400,
+          rotationDeg: 22,
+          scaleX: 1.2,
+          scaleY: 0.9
+        }
+      }
+    ])[0];
 
-  const first = make('object.building.house.fantasy_wood_stone.01');
-  const second = make('object.building.future.02');
+  const building =
+    resolveWorldObjectPlacement(
+      placement
+    );
 
-  assert.deepEqual(buildingFootprintRect(first), buildingFootprintRect(second));
-  assert.deepEqual(
-    buildingDoorAnchorWorld(first, 'main-door'),
-    buildingDoorAnchorWorld(second, 'main-door')
+  assert.equal(
+    'visual' in placement,
+    false
+  );
+  assert.equal(
+    building.visual.assetId,
+    'object.building.house.fantasy_wood_stone.01'
+  );
+  assert.ok(
+    buildingFootprintRect(building)
+  );
+  assert.ok(
+    buildingDoorAnchorWorld(
+      building,
+      'main-door'
+    )
   );
 });
 
