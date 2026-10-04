@@ -217,6 +217,13 @@
 > - exemples de profils visuels : `standard`, `parchemin`, `lettre`, `papier` ;
 > - ce futur choix devra rester une donnée de présentation du message, jamais une seconde logique d'événement.
 >
+> Backlog dialogue générique consigné :
+> - futur `Dialogue System` transversal réutilisable par Exploration / Dungeon / Capture ;
+> - réponses multiples et embranchements ;
+> - conditions et conséquences configurables ;
+> - portraits/noms/pages de dialogue ;
+> - les Builders déclenchent uniquement un `dialogueId` et ne deviennent jamais propriétaires de la logique de dialogue.
+>
 > Clôture :
 > - CI finale : `37212315665` — **SUCCESS** ;
 > - SHA GREEN validé : `b40152ed7d8b6760287062dfc4681135712c6e00` ;
