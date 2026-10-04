@@ -1490,8 +1490,10 @@ function refreshWorldEventControls() {
     event.activation ?? 'on-enter';
   $('event-repeat-policy').value =
     event.repeatPolicy ?? 'once';
+  $('event-action-kind').value =
+    event.action?.kind ?? 'message';
   $('event-message').value =
-    event.eventDefinitionId ?? '';
+    event.action?.text ?? '';
 
   const triggerKind =
     event.trigger?.kind === 'object-anchor'
@@ -1617,10 +1619,14 @@ function applyWorldEventInputs() {
         $('event-activation').value;
       nextEvent.repeatPolicy =
         $('event-repeat-policy').value;
-      nextEvent.eventDefinitionId =
-        $('event-message')
-          .value
-          .trim();
+      nextEvent.action = {
+        kind:
+          $('event-action-kind').value,
+        text:
+          $('event-message')
+            .value
+            .trim()
+      };
 
       const radius =
         numberValue(
