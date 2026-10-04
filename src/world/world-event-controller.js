@@ -28,6 +28,7 @@ export function createWorldEventController(
 ) {
   const consumedIds = new Set();
   let insideOnEnter = new Set();
+  let lastViaPortalId = null;
 
   function eventPoint(
     currentAreaId,
@@ -62,11 +63,47 @@ export function createWorldEventController(
 
   function step({
     currentAreaId,
+    viaPortalId = null,
     entity
   } = {}) {
     const nextInside =
       new Set();
     let intent = null;
+
+    const portalEdge =
+      viaPortalId &&
+      viaPortalId !==
+        lastViaPortalId
+        ? viaPortalId
+        : null;
+
+    lastViaPortalId =
+      viaPortalId ?? null;
+
+    if (portalEdge) {
+      for (
+        const event of
+        worldDocument?.events ?? []
+      ) {
+        if (
+          event.activation !==
+            'on-portal-enter' ||
+          event.sourceAreaId !==
+            currentAreaId ||
+          event.portalId !==
+            portalEdge ||
+          !eligible(
+            event,
+            consumedIds
+          )
+        ) {
+          continue;
+        }
+
+        consumeIfNeeded(event);
+        return freezeIntent(event);
+      }
+    }
 
     for (
       const event of
