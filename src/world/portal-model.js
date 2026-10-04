@@ -1,6 +1,7 @@
 import {
   findWorldArea,
   findWorldAreaSpawn,
+  resolveWorldAreaObjects,
   resolveWorldAreaSpawnPoint
 } from './world-area-model.js?rev=builder-dynamic-return-v1';
 import {
@@ -121,11 +122,12 @@ export function resolvePortalTriggerPoint(areas, portal) {
   }
 
   if (portal.trigger.kind === 'building-door') {
-    const building = area.objects.find(
-      (object) =>
-        object.kind === 'building' &&
-        object.id === portal.trigger.objectId
-    );
+    const building =
+      resolveWorldAreaObjects(area).find(
+        (object) =>
+          object.kind === 'building' &&
+          object.id === portal.trigger.objectId
+      );
 
     if (!building) return null;
 
