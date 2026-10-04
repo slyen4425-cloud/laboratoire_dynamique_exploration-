@@ -1,6 +1,9 @@
 import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=terrain-family-extensibility-v1';
+import {
+  objectDefinitionCatalogV1
+} from '../objects/object-definition-catalog.js?rev=object-catalog-placement-v1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -879,38 +882,67 @@ export function updateWorldObjectTransform(
   return next;
 }
 
-export function updateWorldObjectVisual(
+export function updateWorldObjectOverrides(
   draft,
   areaId,
   objectId,
-  assetId
+  {
+    traversalSurfaceFeatureIds
+  } = {}
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
-  const object = area?.objects?.find((item) => item.id === objectId);
+  const object =
+    area?.objects?.find(
+      (item) => item.id === objectId
+    );
+
   if (!object) return next;
 
-  object.visual ??= {};
-  object.visual.assetId =
-    typeof assetId === 'string' && assetId.trim()
-      ? assetId.trim()
-      : null;
+  const definition =
+    objectDefinitionCatalogV1.get(
+      object.objectDefinitionId
+    );
 
-  return next;
-}
+  if (!definition) return next;
 
-export function patchWorldObject(
-  draft,
-  areaId,
-  objectId,
-  patcher
-) {
-  const next = clone(draft);
-  const area = findArea(next, areaId);
-  const object = area?.objects?.find((item) => item.id === objectId);
+  object.overrides ??= {};
 
-  if (object && typeof patcher === 'function') {
-    patcher(object);
+  if (
+    definition.kind === 'bridge' &&
+    Array.isArray(
+      traversalSurfaceFeatureIds
+    )
+  ) {
+    const ids = [];
+    const seen = new Set();
+
+    for (
+      const value of
+      traversalSurfaceFeatureIds
+    ) {
+      if (
+        typeof value !== 'string'
+      ) {
+        continue;
+      }
+
+      const id = value.trim();
+
+      if (
+        !id ||
+        seen.has(id)
+      ) {
+        continue;
+      }
+
+      seen.add(id);
+      ids.push(id);
+    }
+
+    object.overrides
+      .traversalSurfaceFeatureIds =
+        ids;
   }
 
   return next;
@@ -919,27 +951,99 @@ export function patchWorldObject(
 export function addWorldObject(
   draft,
   areaId,
-  rawObject
+  {
+    id = null,
+    objectDefinitionId,
+    transform = {},
+    overrides = {}
+  } = {}
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
-  if (!area || !rawObject || typeof rawObject !== 'object') {
+
+  const definition =
+    objectDefinitionCatalogV1.get(
+      objectDefinitionId
+    );
+
+  if (!area || !definition) {
     return next;
   }
 
   area.objects ??= [];
-  const object = clone(rawObject);
-  const prefix = object.kind === 'building' ? 'building' : 'bridge';
 
-  if (
-    typeof object.id !== 'string' ||
-    !object.id.trim() ||
-    area.objects.some((item) => item.id === object.id.trim())
-  ) {
-    object.id = uniqueId(prefix, area.objects);
-  }
+  const prefix =
+    definition.kind === 'building'
+      ? 'building'
+      : definition.kind === 'bridge'
+        ? 'bridge'
+        : 'object';
 
-  area.objects.push(object);
+  const placementId =
+    typeof id === 'string' &&
+    id.trim() &&
+    !area.objects.some(
+      (item) =>
+        item.id === id.trim()
+    )
+      ? id.trim()
+      : uniqueId(
+          prefix,
+          area.objects
+        );
+
+  area.objects.push({
+    id: placementId,
+    objectDefinitionId:
+      definition.id,
+    transform: {
+      x: finite(
+        transform.x,
+        area.width / 2
+      ),
+      y: finite(
+        transform.y,
+        area.height / 2
+      ),
+      rotationDeg: finite(
+        transform.rotationDeg,
+        0
+      ),
+      scaleX: finite(
+        transform.scaleX,
+        1
+      ),
+      scaleY: finite(
+        transform.scaleY,
+        1
+      )
+    },
+    overrides: {
+      traversalSurfaceFeatureIds:
+        Array.isArray(
+          overrides
+            .traversalSurfaceFeatureIds
+        )
+          ? [
+              ...new Set(
+                overrides
+                  .traversalSurfaceFeatureIds
+                  .filter(
+                    (value) =>
+                      typeof value ===
+                        'string' &&
+                      value.trim()
+                  )
+                  .map(
+                    (value) =>
+                      value.trim()
+                  )
+              )
+            ]
+          : []
+    }
+  });
+
   return next;
 }
 
