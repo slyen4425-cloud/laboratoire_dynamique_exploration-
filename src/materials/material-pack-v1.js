@@ -160,6 +160,31 @@ export const materialPackV1 = Object.freeze({
       })
     }),
     Object.freeze({
+      id: 'ground.volcanic_ash_lava',
+      kind: 'surface',
+      label: 'Sol cendre & lave',
+      assets: Object.freeze({
+        base: 'texture.ground.volcanic_ash_lava.stylized.01',
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#4d4039',
+        variationColors: Object.freeze([
+          'rgba(80,66,59,0.16)',
+          'rgba(111,72,54,0.12)',
+          'rgba(49,45,43,0.15)'
+        ]),
+        detailSpacing: 200,
+        decalSpacing: 0,
+        decalDensity: 0,
+        decalMinSize: 0,
+        decalMaxSize: 0,
+        decalOpacity: 0
+      })
+    }),
+    Object.freeze({
       id: 'floor.wood.house',
       kind: 'surface',
       label: 'Plancher bois intérieur',
@@ -222,6 +247,86 @@ export const materialPackV1 = Object.freeze({
         innerBankPadding: 10,
         highlightRatio: 0.1,
         highlightOpacity: 0.3
+      })
+    }),
+    Object.freeze({
+      id: 'water.clear_blue',
+      kind: 'water',
+      label: 'Eau claire bleue',
+      assets: Object.freeze({
+        center: 'texture.water.clear_blue.stylized.01',
+        bank: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        outerBankColor: '#55705c',
+        innerBankColor: '#78936f',
+        waterColor: '#39aee5',
+        highlightColor: '#d7f8ff',
+        outerBankPadding: 20,
+        innerBankPadding: 10,
+        highlightRatio: 0.08,
+        highlightOpacity: 0.18
+      })
+    }),
+    Object.freeze({
+      id: 'water.turquoise',
+      kind: 'water',
+      label: 'Eau turquoise',
+      assets: Object.freeze({
+        center: 'texture.water.turquoise.stylized.01',
+        bank: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        outerBankColor: '#4a766d',
+        innerBankColor: '#72a78e',
+        waterColor: '#21c5c0',
+        highlightColor: '#ddfff5',
+        outerBankPadding: 20,
+        innerBankPadding: 10,
+        highlightRatio: 0.08,
+        highlightOpacity: 0.18
+      })
+    }),
+    Object.freeze({
+      id: 'water.swamp',
+      kind: 'water',
+      label: 'Eau sombre / marais',
+      assets: Object.freeze({
+        center: 'texture.water.swamp.stylized.01',
+        bank: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        outerBankColor: '#354936',
+        innerBankColor: '#506542',
+        waterColor: '#205c5c',
+        highlightColor: '#91c5b0',
+        outerBankPadding: 20,
+        innerBankPadding: 10,
+        highlightRatio: 0.08,
+        highlightOpacity: 0.16
+      })
+    }),
+    Object.freeze({
+      id: 'water.lava',
+      kind: 'water',
+      label: 'Lave',
+      assets: Object.freeze({
+        center: 'texture.water.lava.stylized.01',
+        bank: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        outerBankColor: '#2f211d',
+        innerBankColor: '#5f3023',
+        waterColor: '#e84a14',
+        highlightColor: '#ffd34e',
+        outerBankPadding: 22,
+        innerBankPadding: 10,
+        highlightRatio: 0.06,
+        highlightOpacity: 0.24
       })
     })
   ]),

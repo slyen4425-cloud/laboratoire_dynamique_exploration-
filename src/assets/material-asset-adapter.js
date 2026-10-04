@@ -39,6 +39,31 @@ const MATERIAL_ASSETS = Object.freeze({
     kind: 'texture',
     path: './assets/exploration/materials/forest/water/water_forest_stream_base_01.webp'
   }),
+  'texture.water.clear_blue.stylized.01': Object.freeze({
+    id: 'texture.water.clear_blue.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/water/water_clear_blue_stylized_01.webp'
+  }),
+  'texture.water.turquoise.stylized.01': Object.freeze({
+    id: 'texture.water.turquoise.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp'
+  }),
+  'texture.water.swamp.stylized.01': Object.freeze({
+    id: 'texture.water.swamp.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/water/water_swamp_stylized_01.webp'
+  }),
+  'texture.water.lava.stylized.01': Object.freeze({
+    id: 'texture.water.lava.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/water/lava_flow_stylized_01.webp'
+  }),
+  'texture.ground.volcanic_ash_lava.stylized.01': Object.freeze({
+    id: 'texture.ground.volcanic_ash_lava.stylized.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/surfaces/volcanic_ash_lava_stylized_01.webp'
+  }),
   'transition.road.dirt_to_grass_forest.edge.01': Object.freeze({
     id: 'transition.road.dirt_to_grass_forest.edge.01',
     kind: 'transition',

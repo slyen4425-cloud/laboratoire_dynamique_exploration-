@@ -4,7 +4,7 @@
   "profile": "mobile-test-128",
   "ownership": "exploration-material-pack",
   "generatedAt": "2026-10-04",
-  "purpose": "Material Pack v1 mobile visual validation with stylized terrain surfaces; not final production resolution.",
+  "purpose": "Material Pack v1 mobile visual validation with stylized terrain, water variants and lava materials; not final production resolution.",
   "files": [
     {
       "path": "assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp",
@@ -77,6 +77,51 @@
       "height": 128,
       "assetId": "texture.water.forest_stream.center.01",
       "role": "water-center"
+    },
+    {
+      "path": "assets/exploration/materials/forest/water/water_clear_blue_stylized_01.webp",
+      "sha256": "8e773bacd87fe2790dadb9c7559c44da9e95d9d80384b14bfb96ca770e3024bb",
+      "bytes": 3414,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.water.clear_blue.stylized.01",
+      "role": "water-center"
+    },
+    {
+      "path": "assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp",
+      "sha256": "c982ea195c4e639f86c2888fba6e0bcf343cc97ab2d7af5e246b9f56c6d406f7",
+      "bytes": 3750,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.water.turquoise.stylized.01",
+      "role": "water-center"
+    },
+    {
+      "path": "assets/exploration/materials/forest/water/water_swamp_stylized_01.webp",
+      "sha256": "bd990d9adcb188b17a47f0b503ba07292d9a16f2c0bfb993fc126f6a0f04b589",
+      "bytes": 2140,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.water.swamp.stylized.01",
+      "role": "water-center"
+    },
+    {
+      "path": "assets/exploration/materials/forest/water/lava_flow_stylized_01.webp",
+      "sha256": "1bdbab7b18f0a498ff8a67913dc417cee399d5c07a068cf60e57b730680e7b64",
+      "bytes": 4838,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.water.lava.stylized.01",
+      "role": "water-center"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/volcanic_ash_lava_stylized_01.webp",
+      "sha256": "bb812a6230a0d099f2299b490b58025bc6fe0c65ca96bf2f1c04a354115db4f3",
+      "bytes": 3430,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.volcanic_ash_lava.stylized.01",
+      "role": "surface-base"
     },
     {
       "path": "assets/exploration/materials/forest/transitions/road_dirt_to_grass_forest_edge_01.webp",
