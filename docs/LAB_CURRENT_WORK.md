@@ -70,7 +70,33 @@
 > - **User Texture Import v1** : import simple d'images par le créateur, stockage local, métadonnées et injection dans la même autorité Material Registry/Asset Adapter sans second système ;
 > - **Multi-Zone / World Assembly** : éditeur de zones réutilisables puis éditeur supérieur de raccord des zones, analogue Pièce -> Donjon.
 >
-> État : **LOT OUVERT — aucun GREEN avant CI + gate visuel utilisateur**.
+> Résultat technique :
+> - TDD RED : `140f64d1d4eea8ef98ecccd87072051928d44e00`, CI `37229823931` — **FAILURE attendue** ;
+> - implémentation : cinq textures WebP 128 × 128 intégrées derrière les propriétaires existants ;
+> - `grass.forest` conserve son ID mais utilise désormais l'herbe cartoon ;
+> - `ground.sand` et `ground.snow` utilisent désormais une texture réelle ;
+> - nouveaux matériaux `ground.forest_floor` et `ground.mountain_rock` ;
+> - Builder : aucune liste parallèle, les nouveaux choix proviennent automatiquement du Material Registry ;
+> - manifeste étendu avec bytes + SHA-256 des binaires réellement commités ;
+> - première CI d'implémentation `37230250192` : 288/290, deux sentinelles obsolètes diagnostiquées ;
+> - correction soustractive des sentinelles uniquement : compteur 8 -> 12 et regex de cache corrigée pour signifier réellement « non-espace » ;
+> - HEAD technique validé : `ec42a09b4651150c595d548b7612e4c989ab2699` ;
+> - CI complète : `37230407642` — **SUCCESS**.
+>
+> Aucun changement :
+> - géométrie `WorldArea.surface` ;
+> - `terrainFamilyId` / rencontres ;
+> - Surface Renderer métier ;
+> - routes/rivières/Portals/Events/Combat ;
+> - `Zombicide-40k`.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - vérifier visuellement dans le Builder : Herbe cartoon, Sol de forêt, Neige, Sable, Montagne rocheuse ;
+> - vérifier base d'Area + pinceau terrain sur smartphone/desktop ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview + gate visuel utilisateur requis**.
 
 ---
 
