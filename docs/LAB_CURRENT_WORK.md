@@ -450,3 +450,28 @@ Gate utilisateur restante :
 7. vérifier que Moussados remplace visiblement le Loup.
 
 État : **PUBLISHED PREVALIDATION GREEN — validation utilisateur requise avant GREEN final Player Party**.
+
+
+---
+
+## Gate utilisateur échouée / lot gelé — 2026-10-04
+
+Retour utilisateur :
+- le problème Rappel -> Invocation persiste malgré le cache-bust document Combat ;
+- le comportement actuel de Rappel / Invocation doit être repensé dans le laboratoire Combat avant nouvelle tentative d'intégration.
+
+Décision de coordination :
+- **NE PAS fermer Player Party en GREEN** ;
+- geler le micro-lot Combat Document Cache Fix comme diagnostic publié, sans nouvelle rustine ;
+- ne pas modifier Combat Runtime / Roster Session depuis Exploration ;
+- ne pas ajouter de correctif UI, timer, retry, reload ou seconde autorité ;
+- reprendre ce raccord seulement après stabilisation du nouveau contrat Rappel / Invocation côté Combat.
+
+La suite Exploration indépendante peut continuer depuis le dernier checkpoint réellement GREEN.
+
+Point important pour la suite Capture :
+- XP / loot / capture ne seront pas inventés dans Exploration ;
+- les données et règles historiques de Monster Capture doivent être auditées puis portées derrière une autorité Capture configurable ;
+- Exploration ne transportera/appliquera que le contrat public de résultat nécessaire.
+
+État : **FROZEN — USER GATE FAILED — NO GREEN**.
