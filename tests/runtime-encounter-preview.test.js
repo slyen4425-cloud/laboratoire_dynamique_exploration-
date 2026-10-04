@@ -55,7 +55,11 @@ test('runtime publishes the canonical Capture player party reference and forbids
 
   assert.match(
     source,
-    /playerPartyRef:\s*['"]capture-party-player-v1['"]/
+    /const CAPTURE_PLAYER_PARTY_REF\s*=\s*['"]capture-party-player-v1['"]/
+  );
+  assert.match(
+    source,
+    /playerPartyRef:\s*CAPTURE_PLAYER_PARTY_REF/
   );
   assert.equal(
     source.includes('capture-party-preview'),
