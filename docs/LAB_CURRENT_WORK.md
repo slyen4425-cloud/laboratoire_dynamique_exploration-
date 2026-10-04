@@ -45,7 +45,33 @@
 > 5. lancer un second combat ;
 > 6. vérifier que l'équipe est toujours reconnue et utilisable.
 >
-> État : **START — publication de la preview corrigée requise**.
+> Prévalidation technique :
+> - Combat corrigé utilisé : `preview/lab-combat-tactics-switch-travel-v1-2026-10-04` @ `fc5cc99cf7050f7c8013de6ce2ca1998d769b8ba` ;
+> - CI Combat : `37204391454` — **SUCCESS** ;
+> - l'ancien ref `preview/lab-player-party-recall-runtime-fix-v1-2026-10-03` n'est plus utilisé par Pages ;
+> - PR infrastructure Exploration #73 — **MERGED** ;
+> - main infrastructure : `42f9257b83138848bb3088297b9fb4727c6a22ae` ;
+> - Pages : `37213791805` — **SUCCESS** ;
+> - aucun code gameplay Exploration/Builder modifié ;
+> - aucun correctif Roster/Party ajouté dans Exploration.
+>
+> Lien gate :
+> `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=multicombat-revalidation-v1`
+>
+> Gate utilisateur restant :
+> 1. lancer « Tester en jeu » ;
+> 2. déclencher un premier combat ;
+> 3. vérifier Rappel / Invocation / changement de créature si utilisé ;
+> 4. terminer et revenir à Exploration ;
+> 5. continuer l'exploration jusqu'à une seconde rencontre ;
+> 6. lancer le second combat ;
+> 7. vérifier que l'équipe est toujours reconnue et utilisable.
+>
+> Après validation :
+> - lever la note historique `Player Party / Rappel -> Invocation FROZEN` ;
+> - clôturer ce lot en GREEN sans ajouter de code Exploration.
+>
+> État : **TECHNIQUE GREEN — gate multi-combat utilisateur requis**.
 
 ---
 
