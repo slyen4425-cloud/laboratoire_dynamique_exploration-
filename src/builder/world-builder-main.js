@@ -1020,45 +1020,72 @@ function refreshFamilyEncounterControls() {
       Math.abs(total - 100) > 0.001
   );
 }
-function compatibleAssets(object) {
-  if (!object) return [];
-
+function objectDefinitionLabel(
+  definition
+) {
   const kind =
-    object.kind === 'bridge'
-      ? 'bridge-visual'
-      : object.kind === 'building'
-        ? 'building-visual'
-        : null;
+    definition.kind === 'building'
+      ? 'Bâtiment'
+      : definition.kind === 'bridge'
+        ? 'Pont'
+        : 'Objet';
 
-  return listWorldObjectAssets().filter(
-    (asset) => asset.kind === kind
-  );
+  return `${definition.label} · ${kind}`;
+}
+
+function objectPlacementLabel(
+  placement
+) {
+  const definition =
+    objectDefinitionCatalogV1.get(
+      placement.objectDefinitionId
+    );
+
+  return definition
+    ? `${definition.label} · ${placement.id}`
+    : `${placement.objectDefinitionId} · ${placement.id}`;
 }
 
 function refreshObjectControls() {
   const area = currentAreaRaw();
-  const objects = area?.objects ?? [];
+  const placements =
+    area?.objects ?? [];
+
+  setOptions(
+    $('object-definition'),
+    objectDefinitions,
+    $('object-definition').value ||
+      objectDefinitions[0]?.id ||
+      '',
+    {
+      label: objectDefinitionLabel
+    }
+  );
 
   setOptions(
     $('object-select'),
-    objects,
+    placements,
     selectedObjectId,
     {
-      label: (object) => `${object.kind} · ${object.id}`
+      label: objectPlacementLabel
     }
   );
 
   if (selectedObjectId) {
-    $('object-select').value = selectedObjectId;
+    $('object-select').value =
+      selectedObjectId;
   }
 
-  const object = currentObjectRaw();
-  const disabled = !object;
+  const placement =
+    currentObjectRaw();
+  const object =
+    currentObjectResolved();
+  const disabled =
+    !placement || !object;
 
   for (const id of [
     'object-duplicate',
     'object-delete',
-    'object-asset',
     'object-x',
     'object-y',
     'object-rotation',
@@ -1068,64 +1095,48 @@ function refreshObjectControls() {
     $(id).disabled = disabled;
   }
 
-  if (!object) {
-    $('building-fields').hidden = true;
-    $('bridge-fields').hidden = true;
+  $('bridge-fields').hidden =
+    object?.kind !== 'bridge';
+
+  if (!placement || !object) {
+    $('object-x').value = '';
+    $('object-y').value = '';
+    $('object-rotation').value = '';
+    $('object-scale-x').value = '';
+    $('object-scale-y').value = '';
+    $('bridge-obstacles').value = '';
+    $('object-source-status').textContent =
+      'Sélectionner une définition puis placer l’objet.';
     return;
   }
 
-  const assets = compatibleAssets(object);
-  setOptions(
-    $('object-asset'),
-    assets,
-    object.visual?.assetId,
-    { label: (asset) => asset.id }
-  );
-  $('object-asset').value = object.visual?.assetId ?? '';
+  $('object-x').value =
+    placement.transform?.x ?? 0;
+  $('object-y').value =
+    placement.transform?.y ?? 0;
+  $('object-rotation').value =
+    placement.transform?.rotationDeg ?? 0;
+  $('object-scale-x').value =
+    placement.transform?.scaleX ?? 1;
+  $('object-scale-y').value =
+    placement.transform?.scaleY ?? 1;
 
-  $('object-x').value = object.transform?.x ?? 0;
-  $('object-y').value = object.transform?.y ?? 0;
-  $('object-rotation').value = object.transform?.rotationDeg ?? 0;
-  $('object-scale-x').value = object.transform?.scaleX ?? 1;
-  $('object-scale-y').value = object.transform?.scaleY ?? 1;
-
-  const building = object.kind === 'building';
-  const bridge = object.kind === 'bridge';
-  $('building-fields').hidden = !building;
-  $('bridge-fields').hidden = !bridge;
-
-  if (building) {
-    $('building-width').value = object.baseSize?.width ?? 260;
-    $('building-height').value = object.baseSize?.height ?? 260;
-    $('building-footprint-width').value =
-      object.footprint?.widthRatio ?? 0.78;
-    $('building-footprint-height').value =
-      object.footprint?.heightRatio ?? 0.62;
-    $('building-footprint-x').value =
-      object.footprint?.offsetX ?? 0;
-    $('building-footprint-y').value =
-      object.footprint?.offsetY ?? -0.08;
-
-    const door =
-      object.doorAnchors?.find((anchor) => anchor.id === 'main-door') ??
-      object.doorAnchors?.[0] ??
-      null;
-    $('building-door-x').value = door?.x ?? 0;
-    $('building-door-y').value = door?.y ?? 0.38;
-  }
-
-  if (bridge) {
-    $('bridge-length').value = object.baseSize?.length ?? 160;
-    $('bridge-width').value = object.baseSize?.width ?? 80;
-    $('bridge-passage-length').value =
-      object.traversal?.lengthRatio ?? 0.9;
-    $('bridge-passage-width').value =
-      object.traversal?.widthRatio ?? 0.8;
-    $('bridge-edge-assist').value =
-      object.traversal?.edgeAssistRatio ?? 0.15;
+  if (object.kind === 'bridge') {
     $('bridge-obstacles').value =
-      object.traversal?.overridesSurfaceFeatureIds?.join(', ') ?? '';
+      placement.overrides
+        ?.traversalSurfaceFeatureIds
+        ?.join(', ') ?? '';
   }
+
+  const definition =
+    objectDefinitionCatalogV1.get(
+      placement.objectDefinitionId
+    );
+
+  $('object-source-status').textContent =
+    definition
+      ? `Définition : ${definition.label} · visuel ${definition.visual?.assetId ?? 'aucun'}`
+      : `Définition introuvable : ${placement.objectDefinitionId}`;
 }
 
 function currentActorPlacements() {
