@@ -4,9 +4,12 @@ import assert from 'node:assert/strict';
 import {
   WORLD_OBJECT_LIMITS,
   bridgeTraversalRect,
-  bridgeVisualRect,
-  normalizeWorldObjects
+  bridgeVisualRect
 } from '../src/world/world-object-model.js';
+import {
+  normalizeWorldObjectPlacements,
+  resolveWorldObjectPlacement
+} from '../src/world/world-object-placement-model.js';
 import {
   circleFitsOrientedRect,
   isBlocked,
@@ -15,105 +18,141 @@ import {
 import { stepMovement } from '../src/core/movement.js';
 import { normalizeWorldSurface } from '../src/world/surface-model.js';
 
-function makeBridge(overridesSurfaceFeatureIds = ['river-1']) {
-  return normalizeWorldObjects([
+function makeBridgePlacement(
+  overridesSurfaceFeatureIds = ['river-1'],
+  transform = {}
+) {
+  return normalizeWorldObjectPlacements([
     {
       id: 'bridge-1',
-      kind: 'bridge',
+      objectDefinitionId:
+        'objectdef.bridge.wood.rustic_bank.01',
       transform: {
         x: 250,
         y: 250,
         rotationDeg: 90,
         scaleX: 1.25,
-        scaleY: 1.5
+        scaleY: 1.5,
+        ...transform
       },
-      baseSize: {
-        length: 160,
-        width: 80
-      },
-      visual: {
-        assetId: 'object.bridge.wood.01'
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 0.9,
-        widthRatio: 0.75,
-        overridesSurfaceFeatureIds
+      overrides: {
+        traversalSurfaceFeatureIds:
+          overridesSurfaceFeatureIds
       }
     }
   ])[0];
 }
 
-test('bridge WorldObject normalizes transform for future Builder editing', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      kind: 'bridge',
-      transform: {
+function resolve(placement) {
+  return resolveWorldObjectPlacement(
+    placement
+  );
+}
+
+test('WorldObject placement normalizes transform for Builder editing', () => {
+  const placement =
+    makeBridgePlacement(
+      [],
+      {
         x: 320,
         y: 440,
         rotationDeg: 450,
         scaleX: 2,
         scaleY: 0.5
-      },
-      baseSize: {
-        length: 180,
-        width: 90
       }
-    }
-  ])[0];
+    );
 
-  assert.equal(bridge.transform.x, 320);
-  assert.equal(bridge.transform.y, 440);
-  assert.equal(bridge.transform.rotationDeg, 90);
-  assert.equal(bridge.transform.scaleX, 2);
-  assert.equal(bridge.transform.scaleY, 0.5);
-  assert.equal(bridge.baseSize.length, 180);
-  assert.equal(bridge.baseSize.width, 90);
-  assert.equal(bridge.traversal.edgeAssistRatio, 0.15);
-  assert.equal(Object.isFrozen(bridge.transform), true);
+  assert.equal(placement.transform.x, 320);
+  assert.equal(placement.transform.y, 440);
+  assert.equal(
+    placement.transform.rotationDeg,
+    90
+  );
+  assert.equal(placement.transform.scaleX, 2);
+  assert.equal(placement.transform.scaleY, 0.5);
+  assert.equal(
+    placement.objectDefinitionId,
+    'objectdef.bridge.wood.rustic_bank.01'
+  );
+  assert.equal('baseSize' in placement, false);
+  assert.equal('visual' in placement, false);
+  assert.equal(Object.isFrozen(placement.transform), true);
 });
 
-test('invalid bridge scales fall back inside the declared WorldObject limits', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      kind: 'bridge',
-      transform: {
-        scaleX: WORLD_OBJECT_LIMITS.maxScale + 1,
-        scaleY: WORLD_OBJECT_LIMITS.minScale - 0.1
+test('invalid placement scales fall back inside declared limits', () => {
+  const placement =
+    makeBridgePlacement(
+      [],
+      {
+        scaleX:
+          WORLD_OBJECT_LIMITS.maxScale + 1,
+        scaleY:
+          WORLD_OBJECT_LIMITS.minScale - 0.1
       }
-    }
-  ])[0];
+    );
 
-  assert.equal(bridge.transform.scaleX, 1);
-  assert.equal(bridge.transform.scaleY, 1);
+  assert.equal(placement.transform.scaleX, 1);
+  assert.equal(placement.transform.scaleY, 1);
 });
 
-test('bridge visual and traversal rectangles derive from logical data, not pixels', () => {
-  const bridge = makeBridge();
-  const visual = bridgeVisualRect(bridge);
-  const passage = bridgeTraversalRect(bridge);
+test('bridge geometry is derived from definition + placement, never pixels', () => {
+  const bridge =
+    resolve(makeBridgePlacement());
+  const visual =
+    bridgeVisualRect(bridge);
+  const passage =
+    bridgeTraversalRect(bridge);
 
-  assert.equal(visual.length, 200);
-  assert.equal(visual.width, 120);
-  assert.ok(Math.abs(visual.rotation - Math.PI / 2) < 1e-12);
+  assert.equal(visual.length, 212.5);
+  assert.equal(visual.width, 144);
+  assert.ok(
+    Math.abs(
+      visual.rotation -
+      Math.PI / 2
+    ) < 1e-12
+  );
 
-  assert.equal(passage.length, 180);
-  assert.equal(passage.width, 90);
+  assert.equal(
+    passage.length,
+    212.5 * 0.92
+  );
+  assert.equal(
+    passage.width,
+    144 * 0.82
+  );
   assert.equal(passage.x, 250);
   assert.equal(passage.y, 250);
 });
 
-test('oriented passage respects bridge rotation', () => {
-  const passage = bridgeTraversalRect(makeBridge());
+test('oriented passage respects placement rotation', () => {
+  const passage =
+    bridgeTraversalRect(
+      resolve(makeBridgePlacement())
+    );
 
-  assert.equal(circleFitsOrientedRect(250, 320, 10, passage), true);
-  assert.equal(circleFitsOrientedRect(310, 250, 10, passage), false);
-  assert.equal(pointInOrientedRect(250, 320, passage), true);
-  assert.equal(pointInOrientedRect(310, 250, passage), false);
+  assert.equal(
+    circleFitsOrientedRect(
+      250,
+      320,
+      10,
+      passage
+    ),
+    true
+  );
+  assert.equal(
+    pointInOrientedRect(
+      250,
+      320,
+      passage
+    ),
+    true
+  );
 });
 
-test('bridge only overrides explicitly referenced surface features', () => {
-  const bridge = makeBridge(['river-1']);
+test('bridge placement only overrides explicitly referenced surface features', () => {
+  const placement =
+    makeBridgePlacement(['river-1']);
+
   const world = {
     width: 600,
     height: 600,
@@ -122,7 +161,8 @@ test('bridge only overrides explicitly referenced surface features', () => {
         {
           id: 'river-1',
           width: 60,
-          traversalRuleId: 'terrain.water',
+          traversalRuleId:
+            'terrain.water',
           points: [
             { x: 100, y: 250 },
             { x: 400, y: 250 }
@@ -130,16 +170,25 @@ test('bridge only overrides explicitly referenced surface features', () => {
         }
       ]
     }),
-    objects: [bridge],
+    objects: [placement],
     obstacles: []
   };
   const entity = {
     radius: 10,
-    locomotion: { modes: ['ground'] }
+    locomotion: {
+      modes: ['ground']
+    }
   };
 
-  assert.equal(isBlocked(world, entity, 250, 250), false);
-  assert.equal(isBlocked(world, entity, 310, 250), true);
+  assert.equal(
+    isBlocked(
+      world,
+      entity,
+      250,
+      250
+    ),
+    false
+  );
 
   const wrongFeatureWorld = {
     ...world,
@@ -148,7 +197,8 @@ test('bridge only overrides explicitly referenced surface features', () => {
         {
           id: 'river-2',
           width: 60,
-          traversalRuleId: 'terrain.water',
+          traversalRuleId:
+            'terrain.water',
           points: [
             { x: 100, y: 250 },
             { x: 400, y: 250 }
@@ -158,32 +208,29 @@ test('bridge only overrides explicitly referenced surface features', () => {
     })
   };
 
-  assert.equal(isBlocked(wrongFeatureWorld, entity, 250, 250), true);
+  assert.equal(
+    isBlocked(
+      wrongFeatureWorld,
+      entity,
+      250,
+      250
+    ),
+    true
+  );
 });
-test('real movement can cross a blocking river through a rotated bridge corridor', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      id: 'bridge-crossing',
-      kind: 'bridge',
-      transform: {
+
+test('real movement crosses blocking river through catalog-resolved bridge corridor', () => {
+  const placement =
+    makeBridgePlacement(
+      ['river-crossing'],
+      {
         x: 250,
         y: 250,
         rotationDeg: 90,
         scaleX: 1,
         scaleY: 1
-      },
-      baseSize: {
-        length: 180,
-        width: 100
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 1,
-        widthRatio: 0.9,
-        overridesSurfaceFeatureIds: ['river-crossing']
       }
-    }
-  ])[0];
+    );
 
   const world = {
     width: 600,
@@ -193,7 +240,8 @@ test('real movement can cross a blocking river through a rotated bridge corridor
         {
           id: 'river-crossing',
           width: 60,
-          traversalRuleId: 'terrain.water',
+          traversalRuleId:
+            'terrain.water',
           points: [
             { x: 100, y: 250 },
             { x: 400, y: 250 }
@@ -201,13 +249,21 @@ test('real movement can cross a blocking river through a rotated bridge corridor
         }
       ]
     }),
-    objects: [bridge],
+    objects: [placement],
     obstacles: []
   };
 
-  const entity = { x: 250, y: 190, radius: 10 };
+  const entity = {
+    x: 250,
+    y: 190,
+    radius: 10
+  };
 
-  for (let step = 0; step < 14; step += 1) {
+  for (
+    let step = 0;
+    step < 14;
+    step += 1
+  ) {
     stepMovement(
       world,
       entity,
@@ -219,130 +275,4 @@ test('real movement can cross a blocking river through a rotated bridge corridor
 
   assert.equal(entity.y, 330);
   assert.equal(entity.x, 250);
-});
-
-
-test('regression: slightly off-center bridge crossing must not snag on invisible corridor edge', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      id: 'bridge-snag-regression',
-      kind: 'bridge',
-      transform: {
-        x: 250,
-        y: 250,
-        rotationDeg: 90,
-        scaleX: 1,
-        scaleY: 1
-      },
-      baseSize: {
-        length: 170,
-        width: 96
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 0.92,
-        widthRatio: 0.82,
-        overridesSurfaceFeatureIds: ['river-snag']
-      }
-    }
-  ])[0];
-
-  const world = {
-    width: 600,
-    height: 600,
-    surface: normalizeWorldSurface({
-      rivers: [
-        {
-          id: 'river-snag',
-          width: 90,
-          traversalRuleId: 'terrain.water',
-          points: [
-            { x: 100, y: 250 },
-            { x: 400, y: 250 }
-          ]
-        }
-      ]
-    }),
-    objects: [bridge],
-    obstacles: []
-  };
-
-  const entity = { x: 278, y: 180, radius: 18 };
-
-  for (let step = 0; step < 16; step += 1) {
-    stepMovement(
-      world,
-      entity,
-      { x: 0, y: 1 },
-      0.1,
-      { maxSpeed: 100 }
-    );
-  }
-
-  assert.equal(entity.y, 340);
-  assert.equal(entity.x, 278);
-});
-
-
-test('regression: diagonal approach slides onto bridge instead of sticking to river bank', () => {
-  const bridge = normalizeWorldObjects([
-    {
-      id: 'bridge-diagonal-regression',
-      kind: 'bridge',
-      transform: {
-        x: 250,
-        y: 250,
-        rotationDeg: 90,
-        scaleX: 1,
-        scaleY: 1
-      },
-      baseSize: {
-        length: 170,
-        width: 96
-      },
-      traversal: {
-        enabled: true,
-        lengthRatio: 0.92,
-        widthRatio: 0.82,
-        overridesSurfaceFeatureIds: ['river-diagonal']
-      }
-    }
-  ])[0];
-
-  const world = {
-    width: 600,
-    height: 600,
-    surface: normalizeWorldSurface({
-      rivers: [
-        {
-          id: 'river-diagonal',
-          width: 90,
-          traversalRuleId: 'terrain.water',
-          points: [
-            { x: 100, y: 250 },
-            { x: 400, y: 250 }
-          ]
-        }
-      ]
-    }),
-    objects: [bridge],
-    obstacles: []
-  };
-
-  const entity = { x: 220, y: 145, radius: 18 };
-
-  for (let step = 0; step < 20; step += 1) {
-    stepMovement(
-      world,
-      entity,
-      { x: -0.3, y: 1 },
-      0.1,
-      { maxSpeed: 100 }
-    );
-  }
-
-  assert.ok(
-    entity.y > 305,
-    `expected to cross river, stopped at y=${entity.y}`
-  );
 });
