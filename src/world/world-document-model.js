@@ -15,8 +15,12 @@ import {
   normalizePortals,
   portalReferencesAreValid
 } from './portal-model.js?rev=builder-dynamic-return-v1';
+import {
+  normalizeWorldEvents,
+  worldEventReferencesAreValid
+} from './world-event-model.js?rev=world-event-contract-v1';
 
-export const WORLD_DOCUMENT_SCHEMA_VERSION = 2;
+export const WORLD_DOCUMENT_SCHEMA_VERSION = 3;
 
 function normalizedString(value) {
   return typeof value === 'string' && value.trim()
@@ -47,6 +51,16 @@ export function normalizeWorldDocument(raw = {}) {
           portalReferencesAreValid(
             areas,
             portal
+          )
+      );
+
+  const validEvents =
+    normalizeWorldEvents(source.events)
+      .filter(
+        (event) =>
+          worldEventReferencesAreValid(
+            areas,
+            event
           )
       );
 
@@ -92,6 +106,7 @@ export function normalizeWorldDocument(raw = {}) {
       ),
     areas,
     portals: Object.freeze(validPortals),
+    events: Object.freeze(validEvents),
     initialAreaId:
       initialArea?.id ?? null,
     initialSpawnId:
