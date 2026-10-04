@@ -141,7 +141,8 @@ export const demoWorldDocument = normalizeWorldDocument({
       objects: [
         {
           id: 'forest-bridge-01',
-          kind: 'bridge',
+          objectDefinitionId:
+            'objectdef.bridge.wood.rustic_bank.01',
           transform: {
             x: 1190,
             y: 805,
@@ -149,27 +150,16 @@ export const demoWorldDocument = normalizeWorldDocument({
             scaleX: 1,
             scaleY: 1
           },
-          baseSize: {
-            length: 170,
-            width: 96
-          },
-          visual: {
-            assetId: 'object.bridge.wood.rustic_bank.01'
-          },
-          traversal: {
-            enabled: true,
-            lengthRatio: 0.92,
-            widthRatio: 0.82,
-            edgeAssistRatio: 0.15,
-            traversalRuleId: 'terrain.bridge',
-            overridesSurfaceFeatureIds: [
+          overrides: {
+            traversalSurfaceFeatureIds: [
               'forest-stream'
             ]
           }
         },
         {
           id: 'forest-house-01',
-          kind: 'building',
+          objectDefinitionId:
+            'objectdef.building.house.fantasy_wood_stone.01',
           transform: {
             x: 820,
             y: 930,
@@ -177,27 +167,9 @@ export const demoWorldDocument = normalizeWorldDocument({
             scaleX: 1,
             scaleY: 1
           },
-          baseSize: {
-            width: 300,
-            height: 300
-          },
-          visual: {
-            assetId: 'object.building.house.fantasy_wood_stone.01'
-          },
-          footprint: {
-            enabled: true,
-            widthRatio: 0.78,
-            heightRatio: 0.62,
-            offsetX: 0,
-            offsetY: -0.08
-          },
-          doorAnchors: [
-            {
-              id: 'main-door',
-              x: 0,
-              y: 0.38
-            }
-          ]
+          overrides: {
+            traversalSurfaceFeatureIds: []
+          }
         }
       ],
       actors: [
