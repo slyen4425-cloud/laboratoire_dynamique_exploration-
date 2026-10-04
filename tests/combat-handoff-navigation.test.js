@@ -22,7 +22,7 @@ const snapshot = {
   version: 1,
   encounterId: 'e1',
   source: 'terrain-random',
-  player: { partyRef: 'capture-party-preview' },
+  player: { partyRef: 'capture-party-player-v1' },
   opponents: [{ creatureId: 'crea_nat_3' }],
   rules: { rulesetId: 'capture.standard.1v1' },
   context: {
@@ -54,9 +54,14 @@ test('combat navigation adapter owns page navigation outside Exploration bootstr
     });
 
   assert.equal(launched, true);
+  const targetUrl = new URL(target);
   assert.equal(
-    target,
+    targetUrl.origin + targetUrl.pathname,
     'https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/combat-preview/examples/dom-demo/exploration-encounter.html'
+  );
+  assert.equal(
+    targetUrl.searchParams.get('rev'),
+    'player-party-recall-runtime-fix-v1'
   );
 
   const handoff = readCombatHandoff(store);
