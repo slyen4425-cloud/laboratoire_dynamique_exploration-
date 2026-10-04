@@ -1589,9 +1589,13 @@ function drawBuilderOverlays(area, document, camera) {
     ctx.stroke();
   }
 
-  const object = area.objects.find(
-    (item) => item.id === selectedObjectId
-  );
+  const object =
+    resolveWorldObjectPlacements(
+      area.objects ?? []
+    ).find(
+      (item) =>
+        item.id === selectedObjectId
+    );
 
   if (object) {
     const rect =
@@ -2068,9 +2072,13 @@ function pointToObjectLocal(point, rect) {
 }
 
 function hitSelectedObjectGizmo(area, point) {
-  const object = area?.objects?.find(
-    (item) => item.id === selectedObjectId
-  );
+  const object =
+    resolveWorldObjectPlacements(
+      area?.objects ?? []
+    ).find(
+      (item) =>
+        item.id === selectedObjectId
+    );
   if (!object) return null;
 
   const rect = worldObjectRectForHit(object);
@@ -2157,7 +2165,11 @@ function objectBaseDimensions(object) {
 }
 
 function hitWorldObject(area, point) {
-  const objects = [...(area?.objects ?? [])].reverse();
+  const objects = [
+    ...resolveWorldObjectPlacements(
+      area?.objects ?? []
+    )
+  ].reverse();
 
   return objects.find((object) => {
     const rect = worldObjectRectForHit(object);
@@ -3130,10 +3142,16 @@ $('portal-building').addEventListener('change', () => {
   const area = draft.areas.find(
     (item) => item.id === portal.sourceAreaId
   );
-  const building = area?.objects?.find(
-    (object) => object.id === $('portal-building').value
-  );
-  const anchor = building?.doorAnchors?.[0];
+  const building =
+    resolveWorldObjectPlacements(
+      area?.objects ?? []
+    ).find(
+      (object) =>
+        object.id ===
+        $('portal-building').value
+    );
+  const anchor =
+    building?.doorAnchors?.[0];
 
   draft = updatePortal(
     draft,
