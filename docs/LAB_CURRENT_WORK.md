@@ -2,6 +2,65 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **World Event Contract v1**
+>
+> Branche : `work/exploration-world-event-contract-v1-2026-10-04`
+>
+> Base GREEN : `2dfe78980ec957cb2178cdc4783716270753b1d3`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-world-event-contract-v1-2026-10-04`
+>
+> Dernier GREEN : `checkpoint/exploration-trigger-geometry-v1-green-2026-10-04`
+>
+> Mission unique :
+> - introduire un contrat `WorldEvent v1` dans le WorldDocument ;
+> - lier chaque événement à une Area + une géométrie Trigger GREEN ;
+> - distinguer `on-enter` et `on-interact` ;
+> - référencer une définition/action future par identifiant stable sans l'implémenter ici ;
+> - authoring Builder : ajouter/éditer/supprimer un Event local sans runtime actif.
+>
+> Contrat cible :
+> `id + enabled + sourceAreaId + activation + trigger + eventDefinitionId + repeatPolicy`.
+>
+> Propriétaires :
+> - géométrie : World Trigger Geometry GREEN ;
+> - binding local événement/zone : WorldDocument ;
+> - définition/action métier : futur Event Definition/Action Authority, référencée seulement ;
+> - état consommé/persistance : futur ExplorationSave, hors périmètre ;
+> - input interaction/runtime Event Controller : hors périmètre.
+>
+> Invariants :
+> - aucune géométrie Event parallèle ;
+> - aucun calcul de trigger recopié ;
+> - aucun listener/bouton runtime ajouté ;
+> - aucun état `consumed` persistant dans la définition de carte ;
+> - aucun Event ne modifie directement Capture/Combat/XP/loot ;
+> - aucun type d'action métier codé en dur dans le moteur.
+>
+> TDD :
+> - RED avant modèle ;
+> - normalisation on-enter/on-interact ;
+> - réutilisation `WorldTriggerGeometry` ;
+> - validation Area/object-anchor ;
+> - WorldDocument export/import conserve les bindings ;
+> - Builder manipule le même draft canonique.
+>
+> Hors périmètre :
+> - exécution d'Event ;
+> - bouton Interagir ;
+> - coffre fonctionnel ;
+> - action catalog ;
+> - persistance consumed ;
+> - nouveaux assets ;
+> - Capture/Combat/XP/loot ;
+> - `Zombicide-40k`.
+>
+> État : **START — TDD RED à constater**.
+
+---
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Trigger Geometry v1**
 >
 > Branche : `work/exploration-trigger-geometry-v1-2026-10-04`
