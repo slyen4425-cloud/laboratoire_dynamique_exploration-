@@ -2,6 +2,55 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Multi-combat revalidation v1**
+>
+> Branche : `work/exploration-multicombat-revalidation-v1-2026-10-04`
+>
+> Base GREEN documentaire : `269e0a2c8792d7c00363e965f330da2a89a92c14`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-multicombat-revalidation-v1-2026-10-04`
+>
+> Dernier GREEN fonctionnel : `checkpoint/exploration-world-event-message-v1-green-2026-10-04`
+>
+> Contexte :
+> - le blocage « un seul combat puis équipe non reconnue » était explicitement externe à Exploration ;
+> - le correctif Rappel / Invocation / changement de créature a été réalisé dans le laboratoire Combat ;
+> - la preview Exploration publique charge encore l'ancien ref Combat `preview/lab-player-party-recall-runtime-fix-v1-2026-10-03`.
+>
+> Mission unique :
+> - republier la preview Exploration avec le ref Combat corrigé `preview/lab-combat-tactics-switch-travel-v1-2026-10-04` ;
+> - revalider le vrai chemin `Exploration -> Combat -> retour -> Exploration -> second Combat` ;
+> - vérifier que l'équipe reste reconnue entre deux combats ;
+> - lever la note FROZEN uniquement après gate utilisateur.
+>
+> Propriétaires :
+> - équipe / Rappel / Invocation : Combat / Capture roster ;
+> - position monde et rencontres : Exploration ;
+> - transport : Encounter Bridge ;
+> - Pages : infrastructure de test uniquement.
+>
+> Interdits :
+> - aucun correctif Roster dans Exploration ;
+> - aucun retry/reload ;
+> - aucun cache gameplay ;
+> - aucun second party state ;
+> - aucun changement XP/loot/capture ;
+> - aucun changement `Zombicide-40k`.
+>
+> Gate réel :
+> 1. déclencher un premier combat depuis Exploration ;
+> 2. utiliser si souhaité Rappel / Invocation / changement de créature ;
+> 3. terminer/revenir à Exploration ;
+> 4. continuer à marcher jusqu'à une nouvelle rencontre ;
+> 5. lancer un second combat ;
+> 6. vérifier que l'équipe est toujours reconnue et utilisable.
+>
+> État : **START — publication de la preview corrigée requise**.
+
+---
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **World Event Contract v1**
 >
 > Branche : `work/exploration-world-event-contract-v1-2026-10-04`
