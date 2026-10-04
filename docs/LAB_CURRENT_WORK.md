@@ -171,7 +171,33 @@
 > - cercle point sélectionné draggable directement dans la preview Builder ;
 > - coordonnées X/Y conservées uniquement dans les détails avancés.
 >
-> État : **GATE UTILISATEUR REFUSÉ — seconde révision UX/fonctionnelle en cours**.
+> Seconde révision UX/fonctionnelle réalisée :
+> - choix créateur distincts : `Entrer dans une zone`, `Entrer dans un lieu ou bâtiment`, `Interagir` ;
+> - `on-portal-enter` référence un `portalId` précis et ne possède aucune géométrie parallèle ;
+> - l'entrée bâtiment consomme le fait `viaPortalId` produit par Portal après transition ;
+> - validation : le Portal référencé doit réellement cibler l'Area associée à l'événement ;
+> - Builder liste les entrées avec le label de définition de l'objet (ex. `Maison bois et pierre · forest-house-01`) ;
+> - aucun cercle pour l'entrée bâtiment : le déclencheur est le franchissement du Portal ;
+> - pour une zone libre, le cercle jaune sélectionné se déplace directement au doigt/souris ;
+> - centre du cercle matérialisé par une poignée jaune ;
+> - X/Y restent disponibles uniquement dans les détails avancés ;
+> - traitement runtime déplacé immédiatement après Portal, avant rencontre/combat.
+>
+> TDD seconde révision :
+> - RED : `bf401c4067322351ebb65c9b4e3168ef3132930d` ;
+> - CI RED : `37209038792` — FAILURE attendue ;
+> - HEAD fonctionnel : `7a5183ea9f6a2705436ed334391bf3180cc43b74` ;
+> - CI complète : `37209472606` — **SUCCESS**.
+>
+> Nouvelle gate attendue :
+> 1. créer un événement `Entrer dans une zone`, puis déplacer le cercle jaune directement sur la map ;
+> 2. tester le message en jeu ;
+> 3. créer un événement `Entrer dans un lieu ou bâtiment` ;
+> 4. sélectionner `Maison bois et pierre · forest-house-01` ;
+> 5. entrer réellement dans la maison via sa porte ;
+> 6. vérifier que le message apparaît après la transition intérieure, sans cercle artificiel.
+>
+> État : **TECHNIQUE GREEN — publication preview de la seconde révision en cours**.
 
 ---
 
