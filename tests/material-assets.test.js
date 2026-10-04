@@ -30,6 +30,16 @@ const EXPECTED = Object.freeze({
     './assets/exploration/materials/forest/paths/road_dirt_base_01.webp',
   'texture.water.forest_stream.center.01':
     './assets/exploration/materials/forest/water/water_forest_stream_base_01.webp',
+  'texture.water.clear_blue.stylized.01':
+    './assets/exploration/materials/forest/water/water_clear_blue_stylized_01.webp',
+  'texture.water.turquoise.stylized.01':
+    './assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp',
+  'texture.water.swamp.stylized.01':
+    './assets/exploration/materials/forest/water/water_swamp_stylized_01.webp',
+  'texture.water.lava.stylized.01':
+    './assets/exploration/materials/forest/water/lava_flow_stylized_01.webp',
+  'texture.ground.volcanic_ash_lava.stylized.01':
+    './assets/exploration/materials/forest/surfaces/volcanic_ash_lava_stylized_01.webp',
   'transition.road.dirt_to_grass_forest.edge.01':
     './assets/exploration/materials/forest/transitions/road_dirt_to_grass_forest_edge_01.webp',
   'transition.water.forest_stream_to_grass_forest.bank.01':
@@ -43,7 +53,7 @@ const EXPECTED = Object.freeze({
 test('Material Asset Adapter exposes the pilot assets plus stylized terrain surfaces', () => {
   const assets = listMaterialAssets();
 
-  assert.equal(assets.length, 12);
+  assert.equal(assets.length, 17);
 
   for (const [id, path] of Object.entries(EXPECTED)) {
     const asset = resolveMaterialAsset(id);
@@ -66,7 +76,7 @@ test('Material Pack v1 references every generated pilot asset semantically', () 
   const ids = collectMaterialAssetIds(materialPackV1.materials);
 
   assert.deepEqual(new Set(ids), new Set(Object.keys(EXPECTED)));
-  assert.equal(ids.length, 12);
+  assert.equal(ids.length, 17);
 });
 
 test('Material Texture Loader has explicit load/get/dispose lifecycle', () => {
