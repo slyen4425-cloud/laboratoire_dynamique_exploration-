@@ -208,6 +208,7 @@ export function validateWorldBuilderDraft(draft) {
 
   const rawAreas = Array.isArray(draft.areas) ? draft.areas : [];
   const rawPortals = Array.isArray(draft.portals) ? draft.portals : [];
+  const rawEvents = Array.isArray(draft.events) ? draft.events : [];
   const rawTerrainFamilies =
     Array.isArray(draft.terrainFamilies)
       ? draft.terrainFamilies
@@ -306,6 +307,10 @@ export function validateWorldBuilderDraft(draft) {
 
   if (document.portals.length !== rawPortals.length) {
     errors.push('portal-invalid-or-duplicate');
+  }
+
+  if (document.events.length !== rawEvents.length) {
+    errors.push('event-invalid-or-duplicate');
   }
 
   if (!document.initialAreaId || !document.initialSpawnId) {
@@ -1083,7 +1088,14 @@ export function deleteWorldObject(
       portal.trigger.objectId === objectId
   );
 
-  if (referencedByPortal) return next;
+  const referencedByEvent = next.events?.some(
+    (event) =>
+      event.sourceAreaId === areaId &&
+      event.trigger?.kind === 'object-anchor' &&
+      event.trigger.objectId === objectId
+  );
+
+  if (referencedByPortal || referencedByEvent) return next;
 
   area.objects = area.objects.filter(
     (object) => object.id !== objectId
@@ -1103,6 +1115,72 @@ export function updatePortal(
   if (portal && typeof patcher === 'function') {
     patcher(portal);
   }
+
+  return next;
+}
+
+export function addWorldEvent(
+  draft,
+  rawEvent
+) {
+  const next = clone(draft);
+  next.events ??= [];
+
+  if (!rawEvent || typeof rawEvent !== 'object') {
+    return next;
+  }
+
+  const event = clone(rawEvent);
+
+  if (
+    typeof event.id !== 'string' ||
+    !event.id.trim() ||
+    next.events.some(
+      (item) => item.id === event.id.trim()
+    )
+  ) {
+    event.id = uniqueId(
+      'event',
+      next.events
+    );
+  }
+
+  delete event.consumed;
+  next.events.push(event);
+  return next;
+}
+
+export function updateWorldEvent(
+  draft,
+  eventId,
+  patcher
+) {
+  const next = clone(draft);
+  const event = next.events?.find(
+    (item) => item.id === eventId
+  );
+
+  if (
+    event &&
+    typeof patcher === 'function'
+  ) {
+    patcher(event);
+    delete event.consumed;
+  }
+
+  return next;
+}
+
+export function deleteWorldEvent(
+  draft,
+  eventId
+) {
+  const next = clone(draft);
+  next.events = Array.isArray(next.events)
+    ? next.events.filter(
+        (event) => event.id !== eventId
+      )
+    : [];
 
   return next;
 }
