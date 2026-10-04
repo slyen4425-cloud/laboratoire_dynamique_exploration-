@@ -11,7 +11,7 @@ test('Encounter Bridge maps public Encounter Intent to CaptureEncounterSnapshot 
     source: 'terrain-random',
     encounterId: 'encounter-1',
     returnToken: 'return-1',
-    playerPartyRef: 'capture-party-preview',
+    playerPartyRef: 'capture-party-player-v1',
     rulesetId: 'capture.standard.1v1',
     areaId: 'forest-exterior',
     terrainFamilyId: 'forest',
@@ -22,7 +22,7 @@ test('Encounter Bridge maps public Encounter Intent to CaptureEncounterSnapshot 
   });
 
   assert.equal(snapshot.encounterId, 'encounter-1');
-  assert.equal(snapshot.player.partyRef, 'capture-party-preview');
+  assert.equal(snapshot.player.partyRef, 'capture-party-player-v1');
   assert.equal(snapshot.opponents[0].creatureId, 'crea_braiseau');
   assert.equal(snapshot.context.terrainFamilyId, 'forest');
   assert.equal(snapshot.returnToken, 'return-1');
