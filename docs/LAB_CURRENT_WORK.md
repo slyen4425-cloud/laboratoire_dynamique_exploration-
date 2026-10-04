@@ -107,7 +107,21 @@
 > - Capture/Combat/XP/loot ;
 > - `Zombicide-40k`.
 >
-> État : **TECHNIQUE GREEN — preview/gate utilisateur avant GREEN final**.
+> Gate utilisateur — révision requise 2026-10-04 :
+> - retour : l'interface est trop technique et pas assez explicite ;
+> - décision produit : le Builder doit proposer au minimum un événement concret `Afficher un message`, avec texte éditable ;
+> - `eventDefinitionId` ne doit pas être exposé au créateur pour ce cas simple ;
+> - le test Builder -> jeu doit réellement déclencher la boîte de dialogue afin de valider le chemin complet.
+>
+> Révision de périmètre du même lot avant GREEN :
+> - conserver une seule géométrie Trigger GREEN ;
+> - introduire une action locale versionnée `message` dans WorldEvent ;
+> - simplifier les libellés Builder en `Quand ? / Où ? / Que faire ? / Message / Fréquence` ;
+> - ajouter un Event Controller runtime unique pour `on-enter` et `on-interact` ;
+> - ajouter une boîte de dialogue runtime et un intent `Interagir` explicite ;
+> - garder l'état `once` en mémoire runtime seulement dans ce lot, sans persistance save.
+>
+> État : **GATE UTILISATEUR REFUSÉ — révision UX/fonctionnelle en cours, aucun GREEN final**.
 
 ---
 
