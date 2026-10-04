@@ -1,6 +1,9 @@
 import {
   normalizeTerrainFamilyEncounterConfig
-} from '../encounters/terrain-family-encounter-config.js?rev=terrain-family-encounters-v1';
+} from '../encounters/terrain-family-encounter-config.js?rev=terrain-family-extensibility-v1';
+import {
+  normalizeTerrainFamilyDefinitions
+} from './terrain-family-registry.js?rev=terrain-family-extensibility-v1';
 
 import {
   findWorldArea,
@@ -13,7 +16,7 @@ import {
   portalReferencesAreValid
 } from './portal-model.js?rev=builder-dynamic-return-v1';
 
-export const WORLD_DOCUMENT_SCHEMA_VERSION = 1;
+export const WORLD_DOCUMENT_SCHEMA_VERSION = 2;
 
 function normalizedString(value) {
   return typeof value === 'string' && value.trim()
@@ -22,44 +25,88 @@ function normalizedString(value) {
 }
 
 export function normalizeWorldDocument(raw = {}) {
-  const source = raw && typeof raw === 'object' ? raw : {};
-  const areas = normalizeWorldAreas(source.areas);
+  const source =
+    raw && typeof raw === 'object'
+      ? raw
+      : {};
+  const terrainFamilies =
+    normalizeTerrainFamilyDefinitions(
+      source.terrainFamilies
+    );
+  const terrainFamilyIds =
+    terrainFamilies.map(
+      (definition) => definition.id
+    );
+  const areas =
+    normalizeWorldAreas(source.areas);
 
-  const validPortals = normalizePortals(source.portals)
-    .filter((portal) => portalReferencesAreValid(areas, portal));
+  const validPortals =
+    normalizePortals(source.portals)
+      .filter(
+        (portal) =>
+          portalReferencesAreValid(
+            areas,
+            portal
+          )
+      );
 
-  const requestedInitialAreaId = normalizedString(source.initialAreaId);
+  const requestedInitialAreaId =
+    normalizedString(
+      source.initialAreaId
+    );
   const initialArea =
-    findWorldArea(areas, requestedInitialAreaId) ??
+    findWorldArea(
+      areas,
+      requestedInitialAreaId
+    ) ??
     areas[0] ??
     null;
 
-  const requestedInitialSpawnId = normalizedString(source.initialSpawnId);
+  const requestedInitialSpawnId =
+    normalizedString(
+      source.initialSpawnId
+    );
   const initialSpawn =
     initialArea
       ? (
-          findWorldAreaSpawn(initialArea, requestedInitialSpawnId) ??
+          findWorldAreaSpawn(
+            initialArea,
+            requestedInitialSpawnId
+          ) ??
           initialArea.spawns[0] ??
           null
         )
       : null;
 
   return Object.freeze({
-    schemaVersion: WORLD_DOCUMENT_SCHEMA_VERSION,
-    id: normalizedString(source.id) ?? 'world-document',
+    schemaVersion:
+      WORLD_DOCUMENT_SCHEMA_VERSION,
+    id:
+      normalizedString(source.id) ??
+      'world-document',
+    terrainFamilies,
     encounterConfig:
       normalizeTerrainFamilyEncounterConfig(
-        source.encounterConfig
+        source.encounterConfig,
+        terrainFamilyIds
       ),
     areas,
     portals: Object.freeze(validPortals),
-    initialAreaId: initialArea?.id ?? null,
-    initialSpawnId: initialSpawn?.id ?? null
+    initialAreaId:
+      initialArea?.id ?? null,
+    initialSpawnId:
+      initialSpawn?.id ?? null
   });
 }
 
-export function findWorldAreaById(worldDocument, areaId) {
-  return findWorldArea(worldDocument?.areas, areaId);
+export function findWorldAreaById(
+  worldDocument,
+  areaId
+) {
+  return findWorldArea(
+    worldDocument?.areas,
+    areaId
+  );
 }
 
 export function findWorldSpawnById(
@@ -67,11 +114,20 @@ export function findWorldSpawnById(
   areaId,
   spawnId
 ) {
-  const area = findWorldAreaById(worldDocument, areaId);
-  return findWorldAreaSpawn(area, spawnId);
+  const area =
+    findWorldAreaById(
+      worldDocument,
+      areaId
+    );
+  return findWorldAreaSpawn(
+    area,
+    spawnId
+  );
 }
 
-export function createInitialExplorationState(worldDocument) {
+export function createInitialExplorationState(
+  worldDocument
+) {
   const area = findWorldAreaById(
     worldDocument,
     worldDocument?.initialAreaId
@@ -80,12 +136,15 @@ export function createInitialExplorationState(worldDocument) {
     area,
     worldDocument?.initialSpawnId
   );
-  const point = resolveWorldAreaSpawnPoint(
-    area,
-    worldDocument?.initialSpawnId
-  );
+  const point =
+    resolveWorldAreaSpawnPoint(
+      area,
+      worldDocument?.initialSpawnId
+    );
 
-  if (!area || !spawn || !point) return null;
+  if (!area || !spawn || !point) {
+    return null;
+  }
 
   return Object.freeze({
     currentAreaId: area.id,
