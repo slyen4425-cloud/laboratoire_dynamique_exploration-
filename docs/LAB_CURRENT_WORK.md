@@ -335,3 +335,53 @@ Le workflow public utilise explicitement :
 
 Gate restant : validation utilisateur du vrai Player Party dans le combat Encounter.
 
+---
+
+# Micro-lot correctif — Combat Document Cache Fix v1 — 2026-10-04
+
+## Base
+- état Exploration Player Party publié : `f021460a7cf49143bceb9a0f48dbb37bbead4798`
+- checkpoint départ : `checkpoint/exploration-start-combat-document-cachefix-v1-2026-10-04`
+- branche : `work/exploration-combat-document-cachefix-v1-2026-10-04`
+
+## Régression observée
+Après correction Combat du cycle Rappel -> Invocation, le comportement utilisateur reste identique.
+
+## Cause de publication démontrée
+Exploration navigue vers le document Combat avec une URL stable :
+
+`./combat-preview/examples/dom-demo/exploration-encounter.html`
+
+Même si le document du dépôt référence de nouveaux modules versionnés, le navigateur peut réutiliser l'ancien HTML et donc ne jamais charger les nouvelles révisions internes.
+
+## Correction cible
+- versionner l'URL du document Combat elle-même ;
+- garder la navigation comme propriétaire unique du handoff ;
+- aucun reload forcé ;
+- aucun service worker ;
+- aucun second navigateur/bridge ;
+- aucune modification du Combat Runtime ou du Roster Session.
+
+## Chaîne cible
+```text
+Exploration Encounter
+ -> combat-handoff-navigation
+ -> exploration-encounter.html?rev=player-party-recall-runtime-fix-v1
+ -> exploration-encounter.js?rev=player-party-recall-runtime-fix-v1
+ -> combat-2v2-test-ui.js?rev=player-party-recall-runtime-fix-v1
+ -> summon.command.json?rev=player-party-recall-runtime-fix-v1
+```
+
+## TDD
+1. la navigation doit produire l'URL document versionnée ;
+2. le returnUrl Exploration doit rester inchangé hors `combatReturn=1` ;
+3. le snapshot/handoff reste inchangé ;
+4. le bootstrap public doit cache-buster le module de navigation lui-même.
+
+## Hors périmètre
+- gameplay ;
+- roster ;
+- commandes Combat ;
+- assets ;
+- Zombicide-40k.
+
