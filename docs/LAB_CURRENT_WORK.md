@@ -65,7 +65,14 @@
 > - retour utilisateur : la fonction semblait déjà présente, différence comprise comme une consolidation d'autorité ;
 > - placement pont/maison accepté pour poursuite du plan.
 >
-> État : **GREEN utilisateur — clôture CI/checkpoint final en cours**.
+> CI clôture utilisateur :
+> - run `37196666420` — **SUCCESS** ;
+> - SHA validé avant checkpoint : `e483c604348baedcad59b724c934e0c35f22c72c`.
+>
+> Checkpoint final prévu :
+> `checkpoint/exploration-object-catalog-placement-v1-green-2026-10-04`.
+>
+> État : **GREEN utilisateur + CI GREEN**.
 
 ---
 
