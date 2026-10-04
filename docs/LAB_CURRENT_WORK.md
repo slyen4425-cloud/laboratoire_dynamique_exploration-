@@ -385,3 +385,35 @@ Exploration Encounter
 - assets ;
 - Zombicide-40k.
 
+## Prévalidation technique — Combat Document Cache Fix v1
+
+### Cause
+Le document Combat était ouvert avec une URL stable :
+`combat-preview/examples/dom-demo/exploration-encounter.html`.
+
+Le navigateur pouvait donc réutiliser un ancien HTML et ne jamais charger les nouvelles révisions internes du correctif Recall.
+
+### Correction
+- navigation Combat :
+  `exploration-encounter.html?rev=player-party-recall-runtime-fix-v1` ;
+- module `combat-handoff-navigation.js` versionné avec la même révision ;
+- entrée publique `main.js` versionnée avec la même révision ;
+- returnUrl Exploration inchangé hors `combatReturn=1` ;
+- handoff / snapshot inchangés ;
+- aucun reload forcé ;
+- aucun service worker ;
+- aucun changement gameplay.
+
+### TDD
+- `combat-handoff-navigation.test.js` exige la query `rev` sur le document Combat ;
+- `combat-document-cache.test.js` exige la chaîne publique complète ;
+- sentinelle Actor rendue agnostique sur la révision générale d'entrée, tout en conservant sa propre révision Actor.
+
+HEAD :
+`5bd4d920d945eb2c89703de6d463abfe99e7a914`
+
+CI :
+`37174915591` — **SUCCESS**.
+
+État : **TECHNIQUE GREEN — publication preview et validation utilisateur restantes**.
+
