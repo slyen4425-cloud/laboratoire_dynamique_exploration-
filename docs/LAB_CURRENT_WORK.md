@@ -104,7 +104,15 @@
 > - Pages : `37230562737` — **SUCCESS** ;
 > - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=stylized-terrain-surfaces-v1`.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
+> Gate utilisateur final :
+> - retour utilisateur le 2026-10-04 : « Oui parfait » ;
+> - validation visuelle acceptée pour Herbe cartoon, Sol de forêt, Neige, Sable et Montagne rocheuse dans le Builder ;
+> - aucune régression signalée sur ce gate.
+>
+> État : **GREEN FINAL — gate visuel utilisateur validé le 2026-10-04**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-stylized-terrain-surfaces-v1-green-2026-10-04`.
 
 ---
 
