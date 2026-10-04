@@ -2,58 +2,84 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  DEFAULT_TERRAIN_FAMILY_DEFINITIONS,
   TERRAIN_FAMILY_IDS,
-  createTerrainFamilyRegistry
+  createTerrainFamilyRegistry,
+  normalizeTerrainFamilyDefinitions
 } from '../src/world/terrain-family-registry.js';
 
-test('Terrain Family registry exposes the eight canonical families only', () => {
-  assert.deepEqual(TERRAIN_FAMILY_IDS, [
-    'plain',
-    'forest',
-    'sea',
-    'mountain',
-    'volcano',
-    'snow',
-    'road',
-    'sand'
-  ]);
+test('Terrain Family registry exposes eight presets by default', () => {
+  assert.deepEqual(
+    TERRAIN_FAMILY_IDS,
+    [
+      'plain',
+      'forest',
+      'sea',
+      'mountain',
+      'volcano',
+      'snow',
+      'road',
+      'sand'
+    ]
+  );
+
+  assert.equal(
+    DEFAULT_TERRAIN_FAMILY_DEFINITIONS.length,
+    8
+  );
 });
 
-test('family is semantic and texture choices are only compatible visuals', () => {
-  const registry = createTerrainFamilyRegistry();
+test('terrain families are semantic definitions without material ownership', () => {
+  const registry =
+    createTerrainFamilyRegistry([
+      {
+        id: 'swamp',
+        label: 'Marais',
+        materialKind: 'forbidden',
+        materialIds: ['forbidden']
+      }
+    ]);
 
-  assert.equal(registry.require('forest').label, 'Forêt');
-  assert.equal(registry.require('road').materialKind, 'path');
-  assert.equal(registry.require('sea').materialKind, 'water');
+  assert.deepEqual(
+    registry.list(),
+    [{ id: 'swamp', label: 'Marais' }]
+  );
+  assert.equal(
+    'materialKind' in registry.require('swamp'),
+    false
+  );
+  assert.equal(
+    'materialIds' in registry.require('swamp'),
+    false
+  );
+});
 
-  assert.ok(
-    registry.require('forest').materialIds.includes('grass.forest')
-  );
-  assert.ok(
-    registry.require('sand').materialIds.includes('ground.sand')
-  );
-  assert.ok(
-    registry.require('snow').materialIds.includes('ground.snow')
-  );
+test('custom terrain families are normalized as data and duplicate ids are removed', () => {
+  const definitions =
+    normalizeTerrainFamilyDefinitions([
+      { id: 'swamp', label: 'Marais' },
+      { id: 'swamp', label: 'Doublon' },
+      { id: 'crystal', label: 'Cristal' }
+    ]);
 
-  // Same visual can temporarily serve multiple semantic families
-  // without making materialId the gameplay authority.
-  assert.ok(
-    registry.require('plain').materialIds.includes('ground.dirt')
-  );
-  assert.ok(
-    registry.require('mountain').materialIds.includes('ground.dirt')
-  );
-  assert.ok(
-    registry.require('volcano').materialIds.includes('ground.dirt')
+  assert.deepEqual(
+    definitions,
+    [
+      { id: 'swamp', label: 'Marais' },
+      { id: 'crystal', label: 'Cristal' }
+    ]
   );
 });
 
 test('registry never infers gameplay family from a material id', () => {
-  const registry = createTerrainFamilyRegistry();
+  const registry =
+    createTerrainFamilyRegistry();
 
   assert.equal(
-    Object.hasOwn(registry, 'familyFromMaterialId'),
+    Object.hasOwn(
+      registry,
+      'familyFromMaterialId'
+    ),
     false
   );
 });
