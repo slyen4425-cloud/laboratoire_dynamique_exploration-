@@ -2,6 +2,81 @@
 
 > ÉTAT ACTIF — 2026-10-04
 >
+> Chantier : **Stylized Terrain Surfaces v1**
+>
+> Branche : `work/exploration-stylized-terrain-surfaces-v1-2026-10-04`
+>
+> Base GREEN : `a399386dfc3f8dde7c128c6014a16555d38bd5d9`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-stylized-terrain-surfaces-v1-2026-10-04`
+>
+> Dernier GREEN : `checkpoint/exploration-multicombat-revalidation-v1-green-2026-10-04`
+>
+> Mission unique :
+> - intégrer cinq surfaces stylisées dans l'autorité Material Registry / Asset Adapter existante ;
+> - remplacer visuellement la base `grass.forest` par une herbe plus cartoon, sans changer son ID ni sa sémantique ;
+> - raccorder des textures réelles pour `ground.sand` et `ground.snow` ;
+> - ajouter une surface forêt dédiée et une surface montagne rocheuse ;
+> - rendre ces surfaces sélectionnables dans le Builder via les listes déjà alimentées par le Material Registry ;
+> - conserver la géométrie `WorldArea.surface` et le pinceau terrain existants inchangés.
+>
+> Assets source du lot :
+> - herbe cartoon ;
+> - sous-bois / forêt ;
+> - neige ;
+> - sable ;
+> - montagne / roche.
+>
+> Propriétaires :
+> - matériau / label / assetIds : Material Registry / Material Pack ;
+> - assetId -> fichier physique : Material Asset Adapter ;
+> - chargement : Material Texture Loader existant ;
+> - rendu : Surface Renderer existant ;
+> - géométrie / famille terrain : World Surface Model ;
+> - sélection : Builder, consommateur du Material Registry.
+>
+> Invariants / interdits :
+> - aucune texture ne devient une géométrie ou une règle gameplay ;
+> - `terrainFamilyId` reste séparé de `materialId` ;
+> - pas de second catalogue de matériaux ;
+> - pas de fallback silencieux ;
+> - pas de nouveau renderer ni système de masque concurrent ;
+> - routes/rivières/Portals/Events/Combat gelés ;
+> - aucun changement `Zombicide-40k`.
+>
+> Tests :
+> - sentinelle RED puis GREEN sur les nouveaux assetIds et matériaux ;
+> - intégrité des binaires réellement commités : taille + SHA-256 + dimensions ;
+> - Material Registry : cinq surfaces disponibles, IDs uniques ;
+> - Builder : les nouvelles surfaces apparaissent via la projection existante du registry ;
+> - tests matériau/Builder existants verts ;
+> - CI complète ;
+> - preview + gate visuel utilisateur avant GREEN final.
+>
+> Risques :
+> - répétition trop visible d'une texture générée ;
+> - texture trop détaillée à petite échelle ;
+> - confusion forêt visuelle / famille terrain gameplay ;
+> - régression de manifeste/Asset Adapter si les nouveaux binaires ne sont pas déclarés ensemble.
+>
+> Hors périmètre :
+> - nouveau moteur de transition entre surfaces ;
+> - refonte des masques/bords ;
+> - import utilisateur de textures ;
+> - multi-zone / composition de monde ;
+> - XP/loot/capture.
+>
+> Backlog validé après ce lot :
+> - **User Texture Import v1** : import simple d'images par le créateur, stockage local, métadonnées et injection dans la même autorité Material Registry/Asset Adapter sans second système ;
+> - **Multi-Zone / World Assembly** : éditeur de zones réutilisables puis éditeur supérieur de raccord des zones, analogue Pièce -> Donjon.
+>
+> État : **LOT OUVERT — aucun GREEN avant CI + gate visuel utilisateur**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-04
+>
 > Chantier : **Multi-combat revalidation v1**
 >
 > Branche : `work/exploration-multicombat-revalidation-v1-2026-10-04`
