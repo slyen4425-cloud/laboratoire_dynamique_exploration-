@@ -217,7 +217,12 @@
 > - exemples de profils visuels : `standard`, `parchemin`, `lettre`, `papier` ;
 > - ce futur choix devra rester une donnée de présentation du message, jamais une seconde logique d'événement.
 >
-> État : **GREEN utilisateur — clôture CI/checkpoint final en cours**.
+> Clôture :
+> - CI finale : `37212315665` — **SUCCESS** ;
+> - SHA GREEN validé : `b40152ed7d8b6760287062dfc4681135712c6e00` ;
+> - checkpoint final : `checkpoint/exploration-world-event-message-v1-green-2026-10-04`.
+>
+> État : **GREEN FINAL**.
 
 ---
 
