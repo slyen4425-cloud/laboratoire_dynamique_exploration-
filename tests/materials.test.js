@@ -19,6 +19,11 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
   assert.equal(registry.resolve('ground.snow')?.kind, 'surface');
   assert.equal(registry.resolve('ground.forest_floor')?.kind, 'surface');
   assert.equal(registry.resolve('ground.mountain_rock')?.kind, 'surface');
+  assert.equal(registry.resolve('ground.volcanic_ash_lava')?.kind, 'surface');
+  assert.equal(registry.resolve('water.clear_blue')?.kind, 'water');
+  assert.equal(registry.resolve('water.turquoise')?.kind, 'water');
+  assert.equal(registry.resolve('water.swamp')?.kind, 'water');
+  assert.equal(registry.resolve('water.lava')?.kind, 'water');
   assert.equal(
     registry.resolve('grass.forest')?.assets.base,
     'texture.grass.forest.base.01'
@@ -39,7 +44,31 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
     registry.resolve('ground.mountain_rock')?.assets.base,
     'texture.ground.mountain_rock.stylized.01'
   );
-  assert.equal(registry.list().length, 9);
+  assert.equal(
+    registry.resolve('ground.volcanic_ash_lava')?.assets.base,
+    'texture.ground.volcanic_ash_lava.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('water.clear_blue')?.assets.center,
+    'texture.water.clear_blue.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('water.turquoise')?.assets.center,
+    'texture.water.turquoise.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('water.swamp')?.assets.center,
+    'texture.water.swamp.stylized.01'
+  );
+  assert.equal(
+    registry.resolve('water.lava')?.assets.center,
+    'texture.water.lava.stylized.01'
+  );
+  assert.equal(
+    registry.list().filter((item) => item.kind === 'water').length,
+    5
+  );
+  assert.equal(registry.list().length, 14);
 });
 
 test('unknown material ids never silently fall back', () => {
