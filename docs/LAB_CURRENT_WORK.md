@@ -1,5 +1,26 @@
 # LAB_CURRENT_WORK — Point de reprise unique
 
+> ÉTAT ACTIF — 2026-10-04
+>
+> Chantier : **Capture Rewards / XP / Progression — audit de récupération v1**
+>
+> Branche : `work/exploration-capture-rewards-progression-audit-v1-2026-10-04`
+>
+> Base GREEN : `baec0fecede7b9117c3f58d801add3ea593d2796`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-capture-rewards-progression-audit-v1-2026-10-04`
+>
+> Périmètre : audit uniquement des règles historiques Capture et des contrats actuels ; aucune mutation gameplay, aucun changement Combat Runtime/Roster Session, aucun changement Zombicide-40k.
+>
+> Lot Player Party / Rappel -> Invocation : **FROZEN — gate utilisateur échouée**, à reprendre après refonte côté labo Combat.
+>
+> Résultat audit : voir `docs/LAB_CAPTURE_REWARDS_PROGRESSION_AUDIT_V1.md`.
+>
+> Décision : XP/loot/capture appartiennent à Capture. Exploration ne doit ni calculer ni stocker une seconde progression.
+
+---
+
+
 Date : 2026-10-03
 
 ## Chantier actif
