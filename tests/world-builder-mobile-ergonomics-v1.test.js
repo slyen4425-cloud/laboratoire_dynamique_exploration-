@@ -45,10 +45,10 @@ test('brush width inputs are prospective and never resize an existing selected p
   );
 
   const start = main.indexOf(
-    "for (const [kind, widthId, valueId, materialId, fallbackWidth] of ["
+    "for (const [kind, widthId, valueId, fallbackWidth] of ["
   );
   const end = main.indexOf(
-    "$('spawn-select').addEventListener",
+    "for (const [kind, materialId] of [",
     start
   );
 
@@ -56,7 +56,7 @@ test('brush width inputs are prospective and never resize an existing selected p
   const widthControlBlock = main.slice(start, end);
 
   assert.equal(
-    widthControlBlock.includes('draft = updateSurfacePath'),
+    widthControlBlock.includes('updateSurfacePath'),
     false,
     'brush-size controls must not mutate an existing surface path'
   );
