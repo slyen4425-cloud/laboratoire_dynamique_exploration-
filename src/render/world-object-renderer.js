@@ -1,7 +1,6 @@
 import {
-  bridgeVisualRect,
-  buildingVisualRect
-} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+  bridgeVisualRect
+} from '../world/world-object-model.js?rev=environment-showcase-assets-v1';
 import {
   resolveWorldObjectPlacements
 } from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
@@ -21,6 +20,35 @@ function isOffscreen(screenX, screenY, radius, viewport) {
     screenX - radius > viewport.width ||
     screenY - radius > viewport.height
   );
+}
+
+function genericVisualRect(object) {
+  const width = Number(object?.baseSize?.width);
+  const height = Number(object?.baseSize?.height);
+
+  if (
+    !Number.isFinite(width) ||
+    width <= 0 ||
+    !Number.isFinite(height) ||
+    height <= 0
+  ) {
+    return null;
+  }
+
+  return Object.freeze({
+    x: object.transform.x,
+    y: object.transform.y,
+    rotation:
+      degreesToRadians(
+        object.transform.rotationDeg
+      ),
+    width:
+      width *
+      object.transform.scaleX,
+    height:
+      height *
+      object.transform.scaleY
+  });
 }
 
 function requireVisualAsset(object, imageLoader, resolveVisualAsset) {
@@ -96,37 +124,56 @@ function drawBridgeImage(
   ctx.restore();
 }
 
-function drawBuildingImage(
+function drawStaticImage(
   ctx,
-  building,
+  object,
   camera,
   viewport,
   image,
   asset
 ) {
-  const rect = buildingVisualRect(building);
-  if (!rect || !image || !asset?.render) return;
+  const rect =
+    genericVisualRect(object);
+
+  if (
+    !rect ||
+    !image ||
+    !asset?.render
+  ) {
+    return;
+  }
 
   const widthScale =
-    Number.isFinite(asset.render.widthScale) &&
+    Number.isFinite(
+      asset.render.widthScale
+    ) &&
     asset.render.widthScale > 0
       ? asset.render.widthScale
       : 1;
   const heightScale =
-    Number.isFinite(asset.render.heightScale) &&
+    Number.isFinite(
+      asset.render.heightScale
+    ) &&
     asset.render.heightScale > 0
       ? asset.render.heightScale
       : 1;
-  const renderWidth = rect.width * widthScale;
-  const renderHeight = rect.height * heightScale;
-  const screenX = rect.x - camera.x;
-  const screenY = rect.y - camera.y;
+  const renderWidth =
+    rect.width * widthScale;
+  const renderHeight =
+    rect.height * heightScale;
+  const screenX =
+    rect.x - camera.x;
+  const screenY =
+    rect.y - camera.y;
 
   if (
     isOffscreen(
       screenX,
       screenY,
-      cullRadius(renderWidth, renderHeight),
+      cullRadius(
+        renderWidth,
+        renderHeight
+      ),
       viewport
     )
   ) {
@@ -134,10 +181,15 @@ function drawBuildingImage(
   }
 
   ctx.save();
-  ctx.translate(screenX, screenY);
+  ctx.translate(
+    screenX,
+    screenY
+  );
   ctx.rotate(
     rect.rotation +
-    degreesToRadians(asset.render.rotationOffsetDeg)
+    degreesToRadians(
+      asset.render.rotationOffsetDeg
+    )
   );
   ctx.drawImage(
     image,
@@ -155,23 +207,24 @@ export function createWorldObjectRenderer({
 } = {}) {
   return Object.freeze({
     draw(ctx, { camera, viewport, objects }) {
-      for (const object of resolveWorldObjectPlacements(objects ?? [])) {
-        if (
-          object.kind !== 'bridge' &&
-          object.kind !== 'building'
-        ) {
-          continue;
-        }
-
-        const visual = requireVisualAsset(
-          object,
-          imageLoader,
-          resolveVisualAsset
-        );
+      for (
+        const object of
+          resolveWorldObjectPlacements(
+            objects ?? []
+          )
+      ) {
+        const visual =
+          requireVisualAsset(
+            object,
+            imageLoader,
+            resolveVisualAsset
+          );
 
         if (!visual) continue;
 
-        if (object.kind === 'bridge') {
+        if (
+          object.kind === 'bridge'
+        ) {
           drawBridgeImage(
             ctx,
             object,
@@ -183,7 +236,7 @@ export function createWorldObjectRenderer({
           continue;
         }
 
-        drawBuildingImage(
+        drawStaticImage(
           ctx,
           object,
           camera,
