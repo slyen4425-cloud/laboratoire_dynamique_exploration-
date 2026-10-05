@@ -31,7 +31,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=world-event-contract-v1';
+} from './world-builder-draft.js?rev=world-object-library-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
