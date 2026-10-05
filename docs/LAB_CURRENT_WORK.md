@@ -82,7 +82,38 @@
 > - import textures utilisateur ;
 > - Multi-Zone / World Assembly.
 >
-> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+> Résultat technique :
+> - TDD RED : `82152311edb7ae248475630dd5619f9e5a948f5e` ;
+> - CI RED : `37291716247` — **FAILURE attendue** : Registry sans politique + zone rendue en une seule passe opaque ;
+> - Material Registry expose désormais une `surfaceTransition` normalisée et immuable ;
+> - pack `forest-core-v1` : `mode=feather`, ratio `0.18`, min `6`, max `64`, `7` passes, opacité bord `0.08` ;
+> - nouveau calcul pur `surfaceFeatherPasses()` dans le domaine Renderer ;
+> - la première passe utilise exactement `zone.width` : aucune extension visuelle au-delà de la géométrie canonique ;
+> - les passes suivantes rétrécissent vers le cœur et augmentent progressivement l'opacité ;
+> - le cœur est opaque ;
+> - un pack sans politique garde exactement le rendu historique opaque en une passe ;
+> - le vrai test Registry -> Surface Renderer vérifie les passes et l'absence de mutation de la zone ;
+> - transitions route/herbe et eau/berge GREEN existantes inchangées ;
+> - cache navigateur Builder + runtime raccordé à la révision `surface-feather-v1` ;
+> - CI implémentation : `37291868649` — **SUCCESS** ;
+> - CI après sentinelle pack + cache-bust : `37292014268` — **SUCCESS**.
+>
+> Aucun changement :
+> - schéma WorldDocument ;
+> - `surface.zones[].points/width/materialId` ;
+> - familles terrain / traversée / collision ;
+> - Material Asset Adapter ;
+> - routes/rivières ;
+> - Encounter / Combat / Portal / Events ;
+> - `Zombicide-40k`.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - sur smartphone, peindre notamment Herbe ↔ Neige, Herbe ↔ Sable, Neige ↔ Montagne ;
+> - vérifier disparition de la ligne dure, lisibilité du cœur de texture et fluidité ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — preview + gate visuel utilisateur requis**.
 
 ---
 
