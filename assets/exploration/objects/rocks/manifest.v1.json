@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "packId": "rock-showcase-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-05",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "purpose": "Three top-down Rock WorldObject showcase visuals. Visuals never define collision or gameplay.",
+  "sourceProfile": {
+    "fileId": "file_000000008b888210be2523182bd82527",
+    "generationId": "269940d1-7aac-424a-b77a-a73b7bb6f417",
+    "format": "PNG RGBA",
+    "width": 2172,
+    "height": 724,
+    "alpha": true,
+    "sha256": "de05143454c67d28e19b9f88eb1b5c8a0a0b8ddad11639aa3844e866faa98d88"
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 384,
+    "height": 384,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.rock.forest.boulder.01",
+      "path": "assets/exploration/objects/rocks/rock_forest_boulder_01.webp",
+      "role": "rock-visual",
+      "family": "forest",
+      "variant": "boulder",
+      "view": "top-down",
+      "sha256": "e577a9306b25006a1786a17b229a26b9be6ecf08a2ff28119d40303582999da7",
+      "bytes": 46264
+    },
+    {
+      "assetId": "object.rock.forest.spires.01",
+      "path": "assets/exploration/objects/rocks/rock_forest_spires_01.webp",
+      "role": "rock-visual",
+      "family": "forest",
+      "variant": "spires",
+      "view": "top-down",
+      "sha256": "cf9ab5997ef9bcf926c45751b5285c96942b8b07f24671bead7b9ad6074069ad",
+      "bytes": 39822
+    },
+    {
+      "assetId": "object.rock.forest.plateau.01",
+      "path": "assets/exploration/objects/rocks/rock_forest_plateau_01.webp",
+      "role": "rock-visual",
+      "family": "forest",
+      "variant": "plateau",
+      "view": "top-down",
+      "sha256": "81b27afd15c42f2c99265aff9dcd31862281d86238d838b0fae1fca9482e363e",
+      "bytes": 35946
+    }
+  ]
+}
