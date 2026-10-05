@@ -3,6 +3,7 @@ import {
   ribbonTextureSlices
 } from './path-ribbon.js';
 import {
+  surfaceFeatherMaskPlan,
   surfaceFeatherPasses
 } from './surface-feather.js';
 
@@ -54,6 +55,231 @@ function strokePath(ctx, item, camera, width, strokeStyle, alpha = 1) {
   ctx.globalAlpha = alpha;
   ctx.stroke();
   ctx.restore();
+}
+
+function defaultCanvasFactory(width, height) {
+  const safeWidth = Math.max(1, Math.ceil(width));
+  const safeHeight = Math.max(1, Math.ceil(height));
+
+  if (
+    typeof document !== 'undefined' &&
+    typeof document.createElement === 'function'
+  ) {
+    const canvas = document.createElement('canvas');
+    canvas.width = safeWidth;
+    canvas.height = safeHeight;
+    return canvas;
+  }
+
+  if (typeof OffscreenCanvas !== 'undefined') {
+    return new OffscreenCanvas(
+      safeWidth,
+      safeHeight
+    );
+  }
+
+  return null;
+}
+
+function prepareScratchBuffer(
+  canvasFactory,
+  current,
+  viewport
+) {
+  if (typeof canvasFactory !== 'function') {
+    return null;
+  }
+
+  const width = Math.max(
+    1,
+    Math.ceil(viewport.width)
+  );
+  const height = Math.max(
+    1,
+    Math.ceil(viewport.height)
+  );
+  const canvas =
+    current ?? canvasFactory(width, height);
+
+  if (!canvas) return null;
+
+  if (canvas.width !== width) {
+    canvas.width = width;
+  }
+  if (canvas.height !== height) {
+    canvas.height = height;
+  }
+
+  const context =
+    canvas.getContext?.('2d');
+
+  if (!context) return null;
+
+  return {
+    canvas,
+    context
+  };
+}
+
+function strokeMaskPath(
+  ctx,
+  item,
+  camera,
+  width,
+  alpha = 1
+) {
+  ctx.save();
+  ctx.beginPath();
+  smoothPath(ctx, item.points, camera);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = width;
+  ctx.strokeStyle = '#ffffff';
+  ctx.globalAlpha = alpha;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawSurfaceZoneSmoothMask(
+  ctx,
+  zone,
+  camera,
+  viewport,
+  material,
+  textureLoader,
+  transition,
+  scratch
+) {
+  const plan = surfaceFeatherMaskPlan(
+    zone.width,
+    transition
+  );
+
+  if (
+    !plan ||
+    !scratch?.mask?.context ||
+    !scratch?.zone?.context ||
+    typeof ctx.drawImage !== 'function'
+  ) {
+    return false;
+  }
+
+  const maskCtx = scratch.mask.context;
+  const zoneCtx = scratch.zone.context;
+
+  if (!('filter' in maskCtx)) {
+    return false;
+  }
+
+  maskCtx.globalCompositeOperation =
+    'source-over';
+  maskCtx.globalAlpha = 1;
+  maskCtx.filter = 'none';
+  maskCtx.clearRect(
+    0,
+    0,
+    viewport.width,
+    viewport.height
+  );
+
+  if (plan.edgeOpacity > 0) {
+    strokeMaskPath(
+      maskCtx,
+      zone,
+      camera,
+      plan.outerWidth,
+      plan.edgeOpacity
+    );
+  }
+
+  if (
+    plan.blurRadius > 0 &&
+    plan.innerWidth < plan.outerWidth
+  ) {
+    maskCtx.filter =
+      `blur(${plan.blurRadius}px)`;
+    strokeMaskPath(
+      maskCtx,
+      zone,
+      camera,
+      plan.innerWidth,
+      1
+    );
+    maskCtx.filter = 'none';
+  }
+
+  strokeMaskPath(
+    maskCtx,
+    zone,
+    camera,
+    plan.innerWidth,
+    1
+  );
+
+  // The blur is purely visual and may extend outside
+  // the stroke. Clip it back to the canonical zone width.
+  maskCtx.globalCompositeOperation =
+    'destination-in';
+  strokeMaskPath(
+    maskCtx,
+    zone,
+    camera,
+    plan.outerWidth,
+    1
+  );
+  maskCtx.globalCompositeOperation =
+    'source-over';
+  maskCtx.filter = 'none';
+  maskCtx.globalAlpha = 1;
+
+  zoneCtx.globalCompositeOperation =
+    'source-over';
+  zoneCtx.globalAlpha = 1;
+  if ('filter' in zoneCtx) {
+    zoneCtx.filter = 'none';
+  }
+  zoneCtx.clearRect(
+    0,
+    0,
+    viewport.width,
+    viewport.height
+  );
+
+  const image =
+    textureLoader?.get(material.assets.base);
+  const pattern =
+    worldPattern(zoneCtx, image, camera);
+
+  zoneCtx.fillStyle =
+    pattern ?? material.render.baseColor;
+  zoneCtx.fillRect(
+    0,
+    0,
+    viewport.width,
+    viewport.height
+  );
+
+  zoneCtx.globalCompositeOperation =
+    'destination-in';
+  zoneCtx.drawImage(
+    scratch.mask.canvas,
+    0,
+    0,
+    viewport.width,
+    viewport.height
+  );
+  zoneCtx.globalCompositeOperation =
+    'source-over';
+
+  ctx.drawImage(
+    scratch.zone.canvas,
+    0,
+    0,
+    viewport.width,
+    viewport.height
+  );
+
+  return true;
 }
 
 function hash2D(x, y, salt = 0) {
@@ -316,10 +542,28 @@ function drawSurfaceZoneMaterial(
   ctx,
   zone,
   camera,
+  viewport,
   material,
   textureLoader,
-  transition
+  transition,
+  scratch
 ) {
+  if (
+    transition?.method === 'smooth-mask' &&
+    drawSurfaceZoneSmoothMask(
+      ctx,
+      zone,
+      camera,
+      viewport,
+      material,
+      textureLoader,
+      transition,
+      scratch
+    )
+  ) {
+    return;
+  }
+
   const image = textureLoader?.get(material.assets.base);
   const pattern = worldPattern(ctx, image, camera);
   const strokeStyle =
@@ -440,14 +684,49 @@ function drawWaterMaterial(ctx, river, camera, material, textureLoader) {
 
 export function createSurfaceRenderer({
   materialRegistry,
-  textureLoader = null
+  textureLoader = null,
+  canvasFactory = defaultCanvasFactory
 }) {
   if (!materialRegistry) {
     throw new Error('Surface Renderer requires a Material Registry');
   }
 
+  let maskCanvas = null;
+  let zoneCanvas = null;
+
+  function scratchBuffers(viewport) {
+    if (
+      materialRegistry.surfaceTransition?.method !==
+      'smooth-mask'
+    ) {
+      return null;
+    }
+
+    const mask = prepareScratchBuffer(
+      canvasFactory,
+      maskCanvas,
+      viewport
+    );
+    if (!mask) return null;
+    maskCanvas = mask.canvas;
+
+    const zone = prepareScratchBuffer(
+      canvasFactory,
+      zoneCanvas,
+      viewport
+    );
+    if (!zone) return null;
+    zoneCanvas = zone.canvas;
+
+    return {
+      mask,
+      zone
+    };
+  }
+
   return Object.freeze({
     draw(ctx, { camera, viewport, surface }) {
+      const scratch = scratchBuffers(viewport);
       const baseMaterial = materialRegistry.require(
         surface.baseMaterialId,
         'surface'
@@ -478,9 +757,11 @@ export function createSurfaceRenderer({
           ctx,
           zone,
           camera,
+          viewport,
           material,
           textureLoader,
-          materialRegistry.surfaceTransition
+          materialRegistry.surfaceTransition,
+          scratch
         );
       }
 
