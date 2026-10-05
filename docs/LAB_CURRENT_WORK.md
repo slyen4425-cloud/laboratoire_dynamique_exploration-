@@ -1,5 +1,27 @@
 # LAB_CURRENT_WORK — Point de reprise unique
 
+> **LOT ARRÊTÉ / SUPERSEDED — 2026-10-05**
+>
+> Cette branche a été ouverte en parallèle par erreur après reprise depuis le même GREEN.
+> Le contrôle de coordination a démontré qu'un lot canonique plus avancé couvre exactement le même périmètre :
+> `work/exploration-builder-mobile-paint-ergonomics-v1-2026-10-05`
+> @ `24b1e9b36cadc4cfe99f4d6be36e67e1ff2e518a`.
+>
+> Preview canonique :
+> `preview/exploration-builder-mobile-paint-ergonomics-v1-2026-10-05`
+> @ `8faeaddcc00c5be7fb5f40e791933c6ab6d71f12`.
+>
+> Règle de reprise :
+> - ne pas poursuivre ni publier cette branche ;
+> - ne créer aucun checkpoint GREEN depuis cette branche ;
+> - reprendre uniquement le lot canonique ci-dessus ;
+> - cette branche reste comme trace de coordination et ne devient jamais une seconde autorité.
+>
+> État : **STOPPED — DUPLICATE LOT, NO GREEN**.
+
+---
+
+
 > ÉTAT ACTIF — 2026-10-05
 >
 > Chantier : **Builder Mobile Ergonomics v1**
