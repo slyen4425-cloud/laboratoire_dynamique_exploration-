@@ -72,7 +72,14 @@
 > 7. aucune URL/path d'objet n'apparaît dans le Builder ou l'ObjectDefinition ;
 > 8. le bâtiment existant reste GREEN et sert de sentinelle de non-régression.
 >
-> État : **TDD RED en ouverture — aucune implémentation fonctionnelle des 4 nouvelles familles n'est encore autorisée avant constat RED.**
+> TDD RED constaté :
+> - commit tests : `33e5bcba4ae737dc874a0fcc7ac5f47491754981` ;
+> - CI : `37338551304` — **FAILURE attendue** ;
+> - maison existante : catalogue / adapter / manifest restent GREEN ;
+> - sentinelles architecture historiques : GREEN ;
+> - échecs attendus : définitions + assetIds + manifests arbre/rocher/porte/escalier absents, placements refusés faute de définition, renderer statique non générique, erreur asset manquant non atteinte pour ces nouveaux kinds.
+>
+> État : **TDD RED VALIDÉ — implémentation autorisée dans cette branche, sans nouvelle autorité.**
 >
 > Prochaine étape :
 > - commiter le test RED du micro-lot ;
