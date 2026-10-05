@@ -45,7 +45,7 @@ import {
   pointInRotatedRect,
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
-import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=surface-feather-v2-antibanding';
+import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=linear-smooth-transition-v1';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
