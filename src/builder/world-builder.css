@@ -303,6 +303,16 @@ input:focus, select:focus, textarea:focus {
 }
 
 @media (max-width: 430px) {
+  .brush-size-row {
+    grid-template-columns: 42px minmax(0, 1fr) 54px 42px;
+    gap: 6px;
+  }
+
+  #builder-undo-draw {
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
   .builder-header {
     align-items: stretch;
   }
@@ -333,7 +343,7 @@ input:focus, select:focus, textarea:focus {
 
 .map-tools {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   padding: 8px 9px 0;
   background: #18221b;
@@ -391,7 +401,7 @@ input:focus, select:focus, textarea:focus {
 
 .brush-size-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px;
+  grid-template-columns: 44px minmax(0, 1fr) 60px 44px;
   align-items: center;
   gap: 8px;
 }
@@ -418,8 +428,57 @@ input:focus, select:focus, textarea:focus {
   cursor: crosshair;
 }
 
+.terrain-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.terrain-mode-switch button.active {
+  background: #5b744f;
+  border-color: #91ad83;
+}
+
+.terrain-draw-panel[hidden] {
+  display: none;
+}
+
+.brush-size-row button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+#builder-undo-draw {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 40;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+  background: #314f35;
+  border-color: #7fa985;
+}
+
+#builder-undo-draw:disabled {
+  opacity: 0.42;
+  box-shadow: none;
+}
+
 
 @media (max-width: 760px) {
+  #builder-undo-draw {
+    display: inline-flex;
+  }
+
   #test-exploration {
     flex: 0 0 auto;
     white-space: nowrap;
