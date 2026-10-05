@@ -86,6 +86,7 @@ import {
   materialPackV1
 } from '../materials/material-pack-v1.js?rev=user-texture-import-v1';
 import {
+  USER_TEXTURE_MAX_BYTES,
   composeMaterialPackWithUserMaterials,
   countMaterialReferences,
   createUserMaterialRecord,
@@ -355,6 +356,8 @@ let selectedEventId =
   draft.events?.[0]?.id ?? null;
 let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
+let selectedUserMaterialId =
+  userMaterialRecords[0]?.id ?? null;
 let selectedTerrainFamilyDefinitionId =
   draft.terrainFamilies?.[0]?.id ?? null;
 let selectedEncounterFamilyId =
@@ -514,6 +517,279 @@ function setOptions(select, items, value, {
   if (items.some((item) => item[valueKey] === previous)) {
     select.value = previous;
   }
+}
+
+function userMaterialKindLabel(kind) {
+  if (kind === 'path') return 'Route';
+  if (kind === 'water') return 'Rivière / mer';
+  return 'Sol / surface';
+}
+
+function refreshUserTextureControls() {
+  const select = $('user-texture-library');
+  const importButton = $('user-texture-import');
+  const deleteButton = $('user-texture-delete');
+  const fileInput = $('user-texture-file');
+  const status = $('user-texture-status');
+
+  if (userMaterialStorageError) {
+    select.replaceChildren();
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Stockage local indisponible';
+    select.append(option);
+    select.disabled = true;
+    importButton.disabled = true;
+    deleteButton.disabled = true;
+    fileInput.disabled = true;
+    status.textContent =
+      `Stockage local indisponible : ${userMaterialStorageError.message}`;
+    return;
+  }
+
+  select.disabled = false;
+  importButton.disabled = false;
+  fileInput.disabled = false;
+
+  if (
+    !userMaterialRecords.some(
+      (record) =>
+        record.id === selectedUserMaterialId
+    )
+  ) {
+    selectedUserMaterialId =
+      userMaterialRecords[0]?.id ?? null;
+  }
+
+  select.replaceChildren();
+
+  if (userMaterialRecords.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Aucune texture personnelle';
+    select.append(option);
+    deleteButton.disabled = true;
+    status.textContent =
+      'Ajoute une image PNG, JPEG ou WebP (8 Mio max, 4096 px max par côté).';
+    return;
+  }
+
+  for (const record of userMaterialRecords) {
+    const option = document.createElement('option');
+    option.value = record.id;
+    option.textContent =
+      `${record.label} · ${userMaterialKindLabel(record.kind)}`;
+    select.append(option);
+  }
+
+  select.value =
+    selectedUserMaterialId ??
+    userMaterialRecords[0].id;
+  selectedUserMaterialId = select.value;
+
+  const record = userMaterialRecords.find(
+    (item) => item.id === selectedUserMaterialId
+  );
+  const references = record
+    ? countMaterialReferences(
+        draft,
+        record.id
+      )
+    : 0;
+
+  deleteButton.disabled =
+    !record || references > 0;
+
+  if (!record) {
+    status.textContent =
+      'Aucune texture personnelle sélectionnée.';
+    return;
+  }
+
+  status.textContent =
+    references > 0
+      ? `${record.width}×${record.height} · ${userMaterialKindLabel(record.kind)} · utilisée ${references} fois : suppression protégée.`
+      : `${record.width}×${record.height} · ${userMaterialKindLabel(record.kind)} · stockée localement sur cet appareil.`;
+}
+
+function userTexturePaintKind(kind) {
+  if (kind === 'path') return 'route';
+  if (kind === 'water') return 'river';
+  return 'terrain';
+}
+
+function userTextureMaterialSelect(kind) {
+  if (kind === 'path') {
+    return $('terrain-route-material');
+  }
+  if (kind === 'water') {
+    return $('terrain-river-material');
+  }
+  return $('terrain-paint-material');
+}
+
+let userTextureTokenSequence = 0;
+
+function createUserTextureToken() {
+  const uuid =
+    globalThis.crypto?.randomUUID?.();
+
+  if (uuid) {
+    return uuid.toLowerCase();
+  }
+
+  userTextureTokenSequence += 1;
+  return `${Date.now().toString(36)}-${userTextureTokenSequence.toString(36)}`;
+}
+
+function defaultUserTextureLabel(fileName) {
+  const name =
+    typeof fileName === 'string'
+      ? fileName.trim()
+      : '';
+
+  return (
+    name.replace(/\.[^.]+$/, '').trim() ||
+    'Texture personnelle'
+  );
+}
+
+async function importUserTextureFromControls() {
+  if (userMaterialStorageError) {
+    throw userMaterialStorageError;
+  }
+
+  const file =
+    $('user-texture-file').files?.[0];
+
+  if (!file) {
+    throw new Error(
+      'Choisis une image à importer.'
+    );
+  }
+
+  if (
+    !['image/png', 'image/jpeg', 'image/webp'].includes(
+      file.type
+    )
+  ) {
+    throw new Error(
+      'Format non supporté : utilise PNG, JPEG ou WebP.'
+    );
+  }
+
+  if (
+    !Number.isFinite(file.size) ||
+    file.size <= 0 ||
+    file.size > USER_TEXTURE_MAX_BYTES
+  ) {
+    throw new Error(
+      'Fichier trop volumineux : 8 Mio maximum.'
+    );
+  }
+
+  const dimensions =
+    await decodeUserTextureFileDimensions(
+      file
+    );
+
+  let token = createUserTextureToken();
+  while (
+    userMaterialRecords.some(
+      (record) =>
+        record.id.endsWith(
+          `.${token}`
+        )
+    )
+  ) {
+    token = createUserTextureToken();
+  }
+
+  const label =
+    $('user-texture-name').value.trim() ||
+    defaultUserTextureLabel(file.name);
+  const kind =
+    $('user-texture-kind').value;
+
+  const record = createUserMaterialRecord({
+    idToken: token,
+    kind,
+    label,
+    mimeType: file.type,
+    width: dimensions.width,
+    height: dimensions.height,
+    bytes: file.size,
+    sourceName: file.name,
+    blob: file,
+    createdAt: new Date().toISOString()
+  });
+
+  await userMaterialStore.put(record);
+  userMaterialRecords =
+    await userMaterialStore.list();
+  selectedUserMaterialId = record.id;
+
+  await rebuildMaterialPipeline();
+  refreshControls();
+
+  const paintKind =
+    userTexturePaintKind(record.kind);
+  $('terrain-draw-kind').value =
+    paintKind;
+  setMapTool(paintKind);
+
+  const materialSelect =
+    userTextureMaterialSelect(record.kind);
+  materialSelect.value =
+    record.id;
+
+  $('user-texture-name').value = '';
+  $('user-texture-file').value = '';
+
+  refreshUserTextureControls();
+  renderPreview();
+
+  return record;
+}
+
+async function deleteSelectedUserTexture() {
+  if (userMaterialStorageError) {
+    throw userMaterialStorageError;
+  }
+
+  const record = userMaterialRecords.find(
+    (item) =>
+      item.id === selectedUserMaterialId
+  );
+
+  if (!record) return false;
+
+  const references =
+    countMaterialReferences(
+      draft,
+      record.id
+    );
+
+  if (references > 0) {
+    throw new Error(
+      `Texture utilisée ${references} fois : remplace-la dans le monde avant suppression.`
+    );
+  }
+
+  await userMaterialStore.delete(
+    record.id
+  );
+
+  userMaterialRecords =
+    await userMaterialStore.list();
+  selectedUserMaterialId =
+    userMaterialRecords[0]?.id ?? null;
+
+  await rebuildMaterialPipeline();
+  refreshControls();
+  refreshUserTextureControls();
+
+  return true;
 }
 
 function ensureSelections() {
@@ -1979,6 +2255,7 @@ function switchWorldEventActivation(
   );
 
   refreshWorldEventControls();
+  refreshUserTextureControls();
   refreshJson();
   renderPreview();
 }
