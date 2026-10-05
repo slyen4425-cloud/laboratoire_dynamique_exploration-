@@ -2724,7 +2724,7 @@ function eventPortalOptions() {
 
       const definition =
         object
-          ? objectDefinitionCatalogV1.get(
+          ? objectDefinitionCatalog.get(
               object.objectDefinitionId
             )
           : null;
@@ -4704,11 +4704,73 @@ for (const id of [
   );
 }
 
+$('object-library-category').addEventListener(
+  'change',
+  () => {
+    selectedObjectLibraryCategoryId =
+      $('object-library-category').value ||
+      null;
+    selectedObjectLibraryFolderId =
+      objectLibraryFoldersForCategory(
+        selectedObjectLibraryCategoryId
+      )[0]?.id ?? null;
+    refreshObjectControls();
+  }
+);
+
+$('object-library-folder').addEventListener(
+  'change',
+  () => {
+    selectedObjectLibraryFolderId =
+      $('object-library-folder').value ||
+      null;
+    refreshObjectControls();
+  }
+);
+
 $('object-select').addEventListener(
   'change',
   () => {
     selectedObjectId =
       $('object-select').value;
+
+    const placement =
+      currentObjectRaw();
+    const definition =
+      placement
+        ? objectDefinitionCatalog.get(
+            placement.objectDefinitionId
+          )
+        : null;
+
+    if (definition?.library) {
+      selectedObjectLibraryCategoryId =
+        definition.library.categoryId;
+      selectedObjectLibraryFolderId =
+        definition.library.folderId;
+    }
+
+    refreshObjectControls();
+    renderPreview();
+  }
+);
+
+$('object-visual-variant').addEventListener(
+  'change',
+  () => {
+    if (!selectedObjectId) return;
+
+    draft = updateWorldObjectOverrides(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      {
+        visualVariantId:
+          $('object-visual-variant').value
+      }
+    );
+
+    refreshJson();
     refreshObjectControls();
     renderPreview();
   }
@@ -5215,6 +5277,71 @@ $('user-texture-delete').addEventListener(
       }
     } catch (error) {
       $('user-texture-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('user-object-folder').addEventListener(
+  'change',
+  () => {
+    const folder =
+      objectLibraryFolderItems().find(
+        (item) =>
+          item.id ===
+            $('user-object-folder').value
+      );
+
+    if (folder?.defaultKind) {
+      $('user-object-kind').value =
+        folder.defaultKind === 'bridge'
+          ? 'decor'
+          : folder.defaultKind;
+    }
+  }
+);
+
+$('user-object-library').addEventListener(
+  'change',
+  () => {
+    selectedUserWorldObjectId =
+      $('user-object-library').value ||
+      null;
+    refreshUserWorldObjectControls();
+  }
+);
+
+$('user-object-import').addEventListener(
+  'click',
+  async () => {
+    try {
+      const record =
+        await importUserWorldObjectFromControls();
+      setStatus(
+        `Objet « ${record.label} » ajouté dans ${record.folderLabel}.`
+      );
+    } catch (error) {
+      $('user-object-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('user-object-delete').addEventListener(
+  'click',
+  async () => {
+    try {
+      const deleted =
+        await deleteSelectedUserWorldObject();
+      if (deleted) {
+        setStatus(
+          'Objet personnel supprimé.'
+        );
+      }
+    } catch (error) {
+      $('user-object-status').textContent =
         error.message;
       setStatus(error.message, true);
     }
@@ -5934,6 +6061,8 @@ addEventListener(
   () => {
     textureLoader?.dispose?.();
     userMaterialAssetResolver?.dispose?.();
+    objectImageLoader?.dispose?.();
+    userWorldObjectAssetResolver?.dispose?.();
   },
   { once: true }
 );
