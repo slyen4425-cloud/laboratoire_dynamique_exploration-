@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: environment-showcase-assets-v1
+# preview-revision: environment-showcase-selection-v1
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Environment Showcase Assets preview
+      - name: Checkout Exploration Environment Showcase Selection preview
         uses: actions/checkout@v4
         with:
           ref: preview/exploration-environment-showcase-assets-v1-2026-10-05
