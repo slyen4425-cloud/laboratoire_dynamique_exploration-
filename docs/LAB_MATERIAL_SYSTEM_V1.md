@@ -196,6 +196,37 @@ Ce mécanisme est générique surface → surface. Les transitions dédiées rou
 
 Les paramètres sont visuels uniquement : ils ne changent ni `terrainFamilyId`, ni `traversalRuleId`, ni collision, ni gameplay.
 
+### Surface Feather v2 — anti-banding smooth-mask
+
+La V2 conserve exactement la même autorité que la V1 mais remplace, pour le pack pilote, les bandes discrètes par un masque alpha continu :
+
+```js
+surfaceTransition: {
+  mode: 'feather',
+  method: 'smooth-mask',
+  widthRatio: 0.18,
+  minWidth: 6,
+  maxWidth: 64,
+  steps: 7,
+  edgeOpacity: 0,
+  blurRatio: 0.58
+}
+```
+
+Règles :
+- `method: smooth-mask` est une stratégie de rendu du Surface Renderer, jamais une géométrie ;
+- deux Canvas temporaires réutilisables sont alloués par instance de renderer : masque alpha et couche de texture ;
+- le masque part d'un cœur opaque puis utilise un blur continu ;
+- après blur, le masque est recoupé avec `destination-in` sur un stroke de largeur exactement égale à `zone.width` ;
+- aucune opacité issue du blur ne peut donc étendre la zone au-delà de sa largeur canonique ;
+- la texture de la zone est ensuite composée dans ce masque puis reportée sur le canvas principal ;
+- aucun masque, bitmap ou buffer n'est sauvegardé dans le WorldDocument ;
+- si les buffers Canvas ou `filter: blur()` ne sont pas disponibles, le renderer retombe explicitement sur la méthode V1 par passes ;
+- l'ancienne méthode par passes reste supportée pour compatibilité et tests ;
+- les transitions dédiées route/herbe et eau/berge restent inchangées.
+
+La V2 ne modifie ni famille terrain, ni traversée, ni collision, ni rencontre, ni ordre des zones.
+
 ## Decals
 
 Exemples :
