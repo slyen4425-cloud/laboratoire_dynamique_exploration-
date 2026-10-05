@@ -110,3 +110,84 @@ export function surfaceFeatherPasses(
 
   return Object.freeze(passes);
 }
+
+
+export function surfaceFeatherMaskPlan(
+  zoneWidth,
+  transition = { mode: 'none' }
+) {
+  const outerWidth = finite(zoneWidth, 0);
+
+  if (
+    outerWidth <= 0 ||
+    !transition ||
+    transition.mode !== 'feather' ||
+    transition.method !== 'smooth-mask'
+  ) {
+    return null;
+  }
+
+  const widthRatio = clamp(
+    finite(transition.widthRatio, 0.18),
+    0.01,
+    0.45
+  );
+  const minWidth = Math.max(
+    0,
+    finite(transition.minWidth, 6)
+  );
+  const maxWidth = Math.max(
+    minWidth,
+    finite(transition.maxWidth, 64)
+  );
+  const edgeOpacity = clamp(
+    finite(transition.edgeOpacity, 0),
+    0,
+    0.95
+  );
+  const blurRatio = clamp(
+    finite(transition.blurRatio, 0.58),
+    0.2,
+    1
+  );
+
+  const requestedFeather = clamp(
+    outerWidth * widthRatio,
+    minWidth,
+    maxWidth
+  );
+  const featherWidth = Math.min(
+    requestedFeather,
+    outerWidth * 0.4
+  );
+
+  if (featherWidth <= 0.25) {
+    return Object.freeze({
+      outerWidth,
+      innerWidth: outerWidth,
+      featherWidth: 0,
+      blurRadius: 0,
+      edgeOpacity
+    });
+  }
+
+  const innerWidth = Math.max(
+    1,
+    outerWidth - featherWidth * 2
+  );
+  const blurRadius = Math.min(
+    featherWidth,
+    Math.max(
+      0.75,
+      featherWidth * blurRatio
+    )
+  );
+
+  return Object.freeze({
+    outerWidth,
+    innerWidth,
+    featherWidth,
+    blurRadius,
+    edgeOpacity
+  });
+}
