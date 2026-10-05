@@ -107,7 +107,27 @@
 > - vérifier qu'il n'y a pas de perte de fluidité perceptible ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
+> Validation technique finale avant preview :
+> - HEAD prévalidation : `82132160383f778417fece77b4f121cfa9537ac7` ;
+> - CI : `37323690227` — **SUCCESS**.
+>
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-linear-smooth-transition-v1-prevalidation-green-2026-10-05` @ `82132160383f778417fece77b4f121cfa9537ac7` ;
+> - preview : `preview/exploration-linear-smooth-transition-v1-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #86 — **MERGED** ;
+> - main infrastructure : `300b5ad3424641df932c6d06d4fe2d4b6014492c` ;
+> - Pages : `37323858657` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=linear-smooth-transition-v1`.
+>
+> Gate utilisateur demandé :
+> 1. peindre une Route sur Herbe, Neige ou Sable ;
+> 2. peindre une Rivière / mer sur ces mêmes surfaces ;
+> 3. vérifier que les bords ne coupent plus brutalement la texture dessous ;
+> 4. vérifier que le centre Route/Eau reste opaque et lisible ;
+> 5. vérifier que les anciennes bordures/berges visuelles restent présentes mais se fondent progressivement ;
+> 6. vérifier qu'il n'y a pas de perte de fluidité perceptible sur smartphone.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
 
 ---
 
