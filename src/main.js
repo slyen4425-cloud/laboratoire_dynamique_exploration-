@@ -9,7 +9,7 @@ import {
   traversalRulePackV1
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
-import { createSurfaceRenderer } from './render/surface-renderer.js';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=surface-feather-v1';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -20,8 +20,8 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=water-lava-materials-v1';
-import { createMaterialRegistry } from './materials/material-registry.js?rev=water-lava-materials-v1';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=surface-feather-v1';
+import { createMaterialRegistry } from './materials/material-registry.js?rev=surface-feather-v1';
 import { resolveMaterialAsset } from './assets/material-asset-adapter.js?rev=water-lava-materials-v1';
 import {
   resolveWorldObjectAsset
