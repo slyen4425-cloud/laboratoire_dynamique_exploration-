@@ -16,7 +16,10 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
     minWidth: 6,
     maxWidth: 64,
     steps: 7,
-    edgeOpacity: 0.08
+    edgeOpacity: 0,
+    method: 'smooth-mask',
+    blurRatio: 0.58,
+    fallbackMethod: 'passes'
   });
   assert.equal(registry.resolve('grass.forest')?.kind, 'surface');
   assert.equal(registry.resolve('road.dirt')?.kind, 'path');
