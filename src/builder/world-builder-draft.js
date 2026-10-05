@@ -195,7 +195,13 @@ export function createWorldBuilderDraft(sourceDocument) {
   return clone(normalized);
 }
 
-export function validateWorldBuilderDraft(draft) {
+export function validateWorldBuilderDraft(
+  draft,
+  {
+    objectCatalog =
+      objectDefinitionCatalogV1
+  } = {}
+) {
   const errors = [];
 
   if (!draft || typeof draft !== 'object') {
@@ -261,6 +267,22 @@ export function validateWorldBuilderDraft(draft) {
 
     if (normalizedArea.objects.length !== rawObjects.length) {
       errors.push(`object-invalid:${rawArea.id}`);
+    }
+
+    for (const rawObject of rawObjects) {
+      const definitionId =
+        typeof rawObject?.objectDefinitionId === 'string'
+          ? rawObject.objectDefinitionId.trim()
+          : '';
+
+      if (
+        definitionId &&
+        !objectCatalog?.get?.(definitionId)
+      ) {
+        errors.push(
+          `object-definition-unknown:${definitionId}`
+        );
+      }
     }
 
     if (normalizedArea.actors.length !== rawActors.length) {
@@ -892,8 +914,11 @@ export function updateWorldObjectOverrides(
   areaId,
   objectId,
   {
-    traversalSurfaceFeatureIds
-  } = {}
+    traversalSurfaceFeatureIds,
+    visualVariantId
+  } = {},
+  objectCatalog =
+    objectDefinitionCatalogV1
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
@@ -905,13 +930,37 @@ export function updateWorldObjectOverrides(
   if (!object) return next;
 
   const definition =
-    objectDefinitionCatalogV1.get(
+    objectCatalog?.get?.(
       object.objectDefinitionId
     );
 
   if (!definition) return next;
 
   object.overrides ??= {};
+
+  if (
+    visualVariantId !== undefined
+  ) {
+    const variants =
+      Array.isArray(
+        definition.visual?.variants
+      )
+        ? definition.visual.variants
+        : [];
+    const id =
+      typeof visualVariantId === 'string'
+        ? visualVariantId.trim()
+        : '';
+
+    object.overrides.visualVariantId =
+      id &&
+      variants.some(
+        (variant) =>
+          variant?.id === id
+      )
+        ? id
+        : null;
+  }
 
   if (
     definition.kind === 'bridge' &&
@@ -961,13 +1010,15 @@ export function addWorldObject(
     objectDefinitionId,
     transform = {},
     overrides = {}
-  } = {}
+  } = {},
+  objectCatalog =
+    objectDefinitionCatalogV1
 ) {
   const next = clone(draft);
   const area = findArea(next, areaId);
 
   const definition =
-    objectDefinitionCatalogV1.get(
+    objectCatalog?.get?.(
       objectDefinitionId
     );
 
@@ -1024,6 +1075,10 @@ export function addWorldObject(
       )
     },
     overrides: {
+      visualVariantId:
+        typeof overrides.visualVariantId === 'string'
+          ? overrides.visualVariantId.trim() || null
+          : null,
       traversalSurfaceFeatureIds:
         Array.isArray(
           overrides
@@ -1214,8 +1269,15 @@ export function deletePortal(draft, portalId) {
   return next;
 }
 
-export function serializeWorldBuilderDraft(draft) {
-  const result = validateWorldBuilderDraft(draft);
+export function serializeWorldBuilderDraft(
+  draft,
+  options = {}
+) {
+  const result =
+    validateWorldBuilderDraft(
+      draft,
+      options
+    );
 
   if (!result.valid) {
     throw new Error(
@@ -1226,10 +1288,17 @@ export function serializeWorldBuilderDraft(draft) {
   return JSON.stringify(result.document, null, 2);
 }
 
-export function importWorldBuilderDocument(jsonText) {
+export function importWorldBuilderDocument(
+  jsonText,
+  options = {}
+) {
   const parsed = JSON.parse(jsonText);
   const draft = clone(parsed);
-  const result = validateWorldBuilderDraft(draft);
+  const result =
+    validateWorldBuilderDraft(
+      draft,
+      options
+    );
 
   if (!result.valid) {
     throw new Error(
