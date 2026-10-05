@@ -282,9 +282,11 @@ function drawSurfaceZoneSmoothMask(
     zone,
     camera,
     viewport,
-    transition,
     scratch,
-    zone.width,
+    surfaceFeatherMaskPlan(
+      zone.width,
+      transition
+    ),
     (layerCtx) => {
       const image =
         textureLoader?.get(material.assets.base);
