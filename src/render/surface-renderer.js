@@ -6,7 +6,7 @@ import {
   linearFeatherMaskPlan,
   surfaceFeatherMaskPlan,
   surfaceFeatherPasses
-} from './surface-feather.js';
+} from './surface-feather.js?rev=linear-smooth-transition-v1';
 
 function smoothPath(ctx, points, camera) {
   if (!points || points.length < 2) return;
