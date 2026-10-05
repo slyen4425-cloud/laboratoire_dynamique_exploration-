@@ -64,7 +64,40 @@
 > - références user ObjectDefinition ne sont pas encore supportées sur le vrai chemin ;
 > - variantes d'orientation bâtiment absentes.
 >
-> État : **AUDIT / TDD RED À OUVRIR — aucun changement fonctionnel encore validé dans ce chantier.**
+> TDD / implémentation :
+> - contrat RED : `1ffcc1f7a80cc9b62944b5552b688f163ca21477` ;
+> - CI RED : `37383857899` — **FAILURE attendue** ;
+> - taxonomie logique : catégories + sous-dossiers canoniques ;
+> - dossiers déjà réservés : Maisons/Tempéré, Maisons/Neige, Maisons/Sable, Végétation/Arbres, Végétation/Buissons, Fleurs/Herbes, Rochers, Portes, Escaliers, Ponts, Décors ;
+> - imports : PNG/JPEG/WebP, 8 Mio max, dimensions validées ;
+> - IndexedDB unique : `gensrpg-exploration-user-objects-v1` / store `objects` ;
+> - imports utilisateur -> ObjectDefinition normale -> Object Catalog composé UNIQUE ;
+> - asset utilisateur -> Blob URL -> World Object Asset Resolver composé UNIQUE ;
+> - Builder : filtres Catégorie / Sous-dossier + import avec sous-dossier personnalisé optionnel ;
+> - suppression d'un import référencé par le WorldDocument : refus explicite ;
+> - référence user ObjectDefinition absente de l'appareil : erreur explicite, jamais suppression silencieuse ;
+> - runtime Exploration reconstruit le même catalogue/resolver composé ;
+> - support déclaratif `visual.defaultVariantId + visual.variants[] + placement.overrides.visualVariantId` prêt pour les orientations bâtiment ;
+> - CI noyau : `37384492621` — **SUCCESS** ;
+> - CI runtime : `37384579587` — **SUCCESS** ;
+> - CI sentinelles store/runtime : `37385541490` — **SUCCESS** ;
+> - HEAD cache-bust/runtime : `5d61647df22c594ebb7a7114bf04955da5c87d0a` ;
+> - CI HEAD : `37385724416` — **SUCCESS**.
+>
+> Gate visuel restant :
+> - tester navigation Catégorie / Sous-dossier ;
+> - importer un objet dans un dossier canonique puis dans un sous-dossier personnalisé ;
+> - placer l'objet importé, déplacer/rotation/scale ;
+> - lancer Tester la carte et vérifier le même objet dans Exploration ;
+> - vérifier suppression protégée lorsqu'il est encore placé.
+>
+> Assets orientation / biomes :
+> - le contrat logiciel des variantes est en place ;
+> - les dossiers `buildings/houses/snow` et `buildings/houses/sand` existent ;
+> - plusieurs générations visuelles ont produit des maquettes UI et non des assets isolés : **elles ont été rejetées et ne sont pas commitées** ;
+> - aucun faux sprite, masque ou rotation 180° de secours n'est introduit.
+>
+> État : **PRÉVALIDATION TECHNIQUE GREEN — gate utilisateur bibliothèque/import requis ; pack visuel orientation/sable/neige non validé artistiquement.**
 >
 > ---
 >
