@@ -84,9 +84,21 @@
 > Assets utilisateur validés pour intégration — 2026-10-05 :
 > - perspective corrigée en top-down / overhead cohérente avec Exploration ;
 > - 5 planches sources générées : bâtiments, arbres, rochers, entrées/portes, escaliers ;
-> - 3 variantes par famille, soit 15 nouveaux visuels natifs à découper et versionner ;
-> - profil runtime retenu : WebP RGBA 384x384 q82, conforme au Building déjà GREEN ;
-> - les nouveaux visuels seront ajoutés au World Object Asset Adapter existant ; aucun catalogue parallèle.
+> - 3 variantes par famille, soit 15 nouveaux visuels natifs versionnés ;
+> - profil runtime : WebP RGBA 384x384 q82, conforme au Building déjà GREEN ;
+> - les nouveaux visuels utilisent le World Object Asset Adapter existant ; aucun catalogue parallèle.
+>
+> Implémentation prévalidation :
+> - runtime/assets SHA : `92beee6f759d534ab39a27dee2ac6669cc641e0d` ;
+> - CI : `37365582322` — **SUCCESS** ;
+> - 15 WebP réels commités, contrôlés par manifests + SHA-256 + bytes ;
+> - Object Catalog étendu avec 3 bâtiments, 3 arbres, 3 rochers, 3 entrées/portes et 3 escaliers ;
+> - renderer WorldObject généralisé pour les visuels statiques sans autorité gameplay supplémentaire ;
+> - Door/Stairs restent visuels uniquement dans ce lot : aucun Portal, interaction ou traversal implicite ;
+> - Builder continue de placer uniquement `objectDefinitionId + transform + overrides` ;
+> - checkpoint prévalidation : `checkpoint/exploration-environment-showcase-assets-v1-prevalidation-green-2026-10-05` @ `92beee6f759d534ab39a27dee2ac6669cc641e0d` ;
+> - preview : `preview/exploration-environment-showcase-assets-v1-2026-10-05` @ même SHA ;
+> - **GREEN final interdit avant gate utilisateur mobile/visuel.**
 >
 > Prochaine étape :
 > - commiter le test RED du micro-lot ;
