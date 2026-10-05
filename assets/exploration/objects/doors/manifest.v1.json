@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "packId": "door-showcase-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-05",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "purpose": "Three top-down Door/Entrance WorldObject showcase visuals. V1 is visual placement only; interaction/portal ownership remains separate.",
+  "sourceProfile": {
+    "fileId": "file_000000003e5c8210ad98fc083269a1c0",
+    "generationId": "ad71d815-3d47-4ef4-bf2d-ecb57dd86584",
+    "format": "PNG RGBA",
+    "width": 2172,
+    "height": 724,
+    "alpha": true,
+    "sha256": "47e7a919ca0b1210383acfe59b3610afc46bf21a42107d806e9876e5bd970ef5"
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 384,
+    "height": 384,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.door.fantasy.wood.01",
+      "path": "assets/exploration/objects/doors/door_fantasy_wood_01.webp",
+      "role": "door-visual",
+      "family": "fantasy",
+      "variant": "wood-blue-roof",
+      "view": "top-down",
+      "sha256": "54d17020734774734bbdb3f1b4a40fe1d5c9dff841739be4554dafd62a36ac92",
+      "bytes": 41074
+    },
+    {
+      "assetId": "object.door.fantasy.stone_redroof.01",
+      "path": "assets/exploration/objects/doors/door_fantasy_stone_redroof_01.webp",
+      "role": "door-visual",
+      "family": "fantasy",
+      "variant": "stone-red-roof",
+      "view": "top-down",
+      "sha256": "7ac7b096a526e02361d7c7446450da22f5e82289e9767e8844f9c2e5f5efaeec",
+      "bytes": 44464
+    },
+    {
+      "assetId": "object.door.fantasy.tavern_golden.01",
+      "path": "assets/exploration/objects/doors/door_fantasy_tavern_golden_01.webp",
+      "role": "door-visual",
+      "family": "fantasy",
+      "variant": "tavern-golden",
+      "view": "top-down",
+      "sha256": "d9af4dca706a51ff069a994cabd540f7d879984d7e51dc94b55da120d7a8049e",
+      "bytes": 38000
+    }
+  ]
+}
