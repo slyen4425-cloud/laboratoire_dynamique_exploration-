@@ -63,7 +63,9 @@ test('regression: Builder exposes a variable-size terrain paint brush', async ()
     'utf8'
   );
 
-  assert.equal(html.includes('data-map-tool="terrain"'), true);
+  assert.equal(html.includes('data-map-tool="paint"'), true);
   assert.equal(html.includes('id="terrain-brush-size"'), true);
   assert.equal(html.includes('id="terrain-paint-material"'), true);
+  assert.equal(html.includes('id="paint-brush-minus"'), true);
+  assert.equal(html.includes('id="paint-brush-plus"'), true);
 });
