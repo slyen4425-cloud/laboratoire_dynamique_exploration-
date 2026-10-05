@@ -1,5 +1,73 @@
 # LAB_CURRENT_WORK — Point de reprise unique
 
+> ÉTAT ACTIF — 2026-10-05
+>
+> Chantier : **Builder Mobile Ergonomics v1**
+>
+> Branche : `work/exploration-builder-mobile-ergonomics-v1-2026-10-05`
+>
+> Base GREEN : `4a0dfa162627fb423f0dc00c01630e947385974a`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-builder-mobile-ergonomics-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-water-lava-materials-v1-green-2026-10-05`
+>
+> Retours utilisateur à traiter dans ce lot :
+> - les boutons carte « Tracer route » et « Tracer rivière » sont redondants avec l'onglet Terrain ;
+> - sur smartphone, annuler un tracé impose trop de scroll ;
+> - changer la taille du pinceau modifie actuellement la largeur du tracé sélectionné, alors que cette taille doit s'appliquer uniquement aux prochains tracés ;
+> - le réglage de taille doit être plus pratique au tactile.
+>
+> Mission unique :
+> - conserver un seul accès carte « Peindre terrain » ;
+> - déplacer le choix Sol / Route / Rivière à l'intérieur de l'onglet Terrain ;
+> - afficher uniquement le panneau de réglage du type de tracé actif ;
+> - ajouter un bouton flottant mobile « Annuler dernier tracé » ;
+> - l'undo ne mémorise que des références `areaId/kind/pathId`, jamais une copie parallèle de géométrie ;
+> - rendre la taille du pinceau prospective : aucun changement de largeur sur un tracé existant lors d'un mouvement de slider ;
+> - ajouter des boutons tactiles +/- autour des sliders de taille.
+>
+> Propriétaires :
+> - géométrie : World Builder Draft / World Surface Model existants ;
+> - historique d'édition : état UI éphémère par références d'IDs uniquement ;
+> - rendu preview : renderer existant, lecture seule ;
+> - contrôles tactiles : Builder UI.
+>
+> Invariants / fonctions gelées :
+> - `WorldDocument` reste l'unique autorité persistante ;
+> - aucune copie de route/rivière/zone dans l'historique undo ;
+> - `deleteSurfacePath()` reste l'unique mutation utilisée pour annuler un tracé ;
+> - aucun changement des contrats route/rivière/zone ;
+> - aucun changement Material Registry / Traversal / Collision / Encounter / Combat / Portal / Event ;
+> - aucun changement `Zombicide-40k`.
+>
+> TDD attendu :
+> 1. RED : les boutons carte Route/Rivière doivent disparaître au profit des contrôles internes Terrain ;
+> 2. RED : un bouton flottant mobile d'annulation doit exister ;
+> 3. RED : le handler des sliders de largeur ne doit plus appeler `updateSurfacePath()` ;
+> 4. GREEN : Sol / Route / Rivière activent les outils existants sans nouvelle géométrie ;
+> 5. GREEN : annuler supprime le dernier tracé créé via `deleteSurfacePath()` ;
+> 6. GREEN : +/- modifient seulement la taille du prochain tracé et son cercle de preview ;
+> 7. CI complète ;
+> 8. preview + gate utilisateur smartphone avant GREEN final.
+>
+> Risques :
+> - rendre l'outil actif moins évident après suppression des deux boutons carte ;
+> - historique undo incohérent après import/reset/changement d'Area ;
+> - curseurs tactiles encore trop fins sur petit écran.
+>
+> Hors périmètre :
+> - undo général des objets/portals/events ;
+> - édition rétrospective de largeur d'un tracé ;
+> - Surface Transitions / feather ;
+> - import textures utilisateur ;
+> - Multi-Zone / World Assembly.
+>
+> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+
+---
+
+
 > ÉTAT ACTIF — 2026-10-04
 >
 > Chantier : **Water + Lava Materials v1**
