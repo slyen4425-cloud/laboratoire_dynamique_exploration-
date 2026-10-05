@@ -7,7 +7,7 @@
     content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
   />
   <title>GenSrpG — World Builder Dynamique</title>
-  <link rel="stylesheet" href="./src/builder/world-builder.css" />
+  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=builder-mobile-ergonomics-v1" />
 </head>
 <body>
   <main class="builder-shell">
@@ -25,8 +25,6 @@
         <button id="map-tool-actor" data-map-tool="actor-placement" type="button">Placer acteur</button>
         <button id="map-tool-area" data-map-tool="area-size" type="button">Taille Area</button>
         <button id="map-tool-terrain" data-map-tool="terrain" type="button">Peindre terrain</button>
-        <button id="map-tool-route" data-map-tool="route" type="button">Tracer route</button>
-        <button id="map-tool-river" data-map-tool="river" type="button">Tracer rivière</button>
       </div>
       <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
       <div class="preview-tools">
@@ -87,8 +85,14 @@
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
         <p class="builder-hint">
-          Choisis Terrain, Route ou Rivière puis dessine directement sur la carte. Famille gameplay et texture visuelle restent indépendantes.
+          « Peindre terrain » est l’unique outil de dessin sur la carte. Choisis ici Sol, Route ou Rivière. Famille gameplay et texture visuelle restent indépendantes.
         </p>
+
+        <div class="terrain-mode-switch" role="group" aria-label="Type de tracé terrain">
+          <button id="terrain-mode-terrain" data-terrain-map-tool="terrain" type="button">Sol</button>
+          <button id="terrain-mode-route" data-terrain-map-tool="route" type="button">Route</button>
+          <button id="terrain-mode-river" data-terrain-map-tool="river" type="button">Rivière</button>
+        </div>
 
         <section class="terrain-family-definition-panel">
           <h3>Familles de terrain</h3>
@@ -115,7 +119,7 @@
           </p>
         </section>
 
-        <div class="terrain-brush-panel">
+        <div class="terrain-brush-panel terrain-draw-panel" data-terrain-tool-panel="terrain">
           <div class="grid-2">
             <label>
               Famille terrain
@@ -129,8 +133,10 @@
           <label>
             Taille pinceau
             <div class="brush-size-row">
+              <button id="terrain-brush-size-minus" data-brush-adjust="terrain-brush-size" data-brush-delta="-20" type="button" aria-label="Réduire le pinceau">−</button>
               <input id="terrain-brush-size" type="range" min="24" max="600" step="4" value="180" />
               <output id="terrain-brush-size-value" for="terrain-brush-size">180</output>
+              <button id="terrain-brush-size-plus" data-brush-adjust="terrain-brush-size" data-brush-delta="20" type="button" aria-label="Agrandir le pinceau">+</button>
             </div>
           </label>
           <p class="builder-hint">
@@ -138,43 +144,51 @@
           </p>
         </div>
 
-        <h3>Route</h3>
-        <div class="grid-2">
-          <label>
-            Famille
-            <select id="terrain-route-family"></select>
-          </label>
-          <label>
-            Texture
-            <select id="terrain-route-material"></select>
-          </label>
-          <label>
-            Largeur route / pinceau
-            <div class="brush-size-row">
-              <input id="terrain-route-width" type="range" min="8" max="600" step="2" value="82" />
-              <output id="terrain-route-width-value" for="terrain-route-width">82</output>
-            </div>
-          </label>
-        </div>
+        <section class="terrain-draw-panel" data-terrain-tool-panel="route" hidden>
+          <h3>Route</h3>
+          <div class="grid-2">
+            <label>
+              Famille
+              <select id="terrain-route-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-route-material"></select>
+            </label>
+            <label>
+              Largeur du prochain tracé
+              <div class="brush-size-row">
+                <button id="terrain-route-width-minus" data-brush-adjust="terrain-route-width" data-brush-delta="-10" type="button" aria-label="Réduire la largeur route">−</button>
+                <input id="terrain-route-width" type="range" min="8" max="600" step="2" value="82" />
+                <output id="terrain-route-width-value" for="terrain-route-width">82</output>
+                <button id="terrain-route-width-plus" data-brush-adjust="terrain-route-width" data-brush-delta="10" type="button" aria-label="Augmenter la largeur route">+</button>
+              </div>
+            </label>
+          </div>
+        </section>
 
-        <h3>Rivière / eau</h3>
-        <div class="grid-2">
-          <label>
-            Famille
-            <select id="terrain-river-family"></select>
-          </label>
-          <label>
-            Texture
-            <select id="terrain-river-material"></select>
-          </label>
-          <label>
-            Largeur rivière / pinceau
-            <div class="brush-size-row">
-              <input id="terrain-river-width" type="range" min="8" max="2400" step="4" value="72" />
-              <output id="terrain-river-width-value" for="terrain-river-width">72</output>
-            </div>
-          </label>
-        </div>
+        <section class="terrain-draw-panel" data-terrain-tool-panel="river" hidden>
+          <h3>Rivière / eau</h3>
+          <div class="grid-2">
+            <label>
+              Famille
+              <select id="terrain-river-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-river-material"></select>
+            </label>
+            <label>
+              Largeur du prochain tracé
+              <div class="brush-size-row">
+                <button id="terrain-river-width-minus" data-brush-adjust="terrain-river-width" data-brush-delta="-40" type="button" aria-label="Réduire la largeur rivière">−</button>
+                <input id="terrain-river-width" type="range" min="8" max="2400" step="4" value="72" />
+                <output id="terrain-river-width-value" for="terrain-river-width">72</output>
+                <button id="terrain-river-width-plus" data-brush-adjust="terrain-river-width" data-brush-delta="40" type="button" aria-label="Augmenter la largeur rivière">+</button>
+              </div>
+            </label>
+          </div>
+        </section>
 
         <section class="terrain-encounter-panel">
           <h3>Rencontres par famille</h3>
@@ -466,6 +480,11 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=water-lava-materials-v1"></script>
+  <button id="builder-undo-draw" class="builder-undo-draw" type="button" disabled aria-label="Annuler le dernier tracé">
+    <span aria-hidden="true">↶</span>
+    <span>Annuler tracé</span>
+  </button>
+
+  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-mobile-ergonomics-v1"></script>
 </body>
 </html>
