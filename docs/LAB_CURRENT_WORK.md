@@ -55,7 +55,34 @@
 > - multi-zone / World Assembly ;
 > - refonte générale des autres onglets Builder.
 >
-> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+> Résultat technique :
+> - TDD RED exploitable : `ea6e4ba84163dfcf46906487b45d90139651150c`, CI `37257830483` — **FAILURE attendue** ;
+> - toolbar directe ramenée à un seul bouton **Peindre** ;
+> - choix Terrain / Route / Rivière déplacé dans un sélecteur compact dans l'onglet Terrain ;
+> - seuls les réglages du type de tracé courant restent affichés ;
+> - contrôle flottant de peinture ajouté avec − / taille / + / Annuler ;
+> - sur mobile, le contrôle est `position: fixed` et respecte `safe-area-inset-bottom` ;
+> - Undo limité aux tracés : pile éphémère de références `areaId/kind/pathId` uniquement, suppression via `deleteSurfacePath` ;
+> - aucune copie de WorldDocument ou de géométrie dans l'historique ;
+> - les sliders de largeur sont désormais strictement prospectifs : ils ne modifient plus `selectedSurfacePathId.width` ;
+> - sélectionner un ancien tracé ne remplace plus la taille courante du pinceau ;
+> - premier passage implémentation : CI `37258004157` rouge uniquement sur deux sentinelles historiques qui exigeaient les anciens boutons Route/Rivière ;
+> - sentinelles mises à jour selon le nouveau contrat UI, sans changement moteur ;
+> - CI complète : `37258063195` — **SUCCESS**.
+>
+> Aucun changement :
+> - `addSurfacePath/appendSurfacePathPoint/deleteSurfacePath` restent les mutations canoniques ;
+> - format WorldDocument inchangé ;
+> - renderer/collisions/rencontres/Portals/Combat inchangés ;
+> - `Zombicide-40k` inchangé.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - vérifier sur smartphone : changement de type de tracé, boutons −/+, Annuler, absence de scroll forcé ;
+> - confirmer qu'un changement de taille n'épaissit plus les tracés déjà réalisés ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview + gate mobile utilisateur requis**.
 
 ---
 
