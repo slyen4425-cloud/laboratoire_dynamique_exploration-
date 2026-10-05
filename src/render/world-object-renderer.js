@@ -1,6 +1,7 @@
 import {
-  bridgeVisualRect
-} from '../world/world-object-model.js?rev=environment-showcase-assets-v1';
+  bridgeVisualRect,
+  worldObjectVisualRect
+} from '../world/world-object-model.js?rev=environment-showcase-selection-v1';
 import {
   resolveWorldObjectPlacements
 } from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
@@ -20,35 +21,6 @@ function isOffscreen(screenX, screenY, radius, viewport) {
     screenX - radius > viewport.width ||
     screenY - radius > viewport.height
   );
-}
-
-function genericVisualRect(object) {
-  const width = Number(object?.baseSize?.width);
-  const height = Number(object?.baseSize?.height);
-
-  if (
-    !Number.isFinite(width) ||
-    width <= 0 ||
-    !Number.isFinite(height) ||
-    height <= 0
-  ) {
-    return null;
-  }
-
-  return Object.freeze({
-    x: object.transform.x,
-    y: object.transform.y,
-    rotation:
-      degreesToRadians(
-        object.transform.rotationDeg
-      ),
-    width:
-      width *
-      object.transform.scaleX,
-    height:
-      height *
-      object.transform.scaleY
-  });
 }
 
 function requireVisualAsset(object, imageLoader, resolveVisualAsset) {
@@ -133,7 +105,7 @@ function drawStaticImage(
   asset
 ) {
   const rect =
-    genericVisualRect(object);
+    worldObjectVisualRect(object);
 
   if (
     !rect ||
