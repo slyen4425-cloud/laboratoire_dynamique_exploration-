@@ -1593,12 +1593,17 @@ function refreshFamilyEncounterControls() {
 function objectDefinitionLabel(
   definition
 ) {
+  const kindLabels = Object.freeze({
+    building: 'Bâtiment',
+    bridge: 'Pont',
+    tree: 'Arbre',
+    rock: 'Rocher',
+    door: 'Entrée / porte',
+    stairs: 'Escalier'
+  });
   const kind =
-    definition.kind === 'building'
-      ? 'Bâtiment'
-      : definition.kind === 'bridge'
-        ? 'Pont'
-        : 'Objet';
+    kindLabels[definition.kind] ??
+    'Objet';
 
   return `${definition.label} · ${kind}`;
 }
