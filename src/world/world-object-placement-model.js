@@ -1,6 +1,6 @@
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js';
+} from '../objects/object-definition-catalog.js?rev=environment-showcase-assets-v1';
 
 export const WORLD_OBJECT_PLACEMENT_SCHEMA_VERSION = 1;
 
