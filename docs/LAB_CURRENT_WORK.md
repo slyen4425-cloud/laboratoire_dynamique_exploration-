@@ -2,6 +2,93 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **Surface Feather v1**
+>
+> Branche : `work/exploration-surface-feather-v1-2026-10-05`
+>
+> Base GREEN : `fb91e9ce62b162b87ebdddc3f91c80292fb9bb45`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-surface-feather-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-builder-mobile-paint-ergonomics-v1-green-2026-10-05`
+>
+> Besoin utilisateur :
+> - éviter la ligne nette entre deux textures de sol peintes ;
+> - exemple cible : herbe ↔ neige ;
+> - solution retenue : **feather / blend automatique**, sans texture de transition à placer manuellement ;
+> - smartphone prioritaire : aucun besoin de délimiter ou peindre une bordure dédiée.
+>
+> Audit réutilisation :
+> - le lot GREEN `transition-decals-v1` possède déjà les transitions dédiées des routes et rivières ;
+> - `Surface Renderer` reste l'unique autorité de rendu ;
+> - `Material Registry` possède l'apparence et les paramètres de transition ;
+> - `WorldArea.surface.zones[]` est déjà l'unique géométrie des zones peintes ;
+> - aucune seconde géométrie de transition ne sera ajoutée.
+>
+> Mission unique :
+> - ajouter au Material Pack une politique générique versionnée de transition `surface -> surface` ;
+> - faire exposer cette politique par le Material Registry ;
+> - rendre chaque `surface.zones[]` avec un feather progressif au bord ;
+> - préserver la largeur canonique de la zone : le feather se fait **vers l'intérieur** de la largeur existante, sans agrandir la géométrie ;
+> - le matériau peint reste opaque au cœur du tracé ;
+> - le matériau déjà rendu dessous reste visible progressivement dans la bande de transition ;
+> - deux zones superposées se mélangent selon l'ordre canonique de rendu existant.
+>
+> Propriétaires :
+> - géométrie : World Surface Model / WorldDocument ;
+> - paramètres visuels de transition : Material Pack / Material Registry ;
+> - calcul des passes de feather + dessin : Surface Renderer ;
+> - Builder : aucune nouvelle autorité, il continue à écrire uniquement les zones canoniques.
+>
+> Invariants / fonctions gelées :
+> - aucun changement de schéma WorldDocument ;
+> - aucune zone secondaire / masque sérialisé ;
+> - aucun changement de `terrainFamilyId` ou `traversalRuleId` ;
+> - aucune collision ou gameplay déduit du feather ;
+> - routes/rivières conservent leurs transitions GREEN existantes ;
+> - Material Asset Adapter inchangé ;
+> - Encounter / Combat / Portal / Events inchangés ;
+> - aucun changement `Zombicide-40k`.
+>
+> TDD attendu :
+> 1. RED : Material Registry doit exposer une politique `surfaceTransition` explicite ;
+> 2. RED : une politique `mode: feather` doit produire plusieurs passes largeur/alpha déterministes ;
+> 3. RED : le vrai chemin Registry -> Surface Renderer doit dessiner plusieurs passes pour une zone ;
+> 4. GREEN : largeur extérieure maximale = `zone.width` canonique ;
+> 5. GREEN : cœur du tracé opaque, bord partiellement transparent ;
+> 6. GREEN : pack sans transition conserve l'ancien rendu opaque en une passe ;
+> 7. GREEN : renderer ne modifie jamais la zone ni le WorldDocument ;
+> 8. sentinelles routes/rivières/transitions existantes GREEN ;
+> 9. CI complète ;
+> 10. preview Builder + gate utilisateur visuel smartphone avant GREEN final.
+>
+> Paramètres v1 envisagés dans le Material Pack :
+> - `mode: feather` ;
+> - ratio de largeur de transition ;
+> - largeur min/max en unités monde ;
+> - nombre de passes ;
+> - opacité du bord.
+>
+> Risques :
+> - coût de rendu si trop de passes ou trop de zones ;
+> - bord trop transparent sur les petits pinceaux ;
+> - répétition visuelle des textures plus visible pendant le blend.
+>
+> Hors périmètre :
+> - texture de transition spécifique par couple de matériaux ;
+> - bruit organique / bord irrégulier ;
+> - refonte des transitions route/rivière déjà GREEN ;
+> - contrôle Builder utilisateur du feather ;
+> - import textures utilisateur ;
+> - Multi-Zone / World Assembly.
+>
+> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **Builder Mobile Paint Ergonomics v1**
 >
 > Branche : `work/exploration-builder-mobile-paint-ergonomics-v1-2026-10-05`
