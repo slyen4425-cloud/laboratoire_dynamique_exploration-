@@ -5,11 +5,13 @@ export const materialPackV1 = Object.freeze({
   id: 'forest-core-v1',
   surfaceTransition: Object.freeze({
     mode: 'feather',
+    method: 'smooth-mask',
     widthRatio: 0.18,
     minWidth: 6,
     maxWidth: 64,
     steps: 7,
-    edgeOpacity: 0.08
+    edgeOpacity: 0,
+    blurRatio: 0.58
   }),
   materials: Object.freeze([
     Object.freeze({
