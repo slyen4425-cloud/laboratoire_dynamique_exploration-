@@ -77,7 +77,63 @@
 > - cloud sync ;
 > - nouveaux types de matériau.
 >
-> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+> Résultat technique :
+> - TDD RED : `53dcba1edae09b226ef7c8974d3d19a9d8d9777a` ;
+> - CI RED : `37334781322` — **FAILURE attendue** : modèle/store/resolver/UI utilisateur absents ;
+> - `src/materials/user-material-library.js` :
+>   - validation PNG/JPEG/WebP ;
+>   - limite 8 Mio et 16..4096 px ;
+>   - records versionnés ;
+>   - IDs `user.material.*` / `user.texture.*` ;
+>   - conversion vers les Material Definitions canoniques `surface/path/water` ;
+>   - composition du pack natif + utilisateur ;
+>   - comptage des références pour protéger la suppression ;
+> - `src/storage/user-material-store.js` :
+>   - autorité unique IndexedDB `gensrpg-exploration-user-materials-v1` / store `materials` ;
+>   - `list/get/put/delete` ;
+>   - absence d'IndexedDB signalée explicitement, aucun faux fallback persistant ;
+> - `src/assets/user-material-asset-resolver.js` :
+>   - Blob -> URL `blob:` éphémère ;
+>   - révocation explicite au dispose ;
+> - Material Asset Adapter étendu par composition natif + utilisateur, sans remplacement de la table native ;
+> - Builder :
+>   - panneau compact « Textures personnelles » ;
+>   - import nom + usage + fichier ;
+>   - textures utilisateur ajoutées aux mêmes sélecteurs Sol / Route / Rivière-Mer ;
+>   - import sélectionne immédiatement le nouveau matériau et le bon outil ;
+>   - suppression protégée si le matériau est utilisé ;
+>   - pipeline Material Registry / Texture Loader / Surface Renderer reconstruisible sans seconde autorité ;
+> - Runtime Exploration :
+>   - recharge les mêmes records IndexedDB ;
+>   - reconstruit le même Material Pack composé et le même Asset Resolver ;
+>   - erreur explicite si un WorldDocument référence une texture utilisateur absente de l'appareil ;
+> - cache-bust Builder/CSS/runtime raccordé à `user-texture-import-v1` ;
+> - CI implémentation : `37335602823` — **SUCCESS** ;
+> - CI après cache-bust : `37335722144` — **SUCCESS**.
+>
+> Invariants vérifiés :
+> - WorldDocument inchangé : il conserve seulement les `materialId` ;
+> - aucun second Material Registry ;
+> - aucun second catalogue de peinture ;
+> - famille terrain / traversal / collision / rencontre inchangés ;
+> - `Zombicide-40k` inchangé.
+>
+> Limite assumée V1 :
+> - le JSON WorldDocument ne transporte pas encore le Blob vers un autre appareil ;
+> - la texture reste persistante localement sur le navigateur/appareil ;
+> - la portabilité média sera un micro-lot séparé `User Media Project Export v1`.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - importer une texture Sol puis la peindre ;
+> - importer une texture Route puis la peindre ;
+> - importer une texture Rivière/Mer puis la peindre ;
+> - recharger la page et vérifier la persistance ;
+> - « Tester en jeu » et vérifier les mêmes textures dans Exploration ;
+> - vérifier qu'une texture utilisée ne peut pas être supprimée ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
 
 ---
 
