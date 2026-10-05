@@ -10,6 +10,14 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
 
   assert.equal(registry.schemaVersion, 1);
   assert.equal(registry.packId, 'forest-core-v1');
+  assert.deepEqual(registry.surfaceTransition, {
+    mode: 'feather',
+    widthRatio: 0.18,
+    minWidth: 6,
+    maxWidth: 64,
+    steps: 7,
+    edgeOpacity: 0.08
+  });
   assert.equal(registry.resolve('grass.forest')?.kind, 'surface');
   assert.equal(registry.resolve('road.dirt')?.kind, 'path');
   assert.equal(registry.resolve('water.forest_stream')?.kind, 'water');
