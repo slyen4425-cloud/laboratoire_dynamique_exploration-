@@ -63,9 +63,9 @@ import {
 } from '../capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
 import {
   WORLD_OBJECT_LIMITS,
-  bridgeVisualRect,
-  buildingVisualRect
-} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+  worldObjectBaseDimensions,
+  worldObjectVisualRect
+} from '../world/world-object-model.js?rev=environment-showcase-selection-v1';
 import {
   resolveWorldObjectPlacement,
   resolveWorldObjectPlacements
@@ -2644,15 +2644,11 @@ function drawBuilderOverlays(area, document, camera) {
 
   if (object) {
     const rect =
-      object.kind === 'bridge'
-        ? bridgeVisualRect(object)
-        : buildingVisualRect(object);
+      worldObjectVisualRect(object);
 
     if (rect) {
-      const width =
-        object.kind === 'bridge' ? rect.length : rect.width;
-      const height =
-        object.kind === 'bridge' ? rect.width : rect.height;
+      const width = rect.width;
+      const height = rect.height;
       const handleSize = 18 / zoom;
       const handleHalf = handleSize / 2;
       const rotateOffset = 42 / zoom;
@@ -3153,22 +3149,7 @@ function eventWorldPoint(event) {
 }
 
 function worldObjectRectForHit(object) {
-  const rect =
-    object.kind === 'bridge'
-      ? bridgeVisualRect(object)
-      : object.kind === 'building'
-        ? buildingVisualRect(object)
-        : null;
-
-  if (!rect) return null;
-
-  return {
-    x: rect.x,
-    y: rect.y,
-    rotation: rect.rotation,
-    width: object.kind === 'bridge' ? rect.length : rect.width,
-    height: object.kind === 'bridge' ? rect.width : rect.height
-  };
+  return worldObjectVisualRect(object);
 }
 
 function pointToObjectLocal(point, rect) {
@@ -3311,21 +3292,7 @@ function hitSelectedEventTrigger(
 }
 
 function objectBaseDimensions(object) {
-  if (object?.kind === 'bridge') {
-    return {
-      width: object.baseSize?.length ?? 160,
-      height: object.baseSize?.width ?? 80
-    };
-  }
-
-  if (object?.kind === 'building') {
-    return {
-      width: object.baseSize?.width ?? 260,
-      height: object.baseSize?.height ?? 260
-    };
-  }
-
-  return null;
+  return worldObjectBaseDimensions(object);
 }
 
 function hitWorldObject(area, point) {
