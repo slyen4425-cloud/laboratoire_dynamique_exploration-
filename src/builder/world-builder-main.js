@@ -285,6 +285,13 @@ let pointerSession = null;
 let pinchState = null;
 let hoverWorldPoint = null;
 const activePointers = new Map();
+const PAINT_KINDS = Object.freeze([
+  'terrain',
+  'route',
+  'river'
+]);
+const drawUndoStack = [];
+const MAX_DRAW_UNDO = 30;
 
 const initialActorArea =
   draft.areas.find(
@@ -623,7 +630,193 @@ function refreshAreaControls() {
   $('spawn-y').disabled = !spawn || anchored;
   $('spawn-delete').disabled = !spawn;
 }
+function isPaintKind(kind) {
+  return PAINT_KINDS.includes(kind);
+}
+
+function paintBrushControl(kind = mapTool) {
+  if (kind === 'river') {
+    return {
+      input: $('terrain-river-width'),
+      output: $('terrain-river-width-value'),
+      fallback: 72
+    };
+  }
+  if (kind === 'route') {
+    return {
+      input: $('terrain-route-width'),
+      output: $('terrain-route-width-value'),
+      fallback: 82
+    };
+  }
+  return {
+    input: $('terrain-brush-size'),
+    output: $('terrain-brush-size-value'),
+    fallback: 180
+  };
+}
+
+function surfacePathReferenceExists(reference) {
+  const area = draft.areas.find(
+    (item) => item.id === reference.areaId
+  );
+  if (!area) return false;
+
+  const collection =
+    reference.kind === 'river'
+      ? area.surface?.rivers
+      : reference.kind === 'route'
+        ? area.surface?.routes
+        : area.surface?.zones;
+
+  return Boolean(
+    collection?.some(
+      (item) => item.id === reference.pathId
+    )
+  );
+}
+
+function pruneDrawUndoStack() {
+  while (
+    drawUndoStack.length > 0 &&
+    !surfacePathReferenceExists(
+      drawUndoStack[drawUndoStack.length - 1]
+    )
+  ) {
+    drawUndoStack.pop();
+  }
+}
+
+function syncPaintModeUi() {
+  const selectedKind =
+    isPaintKind(mapTool)
+      ? mapTool
+      : (
+          isPaintKind($('terrain-draw-kind').value)
+            ? $('terrain-draw-kind').value
+            : 'terrain'
+        );
+
+  $('terrain-draw-kind').value = selectedKind;
+
+  for (
+    const panel of
+      document.querySelectorAll(
+        '[data-terrain-kind-panel]'
+      )
+  ) {
+    panel.hidden =
+      panel.dataset.terrainKindPanel !== selectedKind;
+  }
+
+  const active = isPaintKind(mapTool);
+  $('paint-floating-tools').hidden = !active;
+
+  const control = paintBrushControl(selectedKind);
+  const size = numberValue(
+    control.input,
+    control.fallback
+  );
+  $('paint-brush-value').value = String(
+    Math.round(size)
+  );
+
+  pruneDrawUndoStack();
+  $('paint-undo').disabled =
+    drawUndoStack.length === 0;
+}
+
+function pushDrawUndoReference(reference) {
+  if (
+    !reference?.areaId ||
+    !isPaintKind(reference.kind) ||
+    !reference.pathId
+  ) {
+    return false;
+  }
+
+  drawUndoStack.push({
+    areaId: reference.areaId,
+    kind: reference.kind,
+    pathId: reference.pathId
+  });
+
+  if (drawUndoStack.length > MAX_DRAW_UNDO) {
+    drawUndoStack.splice(
+      0,
+      drawUndoStack.length - MAX_DRAW_UNDO
+    );
+  }
+
+  syncPaintModeUi();
+  return true;
+}
+
+function undoLastDraw() {
+  pruneDrawUndoStack();
+  const reference = drawUndoStack.pop();
+  if (!reference) {
+    syncPaintModeUi();
+    return false;
+  }
+
+  draft = deleteSurfacePath(
+    draft,
+    reference.areaId,
+    reference.kind,
+    reference.pathId
+  );
+
+  if (
+    selectedAreaId === reference.areaId &&
+    selectedSurfaceKind === reference.kind &&
+    selectedSurfacePathId === reference.pathId
+  ) {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
+
+  setStatus('Dernier tracé annulé');
+  refreshControls();
+  return true;
+}
+
+function adjustPaintBrush(direction) {
+  const kind =
+    isPaintKind(mapTool)
+      ? mapTool
+      : $('terrain-draw-kind').value;
+  const control = paintBrushControl(kind);
+  const current = numberValue(
+    control.input,
+    control.fallback
+  );
+  const step =
+    Math.max(
+      1,
+      Number(control.input.step) || 1
+    ) * 5;
+  const min = Number(control.input.min);
+  const max = Number(control.input.max);
+  const next = Math.max(
+    Number.isFinite(min) ? min : 1,
+    Math.min(
+      Number.isFinite(max) ? max : current + step,
+      current + Math.sign(direction) * step
+    )
+  );
+
+  control.input.value = String(next);
+  control.output.value = String(next);
+  $('paint-brush-value').value = String(
+    Math.round(next)
+  );
+  renderPreview();
+  return next;
+}
+
 function refreshTerrainControls() {
+  syncPaintModeUi();
   const area = currentAreaRaw();
   const selected = currentSurfacePathRaw();
   const families = terrainFamilies();
@@ -850,10 +1043,6 @@ function refreshTerrainControls() {
   ) {
     $('terrain-family').value =
       selected.terrainFamilyId;
-    $('terrain-brush-size').value =
-      selected.width;
-    $('terrain-brush-size-value').value =
-      String(selected.width);
   }
 
   if (
@@ -862,10 +1051,6 @@ function refreshTerrainControls() {
   ) {
     $('terrain-route-family').value =
       selected.terrainFamilyId;
-    $('terrain-route-width').value =
-      selected.width;
-    $('terrain-route-width-value').value =
-      String(selected.width);
     $('terrain-route-material').value =
       selected.materialId;
   }
@@ -876,10 +1061,6 @@ function refreshTerrainControls() {
   ) {
     $('terrain-river-family').value =
       selected.terrainFamilyId;
-    $('terrain-river-width').value =
-      selected.width;
-    $('terrain-river-width-value').value =
-      String(selected.width);
     $('terrain-river-material').value =
       selected.materialId;
   }
@@ -2516,30 +2697,37 @@ function activateTab(tabName) {
 }
 
 function setMapTool(tool) {
+  const requested =
+    tool === 'paint'
+      ? (
+          isPaintKind($('terrain-draw-kind').value)
+            ? $('terrain-draw-kind').value
+            : 'terrain'
+        )
+      : tool;
+
   mapTool = [
     'select',
     'actor-placement',
     'area-size',
-    'terrain',
-    'route',
-    'river'
-  ].includes(tool)
-    ? tool
+    ...PAINT_KINDS
+  ].includes(requested)
+    ? requested
     : 'select';
   canvas.dataset.tool = mapTool;
 
   for (const button of document.querySelectorAll('[data-map-tool]')) {
+    const active =
+      button.dataset.mapTool === 'paint'
+        ? isPaintKind(mapTool)
+        : button.dataset.mapTool === mapTool;
     button.classList.toggle(
       'active',
-      button.dataset.mapTool === mapTool
+      active
     );
   }
 
-  if (
-    mapTool === 'terrain' ||
-    mapTool === 'route' ||
-    mapTool === 'river'
-  ) {
+  if (isPaintKind(mapTool)) {
     activateTab('terrain');
   } else if (mapTool === 'actor-placement') {
     activateTab('actors');
@@ -2548,6 +2736,7 @@ function setMapTool(tool) {
     fitRequested = true;
   }
 
+  syncPaintModeUi();
   renderPreview();
 }
 
@@ -3255,21 +3444,9 @@ for (const [kind, widthId, valueId, materialId, fallbackWidth] of [
     const width = numberValue($(widthId), fallbackWidth);
     $(valueId).value = String(width);
 
-    if (
-      selectedSurfaceKind === kind &&
-      selectedSurfacePathId
-    ) {
-      draft = updateSurfacePath(
-        draft,
-        selectedAreaId,
-        kind,
-        selectedSurfacePathId,
-        { width }
-      );
-      refreshJson();
-    }
-
-    if (mapTool === kind || selectedSurfaceKind === kind) {
+    if (mapTool === kind) {
+      $('paint-brush-value').value =
+        String(Math.round(width));
       renderPreview();
     }
   });
@@ -3926,6 +4103,33 @@ $('preview-fit').addEventListener('click', () => {
 
 $('preview-focus').addEventListener('click', focusSelection);
 
+$('terrain-draw-kind').addEventListener(
+  'change',
+  () => {
+    if (isPaintKind(mapTool)) {
+      setMapTool(
+        $('terrain-draw-kind').value
+      );
+      return;
+    }
+    refreshTerrainControls();
+    renderPreview();
+  }
+);
+
+$('paint-brush-minus').addEventListener(
+  'click',
+  () => adjustPaintBrush(-1)
+);
+$('paint-brush-plus').addEventListener(
+  'click',
+  () => adjustPaintBrush(1)
+);
+$('paint-undo').addEventListener(
+  'click',
+  undoLastDraw
+);
+
 for (const button of document.querySelectorAll('[data-map-tool]')) {
   button.addEventListener('click', () => {
     setMapTool(button.dataset.mapTool);
@@ -3977,6 +4181,7 @@ canvas.addEventListener('pointerdown', (event) => {
       pointerId: event.pointerId,
       mode: 'pending-draw',
       kind: mapTool,
+      areaId: selectedAreaId,
       startCanvas: point,
       startWorld: world
     };
@@ -4174,7 +4379,7 @@ canvas.addEventListener('pointermove', (event) => {
   if (hover) hoverWorldPoint = hover;
 
   if (!activePointers.has(event.pointerId)) {
-    if (mapTool === 'terrain') renderPreview();
+    if (isPaintKind(mapTool)) renderPreview();
     return;
   }
 
@@ -4477,7 +4682,7 @@ canvas.addEventListener('pointermove', (event) => {
 canvas.addEventListener('pointerleave', () => {
   if (activePointers.size > 0) return;
   hoverWorldPoint = null;
-  if (mapTool === 'terrain') renderPreview();
+  if (isPaintKind(mapTool)) renderPreview();
 });
 
 function endPointer(event) {
@@ -4500,6 +4705,12 @@ function endPointer(event) {
         true
       );
     }
+
+    pushDrawUndoReference({
+      areaId: pointerSession.areaId,
+      kind: pointerSession.kind,
+      pathId: pointerSession.pathId
+    });
   }
 
   if (activePointers.size < 2) {
