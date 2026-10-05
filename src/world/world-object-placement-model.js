@@ -1,6 +1,6 @@
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=environment-showcase-assets-v1';
+} from '../objects/object-definition-catalog.js?rev=world-object-library-v1';
 
 export const WORLD_OBJECT_PLACEMENT_SCHEMA_VERSION = 1;
 
@@ -188,10 +188,12 @@ function resolveDefinitionVisual(
   definition,
   placement
 ) {
+  const candidate =
+    definition?.visual;
   const visual =
-    definition?.visual &&
-    typeof definition.visual === 'object'
-      ? definition.visual
+    candidate &&
+    typeof candidate === 'object'
+      ? candidate
       : null;
 
   if (!visual) return null;
