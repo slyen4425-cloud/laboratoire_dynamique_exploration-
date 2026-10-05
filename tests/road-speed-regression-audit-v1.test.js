@@ -192,3 +192,81 @@ test('smooth visual envelope never replaces canonical route width as traversal a
     'only the visual feather extends into the pre-existing edge padding'
   );
 });
+
+
+test('faded road shoulder is visual only and does not silently expand gameplay traversal', () => {
+  const area = {
+    width: 800,
+    height: 600,
+    surface: {
+      version: 3,
+      baseTerrainFamilyId: 'forest',
+      baseMaterialId: 'grass.forest',
+      baseTraversalRuleId: 'terrain.ground',
+      zones: [],
+      routes: [
+        {
+          id: 'road-shoulder',
+          width: 82,
+          terrainFamilyId: 'road',
+          materialId: 'road.dirt',
+          traversalRuleId: 'terrain.road',
+          points: [
+            { x: 0, y: 120 },
+            { x: 800, y: 120 }
+          ]
+        }
+      ],
+      rivers: []
+    },
+    objects: [],
+    obstacles: []
+  };
+
+  const registry =
+    createTraversalRuleRegistry(
+      traversalRulePackV1
+    );
+
+  const center = {
+    radius: 10,
+    locomotion: { modes: ['ground'] }
+  };
+
+  const roadCore =
+    resolveSurfaceTraversal(
+      area,
+      center,
+      200,
+      160,
+      registry
+    );
+  const fadedShoulder =
+    resolveSurfaceTraversal(
+      area,
+      center,
+      200,
+      167,
+      registry
+    );
+
+  // Core half-width = 41px. Visual smooth envelope = 50px
+  // (82 + 18 outerEdgePadding), so y=167 is still visible
+  // in the fade but intentionally remains normal ground.
+  assert.equal(
+    roadCore.ruleId,
+    'terrain.road'
+  );
+  assert.equal(
+    roadCore.speedMultiplier,
+    1.25
+  );
+  assert.equal(
+    fadedShoulder.ruleId,
+    'terrain.ground'
+  );
+  assert.equal(
+    fadedShoulder.speedMultiplier,
+    1
+  );
+});
