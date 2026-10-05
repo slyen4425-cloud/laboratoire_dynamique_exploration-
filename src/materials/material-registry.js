@@ -71,7 +71,7 @@ function normalizeSurfaceTransition(input) {
     finite(input.maxWidth, 64)
   );
 
-  return deepFreeze({
+  const normalized = {
     mode: 'feather',
     widthRatio: clamp(
       finite(input.widthRatio, 0.18),
@@ -90,7 +90,19 @@ function normalizeSurfaceTransition(input) {
       0,
       0.95
     )
-  });
+  };
+
+  if (input.method === 'smooth-mask') {
+    normalized.method = 'smooth-mask';
+    normalized.blurRatio = clamp(
+      finite(input.blurRatio, 0.58),
+      0.2,
+      1
+    );
+    normalized.fallbackMethod = 'passes';
+  }
+
+  return deepFreeze(normalized);
 }
 
 export function createMaterialRegistry(pack) {
