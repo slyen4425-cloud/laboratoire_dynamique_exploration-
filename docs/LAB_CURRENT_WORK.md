@@ -2,6 +2,88 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **Environment Showcase Assets v1**
+>
+> Branche : `work/exploration-environment-showcase-assets-v1-2026-10-05`
+>
+> Base GREEN exacte : `29879395ba584d096d3f90cbafe143548d5dadaf`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-environment-showcase-assets-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-user-texture-import-v1-green-2026-10-05`
+>
+> Besoin utilisateur :
+> - interrompre temporairement l'enrichissement des textures de sol ;
+> - enrichir la bibliothèque vitrine d'objets d'environnement sans créer de seconde autorité ;
+> - premier ensemble représentatif : arbre + rocher + porte + escalier + bâtiment.
+>
+> Audit LIVE avant ouverture :
+> - `src/objects/object-definition-catalog.js` est déjà l'Object Catalog unique ;
+> - `src/world/world-object-placement-model.js` persiste et résout `objectDefinitionId + transform + overrides` ;
+> - `src/assets/world-object-asset-adapter.js` est propriétaire des chemins physiques ;
+> - `src/render/world-object-renderer.js` rend les visuels via `visual.assetId` et l'Image Asset Loader ;
+> - assets natifs déjà présents : 4 ponts + 1 maison, manifests v1, SHA-256 et bytes ;
+> - le Building existant fournit déjà footprint + doorAnchors sans déduire le gameplay de l'image ;
+> - le renderer est encore limité explicitement aux kinds `bridge` et `building` ;
+> - aucun Object Definition Editor runtime distinct n'existe encore ; son architecture future est documentée dans `LAB_MODULAR_AUTHORING_ARCHITECTURE_V1.md` et ne doit pas être simulée dans le Builder ;
+> - aucun chantier parallèle nommé environment/showcase n'occupe ce périmètre.
+>
+> Architecture réutilisée :
+> ```
+> asset graphique natif versionné
+>   -> assetId sémantique
+>   -> World Object Asset Adapter
+>   -> ObjectDefinition
+>   -> Object Definition Catalog UNIQUE
+>   -> World Builder
+>   -> objectDefinitionId + transform + overrides autorisés
+>   -> WorldDocument
+>   -> Object Placement Resolver
+>   -> World Object Renderer
+> ```
+>
+> Micro-lot exact :
+> - réutiliser la maison existante comme cas Building ;
+> - ajouter 4 familles natives minimales : arbre, rocher, porte, escalier ;
+> - créer leurs assetIds + manifests/checksums selon le pipeline existant ;
+> - ajouter les ObjectDefinitions correspondantes ;
+> - généraliser le renderer image statique pour les nouvelles catégories sans switch gameplay local ;
+> - conserver Bridge/Building et leurs contrats existants inchangés ;
+> - ne donner aucune capacité gameplay implicite à Door/Stairs dans ce lot : seulement visuel + taille logique + placement. Les futures interactions auront une ownership explicite dans un lot séparé.
+>
+> Invariants :
+> - Builder sans chemin PNG/WebP codé en dur ;
+> - WorldDocument sans chemin physique ni copie d'ObjectDefinition ;
+> - Object Catalog unique ;
+> - Asset Adapter unique pour les WorldObjects natifs ;
+> - asset manquant = erreur explicite ;
+> - aucune collision, interaction ou traversée déduite des pixels ;
+> - transform X/Y/rotation/scale conservé ;
+> - pas de refonte UI globale dans ce lot ;
+> - `Zombicide-40k` strictement inchangé.
+>
+> TDD RED attendu :
+> 1. les 5 ObjectDefinitions représentatives sont résolues par le catalogue unique ;
+> 2. les 5 assetIds sont résolus uniquement par le World Object Asset Adapter ;
+> 3. les nouveaux assets possèdent manifests + hash/bytes selon le pattern existant ;
+> 4. le placement générique accepte arbre/rocher/porte/escalier sans copie de définition ;
+> 5. le renderer dessine les catégories image statiques via le pipeline générique ;
+> 6. un asset absent provoque une erreur explicite ;
+> 7. aucune URL/path d'objet n'apparaît dans le Builder ou l'ObjectDefinition ;
+> 8. le bâtiment existant reste GREEN et sert de sentinelle de non-régression.
+>
+> État : **TDD RED en ouverture — aucune implémentation fonctionnelle des 4 nouvelles familles n'est encore autorisée avant constat RED.**
+>
+> Prochaine étape :
+> - commiter le test RED du micro-lot ;
+> - constater la CI rouge pour les quatre familles absentes et le renderer encore non générique ;
+> - implémenter ensuite dans la même branche, sans nouveau catalogue ni fallback.
+
+
+---
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **User Texture Import v1**
 >
 > Branche : `work/exploration-user-texture-import-v1-2026-10-05`
