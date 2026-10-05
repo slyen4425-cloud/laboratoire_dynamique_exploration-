@@ -3,6 +3,7 @@ import {
   ribbonTextureSlices
 } from './path-ribbon.js';
 import {
+  linearFeatherMaskPlan,
   surfaceFeatherMaskPlan,
   surfaceFeatherPasses
 } from './surface-feather.js';
