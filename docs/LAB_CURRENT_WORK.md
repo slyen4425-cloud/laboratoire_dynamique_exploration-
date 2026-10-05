@@ -79,7 +79,39 @@
 > - import textures ;
 > - Multi-Zone.
 >
-> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+> Résultat technique :
+> - TDD RED : `f349c9774d22009a808f3dd9e8dbd5fd0ec2b5bf` ;
+> - CI RED : `37312679195` — **FAILURE attendue** sur méthode Registry absente, plan de masque absent et renderer encore en bandes ;
+> - Material Registry conserve maintenant `method: smooth-mask`, `blurRatio` et un fallback explicite `passes` ;
+> - calcul pur `surfaceFeatherMaskPlan()` : largeur externe canonique, cœur, largeur de feather et blur borné ;
+> - Surface Renderer : deux buffers Canvas réutilisés, masque continu par blur, cœur opaque, clipping `destination-in` à exactement `zone.width` ;
+> - la texture est composée dans le masque puis copiée une seule fois sur le canvas principal ;
+> - aucune bande V1 n'est dessinée sur le canvas principal lorsque le smooth-mask est disponible ;
+> - fallback V1 par passes conservé si Canvas/filter indisponible ;
+> - buffers réutilisés entre frames, pas d'allocation Canvas par frame à taille constante ;
+> - aucune mutation de la zone / WorldDocument ;
+> - sentinelle historique Material Pack mise à jour uniquement parce que le contrat visuel du pack passe volontairement de V1 `passes` à V2 `smooth-mask` ;
+> - CI implémentation : `37312991687` — **SUCCESS** ;
+> - cache-bust Builder + Exploration raccordé à `surface-feather-v2-antibanding` ;
+> - CI après raccord navigateur : `37313102025` — **SUCCESS**.
+>
+> Aucun changement :
+> - schéma WorldDocument ;
+> - `surface.zones[].points/width/materialId` ;
+> - routes/rivières et leurs transitions ;
+> - familles terrain / traversée / collision ;
+> - Material Asset Adapter ;
+> - Encounter / Combat / Portal / Events ;
+> - `Zombicide-40k`.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - comparer sur smartphone les mêmes raccords Herbe/Neige, Herbe/Sable et Neige/Montagne ;
+> - vérifier disparition nette du banding/traits V1 ;
+> - vérifier que la frontière reste douce et que la fluidité ne baisse pas perceptiblement ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
 
 ---
 
