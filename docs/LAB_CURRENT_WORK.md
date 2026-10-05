@@ -2,6 +2,83 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **Linear Smooth Transition v1 — Route + Rivière/Mer**
+>
+> Branche : `work/exploration-linear-smooth-transition-v1-2026-10-05`
+>
+> Base GREEN : `3140b2d41faa9d88580727e71979abd6b2aa60d3`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-linear-smooth-transition-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-builder-unified-paint-v1-green-2026-10-05`
+>
+> Besoin utilisateur :
+> - appliquer aux Routes et aux Rivières/Mers le même principe de transition douce que les surfaces ;
+> - éviter les bords nets sans imposer de textures de transition manuelles ;
+> - conserver le système de peinture unique Sol / Route / Rivière-Mer.
+>
+> Audit réutilisation :
+> - Route et Rivière sont déjà des géométries canoniques `surface.routes[]` / `surface.rivers[]` ;
+> - elles sont déjà rendues par le même `Surface Renderer` ;
+> - `Surface Feather v2` possède déjà le moteur `smooth-mask`, ses buffers réutilisables, le calcul pur du masque et le fallback par passes ;
+> - les anciens assets `edge` / `bank` et paddings sont purement visuels et peuvent rester dessinés dans la couche avant composition ;
+> - aucun nouveau moteur de transition n'est nécessaire.
+>
+> Mission unique :
+> - généraliser la composition `smooth-mask` existante aux features linéaires `path` et `water` ;
+> - dessiner le rendu Route/Rivière existant dans la couche temporaire ;
+> - appliquer le même masque continu sur son enveloppe visuelle ;
+> - recopier une seule couche compositée sur le canvas principal ;
+> - conserver les textures de bord/berge, couleurs et highlights existants à l'intérieur de la couche ;
+> - conserver l'ancien rendu direct comme fallback explicite si le smooth-mask n'est pas disponible.
+>
+> Autorités :
+> - géométrie Route/Rivière : World Surface Model / WorldDocument ;
+> - apparence + paddings : Material Registry ;
+> - transition + composition : Surface Renderer ;
+> - buffers offscreen : ressources temporaires du Renderer uniquement.
+>
+> Invariants :
+> - aucune modification de `surface.routes[].points/width/materialId` ;
+> - aucune modification de `surface.rivers[].points/width/materialId` ;
+> - aucun masque ou bitmap sérialisé ;
+> - aucune collision/traversée/rencontre déduite du visuel ;
+> - aucun changement Builder/Draft dans ce lot ;
+> - pas de second registry ni de second renderer ;
+> - `Zombicide-40k` intact.
+>
+> Règle de largeur :
+> - la géométrie gameplay reste `width` canonique ;
+> - le masque visuel Route se borne à l'enveloppe déjà existante `width + outerEdgePadding` ;
+> - le masque visuel Rivière/Mer se borne à l'enveloppe déjà existante `width + outerBankPadding` ;
+> - aucun nouveau débordement visuel n'est créé au-delà de ces paddings déjà GREEN.
+>
+> TDD attendu :
+> 1. RED : une Route sous `smooth-mask` ne doit plus dessiner ses strokes directement sur le canvas principal ;
+> 2. RED : une Rivière/Mer sous `smooth-mask` ne doit plus dessiner ses strokes directement sur le canvas principal ;
+> 3. RED : chacune doit être compositée une seule fois via le buffer réutilisable ;
+> 4. RED : le masque Route doit être recoupé à `width + outerEdgePadding` ;
+> 5. RED : le masque Rivière doit être recoupé à `width + outerBankPadding` ;
+> 6. GREEN : edge/bank + center + highlight restent dessinés dans la couche ;
+> 7. GREEN : fallback historique reste fonctionnel sans Canvas/filter ;
+> 8. aucune mutation de la feature ;
+> 9. CI complète ;
+> 10. preview mobile + gate utilisateur.
+>
+> Hors périmètre :
+> - nouveaux assets Route/Rivière ;
+> - bruit/dithering organique ;
+> - réglage utilisateur du smooth ;
+> - changement collision/traversée ;
+> - refonte Material Pack.
+>
+> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **Builder Unified Paint v1**
 >
 > Branche : `work/exploration-builder-unified-paint-v1-2026-10-05`
