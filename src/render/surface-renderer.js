@@ -726,9 +726,12 @@ function drawPathMaterial(
       path,
       camera,
       viewport,
-      transition,
       scratch,
-      outerWidth,
+      linearFeatherMaskPlan(
+        path.width,
+        outerWidth,
+        transition
+      ),
       (layerCtx) => {
         drawPathMaterialRaw(
           layerCtx,
