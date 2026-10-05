@@ -31,7 +31,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides,
   validateWorldBuilderDraft
-} from './world-builder-draft.js?rev=world-event-contract-v1';
+} from './world-builder-draft.js?rev=builder-mobile-ergonomics-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -285,6 +285,7 @@ let pointerSession = null;
 let pinchState = null;
 let hoverWorldPoint = null;
 const activePointers = new Map();
+const surfaceDrawHistory = [];
 
 const initialActorArea =
   draft.areas.find(
@@ -395,6 +396,117 @@ function surfacePathItems(area = currentAreaRaw()) {
       key: `river:${item.id}`
     }))
   ];
+}
+
+function refreshUndoDrawButton() {
+  const button = $('builder-undo-draw');
+  if (!button) return;
+  button.disabled = surfaceDrawHistory.length === 0;
+}
+
+function clearSurfaceDrawHistory() {
+  surfaceDrawHistory.splice(0);
+  refreshUndoDrawButton();
+}
+
+function recordSurfaceDraw({
+  areaId,
+  kind,
+  pathId
+}) {
+  surfaceDrawHistory.push({
+    areaId,
+    kind,
+    pathId
+  });
+  refreshUndoDrawButton();
+}
+
+function forgetSurfaceDraw({
+  areaId,
+  kind,
+  pathId
+}) {
+  for (let index = surfaceDrawHistory.length - 1; index >= 0; index -= 1) {
+    const item = surfaceDrawHistory[index];
+    if (
+      item.areaId === areaId &&
+      item.kind === kind &&
+      item.pathId === pathId
+    ) {
+      surfaceDrawHistory.splice(index, 1);
+    }
+  }
+  refreshUndoDrawButton();
+}
+
+function surfaceDrawExists(item) {
+  const area = draft.areas.find(
+    (entry) => entry.id === item.areaId
+  );
+  if (!area) return false;
+
+  const collection =
+    item.kind === 'river'
+      ? area.surface?.rivers
+      : item.kind === 'terrain'
+        ? area.surface?.zones
+        : area.surface?.routes;
+
+  return Boolean(
+    collection?.some(
+      (entry) => entry.id === item.pathId
+    )
+  );
+}
+
+function undoLastSurfaceDraw() {
+  while (surfaceDrawHistory.length > 0) {
+    const item = surfaceDrawHistory.pop();
+    if (!surfaceDrawExists(item)) continue;
+
+    draft = deleteSurfacePath(
+      draft,
+      item.areaId,
+      item.kind,
+      item.pathId
+    );
+
+    if (
+      selectedAreaId === item.areaId &&
+      selectedSurfaceKind === item.kind &&
+      selectedSurfacePathId === item.pathId
+    ) {
+      selectedSurfaceKind = null;
+      selectedSurfacePathId = null;
+    }
+
+    refreshControls();
+    setStatus('Dernier tracé annulé');
+    refreshUndoDrawButton();
+    return true;
+  }
+
+  refreshUndoDrawButton();
+  return false;
+}
+
+function refreshTerrainToolPanels() {
+  const drawingKind = ['terrain', 'route', 'river'].includes(mapTool)
+    ? mapTool
+    : 'terrain';
+
+  for (const button of document.querySelectorAll('[data-terrain-map-tool]')) {
+    button.classList.toggle(
+      'active',
+      button.dataset.terrainMapTool === drawingKind
+    );
+  }
+
+  for (const panel of document.querySelectorAll('[data-terrain-tool-panel]')) {
+    panel.hidden =
+      panel.dataset.terrainToolPanel !== drawingKind;
+  }
 }
 
 function setStatus(message, invalid = false) {
@@ -850,10 +962,6 @@ function refreshTerrainControls() {
   ) {
     $('terrain-family').value =
       selected.terrainFamilyId;
-    $('terrain-brush-size').value =
-      selected.width;
-    $('terrain-brush-size-value').value =
-      String(selected.width);
   }
 
   if (
@@ -862,10 +970,6 @@ function refreshTerrainControls() {
   ) {
     $('terrain-route-family').value =
       selected.terrainFamilyId;
-    $('terrain-route-width').value =
-      selected.width;
-    $('terrain-route-width-value').value =
-      String(selected.width);
     $('terrain-route-material').value =
       selected.materialId;
   }
@@ -876,10 +980,6 @@ function refreshTerrainControls() {
   ) {
     $('terrain-river-family').value =
       selected.terrainFamilyId;
-    $('terrain-river-width').value =
-      selected.width;
-    $('terrain-river-width-value').value =
-      String(selected.width);
     $('terrain-river-material').value =
       selected.materialId;
   }
@@ -1704,6 +1804,8 @@ function switchWorldEventActivation(
 
   refreshWorldEventControls();
   refreshJson();
+  refreshTerrainToolPanels();
+  refreshUndoDrawButton();
   renderPreview();
 }
 
@@ -2529,11 +2631,16 @@ function setMapTool(tool) {
   canvas.dataset.tool = mapTool;
 
   for (const button of document.querySelectorAll('[data-map-tool]')) {
+    const buttonTool = button.dataset.mapTool;
     button.classList.toggle(
       'active',
-      button.dataset.mapTool === mapTool
+      buttonTool === 'terrain'
+        ? ['terrain', 'route', 'river'].includes(mapTool)
+        : buttonTool === mapTool
     );
   }
+
+  refreshTerrainToolPanels();
 
   if (
     mapTool === 'terrain' ||
@@ -2865,6 +2972,11 @@ function beginSurfacePath(kind, point) {
 
   selectedSurfaceKind = kind;
   selectedSurfacePathId = created.id;
+  recordSurfaceDraw({
+    areaId: selectedAreaId,
+    kind,
+    pathId: created.id
+  });
   return created.id;
 }
 
@@ -2986,6 +3098,7 @@ $('area-select').addEventListener('change', () => {
   selectedObjectId = null;
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
+  clearSurfaceDrawHistory();
   fitRequested = true;
   setMapTool('select');
   refreshControls();
@@ -3234,46 +3347,45 @@ $('terrain-path-select').addEventListener('change', () => {
 $('terrain-path-delete').addEventListener('click', () => {
   if (!selectedSurfaceKind || !selectedSurfacePathId) return;
 
+  const deletedRef = {
+    areaId: selectedAreaId,
+    kind: selectedSurfaceKind,
+    pathId: selectedSurfacePathId
+  };
+
   draft = deleteSurfacePath(
     draft,
     selectedAreaId,
     selectedSurfaceKind,
     selectedSurfacePathId
   );
+  forgetSurfaceDraw(deletedRef);
 
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
   refreshControls();
 });
 
-for (const [kind, widthId, valueId, materialId, fallbackWidth] of [
-  ['terrain', 'terrain-brush-size', 'terrain-brush-size-value', 'terrain-paint-material', 180],
-  ['route', 'terrain-route-width', 'terrain-route-width-value', 'terrain-route-material', 82],
-  ['river', 'terrain-river-width', 'terrain-river-width-value', 'terrain-river-material', 72]
+for (const [kind, widthId, valueId, fallbackWidth] of [
+  ['terrain', 'terrain-brush-size', 'terrain-brush-size-value', 180],
+  ['route', 'terrain-route-width', 'terrain-route-width-value', 82],
+  ['river', 'terrain-river-width', 'terrain-river-width-value', 72]
 ]) {
   $(widthId).addEventListener('input', () => {
     const width = numberValue($(widthId), fallbackWidth);
     $(valueId).value = String(width);
 
-    if (
-      selectedSurfaceKind === kind &&
-      selectedSurfacePathId
-    ) {
-      draft = updateSurfacePath(
-        draft,
-        selectedAreaId,
-        kind,
-        selectedSurfacePathId,
-        { width }
-      );
-      refreshJson();
-    }
-
-    if (mapTool === kind || selectedSurfaceKind === kind) {
+    if (mapTool === kind) {
       renderPreview();
     }
   });
+}
 
+for (const [kind, materialId] of [
+  ['terrain', 'terrain-paint-material'],
+  ['route', 'terrain-route-material'],
+  ['river', 'terrain-river-material']
+]) {
   $(materialId).addEventListener('change', () => {
     if (
       selectedSurfaceKind !== kind ||
@@ -3932,6 +4044,41 @@ for (const button of document.querySelectorAll('[data-map-tool]')) {
   });
 }
 
+for (const button of document.querySelectorAll('[data-terrain-map-tool]')) {
+  button.addEventListener('click', () => {
+    setMapTool(button.dataset.terrainMapTool);
+  });
+}
+
+for (const button of document.querySelectorAll('[data-brush-adjust]')) {
+  button.addEventListener('click', () => {
+    const input = $(button.dataset.brushAdjust);
+    if (!input) return;
+
+    const current = numberValue(input, 0);
+    const delta = Number(button.dataset.brushDelta);
+    const min = Number(input.min);
+    const max = Number(input.max);
+    const next = Math.max(
+      Number.isFinite(min) ? min : -Infinity,
+      Math.min(
+        Number.isFinite(max) ? max : Infinity,
+        current + (Number.isFinite(delta) ? delta : 0)
+      )
+    );
+
+    input.value = String(next);
+    input.dispatchEvent(
+      new Event('input', { bubbles: true })
+    );
+  });
+}
+
+$('builder-undo-draw').addEventListener(
+  'click',
+  undoLastSurfaceDraw
+);
+
 canvas.addEventListener(
   'wheel',
   (event) => {
@@ -4174,7 +4321,9 @@ canvas.addEventListener('pointermove', (event) => {
   if (hover) hoverWorldPoint = hover;
 
   if (!activePointers.has(event.pointerId)) {
-    if (mapTool === 'terrain') renderPreview();
+    if (['terrain', 'route', 'river'].includes(mapTool)) {
+      renderPreview();
+    }
     return;
   }
 
@@ -4477,7 +4626,9 @@ canvas.addEventListener('pointermove', (event) => {
 canvas.addEventListener('pointerleave', () => {
   if (activePointers.size > 0) return;
   hoverWorldPoint = null;
-  if (mapTool === 'terrain') renderPreview();
+  if (['terrain', 'route', 'river'].includes(mapTool)) {
+    renderPreview();
+  }
 });
 
 function endPointer(event) {
@@ -4586,6 +4737,7 @@ $('import-json').addEventListener('change', async () => {
     selectedPortalId = draft.portals?.[0]?.id ?? null;
     selectedSurfaceKind = null;
     selectedSurfacePathId = null;
+    clearSurfaceDrawHistory();
     fitRequested = true;
     refreshControls();
     setStatus('WorldDocument importé et validé');
@@ -4610,6 +4762,7 @@ $('reset-demo').addEventListener('click', () => {
   selectedPortalId = draft.portals?.[0]?.id ?? null;
   selectedSurfaceKind = null;
   selectedSurfacePathId = null;
+  clearSurfaceDrawHistory();
   fitRequested = true;
   refreshControls();
 });
