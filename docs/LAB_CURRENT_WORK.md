@@ -104,7 +104,15 @@
 > - Pages : `37233124149` — **SUCCESS** ;
 > - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=water-lava-materials-v1`.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
+> Gate utilisateur final :
+> - retour utilisateur le 2026-10-05 : « les texture c est bon » ;
+> - validation visuelle acceptée pour les 3 eaux, la lave rivière et le sol cendre & lave ;
+> - aucune régression visuelle signalée sur ce gate.
+>
+> État : **GREEN FINAL — gate visuel utilisateur validé le 2026-10-05**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-water-lava-materials-v1-green-2026-10-05`.
 
 ---
 
