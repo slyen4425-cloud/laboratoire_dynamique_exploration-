@@ -91,15 +91,15 @@
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
         <p class="builder-hint">
-          Choisis le type de tracé puis dessine directement sur la carte. Famille gameplay et texture visuelle restent indépendantes.
+          Choisis Sol, Route ou Rivière / mer : ce choix active directement le même outil Peindre. Famille gameplay et texture visuelle restent indépendantes.
         </p>
 
         <label class="terrain-draw-kind-control">
           Type de tracé
           <select id="terrain-draw-kind">
-            <option value="terrain">Terrain</option>
+            <option value="terrain">Sol / surface</option>
             <option value="route">Route</option>
-            <option value="river">Rivière / eau</option>
+            <option value="river">Rivière / mer</option>
           </select>
         </label>
 
@@ -173,7 +173,7 @@
         </section>
 
         <section data-terrain-kind-panel="river" hidden>
-          <h3>Rivière / eau</h3>
+          <h3>Rivière / mer</h3>
           <div class="grid-2">
             <label>
               Famille
