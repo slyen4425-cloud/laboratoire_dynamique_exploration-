@@ -6,7 +6,7 @@ import {
   addWorldEvent,
   addSurfacePath,
   addTerrainFamilyDefinition,
-  addWorldObject,
+  addWorldObject as addWorldObjectDraft,
   appendSurfacePathPoint,
   createWorldBuilderDraft,
   deleteActorPlacement,
@@ -17,8 +17,8 @@ import {
   deleteTerrainFamilyDefinition,
   deleteWorldObject,
   duplicateWorldObject,
-  importWorldBuilderDocument,
-  serializeWorldBuilderDraft,
+  importWorldBuilderDocument as importWorldBuilderDocumentRaw,
+  serializeWorldBuilderDraft as serializeWorldBuilderDraftRaw,
   updateActorPlacement,
   updateAreaProperties,
   updateTerrainFamilyDefinition,
@@ -29,8 +29,8 @@ import {
   updateWorldEvent,
   updateSurfacePath,
   updateWorldObjectTransform,
-  updateWorldObjectOverrides,
-  validateWorldBuilderDraft
+  updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
+  validateWorldBuilderDraft as validateWorldBuilderDraftRaw
 } from './world-builder-draft.js?rev=world-event-contract-v1';
 import {
   readWorldBuilderTestHandoff,
@@ -46,7 +46,7 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=environment-showcase-selection-v1';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=world-object-library-v1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -67,12 +67,27 @@ import {
   worldObjectVisualRect
 } from '../world/world-object-model.js?rev=environment-showcase-selection-v1';
 import {
-  resolveWorldObjectPlacement,
-  resolveWorldObjectPlacements
-} from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
+  resolveWorldObjectPlacement as resolveWorldObjectPlacementRaw,
+  resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
+} from '../world/world-object-placement-model.js?rev=world-object-library-v1';
 import {
+  createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=environment-showcase-assets-v1';
+} from '../objects/object-definition-catalog.js?rev=world-object-library-v1';
+import {
+  categoryIdFromFolderId,
+  createCustomObjectLibraryFolder,
+  listObjectLibraryCategories,
+  listObjectLibraryFolders,
+  resolveObjectLibraryFolder
+} from '../objects/object-library-taxonomy.js?rev=world-object-library-v1';
+import {
+  USER_WORLD_OBJECT_MAX_BYTES,
+  countObjectDefinitionReferences,
+  createUserWorldObjectRecord,
+  decodeUserWorldObjectFileDimensions,
+  objectDefinitionFromUserRecord
+} from '../objects/user-object-library.js?rev=world-object-library-v1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
@@ -114,9 +129,16 @@ import {
   createUserMaterialStore
 } from '../storage/user-material-store.js?rev=user-texture-import-v1';
 import {
+  createUserWorldObjectStore
+} from '../storage/user-world-object-store.js?rev=world-object-library-v1';
+import {
+  createWorldObjectAssetResolver,
   listWorldObjectAssets,
   resolveWorldObjectAsset
-} from '../assets/world-object-asset-adapter.js?rev=environment-showcase-assets-v1';
+} from '../assets/world-object-asset-adapter.js?rev=world-object-library-v1';
+import {
+  createUserWorldObjectAssetResolver
+} from '../assets/user-world-object-asset-resolver.js?rev=world-object-library-v1';
 import {
   createImageAssetLoader
 } from '../assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
@@ -147,6 +169,23 @@ if (userMaterialStore.available) {
   }
 } else {
   userMaterialStorageError =
+    new Error('IndexedDB unavailable');
+}
+
+const userWorldObjectStore =
+  createUserWorldObjectStore();
+let userWorldObjectRecords = [];
+let userWorldObjectStorageError = null;
+
+if (userWorldObjectStore.available) {
+  try {
+    userWorldObjectRecords =
+      await userWorldObjectStore.list();
+  } catch (error) {
+    userWorldObjectStorageError = error;
+  }
+} else {
+  userWorldObjectStorageError =
     new Error('IndexedDB unavailable');
 }
 
@@ -235,21 +274,87 @@ const captureCreatureCatalog =
     CAPTURE_CREATURE_CATALOG_PREVIEW_V1
   );
 
-const objectDefinitions =
-  objectDefinitionCatalogV1.list();
+let objectDefinitionCatalog =
+  objectDefinitionCatalogV1;
+let objectDefinitions =
+  objectDefinitionCatalog.list();
+let userWorldObjectAssetResolver = null;
+let resolveWorldObjectAssetComposed =
+  resolveWorldObjectAsset;
+let objectImageLoader = null;
+let objectRenderer = null;
 
-const objectImageLoader = createImageAssetLoader({
-  resolveAsset: resolveWorldObjectAsset,
-  cacheRevision: 'environment-showcase-assets-v1'
-});
-await objectImageLoader.load(
-  listWorldObjectAssets().map((asset) => asset.id)
-);
+async function rebuildWorldObjectPipeline() {
+  objectImageLoader?.dispose?.();
+  userWorldObjectAssetResolver?.dispose?.();
 
-const objectRenderer = createWorldObjectRenderer({
-  imageLoader: objectImageLoader,
-  resolveVisualAsset: resolveWorldObjectAsset
-});
+  const userDefinitions =
+    userWorldObjectRecords.map(
+      objectDefinitionFromUserRecord
+    );
+
+  objectDefinitionCatalog =
+    createComposedObjectDefinitionCatalog(
+      userDefinitions
+    );
+  objectDefinitions =
+    objectDefinitionCatalog.list();
+
+  userWorldObjectAssetResolver =
+    createUserWorldObjectAssetResolver(
+      userWorldObjectRecords
+    );
+
+  resolveWorldObjectAssetComposed =
+    createWorldObjectAssetResolver({
+      resolveUserAsset:
+        userWorldObjectAssetResolver.resolve
+    });
+
+  objectImageLoader =
+    createImageAssetLoader({
+      resolveAsset:
+        resolveWorldObjectAssetComposed,
+      cacheRevision:
+        'world-object-library-v1'
+    });
+
+  const assetIds = [
+    ...listWorldObjectAssets().map(
+      (asset) => asset.id
+    ),
+    ...userWorldObjectAssetResolver
+      .list()
+      .map((asset) => asset.id)
+  ];
+
+  const loadStatus =
+    await objectImageLoader.load(
+      [...new Set(assetIds)]
+    );
+
+  if (
+    loadStatus.missing > 0 ||
+    loadStatus.errors > 0
+  ) {
+    throw new Error(
+      `WorldObject assets unavailable: ${JSON.stringify(loadStatus)}`
+    );
+  }
+
+  objectRenderer =
+    createWorldObjectRenderer({
+      imageLoader: objectImageLoader,
+      resolveVisualAsset:
+        resolveWorldObjectAssetComposed,
+      objectCatalog:
+        objectDefinitionCatalog
+    });
+
+  return loadStatus;
+}
+
+await rebuildWorldObjectPipeline();
 const portalRenderer = createPortalRenderer();
 
 const captureActorDefinitionProvider =
@@ -319,6 +424,78 @@ async function rebuildMapActorPipeline() {
       preparedVisuals:
         mapActorVisualPreparer
     });
+}
+
+function resolveWorldObjectPlacement(placement) {
+  return resolveWorldObjectPlacementRaw(
+    placement,
+    objectDefinitionCatalog
+  );
+}
+
+function resolveWorldObjectPlacements(placements) {
+  return resolveWorldObjectPlacementsRaw(
+    placements,
+    objectDefinitionCatalog
+  );
+}
+
+function validateWorldBuilderDraft(draftValue) {
+  return validateWorldBuilderDraftRaw(
+    draftValue,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+}
+
+function serializeWorldBuilderDraft(draftValue) {
+  return serializeWorldBuilderDraftRaw(
+    draftValue,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+}
+
+function importWorldBuilderDocument(jsonText) {
+  return importWorldBuilderDocumentRaw(
+    jsonText,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+}
+
+function addWorldObject(
+  draftValue,
+  areaId,
+  input
+) {
+  return addWorldObjectDraft(
+    draftValue,
+    areaId,
+    input,
+    objectDefinitionCatalog
+  );
+}
+
+function updateWorldObjectOverrides(
+  draftValue,
+  areaId,
+  objectId,
+  input
+) {
+  return updateWorldObjectOverridesDraft(
+    draftValue,
+    areaId,
+    objectId,
+    input,
+    objectDefinitionCatalog
+  );
 }
 
 const builderParams = new URLSearchParams(window.location.search);
