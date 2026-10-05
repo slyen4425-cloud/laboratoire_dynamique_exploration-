@@ -106,6 +106,17 @@
 > - main infrastructure : `ef665811cd408cb0a8e482673070921d9f1815f9` ;
 > - Pages : `37379958672` — **SUCCESS** ;
 > - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=environment-showcase-assets-v1` ;
+> Gate utilisateur — régression sélection objets génériques :
+> - constat utilisateur : bâtiments sélectionnables/déplaçables, mais arbres/rochers/portes/escaliers non sélectionnables après placement ;
+> - cause racine : le Builder calculait hit-test + gizmos uniquement pour les kinds `bridge` / `building` ;
+> - aucun problème Asset Adapter / renderer / placement ;
+> - TDD RED : `6b37b2e5c29d1ee5b4cb595b0d6fc30a41661c3a`, CI `37382164276` — **FAILURE attendue** ;
+> - correction : géométrie visuelle unique `worldObjectVisualRect()` + `worldObjectBaseDimensions()` dans le World Object Model ;
+> - Builder et renderer consomment désormais la même géométrie issue de `ObjectDefinition.baseSize + placement.transform` ;
+> - aucun branchement par tree/rock/door/stairs, aucun fallback, aucune seconde autorité ;
+> - HEAD runtime fix : `c458a8e8354966e6becec7f198b92a34e18ba1a9` ;
+> - CI : `37382324801` — **SUCCESS**.
+>
 > - **GREEN final interdit avant gate utilisateur mobile/visuel.**
 >
 > Prochaine étape :
