@@ -2,6 +2,74 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **Builder Unified Paint v1**
+>
+> Branche : `work/exploration-builder-unified-paint-v1-2026-10-05`
+>
+> Base GREEN : `e5d470d69dc7e3af05443ef39c6ac11980259d57`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-builder-unified-paint-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-surface-feather-v2-antibanding-green-2026-10-05`
+>
+> Retour utilisateur :
+> - les encadrés/boutons Route et Rivière dédiés ont été supprimés pour éviter les doublons ;
+> - le sélecteur unique existe mais Route/Rivière donnent l'impression de ne plus pouvoir être peints ;
+> - demande : un système unique, logique et mobile-first pour peindre Sol / Route / Rivière-Mer, sans seconde autorité.
+>
+> Cause racine :
+> - `addSurfacePath()` et les contrats `surface.zones/routes/rivers` fonctionnent toujours ;
+> - le sélecteur `terrain-draw-kind` change les réglages affichés ;
+> - mais lorsqu'on est encore dans l'outil `Déplacer`, changer ce sélecteur n'active pas le mode de peinture ;
+> - l'utilisateur doit ensuite deviner qu'il faut cliquer séparément sur `Peindre`.
+>
+> Mission unique :
+> - garder un seul bouton global `Peindre` ;
+> - garder un seul sélecteur interne de type de tracé ;
+> - renommer les modes de façon explicite : `Sol / surface`, `Route`, `Rivière / mer` ;
+> - choisir un type de tracé doit activer immédiatement le même outil de peinture canonique ;
+> - le bouton global `Peindre` reprend le dernier type sélectionné ;
+> - conserver la barre flottante mobile taille +/-/undo ;
+> - aucune nouvelle géométrie ni nouveau format.
+>
+> Autorités :
+> - géométrie : WorldDocument / World Surface Model ;
+> - mutations : helpers existants du World Builder Draft (`addSurfacePath`, `appendSurfacePathPoint`, `deleteSurfacePath`) ;
+> - type de tracé courant : état UI éphémère uniquement ;
+> - preview : Surface Renderer en lecture seule.
+>
+> Invariants :
+> - `terrain` écrit uniquement dans `surface.zones[]` ;
+> - `route` écrit uniquement dans `surface.routes[]` ;
+> - `river` écrit uniquement dans `surface.rivers[]` ;
+> - aucune liste parallèle ;
+> - aucune copie de géométrie ;
+> - aucun changement Material Registry / Renderer dans ce lot ;
+> - aucun changement collision / traversée / encounter / combat / portal / events ;
+> - aucun changement `Zombicide-40k`.
+>
+> TDD attendu :
+> 1. RED : changer `terrain-draw-kind` doit toujours appeler `setMapTool(selectedKind)` ;
+> 2. RED : les trois options doivent être clairement exposées dans l'UI ;
+> 3. GREEN : Route/Rivière passent par le même chemin `pending-draw -> beginSurfacePath -> addSurfacePath` que Terrain ;
+> 4. GREEN : aucun bouton `data-map-tool=route/river` réintroduit ;
+> 5. GREEN : undo reste par références `areaId/kind/pathId` ;
+> 6. CI complète ;
+> 7. preview mobile + gate utilisateur.
+>
+> Hors périmètre :
+> - transitions visuelles Route/Rivière ;
+> - nouveaux matériaux ;
+> - refonte des familles terrain ;
+> - Surface Feather.
+>
+> État : **LOT OUVERT — TDD RED requis avant correction**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **Surface Feather v2 / anti-banding**
 >
 > Branche : `work/exploration-surface-feather-v2-antibanding-2026-10-05`
