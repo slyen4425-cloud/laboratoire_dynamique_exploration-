@@ -93,7 +93,17 @@
 > Lien gate :
 > `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-mobile-paint-ergonomics-v1`.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate mobile utilisateur requis avant GREEN final**.
+> Gate utilisateur final — 2026-10-05 :
+> - verdict utilisateur : « Parfait, je valide » ;
+> - ergonomie mobile Terrain / Route / Rivière validée ;
+> - contrôle flottant − / taille / + / Annuler validé ;
+> - taille du pinceau prospective validée : modifier la taille n'épaissit plus les tracés existants ;
+> - aucune régression signalée sur le gate réel.
+>
+> État : **GREEN FINAL — gate mobile utilisateur validé le 2026-10-05**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-builder-mobile-paint-ergonomics-v1-green-2026-10-05`.
 
 ---
 
