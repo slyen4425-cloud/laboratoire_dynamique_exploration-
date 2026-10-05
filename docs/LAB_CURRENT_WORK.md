@@ -81,6 +81,13 @@
 >
 > État : **TDD RED VALIDÉ — implémentation autorisée dans cette branche, sans nouvelle autorité.**
 >
+> Assets utilisateur validés pour intégration — 2026-10-05 :
+> - perspective corrigée en top-down / overhead cohérente avec Exploration ;
+> - 5 planches sources générées : bâtiments, arbres, rochers, entrées/portes, escaliers ;
+> - 3 variantes par famille, soit 15 nouveaux visuels natifs à découper et versionner ;
+> - profil runtime retenu : WebP RGBA 384x384 q82, conforme au Building déjà GREEN ;
+> - les nouveaux visuels seront ajoutés au World Object Asset Adapter existant ; aucun catalogue parallèle.
+>
 > Prochaine étape :
 > - commiter le test RED du micro-lot ;
 > - constater la CI rouge pour les quatre familles absentes et le renderer encore non générique ;
