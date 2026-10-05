@@ -51,7 +51,11 @@ test('changing unified paint kind immediately activates that canonical paint too
 
   assert.match(
     block,
-    /setMapTool\(\s*\$\('terrain-draw-kind'\)\.value\s*\)/
+    /const drawKind\s*=\s*\$\('terrain-draw-kind'\)\.value/
+  );
+  assert.match(
+    block,
+    /setMapTool\(drawKind\)/
   );
   assert.equal(
     block.includes('if (isPaintKind(mapTool))'),
