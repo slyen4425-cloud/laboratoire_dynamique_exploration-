@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import { normalizeWorldSurface } from '../src/world/surface-model.js';
+import {
+  normalizeWorldObjectPlacement,
+  resolveWorldObjectPlacement
+} from '../src/world/world-object-placement-model.js';
+import {
+  worldObjectBaseDimensions,
+  worldObjectVisualRect
+} from '../src/world/world-object-model.js';
 
 test('regression: selected WorldObject exposes direct scale and rotation gizmo gestures', async () => {
   const main = await readFile(
@@ -68,4 +76,52 @@ test('regression: Builder exposes a variable-size terrain paint brush', async ()
   assert.equal(html.includes('id="terrain-paint-material"'), true);
   assert.equal(html.includes('id="paint-brush-minus"'), true);
   assert.equal(html.includes('id="paint-brush-plus"'), true);
+});
+
+
+test('regression: generic showcase WorldObjects expose one canonical visual rect for Builder hit-test and gizmos', () => {
+  for (const objectDefinitionId of [
+    'objectdef.tree.forest.oak.01',
+    'objectdef.rock.forest.boulder.01',
+    'objectdef.door.fantasy.wood.01',
+    'objectdef.stairs.stone.simple.01'
+  ]) {
+    const placement = normalizeWorldObjectPlacement({
+      id: 'generic-hit-target',
+      objectDefinitionId,
+      transform: {
+        x: 320,
+        y: 240,
+        rotationDeg: 30,
+        scaleX: 1.25,
+        scaleY: 0.8
+      }
+    });
+    const object = resolveWorldObjectPlacement(placement);
+    const rect = worldObjectVisualRect(object);
+    const base = worldObjectBaseDimensions(object);
+
+    assert.ok(rect, objectDefinitionId);
+    assert.ok(base, objectDefinitionId);
+    assert.equal(rect.x, 320);
+    assert.equal(rect.y, 240);
+    assert.equal(rect.width, base.width * 1.25);
+    assert.equal(rect.height, base.height * 0.8);
+  }
+});
+
+test('regression: Builder hit-test consumes the canonical WorldObject visual rect instead of kind-specific branches', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    main,
+    /function worldObjectRectForHit\(object\)[\s\S]*worldObjectVisualRect\(object\)/
+  );
+  assert.match(
+    main,
+    /function objectBaseDimensions\(object\)[\s\S]*worldObjectBaseDimensions\(object\)/
+  );
 });
