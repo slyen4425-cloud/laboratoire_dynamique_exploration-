@@ -131,7 +131,16 @@
 > 5. vérifier que la frontière reste progressive, le cœur lisible et la largeur du tracé inchangée ;
 > 6. vérifier qu'il n'y a pas de baisse de fluidité perceptible sur smartphone.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
+> Gate utilisateur final — 2026-10-05 :
+> - retour utilisateur : « ok, il faut la même chose pour route et rivière » ;
+> - Surface Feather v2 est accepté comme nouvelle base visuelle pour les surfaces ;
+> - aucune régression de fluidité ou de largeur signalée sur ce gate ;
+> - demande suivante distincte : appliquer une transition douce cohérente aux routes/rivières et corriger l'accès peinture unifié.
+>
+> État : **GREEN FINAL — Surface Feather v2 validé utilisateur le 2026-10-05**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-surface-feather-v2-antibanding-green-2026-10-05`.
 
 ---
 
