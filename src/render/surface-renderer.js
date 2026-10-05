@@ -2,6 +2,9 @@ import {
   buildRibbonSegments,
   ribbonTextureSlices
 } from './path-ribbon.js';
+import {
+  surfaceFeatherPasses
+} from './surface-feather.js';
 
 function smoothPath(ctx, points, camera) {
   if (!points || points.length < 2) return;
@@ -314,18 +317,29 @@ function drawSurfaceZoneMaterial(
   zone,
   camera,
   material,
-  textureLoader
+  textureLoader,
+  transition
 ) {
   const image = textureLoader?.get(material.assets.base);
   const pattern = worldPattern(ctx, image, camera);
+  const strokeStyle =
+    pattern ?? material.render.baseColor;
 
-  strokePath(
-    ctx,
-    zone,
-    camera,
-    zone.width,
-    pattern ?? material.render.baseColor
-  );
+  for (
+    const pass of surfaceFeatherPasses(
+      zone.width,
+      transition
+    )
+  ) {
+    strokePath(
+      ctx,
+      zone,
+      camera,
+      pass.width,
+      strokeStyle,
+      pass.alpha
+    );
+  }
 }
 
 function drawPathMaterial(ctx, path, camera, material, textureLoader) {
@@ -465,7 +479,8 @@ export function createSurfaceRenderer({
           zone,
           camera,
           material,
-          textureLoader
+          textureLoader,
+          materialRegistry.surfaceTransition
         );
       }
 
