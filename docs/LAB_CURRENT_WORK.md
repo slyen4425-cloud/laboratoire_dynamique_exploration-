@@ -133,7 +133,23 @@
 > 5. vérifier que le centre du trait reste bien opaque/lisible ;
 > 6. vérifier qu'il n'y a pas de baisse de fluidité perceptible sur smartphone.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
+> Gate utilisateur final — 2026-10-05 :
+> - verdict utilisateur : « ça fait le taf » ;
+> - amélioration validée par rapport à la coupure nette entre textures ;
+> - limite visuelle explicitement signalée : les passes de feather restent perceptibles comme des traits/bandes ;
+> - cette limite est acceptée pour la V1 et devient un chantier de polish séparé ; elle n'est pas masquée ni présentée comme résolue.
+>
+> État : **GREEN FINAL — V1 validée avec dette visuelle connue : banding du feather**.
+>
+> Backlog polish futur — **Surface Feather v2 / anti-banding** :
+> - conserver exactement la même autorité Renderer/Material System ;
+> - réduire la perception des bandes sans ajouter de géométrie au WorldDocument ;
+> - étudier en priorité un vrai gradient alpha continu / masque hors-écran ou un dithering/bruit léger déterministe ;
+> - ne pas revenir à des textures de transition obligatoires ;
+> - mesurer le coût mobile avant toute augmentation importante du nombre de passes.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-surface-feather-v1-green-2026-10-05`.
 
 ---
 
