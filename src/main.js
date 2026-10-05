@@ -9,7 +9,7 @@ import {
   traversalRulePackV1
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
-import { createSurfaceRenderer } from './render/surface-renderer.js?rev=surface-feather-v2-antibanding';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=linear-smooth-transition-v1';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
