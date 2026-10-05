@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "packId": "tree-showcase-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-05",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "purpose": "Three top-down Tree WorldObject showcase visuals. Visuals never define collision or gameplay.",
+  "sourceProfile": {
+    "fileId": "file_000000007a4082109523c4fcf514e540",
+    "generationId": "052d52d2-37dd-4e3d-97bd-2ff3af3bd2f9",
+    "format": "PNG RGBA",
+    "width": 2172,
+    "height": 724,
+    "alpha": true,
+    "sha256": "529740c053e7461b0969944f87d2b0245f07a6c46a723b6241478d70af9b4639"
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 384,
+    "height": 384,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.tree.forest.oak.01",
+      "path": "assets/exploration/objects/trees/tree_forest_oak_01.webp",
+      "role": "tree-visual",
+      "family": "forest",
+      "variant": "oak",
+      "view": "top-down",
+      "sha256": "b7218dc7053784e742c8ecabf04810091106f9e79fe21e34fdb2982fb7ef7e38",
+      "bytes": 47862
+    },
+    {
+      "assetId": "object.tree.forest.pine.01",
+      "path": "assets/exploration/objects/trees/tree_forest_pine_01.webp",
+      "role": "tree-visual",
+      "family": "forest",
+      "variant": "pine",
+      "view": "top-down",
+      "sha256": "c34557754e20e5e8c9cbdfec21b691282e6faccf4381dc910e95761ea1289908",
+      "bytes": 38020
+    },
+    {
+      "assetId": "object.tree.fantasy.ancient_blossom.01",
+      "path": "assets/exploration/objects/trees/tree_fantasy_ancient_blossom_01.webp",
+      "role": "tree-visual",
+      "family": "fantasy",
+      "variant": "ancient-blossom",
+      "view": "top-down",
+      "sha256": "4d993096db8f1e0543e638923b871b99cbad26c07a8fa37026d956363f75c790",
+      "bytes": 52866
+    }
+  ]
+}
