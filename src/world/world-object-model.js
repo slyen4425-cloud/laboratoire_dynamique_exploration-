@@ -30,6 +30,86 @@ export function worldObjectRotationRadians(object) {
     : 0;
 }
 
+
+export function worldObjectBaseDimensions(object) {
+  if (!object || !object.baseSize) {
+    return null;
+  }
+
+  if (object.kind === 'bridge') {
+    const width = Number(object.baseSize.length);
+    const height = Number(object.baseSize.width);
+
+    if (
+      !Number.isFinite(width) ||
+      width <= 0 ||
+      !Number.isFinite(height) ||
+      height <= 0
+    ) {
+      return null;
+    }
+
+    return Object.freeze({
+      width,
+      height
+    });
+  }
+
+  const width = Number(object.baseSize.width);
+  const height = Number(object.baseSize.height);
+
+  if (
+    !Number.isFinite(width) ||
+    width <= 0 ||
+    !Number.isFinite(height) ||
+    height <= 0
+  ) {
+    return null;
+  }
+
+  return Object.freeze({
+    width,
+    height
+  });
+}
+
+export function worldObjectVisualRect(object) {
+  const base =
+    worldObjectBaseDimensions(object);
+
+  if (
+    !base ||
+    !object?.transform
+  ) {
+    return null;
+  }
+
+  const scaleX =
+    Number(object.transform.scaleX);
+  const scaleY =
+    Number(object.transform.scaleY);
+
+  if (
+    !Number.isFinite(scaleX) ||
+    scaleX <= 0 ||
+    !Number.isFinite(scaleY) ||
+    scaleY <= 0
+  ) {
+    return null;
+  }
+
+  return Object.freeze({
+    x: object.transform.x,
+    y: object.transform.y,
+    rotation:
+      worldObjectRotationRadians(object),
+    width:
+      base.width * scaleX,
+    height:
+      base.height * scaleY
+  });
+}
+
 function localPointToWorld(
   object,
   localX,
@@ -60,18 +140,18 @@ export function bridgeVisualRect(bridge) {
     return null;
   }
 
-  return Object.freeze({
-    x: bridge.transform.x,
-    y: bridge.transform.y,
-    rotation:
-      worldObjectRotationRadians(bridge),
-    length:
-      bridge.baseSize.length *
-      bridge.transform.scaleX,
-    width:
-      bridge.baseSize.width *
-      bridge.transform.scaleY
-  });
+  const rect =
+    worldObjectVisualRect(bridge);
+
+  return rect
+    ? Object.freeze({
+        x: rect.x,
+        y: rect.y,
+        rotation: rect.rotation,
+        length: rect.width,
+        width: rect.height
+      })
+    : null;
 }
 
 export function bridgeTraversalRect(bridge) {
@@ -107,18 +187,7 @@ export function buildingVisualRect(building) {
     return null;
   }
 
-  return Object.freeze({
-    x: building.transform.x,
-    y: building.transform.y,
-    rotation:
-      worldObjectRotationRadians(building),
-    width:
-      building.baseSize.width *
-      building.transform.scaleX,
-    height:
-      building.baseSize.height *
-      building.transform.scaleY
-  });
+  return worldObjectVisualRect(building);
 }
 
 export function buildingFootprintRect(
