@@ -127,7 +127,16 @@
 > 5. vérifier que les anciennes bordures/berges visuelles restent présentes mais se fondent progressivement ;
 > 6. vérifier qu'il n'y a pas de perte de fluidité perceptible sur smartphone.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
+> Gate utilisateur final — 2026-10-05 :
+> - verdict utilisateur : « ok c bon » ;
+> - smooth Route et Rivière/Mer validé visuellement ;
+> - bord progressif accepté, cœur lisible, aucune régression visuelle signalée ;
+> - nouvelle demande séparée : vérifier le bonus de déplacement Route.
+>
+> État : **GREEN FINAL — Linear Smooth Transition v1 validé utilisateur le 2026-10-05**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-linear-smooth-transition-v1-green-2026-10-05`.
 
 ---
 
