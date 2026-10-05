@@ -46,7 +46,7 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=environment-showcase-assets-v1';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=environment-showcase-selection-v1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
