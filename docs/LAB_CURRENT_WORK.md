@@ -98,6 +98,14 @@
 > - Builder continue de placer uniquement `objectDefinitionId + transform + overrides` ;
 > - checkpoint prévalidation : `checkpoint/exploration-environment-showcase-assets-v1-prevalidation-green-2026-10-05` @ `92beee6f759d534ab39a27dee2ac6669cc641e0d` ;
 > - preview : `preview/exploration-environment-showcase-assets-v1-2026-10-05` @ même SHA ;
+> - HEAD final prévalidation cache-bust : `6ceda1f44044bf6da1d0865b36474c7ad078e53f` ;
+> - CI HEAD : `37365877496` — **SUCCESS** (attempt 3, npm test + npm run check) ;
+> - checkpoint prévalidation actualisé : `checkpoint/exploration-environment-showcase-assets-v1-prevalidation-green-2026-10-06` @ `6ceda1f44044bf6da1d0865b36474c7ad078e53f` ;
+> - preview actualisée : `preview/exploration-environment-showcase-assets-v1-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #88 — **MERGED** ;
+> - main infrastructure : `ef665811cd408cb0a8e482673070921d9f1815f9` ;
+> - Pages : `37379958672` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=environment-showcase-assets-v1` ;
 > - **GREEN final interdit avant gate utilisateur mobile/visuel.**
 >
 > Prochaine étape :
