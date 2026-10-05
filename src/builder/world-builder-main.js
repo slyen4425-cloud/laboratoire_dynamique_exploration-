@@ -45,7 +45,7 @@ import {
   pointInRotatedRect,
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
-import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=surface-feather-v1';
+import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=surface-feather-v2-antibanding';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -84,7 +84,7 @@ import {
 } from '../world/world-area-model.js?rev=terrain-family-encounters-v1';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=surface-feather-v1';
+} from '../materials/material-pack-v1.js?rev=surface-feather-v2-antibanding';
 import {
   createTerrainFamilyRegistry
 } from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
@@ -96,7 +96,7 @@ import {
 } from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   createMaterialRegistry
-} from '../materials/material-registry.js?rev=surface-feather-v1';
+} from '../materials/material-registry.js?rev=surface-feather-v2-antibanding';
 import {
   resolveMaterialAsset
 } from '../assets/material-asset-adapter.js?rev=water-lava-materials-v1';
