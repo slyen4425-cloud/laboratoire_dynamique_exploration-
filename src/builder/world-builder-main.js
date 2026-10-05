@@ -2213,7 +2213,7 @@ function objectPlacementLabel(
   placement
 ) {
   const definition =
-    objectDefinitionCatalogV1.get(
+    objectDefinitionCatalog.get(
       placement.objectDefinitionId
     );
 
@@ -2227,11 +2227,81 @@ function refreshObjectControls() {
   const placements =
     area?.objects ?? [];
 
+  const categories =
+    listObjectLibraryCategories()
+      .filter(
+        (category) =>
+          objectDefinitions.some(
+            (definition) =>
+              definition.library
+                ?.categoryId ===
+              category.id
+          )
+      );
+
+  if (
+    !categories.some(
+      (category) =>
+        category.id ===
+          selectedObjectLibraryCategoryId
+    )
+  ) {
+    selectedObjectLibraryCategoryId =
+      categories[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('object-library-category'),
+    categories,
+    selectedObjectLibraryCategoryId,
+    {
+      label: (category) =>
+        category.label
+    }
+  );
+  selectedObjectLibraryCategoryId =
+    $('object-library-category').value ||
+    selectedObjectLibraryCategoryId;
+
+  const folders =
+    objectLibraryFoldersForCategory(
+      selectedObjectLibraryCategoryId
+    );
+
+  if (
+    !folders.some(
+      (folder) =>
+        folder.id ===
+          selectedObjectLibraryFolderId
+    )
+  ) {
+    selectedObjectLibraryFolderId =
+      folders[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('object-library-folder'),
+    folders,
+    selectedObjectLibraryFolderId,
+    {
+      label: (folder) =>
+        folder.label
+    }
+  );
+  selectedObjectLibraryFolderId =
+    $('object-library-folder').value ||
+    selectedObjectLibraryFolderId;
+
+  const visibleDefinitions =
+    objectDefinitionsForFolder(
+      selectedObjectLibraryFolderId
+    );
+
   setOptions(
     $('object-definition'),
-    objectDefinitions,
+    visibleDefinitions,
     $('object-definition').value ||
-      objectDefinitions[0]?.id ||
+      visibleDefinitions[0]?.id ||
       '',
     {
       label: objectDefinitionLabel
@@ -2256,6 +2326,12 @@ function refreshObjectControls() {
     currentObjectRaw();
   const object =
     currentObjectResolved();
+  const definition =
+    placement
+      ? objectDefinitionCatalog.get(
+          placement.objectDefinitionId
+        )
+      : null;
   const disabled =
     !placement || !object;
 
@@ -2274,6 +2350,45 @@ function refreshObjectControls() {
   $('bridge-fields').hidden =
     object?.kind !== 'bridge';
 
+  const variants =
+    Array.isArray(
+      definition?.visual?.variants
+    )
+      ? definition.visual.variants
+      : [];
+  const variantFields =
+    $('object-visual-variant-fields');
+  const variantSelect =
+    $('object-visual-variant');
+
+  variantFields.hidden =
+    !placement ||
+    variants.length < 2;
+
+  if (variants.length > 0) {
+    const selectedVariantId =
+      placement?.overrides
+        ?.visualVariantId ??
+      definition?.visual
+        ?.defaultVariantId ??
+      variants[0]?.id ??
+      '';
+
+    setOptions(
+      variantSelect,
+      variants,
+      selectedVariantId,
+      {
+        label: (variant) =>
+          variant.label ?? variant.id
+      }
+    );
+    variantSelect.value =
+      selectedVariantId;
+  } else {
+    variantSelect.replaceChildren();
+  }
+
   if (!placement || !object) {
     $('object-x').value = '';
     $('object-y').value = '';
@@ -2283,6 +2398,7 @@ function refreshObjectControls() {
     $('bridge-obstacles').value = '';
     $('object-source-status').textContent =
       'Sélectionner une définition puis placer l’objet.';
+    refreshUserWorldObjectControls();
     return;
   }
 
@@ -2304,15 +2420,12 @@ function refreshObjectControls() {
         ?.join(', ') ?? '';
   }
 
-  const definition =
-    objectDefinitionCatalogV1.get(
-      placement.objectDefinitionId
-    );
-
   $('object-source-status').textContent =
     definition
-      ? `Définition : ${definition.label} · visuel ${definition.visual?.assetId ?? 'aucun'}`
+      ? `Définition : ${definition.label} · ${definition.library?.folderLabel ?? definition.library?.folderId ?? 'bibliothèque'} · visuel ${object.visual?.assetId ?? 'aucun'}`
       : `Définition introuvable : ${placement.objectDefinitionId}`;
+
+  refreshUserWorldObjectControls();
 }
 
 function currentActorPlacements() {
