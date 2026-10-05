@@ -1,5 +1,73 @@
 # LAB_CURRENT_WORK — Point de reprise unique
 
+> ÉTAT ACTIF — 2026-10-06
+>
+> Chantier : **World Object Library v1**
+>
+> Branche : `work/exploration-world-object-library-v1-2026-10-06`
+>
+> Base GREEN exacte : `18a6b2dfd41fae503240795d9f815fda88fd03cd`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-world-object-library-v1-2026-10-06`
+>
+> Dernier GREEN : `checkpoint/exploration-environment-showcase-assets-v1-green-2026-10-06`
+>
+> Besoin utilisateur :
+> - organiser la bibliothèque d'objets avant qu'elle ne devienne trop volumineuse ;
+> - catégories / dossiers logiques : Maisons/Bâtiments, Végétation (arbres, buissons...), Rochers, Portes, Escaliers, Ponts, Décors ;
+> - permettre à un import utilisateur de choisir son dossier / sous-dossier ;
+> - préparer des variantes d'orientation pour les maisons afin d'éviter une simple rotation visuellement incohérente ;
+> - préparer des familles visuelles sable / neige sans créer une nouvelle autorité de gameplay.
+>
+> Architecture cible :
+> ```
+> asset natif ou Blob utilisateur
+>   -> assetId sémantique
+>   -> World Object Asset Resolver composé (natif + user)
+>   -> ObjectDefinition (intrinsèque)
+>   -> Object Catalog UNIQUE composé
+>   -> library.categoryId + library.folderId = organisation uniquement
+>   -> World Builder filtre / place par objectDefinitionId
+>   -> WorldDocument persiste uniquement objectDefinitionId + transform + overrides
+>   -> Renderer résout via le même Catalog / Asset Resolver
+> ```
+>
+> Règles d'autorité :
+> - les dossiers sont des métadonnées logiques, jamais des chemins physiques utilisés comme contrat runtime ;
+> - aucun second Object Catalog utilisateur ;
+> - aucun second renderer ;
+> - IndexedDB utilisateur ne possède que les records/blobs importés ;
+> - imports utilisateur rejoignent le même Object Catalog et le même Asset Resolver que les assets natifs ;
+> - une référence d'ObjectDefinition inconnue ne doit jamais être supprimée silencieusement du WorldDocument ;
+> - un asset manquant reste une erreur explicite ;
+> - orientation visuelle des bâtiments doit être déclarative et ne doit pas dupliquer footprint / anchors / gameplay ;
+> - sable / neige = organisation / visuels ; aucune règle terrain ou collision déduite du dossier ou de l'image ;
+> - `Zombicide-40k` strictement inchangé.
+>
+> Périmètre v1 :
+> 1. taxonomie stable catégories + dossiers ;
+> 2. métadonnées library sur les définitions natives ;
+> 3. filtres Catégorie / Dossier dans le Builder ;
+> 4. User World Object Store IndexedDB versionné ;
+> 5. import PNG/JPEG/WebP avec nom + dossier/sous-dossier + type d'objet ;
+> 6. définition utilisateur transformée en ObjectDefinition normale et composée dans le catalogue unique ;
+> 7. asset utilisateur résolu par le World Object Asset Resolver composé ;
+> 8. suppression protégée lorsqu'une définition utilisateur est référencée par le WorldDocument ;
+> 9. support déclaratif de variantes visuelles/orientation de bâtiment ;
+> 10. premières variantes maisons sens opposé + dossiers `tempéré`, `neige`, `sable`.
+>
+> TDD RED avant implémentation :
+> - taxonomie / dossier absents ;
+> - imports objets utilisateur absents ;
+> - catalogue/asset resolver composés absents ;
+> - Builder ne filtre pas par catégorie/dossier ;
+> - références user ObjectDefinition ne sont pas encore supportées sur le vrai chemin ;
+> - variantes d'orientation bâtiment absentes.
+>
+> État : **AUDIT / TDD RED À OUVRIR — aucun changement fonctionnel encore validé dans ce chantier.**
+>
+> ---
+>
 > ÉTAT ACTIF — 2026-10-05
 >
 > Chantier : **Environment Showcase Assets v1**
