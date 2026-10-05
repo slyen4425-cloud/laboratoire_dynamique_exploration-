@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: builder-unified-paint-v1
+# preview-revision: linear-smooth-transition-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Builder Unified Paint preview
+      - name: Checkout Exploration Linear Smooth Transition preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-builder-unified-paint-v1-2026-10-05
+          ref: preview/exploration-linear-smooth-transition-v1-2026-10-05
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
