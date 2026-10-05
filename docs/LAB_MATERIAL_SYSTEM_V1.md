@@ -164,6 +164,38 @@ transition: road.dirt_to_grass
 
 Le renderer calcule l'apparence à partir de la frontière réelle.
 
+
+### Surface Feather v1
+
+Pour les zones de sol peintes `WorldArea.surface.zones[]`, le pack peut déclarer une politique générique :
+
+```js
+surfaceTransition: {
+  mode: 'feather',
+  widthRatio: 0.18,
+  minWidth: 6,
+  maxWidth: 64,
+  steps: 7,
+  edgeOpacity: 0.08
+}
+```
+
+Cette politique appartient au Material Pack / Material Registry.
+
+Règles :
+- la largeur canonique `zone.width` ne change jamais ;
+- le feather est calculé vers l'intérieur de cette largeur ;
+- aucune bande, zone ou géométrie de transition n'est sérialisée ;
+- le renderer dessine plusieurs passes imbriquées du matériau de la zone ;
+- le bord reste partiellement transparent afin de laisser voir le matériau déjà rendu dessous ;
+- le cœur devient opaque ;
+- l'ordre canonique des `surface.zones[]` reste l'ordre de composition ;
+- un pack sans politique explicite reçoit `{ mode: 'none' }` et conserve le rendu historique opaque en une passe.
+
+Ce mécanisme est générique surface → surface. Les transitions dédiées route/herbe et eau/berge du lot `transition-decals-v1` restent indépendantes et inchangées.
+
+Les paramètres sont visuels uniquement : ils ne changent ni `terrainFamilyId`, ni `traversalRuleId`, ni collision, ni gameplay.
+
 ## Decals
 
 Exemples :
