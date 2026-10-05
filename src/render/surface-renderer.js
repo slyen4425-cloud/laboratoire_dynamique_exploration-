@@ -776,9 +776,12 @@ function drawWaterMaterial(
       river,
       camera,
       viewport,
-      transition,
       scratch,
-      outerWidth,
+      linearFeatherMaskPlan(
+        river.width,
+        outerWidth,
+        transition
+      ),
       (layerCtx) => {
         drawWaterMaterialRaw(
           layerCtx,
