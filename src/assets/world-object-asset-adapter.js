@@ -149,3 +149,19 @@ export function resolveWorldObjectAsset(assetId) {
   const id = typeof assetId === 'string' ? assetId.trim() : '';
   return id ? WORLD_OBJECT_ASSETS[id] ?? null : null;
 }
+
+
+export function createWorldObjectAssetResolver({
+  resolveUserAsset = null
+} = {}) {
+  return function resolveComposedWorldObjectAsset(assetId) {
+    const native = resolveWorldObjectAsset(assetId);
+    if (native) return native;
+
+    if (typeof resolveUserAsset === 'function') {
+      return resolveUserAsset(assetId) ?? null;
+    }
+
+    return null;
+  };
+}
