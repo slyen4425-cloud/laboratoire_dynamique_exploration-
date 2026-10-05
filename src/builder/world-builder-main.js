@@ -46,7 +46,7 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=environment-showcase-assets-v1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -72,7 +72,7 @@ import {
 } from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=object-catalog-placement-v1';
+} from '../objects/object-definition-catalog.js?rev=environment-showcase-assets-v1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
@@ -116,7 +116,7 @@ import {
 import {
   listWorldObjectAssets,
   resolveWorldObjectAsset
-} from '../assets/world-object-asset-adapter.js';
+} from '../assets/world-object-asset-adapter.js?rev=environment-showcase-assets-v1';
 import {
   createImageAssetLoader
 } from '../assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
@@ -240,7 +240,7 @@ const objectDefinitions =
 
 const objectImageLoader = createImageAssetLoader({
   resolveAsset: resolveWorldObjectAsset,
-  cacheRevision: 'world-builder-dynamique-ui-v1'
+  cacheRevision: 'environment-showcase-assets-v1'
 });
 await objectImageLoader.load(
   listWorldObjectAssets().map((asset) => asset.id)
