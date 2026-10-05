@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: water-lava-materials-v1
+# preview-revision: battle-end-return-v1
 
 on:
   push:
@@ -28,11 +28,11 @@ jobs:
         with:
           ref: preview/exploration-water-lava-materials-v1-2026-10-04
 
-      - name: Checkout Combat Exploration Roster Target Availability preview
+      - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-exploration-roster-target-availability-v1-2026-10-04
+          ref: preview/lab-exploration-battle-end-return-v1-2026-10-05
           path: combat-preview
 
       - name: Checkout Capture global visual assets
