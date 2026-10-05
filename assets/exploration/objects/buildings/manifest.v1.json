@@ -4,7 +4,7 @@
   "ownership": "exploration-world-objects",
   "generatedAt": "2026-10-02",
   "runtimeProfile": "mobile-webp-384x384-q82",
-  "purpose": "First top-down Building WorldObject visual for World Builder Dynamique. Visuals never define collision, footprint, door anchors or portals.",
+  "purpose": "Top-down Building WorldObject visuals for World Builder Dynamique. Visuals never define collision, footprint, door anchors or portals.",
   "sourceProfile": {
     "fileId": "file_00000000caa481f48cb5603bfdc0a907",
     "generationId": "82a85817-f79e-4562-8cee-de81d1f2f5c5",
@@ -31,6 +31,47 @@
       "view": "top-down",
       "sha256": "cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f",
       "bytes": 52898
+    },
+    {
+      "assetId": "object.building.house.blue_cottage.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue-cottage",
+      "view": "top-down",
+      "sha256": "546be91f14935cbc0257d8c8de9a04bf3054e78948a05eb999601c830048b765",
+      "bytes": 40006
+    },
+    {
+      "assetId": "object.building.house.red_tile.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red-tile",
+      "view": "top-down",
+      "sha256": "0b40db1ed8791f2b495f87e907f139cff57130f4847922d32cbf04d6b28bfcd0",
+      "bytes": 46814
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden-thatch",
+      "view": "top-down",
+      "sha256": "2af3034567ab5b96b91aa492e1adc2c1ef62a10bd3cb1640a92994e4522da8fa",
+      "bytes": 37264
+    }
+  ],
+  "additionalSourceProfiles": [
+    {
+      "fileId": "file_00000000e1b08210846414f7b80255b6",
+      "generationId": "48ff180f-da55-4ad1-a247-c0abf02cc1c9",
+      "format": "PNG RGBA",
+      "width": 2172,
+      "height": 724,
+      "alpha": true,
+      "sha256": "3859663bf4a724a5a374d0706efd4f52d776a42fc7355121cb80b158b45796ee"
     }
   ]
 }
