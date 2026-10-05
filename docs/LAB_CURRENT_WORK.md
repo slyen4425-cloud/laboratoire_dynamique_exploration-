@@ -133,7 +133,29 @@
 > - vérifier qu'une texture utilisée ne peut pas être supprimée ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
+> Validation technique finale avant preview :
+> - HEAD prévalidation code : `151c61d6f67afefd792aaaeefd189cc8884e6642` ;
+> - CI : `37335848493` — **SUCCESS**.
+>
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-user-texture-import-v1-prevalidation-green-2026-10-05` @ `151c61d6f67afefd792aaaeefd189cc8884e6642` ;
+> - preview : `preview/exploration-user-texture-import-v1-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #87 — **MERGED** ;
+> - main infrastructure : `4ccb2b49810907a09ab65eb6825495095a1969c5` ;
+> - Pages : `37336026506` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=user-texture-import-v1`.
+>
+> Gate utilisateur demandé :
+> 1. ouvrir Terrain -> « Textures personnelles » ;
+> 2. importer une image comme Sol / surface et la peindre ;
+> 3. importer une image comme Route et la peindre ;
+> 4. importer une image comme Rivière / mer et la peindre ;
+> 5. recharger la page : les textures doivent rester présentes ;
+> 6. cliquer « Tester en jeu » : les textures doivent être identiques dans Exploration ;
+> 7. essayer de supprimer une texture utilisée : suppression refusée explicitement ;
+> 8. créer une texture non utilisée puis la supprimer : suppression autorisée.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate utilisateur mobile requis avant GREEN final**.
 
 ---
 
