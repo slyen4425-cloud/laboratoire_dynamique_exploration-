@@ -1,5 +1,65 @@
 # LAB_CURRENT_WORK — Point de reprise unique
 
+> ÉTAT ACTIF — 2026-10-05
+>
+> Chantier : **Builder Mobile Paint Ergonomics v1**
+>
+> Branche : `work/exploration-builder-mobile-paint-ergonomics-v1-2026-10-05`
+>
+> Base GREEN : `4a0dfa162627fb423f0dc00c01630e947385974a`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-builder-mobile-paint-ergonomics-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-water-lava-materials-v1-green-2026-10-05`
+>
+> Retour utilisateur :
+> - la barre directe possède des entrées séparées Peindre terrain / Tracer route / Tracer rivière alors que ces trois fonctions appartiennent au même espace Terrain ;
+> - sur smartphone, annuler le dernier tracé impose trop de scroll/manipulations ;
+> - le réglage du pinceau est pénible pendant la peinture ;
+> - changer la taille du pinceau après un tracé modifie aujourd'hui la largeur du tracé sélectionné, alors que ce réglage doit servir uniquement aux prochains tracés.
+>
+> Mission unique :
+> - remplacer les trois boutons directs Terrain/Route/Rivière par un seul outil **Peindre** ;
+> - choisir le type de tracé dans l'onglet Terrain via un contrôle compact Terrain / Route / Rivière ;
+> - afficher uniquement les réglages du type de tracé courant pour réduire les doublons et le scroll ;
+> - ajouter sur mobile un bouton flottant **Annuler tracé** ;
+> - l'annulation conserve seulement une pile éphémère de références `areaId/kind/pathId`, jamais une copie de géométrie ;
+> - ajouter un réglage flottant rapide du diamètre/largeur pendant la peinture ;
+> - rendre les sliders de largeur strictement prospectifs : ils règlent le prochain tracé et ne mutent jamais un tracé déjà créé.
+>
+> Propriétaires :
+> - WorldDocument/draft : autorité unique des tracés ;
+> - helpers `addSurfacePath/deleteSurfacePath/updateSurfacePath` : mutations canoniques ;
+> - état outil / pile d'IDs d'annulation / taille outil : UI éphémère seulement ;
+> - Renderer : lecture seule.
+>
+> Interdits :
+> - aucune pile contenant des copies de WorldDocument ou de géométrie ;
+> - aucun système Undo global concurrent ;
+> - aucune mutation d'un path existant depuis le slider du pinceau ;
+> - aucun changement de géométrie runtime, collisions, rencontres, Portals ou Combat ;
+> - aucun changement `Zombicide-40k`.
+>
+> Tests :
+> - RED : toolbar n'expose plus trois outils de peinture séparés ;
+> - RED : contrôle de type + bouton flottant annulation + contrôle rapide pinceau exigés ;
+> - RED : les sliders de largeur ne peuvent plus appeler `updateSurfacePath(... { width })` ;
+> - GREEN : création terrain/route/rivière toujours via `addSurfacePath` ;
+> - GREEN : undo supprime uniquement le dernier tracé référencé via `deleteSurfacePath` ;
+> - tests Builder existants + CI complète ;
+> - preview mobile + gate utilisateur avant GREEN final.
+>
+> Hors périmètre :
+> - moteur de transition/feather ;
+> - import de textures utilisateur ;
+> - multi-zone / World Assembly ;
+> - refonte générale des autres onglets Builder.
+>
+> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+
+---
+
+
 > ÉTAT ACTIF — 2026-10-04
 >
 > Chantier : **Water + Lava Materials v1**
