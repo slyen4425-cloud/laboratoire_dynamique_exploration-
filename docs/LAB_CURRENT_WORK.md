@@ -72,7 +72,42 @@
 > - changement collision/traversée ;
 > - refonte Material Pack.
 >
-> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+> Résultat technique :
+> - TDD RED initial : `54b14f6eea2064e2431004226956e21d1dfe0b9c` ;
+> - CI RED : `37322500717` — **FAILURE attendue** car Route/Rivière dessinaient encore leurs strokes directement sur le canvas principal ;
+> - première implémentation : Route/Rivière rendues dans la couche temporaire puis compositées via le `smooth-mask` partagé ;
+> - CI : `37322646224` — **SUCCESS** ;
+> - refinement TDD : `ff70914294df1596989116cc6b448889c0e581e8` ;
+> - CI RED refinement : `37322955508` — **FAILURE attendue** car le plan linéaire dédié n'existait pas encore ;
+> - `linearFeatherMaskPlan(coreWidth, visualOuterWidth, transition)` ajouté :
+>   - Route : cœur opaque = `width`, enveloppe = `width + outerEdgePadding` ;
+>   - Rivière/Mer : cœur opaque = `width`, enveloppe = `width + outerBankPadding` ;
+> - `drawSmoothMaskedLayer()` reste l'unique compositeur partagé pour Surface / Route / Rivière ;
+> - les deux mêmes buffers Canvas sont réutilisés entre features et frames ;
+> - edge/bank, center et highlight historiques restent dessinés dans la couche ;
+> - aucune mutation de la feature ou du WorldDocument ;
+> - CI refinement : `37323470861` — **SUCCESS** ;
+> - cache-bust du helper `surface-feather.js?rev=linear-smooth-transition-v1` ajouté pour éviter un ancien module mobile ;
+> - CI cache : `37323563216` — **SUCCESS**.
+>
+> Aucun changement :
+> - schéma WorldDocument ;
+> - géométrie Route/Rivière ;
+> - Material Registry / IDs de matériaux ;
+> - collision / traversée / rencontres ;
+> - Builder/Draft ;
+> - Combat / Portal / Events ;
+> - `Zombicide-40k`.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - sur smartphone, tracer une Route puis une Rivière/Mer sur Herbe/Neige/Sable ;
+> - vérifier que le bord est progressif et non net ;
+> - vérifier que le cœur reste bien opaque/lisible ;
+> - vérifier qu'il n'y a pas de perte de fluidité perceptible ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
 
 ---
 
