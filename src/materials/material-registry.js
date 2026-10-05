@@ -44,6 +44,55 @@ function normalizeMaterial(material) {
   });
 }
 
+function finite(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeSurfaceTransition(input) {
+  if (
+    !input ||
+    typeof input !== 'object' ||
+    input.mode !== 'feather'
+  ) {
+    return deepFreeze({ mode: 'none' });
+  }
+
+  const minWidth = Math.max(
+    0,
+    finite(input.minWidth, 6)
+  );
+  const maxWidth = Math.max(
+    minWidth,
+    finite(input.maxWidth, 64)
+  );
+
+  return deepFreeze({
+    mode: 'feather',
+    widthRatio: clamp(
+      finite(input.widthRatio, 0.18),
+      0.01,
+      0.45
+    ),
+    minWidth,
+    maxWidth,
+    steps: clamp(
+      Math.round(finite(input.steps, 7)),
+      2,
+      12
+    ),
+    edgeOpacity: clamp(
+      finite(input.edgeOpacity, 0.08),
+      0,
+      0.95
+    )
+  });
+}
+
 export function createMaterialRegistry(pack) {
   const source = pack && typeof pack === 'object' ? pack : {};
   const materials = Array.isArray(source.materials)
@@ -59,6 +108,11 @@ export function createMaterialRegistry(pack) {
     byId.set(material.id, material);
   }
 
+  const surfaceTransition =
+    normalizeSurfaceTransition(
+      source.surfaceTransition
+    );
+
   return Object.freeze({
     schemaVersion: Number.isInteger(source.schemaVersion)
       ? source.schemaVersion
@@ -67,6 +121,7 @@ export function createMaterialRegistry(pack) {
       typeof source.id === 'string' && source.id.trim()
         ? source.id.trim()
         : 'material-pack',
+    surfaceTransition,
     list() {
       return Object.freeze([...byId.values()]);
     },
