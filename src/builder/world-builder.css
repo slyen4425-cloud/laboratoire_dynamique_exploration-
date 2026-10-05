@@ -333,7 +333,7 @@ input:focus, select:focus, textarea:focus {
 
 .map-tools {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   padding: 8px 9px 0;
   background: #18221b;
@@ -353,6 +353,48 @@ input:focus, select:focus, textarea:focus {
   color: #9fb09e;
   font-size: 0.78rem;
   line-height: 1.25;
+}
+
+[data-terrain-kind-panel][hidden],
+#paint-floating-tools[hidden] {
+  display: none;
+}
+
+.paint-floating-tools {
+  position: absolute;
+  right: 10px;
+  bottom: 62px;
+  z-index: 16;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #536253;
+  border-radius: 12px;
+  background: rgba(15, 23, 17, 0.94);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.34);
+}
+
+.paint-floating-tools button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 7px 10px;
+}
+
+#paint-brush-value {
+  display: grid;
+  place-items: center;
+  min-width: 54px;
+  min-height: 40px;
+  padding-inline: 6px;
+  border: 1px solid #465548;
+  border-radius: 8px;
+  background: #0b120d;
+  font-variant-numeric: tabular-nums;
+}
+
+#paint-undo:disabled {
+  opacity: 0.48;
 }
 
 .builder-hint {
@@ -414,12 +456,27 @@ input:focus, select:focus, textarea:focus {
   padding-inline: 0;
 }
 
-#builder-preview[data-tool="terrain"] {
+#builder-preview[data-tool="terrain"],
+#builder-preview[data-tool="route"],
+#builder-preview[data-tool="river"] {
   cursor: crosshair;
 }
 
 
 @media (max-width: 760px) {
+  #paint-floating-tools {
+    position: fixed;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    justify-content: center;
+    z-index: 40;
+  }
+
+  #paint-undo {
+    margin-left: auto;
+  }
+
   #test-exploration {
     flex: 0 0 auto;
     white-space: nowrap;
