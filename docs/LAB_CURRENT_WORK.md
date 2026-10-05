@@ -63,7 +63,32 @@
 > - refonte des familles terrain ;
 > - Surface Feather.
 >
-> État : **LOT OUVERT — TDD RED requis avant correction**.
+> Résultat technique :
+> - TDD RED : `9ada3f8e71aa0d223bd661a97de30e688c5d941e` ;
+> - CI RED : `37315930233` — **FAILURE attendue** sur les libellés et l'activation automatique du mode sélectionné ;
+> - cause confirmée : le sélecteur changeait les réglages mais n'activait pas le mode de peinture lorsqu'on était encore sur `Déplacer` ;
+> - correction : choisir `Sol / surface`, `Route` ou `Rivière / mer` appelle maintenant directement `setMapTool(selectedKind)` ;
+> - le bouton global reste unique et affiche le mode courant (`Peindre · Sol/Route/Rivière / mer`) ;
+> - le pointer pipeline utilise `isPaintKind(mapTool)` puis le chemin canonique `pending-draw -> beginSurfacePath() -> addSurfacePath()` ;
+> - aucune nouvelle liste, aucun nouveau format, aucun bouton Route/Rivière séparé ;
+> - CI implémentation : `37316131863` — **SUCCESS** ;
+> - cache navigateur Builder raccordé à `builder-unified-paint-v1` ;
+> - CI après cache-bust : `37316212015` — **SUCCESS**.
+>
+> Aucun changement :
+> - WorldDocument / schéma ;
+> - Surface Renderer / Material Registry ;
+> - collisions / traversée / rencontres ;
+> - Combat / Portal / Events ;
+> - `Zombicide-40k`.
+>
+> Gate restant :
+> - publier une preview dédiée ;
+> - sur smartphone : choisir Route puis tracer, choisir Rivière / mer puis tracer, revenir Sol / surface ;
+> - vérifier que le même bouton Peindre reste actif, que +/- et Annuler fonctionnent pour les trois modes ;
+> - aucun GREEN final avant validation utilisateur.
+>
+> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
 
 ---
 
