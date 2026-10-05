@@ -24,9 +24,9 @@ test('Builder exposes one paint entry point and a compact draw-kind selector', a
     assert.match(
       html,
       new RegExp(
-        'data-terrain-kind-panel=["\\']' +
+        "data-terrain-kind-panel=[\\\"']" +
           kind +
-          '["\\']'
+          "[\\\"']"
       )
     );
   }
