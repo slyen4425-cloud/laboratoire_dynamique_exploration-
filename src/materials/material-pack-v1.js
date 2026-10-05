@@ -3,6 +3,14 @@ export const MATERIAL_PACK_SCHEMA_VERSION = 1;
 export const materialPackV1 = Object.freeze({
   schemaVersion: MATERIAL_PACK_SCHEMA_VERSION,
   id: 'forest-core-v1',
+  surfaceTransition: Object.freeze({
+    mode: 'feather',
+    widthRatio: 0.18,
+    minWidth: 6,
+    maxWidth: 64,
+    steps: 7,
+    edgeOpacity: 0.08
+  }),
   materials: Object.freeze([
     Object.freeze({
       id: 'grass.forest',
