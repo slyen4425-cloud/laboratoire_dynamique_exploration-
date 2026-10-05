@@ -88,7 +88,31 @@
 > - vérifier que le même bouton Peindre reste actif, que +/- et Annuler fonctionnent pour les trois modes ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
+> Validation technique finale avant preview :
+> - HEAD prévalidation : `dde25814be407266763158042e27a60924704baf` ;
+> - CI : `37316286090` — **SUCCESS**.
+>
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-builder-unified-paint-v1-prevalidation-green-2026-10-05` @ `dde25814be407266763158042e27a60924704baf` ;
+> - preview : `preview/exploration-builder-unified-paint-v1-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #85 — **MERGED** ;
+> - main infrastructure : `a7f7b143aa6791641be965f076c91d93b35da040` ;
+> - Pages : `37316469893` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-unified-paint-v1`.
+>
+> Gate utilisateur demandé :
+> 1. choisir `Route` dans Type de tracé puis tracer directement sur la map sans cliquer ailleurs ;
+> 2. choisir `Rivière / mer` puis tracer immédiatement ;
+> 3. revenir à `Sol / surface` et peindre ;
+> 4. vérifier que le bouton global indique le mode courant ;
+> 5. vérifier que taille + / - et Annuler fonctionnent dans les trois modes.
+>
+> Audit préparatoire du lot suivant :
+> - Route et Rivière sont déjà rendues par le même `Surface Renderer` ;
+> - elles utilisent actuellement des bords dédiés (`edge` / `bank`) ou des doubles strokes couleur ;
+> - le prochain lot pourra donc réutiliser l'autorité du `smooth-mask` au niveau Renderer, sans modifier `surface.routes[]` ni `surface.rivers[]` et sans nouveau système de géométrie.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate utilisateur requis avant GREEN final**.
 
 ---
 
