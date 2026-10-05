@@ -146,15 +146,10 @@ function drawSmoothMaskedLayer(
   item,
   camera,
   viewport,
-  transition,
   scratch,
-  outerWidth,
+  plan,
   drawLayer
 ) {
-  const plan = surfaceFeatherMaskPlan(
-    outerWidth,
-    transition
-  );
 
   if (
     !plan ||
