@@ -113,7 +113,27 @@
 > - vérifier disparition de la ligne dure, lisibilité du cœur de texture et fluidité ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — preview + gate visuel utilisateur requis**.
+> Validation technique finale avant preview :
+> - HEAD preview : `28417979a22b668b156935d51c57dc6cf7bd059d` ;
+> - CI : `37292114374` — **SUCCESS**.
+>
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-surface-feather-v1-prevalidation-green-2026-10-05` @ `28417979a22b668b156935d51c57dc6cf7bd059d` ;
+> - preview : `preview/exploration-surface-feather-v1-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #83 — **MERGED** ;
+> - main infrastructure : `09c4ac844262f899bc972d4e3c4d488030234d9a` ;
+> - Pages : `37292248199` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=surface-feather-v1`.
+>
+> Gate utilisateur demandé :
+> 1. peindre une zone Neige sur Herbe ;
+> 2. peindre Sable sur Herbe ;
+> 3. peindre Montagne sur Neige ou inversement ;
+> 4. vérifier que la frontière est progressive et non une ligne franche ;
+> 5. vérifier que le centre du trait reste bien opaque/lisible ;
+> 6. vérifier qu'il n'y a pas de baisse de fluidité perceptible sur smartphone.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
 
 ---
 
