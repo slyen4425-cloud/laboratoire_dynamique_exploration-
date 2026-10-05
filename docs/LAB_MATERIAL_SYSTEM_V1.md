@@ -227,6 +227,38 @@ Règles :
 
 La V2 ne modifie ni famille terrain, ni traversée, ni collision, ni rencontre, ni ordre des zones.
 
+### Linear Smooth Transition v1 — Route + Rivière / mer
+
+Le `smooth-mask` de Surface Feather v2 est maintenant réutilisé par les features linéaires `path` et `water` dans le **même Surface Renderer**.
+
+Aucune seconde politique de transition n'est introduite : le pack conserve l'autorité visuelle existante `surfaceTransition.method = 'smooth-mask'`, et le renderer l'applique aux trois géométries peintes.
+
+Règles Route :
+- géométrie canonique inchangée : `surface.routes[].points + width` ;
+- contenu visuel existant inchangé : edge éventuel, center, highlight ;
+- enveloppe visuelle historique : `width + outerEdgePadding` ;
+- cœur opaque : exactement `width` ;
+- le smooth s'effectue uniquement entre le cœur canonique et l'enveloppe visuelle historique ;
+- le blur est recoupé à cette enveloppe avec `destination-in`.
+
+Règles Rivière / mer :
+- géométrie canonique inchangée : `surface.rivers[].points + width` ;
+- contenu visuel existant inchangé : bank éventuelle, center, highlight ;
+- enveloppe visuelle historique : `width + outerBankPadding` ;
+- cœur opaque : exactement `width` ;
+- le smooth s'effectue dans la berge visuelle déjà existante ;
+- aucun nouveau débordement n'est créé.
+
+Implémentation :
+- `linearFeatherMaskPlan(coreWidth, visualOuterWidth, transition)` calcule un plan pur ;
+- `drawSmoothMaskedLayer()` reste l'unique compositeur de masque pour Surface, Route et Rivière ;
+- les deux Canvas temporaires du renderer sont réutilisés par toutes ces géométries ;
+- Route/Rivière sont dessinées dans la couche temporaire puis compositées une seule fois sur le canvas principal ;
+- si Canvas/filter n'est pas disponible, le renderer utilise le rendu direct historique ;
+- aucun masque, bitmap, padding ou résultat de blur n'est persisté dans le WorldDocument.
+
+Le visuel ne modifie jamais collision, traversée, rencontre ou sémantique de terrain.
+
 ## Decals
 
 Exemples :
