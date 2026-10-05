@@ -4478,9 +4478,60 @@ $('preview-focus').addEventListener('click', focusSelection);
 $('terrain-draw-kind').addEventListener(
   'change',
   () => {
-    setMapTool(
-      $('terrain-draw-kind').value
-    );
+    const drawKind =
+      $('terrain-draw-kind').value;
+    $('user-texture-kind').value =
+      drawKind === 'route'
+        ? 'path'
+        : drawKind === 'river'
+          ? 'water'
+          : 'surface';
+    setMapTool(drawKind);
+  }
+);
+
+$('user-texture-library').addEventListener(
+  'change',
+  () => {
+    selectedUserMaterialId =
+      $('user-texture-library').value || null;
+    refreshUserTextureControls();
+  }
+);
+
+$('user-texture-import').addEventListener(
+  'click',
+  async () => {
+    try {
+      const record =
+        await importUserTextureFromControls();
+      setStatus(
+        `Texture « ${record.label} » ajoutée à ${userMaterialKindLabel(record.kind)}.`
+      );
+    } catch (error) {
+      $('user-texture-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('user-texture-delete').addEventListener(
+  'click',
+  async () => {
+    try {
+      const deleted =
+        await deleteSelectedUserTexture();
+      if (deleted) {
+        setStatus(
+          'Texture personnelle supprimée.'
+        );
+      }
+    } catch (error) {
+      $('user-texture-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
   }
 );
 
@@ -5191,6 +5242,15 @@ $('reset-demo').addEventListener('click', () => {
 addEventListener('resize', () => {
   renderPreview();
 });
+
+addEventListener(
+  'pagehide',
+  () => {
+    textureLoader?.dispose?.();
+    userMaterialAssetResolver?.dispose?.();
+  },
+  { once: true }
+);
 
 refreshControls();
 if (resumeBuilderTest) {
