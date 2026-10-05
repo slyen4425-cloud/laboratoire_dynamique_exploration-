@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: user-texture-import-v1
+# preview-revision: environment-showcase-assets-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration User Texture Import preview
+      - name: Checkout Exploration Environment Showcase Assets preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-user-texture-import-v1-2026-10-05
+          ref: preview/exploration-environment-showcase-assets-v1-2026-10-05
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
