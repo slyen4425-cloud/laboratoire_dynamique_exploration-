@@ -112,7 +112,16 @@
 > - elles utilisent actuellement des bords dédiés (`edge` / `bank`) ou des doubles strokes couleur ;
 > - le prochain lot pourra donc réutiliser l'autorité du `smooth-mask` au niveau Renderer, sans modifier `surface.routes[]` ni `surface.rivers[]` et sans nouveau système de géométrie.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate utilisateur requis avant GREEN final**.
+> Gate utilisateur final — 2026-10-05 :
+> - verdict utilisateur : « ok, maintenant tu dois placer le smooth comme pour les autre texture » ;
+> - le système de peinture unifié Sol / Route / Rivière-Mer est validé ;
+> - Route et Rivière sont de nouveau accessibles depuis le sélecteur unique sans bouton concurrent ;
+> - aucune régression signalée sur le gate réel.
+>
+> État : **GREEN FINAL — Builder Unified Paint v1 validé utilisateur le 2026-10-05**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-builder-unified-paint-v1-green-2026-10-05`.
 
 ---
 
