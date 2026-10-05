@@ -1,3 +1,7 @@
+import {
+  resolveObjectLibraryFolder
+} from './object-library-taxonomy.js?rev=world-object-library-v1';
+
 export const OBJECT_DEFINITION_SCHEMA_VERSION = 1;
 
 function frozen(value) {
@@ -10,6 +14,61 @@ function frozen(value) {
   }
 
   return Object.freeze(value);
+}
+
+function libraryMetadataForDefinition(definition) {
+  const explicit = definition?.library;
+  if (
+    explicit?.categoryId &&
+    explicit?.folderId
+  ) {
+    return Object.freeze({
+      ...explicit
+    });
+  }
+
+  const id = String(definition?.id ?? '');
+  let folderId = 'decor/general';
+
+  if (definition?.kind === 'bridge') {
+    folderId = 'bridges/general';
+  } else if (definition?.kind === 'building') {
+    folderId = id.includes('.inn.')
+      ? 'buildings/inns/temperate'
+      : 'buildings/houses/temperate';
+  } else if (definition?.kind === 'tree') {
+    folderId = 'vegetation/trees';
+  } else if (definition?.kind === 'rock') {
+    folderId = 'rocks/general';
+  } else if (definition?.kind === 'door') {
+    folderId = 'doors/general';
+  } else if (definition?.kind === 'stairs') {
+    folderId = 'stairs/general';
+  }
+
+  const folder =
+    resolveObjectLibraryFolder(folderId);
+
+  return Object.freeze({
+    categoryId:
+      folder?.categoryId ?? 'decor',
+    folderId,
+    folderLabel:
+      folder?.label ?? folderId,
+    provenance: 'native'
+  });
+}
+
+function normalizeDefinition(definition) {
+  if (!definition || typeof definition !== 'object') {
+    return definition;
+  }
+
+  return {
+    ...definition,
+    library:
+      libraryMetadataForDefinition(definition)
+  };
 }
 
 const DEFINITIONS = frozen([
@@ -268,7 +327,11 @@ export function createObjectDefinitionCatalog(
 
     byId.set(
       definition.id.trim(),
-      frozen(structuredClone(definition))
+      frozen(
+        structuredClone(
+          normalizeDefinition(definition)
+        )
+      )
     );
   }
 
@@ -302,6 +365,29 @@ export function createObjectDefinitionCatalog(
       return definition;
     }
   });
+}
+
+export function listNativeObjectDefinitions() {
+  return Object.freeze(
+    DEFINITIONS.map((definition) =>
+      frozen(
+        structuredClone(
+          normalizeDefinition(definition)
+        )
+      )
+    )
+  );
+}
+
+export function createComposedObjectDefinitionCatalog(
+  userDefinitions = []
+) {
+  return createObjectDefinitionCatalog([
+    ...listNativeObjectDefinitions(),
+    ...(Array.isArray(userDefinitions)
+      ? userDefinitions
+      : [])
+  ]);
 }
 
 export const objectDefinitionCatalogV1 =
