@@ -2,6 +2,51 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **Road Speed Regression Audit v1**
+>
+> Branche : `work/exploration-road-speed-regression-audit-v1-2026-10-05`
+>
+> Base GREEN : `d5148acb6e9ebd8a7dd16e98aecf9d9f2290b55b`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-road-speed-regression-audit-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-linear-smooth-transition-v1-green-2026-10-05`
+>
+> Signalement utilisateur :
+> - les déplacements doivent être plus rapides sur Route ;
+> - impression actuelle : le bonus Route ne semble plus actif.
+>
+> Autorités auditées :
+> - règles : `Traversal Rule Registry` ;
+> - résolution terrain : `Surface Traversal Resolver` ;
+> - mouvement final : `Exploration Core / stepMovement()` ;
+> - Builder : géométrie uniquement, via `surface.routes[]` ;
+> - Renderer : lecture seule, interdit de modifier le gameplay.
+>
+> Invariants :
+> - `terrain.road` doit rester ground ×1.25 ;
+> - une route Builder doit ressortir du handoff normalisé avec `traversalRuleId: terrain.road` ;
+> - `stepMovement()` doit appliquer ce multiplicateur sur la route ;
+> - le smooth visuel ne doit jamais devenir autorité de vitesse ;
+> - aucune rustine dans le Renderer/Builder UI ;
+> - aucun changement `Zombicide-40k`.
+>
+> Plan de vérification :
+> 1. vérifier Registry : `terrain.road.ground === 1.25` ;
+> 2. vérifier Builder -> validation -> handoff -> runtime document ;
+> 3. vérifier `resolveSurfaceTraversal()` au centre d'une Route créée dans le Builder ;
+> 4. vérifier un pas réel `stepMovement()` Route vs sol ;
+> 5. vérifier l'écart éventuel entre largeur gameplay `route.width` et enveloppe visuelle smooth ;
+> 6. si le chemin réel reste GREEN, ne pas inventer de correctif ;
+> 7. si une rupture est démontrée, TDD RED sur la cause puis correction au bon propriétaire.
+>
+> État : **AUDIT EN COURS — aucune correction avant preuve de régression**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **Linear Smooth Transition v1 — Route + Rivière/Mer**
 >
 > Branche : `work/exploration-linear-smooth-transition-v1-2026-10-05`
