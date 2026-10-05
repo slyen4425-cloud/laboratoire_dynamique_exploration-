@@ -535,6 +535,19 @@ let selectedSurfaceKind = null;
 let selectedSurfacePathId = null;
 let selectedUserMaterialId =
   userMaterialRecords[0]?.id ?? null;
+let selectedUserWorldObjectId =
+  userWorldObjectRecords[0]?.id ?? null;
+let selectedObjectLibraryCategoryId =
+  objectDefinitions[0]?.library?.categoryId ??
+  listObjectLibraryCategories()[0]?.id ??
+  null;
+let selectedObjectLibraryFolderId =
+  objectDefinitions.find(
+    (definition) =>
+      definition.library?.categoryId ===
+        selectedObjectLibraryCategoryId
+  )?.library?.folderId ??
+  null;
 let selectedTerrainFamilyDefinitionId =
   draft.terrainFamilies?.[0]?.id ?? null;
 let selectedEncounterFamilyId =
@@ -965,6 +978,417 @@ async function deleteSelectedUserTexture() {
   await rebuildMaterialPipeline();
   refreshControls();
   refreshUserTextureControls();
+
+  return true;
+}
+
+function objectLibraryFolderItems() {
+  const byId = new Map(
+    listObjectLibraryFolders().map(
+      (folder) => [
+        folder.id,
+        folder
+      ]
+    )
+  );
+
+  for (const definition of objectDefinitions) {
+    const library =
+      definition.library;
+    if (
+      !library?.folderId ||
+      byId.has(library.folderId)
+    ) {
+      continue;
+    }
+
+    byId.set(
+      library.folderId,
+      Object.freeze({
+        id: library.folderId,
+        categoryId:
+          library.categoryId,
+        label:
+          library.folderLabel ??
+          library.folderId,
+        defaultKind:
+          definition.kind
+      })
+    );
+  }
+
+  return Object.freeze(
+    [...byId.values()]
+  );
+}
+
+function objectLibraryFoldersForCategory(
+  categoryId
+) {
+  return objectLibraryFolderItems()
+    .filter(
+      (folder) =>
+        folder.categoryId === categoryId
+    );
+}
+
+function objectDefinitionsForFolder(
+  folderId
+) {
+  return objectDefinitions.filter(
+    (definition) =>
+      definition.library?.folderId ===
+        folderId
+  );
+}
+
+function refreshUserWorldObjectControls() {
+  const select =
+    $('user-object-library');
+  const importButton =
+    $('user-object-import');
+  const deleteButton =
+    $('user-object-delete');
+  const fileInput =
+    $('user-object-file');
+  const folderSelect =
+    $('user-object-folder');
+  const status =
+    $('user-object-status');
+
+  const folderItems =
+    objectLibraryFolderItems();
+  setOptions(
+    folderSelect,
+    folderItems,
+    folderSelect.value ||
+      selectedObjectLibraryFolderId ||
+      folderItems[0]?.id ||
+      '',
+    {
+      label: (folder) =>
+        `${folder.label} · ${folder.categoryId}`
+    }
+  );
+
+  if (userWorldObjectStorageError) {
+    select.replaceChildren();
+    const option =
+      document.createElement('option');
+    option.value = '';
+    option.textContent =
+      'Stockage local indisponible';
+    select.append(option);
+    select.disabled = true;
+    importButton.disabled = true;
+    deleteButton.disabled = true;
+    fileInput.disabled = true;
+    status.textContent =
+      `Stockage local indisponible : ${userWorldObjectStorageError.message}`;
+    return;
+  }
+
+  select.disabled = false;
+  importButton.disabled = false;
+  fileInput.disabled = false;
+
+  if (
+    !userWorldObjectRecords.some(
+      (record) =>
+        record.id ===
+          selectedUserWorldObjectId
+    )
+  ) {
+    selectedUserWorldObjectId =
+      userWorldObjectRecords[0]?.id ??
+      null;
+  }
+
+  select.replaceChildren();
+
+  if (
+    userWorldObjectRecords.length === 0
+  ) {
+    const option =
+      document.createElement('option');
+    option.value = '';
+    option.textContent =
+      'Aucun objet personnel';
+    select.append(option);
+    deleteButton.disabled = true;
+    status.textContent =
+      'Ajoute un PNG, JPEG ou WebP puis choisis son dossier.';
+    return;
+  }
+
+  for (
+    const record of
+      userWorldObjectRecords
+  ) {
+    const option =
+      document.createElement('option');
+    option.value = record.id;
+    option.textContent =
+      `${record.label} · ${record.folderLabel}`;
+    select.append(option);
+  }
+
+  select.value =
+    selectedUserWorldObjectId ??
+    userWorldObjectRecords[0].id;
+  selectedUserWorldObjectId =
+    select.value;
+
+  const record =
+    userWorldObjectRecords.find(
+      (item) =>
+        item.id ===
+          selectedUserWorldObjectId
+    );
+  const references = record
+    ? countObjectDefinitionReferences(
+        draft,
+        record.definitionId
+      )
+    : 0;
+
+  deleteButton.disabled =
+    !record ||
+    references > 0;
+
+  status.textContent =
+    !record
+      ? 'Aucun objet personnel sélectionné.'
+      : references > 0
+        ? `${record.width}×${record.height} · ${record.folderLabel} · utilisé ${references} fois : suppression protégée.`
+        : `${record.width}×${record.height} · ${record.folderLabel} · stocké localement sur cet appareil.`;
+}
+
+let userWorldObjectTokenSequence = 0;
+
+function createUserWorldObjectToken() {
+  const uuid =
+    globalThis.crypto?.randomUUID?.();
+
+  if (uuid) {
+    return uuid.toLowerCase();
+  }
+
+  userWorldObjectTokenSequence += 1;
+  return `${Date.now().toString(36)}-${userWorldObjectTokenSequence.toString(36)}`;
+}
+
+function defaultUserWorldObjectLabel(
+  fileName
+) {
+  const name =
+    typeof fileName === 'string'
+      ? fileName.trim()
+      : '';
+
+  return (
+    name
+      .replace(/\.[^.]+$/, '')
+      .trim() ||
+    'Objet personnel'
+  );
+}
+
+async function importUserWorldObjectFromControls() {
+  if (userWorldObjectStorageError) {
+    throw userWorldObjectStorageError;
+  }
+
+  const file =
+    $('user-object-file').files?.[0];
+
+  if (!file) {
+    throw new Error(
+      'Choisis une image à importer.'
+    );
+  }
+
+  if (
+    ![
+      'image/png',
+      'image/jpeg',
+      'image/webp'
+    ].includes(file.type)
+  ) {
+    throw new Error(
+      'Format non supporté : utilise PNG, JPEG ou WebP.'
+    );
+  }
+
+  if (
+    !Number.isFinite(file.size) ||
+    file.size <= 0 ||
+    file.size >
+      USER_WORLD_OBJECT_MAX_BYTES
+  ) {
+    throw new Error(
+      'Fichier trop volumineux : 8 Mio maximum.'
+    );
+  }
+
+  const dimensions =
+    await decodeUserWorldObjectFileDimensions(
+      file
+    );
+
+  let token =
+    createUserWorldObjectToken();
+  while (
+    userWorldObjectRecords.some(
+      (record) =>
+        record.definitionId.endsWith(
+          `.${token}`
+        )
+    )
+  ) {
+    token =
+      createUserWorldObjectToken();
+  }
+
+  const baseFolderId =
+    $('user-object-folder').value;
+  const baseFolder =
+    resolveObjectLibraryFolder(
+      baseFolderId
+    ) ??
+    objectLibraryFolderItems().find(
+      (folder) =>
+        folder.id === baseFolderId
+    );
+
+  if (!baseFolder) {
+    throw new Error(
+      'Choisis un sous-dossier valide.'
+    );
+  }
+
+  const customLabel =
+    $('user-object-custom-folder')
+      .value
+      .trim();
+  const folder =
+    customLabel
+      ? createCustomObjectLibraryFolder({
+          categoryId:
+            baseFolder.categoryId,
+          parentFolderId:
+            baseFolder.id,
+          label:
+            customLabel,
+          idToken:
+            customLabel
+        })
+      : baseFolder;
+
+  const label =
+    $('user-object-name')
+      .value
+      .trim() ||
+    defaultUserWorldObjectLabel(
+      file.name
+    );
+  const kind =
+    $('user-object-kind').value;
+
+  const record =
+    createUserWorldObjectRecord({
+      idToken: token,
+      kind,
+      label,
+      categoryId:
+        folder.categoryId,
+      folderId:
+        folder.id,
+      folderLabel:
+        folder.label,
+      mimeType:
+        file.type,
+      width:
+        dimensions.width,
+      height:
+        dimensions.height,
+      bytes:
+        file.size,
+      sourceName:
+        file.name,
+      blob:
+        file,
+      createdAt:
+        new Date().toISOString()
+    });
+
+  await userWorldObjectStore.put(
+    record
+  );
+  userWorldObjectRecords =
+    await userWorldObjectStore.list();
+  selectedUserWorldObjectId =
+    record.id;
+
+  await rebuildWorldObjectPipeline();
+
+  selectedObjectLibraryCategoryId =
+    record.categoryId;
+  selectedObjectLibraryFolderId =
+    record.folderId;
+
+  $('user-object-name').value = '';
+  $('user-object-custom-folder').value =
+    '';
+  $('user-object-file').value = '';
+
+  refreshControls();
+  $('object-definition').value =
+    record.definitionId;
+  refreshUserWorldObjectControls();
+  renderPreview();
+
+  return record;
+}
+
+async function deleteSelectedUserWorldObject() {
+  if (userWorldObjectStorageError) {
+    throw userWorldObjectStorageError;
+  }
+
+  const record =
+    userWorldObjectRecords.find(
+      (item) =>
+        item.id ===
+          selectedUserWorldObjectId
+    );
+
+  if (!record) return false;
+
+  const references =
+    countObjectDefinitionReferences(
+      draft,
+      record.definitionId
+    );
+
+  if (references > 0) {
+    throw new Error(
+      `Objet utilisé ${references} fois : supprime ou remplace ses placements avant de retirer l’import.`
+    );
+  }
+
+  await userWorldObjectStore.delete(
+    record.id
+  );
+  userWorldObjectRecords =
+    await userWorldObjectStore.list();
+  selectedUserWorldObjectId =
+    userWorldObjectRecords[0]?.id ??
+    null;
+
+  await rebuildWorldObjectPipeline();
+  refreshControls();
+  refreshUserWorldObjectControls();
 
   return true;
 }
