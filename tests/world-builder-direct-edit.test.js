@@ -249,8 +249,9 @@ test('World Builder direct-edit UI exposes map tools and direct zoom gestures', 
   for (const id of [
     'map-tool-select',
     'map-tool-area',
-    'map-tool-route',
-    'map-tool-river',
+    'map-tool-terrain',
+    'terrain-mode-route',
+    'terrain-mode-river',
     'terrain-route-material',
     'terrain-river-material',
     'terrain-path-select'
