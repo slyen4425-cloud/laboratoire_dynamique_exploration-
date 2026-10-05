@@ -111,7 +111,27 @@
 > - vérifier que la frontière reste douce et que la fluidité ne baisse pas perceptiblement ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview requise avant gate utilisateur**.
+> Validation technique finale avant preview :
+> - HEAD prévalidation : `85b212f141bc6d13b6c889ad1fdc2db881e2aadd` ;
+> - CI : `37313220132` — **SUCCESS**.
+>
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-surface-feather-v2-antibanding-prevalidation-green-2026-10-05` @ `85b212f141bc6d13b6c889ad1fdc2db881e2aadd` ;
+> - preview : `preview/exploration-surface-feather-v2-antibanding-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #84 — **MERGED** ;
+> - main infrastructure : `96a26ca72eeb8609ce8213d4694d73750ad12a5d` ;
+> - Pages : `37313396749` — **SUCCESS** ;
+> - lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=surface-feather-v2-antibanding`.
+>
+> Gate utilisateur demandé :
+> 1. peindre Neige sur Herbe ;
+> 2. peindre Sable sur Herbe ;
+> 3. peindre Montagne sur Neige ;
+> 4. comparer avec V1 : les bandes/traits concentriques doivent avoir disparu ou être très fortement réduits ;
+> 5. vérifier que la frontière reste progressive, le cœur lisible et la largeur du tracé inchangée ;
+> 6. vérifier qu'il n'y a pas de baisse de fluidité perceptible sur smartphone.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate visuel utilisateur requis avant GREEN final**.
 
 ---
 
