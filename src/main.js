@@ -9,7 +9,7 @@ import {
   traversalRulePackV1
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
-import { createSurfaceRenderer } from './render/surface-renderer.js?rev=linear-smooth-transition-v1';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-texture-import-v1';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -20,9 +20,20 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=surface-feather-v2-antibanding';
-import { createMaterialRegistry } from './materials/material-registry.js?rev=surface-feather-v2-antibanding';
-import { resolveMaterialAsset } from './assets/material-asset-adapter.js?rev=water-lava-materials-v1';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=user-texture-import-v1';
+import { createMaterialRegistry } from './materials/material-registry.js?rev=user-texture-import-v1';
+import {
+  composeMaterialPackWithUserMaterials
+} from './materials/user-material-library.js?rev=user-texture-import-v1';
+import {
+  createMaterialAssetResolver
+} from './assets/material-asset-adapter.js?rev=user-texture-import-v1';
+import {
+  createUserMaterialAssetResolver
+} from './assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
+import {
+  createUserMaterialStore
+} from './storage/user-material-store.js?rev=user-texture-import-v1';
 import {
   resolveWorldObjectAsset
 } from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';
@@ -267,15 +278,106 @@ const wildWanderController = createWildWanderController(
   }
 );
 
-const materialRegistry = createMaterialRegistry(materialPackV1);
-const textureLoader = createMaterialTextureLoader({
-  resolveAsset: resolveMaterialAsset
-});
-textureLoader.load(collectMaterialAssetIds(materialRegistry.list()));
+const userMaterialStore =
+  createUserMaterialStore();
+let userMaterialRecords = [];
+
+if (userMaterialStore.available) {
+  try {
+    userMaterialRecords =
+      await userMaterialStore.list();
+  } catch (error) {
+    console.error(
+      'User material storage unavailable',
+      error
+    );
+  }
+}
+
+const materialRegistry =
+  createMaterialRegistry(
+    composeMaterialPackWithUserMaterials(
+      materialPackV1,
+      userMaterialRecords
+    )
+  );
+
+const missingUserMaterialIds = [
+  ...new Set(
+    activeWorldDocument.areas.flatMap((area) => {
+      const surface = area.surface ?? {};
+      return [
+        surface.baseMaterialId,
+        ...(surface.zones ?? []).map(
+          (item) => item.materialId
+        ),
+        ...(surface.routes ?? []).map(
+          (item) => item.materialId
+        ),
+        ...(surface.rivers ?? []).map(
+          (item) => item.materialId
+        )
+      ];
+    })
+  )
+].filter(
+  (materialId) =>
+    typeof materialId === 'string' &&
+    materialId.startsWith('user.material.') &&
+    !materialRegistry.resolve(materialId)
+);
+
+if (missingUserMaterialIds.length > 0) {
+  throw new Error(
+    `Textures personnelles introuvables sur cet appareil : ${missingUserMaterialIds.join(', ')}`
+  );
+}
+
+const userMaterialAssetResolver =
+  createUserMaterialAssetResolver(
+    userMaterialRecords
+  );
+
+const resolveMaterialAsset =
+  createMaterialAssetResolver({
+    resolveUserAsset:
+      userMaterialAssetResolver.resolve
+  });
+
+const textureLoader =
+  createMaterialTextureLoader({
+    resolveAsset: resolveMaterialAsset
+  });
+
+const materialLoadStatus =
+  await textureLoader.load(
+    collectMaterialAssetIds(
+      materialRegistry.list()
+    )
+  );
+
+if (
+  materialLoadStatus.missing > 0 ||
+  materialLoadStatus.errors > 0
+) {
+  throw new Error(
+    `Material textures unavailable: ${JSON.stringify(materialLoadStatus)}`
+  );
+}
+
 const surfaceRenderer = createSurfaceRenderer({
   materialRegistry,
   textureLoader
 });
+
+addEventListener(
+  'pagehide',
+  () => {
+    textureLoader.dispose?.();
+    userMaterialAssetResolver.dispose?.();
+  },
+  { once: true }
+);
 
 const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset: resolveWorldObjectAsset,
