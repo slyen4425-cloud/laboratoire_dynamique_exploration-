@@ -94,3 +94,19 @@ export function resolveMaterialAsset(assetId) {
   const id = typeof assetId === 'string' ? assetId.trim() : '';
   return id ? MATERIAL_ASSETS[id] ?? null : null;
 }
+
+
+export function createMaterialAssetResolver({
+  resolveUserAsset = null
+} = {}) {
+  return function resolveComposedMaterialAsset(assetId) {
+    const native = resolveMaterialAsset(assetId);
+    if (native) return native;
+
+    if (typeof resolveUserAsset === 'function') {
+      return resolveUserAsset(assetId) ?? null;
+    }
+
+    return null;
+  };
+}
