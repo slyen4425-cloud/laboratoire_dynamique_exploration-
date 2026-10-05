@@ -10,7 +10,7 @@ import {
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=worldarea-portal-v1-exit-marker';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=world-object-library-v1';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
@@ -35,11 +35,24 @@ import {
   createUserMaterialStore
 } from './storage/user-material-store.js?rev=user-texture-import-v1';
 import {
-  resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=worldarea-portal-v1';
+  createUserWorldObjectStore
+} from './storage/user-world-object-store.js?rev=world-object-library-v1';
 import {
-  resolveWorldObjectPlacements
-} from './world/world-object-placement-model.js?rev=object-catalog-placement-v1';
+  createWorldObjectAssetResolver,
+  resolveWorldObjectAsset
+} from './assets/world-object-asset-adapter.js?rev=world-object-library-v1';
+import {
+  createUserWorldObjectAssetResolver
+} from './assets/user-world-object-asset-resolver.js?rev=world-object-library-v1';
+import {
+  resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
+} from './world/world-object-placement-model.js?rev=world-object-library-v1';
+import {
+  createComposedObjectDefinitionCatalog
+} from './objects/object-definition-catalog.js?rev=world-object-library-v1';
+import {
+  objectDefinitionFromUserRecord
+} from './objects/user-object-library.js?rev=world-object-library-v1';
 import {
   createImageAssetLoader
 } from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
@@ -370,25 +383,100 @@ const surfaceRenderer = createSurfaceRenderer({
   textureLoader
 });
 
+const userWorldObjectStore =
+  createUserWorldObjectStore();
+let userWorldObjectRecords = [];
+
+if (userWorldObjectStore.available) {
+  try {
+    userWorldObjectRecords =
+      await userWorldObjectStore.list();
+  } catch (error) {
+    console.error(
+      'User WorldObject storage unavailable',
+      error
+    );
+  }
+}
+
+const objectDefinitionCatalog =
+  createComposedObjectDefinitionCatalog(
+    userWorldObjectRecords.map(
+      objectDefinitionFromUserRecord
+    )
+  );
+
+const missingUserObjectDefinitionIds = [
+  ...new Set(
+    activeWorldDocument.areas
+      .flatMap((area) =>
+        (area.objects ?? []).map(
+          (placement) =>
+            placement.objectDefinitionId
+        )
+      )
+  )
+].filter(
+  (definitionId) =>
+    typeof definitionId === 'string' &&
+    definitionId.startsWith('user.objectdef.') &&
+    !objectDefinitionCatalog.get(
+      definitionId
+    )
+);
+
+if (
+  missingUserObjectDefinitionIds.length >
+  0
+) {
+  throw new Error(
+    `Objets personnels introuvables sur cet appareil : ${missingUserObjectDefinitionIds.join(', ')}`
+  );
+}
+
+const userWorldObjectAssetResolver =
+  createUserWorldObjectAssetResolver(
+    userWorldObjectRecords
+  );
+
+const resolveWorldObjectAssetComposed =
+  createWorldObjectAssetResolver({
+    resolveUserAsset:
+      userWorldObjectAssetResolver.resolve
+  });
+
+function resolveRuntimeWorldObjectPlacements(
+  placements
+) {
+  return resolveWorldObjectPlacementsRaw(
+    placements,
+    objectDefinitionCatalog
+  );
+}
+
 addEventListener(
   'pagehide',
   () => {
     textureLoader.dispose?.();
     userMaterialAssetResolver.dispose?.();
+    worldObjectImageLoader?.dispose?.();
+    userWorldObjectAssetResolver.dispose?.();
   },
   { once: true }
 );
 
 const worldObjectImageLoader = createImageAssetLoader({
-  resolveAsset: resolveWorldObjectAsset,
-  cacheRevision: 'worldarea-portal-v1-2026-10-02'
+  resolveAsset:
+    resolveWorldObjectAssetComposed,
+  cacheRevision:
+    'world-object-library-v1'
 });
 
 const requiredWorldObjectAssetIds = Object.freeze([
   ...new Set(
     activeWorldDocument.areas
       .flatMap((area) =>
-        resolveWorldObjectPlacements(
+        resolveRuntimeWorldObjectPlacements(
           area.objects
         )
       )
@@ -417,7 +505,10 @@ if (
 
 const worldObjectRenderer = createWorldObjectRenderer({
   imageLoader: worldObjectImageLoader,
-  resolveVisualAsset: resolveWorldObjectAsset
+  resolveVisualAsset:
+    resolveWorldObjectAssetComposed,
+  objectCatalog:
+    objectDefinitionCatalog
 });
 
 const captureMapActorAssets =
