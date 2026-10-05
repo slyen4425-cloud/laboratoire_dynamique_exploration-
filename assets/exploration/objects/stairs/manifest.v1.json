@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "packId": "stairs-showcase-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-05",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "purpose": "Three top-down Stairs WorldObject showcase visuals. V1 is visual placement only; traversal/portal ownership remains separate.",
+  "sourceProfile": {
+    "fileId": "file_00000000fe488210b836373b4c707222",
+    "generationId": "db8bbced-80f7-4fb5-9f1a-258ae8080519",
+    "format": "PNG RGBA",
+    "width": 2172,
+    "height": 724,
+    "alpha": true,
+    "sha256": "a5b044d6dd82ee4033a83ada5fcd1367df8766114ebeeeebf93a8125d85f2d6a"
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 384,
+    "height": 384,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.stairs.stone.simple.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_simple_01.webp",
+      "role": "stairs-visual",
+      "family": "stone",
+      "variant": "simple",
+      "view": "top-down",
+      "sha256": "37b6ba41d74b699b6d9e546de55e375bacbca99cca5d74bf7b2881196775c3e6",
+      "bytes": 32720
+    },
+    {
+      "assetId": "object.stairs.wood.porch.01",
+      "path": "assets/exploration/objects/stairs/stairs_wood_porch_01.webp",
+      "role": "stairs-visual",
+      "family": "wood",
+      "variant": "porch",
+      "view": "top-down",
+      "sha256": "d7d8f85e708cdea90dcb5350c2dff9a0624d9e984b66a5d7cff9ca497006a2fc",
+      "bytes": 36428
+    },
+    {
+      "assetId": "object.stairs.stone.grand.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_grand_01.webp",
+      "role": "stairs-visual",
+      "family": "stone",
+      "variant": "grand",
+      "view": "top-down",
+      "sha256": "270b24424b20889b6b56b8233b2ee04b2ec628f9c6522d1c65e9f8d75d122681",
+      "bytes": 40650
+    }
+  ]
+}
