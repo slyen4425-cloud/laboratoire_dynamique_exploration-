@@ -2,6 +2,88 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **User Texture Import v1**
+>
+> Branche : `work/exploration-user-texture-import-v1-2026-10-05`
+>
+> Base GREEN : `d5148acb6e9ebd8a7dd16e98aecf9d9f2290b55b`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-user-texture-import-v1-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-linear-smooth-transition-v1-green-2026-10-05`
+>
+> Besoin utilisateur :
+> - permettre au créateur d'importer ses propres textures avant de continuer à enrichir la vitrine native ;
+> - couvrir les trois usages déjà canoniques : Sol / surface, Route, Rivière / mer ;
+> - les textures importées doivent apparaître dans les mêmes sélecteurs de matériaux que les textures natives.
+>
+> Audit architecture :
+> - Material Pack / Material Registry sont aujourd'hui statiques ;
+> - Material Asset Adapter est une table native statique ;
+> - Material Texture Loader sait déjà charger une URL `blob:` et n'ajoute pas de cache-revision à ce type d'URL ;
+> - aucun stockage utilisateur n'existe encore dans le laboratoire ;
+> - le Builder et le runtime Exploration construisent chacun leur pipeline Material Registry -> Asset Resolver -> Texture Loader -> Surface Renderer ;
+> - le WorldDocument ne contient que `materialId`, ce qui est la bonne autorité et reste inchangé.
+>
+> Architecture V1 :
+> ```
+> Fichier utilisateur
+>   -> validation format / taille / dimensions
+>   -> User Material Store (IndexedDB v1)
+>   -> record versionné + Blob + assetId + materialId
+>   -> Material Pack composé (natif + utilisateur)
+>   -> Material Registry unique
+>   -> Material Asset Adapter composé
+>   -> Material Texture Loader
+>   -> Builder / Runtime Exploration
+> ```
+>
+> Règles :
+> - aucun second Material Registry ;
+> - aucun second catalogue de peinture ;
+> - la petite liste « textures personnelles » sert uniquement à gérer/supprimer les imports ; la sélection de peinture reste celle des sélecteurs canoniques Sol/Route/Rivière ;
+> - `terrainFamilyId` reste indépendant du matériau ;
+> - aucune collision/traversée/rencontre déduite de l'image ;
+> - assetIds utilisateur réservés au préfixe `user.texture.*` ;
+> - materialIds utilisateur réservés au préfixe `user.material.*` ;
+> - suppression interdite tant que le materialId est référencé par le WorldDocument courant ;
+> - IndexedDB indisponible = erreur explicite dans l'UI, pas de faux stockage mémoire présenté comme persistant ;
+> - formats V1 : PNG / JPEG / WebP ;
+> - limite V1 : 8 Mio par fichier, dimensions de 16 à 4096 px par côté ;
+> - stockage local à l'appareil pour cette V1.
+>
+> Portabilité :
+> - le WorldDocument JSON continue d'exporter les `materialId` ;
+> - cette V1 ne transporte pas encore le Blob sur un autre appareil ;
+> - un lot séparé « User Media Project Export v1 » devra ajouter un package versionné références + médias sans polluer le WorldDocument.
+>
+> TDD attendu :
+> 1. RED : modèle utilisateur versionné et IDs réservés ;
+> 2. RED : validation format / octets / dimensions ;
+> 3. RED : conversion record -> Material Definition pour surface/path/water ;
+> 4. RED : composition du pack natif + utilisateur sans duplicate authority ;
+> 5. RED : resolver asset natif + utilisateur via le même adapter ;
+> 6. RED : protection de suppression si materialId utilisé ;
+> 7. RED : UI Builder expose import + gestion, mais les matériaux utilisateur rejoignent les sélecteurs canoniques ;
+> 8. GREEN : persistence IndexedDB et restauration après reload ;
+> 9. GREEN : runtime Exploration reconstruit le même registry utilisateur ;
+> 10. CI complète + preview + gate utilisateur mobile.
+>
+> Hors périmètre :
+> - package portable médias entre appareils ;
+> - recadrage/édition d'image ;
+> - génération automatique de normal maps ;
+> - paramètres avancés de matériau ;
+> - cloud sync ;
+> - nouveaux types de matériau.
+>
+> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **Linear Smooth Transition v1 — Route + Rivière/Mer**
 >
 > Branche : `work/exploration-linear-smooth-transition-v1-2026-10-05`
