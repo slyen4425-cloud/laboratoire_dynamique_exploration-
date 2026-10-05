@@ -278,3 +278,22 @@ test('Builder exposes category/folder browsing and user object import controls',
   assert.match(main, /objectDefinitionFromUserRecord/);
   assert.match(main, /rebuildWorldObjectPipeline/);
 });
+
+
+test('Exploration runtime rebuilds the same composed WorldObject pipeline as Builder', async () => {
+  const runtime = await readFile(
+    new URL('../src/main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(runtime, /createUserWorldObjectStore/);
+  assert.match(runtime, /objectDefinitionFromUserRecord/);
+  assert.match(runtime, /createComposedObjectDefinitionCatalog/);
+  assert.match(runtime, /createUserWorldObjectAssetResolver/);
+  assert.match(runtime, /createWorldObjectAssetResolver/);
+  assert.match(runtime, /resolveRuntimeWorldObjectPlacements/);
+  assert.match(
+    runtime,
+    /Objets personnels introuvables sur cet appareil/
+  );
+});
