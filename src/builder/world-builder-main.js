@@ -699,6 +699,14 @@ function syncPaintModeUi() {
 
   $('terrain-draw-kind').value = selectedKind;
 
+  const paintLabels = {
+    terrain: 'Sol',
+    route: 'Route',
+    river: 'Rivière / mer'
+  };
+  $('map-tool-paint').textContent =
+    `Peindre · ${paintLabels[selectedKind] ?? 'Sol'}`;
+
   for (
     const panel of
       document.querySelectorAll(
@@ -4106,14 +4114,9 @@ $('preview-focus').addEventListener('click', focusSelection);
 $('terrain-draw-kind').addEventListener(
   'change',
   () => {
-    if (isPaintKind(mapTool)) {
-      setMapTool(
-        $('terrain-draw-kind').value
-      );
-      return;
-    }
-    refreshTerrainControls();
-    renderPreview();
+    setMapTool(
+      $('terrain-draw-kind').value
+    );
   }
 );
 
@@ -4172,11 +4175,7 @@ canvas.addEventListener('pointerdown', (event) => {
   hoverWorldPoint = world;
   canvas.dataset.dragging = 'true';
 
-  if (
-    mapTool === 'terrain' ||
-    mapTool === 'route' ||
-    mapTool === 'river'
-  ) {
+  if (isPaintKind(mapTool)) {
     pointerSession = {
       pointerId: event.pointerId,
       mode: 'pending-draw',
