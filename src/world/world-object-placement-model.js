@@ -102,6 +102,10 @@ function normalizeOverrides(raw) {
     traversalSurfaceFeatureIds:
       normalizeIds(
         source.traversalSurfaceFeatureIds
+      ),
+    visualVariantId:
+      normalizedString(
+        source.visualVariantId
       )
   });
 }
@@ -109,7 +113,7 @@ function normalizeOverrides(raw) {
 export function normalizeWorldObjectPlacement(
   raw,
   index = 0,
-  catalog = objectDefinitionCatalogV1
+  catalog = null
 ) {
   if (!raw || typeof raw !== 'object') {
     return null;
@@ -120,9 +124,13 @@ export function normalizeWorldObjectPlacement(
       raw.objectDefinitionId
     );
 
+  if (!objectDefinitionId) {
+    return null;
+  }
+
   if (
-    !objectDefinitionId ||
-    !catalog?.get?.(objectDefinitionId)
+    catalog?.get &&
+    !catalog.get(objectDefinitionId)
   ) {
     return null;
   }
@@ -143,7 +151,7 @@ export function normalizeWorldObjectPlacement(
 
 export function normalizeWorldObjectPlacements(
   rawPlacements = [],
-  catalog = objectDefinitionCatalogV1
+  catalog = null
 ) {
   if (!Array.isArray(rawPlacements)) {
     return Object.freeze([]);
@@ -176,6 +184,47 @@ export function normalizeWorldObjectPlacements(
   return Object.freeze(placements);
 }
 
+function resolveDefinitionVisual(
+  definition,
+  placement
+) {
+  const visual =
+    definition?.visual &&
+    typeof definition.visual === 'object'
+      ? definition.visual
+      : null;
+
+  if (!visual) return null;
+
+  const variants =
+    Array.isArray(visual.variants)
+      ? visual.variants
+      : [];
+  const requested =
+    placement?.overrides?.visualVariantId;
+  const selectedId =
+    requested ??
+    visual.defaultVariantId ??
+    null;
+  const selected =
+    selectedId
+      ? variants.find(
+          (variant) =>
+            variant?.id === selectedId
+        )
+      : null;
+
+  if (!selected?.assetId) {
+    return visual;
+  }
+
+  return Object.freeze({
+    ...visual,
+    assetId: selected.assetId,
+    variantId: selected.id
+  });
+}
+
 export function resolveWorldObjectPlacement(
   placement,
   catalog = objectDefinitionCatalogV1
@@ -199,7 +248,11 @@ export function resolveWorldObjectPlacement(
       placement.objectDefinitionId,
     kind: definition.kind,
     transform: placement.transform,
-    visual: definition.visual,
+    visual:
+      resolveDefinitionVisual(
+        definition,
+        placement
+      ),
     baseSize: definition.baseSize
   };
 
@@ -220,7 +273,9 @@ export function resolveWorldObjectPlacement(
       ...common,
       footprint: definition.footprint,
       doorAnchors:
-        definition.doorAnchors
+        Array.isArray(definition.doorAnchors)
+          ? definition.doorAnchors
+          : Object.freeze([])
     });
   }
 
