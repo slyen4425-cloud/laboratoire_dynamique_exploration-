@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { materialPackV1 } from '../src/materials/material-pack-v1.js';
 import { createMaterialRegistry } from '../src/materials/material-registry.js';
 import { createSurfaceRenderer } from '../src/render/surface-renderer.js';
+import { linearFeatherMaskPlan } from '../src/render/surface-feather.js';
 
 function fakeContext(log = []) {
   let filter = 'none';
@@ -123,6 +124,40 @@ function drawFixture({ routes = [], rivers = [] }) {
   return { mainLog, scratch };
 }
 
+test('linear smooth plan keeps canonical core opaque and feathers only the existing visual padding', () => {
+  const transition = {
+    mode: 'feather',
+    method: 'smooth-mask',
+    widthRatio: 0.18,
+    minWidth: 6,
+    maxWidth: 64,
+    edgeOpacity: 0,
+    blurRatio: 0.58
+  };
+
+  const roadPlan = linearFeatherMaskPlan(
+    82,
+    100,
+    transition
+  );
+  assert.equal(roadPlan.outerWidth, 100);
+  assert.equal(roadPlan.innerWidth, 82);
+  assert.equal(roadPlan.featherWidth, 9);
+  assert.ok(roadPlan.blurRadius > 0);
+  assert.ok(roadPlan.blurRadius <= 9);
+
+  const riverPlan = linearFeatherMaskPlan(
+    72,
+    92,
+    transition
+  );
+  assert.equal(riverPlan.outerWidth, 92);
+  assert.equal(riverPlan.innerWidth, 72);
+  assert.equal(riverPlan.featherWidth, 10);
+  assert.ok(riverPlan.blurRadius > 0);
+  assert.ok(riverPlan.blurRadius <= 10);
+});
+
 test('Route uses the shared smooth-mask and keeps existing visual envelope', () => {
   const road = {
     id: 'road-a',
@@ -160,6 +195,16 @@ test('Route uses the shared smooth-mask and keeps existing visual envelope', () 
     ),
     true,
     'road transition must reuse continuous blur mask'
+  );
+  assert.equal(
+    scratchLog.some(
+      (entry) =>
+        entry.type === 'stroke' &&
+        entry.filter.startsWith('blur(') &&
+        entry.width === 82
+    ),
+    true,
+    'road canonical width must remain the fully opaque core'
   );
   assert.equal(
     scratchLog.some(
@@ -224,6 +269,16 @@ test('Rivière / mer uses the shared smooth-mask and keeps existing visual envel
     ),
     true,
     'river transition must reuse continuous blur mask'
+  );
+  assert.equal(
+    scratchLog.some(
+      (entry) =>
+        entry.type === 'stroke' &&
+        entry.filter.startsWith('blur(') &&
+        entry.width === 72
+    ),
+    true,
+    'river canonical width must remain the fully opaque core'
   );
   assert.equal(
     scratchLog.some(
