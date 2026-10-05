@@ -97,6 +97,13 @@
 > - plusieurs générations visuelles ont produit des maquettes UI et non des assets isolés : **elles ont été rejetées et ne sont pas commitées** ;
 > - aucun faux sprite, masque ou rotation 180° de secours n'est introduit.
 >
+> Preview / gate :
+> - checkpoint : `checkpoint/exploration-world-object-library-v1-prevalidation-green-2026-10-06` @ `54236eea147befe843858bfd83e6035964d79f75` ;
+> - preview : `preview/exploration-world-object-library-v1-2026-10-06` @ même SHA ;
+> - PR infrastructure Pages : #90 — **MERGED** ;
+> - Pages : `37385892273` — **SUCCESS** ;
+> - lien gate Builder : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=world-object-library-v1`.
+>
 > État : **PRÉVALIDATION TECHNIQUE GREEN — gate utilisateur bibliothèque/import requis ; pack visuel orientation/sable/neige non validé artistiquement.**
 >
 > ---
