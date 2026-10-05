@@ -155,7 +155,25 @@
 > 7. essayer de supprimer une texture utilisée : suppression refusée explicitement ;
 > 8. créer une texture non utilisée puis la supprimer : suppression autorisée.
 >
-> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate utilisateur mobile requis avant GREEN final**.
+> Gate utilisateur final — 2026-10-05 :
+> - verdict utilisateur : « testé, approuvé » ;
+> - import Sol / surface validé ;
+> - import Route validé ;
+> - import Rivière / mer validé ;
+> - persistance locale après reload validée ;
+> - restitution des textures importées dans Exploration validée ;
+> - gestion/suppression conforme au gate utilisateur.
+>
+> État : **GREEN FINAL — User Texture Import v1 validé utilisateur le 2026-10-05**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-user-texture-import-v1-green-2026-10-05`.
+>
+> Suite fonctionnelle explicitement décidée :
+> - interrompre l'enrichissement des textures de sol pour passer à la vitrine d'objets d'environnement ;
+> - prochain chantier : import et raccord propre d'assets de bâtiments, portes, escaliers, rochers, arbres et éléments assimilés ;
+> - ces assets devront respecter l'Object Catalog / Object Definition existant, sans placement intrinsèque dans le Builder et sans seconde autorité.
+
 
 ---
 
