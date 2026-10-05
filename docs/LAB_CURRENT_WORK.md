@@ -82,7 +82,18 @@
 > - confirmer qu'un changement de taille n'épaissit plus les tracés déjà réalisés ;
 > - aucun GREEN final avant validation utilisateur.
 >
-> État : **TECHNIQUE GREEN — publication preview + gate mobile utilisateur requis**.
+> Publication prévalidation :
+> - checkpoint : `checkpoint/exploration-builder-mobile-paint-ergonomics-v1-prevalidation-green-2026-10-05` @ `8faeaddcc00c5be7fb5f40e791933c6ab6d71f12` ;
+> - preview : `preview/exploration-builder-mobile-paint-ergonomics-v1-2026-10-05` @ même SHA ;
+> - PR infrastructure Pages : #82 — **MERGED** ;
+> - main infrastructure : `de82f122b80ab5877570ea505cc573d99133f2c9` ;
+> - Pages : `37258184399` — **SUCCESS** ;
+> - la même publication consomme la preview Combat `exploration-battle-end-return-v1`.
+>
+> Lien gate :
+> `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-mobile-paint-ergonomics-v1`.
+>
+> État : **TECHNIQUE GREEN / PREVALIDATION PUBLIÉE — gate mobile utilisateur requis avant GREEN final**.
 
 ---
 
