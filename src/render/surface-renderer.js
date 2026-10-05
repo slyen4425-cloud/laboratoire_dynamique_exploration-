@@ -140,18 +140,18 @@ function strokeMaskPath(
   ctx.restore();
 }
 
-function drawSurfaceZoneSmoothMask(
+function drawSmoothMaskedLayer(
   ctx,
-  zone,
+  item,
   camera,
   viewport,
-  material,
-  textureLoader,
   transition,
-  scratch
+  scratch,
+  outerWidth,
+  drawLayer
 ) {
   const plan = surfaceFeatherMaskPlan(
-    zone.width,
+    outerWidth,
     transition
   );
 
@@ -159,13 +159,14 @@ function drawSurfaceZoneSmoothMask(
     !plan ||
     !scratch?.mask?.context ||
     !scratch?.zone?.context ||
-    typeof ctx.drawImage !== 'function'
+    typeof ctx.drawImage !== 'function' ||
+    typeof drawLayer !== 'function'
   ) {
     return false;
   }
 
   const maskCtx = scratch.mask.context;
-  const zoneCtx = scratch.zone.context;
+  const layerCtx = scratch.zone.context;
 
   if (!('filter' in maskCtx)) {
     return false;
@@ -185,7 +186,7 @@ function drawSurfaceZoneSmoothMask(
   if (plan.edgeOpacity > 0) {
     strokeMaskPath(
       maskCtx,
-      zone,
+      item,
       camera,
       plan.outerWidth,
       plan.edgeOpacity
@@ -200,7 +201,7 @@ function drawSurfaceZoneSmoothMask(
       `blur(${plan.blurRadius}px)`;
     strokeMaskPath(
       maskCtx,
-      zone,
+      item,
       camera,
       plan.innerWidth,
       1
@@ -210,19 +211,19 @@ function drawSurfaceZoneSmoothMask(
 
   strokeMaskPath(
     maskCtx,
-    zone,
+    item,
     camera,
     plan.innerWidth,
     1
   );
 
-  // The blur is purely visual and may extend outside
-  // the stroke. Clip it back to the canonical zone width.
+  // Blur is visual only. It is always clipped back to the
+  // caller's existing visual envelope.
   maskCtx.globalCompositeOperation =
     'destination-in';
   strokeMaskPath(
     maskCtx,
-    zone,
+    item,
     camera,
     plan.outerWidth,
     1
@@ -232,43 +233,31 @@ function drawSurfaceZoneSmoothMask(
   maskCtx.filter = 'none';
   maskCtx.globalAlpha = 1;
 
-  zoneCtx.globalCompositeOperation =
+  layerCtx.globalCompositeOperation =
     'source-over';
-  zoneCtx.globalAlpha = 1;
-  if ('filter' in zoneCtx) {
-    zoneCtx.filter = 'none';
+  layerCtx.globalAlpha = 1;
+  if ('filter' in layerCtx) {
+    layerCtx.filter = 'none';
   }
-  zoneCtx.clearRect(
+  layerCtx.clearRect(
     0,
     0,
     viewport.width,
     viewport.height
   );
 
-  const image =
-    textureLoader?.get(material.assets.base);
-  const pattern =
-    worldPattern(zoneCtx, image, camera);
+  drawLayer(layerCtx);
 
-  zoneCtx.fillStyle =
-    pattern ?? material.render.baseColor;
-  zoneCtx.fillRect(
-    0,
-    0,
-    viewport.width,
-    viewport.height
-  );
-
-  zoneCtx.globalCompositeOperation =
+  layerCtx.globalCompositeOperation =
     'destination-in';
-  zoneCtx.drawImage(
+  layerCtx.drawImage(
     scratch.mask.canvas,
     0,
     0,
     viewport.width,
     viewport.height
   );
-  zoneCtx.globalCompositeOperation =
+  layerCtx.globalCompositeOperation =
     'source-over';
 
   ctx.drawImage(
@@ -280,6 +269,42 @@ function drawSurfaceZoneSmoothMask(
   );
 
   return true;
+}
+
+function drawSurfaceZoneSmoothMask(
+  ctx,
+  zone,
+  camera,
+  viewport,
+  material,
+  textureLoader,
+  transition,
+  scratch
+) {
+  return drawSmoothMaskedLayer(
+    ctx,
+    zone,
+    camera,
+    viewport,
+    transition,
+    scratch,
+    zone.width,
+    (layerCtx) => {
+      const image =
+        textureLoader?.get(material.assets.base);
+      const pattern =
+        worldPattern(layerCtx, image, camera);
+
+      layerCtx.fillStyle =
+        pattern ?? material.render.baseColor;
+      layerCtx.fillRect(
+        0,
+        0,
+        viewport.width,
+        viewport.height
+      );
+    }
+  );
 }
 
 function hash2D(x, y, salt = 0) {
@@ -586,7 +611,7 @@ function drawSurfaceZoneMaterial(
   }
 }
 
-function drawPathMaterial(ctx, path, camera, material, textureLoader) {
+function drawPathMaterialRaw(ctx, path, camera, material, textureLoader) {
   const render = material.render;
   const edgeImage = textureLoader?.get(material.assets.edge);
   const centerImage = textureLoader?.get(material.assets.center);
@@ -634,7 +659,7 @@ function drawPathMaterial(ctx, path, camera, material, textureLoader) {
   );
 }
 
-function drawWaterMaterial(ctx, river, camera, material, textureLoader) {
+function drawWaterMaterialRaw(ctx, river, camera, material, textureLoader) {
   const render = material.render;
   const bankImage = textureLoader?.get(material.assets.bank);
   const centerImage = textureLoader?.get(material.assets.center);
@@ -679,6 +704,100 @@ function drawWaterMaterial(ctx, river, camera, material, textureLoader) {
     Math.max(3, river.width * render.highlightRatio),
     render.highlightColor,
     render.highlightOpacity
+  );
+}
+
+function drawPathMaterial(
+  ctx,
+  path,
+  camera,
+  viewport,
+  material,
+  textureLoader,
+  transition,
+  scratch
+) {
+  const outerWidth =
+    path.width +
+    material.render.outerEdgePadding;
+
+  if (
+    transition?.method === 'smooth-mask' &&
+    drawSmoothMaskedLayer(
+      ctx,
+      path,
+      camera,
+      viewport,
+      transition,
+      scratch,
+      outerWidth,
+      (layerCtx) => {
+        drawPathMaterialRaw(
+          layerCtx,
+          path,
+          camera,
+          material,
+          textureLoader
+        );
+      }
+    )
+  ) {
+    return;
+  }
+
+  drawPathMaterialRaw(
+    ctx,
+    path,
+    camera,
+    material,
+    textureLoader
+  );
+}
+
+function drawWaterMaterial(
+  ctx,
+  river,
+  camera,
+  viewport,
+  material,
+  textureLoader,
+  transition,
+  scratch
+) {
+  const outerWidth =
+    river.width +
+    material.render.outerBankPadding;
+
+  if (
+    transition?.method === 'smooth-mask' &&
+    drawSmoothMaskedLayer(
+      ctx,
+      river,
+      camera,
+      viewport,
+      transition,
+      scratch,
+      outerWidth,
+      (layerCtx) => {
+        drawWaterMaterialRaw(
+          layerCtx,
+          river,
+          camera,
+          material,
+          textureLoader
+        );
+      }
+    )
+  ) {
+    return;
+  }
+
+  drawWaterMaterialRaw(
+    ctx,
+    river,
+    camera,
+    material,
+    textureLoader
   );
 }
 
@@ -767,12 +886,30 @@ export function createSurfaceRenderer({
 
       for (const road of surface.routes) {
         const material = materialRegistry.require(road.materialId, 'path');
-        drawPathMaterial(ctx, road, camera, material, textureLoader);
+        drawPathMaterial(
+          ctx,
+          road,
+          camera,
+          viewport,
+          material,
+          textureLoader,
+          materialRegistry.surfaceTransition,
+          scratch
+        );
       }
 
       for (const river of surface.rivers) {
         const material = materialRegistry.require(river.materialId, 'water');
-        drawWaterMaterial(ctx, river, camera, material, textureLoader);
+        drawWaterMaterial(
+          ctx,
+          river,
+          camera,
+          viewport,
+          material,
+          textureLoader,
+          materialRegistry.surfaceTransition,
+          scratch
+        );
       }
     }
   });
