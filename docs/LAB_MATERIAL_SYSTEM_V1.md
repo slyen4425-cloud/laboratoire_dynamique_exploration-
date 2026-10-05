@@ -259,6 +259,43 @@ Implémentation :
 
 Le visuel ne modifie jamais collision, traversée, rencontre ou sémantique de terrain.
 
+### User Texture Import v1 — matériaux locaux
+
+Les textures personnelles rejoignent la chaîne d'autorité Material existante :
+
+```text
+Fichier image utilisateur
+  -> validation
+  -> IndexedDB User Material Store v1
+  -> User Material Record versionné
+  -> Material Pack composé (natif + utilisateur)
+  -> Material Registry unique
+  -> Material Asset Resolver composé
+  -> Material Texture Loader
+  -> Surface Renderer
+```
+
+Contrat V1 :
+- formats acceptés : PNG, JPEG, WebP ;
+- taille maximale : 8 Mio ;
+- dimensions : 16 à 4096 px par côté ;
+- IDs réservés : `user.material.<kind>.<token>` et `user.texture.<kind>.<token>` ;
+- `kind` reste l'un des trois types canoniques : `surface`, `path`, `water` ;
+- le Blob est stocké localement dans IndexedDB et restauré après reload ;
+- l'Asset Resolver crée une URL `blob:` éphémère et la révoque au dispose ;
+- le Material Registry reste unique : le pack utilisateur est composé avec le pack natif avant création du registry ;
+- le Builder et le runtime Exploration reconstruisent exactement le même pipeline ;
+- les sélecteurs canoniques Sol / Route / Rivière-Mer restent les seuls sélecteurs de peinture ;
+- la liste « Mes textures » sert seulement à la gestion locale et à la suppression ;
+- suppression interdite si le `materialId` est encore référencé par le WorldDocument courant ;
+- aucune sémantique gameplay n'est déduite de l'image ;
+- `terrainFamilyId`, traversal, collision et rencontres restent indépendants.
+
+Portabilité V1 :
+- le WorldDocument continue de transporter uniquement les `materialId` ;
+- les Blobs utilisateur restent locaux à l'appareil ;
+- un futur package projet versionné devra transporter références + médias pour transfert inter-appareils, sans intégrer les Blobs dans le WorldDocument.
+
 ## Decals
 
 Exemples :
