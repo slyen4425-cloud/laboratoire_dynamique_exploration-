@@ -284,8 +284,19 @@
           Le visuel, la taille logique, le footprint et les anchors appartiennent à l’Object Catalog.
         </p>
 
+        <div class="grid-2">
+          <label>
+            Catégorie
+            <select id="object-library-category"></select>
+          </label>
+          <label>
+            Sous-dossier
+            <select id="object-library-folder"></select>
+          </label>
+        </div>
+
         <label>
-          Définition à placer
+          Objet à placer
           <select id="object-definition"></select>
         </label>
 
@@ -309,6 +320,18 @@
           <label>Scale Y <input id="object-scale-y" type="number" min="0.25" max="4" step="0.05" /></label>
         </div>
 
+        <div id="object-visual-variant-fields" class="kind-fields" hidden>
+          <h3>Orientation / variante visuelle</h3>
+          <label>
+            Variante
+            <select id="object-visual-variant"></select>
+          </label>
+          <p class="builder-hint">
+            La variante change uniquement le visuel déclaré par la définition.
+            Le placement reste le même WorldObject.
+          </p>
+        </div>
+
         <div id="bridge-fields" class="kind-fields">
           <h3>Override local du pont</h3>
           <label>
@@ -324,6 +347,55 @@
         <p id="object-source-status" class="builder-hint">
           Sélectionner une définition puis placer l’objet.
         </p>
+
+        <details class="terrain-encounter-panel">
+          <summary><strong>Importer un objet personnel</strong></summary>
+          <p class="builder-hint">
+            L’image est stockée localement sur cet appareil puis rejoint le même Object Catalog que les objets natifs.
+            Le dossier sert uniquement à organiser la bibliothèque.
+          </p>
+
+          <div class="grid-2">
+            <label>
+              Nom
+              <input id="user-object-name" type="text" maxlength="80" placeholder="Ex. Chêne enneigé" />
+            </label>
+            <label>
+              Type d’objet
+              <select id="user-object-kind">
+                <option value="building">Maison / bâtiment</option>
+                <option value="tree">Arbre</option>
+                <option value="rock">Rocher</option>
+                <option value="door">Porte / entrée</option>
+                <option value="stairs">Escalier</option>
+                <option value="decor">Décor / autre</option>
+              </select>
+            </label>
+            <label>
+              Ranger dans
+              <select id="user-object-folder"></select>
+            </label>
+            <label>
+              Sous-dossier personnalisé (optionnel)
+              <input id="user-object-custom-folder" type="text" maxlength="60" placeholder="Ex. Village enneigé" />
+            </label>
+          </div>
+
+          <label class="file-button">
+            Choisir PNG / JPEG / WebP
+            <input id="user-object-file" type="file" accept="image/png,image/jpeg,image/webp" />
+          </label>
+
+          <div class="row">
+            <button id="user-object-import" type="button">Importer dans la bibliothèque</button>
+            <select id="user-object-library"></select>
+            <button id="user-object-delete" type="button" class="danger">Supprimer l’import</button>
+          </div>
+
+          <p id="user-object-status" class="builder-hint">
+            Les imports sont stockés localement sur cet appareil.
+          </p>
+        </details>
       </section>
 
 
@@ -525,6 +597,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=environment-showcase-selection-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=world-object-library-v1"></script>
 </body>
 </html>
