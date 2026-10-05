@@ -40,7 +40,36 @@
 > 6. si le chemin réel reste GREEN, ne pas inventer de correctif ;
 > 7. si une rupture est démontrée, TDD RED sur la cause puis correction au bon propriétaire.
 >
-> État : **AUDIT EN COURS — aucune correction avant preuve de régression**.
+> Résultat audit :
+> - aucune régression gameplay démontrée ;
+> - `terrain.road.ground` reste **1.25** dans le Traversal Rule Registry ;
+> - `stepMovement()` applique toujours `maxSpeed × speedMultiplier` ;
+> - une Route créée par `addSurfacePath()` ne duplique pas `traversalRuleId` dans le draft, puis la normalisation canonique restaure bien `terrain.road` ;
+> - le handoff Builder conserve ce contrat ;
+> - test bout-en-bout : sol `x=100 -> 200`, Route `x=100 -> 225` pour `maxSpeed=100`, soit **+25 %** ;
+> - CI : `37329597565` — **SUCCESS**.
+>
+> Cause probable de l'impression utilisateur :
+> - largeur gameplay de la Route : `82 px` dans l'exemple ;
+> - enveloppe visuelle smooth historique : `82 + outerEdgePadding(18) = 100 px` ;
+> - le smooth affiche donc environ **9 px de bord fondu par côté** en dehors du cœur gameplay ;
+> - dans ce bord visuel, le resolver retourne volontairement `terrain.ground ×1.00` ;
+> - ce comportement respecte la séparation stricte rendu/gameplay et existait déjà conceptuellement avec l'edge padding, mais le smooth rend la zone de transition plus perceptible.
+>
+> Sentinelle ajoutée :
+> - test du chemin Builder -> validation -> handoff -> traversal -> mouvement ;
+> - test explicite cœur Route x1.25 vs bord visuel smooth x1.00 ;
+> - CI finale : `37329743230` — **SUCCESS**.
+>
+> Décision :
+> - **aucun correctif gameplay appliqué**, car la régression signalée n'est pas reproduite ;
+> - ne pas élargir la traversée à partir du matériau ou du renderer : cela créerait une autorité gameplay visuelle interdite ;
+> - si un ajustement UX est souhaité plus tard, agir uniquement sur la lisibilité du bord/épaule visuelle ou sur l'intensité du bonus, dans un lot séparé.
+>
+> État : **GREEN AUDIT — bonus Route x1.25 confirmé, aucune régression moteur**.
+>
+> Checkpoint final prévu après CI documentaire :
+> `checkpoint/exploration-road-speed-regression-audit-v1-green-2026-10-05`.
 
 ---
 
