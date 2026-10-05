@@ -135,6 +135,36 @@ button.danger {
 .builder-tab { display: none; }
 .builder-tab.active { display: block; }
 
+.user-texture-panel {
+  margin: 12px 0;
+  padding: 10px;
+  border: 1px solid #3c5140;
+  border-radius: 10px;
+  background: rgba(24, 34, 27, 0.82);
+}
+
+.user-texture-panel summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #d5e2d2;
+  font-weight: 650;
+}
+
+.user-texture-panel > label {
+  margin-top: 8px;
+}
+
+#user-texture-status {
+  margin-bottom: 0;
+}
+
+#user-texture-library {
+  min-width: 0;
+  flex: 1 1 210px;
+}
+
 h2 {
   margin: 0 0 12px;
   font-size: 1.05rem;
