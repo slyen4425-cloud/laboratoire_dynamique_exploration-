@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: builder-mobile-paint-ergonomics-v1
+# preview-revision: surface-feather-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Builder Mobile Paint Ergonomics preview
+      - name: Checkout Exploration Surface Feather preview
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-builder-mobile-paint-ergonomics-v1-2026-10-05
+          ref: preview/exploration-surface-feather-v1-2026-10-05
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
