@@ -191,3 +191,62 @@ export function surfaceFeatherMaskPlan(
     edgeOpacity
   });
 }
+
+
+export function linearFeatherMaskPlan(
+  coreWidth,
+  visualOuterWidth,
+  transition = { mode: 'none' }
+) {
+  const core = finite(coreWidth, 0);
+  const outer = finite(visualOuterWidth, 0);
+
+  if (
+    core <= 0 ||
+    outer <= 0 ||
+    !transition ||
+    transition.mode !== 'feather' ||
+    transition.method !== 'smooth-mask'
+  ) {
+    return null;
+  }
+
+  const safeOuter = Math.max(core, outer);
+  const paddingFeather = Math.max(
+    0,
+    (safeOuter - core) / 2
+  );
+
+  if (paddingFeather <= 0.25) {
+    return surfaceFeatherMaskPlan(
+      core,
+      transition
+    );
+  }
+
+  const edgeOpacity = clamp(
+    finite(transition.edgeOpacity, 0),
+    0,
+    0.95
+  );
+  const blurRatio = clamp(
+    finite(transition.blurRatio, 0.58),
+    0.2,
+    1
+  );
+  const blurRadius = Math.min(
+    paddingFeather,
+    Math.max(
+      0.75,
+      paddingFeather * blurRatio
+    )
+  );
+
+  return Object.freeze({
+    outerWidth: safeOuter,
+    innerWidth: core,
+    featherWidth: paddingFeather,
+    blurRadius,
+    edgeOpacity
+  });
+}
