@@ -45,7 +45,7 @@ import {
   pointInRotatedRect,
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
-import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=linear-smooth-transition-v1';
+import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -84,7 +84,13 @@ import {
 } from '../world/world-area-model.js?rev=terrain-family-encounters-v1';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=surface-feather-v2-antibanding';
+} from '../materials/material-pack-v1.js?rev=user-texture-import-v1';
+import {
+  composeMaterialPackWithUserMaterials,
+  countMaterialReferences,
+  createUserMaterialRecord,
+  decodeUserTextureFileDimensions
+} from '../materials/user-material-library.js?rev=user-texture-import-v1';
 import {
   createTerrainFamilyRegistry
 } from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
@@ -96,10 +102,16 @@ import {
 } from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   createMaterialRegistry
-} from '../materials/material-registry.js?rev=surface-feather-v2-antibanding';
+} from '../materials/material-registry.js?rev=user-texture-import-v1';
 import {
-  resolveMaterialAsset
-} from '../assets/material-asset-adapter.js?rev=water-lava-materials-v1';
+  createMaterialAssetResolver
+} from '../assets/material-asset-adapter.js?rev=user-texture-import-v1';
+import {
+  createUserMaterialAssetResolver
+} from '../assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
+import {
+  createUserMaterialStore
+} from '../storage/user-material-store.js?rev=user-texture-import-v1';
 import {
   listWorldObjectAssets,
   resolveWorldObjectAsset
@@ -120,16 +132,102 @@ const statusEl = $('builder-status');
 const validationEl = $('validation-summary');
 const jsonPreview = $('json-preview');
 
-const materialRegistry = createMaterialRegistry(materialPackV1);
-const surfaceMaterials = materialRegistry
-  .list()
-  .filter((material) => material.kind === 'surface');
-const pathMaterials = materialRegistry
-  .list()
-  .filter((material) => material.kind === 'path');
-const waterMaterials = materialRegistry
-  .list()
-  .filter((material) => material.kind === 'water');
+const userMaterialStore =
+  createUserMaterialStore();
+let userMaterialRecords = [];
+let userMaterialStorageError = null;
+
+if (userMaterialStore.available) {
+  try {
+    userMaterialRecords =
+      await userMaterialStore.list();
+  } catch (error) {
+    userMaterialStorageError = error;
+  }
+} else {
+  userMaterialStorageError =
+    new Error('IndexedDB unavailable');
+}
+
+let userMaterialAssetResolver = null;
+let materialRegistry = null;
+let surfaceMaterials = [];
+let pathMaterials = [];
+let waterMaterials = [];
+let textureLoader = null;
+let surfaceRenderer = null;
+
+async function rebuildMaterialPipeline() {
+  textureLoader?.dispose?.();
+  userMaterialAssetResolver?.dispose?.();
+
+  const composedPack =
+    composeMaterialPackWithUserMaterials(
+      materialPackV1,
+      userMaterialRecords
+    );
+
+  materialRegistry =
+    createMaterialRegistry(composedPack);
+
+  surfaceMaterials = materialRegistry
+    .list()
+    .filter((material) =>
+      material.kind === 'surface'
+    );
+  pathMaterials = materialRegistry
+    .list()
+    .filter((material) =>
+      material.kind === 'path'
+    );
+  waterMaterials = materialRegistry
+    .list()
+    .filter((material) =>
+      material.kind === 'water'
+    );
+
+  userMaterialAssetResolver =
+    createUserMaterialAssetResolver(
+      userMaterialRecords
+    );
+
+  const resolveMaterialAsset =
+    createMaterialAssetResolver({
+      resolveUserAsset:
+        userMaterialAssetResolver.resolve
+    });
+
+  textureLoader =
+    createMaterialTextureLoader({
+      resolveAsset: resolveMaterialAsset
+    });
+
+  const loadStatus =
+    await textureLoader.load(
+      collectMaterialAssetIds(
+        materialRegistry.list()
+      )
+    );
+
+  if (
+    loadStatus.missing > 0 ||
+    loadStatus.errors > 0
+  ) {
+    throw new Error(
+      `Material textures unavailable: ${JSON.stringify(loadStatus)}`
+    );
+  }
+
+  surfaceRenderer =
+    createSurfaceRenderer({
+      materialRegistry,
+      textureLoader
+    });
+
+  return loadStatus;
+}
+
+await rebuildMaterialPipeline();
 
 const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
@@ -139,13 +237,6 @@ const captureCreatureCatalog =
 const objectDefinitions =
   objectDefinitionCatalogV1.list();
 
-const textureLoader = createMaterialTextureLoader({
-  resolveAsset: resolveMaterialAsset
-});
-await textureLoader.load(
-  collectMaterialAssetIds(materialRegistry.list())
-);
-
 const objectImageLoader = createImageAssetLoader({
   resolveAsset: resolveWorldObjectAsset,
   cacheRevision: 'world-builder-dynamique-ui-v1'
@@ -154,10 +245,6 @@ await objectImageLoader.load(
   listWorldObjectAssets().map((asset) => asset.id)
 );
 
-const surfaceRenderer = createSurfaceRenderer({
-  materialRegistry,
-  textureLoader
-});
 const objectRenderer = createWorldObjectRenderer({
   imageLoader: objectImageLoader,
   resolveVisualAsset: resolveWorldObjectAsset
