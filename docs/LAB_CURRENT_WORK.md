@@ -2,6 +2,90 @@
 
 > ÉTAT ACTIF — 2026-10-05
 >
+> Chantier : **Surface Feather v2 / anti-banding**
+>
+> Branche : `work/exploration-surface-feather-v2-antibanding-2026-10-05`
+>
+> Base GREEN : `084136b539900ebccf1f2aad26abad8752123a0b`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-surface-feather-v2-antibanding-2026-10-05`
+>
+> Dernier GREEN : `checkpoint/exploration-surface-feather-v1-green-2026-10-05`
+>
+> Retour utilisateur :
+> - Surface Feather v1 validé fonctionnellement ;
+> - dette visuelle constatée : les 7 passes imbriquées restent visibles comme des traits/bandes ;
+> - objectif V2 : lisser le dégradé maintenant, sans revenir à une coupure nette.
+>
+> Audit :
+> - V1 est correctement possédée par Material Registry + Surface Renderer ;
+> - la géométrie canonique `WorldArea.surface.zones[]` est correcte et reste gelée ;
+> - les transitions dédiées route/herbe et eau/berge du lot GREEN `transition-decals-v1` restent indépendantes ;
+> - aucun autre lot V2 / anti-banding n'existe.
+>
+> Mission unique :
+> - conserver `mode: feather` et la compatibilité du rendu V1 par passes ;
+> - ajouter une méthode explicite `method: smooth-mask` au Material Pack ;
+> - produire un masque alpha continu dans des buffers Canvas éphémères ;
+> - utiliser un blur continu du masque puis le recouper strictement à `zone.width` pour ne jamais agrandir la géométrie ;
+> - composer la texture de la zone dans ce masque avant de la reporter dans le Surface Renderer ;
+> - garder le rendu V1 `passes` comme fallback explicite lorsque le Canvas de masque n'est pas disponible.
+>
+> Propriétaires :
+> - géométrie : World Surface Model / WorldDocument ;
+> - politique visuelle : Material Pack / Material Registry ;
+> - masque et composition : Surface Renderer ;
+> - buffers offscreen : ressources temporaires du Renderer uniquement, jamais données persistantes.
+>
+> Invariants / fonctions gelées :
+> - aucun changement de schéma WorldDocument ;
+> - aucun masque/bitmap/zone de transition sérialisé ;
+> - aucune extension au-delà de `zone.width` ;
+> - aucune collision, traversée ou rencontre dérivée du masque ;
+> - routes/rivières et leurs transitions GREEN inchangées ;
+> - Builder ne calcule pas le feather ;
+> - Encounter / Combat / Portal / Events inchangés ;
+> - aucun changement `Zombicide-40k`.
+>
+> TDD attendu :
+> 1. RED : Registry préserve une méthode explicite `smooth-mask` ;
+> 2. RED : calcul pur du masque retourne largeur extérieure, largeur cœur et rayon blur bornés ;
+> 3. RED : vrai chemin Registry -> Renderer utilise un buffer de masque avec blur et composition, pas 7 bandes visibles sur le canvas principal ;
+> 4. GREEN : le masque est recoupé à la largeur canonique ;
+> 5. GREEN : cœur opaque, bord progressif ;
+> 6. GREEN : ancienne méthode `passes` reste compatible ;
+> 7. GREEN : fallback `passes` explicite si aucun Canvas temporaire n'est disponible ;
+> 8. aucune mutation de la zone ;
+> 9. CI complète ;
+> 10. preview mobile + gate utilisateur visuel avant GREEN final.
+>
+> Risques :
+> - Canvas `filter: blur()` selon navigateur ;
+> - buffers temporaires trop coûteux si recréés à chaque frame ;
+> - texture légèrement adoucie si buffer mal dimensionné ;
+> - performance avec beaucoup de zones.
+>
+> Garde performance :
+> - deux buffers réutilisés par instance de Surface Renderer ;
+> - aucune allocation de canvas par frame lorsque la taille ne change pas ;
+> - pas d'analyse pixel CPU ;
+> - fallback V1 conservé.
+>
+> Hors périmètre :
+> - bruit organique/dithering supplémentaire ;
+> - textures de transition par couple ;
+> - transitions route/rivière ;
+> - contrôle utilisateur du feather dans le Builder ;
+> - import textures ;
+> - Multi-Zone.
+>
+> État : **LOT OUVERT — TDD RED requis avant implémentation**.
+
+---
+
+
+> ÉTAT ACTIF — 2026-10-05
+>
 > Chantier : **Surface Feather v1**
 >
 > Branche : `work/exploration-surface-feather-v1-2026-10-05`
