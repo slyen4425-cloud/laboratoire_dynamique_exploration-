@@ -117,7 +117,13 @@
 > - HEAD runtime fix : `c458a8e8354966e6becec7f198b92a34e18ba1a9` ;
 > - CI : `37382324801` — **SUCCESS**.
 >
-> - **GREEN final interdit avant gate utilisateur mobile/visuel.**
+> Gate utilisateur final — 2026-10-06 :
+> - maisons : placement et manipulation validés ;
+> - arbres / rochers / portes / escaliers : sélection, déplacement, rotation et scale validés après correction de la géométrie canonique ;
+> - utilisateur : **« ok parfait »** ;
+> - aucune rustine / masque / seconde autorité introduite.
+>
+> État : **GREEN FINAL — Environment Showcase Assets v1 validé utilisateur le 2026-10-06**.
 >
 > Prochaine étape :
 > - commiter le test RED du micro-lot ;
