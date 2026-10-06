@@ -2542,3 +2542,29 @@ Règle finale :
 - cible inconnue ou non intérieure : aucune mutation, aucune création de secours.
 
 État : **TECHNIQUE GREEN APRÈS REFINEMENT — nouvelle prévalidation/preview requise.**
+
+
+### Preview / gate — Building Interiors / Entrance Link v1
+
+Sentinelle multi-vues :
+- test `visualVariantId` -> entrée gameplay inchangée : `966eae85d22d81f65b7f898c06bef2e336b251fc` ;
+- CI : `37524414044` — **SUCCESS**.
+
+Prévalidation runtime publiée :
+- checkpoint R2 : `checkpoint/exploration-building-interiors-entrance-link-v1-prevalidation-r2-green-2026-10-06` @ `29b1ef0cfd4ff836521f18620a57062a7813948e` ;
+- CI checkpoint : `37524155323` — **SUCCESS** ;
+- preview : `preview/exploration-building-interiors-entrance-link-v1-2026-10-06` @ `29b1ef0cfd4ff836521f18620a57062a7813948e` lors du déploiement ;
+- PR infra : #93 ;
+- Pages : `37524256998` — **SUCCESS** ;
+- lien : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=building-interiors-entrance-link-v1`.
+
+Gate utilisateur :
+1. placer/sélectionner une maison avec `main-door` ;
+2. dans **Entrée et intérieur**, cliquer **Créer un intérieur vide** ;
+3. vérifier le statut **reliée** puis **Ouvrir l'intérieur** ;
+4. revenir sur l'extérieur, déplacer/rotationner/scaler la maison : l'entrée doit suivre ;
+5. lancer **Tester la carte**, entrer par la porte, puis sortir : retour devant la même maison sans rebond immédiat ;
+6. placer une seconde maison identique : elle doit rester **non reliée** tant qu'on ne lui crée/lie pas son propre intérieur ;
+7. optionnel : lier explicitement une WorldArea intérieure existante via le sélecteur.
+
+État : **PRÉVALIDATION TECHNIQUE GREEN + PREVIEW GREEN — gate utilisateur requis avant GREEN final.**
