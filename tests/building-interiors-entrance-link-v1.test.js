@@ -528,3 +528,47 @@ test('Builder Objects UI exposes one building interior linkage surface backed by
     /building-interior-status/
   );
 });
+
+
+test('explicit unknown interior target never falls back to creating another authority', () => {
+  const source =
+    createUnlinkedHouseDraft({
+      id: 'house-explicit-target'
+    });
+
+  const beforeAreas =
+    source.draft.areas.length;
+  const beforePortals =
+    source.draft.portals.length;
+
+  const next =
+    createBuildingInteriorLink(
+      source.draft,
+      {
+        sourceAreaId:
+          source.sourceAreaId,
+        buildingId:
+          source.buildingId,
+        anchorId: 'main-door',
+        targetAreaId:
+          'missing-interior-area'
+      }
+    );
+
+  assert.equal(
+    next.areas.length,
+    beforeAreas
+  );
+  assert.equal(
+    next.portals.length,
+    beforePortals
+  );
+  assert.equal(
+    outgoingFor(
+      next,
+      source.sourceAreaId,
+      source.buildingId
+    ),
+    null
+  );
+});
