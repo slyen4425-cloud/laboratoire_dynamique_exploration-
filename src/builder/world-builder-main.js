@@ -32,7 +32,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=world-object-library-v1-orientation-v1';
+} from './world-builder-draft.js?rev=building-interiors-entrance-link-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
