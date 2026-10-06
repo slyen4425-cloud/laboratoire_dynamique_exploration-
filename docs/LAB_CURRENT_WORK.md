@@ -2371,3 +2371,22 @@ Cache/runtime :
 - CI : `37502071137` — **SUCCESS**.
 
 État : **PRÉVALIDATION TECHNIQUE GREEN — gate utilisateur visuel Avant / Côté / Arrière requis avant GREEN final.**
+
+
+Preview orientation bâtiments :
+- checkpoint prévalidation : `checkpoint/exploration-world-object-library-v1-orientation-prevalidation-green-2026-10-06` @ `2d387b60724c193b75e43cbc4b5495df4b980f2a` ;
+- CI checkpoint : `37502251023` — **SUCCESS** ;
+- preview runtime : `preview/exploration-world-object-library-v1-2026-10-06` avancée en fast-forward sur le même SHA ;
+- workflow Pages déclenché proprement via PR infra #91, sans merger le runtime sur `main` ;
+- Pages : `37502743755` — **SUCCESS** ;
+- lien gate Builder : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=world-object-library-v1-orientation-v1`.
+
+Gate utilisateur demandé :
+1. ouvrir Objets -> Maisons / bâtiments ;
+2. sélectionner Chaumière toit bleu, Maison toit rouge puis Grande auberge toit doré ;
+3. vérifier le sélecteur `Avant / Côté / Arrière` ;
+4. vérifier que le visuel change sans modifier position, scale, footprint ou porte ;
+5. sauvegarder/recharger ou exporter/importer et confirmer que la variante choisie persiste ;
+6. lancer Tester la carte et vérifier le même visuel dans Exploration.
+
+État : **PRÉVALIDATION TECHNIQUE GREEN + PREVIEW GREEN — validation visuelle utilisateur requise avant GREEN final.**
