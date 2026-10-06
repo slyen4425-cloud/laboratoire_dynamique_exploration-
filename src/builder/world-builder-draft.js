@@ -1240,6 +1240,293 @@ export function deleteWorldEvent(
   return next;
 }
 
+function buildingPlacementDefinition(
+  draft,
+  sourceAreaId,
+  buildingId,
+  objectCatalog
+) {
+  const area =
+    findArea(draft, sourceAreaId);
+  const placement =
+    area?.objects?.find(
+      (object) =>
+        object.id === buildingId
+    );
+  const definition =
+    placement
+      ? objectCatalog?.get?.(
+          placement.objectDefinitionId
+        )
+      : null;
+
+  if (
+    !area ||
+    !placement ||
+    definition?.kind !== 'building'
+  ) {
+    return null;
+  }
+
+  return {
+    area,
+    placement,
+    definition
+  };
+}
+
+function existingBuildingInteriorPortal(
+  draft,
+  sourceAreaId,
+  buildingId,
+  anchorId
+) {
+  return (
+    draft.portals?.find(
+      (portal) =>
+        portal.sourceAreaId ===
+          sourceAreaId &&
+        portal.trigger?.kind ===
+          'object-anchor' &&
+        portal.trigger.objectId ===
+          buildingId &&
+        portal.trigger.anchorId ===
+          anchorId
+    ) ?? null
+  );
+}
+
+function clampInteriorEntryX(
+  area,
+  slot
+) {
+  const margin = 64;
+  const width =
+    Math.max(128, finite(area.width, 720));
+  const spread =
+    ((slot % 5) - 2) * 72;
+
+  return Math.min(
+    width - margin,
+    Math.max(
+      margin,
+      width / 2 + spread
+    )
+  );
+}
+
+export function createBuildingInteriorLink(
+  draft,
+  {
+    sourceAreaId,
+    buildingId,
+    anchorId = 'main-door',
+    targetAreaId = null
+  } = {},
+  objectCatalog =
+    objectDefinitionCatalogV1
+) {
+  const next = clone(draft);
+  next.areas ??= [];
+  next.portals ??= [];
+
+  const source =
+    buildingPlacementDefinition(
+      next,
+      sourceAreaId,
+      buildingId,
+      objectCatalog
+    );
+
+  if (!source) {
+    return next;
+  }
+
+  const anchor =
+    source.definition
+      .doorAnchors
+      ?.find(
+        (item) =>
+          item.id === anchorId
+      );
+
+  if (!anchor) {
+    return next;
+  }
+
+  if (
+    existingBuildingInteriorPortal(
+      next,
+      sourceAreaId,
+      buildingId,
+      anchorId
+    )
+  ) {
+    return next;
+  }
+
+  let targetArea =
+    typeof targetAreaId === 'string' &&
+    targetAreaId.trim()
+      ? findArea(
+          next,
+          targetAreaId.trim()
+        )
+      : null;
+
+  if (
+    targetArea &&
+    (
+      targetArea.id === sourceAreaId ||
+      targetArea.kind !== 'interior'
+    )
+  ) {
+    return next;
+  }
+
+  if (!targetArea) {
+    const areaId =
+      uniqueId(
+        `interior-${buildingId}`,
+        next.areas
+      );
+    const familyId =
+      source.area.surface
+        ?.baseTerrainFamilyId ??
+      next.terrainFamilies?.[0]?.id ??
+      'plain';
+
+    targetArea = {
+      id: areaId,
+      kind: 'interior',
+      width: 720,
+      height: 560,
+      surface: {
+        baseTerrainFamilyId:
+          familyId,
+        baseMaterialId:
+          'floor.wood.house',
+        baseTraversalRuleId:
+          'terrain.ground',
+        zones: [],
+        routes: [],
+        rivers: []
+      },
+      objects: [],
+      actors: [],
+      obstacles: [],
+      spawns: []
+    };
+
+    next.areas.push(targetArea);
+  }
+
+  targetArea.spawns ??= [];
+  source.area.spawns ??= [];
+
+  const connectionSlot =
+    next.portals.filter(
+      (portal) =>
+        portal.sourceAreaId ===
+        targetArea.id
+    ).length;
+  const entryX =
+    clampInteriorEntryX(
+      targetArea,
+      connectionSlot
+    );
+  const entryY =
+    Math.max(
+      24,
+      finite(targetArea.height, 560) -
+        104
+    );
+  const exitY =
+    Math.max(
+      32,
+      finite(targetArea.height, 560) -
+        36
+    );
+
+  const interiorSpawnId =
+    uniqueId(
+      `${buildingId}-entry`,
+      targetArea.spawns
+    );
+  const exteriorReturnSpawnId =
+    uniqueId(
+      `${buildingId}-return`,
+      source.area.spawns
+    );
+
+  targetArea.spawns.push({
+    id: interiorSpawnId,
+    x: entryX,
+    y: entryY
+  });
+
+  source.area.spawns.push({
+    id: exteriorReturnSpawnId,
+    anchor: {
+      kind: 'building-door',
+      objectId: buildingId,
+      anchorId,
+      offset: 72
+    }
+  });
+
+  next.portals.push({
+    id:
+      uniqueId(
+        `${buildingId}-enter`,
+        next.portals
+      ),
+    sourceAreaId,
+    trigger: {
+      kind: 'object-anchor',
+      objectId: buildingId,
+      anchorId,
+      radius: 32
+    },
+    targetAreaId:
+      targetArea.id,
+    targetSpawnId:
+      interiorSpawnId,
+    visual: {
+      visible: true,
+      marker: 'door',
+      label: 'Entrée'
+    }
+  });
+
+  next.portals.push({
+    id:
+      uniqueId(
+        `${buildingId}-exit`,
+        next.portals
+      ),
+    sourceAreaId:
+      targetArea.id,
+    trigger: {
+      kind: 'point',
+      x: entryX,
+      y: exitY,
+      radius: 28
+    },
+    targetAreaId:
+      sourceAreaId,
+    targetSpawnId:
+      exteriorReturnSpawnId,
+    visual: {
+      visible: true,
+      marker: 'door',
+      label: 'Sortie'
+    }
+  });
+
+  return next;
+}
+
 export function addPortal(draft, rawPortal) {
   const next = clone(draft);
   next.portals ??= [];
