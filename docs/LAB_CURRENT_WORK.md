@@ -2390,3 +2390,26 @@ Gate utilisateur demandé :
 6. lancer Tester la carte et vérifier le même visuel dans Exploration.
 
 État : **PRÉVALIDATION TECHNIQUE GREEN + PREVIEW GREEN — validation visuelle utilisateur requise avant GREEN final.**
+
+
+### Prochain micro-lot — Building Interiors / Entrance Link v1
+
+À ouvrir uniquement depuis un SHA GREEN conforme à la politique de checkpoints.
+
+Périmètre obligatoire :
+- réutiliser `Building -> doorAnchor -> Portal -> WorldArea -> Spawn` ;
+- chaque Building instance peut créer/lier son propre intérieur ;
+- entrée extérieure : trigger Portal résolu depuis le `doorAnchor` canonique ;
+- intérieur : WorldArea normale, jamais `InteriorRoom` / `GeneratedRoom` parallèle ;
+- retour : Portal intérieur -> Spawn extérieur ancré au même Building + doorAnchor ;
+- offset de sortie explicite pour éviter le retrigger immédiat ;
+- UI Builder : état entrée `aucune / non reliée / reliée / invalide` ;
+- aucune position de porte dérivée du PNG ou de `visualVariantId` ;
+- aucune seconde autorité de coordonnées ou de lien.
+
+Ordre prévu :
+1. figer orientation canonique bâtiment -> rendu de variante ;
+2. protéger `doorAnchor` sous déplacement/rotation/scale ;
+3. ajouter le contrat de création/lien d'intérieur par instance ;
+4. ajouter Portal aller + Portal retour ;
+5. seulement ensuite ajouter génération/presets d'intérieur.
