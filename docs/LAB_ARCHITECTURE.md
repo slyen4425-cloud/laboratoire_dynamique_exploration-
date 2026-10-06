@@ -749,3 +749,35 @@ Règle permanente :
 La création intrinsèque d'un WorldObject appartient à un futur **Object Definition Editor** séparé. Le World Builder conserve le placement et les overrides explicitement autorisés par contrat.
 
 Les familles/éléments/types destinés à être extensibles par les créateurs doivent provenir de registres/catalogues de données. Les valeurs livrées par défaut sont des presets, pas une enum moteur fermée.
+
+
+## Building Interiors v1 — contrat d'instanciation
+
+Décision produit : **un type de bâtiment ne possède pas un intérieur fixe automatiquement répliqué**.
+
+Chaque instance de Building placée dans une WorldArea peut avoir son propre raccord intérieur. Les choix autorisés sont :
+- aucun intérieur ;
+- créer une nouvelle WorldArea intérieure vide ;
+- générer une nouvelle WorldArea intérieure à partir d'un profil/générateur, avec seed propre à l'instance ;
+- lier explicitement une WorldArea existante.
+
+Le contrat canonique reste :
+
+```text
+Building WorldObject instance
+  -> doorAnchor
+  -> Portal
+  -> target WorldArea
+  -> target Spawn
+```
+
+Règles :
+- deux bâtiments placés ne partagent jamais implicitement la même WorldArea intérieure ;
+- un générateur produit une WorldArea normale et éditable, jamais un format `GeneratedRoom` parallèle ;
+- un éventuel preset/template n'est qu'une **source de création explicite** et ne devient jamais une autorité liée durablement au type de bâtiment ;
+- modifier un preset ne modifie jamais rétroactivement les intérieurs déjà créés ;
+- le Builder ne copie pas le contenu d'un intérieur dans le Building ;
+- l'ObjectDefinition du bâtiment conserve uniquement ses données intrinsèques (visuel, baseSize, footprint, doorAnchors, capacités déclaratives éventuelles) ;
+- le lien réel vers l'intérieur appartient au Portal Model ;
+- une maison visuellement identique peut donc avoir un intérieur totalement différent d'une autre instance ;
+- l'orientation visuelle du bâtiment ne décide jamais de la position gameplay de la porte : les doorAnchors suivent le transform canonique du Building.
