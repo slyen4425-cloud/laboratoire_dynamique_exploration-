@@ -2482,3 +2482,42 @@ Hors périmètre :
 - suppression en cascade d'une Area partagée.
 
 État : **LOT OUVERT — TDD RED à poser avant implémentation.**
+
+
+### Building Interiors / Entrance Link v1 — implémentation
+
+TDD :
+- RED : `9750474a60590328937276b8d6098bcb69524e1f` ;
+- CI RED : `37523065063` — **FAILURE attendue**, export `createBuildingInteriorLink` absent ;
+- implémentation canonique : `acac0990dbe19db4147f72ad19e191333bae28a9` ;
+- UI Objets : `e07181a434917b728bb2499e6d633eb9c76c516a` + `bf72a3f3464b60935c4ad02d7202727095a2f2e1` ;
+- CI fonctionnelle : `37523446910` — **SUCCESS** ;
+- cache-bust Builder : `a19dbb4ef943878dbe645928e494a48059c35a87` ;
+- CI cache : `37523560759` — **SUCCESS**.
+
+Comportement livré :
+- sur un Building avec `doorAnchor`, l'onglet Objets affiche **Entrée et intérieur** ;
+- **Créer un intérieur vide** crée une vraie `WorldArea(kind=interior)` propre à l'instance ;
+- **Lier l'intérieur sélectionné** relie explicitement une WorldArea intérieure existante ;
+- l'aller est un Portal `object-anchor` sur le doorAnchor du Building ;
+- le retour est un Portal de l'intérieur vers un Spawn extérieur `building-door` ancré au même Building + doorAnchor ;
+- le Spawn extérieur ne stocke aucun X/Y concurrent ;
+- le Spawn d'arrivée intérieur est séparé du trigger de sortie afin d'éviter le rebond immédiat ;
+- une deuxième création sur la même entrée est idempotente : aucun intérieur/Portal dupliqué ;
+- déplacement, rotation et scale du Building déplacent automatiquement le trigger d'entrée et le Spawn extérieur ancré via les autorités déjà GREEN ;
+- **Ouvrir l'intérieur** sélectionne la WorldArea liée dans le Builder ;
+- l'onglet Portals reste l'éditeur canonique des Portals créés : aucune seconde donnée de liaison n'est stockée dans le Building.
+
+Tests dédiés :
+- création WorldArea + aller/retour ;
+- autorité doorAnchor / Spawn ancré ;
+- transform Building sans synchronisation ;
+- idempotence ;
+- liaison vers intérieur existant ;
+- export/import WorldDocument ;
+- contrat UI Builder.
+
+Hors périmètre confirmé :
+- génération procédurale, presets, décoration automatique et multi-étages.
+
+État : **PRÉVALIDATION TECHNIQUE GREEN — publication preview + gate utilisateur requis.**
