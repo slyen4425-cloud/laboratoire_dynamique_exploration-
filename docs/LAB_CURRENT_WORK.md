@@ -2335,3 +2335,39 @@ CI audit :
 - `37180332902` — SUCCESS sur HEAD documentaire précédent.
 
 État : **AUDIT TECHNIQUE GREEN**.
+
+
+### Building orientation visual variants — intégration technique 2026-10-06
+
+Sous-lot intégré dans **World Object Library v1**, sans nouvelle autorité.
+
+Assets binaires réellement commités par le créateur :
+- commit upload : `6229c95a7f2d5dee90b45fdb6324c7b117b4a104` ;
+- `building_house_blue_cottage_side_01.webp` ;
+- `building_house_blue_cottage_back_01.webp` ;
+- `building_house_red_tile_side_01.webp` ;
+- `building_house_red_tile_back_01.webp` ;
+- `building_inn_golden_thatch_side_01.webp` ;
+- `building_inn_golden_thatch_back_01.webp`.
+
+Contrat d'autorité :
+- les trois bâtiments restent trois ObjectDefinitions canoniques, pas neuf objets gameplay ;
+- `visual.defaultVariantId = front` ;
+- `visual.variants = front / side / back` ;
+- le WorldDocument persiste uniquement `objectDefinitionId + transform + overrides.visualVariantId` ;
+- footprint, doorAnchors et gameplay restent inchangés ;
+- aucun fallback rotation, masque runtime ou seconde représentation concurrente.
+
+Intégrité binaire :
+- SHA-256 + bytes recalculés sur les octets réellement commités ;
+- manifest et `SHA256SUMS.txt` synchronisés ;
+- commit manifest : `18e4f7ca79a323061031c26b29f7f1e34b9d0cf4` ;
+- commit checksums : `84ef6400dc5eb607573758b2d92bfd35540d57f5` ;
+- CI intégrité : `37501751912` — **SUCCESS**.
+
+Cache/runtime :
+- cache-bust cohérent Builder + Exploration + WorldObject pipeline ;
+- commit : `8b22b196425608eed451cf1f6556150074b86946` ;
+- CI : `37502071137` — **SUCCESS**.
+
+État : **PRÉVALIDATION TECHNIQUE GREEN — gate utilisateur visuel Avant / Côté / Arrière requis avant GREEN final.**
