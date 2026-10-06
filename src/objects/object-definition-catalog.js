@@ -184,7 +184,31 @@ const DEFINITIONS = frozen([
     id: 'objectdef.building.house.blue_cottage.01',
     label: 'Chaumière au toit bleu',
     kind: 'building',
-    visual: { assetId: 'object.building.house.blue_cottage.01' },
+    visual: {
+      assetId:
+        'object.building.house.blue_cottage.01',
+      defaultVariantId: 'front',
+      variants: [
+        {
+          id: 'front',
+          label: 'Avant',
+          assetId:
+            'object.building.house.blue_cottage.01'
+        },
+        {
+          id: 'side',
+          label: 'Côté',
+          assetId:
+            'object.building.house.blue_cottage.side.01'
+        },
+        {
+          id: 'back',
+          label: 'Arrière',
+          assetId:
+            'object.building.house.blue_cottage.back.01'
+        }
+      ]
+    },
     baseSize: { width: 260, height: 240 },
     footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
     doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
@@ -194,7 +218,31 @@ const DEFINITIONS = frozen([
     id: 'objectdef.building.house.red_tile.01',
     label: 'Maison au toit rouge',
     kind: 'building',
-    visual: { assetId: 'object.building.house.red_tile.01' },
+    visual: {
+      assetId:
+        'object.building.house.red_tile.01',
+      defaultVariantId: 'front',
+      variants: [
+        {
+          id: 'front',
+          label: 'Avant',
+          assetId:
+            'object.building.house.red_tile.01'
+        },
+        {
+          id: 'side',
+          label: 'Côté',
+          assetId:
+            'object.building.house.red_tile.side.01'
+        },
+        {
+          id: 'back',
+          label: 'Arrière',
+          assetId:
+            'object.building.house.red_tile.back.01'
+        }
+      ]
+    },
     baseSize: { width: 330, height: 280 },
     footprint: { enabled: true, widthRatio: 0.78, heightRatio: 0.7, offsetX: 0, offsetY: 0.02 },
     doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
@@ -204,7 +252,31 @@ const DEFINITIONS = frozen([
     id: 'objectdef.building.inn.golden_thatch.01',
     label: 'Grande auberge au toit doré',
     kind: 'building',
-    visual: { assetId: 'object.building.inn.golden_thatch.01' },
+    visual: {
+      assetId:
+        'object.building.inn.golden_thatch.01',
+      defaultVariantId: 'front',
+      variants: [
+        {
+          id: 'front',
+          label: 'Avant',
+          assetId:
+            'object.building.inn.golden_thatch.01'
+        },
+        {
+          id: 'side',
+          label: 'Côté',
+          assetId:
+            'object.building.inn.golden_thatch.side.01'
+        },
+        {
+          id: 'back',
+          label: 'Arrière',
+          assetId:
+            'object.building.inn.golden_thatch.back.01'
+        }
+      ]
+    },
     baseSize: { width: 440, height: 330 },
     footprint: { enabled: true, widthRatio: 0.82, heightRatio: 0.72, offsetX: 0, offsetY: 0.02 },
     doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
