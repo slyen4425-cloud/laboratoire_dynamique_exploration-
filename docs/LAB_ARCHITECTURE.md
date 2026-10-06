@@ -781,3 +781,34 @@ Règles :
 - le lien réel vers l'intérieur appartient au Portal Model ;
 - une maison visuellement identique peut donc avoir un intérieur totalement différent d'une autre instance ;
 - l'orientation visuelle du bâtiment ne décide jamais de la position gameplay de la porte : les doorAnchors suivent le transform canonique du Building.
+
+
+### Building Interiors v1 — liaison d'entrée obligatoire
+
+Un intérieur n'est jamais considéré raccordé tant que la chaîne d'entrée/sortie complète n'existe pas.
+
+Contrat minimal :
+
+```text
+Building instance
+  -> doorAnchor
+  -> Portal source trigger
+  -> target WorldArea intérieure
+  -> target Spawn intérieur
+
+WorldArea intérieure
+  -> Portal retour
+  -> Spawn extérieur ancré au même Building + doorAnchor
+```
+
+Règles :
+- le `doorAnchor` appartient à l'ObjectDefinition du Building et décrit la porte dans les coordonnées locales du bâtiment ;
+- la zone d'entrée/trigger appartient au Portal, pas au sprite et pas au Building ;
+- la position monde du trigger est résolue depuis le transform canonique du Building + doorAnchor ;
+- tourner/scaler/déplacer le bâtiment déplace automatiquement son entrée sans coordonnées persistantes concurrentes ;
+- la variante visuelle Avant/Côté/Arrière ne déplace jamais la porte gameplay par elle-même ;
+- le Portal est l'unique autorité du lien entre l'extérieur et l'intérieur ;
+- le Spawn de retour extérieur est ancré au Building + doorAnchor avec un offset explicite pour éviter de retrigger immédiatement le Portal ;
+- aucun X/Y de retour dupliqué n'est conservé en parallèle ;
+- le Builder doit montrer clairement si un bâtiment a une entrée non reliée, reliée, ou invalide ;
+- une entrée sans Portal peut exister comme visuel/anchor, mais ne téléporte jamais silencieusement.
