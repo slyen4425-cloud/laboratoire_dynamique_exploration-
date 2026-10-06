@@ -10,6 +10,7 @@ import {
   importWorldBuilderDocument,
   serializeWorldBuilderDraft,
   updateWorldObjectTransform,
+  updateWorldObjectOverrides,
   validateWorldBuilderDraft
 } from '../src/builder/world-builder-draft.js';
 import {
@@ -570,5 +571,71 @@ test('explicit unknown interior target never falls back to creating another auth
       source.buildingId
     ),
     null
+  );
+});
+
+
+test('visual variants never move the canonical building entrance', () => {
+  const source =
+    createUnlinkedHouseDraft({
+      id: 'multi-view-house'
+    });
+
+  let draft =
+    createBuildingInteriorLink(
+      source.draft,
+      {
+        sourceAreaId:
+          source.sourceAreaId,
+        buildingId:
+          source.buildingId,
+        anchorId: 'main-door'
+      }
+    );
+
+  let document =
+    validateWorldBuilderDraft(draft)
+      .document;
+  let outgoing =
+    outgoingFor(
+      document,
+      source.sourceAreaId,
+      source.buildingId
+    );
+  const before =
+    resolvePortalTriggerPoint(
+      document.areas,
+      outgoing
+    );
+
+  draft =
+    updateWorldObjectOverrides(
+      draft,
+      source.sourceAreaId,
+      source.buildingId,
+      {
+        visualVariantId: 'back'
+      }
+    );
+
+  document =
+    validateWorldBuilderDraft(draft)
+      .document;
+  outgoing =
+    outgoingFor(
+      document,
+      source.sourceAreaId,
+      source.buildingId
+    );
+  const after =
+    resolvePortalTriggerPoint(
+      document.areas,
+      outgoing
+    );
+
+  assert.deepEqual(
+    after,
+    before,
+    'visualVariantId must not become a second gameplay orientation authority'
   );
 });
