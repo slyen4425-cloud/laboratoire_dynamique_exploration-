@@ -2413,3 +2413,17 @@ Ordre prévu :
 3. ajouter le contrat de création/lien d'intérieur par instance ;
 4. ajouter Portal aller + Portal retour ;
 5. seulement ensuite ajouter génération/presets d'intérieur.
+
+
+### Clôture World Object Library v1 — 2026-10-06
+
+Validation utilisateur de poursuite reçue après publication de la preview orientation ; aucune régression visuelle signalée avant demande explicite d'ouvrir le chantier suivant.
+
+- HEAD documentaire/architecture : `2ee7d407e3cbb2e0dbe3ab78c4d2df3dfb0a4379` ;
+- CI : `37516770356` — **SUCCESS** ;
+- Pages orientation : `37502743755` — **SUCCESS** ;
+- aucune seconde ObjectDefinition par orientation ;
+- `doorAnchors`, footprint et placement restent canoniques ;
+- suite ouverte dans un lot séparé : Building Interiors / Entrance Link v1.
+
+État : **GREEN FINAL — World Object Library v1 clôturé avant lot Intérieurs**.
