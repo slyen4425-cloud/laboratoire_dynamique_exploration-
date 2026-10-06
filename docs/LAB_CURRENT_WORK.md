@@ -2521,3 +2521,24 @@ Hors périmètre confirmé :
 - génération procédurale, presets, décoration automatique et multi-étages.
 
 État : **PRÉVALIDATION TECHNIQUE GREEN — publication preview + gate utilisateur requis.**
+
+
+### Refinement anti-fallback — 2026-10-06
+
+Audit avant gate :
+- un `targetAreaId` explicite mais inconnu pouvait encore tomber sur la branche de création d'un nouvel intérieur ;
+- comportement contraire à la charte : aucun fallback silencieux lorsque le créateur demande une cible précise.
+
+TDD refinement :
+- RED : `69cb321123cf50d9fbee60c0a3857d0663fc92ac` ;
+- CI RED : `37523904411` — **FAILURE attendue** ;
+- correction : `4273ac7089a5fac8ccba5116ee969379506b3932` ;
+- CI : `37523988377` — **SUCCESS** ;
+- les marqueurs Portal utilisent désormais les valeurs canoniques `entry` / `exit`.
+
+Règle finale :
+- sans `targetAreaId` : création explicite d'une nouvelle WorldArea intérieure ;
+- avec `targetAreaId` : liaison uniquement si cette WorldArea intérieure existe réellement ;
+- cible inconnue ou non intérieure : aucune mutation, aucune création de secours.
+
+État : **TECHNIQUE GREEN APRÈS REFINEMENT — nouvelle prévalidation/preview requise.**
