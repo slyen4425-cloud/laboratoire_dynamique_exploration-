@@ -1365,14 +1365,25 @@ export function createBuildingInteriorLink(
     return next;
   }
 
-  let targetArea =
+  const requestedTargetAreaId =
     typeof targetAreaId === 'string' &&
     targetAreaId.trim()
+      ? targetAreaId.trim()
+      : null;
+  let targetArea =
+    requestedTargetAreaId
       ? findArea(
           next,
-          targetAreaId.trim()
+          requestedTargetAreaId
         )
       : null;
+
+  if (
+    requestedTargetAreaId &&
+    !targetArea
+  ) {
+    return next;
+  }
 
   if (
     targetArea &&
@@ -1494,7 +1505,7 @@ export function createBuildingInteriorLink(
       interiorSpawnId,
     visual: {
       visible: true,
-      marker: 'door',
+      marker: 'entry',
       label: 'Entrée'
     }
   });
@@ -1519,7 +1530,7 @@ export function createBuildingInteriorLink(
       exteriorReturnSpawnId,
     visual: {
       visible: true,
-      marker: 'door',
+      marker: 'exit',
       label: 'Sortie'
     }
   });
