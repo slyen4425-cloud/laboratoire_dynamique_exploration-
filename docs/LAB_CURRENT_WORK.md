@@ -2427,3 +2427,58 @@ Validation utilisateur de poursuite reçue après publication de la preview orie
 - suite ouverte dans un lot séparé : Building Interiors / Entrance Link v1.
 
 État : **GREEN FINAL — World Object Library v1 clôturé avant lot Intérieurs**.
+
+
+## Chantier courant — Building Interiors / Entrance Link v1 — 2026-10-06
+
+> Branche : `work/exploration-building-interiors-entrance-link-v1-2026-10-06`
+>
+> Base GREEN exacte : `09ad1e7b36736f2b83ac7182cb7bcaaaa922758d`
+>
+> Checkpoint de départ : `checkpoint/exploration-start-building-interiors-entrance-link-v1-2026-10-06`
+>
+> Dernier GREEN : `checkpoint/exploration-world-object-library-v1-green-2026-10-06`
+
+Périmètre :
+- généraliser au Builder le raccord déjà validé `Building -> doorAnchor -> Portal -> WorldArea -> Spawn` ;
+- permettre à une instance de bâtiment de créer un intérieur vide propre ou de lier une WorldArea intérieure existante ;
+- créer une paire Portal aller/retour canonique ;
+- créer le Spawn de retour extérieur ancré au Building + doorAnchor, sans X/Y concurrent ;
+- afficher dans l'onglet Objets l'état de liaison de l'entrée et permettre d'ouvrir l'intérieur lié ;
+- conserver les onglets Area / Portals comme éditeurs canoniques des mêmes données.
+
+Propriétaires :
+- Building/ObjectDefinition : visuel, footprint, `doorAnchors` intrinsèques uniquement ;
+- World Builder Draft : mutation du WorldDocument ;
+- Portal Model : lien source/cible ;
+- WorldArea : contenu intérieur ;
+- Spawn : point d'arrivée ;
+- World Trigger Geometry : géométrie d'entrée.
+
+Invariants gelés :
+- aucun `InteriorRoom`, `GeneratedRoom`, `building.portalRef` ou coordonnées de porte dupliquées ;
+- aucun intérieur imposé par type de bâtiment ;
+- deux instances de la même maison n'ont jamais le même intérieur implicitement ;
+- `visualVariantId` ne déplace jamais la porte gameplay ;
+- déplacement/rotation/scale du bâtiment doivent déplacer automatiquement trigger d'entrée et Spawn extérieur ancré ;
+- `Zombicide-40k` inchangé.
+
+TDD RED prévu :
+1. créer un intérieur vide depuis une instance de Building produit une vraie `WorldArea(kind=interior)` ;
+2. l'aller utilise un trigger `object-anchor` sur le `doorAnchor` canonique ;
+3. le retour cible un Spawn extérieur `building-door` ancré, sans X/Y persistant ;
+4. le Spawn intérieur et le trigger retour sont séparés pour éviter un rebond immédiat ;
+5. déplacer/rotationner/scaler le Building déplace trigger + Spawn retour sans synchronisation ;
+6. une seconde création sur la même entrée ne duplique pas la liaison ;
+7. lier une WorldArea intérieure existante réutilise le même contrat ;
+8. sérialisation/import garde un WorldDocument valide ;
+9. UI Objets expose état + créer/lier/ouvrir, sans cacher un second catalogue.
+
+Hors périmètre :
+- génération procédurale d'intérieur ;
+- presets/templates ;
+- décoration automatique ;
+- multi-étages ;
+- suppression en cascade d'une Area partagée.
+
+État : **LOT OUVERT — TDD RED à poser avant implémentation.**
