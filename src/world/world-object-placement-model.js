@@ -1,6 +1,6 @@
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=world-object-library-v1';
+} from '../objects/object-definition-catalog.js?rev=world-object-library-v1-orientation-v1';
 
 export const WORLD_OBJECT_PLACEMENT_SCHEMA_VERSION = 1;
 

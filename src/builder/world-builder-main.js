@@ -31,7 +31,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=world-object-library-v1';
+} from './world-builder-draft.js?rev=world-object-library-v1-orientation-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -46,7 +46,7 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=world-object-library-v1';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=world-object-library-v1-orientation-v1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -69,25 +69,25 @@ import {
 import {
   resolveWorldObjectPlacement as resolveWorldObjectPlacementRaw,
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
-} from '../world/world-object-placement-model.js?rev=world-object-library-v1';
+} from '../world/world-object-placement-model.js?rev=world-object-library-v1-orientation-v1';
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=world-object-library-v1';
+} from '../objects/object-definition-catalog.js?rev=world-object-library-v1-orientation-v1';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
   listObjectLibraryCategories,
   listObjectLibraryFolders,
   resolveObjectLibraryFolder
-} from '../objects/object-library-taxonomy.js?rev=world-object-library-v1';
+} from '../objects/object-library-taxonomy.js?rev=world-object-library-v1-orientation-v1';
 import {
   USER_WORLD_OBJECT_MAX_BYTES,
   countObjectDefinitionReferences,
   createUserWorldObjectRecord,
   decodeUserWorldObjectFileDimensions,
   objectDefinitionFromUserRecord
-} from '../objects/user-object-library.js?rev=world-object-library-v1';
+} from '../objects/user-object-library.js?rev=world-object-library-v1-orientation-v1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
@@ -130,15 +130,15 @@ import {
 } from '../storage/user-material-store.js?rev=user-texture-import-v1';
 import {
   createUserWorldObjectStore
-} from '../storage/user-world-object-store.js?rev=world-object-library-v1';
+} from '../storage/user-world-object-store.js?rev=world-object-library-v1-orientation-v1';
 import {
   createWorldObjectAssetResolver,
   listWorldObjectAssets,
   resolveWorldObjectAsset
-} from '../assets/world-object-asset-adapter.js?rev=world-object-library-v1';
+} from '../assets/world-object-asset-adapter.js?rev=world-object-library-v1-orientation-v1';
 import {
   createUserWorldObjectAssetResolver
-} from '../assets/user-world-object-asset-resolver.js?rev=world-object-library-v1';
+} from '../assets/user-world-object-asset-resolver.js?rev=world-object-library-v1-orientation-v1';
 import {
   createImageAssetLoader
 } from '../assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
@@ -316,7 +316,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'world-object-library-v1'
+        'world-object-library-v1-orientation-v1'
     });
 
   const assetIds = [
