@@ -61,6 +61,66 @@
       "view": "top-down",
       "sha256": "2af3034567ab5b96b91aa492e1adc2c1ef62a10bd3cb1640a92994e4522da8fa",
       "bytes": 37264
+    },
+    {
+      "assetId": "object.building.house.blue_cottage.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue-cottage",
+      "view": "top-down-side",
+      "sha256": "1618dafa08c6a8e6f167eac61e9201fc71b74a3ac202a6a01f038255127916d7",
+      "bytes": 44908
+    },
+    {
+      "assetId": "object.building.house.blue_cottage.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue-cottage",
+      "view": "top-down-back",
+      "sha256": "76962efd9ee42c4a4652ac007db8a77252ea840e3e352b9b4a5363324b7c204e",
+      "bytes": 32474
+    },
+    {
+      "assetId": "object.building.house.red_tile.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red-tile",
+      "view": "top-down-side",
+      "sha256": "7c241cf298fad8d93ae13155b9b6ca1835b113d0c334f939554758abe3f675d1",
+      "bytes": 42626
+    },
+    {
+      "assetId": "object.building.house.red_tile.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red-tile",
+      "view": "top-down-back",
+      "sha256": "b9874aa7bef8d4b96a98a92af92095cb099760e2a99859e3587591c05b984944",
+      "bytes": 37158
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch.side.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_side_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden-thatch",
+      "view": "top-down-side",
+      "sha256": "c56d58fef9ddb53534d68a7c3ed606c833fd38f67887a21930a3390519d0ad71",
+      "bytes": 35546
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch.back.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_back_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden-thatch",
+      "view": "top-down-back",
+      "sha256": "fef2b121ddeec54ef32ca01e91aefb54c38e37a15740ada5deee0560f22ff0fd",
+      "bytes": 27158
     }
   ],
   "additionalSourceProfiles": [
@@ -72,6 +132,26 @@
       "height": 724,
       "alpha": true,
       "sha256": "3859663bf4a724a5a374d0706efd4f52d776a42fc7355121cb80b158b45796ee"
+    },
+    {
+      "fileId": "file_000000006f1882439b3ff130cb4ba1aa",
+      "generationId": "610b178a-d1db-429d-bd8c-8429a3abc6e1",
+      "format": "PNG RGB",
+      "width": 2172,
+      "height": 724,
+      "alpha": false,
+      "sha256": "a430bcc235dbf4f78e77d49da8eb4c0434649455817a95396356fbccd477d89c",
+      "purpose": "rear-view source sheet"
+    },
+    {
+      "fileId": "file_00000000580c81f4baa2542ff6eff81e",
+      "generationId": "d14d8c8c-59e7-4408-9a1b-400e5592b36c",
+      "format": "PNG RGBA",
+      "width": 1448,
+      "height": 1086,
+      "alpha": true,
+      "sha256": "0913c209d327c48b593b734edb9f3010a59f42470904e9e472b8cde6b9697a56",
+      "purpose": "side-view source sheet"
     }
   ]
 }
