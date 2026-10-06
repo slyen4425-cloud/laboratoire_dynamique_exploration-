@@ -404,6 +404,21 @@ Pour chaque pack binaire versionné :
 - un binaire tronqué ou incohérent bloque la CI et toute publication ;
 - la preview ne doit jamais masquer un asset invalide par une représentation concurrente.
 
+### 12.1.1 Dépôt binaire bloqué : escalade utilisateur immédiate
+
+Si un dépôt simple de fichier binaire (image, son, archive ou autre asset) échoue de façon répétée alors que le fichier local est prêt :
+
+- ne pas passer des heures à contourner le transfert ;
+- après **deux tentatives techniques infructueuses au maximum**, arrêter le contournement ;
+- expliquer précisément que le blocage concerne uniquement le transfert binaire vers GitHub ;
+- fournir au créateur le ou les fichiers prêts à déposer ;
+- fournir le **lien GitHub exact** vers le dossier et la branche cible ;
+- demander au créateur d'effectuer le dépôt manuel ;
+- dès confirmation, reprendre automatiquement la vérification du dépôt, les SHA/bytes, les manifests, la CI, la preview et le checkpoint prévus ;
+- ne jamais présenter le lot comme GREEN avant ces validations.
+
+Cette escalade manuelle est préférée à toute chaîne de contournement fragile, lente ou non vérifiable. Elle ne modifie aucune autorité runtime : elle concerne uniquement le transport physique des octets vers le dépôt.
+
 ### 12.2 Autorité visuelle unique des WorldObjects
 
 Lorsqu'un WorldObject déclare un `visual.assetId`, cet assetId est **l'unique autorité visuelle** de l'objet.
