@@ -67,6 +67,42 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/buildings/building_inn_golden_thatch_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.building.house.blue_cottage.side.01': Object.freeze({
+    id: 'object.building.house.blue_cottage.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_blue_cottage_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.blue_cottage.back.01': Object.freeze({
+    id: 'object.building.house.blue_cottage.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_blue_cottage_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.red_tile.side.01': Object.freeze({
+    id: 'object.building.house.red_tile.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_red_tile_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.red_tile.back.01': Object.freeze({
+    id: 'object.building.house.red_tile.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_red_tile_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.inn.golden_thatch.side.01': Object.freeze({
+    id: 'object.building.inn.golden_thatch.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.inn.golden_thatch.back.01': Object.freeze({
+    id: 'object.building.inn.golden_thatch.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.tree.forest.oak.01': Object.freeze({
     id: 'object.tree.forest.oak.01',
     kind: 'tree-visual',
