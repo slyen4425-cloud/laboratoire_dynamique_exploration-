@@ -8,6 +8,7 @@ import {
   addTerrainFamilyDefinition,
   addWorldObject as addWorldObjectDraft,
   appendSurfacePathPoint,
+  createBuildingInteriorLink,
   createWorldBuilderDraft,
   deleteActorPlacement,
   deletePortal,
@@ -2222,6 +2223,208 @@ function objectPlacementLabel(
     : `${placement.objectDefinitionId} · ${placement.id}`;
 }
 
+function currentBuildingInteriorLink() {
+  const object =
+    currentObjectResolved();
+
+  if (
+    !object ||
+    object.kind !== 'building'
+  ) {
+    return Object.freeze({
+      status: 'not-building',
+      anchor: null,
+      outgoingPortal: null,
+      returnPortal: null,
+      targetArea: null
+    });
+  }
+
+  const anchor =
+    object.doorAnchors?.[0] ??
+    null;
+
+  if (!anchor) {
+    return Object.freeze({
+      status: 'no-anchor',
+      anchor: null,
+      outgoingPortal: null,
+      returnPortal: null,
+      targetArea: null
+    });
+  }
+
+  const outgoingPortal =
+    (draft.portals ?? []).find(
+      (portal) =>
+        portal.sourceAreaId ===
+          selectedAreaId &&
+        portal.trigger?.kind ===
+          'object-anchor' &&
+        portal.trigger.objectId ===
+          object.id &&
+        portal.trigger.anchorId ===
+          anchor.id
+    ) ?? null;
+
+  if (!outgoingPortal) {
+    return Object.freeze({
+      status: 'unlinked',
+      anchor,
+      outgoingPortal: null,
+      returnPortal: null,
+      targetArea: null
+    });
+  }
+
+  const targetArea =
+    draft.areas.find(
+      (area) =>
+        area.id ===
+        outgoingPortal.targetAreaId
+    ) ?? null;
+  const sourceArea =
+    currentAreaRaw();
+
+  const returnPortal =
+    targetArea && sourceArea
+      ? (
+          (draft.portals ?? []).find(
+            (portal) => {
+              if (
+                portal.sourceAreaId !==
+                  targetArea.id ||
+                portal.targetAreaId !==
+                  sourceArea.id
+              ) {
+                return false;
+              }
+
+              const spawn =
+                sourceArea.spawns?.find(
+                  (item) =>
+                    item.id ===
+                    portal.targetSpawnId
+                );
+
+              return (
+                spawn?.anchor?.kind ===
+                  'building-door' &&
+                spawn.anchor.objectId ===
+                  object.id &&
+                spawn.anchor.anchorId ===
+                  anchor.id
+              );
+            }
+          ) ?? null
+        )
+      : null;
+
+  const targetSpawn =
+    targetArea?.spawns?.find(
+      (spawn) =>
+        spawn.id ===
+        outgoingPortal.targetSpawnId
+    ) ?? null;
+
+  const status =
+    targetArea &&
+    targetArea.kind === 'interior' &&
+    targetSpawn &&
+    returnPortal
+      ? 'linked'
+      : 'invalid';
+
+  return Object.freeze({
+    status,
+    anchor,
+    outgoingPortal,
+    returnPortal,
+    targetArea
+  });
+}
+
+function refreshBuildingInteriorControls() {
+  const fields =
+    $('building-interior-fields');
+  const status =
+    $('building-interior-status');
+  const target =
+    $('building-interior-target-area');
+  const createButton =
+    $('building-interior-create');
+  const linkButton =
+    $('building-interior-link');
+  const openButton =
+    $('building-interior-open');
+
+  const object =
+    currentObjectResolved();
+  const isBuilding =
+    object?.kind === 'building';
+
+  fields.hidden = !isBuilding;
+
+  if (!isBuilding) {
+    target.replaceChildren();
+    createButton.disabled = true;
+    linkButton.disabled = true;
+    openButton.disabled = true;
+    status.textContent =
+      'Sélectionner un bâtiment.';
+    return;
+  }
+
+  const link =
+    currentBuildingInteriorLink();
+  const interiorAreas =
+    draft.areas.filter(
+      (area) =>
+        area.kind === 'interior' &&
+        area.id !== selectedAreaId
+    );
+
+  setOptions(
+    target,
+    interiorAreas,
+    link.targetArea?.id ??
+      target.value ??
+      interiorAreas[0]?.id ??
+      '',
+    {
+      label: (area) =>
+        area.id
+    }
+  );
+
+  const canCreate =
+    link.status === 'unlinked';
+  const canLink =
+    canCreate &&
+    Boolean(target.value);
+
+  createButton.disabled =
+    !canCreate;
+  linkButton.disabled =
+    !canLink;
+  openButton.disabled =
+    link.status !== 'linked';
+
+  if (link.status === 'no-anchor') {
+    status.textContent =
+      'Bâtiment sans doorAnchor : aucune entrée gameplay disponible.';
+  } else if (link.status === 'unlinked') {
+    status.textContent =
+      `Entrée ${link.anchor.id} non reliée.`;
+  } else if (link.status === 'linked') {
+    status.textContent =
+      `Entrée ${link.anchor.id} reliée → ${link.targetArea.id} · aller/retour actifs.`;
+  } else {
+    status.textContent =
+      'Liaison intérieure invalide : vérifier les Portals et Spawns.';
+  }
+}
+
 function refreshObjectControls() {
   const area = currentAreaRaw();
   const placements =
@@ -2388,6 +2591,8 @@ function refreshObjectControls() {
   } else {
     variantSelect.replaceChildren();
   }
+
+  refreshBuildingInteriorControls();
 
   if (!placement || !object) {
     $('object-x').value = '';
@@ -4877,6 +5082,144 @@ $('object-delete').addEventListener('click', () => {
   selectedObjectId = null;
   refreshControls();
 });
+
+$('building-interior-create').addEventListener(
+  'click',
+  () => {
+    const object =
+      currentObjectResolved();
+    const anchor =
+      object?.doorAnchors?.[0];
+
+    if (
+      !object ||
+      object.kind !== 'building' ||
+      !anchor
+    ) {
+      setStatus(
+        'Impossible de créer un intérieur sans bâtiment et doorAnchor.',
+        true
+      );
+      return;
+    }
+
+    draft =
+      createBuildingInteriorLink(
+        draft,
+        {
+          sourceAreaId:
+            selectedAreaId,
+          buildingId:
+            object.id,
+          anchorId:
+            anchor.id
+        },
+        objectDefinitionCatalog
+      );
+
+    const link =
+      currentBuildingInteriorLink();
+
+    if (link.status !== 'linked') {
+      setStatus(
+        'La liaison intérieure n’a pas pu être créée.',
+        true
+      );
+    } else {
+      selectedPortalId =
+        link.outgoingPortal.id;
+    }
+
+    refreshControls();
+  }
+);
+
+$('building-interior-link').addEventListener(
+  'click',
+  () => {
+    const object =
+      currentObjectResolved();
+    const anchor =
+      object?.doorAnchors?.[0];
+    const targetAreaId =
+      $('building-interior-target-area')
+        .value;
+
+    if (
+      !object ||
+      object.kind !== 'building' ||
+      !anchor ||
+      !targetAreaId
+    ) {
+      setStatus(
+        'Sélectionner un bâtiment et une WorldArea intérieure.',
+        true
+      );
+      return;
+    }
+
+    draft =
+      createBuildingInteriorLink(
+        draft,
+        {
+          sourceAreaId:
+            selectedAreaId,
+          buildingId:
+            object.id,
+          anchorId:
+            anchor.id,
+          targetAreaId
+        },
+        objectDefinitionCatalog
+      );
+
+    const link =
+      currentBuildingInteriorLink();
+
+    if (link.status !== 'linked') {
+      setStatus(
+        'La WorldArea sélectionnée n’a pas pu être reliée.',
+        true
+      );
+    } else {
+      selectedPortalId =
+        link.outgoingPortal.id;
+    }
+
+    refreshControls();
+  }
+);
+
+$('building-interior-open').addEventListener(
+  'click',
+  () => {
+    const link =
+      currentBuildingInteriorLink();
+
+    if (
+      link.status !== 'linked' ||
+      !link.targetArea
+    ) {
+      return;
+    }
+
+    selectedAreaId =
+      link.targetArea.id;
+    selectedSpawnId =
+      link.targetArea.spawns?.[0]?.id ??
+      null;
+    selectedObjectId =
+      link.targetArea.objects?.[0]?.id ??
+      null;
+    selectedPortalId =
+      link.returnPortal?.id ??
+      selectedPortalId;
+    fitRequested = true;
+
+    activateTab('area');
+    refreshControls();
+  }
+);
 
 $('portal-select').addEventListener('change', () => {
   selectedPortalId = $('portal-select').value;
