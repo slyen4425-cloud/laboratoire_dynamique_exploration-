@@ -332,6 +332,25 @@
           </p>
         </div>
 
+        <div id="building-interior-fields" class="kind-fields" hidden>
+          <h3>Entrée et intérieur</h3>
+          <p id="building-interior-status" class="builder-hint">
+            Entrée non reliée.
+          </p>
+          <label>
+            Intérieur existant
+            <select id="building-interior-target-area"></select>
+          </label>
+          <div class="row">
+            <button id="building-interior-create" type="button">Créer un intérieur vide</button>
+            <button id="building-interior-link" type="button">Lier l’intérieur sélectionné</button>
+            <button id="building-interior-open" type="button">Ouvrir l’intérieur</button>
+          </div>
+          <p class="builder-hint">
+            Le bâtiment conserve uniquement son doorAnchor. La liaison réelle est un Portal vers une WorldArea intérieure, avec un Portal de retour vers un Spawn extérieur ancré.
+          </p>
+        </div>
+
         <div id="bridge-fields" class="kind-fields">
           <h3>Override local du pont</h3>
           <label>
