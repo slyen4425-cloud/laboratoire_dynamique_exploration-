@@ -297,3 +297,112 @@ test('Exploration runtime rebuilds the same composed WorldObject pipeline as Bui
     /Objets personnels introuvables sur cet appareil/
   );
 });
+
+
+const BUILDING_ORIENTATION_VARIANTS = Object.freeze([
+  Object.freeze({
+    definitionId: 'objectdef.building.house.blue_cottage.01',
+    frontAssetId: 'object.building.house.blue_cottage.01',
+    sideAssetId: 'object.building.house.blue_cottage.side.01',
+    backAssetId: 'object.building.house.blue_cottage.back.01',
+    sidePath: './assets/exploration/objects/buildings/building_house_blue_cottage_side_01.webp',
+    backPath: './assets/exploration/objects/buildings/building_house_blue_cottage_back_01.webp'
+  }),
+  Object.freeze({
+    definitionId: 'objectdef.building.house.red_tile.01',
+    frontAssetId: 'object.building.house.red_tile.01',
+    sideAssetId: 'object.building.house.red_tile.side.01',
+    backAssetId: 'object.building.house.red_tile.back.01',
+    sidePath: './assets/exploration/objects/buildings/building_house_red_tile_side_01.webp',
+    backPath: './assets/exploration/objects/buildings/building_house_red_tile_back_01.webp'
+  }),
+  Object.freeze({
+    definitionId: 'objectdef.building.inn.golden_thatch.01',
+    frontAssetId: 'object.building.inn.golden_thatch.01',
+    sideAssetId: 'object.building.inn.golden_thatch.side.01',
+    backAssetId: 'object.building.inn.golden_thatch.back.01',
+    sidePath: './assets/exploration/objects/buildings/building_inn_golden_thatch_side_01.webp',
+    backPath: './assets/exploration/objects/buildings/building_inn_golden_thatch_back_01.webp'
+  })
+]);
+
+test('native building orientation variants expose front side and back assets through the same ObjectDefinition', async () => {
+  const {
+    resolveWorldObjectAsset
+  } = await import('../src/assets/world-object-asset-adapter.js');
+
+  for (const item of BUILDING_ORIENTATION_VARIANTS) {
+    const definition =
+      objectDefinitionCatalogV1.require(
+        item.definitionId
+      );
+    const variants =
+      definition.visual?.variants ?? [];
+
+    assert.equal(
+      definition.visual?.defaultVariantId,
+      'front',
+      item.definitionId
+    );
+    assert.deepEqual(
+      variants.map((variant) => variant.id),
+      ['front', 'side', 'back'],
+      item.definitionId
+    );
+    assert.equal(
+      variants.find((variant) => variant.id === 'front')?.assetId,
+      item.frontAssetId
+    );
+    assert.equal(
+      variants.find((variant) => variant.id === 'side')?.assetId,
+      item.sideAssetId
+    );
+    assert.equal(
+      variants.find((variant) => variant.id === 'back')?.assetId,
+      item.backAssetId
+    );
+
+    assert.equal(
+      resolveWorldObjectAsset(item.sideAssetId)?.path,
+      item.sidePath
+    );
+    assert.equal(
+      resolveWorldObjectAsset(item.backAssetId)?.path,
+      item.backPath
+    );
+  }
+});
+
+test('building orientation variant files are tracked by manifest with SHA-256 and byte size', async () => {
+  const manifest = JSON.parse(
+    await readFile(
+      new URL(
+        '../assets/exploration/objects/buildings/manifest.v1.json',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  );
+
+  for (const item of BUILDING_ORIENTATION_VARIANTS) {
+    for (const [assetId, path] of [
+      [item.sideAssetId, item.sidePath],
+      [item.backAssetId, item.backPath]
+    ]) {
+      const entry = manifest.files.find(
+        (file) => file.assetId === assetId
+      );
+
+      assert.ok(entry, assetId);
+      assert.equal(
+        entry.path,
+        path.replace(/^\.\//, '')
+      );
+      assert.match(entry.sha256, /^[a-f0-9]{64}$/);
+      assert.ok(
+        Number.isInteger(entry.bytes) &&
+        entry.bytes > 0
+      );
+    }
+  }
+});
