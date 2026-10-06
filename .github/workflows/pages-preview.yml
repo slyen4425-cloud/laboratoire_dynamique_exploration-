@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: building-interiors-entrance-link-v1
+# preview-revision: building-interiors-entrance-link-v1-r2
 
 on:
   push:
