@@ -639,3 +639,214 @@ test('visual variants never move the canonical building entrance', () => {
     'visualVariantId must not become a second gameplay orientation authority'
   );
 });
+
+
+test('Building Interiors keeps one WorldObject cache revision across Builder authoring graph', async () => {
+  const revision =
+    'building-interiors-passages-ux-r1';
+
+  const [
+    html,
+    main,
+    draft,
+    placement,
+    renderer,
+    catalog,
+    userLibrary
+  ] = await Promise.all([
+    readFile(
+      new URL('../builder.html', import.meta.url),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../src/builder/world-builder-main.js',
+        import.meta.url
+      ),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../src/builder/world-builder-draft.js',
+        import.meta.url
+      ),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../src/world/world-object-placement-model.js',
+        import.meta.url
+      ),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../src/render/world-object-renderer.js',
+        import.meta.url
+      ),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../src/objects/object-definition-catalog.js',
+        import.meta.url
+      ),
+      'utf8'
+    ),
+    readFile(
+      new URL(
+        '../src/objects/user-object-library.js',
+        import.meta.url
+      ),
+      'utf8'
+    )
+  ]);
+
+  assert.match(
+    html,
+    new RegExp(
+      `world-builder-main\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    html,
+    new RegExp(
+      `world-builder\\.css\\?rev=${revision}`
+    )
+  );
+
+  for (const [label, source] of [
+    ['main', main],
+    ['draft', draft],
+    ['placement', placement],
+    ['renderer', renderer]
+  ]) {
+    assert.match(
+      source,
+      new RegExp(
+        `object-definition-catalog\\.js\\?rev=${revision}`
+      ),
+      `${label}: Object Catalog must use the canonical cache revision`
+    );
+  }
+
+  for (const [label, source] of [
+    ['main', main],
+    ['catalog', catalog],
+    ['user-library', userLibrary]
+  ]) {
+    assert.match(
+      source,
+      new RegExp(
+        `object-library-taxonomy\\.js\\?rev=${revision}`
+      ),
+      `${label}: Object Library taxonomy must use the canonical cache revision`
+    );
+  }
+
+  assert.doesNotMatch(
+    draft,
+    /object-definition-catalog\.js\?rev=object-catalog-placement-v1/
+  );
+  assert.doesNotMatch(
+    main,
+    /world-object-library-v1-orientation-v1/
+  );
+});
+
+test('Building models and visual variants remain exposed to the Builder after interior-link work', async () => {
+  const [catalog, main] =
+    await Promise.all([
+      readFile(
+        new URL(
+          '../src/objects/object-definition-catalog.js',
+          import.meta.url
+        ),
+        'utf8'
+      ),
+      readFile(
+        new URL(
+          '../src/builder/world-builder-main.js',
+          import.meta.url
+        ),
+        'utf8'
+      )
+    ]);
+
+  for (const definitionId of [
+    'objectdef.building.house.blue_cottage.01',
+    'objectdef.building.house.red_tile.01',
+    'objectdef.building.inn.golden_thatch.01'
+  ]) {
+    assert.match(
+      catalog,
+      new RegExp(definitionId.replaceAll('.', '\\.'))
+    );
+  }
+
+  for (const label of [
+    'Avant',
+    'Côté',
+    'Arrière'
+  ]) {
+    assert.match(catalog, new RegExp(label));
+  }
+
+  assert.match(
+    main,
+    /object-visual-variant-fields/
+  );
+  assert.match(
+    main,
+    /definition\?\.visual\?\.variants/
+  );
+});
+
+test('Passages UI keeps one canonical Portal model while exposing activation radius for door anchors', async () => {
+  const html =
+    await readFile(
+      new URL('../builder.html', import.meta.url),
+      'utf8'
+    );
+
+  assert.match(
+    html,
+    /data-tab=["']portals["']>Passages<\/button>/
+  );
+  assert.match(
+    html,
+    /<h2>Passages<\/h2>/
+  );
+  assert.match(
+    html,
+    /Départ/
+  );
+  assert.match(
+    html,
+    /Zone d.activation/
+  );
+  assert.match(
+    html,
+    /Destination/
+  );
+
+  const pointFields =
+    html.match(
+      /<div id=["']portal-point-fields["'][\s\S]*?<\/div>/
+    )?.[0] ?? '';
+
+  assert.doesNotMatch(
+    pointFields,
+    /portal-radius/,
+    'radius must not disappear when trigger kind is object-anchor'
+  );
+
+  assert.match(
+    html,
+    /id=["']portal-trigger-zone-fields["'][\s\S]*?id=["']portal-radius["']/
+  );
+  assert.match(
+    html,
+    /Entrée et intérieur/
+  );
+});
