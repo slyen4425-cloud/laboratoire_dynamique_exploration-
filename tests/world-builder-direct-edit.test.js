@@ -477,3 +477,63 @@ test('regression: pinch zoom has no stale dependency on removed zoom controls', 
   assert.match(main, /function beginPinch\(\)/);
   assert.match(main, /function updatePinch\(\)/);
 });
+
+
+test('Builder viewport allows screen-space overscan so every Area edge stays reachable', () => {
+  const area = { width: 1000, height: 800 };
+  const canvasWidth = 500;
+  const canvasHeight = 400;
+  const panMarginPx = 96;
+
+  const bottomRight = computeBuilderView({
+    area,
+    center: { x: 1400, y: 1200 },
+    zoom: 1,
+    canvasWidth,
+    canvasHeight,
+    panMarginPx
+  });
+
+  assert.equal(bottomRight.camera.x, 596);
+  assert.equal(bottomRight.camera.y, 496);
+
+  const cornerCanvas = {
+    x: area.width - bottomRight.camera.x,
+    y: area.height - bottomRight.camera.y
+  };
+
+  assert.equal(cornerCanvas.x, canvasWidth - panMarginPx);
+  assert.equal(cornerCanvas.y, canvasHeight - panMarginPx);
+
+  const topLeft = computeBuilderView({
+    area,
+    center: { x: -400, y: -400 },
+    zoom: 1,
+    canvasWidth,
+    canvasHeight,
+    panMarginPx
+  });
+
+  assert.equal(topLeft.camera.x, -panMarginPx);
+  assert.equal(topLeft.camera.y, -panMarginPx);
+});
+
+test('Builder entrypoint applies one viewport pan margin to render, input and zoom views', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    main,
+    /const BUILDER_PAN_MARGIN_PX\s*=\s*96/
+  );
+
+  const uses =
+    [...main.matchAll(/panMarginPx:\s*BUILDER_PAN_MARGIN_PX/g)];
+
+  assert.ok(
+    uses.length >= 4,
+    'render, input, wheel/pinch zoom must share the same pan margin'
+  );
+});
