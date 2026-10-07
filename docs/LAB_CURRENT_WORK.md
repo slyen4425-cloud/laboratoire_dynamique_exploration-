@@ -230,3 +230,28 @@ Gate R3 requis sur smartphone paysage :
 7. vérifier peinture / déplacement / centrage hors focus.
 
 État : **GREEN TECHNIQUE R3 — checkpoint + preview R3 à publier, puis nouveau verdict utilisateur obligatoire.**
+
+
+## R3 publiée — nouveau gate smartphone
+
+- SHA preview/checkpoint R3 : `6d14e045727524ece3c2df4d22c9756efd9aba16`
+- CI work documentée : `37667075293` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-mobile-landscape-area-navigation-ux-v1-prevalidation-r3-green-2026-10-07`
+- CI checkpoint : `37667136530` — **SUCCESS**
+- preview : `preview/exploration-mobile-landscape-area-navigation-ux-v1-r3-2026-10-07`
+- publication infrastructure uniquement : PR #102
+- merge infra `main` : `458c21569d24583c714f1bd48ac7fe3930ea8d65`
+- Pages : `37667317895` — **SUCCESS**
+- aucun code gameplay du lot n'a été mergé dans `main`.
+
+Lien de gate R3 :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1-r3`
+
+Attendu en paysage focus :
+- canvas derrière toute la surface utile du Builder ;
+- contexte Area compact flottant en haut ;
+- outils carte flottants en bas ;
+- aucune barre `Vue Area / Centrer sélection / aide zoom` consommant de hauteur ;
+- navigation `Intérieur →` / `← Extérieur` toujours issue des Portals canoniques.
+
+État : **GREEN TECHNIQUE / PREVALIDATION R3 — attente du nouveau verdict smartphone. GREEN FINAL interdit avant validation utilisateur.**
