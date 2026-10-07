@@ -107,7 +107,7 @@ test('focused coarse-pointer interaction lowers only transient canvas backing re
   );
   assert.match(
     main,
-    /Math\.min\(nativeRatio,\s*interacting\s*\?\s*1\s*:\s*1\.5\)/
+    /Math\.min\(\s*nativeRatio,\s*interacting\s*\?\s*1\s*:\s*1\.5\s*\)/
   );
   assert.match(
     main,
