@@ -255,3 +255,36 @@ Attendu en paysage focus :
 - navigation `Intérieur →` / `← Extérieur` toujours issue des Portals canoniques.
 
 État : **GREEN TECHNIQUE / PREVALIDATION R3 — attente du nouveau verdict smartphone. GREEN FINAL interdit avant validation utilisateur.**
+
+
+## Gate smartphone R3 — amélioration validée partiellement, navigation map encore bloquante
+
+Retour utilisateur du 2026-10-07 :
+- le plein écran R3 est **nettement meilleur** ;
+- mais le bas de la map / les bords de l'Area restent difficiles à atteindre ;
+- le redimensionnement Area n'est pas utilisable confortablement tant que le coin bas-droit reste collé au bord du viewport ;
+- le créateur demande de pouvoir faire défiler/déplacer la map au-delà de ses limites visuelles.
+
+Cause :
+- `computeBuilderView()` clampait encore la caméra exactement dans les limites de l'Area ;
+- le handle de resize situé sur le coin bas-droit pouvait donc rester au bord physique du canvas.
+
+TDD :
+- RED : `04f2581d9fbb4e18392b0d07272472eff4403131`
+- CI RED : `37669650021` — **FAILURE attendue**
+- correctif viewport : `7e3f6fdfcaf47ba47e36a246127e87bac95fdc4c`
+- raccord Builder : `1df9c3ee55ce2ae3e5ca6af1008290c590150a1a`
+- CI fonctionnelle : `37669802667` — **SUCCESS**
+
+Correction R4 :
+- ajout d'une marge de pan écran de 96 px ;
+- la caméra peut dépasser visuellement les quatre bords de l'Area sans modifier aucune coordonnée du WorldDocument ;
+- le coin bas-droit peut être ramené à environ 96 px à l'intérieur du canvas ;
+- rendu, hit-test, wheel zoom et pinch zoom utilisent la même marge ;
+- cache du module `world-builder-viewport.js` versionné en R4 ;
+- aucune nouvelle autorité de map/navigation.
+
+Révision publique R4 :
+`mobile-landscape-area-navigation-ux-v1-r4`
+
+État : **GREEN TECHNIQUE R4 — checkpoint/preview R4 requis puis nouveau gate smartphone.**
