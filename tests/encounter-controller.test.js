@@ -385,3 +385,47 @@ test('leaving disabled interior restores normal exterior terrain-random checks',
   assert.equal(intent?.source, 'terrain-random');
   assert.equal(intent?.areaId, exterior.id);
 });
+
+
+test('explicit interior randomEnabled override can produce terrain-random', () => {
+  const controller = createEncounterController({
+    checkDistance: 100
+  });
+  const dangerousInterior = {
+    ...area(),
+    id: 'dangerous-cave',
+    kind: 'interior',
+    encounters: {
+      randomEnabled: true
+    }
+  };
+  const common = {
+    area: dangerousInterior,
+    encounterConfig: encounterConfig(),
+    captureCatalog: catalog(),
+    playerPartyRef: 'capture-party-preview',
+    rulesetId: 'capture.standard.1v1',
+    random: () => 0
+  };
+
+  assert.equal(controller.step({
+    ...common,
+    player: {
+      currentAreaId: dangerousInterior.id,
+      x: 100,
+      y: 100
+    }
+  }), null);
+
+  const intent = controller.step({
+    ...common,
+    player: {
+      currentAreaId: dangerousInterior.id,
+      x: 210,
+      y: 100
+    }
+  });
+
+  assert.equal(intent?.source, 'terrain-random');
+  assert.equal(intent?.areaId, dangerousInterior.id);
+});
