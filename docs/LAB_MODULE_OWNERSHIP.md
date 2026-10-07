@@ -34,6 +34,7 @@
 | Raccord combat | Encounter Bridge | encounter state | Snapshot/Result | accès arbitraire aux internes |
 | Combat Capture | Capture Combat (futur) | Snapshot | Result | Exploration calcule le combat |
 | World Builder Dynamique | Editor/Data | WorldDocument | document validé | modifier runtime actif |\n| Draft World Builder | World Builder Draft Model | WorldDocument source + edits | draft sérialisable | devenir état runtime / posséder renderer |\n| Preview Builder | Renderers Exploration existants | draft normalisé + caméra preview | pixels | écrire données/collision/mouvement |
+| Navigation Area Builder | Builder UI (projection lecture seule) | WorldArea active + Building sélectionné + Portals canoniques | intent de sélection selectedAreaId | stocker un lien parallèle, écrire Portal/WorldArea, dupliquer les coordonnées |
 | Stockage | Core Storage (futur) | document versionné | persisted data | stockage dispersé |
 | Cache PWA | Service worker | version/assets | cache | logique gameplay |
 

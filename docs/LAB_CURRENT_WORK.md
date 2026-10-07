@@ -84,3 +84,42 @@ RED avant implémentation :
 
 CI + test smartphone réel requis.
 GREEN FINAL interdit avant validation ergonomique utilisateur.
+
+
+## TDD / implémentation — état technique
+
+RED :
+- commit tests : `9c08c403a157dce30afa6ec42ce809de977cbc0e` ;
+- CI `37643376000` — **FAILURE attendue** ;
+- 394 tests, 387 GREEN, **7 RED ciblés** sur le contrat UX absent.
+
+Implémentation :
+- commit fonctionnel : `3b9bba858f94a80387335b029ee841d2b8a903ca` ;
+- CI `37644652710` — **SUCCESS** ;
+- **394/394 tests GREEN** + `npm run check` GREEN.
+
+Livré techniquement :
+- helper `world-builder-area-navigation.js` en lecture seule sur les Portals ;
+- barre contextuelle map avec `Intérieur →` et `← Extérieur` ;
+- sélection d'Area centralisée dans `selectAreaForEditing()` ;
+- tap carte sur pointeur tactile -> mode carte plein écran ;
+- bouton plein écran et sortie explicite ;
+- tentative progressive Fullscreen + verrouillage paysage, avec fallback CSS plein viewport ;
+- guidance paysage en portrait dans Builder et runtime ;
+- cache revisions Builder/runtime alignées ;
+- ancienne sentinelle Building Interiors découplée proprement : cache d'entrée Builder nouveau, cache interne WorldObject historique conservé.
+
+## Prévalidation à publier
+
+Créer un checkpoint/preview depuis le HEAD technique GREEN après documentation, puis publier via l'infrastructure Pages séparée.
+
+Gate smartphone demandé :
+1. ouvrir le Builder sur téléphone en portrait puis toucher la map ;
+2. confirmer que la carte devient plein écran et que le passage paysage est naturel ;
+3. sélectionner une maison reliée et utiliser `Intérieur →` ;
+4. depuis l'intérieur utiliser `← Extérieur` sans ouvrir l'onglet Passages ;
+5. quitter le mode plein écran ;
+6. lancer `Tester en jeu` et vérifier l'affichage paysage/rotation ;
+7. vérifier qu'aucun comportement terrain/Portal/rencontre n'a régressé.
+
+État : **GREEN TECHNIQUE — gate ergonomique smartphone requis avant GREEN FINAL.**

@@ -836,3 +836,30 @@ Règles :
 - aucun X/Y de retour dupliqué n'est conservé en parallèle ;
 - le Builder doit montrer clairement si un bâtiment a une entrée non reliée, reliée, ou invalide ;
 - une entrée sans Portal peut exister comme visuel/anchor, mais ne téléporte jamais silencieusement.
+
+
+### Mobile Landscape & Area Navigation UX v1
+
+Le Builder peut simplifier la navigation sans créer une nouvelle autorité de monde.
+
+Projection UI autorisée :
+
+```text
+WorldDocument
+  -> WorldArea active
+  -> WorldObject sélectionné
+  -> Portal existant
+  -> raccourci UI Intérieur / Extérieur
+  -> selectedAreaId (état UI éphémère)
+```
+
+Règles :
+- la barre de carte ne stocke aucun lien d'Area ;
+- `Intérieur →` est dérivé d'un Portal `object-anchor` du Building sélectionné vers une WorldArea `interior` ;
+- `← Extérieur` est dérivé d'un Portal existant dont la source est la WorldArea intérieure active et la cible une WorldArea `exterior` ;
+- `selectedAreaId` est uniquement une sélection d'éditeur et n'est jamais sérialisé comme seconde autorité ;
+- le sélecteur Area et les réglages Portal avancés utilisent le même chemin de sélection UI ;
+- le mode carte plein écran ne change aucun WorldDocument : il ne modifie que la présentation du Builder ;
+- Fullscreen API et Screen Orientation API sont des améliorations progressives ; leur indisponibilité ne modifie ni les données ni le gameplay ;
+- en portrait mobile, Builder et runtime peuvent afficher une guidance paysage purement visuelle ;
+- le runtime Exploration ne reçoit aucune nouvelle autorité d'orientation ou de navigation.

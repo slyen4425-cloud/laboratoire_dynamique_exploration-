@@ -1454,12 +1454,7 @@ function selectAreaForEditing(
   fitRequested = true;
 
   if (resetTool) {
-    if (refresh) {
-      setMapTool('select');
-    } else {
-      mapTool = 'select';
-      canvas.dataset.tool = mapTool;
-    }
+    setMapTool('select');
   }
 
   if (activateAreaTab) {
