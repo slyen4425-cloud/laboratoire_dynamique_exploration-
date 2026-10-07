@@ -32,7 +32,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=building-interiors-entrance-link-v1';
+} from './world-builder-draft.js?rev=building-interiors-passages-ux-r1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -47,7 +47,7 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=world-object-library-v1-orientation-v1';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -64,31 +64,32 @@ import {
 } from '../capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
 import {
   WORLD_OBJECT_LIMITS,
+  buildingDoorAnchorWorld,
   worldObjectBaseDimensions,
   worldObjectVisualRect
-} from '../world/world-object-model.js?rev=environment-showcase-selection-v1';
+} from '../world/world-object-model.js?rev=building-interiors-passages-ux-r1';
 import {
   resolveWorldObjectPlacement as resolveWorldObjectPlacementRaw,
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
-} from '../world/world-object-placement-model.js?rev=world-object-library-v1-orientation-v1';
+} from '../world/world-object-placement-model.js?rev=building-interiors-passages-ux-r1';
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=world-object-library-v1-orientation-v1';
+} from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
   listObjectLibraryCategories,
   listObjectLibraryFolders,
   resolveObjectLibraryFolder
-} from '../objects/object-library-taxonomy.js?rev=world-object-library-v1-orientation-v1';
+} from '../objects/object-library-taxonomy.js?rev=building-interiors-passages-ux-r1';
 import {
   USER_WORLD_OBJECT_MAX_BYTES,
   countObjectDefinitionReferences,
   createUserWorldObjectRecord,
   decodeUserWorldObjectFileDimensions,
   objectDefinitionFromUserRecord
-} from '../objects/user-object-library.js?rev=world-object-library-v1-orientation-v1';
+} from '../objects/user-object-library.js?rev=building-interiors-passages-ux-r1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
@@ -131,15 +132,15 @@ import {
 } from '../storage/user-material-store.js?rev=user-texture-import-v1';
 import {
   createUserWorldObjectStore
-} from '../storage/user-world-object-store.js?rev=world-object-library-v1-orientation-v1';
+} from '../storage/user-world-object-store.js?rev=building-interiors-passages-ux-r1';
 import {
   createWorldObjectAssetResolver,
   listWorldObjectAssets,
   resolveWorldObjectAsset
-} from '../assets/world-object-asset-adapter.js?rev=world-object-library-v1-orientation-v1';
+} from '../assets/world-object-asset-adapter.js?rev=building-interiors-passages-ux-r1';
 import {
   createUserWorldObjectAssetResolver
-} from '../assets/user-world-object-asset-resolver.js?rev=world-object-library-v1-orientation-v1';
+} from '../assets/user-world-object-asset-resolver.js?rev=building-interiors-passages-ux-r1';
 import {
   createImageAssetLoader
 } from '../assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
@@ -317,7 +318,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'world-object-library-v1-orientation-v1'
+        'building-interiors-passages-ux-r1'
     });
 
   const assetIds = [
@@ -2223,6 +2224,26 @@ function objectPlacementLabel(
     : `${placement.objectDefinitionId} · ${placement.id}`;
 }
 
+function syncObjectLibraryToSelectedPlacement() {
+  const placement =
+    currentObjectRaw();
+  const definition =
+    placement
+      ? objectDefinitionCatalog.get(
+          placement.objectDefinitionId
+        )
+      : null;
+
+  if (!definition?.library) {
+    return;
+  }
+
+  selectedObjectLibraryCategoryId =
+    definition.library.categoryId;
+  selectedObjectLibraryFolderId =
+    definition.library.folderId;
+}
+
 function currentBuildingInteriorLink() {
   const object =
     currentObjectResolved();
@@ -2553,26 +2574,32 @@ function refreshObjectControls() {
   $('bridge-fields').hidden =
     object?.kind !== 'bridge';
 
+  const isBuilding =
+    object?.kind === 'building';
+  const variantDefinition =
+    definition?.visual ?? null;
   const variants =
     Array.isArray(
-      definition?.visual?.variants
+      variantDefinition?.variants
     )
-      ? definition.visual.variants
+      ? variantDefinition.variants
       : [];
+  const buildingAuthoringFields =
+    $('building-authoring-fields');
   const variantFields =
     $('object-visual-variant-fields');
   const variantSelect =
     $('object-visual-variant');
 
-  variantFields.hidden =
-    !placement ||
-    variants.length < 2;
+  buildingAuthoringFields.hidden =
+    !isBuilding;
+  variantFields.hidden = !isBuilding;
 
-  if (variants.length > 0) {
+  if (isBuilding && variants.length > 0) {
     const selectedVariantId =
       placement?.overrides
         ?.visualVariantId ??
-      definition?.visual
+      variantDefinition
         ?.defaultVariantId ??
       variants[0]?.id ??
       '';
@@ -2588,8 +2615,19 @@ function refreshObjectControls() {
     );
     variantSelect.value =
       selectedVariantId;
+    variantSelect.disabled =
+      variants.length < 2;
+  } else if (isBuilding) {
+    variantSelect.replaceChildren();
+    const option =
+      document.createElement('option');
+    option.value = '';
+    option.textContent = 'Vue unique';
+    variantSelect.append(option);
+    variantSelect.disabled = true;
   } else {
     variantSelect.replaceChildren();
+    variantSelect.disabled = true;
   }
 
   refreshBuildingInteriorControls();
@@ -2815,6 +2853,19 @@ function refreshPortalControls() {
 
   const portal = currentPortalRaw();
   const disabled = !portal;
+  const summary = $('portal-summary');
+
+  if (!portal) {
+    summary.textContent =
+      'Aucun passage sélectionné.';
+  } else {
+    const triggerLabel =
+      portal.trigger?.kind === 'object-anchor'
+        ? `Entrée bâtiment · ${portal.trigger.objectId ?? 'objet'}`
+        : 'Zone libre';
+    summary.textContent =
+      `${triggerLabel} · ${portal.sourceAreaId} → ${portal.targetAreaId}`;
+  }
 
   for (const id of [
     'portal-delete',
@@ -3485,6 +3536,121 @@ function drawObstacle(obstacle, camera) {
   );
 }
 
+function drawBuildingEntranceAuthoringOverlay(
+  object,
+  document,
+  camera
+) {
+  if (
+    !object ||
+    object.kind !== 'building'
+  ) {
+    return;
+  }
+
+  const anchor =
+    object.doorAnchors?.[0] ??
+    null;
+
+  if (!anchor) {
+    return;
+  }
+
+  const link =
+    currentBuildingInteriorLink();
+  let point =
+    link.outgoingPortal
+      ? resolvePortalTriggerPoint(
+          document.areas,
+          link.outgoingPortal
+        )
+      : null;
+  const linked =
+    Boolean(point);
+
+  if (!point) {
+    const anchorPoint =
+      buildingDoorAnchorWorld(
+        object,
+        anchor.id
+      );
+
+    if (!anchorPoint) {
+      return;
+    }
+
+    point = {
+      x: anchorPoint.x,
+      y: anchorPoint.y,
+      radius: 32
+    };
+  }
+
+  const x =
+    point.x - camera.x;
+  const y =
+    point.y - camera.y;
+  const radius =
+    Math.max(
+      12,
+      Number(point.radius) || 32
+    );
+
+  ctx.beginPath();
+  ctx.arc(
+    x,
+    y,
+    radius,
+    0,
+    Math.PI * 2
+  );
+  ctx.fillStyle =
+    linked
+      ? 'rgba(111, 226, 166, 0.13)'
+      : 'rgba(255, 214, 105, 0.10)';
+  ctx.fill();
+  ctx.strokeStyle =
+    linked
+      ? 'rgba(111, 226, 166, 0.98)'
+      : 'rgba(255, 214, 105, 0.98)';
+  ctx.lineWidth = 3 / zoom;
+  ctx.setLineDash(
+    linked
+      ? []
+      : [8 / zoom, 6 / zoom]
+  );
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(
+    x,
+    y,
+    6 / zoom,
+    0,
+    Math.PI * 2
+  );
+  ctx.fillStyle =
+    linked
+      ? 'rgba(111, 226, 166, 1)'
+      : 'rgba(255, 214, 105, 1)';
+  ctx.fill();
+
+  ctx.font =
+    `${Math.max(11, 13 / zoom)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle =
+    'rgba(255, 248, 220, 0.98)';
+  ctx.fillText(
+    linked
+      ? 'Entrée reliée'
+      : 'Entrée à relier',
+    x,
+    y - radius - 6 / zoom
+  );
+}
+
 function drawBuilderOverlays(area, document, camera) {
   ctx.save();
 
@@ -3626,6 +3792,14 @@ function drawBuilderOverlays(area, document, camera) {
 
       ctx.restore();
     }
+  }
+
+  if (object?.kind === 'building') {
+    drawBuildingEntranceAuthoringOverlay(
+      object,
+      document,
+      camera
+    );
   }
 
   if (
@@ -4939,22 +5113,7 @@ $('object-select').addEventListener(
     selectedObjectId =
       $('object-select').value;
 
-    const placement =
-      currentObjectRaw();
-    const definition =
-      placement
-        ? objectDefinitionCatalog.get(
-            placement.objectDefinitionId
-          )
-        : null;
-
-    if (definition?.library) {
-      selectedObjectLibraryCategoryId =
-        definition.library.categoryId;
-      selectedObjectLibraryFolderId =
-        definition.library.folderId;
-    }
-
+    syncObjectLibraryToSelectedPlacement();
     refreshObjectControls();
     renderPreview();
   }
@@ -5044,6 +5203,7 @@ $('object-add').addEventListener(
         ?.id ??
       selectedObjectId;
 
+    syncObjectLibraryToSelectedPlacement();
     focusSelection();
     refreshControls();
   }
@@ -5059,6 +5219,7 @@ $('object-duplicate').addEventListener('click', () => {
   selectedObjectId = currentAreaRaw()?.objects?.find(
     (object) => !before.includes(object.id)
   )?.id ?? selectedObjectId;
+  syncObjectLibraryToSelectedPlacement();
   refreshControls();
 });
 
@@ -5903,6 +6064,7 @@ canvas.addEventListener('pointerdown', (event) => {
   if (object) {
     selectedObjectId = object.id;
     selectedSpawnId = null;
+    syncObjectLibraryToSelectedPlacement();
     activateTab('objects');
     pointerSession = {
       pointerId: event.pointerId,
