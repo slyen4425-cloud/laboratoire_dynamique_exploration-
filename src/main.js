@@ -10,7 +10,7 @@ import {
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-texture-import-v1';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=world-object-library-v1-orientation-v1';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
@@ -36,23 +36,23 @@ import {
 } from './storage/user-material-store.js?rev=user-texture-import-v1';
 import {
   createUserWorldObjectStore
-} from './storage/user-world-object-store.js?rev=world-object-library-v1-orientation-v1';
+} from './storage/user-world-object-store.js?rev=building-interiors-passages-ux-r1';
 import {
   createWorldObjectAssetResolver,
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=world-object-library-v1-orientation-v1';
+} from './assets/world-object-asset-adapter.js?rev=building-interiors-passages-ux-r1';
 import {
   createUserWorldObjectAssetResolver
-} from './assets/user-world-object-asset-resolver.js?rev=world-object-library-v1-orientation-v1';
+} from './assets/user-world-object-asset-resolver.js?rev=building-interiors-passages-ux-r1';
 import {
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
-} from './world/world-object-placement-model.js?rev=world-object-library-v1-orientation-v1';
+} from './world/world-object-placement-model.js?rev=building-interiors-passages-ux-r1';
 import {
   createComposedObjectDefinitionCatalog
-} from './objects/object-definition-catalog.js?rev=world-object-library-v1-orientation-v1';
+} from './objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
 import {
   objectDefinitionFromUserRecord
-} from './objects/user-object-library.js?rev=world-object-library-v1-orientation-v1';
+} from './objects/user-object-library.js?rev=building-interiors-passages-ux-r1';
 import {
   createImageAssetLoader
 } from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
