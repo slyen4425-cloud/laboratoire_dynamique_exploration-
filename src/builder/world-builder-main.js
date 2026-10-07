@@ -98,7 +98,7 @@ import {
 } from '../world/world-trigger-geometry.js?rev=world-event-contract-v1';
 import {
   resolveWorldAreaSpawnPoint
-} from '../world/world-area-model.js?rev=terrain-family-encounters-v1';
+} from '../world/world-area-model.js?rev=interior-random-encounter-policy-v1';
 import {
   materialPackV1
 } from '../materials/material-pack-v1.js?rev=user-texture-import-v1';
