@@ -993,3 +993,48 @@ test('Portal tab presents a simple liaison summary and keeps raw Portal fields u
     'Portal summary must be refreshed from canonical Portal data'
   );
 });
+
+
+test('Exploration runtime uses the same WorldObject cache revision as the Builder', async () => {
+  const revision =
+    'building-interiors-passages-ux-r1';
+  const [indexHtml, runtimeMain] =
+    await Promise.all([
+      readFile(
+        new URL('../index.html', import.meta.url),
+        'utf8'
+      ),
+      readFile(
+        new URL('../src/main.js', import.meta.url),
+        'utf8'
+      )
+    ]);
+
+  assert.match(
+    indexHtml,
+    new RegExp(
+      `main\\.js\\?rev=${revision}`
+    )
+  );
+
+  for (const modulePath of [
+    'render/world-object-renderer.js',
+    'world/world-object-placement-model.js',
+    'objects/object-definition-catalog.js',
+    'objects/user-object-library.js',
+    'assets/world-object-asset-adapter.js',
+    'assets/user-world-object-asset-resolver.js',
+    'storage/user-world-object-store.js'
+  ]) {
+    assert.match(
+      runtimeMain,
+      new RegExp(
+        modulePath
+          .replaceAll('/', '\\/')
+          .replaceAll('.', '\\.') +
+        `\\?rev=${revision}`
+      ),
+      `runtime must resolve ${modulePath} through the canonical revision`
+    );
+  }
+});
