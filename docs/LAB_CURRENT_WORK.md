@@ -2632,3 +2632,28 @@ Invariants :
 - `Zombicide-40k` inchangé.
 
 État : **TECHNIQUE GREEN — nouvelle preview + gate utilisateur requis avant GREEN FINAL.**
+
+
+### Publication gate corrigé — Building Interiors / Passages UX R1 — 2026-10-07
+
+État runtime prévalidation :
+- runtime/Builder publié : `e2a72e5da53f2f29886d433294f863712b11d8e3` ;
+- CI work : `37622390524` — **SUCCESS** ;
+- checkpoint : `checkpoint/exploration-building-interiors-passages-ux-r1-prevalidation-r2-green-2026-10-07` @ même SHA ;
+- CI checkpoint : `37622520412` — **SUCCESS** ;
+- preview `preview/exploration-building-interiors-entrance-link-v1-2026-10-06` alignée sur le même SHA ;
+- PR infra redéploiement : #96 — **MERGED** ;
+- Pages : `37622663307` — **SUCCESS** ;
+- lien gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=building-interiors-passages-ux-r1`.
+
+Gate utilisateur ciblé :
+1. Objets -> Maisons/Bâtiments : vérifier les modèles natifs ;
+2. sélectionner une maison : vérifier `Bâtiment sélectionné` puis `Avant / Côté / Arrière` ;
+3. vérifier le cercle `Entrée à relier` sur le doorAnchor avant liaison ;
+4. créer/lier un intérieur depuis `Entrée et intérieur` ;
+5. vérifier cercle `Entrée reliée` et déplacement/rotation/scale sans désynchronisation ;
+6. ouvrir `Passages` : résumé simple visible, réglages techniques repliés sous `Réglages avancés` ;
+7. ouvrir les réglages avancés et vérifier que le rayon de zone reste disponible pour une porte/object-anchor ;
+8. Tester la carte : entrer/sortir et vérifier le même modèle/variante et le retour devant la même maison sans rebond.
+
+État : **PRÉVALIDATION TECHNIQUE GREEN + PAGES GREEN — validation utilisateur requise avant GREEN FINAL.**
