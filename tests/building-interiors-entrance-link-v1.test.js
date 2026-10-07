@@ -902,7 +902,7 @@ test('Builder exposes an explicit building model/orientation/interior workflow a
   assert.match(html, /Modèle \/ objet à placer/);
   assert.match(html, /Orientation du bâtiment/);
   assert.match(html, /Entrée et intérieur/);
-  assert.match(html, /data-tab=["']portals["'][^>]*>Liaisons</);
+  assert.match(html, /data-tab=["\']portals["\'][^>]*>Passages</);
   assert.match(html, /id=["']portal-advanced-settings["']/);
   assert.match(html, /Réglages avancés/);
 
