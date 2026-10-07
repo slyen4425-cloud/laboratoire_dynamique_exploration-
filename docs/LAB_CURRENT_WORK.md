@@ -166,3 +166,20 @@ La preview R1 reste un historique technique et ne doit plus être utilisée pour
 Créer un checkpoint + preview R2 depuis le HEAD documenté R2, puis publier un nouveau run Pages frais.
 
 État : **GREEN TECHNIQUE R2 — publication R2 puis gate smartphone avant GREEN FINAL.**
+
+
+## R2 publiée — gate smartphone actif
+
+- HEAD R2 documenté : `b6e4e8647fd9d846c888a296d2fb5576e529d69c`
+- CI work R2 documenté : `37646399188` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-mobile-landscape-area-navigation-ux-v1-prevalidation-r2-green-2026-10-07`
+- CI checkpoint : `37646466092` — **SUCCESS**
+- preview : `preview/exploration-mobile-landscape-area-navigation-ux-v1-r2-2026-10-07`
+- publication infra : PR #101 uniquement
+- merge infra main : `253764c2b02a3ad6dd926fdf62f7a22c36f8bd91`
+- Pages : `37646605273` — **SUCCESS**
+
+Lien de gate smartphone R2 :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1-r2`
+
+Le lot reste **GREEN TECHNIQUE / PREVALIDATION R2** jusqu'au verdict utilisateur. Ne pas créer le checkpoint GREEN FINAL avant cette validation.
