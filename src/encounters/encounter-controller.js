@@ -70,6 +70,12 @@ export function createEncounterController({
       return null;
     }
 
+    if (area.encounters?.randomEnabled === false) {
+      lastPosition = current;
+      travelledSinceCheck = 0;
+      return null;
+    }
+
     const moved = Math.hypot(
       current.x - lastPosition.x,
       current.y - lastPosition.y
