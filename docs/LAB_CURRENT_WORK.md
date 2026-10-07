@@ -2,110 +2,85 @@
 
 > ÉTAT ACTIF — 2026-10-07
 >
-> Chantier : **Interior Random Encounter Policy v1**
+> Chantier : **Mobile Landscape & Area Navigation UX v1**
 >
-> Branche : `work/exploration-interior-random-encounter-policy-v1-2026-10-07`
+> Branche : `work/exploration-mobile-landscape-area-navigation-ux-v1-2026-10-07`
 >
-> Base GREEN exacte : `281754a2d2c707517dbf785838031c82b9e81857`
+> Base technique GREEN exacte : `66586150bcbebc731a0f72b5dc5b6607ae321c85`
 >
-> Checkpoint de départ : `checkpoint/exploration-start-interior-random-encounter-policy-v1-2026-10-07`
->
-> Prévalidation r1 : `checkpoint/exploration-interior-random-encounter-policy-v1-prevalidation-green-2026-10-07` — **supersédée avant gate utilisateur** (cache public détecté)
->
-> Checkpoint prévalidation r2 prévu : `checkpoint/exploration-interior-random-encounter-policy-v1-prevalidation-r2-green-2026-10-07`
->
-> Preview r2 prévue : `preview/exploration-interior-random-encounter-policy-v1-r2-2026-10-07`
+> Checkpoint de départ : `checkpoint/exploration-start-mobile-landscape-area-navigation-ux-v1-2026-10-07`
 
-## Contrat canonique
+## Validation précédente conservée
 
-```text
-WorldArea.encounters.randomEnabled
-```
+Le créateur confirme le 2026-10-07 : **aucun combat aléatoire à l'intérieur** sur la preview r2.
+Les sentinelles automatiques du lot précédent couvrent aussi le retour des rencontres en extérieur et l'indépendance des combats explicites.
+Ce chantier UX ne modifie pas Encounter Controller, WorldArea.encounters ni Combat Bridge.
 
-Normalisation WorldArea v5 :
-- `exterior` -> `true` par défaut ;
-- `interior` -> `false` par défaut ;
-- override booléen explicite autorisé, notamment pour un futur intérieur dangereux ;
-- anciennes Areas sans champ -> normalisées selon `kind`.
+## Problème produit
 
-Le Encounter Controller reste l'unique autorité du déclenchement `terrain-random`.
-Quand `randomEnabled === false` :
-- l'ancre de distance reste tenue à jour ;
-- la distance accumulée est remise à zéro ;
-- retour `null` avant Terrain Family Resolver / Encounter Resolver ;
-- aucun RNG n'est appelé.
+Le moteur WorldArea / Portal fonctionne, mais le Builder expose trop directement sa structure technique :
+- la map reste enfermée dans la grille de panneaux sur smartphone ;
+- le parcours extérieur -> intérieur passe par Objets -> bâtiment -> Entrée et intérieur -> Ouvrir l'intérieur ;
+- le retour intérieur -> extérieur exige de comprendre les Areas / Passages ;
+- le jeu et l'éditeur ne guident pas clairement vers l'usage smartphone paysage.
 
-Les combats explicites/scénarisés restent hors de cette policy.
+## Contrat UX v1
 
-## Autorités protégées
+1. **Carte prioritaire**
+   - toucher/sélectionner la map sur mobile ouvre un mode carte plein écran ;
+   - bouton explicite plein écran disponible ;
+   - sortie explicite du mode carte ;
+   - le mode CSS reste fonctionnel si l'API Fullscreen native est indisponible.
 
-- nature/policy locale de l'Area -> World Area Model ;
-- déclenchement aléatoire -> Encounter Controller ;
-- famille locale -> Terrain Family Resolver ;
-- chance/élément/créature -> Terrain Family Encounter Config + CaptureDatabase ;
-- transformation vers Combat -> Encounter Bridge ;
-- changement d'Area -> Portal Model ;
-- rendu -> Renderer lecture seule.
+2. **Paysage mobile**
+   - le mode carte tente le verrouillage `landscape` uniquement via l'API navigateur depuis un geste utilisateur ;
+   - échec de Fullscreen/orientation = fallback visuel, jamais blocage moteur ;
+   - jeu + Builder affichent un conseil de rotation en portrait étroit.
 
-Interdits confirmés :
-- aucun `if interior` dans Renderer/Portal/Bridge ;
-- aucun `indoor-safe` / `interior-safe` ;
-- aucun materialId/terrainFamilyId spécial ;
-- aucune désactivation globale du Combat ;
-- aucune modification de `Zombicide-40k`.
+3. **Navigation Area simple**
+   - barre contextuelle directement sur la map ;
+   - extérieur + bâtiment sélectionné relié -> raccourci `Intérieur →` ;
+   - intérieur -> raccourci `← Extérieur` résolu depuis les Portals existants ;
+   - le sélecteur Area et les réglages Portal détaillés restent disponibles comme réglages avancés.
 
-## TDD
+## Autorités / invariants
 
-RED final :
-- HEAD tests : `65b02d8ac96e358f6443f255c86db6eb814ef620` ;
-- CI : `37633727026` — **FAILURE attendue** ;
-- 386 tests, 381 GREEN, 5 RED ciblés sur le contrat absent.
+- WorldDocument = unique état persistant de carte ;
+- WorldArea = unique autorité des Areas ;
+- Portal = unique autorité des raccords ;
+- WorldObject + doorAnchor = entrée bâtiment canonique ;
+- `selectedAreaId` reste un état UI éphémère autorisé par la charte ;
+- aucun `building.portalRef`, aucune coordonnée d'entrée dupliquée, aucun format Navigation parallèle ;
+- aucun changement de schéma WorldDocument attendu ;
+- Renderer reste en lecture seule ;
+- aucun changement dans `Zombicide-40k`.
 
-Couverture ajoutée :
-1. extérieur -> terrain-random toujours possible ;
-2. intérieur -> aucun terrain-random par défaut ;
-3. RNG jamais appelé dans intérieur bloqué ;
-4. entrée intérieur -> ancre distance reset ;
-5. sortie extérieur -> random restauré ;
-6. source Combat explicite préservée ;
-7. aucune fuite de policy dans Renderer / Portal / Bridge ;
-8. aucun faux terrain/material safe ;
-9. override intérieur explicite -> random possible.
+## Fichiers attendus
 
-## Implémentation
+- `builder.html`
+- `src/builder/world-builder.css`
+- `src/builder/world-builder-main.js`
+- helper UI pur de navigation Area si nécessaire
+- `index.html` / `src/style.css` uniquement pour la guidance paysage du runtime
+- tests sentinelles dédiés
 
-- WorldArea v5 + `encounters.randomEnabled` : `a51b9fcf701c0f2123db402c56aa89180cf6ea8f` ;
-- Encounter Controller bloque avant roll : `cd0dcbe41d90ebc27ea2732cedaca9583f3ff41c` ;
-- CI fonctionnelle : `37633971384` — **SUCCESS** ;
-- cache runtime aligné : `647fcd35b85869ef6a684c047133b75b49474be5` ;
-- WorldDocument / Builder imports alignés jusqu'à `8569f0ae516c7002c9c3f9758662afe52f6a6680` ;
-- CI chaîne navigateur/Builder : `37634086848` — **SUCCESS** ;
-- libellé sentinelle WorldArea v5 : `349987de8325967b9531e7fcc6a10796a1665269` ;
-- CI : `37634445594` — **SUCCESS**.
+## TDD attendu
 
-## Correction cache publique avant gate
+RED avant implémentation :
+1. navigation bâtiment extérieur -> intérieur depuis le Portal canonique ;
+2. navigation intérieur -> extérieur depuis le Portal canonique ;
+3. aucun stockage/navigation parallèle ;
+4. présence du mode carte plein écran et de sa sortie ;
+5. fallback portrait/paysage mobile ;
+6. cache-bust public Builder/runtime aligné si fichiers d'entrée modifiés.
 
-La première preview technique a révélé que `index.html` conservait l'URL historique
-`main.js?rev=building-interiors-passages-ux-r1`.
-Le contenu Git était correct mais un smartphone déjà passé par cette URL pouvait conserver un runtime obsolète.
+## Risques
 
-TDD cache :
-- RED : `e674a74eedb7c5824610f4ee25f1dba06a445697` ;
-- CI RED : `37635066394` — **FAILURE attendue** ;
-- cache-bust public : `8c5de3f15ad7aac047aa0e988c09524eab620fb1` ;
-- une ancienne sentinelle WorldObject a alors révélé un couplage abusif entre révision publique et révision interne ;
-- sentinelle séparée proprement : `84e16c16c68e468d84eaf4f0531b7d3ee7530925` ;
-- CI GREEN : `37635333675` — **SUCCESS**.
+- API Fullscreen / Screen Orientation variables selon navigateur : elles restent un bonus progressif, jamais une dépendance gameplay ;
+- changement de taille du canvas pendant Fullscreen : le Renderer doit continuer à lire `clientWidth/clientHeight` et recalculer la vue ;
+- ne pas transformer la simplification UI en seconde autorité de Portal.
 
-La prévalidation r1 / preview r1 est donc **supersédée avant test utilisateur**. Elle ne doit pas être utilisée comme verdict.
+## Gate
 
-## Gate utilisateur restant
-
-Publier la preview r2 séparée puis tester sur smartphone :
-1. entrer dans la maison ;
-2. marcher longtemps à l'intérieur : aucun random ;
-3. sortir ;
-4. marcher dehors : les rencontres terrain reviennent ;
-5. confirmer que les mécanismes de Combat explicites existants restent indépendants.
-
-État : **GREEN TECHNIQUE r2 — publication preview r2 requise. GREEN FINAL interdit avant gate utilisateur.**
+CI + test smartphone réel requis.
+GREEN FINAL interdit avant validation ergonomique utilisateur.
