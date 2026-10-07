@@ -183,3 +183,50 @@ Lien de gate smartphone R2 :
 `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1-r2`
 
 Le lot reste **GREEN TECHNIQUE / PREVALIDATION R2** jusqu'au verdict utilisateur. Ne pas créer le checkpoint GREEN FINAL avant cette validation.
+
+
+## Gate smartphone R2 — verdict NEGATIF utilisateur
+
+Test réel smartphone paysage reçu le 2026-10-07.
+
+Verdict :
+- la map est bien visible ;
+- le mode focus/paysage n'est pas encore acceptable ;
+- le bandeau de zone, la rangée des 4 outils et la barre `Vue Area / Centrer sélection / aide zoom` consomment une trop grande part de la hauteur ;
+- sur l'écran testé, la carte n'occupe qu'environ 40–45 % de la hauteur utile visible ;
+- **GREEN FINAL refusé**.
+
+Cause UX :
+- `.preview-panel.is-map-focus` remplissait bien le viewport ;
+- mais `.map-area-context`, `.map-tools` et `.preview-tools` restaient des enfants flex qui réservaient de la hauteur avant le canvas ;
+- le problème est donc de composition UI, pas de WorldArea/Portal/Renderer.
+
+## Correction R3 — focus réellement immersif
+
+TDD RED :
+- test de régression ajouté : les commandes de focus doivent être des overlays, le canvas doit posséder le viewport ;
+- commit : `8d4278fa8b68583be4740d16d092a582f90d1ec3` ;
+- CI : `37666647255` — **FAILURE attendue**.
+
+Correctif :
+- commit : `55adc55c33b33ead1dc1ae9cdca9c8cc89811478` ;
+- CI : `37666944802` — **SUCCESS** ;
+- canvas en `position:absolute; inset:0` dans le mode focus ;
+- navigation Area en overlay compact en haut ;
+- outils carte en overlay flottant en bas ;
+- `Vue Area / Centrer sélection / aide zoom` masqués pendant le focus ;
+- libellé `Zone active` masqué en focus, seul `Extérieur/Intérieur` reste visible ;
+- contrôles pinceau décalés au-dessus de la barre d'outils ;
+- aucun changement WorldDocument, WorldArea, Portal, Encounter ou Renderer ;
+- révision publique passée à `mobile-landscape-area-navigation-ux-v1-r3`.
+
+Gate R3 requis sur smartphone paysage :
+1. ouvrir la map ;
+2. entrer en mode focus ;
+3. vérifier que la map occupe presque toute la hauteur disponible sous le chrome navigateur ;
+4. vérifier que les commandes flottantes ne masquent pas excessivement la zone de travail ;
+5. tester `Intérieur →` puis `← Extérieur` ;
+6. quitter le focus ;
+7. vérifier peinture / déplacement / centrage hors focus.
+
+État : **GREEN TECHNIQUE R3 — checkpoint + preview R3 à publier, puis nouveau verdict utilisateur obligatoire.**
