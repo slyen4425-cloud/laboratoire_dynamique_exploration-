@@ -45,7 +45,7 @@ import {
   panBuilderCenter,
   pointInRotatedRect,
   zoomBuilderAtCanvasPoint
-} from './world-builder-viewport.js';
+} from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r4';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
@@ -582,6 +582,7 @@ const PAINT_KINDS = Object.freeze([
 ]);
 const drawUndoStack = [];
 const MAX_DRAW_UNDO = 30;
+const BUILDER_PAN_MARGIN_PX = 96;
 
 const initialActorArea =
   draft.areas.find(
@@ -4093,7 +4094,8 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
     center,
     zoom,
     canvasWidth: cssWidth,
-    canvasHeight: cssHeight
+    canvasHeight: cssHeight,
+    panMarginPx: BUILDER_PAN_MARGIN_PX
   });
   zoom = lastView.zoom;
   center = { ...lastView.center };
@@ -4370,7 +4372,8 @@ function viewForInput() {
     center,
     zoom,
     canvasWidth: Math.max(canvas.clientWidth, 1),
-    canvasHeight: Math.max(canvas.clientHeight, 1)
+    canvasHeight: Math.max(canvas.clientHeight, 1),
+    panMarginPx: BUILDER_PAN_MARGIN_PX
   });
 }
 
@@ -4582,7 +4585,8 @@ function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
     canvasWidth: Math.max(canvas.clientWidth, 1),
     canvasHeight: Math.max(canvas.clientHeight, 1),
     canvasX: canvasPoint.x,
-    canvasY: canvasPoint.y
+    canvasY: canvasPoint.y,
+    panMarginPx: BUILDER_PAN_MARGIN_PX
   });
 
   zoom = view.zoom;
@@ -4728,7 +4732,8 @@ function updatePinch() {
     center: desiredCenter,
     zoom: nextZoom,
     canvasWidth: Math.max(canvas.clientWidth, 1),
-    canvasHeight: Math.max(canvas.clientHeight, 1)
+    canvasHeight: Math.max(canvas.clientHeight, 1),
+    panMarginPx: BUILDER_PAN_MARGIN_PX
   });
 
   zoom = view.zoom;
