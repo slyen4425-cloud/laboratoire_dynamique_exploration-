@@ -1503,6 +1503,7 @@ export function createBuildingInteriorLink(
       targetArea.id,
     targetSpawnId:
       interiorSpawnId,
+    enabled: true,
     visual: {
       visible: true,
       marker: 'entry',
@@ -1528,6 +1529,7 @@ export function createBuildingInteriorLink(
       sourceAreaId,
     targetSpawnId:
       exteriorReturnSpawnId,
+    enabled: true,
     visual: {
       visible: true,
       marker: 'exit',
