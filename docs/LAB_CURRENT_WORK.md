@@ -10,87 +10,84 @@
 >
 > Checkpoint de départ : `checkpoint/exploration-start-interior-random-encounter-policy-v1-2026-10-07`
 >
-> Dernier GREEN : `checkpoint/exploration-building-interiors-entrance-link-v1-green-2026-10-07`
+> Checkpoint prévalidation prévu : `checkpoint/exploration-interior-random-encounter-policy-v1-prevalidation-green-2026-10-07`
+>
+> Preview prévue : `preview/exploration-interior-random-encounter-policy-v1-2026-10-07`
 
-## Besoin utilisateur
-
-Une `WorldArea(kind = interior)` ne doit pas produire spontanément une rencontre `source = terrain-random` simplement parce que le joueur marche.
-
-Les combats explicites restent autorisés et hors de cette règle : acteur hostile placé, WorldEvent combat, trigger scripté, boss, interaction ou autre mécanisme possédant sa propre autorité.
-
-## Audit LIVE
-
-- Encounter Controller = autorité unique du déclenchement terrain aléatoire.
-- WorldArea = autorité de la nature/configuration locale de l'Area.
-- Terrain Family Resolver = famille locale uniquement.
-- Encounter Bridge = transformation intent -> Combat, hors policy.
-- Portal = changement d'Area uniquement, hors policy.
-- Renderer = lecture seule, hors policy.
-- aucun chantier parallèle `random` / `encounter-policy` / `work/exploration-interior*` détecté.
-- `WorldArea v4` ne possède actuellement aucune policy de rencontre.
-
-## Contrat retenu
-
-Ajouter une policy canonique persistée dans `WorldArea` :
+## Contrat canonique
 
 ```text
 WorldArea.encounters.randomEnabled
 ```
 
-Valeurs par défaut :
-- `exterior` -> `true`
-- `interior` -> `false`
+Normalisation WorldArea v5 :
+- `exterior` -> `true` par défaut ;
+- `interior` -> `false` par défaut ;
+- override booléen explicite autorisé, notamment pour un futur intérieur dangereux ;
+- anciennes Areas sans champ -> normalisées selon `kind`.
 
-Un override explicite pourra donc autoriser plus tard les rencontres aléatoires dans une Area intérieure dangereuse sans déduire la règle du matériau, de la texture ou de `terrainFamilyId`.
+Le Encounter Controller reste l'unique autorité du déclenchement `terrain-random`.
+Quand `randomEnabled === false` :
+- l'ancre de distance reste tenue à jour ;
+- la distance accumulée est remise à zéro ;
+- retour `null` avant Terrain Family Resolver / Encounter Resolver ;
+- aucun RNG n'est appelé.
 
-Le Encounter Controller :
-1. conserve/reset l'ancre de distance lors d'un changement d'Area ;
-2. lit uniquement la policy canonique de l'Area ;
-3. retourne `null` avant résolution/roll si random désactivé ;
-4. n'appelle jamais le RNG dans ce cas.
+Les combats explicites/scénarisés restent hors de cette policy.
 
-## Propriétaires / frontières
+## Autorités protégées
 
-- policy Area : WorldArea Model ;
-- déclenchement random : Encounter Controller ;
-- famille locale : Terrain Family Resolver ;
-- chance/éléments/créature : Terrain Family Encounter Config + CaptureDatabase ;
-- Combat explicite : autorités existantes, inchangées.
+- nature/policy locale de l'Area -> World Area Model ;
+- déclenchement aléatoire -> Encounter Controller ;
+- famille locale -> Terrain Family Resolver ;
+- chance/élément/créature -> Terrain Family Encounter Config + CaptureDatabase ;
+- transformation vers Combat -> Encounter Bridge ;
+- changement d'Area -> Portal Model ;
+- rendu -> Renderer lecture seule.
 
-## Fichiers attendus
+Interdits confirmés :
+- aucun `if interior` dans Renderer/Portal/Bridge ;
+- aucun `indoor-safe` / `interior-safe` ;
+- aucun materialId/terrainFamilyId spécial ;
+- aucune désactivation globale du Combat ;
+- aucune modification de `Zombicide-40k`.
 
-- `src/world/world-area-model.js`
-- `src/encounters/encounter-controller.js`
-- tests ciblés Encounter / WorldArea / runtime architecture
-- documentation du lot
+## TDD
 
-Hors périmètre :
-- Renderer ;
-- Portal Model ;
-- Combat Bridge ;
-- textures/materials ;
-- nouveau terrainFamilyId ;
-- désactivation globale du Combat ;
-- `Zombicide-40k`.
+RED final :
+- HEAD tests : `65b02d8ac96e358f6443f255c86db6eb814ef620` ;
+- CI : `37633727026` — **FAILURE attendue** ;
+- 386 tests, 381 GREEN, 5 RED ciblés sur le contrat absent.
 
-## TDD RED requis
+Couverture ajoutée :
+1. extérieur -> terrain-random toujours possible ;
+2. intérieur -> aucun terrain-random par défaut ;
+3. RNG jamais appelé dans intérieur bloqué ;
+4. entrée intérieur -> ancre distance reset ;
+5. sortie extérieur -> random restauré ;
+6. source Combat explicite préservée ;
+7. aucune fuite de policy dans Renderer / Portal / Bridge ;
+8. aucun faux terrain/material safe ;
+9. override intérieur explicite -> random possible.
 
-1. extérieur identique -> `terrain-random` toujours possible ;
-2. intérieur identique -> aucun random par défaut ;
-3. aucun appel RNG dans intérieur bloqué ;
-4. entrée intérieur -> ancre distance remise correctement ;
-5. sortie extérieur -> random restauré normalement ;
-6. combats explicites non affectés ;
-7. aucune logique interior/policy dans Renderer / Portal / Combat Bridge ;
-8. aucun `terrainFamilyId` / `materialId` artificiel pour simuler un intérieur sûr ;
-9. override intérieur explicite -> random autorisable.
+## Implémentation
 
-## Gate
+- WorldArea v5 + `encounters.randomEnabled` : `a51b9fcf701c0f2123db402c56aa89180cf6ea8f` ;
+- Encounter Controller bloque avant roll : `cd0dcbe41d90ebc27ea2732cedaca9583f3ff41c` ;
+- CI fonctionnelle : `37633971384` — **SUCCESS** ;
+- cache runtime aligné : `647fcd35b85869ef6a684c047133b75b49474be5` ;
+- WorldDocument / Builder imports alignés jusqu'à `8569f0ae516c7002c9c3f9758662afe52f6a6680` ;
+- CI chaîne navigateur/Builder : `37634086848` — **SUCCESS** ;
+- libellé sentinelle WorldArea v5 : `349987de8325967b9531e7fcc6a10796a1665269` ;
+- CI : `37634445594` — **SUCCESS**.
 
-- CI RED attendue après commit des tests ;
-- implémentation seulement après RED constaté ;
-- CI GREEN technique ;
-- checkpoint prévalidation ;
-- preview séparée ;
-- test smartphone : entrer maison, marcher longtemps sans random, sortir, retrouver random extérieur, vérifier combat explicite ;
-- GREEN FINAL uniquement après validation utilisateur.
+## Gate utilisateur restant
+
+Publier la preview séparée puis tester sur smartphone :
+1. entrer dans la maison ;
+2. marcher longtemps à l'intérieur : aucun random ;
+3. sortir ;
+4. marcher dehors : les rencontres terrain reviennent ;
+5. confirmer que les mécanismes de Combat explicites existants restent indépendants.
+
+État : **GREEN TECHNIQUE — PRÉVALIDATION EN COURS. GREEN FINAL interdit avant gate utilisateur.**
