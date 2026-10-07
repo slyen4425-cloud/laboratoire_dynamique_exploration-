@@ -288,3 +288,28 @@ Révision publique R4 :
 `mobile-landscape-area-navigation-ux-v1-r4`
 
 État : **GREEN TECHNIQUE R4 — checkpoint/preview R4 requis puis nouveau gate smartphone.**
+
+
+## R4 publiée — gate smartphone pan / Taille Area
+
+- SHA checkpoint/preview R4 : `82e3eb5096bb0c6e3379b65b6fb77e6c7fe40899`
+- CI work R4 : `37670072319` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-mobile-landscape-area-navigation-ux-v1-prevalidation-r4-green-2026-10-07`
+- CI checkpoint : `37670146123` — **SUCCESS**
+- preview : `preview/exploration-mobile-landscape-area-navigation-ux-v1-r4-2026-10-07`
+- publication infrastructure uniquement : PR #103
+- merge infra `main` : `c1baa3175eb90d324df1e1ac1423e1ae688622a4`
+- Pages : `37670272396` — **SUCCESS**
+- aucun gameplay du lot n'a été mergé dans `main`.
+
+Lien R4 :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1-r4`
+
+Gate demandé :
+- en mode focus paysage, utiliser Déplacer et tirer la map au-delà de ses bords ;
+- confirmer que le bas et le coin bas-droit peuvent être ramenés à l'intérieur de l'écran ;
+- activer Taille Area et saisir la poignée bas-droite ;
+- vérifier que le comportement R3 plein écran reste bon ;
+- vérifier Intérieur → / ← Extérieur.
+
+État : **GREEN TECHNIQUE / PREVALIDATION R4 — attente du verdict smartphone. GREEN FINAL interdit avant validation utilisateur.**
