@@ -9,6 +9,7 @@
 | Monde runtime | World Model | document généré/chargé | état monde | UI duplique l'état |
 | Objets placés | World Object Model | données objet | transform/footprint/interaction | renderer possède transform |
 | Area active | World Area Model | areaId | contenu Area | Shell/renderer invente l'Area |
+| Policy rencontre aléatoire Area | World Area Model | kind + override explicite | encounters.randomEnabled | texture/terrain/renderer décide si le random est autorisé |
 | Portals | Portal Model | trigger + cible | changement d'Area intent | location.reload / navigation sauvage |
 | Géométrie surface | World Surface Model | WorldDocument | base/zones/routes/rivières | texture définit géométrie |
 | Famille terrain | World Surface Model | terrainFamilyId explicite | sémantique terrain gameplay | Material Registry/texture déduit la famille |
