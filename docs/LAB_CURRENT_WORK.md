@@ -141,3 +141,28 @@ Preview de gate :
 `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1`
 
 État : **GREEN TECHNIQUE / PREVIEW PUBLIÉE — attente du verdict ergonomique smartphone avant GREEN FINAL.**
+
+
+## Prévalidation R2 — chaîne de cache mobile complète
+
+Interception avant gate utilisateur :
+- le Builder R1 ouvrait encore `index.html?builderTest=1` sans révision publique ;
+- un smartphone pouvait donc réutiliser un ancien HTML runtime malgré les nouveaux CSS/JS ;
+- correction traitée en TDD, sans modification des autorités moteur.
+
+TDD R2 :
+- RED cache : `adc151e601efd2e20c49b06ec078fb0c57efff2a`
+- CI RED : `37646009673` — **FAILURE attendue**, 392/394 GREEN, 2 RED ciblés ;
+- correction cache : `160236129348bce4e2d43af10b46a84827dd2840` ;
+- réalignement de la sentinelle historique handoff : `e190e72c76be5803729427f747d0e00578d4209e` ;
+- CI R2 : `37646264782` — **SUCCESS**.
+
+Révision publique R2 :
+- Builder HTML -> CSS/JS : `mobile-landscape-area-navigation-ux-v1-r2`
+- Builder -> Tester en jeu : `index.html?builderTest=1&rev=mobile-landscape-area-navigation-ux-v1-r2`
+- runtime HTML -> CSS : `mobile-landscape-area-navigation-ux-v1-r2`
+
+La preview R1 reste un historique technique et ne doit plus être utilisée pour le gate ergonomique.
+Créer un checkpoint + preview R2 depuis le HEAD documenté R2, puis publier un nouveau run Pages frais.
+
+État : **GREEN TECHNIQUE R2 — publication R2 puis gate smartphone avant GREEN FINAL.**
