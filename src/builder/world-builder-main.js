@@ -45,7 +45,7 @@ import {
   panBuilderCenter,
   pointInRotatedRect,
   zoomBuilderAtCanvasPoint
-} from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r4';
+} from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
