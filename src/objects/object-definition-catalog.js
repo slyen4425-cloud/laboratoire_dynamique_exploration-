@@ -1,6 +1,6 @@
 import {
   resolveObjectLibraryFolder
-} from './object-library-taxonomy.js?rev=world-object-library-v1';
+} from './object-library-taxonomy.js?rev=building-interiors-passages-ux-r1';
 
 export const OBJECT_DEFINITION_SCHEMA_VERSION = 1;
 
