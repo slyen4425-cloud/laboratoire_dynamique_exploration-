@@ -217,3 +217,31 @@ test('runtime presents landscape guidance without adding gameplay orientation au
   assert.equal(/orientation\.lock/.test(main), false);
   assert.equal(/requestFullscreen/.test(main), false);
 });
+
+
+test('landscape map focus keeps controls as overlays so the canvas owns the viewport', async () => {
+  const css = await source(
+    'src/builder/world-builder.css'
+  );
+
+  assert.match(
+    css,
+    /\.preview-panel\.is-map-focus\s+\.map-area-context\s*\{[\s\S]*?position:\s*absolute/
+  );
+  assert.match(
+    css,
+    /\.preview-panel\.is-map-focus\s+\.map-tools\s*\{[\s\S]*?position:\s*absolute/
+  );
+  assert.match(
+    css,
+    /\.preview-panel\.is-map-focus\s+\.preview-tools\s*\{[\s\S]*?display:\s*none/
+  );
+  assert.match(
+    css,
+    /\.preview-panel\.is-map-focus\s+#builder-preview\s*\{[\s\S]*?position:\s*absolute[\s\S]*?inset:\s*0/
+  );
+  assert.match(
+    css,
+    /\.preview-panel\.is-map-focus\s+\.map-area-location\s+span\s*\{[\s\S]*?display:\s*none/
+  );
+});
