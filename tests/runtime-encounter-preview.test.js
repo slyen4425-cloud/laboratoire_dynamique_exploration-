@@ -66,3 +66,16 @@ test('runtime publishes the canonical Capture player party reference and forbids
     false
   );
 });
+
+
+test('public Exploration entry cache-busts the interior random encounter policy runtime', async () => {
+  const html = await readFile(
+    new URL('../index.html', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    html,
+    /src=["']\.\/src\/main\.js\?rev=interior-random-encounter-policy-v1["']/
+  );
+});
