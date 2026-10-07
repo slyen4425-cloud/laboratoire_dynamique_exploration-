@@ -850,3 +850,68 @@ test('Passages UI keeps one canonical Portal model while exposing activation rad
     /Entrée et intérieur/
   );
 });
+
+
+test('building interior helper creates enabled visible entry and exit Portals', () => {
+  const source = createUnlinkedHouseDraft({
+    id: 'enabled-portal-house'
+  });
+
+  const linked = createBuildingInteriorLink(
+    source.draft,
+    {
+      sourceAreaId: source.sourceAreaId,
+      buildingId: source.buildingId,
+      anchorId: 'main-door'
+    }
+  );
+
+  const outgoing = outgoingFor(
+    linked,
+    source.sourceAreaId,
+    source.buildingId
+  );
+  const interior = linked.areas.find(
+    (area) => area.id === outgoing?.targetAreaId
+  );
+  const returnPortal = linked.portals.find(
+    (portal) =>
+      portal.sourceAreaId === interior?.id &&
+      portal.targetAreaId === source.sourceAreaId
+  );
+
+  assert.ok(outgoing);
+  assert.ok(returnPortal);
+  assert.equal(outgoing.enabled, true);
+  assert.equal(returnPortal.enabled, true);
+  assert.equal(outgoing.visual?.visible, true);
+  assert.equal(outgoing.visual?.marker, 'entry');
+  assert.equal(returnPortal.visual?.visible, true);
+  assert.equal(returnPortal.visual?.marker, 'exit');
+});
+
+test('Builder exposes an explicit building model/orientation/interior workflow and keeps raw Portal wiring advanced', async () => {
+  const [html, main] = await Promise.all([
+    readFile(new URL('../builder.html', import.meta.url), 'utf8'),
+    readFile(
+      new URL('../src/builder/world-builder-main.js', import.meta.url),
+      'utf8'
+    )
+  ]);
+
+  assert.match(html, /Modèle \/ objet à placer/);
+  assert.match(html, /Orientation du bâtiment/);
+  assert.match(html, /Entrée et intérieur/);
+  assert.match(html, /data-tab=["']portals["'][^>]*>Liaisons</);
+  assert.match(html, /id=["']portal-advanced-settings["']/);
+  assert.match(html, /Réglages avancés/);
+
+  assert.match(
+    main,
+    /const variantDefinition\s*=/
+  );
+  assert.doesNotMatch(
+    main,
+    /variantFields\.hidden\s*=\s*!placement\s*\|\|/
+  );
+});
