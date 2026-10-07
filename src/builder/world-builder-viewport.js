@@ -19,7 +19,8 @@ export function computeBuilderView({
   center,
   zoom,
   canvasWidth,
-  canvasHeight
+  canvasHeight,
+  panMarginPx = 0
 }) {
   const safeZoom = clampBuilderZoom(zoom);
   const width = Math.max(1, finite(canvasWidth, 1));
@@ -30,6 +31,9 @@ export function computeBuilderView({
     width: width / safeZoom,
     height: height / safeZoom
   });
+  const panMarginWorld =
+    Math.max(0, finite(panMarginPx, 0)) /
+    safeZoom;
 
   const desiredX =
     finite(center?.x, areaWidth / 2) - viewport.width / 2;
@@ -38,12 +42,20 @@ export function computeBuilderView({
 
   const camera = Object.freeze({
     x: Math.max(
-      0,
-      Math.min(Math.max(0, areaWidth - viewport.width), desiredX)
+      -panMarginWorld,
+      Math.min(
+        Math.max(0, areaWidth - viewport.width) +
+          panMarginWorld,
+        desiredX
+      )
     ),
     y: Math.max(
-      0,
-      Math.min(Math.max(0, areaHeight - viewport.height), desiredY)
+      -panMarginWorld,
+      Math.min(
+        Math.max(0, areaHeight - viewport.height) +
+          panMarginWorld,
+        desiredY
+      )
     )
   });
 
@@ -94,14 +106,16 @@ export function zoomBuilderAtCanvasPoint({
   canvasWidth,
   canvasHeight,
   canvasX,
-  canvasY
+  canvasY,
+  panMarginPx = 0
 }) {
   const oldView = computeBuilderView({
     area,
     center,
     zoom: oldZoom,
     canvasWidth,
-    canvasHeight
+    canvasHeight,
+    panMarginPx
   });
 
   const worldPoint = canvasPointToWorld({
@@ -130,7 +144,8 @@ export function zoomBuilderAtCanvasPoint({
     center: desiredCenter,
     zoom: safeNewZoom,
     canvasWidth,
-    canvasHeight
+    canvasHeight,
+    panMarginPx
   });
 }
 
