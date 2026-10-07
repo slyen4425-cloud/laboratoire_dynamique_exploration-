@@ -798,7 +798,7 @@ test('Building models and visual variants remain exposed to the Builder after in
   );
   assert.match(
     main,
-    /definition\?\.visual\?\.variants/
+    /variantDefinition\?\.variants/
   );
 });
 
