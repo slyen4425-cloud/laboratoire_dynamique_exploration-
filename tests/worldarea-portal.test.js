@@ -93,7 +93,7 @@ function makeDocument() {
   });
 }
 
-test('WorldArea v4 normalizes dimensions, surface, object placements, actors and named spawns', () => {
+test('WorldArea v5 normalizes dimensions, encounter policy, surface, object placements, actors and named spawns', () => {
   const area = normalizeWorldArea({
     id: 'home',
     kind: 'interior',
