@@ -29,3 +29,22 @@ test('Encounter Bridge maps public Encounter Intent to CaptureEncounterSnapshot 
   assert.equal('internalPosition' in snapshot, false);
   assert.equal('mapVisual' in snapshot, false);
 });
+
+
+test('Encounter Bridge keeps explicit combat sources independent from terrain-random policy', () => {
+  const snapshot = snapshotFromEncounterIntent({
+    version: 1,
+    source: 'scripted-explicit',
+    encounterId: 'scripted-1',
+    returnToken: 'scripted-return-1',
+    playerPartyRef: 'capture-party-player-v1',
+    rulesetId: 'capture.standard.1v1',
+    areaId: 'house-interior-01',
+    terrainFamilyId: 'plain',
+    elementId: 'fire',
+    opponentCreatureId: 'crea_braiseau'
+  });
+
+  assert.equal(snapshot.source, 'scripted-explicit');
+  assert.equal(snapshot.context.areaId, 'house-interior-01');
+});
