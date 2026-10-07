@@ -367,3 +367,21 @@ Contrat produit demandé :
 - les textures intérieures continueront ensuite sur cette géométrie.
 
 État actuel : **GREEN TECHNIQUE PERFORMANCE R5 — checkpoint + preview R5 puis gate smartphone requis.**
+
+
+## R5 — alignement cache final
+
+Le premier commit de préparation R5 a volontairement fait échouer la CI publique car l'import interne du viewport conservait encore la révision `r4`.
+
+- préparation publique R5 : `6fda9595c36bc61f4fbc2a8c29d89e40d28945f4`
+- CI `37673079083` — **FAILURE attendue**, 400/401 GREEN, uniquement cache viewport stale ;
+- correction : `ede4c28a46fb3e1d390e48f0ffa3111124321cef`
+- CI `37673219066` — **SUCCESS**, 401/401 GREEN.
+
+La chaîne publique est maintenant cohérente :
+- Builder HTML -> CSS/JS : `mobile-landscape-area-navigation-ux-v1-r5`
+- Builder Main -> Viewport : `mobile-landscape-area-navigation-ux-v1-r5`
+- Builder -> runtime test : `mobile-landscape-area-navigation-ux-v1-r5`
+- runtime HTML -> CSS : `mobile-landscape-area-navigation-ux-v1-r5`.
+
+État : **GREEN TECHNIQUE R5 — checkpoint/preview à figer sur l'état documenté, puis gate smartphone performance.**
