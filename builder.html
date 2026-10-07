@@ -7,7 +7,7 @@
     content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
   />
   <title>GenSrpG — World Builder Dynamique</title>
-  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=user-texture-import-v1" />
+  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=building-interiors-passages-ux-r1" />
 </head>
 <body>
   <main class="builder-shell">
@@ -45,7 +45,7 @@
       <button type="button" data-tab="terrain">Terrain</button>
       <button type="button" data-tab="objects">Objets</button>
       <button type="button" data-tab="actors">Acteurs</button>
-      <button type="button" data-tab="portals">Portals</button>
+      <button type="button" data-tab="portals">Passages</button>
       <button type="button" data-tab="events">Événements</button>
       <button type="button" data-tab="json">JSON</button>
     </nav>
@@ -296,9 +296,12 @@
         </div>
 
         <label>
-          Objet à placer
+          Modèle / objet à placer
           <select id="object-definition"></select>
         </label>
+        <p class="builder-hint">
+          Pour un bâtiment, ce sélecteur choisit le modèle. Après placement, sélectionne le bâtiment sur la carte pour régler son orientation et son intérieur.
+        </p>
 
         <div class="row">
           <button id="object-add" type="button">+ Placer l’objet</button>
@@ -311,6 +314,44 @@
           <select id="object-select"></select>
         </label>
 
+        <div id="building-authoring-fields" class="kind-fields" hidden>
+          <h3>Bâtiment sélectionné</h3>
+          <p class="builder-hint">
+            Les réglages ci-dessous modifient le bâtiment sélectionné. Le modèle reste une ObjectDefinition unique ; orientation et liaison utilisent les autorités canoniques existantes.
+          </p>
+
+          <div id="object-visual-variant-fields" class="kind-fields" hidden>
+            <h3>Orientation du bâtiment</h3>
+            <label>
+              Vue
+              <select id="object-visual-variant"></select>
+            </label>
+            <p class="builder-hint">
+              Avant / Côté / Arrière change uniquement le visuel déclaré par la définition.
+              Le footprint, la porte et le placement restent canoniques.
+            </p>
+          </div>
+
+          <div id="building-interior-fields" class="kind-fields" hidden>
+            <h3>Entrée et intérieur</h3>
+            <p id="building-interior-status" class="builder-hint">
+              Entrée non reliée.
+            </p>
+            <label>
+              Intérieur existant
+              <select id="building-interior-target-area"></select>
+            </label>
+            <div class="row">
+              <button id="building-interior-create" type="button">Créer un intérieur vide</button>
+              <button id="building-interior-link" type="button">Lier l’intérieur sélectionné</button>
+              <button id="building-interior-open" type="button">Ouvrir l’intérieur</button>
+            </div>
+            <p class="builder-hint">
+              La zone d’entrée est résolue depuis le doorAnchor du bâtiment. La liaison réelle reste un Passage (Portal) vers une WorldArea intérieure, avec retour vers un Spawn extérieur ancré.
+            </p>
+          </div>
+        </div>
+
         <h3>Placement</h3>
         <div class="grid-2">
           <label>X <input id="object-x" type="number" step="1" /></label>
@@ -318,37 +359,6 @@
           <label>Rotation° <input id="object-rotation" type="number" step="1" /></label>
           <label>Scale X <input id="object-scale-x" type="number" min="0.25" max="4" step="0.05" /></label>
           <label>Scale Y <input id="object-scale-y" type="number" min="0.25" max="4" step="0.05" /></label>
-        </div>
-
-        <div id="object-visual-variant-fields" class="kind-fields" hidden>
-          <h3>Orientation / variante visuelle</h3>
-          <label>
-            Variante
-            <select id="object-visual-variant"></select>
-          </label>
-          <p class="builder-hint">
-            La variante change uniquement le visuel déclaré par la définition.
-            Le placement reste le même WorldObject.
-          </p>
-        </div>
-
-        <div id="building-interior-fields" class="kind-fields" hidden>
-          <h3>Entrée et intérieur</h3>
-          <p id="building-interior-status" class="builder-hint">
-            Entrée non reliée.
-          </p>
-          <label>
-            Intérieur existant
-            <select id="building-interior-target-area"></select>
-          </label>
-          <div class="row">
-            <button id="building-interior-create" type="button">Créer un intérieur vide</button>
-            <button id="building-interior-link" type="button">Lier l’intérieur sélectionné</button>
-            <button id="building-interior-open" type="button">Ouvrir l’intérieur</button>
-          </div>
-          <p class="builder-hint">
-            Le bâtiment conserve uniquement son doorAnchor. La liaison réelle est un Portal vers une WorldArea intérieure, avec un Portal de retour vers un Spawn extérieur ancré.
-          </p>
         </div>
 
         <div id="bridge-fields" class="kind-fields">
@@ -458,54 +468,71 @@
       </section>
 
       <section class="builder-tab" data-panel="portals">
-        <h2>Portals</h2>
+        <h2>Passages</h2>
+        <p class="builder-hint">
+          Un Passage relie une zone de départ à une destination. Pour une maison, utilise d’abord « Entrée et intérieur » dans Objets ; cette page sert surtout à vérifier ou affiner la même liaison canonique.
+        </p>
         <div class="row">
           <select id="portal-select"></select>
-          <button id="portal-add" type="button">+ Portal</button>
+          <button id="portal-add" type="button">+ Passage</button>
           <button id="portal-delete" type="button" class="danger">Supprimer</button>
         </div>
+        <p id="portal-summary" class="builder-hint">
+          Sélectionner un Passage pour voir son départ et sa destination.
+        </p>
 
-        <div class="grid-2">
-          <label>Area source <select id="portal-source-area"></select></label>
-          <label>Type trigger
-            <select id="portal-trigger-kind">
-              <option value="point">Point</option>
-              <option value="object-anchor">Ancre objet (porte)</option>
-            </select>
+        <details id="portal-advanced-settings">
+          <summary><strong>Réglages avancés</strong></summary>
+
+          <h3>Départ</h3>
+          <div class="grid-2">
+            <label>Area source <select id="portal-source-area"></select></label>
+            <label>Type de départ
+              <select id="portal-trigger-kind">
+                <option value="point">Point libre</option>
+                <option value="object-anchor">Entrée d’un bâtiment</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="portal-point-fields" class="grid-2">
+            <label>X <input id="portal-point-x" type="number" step="1" /></label>
+            <label>Y <input id="portal-point-y" type="number" step="1" /></label>
+          </div>
+
+          <div id="portal-building-fields" class="grid-2">
+            <label>Bâtiment <select id="portal-building"></select></label>
+            <label>Entrée <select id="portal-anchor"></select></label>
+          </div>
+
+          <h3>Zone d’activation</h3>
+          <div id="portal-trigger-zone-fields" class="grid-2">
+            <label>Rayon <input id="portal-radius" type="number" min="4" max="240" step="1" /></label>
+            <p class="builder-hint">Cette zone appartient au Passage, y compris lorsque le départ suit un doorAnchor.</p>
+          </div>
+
+          <h3>Destination</h3>
+          <div class="grid-2">
+            <label>Area cible <select id="portal-target-area"></select></label>
+            <label>Spawn d’arrivée <select id="portal-target-spawn"></select></label>
+          </div>
+
+          <h3>Affichage</h3>
+          <label class="checkbox-line">
+            <input id="portal-visible" type="checkbox" />
+            Afficher la zone sur la map
           </label>
-        </div>
-
-        <div id="portal-point-fields" class="grid-3">
-          <label>X <input id="portal-point-x" type="number" step="1" /></label>
-          <label>Y <input id="portal-point-y" type="number" step="1" /></label>
-          <label>Rayon <input id="portal-radius" type="number" min="4" max="240" step="1" /></label>
-        </div>
-
-        <div id="portal-building-fields" class="grid-2">
-          <label>Bâtiment <select id="portal-building"></select></label>
-          <label>Door anchor <select id="portal-anchor"></select></label>
-        </div>
-
-        <div class="grid-2">
-          <label>Area cible <select id="portal-target-area"></select></label>
-          <label>Spawn cible <select id="portal-target-spawn"></select></label>
-        </div>
-
-        <h3>Repère visuel</h3>
-        <label class="checkbox-line">
-          <input id="portal-visible" type="checkbox" />
-          Afficher sur la map
-        </label>
-        <div class="grid-2">
-          <label>Marker
-            <select id="portal-marker">
-              <option value="portal">Portal</option>
-              <option value="entry">Entrée</option>
-              <option value="exit">Sortie</option>
-            </select>
-          </label>
-          <label>Label <input id="portal-label" type="text" /></label>
-        </div>
+          <div class="grid-2">
+            <label>Repère
+              <select id="portal-marker">
+                <option value="portal">Passage</option>
+                <option value="entry">Entrée</option>
+                <option value="exit">Sortie</option>
+              </select>
+            </label>
+            <label>Label <input id="portal-label" type="text" /></label>
+          </div>
+        </details>
       </section>
 
       <section class="builder-tab" data-panel="events">
@@ -616,6 +643,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=building-interiors-entrance-link-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=building-interiors-passages-ux-r1"></script>
 </body>
 </html>
