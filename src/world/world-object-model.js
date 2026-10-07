@@ -2,7 +2,7 @@ import {
   WORLD_OBJECT_PLACEMENT_LIMITS,
   normalizeWorldObjectPlacements,
   resolveWorldObjectPlacements
-} from './world-object-placement-model.js';
+} from './world-object-placement-model.js?rev=building-interiors-passages-ux-r1';
 
 export const WORLD_OBJECT_SCHEMA_VERSION = 3;
 
