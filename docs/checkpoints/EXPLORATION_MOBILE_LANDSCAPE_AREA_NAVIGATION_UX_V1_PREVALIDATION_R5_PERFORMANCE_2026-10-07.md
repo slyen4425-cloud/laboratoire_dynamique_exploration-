@@ -53,3 +53,13 @@ Tester surtout :
 7. Intérieur → / ← Extérieur.
 
 GREEN FINAL interdit avant verdict utilisateur.
+
+
+## Cache public final
+
+- préparation R5 : `6fda9595c36bc61f4fbc2a8c29d89e40d28945f4`
+- CI : `37673079083` — FAILURE attendue, import viewport encore r4
+- correction cache : `ede4c28a46fb3e1d390e48f0ffa3111124321cef`
+- CI : `37673219066` — SUCCESS, 401/401 tests
+
+Le checkpoint final R5 doit être créé après cette correction.
