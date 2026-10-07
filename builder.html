@@ -7,7 +7,7 @@
     content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
   />
   <title>GenSrpG — World Builder Dynamique</title>
-  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=building-interiors-passages-ux-r1" />
+  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=mobile-landscape-area-navigation-ux-v1" />
 </head>
 <body>
   <main class="builder-shell">
@@ -20,6 +20,21 @@
     </header>
 
     <section class="preview-panel">
+      <div id="map-area-context" class="map-area-context" aria-label="Navigation de zone">
+        <div class="map-area-location">
+          <span>Zone active</span>
+          <strong id="map-area-label">Extérieur</strong>
+        </div>
+        <div class="map-area-actions">
+          <button id="map-area-back" type="button" hidden>← Extérieur</button>
+          <button id="map-area-enter" type="button" hidden>Intérieur →</button>
+          <button id="preview-fullscreen" type="button">⛶ Plein écran</button>
+          <button id="preview-fullscreen-exit" type="button" hidden>✕ Quitter</button>
+        </div>
+      </div>
+      <div id="builder-landscape-hint" class="builder-landscape-hint" role="status">
+        ↻ Tourne le téléphone pour éditer confortablement
+      </div>
       <div class="map-tools" aria-label="Outils directs de carte">
         <button id="map-tool-select" data-map-tool="select" type="button" class="active">Déplacer</button>
         <button id="map-tool-actor" data-map-tool="actor-placement" type="button">Placer acteur</button>
@@ -643,6 +658,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=building-interiors-passages-ux-r1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=mobile-landscape-area-navigation-ux-v1"></script>
 </body>
 </html>

@@ -94,6 +94,10 @@ import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
 import {
+  resolveExteriorReturnNavigation,
+  resolveLinkedInteriorNavigation
+} from './world-builder-area-navigation.js?rev=mobile-landscape-area-navigation-ux-v1';
+import {
   resolveWorldTriggerPoint
 } from '../world/world-trigger-geometry.js?rev=world-event-contract-v1';
 import {
@@ -156,6 +160,8 @@ const ctx = canvas.getContext('2d');
 const statusEl = $('builder-status');
 const validationEl = $('validation-summary');
 const jsonPreview = $('json-preview');
+const previewPanel =
+  document.querySelector('.preview-panel');
 
 const userMaterialStore =
   createUserMaterialStore();
@@ -566,6 +572,8 @@ let mapTool = 'select';
 let pointerSession = null;
 let pinchState = null;
 let hoverWorldPoint = null;
+let mapFocusActive = false;
+let nativeMapFullscreenActive = false;
 const activePointers = new Map();
 const PAINT_KINDS = Object.freeze([
   'terrain',
@@ -1395,9 +1403,89 @@ async function deleteSelectedUserWorldObject() {
   return true;
 }
 
+function selectAreaForEditing(
+  targetAreaId,
+  {
+    portalId = null,
+    activateAreaTab = false,
+    refresh = true,
+    resetTool = true
+  } = {}
+) {
+  const targetArea =
+    draft.areas.find(
+      (area) => area.id === targetAreaId
+    ) ?? null;
+
+  if (!targetArea) {
+    return false;
+  }
+
+  selectedAreaId = targetArea.id;
+  selectedSpawnId =
+    targetArea.spawns?.[0]?.id ?? null;
+  selectedObjectId =
+    targetArea.objects?.[0]?.id ?? null;
+  selectedActorPlacementId =
+    targetArea.actors?.[0]?.id ?? null;
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+
+  const requestedPortal =
+    portalId
+      ? draft.portals?.find(
+          (portal) =>
+            portal.id === portalId &&
+            portal.sourceAreaId === targetArea.id
+        )
+      : null;
+  const localPortal =
+    requestedPortal ??
+    draft.portals?.find(
+      (portal) =>
+        portal.sourceAreaId === targetArea.id
+    ) ??
+    null;
+
+  if (localPortal) {
+    selectedPortalId = localPortal.id;
+  }
+
+  fitRequested = true;
+
+  if (resetTool) {
+    if (refresh) {
+      setMapTool('select');
+    } else {
+      mapTool = 'select';
+      canvas.dataset.tool = mapTool;
+    }
+  }
+
+  if (activateAreaTab) {
+    activateTab('area');
+  }
+
+  if (refresh) {
+    refreshControls();
+  }
+
+  return true;
+}
+
 function ensureSelections() {
-  const area = currentAreaRaw() ?? draft.areas[0] ?? null;
-  selectedAreaId = area?.id ?? null;
+  let area = currentAreaRaw();
+
+  if (!area && draft.areas[0]) {
+    selectAreaForEditing(
+      draft.areas[0].id,
+      {
+        refresh: false,
+        resetTool: false
+      }
+    );
+    area = currentAreaRaw();
+  }
 
   if (!area) {
     selectedSpawnId = null;
@@ -1595,6 +1683,7 @@ function refreshAreaControls() {
   $('spawn-x').disabled = !spawn || anchored;
   $('spawn-y').disabled = !spawn || anchored;
   $('spawn-delete').disabled = !spawn;
+  refreshMapAreaNavigation();
 }
 function isPaintKind(kind) {
   return PAINT_KINDS.includes(kind);
@@ -2365,6 +2454,67 @@ function currentBuildingInteriorLink() {
   });
 }
 
+function currentMapAreaNavigation() {
+  const document = normalizedDocument();
+  const area = currentAreaNormalized();
+  const object = currentObjectResolved();
+
+  if (!document || !area) {
+    return Object.freeze({
+      enter: null,
+      back: null
+    });
+  }
+
+  let enter = null;
+
+  if (
+    area.kind === 'exterior' &&
+    object?.kind === 'building' &&
+    currentBuildingInteriorLink().status === 'linked'
+  ) {
+    enter =
+      resolveLinkedInteriorNavigation(
+        document,
+        {
+          sourceAreaId: area.id,
+          buildingId: object.id
+        }
+      );
+  }
+
+  const back =
+    area.kind === 'interior'
+      ? resolveExteriorReturnNavigation(
+          document,
+          area.id
+        )
+      : null;
+
+  return Object.freeze({
+    enter,
+    back
+  });
+}
+
+function refreshMapAreaNavigation() {
+  const area = currentAreaNormalized();
+  const navigation =
+    currentMapAreaNavigation();
+
+  $('map-area-label').textContent =
+    area?.kind === 'interior'
+      ? 'Intérieur'
+      : 'Extérieur';
+
+  $('map-area-context').dataset.areaKind =
+    area?.kind ?? 'unknown';
+  $('map-area-enter').hidden =
+    !navigation.enter;
+  $('map-area-back').hidden =
+    !navigation.back;
+}
+
 function refreshBuildingInteriorControls() {
   const fields =
     $('building-interior-fields');
@@ -2631,6 +2781,7 @@ function refreshObjectControls() {
   }
 
   refreshBuildingInteriorControls();
+  refreshMapAreaNavigation();
 
   if (!placement || !object) {
     $('object-x').value = '';
@@ -4600,6 +4751,112 @@ function finishPointerEditing() {
   renderPreview();
 }
 
+function applyMapFocusState(active) {
+  mapFocusActive = Boolean(active);
+  previewPanel.classList.toggle(
+    'is-map-focus',
+    mapFocusActive
+  );
+  document.body.classList.toggle(
+    'builder-map-focus',
+    mapFocusActive
+  );
+  $('preview-fullscreen').hidden =
+    mapFocusActive;
+  $('preview-fullscreen-exit').hidden =
+    !mapFocusActive;
+  fitRequested = true;
+
+  requestAnimationFrame(() => {
+    renderPreview();
+  });
+}
+
+function prefersMapFocusOnPointer() {
+  return Boolean(
+    window.matchMedia?.(
+      '(pointer: coarse)'
+    ).matches
+  );
+}
+
+async function enterMapFocus() {
+  if (mapFocusActive) return;
+
+  applyMapFocusState(true);
+
+  if (
+    previewPanel.requestFullscreen &&
+    document.fullscreenElement !== previewPanel
+  ) {
+    try {
+      await previewPanel.requestFullscreen({
+        navigationUI: 'hide'
+      });
+      nativeMapFullscreenActive =
+        document.fullscreenElement === previewPanel;
+    } catch {
+      nativeMapFullscreenActive = false;
+    }
+  }
+
+  try {
+    await screen.orientation?.lock?.(
+      'landscape'
+    );
+  } catch {
+    // CSS focus remains authoritative for presentation fallback.
+  }
+}
+
+async function exitMapFocus() {
+  nativeMapFullscreenActive = false;
+
+  if (
+    document.fullscreenElement === previewPanel &&
+    document.exitFullscreen
+  ) {
+    try {
+      await document.exitFullscreen();
+    } catch {
+      // CSS focus can still be closed explicitly.
+    }
+  }
+
+  try {
+    screen.orientation?.unlock?.();
+  } catch {
+    // Orientation unlock is best-effort only.
+  }
+
+  applyMapFocusState(false);
+}
+
+document.addEventListener(
+  'fullscreenchange',
+  () => {
+    if (
+      document.fullscreenElement === previewPanel
+    ) {
+      nativeMapFullscreenActive = true;
+      applyMapFocusState(true);
+      return;
+    }
+
+    if (nativeMapFullscreenActive) {
+      nativeMapFullscreenActive = false;
+
+      try {
+        screen.orientation?.unlock?.();
+      } catch {
+        // Browser may not expose Screen Orientation unlock.
+      }
+
+      applyMapFocusState(false);
+    }
+  }
+);
+
 for (const button of document.querySelectorAll('[data-tab]')) {
   button.addEventListener('click', () => {
     activateTab(button.dataset.tab);
@@ -4607,14 +4864,12 @@ for (const button of document.querySelectorAll('[data-tab]')) {
 }
 
 $('area-select').addEventListener('change', () => {
-  selectedAreaId = $('area-select').value;
-  selectedSpawnId = null;
-  selectedObjectId = null;
-  selectedSurfaceKind = null;
-  selectedSurfacePathId = null;
-  fitRequested = true;
-  setMapTool('select');
-  refreshControls();
+  selectAreaForEditing(
+    $('area-select').value,
+    {
+      activateAreaTab: true
+    }
+  );
 });
 
 for (const id of ['area-width', 'area-height']) {
@@ -5364,21 +5619,14 @@ $('building-interior-open').addEventListener(
       return;
     }
 
-    selectedAreaId =
-      link.targetArea.id;
-    selectedSpawnId =
-      link.targetArea.spawns?.[0]?.id ??
-      null;
-    selectedObjectId =
-      link.targetArea.objects?.[0]?.id ??
-      null;
-    selectedPortalId =
-      link.returnPortal?.id ??
-      selectedPortalId;
-    fitRequested = true;
-
-    activateTab('area');
-    refreshControls();
+    selectAreaForEditing(
+      link.targetArea.id,
+      {
+        portalId:
+          link.returnPortal?.id ?? null,
+        activateAreaTab: true
+      }
+    );
   }
 );
 
@@ -5532,9 +5780,13 @@ $('event-select').addEventListener('change', () => {
     currentWorldEventRaw();
 
   if (event?.sourceAreaId) {
-    selectedAreaId =
-      event.sourceAreaId;
-    fitRequested = true;
+    selectAreaForEditing(
+      event.sourceAreaId,
+      {
+        refresh: false,
+        resetTool: false
+      }
+    );
   }
 
   refreshControls();
@@ -5625,9 +5877,13 @@ $('event-portal').addEventListener(
       currentWorldEventRaw();
 
     if (event?.sourceAreaId) {
-      selectedAreaId =
-        event.sourceAreaId;
-      fitRequested = true;
+      selectAreaForEditing(
+        event.sourceAreaId,
+        {
+          refresh: false,
+          resetTool: false
+        }
+      );
     }
 
     refreshControls();
@@ -5718,6 +5974,62 @@ for (const id of [
 $('event-message').addEventListener(
   'input',
   applyWorldEventInputs
+);
+
+$('map-area-enter').addEventListener(
+  'click',
+  () => {
+    const link =
+      currentBuildingInteriorLink();
+
+    if (
+      link.status !== 'linked' ||
+      !link.targetArea
+    ) {
+      return;
+    }
+
+    selectAreaForEditing(
+      link.targetArea.id,
+      {
+        portalId:
+          link.returnPortal?.id ?? null,
+        activateAreaTab: true
+      }
+    );
+  }
+);
+
+$('map-area-back').addEventListener(
+  'click',
+  () => {
+    const navigation =
+      currentMapAreaNavigation().back;
+
+    if (!navigation) return;
+
+    selectAreaForEditing(
+      navigation.targetAreaId,
+      {
+        portalId: navigation.portalId,
+        activateAreaTab: true
+      }
+    );
+  }
+);
+
+$('preview-fullscreen').addEventListener(
+  'click',
+  () => {
+    void enterMapFocus();
+  }
+);
+
+$('preview-fullscreen-exit').addEventListener(
+  'click',
+  () => {
+    void exitMapFocus();
+  }
 );
 
 $('preview-fit').addEventListener('click', () => {
@@ -5883,6 +6195,15 @@ canvas.addEventListener(
 );
 
 canvas.addEventListener('pointerdown', (event) => {
+  if (
+    !mapFocusActive &&
+    prefersMapFocusOnPointer()
+  ) {
+    event.preventDefault();
+    void enterMapFocus();
+    return;
+  }
+
   const point = canvasCoordinates(event);
   activePointers.set(event.pointerId, point);
 
@@ -6517,19 +6838,16 @@ $('import-json').addEventListener('change', async () => {
 
   try {
     draft = importWorldBuilderDocument(await file.text());
-    selectedAreaId = draft.initialAreaId ?? draft.areas[0]?.id ?? null;
-    selectedSpawnId = null;
-    selectedObjectId = null;
-    selectedActorPlacementId =
-      draft.areas.find(
-        (area) =>
-          area.id === selectedAreaId
-      )?.actors?.[0]?.id ??
-      null;
-    selectedPortalId = draft.portals?.[0]?.id ?? null;
-    selectedSurfaceKind = null;
-    selectedSurfacePathId = null;
-    fitRequested = true;
+    selectedPortalId =
+      draft.portals?.[0]?.id ?? null;
+    selectAreaForEditing(
+      draft.initialAreaId ??
+        draft.areas[0]?.id ??
+        null,
+      {
+        refresh: false
+      }
+    );
     refreshControls();
     setStatus('WorldDocument importé et validé');
   } catch (error) {
@@ -6541,25 +6859,30 @@ $('import-json').addEventListener('change', async () => {
 
 $('reset-demo').addEventListener('click', () => {
   draft = createWorldBuilderDraft(demoWorldDocument);
-  selectedAreaId = draft.initialAreaId;
-  selectedSpawnId = null;
-  selectedObjectId = null;
-  selectedActorPlacementId =
-    draft.areas.find(
-      (area) =>
-        area.id === selectedAreaId
-    )?.actors?.[0]?.id ??
-    null;
-  selectedPortalId = draft.portals?.[0]?.id ?? null;
-  selectedSurfaceKind = null;
-  selectedSurfacePathId = null;
-  fitRequested = true;
+  selectedPortalId =
+    draft.portals?.[0]?.id ?? null;
+  selectAreaForEditing(
+    draft.initialAreaId ??
+      draft.areas[0]?.id ??
+      null,
+    {
+      refresh: false
+    }
+  );
   refreshControls();
 });
 
 addEventListener('resize', () => {
   renderPreview();
 });
+
+addEventListener(
+  'orientationchange',
+  () => {
+    fitRequested = true;
+    renderPreview();
+  }
+);
 
 addEventListener(
   'pagehide',

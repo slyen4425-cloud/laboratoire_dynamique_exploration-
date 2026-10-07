@@ -181,7 +181,7 @@ test('Builder uses progressive Fullscreen/orientation APIs and one centralized a
   );
 
   const directAssignments =
-    [...main.matchAll(/selectedAreaId\s*=\s*/g)];
+    [...main.matchAll(/selectedAreaId\s*=(?!=)\s*/g)];
 
   assert.ok(
     directAssignments.length <= 2,

@@ -642,8 +642,10 @@ test('visual variants never move the canonical building entrance', () => {
 
 
 test('Building Interiors keeps one WorldObject cache revision across Builder authoring graph', async () => {
-  const revision =
+  const worldObjectRevision =
     'building-interiors-passages-ux-r1';
+  const builderEntryRevision =
+    'mobile-landscape-area-navigation-ux-v1';
 
   const [
     html,
@@ -705,13 +707,13 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   assert.match(
     html,
     new RegExp(
-      `world-builder-main\\.js\\?rev=${revision}`
+      `world-builder-main\\.js\\?rev=${builderEntryRevision}`
     )
   );
   assert.match(
     html,
     new RegExp(
-      `world-builder\\.css\\?rev=${revision}`
+      `world-builder\\.css\\?rev=${builderEntryRevision}`
     )
   );
 
@@ -724,7 +726,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
     assert.match(
       source,
       new RegExp(
-        `object-definition-catalog\\.js\\?rev=${revision}`
+        `object-definition-catalog\\.js\\?rev=${worldObjectRevision}`
       ),
       `${label}: Object Catalog must use the canonical cache revision`
     );
@@ -738,7 +740,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
     assert.match(
       source,
       new RegExp(
-        `object-library-taxonomy\\.js\\?rev=${revision}`
+        `object-library-taxonomy\\.js\\?rev=${worldObjectRevision}`
       ),
       `${label}: Object Library taxonomy must use the canonical cache revision`
     );
