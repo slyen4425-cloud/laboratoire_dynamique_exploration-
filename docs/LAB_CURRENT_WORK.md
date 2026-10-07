@@ -123,3 +123,21 @@ Gate smartphone demandé :
 7. vérifier qu'aucun comportement terrain/Portal/rencontre n'a régressé.
 
 État : **GREEN TECHNIQUE — gate ergonomique smartphone requis avant GREEN FINAL.**
+
+
+## Prévalidation publiée
+
+- HEAD technique/documenté : `86a9df8e43484894e5980aaeaff38a3ea92ab5fd`
+- CI work : `37644941107` — **SUCCESS**
+- checkpoint prévalidation : `checkpoint/exploration-mobile-landscape-area-navigation-ux-v1-prevalidation-green-2026-10-07`
+- CI checkpoint : `37645005712` — **SUCCESS**
+- preview : `preview/exploration-mobile-landscape-area-navigation-ux-v1-2026-10-07`
+- publication infra PR #99 puis PR #100, sans merge gameplay vers `main`
+- premier run Pages `37645194072` : échec d'infrastructure artefact ; la relance du même run a créé deux artefacts `github-pages`, donc elle ne doit pas servir de retry pour ce cas
+- nouveau run Pages frais : `37645576186` — **SUCCESS**
+- `main` ne contient que l'infrastructure de publication ; le code UX reste sur la branche de preview/work.
+
+Preview de gate :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1`
+
+État : **GREEN TECHNIQUE / PREVIEW PUBLIÉE — attente du verdict ergonomique smartphone avant GREEN FINAL.**
