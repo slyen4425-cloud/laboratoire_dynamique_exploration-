@@ -2657,3 +2657,38 @@ Gate utilisateur ciblé :
 8. Tester la carte : entrer/sortir et vérifier le même modèle/variante et le retour devant la même maison sans rebond.
 
 État : **PRÉVALIDATION TECHNIQUE GREEN + PAGES GREEN — validation utilisateur requise avant GREEN FINAL.**
+
+
+### Validation utilisateur finale — Building Interiors / Passages UX — 2026-10-07
+
+Retour utilisateur :
+- modèles bâtiment restaurés ;
+- variantes Avant / Côté / Arrière visibles et fonctionnelles ;
+- intérieur visible et raccord utilisable ;
+- parcours Entrée et intérieur / Passages validé ;
+- verdict utilisateur : **« Enfin ça marche. Donc je valide. »**
+
+État du lot :
+- aucune nouvelle autorité de Portal, WorldArea, doorAnchor ou variante visuelle ;
+- pas de rustine, masque ou fallback ajouté ;
+- les Portals entrée/sortie restent les seules autorités de transition ;
+- le World Builder édite toujours le même WorldDocument canonique.
+
+État : **GREEN FINAL UTILISATEUR — Building Interiors / Entrance Link v1 + Passages UX validés le 2026-10-07.**
+
+### Prochain chantier demandé — Interior Random Encounter Policy v1
+
+Bug observé après entrée dans une maison :
+- une WorldArea intérieure peut encore déclencher un combat aléatoire de terrain après quelques secondes de déplacement ;
+- comportement produit attendu : une maison/intérieur ne déclenche **aucune rencontre aléatoire par défaut** ;
+- les combats explicites restent autorisés : créature/PNJ placé, événement, script, boss ou autre déclencheur volontaire ;
+- un éventuel futur intérieur avec rencontres aléatoires devra être un opt-in explicite, jamais déduit de la texture ou de la famille de terrain.
+
+Autorité à auditer avant code :
+- `src/encounters/encounter-controller.js` possède le déclenchement `terrain-random` ;
+- `terrain-family-resolver` résout aujourd'hui une famille même dans une Area intérieure ;
+- le contrôleur reçoit déjà l'objet `area`, donc la règle doit être placée dans l'autorité Encounter/Area appropriée, sans désactiver les combats explicites ;
+- TDD RED obligatoire avant implémentation ;
+- ne pas coder une exception dans le renderer, le mouvement, le Portal ou le Combat Bridge.
+
+État : **PROCHAIN MICRO-LOT À OUVRIR APRÈS CHECKPOINT GREEN DU LOT INTÉRIEURS.**
