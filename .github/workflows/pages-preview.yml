@@ -1,5 +1,6 @@
 name: Exploration Preview
 # preview-revision: mobile-landscape-area-navigation-ux-v1
+# deployment-retry: fresh-run-2026-10-07
 
 on:
   push:
