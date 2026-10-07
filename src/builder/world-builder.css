@@ -702,3 +702,114 @@ body.builder-map-focus {
     white-space: nowrap;
   }
 }
+
+
+/* Mobile Landscape & Area Navigation UX v1 — R3 immersive focus */
+.preview-panel.is-map-focus {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
+.preview-panel.is-map-focus #builder-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.preview-panel.is-map-focus .map-area-context {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 40;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+.preview-panel.is-map-focus .map-area-location {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  background: rgba(13, 24, 16, 0.88);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+}
+
+.preview-panel.is-map-focus .map-area-location span {
+  display: none;
+}
+
+.preview-panel.is-map-focus .map-area-actions {
+  max-width: none;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.preview-panel.is-map-focus .map-area-actions button {
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(13, 24, 16, 0.9);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+}
+
+.preview-panel.is-map-focus .map-tools {
+  position: absolute;
+  left: 50%;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 35;
+  display: flex;
+  width: max-content;
+  max-width: calc(
+    100% - max(16px, env(safe-area-inset-left)) -
+    max(16px, env(safe-area-inset-right))
+  );
+  transform: translateX(-50%);
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(13, 24, 16, 0.86);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.preview-panel.is-map-focus .map-tools button {
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.preview-panel.is-map-focus .preview-tools {
+  display: none;
+}
+
+.preview-panel.is-map-focus #paint-floating-tools {
+  bottom: calc(60px + env(safe-area-inset-bottom));
+  z-index: 45;
+}
+
+@media (orientation: landscape) and (pointer: coarse) {
+  .preview-panel.is-map-focus .map-area-location,
+  .preview-panel.is-map-focus .map-area-actions button,
+  .preview-panel.is-map-focus .map-tools button {
+    min-height: 38px;
+  }
+
+  .preview-panel.is-map-focus .map-tools {
+    bottom: max(6px, env(safe-area-inset-bottom));
+  }
+}

@@ -645,7 +645,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   const worldObjectRevision =
     'building-interiors-passages-ux-r1';
   const builderEntryRevision =
-    'mobile-landscape-area-navigation-ux-v1-r2';
+    'mobile-landscape-area-navigation-ux-v1-r3';
 
   const [
     html,
