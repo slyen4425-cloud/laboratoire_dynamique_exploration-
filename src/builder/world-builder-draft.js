@@ -3,7 +3,7 @@ import {
 } from '../world/world-document-model.js?rev=terrain-family-extensibility-v1';
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=object-catalog-placement-v1';
+} from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
