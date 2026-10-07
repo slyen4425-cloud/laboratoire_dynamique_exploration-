@@ -2595,3 +2595,40 @@ Refinement imposé :
 7. pas de masque, fallback, copie de coordonnées ou Portal parallèle.
 
 État : **RÉGRESSION GATE CONFIRMÉE — TDD RED refinement à poser avant correction.**
+
+
+### Refinement gate — Building authoring / Passages UX — 2026-10-07
+
+Retour utilisateur :
+- modèles et variantes bâtiment Avant / Côté / Arrière non visibles dans le chemin de test ;
+- zone d'entrée difficile/non visible ;
+- configuration intérieur/lien trop difficile à trouver ;
+- onglet Portals trop complexe.
+
+Correction à la source :
+- graphe WorldObject / Object Catalog / Library aligné sur une seule révision cache `building-interiors-passages-ux-r1` ;
+- aucune ObjectDefinition ni aucun asset recréé : les modèles et variantes existants restent l'autorité unique ;
+- sélection d'un bâtiment depuis la carte ou la liste resynchronise Catégorie / Sous-dossier / modèle vers la même ObjectDefinition ;
+- bloc **Bâtiment sélectionné** explicite dans Objets ;
+- orientation visible pour tout bâtiment : Avant / Côté / Arrière lorsque déclarés, sinon `Vue unique` ;
+- bloc **Entrée et intérieur** conservé comme chemin principal ;
+- overlay Builder d'entrée résolu uniquement depuis `doorAnchor` / Portal canonique, sans coordonnées persistées supplémentaires ;
+- les Portals créés pour entrée/sortie déclarent explicitement `enabled:true` et restent les seules autorités de transition ;
+- onglet **Portals** renommé **Passages** et simplifié : résumé lisible, puis réglages avancés repliés ;
+- rayon d'activation visible pour les triggers point ET `object-anchor` ;
+- l'éditeur avancé modifie toujours les mêmes `draft.portals[]`, aucun second modèle de liaison.
+
+TDD / CI :
+- RED UX/cache : `3c6c6128e718464221801753166cc9d010553a77` + `d658e46b082efda8a174ece89d30334807b4ae86` + sentinelles complémentaires ;
+- correction principale : `52ee18618db0884a3c6d24d4f7ce10436a3f6328` ;
+- sentinelle finale variante : `4d68ae0699a8b7555e1e44d32a6bca82b5f7fe62` ;
+- CI HEAD : `37622184942` — **SUCCESS**.
+
+Invariants :
+- pas de rustine, masque ou fallback visuel ;
+- pas de coordonnées d'entrée dupliquées ;
+- pas de second Portal model ;
+- `visualVariantId` reste purement visuel et ne déplace jamais `doorAnchor` ;
+- `Zombicide-40k` inchangé.
+
+État : **TECHNIQUE GREEN — nouvelle preview + gate utilisateur requis avant GREEN FINAL.**
