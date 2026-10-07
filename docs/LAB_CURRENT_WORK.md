@@ -2568,3 +2568,30 @@ Gate utilisateur :
 7. optionnel : lier explicitement une WorldArea intérieure existante via le sélecteur.
 
 État : **PRÉVALIDATION TECHNIQUE GREEN + PREVIEW GREEN — gate utilisateur requis avant GREEN final.**
+
+
+### Gate utilisateur — régression UI / cache + ergonomie Passages — 2026-10-07
+
+Retour utilisateur :
+- variantes bâtiment `Avant / Côté / Arrière` et modèles attendus non visibles alors qu'ils étaient GREEN au lot précédent ;
+- zone d'entrée non visible/configurable ;
+- raccord intérieur/lien difficile à trouver ;
+- onglet `Portals` jugé trop complexe et peu intuitif.
+
+Audit racine :
+- le code source conserve bien `visual.variants[]`, le sélecteur de variante et le bloc `Entrée et intérieur` ;
+- le graphe ES modules WorldObject utilise cependant plusieurs query revisions concurrentes pour le même catalogue/taxonomie : `world-object-library-v1-orientation-v1`, `object-catalog-placement-v1`, `world-object-library-v1` et absence de revision ;
+- en PWA/browser cela crée plusieurs identités/cache URLs pour la même autorité logique et peut réexposer un catalogue ancien ;
+- le champ `portal-radius` est placé dans `portal-point-fields`, donc il est caché précisément pour un trigger `object-anchor` (porte), ce qui masque la configuration de la zone d'entrée ;
+- le Portal Renderer sait déjà dessiner le rayon canonique et les Portals auto créés sont `visible:true` avec `marker:entry/exit` : aucune nouvelle géométrie ni nouvelle autorité n'est nécessaire.
+
+Refinement imposé :
+1. une revision unique pour tout le sous-graphe WorldObject/Library utilisé par le Builder ;
+2. aucun import concurrent de l'Object Catalog/Taxonomy sous une ancienne revision ;
+3. zone/rayon d'activation visible pour `point` ET `object-anchor` ;
+4. onglet utilisateur renommé `Passages` et structuré Départ -> Zone d'activation -> Destination -> Affichage, en conservant les mêmes ids/champs Portal canoniques ;
+5. le bloc simple `Entrée et intérieur` reste dans Objets et demeure la voie principale pour un bâtiment ;
+6. l'onglet Passages reste l'éditeur avancé des mêmes `draft.portals[]`, jamais un second modèle ;
+7. pas de masque, fallback, copie de coordonnées ou Portal parallèle.
+
+État : **RÉGRESSION GATE CONFIRMÉE — TDD RED refinement à poser avant correction.**
