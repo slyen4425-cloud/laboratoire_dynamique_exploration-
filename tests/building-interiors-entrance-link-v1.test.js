@@ -915,3 +915,81 @@ test('Builder exposes an explicit building model/orientation/interior workflow a
     /variantFields\.hidden\s*=\s*!placement\s*\|\|/
   );
 });
+
+
+test('Builder keeps building authoring controls visible and synchronizes the library to the selected building', async () => {
+  const [html, main] = await Promise.all([
+    readFile(new URL('../builder.html', import.meta.url), 'utf8'),
+    readFile(
+      new URL('../src/builder/world-builder-main.js', import.meta.url),
+      'utf8'
+    )
+  ]);
+
+  assert.match(
+    html,
+    /id=["']building-authoring-fields["']/,
+    'building authoring must have one obvious panel'
+  );
+  assert.match(
+    html,
+    /Modèle \/ objet à placer/,
+    'the placement selector must be understandable as the model selector'
+  );
+  assert.match(
+    html,
+    /id=["']object-visual-variant-fields["'][^>]*>/,
+    'orientation controls must remain in the building panel'
+  );
+  assert.match(
+    main,
+    /syncObjectLibraryToSelectedPlacement/,
+    'map/object selection must synchronize category + folder'
+  );
+  assert.match(
+    main,
+    /variantFields\.hidden\s*=\s*!isBuilding/,
+    'orientation panel stays visible for every selected building'
+  );
+});
+
+test('Builder renders the selected building entrance from canonical doorAnchor or Portal geometry', async () => {
+  const main = await readFile(
+    new URL('../src/builder/world-builder-main.js', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(main, /buildingDoorAnchorWorld/);
+  assert.match(main, /drawBuildingEntranceAuthoringOverlay/);
+  assert.match(
+    main,
+    /currentBuildingInteriorLink\(\)/,
+    'linked entrance overlay must reuse the canonical Portal when available'
+  );
+});
+
+test('Portal tab presents a simple liaison summary and keeps raw Portal fields under advanced settings', async () => {
+  const [html, main] = await Promise.all([
+    readFile(new URL('../builder.html', import.meta.url), 'utf8'),
+    readFile(
+      new URL('../src/builder/world-builder-main.js', import.meta.url),
+      'utf8'
+    )
+  ]);
+
+  assert.match(
+    html,
+    /id=["']portal-summary["']/,
+    'Portal tab needs a human-readable summary'
+  );
+  assert.match(
+    html,
+    /<details[^>]+id=["']portal-advanced-settings["']/,
+    'raw Portal fields must be available but not dominate the normal workflow'
+  );
+  assert.match(
+    main,
+    /portal-summary/,
+    'Portal summary must be refreshed from canonical Portal data'
+  );
+});
