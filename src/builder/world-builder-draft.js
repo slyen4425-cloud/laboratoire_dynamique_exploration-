@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=terrain-family-extensibility-v1';
+} from '../world/world-document-model.js?rev=interior-random-encounter-policy-v1';
 import {
   objectDefinitionCatalogV1
 } from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
