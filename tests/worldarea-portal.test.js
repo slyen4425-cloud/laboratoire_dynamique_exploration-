@@ -105,9 +105,10 @@ test('WorldArea v4 normalizes dimensions, surface, object placements, actors and
     ]
   });
 
-  assert.equal(area.schemaVersion, 4);
+  assert.equal(area.schemaVersion, 5);
   assert.equal(area.id, 'home');
   assert.equal(area.kind, 'interior');
+  assert.equal(area.encounters.randomEnabled, false);
   assert.equal(area.width, 640);
   assert.equal(area.height, 480);
   assert.equal(area.surface.baseMaterialId, 'road.dirt');
@@ -418,4 +419,44 @@ test('anchored Spawn stores no competing X/Y and resolves from its Building door
 
   assert.ok(Math.abs(point.x - 820) < 1e-9);
   assert.ok(Math.abs(point.y - 1100) < 1e-9);
+});
+
+
+test('WorldArea encounter policy defaults exterior ON and interior OFF with explicit override support', () => {
+  const exterior = normalizeWorldArea({
+    id: 'outside',
+    kind: 'exterior',
+    surface: {
+      baseTerrainFamilyId: 'forest',
+      baseMaterialId: 'grass.forest'
+    }
+  });
+
+  const interior = normalizeWorldArea({
+    id: 'inside',
+    kind: 'interior',
+    surface: {
+      baseTerrainFamilyId: 'forest',
+      baseMaterialId: 'floor.wood.house'
+    }
+  });
+
+  const dangerousInterior = normalizeWorldArea({
+    id: 'dangerous-cave',
+    kind: 'interior',
+    encounters: {
+      randomEnabled: true
+    },
+    surface: {
+      baseTerrainFamilyId: 'mountain',
+      baseMaterialId: 'ground.rock'
+    }
+  });
+
+  assert.equal(exterior.encounters.randomEnabled, true);
+  assert.equal(interior.encounters.randomEnabled, false);
+  assert.equal(dangerousInterior.encounters.randomEnabled, true);
+  assert.equal(Object.isFrozen(exterior.encounters), true);
+  assert.equal(Object.isFrozen(interior.encounters), true);
+  assert.equal(Object.isFrozen(dangerousInterior.encounters), true);
 });
