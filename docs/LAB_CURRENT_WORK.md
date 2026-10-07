@@ -313,3 +313,57 @@ Gate demandé :
 - vérifier Intérieur → / ← Extérieur.
 
 État : **GREEN TECHNIQUE / PREVALIDATION R4 — attente du verdict smartphone. GREEN FINAL interdit avant validation utilisateur.**
+
+
+## Gate smartphone R4 — ergonomie meilleure, performance insuffisante
+
+Retour utilisateur du 2026-10-07 :
+- navigation/pan R4 : **beaucoup mieux** ;
+- plein écran globalement satisfaisant ;
+- problème restant : le Builder **rame sensiblement** pendant les interactions ;
+- demande suivante enregistrée : édition intérieure avec **forme + taille**, puis poursuite de l'intégration textures.
+
+Le lot UX reste actif : la performance mobile doit être corrigée avant GREEN FINAL et avant ouverture du chantier géométrie intérieure.
+
+## Correction performance mobile — R5
+
+Audit :
+- `renderPreview()` revalidait le WorldDocument à chaque redraw ;
+- les événements `pointermove` pouvaient provoquer plusieurs redraws complets dans une même frame ;
+- le canvas plein écran mobile utilisait jusqu'à DPR 2 pendant le drag, augmentant fortement le nombre de pixels à redessiner.
+
+TDD :
+- RED performance : `e9ec9f5157770343eb228e92f45cea9a45870852`
+- CI RED : `37672557775` — **FAILURE attendue**
+- scheduler preview : `80649a6a16b27f87c4cc915c279cce7a83214606`
+- implémentation performance : `5c5ed28488d88fe6bab05c1e960237738c745ca7`
+- première CI d'implémentation : `37672714822` — 400/401 GREEN, une sentinelle de format trop stricte ;
+- sentinelle rendue indépendante du format : `4a613f3501ef906f0bf724d801d26284d9f65c4d`
+- CI finale performance : `37672859410` — **SUCCESS**, 401/401 tests.
+
+Correctif :
+- cache de validation par identité immuable de `draft` ;
+- scheduler `requestAnimationFrame` : plusieurs mouvements tactiles dans une frame -> un seul redraw ;
+- pointermove / pinch / zoom haute fréquence utilisent le scheduler ;
+- en plein écran mobile/coarse pointer :
+  - interaction active -> DPR max 1 ;
+  - repos -> DPR max 1.5 ;
+  - desktop/non-focus conserve le DPR historique max 2 ;
+- résolution visuelle seulement : aucune donnée persistante n'est modifiée.
+
+Révision publique R5 :
+`mobile-landscape-area-navigation-ux-v1-r5`
+
+## Prochain chantier enregistré — Interior Geometry Authoring v1
+
+À ouvrir **après validation du lot UX R5**, pas en parallèle.
+
+Contrat produit demandé :
+- édition intérieure : réglage simple de la **taille** ;
+- édition intérieure : réglage de la **forme** ;
+- WorldArea doit rester l'unique autorité géométrique ;
+- interdiction d'un masque purement visuel ou d'une seconde géométrie Renderer ;
+- les Portals/Spawns/objets doivent consommer la même géométrie canonique ;
+- les textures intérieures continueront ensuite sur cette géométrie.
+
+État actuel : **GREEN TECHNIQUE PERFORMANCE R5 — checkpoint + preview R5 puis gate smartphone requis.**

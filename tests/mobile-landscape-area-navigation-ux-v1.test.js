@@ -131,15 +131,15 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   assert.match(html, /Intérieur\s*→/);
   assert.match(
     html,
-    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=mobile-landscape-area-navigation-ux-v1-r4["']/
+    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=mobile-landscape-area-navigation-ux-v1-r5["']/
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=mobile-landscape-area-navigation-ux-v1-r4/
+    /world-builder-main\.js\?rev=mobile-landscape-area-navigation-ux-v1-r5/
   );
   assert.match(
     html,
-    /world-builder\.css\?rev=mobile-landscape-area-navigation-ux-v1-r4/
+    /world-builder\.css\?rev=mobile-landscape-area-navigation-ux-v1-r5/
   );
 });
 
@@ -171,7 +171,7 @@ test('Builder uses progressive Fullscreen/orientation APIs and one centralized a
 
   assert.match(
     main,
-    /world-builder-viewport\.js\?rev=mobile-landscape-area-navigation-ux-v1-r4/
+    /world-builder-viewport\.js\?rev=mobile-landscape-area-navigation-ux-v1-r5/
   );
   assert.match(main, /requestFullscreen/);
   assert.match(main, /screen\.orientation/);
@@ -210,7 +210,7 @@ test('runtime presents landscape guidance without adding gameplay orientation au
   );
   assert.match(
     html,
-    /style\.css\?rev=mobile-landscape-area-navigation-ux-v1-r4/
+    /style\.css\?rev=mobile-landscape-area-navigation-ux-v1-r5/
   );
   assert.match(
     css,

@@ -91,7 +91,7 @@ test('regression: test-in-game action is not a blind link to static demo runtime
   assert.match(builderMain, /sessionStorage/);
   assert.match(
     html,
-    /href="\.\/index\.html\?builderTest=1&rev=mobile-landscape-area-navigation-ux-v1-r4"/
+    /href="\.\/index\.html\?builderTest=1&rev=mobile-landscape-area-navigation-ux-v1-r5"/
   );
 
   assert.match(runtimeMain, /builderTest/);
