@@ -1,7 +1,7 @@
 import {
   categoryIdFromFolderId,
   resolveObjectLibraryCategory
-} from './object-library-taxonomy.js';
+} from './object-library-taxonomy.js?rev=building-interiors-passages-ux-r1';
 
 export const USER_WORLD_OBJECT_SCHEMA_VERSION = 1;
 export const USER_WORLD_OBJECT_MAX_BYTES = 8 * 1024 * 1024;
