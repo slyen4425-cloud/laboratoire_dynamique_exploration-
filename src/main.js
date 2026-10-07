@@ -69,7 +69,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=terrain-family-encounters-v1';
+} from './world/world-document-model.js?rev=interior-random-encounter-policy-v1';
 import {
   applyPortalTransition,
   findTriggeredPortal
@@ -90,7 +90,7 @@ import {
 } from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   createEncounterController
-} from './encounters/encounter-controller.js?rev=phase7-snapshot-v1';
+} from './encounters/encounter-controller.js?rev=interior-random-encounter-policy-v1';
 import {
   snapshotFromEncounterIntent
 } from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';
