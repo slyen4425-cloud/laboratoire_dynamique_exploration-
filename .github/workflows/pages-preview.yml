@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: building-interiors-entrance-link-v1-r2
+# preview-revision: building-interiors-entrance-link-v1-r3
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration World Object Library preview
+      - name: Checkout Exploration Building Interiors preview R3
         uses: actions/checkout@v4
         with:
           ref: preview/exploration-building-interiors-entrance-link-v1-2026-10-06
