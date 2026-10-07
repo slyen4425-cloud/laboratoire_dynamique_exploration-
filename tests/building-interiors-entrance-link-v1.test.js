@@ -995,8 +995,10 @@ test('Portal tab presents a simple liaison summary and keeps raw Portal fields u
 });
 
 
-test('Exploration runtime uses the same WorldObject cache revision as the Builder', async () => {
-  const revision =
+test('Exploration runtime keeps the canonical WorldObject revision behind the current public entry revision', async () => {
+  const publicEntryRevision =
+    'interior-random-encounter-policy-v1';
+  const worldObjectRevision =
     'building-interiors-passages-ux-r1';
   const [indexHtml, runtimeMain] =
     await Promise.all([
@@ -1013,7 +1015,7 @@ test('Exploration runtime uses the same WorldObject cache revision as the Builde
   assert.match(
     indexHtml,
     new RegExp(
-      `main\\.js\\?rev=${revision}`
+      `main\\.js\\?rev=${publicEntryRevision}`
     )
   );
 
@@ -1032,7 +1034,7 @@ test('Exploration runtime uses the same WorldObject cache revision as the Builde
         modulePath
           .replaceAll('/', '\\/')
           .replaceAll('.', '\\.') +
-        `\\?rev=${revision}`
+        `\\?rev=${worldObjectRevision}`
       ),
       `runtime must resolve ${modulePath} through the canonical revision`
     );
