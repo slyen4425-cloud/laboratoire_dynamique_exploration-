@@ -195,3 +195,193 @@ test('controller locks while an encounter is active and releases only matching i
   assert.ok(next);
   assert.notEqual(next.encounterId, intent.encounterId);
 });
+
+
+test('interior Area with random encounters disabled never rolls terrain-random', () => {
+  let randomCalls = 0;
+  const controller = createEncounterController({
+    checkDistance: 100
+  });
+  const interior = {
+    ...area(),
+    id: 'house-interior-01',
+    kind: 'interior',
+    encounters: {
+      randomEnabled: false
+    }
+  };
+  const args = {
+    area: interior,
+    encounterConfig: encounterConfig(),
+    captureCatalog: catalog(),
+    playerPartyRef: 'capture-party-preview',
+    rulesetId: 'capture.standard.1v1',
+    random: () => {
+      randomCalls += 1;
+      return 0;
+    }
+  };
+
+  assert.equal(controller.step({
+    ...args,
+    player: {
+      currentAreaId: interior.id,
+      x: 100,
+      y: 100
+    }
+  }), null);
+
+  assert.equal(controller.step({
+    ...args,
+    player: {
+      currentAreaId: interior.id,
+      x: 260,
+      y: 100
+    }
+  }), null);
+
+  assert.equal(randomCalls, 0);
+});
+
+test('Area change into disabled interior resets distance anchor without carrying exterior travel', () => {
+  const controller = createEncounterController({
+    checkDistance: 100
+  });
+  const exterior = {
+    ...area(),
+    kind: 'exterior',
+    encounters: {
+      randomEnabled: true
+    }
+  };
+  const interior = {
+    ...area(),
+    id: 'house-interior-01',
+    kind: 'interior',
+    encounters: {
+      randomEnabled: false
+    }
+  };
+  let randomCalls = 0;
+  const common = {
+    encounterConfig: encounterConfig(),
+    captureCatalog: catalog(),
+    playerPartyRef: 'capture-party-preview',
+    rulesetId: 'capture.standard.1v1',
+    random: () => {
+      randomCalls += 1;
+      return 0;
+    }
+  };
+
+  assert.equal(controller.step({
+    ...common,
+    area: exterior,
+    player: {
+      currentAreaId: exterior.id,
+      x: 100,
+      y: 100
+    }
+  }), null);
+  assert.equal(controller.step({
+    ...common,
+    area: exterior,
+    player: {
+      currentAreaId: exterior.id,
+      x: 170,
+      y: 100
+    }
+  }), null);
+
+  assert.equal(controller.step({
+    ...common,
+    area: interior,
+    player: {
+      currentAreaId: interior.id,
+      x: 360,
+      y: 390
+    }
+  }), null);
+
+  assert.equal(controller.step({
+    ...common,
+    area: interior,
+    player: {
+      currentAreaId: interior.id,
+      x: 520,
+      y: 390
+    }
+  }), null);
+
+  assert.equal(randomCalls, 0);
+});
+
+test('leaving disabled interior restores normal exterior terrain-random checks', () => {
+  const controller = createEncounterController({
+    checkDistance: 100
+  });
+  const exterior = {
+    ...area(),
+    kind: 'exterior',
+    encounters: {
+      randomEnabled: true
+    }
+  };
+  const interior = {
+    ...area(),
+    id: 'house-interior-01',
+    kind: 'interior',
+    encounters: {
+      randomEnabled: false
+    }
+  };
+  const common = {
+    encounterConfig: encounterConfig(),
+    captureCatalog: catalog(),
+    playerPartyRef: 'capture-party-preview',
+    rulesetId: 'capture.standard.1v1',
+    random: () => 0
+  };
+
+  assert.equal(controller.step({
+    ...common,
+    area: interior,
+    player: {
+      currentAreaId: interior.id,
+      x: 360,
+      y: 390
+    }
+  }), null);
+  assert.equal(controller.step({
+    ...common,
+    area: interior,
+    player: {
+      currentAreaId: interior.id,
+      x: 410,
+      y: 390
+    }
+  }), null);
+
+  assert.equal(controller.step({
+    ...common,
+    area: exterior,
+    player: {
+      currentAreaId: exterior.id,
+      x: 820,
+      y: 1100
+    }
+  }), null);
+
+  const intent = controller.step({
+    ...common,
+    area: exterior,
+    player: {
+      currentAreaId: exterior.id,
+      x: 930,
+      y: 1100
+    }
+  });
+
+  assert.equal(intent?.source, 'terrain-random');
+  assert.equal(intent?.areaId, exterior.id);
+});
