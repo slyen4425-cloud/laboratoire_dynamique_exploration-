@@ -783,6 +783,30 @@ Règles :
 - l'orientation visuelle du bâtiment ne décide jamais de la position gameplay de la porte : les doorAnchors suivent le transform canonique du Building.
 
 
+### WorldArea encounter policy v1
+
+La politique locale des rencontres aléatoires appartient à la WorldArea et reste distincte de la famille de terrain :
+
+```text
+WorldArea
+  -> encounters.randomEnabled
+  -> Encounter Controller
+  -> Terrain Family Resolver / Encounter Resolver uniquement si autorisé
+```
+
+Contrat v1 :
+- `WorldArea(kind = exterior)` -> `randomEnabled = true` par défaut ;
+- `WorldArea(kind = interior)` -> `randomEnabled = false` par défaut ;
+- un override booléen explicite peut autoriser un intérieur dangereux ;
+- l'absence du champ dans une ancienne WorldArea est normalisée selon `kind` lors du chargement ;
+- la policy ne désactive que les intents `terrain-random` du Encounter Controller ;
+- les combats explicites/scénarisés gardent leurs autorités propres ;
+- `materialId`, texture et `terrainFamilyId` ne décident jamais de cette autorisation ;
+- Portal, Renderer et Encounter Bridge ne possèdent aucune copie de cette règle ;
+- si la policy interdit le random, le Encounter Controller retourne avant tout roll RNG.
+
+
+
 ### Building Interiors v1 — liaison d'entrée obligatoire
 
 Un intérieur n'est jamais considéré raccordé tant que la chaîne d'entrée/sortie complète n'existe pas.
