@@ -46,6 +46,7 @@ import {
   pointInRotatedRect,
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r4';
+import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
@@ -583,6 +584,8 @@ const PAINT_KINDS = Object.freeze([
 const drawUndoStack = [];
 const MAX_DRAW_UNDO = 30;
 const BUILDER_PAN_MARGIN_PX = 96;
+const coarsePointerMedia =
+  window.matchMedia?.('(pointer: coarse)') ?? null;
 
 const initialActorArea =
   draft.areas.find(
@@ -599,8 +602,35 @@ await rebuildMapActorPipeline();
 
 canvas.dataset.tool = mapTool;
 
+let cachedValidationDraft = null;
+let cachedValidationResult = null;
+
 function currentValidation() {
-  return validateWorldBuilderDraft(draft);
+  if (
+    cachedValidationDraft === draft &&
+    cachedValidationResult
+  ) {
+    return cachedValidationResult;
+  }
+
+  cachedValidationDraft = draft;
+  cachedValidationResult =
+    validateWorldBuilderDraft(draft);
+
+  return cachedValidationResult;
+}
+
+const previewFrameScheduler =
+  createPreviewFrameScheduler({
+    requestFrame:
+      window.requestAnimationFrame.bind(window),
+    render(timeMs) {
+      renderPreview(timeMs / 1000);
+    }
+  });
+
+function schedulePreviewRender() {
+  return previewFrameScheduler.request();
 }
 
 function normalizedDocument() {
@@ -4065,6 +4095,26 @@ function drawBuilderOverlays(area, document, camera) {
   ctx.restore();
 }
 
+function previewPixelRatio() {
+  const nativeRatio =
+    Math.min(devicePixelRatio || 1, 2);
+  const interacting =
+    Boolean(pointerSession) ||
+    activePointers.size > 0;
+
+  if (
+    mapFocusActive &&
+    coarsePointerMedia?.matches
+  ) {
+    return Math.min(
+      nativeRatio,
+      interacting ? 1 : 1.5
+    );
+  }
+
+  return nativeRatio;
+}
+
 function renderPreview(timeSeconds = performance.now() / 1000) {
   const result = currentValidation();
   if (!result.document) return;
@@ -4077,7 +4127,7 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
 
   const cssWidth = Math.max(canvas.clientWidth, 1);
   const cssHeight = Math.max(canvas.clientHeight, 1);
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = previewPixelRatio();
 
   if (
     canvas.width !== Math.floor(cssWidth * dpr) ||
@@ -4592,7 +4642,7 @@ function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
   zoom = view.zoom;
   center = { ...view.center };
   fitRequested = false;
-  renderPreview();
+  schedulePreviewRender();
 }
 
 function beginSurfacePath(kind, point) {
@@ -4739,7 +4789,7 @@ function updatePinch() {
   zoom = view.zoom;
   center = { ...view.center };
   fitRequested = false;
-  renderPreview();
+  schedulePreviewRender();
 }
 
 function finishPointerEditing() {
@@ -4774,9 +4824,7 @@ function applyMapFocusState(active) {
 
 function prefersMapFocusOnPointer() {
   return Boolean(
-    window.matchMedia?.(
-      '(pointer: coarse)'
-    ).matches
+    coarsePointerMedia?.matches
   );
 }
 
@@ -6432,7 +6480,7 @@ canvas.addEventListener('pointermove', (event) => {
   if (hover) hoverWorldPoint = hover;
 
   if (!activePointers.has(event.pointerId)) {
-    if (isPaintKind(mapTool)) renderPreview();
+    if (isPaintKind(mapTool)) schedulePreviewRender();
     return;
   }
 
@@ -6484,7 +6532,7 @@ canvas.addEventListener('pointermove', (event) => {
     };
 
     refreshTerrainControls();
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6494,7 +6542,7 @@ canvas.addEventListener('pointermove', (event) => {
       pointerSession.pathId,
       world
     );
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6527,7 +6575,7 @@ canvas.addEventListener('pointermove', (event) => {
       );
     refreshActorControls();
     refreshJson();
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6574,7 +6622,7 @@ canvas.addEventListener('pointermove', (event) => {
     $('event-point-y').value =
       Math.round(y * 10) / 10;
     refreshJson();
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6597,7 +6645,7 @@ canvas.addEventListener('pointermove', (event) => {
 
     $('object-rotation').value =
       Math.round(degrees * 10) / 10;
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6637,7 +6685,7 @@ canvas.addEventListener('pointermove', (event) => {
       Math.round(scaleX * 100) / 100;
     $('object-scale-y').value =
       Math.round(scaleY * 100) / 100;
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6666,7 +6714,7 @@ canvas.addEventListener('pointermove', (event) => {
 
     $('object-x').value = Math.round(x * 10) / 10;
     $('object-y').value = Math.round(y * 10) / 10;
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6695,7 +6743,7 @@ canvas.addEventListener('pointermove', (event) => {
 
     $('spawn-x').value = Math.round(x * 10) / 10;
     $('spawn-y').value = Math.round(y * 10) / 10;
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6712,7 +6760,7 @@ canvas.addEventListener('pointermove', (event) => {
     $('area-width').value = Math.round(width);
     $('area-height').value = Math.round(height);
     fitRequested = false;
-    renderPreview();
+    schedulePreviewRender();
     return;
   }
 
@@ -6728,14 +6776,14 @@ canvas.addEventListener('pointermove', (event) => {
       })
     };
     fitRequested = false;
-    renderPreview();
+    schedulePreviewRender();
   }
 });
 
 canvas.addEventListener('pointerleave', () => {
   if (activePointers.size > 0) return;
   hoverWorldPoint = null;
-  if (isPaintKind(mapTool)) renderPreview();
+  if (isPaintKind(mapTool)) schedulePreviewRender();
 });
 
 function endPointer(event) {
