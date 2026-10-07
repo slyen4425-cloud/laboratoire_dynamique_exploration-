@@ -385,3 +385,36 @@ La chaîne publique est maintenant cohérente :
 - runtime HTML -> CSS : `mobile-landscape-area-navigation-ux-v1-r5`.
 
 État : **GREEN TECHNIQUE R5 — checkpoint/preview à figer sur l'état documenté, puis gate smartphone performance.**
+
+
+## R5 publiée — gate smartphone performance
+
+- SHA checkpoint/preview R5 : `61163b6df74835cdf76047956a8431a2535b7b5b`
+- CI work documentée : `37673307292` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-mobile-landscape-area-navigation-ux-v1-prevalidation-r5-performance-green-2026-10-07`
+- CI checkpoint : `37673386581` — **SUCCESS**
+- preview : `preview/exploration-mobile-landscape-area-navigation-ux-v1-r5-2026-10-07`
+- publication infrastructure uniquement : PR #104
+- merge infra `main` : `909d0c3c5b08dfdf5136e44c14575fcf6c313c9a`
+- Pages : `37673534036` — **SUCCESS**
+- aucun gameplay du lot n'a été mergé dans `main`.
+
+Lien R5 :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=mobile-landscape-area-navigation-ux-v1-r5`
+
+Gate demandé :
+- refaire le même pan paysage qui ramait en R4 ;
+- pinch zoom ;
+- Taille Area ;
+- drag objet/acteur ;
+- peinture continue ;
+- vérifier que l'image redevient nette dès la fin du geste ;
+- vérifier Intérieur → / ← Extérieur.
+
+Prochain lot après validation :
+**Interior Geometry Authoring v1**
+- taille intérieure ;
+- forme intérieure canonique WorldArea ;
+- puis poursuite textures/assets.
+
+État : **GREEN TECHNIQUE / PREVALIDATION R5 — attente du verdict smartphone performance. GREEN FINAL interdit avant validation utilisateur.**
