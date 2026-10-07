@@ -10,7 +10,7 @@ import {
   normalizeWorldActorPlacements
 } from '../actors/world-actor-placement-model.js';
 
-export const WORLD_AREA_SCHEMA_VERSION = 4;
+export const WORLD_AREA_SCHEMA_VERSION = 5;
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max
@@ -68,6 +68,20 @@ function normalizeSpawn(raw, index) {
   });
 }
 
+function normalizeWorldAreaEncounters(raw, kind) {
+  const encounters =
+    raw && typeof raw === 'object'
+      ? raw
+      : {};
+
+  return Object.freeze({
+    randomEnabled:
+      typeof encounters.randomEnabled === 'boolean'
+        ? encounters.randomEnabled
+        : kind !== 'interior'
+  });
+}
+
 function normalizeObstacle(raw, index) {
   if (!raw || typeof raw !== 'object') return null;
 
@@ -114,6 +128,10 @@ export function normalizeWorldArea(raw, index = 0) {
     kind,
     width: finiteNumber(raw.width, 1200, { min: 128, max: 20000 }),
     height: finiteNumber(raw.height, 800, { min: 128, max: 20000 }),
+    encounters: normalizeWorldAreaEncounters(
+      raw.encounters,
+      kind
+    ),
     surface: normalizeWorldSurface(raw.surface),
     objects: normalizeWorldObjectPlacements(raw.objects),
     actors: normalizeWorldActorPlacements(raw.actors),
