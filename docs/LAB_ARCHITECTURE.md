@@ -863,3 +863,43 @@ Règles :
 - Fullscreen API et Screen Orientation API sont des améliorations progressives ; leur indisponibilité ne modifie ni les données ni le gameplay ;
 - en portrait mobile, Builder et runtime peuvent afficher une guidance paysage purement visuelle ;
 - le runtime Exploration ne reçoit aucune nouvelle autorité d'orientation ou de navigation.
+
+
+## Interior Geometry Authoring v1 — boundary canonique WorldArea
+
+La géométrie locale d'une WorldArea appartient exclusivement au **World Area Model**.
+
+Contrat :
+
+```text
+WorldArea
+  -> width / height
+  -> boundary
+       -> rectangle
+       -> polygon(vertices normalisés 0..1)
+  -> WorldArea Geometry helpers
+       -> Collision World
+       -> runtime clip
+       -> Builder preview clip
+       -> Builder contour
+```
+
+Règles :
+- `width/height` décrivent l'étendue locale canonique ;
+- `boundary` décrit la forme autorisée dans cette étendue ;
+- l'absence de boundary dans une ancienne Area est migrée en rectangle ;
+- une boundary polygonale stocke des vertices normalisés 0..1 afin qu'un resize d'Area conserve la même forme relative ;
+- le WorldArea schema passe à v6 ;
+- Collision World décide la passabilité de limite à partir de la boundary, jamais depuis le renderer ;
+- runtime et Builder utilisent le même helper de clip en lecture seule ;
+- le Surface Renderer ne possède aucune forme d'Area ;
+- les presets Rectangle/L/T/Croix appartiennent uniquement à l'authoring et écrivent une boundary canonique ;
+- aucun `shapePresetId` n'est sérialisé ;
+- une boundary personnalisée importée est conservée, même si elle ne correspond à aucun preset Builder ;
+- les Portals restent l'unique autorité des transitions et ne copient aucune boundary.
+
+Compatibilité :
+- v5 sans boundary -> v6 rectangle ;
+- les extérieurs historiques restent rectangulaires et gardent leur comportement ;
+- import/export WorldDocument préserve la boundary ;
+- modifier une texture ne modifie jamais la boundary.

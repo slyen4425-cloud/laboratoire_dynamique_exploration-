@@ -105,3 +105,53 @@ RED avant implémentation :
 ## Gate
 
 CI complète + preview + test smartphone obligatoire avant GREEN FINAL.
+
+
+## TDD / implémentation — Interior Geometry Authoring v1
+
+RED fonctionnel :
+- commit : `4fbd40c9c44ba7896b0ea3ac01cc891622fc65e3`
+- CI : `37741723179` — **FAILURE attendue**
+- 409 tests : 400 GREEN, 9 RED ciblés sur schema v6, boundary, collision, Builder, presets et clip partagé.
+
+Implémentation fonctionnelle :
+- commit : `3d87e32892b7d145467cb9f32373473b3504e857`
+- CI : `37742123865` — **SUCCESS**
+- 409/409 tests GREEN.
+
+Livré :
+- WorldArea schema v6 ;
+- ancienne Area sans boundary -> rectangle canonique ;
+- boundary polygonale normalisée en coordonnées 0..1 ;
+- helpers purs de géométrie WorldArea ;
+- Collision World bloque hors boundary et respecte les cutouts concaves ;
+- clip WorldArea partagé par runtime + preview Builder ;
+- Builder intérieur : formes Rectangle / L / T / Croix ;
+- forme importée non reconnue conservée comme Personnalisée ;
+- width/height existants redimensionnent la forme proportionnellement ;
+- aucune donnée `shapePresetId` persistée ;
+- Taille Area directe continue d'écrire uniquement width/height.
+
+TDD cache :
+- RED : `867bd9102248adce1bd44758180b94750ba3ca18`
+- CI : `37742252525` — **FAILURE attendue**, 409/410 GREEN, uniquement cache public ;
+- code cache : `a8adfb4eb7652594c61aeab9f83aaaaabfa8b91c`
+- sentinelles alignées : `5047f48ab9d283d24348130acb7513924f1cf349`
+- CI : `37742615742` — **SUCCESS**, 410/410 tests.
+
+Révision publique :
+`interior-geometry-authoring-v1`
+
+## Gate attendu
+
+Sur smartphone :
+1. ouvrir un intérieur ;
+2. changer Rectangle -> L -> T -> Croix ;
+3. vérifier que le sol et les objets/acteurs visibles sont bien clipsés à la forme ;
+4. vérifier qu'on ne peut pas marcher dans les zones découpées ;
+5. modifier Largeur/Hauteur puis Taille Area directe ;
+6. vérifier que la forme se redimensionne sans se déformer arbitrairement ;
+7. tester `← Extérieur` puis `Intérieur →` ;
+8. vérifier que le Builder reste fluide comme en R5.
+
+État : **GREEN TECHNIQUE — documentation + checkpoint/preview requis avant validation utilisateur.**
