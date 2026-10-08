@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: mobile-landscape-area-navigation-ux-v1-r5
+# preview-revision: interior-geometry-authoring-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Mobile Landscape Area Navigation UX v1 R5
+      - name: Checkout Exploration Interior Geometry Authoring v1
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-mobile-landscape-area-navigation-ux-v1-r5-2026-10-07
+          ref: preview/exploration-interior-geometry-authoring-v1-2026-10-08
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
