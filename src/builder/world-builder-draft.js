@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=interior-random-encounter-policy-v1';
+} from '../world/world-document-model.js?rev=interior-geometry-authoring-v1';
 import {
   normalizeWorldAreaBoundary
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';

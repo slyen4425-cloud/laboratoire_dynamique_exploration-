@@ -1,5 +1,5 @@
 import { normalize } from './core/vector.js';
-import { stepMovement } from './core/movement.js?rev=surface-traversal-replay-v1';
+import { stepMovement } from './core/movement.js?rev=interior-geometry-authoring-v1';
 import { normalizeExplorationConfig } from './core/config.js';
 import {
   createTraversalRuleRegistry,
@@ -72,7 +72,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=interior-random-encounter-policy-v1';
+} from './world/world-document-model.js?rev=interior-geometry-authoring-v1';
 import {
   applyPortalTransition,
   findTriggeredPortal
@@ -117,7 +117,7 @@ import {
   createInitialWildlife,
   createWildMapActorView,
   createWildWanderController
-} from './living/living-runtime.js?rev=phase5-wild-wander-territory-v1-boundary';
+} from './living/living-runtime.js?rev=interior-geometry-authoring-v1';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');

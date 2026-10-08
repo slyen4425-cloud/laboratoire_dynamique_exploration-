@@ -33,7 +33,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=building-interiors-passages-ux-r1';
+} from './world-builder-draft.js?rev=interior-geometry-authoring-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
