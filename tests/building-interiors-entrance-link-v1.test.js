@@ -645,7 +645,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   const worldObjectRevision =
     'building-interiors-passages-ux-r1';
   const builderEntryRevision =
-    'mobile-landscape-area-navigation-ux-v1-r5';
+    'interior-geometry-authoring-v1';
 
   const [
     html,
@@ -999,7 +999,7 @@ test('Portal tab presents a simple liaison summary and keeps raw Portal fields u
 
 test('Exploration runtime keeps the canonical WorldObject revision behind the current public entry revision', async () => {
   const publicEntryRevision =
-    'interior-random-encounter-policy-v1';
+    'interior-geometry-authoring-v1';
   const worldObjectRevision =
     'building-interiors-passages-ux-r1';
   const [indexHtml, runtimeMain] =

@@ -131,15 +131,15 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   assert.match(html, /Intérieur\s*→/);
   assert.match(
     html,
-    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=mobile-landscape-area-navigation-ux-v1-r5["']/
+    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=interior-geometry-authoring-v1["']/
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=mobile-landscape-area-navigation-ux-v1-r5/
+    /world-builder-main\.js\?rev=interior-geometry-authoring-v1/
   );
   assert.match(
     html,
-    /world-builder\.css\?rev=mobile-landscape-area-navigation-ux-v1-r5/
+    /world-builder\.css\?rev=interior-geometry-authoring-v1/
   );
 });
 
@@ -210,7 +210,7 @@ test('runtime presents landscape guidance without adding gameplay orientation au
   );
   assert.match(
     html,
-    /style\.css\?rev=mobile-landscape-area-navigation-ux-v1-r5/
+    /style\.css\?rev=interior-geometry-authoring-v1/
   );
   assert.match(
     css,
