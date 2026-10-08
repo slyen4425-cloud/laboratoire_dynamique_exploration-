@@ -10,6 +10,9 @@ import {
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-texture-import-v1';
+import {
+  clipWorldArea
+} from './render/world-area-clip.js?rev=interior-geometry-authoring-v1';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -976,34 +979,46 @@ function render(timeSeconds = 0) {
     currentPlacedMapActors();
 
   ctx.clearRect(0, 0, innerWidth, innerHeight);
-  drawGround();
+  ctx.save();
 
-  area.obstacles.forEach(drawObstacle);
+  try {
+    clipWorldArea(
+      ctx,
+      area,
+      camera
+    );
 
-  worldObjectRenderer.draw(ctx, {
-    camera,
-    viewport: {
-      width: innerWidth,
-      height: innerHeight
-    },
-    objects: area.objects
-  });
+    drawGround();
 
-  portalRenderer.draw(ctx, {
-    camera,
-    worldDocument: activeWorldDocument,
-    currentAreaId: player.currentAreaId
-  });
+    area.obstacles.forEach(drawObstacle);
 
-  mapActorRenderer.draw(ctx, {
-    camera,
-    actors: [
-      ...placedMapActors,
-      ...wildMapActors,
-      player
-    ],
-    timeSeconds
-  });
+    worldObjectRenderer.draw(ctx, {
+      camera,
+      viewport: {
+        width: innerWidth,
+        height: innerHeight
+      },
+      objects: area.objects
+    });
+
+    portalRenderer.draw(ctx, {
+      camera,
+      worldDocument: activeWorldDocument,
+      currentAreaId: player.currentAreaId
+    });
+
+    mapActorRenderer.draw(ctx, {
+      camera,
+      actors: [
+        ...placedMapActors,
+        ...wildMapActors,
+        player
+      ],
+      timeSeconds
+    });
+  } finally {
+    ctx.restore();
+  }
 }
 
 function frame(now) {

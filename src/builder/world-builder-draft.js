@@ -2,6 +2,9 @@ import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=interior-random-encounter-policy-v1';
 import {
+  normalizeWorldAreaBoundary
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
+import {
   objectDefinitionCatalogV1
 } from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
 
@@ -397,6 +400,28 @@ export function updateAreaProperties(
     area.surface ??= {};
     area.surface.baseMaterialId = baseMaterialId.trim();
   }
+
+  return next;
+}
+
+
+export function updateAreaBoundary(
+  draft,
+  areaId,
+  boundary
+) {
+  const next = clone(draft);
+  const area =
+    findArea(next, areaId);
+
+  if (!area) return next;
+
+  area.boundary =
+    clone(
+      normalizeWorldAreaBoundary(
+        boundary
+      )
+    );
 
   return next;
 }

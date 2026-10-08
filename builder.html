@@ -76,6 +76,15 @@
           <label>Largeur <input id="area-width" type="number" min="128" step="10" /></label>
           <label>Hauteur <input id="area-height" type="number" min="128" step="10" /></label>
         </div>
+        <div id="area-shape-fields" hidden>
+          <label>
+            <span>Forme intérieure</span>
+            <select id="area-shape"></select>
+          </label>
+          <p class="builder-hint">
+            Rectangle, L, T ou croix. La forme est redimensionnée avec Largeur / Hauteur sans créer une seconde géométrie.
+          </p>
+        </div>
         <div class="grid-2">
           <label>
             Famille du sol

@@ -21,6 +21,7 @@ import {
   importWorldBuilderDocument as importWorldBuilderDocumentRaw,
   serializeWorldBuilderDraft as serializeWorldBuilderDraftRaw,
   updateActorPlacement,
+  updateAreaBoundary,
   updateAreaProperties,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
@@ -48,6 +49,9 @@ import {
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
+import {
+  clipWorldArea
+} from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -99,11 +103,19 @@ import {
   resolveLinkedInteriorNavigation
 } from './world-builder-area-navigation.js?rev=mobile-landscape-area-navigation-ux-v1';
 import {
+  boundaryForInteriorShapePreset,
+  interiorShapePresetIdForBoundary,
+  listInteriorShapePresets
+} from './world-area-shape-presets.js?rev=interior-geometry-authoring-v1';
+import {
   resolveWorldTriggerPoint
 } from '../world/world-trigger-geometry.js?rev=world-event-contract-v1';
 import {
   resolveWorldAreaSpawnPoint
-} from '../world/world-area-model.js?rev=interior-random-encounter-policy-v1';
+} from '../world/world-area-model.js?rev=interior-geometry-authoring-v1';
+import {
+  worldAreaBoundaryPoints
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
 import {
   materialPackV1
 } from '../materials/material-pack-v1.js?rev=user-texture-import-v1';
@@ -1651,6 +1663,47 @@ function refreshAreaControls() {
 
   $('area-width').value = area.width;
   $('area-height').value = area.height;
+
+  const shapeFields =
+    $('area-shape-fields');
+  const shapeSelect =
+    $('area-shape');
+
+  shapeFields.hidden =
+    area.kind !== 'interior';
+
+  if (area.kind === 'interior') {
+    const presetId =
+      interiorShapePresetIdForBoundary(
+        area.boundary
+      );
+    const options = [
+      ...listInteriorShapePresets()
+    ];
+
+    if (!presetId) {
+      options.push({
+        id: 'custom',
+        label: 'Personnalisée'
+      });
+    }
+
+    setOptions(
+      shapeSelect,
+      options,
+      presetId ?? 'custom',
+      {
+        label: (item) =>
+          item.label
+      }
+    );
+    shapeSelect.value =
+      presetId ?? 'custom';
+    shapeSelect.disabled = false;
+  } else {
+    shapeSelect.replaceChildren();
+    shapeSelect.disabled = true;
+  }
 
   const families = terrainFamilies();
   const familyRegistry =
@@ -3837,12 +3890,32 @@ function drawBuilderOverlays(area, document, camera) {
       : 'rgba(160,205,175,0.58)';
   ctx.lineWidth = (mapTool === 'area-size' ? 4 : 2) / zoom;
   ctx.setLineDash(mapTool === 'area-size' ? [] : [8 / zoom, 6 / zoom]);
-  ctx.strokeRect(
-    -camera.x,
-    -camera.y,
-    area.width,
-    area.height
-  );
+
+  const boundaryPoints =
+    worldAreaBoundaryPoints(area);
+
+  if (boundaryPoints.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(
+      boundaryPoints[0].x - camera.x,
+      boundaryPoints[0].y - camera.y
+    );
+
+    for (
+      let index = 1;
+      index < boundaryPoints.length;
+      index += 1
+    ) {
+      ctx.lineTo(
+        boundaryPoints[index].x - camera.x,
+        boundaryPoints[index].y - camera.y
+      );
+    }
+
+    ctx.closePath();
+    ctx.stroke();
+  }
+
   ctx.setLineDash([]);
 
   const handleSize = (mapTool === 'area-size' ? 28 : 18) / zoom;
@@ -4157,35 +4230,47 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
   ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
 
   try {
-    surfaceRenderer.draw(ctx, {
-      camera,
-      viewport,
-      surface: area.surface
-    });
+    ctx.save();
 
-    area.obstacles.forEach((obstacle) =>
-      drawObstacle(obstacle, camera)
-    );
+    try {
+      clipWorldArea(
+        ctx,
+        area,
+        camera
+      );
 
-    objectRenderer.draw(ctx, {
-      camera,
-      viewport,
-      objects: area.objects
-    });
-
-    portalRenderer.draw(ctx, {
-      camera,
-      worldDocument: document,
-      currentAreaId: area.id
-    });
-
-    if (mapActorRenderer) {
-      mapActorRenderer.draw(ctx, {
+      surfaceRenderer.draw(ctx, {
         camera,
-        actors:
-          currentPlacedMapActors(area),
-        timeSeconds
+        viewport,
+        surface: area.surface
       });
+
+      area.obstacles.forEach((obstacle) =>
+        drawObstacle(obstacle, camera)
+      );
+
+      objectRenderer.draw(ctx, {
+        camera,
+        viewport,
+        objects: area.objects
+      });
+
+      portalRenderer.draw(ctx, {
+        camera,
+        worldDocument: document,
+        currentAreaId: area.id
+      });
+
+      if (mapActorRenderer) {
+        mapActorRenderer.draw(ctx, {
+          camera,
+          actors:
+            currentPlacedMapActors(area),
+          timeSeconds
+        });
+      }
+    } finally {
+      ctx.restore();
     }
 
     drawBuilderOverlays(area, document, camera);
@@ -4934,6 +5019,39 @@ for (const id of ['area-width', 'area-height']) {
     refreshControls();
   });
 }
+
+$('area-shape').addEventListener(
+  'change',
+  () => {
+    const area =
+      currentAreaRaw();
+
+    if (
+      area?.kind !== 'interior'
+    ) {
+      return;
+    }
+
+    const boundary =
+      boundaryForInteriorShapePreset(
+        $('area-shape').value
+      );
+
+    if (!boundary) {
+      return;
+    }
+
+    draft =
+      updateAreaBoundary(
+        draft,
+        selectedAreaId,
+        boundary
+      );
+
+    fitRequested = true;
+    refreshControls();
+  }
+);
 
 $('area-family').addEventListener('change', () => {
   draft = updateAreaProperties(

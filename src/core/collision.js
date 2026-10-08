@@ -16,6 +16,9 @@ import {
   pointInOrientedRect
 } from './geometry.js?rev=surface-traversal-replay-v1';
 import {
+  circleFitsWorldAreaBoundary
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
+import {
   defaultTraversalRuleRegistry,
   resolveBaseSurfaceFeature,
   resolveSurfaceTraversal
@@ -39,10 +42,12 @@ export function isBlocked(
   traversalRegistry = defaultTraversalRuleRegistry
 ) {
   if (
-    x - entity.radius < 0 ||
-    y - entity.radius < 0 ||
-    x + entity.radius > world.width ||
-    y + entity.radius > world.height
+    !circleFitsWorldAreaBoundary(
+      world,
+      x,
+      y,
+      entity.radius
+    )
   ) {
     return true;
   }

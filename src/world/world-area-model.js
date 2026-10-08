@@ -1,5 +1,8 @@
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {
+  normalizeWorldAreaBoundary
+} from './world-area-geometry.js?rev=interior-geometry-authoring-v1';
+import {
   buildingDoorArrivalWorld
 } from './world-object-model.js?rev=object-catalog-placement-v1';
 import {
@@ -10,7 +13,7 @@ import {
   normalizeWorldActorPlacements
 } from '../actors/world-actor-placement-model.js';
 
-export const WORLD_AREA_SCHEMA_VERSION = 5;
+export const WORLD_AREA_SCHEMA_VERSION = 6;
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max
@@ -128,6 +131,7 @@ export function normalizeWorldArea(raw, index = 0) {
     kind,
     width: finiteNumber(raw.width, 1200, { min: 128, max: 20000 }),
     height: finiteNumber(raw.height, 800, { min: 128, max: 20000 }),
+    boundary: normalizeWorldAreaBoundary(raw.boundary),
     encounters: normalizeWorldAreaEncounters(
       raw.encounters,
       kind
