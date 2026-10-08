@@ -418,3 +418,25 @@ Prochain lot après validation :
 - puis poursuite textures/assets.
 
 État : **GREEN TECHNIQUE / PREVALIDATION R5 — attente du verdict smartphone performance. GREEN FINAL interdit avant validation utilisateur.**
+
+
+## Gate smartphone R5 — VALIDÉ utilisateur
+
+Retour créateur du 2026-10-08 :
+> « Oui c'est plus fluide. continue en respectant la charte et le plan »
+
+Verdict :
+- le point bloquant performance mobile du Builder R4 est corrigé ;
+- la R5 est acceptée pour poursuivre le plan ;
+- les sentinelles automatiques restent GREEN sur navigation Area, plein écran, pan, Taille Area, Portal et cache public.
+
+Le lot **Mobile Landscape & Area Navigation UX v1** peut être fermé GREEN.
+Aucun merge gameplay vers main n'est demandé par cette validation.
+
+Prochain lot autorisé :
+**Interior Geometry Authoring v1**
+- taille intérieure ;
+- forme intérieure canonique WorldArea ;
+- compatibilité anciennes WorldArea ;
+- aucun masque Renderer parallèle ;
+- textures/assets après cette géométrie, dans un lot séparé.
