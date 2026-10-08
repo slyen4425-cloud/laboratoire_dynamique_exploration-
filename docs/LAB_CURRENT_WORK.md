@@ -155,3 +155,21 @@ Sur smartphone :
 8. vérifier que le Builder reste fluide comme en R5.
 
 État : **GREEN TECHNIQUE — documentation + checkpoint/preview requis avant validation utilisateur.**
+
+
+## Prévalidation publiée — Interior Geometry Authoring v1
+
+- SHA gameplay/docs prévalidation : `085a2aa100274af1676b17b420359bc0b509ac4a`
+- CI work : `37742782556` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-interior-geometry-authoring-v1-prevalidation-green-2026-10-08`
+- CI checkpoint : `37742828444` — **SUCCESS**
+- preview : `preview/exploration-interior-geometry-authoring-v1-2026-10-08`
+- publication infrastructure uniquement : PR #105
+- merge infra `main` : `faf4704d2489ff1f764804acf6ed2d9b77e4d642`
+- Pages : `37742930654` — **SUCCESS**
+- aucun gameplay du lot n'a été mergé dans `main`.
+
+Lien de gate :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=interior-geometry-authoring-v1`
+
+État : **GREEN TECHNIQUE / PREVALIDATION — attente validation smartphone de la forme/taille intérieure avant GREEN FINAL et avant le lot textures.**
