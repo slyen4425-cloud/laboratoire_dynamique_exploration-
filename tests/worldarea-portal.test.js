@@ -93,7 +93,7 @@ function makeDocument() {
   });
 }
 
-test('WorldArea v5 normalizes dimensions, encounter policy, surface, object placements, actors and named spawns', () => {
+test('WorldArea v6 normalizes dimensions, boundary, encounter policy, surface, object placements, actors and named spawns', () => {
   const area = normalizeWorldArea({
     id: 'home',
     kind: 'interior',
@@ -105,7 +105,8 @@ test('WorldArea v5 normalizes dimensions, encounter policy, surface, object plac
     ]
   });
 
-  assert.equal(area.schemaVersion, 5);
+  assert.equal(area.schemaVersion, 6);
+  assert.deepEqual(area.boundary, { kind: 'rectangle' });
   assert.equal(area.id, 'home');
   assert.equal(area.kind, 'interior');
   assert.equal(area.encounters.randomEnabled, false);
