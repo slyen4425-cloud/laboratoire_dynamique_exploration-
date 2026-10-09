@@ -255,3 +255,31 @@ Le prochain lot devra :
 - aucun calcul de collision depuis les pixels/assets.
 
 État : **GREEN TECHNIQUE R2 / PREVALIDATION — publication + retest smartphone requis.**
+
+
+## R2 publiée — gate smartphone correction entrée T
+
+- SHA checkpoint/preview R2 : `62ee2defd343a4762bad1afb771a6894aaae521a`
+- CI work documentée : `38000570123` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-interior-geometry-authoring-v1-prevalidation-r2-green-2026-10-10`
+- CI checkpoint : `38000605260` — **SUCCESS**
+- preview : `preview/exploration-interior-geometry-authoring-v1-r2-2026-10-10`
+- publication infrastructure uniquement : PR #106
+- merge infra `main` : `f295c12a34c0ce18a5914612976d362a7e670c0e`
+- Pages : `38000677822` — **SUCCESS**
+- aucun gameplay du lot n'a été mergé dans `main`.
+
+Lien R2 :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=interior-geometry-authoring-v1-r2`
+
+Gate demandé :
+1. intérieur T ;
+2. entrer depuis le Building ;
+3. confirmer que le personnage apparaît sur la zone de sol et peut bouger immédiatement ;
+4. sortir / rentrer ;
+5. tester L et Croix ;
+6. resize puis nouvelle entrée.
+
+Le défaut rochers/objets franchissables reste volontairement **non corrigé dans ce lot** : il est déjà audité et réservé au prochain chantier `WorldObject Collision Footprints v1`.
+
+État : **GREEN TECHNIQUE / PREVALIDATION R2 — attente validation utilisateur de l'entrée intérieure. GREEN FINAL interdit avant verdict.**
