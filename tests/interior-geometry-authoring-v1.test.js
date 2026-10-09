@@ -432,3 +432,349 @@ test('public cache chain reaches canonical interior geometry through Builder and
     )
   );
 });
+
+
+test('regression: changing a newly linked interior to T keeps Portal arrival and exit inside the playable boundary', async () => {
+  const {
+    boundaryForInteriorShapePreset
+  } = await import(
+    '../src/builder/world-area-shape-presets.js'
+  );
+  const {
+    resolveWorldAreaSpawnPoint
+  } = await import(
+    '../src/world/world-area-model.js'
+  );
+  const {
+    circleFitsWorldAreaBoundary
+  } = await import(
+    '../src/world/world-area-geometry.js'
+  );
+  const {
+    resolvePortalTriggerPoint,
+    applyPortalTransition
+  } = await import(
+    '../src/world/portal-model.js'
+  );
+  const {
+    stepMovement
+  } = await import(
+    '../src/core/movement.js'
+  );
+
+  let draft =
+    draftApi.createWorldBuilderDraft({
+      id: 't-entry-regression',
+      initialAreaId: 'outside',
+      initialSpawnId: 'start',
+      areas: [
+        {
+          id: 'outside',
+          kind: 'exterior',
+          width: 1200,
+          height: 900,
+          surface: {
+            baseTerrainFamilyId: 'plain',
+            baseMaterialId: 'grass.forest',
+            baseTraversalRuleId:
+              'terrain.ground',
+            zones: [],
+            routes: [],
+            rivers: []
+          },
+          objects: [
+            {
+              id: 'house-new',
+              objectDefinitionId:
+                'objectdef.building.house.fantasy_wood_stone.01',
+              transform: {
+                x: 600,
+                y: 450,
+                rotationDeg: 0,
+                scaleX: 1,
+                scaleY: 1
+              },
+              overrides: {
+                traversalSurfaceFeatureIds: []
+              }
+            }
+          ],
+          actors: [],
+          obstacles: [],
+          spawns: [
+            {
+              id: 'start',
+              x: 120,
+              y: 120
+            }
+          ]
+        }
+      ],
+      portals: []
+    });
+
+  draft =
+    draftApi.createBuildingInteriorLink(
+      draft,
+      {
+        sourceAreaId: 'outside',
+        buildingId: 'house-new'
+      }
+    );
+
+  const enterBefore =
+    draft.portals.find(
+      (portal) =>
+        portal.sourceAreaId ===
+          'outside' &&
+        portal.targetAreaId !==
+          'outside'
+    );
+
+  assert.ok(enterBefore);
+
+  draft =
+    draftApi.updateAreaBoundary(
+      draft,
+      enterBefore.targetAreaId,
+      boundaryForInteriorShapePreset(
+        't'
+      )
+    );
+
+  const validation =
+    draftApi.validateWorldBuilderDraft(
+      draft
+    );
+
+  assert.equal(
+    validation.valid,
+    true
+  );
+
+  const document =
+    validation.document;
+  const enter =
+    document.portals.find(
+      (portal) =>
+        portal.id ===
+        enterBefore.id
+    );
+  const interior =
+    document.areas.find(
+      (area) =>
+        area.id ===
+        enter.targetAreaId
+    );
+  const arrival =
+    resolveWorldAreaSpawnPoint(
+      interior,
+      enter.targetSpawnId
+    );
+
+  assert.ok(arrival);
+  assert.equal(
+    circleFitsWorldAreaBoundary(
+      interior,
+      arrival.x,
+      arrival.y,
+      18
+    ),
+    true,
+    'Portal arrival must fit the T floor with player clearance'
+  );
+
+  const exit =
+    document.portals.find(
+      (portal) =>
+        portal.sourceAreaId ===
+          interior.id &&
+        portal.targetAreaId ===
+          'outside'
+    );
+
+  assert.ok(exit);
+  const exitTrigger =
+    resolvePortalTriggerPoint(
+      document.areas,
+      exit
+    );
+
+  assert.ok(exitTrigger);
+  assert.equal(
+    circleFitsWorldAreaBoundary(
+      interior,
+      exitTrigger.x,
+      exitTrigger.y,
+      exitTrigger.radius
+    ),
+    true,
+    'exit trigger must remain fully inside the T floor'
+  );
+
+  const player =
+    applyPortalTransition(
+      document,
+      {
+        currentAreaId: 'outside',
+        x: 600,
+        y: 450
+      },
+      enter
+    );
+
+  assert.ok(player);
+  player.radius = 18;
+  player.locomotion = {
+    modes: ['ground']
+  };
+
+  assert.equal(
+    isBlocked(
+      interior,
+      player,
+      player.x,
+      player.y
+    ),
+    false,
+    'player must never arrive in blocked black border space'
+  );
+
+  const beforeY = player.y;
+
+  stepMovement(
+    interior,
+    player,
+    { x: 0, y: -1 },
+    0.1,
+    { maxSpeed: 100 }
+  );
+
+  assert.ok(
+    player.y < beforeY,
+    'player must be able to move after entering the T interior'
+  );
+});
+
+test('regression: linking directly to an existing T interior chooses boundary-safe connection points', async () => {
+  const {
+    boundaryForInteriorShapePreset
+  } = await import(
+    '../src/builder/world-area-shape-presets.js'
+  );
+  const {
+    resolveWorldAreaSpawnPoint
+  } = await import(
+    '../src/world/world-area-model.js'
+  );
+  const {
+    circleFitsWorldAreaBoundary
+  } = await import(
+    '../src/world/world-area-geometry.js'
+  );
+
+  let draft =
+    draftApi.createWorldBuilderDraft({
+      id: 'existing-t-target',
+      initialAreaId: 'outside',
+      initialSpawnId: 'start',
+      areas: [
+        {
+          id: 'outside',
+          kind: 'exterior',
+          width: 1200,
+          height: 900,
+          surface: {
+            baseTerrainFamilyId: 'plain',
+            baseMaterialId: 'grass.forest',
+            baseTraversalRuleId:
+              'terrain.ground'
+          },
+          objects: [
+            {
+              id: 'house-new',
+              objectDefinitionId:
+                'objectdef.building.house.fantasy_wood_stone.01',
+              transform: {
+                x: 600,
+                y: 450,
+                rotationDeg: 0,
+                scaleX: 1,
+                scaleY: 1
+              },
+              overrides: {
+                traversalSurfaceFeatureIds: []
+              }
+            }
+          ],
+          spawns: [
+            { id: 'start', x: 120, y: 120 }
+          ]
+        },
+        {
+          id: 'inside-t',
+          kind: 'interior',
+          width: 720,
+          height: 560,
+          boundary:
+            boundaryForInteriorShapePreset(
+              't'
+            ),
+          surface: {
+            baseTerrainFamilyId: 'plain',
+            baseMaterialId: 'floor.wood.house',
+            baseTraversalRuleId:
+              'terrain.ground'
+          },
+          objects: [],
+          actors: [],
+          obstacles: [],
+          spawns: []
+        }
+      ],
+      portals: []
+    });
+
+  draft =
+    draftApi.createBuildingInteriorLink(
+      draft,
+      {
+        sourceAreaId: 'outside',
+        buildingId: 'house-new',
+        targetAreaId: 'inside-t'
+      }
+    );
+
+  const validation =
+    draftApi.validateWorldBuilderDraft(
+      draft
+    );
+  assert.equal(validation.valid, true);
+
+  const enter =
+    validation.document.portals.find(
+      (portal) =>
+        portal.sourceAreaId ===
+          'outside'
+    );
+  const interior =
+    validation.document.areas.find(
+      (area) =>
+        area.id === 'inside-t'
+    );
+  const arrival =
+    resolveWorldAreaSpawnPoint(
+      interior,
+      enter.targetSpawnId
+    );
+
+  assert.equal(
+    circleFitsWorldAreaBoundary(
+      interior,
+      arrival.x,
+      arrival.y,
+      18
+    ),
+    true
+  );
+});
