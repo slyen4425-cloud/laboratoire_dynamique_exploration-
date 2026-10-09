@@ -33,7 +33,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=interior-geometry-authoring-v1';
+} from './world-builder-draft.js?rev=interior-geometry-authoring-v1-r2';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -51,7 +51,7 @@ import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.j
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
 import {
   clipWorldArea
-} from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1';
+} from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
 import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -106,16 +106,16 @@ import {
   boundaryForInteriorShapePreset,
   interiorShapePresetIdForBoundary,
   listInteriorShapePresets
-} from './world-area-shape-presets.js?rev=interior-geometry-authoring-v1';
+} from './world-area-shape-presets.js?rev=interior-geometry-authoring-v1-r2';
 import {
   resolveWorldTriggerPoint
 } from '../world/world-trigger-geometry.js?rev=world-event-contract-v1';
 import {
   resolveWorldAreaSpawnPoint
-} from '../world/world-area-model.js?rev=interior-geometry-authoring-v1';
+} from '../world/world-area-model.js?rev=interior-geometry-authoring-v1-r2';
 import {
   worldAreaBoundaryPoints
-} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
 } from '../materials/material-pack-v1.js?rev=user-texture-import-v1';

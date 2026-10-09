@@ -1,10 +1,10 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=interior-geometry-authoring-v1';
+} from '../world/world-document-model.js?rev=interior-geometry-authoring-v1-r2';
 import {
   findWorldAreaBoundarySafePoint,
   normalizeWorldAreaBoundary
-} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   objectDefinitionCatalogV1
 } from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';

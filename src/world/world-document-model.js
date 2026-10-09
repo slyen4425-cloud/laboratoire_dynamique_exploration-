@@ -10,7 +10,7 @@ import {
   findWorldAreaSpawn,
   normalizeWorldAreas,
   resolveWorldAreaSpawnPoint
-} from './world-area-model.js?rev=interior-geometry-authoring-v1';
+} from './world-area-model.js?rev=interior-geometry-authoring-v1-r2';
 import {
   normalizePortals,
   portalReferencesAreValid

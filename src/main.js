@@ -1,5 +1,5 @@
 import { normalize } from './core/vector.js';
-import { stepMovement } from './core/movement.js?rev=interior-geometry-authoring-v1';
+import { stepMovement } from './core/movement.js?rev=interior-geometry-authoring-v1-r2';
 import { normalizeExplorationConfig } from './core/config.js';
 import {
   createTraversalRuleRegistry,
@@ -12,7 +12,7 @@ import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-texture-import-v1';
 import {
   clipWorldArea
-} from './render/world-area-clip.js?rev=interior-geometry-authoring-v1';
+} from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
 import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
@@ -72,7 +72,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=interior-geometry-authoring-v1';
+} from './world/world-document-model.js?rev=interior-geometry-authoring-v1-r2';
 import {
   applyPortalTransition,
   findTriggeredPortal
@@ -117,7 +117,7 @@ import {
   createInitialWildlife,
   createWildMapActorView,
   createWildWanderController
-} from './living/living-runtime.js?rev=interior-geometry-authoring-v1';
+} from './living/living-runtime.js?rev=interior-geometry-authoring-v1-r2';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');

@@ -3,7 +3,7 @@ import {
 } from '../core/surface-traversal.js?rev=surface-traversal-replay-v1';
 import {
   isBlocked
-} from '../core/collision.js?rev=interior-geometry-authoring-v1';
+} from '../core/collision.js?rev=interior-geometry-authoring-v1-r2';
 import {
   createWildCreatureEntity,
   normalizeLivingWorldConfig

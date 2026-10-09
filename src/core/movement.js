@@ -1,7 +1,7 @@
 import {
   isBlocked,
   resolveBridgeGuidedPosition
-} from './collision.js?rev=interior-geometry-authoring-v1';
+} from './collision.js?rev=interior-geometry-authoring-v1-r2';
 import {
   defaultTraversalRuleRegistry,
   resolveSurfaceTraversal
