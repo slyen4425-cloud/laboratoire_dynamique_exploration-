@@ -173,3 +173,85 @@ Lien de gate :
 `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=interior-geometry-authoring-v1`
 
 État : **GREEN TECHNIQUE / PREVALIDATION — attente validation smartphone de la forme/taille intérieure avant GREEN FINAL et avant le lot textures.**
+
+
+## Gate smartphone prévalidation v1 — verdict NEGATIF
+
+Retour utilisateur du 2026-10-09 :
+- intérieur en forme T : à l'entrée, le personnage se retrouve bloqué entre le sol intérieur et la bordure noire, déplacement impossible ;
+- rochers / objets : le personnage peut marcher dessus.
+
+Verdict :
+- **GREEN FINAL refusé** ;
+- le défaut d'arrivée Portal est dans le périmètre Interior Geometry Authoring v1 ;
+- la collision générique des WorldObjects est confirmée comme lacune distincte : le Collision World v1 ne bloque actuellement que les `building` dotés d'un footprint. Les `rock`, `tree`, `door`, `stairs` n'ont pas de footprint collision canonique dans leurs ObjectDefinitions.
+- conformément à la charte, la collision générique d'objets n'est pas ajoutée en douce dans ce lot. Elle devient le prochain lot explicite après validation de la correction intérieure.
+
+### Cause du blocage T
+
+Le système historique de Building Interior plaçait la première entrée à :
+- X = centre - 144 px ;
+- Y = bas de l'Area - 104 px.
+
+Pour une Area 720×560 en forme T, la tige basse commence vers X = 230.4.
+La première entrée pouvait donc être placée vers X = 216 : **hors de la boundary jouable**.
+
+Changer Rectangle -> T après création du Portal conservait également ces coordonnées rectangulaires devenues invalides.
+
+### TDD regression
+
+RED :
+- commit : `d0c6b4857574d910251d3b34c705f973666ef823`
+- CI : `38000127075` — **FAILURE attendue**
+- tests du vrai chemin :
+  - création Building -> intérieur ;
+  - changement boundary -> T ;
+  - Portal -> target Spawn ;
+  - vérification clearance dans boundary ;
+  - transition -> Collision World ;
+  - mouvement immédiatement après l'entrée ;
+  - liaison directe vers une Area T existante.
+
+Correctif :
+- helper pur `findWorldAreaBoundarySafePoint()` :
+  `1ca80e92729c1f6105f6679757bd80a95dedfc49`
+- raccord Draft / Portal / Spawn :
+  `e3b414a3034892e6c29e31c67b53c35849e49734`
+- correction du test pour respecter l'état Portal frozen :
+  `c862ddaab959bd3fcae6d014a6eec6f15e14117e`
+- CI : `38000304668` — **SUCCESS**.
+
+Comportement corrigé :
+- une liaison créée directement vers une forme T choisit un Spawn + trigger de sortie réellement praticables ;
+- si la forme ou la taille d'une Area rend un Spawn/trigger Portal invalide, le Draft le replace vers le point praticable le plus proche ;
+- la boundary WorldArea reste l'unique autorité ;
+- aucun X/Y parallèle UI/Renderer n'est ajouté ;
+- les autres points valides ne bougent pas.
+
+### Cache/publication R2
+
+Révision publique :
+`interior-geometry-authoring-v1-r2`
+
+- chaîne publique R2 : `3339b980592e91e2219a41f85c8ad67dd196cf29`
+- sentinelles/imports imbriqués R2 : `77f255cb62cb0bee70676ec99a64eabc46229f3e`
+- CI : `38000499216` — **SUCCESS**.
+
+## Prochain lot confirmé — WorldObject Collision Footprints v1
+
+À ouvrir uniquement après validation utilisateur de la R2 intérieure.
+
+Objectif déjà audité :
+- `building` : collision footprint existe déjà ;
+- `rock` / `tree` : visuels/baseSize présents mais aucune collision canonique ;
+- Collision World filtre actuellement explicitement `object.kind !== 'building'`.
+
+Le prochain lot devra :
+- déclarer la collision dans ObjectDefinition, pas dans le Renderer ;
+- fournir des footprints adaptés par catégorie/définition ;
+- faire consommer ces footprints par Collision World ;
+- préserver Bridge traversal, Building footprint et objets volontairement franchissables ;
+- tests vrais chemins héros + entités vivantes ;
+- aucun calcul de collision depuis les pixels/assets.
+
+État : **GREEN TECHNIQUE R2 / PREVALIDATION — publication + retest smartphone requis.**
