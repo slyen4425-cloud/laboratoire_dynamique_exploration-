@@ -612,7 +612,7 @@ test('regression: changing a newly linked interior to T keeps Portal arrival and
     'exit trigger must remain fully inside the T floor'
   );
 
-  const player =
+  const transition =
     applyPortalTransition(
       document,
       {
@@ -623,10 +623,13 @@ test('regression: changing a newly linked interior to T keeps Portal arrival and
       enter
     );
 
-  assert.ok(player);
-  player.radius = 18;
-  player.locomotion = {
-    modes: ['ground']
+  assert.ok(transition);
+  const player = {
+    ...transition,
+    radius: 18,
+    locomotion: {
+      modes: ['ground']
+    }
   };
 
   assert.equal(
