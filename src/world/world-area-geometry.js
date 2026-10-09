@@ -476,3 +476,130 @@ export function circleFitsWorldAreaBoundary(
 
   return true;
 }
+
+
+export function findWorldAreaBoundarySafePoint(
+  area,
+  preferred,
+  radius = 0
+) {
+  const width =
+    safeAreaSize(area?.width);
+  const height =
+    safeAreaSize(area?.height);
+  const safeRadius =
+    Number.isFinite(radius)
+      ? Math.max(0, radius)
+      : 0;
+  const preferredX =
+    Number.isFinite(preferred?.x)
+      ? preferred.x
+      : width / 2;
+  const preferredY =
+    Number.isFinite(preferred?.y)
+      ? preferred.y
+      : height / 2;
+
+  if (
+    circleFitsWorldAreaBoundary(
+      area,
+      preferredX,
+      preferredY,
+      safeRadius
+    )
+  ) {
+    return Object.freeze({
+      x: preferredX,
+      y: preferredY
+    });
+  }
+
+  const candidates = [];
+  const addCandidate = (x, y) => {
+    if (
+      !circleFitsWorldAreaBoundary(
+        area,
+        x,
+        y,
+        safeRadius
+      )
+    ) {
+      return;
+    }
+
+    const dx = x - preferredX;
+    const dy = y - preferredY;
+
+    candidates.push({
+      x,
+      y,
+      distanceSquared:
+        dx * dx + dy * dy
+    });
+  };
+
+  addCandidate(
+    width / 2,
+    height / 2
+  );
+
+  const points =
+    worldAreaBoundaryPoints(area);
+
+  if (points.length > 0) {
+    const centroid =
+      points.reduce(
+        (sum, point) => ({
+          x: sum.x + point.x,
+          y: sum.y + point.y
+        }),
+        { x: 0, y: 0 }
+      );
+
+    addCandidate(
+      centroid.x / points.length,
+      centroid.y / points.length
+    );
+  }
+
+  const divisions = 32;
+
+  for (
+    let yIndex = 0;
+    yIndex <= divisions;
+    yIndex += 1
+  ) {
+    const y =
+      height * yIndex /
+      divisions;
+
+    for (
+      let xIndex = 0;
+      xIndex <= divisions;
+      xIndex += 1
+    ) {
+      const x =
+        width * xIndex /
+        divisions;
+
+      addCandidate(x, y);
+    }
+  }
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  candidates.sort(
+    (left, right) =>
+      left.distanceSquared -
+        right.distanceSquared ||
+      left.y - right.y ||
+      left.x - right.x
+  );
+
+  return Object.freeze({
+    x: candidates[0].x,
+    y: candidates[0].y
+  });
+}
