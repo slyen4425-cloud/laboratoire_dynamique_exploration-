@@ -2,6 +2,7 @@ import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=interior-geometry-authoring-v1';
 import {
+  findWorldAreaBoundarySafePoint,
   normalizeWorldAreaBoundary
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
 import {
@@ -364,6 +365,119 @@ export function validateWorldBuilderDraft(
   });
 }
 
+function reconcileAreaBoundaryDependents(
+  draft,
+  areaId
+) {
+  const area =
+    findArea(draft, areaId);
+
+  if (!area) return;
+
+  const spawnClearance =
+    new Map();
+
+  for (
+    const portal of
+      draft.portals ?? []
+  ) {
+    if (
+      portal.targetAreaId !==
+        areaId ||
+      typeof portal.targetSpawnId !==
+        'string'
+    ) {
+      continue;
+    }
+
+    const radius =
+      Math.max(
+        18,
+        finite(
+          portal.trigger?.radius,
+          18
+        )
+      );
+    const current =
+      spawnClearance.get(
+        portal.targetSpawnId
+      ) ?? 18;
+
+    spawnClearance.set(
+      portal.targetSpawnId,
+      Math.max(
+        current,
+        radius
+      )
+    );
+  }
+
+  for (
+    const spawn of
+      area.spawns ?? []
+  ) {
+    if (
+      spawn.anchor ||
+      !Number.isFinite(spawn.x) ||
+      !Number.isFinite(spawn.y)
+    ) {
+      continue;
+    }
+
+    const safe =
+      findWorldAreaBoundarySafePoint(
+        area,
+        {
+          x: spawn.x,
+          y: spawn.y
+        },
+        spawnClearance.get(
+          spawn.id
+        ) ?? 18
+      );
+
+    if (!safe) continue;
+
+    spawn.x = safe.x;
+    spawn.y = safe.y;
+  }
+
+  for (
+    const portal of
+      draft.portals ?? []
+  ) {
+    if (
+      portal.sourceAreaId !==
+        areaId ||
+      portal.trigger?.kind !==
+        'point'
+    ) {
+      continue;
+    }
+
+    const safe =
+      findWorldAreaBoundarySafePoint(
+        area,
+        {
+          x: portal.trigger.x,
+          y: portal.trigger.y
+        },
+        Math.max(
+          0,
+          finite(
+            portal.trigger.radius,
+            0
+          )
+        )
+      );
+
+    if (!safe) continue;
+
+    portal.trigger.x = safe.x;
+    portal.trigger.y = safe.y;
+  }
+}
+
 export function updateAreaProperties(
   draft,
   areaId,
@@ -378,8 +492,19 @@ export function updateAreaProperties(
   const area = findArea(next, areaId);
   if (!area) return next;
 
-  if (width !== undefined) area.width = finite(width, area.width);
-  if (height !== undefined) area.height = finite(height, area.height);
+  let geometryChanged = false;
+
+  if (width !== undefined) {
+    area.width =
+      finite(width, area.width);
+    geometryChanged = true;
+  }
+
+  if (height !== undefined) {
+    area.height =
+      finite(height, area.height);
+    geometryChanged = true;
+  }
 
   if (
     typeof baseTerrainFamilyId === 'string' &&
@@ -399,6 +524,13 @@ export function updateAreaProperties(
   ) {
     area.surface ??= {};
     area.surface.baseMaterialId = baseMaterialId.trim();
+  }
+
+  if (geometryChanged) {
+    reconcileAreaBoundaryDependents(
+      next,
+      areaId
+    );
   }
 
   return next;
@@ -422,6 +554,11 @@ export function updateAreaBoundary(
         boundary
       )
     );
+
+  reconcileAreaBoundaryDependents(
+    next,
+    areaId
+  );
 
   return next;
 }
@@ -1483,6 +1620,33 @@ export function createBuildingInteriorLink(
       finite(targetArea.height, 560) -
         36
     );
+  const entryPoint =
+    findWorldAreaBoundarySafePoint(
+      targetArea,
+      {
+        x: entryX,
+        y: entryY
+      },
+      32
+    );
+  const exitPoint =
+    findWorldAreaBoundarySafePoint(
+      targetArea,
+      {
+        x:
+          entryPoint?.x ??
+          entryX,
+        y: exitY
+      },
+      28
+    );
+
+  if (
+    !entryPoint ||
+    !exitPoint
+  ) {
+    return next;
+  }
 
   const interiorSpawnId =
     uniqueId(
@@ -1497,8 +1661,8 @@ export function createBuildingInteriorLink(
 
   targetArea.spawns.push({
     id: interiorSpawnId,
-    x: entryX,
-    y: entryY
+    x: entryPoint.x,
+    y: entryPoint.y
   });
 
   source.area.spawns.push({
@@ -1546,8 +1710,8 @@ export function createBuildingInteriorLink(
       targetArea.id,
     trigger: {
       kind: 'point',
-      x: entryX,
-      y: exitY,
+      x: exitPoint.x,
+      y: exitPoint.y,
       radius: 28
     },
     targetAreaId:
