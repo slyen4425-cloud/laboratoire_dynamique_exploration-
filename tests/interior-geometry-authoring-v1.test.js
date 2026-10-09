@@ -323,7 +323,7 @@ test('runtime and Builder reuse one read-only WorldArea clip instead of duplicat
 
 test('public cache chain reaches canonical interior geometry through Builder and runtime', async () => {
   const revision =
-    'interior-geometry-authoring-v1';
+    'interior-geometry-authoring-v1-r2';
 
   const [
     builderHtml,

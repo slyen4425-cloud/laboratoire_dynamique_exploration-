@@ -1,7 +1,7 @@
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {
   normalizeWorldAreaBoundary
-} from './world-area-geometry.js?rev=interior-geometry-authoring-v1';
+} from './world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   buildingDoorArrivalWorld
 } from './world-object-model.js?rev=object-catalog-placement-v1';

@@ -1,6 +1,6 @@
 import {
   normalizeWorldAreaBoundary
-} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1';
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 
 const PRESETS = Object.freeze([
   Object.freeze({
