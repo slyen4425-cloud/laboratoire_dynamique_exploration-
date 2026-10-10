@@ -323,6 +323,18 @@ Décision d'autorité :
 Statut : Interior Geometry Authoring v1 -> **VALIDÉ utilisateur / checkpoint final à créer**, puis ouverture du lot Collision.
 
 
+## Validation finale utilisateur — Interior Geometry Authoring v1 (base GREEN)
+
+- Retour : « Ok je valide, tout est ok. »
+- SHA final GREEN du lot antérieur : `11d1c4fe39b6bc8b587a3357dbca9e157a58bdab`.
+- CI work `38033298058` SUCCESS ; checkpoint `38033337107` SUCCESS.
+- Filiation historique à signaler : le checkpoint START de Collision avait été créé sur
+  `ab3ea4b761050977d181d424eb5bfb6439dd249e` avant le commit
+  documentaire de clôture GREEN `11d1c4f`. Les fichiers gameplay étaient
+  déjà identiques. La prévalidation R2 réconcilie `11d1c4f` comme parent
+  de merge sans supprimer les commits TDD existants ; le START historique
+  reste néanmoins sur `ab3ea4b`.
+
 # Lot actif — Collision Boundary & WorldObject Obstacles v1
 
 Date : 2026-10-10
@@ -520,3 +532,30 @@ Gate smartphone :
 7. vérifier formes T/L/Croix et navigation intérieur/extérieur.
 
 État : **GREEN TECHNIQUE / PREVALIDATION — attente du verdict smartphone. GREEN FINAL interdit avant validation utilisateur.**
+
+
+## R2 — Correction d'architecture avant validation smartphone
+
+Audit complémentaire du 2026-10-10 : le Collision World conservait
+un cas spécial `object.kind === 'building'` malgré le nouveau résolveur générique.
+
+- RED architectural : `da67d2fdb799109417e641af18129b28f203a998`
+  / CI `38052251914` FAILURE ciblée.
+- Fix générique : `9e7a68fa1a93614f42e47ec67615edaa8e1f31ec`
+  + suppression du cas spécial `30d0d331120d788bb9c909866d34005cf7928f8f`.
+- CI : `38052319049` SUCCESS — 429 tests.
+- RED chaîne de cache R2 : `bf5b86abd06b2a81681334f1e2ef9de21bc83d78`
+  / CI `38052396832` FAILURE attendue.
+- Chaîne publique R2 : `bc196e6e794ec7592d295c4e28f3a94029f2face`.
+- Trois sentinelles de révision exacte réalignées :
+  `1e9c56b3f978cd66fb9043a2d82260dd5176b2f6`.
+- CI R2 : `38052495858` SUCCESS — 430 tests + npm run check.
+- `WorldObject.collision` explicite prévaut ; à défaut, le `footprint`
+  historique de l'ObjectDefinition reste consommé par le résolveur générique.
+- Le Collision World n'a désormais plus de branche bâtiment.
+- Aucun pixel, renderer ni `WorldArea.obstacles[]` secondaire.
+- Bridge, Portal, Import, Living et silhouettes restent protégés par tests.
+- Révision navigateur R2 : `collision-boundary-worldobject-obstacles-v1-r2`.
+
+Statut : **GREEN TECHNIQUE R2 ; nouvelle publication et gate smartphone requis.
+GREEN FINAL interdit avant confirmation utilisateur.**
