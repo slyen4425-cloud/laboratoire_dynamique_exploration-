@@ -198,6 +198,8 @@ const player = {
   x: initialState.x,
   y: initialState.y,
   radius: config.player.radius,
+  boundaryFootprint:
+    config.player.boundaryFootprint,
   locomotion: { modes: ['ground'] },
   viaPortalId: null,
   facingX: 1,
