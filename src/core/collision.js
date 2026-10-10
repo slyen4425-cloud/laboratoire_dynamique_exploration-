@@ -2,10 +2,10 @@ import {
   bridgeTraversalRect,
   buildingFootprintRect,
   worldObjectObstacleRect
-} from '../world/world-object-model.js?rev=object-catalog-placement-v1';
+} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   resolveWorldObjectPlacements
-} from '../world/world-object-placement-model.js?rev=object-catalog-placement-v1';
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   clamp,
   circleFitsOrientedRect,
@@ -19,7 +19,7 @@ import {
 import {
   boxFitsWorldAreaBoundary,
   circleFitsWorldAreaBoundary
-} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
+} from '../world/world-area-geometry.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   defaultTraversalRuleRegistry,
   resolveBaseSurfaceFeature,
