@@ -1,6 +1,6 @@
 import {
   resolveObjectLibraryFolder
-} from './object-library-taxonomy.js?rev=building-interiors-passages-ux-r1';
+} from './object-library-taxonomy.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 export const OBJECT_DEFINITION_SCHEMA_VERSION = 1;
 
