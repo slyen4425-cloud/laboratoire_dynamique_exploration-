@@ -3,7 +3,7 @@ import {
   resolveObjectLibraryCategory
 } from './object-library-taxonomy.js?rev=building-interiors-passages-ux-r1';
 
-export const USER_WORLD_OBJECT_SCHEMA_VERSION = 1;
+export const USER_WORLD_OBJECT_SCHEMA_VERSION = 2;
 export const USER_WORLD_OBJECT_MAX_BYTES = 8 * 1024 * 1024;
 export const USER_WORLD_OBJECT_MIN_DIMENSION = 16;
 export const USER_WORLD_OBJECT_MAX_DIMENSION = 4096;
@@ -32,6 +32,61 @@ function safeToken(value) {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function defaultCollisionRoleForKind(kind) {
+  return (
+    kind === 'rock' ||
+    kind === 'tree'
+  )
+    ? 'obstacle'
+    : 'passable';
+}
+
+function normalizedCollisionRole(
+  value,
+  kind
+) {
+  return value === 'obstacle' ||
+    value === 'passable'
+    ? value
+    : defaultCollisionRoleForKind(kind);
+}
+
+function userObjectCollision(role, kind) {
+  if (role !== 'obstacle') {
+    return Object.freeze({
+      role: 'passable'
+    });
+  }
+
+  const profile =
+    kind === 'tree'
+      ? {
+          widthRatio: 0.3,
+          heightRatio: 0.24,
+          offsetY: 0.28
+        }
+      : kind === 'rock'
+        ? {
+            widthRatio: 0.76,
+            heightRatio: 0.58,
+            offsetY: 0.1
+          }
+        : {
+            widthRatio: 0.72,
+            heightRatio: 0.62,
+            offsetY: 0
+          };
+
+  return Object.freeze({
+    role: 'obstacle',
+    shape: 'box',
+    widthRatio: profile.widthRatio,
+    heightRatio: profile.heightRatio,
+    offsetX: 0,
+    offsetY: profile.offsetY
+  });
 }
 
 export function validateUserWorldObjectMetadata({
@@ -88,6 +143,7 @@ export function createUserWorldObjectRecord({
   idToken,
   kind,
   label,
+  collisionRole,
   categoryId,
   folderId,
   folderLabel,
@@ -144,6 +200,11 @@ export function createUserWorldObjectRecord({
     assetId: `user.object.asset.${safeKind}.${token}`,
     kind: safeKind,
     label: safeLabel,
+    collisionRole:
+      normalizedCollisionRole(
+        collisionRole,
+        safeKind
+      ),
     categoryId: safeCategoryId,
     folderId: safeFolderId,
     folderLabel: safeFolderLabel || safeFolderId.split('/').at(-1),
@@ -164,6 +225,12 @@ export function objectDefinitionFromUserRecord(record) {
     throw new Error('Invalid user object record');
   }
 
+  const collisionRole =
+    normalizedCollisionRole(
+      record.collisionRole,
+      record.kind
+    );
+
   const definition = {
     schemaVersion: 1,
     id: record.definitionId,
@@ -181,7 +248,12 @@ export function objectDefinitionFromUserRecord(record) {
     baseSize: {
       width: record.baseSize.width,
       height: record.baseSize.height
-    }
+    },
+    collision:
+      userObjectCollision(
+        collisionRole,
+        record.kind
+      )
   };
 
   if (record.kind === 'building') {
