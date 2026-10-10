@@ -13,7 +13,7 @@ import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-tex
 import {
   clipWorldArea
 } from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=building-interiors-passages-ux-r1';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
@@ -39,14 +39,14 @@ import {
 } from './storage/user-material-store.js?rev=user-texture-import-v1';
 import {
   createUserWorldObjectStore
-} from './storage/user-world-object-store.js?rev=building-interiors-passages-ux-r1';
+} from './storage/user-world-object-store.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createWorldObjectAssetResolver,
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=building-interiors-passages-ux-r1';
+} from './assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createUserWorldObjectAssetResolver
-} from './assets/user-world-object-asset-resolver.js?rev=building-interiors-passages-ux-r1';
+} from './assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
 } from './world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1';
