@@ -14,7 +14,7 @@ import {
 import {
   advanceWildCreatureTowardTarget,
   planWildWanderTarget
-} from './wander-planner.js?rev=phase5-wild-wander-territory-v1-boundary';
+} from './wander-planner.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 function findArea(worldDocument, areaId) {
   return Array.isArray(worldDocument?.areas)
@@ -298,7 +298,8 @@ export function createWildWanderController(
           area,
           state.target,
           dt,
-          traversalRegistry
+          traversalRegistry,
+          { objectCatalog }
         );
 
         const homeZone = config.spawnZones.find(
