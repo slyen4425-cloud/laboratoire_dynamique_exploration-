@@ -24,8 +24,7 @@ export function stepMovement(
     entity,
     entity.x,
     entity.y,
-    traversalRegistry,
-    collisionContext
+    traversalRegistry
   );
 
   const speed =
@@ -58,7 +57,8 @@ export function stepMovement(
     entity,
     targetX,
     targetY,
-    traversalRegistry
+    traversalRegistry,
+    collisionContext
   );
 
   if (guided) {
