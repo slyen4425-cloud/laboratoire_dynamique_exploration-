@@ -41,7 +41,8 @@ export function isBlocked(
   entity,
   x,
   y,
-  traversalRegistry = defaultTraversalRuleRegistry
+  traversalRegistry = defaultTraversalRuleRegistry,
+  collisionContext = {}
 ) {
   const boundaryFootprint =
     entity?.boundaryFootprint;
@@ -71,7 +72,11 @@ export function isBlocked(
     }
   }
 
-  for (const object of resolveWorldObjectPlacements(world?.objects ?? [])) {
+  for (const object of resolveWorldObjectPlacements(
+    world?.objects ?? [],
+    collisionContext?.objectCatalog ??
+      undefined
+  )) {
     const obstacle =
       worldObjectObstacleRect(object);
 
@@ -122,7 +127,8 @@ export function resolveBridgeGuidedPosition(
   entity,
   targetX,
   targetY,
-  traversalRegistry = defaultTraversalRuleRegistry
+  traversalRegistry = defaultTraversalRuleRegistry,
+  collisionContext = {}
 ) {
   const targetFeature = resolveBaseSurfaceFeature(
     world,
@@ -135,7 +141,11 @@ export function resolveBridgeGuidedPosition(
     return null;
   }
 
-  for (const object of resolveWorldObjectPlacements(world?.objects ?? [])) {
+  for (const object of resolveWorldObjectPlacements(
+    world?.objects ?? [],
+    collisionContext?.objectCatalog ??
+      undefined
+  )) {
     if (
       object.kind !== 'bridge' ||
       object.traversal?.enabled !== true ||
@@ -179,7 +189,8 @@ export function resolveBridgeGuidedPosition(
         entity,
         guided.x,
         guided.y,
-        traversalRegistry
+        traversalRegistry,
+        collisionContext
       )
     ) {
       return guided;
