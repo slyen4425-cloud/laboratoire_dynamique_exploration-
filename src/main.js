@@ -275,26 +275,8 @@ if (encounterPreviewContinue) {
 }
 
 const livingWorldConfig = demoLivingWorldConfig;
-let wildCreatures = createInitialWildlife(
-  livingWorldConfig,
-  {
-    worldDocument: activeWorldDocument,
-    resolveActorDefinition: resolveDemoLivingActorDefinition,
-    seed: `${activeWorldDocument.id}:wildlife:v1`,
-    activationCount: 3,
-    traversalRegistry
-  }
-);
-
-const wildWanderController = createWildWanderController(
-  livingWorldConfig,
-  {
-    worldDocument: activeWorldDocument,
-    resolveActorDefinition: resolveDemoLivingActorDefinition,
-    seed: `${activeWorldDocument.id}:wander:v1`,
-    traversalRegistry
-  }
-);
+let wildCreatures = [];
+let wildWanderController = null;
 
 const userMaterialStore =
   createUserMaterialStore();
@@ -438,6 +420,37 @@ if (
     `Objets personnels introuvables sur cet appareil : ${missingUserObjectDefinitionIds.join(', ')}`
   );
 }
+
+wildCreatures = createInitialWildlife(
+  livingWorldConfig,
+  {
+    worldDocument: activeWorldDocument,
+    resolveActorDefinition:
+      resolveDemoLivingActorDefinition,
+    seed:
+      `${activeWorldDocument.id}:wildlife:v1`,
+    activationCount: 3,
+    traversalRegistry,
+    objectCatalog:
+      objectDefinitionCatalog
+  }
+);
+
+wildWanderController =
+  createWildWanderController(
+    livingWorldConfig,
+    {
+      worldDocument:
+        activeWorldDocument,
+      resolveActorDefinition:
+        resolveDemoLivingActorDefinition,
+      seed:
+        `${activeWorldDocument.id}:wander:v1`,
+      traversalRegistry,
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
 
 const userWorldObjectAssetResolver =
   createUserWorldObjectAssetResolver(
@@ -817,7 +830,11 @@ function update(dt) {
     input,
     dt,
     config.movement,
-    traversalRegistry
+    traversalRegistry,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
   );
 
   applyTriggeredPortal();
