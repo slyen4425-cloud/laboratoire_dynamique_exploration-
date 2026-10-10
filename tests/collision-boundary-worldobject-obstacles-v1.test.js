@@ -607,3 +607,127 @@ test('living runtime keeps using the same Collision World obstacle authority', a
     false
   );
 });
+
+
+test('public cache chain reaches boundary silhouette and WorldObject obstacle authorities', async () => {
+  const revision =
+    'collision-boundary-worldobject-obstacles-v1';
+
+  const [
+    builderHtml,
+    indexHtml,
+    builderMain,
+    runtimeMain,
+    config,
+    movement,
+    collision,
+    objectModel,
+    placementModel,
+    living
+  ] = await Promise.all([
+    source('builder.html'),
+    source('index.html'),
+    source('src/builder/world-builder-main.js'),
+    source('src/main.js'),
+    source('src/core/config.js'),
+    source('src/core/movement.js'),
+    source('src/core/collision.js'),
+    source('src/world/world-object-model.js'),
+    source('src/world/world-object-placement-model.js'),
+    source('src/living/living-runtime.js')
+  ]);
+
+  assert.match(
+    builderHtml,
+    new RegExp(
+      `world-builder-main\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    builderHtml,
+    new RegExp(
+      `index\\.html\\?builderTest=1&rev=${revision}`
+    )
+  );
+  assert.match(
+    indexHtml,
+    new RegExp(
+      `main\\.js\\?rev=${revision}`
+    )
+  );
+
+  assert.match(
+    builderMain,
+    new RegExp(
+      `user-object-library\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    builderMain,
+    new RegExp(
+      `object-definition-catalog\\.js\\?rev=${revision}`
+    )
+  );
+
+  assert.match(
+    runtimeMain,
+    new RegExp(
+      `core/config\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    runtimeMain,
+    new RegExp(
+      `core/movement\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    runtimeMain,
+    new RegExp(
+      `living/living-runtime\\.js\\?rev=${revision}`
+    )
+  );
+
+  assert.match(
+    config,
+    new RegExp(
+      `exploration-defaults\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    movement,
+    new RegExp(
+      `collision\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    living,
+    new RegExp(
+      `core/collision\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    collision,
+    new RegExp(
+      `world-object-model\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    collision,
+    new RegExp(
+      `world-object-placement-model\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    objectModel,
+    new RegExp(
+      `world-object-placement-model\\.js\\?rev=${revision}`
+    )
+  );
+  assert.match(
+    placementModel,
+    new RegExp(
+      `object-definition-catalog\\.js\\?rev=${revision}`
+    )
+  );
+});
