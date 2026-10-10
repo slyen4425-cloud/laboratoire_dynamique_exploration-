@@ -1,6 +1,5 @@
 import {
   bridgeTraversalRect,
-  buildingFootprintRect,
   worldObjectObstacleRect
 } from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
@@ -92,22 +91,6 @@ export function isBlocked(
       return true;
     }
 
-    if (object.kind === 'building') {
-      const footprint =
-        buildingFootprintRect(object);
-
-      if (
-        footprint &&
-        circleIntersectsOrientedRect(
-          x,
-          y,
-          entity.radius,
-          footprint
-        )
-      ) {
-        return true;
-      }
-    }
   }
 
   const traversal = resolveSurfaceTraversal(
