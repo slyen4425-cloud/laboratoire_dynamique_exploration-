@@ -283,3 +283,41 @@ Gate demandé :
 Le défaut rochers/objets franchissables reste volontairement **non corrigé dans ce lot** : il est déjà audité et réservé au prochain chantier `WorldObject Collision Footprints v1`.
 
 État : **GREEN TECHNIQUE / PREVALIDATION R2 — attente validation utilisateur de l'entrée intérieure. GREEN FINAL interdit avant verdict.**
+
+
+## Gate smartphone R2 — VALIDÉ utilisateur
+
+Retour utilisateur du 2026-10-10 :
+- correction entrée intérieur T : **validée** ;
+- défaut résiduel observé : le haut du sprite du héros peut encore entrer dans le noir avant que son petit cercle de collision atteigne la boundary ;
+- demande explicite : traiter en même temps les rochers/objets traversables.
+
+Le lot **Interior Geometry Authoring v1** est fonctionnellement validé sur son objectif forme/taille/Portal.
+Le problème visuel restant appartient au prochain lot Collision World : profil de clearance de silhouette contre les boundaries.
+
+## Prochain lot — Collision Boundary & WorldObject Obstacles v1
+
+Propriétaire unique : **Collision World**.
+
+Périmètre :
+- profil de collision de silhouette explicite pour acteur, indépendant des pixels/assets ;
+- boundary WorldArea bloque la silhouette avant qu'une partie importante du corps ne soit clipsée dans le noir ;
+- ObjectDefinition peut déclarer un comportement collision `obstacle` ou `passable` ;
+- rochers et arbres livrés deviennent des obstacles canoniques avec footprint logique ;
+- Collision World consomme le footprint générique, sans filtre codé en dur `kind === building` ;
+- import d'objet utilisateur expose explicitement **Obstacle / Traversable** ;
+- un import classé Obstacle reçoit une collision logique par défaut éditable ultérieurement ;
+- Building footprint et Bridge traversal restent compatibles.
+
+Interdits :
+- déduire la collision depuis les pixels du sprite/image ;
+- recopier l'objet dans `WorldArea.obstacles[]` ;
+- collision dans Renderer ;
+- modifier textures/assets dans ce lot.
+
+Décision d'autorité :
+- `WorldArea.obstacles[]` reste réservé aux obstacles géométriques autonomes ;
+- un WorldObject classé obstacle conserve **sa propre collision dans son ObjectDefinition** ;
+- le placement WorldObject reste la seule position/rotation/scale de cet obstacle.
+
+Statut : Interior Geometry Authoring v1 -> **VALIDÉ utilisateur / checkpoint final à créer**, puis ouverture du lot Collision.
