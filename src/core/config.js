@@ -1,7 +1,7 @@
 import {
   EXPLORATION_CONFIG_SCHEMA_VERSION,
   explorationDefaults
-} from '../config/exploration-defaults.js';
+} from '../config/exploration-defaults.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {}) {
   return Number.isFinite(value) && value >= min && value <= max ? value : fallback;
