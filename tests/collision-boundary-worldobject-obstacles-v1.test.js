@@ -908,3 +908,28 @@ test('Collision World delegates legacy building obstruction to one generic World
     'an explicit passable ObjectDefinition must not reactivate legacy footprint'
   );
 });
+
+
+test('R2 public cache graph reaches generic obstacle resolver from Builder and runtime', async () => {
+  const [index, builder, main, builderMain, movement, living, collision] =
+    await Promise.all([
+      source('index.html'),
+      source('builder.html'),
+      source('src/main.js'),
+      source('src/builder/world-builder-main.js'),
+      source('src/core/movement.js'),
+      source('src/living/living-runtime.js'),
+      source('src/core/collision.js')
+    ]);
+
+  const rev = 'collision-boundary-worldobject-obstacles-v1-r2';
+
+  assert.ok(index.includes('main.js?rev=' + rev));
+  assert.ok(builder.includes('world-builder-main.js?rev=' + rev));
+  assert.ok(main.includes('movement.js?rev=' + rev));
+  assert.ok(main.includes('living-runtime.js?rev=' + rev));
+  assert.ok(builderMain.includes('world-object-model.js?rev=' + rev));
+  assert.ok(movement.includes('collision.js?rev=' + rev));
+  assert.ok(living.includes('collision.js?rev=' + rev));
+  assert.ok(collision.includes('world-object-model.js?rev=' + rev));
+});
