@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: interior-geometry-authoring-v1-r2
+# preview-revision: collision-boundary-worldobject-obstacles-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Interior Geometry Authoring v1 R2
+      - name: Checkout Exploration Collision Boundary WorldObject Obstacles v1
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-interior-geometry-authoring-v1-r2-2026-10-10
+          ref: preview/exploration-collision-boundary-worldobject-obstacles-v1-2026-10-10
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
