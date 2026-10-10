@@ -1,13 +1,13 @@
 import {
   bridgeVisualRect,
   worldObjectVisualRect
-} from '../world/world-object-model.js?rev=building-interiors-passages-ux-r1';
+} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   resolveWorldObjectPlacements
-} from '../world/world-object-placement-model.js?rev=building-interiors-passages-ux-r1';
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
