@@ -51,7 +51,8 @@ export function createInitialWildlife(
     seed = 'living-world',
     activationCount = 0,
     traversalRegistry = defaultTraversalRuleRegistry,
-    collisionCheck = isBlocked
+    collisionCheck = isBlocked,
+    objectCatalog = null
   } = {}
 ) {
   const config = normalizeLivingWorldConfig(rawConfig);
@@ -99,7 +100,8 @@ export function createInitialWildlife(
           probe,
           candidate.x,
           candidate.y,
-          traversalRegistry
+          traversalRegistry,
+          { objectCatalog }
         );
       }
     });
@@ -195,7 +197,8 @@ export function createWildWanderController(
     resolveActorDefinition,
     seed = 'wild-wander',
     traversalRegistry = defaultTraversalRuleRegistry,
-    collisionCheck = isBlocked
+    collisionCheck = isBlocked,
+    objectCatalog = null
   } = {}
 ) {
   const config = normalizeLivingWorldConfig(rawConfig);
@@ -212,7 +215,8 @@ export function createWildWanderController(
       probe,
       candidate.x,
       candidate.y,
-      traversalRegistry
+      traversalRegistry,
+      { objectCatalog }
     );
   }
 
