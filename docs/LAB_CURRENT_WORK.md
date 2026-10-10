@@ -410,3 +410,86 @@ CI complète puis preview smartphone :
 - objet importé Obstacle ;
 - objet importé Traversable ;
 - Bridge/Building non régressés.
+
+
+## TDD / implémentation — Collision Boundary & WorldObject Obstacles v1
+
+### RED fonctionnel
+
+- contrat TDD : `62698a345b1a39a78b276f877260698adab010ba`
+- CI : `38023628937` — **FAILURE attendue**
+- couverture :
+  - silhouette acteur asymétrique contre boundary ;
+  - déplacement vrai chemin au mur haut ;
+  - fallback cercle historique ;
+  - rock/tree natifs obstacle ;
+  - footprint WorldObject orienté/scalé ;
+  - Building historique / Bridge non régressés ;
+  - import utilisateur Obstacle / Traversable ;
+  - migration record utilisateur v1 ;
+  - living runtime reste consommateur du même Collision World.
+
+### Implémentation fonctionnelle
+
+Acteur / boundary :
+- `boxFitsWorldAreaBoundary()` : `422540987d26102d874ea57b81e430e4f97edfdb`
+- profil joueur `boundaryFootprint` : `08fa32c4643fede65a7bd593690c53a40070ef54`
+- normalisation config : `5578dad812688fcd00a40fd972717a5f4d8501e0`
+- raccord runtime : `54ee99b9a74db3fbb3e7944e305e7cf6c248f324`
+
+WorldObject obstacle :
+- rock/tree natifs déclarés obstacle dans ObjectDefinition : `7237ba821fbf7a2000d006272d587203b108a0de`
+- résolution placement -> collision définition : `cadb26fa0865ec0cea698ea5098a65b745424a06`
+- footprint générique `worldObjectObstacleRect()` : `f3c2d4871d74326090da5e3ad242973467ee72e4`
+- Collision World générique : `aff488ebbe947f3e106932018db1e6d96454142c`
+
+Import utilisateur :
+- record v2 + `collisionRole` + migration v1 : `4250cefae99e0bbb91094d18d851399388810e1e`
+- UI Obstacle / Traversable : `022b3e8a1513d489818dd977a516196a965d0197`
+- raccord Builder : `d0a12e192b8726cd349dc83f481784c06ff9c143`
+- ajustement des nouvelles sentinelles géométriques : `a798a386c47ae18762b8e54ce5c3b7779ec314ca`
+- CI fonctionnelle intermédiaire : `38023867529` — **SUCCESS, 425/425**.
+
+### Cache public
+
+- RED cache : `274622954da5f28b6360cd33e87b836496b32b1c`
+- CI : `38023908679` — **FAILURE attendue**
+- révision publique : `collision-boundary-worldobject-obstacles-v1`
+- chaîne Builder/runtime/Core/WorldObject alignée ;
+- sentinelles historiques réconciliées sans retirer leur couverture ;
+- CI chaîne cache : `38024238259` — **SUCCESS, 426/426**.
+
+### Vrai chemin import utilisateur
+
+Un dernier audit avant publication a détecté que le Collision World utilisait encore par défaut le catalogue natif, alors que les imports sont résolus par le catalogue composé runtime.
+
+TDD :
+- RED : `f57cf1caac959cbe4c92081f608d3f6924b2c2e2`
+- CI : `38024297618` — **FAILURE attendue**.
+
+Correctif :
+- injection explicite `collisionContext.objectCatalog` dans Collision World ;
+- `stepMovement()` propage le contexte ;
+- wildlife spawn + choix de cible + déplacement réel utilisent le même catalogue composé ;
+- le catalogue runtime reste un resolver injecté, jamais une donnée persistée dans WorldDocument ;
+- raccord final runtime : `4a8d51c0dc2b3a1d176d28085db5f38858d1b0ee`.
+
+CI finale fonctionnelle :
+- `38024391220` — **SUCCESS**
+- **428/428 tests GREEN**
+- `npm run check` GREEN.
+
+## Comportement livré
+
+- le héros est arrêté par la boundary avant que sa tête / haut de silhouette entre dans le noir ;
+- sans profil de silhouette, une entité conserve le cercle historique ;
+- rochers et arbres natifs bloquent le passage via leur ObjectDefinition ;
+- footprint suit placement X/Y, rotation et scale ;
+- Building conserve son footprint historique ;
+- Bridge conserve son corridor de traversée et ne devient pas obstacle ;
+- import utilisateur : choix explicite **Obstacle — bloque le passage** / **Traversable** ;
+- anciens records utilisateur sans champ collision : rock/tree -> obstacle, autres -> passable ;
+- aucun calcul de collision depuis PNG/WebP/alpha/pixels ;
+- aucun WorldObject n'est recopié dans `WorldArea.obstacles[]`.
+
+État : **GREEN TECHNIQUE — documentation/checkpoint/preview requis avant validation smartphone. GREEN FINAL interdit avant verdict utilisateur.**
