@@ -903,3 +903,86 @@ Compatibilité :
 - les extérieurs historiques restent rectangulaires et gardent leur comportement ;
 - import/export WorldDocument préserve la boundary ;
 - modifier une texture ne modifie jamais la boundary.
+
+
+## Collision Boundary & WorldObject Obstacles v1
+
+### Silhouette acteur contre la boundary
+
+La boundary de WorldArea reste l'unique géométrie de limite.
+
+Chaîne canonique :
+
+```text
+Actor/Exploration config
+  -> radius
+  -> boundaryFootprint { left, right, top, bottom } optionnel
+WorldArea.boundary
+  -> WorldArea Geometry
+  -> Collision World
+```
+
+Règles :
+- `boundaryFootprint` est une donnée gameplay explicite, pas une mesure du sprite ;
+- le renderer, l'alpha et les pixels ne fournissent jamais de collision ;
+- si le profil est absent, le cercle `radius` historique reste le fallback ;
+- le profil asymétrique permet notamment de garder la tête du héros à l'intérieur d'un mur haut ;
+- la même boundary canonique reste utilisée pour les formes Rectangle/L/T/Croix.
+
+### Collision des WorldObjects
+
+La collision intrinsèque d'un WorldObject appartient à son **ObjectDefinition**.
+
+```text
+ObjectDefinition.collision
+        +
+WorldObject placement transform
+        ↓
+worldObjectObstacleRect()
+        ↓
+Collision World
+```
+
+Contrat v1 :
+- `collision.role = obstacle | passable` ;
+- obstacle v1 : `shape = box` + ratios/offsets logiques ;
+- position, rotation et scale viennent uniquement du placement canonique ;
+- la taille physique du fichier image ne devient jamais une collision runtime ;
+- `WorldArea.obstacles[]` reste réservé aux obstacles géométriques autonomes et ne reçoit aucune copie d'un WorldObject ;
+- Building garde son footprint historique ;
+- Bridge garde son traversal corridor et n'est pas transformé silencieusement en obstacle.
+
+### Catalogue composé runtime
+
+Le WorldDocument stocke toujours seulement `objectDefinitionId`.
+
+Les définitions natives + utilisateur sont résolues par un catalogue composé injecté au runtime :
+
+```text
+WorldDocument placement reference
+        ↓
+Composed Object Catalog
+        ↓
+Collision World context
+```
+
+Le catalogue n'est jamais sérialisé dans le WorldDocument.
+
+Le même contexte est utilisé par :
+- mouvement héros ;
+- validation de spawn wildlife ;
+- sélection de cible wildlife ;
+- déplacement réel wildlife.
+
+### Import utilisateur
+
+Le créateur classe explicitement un import :
+- **Obstacle — bloque le passage** ;
+- **Traversable**.
+
+Le record utilisateur v2 conserve cette intention sémantique. Compatibilité v1 :
+- `rock` / `tree` sans champ -> obstacle ;
+- autres anciens imports -> passable ;
+- les Buildings conservent leur contrat historique séparé.
+
+Cette classification décrit le gameplay ; elle n'est ni un dossier visuel ni une analyse de l'image.
