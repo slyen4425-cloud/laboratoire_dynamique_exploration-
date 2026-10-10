@@ -158,8 +158,22 @@ test('true movement path cannot push actor head through top boundary', () => {
 
   assert.equal(
     entity.y,
-    86,
-    'movement must reject a target that would clip the silhouette'
+    76,
+    'actor may move until the semantic head clearance exactly touches the wall'
+  );
+
+  stepMovement(
+    world,
+    entity,
+    { x: 0, y: -1 },
+    0.1,
+    { maxSpeed: 100 }
+  );
+
+  assert.equal(
+    entity.y,
+    76,
+    'movement beyond the wall must be rejected'
   );
 });
 
@@ -260,8 +274,12 @@ test('resolved obstacle footprint follows one WorldObject placement transform', 
     object.collision.role,
     'obstacle'
   );
-  assert.equal(rect.x, 300);
-  assert.equal(rect.y > 220, true);
+  assert.equal(
+    rect.x < 300,
+    true,
+    'local +Y collision offset rotates toward world -X at 90 degrees'
+  );
+  assert.equal(rect.y, 220);
   assert.equal(
     rect.rotation,
     Math.PI / 2
