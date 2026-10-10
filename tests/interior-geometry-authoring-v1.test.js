@@ -324,6 +324,10 @@ test('runtime and Builder reuse one read-only WorldArea clip instead of duplicat
 test('public cache chain reaches canonical interior geometry through Builder and runtime', async () => {
   const revision =
     'interior-geometry-authoring-v1-r2';
+  const publicRevision =
+    'collision-boundary-worldobject-obstacles-v1';
+  const collisionRevision =
+    'collision-boundary-worldobject-obstacles-v1';
 
   const [
     builderHtml,
@@ -354,31 +358,31 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     builderHtml,
     new RegExp(
-      `world-builder-main\\.js\\?rev=${revision}`
+      `world-builder-main\\.js\\?rev=${publicRevision}`
     )
   );
   assert.match(
     builderHtml,
     new RegExp(
-      `world-builder\\.css\\?rev=${revision}`
+      `world-builder\\.css\\?rev=${publicRevision}`
     )
   );
   assert.match(
     builderHtml,
     new RegExp(
-      `index\\.html\\?builderTest=1&rev=${revision}`
+      `index\\.html\\?builderTest=1&rev=${publicRevision}`
     )
   );
   assert.match(
     indexHtml,
     new RegExp(
-      `main\\.js\\?rev=${revision}`
+      `main\\.js\\?rev=${publicRevision}`
     )
   );
   assert.match(
     indexHtml,
     new RegExp(
-      `style\\.css\\?rev=${revision}`
+      `style\\.css\\?rev=${publicRevision}`
     )
   );
 
@@ -404,7 +408,7 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     runtimeMain,
     new RegExp(
-      `core/movement\\.js\\?rev=${revision}`
+      `core/movement\\.js\\?rev=${collisionRevision}`
     )
   );
   assert.match(
@@ -416,19 +420,19 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     runtimeMain,
     new RegExp(
-      `living/living-runtime\\.js\\?rev=${revision}`
+      `living/living-runtime\\.js\\?rev=${collisionRevision}`
     )
   );
   assert.match(
     movement,
     new RegExp(
-      `collision\\.js\\?rev=${revision}`
+      `collision\\.js\\?rev=${collisionRevision}`
     )
   );
   assert.match(
     living,
     new RegExp(
-      `core/collision\\.js\\?rev=${revision}`
+      `core/collision\\.js\\?rev=${collisionRevision}`
     )
   );
 });
