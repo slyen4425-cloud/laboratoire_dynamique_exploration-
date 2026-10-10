@@ -7,6 +7,20 @@ function finiteNumber(value, fallback, { min = -Infinity, max = Infinity } = {})
   return Number.isFinite(value) && value >= min && value <= max ? value : fallback;
 }
 
+function normalizeBoundaryFootprint(raw, fallback) {
+  const source =
+    raw && typeof raw === 'object' ? raw : {};
+  const base =
+    fallback && typeof fallback === 'object' ? fallback : {};
+
+  return {
+    left: finiteNumber(source.left, base.left ?? 0, { min: 0, max: 240 }),
+    right: finiteNumber(source.right, base.right ?? 0, { min: 0, max: 240 }),
+    top: finiteNumber(source.top, base.top ?? 0, { min: 0, max: 240 }),
+    bottom: finiteNumber(source.bottom, base.bottom ?? 0, { min: 0, max: 240 })
+  };
+}
+
 export function normalizeExplorationConfig(raw = {}) {
   const config = raw && typeof raw === 'object' ? raw : {};
 
@@ -17,7 +31,12 @@ export function normalizeExplorationConfig(raw = {}) {
         config.player?.radius,
         explorationDefaults.player.radius,
         { min: 1 }
-      )
+      ),
+      boundaryFootprint:
+        normalizeBoundaryFootprint(
+          config.player?.boundaryFootprint,
+          explorationDefaults.player.boundaryFootprint
+        )
     },
     movement: {
       maxSpeed: finiteNumber(
