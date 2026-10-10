@@ -84,3 +84,17 @@ Les futurs éditeurs suivent la séparation définie dans
 | Composition campagne future | Campaign Editor | références mondes/niveaux/quêtes/règles | CampaignDocument versionné futur | devenir propriétaire des ressources référencées |
 
 Tout nouvel éditeur doit être classé comme producteur de **définitions** ou de **composition par références** avant implémentation.
+
+
+## Collision Boundary & WorldObject Obstacles v1 — ownership
+
+| Responsabilité | Propriétaire | Donnée / entrée | Consommateur | Interdit |
+|---|---|---|---|---|
+| Profil silhouette de limite acteur | Actor / Exploration config | `boundaryFootprint` explicite + radius fallback | Collision World | Renderer/pixels décident la collision |
+| Boundary locale | World Area Model | `WorldArea.boundary` | Collision World | UI/renderer duplique la forme |
+| Collision intrinsèque WorldObject | ObjectDefinition / Object Catalog | `collision.role/shape/ratios/offsets` | Collision World | placement ou renderer invente le footprint |
+| Transform obstacle placé | WorldObject placement | X/Y/rotation/scale | WorldObject Model -> Collision World | copie dans `WorldArea.obstacles[]` |
+| Classification import obstacle | User Object Library / Object Definition authoring | `collisionRole` | Object Catalog | déduction depuis PNG/WebP/alpha |
+| Résolution defs utilisateur runtime | Composed Object Catalog adapter | ids natifs + records utilisateur | Collision World / renderer | persister le catalogue dans WorldDocument |
+| Building collision historique | ObjectDefinition Building | footprint | Collision World | double footprint concurrent |
+| Bridge traversable | ObjectDefinition Bridge + placement override | traversal corridor | Collision World / Traversal | convertir Bridge en obstacle générique |
