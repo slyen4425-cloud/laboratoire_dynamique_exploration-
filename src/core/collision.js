@@ -1,6 +1,7 @@
 import {
   bridgeTraversalRect,
-  buildingFootprintRect
+  buildingFootprintRect,
+  worldObjectObstacleRect
 } from '../world/world-object-model.js?rev=object-catalog-placement-v1';
 import {
   resolveWorldObjectPlacements
@@ -16,6 +17,7 @@ import {
   pointInOrientedRect
 } from './geometry.js?rev=surface-traversal-replay-v1';
 import {
+  boxFitsWorldAreaBoundary,
   circleFitsWorldAreaBoundary
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
@@ -41,14 +43,25 @@ export function isBlocked(
   y,
   traversalRegistry = defaultTraversalRuleRegistry
 ) {
-  if (
-    !circleFitsWorldAreaBoundary(
-      world,
-      x,
-      y,
-      entity.radius
-    )
-  ) {
+  const boundaryFootprint =
+    entity?.boundaryFootprint;
+  const boundaryFits =
+    boundaryFootprint &&
+    typeof boundaryFootprint === 'object'
+      ? boxFitsWorldAreaBoundary(
+          world,
+          x,
+          y,
+          boundaryFootprint
+        )
+      : circleFitsWorldAreaBoundary(
+          world,
+          x,
+          y,
+          entity.radius
+        );
+
+  if (!boundaryFits) {
     return true;
   }
 
@@ -59,20 +72,36 @@ export function isBlocked(
   }
 
   for (const object of resolveWorldObjectPlacements(world?.objects ?? [])) {
-    if (object.kind !== 'building') continue;
-
-    const footprint = buildingFootprintRect(object);
+    const obstacle =
+      worldObjectObstacleRect(object);
 
     if (
-      footprint &&
+      obstacle &&
       circleIntersectsOrientedRect(
         x,
         y,
         entity.radius,
-        footprint
+        obstacle
       )
     ) {
       return true;
+    }
+
+    if (object.kind === 'building') {
+      const footprint =
+        buildingFootprintRect(object);
+
+      if (
+        footprint &&
+        circleIntersectsOrientedRect(
+          x,
+          y,
+          entity.radius,
+          footprint
+        )
+      ) {
+        return true;
+      }
     }
   }
 
