@@ -2,15 +2,15 @@
 
 > ÉTAT ACTIF — 2026-10-08
 >
-> Chantier : **Interior Geometry Authoring v1**
+> Chantier : **Collision Boundary & WorldObject Obstacles v1**
 >
-> Branche : `work/exploration-interior-geometry-authoring-v1-2026-10-08`
+> Branche : `work/exploration-collision-boundary-worldobject-obstacles-v1-2026-10-10`
 >
-> Base GREEN exacte : `1585de871136ffbb9858cedae0b6a0df2e679c8d`
+> Base GREEN exacte : `ab3ea4b761050977d181d424eb5bfb6439dd249e`
 >
-> Checkpoint précédent validé : `checkpoint/exploration-mobile-landscape-area-navigation-ux-v1-green-2026-10-08`
+> Checkpoint précédent validé : `checkpoint/exploration-interior-geometry-authoring-v1-green-2026-10-10`
 >
-> Checkpoint de départ : `checkpoint/exploration-start-interior-geometry-authoring-v1-2026-10-08`
+> Checkpoint de départ : `checkpoint/exploration-start-collision-boundary-worldobject-obstacles-v1-2026-10-10`
 
 ## Validation précédente
 
@@ -321,3 +321,92 @@ Décision d'autorité :
 - le placement WorldObject reste la seule position/rotation/scale de cet obstacle.
 
 Statut : Interior Geometry Authoring v1 -> **VALIDÉ utilisateur / checkpoint final à créer**, puis ouverture du lot Collision.
+
+
+# Lot actif — Collision Boundary & WorldObject Obstacles v1
+
+Date : 2026-10-10
+
+## Retour utilisateur déclencheur
+
+- la R2 Interior Geometry est validée ;
+- dans un intérieur, le haut du héros peut encore être clipsé par le noir car la boundary ne teste que le petit cercle de pieds ;
+- rochers et autres objets décoratifs sont traversables ;
+- demande produit : un modèle importé classé **Obstacle** doit automatiquement utiliser la collision moteur.
+
+## Propriétaire
+
+**Collision World**.
+
+## Contrat acteur
+
+Le renderer ne fournit aucune géométrie gameplay.
+
+L'entité peut déclarer un profil gameplay :
+`boundaryFootprint = { left, right, top, bottom }`.
+
+Fallback :
+- sans profil -> cercle historique `radius` ;
+- avec profil -> la silhouette logique doit tenir dans la WorldArea boundary avant mouvement.
+
+Le héros démo aura un profil explicite cohérent avec sa silhouette de jeu, sans lecture des pixels/alpha.
+
+## Contrat WorldObject
+
+L'ObjectDefinition peut déclarer :
+`collision: { role: 'obstacle'|'passable', shape: 'box', widthRatio, heightRatio, offsetX, offsetY }`.
+
+Règles :
+- position/rotation/scale viennent uniquement du placement WorldObject ;
+- Collision World transforme le footprint logique depuis la définition ;
+- Renderer ne calcule jamais la collision ;
+- aucun duplicata dans `WorldArea.obstacles[]` ;
+- Building footprint historique reste supporté ;
+- Bridge traversal reste prioritaire et traversable ;
+- rock/tree natifs -> obstacle ;
+- door/stairs/decor restent passables par défaut tant qu'une définition ne dit pas le contraire.
+
+## Import utilisateur
+
+Le panneau d'import expose :
+- **Obstacle — bloque le passage**
+- **Traversable**
+
+Le record local versionné conserve cette intention.
+Les anciens records sans ce champ sont migrés de façon compatible :
+- rock/tree -> obstacle ;
+- autres -> passable, sauf Building qui conserve son contrat historique.
+
+## TDD RED obligatoire
+
+1. silhouette acteur bloque avant le mur haut ;
+2. mouvement vrai chemin ne peut pas pousser la tête dans la boundary ;
+3. sans profil, cercle historique inchangé ;
+4. rochers/arbres natifs déclarent obstacle ;
+5. Collision World bloque leur footprint orienté/scalé ;
+6. Building historique toujours bloquant ;
+7. Bridge toujours franchissable selon traversal ;
+8. import utilisateur Obstacle -> ObjectDefinition collision obstacle ;
+9. import Traversable -> aucune collision bloquante ;
+10. record v1 ancien -> migration déterministe ;
+11. UI import expose Obstacle/Traversable ;
+12. aucune dépendance asset/pixels dans Collision World ;
+13. living creatures consomment le même Collision World.
+
+## Hors périmètre
+
+- rendu d'occlusion derrière les murs ;
+- éditeur fin de footprint ;
+- collision pixel-perfect ;
+- nouvelles textures/assets ;
+- combat ;
+- Zombicide-40k.
+
+## Gate
+
+CI complète puis preview smartphone :
+- mur haut intérieur ;
+- rochers/arbres ;
+- objet importé Obstacle ;
+- objet importé Traversable ;
+- Bridge/Building non régressés.
