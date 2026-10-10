@@ -1095,6 +1095,31 @@ function objectDefinitionsForFolder(
   );
 }
 
+function defaultUserObjectCollisionRole(
+  kind
+) {
+  return (
+    kind === 'rock' ||
+    kind === 'tree' ||
+    kind === 'building'
+  )
+    ? 'obstacle'
+    : 'passable';
+}
+
+function syncUserObjectCollisionRole(
+  kind =
+    $('user-object-kind')?.value
+) {
+  const select =
+    $('user-object-collision');
+  if (!select) return;
+
+  select.value =
+    defaultUserObjectCollisionRole(kind);
+}
+
+
 function refreshUserWorldObjectControls() {
   const select =
     $('user-object-library');
@@ -1353,6 +1378,8 @@ async function importUserWorldObjectFromControls() {
       idToken: token,
       kind,
       label,
+      collisionRole:
+        $('user-object-collision').value,
       categoryId:
         folder.categoryId,
       folderId:
@@ -6280,7 +6307,17 @@ $('user-object-folder').addEventListener(
         folder.defaultKind === 'bridge'
           ? 'decor'
           : folder.defaultKind;
+      syncUserObjectCollisionRole(
+        $('user-object-kind').value
+      );
     }
+  }
+);
+
+$('user-object-kind').addEventListener(
+  'change',
+  () => {
+    syncUserObjectCollisionRole();
   }
 );
 
