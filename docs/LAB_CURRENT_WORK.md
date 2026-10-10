@@ -559,3 +559,26 @@ un cas spécial `object.kind === 'building'` malgré le nouveau résolveur gén�
 
 Statut : **GREEN TECHNIQUE R2 ; nouvelle publication et gate smartphone requis.
 GREEN FINAL interdit avant confirmation utilisateur.**
+
+
+## Publication R2 — gate smartphone
+
+- SHA checkpoint/preview R2 : `1a69029adb43e043f0f9fee06039ce09e173da73`.
+- CI work docs R2 : `38052582560` — **SUCCESS**.
+- Checkpoint :
+  `checkpoint/exploration-collision-boundary-worldobject-obstacles-v1-prevalidation-r2-green-2026-10-10`.
+- CI checkpoint : `38052600633` — **SUCCESS**.
+- Preview :
+  `preview/exploration-collision-boundary-worldobject-obstacles-v1-r2-2026-10-10`.
+- Publication infrastructure **seule** : PR #108 (merge squash main
+  `96dc06430e06e14ef182184e9c7e4f69c4637b01`).
+- Pages R2 : `38052658975` — **SUCCESS**.
+- Aucun gameplay Collision/Builder du lot n'a été mergé sur `main`.
+- Vérification filiation : `11d1c4f` est ancêtre du checkpoint R2 ;
+  comparaison GREEN -> R2 : 58 commits ahead, 0 behind.
+- Lien de gate :
+  `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=collision-boundary-worldobject-obstacles-v1-r2`.
+
+Verdict : **GREEN TECHNIQUE / PREVALIDATION R2**.
+Attente de validation smartphone utilisateur ; **pas de GREEN FINAL** avant verdict.
+Les textures restent hors du présent lot.
