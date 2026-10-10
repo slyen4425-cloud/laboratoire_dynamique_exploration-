@@ -493,3 +493,30 @@ CI finale fonctionnelle :
 - aucun WorldObject n'est recopié dans `WorldArea.obstacles[]`.
 
 État : **GREEN TECHNIQUE — documentation/checkpoint/preview requis avant validation smartphone. GREEN FINAL interdit avant verdict utilisateur.**
+
+
+## Prévalidation publiée — Collision Boundary & WorldObject Obstacles v1
+
+- SHA checkpoint/preview : `5b1c456de5611890d77bf523de35f9ad60112d82`
+- CI work documentée : `38024519933` — **SUCCESS**
+- checkpoint : `checkpoint/exploration-collision-boundary-worldobject-obstacles-v1-prevalidation-green-2026-10-10`
+- CI checkpoint : `38024549851` — **SUCCESS**
+- preview : `preview/exploration-collision-boundary-worldobject-obstacles-v1-2026-10-10`
+- publication infrastructure uniquement : PR #107
+- merge infra `main` : `1776c54cb53be686660e5963812e6778b0a4b03a`
+- Pages : `38024603684` — **SUCCESS**
+- aucun gameplay du lot n'a été mergé dans `main`.
+
+Lien de gate :
+`https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=collision-boundary-worldobject-obstacles-v1`
+
+Gate smartphone :
+1. entrer dans un intérieur et marcher vers le mur du haut : la silhouette doit être arrêtée avant que le haut du corps entre dans le noir ;
+2. extérieur : tenter de traverser rocher et arbre natifs ;
+3. vérifier Building + Portal ;
+4. traverser un Bridge ;
+5. importer un modèle avec Collision = Obstacle, le placer et tester le blocage ;
+6. importer/classer un modèle Traversable et vérifier le passage ;
+7. vérifier formes T/L/Croix et navigation intérieur/extérieur.
+
+État : **GREEN TECHNIQUE / PREVALIDATION — attente du verdict smartphone. GREEN FINAL interdit avant validation utilisateur.**
