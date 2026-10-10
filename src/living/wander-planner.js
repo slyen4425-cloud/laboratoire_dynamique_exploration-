@@ -3,7 +3,7 @@ import {
 } from '../core/surface-traversal.js?rev=surface-traversal-replay-v1';
 import {
   stepMovement
-} from '../core/movement.js?rev=surface-traversal-replay-v1';
+} from '../core/movement.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createWildCreatureEntity,
   normalizeLivingWorldConfig
@@ -144,7 +144,8 @@ export function advanceWildCreatureTowardTarget(
   area,
   target,
   dt,
-  traversalRegistry = defaultTraversalRuleRegistry
+  traversalRegistry = defaultTraversalRuleRegistry,
+  collisionContext = {}
 ) {
   if (
     !entity ||
@@ -189,7 +190,8 @@ export function advanceWildCreatureTowardTarget(
     { x: dx, y: dy },
     safeDt,
     { maxSpeed: boundedSpeed },
-    traversalRegistry
+    traversalRegistry,
+    collisionContext
   );
 
   const movedDistance = Math.hypot(
