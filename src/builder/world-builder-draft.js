@@ -7,7 +7,7 @@ import {
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
