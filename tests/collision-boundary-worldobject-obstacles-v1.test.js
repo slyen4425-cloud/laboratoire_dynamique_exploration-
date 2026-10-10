@@ -731,3 +731,118 @@ test('public cache chain reaches boundary silhouette and WorldObject obstacle au
     )
   );
 });
+
+
+test('true user obstacle path injects composed Object Catalog into Collision World', async () => {
+  const {
+    createComposedObjectDefinitionCatalog
+  } = await import(
+    '../src/objects/object-definition-catalog.js'
+  );
+
+  const record =
+    createUserWorldObjectRecord({
+      idToken: 'blocking-import',
+      kind: 'rock',
+      label: 'Rocher importé',
+      collisionRole: 'obstacle',
+      categoryId: 'rocks',
+      folderId: 'rocks/general',
+      folderLabel: 'Rochers',
+      mimeType: 'image/png',
+      width: 512,
+      height: 512,
+      bytes: 1000,
+      sourceName: 'blocking.png',
+      blob: new Blob(['x'], {
+        type: 'image/png'
+      }),
+      createdAt:
+        '2026-10-10T00:00:00Z'
+    });
+  const catalog =
+    createComposedObjectDefinitionCatalog([
+      objectDefinitionFromUserRecord(
+        record
+      )
+    ]);
+  const world =
+    groundWorld({
+      objects: [
+        {
+          id: 'user-rock',
+          objectDefinitionId:
+            record.definitionId,
+          transform: {
+            x: 300,
+            y: 220,
+            rotationDeg: 0,
+            scaleX: 1,
+            scaleY: 1
+          }
+        }
+      ]
+    });
+  const entity = {
+    radius: 14,
+    locomotion: {
+      modes: ['ground']
+    }
+  };
+
+  assert.equal(
+    isBlocked(
+      world,
+      entity,
+      300,
+      230
+    ),
+    false,
+    'native-only catalog cannot resolve a user placement'
+  );
+
+  assert.equal(
+    isBlocked(
+      world,
+      entity,
+      300,
+      230,
+      undefined,
+      {
+        objectCatalog: catalog
+      }
+    ),
+    true,
+    'composed user catalog must activate the imported obstacle footprint'
+  );
+});
+
+test('runtime injects composed Object Catalog into hero and living collision paths', async () => {
+  const [runtime, movement, living] =
+    await Promise.all([
+      source('src/main.js'),
+      source('src/core/movement.js'),
+      source('src/living/living-runtime.js')
+    ]);
+
+  assert.match(
+    runtime,
+    /stepMovement\([\s\S]*objectCatalog:\s*objectDefinitionCatalog/
+  );
+  assert.match(
+    runtime,
+    /createInitialWildlife\([\s\S]*objectCatalog:\s*objectDefinitionCatalog/
+  );
+  assert.match(
+    runtime,
+    /createWildWanderController\([\s\S]*objectCatalog:\s*objectDefinitionCatalog/
+  );
+  assert.match(
+    movement,
+    /collisionContext/
+  );
+  assert.match(
+    living,
+    /objectCatalog/
+  );
+});
