@@ -321,3 +321,24 @@ Décision d'autorité :
 - le placement WorldObject reste la seule position/rotation/scale de cet obstacle.
 
 Statut : Interior Geometry Authoring v1 -> **VALIDÉ utilisateur / checkpoint final à créer**, puis ouverture du lot Collision.
+
+
+## Validation finale utilisateur — Interior Geometry Authoring v1
+
+Validation reçue le 2026-10-10 :
+> « Ok je valide, tout est ok. »
+
+Verdict final :
+- forme/taille intérieures : validées ;
+- entrée/sortie Portal sur formes T/L/Croix : validées ;
+- correction R2 d'arrivée intérieure : validée ;
+- lot **Interior Geometry Authoring v1** : **GREEN FINAL**.
+
+Dernière CI avant checkpoint final :
+- commit de validation/préparation collision : `ab3ea4b761050977d181d424eb5bfb6439dd249e`
+- CI : `38023506983` — **SUCCESS**.
+
+Le prochain chantier reste :
+**Collision Boundary & WorldObject Obstacles v1**.
+
+À démarrer depuis le checkpoint final de ce lot, sans repartir de ce document seul.
