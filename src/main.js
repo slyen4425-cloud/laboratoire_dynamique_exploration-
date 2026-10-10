@@ -1,6 +1,6 @@
 import { normalize } from './core/vector.js';
-import { stepMovement } from './core/movement.js?rev=interior-geometry-authoring-v1-r2';
-import { normalizeExplorationConfig } from './core/config.js';
+import { stepMovement } from './core/movement.js?rev=collision-boundary-worldobject-obstacles-v1';
+import { normalizeExplorationConfig } from './core/config.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createTraversalRuleRegistry,
   resolveSurfaceTraversal
@@ -49,13 +49,13 @@ import {
 } from './assets/user-world-object-asset-resolver.js?rev=building-interiors-passages-ux-r1';
 import {
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
-} from './world/world-object-placement-model.js?rev=building-interiors-passages-ux-r1';
+} from './world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createComposedObjectDefinitionCatalog
-} from './objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
+} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   objectDefinitionFromUserRecord
-} from './objects/user-object-library.js?rev=building-interiors-passages-ux-r1';
+} from './objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createImageAssetLoader
 } from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
@@ -117,7 +117,7 @@ import {
   createInitialWildlife,
   createWildMapActorView,
   createWildWanderController
-} from './living/living-runtime.js?rev=interior-geometry-authoring-v1-r2';
+} from './living/living-runtime.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 const canvas = document.querySelector('#game');
 const ctx = canvas.getContext('2d');
