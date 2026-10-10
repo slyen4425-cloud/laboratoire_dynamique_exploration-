@@ -72,29 +72,29 @@ import {
   buildingDoorAnchorWorld,
   worldObjectBaseDimensions,
   worldObjectVisualRect
-} from '../world/world-object-model.js?rev=building-interiors-passages-ux-r1';
+} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   resolveWorldObjectPlacement as resolveWorldObjectPlacementRaw,
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
-} from '../world/world-object-placement-model.js?rev=building-interiors-passages-ux-r1';
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=building-interiors-passages-ux-r1';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
   listObjectLibraryCategories,
   listObjectLibraryFolders,
   resolveObjectLibraryFolder
-} from '../objects/object-library-taxonomy.js?rev=building-interiors-passages-ux-r1';
+} from '../objects/object-library-taxonomy.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   USER_WORLD_OBJECT_MAX_BYTES,
   countObjectDefinitionReferences,
   createUserWorldObjectRecord,
   decodeUserWorldObjectFileDimensions,
   objectDefinitionFromUserRecord
-} from '../objects/user-object-library.js?rev=building-interiors-passages-ux-r1';
+} from '../objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   resolvePortalTriggerPoint
 } from '../world/portal-model.js?rev=builder-dynamic-return-v1';
