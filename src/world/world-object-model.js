@@ -179,6 +179,73 @@ export function bridgeTraversalRect(bridge) {
   });
 }
 
+export function worldObjectObstacleRect(
+  object
+) {
+  if (
+    !object ||
+    object.collision?.role !== 'obstacle' ||
+    object.collision?.shape !== 'box'
+  ) {
+    return null;
+  }
+
+  const base =
+    worldObjectBaseDimensions(object);
+  if (!base) return null;
+
+  const scaleX =
+    Number(object.transform?.scaleX);
+  const scaleY =
+    Number(object.transform?.scaleY);
+
+  if (
+    !Number.isFinite(scaleX) ||
+    scaleX <= 0 ||
+    !Number.isFinite(scaleY) ||
+    scaleY <= 0
+  ) {
+    return null;
+  }
+
+  const collision = object.collision;
+  const ratio = (value, fallback) =>
+    Number.isFinite(value) && value > 0
+      ? value
+      : fallback;
+  const offset = (value) =>
+    Number.isFinite(value)
+      ? value
+      : 0;
+
+  const visualWidth =
+    base.width * scaleX;
+  const visualHeight =
+    base.height * scaleY;
+  const center =
+    localPointToWorld(
+      object,
+      visualWidth *
+        offset(collision.offsetX),
+      visualHeight *
+        offset(collision.offsetY)
+    );
+
+  return Object.freeze({
+    x: center.x,
+    y: center.y,
+    rotation:
+      worldObjectRotationRadians(object),
+    length:
+      visualWidth *
+      ratio(collision.widthRatio, 0.7),
+    width:
+      visualHeight *
+      ratio(collision.heightRatio, 0.55)
+  });
+}
+
+
 export function buildingVisualRect(building) {
   if (
     !building ||
