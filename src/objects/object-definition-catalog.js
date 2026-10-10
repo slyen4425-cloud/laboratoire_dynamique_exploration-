@@ -287,7 +287,15 @@ const DEFINITIONS = frozen([
     label: 'Chêne forestier',
     kind: 'tree',
     visual: { assetId: 'object.tree.forest.oak.01' },
-    baseSize: { width: 190, height: 190 }
+    baseSize: { width: 190, height: 190 },
+    collision: {
+      role: 'obstacle',
+      shape: 'box',
+      widthRatio: 0.3,
+      heightRatio: 0.24,
+      offsetX: 0,
+      offsetY: 0.28
+    }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -295,7 +303,15 @@ const DEFINITIONS = frozen([
     label: 'Sapin forestier',
     kind: 'tree',
     visual: { assetId: 'object.tree.forest.pine.01' },
-    baseSize: { width: 170, height: 210 }
+    baseSize: { width: 170, height: 210 },
+    collision: {
+      role: 'obstacle',
+      shape: 'box',
+      widthRatio: 0.28,
+      heightRatio: 0.22,
+      offsetX: 0,
+      offsetY: 0.3
+    }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -303,7 +319,15 @@ const DEFINITIONS = frozen([
     label: 'Arbre ancien fleuri',
     kind: 'tree',
     visual: { assetId: 'object.tree.fantasy.ancient_blossom.01' },
-    baseSize: { width: 210, height: 200 }
+    baseSize: { width: 210, height: 200 },
+    collision: {
+      role: 'obstacle',
+      shape: 'box',
+      widthRatio: 0.32,
+      heightRatio: 0.24,
+      offsetX: 0,
+      offsetY: 0.28
+    }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -311,7 +335,15 @@ const DEFINITIONS = frozen([
     label: 'Rochers moussus',
     kind: 'rock',
     visual: { assetId: 'object.rock.forest.boulder.01' },
-    baseSize: { width: 170, height: 160 }
+    baseSize: { width: 170, height: 160 },
+    collision: {
+      role: 'obstacle',
+      shape: 'box',
+      widthRatio: 0.78,
+      heightRatio: 0.58,
+      offsetX: 0,
+      offsetY: 0.1
+    }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -319,7 +351,15 @@ const DEFINITIONS = frozen([
     label: 'Aiguilles rocheuses',
     kind: 'rock',
     visual: { assetId: 'object.rock.forest.spires.01' },
-    baseSize: { width: 160, height: 190 }
+    baseSize: { width: 160, height: 190 },
+    collision: {
+      role: 'obstacle',
+      shape: 'box',
+      widthRatio: 0.66,
+      heightRatio: 0.58,
+      offsetX: 0,
+      offsetY: 0.12
+    }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -327,7 +367,15 @@ const DEFINITIONS = frozen([
     label: 'Plateau rocheux',
     kind: 'rock',
     visual: { assetId: 'object.rock.forest.plateau.01' },
-    baseSize: { width: 230, height: 150 }
+    baseSize: { width: 230, height: 150 },
+    collision: {
+      role: 'obstacle',
+      shape: 'box',
+      widthRatio: 0.82,
+      heightRatio: 0.62,
+      offsetX: 0,
+      offsetY: 0.08
+    }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
