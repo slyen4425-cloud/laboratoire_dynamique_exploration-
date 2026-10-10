@@ -603,3 +603,55 @@ export function findWorldAreaBoundarySafePoint(
     y: candidates[0].y
   });
 }
+
+
+export function boxFitsWorldAreaBoundary(
+  area,
+  x,
+  y,
+  {
+    left = 0,
+    right = 0,
+    top = 0,
+    bottom = 0
+  } = {}
+) {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return false;
+  }
+
+  const safe = (value) =>
+    Number.isFinite(value)
+      ? Math.max(0, value)
+      : 0;
+  const l = safe(left);
+  const r = safe(right);
+  const t = safe(top);
+  const b = safe(bottom);
+
+  const minX = x - l;
+  const maxX = x + r;
+  const minY = y - t;
+  const maxY = y + b;
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+
+  return [
+    [minX, minY],
+    [midX, minY],
+    [maxX, minY],
+    [minX, midY],
+    [x, y],
+    [maxX, midY],
+    [minX, maxY],
+    [midX, maxY],
+    [maxX, maxY]
+  ].every(
+    ([probeX, probeY]) =>
+      pointInWorldAreaBoundary(
+        area,
+        probeX,
+        probeY
+      )
+  );
+}
