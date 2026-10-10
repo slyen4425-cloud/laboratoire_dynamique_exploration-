@@ -853,12 +853,12 @@ test('Collision World delegates legacy building obstruction to one generic World
 
   assert.doesNotMatch(
     collisionSource,
-    /object\\.kind\\s*===?\\s*['"]building['"]/,
+    /object\.kind\s*===?\s*['"]building['"]/,
     'Collision World must not branch on a WorldObject kind to block it'
   );
   assert.doesNotMatch(
     collisionSource,
-    /\\bbuildingFootprintRect\\b/,
+    /\bbuildingFootprintRect\b/,
     'legacy Building footprint must be adapted by the generic WorldObject resolver'
   );
 
