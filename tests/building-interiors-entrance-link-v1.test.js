@@ -643,9 +643,9 @@ test('visual variants never move the canonical building entrance', () => {
 
 test('Building Interiors keeps one WorldObject cache revision across Builder authoring graph', async () => {
   const worldObjectRevision =
-    'building-interiors-passages-ux-r1';
+    'collision-boundary-worldobject-obstacles-v1';
   const builderEntryRevision =
-    'interior-geometry-authoring-v1-r2';
+    'collision-boundary-worldobject-obstacles-v1';
 
   const [
     html,
