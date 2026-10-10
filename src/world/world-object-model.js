@@ -182,11 +182,18 @@ export function bridgeTraversalRect(bridge) {
 export function worldObjectObstacleRect(
   object
 ) {
-  if (
-    !object ||
-    object.collision?.role !== 'obstacle' ||
-    object.collision?.shape !== 'box'
-  ) {
+  // Explicit ObjectDefinition collision takes precedence. Historical
+  // footprint-only definitions remain compatible without a kind switch.
+  const collision =
+    object?.collision?.role === 'obstacle' &&
+    object.collision?.shape === 'box'
+      ? object.collision
+      : !object?.collision &&
+          object?.footprint?.enabled === true
+        ? object.footprint
+        : null;
+
+  if (!collision) {
     return null;
   }
 
@@ -208,7 +215,6 @@ export function worldObjectObstacleRect(
     return null;
   }
 
-  const collision = object.collision;
   const ratio = (value, fallback) =>
     Number.isFinite(value) && value > 0
       ? value
@@ -268,33 +274,8 @@ export function buildingFootprintRect(
     return null;
   }
 
-  const width =
-    building.baseSize.width *
-    building.transform.scaleX;
-  const height =
-    building.baseSize.height *
-    building.transform.scaleY;
-  const center =
-    localPointToWorld(
-      building,
-      width *
-        building.footprint.offsetX,
-      height *
-        building.footprint.offsetY
-    );
-
-  return Object.freeze({
-    x: center.x,
-    y: center.y,
-    rotation:
-      worldObjectRotationRadians(building),
-    length:
-      width *
-      building.footprint.widthRatio,
-    width:
-      height *
-      building.footprint.heightRatio
-  });
+  // Public compatibility helper; the generic resolver owns geometry.
+  return worldObjectObstacleRect(building);
 }
 
 export function buildingDoorAnchorWorld(
