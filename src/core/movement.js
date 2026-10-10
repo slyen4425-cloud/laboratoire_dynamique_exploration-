@@ -14,7 +14,8 @@ export function stepMovement(
   input,
   dt,
   movementConfig,
-  traversalRegistry = defaultTraversalRuleRegistry
+  traversalRegistry = defaultTraversalRuleRegistry,
+  collisionContext = {}
 ) {
   const direction = normalize(input.x, input.y);
 
@@ -23,7 +24,8 @@ export function stepMovement(
     entity,
     entity.x,
     entity.y,
-    traversalRegistry
+    traversalRegistry,
+    collisionContext
   );
 
   const speed =
@@ -42,7 +44,8 @@ export function stepMovement(
       entity,
       targetX,
       targetY,
-      traversalRegistry
+      traversalRegistry,
+      collisionContext
     )
   ) {
     entity.x = targetX;
@@ -71,7 +74,8 @@ export function stepMovement(
       entity,
       nextX,
       entity.y,
-      traversalRegistry
+      traversalRegistry,
+      collisionContext
     )
   ) {
     entity.x = nextX;
@@ -84,7 +88,8 @@ export function stepMovement(
       entity,
       entity.x,
       nextY,
-      traversalRegistry
+      traversalRegistry,
+      collisionContext
     )
   ) {
     entity.y = nextY;
