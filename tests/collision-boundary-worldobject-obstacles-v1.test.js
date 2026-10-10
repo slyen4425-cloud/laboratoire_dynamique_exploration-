@@ -846,3 +846,65 @@ test('runtime injects composed Object Catalog into hero and living collision pat
     /objectCatalog/
   );
 });
+
+
+test('Collision World delegates legacy building obstruction to one generic WorldObject footprint resolver', async () => {
+  const collisionSource = await source('src/core/collision.js');
+
+  assert.doesNotMatch(
+    collisionSource,
+    /object\\.kind\\s*===?\\s*['"]building['"]/,
+    'Collision World must not branch on a WorldObject kind to block it'
+  );
+  assert.doesNotMatch(
+    collisionSource,
+    /\\bbuildingFootprintRect\\b/,
+    'legacy Building footprint must be adapted by the generic WorldObject resolver'
+  );
+
+  const building = resolveWorldObjectPlacement(
+    normalizeWorldObjectPlacement({
+      id: 'legacy-house',
+      objectDefinitionId: 'objectdef.building.house.fantasy_wood_stone.01',
+      transform: {
+        x: 300,
+        y: 250,
+        rotationDeg: 24,
+        scaleX: 1.25,
+        scaleY: 0.85
+      }
+    })
+  );
+
+  assert.ok(
+    worldObjectObstacleRect(building),
+    'a legacy Building ObjectDefinition still supplies its original footprint'
+  );
+  assert.equal(
+    isBlocked(
+      groundWorld({
+        objects: [
+          {
+            id: building.id,
+            objectDefinitionId: building.objectDefinitionId,
+            transform: building.transform
+          }
+        ]
+      }),
+      { radius: 12, locomotion: { modes: ['ground'] } },
+      300,
+      250
+    ),
+    true,
+    'legacy Building remains impassable in the true Collision World path'
+  );
+
+  assert.equal(
+    worldObjectObstacleRect({
+      ...building,
+      collision: { role: 'passable' }
+    }),
+    null,
+    'an explicit passable ObjectDefinition must not reactivate legacy footprint'
+  );
+});
