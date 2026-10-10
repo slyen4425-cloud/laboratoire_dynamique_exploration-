@@ -255,7 +255,9 @@ export function resolveWorldObjectPlacement(
         definition,
         placement
       ),
-    baseSize: definition.baseSize
+    baseSize: definition.baseSize,
+    collision:
+      definition.collision ?? null
   };
 
   if (definition.kind === 'bridge') {
