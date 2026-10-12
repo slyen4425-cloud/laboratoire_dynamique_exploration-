@@ -798,3 +798,34 @@ Aucune copie des réglages visuels n'est stockée dans le placement Builder.
 La charte prime sur la solution la plus rapide.
 
 Choisir la solution qui réduit les autorités, les effets globaux et la dette, réutilise les contrats existants, reste testable et facilite l'intégration future à GenSrpG.
+
+## 29. Économie du contexte ChatGPT et des ressources GitHub — sans compromis sur la qualité
+
+Cette règle est obligatoire dans tous les fils travaillant sur ce dépôt. Elle réduit le **volume de données transportées dans la conversation**, et non la qualité des contrôles. GitHub demeure l'autorité ; la mémoire d'un fil ne l'est pas.
+
+### 29.1. Reprise complète des obligations, lecture ciblée du contenu
+
+- Lire les documents LIVE requis par la charte (charte, roadmap, CURRENT_WORK, architecture, politiques et ownership applicables) **avant toute modification** ; relever branche, SHA, checkpoint GREEN, état du lot et CI.
+- Pour les journaux très longs, récupérer les métadonnées et lire en priorité le point de reprise actif, les dernières entrées pertinentes et les sections référencées par le lot. Utiliser une recherche ciblée ou des plages de lignes ; **ne pas injecter le journal entier dans la conversation par défaut**.
+- Si le statut, le périmètre, l'historique pertinent ou une décision est ambigu, approfondir la lecture jusqu'à lever le doute. Une synthèse, un extrait ou un ancien fil ne remplace jamais la source GitHub vérifiée.
+- La lecture ciblée ne dispense jamais de vérifier Collision World, WorldDocument, les contrats de traversée, le statut de prévalidation smartphone et les gates utilisateur lorsque le chantier les touche.
+
+### 29.2. Interroger GitHub avec parcimonie
+
+- Effectuer un pré-contrôle de gouvernance complet **une fois par lot** puis réutiliser les SHA et références vérifiés tant qu'ils n'ont pas changé. Revérifier avant toute écriture, publication, merge ou checkpoint final, et dès qu'une modification concurrente est possible.
+- Préférer les chemins exacts, la recherche par symbole, les fichiers concernés, les extraits de lignes et les diffs du lot aux lectures de tout le dépôt. Ne pas rouvrir sans motif un fichier au même SHA déjà contrôlé dans le fil.
+- Réduire les retours d'outils présentés au modèle aux informations exploitables : chemins, SHA, statut, lignes en cause, changements précis, tests et erreurs. Éviter les JSON complets, logs bruts, répétitions et longs blocs de code non nécessaires.
+- En cas d'échec d'un outil, diagnostiquer l'erreur ; ne pas répéter en boucle la même requête lourde. Chercher une voie de lecture fiable et traçable ou signaler le blocage.
+
+### 29.3. Tests proportionnés, jamais omis
+
+- Commencer par les tests ciblés utiles au diagnostic puis exécuter **toutes** les sentinelles, validations CI, préviews et gates requis avant GREEN. N'exécuter aucune vérification supplémentaire uniquement pour remplir un rapport.
+- Sur CI rouge, consulter d'abord le statut et l'étape fautive, puis uniquement les logs nécessaires ; relancer après correction démontrée. Ne jamais masquer un échec ni déclarer GREEN sans preuve.
+- Garder le principe « un lot = un périmètre = une branche », avec checkpoints de départ/fin, ownership et rollback inchangés. Pas de micro-audits ni de nouveaux lots accessoires sans raison liée au critère de sortie.
+
+### 29.4. Rapports, historique et changement de fil
+
+- Rapport normal court : **fait / branche + SHA / tests-CI / checkpoint / blocage ou validation utilisateur / prochaine action**. Le détail long ne vient qu'en cas de diagnostic, de risque ou de demande explicite.
+- Garder le haut de CURRENT_WORK utile à la reprise : état actif, base, branche, dernier GREEN, protections, gate et prochaine action. Les anciens comptes rendus détaillés peuvent être archivés **sans destruction** dans un lot documentaire séparé et vérifié ; ils ne doivent pas être recopiés intégralement à chaque reprise.
+- En fin de fil, transmettre des liens et références GitHub vérifiables, pas un énorme résumé de toute l'histoire du dépôt.
+- Cette optimisation ne permet **jamais** de sauter une lecture pertinente, un diagnostic, un test, une CI obligatoire, une vérification du vrai chemin, un accord utilisateur ou une étape de gouvernance.
