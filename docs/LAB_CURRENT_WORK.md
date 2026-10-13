@@ -12,9 +12,9 @@
 >
 > Collision v1 R2 : **toujours en attente de validation smartphone**, jamais GREEN FINAL.
 >
-> Gate correctif Builder : **GREEN technique, 435 tests / CI 38473354843 SUCCESS ; preview smartphone à publier et valider**.
+> Gate correctif Builder : **GREEN technique, 435/435 tests ; Pages preview publiée / smartphone à valider**, pas de GREEN FINAL.
 >
-> Prochaine action : publier preview de cette branche en infrastructure uniquement, tester Sable / autres familles et la fluidité mobile avec le créateur ; ne pas ouvrir le lot nouvelles textures avant validation.
+> Prochaine action : test smartphone du nouveau Builder Sable / familles / fluidité, puis verdict utilisateur ; ne pas ouvrir de nouveau lot avant validation.
 
 > ÉTAT ACTIF — 2026-10-08
 >
@@ -615,3 +615,17 @@ Retour utilisateur : choisir Sable laisse souvent Herbe et l'éditeur mobile ral
 - Recalage des sentinelles : uniquement la révision navigateur des entrypoints ; versions des autorités Collision et WorldObject continuent de pointer vers R2.
 - **Pas de validation mobile ni mesure réelle FPS à ce stade.** La performance effective du Pixel et la lecture des textures devront être contrôlées par l'utilisateur.
 - Prochaine étape : checkpoint technique + preview Pages ; verdict mobile puis GREEN FINAL. Le gate Collision R2 reste ouvert et sera couvert par ses propres contrôles.
+
+## Publication du correctif de gate Builder — 2026-10-13
+
+- Prévalidation SHA : `76ee8373c6e4a312b8bab1bcc5326c244d437b75`.
+- CI sur work : `38473569718` SUCCESS ; checkpoint CI `38473624249` SUCCESS.
+- Checkpoint technique : `checkpoint/exploration-builder-terrain-texture-perf-gatefix-prevalidation-green-2026-10-13`.
+- Branche preview : `preview/exploration-builder-terrain-texture-perf-gatefix-2026-10-13`.
+- Publication Pages par PR infra **#110** (seul `.github/workflows/pages-preview.yml` modifié).
+- Merge infra-only `main` : `9ad28978d5b98236126fd27a5e5bd8919d583d84`.
+- Pages run `38473845161` : **SUCCESS**.
+- Lien officiel de test : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=terrain-family-perf-gatefix-v1`.
+- Aucun code Builder / SurfaceRenderer / Material Registry du lot n'a été mergé dans `main`.
+- **Toujours PREVALIDATION : verdict smartphone Sable / imports / performance requis.**
+- **Collision R2 toujours non validé manuellement**, GREEN FINAL interdit pour ce lot également.
