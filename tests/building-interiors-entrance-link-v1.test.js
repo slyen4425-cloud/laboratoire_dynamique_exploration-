@@ -713,7 +713,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   assert.match(
     html,
     new RegExp(
-      `world-builder\\.css\\?rev=collision-boundary-worldobject-obstacles-v1-r2`
+      `world-builder\\.css\\?rev=terrain-family-palette-editable-v2`
     )
   );
 

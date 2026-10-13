@@ -210,7 +210,7 @@ test('runtime presents landscape guidance without adding gameplay orientation au
   );
   assert.match(
     html,
-    /style\.css\?rev=terrain-family-palette-editable-v2/
+    /style\.css\?rev=collision-boundary-worldobject-obstacles-v1-r2/
   );
   assert.match(
     css,
