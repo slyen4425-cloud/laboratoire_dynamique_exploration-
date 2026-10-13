@@ -23,7 +23,7 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=terrain-family-perf-gatefix-v1';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=terrain-family-palette-editable-v2';
 import { createMaterialRegistry } from './materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   composeMaterialPackWithUserMaterials
@@ -72,7 +72,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=interior-geometry-authoring-v1-r2';
+} from './world/world-document-model.js?rev=terrain-family-palette-editable-v2';
 import {
   applyPortalTransition,
   findTriggeredPortal
@@ -80,7 +80,7 @@ import {
 import {
   createWorldEventController
 } from './world/world-event-controller.js?rev=world-event-message-v1';
-import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-encounters-v1';
+import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-palette-editable-v2';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession

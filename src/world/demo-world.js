@@ -1,4 +1,4 @@
-import { normalizeWorldDocument } from './world-document-model.js?rev=terrain-family-encounters-v1';
+import { normalizeWorldDocument } from './world-document-model.js?rev=terrain-family-palette-editable-v2';
 
 export const demoWorldDocument = normalizeWorldDocument({
   id: 'forest-demo-world',

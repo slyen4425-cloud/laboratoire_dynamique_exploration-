@@ -1,4 +1,4 @@
-import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-encounters-v1';
+import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2';
 import {
   addActorPlacement,
   addPortal,
@@ -33,7 +33,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=interior-geometry-authoring-v1-r2';
+} from './world-builder-draft.js?rev=terrain-family-palette-editable-v2';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -119,7 +119,7 @@ import {
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=terrain-family-perf-gatefix-v1';
+} from '../materials/material-pack-v1.js?rev=terrain-family-palette-editable-v2';
 import {
   USER_TEXTURE_MAX_BYTES,
   composeMaterialPackWithUserMaterials,
@@ -990,6 +990,14 @@ async function importUserTextureFromControls() {
     await userMaterialStore.list();
   selectedUserMaterialId = record.id;
 
+  // Explicit per-world palette overrides must also accept newly imported assets.
+  if (record.kind === 'surface') {
+    const family = terrainFamilies().find((entry) => entry.id === record.terrainFamilyId);
+    if (Array.isArray(family?.surfaceMaterialIds)) {
+      draft = updateTerrainFamilyDefinition(draft, family.id,
+        { surfaceMaterialIds: [...family.surfaceMaterialIds, record.id] });
+    }
+  }
   await rebuildMaterialPipeline();
   if (record.kind === 'surface') {
     selectedSurfaceKind = null;
