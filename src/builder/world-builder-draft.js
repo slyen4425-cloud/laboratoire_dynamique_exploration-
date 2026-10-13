@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=interior-geometry-authoring-v1-r2';
+} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2';
 import {
   findWorldAreaBoundarySafePoint,
   normalizeWorldAreaBoundary

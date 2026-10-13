@@ -193,6 +193,19 @@
               <input id="terrain-family-label" type="text" />
             </label>
           </div>
+          <label>
+            Outil de peinture de cette famille
+            <select id="terrain-family-paint-kind">
+              <option value="terrain">Sol / surface</option>
+              <option value="route">Route</option>
+              <option value="river">Rivière / mer</option>
+            </select>
+          </label>
+          <div id="terrain-family-materials-panel">
+            <p class="builder-hint">Textures de cette famille (modifiables). Coche les textures disponibles dans ce monde.</p>
+            <div id="terrain-family-materials" class="terrain-family-materials"></div>
+            <button id="terrain-family-materials-save" type="button">Enregistrer le classement des textures</button>
+          </div>
           <p id="terrain-family-delete-status" class="builder-hint">
             Une famille utilisée par une surface ne peut pas être supprimée.
           </p>

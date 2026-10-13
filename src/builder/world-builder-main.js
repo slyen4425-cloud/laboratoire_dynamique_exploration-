@@ -49,7 +49,7 @@ import {
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=terrain-family-perf-gatefix-v1';
-import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-perf-gatefix-v1';
+import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-palette-editable-v2';
 import {
   clipWorldArea
 } from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
@@ -128,8 +128,9 @@ import {
   decodeUserTextureFileDimensions
 } from '../materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
-  createTerrainFamilyRegistry
-} from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
+  createTerrainFamilyRegistry,
+  terrainFamiliesForPaintKind
+} from '../world/terrain-family-registry.js?rev=terrain-family-palette-editable-v2';
 import {
   createCaptureCreatureCatalogProvider
 } from '../capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
@@ -780,7 +781,7 @@ function userMaterialKindLabel(kind) {
 
 function refreshUserTextureControls() {
   const familySelect = $('user-texture-family');
-  const families = terrainFamilies();
+  const families = terrainFamiliesForPaintKind(terrainFamilies(), 'terrain');
   setOptions(familySelect, families,
     familySelect.value || $('terrain-family').value || 'plain',
     { label: (family) => family.label });
@@ -1773,12 +1774,12 @@ function refreshAreaControls() {
   $('area-family').value = familyId;
 
   const areaMaterialOptions = area.kind === 'interior'
-    ? surfaceMaterials : surfaceMaterialsForFamily(surfaceMaterials, familyId);
+    ? surfaceMaterials : surfaceMaterialsForFamily(surfaceMaterials, familyId, families);
   setOptions(
     $('area-material'),
     areaMaterialOptions,
     preferredSurfaceMaterial(areaMaterialOptions, familyId,
-      area.surface?.baseMaterialId) ?? area.surface?.baseMaterialId,
+      area.surface?.baseMaterialId, families) ?? area.surface?.baseMaterialId,
     { label: (material) => material.label }
   );
   if (!areaMaterialOptions.some((material) => material.id === $('area-material').value)) {
@@ -2025,15 +2026,23 @@ function refreshTerrainControls() {
             : fallbackFamily
         );
 
+  // Legacy zone is still editable, but non-surface families cannot be chosen for new strokes.
+  const terrainChoices = paintableTerrainFamilies.some((f) => f.id === currentTerrainFamily)
+    ? paintableTerrainFamilies
+    : selected && selectedSurfaceKind === 'terrain' && registry.get(currentTerrainFamily)
+      ? [...paintableTerrainFamilies, registry.get(currentTerrainFamily)]
+      : paintableTerrainFamilies;
+  const activeTerrainFamily = terrainChoices.some((f) => f.id === currentTerrainFamily)
+    ? currentTerrainFamily : paintableTerrainFamilies[0]?.id ?? '';
   setOptions(
     $('terrain-family'),
-    families,
-    currentTerrainFamily,
+    terrainChoices,
+    activeTerrainFamily,
     { label: (family) => family.label }
   );
-  $('terrain-family').value =
-    currentTerrainFamily;
+  $('terrain-family').value = activeTerrainFamily;
 
+  const paintableTerrainFamilies = terrainFamiliesForPaintKind(families, 'terrain');
   const requestedTerrainMaterial =
     selected &&
     selectedSurfaceKind === 'terrain'
@@ -2041,9 +2050,9 @@ function refreshTerrainControls() {
       : $('terrain-paint-material').value;
 
   const terrainMaterialOptions = surfaceMaterialsForFamily(
-    surfaceMaterials, currentTerrainFamily);
+    surfaceMaterials, activeTerrainFamily, families);
   const terrainMaterialId = preferredSurfaceMaterial(
-    surfaceMaterials, currentTerrainFamily, requestedTerrainMaterial);
+    surfaceMaterials, activeTerrainFamily, requestedTerrainMaterial, families);
   setOptions(
     $('terrain-paint-material'),
     terrainMaterialOptions,
@@ -2092,7 +2101,10 @@ function refreshTerrainControls() {
 
   setOptions(
     $('terrain-route-family'),
-    families,
+    terrainFamiliesForPaintKind(families, 'route').concat(
+      registry.get(routeFamily) && !terrainFamiliesForPaintKind(families, 'route').some((f) => f.id === routeFamily)
+        ? [registry.get(routeFamily)] : []
+    ),
     routeFamily,
     { label: (family) => family.label }
   );
@@ -2143,7 +2155,10 @@ function refreshTerrainControls() {
 
   setOptions(
     $('terrain-river-family'),
-    families,
+    terrainFamiliesForPaintKind(families, 'river').concat(
+      registry.get(riverFamily) && !terrainFamiliesForPaintKind(families, 'river').some((f) => f.id === riverFamily)
+        ? [registry.get(riverFamily)] : []
+    ),
     riverFamily,
     { label: (family) => family.label }
   );
@@ -2274,8 +2289,28 @@ function refreshTerrainFamilyDefinitionControls() {
     family?.id ?? '';
   $('terrain-family-label').value =
     family?.label ?? '';
-  $('terrain-family-label').disabled =
-    !family;
+  $('terrain-family-label').disabled = !family;
+  $('terrain-family-paint-kind').value = family?.paintKind || 'terrain';
+  $('terrain-family-paint-kind').disabled = !family;
+  const assignmentPanel = $('terrain-family-materials-panel');
+  assignmentPanel.hidden = !family || (family.paintKind || 'terrain') !== 'terrain';
+  const assignmentList = $('terrain-family-materials');
+  assignmentList.replaceChildren();
+  const assignedIds = new Set(family
+    ? surfaceMaterialsForFamily(surfaceMaterials, family.id, families).map((material) => material.id)
+    : []);
+  if (family && !assignmentPanel.hidden) {
+    for (const material of surfaceMaterials) {
+      const row = document.createElement('label');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = material.id;
+      box.checked = assignedIds.has(material.id);
+      row.append(box, document.createTextNode(material.label));
+      assignmentList.append(row);
+    }
+  }
+  $('terrain-family-materials-save').disabled = !family;
 
   const used =
     family
@@ -4784,7 +4819,7 @@ function beginSurfacePath(kind, point) {
       ? $('terrain-river-material').value
       : kind === 'terrain'
         ? (preferredSurfaceMaterial(surfaceMaterials, $('terrain-family').value,
-          $('terrain-paint-material').value) ?? '')
+          $('terrain-paint-material').value, terrainFamilies()) ?? '')
         : $('terrain-route-material').value;
   if (!materialId) {
     setStatus('Importe une texture pour cette famille avant de peindre.', true);
@@ -5096,7 +5131,7 @@ $('area-shape').addEventListener(
 $('area-family').addEventListener('change', () => {
   const familyId = $('area-family').value;
   const baseMaterialId = preferredSurfaceMaterial(
-    surfaceMaterials, familyId, currentAreaRaw()?.surface?.baseMaterialId);
+    surfaceMaterials, familyId, currentAreaRaw()?.surface?.baseMaterialId, terrainFamilies());
   draft = updateAreaProperties(
     draft,
     selectedAreaId,
@@ -5120,7 +5155,7 @@ $('area-material').addEventListener('change', () => {
 
 $('terrain-family').addEventListener('change', () => {
   const familyId = $('terrain-family').value;
-  const materialId = preferredSurfaceMaterial(surfaceMaterials, familyId);
+  const materialId = preferredSurfaceMaterial(surfaceMaterials, familyId, null, terrainFamilies());
   if (selectedSurfaceKind === 'terrain' && selectedSurfacePathId) {
     draft = updateSurfacePath(draft, selectedAreaId, 'terrain',
       selectedSurfacePathId, { terrainFamilyId: familyId,
@@ -5191,6 +5226,22 @@ $('terrain-family-label').addEventListener(
     refreshControls();
   }
 );
+
+$('terrain-family-paint-kind').addEventListener('change', () => {
+  if (!selectedTerrainFamilyDefinitionId) return;
+  draft = updateTerrainFamilyDefinition(draft, selectedTerrainFamilyDefinitionId,
+    { paintKind: $('terrain-family-paint-kind').value });
+  refreshControls();
+});
+
+$('terrain-family-materials-save').addEventListener('click', () => {
+  if (!selectedTerrainFamilyDefinitionId) return;
+  const chosen = [...$('terrain-family-materials').querySelectorAll('input:checked')]
+    .map((input) => input.value);
+  draft = updateTerrainFamilyDefinition(draft, selectedTerrainFamilyDefinitionId,
+    { surfaceMaterialIds: chosen });
+  refreshControls();
+});
 
 $('terrain-family-delete').addEventListener(
   'click',
