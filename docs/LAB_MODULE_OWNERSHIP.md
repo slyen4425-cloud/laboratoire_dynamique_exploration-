@@ -98,3 +98,13 @@ Tout nouvel éditeur doit être classé comme producteur de **définitions** ou 
 | Résolution defs utilisateur runtime | Composed Object Catalog adapter | ids natifs + records utilisateur | Collision World / renderer | persister le catalogue dans WorldDocument |
 | Building collision historique | ObjectDefinition Building | footprint | Collision World | double footprint concurrent |
 | Bridge traversable | ObjectDefinition Bridge + placement override | traversal corridor | Collision World / Traversal | convertir Bridge en obstacle générique |
+
+## Builder — Choix de matériau par famille (gatefix 2026-10-13)
+
+| Responsable | Autorité | Limite |
+|---|---|---|
+| Terrain Family / WorldDocument | famille sémantique, rencontres/traversée | n'infère jamais une texture obligatoire |
+| Material Registry + Visual Family Catalog | surfaces natives/user regroupées, suggestions de l'éditeur | ne modifie pas la famille canonique au runtime |
+| User Material Library | `terrainFamilyId` optionnel du matériau importé | ne stocke ni règle de combat ni collision |
+| Builder | synchronise sélections de famille et matériau à l'acte d'édition | aucune réparation silencieuse du document chargé |
+| Surface Renderer | masques locaux de présentation pour le trait visible | aucune modification du WorldDocument / largeur du tracé |

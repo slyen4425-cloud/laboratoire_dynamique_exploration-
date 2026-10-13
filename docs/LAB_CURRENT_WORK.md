@@ -1,5 +1,21 @@
 # LAB_CURRENT_WORK — Point de reprise unique
 
+> ÉTAT ACTIF — 2026-10-13
+>
+> **Correctif de gate bloquant : Builder — familles de textures et performance mobile**
+>
+> Branche : `work/exploration-builder-terrain-texture-perf-gatefix-2026-10-13`
+>
+> Base du lot : `edfadb539fb53aacbf57dd91e79fe9a4efe374c1` (collision R2 prévalidation + gouvernance docs)
+>
+> Dernier GREEN FINAL utilisateur : `checkpoint/exploration-interior-geometry-authoring-v1-green-2026-10-10` (`11d1c4fe39b6bc8b587a3357dbca9e157a58bdab`)
+>
+> Collision v1 R2 : **toujours en attente de validation smartphone**, jamais GREEN FINAL.
+>
+> Gate correctif Builder : **GREEN technique, 435 tests / CI 38473354843 SUCCESS ; preview smartphone à publier et valider**.
+>
+> Prochaine action : publier preview de cette branche en infrastructure uniquement, tester Sable / autres familles et la fluidité mobile avec le créateur ; ne pas ouvrir le lot nouvelles textures avant validation.
+
 > ÉTAT ACTIF — 2026-10-08
 >
 > Chantier : **Collision Boundary & WorldObject Obstacles v1**
@@ -582,3 +598,20 @@ GREEN FINAL interdit avant confirmation utilisateur.**
 Verdict : **GREEN TECHNIQUE / PREVALIDATION R2**.
 Attente de validation smartphone utilisateur ; **pas de GREEN FINAL** avant verdict.
 Les textures restent hors du présent lot.
+
+## Correctif de gate — Peinture familles / fluidité Builder, 2026-10-13
+
+Retour utilisateur : choisir Sable laisse souvent Herbe et l'éditeur mobile ralentit très fortement même avec peu d'objets. Priorité à la résolution avant d'ajouter textures ou mécanique.
+
+- Lot séparé : `work/exploration-builder-terrain-texture-perf-gatefix-2026-10-13`
+- Checkpoint start : `checkpoint/exploration-start-builder-terrain-texture-perf-gatefix-2026-10-13` au SHA `edfadb539fb53aacbf57dd91e79fe9a4efe374c1`.
+- RED : `bd7b662a0689199566c0aa0dc01d7e22861441ca`, run `38472482630` FAILURE attendue.
+- Cause 1 : la famille sémantique et le matériau visuel sont indépendants (bon ownership), mais le Builder ne liait pas leurs sélecteurs ; le matériau Herbe restait actif.
+- Fix : catalogue visuel `terrain-family-materials.js` avec matériaux natifs classés par 8 familles, 2 surfaces de démonstration Mer et Route, filtrage de la liste par famille, défaut de texture associé au changement de famille. `WorldDocument` conserve les ids séparés sans seconde autorité gameplay.
+- Import texture sol : champ famille explicite, records existants sans famille restent compatibles (Plaine par défaut dans la bibliothèque ; aucune réécriture silencieuse de leurs fichiers).
+- Cause 2 : même une faible quantité de traits entraînait la copie du document à chaque échantillon tactile et la création de deux masques de la dimension du viewport en unités monde. Les masques sont maintenant paresseux, bornés aux traits visibles et réutilisent les tampons ; les points tactiles sont coalescés par frame.
+- Préservation R2 : mouvements/collisions WorldObject, Bridge et Building inchangés. Aucun changement dans Zombicide-40k ou labo Combat.
+- GREEN technique code : `f1e7da11a65921b3b0ad1c5f47f623147c983ab0`, CI `38473354843` SUCCESS, **435/435 tests** et `npm run check` SUCCESS.
+- Recalage des sentinelles : uniquement la révision navigateur des entrypoints ; versions des autorités Collision et WorldObject continuent de pointer vers R2.
+- **Pas de validation mobile ni mesure réelle FPS à ce stade.** La performance effective du Pixel et la lecture des textures devront être contrôlées par l'utilisateur.
+- Prochaine étape : checkpoint technique + preview Pages ; verdict mobile puis GREEN FINAL. Le gate Collision R2 reste ouvert et sera couvert par ses propres contrôles.

@@ -986,3 +986,27 @@ Le record utilisateur v2 conserve cette intention sémantique. Compatibilité v1
 - les Buildings conservent leur contrat historique séparé.
 
 Cette classification décrit le gameplay ; elle n'est ni un dossier visuel ni une analyse de l'image.
+
+## Builder — Contrat des textures par famille et prévalidation performance (2026-10-13)
+
+La `terrainFamilyId` canonique reste sémantique, propriétaire WorldDocument / Terrain Family.
+Le `materialId` reste l'autorité de l'apparence, propriétaire Material Registry.
+`src/materials/terrain-family-materials.js` est un **catalogue d'authoring visuel** :
+il groupe les surfaces natives par famille et propose un matériau par défaut, sans modifier
+les règles de traversée ou rencontres et sans écriture automatique dans le runtime.
+
+Le Builder sélectionne seulement des matériaux classés dans la famille active ;
+l'utilisateur peut choisir plusieurs textures d'une même famille. Les textures importées
+de type surface portent `terrainFamilyId` dans leur record local IndexedDB (champ additif).
+Les records v1 sans cette valeur restent chargés et sont catégorisés en Plaine sans
+mutation de l'original. Les familles personnalisées peuvent recevoir leurs propres textures.
+Le rendu ne déduit jamais la famille depuis la couleur ou un asset.
+
+Les masques visuels de transition `smooth-mask` du SurfaceRenderer n'allouent rien en
+l'absence de traits, limitent les buffers au rectangle visible de la ligne + marge de
+transition et réutilisent leur capacité pour éviter des redimensionnements GPU répétitifs.
+Les points du pinceau mobile passent par le scheduler RAF, non par un clonage à chaque
+événement tactile. La forme canonique et la largeur du trait ne sont pas modifiées.
+
+Prévalidation technique : 435/435 tests, CI `38473354843`. Gate smartphone requis
+pour confirmer les textures et la fluidité ; aucune donnée de FPS réelle annoncée.
