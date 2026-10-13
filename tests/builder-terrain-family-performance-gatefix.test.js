@@ -80,3 +80,40 @@ test('Builder binds family change to associated visual material and queues point
   assert.match(move, /pendingPaintPoint\s*=/);
   assert.doesNotMatch(move, /appendDrawPoint\(\s*pointerSession.kind,\s*pointerSession.pathId,\s*world\s*\)/);
 });
+
+test('forest keeps the original cartoon grass and plain remains a surface choice', () => {
+  assert.deepEqual(surfaceMaterialsForFamily(surfaces, 'forest').slice(0,2).map(m=>m.id),
+    ['grass.forest', 'ground.forest_floor']);
+  assert.ok(surfaceMaterialsForFamily(surfaces, 'plain').some(m=>m.id==='ground.dirt'));
+  assert.equal(surfaceMaterialsForFamily(surfaces, 'sea').length, 0);
+  assert.equal(surfaceMaterialsForFamily(surfaces, 'road').length, 0);
+});
+
+test('family paint tool and materials can be author-edited, exported and reloaded', async () => {
+  const { demoWorldDocument } = await import('../src/world/demo-world.js');
+  const { createWorldBuilderDraft, updateTerrainFamilyDefinition, serializeWorldBuilderDraft, importWorldBuilderDocument } =
+    await import('../src/builder/world-builder-draft.js');
+  const { terrainFamiliesForPaintKind } = await import('../src/world/terrain-family-registry.js');
+  const all=demoWorldDocument.terrainFamilies;
+  assert.ok(terrainFamiliesForPaintKind(all,'terrain').some(f=>f.id==='plain'));
+  assert.ok(terrainFamiliesForPaintKind(all,'terrain').some(f=>f.id==='forest'));
+  assert.ok(!terrainFamiliesForPaintKind(all,'terrain').some(f=>f.id==='road'||f.id==='sea'));
+  let draft=createWorldBuilderDraft(demoWorldDocument);
+  draft=updateTerrainFamilyDefinition(draft,'plain',{surfaceMaterialIds:['grass.forest','ground.dirt'],paintKind:'terrain'});
+  const out=importWorldBuilderDocument(serializeWorldBuilderDraft(draft));
+  const plain=out.terrainFamilies.find(f=>f.id==='plain');
+  assert.deepEqual(plain.surfaceMaterialIds,['grass.forest','ground.dirt']);
+  assert.equal(plain.paintKind,'terrain');
+  assert.deepEqual(surfaceMaterialsForFamily(surfaces,'plain',out.terrainFamilies).map(m=>m.id),
+    ['grass.forest','ground.dirt']);
+});
+
+test('the category UI is editable and shows the texture assignments for the chosen family', async () => {
+ const html=await readFile(new URL('../builder.html',import.meta.url),'utf8');
+ const js=await readFile(new URL('../src/builder/world-builder-main.js',import.meta.url),'utf8');
+ assert.match(html,/id="terrain-family-paint-kind"/);
+ assert.match(html,/id="terrain-family-materials"/);
+ assert.match(html,/id="terrain-family-materials-save"/);
+ assert.match(js,/terrainFamiliesForPaintKind/);
+ assert.doesNotMatch(await readFile(new URL('../src/materials/terrain-family-materials.js',import.meta.url),'utf8'),/NATIVE_SURFACE_FAMILIES/);
+});
