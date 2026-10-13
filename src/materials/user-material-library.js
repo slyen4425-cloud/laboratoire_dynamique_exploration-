@@ -78,6 +78,7 @@ export function createUserMaterialRecord({
   idToken,
   kind,
   label,
+  terrainFamilyId = null,
   mimeType,
   width,
   height,
@@ -125,6 +126,8 @@ export function createUserMaterialRecord({
     assetId: `user.texture.${normalizedKind}.${token}`,
     kind: normalizedKind,
     label: safeLabel,
+    terrainFamilyId: normalizedKind === 'surface' && safeString(terrainFamilyId)
+      ? safeString(terrainFamilyId) : null,
     mimeType: safeMimeType,
     width: Number(width),
     height: Number(height),
@@ -146,7 +149,9 @@ export function materialDefinitionFromUserRecord(record) {
   const common = {
     id: record.id,
     kind: record.kind,
-    label: record.label
+    label: record.label,
+    terrainFamilyId: record.kind === 'surface'
+      ? (record.terrainFamilyId || 'plain') : null
   };
 
   if (record.kind === 'surface') {

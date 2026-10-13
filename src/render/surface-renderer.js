@@ -141,129 +141,69 @@ function strokeMaskPath(
   ctx.restore();
 }
 
-function drawSmoothMaskedLayer(
-  ctx,
-  item,
-  camera,
-  viewport,
-  scratch,
-  plan,
-  drawLayer
-) {
+function visibleMaskBounds(item, camera, viewport, plan) {
+  const points = item?.points;
+  if (!Array.isArray(points) || points.length < 2) return null;
+  const pad = Math.ceil((plan.outerWidth ?? item.width ?? 0) / 2 +
+    (plan.blurRadius ?? 0) * 2 + 4);
+  const xs = points.map(p => p.x - camera.x);
+  const ys = points.map(p => p.y - camera.y);
+  const left = Math.max(0, Math.floor(Math.min(...xs) - pad));
+  const top = Math.max(0, Math.floor(Math.min(...ys) - pad));
+  const right = Math.min(Math.ceil(viewport.width), Math.ceil(Math.max(...xs) + pad));
+  const bottom = Math.min(Math.ceil(viewport.height), Math.ceil(Math.max(...ys) + pad));
+  return right > left && bottom > top
+    ? { x: left, y: top, width: right - left, height: bottom - top }
+    : null;
+}
 
-  if (
-    !plan ||
-    !scratch?.mask?.context ||
-    !scratch?.zone?.context ||
-    typeof ctx.drawImage !== 'function' ||
-    typeof drawLayer !== 'function'
-  ) {
-    return false;
-  }
+function drawSmoothMaskedLayer(
+  ctx, item, camera, viewport, getScratch, plan, drawLayer
+) {
+  if (!plan || typeof ctx.drawImage !== 'function' ||
+      typeof drawLayer !== 'function') return false;
+  // An invisible segment is already clipped. Do not fall back to a full-screen pass.
+  const bounds = visibleMaskBounds(item, camera, viewport, plan);
+  if (!bounds) return true;
+  const scratch = getScratch?.(bounds.width, bounds.height);
+  if (!scratch?.mask?.context || !scratch?.zone?.context) return false;
 
   const maskCtx = scratch.mask.context;
   const layerCtx = scratch.zone.context;
+  if (!('filter' in maskCtx)) return false;
 
-  if (!('filter' in maskCtx)) {
-    return false;
-  }
-
-  maskCtx.globalCompositeOperation =
-    'source-over';
+  maskCtx.setTransform?.(1, 0, 0, 1, -bounds.x, -bounds.y);
+  maskCtx.globalCompositeOperation = 'source-over';
   maskCtx.globalAlpha = 1;
   maskCtx.filter = 'none';
-  maskCtx.clearRect(
-    0,
-    0,
-    viewport.width,
-    viewport.height
-  );
+  maskCtx.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
-  if (plan.edgeOpacity > 0) {
-    strokeMaskPath(
-      maskCtx,
-      item,
-      camera,
-      plan.outerWidth,
-      plan.edgeOpacity
-    );
-  }
-
-  if (
-    plan.blurRadius > 0 &&
-    plan.innerWidth < plan.outerWidth
-  ) {
-    maskCtx.filter =
-      `blur(${plan.blurRadius}px)`;
-    strokeMaskPath(
-      maskCtx,
-      item,
-      camera,
-      plan.innerWidth,
-      1
-    );
+  if (plan.edgeOpacity > 0)
+    strokeMaskPath(maskCtx, item, camera, plan.outerWidth, plan.edgeOpacity);
+  if (plan.blurRadius > 0 && plan.innerWidth < plan.outerWidth) {
+    maskCtx.filter = `blur(${plan.blurRadius}px)`;
+    strokeMaskPath(maskCtx, item, camera, plan.innerWidth, 1);
     maskCtx.filter = 'none';
   }
-
-  strokeMaskPath(
-    maskCtx,
-    item,
-    camera,
-    plan.innerWidth,
-    1
-  );
-
-  // Blur is visual only. It is always clipped back to the
-  // caller's existing visual envelope.
-  maskCtx.globalCompositeOperation =
-    'destination-in';
-  strokeMaskPath(
-    maskCtx,
-    item,
-    camera,
-    plan.outerWidth,
-    1
-  );
-  maskCtx.globalCompositeOperation =
-    'source-over';
+  strokeMaskPath(maskCtx, item, camera, plan.innerWidth, 1);
+  maskCtx.globalCompositeOperation = 'destination-in';
+  strokeMaskPath(maskCtx, item, camera, plan.outerWidth, 1);
+  maskCtx.globalCompositeOperation = 'source-over';
   maskCtx.filter = 'none';
   maskCtx.globalAlpha = 1;
 
-  layerCtx.globalCompositeOperation =
-    'source-over';
+  layerCtx.setTransform?.(1, 0, 0, 1, -bounds.x, -bounds.y);
+  layerCtx.globalCompositeOperation = 'source-over';
   layerCtx.globalAlpha = 1;
-  if ('filter' in layerCtx) {
-    layerCtx.filter = 'none';
-  }
-  layerCtx.clearRect(
-    0,
-    0,
-    viewport.width,
-    viewport.height
-  );
-
+  if ('filter' in layerCtx) layerCtx.filter = 'none';
+  layerCtx.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
   drawLayer(layerCtx);
-
-  layerCtx.globalCompositeOperation =
-    'destination-in';
-  layerCtx.drawImage(
-    scratch.mask.canvas,
-    0,
-    0,
-    viewport.width,
-    viewport.height
-  );
-  layerCtx.globalCompositeOperation =
-    'source-over';
-
-  ctx.drawImage(
-    scratch.zone.canvas,
-    0,
-    0,
-    viewport.width,
-    viewport.height
-  );
-
+  layerCtx.globalCompositeOperation = 'destination-in';
+  layerCtx.drawImage(scratch.mask.canvas,
+    bounds.x, bounds.y, bounds.width, bounds.height);
+  layerCtx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(scratch.zone.canvas,
+    bounds.x, bounds.y, bounds.width, bounds.height);
   return true;
 }
 
@@ -817,39 +757,21 @@ export function createSurfaceRenderer({
   let maskCanvas = null;
   let zoneCanvas = null;
 
-  function scratchBuffers(viewport) {
-    if (
-      materialRegistry.surfaceTransition?.method !==
-      'smooth-mask'
-    ) {
-      return null;
-    }
-
-    const mask = prepareScratchBuffer(
-      canvasFactory,
-      maskCanvas,
-      viewport
-    );
+  function scratchBuffers(width, height) {
+    if (materialRegistry.surfaceTransition?.method !== 'smooth-mask') return null;
+    const size = { width, height };
+    const mask = prepareScratchBuffer(canvasFactory, maskCanvas, size);
     if (!mask) return null;
     maskCanvas = mask.canvas;
-
-    const zone = prepareScratchBuffer(
-      canvasFactory,
-      zoneCanvas,
-      viewport
-    );
+    const zone = prepareScratchBuffer(canvasFactory, zoneCanvas, size);
     if (!zone) return null;
     zoneCanvas = zone.canvas;
-
-    return {
-      mask,
-      zone
-    };
+    return { mask, zone };
   }
 
   return Object.freeze({
     draw(ctx, { camera, viewport, surface }) {
-      const scratch = scratchBuffers(viewport);
+      const scratch = (width, height) => scratchBuffers(width, height);
       const baseMaterial = materialRegistry.require(
         surface.baseMaterialId,
         'surface'

@@ -9,7 +9,7 @@ import {
   traversalRulePackV1
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
-import { createSurfaceRenderer } from './render/surface-renderer.js?rev=user-texture-import-v1';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=terrain-family-perf-gatefix-v1';
 import {
   clipWorldArea
 } from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
@@ -23,11 +23,11 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=user-texture-import-v1';
-import { createMaterialRegistry } from './materials/material-registry.js?rev=user-texture-import-v1';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=terrain-family-perf-gatefix-v1';
+import { createMaterialRegistry } from './materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   composeMaterialPackWithUserMaterials
-} from './materials/user-material-library.js?rev=user-texture-import-v1';
+} from './materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
 } from './assets/material-asset-adapter.js?rev=user-texture-import-v1';

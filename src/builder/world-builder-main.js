@@ -48,7 +48,8 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
-import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=user-texture-import-v1';
+import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=terrain-family-perf-gatefix-v1';
+import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-perf-gatefix-v1';
 import {
   clipWorldArea
 } from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
@@ -118,14 +119,14 @@ import {
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=user-texture-import-v1';
+} from '../materials/material-pack-v1.js?rev=terrain-family-perf-gatefix-v1';
 import {
   USER_TEXTURE_MAX_BYTES,
   composeMaterialPackWithUserMaterials,
   countMaterialReferences,
   createUserMaterialRecord,
   decodeUserTextureFileDimensions
-} from '../materials/user-material-library.js?rev=user-texture-import-v1';
+} from '../materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createTerrainFamilyRegistry
 } from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
@@ -137,7 +138,7 @@ import {
 } from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   createMaterialRegistry
-} from '../materials/material-registry.js?rev=user-texture-import-v1';
+} from '../materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
 } from '../assets/material-asset-adapter.js?rev=user-texture-import-v1';
@@ -632,11 +633,20 @@ function currentValidation() {
   return cachedValidationResult;
 }
 
+let pendingPaintPoint = null;
+function flushPendingPaintPoint() {
+  if (!pendingPaintPoint) return;
+  const { kind, pathId, point } = pendingPaintPoint;
+  pendingPaintPoint = null;
+  appendDrawPoint(kind, pathId, point);
+}
+
 const previewFrameScheduler =
   createPreviewFrameScheduler({
     requestFrame:
       window.requestAnimationFrame.bind(window),
     render(timeMs) {
+      flushPendingPaintPoint();
       renderPreview(timeMs / 1000);
     }
   });
@@ -769,6 +779,12 @@ function userMaterialKindLabel(kind) {
 }
 
 function refreshUserTextureControls() {
+  const familySelect = $('user-texture-family');
+  const families = terrainFamilies();
+  setOptions(familySelect, families,
+    familySelect.value || $('terrain-family').value || 'plain',
+    { label: (family) => family.label });
+  familySelect.disabled = $('user-texture-kind').value !== 'surface';
   const select = $('user-texture-library');
   const importButton = $('user-texture-import');
   const deleteButton = $('user-texture-delete');
@@ -958,6 +974,7 @@ async function importUserTextureFromControls() {
     idToken: token,
     kind,
     label,
+    terrainFamilyId: kind === 'surface' ? $('user-texture-family').value : null,
     mimeType: file.type,
     width: dimensions.width,
     height: dimensions.height,
@@ -973,6 +990,11 @@ async function importUserTextureFromControls() {
   selectedUserMaterialId = record.id;
 
   await rebuildMaterialPipeline();
+  if (record.kind === 'surface') {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+    $('terrain-family').value = record.terrainFamilyId;
+  }
   refreshControls();
 
   const paintKind =
@@ -1750,24 +1772,17 @@ function refreshAreaControls() {
   );
   $('area-family').value = familyId;
 
+  const areaMaterialOptions = area.kind === 'interior'
+    ? surfaceMaterials : surfaceMaterialsForFamily(surfaceMaterials, familyId);
   setOptions(
     $('area-material'),
-    surfaceMaterials,
-    area.surface?.baseMaterialId,
+    areaMaterialOptions,
+    preferredSurfaceMaterial(areaMaterialOptions, familyId,
+      area.surface?.baseMaterialId) ?? area.surface?.baseMaterialId,
     { label: (material) => material.label }
   );
-  if (
-    surfaceMaterials.some(
-      (material) =>
-        material.id ===
-        area.surface?.baseMaterialId
-    )
-  ) {
-    $('area-material').value =
-      area.surface.baseMaterialId;
-  } else if (surfaceMaterials[0]) {
-    $('area-material').value =
-      surfaceMaterials[0].id;
+  if (!areaMaterialOptions.some((material) => material.id === $('area-material').value)) {
+    $('area-material').value = areaMaterialOptions[0]?.id ?? '';
   }
 
   setOptions(
@@ -2025,25 +2040,17 @@ function refreshTerrainControls() {
       ? selected.materialId
       : $('terrain-paint-material').value;
 
+  const terrainMaterialOptions = surfaceMaterialsForFamily(
+    surfaceMaterials, currentTerrainFamily);
+  const terrainMaterialId = preferredSurfaceMaterial(
+    surfaceMaterials, currentTerrainFamily, requestedTerrainMaterial);
   setOptions(
     $('terrain-paint-material'),
-    surfaceMaterials,
-    requestedTerrainMaterial,
+    terrainMaterialOptions,
+    terrainMaterialId,
     { label: (material) => material.label }
   );
-  if (
-    surfaceMaterials.some(
-      (material) =>
-        material.id ===
-        requestedTerrainMaterial
-    )
-  ) {
-    $('terrain-paint-material').value =
-      requestedTerrainMaterial;
-  } else if (surfaceMaterials[0]) {
-    $('terrain-paint-material').value =
-      surfaceMaterials[0].id;
-  }
+  $('terrain-paint-material').value = terrainMaterialId ?? '';
 
   $('terrain-brush-size-value').value =
     String(
@@ -4775,8 +4782,13 @@ function beginSurfacePath(kind, point) {
     kind === 'river'
       ? $('terrain-river-material').value
       : kind === 'terrain'
-        ? $('terrain-paint-material').value
+        ? (preferredSurfaceMaterial(surfaceMaterials, $('terrain-family').value,
+          $('terrain-paint-material').value) ?? '')
         : $('terrain-route-material').value;
+  if (!materialId) {
+    setStatus('Importe une texture pour cette famille avant de peindre.', true);
+    return null;
+  }
   const terrainFamilyId =
     kind === 'river'
       ? $('terrain-river-family').value
@@ -5081,13 +5093,13 @@ $('area-shape').addEventListener(
 );
 
 $('area-family').addEventListener('change', () => {
+  const familyId = $('area-family').value;
+  const baseMaterialId = preferredSurfaceMaterial(
+    surfaceMaterials, familyId, currentAreaRaw()?.surface?.baseMaterialId);
   draft = updateAreaProperties(
     draft,
     selectedAreaId,
-    {
-      baseTerrainFamilyId:
-        $('area-family').value
-    }
+    { baseTerrainFamilyId: familyId, ...(baseMaterialId ? { baseMaterialId } : {}) }
   );
   refreshControls();
 });
@@ -5106,23 +5118,16 @@ $('area-material').addEventListener('change', () => {
 
 
 $('terrain-family').addEventListener('change', () => {
-  if (
-    selectedSurfaceKind === 'terrain' &&
-    selectedSurfacePathId
-  ) {
-    draft = updateSurfacePath(
-      draft,
-      selectedAreaId,
-      'terrain',
-      selectedSurfacePathId,
-      {
-        terrainFamilyId:
-          $('terrain-family').value
-      }
-    );
+  const familyId = $('terrain-family').value;
+  const materialId = preferredSurfaceMaterial(surfaceMaterials, familyId);
+  if (selectedSurfaceKind === 'terrain' && selectedSurfacePathId) {
+    draft = updateSurfacePath(draft, selectedAreaId, 'terrain',
+      selectedSurfacePathId, { terrainFamilyId: familyId,
+        ...(materialId ? { materialId } : {}) });
     refreshJson();
-    renderPreview();
   }
+  refreshTerrainControls();
+  renderPreview();
 });
 
 $('terrain-family-definition-select').addEventListener(
@@ -6232,6 +6237,10 @@ $('preview-fit').addEventListener('click', () => {
 
 $('preview-focus').addEventListener('click', focusSelection);
 
+$('user-texture-kind').addEventListener('change', () => {
+  $('user-texture-family').disabled = $('user-texture-kind').value !== 'surface';
+});
+
 $('terrain-draw-kind').addEventListener(
   'change',
   () => {
@@ -6692,11 +6701,9 @@ canvas.addEventListener('pointermove', (event) => {
   }
 
   if (pointerSession.mode === 'draw-path') {
-    appendDrawPoint(
-      pointerSession.kind,
-      pointerSession.pathId,
-      world
-    );
+    pendingPaintPoint = {
+      kind: pointerSession.kind, pathId: pointerSession.pathId, point: world
+    };
     schedulePreviewRender();
     return;
   }
@@ -6952,6 +6959,7 @@ function endPointer(event) {
     pointerSession.pointerId === event.pointerId &&
     pointerSession.mode === 'draw-path'
   ) {
+    flushPendingPaintPoint();
     const world = eventWorldPoint(event);
     if (world) {
       appendDrawPoint(

@@ -29,6 +29,8 @@ function normalizeMaterial(material) {
   return deepFreeze({
     id,
     kind,
+    terrainFamilyId: typeof material.terrainFamilyId === 'string' && material.terrainFamilyId.trim()
+      ? material.terrainFamilyId.trim() : null,
     label:
       typeof material.label === 'string' && material.label.trim()
         ? material.label.trim()

@@ -195,6 +195,34 @@ export const materialPackV1 = Object.freeze({
       })
     }),
     Object.freeze({
+      id: 'ground.sea',
+      kind: 'surface',
+      label: 'Mer bleue',
+      assets: Object.freeze({
+        base: 'texture.water.clear_blue.stylized.01',
+        variants: Object.freeze([]), edge: null, decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#3d8fb7', variationColors: Object.freeze([]),
+        detailSpacing: 0, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'ground.road',
+      kind: 'surface',
+      label: 'Chemin de terre',
+      assets: Object.freeze({
+        base: 'texture.road.dirt.center.01',
+        variants: Object.freeze([]), edge: null, decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#99734b', variationColors: Object.freeze([]),
+        detailSpacing: 0, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
+      })
+    }),
+    Object.freeze({
       id: 'floor.wood.house',
       kind: 'surface',
       label: 'Plancher bois intérieur',

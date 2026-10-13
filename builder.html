@@ -115,7 +115,7 @@
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
         <p class="builder-hint">
-          Choisis Sol, Route ou Rivière / mer : ce choix active directement le même outil Peindre. Famille gameplay et texture visuelle restent indépendantes.
+          Choisis Sol, Route ou Rivière / mer : ce choix active directement le même outil Peindre. Chaque famille propose ses propres textures. La texture choisie reste une propriété visuelle, jamais une règle de déplacement ou de rencontre.
         </p>
 
         <label class="terrain-draw-kind-control">
@@ -145,6 +145,10 @@
                 <option value="path">Route</option>
                 <option value="water">Rivière / mer</option>
               </select>
+            </label>
+            <label>
+              Famille pour un sol
+              <select id="user-texture-family"></select>
             </label>
           </div>
           <label>
@@ -674,6 +678,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=collision-boundary-worldobject-obstacles-v1-r2"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=terrain-family-perf-gatefix-v1"></script>
 </body>
 </html>
