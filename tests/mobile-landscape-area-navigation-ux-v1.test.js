@@ -131,15 +131,15 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   assert.match(html, /Intérieur\s*→/);
   assert.match(
     html,
-    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=collision-boundary-worldobject-obstacles-v1-r2["']/
+    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=terrain-family-palette-editable-v2["']/
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=terrain-family-perf-gatefix-v1/
+    /world-builder-main\.js\?rev=terrain-family-palette-editable-v2/
   );
   assert.match(
     html,
-    /world-builder\.css\?rev=collision-boundary-worldobject-obstacles-v1-r2/
+    /world-builder\.css\?rev=terrain-family-palette-editable-v2/
   );
 });
 
@@ -210,7 +210,7 @@ test('runtime presents landscape guidance without adding gameplay orientation au
   );
   assert.match(
     html,
-    /style\.css\?rev=collision-boundary-worldobject-obstacles-v1-r2/
+    /style\.css\?rev=terrain-family-palette-editable-v2/
   );
   assert.match(
     css,

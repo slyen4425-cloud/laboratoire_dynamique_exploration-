@@ -416,7 +416,7 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     runtimeMain,
     new RegExp(
-      `world-document-model\\.js\\?rev=${revision}`
+      `world-document-model\\.js\\?rev=${familyRevision}`
     )
   );
   assert.match(

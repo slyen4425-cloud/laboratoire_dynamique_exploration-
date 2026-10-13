@@ -612,7 +612,7 @@ test('living runtime keeps using the same Collision World obstacle authority', a
 test('public cache chain reaches boundary silhouette and WorldObject obstacle authorities', async () => {
   const revision =
     'collision-boundary-worldobject-obstacles-v1';
-  const entryRevision = 'terrain-family-perf-gatefix-v1';
+  const entryRevision = 'terrain-family-palette-editable-v2';
 
   const [
     builderHtml,
@@ -647,7 +647,7 @@ test('public cache chain reaches boundary silhouette and WorldObject obstacle au
   assert.match(
     builderHtml,
     new RegExp(
-      `index\\.html\\?builderTest=1&rev=${revision}`
+      `index\\.html\\?builderTest=1&rev=${entryRevision}`
     )
   );
   assert.match(
@@ -924,7 +924,7 @@ test('R2 public cache graph reaches generic obstacle resolver from Builder and r
     ]);
 
   const rev = 'collision-boundary-worldobject-obstacles-v1-r2';
-  const entryRev = 'terrain-family-perf-gatefix-v1';
+  const entryRev = 'terrain-family-palette-editable-v2';
 
   assert.ok(index.includes('main.js?rev=' + entryRev));
   assert.ok(builder.includes('world-builder-main.js?rev=' + entryRev));
