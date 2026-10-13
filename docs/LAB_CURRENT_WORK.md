@@ -16,11 +16,15 @@
 >
 > Prochaine action : test smartphone du nouveau Builder Sable / familles / fluidité, puis verdict utilisateur ; ne pas ouvrir de nouveau lot avant validation.
 
-> ÉTAT ACTIF — 2026-10-08
+> ÉTAT ACTIF — 2026-10-14
 >
-> Chantier : **Collision Boundary & WorldObject Obstacles v1**
+> Chantier : **Correctif prévalidation Builder — familles de peinture/texture éditables R2**
 >
-> Branche : `work/exploration-collision-boundary-worldobject-obstacles-v1-2026-10-10`
+> Branche : `work/exploration-builder-terrain-texture-perf-gatefix-2026-10-13`
+>
+> Base GREEN protégée : Interior Geometry Authoring v1 ; Collision R2 en prévalidation distincte.
+>
+> Correctif performances R1 : fluidité mobile nettement améliorée, confirmé utilisateur le 2026-10-14. Corrections de palettes R2 : tests CI GREEN, preview/validation mobile nécessaires.
 >
 > Base GREEN exacte : `ab3ea4b761050977d181d424eb5bfb6439dd249e`
 >
@@ -629,3 +633,19 @@ Retour utilisateur : choisir Sable laisse souvent Herbe et l'éditeur mobile ral
 - Aucun code Builder / SurfaceRenderer / Material Registry du lot n'a été mergé dans `main`.
 - **Toujours PREVALIDATION : verdict smartphone Sable / imports / performance requis.**
 - **Collision R2 toujours non validé manuellement**, GREEN FINAL interdit pour ce lot également.
+
+
+## Prévalidation R2 — classement des familles de peinture entièrement éditable (2026-10-14)
+
+Retour créateur après test Pixel en paysage : **grosse amélioration de fluidité validée** ; trois défauts visuels/UX restaient bloquants : herbe cartoon retirée de Forêt, familles Route/Mer proposées sous Sol, Plaine manquante dans les choix visibles. L'ancienne table de correspondance native fixée dans le code était incompatible avec la gouvernance GenSrpG : tout doit rester éditable.
+
+- Même branche de gatefix, sans nouveau moteur graphique et sans toucher aux collisions ni à Combat : `work/exploration-builder-terrain-texture-perf-gatefix-2026-10-13`.
+- RED ciblé `4ce3685`, run `38479770652` FAILURE attendue.
+- Matériaux natifs déclarent une **famille visuelle indicative** dans Material Pack (Forêt propose d'abord Herbe cartoon, puis Sol de forêt ; Plaine propose Terre ; Sable garde Sable).
+- Le classement `surfaceMaterialIds[]` est **éditable dans la famille du WorldDocument** ; c'est une liste de présentation du Builder, jamais une règle gameplay ou un alias de collision. Les imports réutilisent l'autorité User Material Library et rejoignent explicitement cette liste si elle a été personnalisée.
+- Les familles ont un rôle d'outil `paintKind` éditable, valeurs Sol/Route/Rivière ; le pinceau Sol ne propose plus Route ni Mer, mais propose Plaine. Compatibilité d'anciens documents et zones existantes conservée.
+- La table fixe `NATIVE_SURFACE_FAMILIES` a été supprimée : plus de routage par identifiants de matériau dans la logique UI. Les presets restent **des données initiales configurables**, pas des règles moteur immuables.
+- Le moteur des rencontres, WorldSurface, Collisions et le rendu haute qualité du jeu ne sont pas modifiés. La performance mobile déjà confirmée est préservée.
+- Commits fonctionnels `659c345a`, `d2550a8e`, cache `91d786e5`, sentinelles `f4940ade`, CI `38480643515` SUCCESS, **438/438 tests** et `npm run check` SUCCESS au SHA `1623614534bddf2729f6222bdf0f5cb259ccfc95`.
+- Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BUILDER_TERRAIN_FAMILY_PALETTE_EDITABLE_R2_PREVALIDATION_2026-10-14.md`.
+- Prochaine action : checkpoint prévalidation R2 + publication Pages **infra-only** ; test smartphone des palettes puis GREEN FINAL. Collision R2 reste à valider indépendamment.

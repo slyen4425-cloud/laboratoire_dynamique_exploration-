@@ -1010,3 +1010,13 @@ Les points du pinceau mobile passent par le scheduler RAF, non par un clonage à
 
 Prévalidation technique : 435/435 tests, CI `38473354843`. Gate smartphone requis
 pour confirmer les textures et la fluidité ; aucune donnée de FPS réelle annoncée.
+
+
+## Palette éditable par famille — correctif Builder R2 (2026-10-14)
+
+- `WorldDocument.terrainFamilies[].paintKind` est le rôle visuel de peinture (`terrain`, `route`, `river`) : cette métadonnée ne pilote ni traversée ni apparition des rencontres.
+- `WorldDocument.terrainFamilies[].surfaceMaterialIds` est une liste **optionnelle** et éditable de matériaux disponibles pour la famille dans le World Builder. Une liste explicite, même vide, est prioritaire ; si le champ est absent dans un ancien monde, le Builder liste les matériaux du registre dont `terrainFamilyId` correspond.
+- Les matériaux natifs déclarent leurs suggestions dans leurs définitions `MaterialPack`, pas dans une table algorithmique d'identifiants ; les imports utilisateur stockent la famille choisie dans leur record existant.
+- Les outils affichent les familles selon `paintKind` pour les **nouveaux traits**. Les anciens placements importés ne sont jamais recatégorisés ni réécrits silencieusement.
+- `WorldDocument` conserve les références de familles et de matériaux indépendantes. Modifier la palette visuelle n'accorde aucune capacité de locomotion, ne change ni l'Encounter Resolver ni la collision.
+- Le rendu runtime complet garde le Surface Renderer existant. Les optimisations de masques du Builder, validées en fluidité mobile au lot R1, ne sont pas touchées.

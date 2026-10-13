@@ -108,3 +108,14 @@ Tout nouvel éditeur doit être classé comme producteur de **définitions** ou 
 | User Material Library | `terrainFamilyId` optionnel du matériau importé | ne stocke ni règle de combat ni collision |
 | Builder | synchronise sélections de famille et matériau à l'acte d'édition | aucune réparation silencieuse du document chargé |
 | Surface Renderer | masques locaux de présentation pour le trait visible | aucune modification du WorldDocument / largeur du tracé |
+
+
+## Taxonomie visuelle éditable des familles — gatefix R2 (2026-10-14)
+
+| Donnée | Propriétaire | Consommateur | Limite |
+|---|---|---|---|
+| `paintKind`, `surfaceMaterialIds` optionnels | TerrainFamilyDefinition dans WorldDocument | Builder seulement, projection UI | aucune autorité sur gameplay ou textures intrinsèques |
+| `terrainFamilyId` indicatif d'un matériau | Material Registry / Material Pack ou User Material Library | palette par défaut de l'éditeur | pas de famille de terrain calculée depuis un matériau |
+| Base/zone `terrainFamilyId`, `materialId` | World Surface / WorldDocument | runtime/Renderer | champs distincts, pas de mutation implicite à l'import |
+
+La famille configurable est la seule autorité sur l'association de textures spécifique à ce monde ; l'association native est uniquement un défaut visuel dans le catalogue. Le Builder ne crée pas de seconde collection de surfaces.
