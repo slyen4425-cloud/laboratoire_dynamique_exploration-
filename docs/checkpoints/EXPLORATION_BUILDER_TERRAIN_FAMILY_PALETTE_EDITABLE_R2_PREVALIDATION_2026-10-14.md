@@ -32,3 +32,13 @@ Date : 2026-10-14
 7. Gate collision R2 distinct (mur haut, arbre/rocher, bâtiment/pont, objets importés).
 
 **État : GREEN TECHNIQUE / PREVALIDATION R2, validation smartphone et GREEN FINAL non obtenus.**
+
+
+## Publication effective
+
+- Checkpoint et preview : `d03675a391dabda6bb13567fc11cd5305d9ed4c7`.
+- CI checkpoint `38480850396` SUCCESS.
+- Publication via PR #111, changement de workflow seul sur `main`, merge `8a46beac33230f3b616fcb4f0a206fe6745aed46`.
+- Pages `38480939249` SUCCESS.
+- Test : https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=terrain-family-palette-editable-v2
+- Gate smartphone R2 **EN ATTENTE**, pas de GREEN FINAL.

@@ -649,3 +649,16 @@ Retour créateur après test Pixel en paysage : **grosse amélioration de fluidi
 - Commits fonctionnels `659c345a`, `d2550a8e`, cache `91d786e5`, sentinelles `f4940ade`, CI `38480643515` SUCCESS, **438/438 tests** et `npm run check` SUCCESS au SHA `1623614534bddf2729f6222bdf0f5cb259ccfc95`.
 - Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BUILDER_TERRAIN_FAMILY_PALETTE_EDITABLE_R2_PREVALIDATION_2026-10-14.md`.
 - Prochaine action : checkpoint prévalidation R2 + publication Pages **infra-only** ; test smartphone des palettes puis GREEN FINAL. Collision R2 reste à valider indépendamment.
+
+
+## Publication R2 — familles et peinture éditables (2026-10-14)
+
+- SHA checkpoint technique : `d03675a391dabda6bb13567fc11cd5305d9ed4c7`.
+- CI checkpoint : `38480850396` SUCCESS, 438/438 tests et npm run check.
+- Ref checkpoint : `checkpoint/exploration-builder-terrain-family-palette-editable-v2-prevalidation-green-2026-10-14`.
+- Ref preview : `preview/exploration-builder-terrain-family-palette-editable-v2-2026-10-14`.
+- PR infra-only : **#111**, merge `main` `8a46beac33230f3b616fcb4f0a206fe6745aed46` ; un seul fichier modifié : `.github/workflows/pages-preview.yml`.
+- Pages `38480939249` **SUCCESS**.
+- URL officielle de gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=terrain-family-palette-editable-v2`.
+- Aucun code de gameplay ni Builder n'a été mergé sur `main` ; R2 **PREVALIDATION uniquement**.
+- Validation utilisateur déjà recueillie : forte amélioration de fluidité R1. **Nouvelle validation du classement R2 et gate Collision R2 encore nécessaires**, GREEN FINAL interdit.
