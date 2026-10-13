@@ -1,13 +1,13 @@
 export const DEFAULT_TERRAIN_FAMILY_DEFINITIONS =
   Object.freeze([
-    Object.freeze({ id: 'plain', label: 'Plaine' }),
-    Object.freeze({ id: 'forest', label: 'Forêt' }),
-    Object.freeze({ id: 'sea', label: 'Mer' }),
-    Object.freeze({ id: 'mountain', label: 'Montagne' }),
-    Object.freeze({ id: 'volcano', label: 'Volcan' }),
-    Object.freeze({ id: 'snow', label: 'Neige' }),
-    Object.freeze({ id: 'road', label: 'Route' }),
-    Object.freeze({ id: 'sand', label: 'Sable' })
+    Object.freeze({ id: 'plain', label: 'Plaine', paintKind: 'terrain' }),
+    Object.freeze({ id: 'forest', label: 'Forêt', paintKind: 'terrain' }),
+    Object.freeze({ id: 'sea', label: 'Mer', paintKind: 'river' }),
+    Object.freeze({ id: 'mountain', label: 'Montagne', paintKind: 'terrain' }),
+    Object.freeze({ id: 'volcano', label: 'Volcan', paintKind: 'terrain' }),
+    Object.freeze({ id: 'snow', label: 'Neige', paintKind: 'terrain' }),
+    Object.freeze({ id: 'road', label: 'Route', paintKind: 'route' }),
+    Object.freeze({ id: 'sand', label: 'Sable', paintKind: 'terrain' })
   ]);
 
 export const TERRAIN_FAMILY_IDS = Object.freeze(
@@ -43,12 +43,22 @@ export function normalizeTerrainFamilyDefinitions(
     }
 
     seen.add(id);
-    result.push(
-      Object.freeze({
-        id,
-        label
-      })
+    const preset = DEFAULT_TERRAIN_FAMILY_DEFINITIONS.find(
+      (item) => item.id === id
     );
+    const paintKind = ['terrain', 'route', 'river'].includes(raw?.paintKind)
+      ? raw.paintKind : preset?.paintKind;
+    const surfaceMaterialIds = Array.isArray(raw?.surfaceMaterialIds)
+      ? Object.freeze([...new Set(raw.surfaceMaterialIds.filter(
+          (value) => typeof value === 'string' && value.trim()
+        ).map((value) => value.trim()))])
+      : null;
+    result.push(Object.freeze({
+      id,
+      label,
+      ...(paintKind ? { paintKind } : {}),
+      ...(surfaceMaterialIds ? { surfaceMaterialIds } : {})
+    }));
   }
 
   if (result.length === 0) {
@@ -104,3 +114,11 @@ export function createTerrainFamilyRegistry(
 
 export const terrainFamilyRegistry =
   createTerrainFamilyRegistry();
+
+
+// Builder projection only: never used to decide gameplay traversal or encounters.
+export function terrainFamiliesForPaintKind(definitions, paintKind = 'terrain') {
+  return (Array.isArray(definitions) ? definitions : []).filter(
+    (family) => (family?.paintKind || 'terrain') === paintKind
+  );
+}

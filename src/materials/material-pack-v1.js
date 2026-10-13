@@ -17,6 +17,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'grass.forest',
       kind: 'surface',
+      terrainFamilyId: 'forest',
       label: 'Herbe cartoon',
       assets: Object.freeze({
         base: 'texture.grass.forest.base.01',
@@ -47,6 +48,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'ground.dirt',
       kind: 'surface',
+      terrainFamilyId: 'plain',
       label: 'Terre',
       assets: Object.freeze({
         base: null,
@@ -72,6 +74,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'ground.sand',
       kind: 'surface',
+      terrainFamilyId: 'sand',
       label: 'Sable',
       assets: Object.freeze({
         base: 'texture.ground.sand.stylized.01',
@@ -97,6 +100,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'ground.snow',
       kind: 'surface',
+      terrainFamilyId: 'snow',
       label: 'Neige',
       assets: Object.freeze({
         base: 'texture.ground.snow.stylized.01',
@@ -122,6 +126,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'ground.forest_floor',
       kind: 'surface',
+      terrainFamilyId: 'forest',
       label: 'Sol de forêt',
       assets: Object.freeze({
         base: 'texture.ground.forest_floor.stylized.01',
@@ -147,6 +152,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'ground.mountain_rock',
       kind: 'surface',
+      terrainFamilyId: 'mountain',
       label: 'Montagne rocheuse',
       assets: Object.freeze({
         base: 'texture.ground.mountain_rock.stylized.01',
@@ -172,6 +178,7 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'ground.volcanic_ash_lava',
       kind: 'surface',
+      terrainFamilyId: 'volcano',
       label: 'Sol cendre & lave',
       assets: Object.freeze({
         base: 'texture.ground.volcanic_ash_lava.stylized.01',

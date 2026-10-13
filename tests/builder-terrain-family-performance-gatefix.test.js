@@ -11,7 +11,7 @@ const surfaces = materialPackV1.materials.filter(m => m.kind === 'surface');
 
 test('showcase texture is classified by gameplay family, not globally listed under grass', () => {
   for (const [family, id] of [
-    ['plain', 'grass.forest'], ['forest', 'ground.forest_floor'],
+    ['plain', 'ground.dirt'], ['forest', 'grass.forest'],
     ['sand', 'ground.sand'], ['snow', 'ground.snow'],
     ['mountain', 'ground.mountain_rock'],
     ['volcano', 'ground.volcanic_ash_lava']

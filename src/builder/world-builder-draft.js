@@ -84,7 +84,8 @@ export function addTerrainFamilyDefinition(
   draft,
   {
     id = null,
-    label = 'Nouvelle famille'
+    label = 'Nouvelle famille',
+    paintKind = 'terrain'
   } = {}
 ) {
   const next = clone(draft);
@@ -112,7 +113,8 @@ export function addTerrainFamilyDefinition(
       typeof label === 'string' &&
       label.trim()
         ? label.trim()
-        : familyId
+        : familyId,
+    paintKind: ['terrain', 'route', 'river'].includes(paintKind) ? paintKind : 'terrain'
   });
 
   next.encounterConfig ??= {
@@ -133,7 +135,9 @@ export function updateTerrainFamilyDefinition(
   draft,
   terrainFamilyId,
   {
-    label
+    label,
+    paintKind,
+    surfaceMaterialIds
   } = {}
 ) {
   const next = clone(draft);
@@ -150,6 +154,15 @@ export function updateTerrainFamilyDefinition(
     label.trim()
   ) {
     family.label = label.trim();
+  }
+
+  if (['terrain', 'route', 'river'].includes(paintKind)) {
+    family.paintKind = paintKind;
+  }
+  if (Array.isArray(surfaceMaterialIds)) {
+    family.surfaceMaterialIds = [...new Set(surfaceMaterialIds.filter(
+      (id) => typeof id === 'string' && id.trim()
+    ).map((id) => id.trim()))];
   }
 
   return next;
