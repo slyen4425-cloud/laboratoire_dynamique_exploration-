@@ -612,6 +612,7 @@ test('living runtime keeps using the same Collision World obstacle authority', a
 test('public cache chain reaches boundary silhouette and WorldObject obstacle authorities', async () => {
   const revision =
     'collision-boundary-worldobject-obstacles-v1';
+  const entryRevision = 'terrain-family-perf-gatefix-v1';
 
   const [
     builderHtml,
@@ -640,7 +641,7 @@ test('public cache chain reaches boundary silhouette and WorldObject obstacle au
   assert.match(
     builderHtml,
     new RegExp(
-      `world-builder-main\\.js\\?rev=${revision}`
+      `world-builder-main\\.js\\?rev=${entryRevision}`
     )
   );
   assert.match(
@@ -652,7 +653,7 @@ test('public cache chain reaches boundary silhouette and WorldObject obstacle au
   assert.match(
     indexHtml,
     new RegExp(
-      `main\\.js\\?rev=${revision}`
+      `main\\.js\\?rev=${entryRevision}`
     )
   );
 
@@ -923,9 +924,10 @@ test('R2 public cache graph reaches generic obstacle resolver from Builder and r
     ]);
 
   const rev = 'collision-boundary-worldobject-obstacles-v1-r2';
+  const entryRev = 'terrain-family-perf-gatefix-v1';
 
-  assert.ok(index.includes('main.js?rev=' + rev));
-  assert.ok(builder.includes('world-builder-main.js?rev=' + rev));
+  assert.ok(index.includes('main.js?rev=' + entryRev));
+  assert.ok(builder.includes('world-builder-main.js?rev=' + entryRev));
   assert.ok(main.includes('movement.js?rev=' + rev));
   assert.ok(main.includes('living-runtime.js?rev=' + rev));
   assert.ok(builderMain.includes('world-object-model.js?rev=' + rev));

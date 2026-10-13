@@ -272,3 +272,31 @@ test('Registry -> Surface Renderer uses a continuous reusable mask instead of vi
   );
   assert.deepEqual(zone, before);
 });
+
+test('mobile mask buffers are sized to visible stroke and reuse capacity', () => {
+  const registry = createMaterialRegistry({
+    schemaVersion: 1,
+    surfaceTransition: { mode: 'feather', method: 'smooth-mask', blurRatio: 0.58 },
+    materials: [surfaceMaterial('base', '#555'), surfaceMaterial('paint', '#888')]
+  });
+  const scratch = fakeCanvasFactory();
+  const renderer = createSurfaceRenderer({
+    materialRegistry: registry, canvasFactory: scratch.factory
+  });
+  const ctx = fakeContext();
+  const zone = { materialId: 'paint', width: 100,
+    points: [{x:40,y:40},{x:90,y:75}] };
+  const render = (points) => renderer.draw(ctx, {
+    camera: {x:0,y:0}, viewport: {width:4000,height:3000},
+    surface: {baseMaterialId:'base',
+      zones:[{...zone,points}],routes:[],rivers:[]}
+  });
+  render(zone.points);
+  assert.equal(scratch.calls, 2);
+  assert.ok(scratch.canvases.every(c => c.width < 400 && c.height < 400),
+    'mask must not allocate the entire 4000x3000 viewport');
+  const before = scratch.canvases.map(c => ({width:c.width,height:c.height}));
+  render([{x:43,y:42},{x:70,y:65}]);
+  assert.deepEqual(scratch.canvases.map(c => ({width:c.width,height:c.height})),before,
+    'second smaller stroke must not resize backing stores');
+});

@@ -135,7 +135,7 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=collision-boundary-worldobject-obstacles-v1-r2/
+    /world-builder-main\.js\?rev=terrain-family-perf-gatefix-v1/
   );
   assert.match(
     html,

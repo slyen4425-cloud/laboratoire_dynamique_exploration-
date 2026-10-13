@@ -326,6 +326,7 @@ test('public cache chain reaches canonical interior geometry through Builder and
     'interior-geometry-authoring-v1-r2';
   const publicRevision =
     'collision-boundary-worldobject-obstacles-v1';
+  const entryRevision = 'terrain-family-perf-gatefix-v1';
   const collisionRevision =
     'collision-boundary-worldobject-obstacles-v1';
 
@@ -358,7 +359,7 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     builderHtml,
     new RegExp(
-      `world-builder-main\\.js\\?rev=${publicRevision}`
+      `world-builder-main\\.js\\?rev=${entryRevision}`
     )
   );
   assert.match(
@@ -376,7 +377,7 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     indexHtml,
     new RegExp(
-      `main\\.js\\?rev=${publicRevision}`
+      `main\\.js\\?rev=${entryRevision}`
     )
   );
   assert.match(

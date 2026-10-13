@@ -104,12 +104,9 @@ function prepareScratchBuffer(
 
   if (!canvas) return null;
 
-  if (canvas.width !== width) {
-    canvas.width = width;
-  }
-  if (canvas.height !== height) {
-    canvas.height = height;
-  }
+  // Reuse maximum required raster capacity across variable-sized strokes.
+  if (canvas.width < width) canvas.width = width;
+  if (canvas.height < height) canvas.height = height;
 
   const context =
     canvas.getContext?.('2d');
@@ -200,9 +197,11 @@ function drawSmoothMaskedLayer(
   drawLayer(layerCtx);
   layerCtx.globalCompositeOperation = 'destination-in';
   layerCtx.drawImage(scratch.mask.canvas,
+    0, 0, bounds.width, bounds.height,
     bounds.x, bounds.y, bounds.width, bounds.height);
   layerCtx.globalCompositeOperation = 'source-over';
   ctx.drawImage(scratch.zone.canvas,
+    0, 0, bounds.width, bounds.height,
     bounds.x, bounds.y, bounds.width, bounds.height);
   return true;
 }

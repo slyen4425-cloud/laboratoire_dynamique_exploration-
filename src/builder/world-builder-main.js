@@ -3671,6 +3671,7 @@ function refreshControls() {
   refreshAreaControls();
   refreshTerrainFamilyDefinitionControls();
   refreshTerrainControls();
+  refreshUserTextureControls();
   refreshFamilyEncounterControls();
   refreshObjectControls();
   refreshActorControls();

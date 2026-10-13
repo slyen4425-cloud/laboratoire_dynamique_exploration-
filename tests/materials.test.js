@@ -79,7 +79,9 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
     registry.list().filter((item) => item.kind === 'water').length,
     5
   );
-  assert.equal(registry.list().length, 14);
+  assert.equal(registry.resolve('ground.sea')?.kind, 'surface');
+  assert.equal(registry.resolve('ground.road')?.kind, 'surface');
+  assert.equal(registry.list().length, 16);
 });
 
 test('unknown material ids never silently fall back', () => {
