@@ -802,3 +802,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Fichiers prévus : extraction du composant de cache partagé sous `src/render/`, shim Builder conservant ses tests; `src/main.js` pour la consommation; tests runtime permettant de compter les appels réels au renderer, revue du graphe des révisions script, documentation.
 - Sûreté : ordre des surfaces et transitions inchangés, culling et clip WorldArea conservés; moteurs de mouvement/rencontres/collisions/Combat intacts ; caméra configurable séparée et toujours en attente.
 - Validation : tests RED → GREEN, CI architecture, preview publique par PR infra-only, test PC sur 10–20 couches + téléphone sur la même carte, export/import. Aucune prétention de FPS réel sans mesure utilisateur.
+
+## Prévalidation technique — Terrain cache dans le jeu Exploration (2026-10-14)
+
+- L’utilisateur confirme Builder **nettement plus fluide** mais jeu « catastrophique » après plusieurs couches. Le Builder conserve son cache ; la cause runtime identifiée : `frame() → drawGround() → surfaceRenderer.draw()` recomposait toutes les textures/zones, les masques floutés, routes/rivières à 60 Hz.
+- Refactor propriétaire du rendu : extraction du compositor en `src/render/terrain-raster-compositor.js`, réexport de compatibilité pour le Builder. Un seul mécanisme, surfaces canoniques inchangées.
+- `src/main.js` réutilise le raster statique par frames et petites translations caméra (marge 130–240 px), invalidation Area/resize/sortie de marge, nettoyage pagehide ; Actors, WorldObjects, Portals et animations restent dynamiques.
+- `index.html` recharge le JS runtime via version query ; contrôles de graphes de révisions ajustés sans modifier le runtime des rencontres.
+- TDD RED `54aff8734`; CI `38611409304` **SUCCESS** au SHA `b62aa916e3247fb254af62c3d2c3ac0dae3bf8ee` : **461/461 tests** et `npm run check` SUCCESS.
+- Checkpoint documentaire `docs/checkpoints/EXPLORATION_RUNTIME_TERRAIN_CACHE_PREVALIDATION_2026-10-14.md`. CI et tests ne mesurent pas de FPS réel.
+- À faire : checkpoint/ref preview et Pages infrastructure seule ; test manuel sur PC et Pixel pour plusieurs couches + déplacement caméra/transition/objets avant GREEN FINAL. Caméra configurable toujours suspendue.
