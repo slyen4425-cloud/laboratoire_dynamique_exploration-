@@ -769,28 +769,24 @@ export function createSurfaceRenderer({
   }
 
   return Object.freeze({
-    draw(ctx, { camera, viewport, surface }) {
+    draw(ctx, { camera, viewport, surface, includeBase = true }) {
       const scratch = (width, height) => scratchBuffers(width, height);
-      const baseMaterial = materialRegistry.require(
-        surface.baseMaterialId,
-        'surface'
-      );
+      // Optional transparent pass is only used by the Builder's temporary
+      // viewport compositor. The runtime's default full draw is unchanged.
+      if (includeBase) {
+        const baseMaterial = materialRegistry.require(
+          surface.baseMaterialId,
+          'surface'
+        );
 
-      drawSurfaceMaterial(
-        ctx,
-        camera,
-        viewport,
-        baseMaterial,
-        textureLoader
-      );
+        drawSurfaceMaterial(
+          ctx, camera, viewport, baseMaterial, textureLoader
+        );
 
-      drawSurfaceDecals(
-        ctx,
-        camera,
-        viewport,
-        baseMaterial,
-        textureLoader
-      );
+        drawSurfaceDecals(
+          ctx, camera, viewport, baseMaterial, textureLoader
+        );
+      }
 
       for (const zone of surface.zones ?? []) {
         const material = materialRegistry.require(
