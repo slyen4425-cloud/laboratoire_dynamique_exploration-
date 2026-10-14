@@ -761,3 +761,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Lien de test manuel : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-object-copy-stamp-v1`.
 - Gate utilisateur en attente : rocher réglé à ×1.5 puis Copier, trois touches de placement et orientation/scale conservées, changements sur une copie indépendants, autre modèle taille ×1, export/import, ergonomie plein écran et fluidité. Prévalidation technique, **pas GREEN FINAL**.
 - Caméra configurable toujours suspendue sur `work/exploration-configurable-game-camera-2026-10-14`.
+
+## Lot actif — Builder Terrain Layer Compositor (2026-10-14)
+
+- Créateur : ralentissements sévères même sur PC performant après quelques couches de peinture ; l’optimisation DPR mobile n’est pas une solution suffisante. Gate performance précédent **non validé**.
+- Base prévalidation : `591cb2990e9961d0dea1ae053767dab9bb48802d`, checkpoint `checkpoint/exploration-start-builder-terrain-layer-compositor-2026-10-14`, branche `work/exploration-builder-terrain-layer-compositor-2026-10-14`.
+- Diagnostic code : `renderPreview()` invoque `surfaceRenderer.draw` sur toutes les zones/voies/rivières et leurs masques `smooth-mask` floutés à chaque mouvement/coup de pinceau ; coût de composition croissant avec nombre de couches, indépendamment de la puissance machine.
+- Périmètre : optimisation du **renderer de preview Builder** par composition de couches raster mémorisées et actualisation du seul trait actif ; extensions additives sans changer le rendu runtime. Propriétaire modèle WorldSurface/WorldDocument inchangé ; rendu toujours par Surface Renderer canonique.
+- Gardes : respecter ordre base → zones → routes → rivières, clip WorldArea, normalisation, textures importées, zoom et pan ; libérer/recalculer les buffers lors des changements caméra/taille/document/Area/texture. Les couches ne deviennent jamais une nouvelle autorité persistante.
+- Tests : compteur de reconstructions du fond vs nombre de frames, tracé actif et calques avant/après, pan/zoom/Area/surface edits, rendu/canonique et CI. Test physique PC et mobile obligatoire avant GREEN FINAL.
+- Hors périmètre : caméra de jeu configurable (toujours suspendue), collisions/encounters, Combat, GenSrpG principal, animation assets, UX copie d’objet.
