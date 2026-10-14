@@ -831,3 +831,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Fichiers prévus : `src/render/surface-renderer.js`, nouveau cache de tuiles renderer-only pour runtime `src/render/terrain-tile-cache.js`, raccord `src/main.js`, tests de charge/rendu/culling, documentation/checkpoint. Builder réutilise les optimisations communes de surface.
 - Aucun changement de la géométrie ou de la sémantique des couches, monde, objets, rencontres, collisions, export/import, ni code de l’autre dépôt ; caméra configurable et éditeur de lissage route sont hors périmètre du lot.
 - Risques : coutures visuelles des tuiles aux transitions, tuiles absentes pendant préchargement, mémoire et écrans retina ; gardes requis : tests de source-crop/ordre, taille limite de cache, fallback en cas de canvas indisponible, contrôle manuel PC/Pixel, pas de GREEN FINAL sans test utilisateur.
+
+## Prévalidation technique — Rendu des terrains par tuiles et culling (2026-10-14)
+- Changements : runtime crée un cache de tuiles monde de 384px (bord 128px pour lissage). Limite de calcul par image : PC 2 nouvelles tuiles / mobile tactile 1 ; mémoire 48/28 tuiles, LRU. Camera qui dépasse l'ancien overscan ne provoque donc plus le recalcul synchronisé de la scène entière.
+- `SurfaceRenderer` élimine maintenant les traces de terrain, routes et rivières éloignées de l'écran *avant* de calculer les masques ; les bornes géométriques sont mémorisées par identité immuable. Le Builder bénéficie de ce culling lors du recalcul de fonds chargés.
+- Compatibilité Builder préservée par l'ancien compositor partagé ; WorldDocument, encounters, collisions et scripts Combat inchangés.
+- RED sentinelle `c22b4624`, suite réelle de culling + tuile `tests/terrain-tile-hitch-culling.test.js`. CI code `38615336474` SUCCESS au SHA `e6a82a526406e737f9339cc9de96f61cf41717ae` : **466/466**, npm run check vert. Budget mobile / roadmap / checkpoint ajoutés ensuite.
+- Checkpoint : `docs/checkpoints/EXPLORATION_TERRAIN_RENDER_HITCH_CULLING_PREVALIDATION_2026-10-14.md`.
+- Attente publication prévalidation Pages et test utilisateur *réel* : mouvement continu PC + Pixel sur carte 15–20 couches, qualité des transitions, trous de chargement temporaires, zoom et édition. Pas de GREEN FINAL avant confirmation.
+- Lissage des routes réglable **noté comme futur lot** après la fluidité ; caméra configurable suspendue jusque-là sur sa branche distincte.
