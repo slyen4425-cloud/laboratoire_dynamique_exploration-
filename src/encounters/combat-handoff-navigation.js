@@ -10,7 +10,7 @@ export const DEFAULT_COMBAT_PREVIEW_PAGE =
 export function normalizeLocalCombatPreviewPage(value) {
   if (
     typeof value !== 'string' ||
-    !/^\\.\\/combat-preview\\/[a-zA-Z0-9/_-]+\\.html$/.test(value) ||
+    !/^\.\/combat-preview\/[a-zA-Z0-9/_-]+\.html$/.test(value) ||
     value.includes('..')
   ) {
     throw new RangeError('combat preview page must be a local packaged HTML page');
