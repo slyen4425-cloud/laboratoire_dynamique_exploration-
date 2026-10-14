@@ -76,6 +76,6 @@ test('public Exploration entry cache-busts the interior random encounter policy 
 
   assert.match(
     html,
-    /src=["']\.\/src\/main\.js\?rev=terrain-family-palette-editable-v2["']/
+    /src=["']\.\/src\/main\.js\?rev=builder-blank-world-export-v1["']/
   );
 });
