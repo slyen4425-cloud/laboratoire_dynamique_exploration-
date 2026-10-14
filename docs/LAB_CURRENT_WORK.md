@@ -722,3 +722,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BUILDER_OBJECT_STAMP_MOBILE_PERF_PREVALIDATION_2026-10-14.md`.
 - Prochaine étape : checkpoint/preview et publication Pages infra-only ; validation manuelle smartphone incontournable avant GREEN FINAL. Les performances FPS réelles restent non mesurées.
 - Chantier caméra de jeu configurable **conservé et suspendu** sur `work/exploration-configurable-game-camera-2026-10-14`, jamais intégré dans le lot objets ; reprise après résolution complète des difficultés de carte. Collision R2 toujours gate séparé.
+
+## Publication — placement d’objets et fluidité tactile (2026-10-14)
+
+- Prévalidation ref `preview/exploration-builder-object-stamp-mobile-perf-v1-2026-10-14` et checkpoint `checkpoint/exploration-builder-object-stamp-mobile-perf-prevalidation-green-2026-10-14`, SHA `e45a0f77d07d1046206121137ed1f9eb5f7b4d03`.
+- CI checkpoint `38584415404` SUCCESS — **448/448** tests ; `npm run check` SUCCESS.
+- PR infra-only **#114**, un fichier `.github/workflows/pages-preview.yml`, merge `main` `7bd909aaf11dca3a7675dd13ae27e1b0e97b9a18`.
+- GitHub Pages `38584554184` **SUCCESS**.
+- Lien de test manuel : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-object-stamp-mobile-perf-v1`.
+- Aucun code Builder / runtime / gameplay mergé dans main. Le nouveau placement répété des objets, le déplacement tactile verrouillé et la stabilisation du DPR restent en **prévalidation** jusqu’au verdict réel smartphone ; aucun FPS mesuré ni GREEN FINAL.
+- Caméra configurable : lot précédent **suspendu et conservé**, ref `work/exploration-configurable-game-camera-2026-10-14`. Reprendre uniquement après résolution du gate mobile.
