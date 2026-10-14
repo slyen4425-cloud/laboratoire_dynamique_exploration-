@@ -131,11 +131,11 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   assert.match(html, /Intérieur\s*→/);
   assert.match(
     html,
-    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=builder-blank-world-export-v1["']/
+    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=builder-paint-workflow-fix-v1["']/
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=builder-blank-world-export-v1/
+    /world-builder-main\.js\?rev=builder-paint-workflow-fix-v1/
   );
   assert.match(
     html,
