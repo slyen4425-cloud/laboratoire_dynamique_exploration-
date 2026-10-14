@@ -732,3 +732,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Lien de test manuel : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-object-stamp-mobile-perf-v1`.
 - Aucun code Builder / runtime / gameplay mergé dans main. Le nouveau placement répété des objets, le déplacement tactile verrouillé et la stabilisation du DPR restent en **prévalidation** jusqu’au verdict réel smartphone ; aucun FPS mesuré ni GREEN FINAL.
 - Caméra configurable : lot précédent **suspendu et conservé**, ref `work/exploration-configurable-game-camera-2026-10-14`. Reprendre uniquement après résolution du gate mobile.
+
+## Lot actif — Copier objet vers pinceau de placement (2026-10-14)
+
+- Demande créateur : remplacer « Dupliquer » par « Copier » ; copier les réglages d’un rocher (scale/rotation) puis poser autant d’exemplaires identiques que voulu par taps, même en plein écran.
+- Branche `work/exploration-builder-object-copy-stamp-2026-10-14` issue de `8051c31c195fcd30a5dd733b89492778168a4aa1` ; checkpoint start `checkpoint/exploration-start-builder-object-copy-stamp-2026-10-14`.
+- Propriétaire : World Builder UI pour le presse-papiers de placement, helper pur de snapshot ; mutations de WorldDocument par `addWorldObject` uniquement.
+- Contrat : Copier ne crée pas d’objet immédiatement ; mémorise définition/scaleX/scaleY/rotation et variante visuelle éventuelle, pas de coordonnées, ID, Portal ou références spatiales ; poser = nouveaux IDs à la position touchée. Sélection d’un autre modèle rétablit le placement standard ; carte vierge / import / démo réinitialisent le preset éphémère.
+- Fichiers attendus : `src/builder/world-object-stamp-preset.js`, `src/builder/world-builder-main.js`, `builder.html`, tests ciblés, documentation/checkpoint. Pas de refonte du catalogue ni du moteur.
+- Gate : tests du parcours copier → changer source → poser x2 → exporter/importer, conservation du placement simple, intégrité des anciens WorldDocuments, CI + test smartphone en paysage. Publication Pages seulement en prévalidation, jamais GREEN FINAL avant retour utilisateur.
+- Hors périmètre : caméra configurable suspendue, performance/Collisions/rencontres/Combat/production.
