@@ -66,7 +66,9 @@ export function createTerrainRasterCompositor({ canvasFactory = createCanvas } =
   function prepare(slot, key, args, layer, includeBase) {
     const { renderer, areaKey, camera, zoom, dpr, canvasWidth, canvasHeight, areaClip } = args;
     const density = Math.min(1, Math.max(0.25, dpr));
-    const padding = Math.min(180, Math.max(32, Math.floor(Math.min(canvasWidth, canvasHeight) * 0.2)));
+    const padding = Number.isFinite(args.overscanCssPx)
+      ? Math.max(0, Math.min(320, Math.ceil(args.overscanCssPx)))
+      : Math.min(180, Math.max(32, Math.floor(Math.min(canvasWidth, canvasHeight) * 0.2)));
     const screenWidth = canvasWidth + padding * 2;
     const screenHeight = canvasHeight + padding * 2;
     const pixelWidth = Math.ceil(screenWidth * density);
