@@ -51,7 +51,7 @@ test('unchanged terrain repaints via cached raster even when other editor UI red
  f.draw();f.draw();f.draw();
  assert.equal(f.renders.length,1);
  assert.equal(f.mainCtx.calls.length,3);
- f.draw({camera:{x:80,y:0}}); // pan within overscan, no rasterization
+ f.draw({camera:{x:40,y:0}}); // pan within overscan, no rasterization
  assert.equal(f.renders.length,1);
  f.draw({camera:{x:500,y:0}}); // beyond overscan
  assert.equal(f.renders.length,2);
