@@ -689,3 +689,14 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - URL de test : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-blank-world-export-v1`.
 - Aucun Builder/moteur WorldDocument mergé dans `main`.
 - Reste en **prévalidation** en attente du verdict smartphone pour carte vierge, export/import, R2 palettes et Collision R2 (ce dernier séparé). Aucun GREEN FINAL anticipé.
+
+## Correction bloquante : pinceau carte vierge et accès aux textures — 2026-10-14
+
+- Retour créateur : après création de carte vierge, pinceau inutilisable et réglages de textures peu clairs ; le chantier caméra distinct est suspendu pour traiter ce blocage.
+- Branche `work/exploration-builder-paint-workflow-fix-2026-10-14` ; checkpoint start `checkpoint/exploration-start-builder-paint-workflow-fix-2026-10-14` à `4918a98f`.
+- Cause exacte : `refreshTerrainControls` utilisait la constante `paintableTerrainFamilies` avant sa déclaration JavaScript (TDZ), interrompant les commandes de peinture.
+- Fix : ordre d'initialisation corrigé ; accès direct Type/Famille/Texture/Pinceau ; réglages complexes repliables sans perdre l'éditabilité ; pinceau tactile sans passage obligatoire plein écran ; touche simple et tracés successifs autorisés.
+- TDD RED `1588834ba`, fix `834b8f8c`, CI validée `38543603277` au SHA `81e1f737522f07dcd7006cea8259bd48bec8f321` avec npm test et npm run check SUCCESS.
+- Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BUILDER_PAINT_WORKFLOW_FIX_PREVALIDATION_2026-10-14.md`.
+- Prévalidation technique uniquement : la publication Pages puis le verdict utilisateur sur Pixel paysage (Forêt/Herbe, Sable, Route, Mer, point et tracé, undo, export/import) sont obligatoires avant GREEN FINAL.
+- Aucun changement de collision, de rendu gameplay, de Combat, ni fusion du Builder sur main.
