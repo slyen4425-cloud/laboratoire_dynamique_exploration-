@@ -52,7 +52,8 @@ import {
   zoomBuilderAtCanvasPoint
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
-import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=terrain-family-perf-gatefix-v1';
+import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=builder-terrain-compositor-v1';
+import { createBuilderTerrainCompositor } from './builder-terrain-compositor.js?rev=builder-terrain-compositor-v1';
 import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-palette-editable-v2';
 import {
   clipWorldArea
@@ -295,6 +296,7 @@ async function rebuildMaterialPipeline() {
 }
 
 await rebuildMaterialPipeline();
+const terrainCompositor = createBuilderTerrainCompositor();
 
 const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
@@ -624,6 +626,19 @@ canvas.dataset.tool = mapTool;
 
 let cachedValidationDraft = null;
 let cachedValidationResult = null;
+// Signature is recomputed only when a committed WorldDocument change occurs.
+// Cursor motion and object animations do not reserialize the finished terrain.
+let lastTerrainKeyDraft = null;
+let lastTerrainKeyArea = null;
+let lastTerrainKey = '';
+function terrainSurfaceKey() {
+  if (lastTerrainKeyDraft !== draft || lastTerrainKeyArea !== selectedAreaId) {
+    lastTerrainKeyDraft = draft;
+    lastTerrainKeyArea = selectedAreaId;
+    lastTerrainKey = JSON.stringify(currentAreaRaw()?.surface ?? null);
+  }
+  return lastTerrainKey;
+}
 
 function currentValidation() {
   if (
@@ -4341,10 +4356,22 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
         camera
       );
 
-      surfaceRenderer.draw(ctx, {
-        camera,
-        viewport,
-        surface: area.surface
+      const activeStroke = pointerSession?.mode === 'draw-path' &&
+        pointerSession.areaId === selectedAreaId
+        ? { kind: pointerSession.kind, id: pointerSession.pathId }
+        : null;
+      terrainCompositor.draw({
+        ctx, renderer: surfaceRenderer, camera, viewport,
+        surface: area.surface, active: activeStroke,
+        surfaceKey: activeStroke ? null : terrainSurfaceKey(),
+        areaKey: JSON.stringify([
+          area.id, area.width, area.height, area.boundary
+        ]),
+        canvasWidth: cssWidth, canvasHeight: cssHeight,
+        dpr, zoom,
+        areaClip(layerCtx, layerCamera) {
+          clipWorldArea(layerCtx, area, layerCamera);
+        }
       });
 
       area.obstacles.forEach((obstacle) =>
@@ -7272,6 +7299,7 @@ addEventListener(
 addEventListener(
   'pagehide',
   () => {
+    terrainCompositor.clear();
     textureLoader?.dispose?.();
     userMaterialAssetResolver?.dispose?.();
     objectImageLoader?.dispose?.();
