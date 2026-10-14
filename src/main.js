@@ -9,7 +9,8 @@ import {
   traversalRulePackV1
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
-import { createSurfaceRenderer } from './render/surface-renderer.js?rev=terrain-family-perf-gatefix-v1';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
+import { createTerrainRasterCompositor } from './render/terrain-raster-compositor.js?rev=runtime-terrain-cache-v1';
 import {
   clipWorldArea
 } from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
@@ -369,6 +370,9 @@ const surfaceRenderer = createSurfaceRenderer({
   materialRegistry,
   textureLoader
 });
+// Finished terrain geometry is immutable during play; never redo its feather
+// masks for each animation frame as the player and creatures move.
+const terrainCompositor = createTerrainRasterCompositor();
 
 const userWorldObjectStore =
   createUserWorldObjectStore();
@@ -735,6 +739,7 @@ function triggerWorldInteraction() {
 }
 
 function resize() {
+  terrainCompositor.clear();
   const dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.floor(innerWidth * dpr);
   canvas.height = Math.floor(innerHeight * dpr);
@@ -909,14 +914,24 @@ function update(dt) {
 
 function drawGround() {
   const area = currentArea();
-
-  surfaceRenderer.draw(ctx, {
+  const width = innerWidth;
+  const height = innerHeight;
+  terrainCompositor.draw({
+    ctx, renderer: surfaceRenderer,
+    surface: area.surface,
+    surfaceKey: area.id,
+    areaKey: area.id,
     camera,
-    viewport: {
-      width: innerWidth,
-      height: innerHeight
-    },
-    surface: area.surface
+    viewport: { width, height },
+    canvasWidth: width, canvasHeight: height,
+    zoom: 1,
+    dpr: Math.min(devicePixelRatio || 1, 2),
+    // The terrain is static in game. Larger guard bands trade one slightly
+    // bigger buffer for substantially fewer expensive terrain rebakes.
+    overscanCssPx: Math.min(240, Math.max(130, Math.floor(Math.min(width, height) * 0.4))),
+    areaClip(layerCtx, layerCamera) {
+      clipWorldArea(layerCtx, area, layerCamera);
+    }
   });
 }
 
@@ -1052,6 +1067,10 @@ function frame(now) {
 }
 
 addEventListener('resize', resize);
+addEventListener('pagehide', () => {
+  terrainCompositor.clear();
+  textureLoader?.dispose?.();
+}, { once: true });
 addEventListener('keydown', (event) => keys.add(event.key.toLowerCase()));
 addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
 
