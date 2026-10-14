@@ -41,9 +41,19 @@
       </div>
       <div class="map-tools" aria-label="Outils directs de carte">
         <button id="map-tool-select" data-map-tool="select" type="button" class="active">Déplacer</button>
+        <button id="map-tool-object" data-map-tool="object-stamp" type="button">Placer objet</button>
         <button id="map-tool-actor" data-map-tool="actor-placement" type="button">Placer acteur</button>
         <button id="map-tool-area" data-map-tool="area-size" type="button">Taille Area</button>
         <button id="map-tool-paint" data-map-tool="paint" type="button">Peindre</button>
+      </div>
+      <div id="map-object-tools" class="map-object-tools" hidden>
+        <label class="map-object-choice">Objet à placer
+          <select id="map-object-definition" aria-label="Choisir un arbre ou un autre objet à placer"></select>
+        </label>
+        <label class="checkbox-line map-object-transform-choice">
+          <input id="map-object-transform-enabled" type="checkbox" />
+          Autoriser taille / rotation
+        </label>
       </div>
       <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
       <div id="paint-floating-tools" class="paint-floating-tools" hidden>
@@ -360,7 +370,7 @@
         </p>
 
         <div class="row">
-          <button id="object-add" type="button">+ Placer l’objet</button>
+          <button id="object-add" type="button">Choisir et placer sur la carte</button>
           <button id="object-duplicate" type="button">Dupliquer</button>
           <button id="object-delete" type="button" class="danger">Supprimer</button>
         </div>
@@ -409,6 +419,7 @@
         </div>
 
         <h3>Placement</h3>
+        <p class="builder-hint">« Placer objet » : touche la carte pour déposer plusieurs exemplaires. « Déplacer » : glisse un objet. Rotation et taille par geste : uniquement si la case dédiée est cochée sur la carte.</p>
         <div class="grid-2">
           <label>X <input id="object-x" type="number" step="1" /></label>
           <label>Y <input id="object-y" type="number" step="1" /></label>
