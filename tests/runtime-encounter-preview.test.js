@@ -76,6 +76,6 @@ test('public Exploration entry cache-busts the interior random encounter policy 
 
   assert.match(
     html,
-    /src=["']\.\/src\/main\.js\?rev=builder-paint-workflow-fix-v1&runtime=terrain-cache-v1["']/
+    /src=["']\.\/src\/main\.js\?rev=builder-paint-workflow-fix-v1&runtime=terrain-tile-hitch-culling-v1["']/
   );
 });
