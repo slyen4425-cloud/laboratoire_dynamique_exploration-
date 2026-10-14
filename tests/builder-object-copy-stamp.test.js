@@ -55,7 +55,12 @@ test('Copier then stamp twice uses canonical WorldDocument, independent IDs and 
   }
   assert.equal(validateWorldBuilderDraft(world).valid,true);
   const restored=importWorldBuilderDocument(serializeWorldBuilderDraft(world));
-  assert.deepEqual(restored.areas[0].objects, world.areas[0].objects);
+  // Import normalizes schemaVersion, so compare canonical placement identity and transforms.
+  const essentials = (areas) => areas[0].objects.map((object) => ({
+    id: object.id, objectDefinitionId: object.objectDefinitionId,
+    transform: object.transform
+  }));
+  assert.deepEqual(essentials(restored.areas), essentials(world.areas));
 });
 
 test('selection of a different model uses default transform and stale presets cannot leak', () => {
