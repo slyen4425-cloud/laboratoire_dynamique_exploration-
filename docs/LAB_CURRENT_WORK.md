@@ -781,3 +781,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Checkpoint document `docs/checkpoints/EXPLORATION_BUILDER_TERRAIN_LAYER_COMPOSITOR_PREVALIDATION_2026-10-14.md`.
 - Reste publication preview infra-only puis test PC + smartphone sur 10-20 couches et export/import avant GREEN FINAL. Aucune valeur de FPS réelle prétendue.
 - Caméra de jeu configurable conservée, en pause. Production et labo combat inchangés.
+
+## Publication Terrain Layer Compositor — 2026-10-14
+
+- Checkpoint prévalidation `checkpoint/exploration-builder-terrain-layer-compositor-prevalidation-green-2026-10-14` et ref preview `preview/exploration-builder-terrain-layer-compositor-v1-2026-10-14` créés au SHA `eca7b681be5f31fd8299b63137f84f102b913583`.
+- CI work `38603832536` SUCCESS ; checkpoint `38603900451` SUCCESS. **457/457 tests et npm run check**.
+- PR infra-only **#116**, diff vérifié d'un seul fichier `.github/workflows/pages-preview.yml` (3 ajouts / 3 suppressions), merge `main` `dedaf9e0dbc6ba1e2cd8c5480a0d8f3bfded3b33`.
+- Publication Pages workflow `38604047996` **SUCCESS**. URL : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-terrain-layer-compositor-v1`.
+- Les sources Builder, renderer, WorldDocument, gameplay, caméra et Combat ne sont **pas** mergées sur main ; seule l'infrastructure de Pages a changé, qui checkout la preview.
+- Gate manuel encore ouvert : carte vierge 15-20 traits multi-couches, pan/zoom en plein écran PC puis sur smartphone ; textures/lissage, routes/rivières, objets, export/import. Aucun FPS réel mesuré ni GREEN FINAL déclaré.
+- Caméra de jeu configurable maintenue en attente, sans mélange avec cet audit performance.
