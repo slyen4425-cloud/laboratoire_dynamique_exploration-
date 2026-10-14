@@ -62,6 +62,20 @@ button.danger {
   background: #18221b;
 }
 
+.builder-header { flex-wrap: wrap; }
+
+.builder-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.builder-header-actions button {
+  white-space: nowrap;
+}
+
 .builder-header strong {
   display: block;
   font-size: 1.05rem;
