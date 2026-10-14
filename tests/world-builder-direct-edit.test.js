@@ -303,8 +303,8 @@ test('direct gestures mutate canonical draft through Builder mutation helpers on
 
   assert.match(
     main,
-    /mode === 'drag-object'[\s\S]*draft = updateWorldObjectTransform\(/,
-    'object drag must update canonical WorldObject transform'
+    /function flushPendingObjectMove\([\s\S]*draft = updateWorldObjectTransform\([\s\S]*mode === 'drag-object'[\s\S]*pendingObjectMove =/,
+    'object drag must flush the coalesced transform to canonical WorldObject'
   );
   assert.match(
     main,
