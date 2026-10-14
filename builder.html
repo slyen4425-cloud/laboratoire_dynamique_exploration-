@@ -7,7 +7,7 @@
     content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
   />
   <title>GenSrpG — World Builder Dynamique</title>
-  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=terrain-family-palette-editable-v2" />
+  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=builder-blank-world-export-v1" />
 </head>
 <body>
   <main class="builder-shell">
@@ -16,7 +16,11 @@
         <strong>World Builder Dynamique</strong>
         <span id="builder-status">Initialisation…</span>
       </div>
-      <a id="test-exploration" class="header-link" href="./index.html?builderTest=1&rev=terrain-family-palette-editable-v2">Tester en jeu</a>
+      <div class="builder-header-actions">
+        <button id="new-blank-world" type="button">+ Carte vierge</button>
+        <button id="export-map" type="button">↓ Exporter carte</button>
+        <a id="test-exploration" class="header-link" href="./index.html?builderTest=1&rev=terrain-family-palette-editable-v2">Tester en jeu</a>
+      </div>
     </header>
 
     <section class="preview-panel">
@@ -677,8 +681,9 @@
 
       <section class="builder-tab" data-panel="json">
         <h2>WorldDocument</h2>
+        <p class="builder-hint">Exporter en .world.json conserve les données éditables de la carte. Ce fichier se réimporte ici pour continuer la création, sans remplacer les textures personnelles stockées sur l'appareil.</p>
         <div class="row">
-          <button id="export-json" type="button">Exporter JSON</button>
+          <button id="export-json" type="button">Exporter la carte (.json)</button>
           <label class="file-button">
             Importer JSON
             <input id="import-json" type="file" accept=".json,application/json" />
@@ -691,6 +696,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=terrain-family-palette-editable-v2"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-blank-world-export-v1"></script>
 </body>
 </html>
