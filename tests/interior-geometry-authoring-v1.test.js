@@ -374,13 +374,13 @@ test('public cache chain reaches canonical interior geometry through Builder and
   assert.match(
     builderHtml,
     new RegExp(
-      `index\\.html\\?builderTest=1&rev=${builderEntryRevision}`
+      `index\\.html\\?builderTest=1&rev=${entryRevision}`
     )
   );
   assert.match(
     indexHtml,
     new RegExp(
-      `main\\.js\\?rev=${builderEntryRevision}`
+      `main\\.js\\?rev=${entryRevision}`
     )
   );
   assert.match(
