@@ -751,3 +751,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - CI `38592981758` SUCCESS au commit `05f33cf8e3d92796663d3939a8c70c55998bff7f` : **452/452** tests, `npm run check` SUCCESS.
 - Checkpoint lot : `docs/checkpoints/EXPLORATION_BUILDER_OBJECT_COPY_STAMP_PREVALIDATION_2026-10-14.md`.
 - Prochaine étape : checkpoint technique, ref preview, publication Pages infrastructure seule, test mobile avant GREEN FINAL. Caméra configurable toujours suspendue et isolée.
+
+## Publication — Copier objet / empreinte répétée (2026-10-14)
+
+- Checkpoint technique `checkpoint/exploration-builder-object-copy-stamp-prevalidation-green-2026-10-14` et preview `preview/exploration-builder-object-copy-stamp-v1-2026-10-14` au SHA `4cf20ac353a05714653bbbf1fbe96c0b3e23083e`.
+- CI work `38593206676` SUCCESS au checkpoint source ; 452/452 tests, `npm run check` SUCCESS. CI du code `38592981758` SUCCESS.
+- PR infrastructure seule #115 (un seul fichier `.github/workflows/pages-preview.yml`) mergée dans `main` au SHA `95da650bbf4b361908ac1a6077ca0f373a0522b4`, aucun code Builder/jeu poussé sur main.
+- Publication GitHub Pages `38593425593` **SUCCESS**.
+- Lien de test manuel : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-object-copy-stamp-v1`.
+- Gate utilisateur en attente : rocher réglé à ×1.5 puis Copier, trois touches de placement et orientation/scale conservées, changements sur une copie indépendants, autre modèle taille ×1, export/import, ergonomie plein écran et fluidité. Prévalidation technique, **pas GREEN FINAL**.
+- Caméra configurable toujours suspendue sur `work/exploration-configurable-game-camera-2026-10-14`.
