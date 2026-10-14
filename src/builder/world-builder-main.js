@@ -9,6 +9,7 @@ import {
   addWorldObject as addWorldObjectDraft,
   appendSurfacePathPoint,
   createBuildingInteriorLink,
+  createBlankWorldBuilderDraft,
   createWorldBuilderDraft,
   deleteActorPlacement,
   deletePortal,
@@ -33,7 +34,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=terrain-family-palette-editable-v2';
+} from './world-builder-draft.js?rev=builder-blank-world-export-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -7087,20 +7088,65 @@ $('test-exploration').addEventListener('click', (event) => {
   }
 });
 
-$('export-json').addEventListener('click', () => {
+function exportWorldDocument() {
   try {
+    const result = currentValidation();
+    if (!result.valid) {
+      throw new Error(`Carte invalide : ${result.errors.join(' · ')}`);
+    }
     const json = serializeWorldBuilderDraft(draft);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+    const fileId = String(draft.id || 'world')
+      .replace(/[^a-z0-9_-]+/gi, '-')
+      .replace(/^-+|-+$/g, '') || 'world';
     link.href = url;
-    link.download = `${draft.id || 'world'}.world.json`;
+    link.download = `${fileId}.world.json`;
+    document.body.append(link);
     link.click();
-    URL.revokeObjectURL(url);
-    setStatus('WorldDocument exporté');
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus('Carte exportée : ' + link.download);
   } catch (error) {
     setStatus(error.message, true);
   }
+}
+
+$('export-json').addEventListener('click', exportWorldDocument);
+$('export-map').addEventListener('click', exportWorldDocument);
+
+$('new-blank-world').addEventListener('click', () => {
+  if (!window.confirm(
+    'Créer une nouvelle carte vierge ? Les modifications non exportées ' +
+    'seront perdues. Utilise « Exporter carte » pour conserver la carte actuelle.'
+  )) return;
+
+  draft = createBlankWorldBuilderDraft();
+  pendingPaintPoint = null;
+  pointerSession = null;
+  pinchState = null;
+  activePointers.clear();
+  hoverWorldPoint = null;
+  canvas.dataset.dragging = 'false';
+  drawUndoStack.length = 0;
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  selectedObjectId = null;
+  selectedActorPlacementId = null;
+  selectedSpawnId = null;
+  selectedPortalId = null;
+  selectedEventId = null;
+  selectedTerrainFamilyDefinitionId = draft.terrainFamilies[0]?.id ?? null;
+  selectedEncounterFamilyId = selectedTerrainFamilyDefinitionId;
+  selectedAreaId = null;
+  selectAreaForEditing(draft.initialAreaId, {
+    refresh: false,
+    activateAreaTab: true
+  });
+  fitRequested = true;
+  refreshControls();
+  setStatus('Carte vierge prête : choisis le sol, peins, puis exporte ta carte.');
 });
 
 $('import-json').addEventListener('change', async () => {
