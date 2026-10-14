@@ -551,6 +551,7 @@ let selectedAreaId =
   null;
 let selectedSpawnId = null;
 let selectedObjectId = null;
+let selectedStampDefinitionId = objectDefinitions[0]?.id ?? null;
 let selectedPortalId =
   draft.portals[0]?.id ?? null;
 let selectedEventId =
@@ -635,6 +636,14 @@ function currentValidation() {
   return cachedValidationResult;
 }
 
+let pendingObjectMove = null;
+function flushPendingObjectMove() {
+  if (!pendingObjectMove) return;
+  const move = pendingObjectMove;
+  pendingObjectMove = null;
+  draft = updateWorldObjectTransform(draft, move.areaId, move.objectId,
+    { x: move.x, y: move.y });
+}
 let pendingPaintPoint = null;
 function flushPendingPaintPoint() {
   if (!pendingPaintPoint) return;
@@ -649,6 +658,7 @@ const previewFrameScheduler =
       window.requestAnimationFrame.bind(window),
     render(timeMs) {
       flushPendingPaintPoint();
+      flushPendingObjectMove();
       renderPreview(timeMs / 1000);
     }
   });
@@ -2761,6 +2771,12 @@ function refreshBuildingInteriorControls() {
 }
 
 function refreshObjectControls() {
+  setOptions($('map-object-definition'), objectDefinitions,
+    selectedStampDefinitionId, { label: objectDefinitionLabel });
+  if (!objectDefinitions.some((item) => item.id === selectedStampDefinitionId)) {
+    selectedStampDefinitionId = objectDefinitions[0]?.id ?? null;
+  }
+  $('map-object-definition').value = selectedStampDefinitionId ?? '';
   const area = currentAreaRaw();
   const placements =
     area?.objects ?? [];
@@ -4063,7 +4079,7 @@ function drawBuilderOverlays(area, document, camera) {
         item.id === selectedObjectId
     );
 
-  if (object) {
+  if (object && mapTool === 'select') {
     const rect =
       worldObjectVisualRect(object);
 
@@ -4090,6 +4106,7 @@ function drawBuilderOverlays(area, document, camera) {
       );
       ctx.setLineDash([]);
 
+      if ($('map-object-transform-enabled').checked) {
       ctx.fillStyle = 'rgba(255,236,130,0.98)';
       for (const [x, y] of [
         [-width / 2, -height / 2],
@@ -4125,6 +4142,7 @@ function drawBuilderOverlays(area, document, camera) {
       ctx.strokeStyle = 'rgba(58,38,18,0.95)';
       ctx.lineWidth = 2 / zoom;
       ctx.stroke();
+      }
 
       ctx.restore();
     }
@@ -4257,18 +4275,9 @@ function drawBuilderOverlays(area, document, camera) {
 function previewPixelRatio() {
   const nativeRatio =
     Math.min(devicePixelRatio || 1, 2);
-  const interacting =
-    Boolean(pointerSession) ||
-    activePointers.size > 0;
-
-  if (
-    mapFocusActive &&
-    coarsePointerMedia?.matches
-  ) {
-    return Math.min(
-      nativeRatio,
-      interacting ? 1 : 1.5
-    );
+  // Stable DPR avoids allocating a new fullscreen framebuffer on each gesture.
+  if (mapFocusActive && coarsePointerMedia?.matches) {
+    return Math.min(nativeRatio, 1);
   }
 
   return nativeRatio;
@@ -4543,6 +4552,7 @@ function setMapTool(tool) {
 
   mapTool = [
     'select',
+    'object-stamp',
     'actor-placement',
     'area-size',
     ...PAINT_KINDS
@@ -4562,8 +4572,11 @@ function setMapTool(tool) {
     );
   }
 
+  $('map-object-tools').hidden = mapTool !== 'select' && mapTool !== 'object-stamp';
   if (isPaintKind(mapTool)) {
     activateTab('terrain');
+  } else if (mapTool === 'object-stamp') {
+    activateTab('objects');
   } else if (mapTool === 'actor-placement') {
     activateTab('actors');
   } else if (mapTool === 'area-size') {
@@ -4628,6 +4641,7 @@ function pointToObjectLocal(point, rect) {
 }
 
 function hitSelectedObjectGizmo(area, point) {
+  if (!$('map-object-transform-enabled').checked || mapTool !== 'select') return null;
   const object =
     resolveWorldObjectPlacements(
       area?.objects ?? []
@@ -4756,6 +4770,28 @@ function hitSelectedEventTrigger(
 
 function objectBaseDimensions(object) {
   return worldObjectBaseDimensions(object);
+}
+
+function stampSelectedWorldObject(point) {
+  const area = currentAreaRaw();
+  const objectDefinitionId = selectedStampDefinitionId;
+  if (!area || !objectDefinitionCatalog.get(objectDefinitionId)) {
+    setStatus('Choisis un objet avant de le placer.', true);
+    return false;
+  }
+  draft = addWorldObject(draft, selectedAreaId, {
+    objectDefinitionId,
+    transform: {
+      x: Math.max(0, Math.min(area.width, point.x)),
+      y: Math.max(0, Math.min(area.height, point.y)),
+      rotationDeg: 0, scaleX: 1, scaleY: 1
+    },
+    overrides: { traversalSurfaceFeatureIds: [] }
+  });
+  selectedObjectId = null;
+  schedulePreviewRender();
+  setStatus('Objet placé. Touche un autre endroit pour continuer.');
+  return true;
 }
 
 function hitWorldObject(area, point) {
@@ -5618,6 +5654,24 @@ $('object-library-category').addEventListener(
   }
 );
 
+$('map-object-definition').addEventListener('change', () => {
+  selectedStampDefinitionId = $('map-object-definition').value;
+  const selected = objectDefinitionCatalog.get(selectedStampDefinitionId);
+  if (selected?.library) {
+    selectedObjectLibraryCategoryId = selected.library.categoryId;
+    selectedObjectLibraryFolderId = selected.library.folderId;
+    refreshObjectControls();
+    $('object-definition').value = selectedStampDefinitionId;
+  }
+});
+
+$('object-definition').addEventListener('change', () => {
+  selectedStampDefinitionId = $('object-definition').value;
+  $('map-object-definition').value = selectedStampDefinitionId;
+});
+
+$('map-object-transform-enabled').addEventListener('change', schedulePreviewRender);
+
 $('object-library-folder').addEventListener(
   'change',
   () => {
@@ -5679,56 +5733,12 @@ $('bridge-obstacles').addEventListener(
   applyBridgeInputs
 );
 
-$('object-add').addEventListener(
-  'click',
-  () => {
-    const area = currentAreaRaw();
-    const objectDefinitionId =
-      $('object-definition').value;
-
-    if (!area || !objectDefinitionId) {
-      return;
-    }
-
-    const before = new Set(
-      area.objects?.map(
-        (object) => object.id
-      ) ?? []
-    );
-
-    draft = addWorldObject(
-      draft,
-      selectedAreaId,
-      {
-        objectDefinitionId,
-        transform: {
-          x: area.width / 2,
-          y: area.height / 2,
-          rotationDeg: 0,
-          scaleX: 1,
-          scaleY: 1
-        },
-        overrides: {
-          traversalSurfaceFeatureIds: []
-        }
-      }
-    );
-
-    selectedObjectId =
-      currentAreaRaw()
-        ?.objects
-        ?.find(
-          (object) =>
-            !before.has(object.id)
-        )
-        ?.id ??
-      selectedObjectId;
-
-    syncObjectLibraryToSelectedPlacement();
-    focusSelection();
-    refreshControls();
-  }
-);
+$('object-add').addEventListener('click', () => {
+  selectedStampDefinitionId = $('object-definition').value || selectedStampDefinitionId;
+  $('map-object-definition').value = selectedStampDefinitionId ?? '';
+  setMapTool('object-stamp');
+  setStatus('Placement actif : touche plusieurs endroits pour poser des objets.');
+});
 
 $('object-duplicate').addEventListener('click', () => {
   const before = currentAreaRaw()?.objects?.map((object) => object.id) ?? [];
@@ -6482,7 +6492,7 @@ canvas.addEventListener('pointerdown', (event) => {
   if (
     !mapFocusActive &&
     prefersMapFocusOnPointer() &&
-    !isPaintKind(mapTool)
+    !isPaintKind(mapTool) && mapTool !== 'object-stamp'
   ) {
     event.preventDefault();
     void enterMapFocus();
@@ -6512,6 +6522,14 @@ canvas.addEventListener('pointerdown', (event) => {
 
   hoverWorldPoint = world;
   canvas.dataset.dragging = 'true';
+
+  if (mapTool === 'object-stamp') {
+    pointerSession = {
+      pointerId: event.pointerId, mode: 'pending-object-stamp',
+      areaId: selectedAreaId, startCanvas: point, startWorld: world
+    };
+    return;
+  }
 
   if (isPaintKind(mapTool)) {
     pointerSession = {
@@ -6741,6 +6759,15 @@ canvas.addEventListener('pointermove', (event) => {
   const world = hover ?? eventWorldPoint(event);
   if (!area || !world) return;
 
+  if (pointerSession.mode === 'pending-object-stamp') {
+    const distance = Math.hypot(
+      canvasPoint.x - pointerSession.startCanvas.x,
+      canvasPoint.y - pointerSession.startCanvas.y
+    );
+    if (distance > 12) pointerSession = null;
+    return;
+  }
+
   if (pointerSession.mode === 'pending-draw') {
     const distance = Math.hypot(
       canvasPoint.x - pointerSession.startCanvas.x,
@@ -6925,30 +6952,11 @@ canvas.addEventListener('pointermove', (event) => {
   }
 
   if (pointerSession.mode === 'drag-object') {
-    const x = Math.max(
-      0,
-      Math.min(
-        area.width,
-        world.x - pointerSession.offsetX
-      )
-    );
-    const y = Math.max(
-      0,
-      Math.min(
-        area.height,
-        world.y - pointerSession.offsetY
-      )
-    );
-
-    draft = updateWorldObjectTransform(
-      draft,
-      selectedAreaId,
-      selectedObjectId,
-      { x, y }
-    );
-
-    $('object-x').value = Math.round(x * 10) / 10;
-    $('object-y').value = Math.round(y * 10) / 10;
+    pendingObjectMove = {
+      areaId: selectedAreaId, objectId: selectedObjectId,
+      x: Math.max(0, Math.min(area.width, world.x - pointerSession.offsetX)),
+      y: Math.max(0, Math.min(area.height, world.y - pointerSession.offsetY))
+    };
     schedulePreviewRender();
     return;
   }
@@ -7026,6 +7034,16 @@ function endPointer(event) {
   activePointers.delete(event.pointerId);
 
   if (!wasTracked) return;
+
+  if (pointerSession?.mode === 'pending-object-stamp' &&
+      pointerSession.pointerId === event.pointerId) {
+    const p = canvasCoordinates(event);
+    if (Math.hypot(p.x - pointerSession.startCanvas.x,
+      p.y - pointerSession.startCanvas.y) <= 12) {
+      stampSelectedWorldObject(pointerSession.startWorld);
+    }
+  }
+  if (pointerSession?.mode === 'drag-object') flushPendingObjectMove();
 
   if (
     pointerSession &&
@@ -7158,6 +7176,7 @@ $('new-blank-world').addEventListener('click', () => {
 
   draft = createBlankWorldBuilderDraft();
   pendingPaintPoint = null;
+  pendingObjectMove = null;
   pointerSession = null;
   pinchState = null;
   activePointers.clear();
