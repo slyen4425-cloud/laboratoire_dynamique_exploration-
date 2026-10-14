@@ -64,7 +64,7 @@ test('runtime scene renders its original actors and objects separately above cac
 });
 test('Builder imports the shared raster engine with unchanged public API',async()=>{
   const facade=await import('../src/builder/builder-terrain-compositor.js');
-  const shared=await import('../src/render/terrain-raster-compositor.js');
+  const shared=await import('../src/render/terrain-raster-compositor.js?rev=runtime-terrain-cache-v1');
   assert.equal(facade.createBuilderTerrainCompositor,shared.createTerrainRasterCompositor);
   assert.equal(typeof facade.partitionActiveSurface,'function');
 });
