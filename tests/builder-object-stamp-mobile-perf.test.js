@@ -7,7 +7,7 @@ const read=p=>readFile(new URL('../'+p,import.meta.url),'utf8');
 test('repeated trees use canonical addWorldObject placements and round-trip',()=>{
  let world=createBlankWorldBuilderDraft();
  for(let i=0;i<3;i++)world=addWorldObject(world,world.initialAreaId,{
-  objectDefinitionId:'objectdef.tree.oak.01',transform:{x:200+i*80,y:300,rotationDeg:0,scaleX:1,scaleY:1}
+  objectDefinitionId:'objectdef.tree.forest.oak.01',transform:{x:200+i*80,y:300,rotationDeg:0,scaleX:1,scaleY:1}
  });
  assert.equal(world.areas[0].objects.length,3);
  assert.equal(new Set(world.areas[0].objects.map(o=>o.id)).size,3);
