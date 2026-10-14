@@ -119,7 +119,7 @@
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
         <p class="builder-hint">
-          Choisis Sol, Route ou Rivière / mer : ce choix active directement le même outil Peindre. Chaque famille propose ses propres textures. La texture choisie reste une propriété visuelle, jamais une règle de déplacement ou de rencontre.
+          Peinture rapide : sélectionne un type de tracé, une famille et une texture. Active le pinceau, puis dessine sur la carte. La texture visuelle ne change pas les règles de déplacement ou de rencontre.
         </p>
 
         <label class="terrain-draw-kind-control">
@@ -131,6 +131,81 @@
           </select>
         </label>
 
+        <div class="terrain-paint-start">
+          <button id="terrain-paint-toggle" type="button" aria-pressed="false">🖌 Activer le pinceau</button>
+          <p id="terrain-paint-guide" class="builder-hint" role="status">
+            1. Choisis Sol, Route ou Rivière. 2. Choisis famille et texture. 3. Active le pinceau.
+          </p>
+        </div>
+
+        <div class="terrain-brush-panel" data-terrain-kind-panel="terrain">
+          <div class="grid-2">
+            <label>
+              Famille à peindre
+              <select id="terrain-family"></select>
+            </label>
+            <label>
+              Texture à peindre
+              <select id="terrain-paint-material"></select>
+            </label>
+          </div>
+          <label>
+            Taille pinceau
+            <div class="brush-size-row">
+              <input id="terrain-brush-size" type="range" min="24" max="600" step="4" value="180" />
+              <output id="terrain-brush-size-value" for="terrain-brush-size">180</output>
+            </div>
+          </label>
+          <p class="builder-hint">
+            Le cercle correspond à la taille du pinceau. Un appui peint un point, un glissement dessine une zone.
+          </p>
+        </div>
+
+        <section data-terrain-kind-panel="route" hidden>
+          <h3>Route</h3>
+          <div class="grid-2">
+            <label>
+              Famille
+              <select id="terrain-route-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-route-material"></select>
+            </label>
+            <label>
+              Largeur route / pinceau
+              <div class="brush-size-row">
+                <input id="terrain-route-width" type="range" min="8" max="600" step="2" value="82" />
+                <output id="terrain-route-width-value" for="terrain-route-width">82</output>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section data-terrain-kind-panel="river" hidden>
+          <h3>Rivière / mer</h3>
+          <div class="grid-2">
+            <label>
+              Famille
+              <select id="terrain-river-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-river-material"></select>
+            </label>
+            <label>
+              Largeur rivière / pinceau
+              <div class="brush-size-row">
+                <input id="terrain-river-width" type="range" min="8" max="2400" step="4" value="72" />
+                <output id="terrain-river-width-value" for="terrain-river-width">72</output>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <details class="terrain-advanced">
+          <summary>Réglages avancés : textures personnelles, familles, rencontres et tracés</summary>
+          <p class="builder-hint">Ces paramètres sont facultatifs pour peindre avec les textures fournies.</p>
         <details class="user-texture-panel">
           <summary>Textures personnelles</summary>
           <p class="builder-hint">
@@ -215,71 +290,6 @@
           </p>
         </section>
 
-        <div class="terrain-brush-panel" data-terrain-kind-panel="terrain">
-          <div class="grid-2">
-            <label>
-              Famille terrain
-              <select id="terrain-family"></select>
-            </label>
-            <label>
-              Texture
-              <select id="terrain-paint-material"></select>
-            </label>
-          </div>
-          <label>
-            Taille pinceau
-            <div class="brush-size-row">
-              <input id="terrain-brush-size" type="range" min="24" max="600" step="4" value="180" />
-              <output id="terrain-brush-size-value" for="terrain-brush-size">180</output>
-            </div>
-          </label>
-          <p class="builder-hint">
-            Active « Peindre terrain » puis glisse sur la map. Le cercle indique exactement le diamètre du pinceau.
-          </p>
-        </div>
-
-        <section data-terrain-kind-panel="route" hidden>
-          <h3>Route</h3>
-          <div class="grid-2">
-            <label>
-              Famille
-              <select id="terrain-route-family"></select>
-            </label>
-            <label>
-              Texture
-              <select id="terrain-route-material"></select>
-            </label>
-            <label>
-              Largeur route / pinceau
-              <div class="brush-size-row">
-                <input id="terrain-route-width" type="range" min="8" max="600" step="2" value="82" />
-                <output id="terrain-route-width-value" for="terrain-route-width">82</output>
-              </div>
-            </label>
-          </div>
-        </section>
-
-        <section data-terrain-kind-panel="river" hidden>
-          <h3>Rivière / mer</h3>
-          <div class="grid-2">
-            <label>
-              Famille
-              <select id="terrain-river-family"></select>
-            </label>
-            <label>
-              Texture
-              <select id="terrain-river-material"></select>
-            </label>
-            <label>
-              Largeur rivière / pinceau
-              <div class="brush-size-row">
-                <input id="terrain-river-width" type="range" min="8" max="2400" step="4" value="72" />
-                <output id="terrain-river-width-value" for="terrain-river-width">72</output>
-              </div>
-            </label>
-          </div>
-        </section>
-
         <section class="terrain-encounter-panel">
           <h3>Rencontres par famille</h3>
           <p class="builder-hint">
@@ -320,6 +330,7 @@
         <p class="builder-hint">
           Astuce : la Rivière peut monter jusqu’à 2400 pour créer de très larges étendues d’eau (lac/mer). Utilise deux doigts pour zoomer/déplacer la carte sans quitter l’outil.
         </p>
+        </details>
       </section>
 
       <section class="builder-tab" data-panel="objects">
@@ -696,6 +707,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-blank-world-export-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-paint-workflow-fix-v1"></script>
 </body>
 </html>
