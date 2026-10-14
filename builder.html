@@ -50,6 +50,7 @@
         <label class="map-object-choice">Objet à placer
           <select id="map-object-definition" aria-label="Choisir un arbre ou un autre objet à placer"></select>
         </label>
+        <output id="map-object-copy-status" aria-live="polite">Modèle standard · taille ×1, rotation 0°</output>
         <label class="checkbox-line map-object-transform-choice">
           <input id="map-object-transform-enabled" type="checkbox" />
           Autoriser taille / rotation
@@ -371,7 +372,7 @@
 
         <div class="row">
           <button id="object-add" type="button">Choisir et placer sur la carte</button>
-          <button id="object-duplicate" type="button">Dupliquer</button>
+          <button id="object-duplicate" type="button">Copier</button>
           <button id="object-delete" type="button" class="danger">Supprimer</button>
         </div>
 
@@ -419,7 +420,8 @@
         </div>
 
         <h3>Placement</h3>
-        <p class="builder-hint">« Placer objet » : touche la carte pour déposer plusieurs exemplaires. « Déplacer » : glisse un objet. Rotation et taille par geste : uniquement si la case dédiée est cochée sur la carte.</p>
+        <p class="builder-hint">Sélectionne un objet déjà placé, règle sa taille et sa rotation puis touche « Copier ». En mode « Placer objet », chaque appui dépose un nouvel exemplaire avec ces réglages. Sélectionner un autre modèle revient à sa taille normale.</p>
+        <p class="builder-hint">« Déplacer » : glisse un objet. Rotation et taille par geste : uniquement si la case dédiée est cochée sur la carte.</p>
         <div class="grid-2">
           <label>X <input id="object-x" type="number" step="1" /></label>
           <label>Y <input id="object-y" type="number" step="1" /></label>
@@ -718,6 +720,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-paint-workflow-fix-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-object-copy-stamp-v1"></script>
 </body>
 </html>
