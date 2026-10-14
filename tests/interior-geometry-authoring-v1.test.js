@@ -326,7 +326,7 @@ test('public cache chain reaches canonical interior geometry through Builder and
     'interior-geometry-authoring-v1-r2';
   const publicRevision =
     'collision-boundary-worldobject-obstacles-v1';
-  const entryRevision = 'builder-blank-world-export-v1';
+  const entryRevision = 'builder-paint-workflow-fix-v1';
   const builderRevision = 'builder-blank-world-export-v1';
   const familyRevision = 'terrain-family-palette-editable-v2';
   const collisionRevision =
