@@ -79,3 +79,30 @@ test('Builder preview hands renderer to a compositor while runtime defaults to o
  assert.match(renderer,/includeBase = true/);
  assert.match(renderer,/if \(includeBase\)/);
 });
+
+import { createBlankWorldBuilderDraft,addSurfacePath,appendSurfacePathPoint } from '../src/builder/world-builder-draft.js';
+test('brush samples copy only edited path and preserve immutability of prior worlds',()=>{
+  let draft=createBlankWorldBuilderDraft();
+  draft=addSurfacePath(draft,draft.initialAreaId,'terrain',{
+    width:180,terrainFamilyId:'forest',materialId:'grass.forest',
+    points:[{x:2,y:3},{x:4,y:5}]
+  });
+  const oldArea=draft.areas[0];
+  const oldZones=oldArea.surface.zones;
+  const oldPath=oldZones[0];
+  const oldOthers={...draft,events:draft.events,objects:oldArea.objects};
+  const newDraft=appendSurfacePathPoint(draft,draft.initialAreaId,'terrain',oldPath.id,{x:80,y:90});
+  assert.notEqual(newDraft,draft);
+  assert.notEqual(newDraft.areas, draft.areas);
+  assert.notEqual(newDraft.areas[0], oldArea);
+  assert.notEqual(newDraft.areas[0].surface,oldArea.surface);
+  assert.notEqual(newDraft.areas[0].surface.zones,oldZones);
+  assert.notEqual(newDraft.areas[0].surface.zones[0],oldPath);
+  assert.equal(oldPath.points.length,2);
+  assert.equal(newDraft.areas[0].surface.zones[0].points.length,3);
+  assert.deepEqual(newDraft.areas[0].surface.zones[0].points[2],{x:80,y:90});
+  // Old unrelated arrays remain shared, not JSON-serialized on every brush point.
+  assert.equal(newDraft.events,oldOthers.events);
+  assert.equal(newDraft.areas[0].objects,oldOthers.objects);
+  assert.equal(newDraft.areas[0].surface.routes,oldArea.surface.routes);
+});
