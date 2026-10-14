@@ -818,6 +818,6 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Checkpoint technique `checkpoint/exploration-runtime-terrain-cache-prevalidation-green-2026-10-14` et preview `preview/exploration-runtime-terrain-cache-v1-2026-10-14` au SHA `0a2a0d8fd307a5761098ff96df9e257b72631021`.
 - CI work `38611669643` et checkpoint `38611734915` SUCCESS (461/461 tests, npm run check).
 - PR infra-only **#117** mergée sur `main` à `a98a7099e55f8740cc33aee9285a2b3112278378` ; diff vérifié limité à `.github/workflows/pages-preview.yml` (3 ajouts/3 suppressions). Aucun changement gameplay/Builder/WorldDocument sur main.
-- Workflow Pages déclenché : `38611854472` (état à confirmer) ; URL prévue après SUCCESS : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=runtime-terrain-cache-v1`.
+- Workflow Pages `38611854472` **SUCCESS** : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=runtime-terrain-cache-v1`. Tester depuis le Builder par « Tester en jeu » pour utiliser la carte en cours.
 - Exigence manuelle : test sur PC/paysage smartphone avec le même monde chargé, pan/rencontres/animation, 15+ couches. Gate runtime en attente, **pas GREEN FINAL** ni promesse de FPS chiffré.
 - Caméra configurable maintenue en attente ; aucun travail sur labo Combat ni dépôt production.
