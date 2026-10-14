@@ -791,3 +791,14 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Les sources Builder, renderer, WorldDocument, gameplay, caméra et Combat ne sont **pas** mergées sur main ; seule l'infrastructure de Pages a changé, qui checkout la preview.
 - Gate manuel encore ouvert : carte vierge 15-20 traits multi-couches, pan/zoom en plein écran PC puis sur smartphone ; textures/lissage, routes/rivières, objets, export/import. Aucun FPS réel mesuré ni GREEN FINAL déclaré.
 - Caméra de jeu configurable maintenue en attente, sans mélange avec cet audit performance.
+
+## Lot actif — Cache de terrain runtime Exploration (2026-10-14)
+
+- Test utilisateur : Builder nettement plus fluide avec cache des surfaces, MAIS « Tester en jeu » devient inutilisable à cause d'énormes ralentissements sur la même carte. Gate de performance en jeu explicitement ROUGE, ne pas confondre avec green technique du Builder.
+- Cause code confirmée : `src/main.js:render()` appelle `drawGround()` à chaque frame, qui appelle `surfaceRenderer.draw()` sur TOUTES les couches WorldSurface, avec masque `smooth-mask` flouté par couche, même lorsque les terrains et leurs textures sont immuables. Le cache du Builder ne s'applique pas au runtime.
+- Base propre : `aeb4b042374453ef84f6c27086edb24f79010e89` (Builder compositor publié, 457/457), checkpoint `checkpoint/exploration-start-runtime-terrain-cache-2026-10-14`; travail `work/exploration-runtime-terrain-cache-2026-10-14`.
+- Propriétaire : adapter raster du Surface Renderer (lecture seule) ; `WorldDocument`, `WorldSurface`, `Material Registry`, `Collision World` et moteur de jeu inchangés. Réutiliser la composition raster existante, sans créer un format ou algorithme concurrent.
+- Périmètre : rendre le terrain canonique une seule fois par fenêtre de caméra visible, réutiliser le raster lors des frames suivantes, recharger par Area/viewport/zoom/pan au-delà de la marge, libérer le cache sur resize/pagehide. Personnage, PNJ et rencontres restent dynamiques par dessus.
+- Fichiers prévus : extraction du composant de cache partagé sous `src/render/`, shim Builder conservant ses tests; `src/main.js` pour la consommation; tests runtime permettant de compter les appels réels au renderer, revue du graphe des révisions script, documentation.
+- Sûreté : ordre des surfaces et transitions inchangés, culling et clip WorldArea conservés; moteurs de mouvement/rencontres/collisions/Combat intacts ; caméra configurable séparée et toujours en attente.
+- Validation : tests RED → GREEN, CI architecture, preview publique par PR infra-only, test PC sur 10–20 couches + téléphone sur la même carte, export/import. Aucune prétention de FPS réel sans mesure utilisateur.
