@@ -28,6 +28,14 @@ jobs:
         with:
           ref: def7aaaa4b0d24317d0f4dc4544da20c26b35b19
 
+      - name: Configure Node for immutable integration checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify the Exploration baseline
+        run: npm test && npm run check
+
       - name: Checkout Combat native modern Encounter browser GREEN prevalidation
         uses: actions/checkout@v4
         with:
@@ -41,14 +49,6 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: global-assets
           path: capture-assets
-
-      - name: Configure Node for immutable integration checks
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Verify the Exploration baseline
-        run: npm test && npm run check
 
       - name: Fail closed if modern Combat has no real native bridge
         run: node scripts/audit-combat-preview.mjs combat-preview
