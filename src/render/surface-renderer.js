@@ -138,6 +138,41 @@ function strokeMaskPath(
   ctx.restore();
 }
 
+// Normalized WorldSurface geometry is immutable. Cache bounding rectangles by
+// path identity to skip expensive offscreen masks and ribbon tessellation.
+const featureBounds = new WeakMap();
+function featureBoundingRect(feature) {
+  const points = feature?.points;
+  if (!feature || !Array.isArray(points) || points.length < 2) return null;
+  let bounds = featureBounds.get(feature);
+  if (bounds) return bounds;
+  let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+  for (const p of points) {
+    if (!Number.isFinite(p?.x) || !Number.isFinite(p?.y)) continue;
+    left = Math.min(left, p.x);
+    right = Math.max(right, p.x);
+    top = Math.min(top, p.y);
+    bottom = Math.max(bottom, p.y);
+  }
+  if (!Number.isFinite(left)) return null;
+  bounds = { left, top, right, bottom };
+  featureBounds.set(feature, bounds);
+  return bounds;
+}
+
+export function surfaceFeatureMayBeVisible(
+  feature, camera, viewport, extraPadding = 128
+) {
+  const bounds = featureBoundingRect(feature);
+  if (!bounds) return false;
+  const width = Number.isFinite(feature.width) ? Math.max(0, feature.width) : 0;
+  const margin = width / 2 + Math.max(0, extraPadding);
+  return bounds.right + margin >= camera.x &&
+    bounds.left - margin <= camera.x + viewport.width &&
+    bounds.bottom + margin >= camera.y &&
+    bounds.top - margin <= camera.y + viewport.height;
+}
+
 function visibleMaskBounds(item, camera, viewport, plan) {
   const points = item?.points;
   if (!Array.isArray(points) || points.length < 2) return null;
@@ -793,6 +828,7 @@ export function createSurfaceRenderer({
           zone.materialId,
           'surface'
         );
+        if (!surfaceFeatureMayBeVisible(zone, camera, viewport)) continue;
         drawSurfaceZoneMaterial(
           ctx,
           zone,
@@ -807,6 +843,10 @@ export function createSurfaceRenderer({
 
       for (const road of surface.routes) {
         const material = materialRegistry.require(road.materialId, 'path');
+        if (!surfaceFeatureMayBeVisible(
+          road, camera, viewport,
+          Math.max(128, (material.render?.outerEdgePadding ?? 0) / 2 + 96)
+        )) continue;
         drawPathMaterial(
           ctx,
           road,
@@ -821,6 +861,10 @@ export function createSurfaceRenderer({
 
       for (const river of surface.rivers) {
         const material = materialRegistry.require(river.materialId, 'water');
+        if (!surfaceFeatureMayBeVisible(
+          river, camera, viewport,
+          Math.max(128, (material.render?.outerBankPadding ?? 0) / 2 + 96)
+        )) continue;
         drawWaterMaterial(
           ctx,
           river,
