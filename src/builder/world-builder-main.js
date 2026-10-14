@@ -4887,6 +4887,9 @@ function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
 function beginSurfacePath(kind, point) {
   const area = currentAreaRaw();
   if (!area) return null;
+  // Each fresh stroke starts a distinct retained-layer transaction, even if
+  // undo/repaint recycles the same canonical WorldSurface path ID.
+  terrainCompositor.clear();
 
   const before = surfacePathItems(area)
     .filter((item) => item.kind === kind)
