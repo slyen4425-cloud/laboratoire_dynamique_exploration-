@@ -812,3 +812,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - TDD RED `54aff8734`; CI `38611409304` **SUCCESS** au SHA `b62aa916e3247fb254af62c3d2c3ac0dae3bf8ee` : **461/461 tests** et `npm run check` SUCCESS.
 - Checkpoint documentaire `docs/checkpoints/EXPLORATION_RUNTIME_TERRAIN_CACHE_PREVALIDATION_2026-10-14.md`. CI et tests ne mesurent pas de FPS réel.
 - À faire : checkpoint/ref preview et Pages infrastructure seule ; test manuel sur PC et Pixel pour plusieurs couches + déplacement caméra/transition/objets avant GREEN FINAL. Caméra configurable toujours suspendue.
+
+## Publication — Terrain cache runtime Exploration (2026-10-14)
+
+- Checkpoint technique `checkpoint/exploration-runtime-terrain-cache-prevalidation-green-2026-10-14` et preview `preview/exploration-runtime-terrain-cache-v1-2026-10-14` au SHA `0a2a0d8fd307a5761098ff96df9e257b72631021`.
+- CI work `38611669643` et checkpoint `38611734915` SUCCESS (461/461 tests, npm run check).
+- PR infra-only **#117** mergée sur `main` à `a98a7099e55f8740cc33aee9285a2b3112278378` ; diff vérifié limité à `.github/workflows/pages-preview.yml` (3 ajouts/3 suppressions). Aucun changement gameplay/Builder/WorldDocument sur main.
+- Workflow Pages déclenché : `38611854472` (état à confirmer) ; URL prévue après SUCCESS : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=runtime-terrain-cache-v1`.
+- Exigence manuelle : test sur PC/paysage smartphone avec le même monde chargé, pan/rencontres/animation, 15+ couches. Gate runtime en attente, **pas GREEN FINAL** ni promesse de FPS chiffré.
+- Caméra configurable maintenue en attente ; aucun travail sur labo Combat ni dépôt production.
