@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: runtime-terrain-cache-v1
+# preview-revision: terrain-render-hitch-culling-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Runtime Terrain Cache Prevalidation
+      - name: Checkout Exploration Terrain Tile Culling Prevalidation
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-runtime-terrain-cache-v1-2026-10-14
+          ref: preview/exploration-terrain-render-hitch-culling-v1-2026-10-14
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
