@@ -54,7 +54,7 @@ test('moving within guard band does not rebake; moving beyond guard band does',(
 test('runtime scene renders its original actors and objects separately above cached ground',async()=>{
   const main=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
   const shared=await readFile(new URL('../src/render/terrain-raster-compositor.js',import.meta.url),'utf8');
-  assert.match(main,/createTerrainRasterCompositor/);
+  assert.match(main,/createTerrainTileCache/);
   assert.match(main,/terrainCompositor\.draw\(/);
   assert.match(main,/surface: area\.surface/);
   assert.doesNotMatch(main,/function drawGround\(\)\s*\{[\s\S]*?surfaceRenderer\.draw\(/);
