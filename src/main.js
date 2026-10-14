@@ -183,7 +183,7 @@ let activeWorldEventIntent = null;
 
 const builderShortcut = document.querySelector('#builder-shortcut');
 if (builderShortcut && builderTest) {
-  builderShortcut.href = './builder.html?resumeBuilderTest=1';
+  builderShortcut.href = './builder.html?resumeBuilderTest=1&rev=builder-blank-world-export-v1';
   builderShortcut.textContent = 'Retour World Builder';
 }
 
