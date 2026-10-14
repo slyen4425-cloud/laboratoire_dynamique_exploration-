@@ -65,3 +65,27 @@ test('runtime module uses tiled cache; Builder retains old compositor, no camera
  const txt=await readFile(new URL('../src/render/surface-renderer.js',import.meta.url),'utf8');
  assert.match(txt,/surfaceFeatureMayBeVisible\(/);
 });
+
+test('SurfaceRenderer skips far-offscreen strokes before painting zone, road or river',async()=>{
+  const {createSurfaceRenderer}=await import('../src/render/surface-renderer.js');
+  const surfaces={
+    baseMaterialId:'ground', zones:[path('near',15,25),path('far',25000,25000)],
+    routes:[{...path('far-route',18000,18000),materialId:'route'}],
+    rivers:[{...path('far-river',19000,19000),materialId:'river'}]
+  };
+  const materials={
+    ground:{assets:{base:null,decals:[]},render:{baseColor:'#555',detailSpacing:0}},
+    'ground.sand':{assets:{base:null},render:{baseColor:'#333'}},
+    route:{assets:{edge:null,center:null},render:{outerEdgePadding:10,innerEdgePadding:5,highlightRatio:.2,highlightColor:'#faf',highlightOpacity:.5,outerEdgeColor:'#eee',innerEdgeColor:'#ccc',centerColor:'#999'}},
+    river:{assets:{bank:null,center:null},render:{outerBankPadding:10,innerBankPadding:5,highlightRatio:.2,highlightColor:'#7ef',highlightOpacity:.4,outerBankColor:'#356',innerBankColor:'#457',waterColor:'#45c'}}
+  };
+  let strokes=0;
+  const ctx={save(){},restore(){},fillRect(){},createPattern(){return null},
+    beginPath(){},moveTo(){},lineTo(){},quadraticCurveTo(){},stroke(){strokes++}};
+  const renderer=createSurfaceRenderer({materialRegistry:{
+    surfaceTransition:{mode:'none'},
+    require(id){if(!materials[id])throw new Error(id);return materials[id]}
+  }});
+  renderer.draw(ctx,{camera:{x:0,y:0},viewport:{width:400,height:300},surface:surfaces});
+  assert.equal(strokes,1,'only the near surface gets stroked; distant paths are culled');
+});
