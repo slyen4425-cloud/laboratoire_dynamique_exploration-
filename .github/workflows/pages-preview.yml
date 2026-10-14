@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: terrain-family-palette-editable-v2
+# preview-revision: builder-blank-world-export-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Builder Editable Terrain Family Palette R2
+      - name: Checkout Exploration Builder Blank World and Export Prevalidation
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-builder-terrain-family-palette-editable-v2-2026-10-14
+          ref: preview/exploration-builder-blank-world-export-v1-2026-10-14
 
       - name: Checkout Combat Exploration Battle End Return preview
         uses: actions/checkout@v4
