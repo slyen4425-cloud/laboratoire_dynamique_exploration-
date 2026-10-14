@@ -849,3 +849,11 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Test manuel : depuis le Builder, même carte avec 15–20 couches, puis bouton « Tester en jeu » et déplacement continu PC + Pixel 1–3 min ; vérifier disparition des hitches périodiques, temps de remplissage visuel des tuiles, superpositions terrain/route/rivière, objets et import/export.
 - Statut **GREEN TECHNIQUE / PRÉVALIDATION** seulement : aucune mesure FPS réelle ni validation visuelle encore ; ne pas annoncer ultra-fluidité garantie.
 - Ordre de backlog figé : fluidité (jusqu'au retour vert utilisateur) → transition de routes configurable → caméra de jeu configurable conservée en pause sur branche séparée.
+
+## Retour créateur — Performances utilisables, optimisation maintenue au backlog (2026-10-14)
+
+- Verdict après le lot « tuiles + culling » : **« carrément mieux, pour le moment ça va »**. La fluidité redevient acceptable en usage courant ; ce verdict n'est **ni** une mesure FPS **ni** la confirmation que les cartes plus chargées/longues sessions sont entièrement optimisées.
+- **Optimisation supplémentaire conservée comme chantier futur explicite** : PC + Pixel, cartes très denses avec nombreuses couches, longues sessions peinture/déplacement, éventuelles micro-saccades résiduelles, mémoire des caches / tuiles, qualité et visibilité des transitions, budget de préparation et absence de trous visuels. Déclencher ce lot sur un nouveau test reproductible ou avant une validation finale de robustesse mobile.
+- Ne pas réouvrir sans raison le lot en boucle : conserver le gain obtenu, poursuivre les priorités prévues, et traiter les défauts de performance observés avec mesures/cas reproduits et checkpoint propre.
+- Séquence maintenue : **stabilisation et optimisation supplémentaires si besoin → transition de routes réglable (effet disparu signalé) → caméra configurable en jeu**. La caméra reste isolée sur `work/exploration-configurable-game-camera-2026-10-14`.
+- Statut du jalon actuel : **retour fonctionnel positif, validation partielle/provisoire**, tests PC/Pixel sur cartes lourdement chargées et durée prolongée non exhaustifs ; ne pas déclarer « optimisation définitive » ou GREEN FINAL sur cette seule phrase.
