@@ -840,3 +840,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Checkpoint : `docs/checkpoints/EXPLORATION_TERRAIN_RENDER_HITCH_CULLING_PREVALIDATION_2026-10-14.md`.
 - Attente publication prévalidation Pages et test utilisateur *réel* : mouvement continu PC + Pixel sur carte 15–20 couches, qualité des transitions, trous de chargement temporaires, zoom et édition. Pas de GREEN FINAL avant confirmation.
 - Lissage des routes réglable **noté comme futur lot** après la fluidité ; caméra configurable suspendue jusque-là sur sa branche distincte.
+
+## Publication prévalidation — Tuiles terrain, micro-hitches et culling (2026-10-14)
+- Work source code + checkpoint technique `7016e240f7a65df8fcfe81a59abf23aa84bfbd16`, refs `checkpoint/exploration-terrain-render-hitch-culling-prevalidation-green-2026-10-14` et `preview/exploration-terrain-render-hitch-culling-v1-2026-10-14`.
+- CI source `38615684501` et checkpoint `38615764168` **SUCCESS** : 466 tests, npm run check GREEN.
+- PR infra-only **#118** merge `main` au SHA `879fbe14d50b88f25a4acd37088dd48b08f06028`, diff un seul fichier `.github/workflows/pages-preview.yml` (3 ajouts/3 suppressions) ; le code Builder/runtime/jeu n'est PAS mergé sur `main`.
+- Pages `38615886108` **SUCCESS**, URL : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=terrain-render-hitch-culling-v1`.
+- Test manuel : depuis le Builder, même carte avec 15–20 couches, puis bouton « Tester en jeu » et déplacement continu PC + Pixel 1–3 min ; vérifier disparition des hitches périodiques, temps de remplissage visuel des tuiles, superpositions terrain/route/rivière, objets et import/export.
+- Statut **GREEN TECHNIQUE / PRÉVALIDATION** seulement : aucune mesure FPS réelle ni validation visuelle encore ; ne pas annoncer ultra-fluidité garantie.
+- Ordre de backlog figé : fluidité (jusqu'au retour vert utilisateur) → transition de routes configurable → caméra de jeu configurable conservée en pause sur branche séparée.
