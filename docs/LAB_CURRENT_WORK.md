@@ -662,3 +662,18 @@ Retour créateur après test Pixel en paysage : **grosse amélioration de fluidi
 - URL officielle de gate : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=terrain-family-palette-editable-v2`.
 - Aucun code de gameplay ni Builder n'a été mergé sur `main` ; R2 **PREVALIDATION uniquement**.
 - Validation utilisateur déjà recueillie : forte amélioration de fluidité R1. **Nouvelle validation du classement R2 et gate Collision R2 encore nécessaires**, GREEN FINAL interdit.
+
+
+## Activation du test avec carte vierge / export — 2026-10-14
+
+Retour créateur : la fluidité est nettement meilleure, souhait de démarrer les tests R2 sur une **carte vierge** et d'exporter son monde pour le reprendre.
+
+- Branche dédiée : `work/exploration-builder-blank-world-export-2026-10-14`.
+- Départ / prévalidation héritée : `f7a7e72ffcedfc48f1de862becf52eb13a838cf0`, checkpoint start `checkpoint/exploration-start-builder-blank-world-export-2026-10-14`.
+- RED `1ab0b132` : exigences vierge jouable / export import / UX mobile.
+- Code `5243527a` : fabrique World Builder Draft canonique (une Area + spawn, aucun objet/tracé/portail/événement/rencontre), commande Nouvelle carte avec confirmation, export WorldDocument visible en en-tête et dans JSON, contrôles d'état/UI remis à zéro ; données et familles toujours éditables.
+- Navigation de test/reprise et chaînes de cache réalignées sans toucher aux autorités Collision et WorldDocument.
+- CI `38515546118` **SUCCESS — 441/441 tests + npm run check**.
+- Export = fichier `.world.json` réimportable ; images importées par l'utilisateur toujours locales, non empaquetées dans JSON.
+- Checkpoint de lot : `docs/checkpoints/EXPLORATION_BUILDER_BLANK_WORLD_EXPORT_PREVALIDATION_2026-10-14.md`.
+- État **GREEN TECHNIQUE / PREVALIDATION** : publication Pages + verdict smartphone requis avant GREEN FINAL. Le gate Collision R2 reste indépendant.
