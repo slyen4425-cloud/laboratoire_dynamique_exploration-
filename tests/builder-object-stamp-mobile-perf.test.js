@@ -19,8 +19,11 @@ test('Builder offers explicit stamp and transform permission while full-screen',
  const html=await read('builder.html'),main=await read('src/builder/world-builder-main.js');
  for(const id of ['map-tool-object','map-object-definition','map-object-transform-enabled']){
   assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ for(const id of ['map-object-definition','map-object-transform-enabled']){
   assert.match(main,new RegExp(id));
  }
+ assert.match(main, /button\.dataset\.mapTool/);
  assert.match(main,/mapTool === 'object-stamp'/);
  assert.match(main,/\!\$\('map-object-transform-enabled'\)\.checked/);
  assert.match(main,/!isPaintKind\(mapTool\) && mapTool !== 'object-stamp'/);
