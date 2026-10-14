@@ -131,15 +131,15 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   assert.match(html, /Intérieur\s*→/);
   assert.match(
     html,
-    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=terrain-family-palette-editable-v2["']/
+    /id=["']test-exploration["'][^>]*href=["']\.\/index\.html\?builderTest=1&rev=builder-blank-world-export-v1["']/
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=terrain-family-palette-editable-v2/
+    /world-builder-main\.js\?rev=builder-blank-world-export-v1/
   );
   assert.match(
     html,
-    /world-builder\.css\?rev=terrain-family-palette-editable-v2/
+    /world-builder\.css\?rev=builder-blank-world-export-v1/
   );
 });
 
