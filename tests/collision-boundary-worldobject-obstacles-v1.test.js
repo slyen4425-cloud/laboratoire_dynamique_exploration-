@@ -642,7 +642,7 @@ test('public cache chain reaches boundary silhouette and WorldObject obstacle au
   assert.match(
     builderHtml,
     new RegExp(
-      `world-builder-main\\.js\\?rev=${entryRevision}`
+      `world-builder-main\\.js\\?rev=${builderEntryRevision}`
     )
   );
   assert.match(
