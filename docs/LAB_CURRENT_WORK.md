@@ -742,3 +742,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Fichiers attendus : `src/builder/world-object-stamp-preset.js`, `src/builder/world-builder-main.js`, `builder.html`, tests ciblés, documentation/checkpoint. Pas de refonte du catalogue ni du moteur.
 - Gate : tests du parcours copier → changer source → poser x2 → exporter/importer, conservation du placement simple, intégrité des anciens WorldDocuments, CI + test smartphone en paysage. Publication Pages seulement en prévalidation, jamais GREEN FINAL avant retour utilisateur.
 - Hors périmètre : caméra configurable suspendue, performance/Collisions/rencontres/Combat/production.
+
+## Prévalidation technique « Copier » -> pinceau objets (2026-10-14)
+
+- RED `f42c1b49` ; implementation `src/builder/world-object-stamp-preset.js` + raccord de `world-builder-main.js` ; bouton Dupliquer remplacé par **Copier** sans création immédiate.
+- Snapshot des réglages du WorldObject choisi (modèle, rotation, scaleX/scaleY, variante visuelle), sans ID, position ou référence spatiale. Les taps créent de nouveaux placements canoniques à leur propre position ; autre modèle = échelle standard ; statut visible en plein écran.
+- Passage carte vierge, import JSON, retour démo : preset temporaire annulé ; champs WorldDocument inchangés. Les objets posés se réexportent normalement.
+- CI `38592981758` SUCCESS au commit `05f33cf8e3d92796663d3939a8c70c55998bff7f` : **452/452** tests, `npm run check` SUCCESS.
+- Checkpoint lot : `docs/checkpoints/EXPLORATION_BUILDER_OBJECT_COPY_STAMP_PREVALIDATION_2026-10-14.md`.
+- Prochaine étape : checkpoint technique, ref preview, publication Pages infrastructure seule, test mobile avant GREEN FINAL. Caméra configurable toujours suspendue et isolée.
