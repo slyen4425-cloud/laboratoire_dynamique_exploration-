@@ -999,7 +999,7 @@ test('Portal tab presents a simple liaison summary and keeps raw Portal fields u
 
 test('Exploration runtime keeps the canonical WorldObject revision behind the current public entry revision', async () => {
   const publicEntryRevision =
-    'builder-blank-world-export-v1';
+    'builder-paint-workflow-fix-v1';
   const worldObjectRevision =
     'collision-boundary-worldobject-obstacles-v1';
   const [indexHtml, runtimeMain] =
