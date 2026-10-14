@@ -700,3 +700,14 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BUILDER_PAINT_WORKFLOW_FIX_PREVALIDATION_2026-10-14.md`.
 - Prévalidation technique uniquement : la publication Pages puis le verdict utilisateur sur Pixel paysage (Forêt/Herbe, Sable, Route, Mer, point et tracé, undo, export/import) sont obligatoires avant GREEN FINAL.
 - Aucun changement de collision, de rendu gameplay, de Combat, ni fusion du Builder sur main.
+
+## Publication du correctif pinceau — 2026-10-14
+
+- CI work GREEN technique `38544153721` SUCCESS ; CI checkpoint `38544200368` SUCCESS.
+- Checkpoint et branche de prévisualisation au SHA `50c73f10e934430d47792d6416a1c57e81ab26c4` :
+  `checkpoint/exploration-builder-paint-workflow-fix-prevalidation-green-2026-10-14` et
+  `preview/exploration-builder-paint-workflow-fix-v1-2026-10-14`.
+- PR d'infrastructure seule #113 (un fichier `.github/workflows/pages-preview.yml`) mergée dans main `3f0e5f0ac38174c1bb6eb28b7050d50beeb23f2b`.
+- Pages run `38544307188` **SUCCESS**.
+- Test mobile : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-paint-workflow-fix-v1`.
+- Le Builder modifié n'a pas été mergé dans main. Gate utilisateur carte vierge/peinture/sauvegarde et non-régression fluidité en attente ; GREEN FINAL interdit avant validation.
