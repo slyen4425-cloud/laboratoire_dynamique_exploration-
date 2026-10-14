@@ -18,3 +18,22 @@ jobs:
           node-version: '22'
       - run: npm test
       - run: npm run check
+
+  modern-combat-encounter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated Exploration integration
+        uses: actions/checkout@v4
+      - name: Checkout immutable tested Combat bridge
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: 37ad2a90223f8f0e92da6d1b78741e7812839bff
+          path: combat-preview
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify packaged owner contracts before the browser
+        run: node scripts/audit-combat-preview.mjs combat-preview
+      - name: Real Chromium Encounter startup smoke
+        run: node scripts/smoke-modern-combat-preview.mjs
