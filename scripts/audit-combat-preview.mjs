@@ -37,13 +37,13 @@ export function auditCombatPreviewDirectory(root) {
   // A modern runtime that silently ignores the legacy onBattleEnd parameter
   // cannot complete the Encounter -> Combat -> Result -> Exploration flow.
   const signature = ui.match(
-    /export\\s+async\\s+function\\s+mountCoop2v2Test\\s*\\(\\s*\\{([\\s\\S]*?)\\}\\s*\\)/
+    /export\s+async\s+function\s+mountCoop2v2Test\s*\(\s*\{([\s\S]*?)\}\s*\)/
   );
   const acceptsEndCallback =
-    signature !== null && /\\bonBattleEnd\\b/.test(signature[1]);
+    signature !== null && /\bonBattleEnd\b/.test(signature[1]);
   if (!acceptsEndCallback) {
     issues.push('missing_native_battle_end_callback');
-  } else if (!/\\bonBattleEnd\\s*\\(/.test(ui.slice(signature.index + signature[0].length))) {
+  } else if (!/\bonBattleEnd\s*\(/.test(ui.slice(signature.index + signature[0].length))) {
     issues.push('unused_native_battle_end_callback');
   }
 
@@ -73,7 +73,7 @@ export function auditCombatPreviewDirectory(root) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const root = resolve(process.argv[2] ?? 'combat-preview');
   const result = auditCombatPreviewDirectory(root);
-  process.stdout.write(JSON.stringify({ root, ...result }, null, 2) + '\\n');
+  process.stdout.write(JSON.stringify({ root, ...result }, null, 2) + '\n');
   if (!result.ok && !process.argv.includes('--report-only')) {
     process.exitCode = 1;
   }
