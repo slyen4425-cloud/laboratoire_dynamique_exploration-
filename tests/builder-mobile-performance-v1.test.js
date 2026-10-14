@@ -92,7 +92,7 @@ test('high-frequency pointer movement requests one preview frame instead of rend
   );
 });
 
-test('focused coarse-pointer interaction lowers only transient canvas backing resolution', async () => {
+test('focused coarse-pointer interaction uses stable mobile backing resolution', async () => {
   const main = await source(
     'src/builder/world-builder-main.js'
   );
@@ -103,12 +103,13 @@ test('focused coarse-pointer interaction lowers only transient canvas backing re
   );
   assert.match(
     main,
-    /mapFocusActive[\s\S]*pointerSession[\s\S]*activePointers/
+    /mapFocusActive\s*&&\s*coarsePointerMedia\?\.matches/
   );
   assert.match(
     main,
-    /Math\.min\(\s*nativeRatio,\s*interacting\s*\?\s*1\s*:\s*1\.5\s*\)/
+    /Math\.min\(nativeRatio, 1\)/
   );
+  assert.equal(main.includes('interacting ? 1 : 1.5'), false);
   assert.match(
     main,
     /const dpr\s*=\s*previewPixelRatio\(\)/
