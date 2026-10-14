@@ -7139,7 +7139,6 @@ $('new-blank-world').addEventListener('click', () => {
   selectedEventId = null;
   selectedTerrainFamilyDefinitionId = draft.terrainFamilies[0]?.id ?? null;
   selectedEncounterFamilyId = selectedTerrainFamilyDefinitionId;
-  selectedAreaId = null;
   selectAreaForEditing(draft.initialAreaId, {
     refresh: false,
     activateAreaTab: true
