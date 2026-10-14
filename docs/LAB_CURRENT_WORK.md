@@ -677,3 +677,15 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Export = fichier `.world.json` réimportable ; images importées par l'utilisateur toujours locales, non empaquetées dans JSON.
 - Checkpoint de lot : `docs/checkpoints/EXPLORATION_BUILDER_BLANK_WORLD_EXPORT_PREVALIDATION_2026-10-14.md`.
 - État **GREEN TECHNIQUE / PREVALIDATION** : publication Pages + verdict smartphone requis avant GREEN FINAL. Le gate Collision R2 reste indépendant.
+
+
+## Publication Builder « carte vierge / export » — 2026-10-14
+
+- Checkpoint de prévalidation : `checkpoint/exploration-builder-blank-world-export-prevalidation-green-2026-10-14` au SHA `1edfdf017acd06a7a9d933f4381485f12e06afe2`.
+- CI du work `38515703439` SUCCESS (441/441, npm run check) ; CI du checkpoint SUCCESS.
+- Preview : `preview/exploration-builder-blank-world-export-v1-2026-10-14` au même SHA.
+- PR infrastructure seule #112 mergée dans `main`, SHA `b89d8fae6e3d4fe08ad9dc792c7a951889a1084f`.
+- Workflow Pages `38515826673` SUCCESS.
+- URL de test : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-blank-world-export-v1`.
+- Aucun Builder/moteur WorldDocument mergé dans `main`.
+- Reste en **prévalidation** en attente du verdict smartphone pour carte vierge, export/import, R2 palettes et Collision R2 (ce dernier séparé). Aucun GREEN FINAL anticipé.
