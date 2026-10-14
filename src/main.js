@@ -10,7 +10,7 @@ import {
 } from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
-import { createTerrainRasterCompositor } from './render/terrain-raster-compositor.js?rev=runtime-terrain-cache-v1';
+import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
 import {
   clipWorldArea
 } from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
@@ -372,7 +372,9 @@ const surfaceRenderer = createSurfaceRenderer({
 });
 // Finished terrain geometry is immutable during play; never redo its feather
 // masks for each animation frame as the player and creatures move.
-const terrainCompositor = createTerrainRasterCompositor();
+const terrainCompositor = createTerrainTileCache({
+  tileSize: 384, bleed: 128, maxTiles: 48, maxNewTilesPerFrame: 2
+});
 
 const userWorldObjectStore =
   createUserWorldObjectStore();
@@ -921,6 +923,7 @@ function drawGround() {
     surface: area.surface,
     surfaceKey: area.id,
     areaKey: area.id,
+    fallbackColor: materialRegistry.require(area.surface.baseMaterialId,'surface').render.baseColor,
     camera,
     viewport: { width, height },
     canvasWidth: width, canvasHeight: height,
