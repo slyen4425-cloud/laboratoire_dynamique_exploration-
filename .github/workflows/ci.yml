@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 37ad2a90223f8f0e92da6d1b78741e7812839bff
+          ref: 3f612ec0cf4adf4bf5aa0a2594131613ce16ceec
           path: combat-preview
       - uses: actions/setup-node@v4
         with:
