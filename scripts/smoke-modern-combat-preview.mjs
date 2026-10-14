@@ -1,0 +1,96 @@
+// Chromium checks the actual, packaged Encounter DOM and module/data graph,
+// not a mocked Combat UI or invented win/loss. Run only against a pinned artifact.
+import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { resolve, extname, sep } from 'node:path';
+import { once } from 'node:events';
+
+const root = process.cwd();
+const route = '/combat-preview/examples/dom-demo/exploration-encounter.html';
+const mime = {
+  '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript',
+  '.css':'text/css', '.json':'application/json', '.svg':'image/svg+xml',
+  '.png':'image/png', '.webp':'image/webp', '.ico':'image/x-icon'
+};
+
+const snapshot = {
+  schema:'capture-encounter-snapshot-v1', version:1,
+  encounterId:'smoke-encounter-1', source:'terrain-random',
+  player:{partyRef:'capture-party-player-v1'},
+  opponents:[{creatureId:'crea_nat_3'}],
+  rules:{rulesetId:'capture.standard.1v1'},
+  context:{areaId:'forest-exterior',terrainFamilyId:'forest',elementId:'nature'},
+  returnToken:'return-smoke-1'
+};
+
+const server = createServer(async(req,res)=>{
+  try {
+    const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+    const path=resolve(root,'.'+pathname);
+    if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
+    let content=await readFile(path);
+    if(pathname===route){
+      const origin='http://127.0.0.1:'+server.address().port;
+      const envelope={version:1,snapshot,
+        returnState:{areaId:'forest-exterior',x:62,y:18,
+          returnUrl:origin+'/index.html?combatReturn=1'},result:null};
+      const probe='<script>'+
+        'sessionStorage.setItem("gensrpg.capture.combat-handoff.v1",'+
+        JSON.stringify(JSON.stringify(envelope))+');'+
+        'window.addEventListener("error",e=>document.documentElement.dataset.encounterBootstrapError=e.message);'+
+        'window.addEventListener("unhandledrejection",e=>document.documentElement.dataset.encounterBootstrapError=String(e.reason?.message||e.reason));'+
+        '</script>';
+      content=Buffer.from(content.toString('utf8').replace('</head>',probe+'</head>'));
+    }
+    res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
+      'Cache-Control':'no-store'}).end(content);
+  }catch(error){res.writeHead(404).end('Unavailable '+String(error?.message));}
+});
+await new Promise((resolveStart,rejectStart)=>{
+  server.once('error',rejectStart);
+  server.listen(0,'127.0.0.1',resolveStart);
+});
+
+function browserBinary() {
+  for(const candidate of [process.env.CHROME_PATH,'google-chrome','google-chrome-stable','chromium','chromium-browser']){
+    if(candidate && spawnSync('which',[candidate]).status===0)return candidate;
+  }
+  throw new Error('Chrome/Chromium unavailable');
+}
+
+async function dumpDom(url) {
+  const command=spawn(browserBinary(),[
+    '--headless=new','--no-sandbox','--disable-gpu',
+    '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
+    '--virtual-time-budget=30000','--dump-dom',url
+  ],{stdio:['ignore','pipe','pipe']});
+  const chunks=[],errors=[];
+  command.stdout.on('data',chunk=>chunks.push(chunk));
+  command.stderr.on('data',chunk=>errors.push(chunk));
+  const timeout=setTimeout(()=>command.kill('SIGKILL'),75000);
+  try {
+    const [code]=await once(command,'close');
+    if(code!==0)throw Error('Chromium exit='+code+' '+Buffer.concat(errors).toString().slice(-1000));
+    return Buffer.concat(chunks).toString();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+try {
+  const url='http://127.0.0.1:'+server.address().port+route;
+  const dom=await dumpDom(url);
+  const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
+  const jsError=dom.match(/data-encounter-bootstrap-error="([^"]+)"/)?.[1]??'';
+  const skillCount=[...dom.matchAll(/data-combat-skill="/g)].length;
+  const orbs=[...dom.matchAll(/class="energy-orb\b/g)].length;
+  console.log(JSON.stringify({status,jsError,skillCount,orbs}));
+  if(jsError)throw Error('Encounter JavaScript error: '+jsError);
+  if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status);
+  if(skillCount<1)throw Error('No real Capture combat skill rendered');
+  if(!dom.includes('data-combat-hp-value="enemy-1"'))throw Error('Encounter enemy HUD absent');
+  console.log('GREEN real Chromium Encounter bootstrap and current HUD');
+}finally{
+  server.close();
+}
