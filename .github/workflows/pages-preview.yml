@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: terrain-render-hitch-culling-v1
+# preview-revision: modern-capture-combat-v1
 
 on:
   push:
@@ -23,16 +23,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Terrain Tile Culling Prevalidation
+      - name: Checkout Exploration modern Combat browser GREEN prevalidation
         uses: actions/checkout@v4
         with:
-          ref: preview/exploration-terrain-render-hitch-culling-v1-2026-10-14
+          ref: def7aaaa4b0d24317d0f4dc4544da20c26b35b19
 
-      - name: Checkout Combat Exploration Battle End Return preview
+      - name: Checkout Combat native modern Encounter browser GREEN prevalidation
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: preview/lab-exploration-battle-end-return-v1-2026-10-05
+          ref: 3f612ec0cf4adf4bf5aa0a2594131613ce16ceec
           path: combat-preview
 
       - name: Checkout Capture global visual assets
@@ -41,6 +41,20 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: global-assets
           path: capture-assets
+
+      - name: Configure Node for immutable integration checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify the Exploration baseline
+        run: npm test && npm run check
+
+      - name: Fail closed if modern Combat has no real native bridge
+        run: node scripts/audit-combat-preview.mjs combat-preview
+
+      - name: Verify actual encounter startup in Chromium
+        run: node scripts/smoke-modern-combat-preview.mjs
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
