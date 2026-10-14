@@ -1905,6 +1905,13 @@ function syncPaintModeUi() {
 
   const active = isPaintKind(mapTool);
   $('paint-floating-tools').hidden = !active;
+  $('terrain-paint-toggle').textContent = active
+    ? '✓ Pinceau actif · arrêter'
+    : '🖌 Activer le pinceau';
+  $('terrain-paint-toggle').setAttribute('aria-pressed', String(active));
+  $('terrain-paint-guide').textContent = active
+    ? 'Pinceau actif : touche puis glisse sur la carte. Un simple appui peint un point. Deux doigts : déplacer et zoomer.'
+    : '1. Choisis Sol, Route ou Rivière. 2. Choisis famille et texture. 3. Active le pinceau.';
 
   const control = paintBrushControl(selectedKind);
   const size = numberValue(
@@ -2035,6 +2042,7 @@ function refreshTerrainControls() {
             : fallbackFamily
         );
 
+  const paintableTerrainFamilies = terrainFamiliesForPaintKind(families, 'terrain');
   // Legacy zone is still editable, but non-surface families cannot be chosen for new strokes.
   const terrainChoices = paintableTerrainFamilies.some((f) => f.id === currentTerrainFamily)
     ? paintableTerrainFamilies
@@ -2051,7 +2059,6 @@ function refreshTerrainControls() {
   );
   $('terrain-family').value = activeTerrainFamily;
 
-  const paintableTerrainFamilies = terrainFamiliesForPaintKind(families, 'terrain');
   const requestedTerrainMaterial =
     selected &&
     selectedSurfaceKind === 'terrain'
@@ -6302,6 +6309,10 @@ $('user-texture-kind').addEventListener('change', () => {
   $('user-texture-family').disabled = $('user-texture-kind').value !== 'surface';
 });
 
+$('terrain-paint-toggle').addEventListener('click', () => {
+  setMapTool(isPaintKind(mapTool) ? 'select' : $('terrain-draw-kind').value);
+});
+
 $('terrain-draw-kind').addEventListener(
   'change',
   () => {
@@ -6470,7 +6481,8 @@ canvas.addEventListener(
 canvas.addEventListener('pointerdown', (event) => {
   if (
     !mapFocusActive &&
-    prefersMapFocusOnPointer()
+    prefersMapFocusOnPointer() &&
+    !isPaintKind(mapTool)
   ) {
     event.preventDefault();
     void enterMapFocus();
@@ -7018,6 +7030,24 @@ function endPointer(event) {
   if (
     pointerSession &&
     pointerSession.pointerId === event.pointerId &&
+    pointerSession.mode === 'pending-draw'
+  ) {
+    // A single touch stamps one brush point. WorldSurface remains canonical.
+    const pathId = beginSurfacePath(pointerSession.kind, pointerSession.startWorld);
+    if (pathId) {
+      pushDrawUndoReference({
+        areaId: pointerSession.areaId,
+        kind: pointerSession.kind,
+        pathId
+      });
+    }
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId &&
     pointerSession.mode === 'draw-path'
   ) {
     flushPendingPaintPoint();
@@ -7036,6 +7066,10 @@ function endPointer(event) {
       kind: pointerSession.kind,
       pathId: pointerSession.pathId
     });
+    // After finishing a gesture, selection no longer pins brush color/family
+    // to the previous stroke. Past strokes stay editable via Tracés.
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
   }
 
   if (activePointers.size < 2) {
