@@ -18,7 +18,6 @@ import {
   deleteSurfacePath,
   deleteTerrainFamilyDefinition,
   deleteWorldObject,
-  duplicateWorldObject,
   importWorldBuilderDocument as importWorldBuilderDocumentRaw,
   serializeWorldBuilderDraft as serializeWorldBuilderDraftRaw,
   updateActorPlacement,
@@ -35,6 +34,10 @@ import {
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
 } from './world-builder-draft.js?rev=builder-blank-world-export-v1';
+import {
+  copyWorldObjectAsStamp,
+  worldObjectStampInput
+} from './world-object-stamp-preset.js?rev=builder-object-copy-stamp-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession,
@@ -552,6 +555,7 @@ let selectedAreaId =
 let selectedSpawnId = null;
 let selectedObjectId = null;
 let selectedStampDefinitionId = objectDefinitions[0]?.id ?? null;
+let selectedStampPreset = null;
 let selectedPortalId =
   draft.portals[0]?.id ?? null;
 let selectedEventId =
@@ -2777,6 +2781,9 @@ function refreshObjectControls() {
     selectedStampDefinitionId = objectDefinitions[0]?.id ?? null;
   }
   $('map-object-definition').value = selectedStampDefinitionId ?? '';
+  $('map-object-copy-status').textContent = selectedStampPreset
+    ? `Copié : taille X ×${selectedStampPreset.scaleX}, Y ×${selectedStampPreset.scaleY} · rotation ${selectedStampPreset.rotationDeg}°`
+    : 'Modèle standard · taille ×1, rotation 0°';
   const area = currentAreaRaw();
   const placements =
     area?.objects ?? [];
@@ -4779,15 +4786,13 @@ function stampSelectedWorldObject(point) {
     setStatus('Choisis un objet avant de le placer.', true);
     return false;
   }
-  draft = addWorldObject(draft, selectedAreaId, {
-    objectDefinitionId,
-    transform: {
-      x: Math.max(0, Math.min(area.width, point.x)),
-      y: Math.max(0, Math.min(area.height, point.y)),
-      rotationDeg: 0, scaleX: 1, scaleY: 1
-    },
-    overrides: { traversalSurfaceFeatureIds: [] }
+  const input = worldObjectStampInput({
+    definitionId: objectDefinitionId,
+    preset: selectedStampPreset,
+    point, area
   });
+  if (!input) return false;
+  draft = addWorldObject(draft, selectedAreaId, input);
   selectedObjectId = null;
   schedulePreviewRender();
   setStatus('Objet placé. Touche un autre endroit pour continuer.');
@@ -5656,6 +5661,7 @@ $('object-library-category').addEventListener(
 
 $('map-object-definition').addEventListener('change', () => {
   selectedStampDefinitionId = $('map-object-definition').value;
+  selectedStampPreset = null;
   const selected = objectDefinitionCatalog.get(selectedStampDefinitionId);
   if (selected?.library) {
     selectedObjectLibraryCategoryId = selected.library.categoryId;
@@ -5667,6 +5673,8 @@ $('map-object-definition').addEventListener('change', () => {
 
 $('object-definition').addEventListener('change', () => {
   selectedStampDefinitionId = $('object-definition').value;
+  selectedStampPreset = null;
+  $('map-object-copy-status').textContent = 'Modèle standard · taille ×1, rotation 0°';
   $('map-object-definition').value = selectedStampDefinitionId;
 });
 
@@ -5735,23 +5743,28 @@ $('bridge-obstacles').addEventListener(
 
 $('object-add').addEventListener('click', () => {
   selectedStampDefinitionId = $('object-definition').value || selectedStampDefinitionId;
+  selectedStampPreset = null;
+  $('map-object-copy-status').textContent = 'Modèle standard · taille ×1, rotation 0°';
   $('map-object-definition').value = selectedStampDefinitionId ?? '';
   setMapTool('object-stamp');
   setStatus('Placement actif : touche plusieurs endroits pour poser des objets.');
 });
 
 $('object-duplicate').addEventListener('click', () => {
-  const before = currentAreaRaw()?.objects?.map((object) => object.id) ?? [];
-  draft = duplicateWorldObject(
-    draft,
-    selectedAreaId,
-    selectedObjectId
-  );
-  selectedObjectId = currentAreaRaw()?.objects?.find(
-    (object) => !before.includes(object.id)
-  )?.id ?? selectedObjectId;
+  // Copy a snapshot of reusable settings: do not create or move any placement.
+  flushPendingObjectMove();
+  const preset = copyWorldObjectAsStamp(currentObjectRaw());
+  if (!preset) {
+    setStatus('Sélectionne un objet déjà placé pour copier ses réglages.', true);
+    return;
+  }
+  selectedStampPreset = preset;
+  selectedStampDefinitionId = preset.objectDefinitionId;
   syncObjectLibraryToSelectedPlacement();
-  refreshControls();
+  refreshObjectControls();
+  $('object-definition').value = preset.objectDefinitionId;
+  setMapTool('object-stamp');
+  setStatus('Réglages copiés : touche la carte pour placer des exemplaires identiques.');
 });
 
 $('object-delete').addEventListener('click', () => {
@@ -7175,6 +7188,7 @@ $('new-blank-world').addEventListener('click', () => {
   )) return;
 
   draft = createBlankWorldBuilderDraft();
+  selectedStampPreset = null;
   pendingPaintPoint = null;
   pendingObjectMove = null;
   pointerSession = null;
@@ -7207,6 +7221,7 @@ $('import-json').addEventListener('change', async () => {
 
   try {
     draft = importWorldBuilderDocument(await file.text());
+    selectedStampPreset = null;
     selectedPortalId =
       draft.portals?.[0]?.id ?? null;
     selectAreaForEditing(
@@ -7228,6 +7243,7 @@ $('import-json').addEventListener('change', async () => {
 
 $('reset-demo').addEventListener('click', () => {
   draft = createWorldBuilderDraft(demoWorldDocument);
+  selectedStampPreset = null;
   selectedPortalId =
     draft.portals?.[0]?.id ?? null;
   selectAreaForEditing(
