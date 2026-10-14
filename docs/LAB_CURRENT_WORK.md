@@ -711,3 +711,14 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Pages run `38544307188` **SUCCESS**.
 - Test mobile : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-paint-workflow-fix-v1`.
 - Le Builder modifié n'a pas été mergé dans main. Gate utilisateur carte vierge/peinture/sauvegarde et non-régression fluidité en attente ; GREEN FINAL interdit avant validation.
+
+## Prévalidation — Objets par touches directes et fluidité plein écran (2026-10-14)
+
+- Retour utilisateur : la peinture au sol marche plutôt bien mais poser/déplacer des objets sur téléphone est trop difficile ; poignées de taille/rotation activées accidentellement ; latences importantes en plein écran. Priorité donnée à l’ergonomie et à la performance.
+- Branche de lot : `work/exploration-builder-object-stamp-mobile-perf-2026-10-14` ; checkpoint départ `checkpoint/exploration-start-builder-object-stamp-mobile-perf-2026-10-14` basé sur `1539ef847093377003b417d7e1fe9ccf7ba99f1b`.
+- Nouveau bouton Placer objet, sélecteur d’objet disponible en plein écran, touche répétée = nouvel exemplaire placé à la position du doigt. Un zoom/pinch annule le tap. Déplacer = sélection + glisser. Poignées taille/rotation désactivées sauf case explicite. Champs numériques conservés.
+- Corrections de coût mobile : DPR fixe <= 1 pour prévisualisation plein écran tactile ; mouvements WorldObject coalescés par animation frame, commit final au relâchement ; préserve `WorldDocument` et rendu jeu.
+- RED `7ff3994e`, code et sentinelles SHA `ef26323ea23058ed76eb0d9bb2d83a1f06519afd` ; CI `38584062418` SUCCESS : 448 tests, npm run check SUCCESS.
+- Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BUILDER_OBJECT_STAMP_MOBILE_PERF_PREVALIDATION_2026-10-14.md`.
+- Prochaine étape : checkpoint/preview et publication Pages infra-only ; validation manuelle smartphone incontournable avant GREEN FINAL. Les performances FPS réelles restent non mesurées.
+- Chantier caméra de jeu configurable **conservé et suspendu** sur `work/exploration-configurable-game-camera-2026-10-14`, jamais intégré dans le lot objets ; reprise après résolution complète des difficultés de carte. Collision R2 toujours gate séparé.
