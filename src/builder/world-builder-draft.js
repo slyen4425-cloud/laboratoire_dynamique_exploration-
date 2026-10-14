@@ -788,28 +788,35 @@ export function appendSurfacePathPoint(
   pathId,
   point
 ) {
-  const next = clone(draft);
-  const area = findArea(next, areaId);
-  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
-
-  const item = surfaceCollection(area, kind)
-    .find((path) => path.id === pathId);
-  if (
-    !item ||
-    !point ||
-    !Number.isFinite(Number(point.x)) ||
-    !Number.isFinite(Number(point.y))
-  ) {
-    return next;
+  // Painting can append many points per second. Deep-cloning the entire
+  // WorldDocument on every sample made each stroke slower as layers grew.
+  // Copy only the owning Area, surface collection, path and its points.
+  const key = kind === 'terrain' ? 'zones'
+    : kind === 'river' ? 'rivers'
+      : kind === 'route' ? 'routes' : null;
+  const areaIndex = draft?.areas?.findIndex(area => area.id === areaId) ?? -1;
+  const area = areaIndex >= 0 ? draft.areas[areaIndex] : null;
+  const source = key ? area?.surface?.[key] : null;
+  const pathIndex = source?.findIndex(path => path.id === pathId) ?? -1;
+  const x = Number(point?.x);
+  const y = Number(point?.y);
+  if (!area || pathIndex < 0 || !point ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+    return clone(draft);
   }
 
-  item.points ??= [];
-  item.points.push({
-    x: Number(point.x),
-    y: Number(point.y)
-  });
-
-  return next;
+  const nextPath = {
+    ...source[pathIndex],
+    points: [...(source[pathIndex].points ?? []), { x, y }]
+  };
+  const nextCollection = source.slice();
+  nextCollection[pathIndex] = nextPath;
+  const nextAreas = draft.areas.slice();
+  nextAreas[areaIndex] = {
+    ...area,
+    surface: { ...area.surface, [key]: nextCollection }
+  };
+  return { ...draft, areas: nextAreas };
 }
 
 export function deleteSurfacePath(
