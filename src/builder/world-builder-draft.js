@@ -212,6 +212,49 @@ export function createWorldBuilderDraft(sourceDocument) {
   return clone(normalized);
 }
 
+/**
+ * Starting preset for an empty editable WorldDocument. The spawn is intentionally
+ * retained so "Tester en jeu" works; nothing from the demonstration is copied.
+ * All dimensions, terrain, textures and encounters remain ordinary draft data.
+ */
+export function createBlankWorldBuilderDraft({
+  id = 'nouvelle-carte',
+  width = 2400,
+  height = 1600,
+  terrainFamilyId = 'plain',
+  materialId = 'ground.dirt'
+} = {}) {
+  const safeWidth = Math.max(128, Math.min(20000, finite(width, 2400)));
+  const safeHeight = Math.max(128, Math.min(20000, finite(height, 1600)));
+
+  return createWorldBuilderDraft({
+    id,
+    initialAreaId: 'area-principale',
+    initialSpawnId: 'depart',
+    areas: [{
+      id: 'area-principale',
+      kind: 'exterior',
+      width: safeWidth,
+      height: safeHeight,
+      encounters: { randomEnabled: false },
+      surface: {
+        baseTerrainFamilyId: terrainFamilyId,
+        baseMaterialId: materialId,
+        baseTraversalRuleId: 'terrain.ground',
+        zones: [],
+        routes: [],
+        rivers: []
+      },
+      objects: [],
+      actors: [],
+      obstacles: [],
+      spawns: [{ id: 'depart', x: safeWidth / 2, y: safeHeight / 2 }]
+    }],
+    portals: [],
+    events: []
+  });
+}
+
 export function validateWorldBuilderDraft(
   draft,
   {
