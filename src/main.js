@@ -372,8 +372,14 @@ const surfaceRenderer = createSurfaceRenderer({
 });
 // Finished terrain geometry is immutable during play; never redo its feather
 // masks for each animation frame as the player and creatures move.
+// Memory and rasterization budgets differ on coarse-pointer devices.
+// Rendering remains incremental and actor animation is always unrestricted.
+const mobileTerrainBudget = window.matchMedia?.('(pointer: coarse)')?.matches === true;
 const terrainCompositor = createTerrainTileCache({
-  tileSize: 384, bleed: 128, maxTiles: 48, maxNewTilesPerFrame: 2
+  tileSize: 384,
+  bleed: 128,
+  maxTiles: mobileTerrainBudget ? 28 : 48,
+  maxNewTilesPerFrame: mobileTerrainBudget ? 1 : 2
 });
 
 const userWorldObjectStore =
