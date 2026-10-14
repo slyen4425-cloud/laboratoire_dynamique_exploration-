@@ -771,3 +771,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Gardes : respecter ordre base → zones → routes → rivières, clip WorldArea, normalisation, textures importées, zoom et pan ; libérer/recalculer les buffers lors des changements caméra/taille/document/Area/texture. Les couches ne deviennent jamais une nouvelle autorité persistante.
 - Tests : compteur de reconstructions du fond vs nombre de frames, tracé actif et calques avant/après, pan/zoom/Area/surface edits, rendu/canonique et CI. Test physique PC et mobile obligatoire avant GREEN FINAL.
 - Hors périmètre : caméra de jeu configurable (toujours suspendue), collisions/encounters, Combat, GenSrpG principal, animation assets, UX copie d’objet.
+
+## Prévalidation technique — Terrain Layer Compositor (2026-10-14)
+
+- Correction de cause : tous les masques de toutes les couches n'étaient pas remis en cache, recalculés à chaque mouvement de pinceau. Fond raster temporaire avec overscan de pan, séparation rendu avant/tracé actif/après ; le seul tracé actif recalcule les masques pendant sa création.
+- Second goulot éliminé : append de point du pinceau par copy-on-write local, pas copie JSON de l'intégralité de la carte à chaque échantillon.
+- Fichiers : `src/builder/builder-terrain-compositor.js`, `src/builder/world-builder-main.js`, `src/builder/world-builder-draft.js`, `src/render/surface-renderer.js` (option additive draw sans base, runtime défaut inchangé), entry Builder et sentinelles.
+- CI `38603578445` **SUCCESS**, 457/457 tests + npm run check au SHA `8b612d054e6efc29196b2a99c6303b808b61c5c3`.
+- Checkpoint document `docs/checkpoints/EXPLORATION_BUILDER_TERRAIN_LAYER_COMPOSITOR_PREVALIDATION_2026-10-14.md`.
+- Reste publication preview infra-only puis test PC + smartphone sur 10-20 couches et export/import avant GREEN FINAL. Aucune valeur de FPS réelle prétendue.
+- Caméra de jeu configurable conservée, en pause. Production et labo combat inchangés.
