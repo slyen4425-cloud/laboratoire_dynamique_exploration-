@@ -295,6 +295,12 @@ Aucun accès direct aux internes du labo Combat.
 
 À l'intégration : adapter vers Core Storage GenSrpG.
 
+## Prérequis prioritaire validé par le créateur — fluidité avant finition visuelle et caméra (2026-10-14)
+
+**Ordre strict** : 1) atteindre une fluidité satisfaisante sur PC et smartphone dans l'éditeur **et** dans le jeu chargé de 15–20 couches ; 2) restaurer les transitions visuelles des **routes** et exposer au créateur un réglage de largeur/intensité du fondu sans changer la géométrie des routes ; 3) reprendre le chantier de **caméra de jeu configurable** (zoom initial, limites, autorisation de zoom joueur) conservé sur branche distincte et actuellement suspendu.
+
+Les caches/culling doivent conserver la qualité des transitions ; pas de GREEN FINAL tant que le test réel de déplacement continu (micro-freezes toutes ~2 s) et le remplissage progressif de la carte ne sont pas jugés satisfaisants par l'utilisateur.
+
 ## Phase 9 — Mobile/PWA hardening
 
 - performances smartphone ;
