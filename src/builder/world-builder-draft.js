@@ -874,6 +874,35 @@ export function updateTerrainFamilyEncounterProfile(
   return next;
 }
 
+/**
+ * Explicit authoring command: choose one element for 100% of an active family's
+ * encounters, without normalizing other families or changing encounter chance.
+ * Writes only the canonical WorldDocument encounterConfig profile.
+ */
+export function setTerrainFamilyExclusiveEncounterElement(
+  draft,
+  terrainFamilyId,
+  elementId
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(next, terrainFamilyId);
+
+  if (
+    !profile ||
+    typeof elementId !== 'string' ||
+    !elementId.trim()
+  ) {
+    return next;
+  }
+
+  profile.elementChances = [{
+    elementId: elementId.trim(),
+    chancePercent: 100
+  }];
+
+  return next;
+}
+
 export function updateTerrainFamilyElementChance(
   draft,
   terrainFamilyId,
