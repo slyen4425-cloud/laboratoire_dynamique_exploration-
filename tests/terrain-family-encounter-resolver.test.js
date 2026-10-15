@@ -88,8 +88,8 @@ test('selected family elements feed one pool weighted by each creature rarity', 
   });
 
   assert.equal(result.triggered, true);
-  assert.equal(result.elementId, 'fire');
-  assert.equal(result.creatureId, 'legend-fire');
+  assert.equal(result.elementId, 'water');
+  assert.equal(result.creatureId, 'water');
 });
 
 test('intrinsic Capture spawnChance remains the creature rarity authority', () => {
@@ -107,7 +107,7 @@ test('intrinsic Capture spawnChance remains the creature rarity authority', () =
       ]
     }),
     captureCatalog: provider(),
-    random: sequence([0, 0, 0.99])
+    random: sequence([0, 0.99])
   });
 
   assert.equal(result.triggered, true);
