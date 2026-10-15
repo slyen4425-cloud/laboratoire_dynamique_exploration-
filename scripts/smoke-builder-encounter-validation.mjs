@@ -106,8 +106,10 @@ try {
       const total = document.querySelector('#family-encounter-total')?.value ?? '';
       const selected = document.querySelector('#family-encounter-family')?.value ?? '';
       const active = document.querySelector('[data-panel="terrain"]')?.classList.contains('active');
+      const advancedOpen = document.querySelector('.terrain-advanced')?.open;
+      const editorVisible = Boolean(document.querySelector('.terrain-encounter-panel')?.getClientRects().length);
       return {
-        ready:true, initial, status, total, selected, active, navigationAllowed,
+        ready:true, initial, status, total, selected, active, advancedOpen, editorVisible, navigationAllowed,
         path:location.pathname
       };
     })()`);
@@ -125,6 +127,7 @@ try {
     !result.status.includes('Forêt') || !result.status.includes('90 %') ||
     !result.status.includes('100 %') || result.total !== '90 %' ||
     result.selected !== 'forest' || !result.active ||
+    !result.advancedOpen || !result.editorVisible ||
     result.path !== '/builder.html'
   ) {
     throw Error('Builder validation/navigation assertion failed: ' + JSON.stringify(result));
