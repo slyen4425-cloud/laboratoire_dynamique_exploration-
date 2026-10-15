@@ -208,36 +208,19 @@ test('Builder edits encounter chance and exact element percentages per family', 
   );
 });
 
-test('active family blocks export when element percentages do not total 100', () => {
-  let next =
-    updateTerrainFamilyEncounterProfile(
-      draft(),
-      'forest',
-      {
-        encounterChancePercent: 30
-      }
-    );
-
-  next =
-    updateTerrainFamilyElementChance(
-      next,
-      'forest',
-      'fire',
-      50
-    );
-
-  const validation =
-    validateWorldBuilderDraft(next);
-
-  assert.equal(
-    validation.valid,
-    false
+test('active family requires at least one enabled element, never total 100%', () => {
+  let next = updateTerrainFamilyEncounterProfile(
+    draft(), 'forest', { encounterChancePercent: 30 }
   );
-  assert.ok(
-    validation.errors.includes(
-      'encounter-element-total:forest'
-    )
-  );
+  // Legacy 50% is now a selected element, not a partially invalid sum.
+  next = updateTerrainFamilyElementChance(next, 'forest', 'fire', 50);
+  assert.equal(validateWorldBuilderDraft(next).valid, true);
+  for (const entry of [...next.encounterConfig.families.find(p=>p.terrainFamilyId==='forest').elementChances]) {
+    next = updateTerrainFamilyElementChance(next,'forest',entry.elementId,0);
+  }
+  const check=validateWorldBuilderDraft(next);
+  assert.equal(check.valid,false);
+  assert.ok(check.errors.includes('encounter-elements-empty:forest'));
 });
 
 test('route and river terrain families are editable independently from geometry and texture kind', () => {
