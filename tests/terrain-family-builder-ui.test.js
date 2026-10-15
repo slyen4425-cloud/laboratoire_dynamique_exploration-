@@ -27,8 +27,7 @@ test('World Builder exposes editable terrain families independently from texture
     'terrain-river-material',
     'family-encounter-family',
     'family-encounter-chance',
-    'family-encounter-elements',
-    'family-encounter-total'
+    'family-encounter-elements'
   ]) {
     assert.match(
       html,
@@ -76,7 +75,7 @@ test('Builder no longer exposes a separate Encounter painting system', async () 
   );
 });
 
-test('family encounter UI remains percentage-based and contains no typed creature ids', async () => {
+test('family encounter UI has one encounter percentage and selectable elements', async () => {
   const html =
     await readFile(
       new URL(
@@ -94,10 +93,8 @@ test('family encounter UI remains percentage-based and contains no typed creatur
     html,
     /Chance de rencontre/
   );
-  assert.match(
-    html,
-    /Total éléments/
-  );
+  assert.match(html, /Choisir les éléments possibles/);
+  assert.doesNotMatch(html, /Total éléments|Répartition des éléments Capture/);
   assert.equal(
     /actorDefinitionId/.test(html),
     false
