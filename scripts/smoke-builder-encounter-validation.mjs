@@ -133,6 +133,58 @@ try {
     throw Error('Builder validation/navigation assertion failed: ' + JSON.stringify(result));
   }
   console.log('GREEN real Chromium Builder invalid encounters -> correct family editor');
+
+  // RED then GREEN for the user's actual blocked path: full Earth-only distribution,
+  // real handoff click and a running Exploration canvas. Never seed test storage.
+  const setupResponse = await evaluate(`(() => {
+    const select = document.querySelector('#family-encounter-sole-element');
+    const apply = document.querySelector('#family-encounter-sole-apply');
+    if (!select || !apply) return {ready:false, why:'Missing explicit 100% single-element setup controls'};
+    const chance = document.querySelector('#family-encounter-chance');
+    chance.value = '100';
+    chance.dispatchEvent(new Event('input', {bubbles:true}));
+    select.value = 'earth';
+    apply.click();
+    const inputs = [...document.querySelectorAll('#family-encounter-elements input[data-element-id]')];
+    return {
+      ready:true,
+      chance:chance.value,
+      values:inputs.map(i=>({id:i.dataset.elementId, value:i.value})),
+      total:document.querySelector('#family-encounter-total')?.value,
+      status:document.querySelector('#builder-status')?.textContent
+    };
+  })()`);
+  if (setupResponse.error || setupResponse.result?.exceptionDetails)
+    throw Error('Browser sole element setup failed: ' + JSON.stringify(setupResponse));
+  const setup = setupResponse.result?.result?.value;
+  console.log('Single-element authoring: ' + JSON.stringify(setup));
+  if (!setup?.ready || setup.chance !== '100' || setup.total !== '100 %' ||
+    setup.status !== 'WorldDocument valide' ||
+    !setup.values.some(x => x.id === 'earth' && x.value === '100') ||
+    setup.values.some(x => x.id !== 'earth' && x.value !== '0'))
+    throw Error('Explicit Earth-only authoring did not validate: ' + JSON.stringify(setup));
+
+  const navResponse = await evaluate("document.querySelector('#test-exploration').click(); 'click-sent'");
+  if (navResponse.error || navResponse.result?.exceptionDetails)
+    throw Error('Builder test-click failed: ' + JSON.stringify(navResponse));
+  let launched = null;
+  for (let tries=0; tries<140; tries++) {
+    const response = await evaluate(`(() => ({
+      path:location.pathname,
+      query:location.search,
+      coords:document.querySelector('#coords')?.textContent ?? '',
+      hasGame: Boolean(document.querySelector('#game')),
+      hasError:document.querySelector('#builder-status')?.textContent ?? ''
+    }))()`);
+    launched = response.result?.result?.value;
+    if (launched?.path === '/index.html' && launched.coords.includes(' · x: ')) break;
+    await sleep(250);
+  }
+  console.log('Builder game handoff: ' + JSON.stringify(launched));
+  if (launched?.path !== '/index.html' || !launched.query.includes('builderTest=1') ||
+      !launched.hasGame || !launched.coords.includes(' · x: '))
+    throw Error('Builder valid map did not start real Exploration game: ' + JSON.stringify(launched));
+  console.log('GREEN real Chromium Builder valid Forest Earth-only -> Exploration game running');
 } finally {
   socket?.close();
   if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
