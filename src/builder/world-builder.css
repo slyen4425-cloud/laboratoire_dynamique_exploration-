@@ -576,29 +576,22 @@ input:focus, select:focus, textarea:focus {
 }
 
 .family-element-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px;
+  display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.8rem;
   min-height: 44px;
+  padding: 6px 9px;
+  border: 1px solid #465548;
+  border-radius: 8px;
+  cursor: pointer;
 }
-
-.family-element-row input {
-  width: 100%;
-  min-height: 44px;
+.family-element-row input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
 }
-
-#family-encounter-total.invalid {
-  font-weight: 700;
-  text-decoration: underline;
-}
-
-@media (max-width: 760px) {
-  .family-element-row {
-    grid-template-columns: minmax(0, 1fr) 78px;
-  }
-}
-
+.family-element-row span { min-width: 0; }
 
 /* Mobile Landscape & Area Navigation UX v1 */
 .map-area-context {
