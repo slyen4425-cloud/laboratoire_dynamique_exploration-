@@ -135,7 +135,7 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=builder-encounter-validation-guidance-v1/
+    /world-builder-main\.js\?rev=builder-encounter-validation-guidance-r2/
   );
   assert.match(
     html,
