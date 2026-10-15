@@ -897,3 +897,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - TDD RED `38663295703`, CI GREEN `38664200206`, **475/475**, test Chromium réel de saisie Forest Nature 50→40, bouton Tester intercepté, bonne navigation, Encounter Combat moderne inchangé, navigateur GREEN.
 - Test CI Browser utilise les deux sources externes pinées, Combat `3f612ec0cf4adf4bf5aa0a2594131613ce16ceec` et global-assets `e55fea3b559c348be596d7c16250808a39c315a1`. Aucun artefact Capture recopié sous Exploration.
 - Checkpoint technique : `docs/checkpoints/EXPLORATION_BUILDER_ENCOUNTER_VALIDATION_GUIDANCE_PREVALIDATION_2026-10-15.md`. Publication Pages puis validation smartphone requises ; pas de GREEN FINAL.
+
+
+### Publication Pages — 2026-10-15
+
+- Source de prévalidation figée : `74d354f76ecc4900e709d62eb302780879b47eb4` ; refs `checkpoint/exploration-builder-encounter-validation-guidance-prevalidation-green-2026-10-15` et `preview/exploration-builder-encounter-validation-guidance-v1-2026-10-15`.
+- PR #121 infrastructure GitHub Pages uniquement ; merge main `080babfa3ff29d1dc3df98751cdf2118636514e5` ; **aucun runtime fonctionnel fusionné sur main**.
+- Pages run `38664465798` **SUCCESS**, tests 475, smoke Chrome Builder 90/100 & navigation et smoke Combat moderne validés avant upload.
+- Preview : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-encounter-validation-guidance-v1`.
+- Gate utilisateur : régler le total des rencontres Forêt à 100 % sur la carte existante, exporter son WorldDocument avant de changer de preview (Builder ne garantit pas de sauvegarde automatique), importer dans la nouvelle preview puis Tester en jeu. **GREEN FINAL en attente** de retour Pixel et du flux combat complet.
