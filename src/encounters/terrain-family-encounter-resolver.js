@@ -65,30 +65,18 @@ export function resolveTerrainFamilyEncounter({
     });
   }
 
-  const eligibleElements = profile.elementChances.filter(
-    ({ elementId }) =>
-      captureCatalog
-        .findByElement(elementId)
-        .some((creature) => creature.spawnChance > 0)
+  // Historical WorldDocument v1 elementChances are now just a set of
+  // enabled element IDs: their former percentages never weight the lottery.
+  // A creature with multiple enabled elements appears ONCE in this pool.
+  const enabled = new Set(
+    (profile.elementChances ?? [])
+      .filter((entry) => entry.chancePercent > 0)
+      .map((entry) => entry.elementId)
   );
-
-  const selectedElement = weightedPick(
-    eligibleElements,
-    (entry) => entry.chancePercent,
-    random
+  const candidates = captureCatalog.listCreatures().filter(
+    (creature) => creature.spawnChance > 0 &&
+      creature.elements.some((id) => enabled.has(id))
   );
-
-  if (!selectedElement) {
-    return Object.freeze({
-      triggered: false,
-      reason: 'no-element',
-      terrainFamilyId
-    });
-  }
-
-  const candidates = captureCatalog
-    .findByElement(selectedElement.elementId)
-    .filter((creature) => creature.spawnChance > 0);
 
   const creature = weightedPick(
     candidates,
@@ -99,17 +87,20 @@ export function resolveTerrainFamilyEncounter({
   if (!creature) {
     return Object.freeze({
       triggered: false,
-      reason: 'no-creature',
-      terrainFamilyId,
-      elementId: selectedElement.elementId
+      reason: 'no-element',
+      terrainFamilyId
     });
   }
+
+  // EncounterSnapshot v1 expects a meaningful element context. Choose one
+  // of the winning creature's enabled elements; do not roll a second lottery.
+  const elementId = creature.elements.find((id) => enabled.has(id));
 
   return Object.freeze({
     triggered: true,
     reason: 'selected',
     terrainFamilyId,
-    elementId: selectedElement.elementId,
+    elementId,
     creatureId: creature.id,
     spawnChance: creature.spawnChance
   });
