@@ -645,7 +645,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   const worldObjectRevision =
     'collision-boundary-worldobject-obstacles-v1';
   const builderEntryRevision =
-    'builder-terrain-compositor-v1';
+    'builder-encounter-validation-guidance-v1';
 
   const [
     html,
@@ -713,7 +713,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   assert.match(
     html,
     new RegExp(
-      `world-builder\\.css\\?rev=builder-blank-world-export-v1`
+      `world-builder\\.css\\?rev=builder-encounter-validation-guidance-v1`
     )
   );
 
