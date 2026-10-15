@@ -888,3 +888,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Propriétaire : Builder UI (message, orientation dans le panneau Terrain) ; validateWorldBuilderDraft/WorldDocument conservent leurs règles et leur autorité. Ne jamais renormaliser silencieusement les pourcentages de l'auteur, ni ignorer la validation à l'export/test.
 - Périmètre : helper pur de présentation des erreurs, guidance depuis « Tester en jeu », lisibilité en paysage, tests régressions TDD, cache public Builder. Hors périmètre : Combat, Encounter, règles de probabilités, import, données du monde, code production, transition routes, caméra.
 - Gate : tests RED puis GREEN + CI et preview isolée + test Pixel. GREEN FINAL interdit avant validation utilisateur.
+
+
+### 2026-10-15 — Prévalidation technique guidance rencontres
+
+- Cause observée : `encounter-element-total:forest` émis avant lancement du Combat, car répartition d'éléments d'une famille active différente de 100 % ; démo initiale valide, carte utilisateur modifiée non corrigeable depuis message opaque.
+- Helper de présentation pur ; affichage du total réel, famille exacte et consigne, activation automatique onglet Terrain et sélection de famille au clic invalide. Validation canonique inchangée, pas de renormalisation ni masquage.
+- TDD RED `38663295703`, CI GREEN `38664200206`, **475/475**, test Chromium réel de saisie Forest Nature 50→40, bouton Tester intercepté, bonne navigation, Encounter Combat moderne inchangé, navigateur GREEN.
+- Test CI Browser utilise les deux sources externes pinées, Combat `3f612ec0cf4adf4bf5aa0a2594131613ce16ceec` et global-assets `e55fea3b559c348be596d7c16250808a39c315a1`. Aucun artefact Capture recopié sous Exploration.
+- Checkpoint technique : `docs/checkpoints/EXPLORATION_BUILDER_ENCOUNTER_VALIDATION_GUIDANCE_PREVALIDATION_2026-10-15.md`. Publication Pages puis validation smartphone requises ; pas de GREEN FINAL.
