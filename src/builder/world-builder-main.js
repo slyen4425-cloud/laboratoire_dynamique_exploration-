@@ -1,3 +1,4 @@
+import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=builder-encounter-validation-guidance-v1';
 import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2';
 import {
   addActorPlacement,
@@ -3749,7 +3750,7 @@ function refreshJson() {
   } else {
     jsonPreview.value = JSON.stringify(draft, null, 2);
     setStatus(
-      `Document invalide : ${result.errors.join(' · ')}`,
+      `Document invalide : ${describeWorldBuilderValidation(result.errors, result.document).message}`,
       true
     );
   }
@@ -7162,10 +7163,19 @@ $('test-exploration').addEventListener('click', (event) => {
 
   if (!result.valid || !result.document) {
     event.preventDefault();
-    setStatus(
-      `Impossible de tester : ${result.errors.join(' · ')}`,
-      true
-    );
+    const guidance = describeWorldBuilderValidation(result.errors, result.document);
+    if (guidance.encounterFamilyId) {
+      // Direct users to the unique authoring controls; never mutate encounter odds.
+      selectedEncounterFamilyId = guidance.encounterFamilyId;
+      activateTab('terrain');
+      refreshFamilyEncounterControls();
+    }
+    setStatus(`Impossible de tester : ${guidance.message}`, true);
+    if (guidance.encounterFamilyId) {
+      document.querySelector('.terrain-encounter-panel')?.scrollIntoView({
+        block: 'start', behavior: 'instant'
+      });
+    }
     return;
   }
 
