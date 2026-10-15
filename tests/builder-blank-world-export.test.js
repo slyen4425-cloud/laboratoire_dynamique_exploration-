@@ -27,7 +27,7 @@ test('new blank map keeps one editable playable area and no demo content', () =>
   assert.deepEqual(area.surface.zones, []);
   assert.deepEqual(area.surface.routes, []);
   assert.deepEqual(area.surface.rivers, []);
-  assert.equal(area.encounters.randomEnabled, false);
+  assert.equal(area.encounters.randomEnabled, true);
   assert.equal(area.spawns.length, 1);
   assert.equal(blank.initialSpawnId, area.spawns[0].id);
   assert.equal(blank.initialAreaId, area.id);
