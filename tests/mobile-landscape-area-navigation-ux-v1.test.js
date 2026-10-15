@@ -135,11 +135,11 @@ test('Builder exposes map focus controls and simple area shortcuts on the map', 
   );
   assert.match(
     html,
-    /world-builder-main\.js\?rev=blank-world-encounter-enable-v1/
+    /world-builder-main\.js\?rev=encounter-selected-elements-v1/
   );
   assert.match(
     html,
-    /world-builder\.css\?rev=builder-encounter-quick-setup-v1/
+    /world-builder\.css\?rev=encounter-selected-elements-v1/
   );
 });
 
