@@ -848,3 +848,7 @@ body.builder-map-focus {
   .map-object-tools { gap:4px; padding:4px 7px; }
   .map-object-transform-choice { white-space:normal; font-size:.72rem; }
 }
+
+/* Mobile gate guidance: status and actions must wrap, never clip error details. */
+.builder-header > div:first-child { min-width: 0; flex: 1 1 240px; }
+#builder-status { overflow-wrap: anywhere; line-height: 1.35; }
