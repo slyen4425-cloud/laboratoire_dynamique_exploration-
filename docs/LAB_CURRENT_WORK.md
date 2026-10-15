@@ -1,3 +1,12 @@
+## 2026-10-15 — Remplacement de la fausse vue Combat intégrée par l'interface Capture native
+
+- Constat visuel utilisateur : raccord Combat précédent `c61798e` techniquement fonctionnel mais mauvaise page HUD ancienne ; les sprites de créatures inachevées sont provisoires **par choix de l'auteur**, ne pas les supprimer ni réinventer les assets.
+- Base Explore `work/exploration-current-combat-refresh-2026-10-15@b36e4e4fbb9a4db34121e7ad550a641cfb0362f3`, checkpoint `checkpoint/exploration-start-native-combat-view-2026-10-15`, branche unique `work/exploration-native-combat-view-2026-10-15`.
+- Version Combat retenue `work/lab-exploration-native-view-2026-10-15@85f5bc607266bfefdad233dcac50ff94797dfa18` : même template HTML, mêmes styles et même moteur que l'éditeur de combat récent. Snapshot, équipe, statut KO, résultat et retour conservent les autorités d'origine.
+- Les audits d'intégration vérifient dorénavant que la page Encounter **consomme** réellement `capture-editor-v2.html > data-capture-preview-template` et `capture-editor-v2.css` au lieu d'accepter une copie de HUD ancienne ; test Chromium réel vérifie 16:9 paysage, dimensions des panneaux, bannière masquée en succès, acteurs et capacités.
+- CI Explore `38791457656` et `38791457834` **SUCCESS** avant note de documentation ; CI Combat `38790911605` **SUCCESS**. Référence stable de code Explore `535b6d10b4b995edbc3e31ab2461d1dfd5a28ff0`.
+- Aucun changement des rencontres par éléments cochés, rareté, WorldDocument, surface, collisions, Builder ou jeu principal. Déploiement public par PR infrastructure uniquement, une fois les gates verts ; prévisualisation précédente conservée comme rollback. Pas de GREEN FINAL avant vérification visuelle et combat jusqu'au retour sur le Pixel.
+
 # LAB_CURRENT_WORK — Point de reprise unique
 
 > ÉTAT ACTIF — 2026-10-13
