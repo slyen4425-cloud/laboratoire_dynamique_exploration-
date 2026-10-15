@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: builder-encounter-validation-guidance-v1
+# preview-revision: builder-encounter-validation-guidance-r2
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Builder encounter guidance prevalidation
+      - name: Checkout Exploration Builder encounter guidance R2 prevalidation
         uses: actions/checkout@v4
         with:
-          ref: 74d354f76ecc4900e709d62eb302780879b47eb4
+          ref: 5c681adf6d8969ac4c192c8349e9689b3ec3a5f3
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
