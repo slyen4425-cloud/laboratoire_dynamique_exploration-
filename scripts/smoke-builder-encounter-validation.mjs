@@ -135,7 +135,12 @@ try {
   console.log('GREEN real Chromium Builder invalid encounters -> correct family editor');
 } finally {
   socket?.close();
-  chrome?.kill('SIGKILL');
+  if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
+    const exited = once(chrome, 'exit');
+    chrome.kill('SIGKILL');
+    await exited;
+  }
   server.close();
-  await rm(profile, {recursive:true, force:true});
+  // Wait until Chromium has released its profile instead of racing rmdir.
+  await rm(profile, {recursive:true, force:true, maxRetries:5, retryDelay:100});
 }
