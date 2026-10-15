@@ -613,7 +613,7 @@ test('public cache chain reaches boundary silhouette and WorldObject obstacle au
   const revision =
     'collision-boundary-worldobject-obstacles-v1';
   const entryRevision = 'builder-paint-workflow-fix-v1';
-  const builderEntryRevision = 'builder-terrain-compositor-v1';
+  const builderEntryRevision = 'builder-encounter-validation-guidance-v1';
 
   const [
     builderHtml,
@@ -926,7 +926,7 @@ test('R2 public cache graph reaches generic obstacle resolver from Builder and r
 
   const rev = 'collision-boundary-worldobject-obstacles-v1-r2';
   const entryRev = 'builder-paint-workflow-fix-v1';
-  const builderEntryRev = 'builder-terrain-compositor-v1';
+  const builderEntryRev = 'builder-encounter-validation-guidance-v1';
 
   assert.ok(index.includes('main.js?rev=' + entryRev));
   assert.ok(builder.includes('world-builder-main.js?rev=' + builderEntryRev));
