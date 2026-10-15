@@ -971,3 +971,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BLANK_WORLD_ENCOUNTER_ENABLE_PREVALIDATION_2026-10-15.md`.
 - **Prochaine action** : épingler checkpoint et source preview, CI checkpoint, publier Pages par PR infrastructure seule, vérifier le déploiement. Puis exiger validation Pixel et vrai combat complet avant **GREEN FINAL**.
 - Ticket source `#123` ; ne pas fusionner gameplay sur `main`, ne pas toucher au lot Quick Setup déjà qualifié, ni Combat / Capture / Zombicide-40k.
+
+
+### 2026-10-15 — Preview publiée / validation réelle en attente
+
+- Code source immuable et documents : `46b5fc42b3475963b03999473ad9f3dc130318c4`. Work CI `38737515958` SUCCESS ; checkpoint `checkpoint/exploration-blank-world-encounter-enable-prevalidation-green-2026-10-15`, CI `38737578493` SUCCESS ; preview ref `preview/exploration-blank-world-encounter-enable-v1-2026-10-15` au même SHA.
+- PR #125 **infrastructure seule** fusionnée sur main `2d495525f3b9650ca394157bade8ef4455fe25db` ; **aucun code de moteur ni Builder fusionné dans main**, checkout Explore + Combat/Assets fixes et tests verrouillés.
+- GitHub Pages `38737750320` **SUCCESS**, y compris tests 480/480, audit Combat et Chromium marche réelle -> encounter.
+- URL publiée : https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=blank-world-encounter-enable-v1
+- **Gate Pixel utilisateur toujours ouvert** : sur ancienne carte, activer explicitement `Autoriser les rencontres aléatoires dans l'Area actuelle` ; sur nouvelle carte vierge, base Forêt + chance 100 % + élément Terre 100 %, tester déplacement → rencontre → combat réel → retour. Ancien JSON avec `false` reste OFF sans réécriture cachée. Pas de GREEN FINAL avant verdict du créateur ; ticket #123 conservé ouvert.
