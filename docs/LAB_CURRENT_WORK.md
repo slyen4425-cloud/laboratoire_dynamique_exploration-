@@ -916,3 +916,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Correctif `9a0775769bc2cdd6256b6b1cb98a0425abb256e9` : ouvre explicitement le `details` canonique avant de sélectionner/afficher l’éditeur ; n’altère aucune chance de rencontre. CI `38676714073` **SUCCESS** avec parcours Chromium et cœur de tests.
 - Cache module public R2 `26462b7931bdbb691a0f0f0653c1d250b2802abe` ; nouvelle preview/Pages à publier sur SHA contrôlé après CI.
 - Aucun changement du validateur, du WorldDocument, du moteur Combat, des réglages de pourcentage, du mode Capture ou du dépôt principal. GREEN FINAL soumis au test Pixel et à la validation du combat complet.
+
+
+### 2026-10-15 — Publication R2 et stabilisation du test navigateur
+
+- Correctif UI R2 validé : `9a0775769bc2cdd6256b6b1cb98a0425abb256e9`, onglet Terrain + `details.terrain-advanced` ouvert, famille concernée sélectionnée, pourcentages conservés. Preuve RED `38676659327` (`advancedOpen=false`), GREEN `38676714073`.
+- Cache public JS mis à jour ; sentinelles vérifient exactement le nouveau module JavaScript et l’ancien CSS inchangé. CI GREEN `38676922695` au checkpoint/preview R2 `5c681adf6d8969ac4c192c8349e9689b3ec3a5f3` (475 tests + navigateur).
+- Publication Pages infra-only PR #122 sur `main@38b8b29e5f102cc31b8b90ab61316d167c89417d`, workflow `38677056491` **SUCCESS**. URL : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-encounter-validation-guidance-r2`.
+- Une CI de la même source a révélé un défaut non fonctionnel de nettoyage Chromium (`ENOTEMPTY` à la suppression du profil après tests réussis), corrigé par attente du processus enfant et nettoyage déterministe `dcf0f15f4e45d6ebcedf725164dcc59445b0342c`; CI `38677193279` SUCCESS. Le système de validation gameplay n’a pas été affaibli.
+- Verdict Pixel toujours nécessaire pour la carte utilisateur, export/import, navigation et jeu Combat complet. GREEN FINAL interdit avant retour du créateur.
