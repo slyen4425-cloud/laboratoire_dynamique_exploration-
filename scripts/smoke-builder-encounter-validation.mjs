@@ -164,6 +164,38 @@ try {
     setup.values.some(x => x.id !== 'earth' && x.value !== '0'))
     throw Error('Explicit Earth-only authoring did not validate: ' + JSON.stringify(setup));
 
+  // Exercise the existing WorldArea encounter flag through the real Builder UI.
+  // A valid 100% chance / 100% Earth profile must remain explicitly OFF if
+  // the author disables encounters; turning it ON writes that same canonical field.
+  const policyResponse = await evaluate(`(() => {
+    const toggle = document.querySelector('#area-random-encounters-enabled');
+    const status = document.querySelector('#area-random-encounters-status');
+    if (!toggle || !status) return {ready:false};
+    const initial = toggle.checked;
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change', { bubbles:true }));
+    const disabled = JSON.parse(document.querySelector('#json-preview').value);
+    const disabledFlag = disabled.areas.find(a => a.id === disabled.initialAreaId)?.encounters?.randomEnabled;
+    const disabledWarning = status.textContent;
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change', { bubbles:true }));
+    const enabled = JSON.parse(document.querySelector('#json-preview').value);
+    const enabledFlag = enabled.areas.find(a => a.id === enabled.initialAreaId)?.encounters?.randomEnabled;
+    return {
+      ready:true, initial, disabledFlag, enabledFlag, disabledWarning,
+      valid:document.querySelector('#builder-status')?.textContent === 'WorldDocument valide'
+    };
+  })()`);
+  if (policyResponse.error || policyResponse.result?.exceptionDetails)
+    throw Error('Browser Area encounter toggle failed: ' + JSON.stringify(policyResponse));
+  const policy = policyResponse.result?.result?.value;
+  console.log('Area encounter policy: ' + JSON.stringify(policy));
+  if (!policy?.ready || !policy.initial || policy.disabledFlag !== false ||
+      policy.enabledFlag !== true || !policy.disabledWarning.includes('DÉSACTIVÉES') ||
+      !policy.valid)
+    throw Error('Browser Area encounters did not honor the canonical WorldArea flag: ' + JSON.stringify(policy));
+  console.log('GREEN real Chromium: explicit Area OFF and ON, unchanged family odds');
+
   const navResponse = await evaluate("document.querySelector('#test-exploration').click(); 'click-sent'");
   if (navResponse.error || navResponse.result?.exceptionDetails)
     throw Error('Builder test-click failed: ' + JSON.stringify(navResponse));
