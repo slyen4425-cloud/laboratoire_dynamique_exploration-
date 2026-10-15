@@ -89,7 +89,9 @@ try {
   const dom = Buffer.concat(stdout).toString();
   const result = dom.match(/data-builder-validation-smoke="([^"]+)"/)?.[1] ?? 'missing';
   const jsError = dom.match(/data-builder-probe-js-error="([^"]+)"/)?.[1] ?? '';
-  console.log(JSON.stringify({result, jsError}));
+  const status = dom.match(/id="builder-status"[^>]*>([^<]*)/)?.[1] ?? 'not found';
+  const natureCount = [...dom.matchAll(/data-element-id="nature"/g)].length;
+  console.log(JSON.stringify({result, jsError, status, natureCount}));
   if (jsError || result !== 'ok') throw Error('Builder browser validation failed: ' + result + ' ' + jsError);
   console.log('GREEN real Chromium Builder invalid encounters -> correct family editor');
 } finally {
