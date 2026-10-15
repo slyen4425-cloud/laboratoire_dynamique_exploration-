@@ -79,17 +79,17 @@ test('family encounter chance can reject before element/creature selection', () 
   assert.equal(result.reason, 'chance');
 });
 
-test('family element percentages select a Capture element before choosing a creature', () => {
+test('selected family elements feed one pool weighted by each creature rarity', () => {
   const result = resolveTerrainFamilyEncounter({
     terrainFamilyId: 'forest',
     config: config(),
     captureCatalog: provider(),
-    random: sequence([0, 0.95, 0])
+    random: sequence([0, 0.95])
   });
 
   assert.equal(result.triggered, true);
-  assert.equal(result.elementId, 'water');
-  assert.equal(result.creatureId, 'water');
+  assert.equal(result.elementId, 'fire');
+  assert.equal(result.creatureId, 'legend-fire');
 });
 
 test('intrinsic Capture spawnChance remains the creature rarity authority', () => {
