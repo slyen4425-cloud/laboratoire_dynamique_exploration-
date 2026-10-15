@@ -24,6 +24,7 @@ import {
   updateActorPlacement,
   updateAreaBoundary,
   updateAreaProperties,
+  setAreaEncounterRandomEnabled,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
@@ -2382,6 +2383,12 @@ function refreshTerrainFamilyDefinitionControls() {
 }
 
 function refreshFamilyEncounterControls() {
+  const area = currentAreaRaw();
+  const enabled = area?.encounters?.randomEnabled !== false;
+  $('area-random-encounters-enabled').checked = enabled;
+  $('area-random-encounters-status').textContent = enabled
+    ? `Rencontres autorisées dans l'Area « ${area?.id ?? 'inconnue'} ». Chaque tirage dépend de la famille sous le héros et de sa chance.`
+    : `Rencontres DÉSACTIVÉES dans l'Area « ${area?.id ?? 'inconnue'} » : aucun combat aléatoire ne peut apparaître, même si la chance de rencontre est à 100 %. Active la case ci-dessus pour cette Area.`;
   const families = terrainFamilies();
   const registry =
     terrainFamilyRegistryForDraft();
@@ -5418,6 +5425,14 @@ $('family-encounter-family').addEventListener(
     refreshFamilyEncounterControls();
   }
 );
+
+$('area-random-encounters-enabled').addEventListener('change', () => {
+  draft = setAreaEncounterRandomEnabled(
+    draft, selectedAreaId, $('area-random-encounters-enabled').checked
+  );
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
 
 $('family-encounter-sole-apply').addEventListener('click', () => {
   const elementId = $('family-encounter-sole-element').value;
