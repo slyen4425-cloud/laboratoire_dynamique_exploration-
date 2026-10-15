@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: blank-world-encounter-enable-v1
+# preview-revision: selected-elements-v2
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration blank WorldArea encounter gate browser-GREEN preview
+      - name: Checkout Exploration checkbox elements and unified rarity pool browser-GREEN preview
         uses: actions/checkout@v4
         with:
-          ref: 46b5fc42b3475963b03999473ad9f3dc130318c4
+          ref: fca3f161f1ad33fa515577776193895e9a91d7f4
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
@@ -53,7 +53,7 @@ jobs:
       - name: Fail closed if modern Combat has no real native bridge
         run: node scripts/audit-combat-preview.mjs combat-preview
 
-      - name: Verify real blank map and native walking Encounter in Chromium
+      - name: Verify Builder checkbox elements, blank map and real Encounter in Chromium
         run: node scripts/smoke-builder-encounter-validation.mjs
 
       - name: Verify actual encounter startup in Chromium
