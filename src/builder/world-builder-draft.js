@@ -401,15 +401,11 @@ export function validateWorldBuilderDraft(
 
   for (const profile of document.encounterConfig?.families ?? []) {
     if (profile.encounterChancePercent <= 0) continue;
-
-    const total = profile.elementChances.reduce(
-      (sum, entry) => sum + entry.chancePercent,
-      0
-    );
-
-    if (Math.abs(total - 100) > 0.001) {
+    // Element percentages from legacy WorldDocuments are selections only;
+    // no second probability gate exists between encounter and creature rarity.
+    if (!profile.elementChances.some((entry) => entry.chancePercent > 0)) {
       errors.push(
-        `encounter-element-total:${profile.terrainFamilyId}`
+        `encounter-elements-empty:${profile.terrainFamilyId}`
       );
     }
   }
@@ -914,6 +910,32 @@ export function setTerrainFamilyExclusiveEncounterElement(
     chancePercent: 100
   }];
 
+  return next;
+}
+
+/**
+ * Authoring for the v1 WorldDocument compatible element selection.
+ * Positive legacy percentages are treated as checked; checkbox writes a
+ * single positive marker. No element percentage affects rarity selection.
+ */
+export function setTerrainFamilyEncounterElementEnabled(
+  draft,
+  terrainFamilyId,
+  elementId,
+  enabled
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(next, terrainFamilyId);
+  if (!profile || typeof elementId !== 'string' ||
+      !elementId.trim() || typeof enabled !== 'boolean') return next;
+  const id = elementId.trim();
+  profile.elementChances ??= [];
+  profile.elementChances = profile.elementChances.filter(
+    (entry) => entry.elementId !== id
+  );
+  if (enabled) {
+    profile.elementChances.push({ elementId:id, chancePercent:1 });
+  }
   return next;
 }
 
