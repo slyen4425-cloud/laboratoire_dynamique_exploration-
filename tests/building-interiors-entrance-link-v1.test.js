@@ -713,7 +713,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   assert.match(
     html,
     new RegExp(
-      `world-builder\\.css\\?rev=builder-encounter-quick-setup-v1`
+      `world-builder\\.css\\?rev=encounter-selected-elements-v1`
     )
   );
 
