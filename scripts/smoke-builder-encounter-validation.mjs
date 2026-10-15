@@ -237,11 +237,11 @@ try {
   await cdp('Page.navigate', {url});
   let blankBuilderReady = false;
   for (let tries=0; tries<120; tries++) {
-    const response = await evaluate(\`(() => ({
+    const response = await evaluate(`(() => ({
       ready:Boolean(document.querySelector('#family-encounter-sole-apply') &&
         document.querySelector('#family-encounter-elements input[data-element-id="nature"]')),
       path:location.pathname
-    }))()\`);
+    }))()`);
     if (response.result?.result?.value?.ready) {blankBuilderReady=true;break;}
     await sleep(250);
   }
@@ -258,7 +258,7 @@ try {
     await sleep(100);
   }
   if (!blankSelected) throw Error('Blank-world regression: new blank WorldArea not created');
-  const blankSetupResponse = await evaluate(\`(() => {
+  const blankSetupResponse = await evaluate(`(() => {
     const areaFamily = document.querySelector('#area-family');
     areaFamily.value = 'forest';
     areaFamily.dispatchEvent(new Event('change',{bubbles:true}));
@@ -281,7 +281,7 @@ try {
       elements:p?.elementChances,
       status:document.querySelector('#builder-status').textContent
     };
-  })()\`);
+  })()`);
   if (blankSetupResponse.error || blankSetupResponse.result?.exceptionDetails)
     throw Error('Blank-world authoring failed: ' + JSON.stringify(blankSetupResponse));
   const blankSetup=blankSetupResponse.result?.result?.value;
@@ -295,10 +295,10 @@ try {
   await evaluate("document.querySelector('#test-exploration').click(); 'blank-play'");
   let blankGame=false;
   for (let tries=0; tries<140; tries++){
-    const res=await evaluate(\`(() => ({
+    const res=await evaluate(`(() => ({
       path:location.pathname,
       coords:document.querySelector('#coords')?.textContent ?? ''
-    }))()\`);
+    }))()`);
     if (res.result?.result?.value?.path==='/index.html' &&
         res.result.result.value.coords.includes(' · x: ')){
       blankGame=true;break;
@@ -310,12 +310,12 @@ try {
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',...key});
   await sleep(2000);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',...key});
-  const seen=await evaluate(\`(() => ({
+  const seen=await evaluate(`(() => ({
     path:location.pathname,
     encountered:document.querySelector('#encounter-preview')?.hidden===false,
     summary:document.querySelector('#encounter-preview-summary')?.textContent ?? '',
     coords:document.querySelector('#coords')?.textContent ?? ''
-  }))()\`);
+  }))()`);
   if (seen.error || seen.result?.exceptionDetails)
     throw Error('Blank-world Encounter DOM probe failed: ' + JSON.stringify(seen));
   const realEncounter=seen.result?.result?.value;
