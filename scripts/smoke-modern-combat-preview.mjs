@@ -41,7 +41,42 @@ const server = createServer(async(req,res)=>{
         'window.addEventListener("error",e=>document.documentElement.dataset.encounterBootstrapError=e.message);'+
         'window.addEventListener("unhandledrejection",e=>document.documentElement.dataset.encounterBootstrapError=String(e.reason?.message||e.reason));'+
         '</script>';
-      content=Buffer.from(content.toString('utf8').replace('</head>',probe+'</head>'));
+      const layoutProbe = `<script>
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            const stage = document.querySelector('[data-capture-preview-shell]');
+            const arena = document.querySelector('[data-combat-arena]');
+            const banner = document.querySelector('[data-bridge-status]');
+            const local = document.querySelector('.squad-card--local-full');
+            const controls = document.querySelector('.coop-command-stack');
+            if (!stage || !arena || !banner || !local || !controls) {
+              document.documentElement.dataset.nativeLayoutProof = 'missing-canonical-view';
+              return;
+            }
+            const r = arena.getBoundingClientRect();
+            const h = local.getBoundingClientRect();
+            const c = controls.getBoundingClientRect();
+            const ok = getComputedStyle(stage).position === 'fixed' &&
+              getComputedStyle(banner).display === 'none' &&
+              r.width > 500 && r.height > 260 &&
+              Math.abs(r.width/r.height - 16/9) < 0.06 &&
+              r.width <= window.innerWidth + 1 &&
+              r.height <= window.innerHeight + 1 &&
+              h.height < r.height * 0.29 &&
+              c.width < r.width * 0.41 &&
+              arena.dataset.combatActiveCount === '1';
+            document.documentElement.dataset.nativeLayoutProof = ok ? 'OK' :
+              'layout-mismatch:' + [
+                getComputedStyle(stage).position,
+                getComputedStyle(banner).display,
+                Math.round(r.width), Math.round(r.height),
+                Math.round(h.height), Math.round(c.width),
+                arena.dataset.combatActiveCount
+              ].join(':');
+          }, 14000);
+        }, {once: true});
+      </script>`;
+      content=Buffer.from(content.toString('utf8').replace('</head>',probe+layoutProbe+'</head>'));
     }
     res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
       'Cache-Control':'no-store'}).end(content);
@@ -62,6 +97,7 @@ function browserBinary() {
 async function dumpDom(url) {
   const command=spawn(browserBinary(),[
     '--headless=new','--no-sandbox','--disable-gpu',
+    '--window-size=1600,900',
     '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
     '--virtual-time-budget=30000','--dump-dom',url
   ],{stdio:['ignore','pipe','pipe']});
@@ -83,13 +119,15 @@ try {
   const dom=await dumpDom(url);
   const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
   const jsError=dom.match(/data-encounter-bootstrap-error="([^"]+)"/)?.[1]??'';
+  const layoutProof=dom.match(/data-native-layout-proof="([^"]+)"/)?.[1]??'missing';
   const skillCount=[...dom.matchAll(/data-combat-skill="/g)].length;
   const orbs=[...dom.matchAll(/class="energy-orb\b/g)].length;
-  console.log(JSON.stringify({status,jsError,skillCount,orbs}));
+  console.log(JSON.stringify({status,jsError,skillCount,orbs,layoutProof}));
   if(jsError)throw Error('Encounter JavaScript error: '+jsError);
   if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status);
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
   if(!dom.includes('data-combat-hp-value="enemy-1"'))throw Error('Encounter enemy HUD absent');
+  if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
   console.log('GREEN real Chromium Encounter bootstrap and current HUD');
 }finally{
   server.close();
