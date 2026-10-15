@@ -7173,7 +7173,7 @@ $('test-exploration').addEventListener('click', (event) => {
     setStatus(`Impossible de tester : ${guidance.message}`, true);
     if (guidance.encounterFamilyId) {
       document.querySelector('.terrain-encounter-panel')?.scrollIntoView({
-        block: 'start', behavior: 'instant'
+        block: 'start', behavior: 'auto'
       });
     }
     return;
