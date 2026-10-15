@@ -27,6 +27,7 @@ import {
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
+  setTerrainFamilyExclusiveEncounterElement,
   updatePortal,
   updateSpawn,
   updateWorldEvent,
@@ -34,7 +35,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=builder-blank-world-export-v1';
+} from './world-builder-draft.js?rev=builder-encounter-quick-setup-v1';
 import {
   copyWorldObjectAsStamp,
   worldObjectStampInput
@@ -2416,6 +2417,20 @@ function refreshFamilyEncounterControls() {
 
   $('family-encounter-catalog-summary').textContent =
     `Catalogue Capture · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} éléments · rareté propre conservée`;
+
+  const soleSelector = $('family-encounter-sole-element');
+  const candidates = captureCreatureCatalog.listElements()
+    .filter((element) => captureCreatureCatalog.findByElement(element.id).length > 0);
+  setOptions(
+    soleSelector,
+    candidates,
+    soleSelector.value || (candidates.some((item) => item.id === 'earth') ? 'earth' : candidates[0]?.id),
+    {
+      label: (element) =>
+        `${element.label} (${captureCreatureCatalog.findByElement(element.id).length} créatures)`
+    }
+  );
+  $('family-encounter-sole-apply').disabled = candidates.length === 0;
 
   const container = $('family-encounter-elements');
   container.replaceChildren();
@@ -5403,6 +5418,23 @@ $('family-encounter-family').addEventListener(
     refreshFamilyEncounterControls();
   }
 );
+
+$('family-encounter-sole-apply').addEventListener('click', () => {
+  const elementId = $('family-encounter-sole-element').value;
+  const selected = captureCreatureCatalog.listElements()
+    .find((element) => element.id === elementId);
+  if (!selected || captureCreatureCatalog.findByElement(elementId).length === 0) {
+    setStatus('Choisis un élément contenant au moins une créature.', true);
+    return;
+  }
+  // Author explicitly requests one 100% element: one WorldDocument mutation,
+  // never an automatic rebalancing or a second encounter configuration.
+  draft = setTerrainFamilyExclusiveEncounterElement(
+    draft, selectedEncounterFamilyId, elementId
+  );
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
 
 $('family-encounter-chance').addEventListener(
   'input',
