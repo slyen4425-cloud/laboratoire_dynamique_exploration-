@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: selected-elements-v2
+# preview-revision: selected-elements-v2-with-current-combat-bridge
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 3f612ec0cf4adf4bf5aa0a2594131613ce16ceec
+          ref: c61798e78fa6cc454aeb5f25294e997e398729f7
           path: combat-preview
 
       - name: Checkout Capture global visual assets
