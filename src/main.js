@@ -94,7 +94,7 @@ import {
 } from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
 import {
   createEncounterController
-} from './encounters/encounter-controller.js?rev=interior-random-encounter-policy-v1';
+} from './encounters/encounter-controller.js?rev=encounter-selected-elements-v1';
 import {
   snapshotFromEncounterIntent
 } from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';
