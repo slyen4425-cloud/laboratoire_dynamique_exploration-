@@ -2414,6 +2414,14 @@ function refreshFamilyEncounterControls() {
   $('family-encounter-family').value =
     selectedEncounterFamilyId ?? '';
 
+  const baseFamilyId = area?.surface?.baseTerrainFamilyId;
+  const baseFamilyName = families.find((item) => item.id === baseFamilyId)?.label ?? baseFamilyId ?? 'inconnue';
+  const selectedFamilyName = families.find((item) => item.id === selectedEncounterFamilyId)?.label ?? selectedEncounterFamilyId ?? 'inconnue';
+  $('family-encounter-surface-info').textContent =
+    baseFamilyId === selectedEncounterFamilyId
+      ? `La famille « ${selectedFamilyName} » est le sol de base de l'Area : aucune peinture nécessaire pour rencontrer ses créatures.`
+      : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
+
   const profile = encounterProfile();
   if (!profile) return;
 
