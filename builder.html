@@ -303,9 +303,22 @@
 
         <section class="terrain-encounter-panel">
           <h3>Rencontres par famille</h3>
+          <label class="checkbox-line">
+            <input id="area-random-encounters-enabled" type="checkbox" />
+            Autoriser les rencontres aléatoires dans l'Area actuelle
+          </label>
+          <p id="area-random-encounters-status" class="builder-hint" role="status"></p>
           <p class="builder-hint">
-            Configure une fois chaque famille. Toutes les surfaces portant cette famille utilisent automatiquement ces règles.
-            La rareté propre de chaque créature reste celle définie dans Capture.
+            Le jeu vérifie les rencontres environ tous les 160 points parcourus par le héros :
+            « Chance de rencontre » est la probabilité à chaque vérification, pas un délai en secondes.
+            Le terrain sous le héros détermine la famille : le sol de base s'applique partout
+            sauf sur une zone peinte, route ou rivière. Les routes et rivières passent avant
+            les zones peintes. Pas besoin de peindre si le sol de base est déjà la bonne famille.
+            La répartition des éléments (total 100 %) choisit ensuite le type de créature.
+          </p>
+          <p class="builder-hint">
+            Configure une fois chaque famille. Toutes les surfaces portant cette famille utilisent
+            ses règles ; chaque créature conserve sa rareté propre définie dans Capture.
           </p>
 
           <label>
