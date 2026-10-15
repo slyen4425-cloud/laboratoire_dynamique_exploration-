@@ -86,6 +86,8 @@ test('Builder exposes Area-owned activation, visible warning and explanation of 
   assert.match(html,/id="area-random-encounters-status"/);
   assert.match(html,/160/);
   assert.match(html,/sol de base|sol principal/i);
+  assert.match(html,/id="family-encounter-surface-info"/);
+  assert.match(main,/baseFamilyId === selectedEncounterFamilyId/);
   assert.match(main,/setAreaEncounterRandomEnabled/);
   assert.match(main,/\$\('area-random-encounters-enabled'\)\.checked/);
   assert.match(main,/refreshFamilyEncounterControls/);
