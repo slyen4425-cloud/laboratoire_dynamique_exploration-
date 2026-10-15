@@ -3,7 +3,7 @@ import {
 } from './terrain-family-resolver.js?rev=terrain-family-encounters-v1';
 import {
   resolveTerrainFamilyEncounter
-} from './terrain-family-encounter-resolver.js?rev=terrain-family-encounters-v1';
+} from './terrain-family-encounter-resolver.js?rev=encounter-selected-elements-v1';
 
 function positiveDistance(value, fallback) {
   const number = Number(value);
