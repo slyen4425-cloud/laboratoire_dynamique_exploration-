@@ -26,9 +26,9 @@ const config = (ids) => normalizeTerrainFamilyEncounterConfig({
 
 test('selected elements filter one combined creature pool: no weighted element lottery',()=>{
   const roll=resolveTerrainFamilyEncounter({terrainFamilyId:'forest',config:config(['fire','water']),
-    captureCatalog:pool,random:((a)=>()=>a.shift())([0,0.975])});
+    captureCatalog:pool,random:((a)=>()=>a.shift())([0,0.99])});
   assert.equal(roll.triggered,true);
-  assert.equal(roll.creatureId,'rare-water'); // total rarity weight 41; 0.975 selects last 1
+  assert.equal(roll.creatureId,'rare-water'); // total rarity weight 41; 0.99 selects last 1
   assert.equal(roll.spawnChance,1);
   assert.equal(roll.elementId,'water');
 });
