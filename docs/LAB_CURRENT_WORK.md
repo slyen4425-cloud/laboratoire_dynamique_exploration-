@@ -925,3 +925,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Publication Pages infra-only PR #122 sur `main@38b8b29e5f102cc31b8b90ab61316d167c89417d`, workflow `38677056491` **SUCCESS**. URL : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-encounter-validation-guidance-r2`.
 - Une CI de la même source a révélé un défaut non fonctionnel de nettoyage Chromium (`ENOTEMPTY` à la suppression du profil après tests réussis), corrigé par attente du processus enfant et nettoyage déterministe `dcf0f15f4e45d6ebcedf725164dcc59445b0342c`; CI `38677193279` SUCCESS. Le système de validation gameplay n’a pas été affaibli.
 - Verdict Pixel toujours nécessaire pour la carte utilisateur, export/import, navigation et jeu Combat complet. GREEN FINAL interdit avant retour du créateur.
+
+
+## 2026-10-15 — Lot correctif Builder : configuration simple des rencontres et lancement valide
+
+- Signalement Pixel : Forêt chance de rencontre 100 %, sélection de Terre (23 créatures dans le catalogue), mais « Tester en jeu » ne démarre pas. Le compteur d'espèces n'est pas une chance de répartition ; modifier un seul champ pourcentage ne rééquilibre pas les autres. On ne doit ni attribuer la panne au Combat sans trace ni demander un calcul manuel ambigu.
+- Base contrôlée : `6376a940953428d6f490ab75d2267bca5d2561d4` ; checkpoint départ `checkpoint/exploration-start-builder-encounter-quick-setup-2026-10-15` ; branche `work/exploration-builder-encounter-quick-setup-2026-10-15`.
+- Propriétaire : **Builder Draft Model** pour la commande atomique explicite « 100 % d'un élément » dans `encounterConfig.families[].elementChances`, et **Builder UI** pour la lisibilité et l'interaction. Source de vérité WorldDocument inchangée. La sélection du catalogue Capture reste lecture seule.
+- Invariants : jamais de normalisation silencieuse ; ne pas modifier les règles de rencontres, de déplacement ou les autres familles ; validation 100 % toujours obligatoire ; aucune copie du moteur Combat ; code principal et caméra/routes gelés.
+- Tests obligatoires : modèle canonique (sélection Terre seule 100 % sans toucher aux autres familles), expérience Builder vraie dans Chromium (clic commande, validation, lancement réel de la carte `index.html?builderTest=1`), sentinelles complètes, audit et smoke Combat existants. Prévalidation Pages isolée, Pixel manuel avant GREEN FINAL.
+- Risque principal : un autre blocage au démarrage après une configuration rendue valide ; l'identifier dans le vrai runtime, ne pas masquer une erreur de navigation/chargement.
