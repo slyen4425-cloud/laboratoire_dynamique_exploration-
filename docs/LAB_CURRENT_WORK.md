@@ -906,3 +906,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Pages run `38664465798` **SUCCESS**, tests 475, smoke Chrome Builder 90/100 & navigation et smoke Combat moderne validés avant upload.
 - Preview : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/builder.html?rev=builder-encounter-validation-guidance-v1`.
 - Gate utilisateur : régler le total des rencontres Forêt à 100 % sur la carte existante, exporter son WorldDocument avant de changer de preview (Builder ne garantit pas de sauvegarde automatique), importer dans la nouvelle preview puis Tester en jeu. **GREEN FINAL en attente** de retour Pixel et du flux combat complet.
+
+
+### 2026-10-15 — R2 guidance rencontres : ouverture réelle du panneau (gate correctif)
+
+- Anomalie résiduelle trouvée lors de la revue de la prévalidation v1 : le clic invalide sur « Tester en jeu » sélectionnait l’onglet Terrain et la famille, mais la section `<details class="terrain-advanced">` restait repliée. L’utilisateur ne voyait pas les champs malgré un message exact.
+- Branche isolée `work/exploration-builder-encounter-guidance-r2-2026-10-15`, checkpoint de départ `checkpoint/exploration-start-builder-encounter-guidance-r2-2026-10-15` depuis `76e2bcda236f328c5c726404b5ce424a94b000ab`. Domaine : navigation UI du Builder uniquement.
+- TDD Chromium RED `38676659327` : le vrai Builder affichait Forêt 90/100 % et choisissait le bon onglet, mais `advancedOpen=false` bloquait l’accès visible.
+- Correctif `9a0775769bc2cdd6256b6b1cb98a0425abb256e9` : ouvre explicitement le `details` canonique avant de sélectionner/afficher l’éditeur ; n’altère aucune chance de rencontre. CI `38676714073` **SUCCESS** avec parcours Chromium et cœur de tests.
+- Cache module public R2 `26462b7931bdbb691a0f0f0653c1d250b2802abe` ; nouvelle preview/Pages à publier sur SHA contrôlé après CI.
+- Aucun changement du validateur, du WorldDocument, du moteur Combat, des réglages de pourcentage, du mode Capture ou du dépôt principal. GREEN FINAL soumis au test Pixel et à la validation du combat complet.
