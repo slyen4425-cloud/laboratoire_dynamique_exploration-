@@ -236,7 +236,7 @@ export function createBlankWorldBuilderDraft({
       kind: 'exterior',
       width: safeWidth,
       height: safeHeight,
-      encounters: { randomEnabled: false },
+      encounters: { randomEnabled: true },
       surface: {
         baseTerrainFamilyId: terrainFamilyId,
         baseMaterialId: materialId,
@@ -532,6 +532,20 @@ function reconcileAreaBoundaryDependents(
     portal.trigger.x = safe.x;
     portal.trigger.y = safe.y;
   }
+}
+
+/**
+ * Explicit WorldArea authoring command. This changes only the existing
+ * WorldArea.encounters.randomEnabled field; the Encounter Controller remains
+ * the sole runtime authority for movement-distance encounter checks.
+ */
+export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || typeof enabled !== 'boolean') return next;
+  area.encounters ??= {};
+  area.encounters.randomEnabled = enabled;
+  return next;
 }
 
 export function updateAreaProperties(
