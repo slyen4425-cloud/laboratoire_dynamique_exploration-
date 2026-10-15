@@ -27,8 +27,7 @@ import {
   setAreaEncounterRandomEnabled,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
-  updateTerrainFamilyElementChance,
-  setTerrainFamilyExclusiveEncounterElement,
+  setTerrainFamilyEncounterElementEnabled,
   updatePortal,
   updateSpawn,
   updateWorldEvent,
@@ -1731,19 +1730,6 @@ function encounterProfile(familyId = selectedEncounterFamilyId) {
   ) ?? null;
 }
 
-function encounterElementChance(profile, elementId) {
-  return profile?.elementChances?.find(
-    (entry) => entry.elementId === elementId
-  )?.chancePercent ?? 0;
-}
-
-function encounterElementTotal(profile) {
-  return (profile?.elementChances ?? []).reduce(
-    (sum, entry) => sum + Number(entry.chancePercent || 0),
-    0
-  );
-}
-
 function refreshAreaControls() {
   ensureSelections();
   setOptions($('area-select'), draft.areas, selectedAreaId);
@@ -2433,78 +2419,37 @@ function refreshFamilyEncounterControls() {
   $('family-encounter-catalog-summary').textContent =
     `Catalogue Capture · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} éléments · rareté propre conservée`;
 
-  const soleSelector = $('family-encounter-sole-element');
-  const candidates = captureCreatureCatalog.listElements()
-    .filter((element) => captureCreatureCatalog.findByElement(element.id).length > 0);
-  setOptions(
-    soleSelector,
-    candidates,
-    soleSelector.value || (candidates.some((item) => item.id === 'earth') ? 'earth' : candidates[0]?.id),
-    {
-      label: (element) =>
-        `${element.label} (${captureCreatureCatalog.findByElement(element.id).length} créatures)`
-    }
-  );
-  $('family-encounter-sole-apply').disabled = candidates.length === 0;
-
   const container = $('family-encounter-elements');
   container.replaceChildren();
-
+  const checked = new Set(
+    (profile.elementChances ?? [])
+      .filter((entry) => entry.chancePercent > 0)
+      .map((entry) => entry.elementId)
+  );
   for (const element of captureCreatureCatalog.listElements()) {
     const row = document.createElement('label');
     row.className = 'family-element-row';
 
-    const name = document.createElement('span');
-    const candidateCount =
-      captureCreatureCatalog.findByElement(element.id).length;
-    name.textContent =
-      `${element.label} · ${candidateCount} créature(s)`;
-
     const input = document.createElement('input');
-    input.type = 'number';
-    input.min = '0';
-    input.max = '100';
-    input.step = '1';
-    input.value = String(
-      encounterElementChance(profile, element.id)
-    );
+    input.type = 'checkbox';
+    input.checked = checked.has(element.id);
     input.dataset.elementId = element.id;
-    input.setAttribute(
-      'aria-label',
-      `Pourcentage ${element.label}`
-    );
+    input.setAttribute('aria-label', `Autoriser ${element.label}`);
 
-    input.addEventListener('input', () => {
-      draft = updateTerrainFamilyElementChance(
-        draft,
-        selectedEncounterFamilyId,
-        element.id,
-        numberValue(input, 0)
-      );
-      const nextProfile = encounterProfile();
-      const total = encounterElementTotal(nextProfile);
-      $('family-encounter-total').value =
-        `${Math.round(total * 100) / 100} %`;
-      $('family-encounter-total').classList.toggle(
-        'invalid',
-        nextProfile?.encounterChancePercent > 0 &&
-          Math.abs(total - 100) > 0.001
+    const name = document.createElement('span');
+    const eligible = captureCreatureCatalog.findByElement(element.id)
+      .filter((creature) => creature.spawnChance > 0).length;
+    name.textContent = `${element.label} · ${eligible} créature(s)`;
+
+    input.addEventListener('change', () => {
+      draft = setTerrainFamilyEncounterElementEnabled(
+        draft, selectedEncounterFamilyId, element.id, input.checked
       );
       refreshJson();
     });
-
-    row.append(name, input);
+    row.append(input, name);
     container.append(row);
   }
-
-  const total = encounterElementTotal(profile);
-  $('family-encounter-total').value =
-    `${Math.round(total * 100) / 100} %`;
-  $('family-encounter-total').classList.toggle(
-    'invalid',
-    profile.encounterChancePercent > 0 &&
-      Math.abs(total - 100) > 0.001
-  );
 }
 function objectDefinitionLabel(
   definition
@@ -5442,23 +5387,6 @@ $('area-random-encounters-enabled').addEventListener('change', () => {
   refreshJson();
 });
 
-$('family-encounter-sole-apply').addEventListener('click', () => {
-  const elementId = $('family-encounter-sole-element').value;
-  const selected = captureCreatureCatalog.listElements()
-    .find((element) => element.id === elementId);
-  if (!selected || captureCreatureCatalog.findByElement(elementId).length === 0) {
-    setStatus('Choisis un élément contenant au moins une créature.', true);
-    return;
-  }
-  // Author explicitly requests one 100% element: one WorldDocument mutation,
-  // never an automatic rebalancing or a second encounter configuration.
-  draft = setTerrainFamilyExclusiveEncounterElement(
-    draft, selectedEncounterFamilyId, elementId
-  );
-  refreshFamilyEncounterControls();
-  refreshJson();
-});
-
 $('family-encounter-chance').addEventListener(
   'input',
   () => {
@@ -5478,13 +5406,6 @@ $('family-encounter-chance').addEventListener(
         numberValue($('family-encounter-chance'), 0)
       )} %`;
 
-    const profile = encounterProfile();
-    const total = encounterElementTotal(profile);
-    $('family-encounter-total').classList.toggle(
-      'invalid',
-      profile?.encounterChancePercent > 0 &&
-        Math.abs(total - 100) > 0.001
-    );
     refreshJson();
   }
 );
