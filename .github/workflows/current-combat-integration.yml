@@ -2,7 +2,7 @@ name: Exploration Current Combat Integration Gate
 on:
   push:
     branches:
-      - work/exploration-current-combat-refresh-2026-10-15
+      - work/exploration-native-combat-view-2026-10-15
   workflow_dispatch:
 jobs:
   integration:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: c61798e78fa6cc454aeb5f25294e997e398729f7
+          ref: 85f5bc607266bfefdad233dcac50ff94797dfa18
           path: combat-preview
       - name: Checkout pinned Capture global assets
         uses: actions/checkout@v4

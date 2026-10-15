@@ -25,15 +25,19 @@ function fixture(t, options = {}) {
   ].join('\n');
   add('src/ui/combat-2v2-test-ui.js', ui);
   for (const file of REQUIRED_BRIDGE_PATHS) add(file, 'versioned contract');
-  add('examples/dom-demo/exploration-encounter.html', [
+  add('examples/dom-demo/exploration-encounter.html',
+    '<section data-capture-preview-host><link href="capture-editor-v2.css"></section>');
+  add('examples/dom-demo/capture-editor-v2.html', [
+    '<template data-capture-preview-template>',
     '<main data-combat-arena>',
     '<section data-combat-skills></section>',
     '<span data-combat-live-status></span>',
     '<div data-combat-energy-orbs="local-1"></div>',
-    '</main>'
-  ].join('\n'));
+    '</main></template>'
+  ].join('\\n'));
+  add('examples/dom-demo/capture-editor-v2.css', '.capture-preview-shell{position:fixed;}');
   add('examples/dom-demo/exploration-encounter.js',
-    'const onBattleEnd = () => completeExplorationCombatHandoffV1();'
+    'const onBattleEnd = () => completeExplorationCombatHandoffV1(); fetch("./capture-editor-v2.html"); data-capture-preview-template; template.content.cloneNode(true);'
   );
   return { root, add };
 }
@@ -43,8 +47,10 @@ test('Combat recent sans bridge ne peut jamais être déclaré intégrable', (t)
     ui: 'export async function mountCoop2v2Test({ root, visuals }) {}'
   });
   add('examples/dom-demo/exploration-encounter.html',
-    '<main data-combat-arena data-combat-skills data-combat-live-status></main>'
+    '<section data-capture-preview-host><link href="capture-editor-v2.css"></section>'
   );
+  add('examples/dom-demo/capture-editor-v2.html',
+    '<template data-capture-preview-template><main data-combat-skills data-combat-live-status></main></template>');
   const report = auditCombatPreviewDirectory(root);
   assert.equal(report.ok, false);
   assert.ok(report.issues.includes('missing_native_battle_end_callback'));
@@ -75,4 +81,13 @@ test('contrat explicite + scène HUD compatible donne un avis de prévalidation 
   const report = auditCombatPreviewDirectory(root);
   assert.equal(report.ok, true);
   assert.deepEqual(report.issues, []);
+});
+
+test('une page Encounter autonome avec ancien HUD ne peut pas être publiée', (t) => {
+  const { root, add } = fixture(t);
+  add('examples/dom-demo/exploration-encounter.html',
+    '<main data-combat-arena data-combat-skills data-combat-live-status></main>');
+  const report = auditCombatPreviewDirectory(root);
+  assert.equal(report.ok, false);
+  assert.ok(report.issues.includes('missing_native_authoring_capture_view'));
 });
