@@ -97,19 +97,22 @@ try {
     const response = await evaluate(`(() => {
       const nature = document.querySelector('#family-encounter-elements input[data-element-id="nature"]');
       if (!nature) return {ready:false, status:document.querySelector('#builder-status')?.textContent ?? 'missing'};
-      const initial = nature.value;
-      nature.value = '40';
-      nature.dispatchEvent(new Event('input', {bubbles:true}));
+      const initial = nature.checked;
+      const inputs = [...document.querySelectorAll('#family-encounter-elements input[data-element-id]')];
+      for (const input of inputs) {
+        input.checked = false;
+        input.dispatchEvent(new Event('change',{bubbles:true}));
+      }
       const click = new MouseEvent('click', {bubbles:true, cancelable:true});
       const navigationAllowed = document.querySelector('#test-exploration').dispatchEvent(click);
       const status = document.querySelector('#builder-status')?.textContent ?? '';
-      const total = document.querySelector('#family-encounter-total')?.value ?? '';
+      const allUnselected = [...document.querySelectorAll('#family-encounter-elements input[data-element-id]')].every(i => !i.checked);
       const selected = document.querySelector('#family-encounter-family')?.value ?? '';
       const active = document.querySelector('[data-panel="terrain"]')?.classList.contains('active');
       const advancedOpen = document.querySelector('.terrain-advanced')?.open;
       const editorVisible = Boolean(document.querySelector('.terrain-encounter-panel')?.getClientRects().length);
       return {
-        ready:true, initial, status, total, selected, active, advancedOpen, editorVisible, navigationAllowed,
+        ready:true, initial, status, allUnselected, selected, active, advancedOpen, editorVisible, navigationAllowed,
         path:location.pathname
       };
     })()`);
@@ -123,9 +126,9 @@ try {
   console.log(JSON.stringify(result));
   if (!result?.ready) throw Error('Builder did not initialize: ' + JSON.stringify(result));
   if (
-    result.initial !== '50' || result.navigationAllowed ||
-    !result.status.includes('Forêt') || !result.status.includes('90 %') ||
-    !result.status.includes('100 %') || result.total !== '90 %' ||
+    result.initial !== true || result.navigationAllowed ||
+    !result.status.includes('Forêt') || !result.status.includes('coche au moins un élément') ||
+    !result.allUnselected ||
     result.selected !== 'forest' || !result.active ||
     !result.advancedOpen || !result.editorVisible ||
     result.path !== '/builder.html'
@@ -134,35 +137,31 @@ try {
   }
   console.log('GREEN real Chromium Builder invalid encounters -> correct family editor');
 
-  // RED then GREEN for the user's actual blocked path: full Earth-only distribution,
-  // real handoff click and a running Exploration canvas. Never seed test storage.
+  // Configure from the actual checkbox UI: one encounter probability,
+  // checkbox for Earth only. No element percentages or select-all hacks.
   const setupResponse = await evaluate(`(() => {
-    const select = document.querySelector('#family-encounter-sole-element');
-    const apply = document.querySelector('#family-encounter-sole-apply');
-    if (!select || !apply) return {ready:false, why:'Missing explicit 100% single-element setup controls'};
     const chance = document.querySelector('#family-encounter-chance');
     chance.value = '100';
     chance.dispatchEvent(new Event('input', {bubbles:true}));
-    select.value = 'earth';
-    apply.click();
+    const earth = document.querySelector('#family-encounter-elements input[data-element-id="earth"]');
+    if (!earth) return {ready:false};
+    earth.checked = true;
+    earth.dispatchEvent(new Event('change', {bubbles:true}));
     const inputs = [...document.querySelectorAll('#family-encounter-elements input[data-element-id]')];
     return {
-      ready:true,
-      chance:chance.value,
-      values:inputs.map(i=>({id:i.dataset.elementId, value:i.value})),
-      total:document.querySelector('#family-encounter-total')?.value,
+      ready:true, chance:chance.value,
+      values:inputs.map(i=>({id:i.dataset.elementId, checked:i.checked})),
       status:document.querySelector('#builder-status')?.textContent
     };
   })()`);
   if (setupResponse.error || setupResponse.result?.exceptionDetails)
-    throw Error('Browser sole element setup failed: ' + JSON.stringify(setupResponse));
-  const setup = setupResponse.result?.result?.value;
-  console.log('Single-element authoring: ' + JSON.stringify(setup));
-  if (!setup?.ready || setup.chance !== '100' || setup.total !== '100 %' ||
-    setup.status !== 'WorldDocument valide' ||
-    !setup.values.some(x => x.id === 'earth' && x.value === '100') ||
-    setup.values.some(x => x.id !== 'earth' && x.value !== '0'))
-    throw Error('Explicit Earth-only authoring did not validate: ' + JSON.stringify(setup));
+    throw Error('Browser element selection failed: ' + JSON.stringify(setupResponse));
+  const setup=setupResponse.result?.result?.value;
+  console.log('Checkbox element selection: '+JSON.stringify(setup));
+  if (!setup?.ready || setup.chance!=='100' || setup.status!=='WorldDocument valide' ||
+      !setup.values.some(x=>x.id==='earth' && x.checked) ||
+      setup.values.some(x=>x.id!=='earth' && x.checked))
+    throw Error('Earth checkbox authoring not valid: '+JSON.stringify(setup));
 
   // Exercise the existing WorldArea encounter flag through the real Builder UI.
   // A valid 100% chance / 100% Earth profile must remain explicitly OFF if
@@ -238,7 +237,7 @@ try {
   let blankBuilderReady = false;
   for (let tries=0; tries<120; tries++) {
     const response = await evaluate(`(() => ({
-      ready:Boolean(document.querySelector('#family-encounter-sole-apply') &&
+      ready:Boolean(document.querySelector('#family-encounter-elements input[type="checkbox"][data-element-id="earth"]') &&
         document.querySelector('#family-encounter-elements input[data-element-id="nature"]')),
       path:location.pathname
     }))()`);
@@ -268,8 +267,16 @@ try {
     const chance = document.querySelector('#family-encounter-chance');
     chance.value = '100';
     chance.dispatchEvent(new Event('input',{bubbles:true}));
-    document.querySelector('#family-encounter-sole-element').value='earth';
-    document.querySelector('#family-encounter-sole-apply').click();
+    const checkboxes=[...document.querySelectorAll('#family-encounter-elements input[data-element-id]')];
+    for (const input of checkboxes) {
+      if (input.checked) {
+        input.checked=false;
+        input.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+    const earth=checkboxes.find(i=>i.dataset.elementId==='earth');
+    earth.checked=true;
+    earth.dispatchEvent(new Event('change',{bubbles:true}));
     const data = JSON.parse(document.querySelector('#json-preview').value);
     const area = data.areas.find(a=>a.id===data.initialAreaId);
     const p = data.encounterConfig.families.find(f=>f.terrainFamilyId==='forest');
@@ -278,7 +285,7 @@ try {
       flag:area?.encounters?.randomEnabled,
       base:area?.surface?.baseTerrainFamilyId,
       chance:p?.encounterChancePercent,
-      elements:p?.elementChances,
+      elements:p?.elementChances?.map(e=>e.elementId),
       status:document.querySelector('#builder-status').textContent
     };
   })()`);
@@ -288,7 +295,7 @@ try {
   console.log('Real blank map encounter setup: '+JSON.stringify(blankSetup));
   if (!blankSetup?.active || blankSetup.flag!==true || blankSetup.base!=='forest' ||
       blankSetup.chance!==100 || blankSetup.elements?.length!==1 ||
-      blankSetup.elements[0].elementId!=='earth' || blankSetup.elements[0].chancePercent!==100 ||
+      blankSetup.elements[0]!=='earth' ||
       blankSetup.status!=='WorldDocument valide')
     throw Error('Blank-world settings did not reach canonical WorldDocument: '+JSON.stringify(blankSetup));
 
