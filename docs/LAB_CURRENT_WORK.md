@@ -961,3 +961,13 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - **UI :** préciser différence entre fréquence (tirage à distance), éléments (répartition sur 100 %), et famille effective (sol de base ou zone peinte ; route et eau prioritaires). Afficher un avertissement pour une Area désactivée.
 - **Tests obligatoires :** TDD RED de création vierge, écriture canonique Area, export/import false conservé ; vrai contrôleur de rencontre 100 % Terre après déplacement avec `CaptureEncounterSnapshot` ; négatifs Area OFF / Route sûre / intérieur ; Chromium Builder source réelle : carte vierge + activation + test. CI totale, audit Combat, checkpoint technique et Pages preview isolée, validation Pixel requise avant GREEN FINAL.
 - **Gel / hors lot :** moteur Combat/Capture, Zombicide-40k, mouvement/collision/WorldSurface, rendu, XP, caméra, fondu des routes, performance. **Aucune rustine ni masquage, pas de fusion gameplay sur main.**
+
+
+### 2026-10-15 — Prévalidation technique : carte vierge -> rencontre native réelle
+
+- Correctif WorldArea/Builder en branche isolée : nouvelles cartes vierges extérieures `encounters.randomEnabled=true` (sans augmenter les chances de 0 %), case de contrôle de la politique de l'Area courante (importe et conserve les `false` explicites) et aide claire sol de base / peintures / routes / rivière / tirage chaque 160 unités.
+- Tests TDD RED `38735926497`, GREEN final du code `7cce25026e611709fe8e4665ca28d9a1cbcfd6ed` / CI `38737222106` SUCCESS : **480/480**, `npm run check`, audit et Chromium réels.
+- Chromium a créé une vraie carte vierge Forêt/Terre 100 %, démarré Exploration, fait marcher le personnage jusqu'à x=1357.1 et observé le panneau natif `Lavabête · élément earth · famille forest`. Un test séparé prouve la case OFF/ON canonique et le maintien des chances ; aucune injection artificielle de combat.
+- Checkpoint documentaire : `docs/checkpoints/EXPLORATION_BLANK_WORLD_ENCOUNTER_ENABLE_PREVALIDATION_2026-10-15.md`.
+- **Prochaine action** : épingler checkpoint et source preview, CI checkpoint, publier Pages par PR infrastructure seule, vérifier le déploiement. Puis exiger validation Pixel et vrai combat complet avant **GREEN FINAL**.
+- Ticket source `#123` ; ne pas fusionner gameplay sur `main`, ne pas toucher au lot Quick Setup déjà qualifié, ni Combat / Capture / Zombicide-40k.
