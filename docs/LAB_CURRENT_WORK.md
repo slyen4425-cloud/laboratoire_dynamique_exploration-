@@ -879,3 +879,12 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Ticket de raccord public créé dans le dépôt propriétaire Combat : [#19](https://github.com/slyen4425-cloud/GenSrpg_labo_combat_dynamique/issues/19). Ce ticket demande l'événement de fin natif et une page Encounter compatible sans modifier le moteur Combat depuis Exploration.
 - **ÉTAT DU CHANTIER : bloqué sur l'API publique de Combat**, pas de bascule de la preview ; pas de revendication de combat mis à jour, ni de GREEN FINAL. Ancien combat encore servi par Pages. Cette étape permet une migration ultérieure testable, sans faux résultat, polling ou double autorité. La source Combat avance par ailleurs sur d'autres branches ; réserver un SHA final après publication d'un point d'entrée stable.
 - Prochain jalon après restitution Combat #19 : assembler un paquet préversionné, passer le script de compatibilité **contre les vrais fichiers**, exécuter la vraie navigation Exploration → Combat moderne → résultat → retour, puis CI + test PC et Pixel. Les lots de route et caméra restent en attente et dans l'ordre existant.
+
+
+## 2026-10-15 — Correctif de gate : erreur de répartition des rencontres Builder
+
+- Signalement Pixel paysage lors de « Tester en jeu » : `Impossible de tester : encounter-element-total:forest`. Le contrôle du WorldDocument empêche le test lorsque les pourcentages d'éléments d'une famille de rencontre active ne font pas 100 %. Le moteur Combat n'est pas lancé : la défaillance est l'ergonomie de diagnostic et d'accès aux champs, pas le contrat Combat.
+- Base technique Exploration/Combat : preview `def7aaaa4b0d24317d0f4dc4544da20c26b35b19` ; checkpoint départ `checkpoint/exploration-start-builder-encounter-validation-guidance-2026-10-15` ; branche isolée `work/exploration-builder-encounter-validation-guidance-2026-10-15`.
+- Propriétaire : Builder UI (message, orientation dans le panneau Terrain) ; validateWorldBuilderDraft/WorldDocument conservent leurs règles et leur autorité. Ne jamais renormaliser silencieusement les pourcentages de l'auteur, ni ignorer la validation à l'export/test.
+- Périmètre : helper pur de présentation des erreurs, guidance depuis « Tester en jeu », lisibilité en paysage, tests régressions TDD, cache public Builder. Hors périmètre : Combat, Encounter, règles de probabilités, import, données du monde, code production, transition routes, caméra.
+- Gate : tests RED puis GREEN + CI et preview isolée + test Pixel. GREEN FINAL interdit avant validation utilisateur.
