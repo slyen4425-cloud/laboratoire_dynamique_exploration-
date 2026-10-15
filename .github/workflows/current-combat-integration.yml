@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: e53665d6f75da54694e340581c847a2b82826a4f
+          ref: a4f4ae112cc8c660a4b9a59be79dfdfc6f1bce0c
           path: combat-preview
       - name: Checkout pinned Capture global assets
         uses: actions/checkout@v4
