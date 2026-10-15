@@ -35,5 +35,7 @@ jobs:
           node-version: '22'
       - name: Verify packaged owner contracts before the browser
         run: node scripts/audit-combat-preview.mjs combat-preview
+      - name: Real Chromium Builder invalid-encounter navigation smoke
+        run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Real Chromium Encounter startup smoke
         run: node scripts/smoke-modern-combat-preview.mjs
