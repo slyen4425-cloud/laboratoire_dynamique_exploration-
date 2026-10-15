@@ -314,7 +314,7 @@
             Le terrain sous le héros détermine la famille : le sol de base s'applique partout
             sauf sur une zone peinte, route ou rivière. Les routes et rivières passent avant
             les zones peintes. Pas besoin de peindre si le sol de base est déjà la bonne famille.
-            La répartition des éléments (total 100 %) choisit ensuite le type de créature.
+            Les éléments cochés définissent toutes les créatures possibles ; leur rareté individuelle détermine laquelle apparaît.
           </p>
           <p class="builder-hint">
             Configure une fois chaque famille. Toutes les surfaces portant cette famille utilisent
@@ -335,25 +335,16 @@
             </div>
           </label>
 
-          <h4>Répartition des éléments Capture (%)</h4>
+          <h4>Choisir les éléments possibles</h4>
           <p class="builder-hint">
-            Exemple : « Terre · 23 créatures » signifie 23 créatures disponibles,
-            pas 23 %. Les cases numériques règlent des pourcentages dont le
-            total doit être égal à 100 %.
+            Coche simplement Terre, Eau, Feu… selon les créatures souhaitées.
+            Le jeu pioche parmi TOUTES les créatures de ces éléments,
+            une seule fois par créature, et respecte la rareté propre à chacune.
+            « Terre · 23 créatures » indique seulement la taille du catalogue,
+            jamais un pourcentage à saisir. Au moins un élément doit être coché
+            si la chance de rencontre est supérieure à 0 %.
           </p>
-          <div class="row family-encounter-sole-row">
-            <label>
-              Rencontrer uniquement cet élément
-              <select id="family-encounter-sole-element" aria-label="Élément exclusif de rencontre"></select>
-            </label>
-            <button id="family-encounter-sole-apply" type="button">100 % de cet élément</button>
-          </div>
           <div id="family-encounter-elements"></div>
-          <p class="builder-hint">
-            Total éléments :
-            <output id="family-encounter-total">0 %</output>
-            — le total doit faire 100 % quand la famille peut déclencher un combat.
-          </p>
           <p id="family-encounter-catalog-summary" class="builder-hint">
             Catalogue Capture en cours de chargement…
           </p>
