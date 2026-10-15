@@ -321,7 +321,19 @@
             </div>
           </label>
 
-          <h4>Répartition des éléments Capture</h4>
+          <h4>Répartition des éléments Capture (%)</h4>
+          <p class="builder-hint">
+            Exemple : « Terre · 23 créatures » signifie 23 créatures disponibles,
+            pas 23 %. Les cases numériques règlent des pourcentages dont le
+            total doit être égal à 100 %.
+          </p>
+          <div class="row family-encounter-sole-row">
+            <label>
+              Rencontrer uniquement cet élément
+              <select id="family-encounter-sole-element" aria-label="Élément exclusif de rencontre"></select>
+            </label>
+            <button id="family-encounter-sole-apply" type="button">100 % de cet élément</button>
+          </div>
           <div id="family-encounter-elements"></div>
           <p class="builder-hint">
             Total éléments :
@@ -720,6 +732,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-encounter-validation-guidance-r2"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=builder-encounter-quick-setup-v1"></script>
 </body>
 </html>
