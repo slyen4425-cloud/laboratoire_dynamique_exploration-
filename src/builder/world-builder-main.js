@@ -1,4 +1,4 @@
-import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=builder-encounter-validation-guidance-v1';
+import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=encounter-selected-elements-v1';
 import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2';
 import {
   addActorPlacement,
@@ -35,7 +35,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=blank-world-encounter-enable-v1';
+} from './world-builder-draft.js?rev=encounter-selected-elements-v1';
 import {
   copyWorldObjectAsStamp,
   worldObjectStampInput
