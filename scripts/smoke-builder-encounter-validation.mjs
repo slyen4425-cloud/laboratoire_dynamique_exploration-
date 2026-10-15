@@ -50,7 +50,7 @@ try {
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
   const port = await new Promise((done, fail) => {
     let stderr = '';
-    const timeout = setTimeout(() => fail(Error('Chromium DevTools port timeout: ' + stderr.slice(-1000))), 20000);
+    const timeout = setTimeout(() => fail(Error('Chromium DevTools port timeout: ' + stderr.slice(-1000))), 45000);
     chrome.stderr.on('data', chunk => {
       stderr += chunk.toString();
       const match = /DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)\//.exec(stderr);
