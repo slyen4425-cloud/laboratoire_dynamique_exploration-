@@ -10,31 +10,27 @@ import {
 } from '../src/builder/world-builder-draft.js';
 import { describeWorldBuilderValidation } from '../src/builder/world-builder-validation-guidance.js';
 
-test('invalid forest encounter distribution explains the actual total and locates canonical family', () => {
-  const draft = updateTerrainFamilyElementChance(
-    createWorldBuilderDraft(demoWorldDocument), 'forest', 'nature', 40
-  );
+test('active forest with no selected elements explains action in French', () => {
+  let draft = createWorldBuilderDraft(demoWorldDocument);
+  for (const entry of [...draft.encounterConfig.families.find(p=>p.terrainFamilyId==='forest').elementChances])
+    draft = updateTerrainFamilyElementChance(draft,'forest',entry.elementId,0);
   const result = validateWorldBuilderDraft(draft);
-  assert.equal(result.valid, false);
-  assert.ok(result.errors.includes('encounter-element-total:forest'));
-  const guidance = describeWorldBuilderValidation(result.errors, result.document);
-  assert.equal(guidance.encounterFamilyId, 'forest');
-  assert.match(guidance.message, /Forêt/);
-  assert.match(guidance.message, /90\s*%/);
-  assert.match(guidance.message, /100\s*%/);
-  assert.match(guidance.message, /Terrain/);
-  assert.match(guidance.message, /Rencontres par famille/);
+  assert.equal(result.valid,false);
+  assert.ok(result.errors.includes('encounter-elements-empty:forest'));
+  const guidance=describeWorldBuilderValidation(result.errors,result.document);
+  assert.equal(guidance.encounterFamilyId,'forest');
+  assert.match(guidance.message,/Forêt/);
+  assert.match(guidance.message,/coche au moins un élément/);
 });
 
-test('unknown validation codes stay visible; multiple erroneous families preserve error information', () => {
-  const guidance = describeWorldBuilderValidation(
-    ['encounter-element-total:forest', 'other-invalid-code', 'encounter-element-total:volcano'],
+test('other error codes remain visible and family navigation selects first invalid family', () => {
+  const guidance=describeWorldBuilderValidation(
+    ['encounter-elements-empty:forest','other-invalid-code','encounter-elements-empty:volcano'],
     demoWorldDocument
   );
-  assert.equal(guidance.encounterFamilyId, 'forest');
-  assert.match(guidance.message, /Forêt/);
-  assert.match(guidance.message, /Volcan/);
-  assert.match(guidance.message, /other-invalid-code/);
+  assert.equal(guidance.encounterFamilyId,'forest');
+  assert.match(guidance.message,/Volcan/);
+  assert.match(guidance.message,/other-invalid-code/);
 });
 
 test('Builder test navigation must expose invalid encounter family without mutating data', async () => {
