@@ -16,6 +16,7 @@ import {
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   updateTerrainFamilyElementChance,
+  setTerrainFamilyExclusiveEncounterElement,
   validateWorldBuilderDraft
 } from '../src/builder/world-builder-draft.js';
 
@@ -516,4 +517,23 @@ test('custom terrain family and encounter config survive Builder export/import',
     ).valid,
     true
   );
+});
+
+
+test('explicit single-element encounter preset replaces only the chosen family distribution, preserving odds and other families', () => {
+  const initial = updateTerrainFamilyEncounterProfile(draft(), 'forest', {
+    encounterChancePercent: 100
+  });
+  const beforeOtherFamilies = initial.encounterConfig.families.filter(p => p.terrainFamilyId !== 'forest');
+  const result = setTerrainFamilyExclusiveEncounterElement(initial, 'forest', 'earth');
+  const forest = result.encounterConfig.families.find(p => p.terrainFamilyId === 'forest');
+  assert.equal(forest.encounterChancePercent, 100);
+  assert.deepEqual(forest.elementChances, [{elementId:'earth', chancePercent:100}]);
+  assert.deepEqual(result.encounterConfig.families.filter(p=>p.terrainFamilyId !== 'forest'), beforeOtherFamilies);
+  assert.equal(validateWorldBuilderDraft(result).valid, true);
+  assert.notEqual(initial, result);
+  assert.deepEqual(initial.encounterConfig.families.find(p=>p.terrainFamilyId === 'forest').elementChances,
+    demoWorldDocument.encounterConfig.families.find(p=>p.terrainFamilyId === 'forest').elementChances);
+  assert.deepEqual(setTerrainFamilyExclusiveEncounterElement(initial, 'not-a-family', 'earth').encounterConfig, initial.encounterConfig);
+  assert.deepEqual(setTerrainFamilyExclusiveEncounterElement(initial, 'forest', ' ').encounterConfig, initial.encounterConfig);
 });
