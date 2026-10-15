@@ -217,6 +217,113 @@ try {
       !launched.hasGame || !launched.coords.includes(' · x: '))
     throw Error('Builder valid map did not start real Exploration game: ' + JSON.stringify(launched));
   console.log('GREEN real Chromium Builder valid Forest Earth-only -> Exploration game running');
+
+  // End-to-end regression for the reported bug: start a genuinely blank
+  // WorldArea in the real Builder, configure Forest / Earth, play, WALK,
+  // and observe the actual native Encounter Controller showing the encounter.
+  // No handoff storage seed, fake random result, or runtime monkey patch.
+  const cdp = (method, params = {}) => new Promise(resolveResponse => {
+    const id = ++sequence;
+    pending.set(id, resolveResponse);
+    socket.send(JSON.stringify({id, method, params}));
+  });
+  await cdp('Page.enable');
+  socket.addEventListener('message', event => {
+    const payload = JSON.parse(event.data);
+    if (payload.method === 'Page.javascriptDialogOpening') {
+      cdp('Page.handleJavaScriptDialog', {accept:true});
+    }
+  });
+  await cdp('Page.navigate', {url});
+  let blankBuilderReady = false;
+  for (let tries=0; tries<120; tries++) {
+    const response = await evaluate(\`(() => ({
+      ready:Boolean(document.querySelector('#family-encounter-sole-apply') &&
+        document.querySelector('#family-encounter-elements input[data-element-id="nature"]')),
+      path:location.pathname
+    }))()\`);
+    if (response.result?.result?.value?.ready) {blankBuilderReady=true;break;}
+    await sleep(250);
+  }
+  if (!blankBuilderReady) throw Error('Blank-world regression: Builder did not reload');
+
+  const blankClick = await evaluate("document.querySelector('#new-blank-world').click(); 'new-blank-requested'");
+  if (blankClick.error || blankClick.result?.exceptionDetails)
+    throw Error('Blank world click failed: ' + JSON.stringify(blankClick));
+
+  let blankSelected = false;
+  for (let tries=0; tries<50; tries++) {
+    const res=await evaluate("document.querySelector('#area-select')?.value");
+    if (res.result?.result?.value==='area-principale'){blankSelected=true;break;}
+    await sleep(100);
+  }
+  if (!blankSelected) throw Error('Blank-world regression: new blank WorldArea not created');
+  const blankSetupResponse = await evaluate(\`(() => {
+    const areaFamily = document.querySelector('#area-family');
+    areaFamily.value = 'forest';
+    areaFamily.dispatchEvent(new Event('change',{bubbles:true}));
+    const family = document.querySelector('#family-encounter-family');
+    family.value = 'forest';
+    family.dispatchEvent(new Event('change',{bubbles:true}));
+    const chance = document.querySelector('#family-encounter-chance');
+    chance.value = '100';
+    chance.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#family-encounter-sole-element').value='earth';
+    document.querySelector('#family-encounter-sole-apply').click();
+    const data = JSON.parse(document.querySelector('#json-preview').value);
+    const area = data.areas.find(a=>a.id===data.initialAreaId);
+    const p = data.encounterConfig.families.find(f=>f.terrainFamilyId==='forest');
+    return {
+      active:document.querySelector('#area-random-encounters-enabled').checked,
+      flag:area?.encounters?.randomEnabled,
+      base:area?.surface?.baseTerrainFamilyId,
+      chance:p?.encounterChancePercent,
+      elements:p?.elementChances,
+      status:document.querySelector('#builder-status').textContent
+    };
+  })()\`);
+  if (blankSetupResponse.error || blankSetupResponse.result?.exceptionDetails)
+    throw Error('Blank-world authoring failed: ' + JSON.stringify(blankSetupResponse));
+  const blankSetup=blankSetupResponse.result?.result?.value;
+  console.log('Real blank map encounter setup: '+JSON.stringify(blankSetup));
+  if (!blankSetup?.active || blankSetup.flag!==true || blankSetup.base!=='forest' ||
+      blankSetup.chance!==100 || blankSetup.elements?.length!==1 ||
+      blankSetup.elements[0].elementId!=='earth' || blankSetup.elements[0].chancePercent!==100 ||
+      blankSetup.status!=='WorldDocument valide')
+    throw Error('Blank-world settings did not reach canonical WorldDocument: '+JSON.stringify(blankSetup));
+
+  await evaluate("document.querySelector('#test-exploration').click(); 'blank-play'");
+  let blankGame=false;
+  for (let tries=0; tries<140; tries++){
+    const res=await evaluate(\`(() => ({
+      path:location.pathname,
+      coords:document.querySelector('#coords')?.textContent ?? ''
+    }))()\`);
+    if (res.result?.result?.value?.path==='/index.html' &&
+        res.result.result.value.coords.includes(' · x: ')){
+      blankGame=true;break;
+    }
+    await sleep(250);
+  }
+  if (!blankGame) throw Error('Blank-world game did not start after handoff');
+  const key={key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39,nativeVirtualKeyCode:39};
+  await cdp('Input.dispatchKeyEvent',{type:'keyDown',...key});
+  await sleep(2000);
+  await cdp('Input.dispatchKeyEvent',{type:'keyUp',...key});
+  const seen=await evaluate(\`(() => ({
+    path:location.pathname,
+    encountered:document.querySelector('#encounter-preview')?.hidden===false,
+    summary:document.querySelector('#encounter-preview-summary')?.textContent ?? '',
+    coords:document.querySelector('#coords')?.textContent ?? ''
+  }))()\`);
+  if (seen.error || seen.result?.exceptionDetails)
+    throw Error('Blank-world Encounter DOM probe failed: ' + JSON.stringify(seen));
+  const realEncounter=seen.result?.result?.value;
+  console.log('Real blank-world walking Encounter: '+JSON.stringify(realEncounter));
+  if (!realEncounter?.encountered || !realEncounter.summary.includes('earth'))
+    throw Error('Real blank Forest Earth 100% map did not encounter after walking: '+JSON.stringify(realEncounter));
+  console.log('GREEN real Chromium blank map -> movement -> native Earth Encounter visible');
+
 } finally {
   socket?.close();
   if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
