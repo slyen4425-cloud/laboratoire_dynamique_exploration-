@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: builder-encounter-validation-guidance-r2
+# preview-revision: builder-encounter-quick-setup-v1
 
 on:
   push:
@@ -23,10 +23,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration Builder encounter guidance R2 prevalidation
+      - name: Checkout Exploration Builder Earth-only quick setup browser-GREEN preview
         uses: actions/checkout@v4
         with:
-          ref: 5c681adf6d8969ac4c192c8349e9689b3ec3a5f3
+          ref: 53b74309a28623f3baef3a9f8e2708d9d64908fa
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
@@ -53,7 +53,7 @@ jobs:
       - name: Fail closed if modern Combat has no real native bridge
         run: node scripts/audit-combat-preview.mjs combat-preview
 
-      - name: Verify real Builder invalid encounter navigation in Chromium
+      - name: Verify invalid encounters and actual valid Builder game launch in Chromium
         run: node scripts/smoke-builder-encounter-validation.mjs
 
       - name: Verify actual encounter startup in Chromium
