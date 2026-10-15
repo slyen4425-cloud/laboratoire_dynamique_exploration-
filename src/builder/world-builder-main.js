@@ -36,7 +36,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=builder-encounter-quick-setup-v1';
+} from './world-builder-draft.js?rev=blank-world-encounter-enable-v1';
 import {
   copyWorldObjectAsStamp,
   worldObjectStampInput
