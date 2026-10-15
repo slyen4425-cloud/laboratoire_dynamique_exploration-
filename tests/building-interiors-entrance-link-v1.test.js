@@ -645,7 +645,7 @@ test('Building Interiors keeps one WorldObject cache revision across Builder aut
   const worldObjectRevision =
     'collision-boundary-worldobject-obstacles-v1';
   const builderEntryRevision =
-    'builder-encounter-quick-setup-v1';
+    'blank-world-encounter-enable-v1';
 
   const [
     html,
