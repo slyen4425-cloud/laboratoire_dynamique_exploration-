@@ -7168,6 +7168,10 @@ $('test-exploration').addEventListener('click', (event) => {
       // Direct users to the unique authoring controls; never mutate encounter odds.
       selectedEncounterFamilyId = guidance.encounterFamilyId;
       activateTab('terrain');
+      // The editor lives inside a collapsed <details>: open its only real panel.
+      // This is UI navigation only; no WorldDocument or encounter data mutation.
+      const advancedSettings = document.querySelector('.terrain-advanced');
+      if (advancedSettings) advancedSettings.open = true;
       refreshFamilyEncounterControls();
     }
     setStatus(`Impossible de tester : ${guidance.message}`, true);
