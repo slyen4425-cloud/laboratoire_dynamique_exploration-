@@ -274,9 +274,9 @@ try {
         input.dispatchEvent(new Event('change',{bubbles:true}));
       }
     }
-    const earth=checkboxes.find(i=>i.dataset.elementId==='earth');
-    earth.checked=true;
-    earth.dispatchEvent(new Event('change',{bubbles:true}));
+    const shadow=checkboxes.find(i=>i.dataset.elementId==='shadow');
+    shadow.checked=true;
+    shadow.dispatchEvent(new Event('change',{bubbles:true}));
     const data = JSON.parse(document.querySelector('#json-preview').value);
     const area = data.areas.find(a=>a.id===data.initialAreaId);
     const p = data.encounterConfig.families.find(f=>f.terrainFamilyId==='forest');
@@ -295,7 +295,7 @@ try {
   console.log('Real blank map encounter setup: '+JSON.stringify(blankSetup));
   if (!blankSetup?.active || blankSetup.flag!==true || blankSetup.base!=='forest' ||
       blankSetup.chance!==100 || blankSetup.elements?.length!==1 ||
-      blankSetup.elements[0]!=='earth' ||
+      blankSetup.elements[0]!=='shadow' ||
       blankSetup.status!=='WorldDocument valide')
     throw Error('Blank-world settings did not reach canonical WorldDocument: '+JSON.stringify(blankSetup));
 
@@ -327,9 +327,9 @@ try {
     throw Error('Blank-world Encounter DOM probe failed: ' + JSON.stringify(seen));
   const realEncounter=seen.result?.result?.value;
   console.log('Real blank-world walking Encounter: '+JSON.stringify(realEncounter));
-  if (!realEncounter?.encountered || !realEncounter.summary.includes('earth'))
-    throw Error('Real blank Forest Earth 100% map did not encounter after walking: '+JSON.stringify(realEncounter));
-  console.log('GREEN real Chromium blank map -> movement -> native Earth Encounter visible');
+  if (!realEncounter?.encountered || !realEncounter.summary.includes('shadow'))
+    throw Error('Real blank Forest Shadow 100% map did not encounter after walking: '+JSON.stringify(realEncounter));
+  console.log('GREEN real Chromium blank map -> movement -> native Shadow Encounter visible');
 
   // Seamless immersion gate: the real movement-triggered Encounter must
   // open Combat INSIDE the same Explorer page, not navigate a new document.
