@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: encounter-ombrelot-cached-image-fix-2026-10-16
+# preview-revision: immersive-pwa-2026-10-16
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 081073f98940ff555dd94236b2e33937c07d8406
+          ref: e7aefa3316aba2801e0ad23789a5bc9d4ac4c982
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
