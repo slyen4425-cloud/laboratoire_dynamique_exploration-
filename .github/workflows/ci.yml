@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: b3414add2c187547aca1d6cf56cbae6629f00da6
+          ref: 11a9f70b5f6cf6850fc4bedfd876d799635c33db
           path: combat-preview
       - name: Checkout immutable Capture visual asset authority for Builder boot
         uses: actions/checkout@v4
