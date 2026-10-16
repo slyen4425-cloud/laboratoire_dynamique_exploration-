@@ -400,7 +400,7 @@ try {
         stillStored:!!sessionStorage.getItem('gensrpg.capture.combat-handoff.v1')
       }))()`);
       restored=res.result?.result?.value;
-      if (restored?.overlayAbsent && restored?.previewHidden) break;
+      if (restored?.overlayAbsent && restored?.previewHidden && restored.info.includes('combat: victory')) break;
       await sleep(100);
     }
     console.log('Immersive Encounter return ' + round + ': '+JSON.stringify(restored));
