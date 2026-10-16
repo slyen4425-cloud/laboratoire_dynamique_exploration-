@@ -331,6 +331,97 @@ try {
     throw Error('Real blank Forest Earth 100% map did not encounter after walking: '+JSON.stringify(realEncounter));
   console.log('GREEN real Chromium blank map -> movement -> native Earth Encounter visible');
 
+  // Seamless immersion gate: the real movement-triggered Encounter must
+  // open Combat INSIDE the same Explorer page, not navigate a new document.
+  // The existing owner completes the genuine versioned handoff and signals
+  // its same-origin parent. The test does not forge a battle victory.
+  for (let round = 1; round <= 2; round++) {
+    const launch = await evaluate("document.querySelector('#encounter-preview-combat').click(); 'native-combat-launch'");
+    if (launch.error || launch.result?.exceptionDetails)
+      throw Error('Overlay launch failed: ' + JSON.stringify(launch));
+
+    let active;
+    for (let tries = 0; tries < 150; tries++) {
+      const res = await evaluate(`(() => {
+        const frame = document.querySelector('.combat-overlay__frame');
+        const doc = frame?.contentDocument;
+        return {
+          parentPath: location.pathname,
+          framePresent: !!frame,
+          framePath: frame?.contentWindow?.location?.pathname ?? '',
+          loaded: doc?.querySelector('[data-bridge-status]')?.textContent ?? '',
+          buttons: doc?.querySelectorAll('[data-combat-skill]')?.length ?? 0,
+          fullscreenButtonHidden: doc?.querySelector('[data-encounter-fullscreen]')?.hidden ?? false,
+          overlayWidth: document.querySelector('.combat-overlay')?.getBoundingClientRect().width ?? 0,
+          viewportWidth: innerWidth
+        };
+      })()`);
+      if (res.error || res.result?.exceptionDetails)
+        throw Error('Overlay DOM evaluation failed: ' + JSON.stringify(res));
+      active = res.result?.result?.value;
+      if (active?.loaded.includes('Combat réel') && active.buttons > 0) break;
+      await sleep(250);
+    }
+    console.log('Immersive Encounter round ' + round + ': ' + JSON.stringify(active));
+    if (active?.parentPath !== '/index.html' || !active?.framePresent ||
+        !active.framePath.endsWith('/exploration-encounter.html') ||
+        !active.loaded.includes('Combat réel') || active.buttons < 1 ||
+        !active.fullscreenButtonHidden ||
+        active.overlayWidth < active.viewportWidth - 2) {
+      throw Error('Real Combat failed to open full-viewport in the same Explorer page: '+JSON.stringify(active));
+    }
+
+    // The Combat module, not Explorer or the test, constructs and persists
+    // a contract-valid CombatResult, then invokes its own parent signal.
+    const completion = await evaluate(`(async()=>{
+      const frame=document.querySelector('.combat-overlay__frame');
+      const module=await import('/combat-preview/src/ui/exploration-encounter-handoff-v1.js');
+      const stored=module.completeExplorationCombatHandoffV1({storage:sessionStorage,outcome:'victory'});
+      return {notified:module.notifyExplorationCombatParentV1({
+        windowRef:frame.contentWindow,result:stored.result
+      }), encounterId:stored.result.encounterId};
+    })()`);
+    if (completion.error || completion.result?.exceptionDetails ||
+        !completion.result?.result?.value?.notified)
+      throw Error('Native Combat completed handoff failed: '+JSON.stringify(completion));
+
+    let restored;
+    for (let tries=0; tries<80; tries++) {
+      const res = await evaluate(`(()=>({
+        parentPath:location.pathname,
+        overlayAbsent:!document.querySelector('.combat-overlay'),
+        previewHidden:document.querySelector('#encounter-preview')?.hidden,
+        info:document.querySelector('#coords')?.textContent ?? '',
+        stillStored:!!sessionStorage.getItem('gensrpg.capture.combat-handoff.v1')
+      }))()`);
+      restored=res.result?.result?.value;
+      if (restored?.overlayAbsent && restored?.previewHidden) break;
+      await sleep(100);
+    }
+    console.log('Immersive Encounter return ' + round + ': '+JSON.stringify(restored));
+    if (restored?.parentPath !== '/index.html' || !restored.overlayAbsent ||
+        !restored.previewHidden || restored.stillStored ||
+        !restored.info.includes('combat: victory'))
+      throw Error('Combat return did not restore original Explorer document: '+JSON.stringify(restored));
+
+    if (round === 1) {
+      // Release resets the Encounter's travel distance; walking again
+      // must trigger an independent second Encounter in this same document.
+      const nextKey={key:'ArrowLeft',code:'ArrowLeft',windowsVirtualKeyCode:37,nativeVirtualKeyCode:37};
+      await cdp('Input.dispatchKeyEvent',{type:'keyDown',...nextKey});
+      await sleep(2200);
+      await cdp('Input.dispatchKeyEvent',{type:'keyUp',...nextKey});
+      let second=false;
+      for (let tries=0; tries<50; tries++) {
+        const res=await evaluate("document.querySelector('#encounter-preview')?.hidden===false");
+        if (res.result?.result?.value===true) {second=true;break;}
+        await sleep(100);
+      }
+      if (!second) throw Error('Second real Encounter did not trigger after in-place return');
+    }
+  }
+  console.log('GREEN real Chromium: two full-viewport Combat encounters without Explorer navigation');
+
 } finally {
   socket?.close();
   if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
