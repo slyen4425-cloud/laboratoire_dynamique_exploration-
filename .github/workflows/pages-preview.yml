@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: immersive-pwa-2026-10-16
+# preview-revision: immersive-combat-overlay-2026-10-16
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: e7aefa3316aba2801e0ad23789a5bc9d4ac4c982
+          ref: ff3db58d6f7c065f7dc0b9fb556ce16c9115dd62
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 18946be813eef6bc06d2b976db41c5b24da36ecc
+          ref: 92e3c4b551f18dd766f51f1d4f92b76bae7e4d1d
           path: combat-preview
 
       - name: Checkout Capture global visual assets
