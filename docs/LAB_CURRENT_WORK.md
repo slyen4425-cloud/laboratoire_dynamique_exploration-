@@ -1013,3 +1013,9 @@ Retour créateur : la fluidité est nettement meilleure, souhait de démarrer le
 - Nouvel artefact propriétaire Combat candidat `ae8ff1c5995522ed497cbaf64d1fcf25fdf498e7`, CI 3/3 SUCCESS `38846780448`. Ici, extension de la gate Chromium réelle : exige Griffe utilisable + clic qui lance une préparation native, et bouton plein écran présent dans la page officielle. Le contrôle doit échouer sur l'ancien SHA, aucun faux GREEN statique.
 - Conserver le template visuel Capture officiel, le fallback des créatures non terminées, les anciennes sauvegardes, le contrat Snapshot/Result, le cache assets, le retour exact et 16:9. Pour publier : CI Exploration + Chromium réels SUCCESS, checkpoint prévalidation et PR infra seule pour pins Exploration/Combat ; gate utilisateur Pixel (capacité, mode immersif autorisé, fin KO et retour) distincte avant GREEN FINAL.
 - Aucune modification de `main` gameplay, Zombicide-40k, ou autre dépôt ; vérifier le navigateur si plein écran système refusé.
+
+
+### 2026-10-16 — Validation vraie capacité et fullscreen en Chromium
+- Source Combat `ae8ff1c5995522ed497cbaf64d1fcf25fdf498e7` ; CI Combat 3 jobs `38846780448` **SUCCESS**. Gate Chromium étendue : attendre la capacité Griffe disponible, déclencher son véritable clic dans Encounter, vérifier `se prépare sur` du moteur, bouton plein écran visible et ancien contrôle 16:9/HUD conservé.
+- CI Exploration `38846986665` : `core-tests` + `modern-combat-encounter` **SUCCESS**, vrai Chromium + audit, Builder validé ; ce test aurait rejeté l'ancien Combat aux cibles désactivées.
+- Publier uniquement par PR d'infrastructure Pages distincte, Combat et Exploration figés par SHA ; vérification Pixel des capacités/plein écran/KO/retour requise avant GREEN FINAL.
