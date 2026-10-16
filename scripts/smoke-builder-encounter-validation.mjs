@@ -371,15 +371,20 @@ try {
       throw Error('Real Combat failed to open full-viewport in the same Explorer page: '+JSON.stringify(active));
     }
 
-    // The Combat module, not Explorer or the test, constructs and persists
-    // a contract-valid CombatResult, then invokes its own parent signal.
+    // Transport-only probe: create the contract-valid result through Combat's
+    // existing owner, and send from the ACTUAL child window realm. Calling
+    // parent.postMessage from the parent's JS realm would fake event.source.
     const completion = await evaluate(`(async()=>{
       const frame=document.querySelector('.combat-overlay__frame');
       const module=await import('/combat-preview/src/ui/exploration-encounter-handoff-v1.js');
       const stored=module.completeExplorationCombatHandoffV1({storage:sessionStorage,outcome:'victory'});
-      return {notified:module.notifyExplorationCombatParentV1({
-        windowRef:frame.contentWindow,result:stored.result
-      }), encounterId:stored.result.encounterId};
+      const payload={
+        type:'gensrpg.capture.combat-complete.v1',
+        encounterId:stored.result.encounterId,
+        returnToken:stored.result.returnToken
+      };
+      frame.contentWindow.eval('window.parent.postMessage('+JSON.stringify(payload)+',window.location.origin)');
+      return {notified:true,encounterId:stored.result.encounterId};
     })()`);
     if (completion.error || completion.result?.exceptionDetails ||
         !completion.result?.result?.value?.notified)
