@@ -108,6 +108,9 @@ import {
   resolveExplorationCombatReturn
 } from './encounters/combat-return.js?rev=phase7-combat-handoff-v1';
 import {
+  createImmersiveEncounterHostV1
+} from './encounters/immersive-encounter-host-v1.js';
+import {
   demoLivingWorldConfig
 } from './living/demo-living-world.js?rev=phase5-wild-wander-territory-v1';
 import {
@@ -269,6 +272,33 @@ const encounterRandom =
     : Math.random;
 
 let pendingEncounterSnapshot = null;
+
+// The Exploration document stays alive throughout Combat. Only the
+// contract-complete result mutates its original position and encounter state.
+const immersiveCombatHost = createImmersiveEncounterHostV1({
+  windowRef: window,
+  documentRef: document,
+  storage: window.sessionStorage,
+  onCompleted(envelope) {
+    if (!pendingEncounterSnapshot ||
+        pendingEncounterSnapshot.encounterId !== envelope.snapshot.encounterId ||
+        pendingEncounterSnapshot.returnToken !== envelope.snapshot.returnToken) {
+      return false;
+    }
+    const restored = resolveExplorationCombatReturn({
+      envelope,
+      worldDocument: activeWorldDocument
+    });
+    if (!clearEncounterPreview()) return false;
+    player.currentAreaId = restored.currentAreaId;
+    player.x = restored.x;
+    player.y = restored.y;
+    lastCombatOutcome = restored.outcome;
+    keys.clear();
+    updateCamera();
+    return true;
+  }
+});
 
 if (encounterPreviewContinue) {
   encounterPreviewContinue.hidden =
@@ -655,11 +685,18 @@ function showEncounterPreview(snapshot) {
 }
 
 function launchPendingEncounterCombat() {
+  if (!pendingEncounterSnapshot || immersiveCombatHost.active) return false;
   return launchCombatHandoffNavigation({
     snapshot: pendingEncounterSnapshot,
     player,
     storage: window.sessionStorage,
-    documentUrl: document.URL
+    documentUrl: document.URL,
+    navigate(url) {
+      // This callback still runs inside the original "Lancer le combat" tap:
+      // browsers may therefore authorize true fullscreen without a second tap.
+      // A CSS viewport overlay always works even if the Fullscreen API refuses.
+      immersiveCombatHost.open({ url, snapshot: pendingEncounterSnapshot });
+    }
   });
 }
 
@@ -1077,6 +1114,7 @@ function frame(now) {
 
 addEventListener('resize', resize);
 addEventListener('pagehide', () => {
+  immersiveCombatHost.dispose();
   terrainCompositor.clear();
   textureLoader?.dispose?.();
 }, { once: true });
