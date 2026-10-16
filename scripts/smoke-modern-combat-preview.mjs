@@ -26,13 +26,16 @@ const snapshot = {
 
 const server = createServer(async(req,res)=>{
   try {
-    const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+    const requestUrl=new URL(req.url,'http://localhost');
+    const pathname=decodeURIComponent(requestUrl.pathname);
     const path=resolve(root,'.'+pathname);
     if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
     let content=await readFile(path);
     if(pathname===route){
       const origin='http://127.0.0.1:'+server.address().port;
-      const envelope={version:1,snapshot,
+      const opponentId=requestUrl.searchParams.get('opponent') || snapshot.opponents[0].creatureId;
+      const encounterSnapshot={...snapshot,opponents:[{creatureId:opponentId}]};
+      const envelope={version:1,snapshot:encounterSnapshot,
         returnState:{areaId:'forest-exterior',x:62,y:18,
           returnUrl:origin+'/index.html?combatReturn=1'},result:null};
       const probe='<script>'+
@@ -148,7 +151,11 @@ async function dumpDom(url) {
 }
 
 try {
-  const url='http://127.0.0.1:'+server.address().port+route;
+  const baseUrl='http://127.0.0.1:'+server.address().port+route;
+  // Keep the original encounter sentinel and add the creator's second-battle
+  // case: Ombrelot has no authored model and must remain playable by fallback.
+  for (const [opponentId,opponentName] of [['crea_nat_3','Ancêtronc'],['crea_ombre_1','Ombrelot']]) {
+  const url=baseUrl+'?opponent='+opponentId;
   const dom=await dumpDom(url);
   const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
   const jsError=dom.match(/data-encounter-bootstrap-error="([^"]+)"/)?.[1]??'';
@@ -157,15 +164,17 @@ try {
   const fullscreenProof=dom.match(/data-encounter-fullscreen-proof="([^"]+)"/)?.[1]??'missing';
   const skillCount=[...dom.matchAll(/data-combat-skill="/g)].length;
   const orbs=[...dom.matchAll(/class="energy-orb\b/g)].length;
-  console.log(JSON.stringify({status,jsError,skillCount,orbs,layoutProof,skillProof,fullscreenProof}));
+  console.log(JSON.stringify({opponentId,status,jsError,skillCount,orbs,layoutProof,skillProof,fullscreenProof}));
   if(jsError)throw Error('Encounter JavaScript error: '+jsError);
   if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status);
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
   if(!dom.includes('data-combat-hp-value="enemy-1"'))throw Error('Encounter enemy HUD absent');
+  if(!dom.includes(opponentName))throw Error('Encounter does not show real selected creature '+opponentName);
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
   if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
   if(fullscreenProof!=='OK')throw Error('Encounter has no usable Android fullscreen control: '+fullscreenProof);
-  console.log('GREEN real Chromium Encounter bootstrap and current HUD');
+  console.log('GREEN real Chromium Encounter boot, skill click and canonical HUD: '+opponentName);
+  }
 }finally{
   server.close();
 }
