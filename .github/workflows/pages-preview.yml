@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: selected-elements-v2-with-native-combat-editor-hud
+# preview-revision: encounter-playable-fullscreen-2026-10-16
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 7a8dae3452a0ce9b566424e479e2c00de833bf99
+          ref: ad053808be37f59ae38864730ff3e89f2227197a
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
@@ -40,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 85f5bc607266bfefdad233dcac50ff94797dfa18
+          ref: 67097ee7db70a1e9662059fc905e6a5fd08fe436
           path: combat-preview
 
       - name: Checkout Capture global visual assets
