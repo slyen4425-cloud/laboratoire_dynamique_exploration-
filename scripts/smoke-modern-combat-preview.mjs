@@ -41,6 +41,39 @@ const server = createServer(async(req,res)=>{
         'window.addEventListener("error",e=>document.documentElement.dataset.encounterBootstrapError=e.message);'+
         'window.addEventListener("unhandledrejection",e=>document.documentElement.dataset.encounterBootstrapError=String(e.reason?.message||e.reason));'+
         '</script>';
+      // Native browser behavior: a visible ability must really dispatch an action.
+      // The earlier Chromium gate only counted icons and missed disabled skills.
+      const playableProbe = `<script>
+        window.addEventListener('load', () => {
+          let attempts = 0;
+          const timer = setInterval(() => {
+            const fullscreenButton = document.querySelector('[data-encounter-fullscreen]');
+            if (fullscreenButton && !document.documentElement.dataset.encounterFullscreenProof) {
+              document.documentElement.dataset.encounterFullscreenProof =
+                getComputedStyle(fullscreenButton).display !== 'none' && !fullscreenButton.disabled
+                  ? 'OK' : 'button-not-visible';
+            }
+            const skills = [...document.querySelectorAll('[data-combat-skill]')];
+            const claw = skills.find(button => button.dataset.combatSkill === 'claw');
+            if (claw && !claw.disabled) {
+              const status = document.querySelector('[data-combat-live-status]');
+              claw.click();
+              const message = status?.textContent ?? '';
+              document.documentElement.dataset.encounterSkillProof =
+                message.includes('se prépare sur') ? 'OK' :
+                  'click-not-committed:' + message.slice(0, 80);
+              clearInterval(timer);
+              return;
+            }
+            if (++attempts >= 48) {
+              document.documentElement.dataset.encounterSkillProof =
+                'claw-disabled:' + (claw?.disabled ?? 'not-rendered') +
+                ':buttons=' + skills.length;
+              clearInterval(timer);
+            }
+          }, 350);
+        }, {once: true});
+      </script>`;
       const layoutProbe = `<script>
         window.addEventListener('load', () => {
           setTimeout(() => {
@@ -76,7 +109,7 @@ const server = createServer(async(req,res)=>{
           }, 14000);
         }, {once: true});
       </script>`;
-      content=Buffer.from(content.toString('utf8').replace('</head>',probe+layoutProbe+'</head>'));
+      content=Buffer.from(content.toString('utf8').replace('</head>',probe+playableProbe+layoutProbe+'</head>'));
     }
     res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
       'Cache-Control':'no-store'}).end(content);
@@ -120,14 +153,18 @@ try {
   const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
   const jsError=dom.match(/data-encounter-bootstrap-error="([^"]+)"/)?.[1]??'';
   const layoutProof=dom.match(/data-native-layout-proof="([^"]+)"/)?.[1]??'missing';
+  const skillProof=dom.match(/data-encounter-skill-proof="([^"]+)"/)?.[1]??'missing';
+  const fullscreenProof=dom.match(/data-encounter-fullscreen-proof="([^"]+)"/)?.[1]??'missing';
   const skillCount=[...dom.matchAll(/data-combat-skill="/g)].length;
   const orbs=[...dom.matchAll(/class="energy-orb\b/g)].length;
-  console.log(JSON.stringify({status,jsError,skillCount,orbs,layoutProof}));
+  console.log(JSON.stringify({status,jsError,skillCount,orbs,layoutProof,skillProof,fullscreenProof}));
   if(jsError)throw Error('Encounter JavaScript error: '+jsError);
   if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status);
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
   if(!dom.includes('data-combat-hp-value="enemy-1"'))throw Error('Encounter enemy HUD absent');
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
+  if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
+  if(fullscreenProof!=='OK')throw Error('Encounter has no usable Android fullscreen control: '+fullscreenProof);
   console.log('GREEN real Chromium Encounter bootstrap and current HUD');
 }finally{
   server.close();
