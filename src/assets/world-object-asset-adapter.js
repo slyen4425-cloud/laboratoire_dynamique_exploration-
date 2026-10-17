@@ -175,6 +175,12 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/relief/cliff_grassy_edge_01.svg',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.relief.cliff.broken_ledge.02': Object.freeze({
+    id: 'object.relief.cliff.broken_ledge.02',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/relief/cliff_broken_ledge_02.svg',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.relief.cliff.corner.01': Object.freeze({
     id: 'object.relief.cliff.corner.01',
     kind: 'rock-visual',
