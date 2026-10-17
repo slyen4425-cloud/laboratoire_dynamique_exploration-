@@ -1,3 +1,18 @@
+# Reprise active — 2026-10-17 — Réglages vitesse par famille de terrain
+
+- **Branche unique :** `work/exploration-terrain-family-speed-editor-2026-10-17`
+- **Base CI GREEN :** `ff3db58d6f7c065f7dc0b9fb556ce16c9115dd62` (Exploration CI SUCCESS), dernier socle Exploration ↔ Combat immersif ; aucune modification du labo Combat / dépôt principal.
+- **Checkpoint de départ :** `checkpoint/exploration-start-terrain-family-speed-editor-2026-10-17` (SHA identique).
+- **Constat :** le Builder n'expose plus la vitesse par terrain ; son modèle connait 8 familles mais le Traversal Rule Pack n'a que ground/road/water/bridge ; les zones peintes n'entrent pas dans le résolveur de vitesse.
+- **Périmètre :** exposer les vitesses marche/nage/vol par famille dans le Builder, les sérialiser dans WorldDocument. Réutiliser le Traversal Rule Registry et le resolver central ; appliquer les zones peintes en jeu (priorité rivière > route > zone > fond ; bridge conserve son override).
+- **Propriétaires :** Terrain Family Definitions (paramètres gameplay), Surface Traversal Registry/Resolver (traversée), Exploration Core (mouvement final), Builder (édition uniquement). Renderer, Material Registry, Encounter, Combat et interface de caméra sont gelés.
+- **Compatibilité :** anciens mondes sans réglages gardent ×1.00 sol, ×1.25 route et ×0.75 nage. Zéro interdit un mode ; multiplication maximale 10. Le materialId ne décide jamais de la vitesse.
+- **TDD :** sentinelles rétrocompatibilité, traversée réelle sur zone peinte, marche/nage/vol, route/mer, bridge, aller-retour Builder JSON et garde d'intégrité UI ; CI complète, puis gate smartphone avant GREEN final.
+- **Risques :** migration de paramètres existants, priorité d'overlap des zones, cache JS PWA, mauvais point de départ. Aucun autre lot ni branche parallèle.
+- **État :** chantier démarré, pas encore GREEN ; publication distincte après CI complète.
+
+---
+
 ## 2026-10-15 — Remplacement de la fausse vue Combat intégrée par l'interface Capture native
 
 - Constat visuel utilisateur : raccord Combat précédent `c61798e` techniquement fonctionnel mais mauvaise page HUD ancienne ; les sprites de créatures inachevées sont provisoires **par choix de l'auteur**, ne pas les supprimer ni réinventer les assets.
