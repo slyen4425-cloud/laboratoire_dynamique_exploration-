@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 384">
+<defs>
+<linearGradient id="wall" x1=".08" y1="0" x2=".78" y2="1"><stop stop-color="#c1a385"/><stop offset=".42" stop-color="#a98b79"/><stop offset=".75" stop-color="#7c6b70"/><stop offset="1" stop-color="#514e63"/></linearGradient>
+<linearGradient id="cap" x1="0" y1="0" x2=".35" y2="1"><stop stop-color="#91c164"/><stop offset=".58" stop-color="#6c9e51"/><stop offset="1" stop-color="#507846"/></linearGradient>
+<linearGradient id="under" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#293f49" stop-opacity=".05"/><stop offset="1" stop-color="#172d41" stop-opacity=".6"/></linearGradient>
+</defs>
+<!-- mountain mass, tapering toward rocky talus instead of a hard rectangle -->
+<path d="M18 117 49 93 111 95 160 77 204 90 273 69 320 88 383 71 441 91 512 70 566 85 626 79 680 95 746 113 748 246 730 284 700 299 660 296 619 333 578 324 542 341 497 312 443 339 390 328 357 352 307 326 260 345 222 326 170 339 135 320 92 326 61 297 30 281Z" fill="url(#wall)" stroke="#5c5262" stroke-width="5" stroke-linejoin="round"/>
+<!-- angular geological strata, warm illuminated and cool recessed planes -->
+<path d="M28 121 89 134 113 189 104 256 65 290 31 279Z" fill="#715e65" opacity=".78"/>
+<path d="M92 135 151 128 181 162 177 233 143 313 105 257 114 189Z" fill="#d1ae88"/>
+<path d="M151 128 210 139 236 199 218 267 171 333 143 312 177 234 181 162Z" fill="#826b71"/>
+<path d="M210 140 279 129 309 183 300 256 261 343 221 326 218 266 238 197Z" fill="#b99b83"/>
+<path d="M279 132 343 137 363 199 349 283 356 350 307 325 300 256 310 183Z" fill="#6f626e"/>
+<path d="M343 138 413 129 448 180 433 249 442 338 392 329 349 282 362 201Z" fill="#d1ad8d"/>
+<path d="M414 132 476 137 504 190 486 283 495 311 444 335 430 249 449 178Z" fill="#816e78"/>
+<path d="M477 133 548 127 566 185 561 258 540 338 497 310 484 281 503 190Z" fill="#c49e86"/>
+<path d="M549 126 618 129 651 182 636 247 621 332 579 321 560 257 567 184Z" fill="#796778"/>
+<path d="M620 129 688 135 734 120 745 248 697 298 662 294 633 249 652 181Z" fill="#b5977d"/>
+<path d="M114 187 176 203 233 191 312 212 359 198 432 215 499 194 564 211 631 201 712 218" fill="none" stroke="#e6c59c" stroke-width="9" stroke-linecap="round" opacity=".25"/>
+<path d="M85 261 144 251 214 270 307 249 352 281 440 256 499 282 563 260 642 271 736 251" fill="none" stroke="#524e5d" stroke-width="12" stroke-linecap="round" opacity=".26"/>
+<path d="M18 117 49 93 111 95 160 77 204 90 273 69 320 88 383 71 441 91 512 70 566 85 626 79 680 95 746 113 708 139 638 125 564 137 489 125 422 146 340 128 280 151 210 132 149 149 84 132Z" fill="url(#cap)" stroke="#527a46" stroke-width="5" stroke-linejoin="round"/>
+<!-- grass shadow/edge and rock rim follow uneven physical topography -->
+<path d="M20 118Q81 139 145 139T273 140T403 137T539 132T669 135T744 115" fill="none" stroke="#294d3b" opacity=".34" stroke-width="22"/>
+<path d="M20 115Q65 129 114 130T209 136T295 142T391 135T489 139T586 133T687 135T744 115" fill="none" stroke="#e3bf93" stroke-width="13" stroke-linecap="round"/>
+<path d="M26 121Q97 143 156 141T288 148T422 144T551 137T687 143" fill="none" stroke="#fbdfaf" stroke-width="3" opacity=".6"/>
+<!-- moss pockets, fractured bedding, scattered flowers and short tufts -->
+<g fill="#4b8750" opacity=".9"><path d="m54 102 9-21 7 18 6-26 7 28Z"/><path d="m195 106 8-21 9 17 8-19 4 23Z"/><path d="m343 108 9-17 10 20 6-26 7 24Z"/><path d="m550 103 8-22 7 19 10-14 4 23Z"/><path d="m692 111 7-19 8 15 6-20 7 20Z"/></g>
+<g fill="none" stroke="#514c5f" stroke-width="4" opacity=".5" stroke-linecap="round"><path d="m165 171-19 44 7 27"/><path d="m293 199-17 53 6 24"/><path d="m438 189-18 53 10 16"/><path d="m582 205 23 34-10 38"/><path d="m689 181-18 42 6 28"/></g>
+<g fill="#a7ba7c" opacity=".65"><ellipse cx="88" cy="166" rx="17" ry="5"/><ellipse cx="251" cy="166" rx="12" ry="6"/><ellipse cx="408" cy="192" rx="20" ry="4"/><ellipse cx="624" cy="161" rx="15" ry="5"/></g>
+<g fill="#f2dfa6"><circle cx="237" cy="102" r="4"/><circle cx="246" cy="99" r="3"/><circle cx="493" cy="100" r="4"/><circle cx="702" cy="101" r="3"/></g>
+<path d="M34 283Q104 314 169 331L221 320 263 339 309 322 359 343 403 323 444 331 498 308 543 333 583 318 622 325 680 287 730 285" fill="none" stroke="url(#under)" stroke-width="19" opacity=".3"/>
+</svg>
