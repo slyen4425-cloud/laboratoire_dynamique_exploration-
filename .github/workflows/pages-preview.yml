@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: canyon-organic-reflections-v6-prevalidation-2026-10-17
+# preview-revision: relief-themable-v7-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 3b50137714d44c165b0ceca0538bea4b30501de3
+          ref: 9c35fbda32b1cb23a1eb100750da5b486c08ae63
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
