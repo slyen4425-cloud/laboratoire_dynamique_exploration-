@@ -424,8 +424,8 @@ const DEFINITIONS = frozen([
     kind: 'stairs',
     visual: { assetId: 'object.stairs.stone.grand.01' },
     baseSize: { width: 230, height: 170 }
-  }
-  ,{
+  },
+  {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.relief.cliff.grassy_edge.01',
     label: '2,5D · Falaise herbeuse longue',
