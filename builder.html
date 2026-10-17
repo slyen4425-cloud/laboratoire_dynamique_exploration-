@@ -74,7 +74,8 @@
 
     <nav class="builder-tabs" aria-label="Sections du World Builder">
       <button type="button" data-tab="area" class="active">Area</button>
-      <button type="button" data-tab="terrain">Terrain</button>
+      <button type="button" data-tab="interior-floor" hidden>Sol intérieur</button>
+      <button type="button" data-tab="terrain">Terrain extérieur</button>
       <button type="button" data-tab="objects">Objets</button>
       <button type="button" data-tab="actors">Acteurs</button>
       <button type="button" data-tab="portals">Passages</button>
@@ -112,6 +113,10 @@
             <select id="area-material"></select>
           </label>
         </div>
+        <div id="area-interior-floor-shortcut" hidden>
+          <p class="builder-hint">Area permet de changer de zone. « Texture du sol » remplace le fond de toute la pièce. Pour poser plusieurs revêtements dans la même pièce, ouvre le pinceau intérieur.</p>
+          <button id="area-open-interior-floors" type="button">🎨 Choisir / peindre les sols intérieurs</button>
+        </div>
         <p class="builder-hint">
           Pour redimensionner directement : active « Taille Area » puis fais glisser le coin inférieur droit sur la map.
         </p>
@@ -128,6 +133,34 @@
         </div>
       </section>
 
+
+      <section class="builder-tab" data-panel="interior-floor">
+        <h2>🎨 Sol intérieur</h2>
+        <p class="builder-hint">Choisis le revêtement du fond, puis peins d'autres sols dans la même pièce. Les 5 textures sont séparées du terrain extérieur et n'affectent pas la vitesse.</p>
+        <label>Sol de fond (toute la pièce)
+          <select id="interior-floor-base"></select>
+        </label>
+        <label>Texture du pinceau
+          <select id="interior-floor-material"></select>
+        </label>
+        <label>Taille du pinceau
+          <div class="brush-size-row">
+            <input id="interior-floor-brush-size" type="range" min="12" max="240" step="4" value="72" />
+            <output id="interior-floor-brush-size-value" for="interior-floor-brush-size">72</output>
+          </div>
+        </label>
+        <div class="row">
+          <button id="interior-floor-paint-toggle" type="button" aria-pressed="false">🖌 Activer le pinceau intérieur</button>
+          <button id="interior-floor-undo" type="button">↶ Annuler un sol peint</button>
+        </div>
+        <p class="builder-hint" id="interior-floor-paint-guide" role="status">1. Choisis le sol. 2. Active le pinceau. 3. Touche ou glisse dans la pièce ; deux doigts pour zoomer.</p>
+        <h3>Sols peints dans cette pièce</h3>
+        <div class="row">
+          <select id="interior-floor-zone-select" aria-label="Zone de sol intérieur à supprimer"></select>
+          <button id="interior-floor-zone-delete" type="button" class="danger">Supprimer</button>
+        </div>
+        <p class="builder-hint">Chaque trait est enregistré dans cette même WorldArea et reste modifiable après export/import.</p>
+      </section>
 
       <section class="builder-tab" data-panel="terrain">
         <h2>Terrain</h2>
@@ -748,6 +781,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1&brush=interior-floor-brush-v1"></script>
 </body>
 </html>
