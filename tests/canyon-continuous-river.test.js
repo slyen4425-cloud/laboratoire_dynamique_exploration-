@@ -37,7 +37,7 @@ test('canyon only opts into the single continuous WaterSurface renderer path', (
   assert.equal(area.surface.rivers[0].materialId, canyon.id);
   assert.equal(area.surface.rivers[0].traversalRuleId, 'terrain.water');
   assert.equal(demoWorldDocument.areas[0].surface.rivers[0].materialId, forest.id);
-  const assets = collectMaterialAssetIds(registry, area.surface);
+  const assets = collectMaterialAssetIds([canyon]);
   assert.equal(assets.includes('transition.water.canyon.turquoise.bank.01'), false);
 });
 
