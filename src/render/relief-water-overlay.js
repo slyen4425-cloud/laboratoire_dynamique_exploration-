@@ -71,7 +71,7 @@ export function drawReliefRiverGlints(ctx, { area, camera, viewport, timeSeconds
   if (!area?.surface?.rivers) return 0;
   let drawn = 0;
   for (const river of area.surface.rivers) {
-    if (river.materialId !== 'water.clear_blue') continue;
+    if (river.materialId !== 'water.canyon_turquoise') continue;
     for (const mark of reliefWaterMarks(river, timeSeconds)) {
       const x = mark.x - camera.x, y = mark.y - camera.y;
       if (x < -30 || y < -30 || x > viewport.width + 30 || y > viewport.height + 30) continue;
