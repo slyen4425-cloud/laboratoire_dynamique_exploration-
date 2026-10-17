@@ -1,3 +1,16 @@
+# Lot actif — 17/10/2026 — Rivière canyon continue, anti-rectangles (V4)
+
+- **Branche :** `work/exploration-canyon-continuous-river-2026-10-17` depuis le snapshot immutable prévalidé V3 `a11fe22b03f9027052f87bcb89ed7fb272a972a8`. Checkpoint START `checkpoint/exploration-start-canyon-continuous-river-2026-10-17` au même SHA. **Aucune fusion** avec les deux branches V3 concurrentes/expérimentales.
+- **Retour auteur :** capture réelle smartphone V3 (17:24) : rivière encore constituée visuellement d'une rangée de rectangles/tuiles bleues, cassant la continuité ; esthétique eau **NON VALIDÉE**, fluidité positive sur les lots précédents.
+- **Cause identifiée :** `drawWaterMaterialRaw` du propriétaire `src/render/surface-renderer.js` utilise `drawTexturedRibbon` sur l'asset de berge. Le ruban est rasterisé en de nombreux segments orientés de 16 unités (rectangles drawImage), ce qui matérialise les jonctions sur une bande quasi horizontale ; changer des SVG ne peut pas supprimer ces joints géométriques.
+- **Correction restreinte :** stratégie `render.ribbonMode = 'continuous-stroke'` sur l'unique matériau `water.canyon_turquoise`, choisie par le Material Registry ; dans **le même Surface Renderer**, dessiner une seule courbe lissée par couche d'eau/berge au moyen de `strokePath` existant. Une texture centre SVG peut rester un motif world-anchored dans la courbe ; aucun `drawTexturedRibbon` pour la berge canyon. Les autres rivières/routes restent sur le code historique. Rendu statique cullé/cache exactement comme avant ; animation écume/reflèt existante inchangée.
+- **Gel :** WorldDocument, tracé/largeur/traversalRule, collisions/Collision World, déplacement, caméra, générateur, Builder data layer, stockage, catalogue WorldObject, Encounter/Combat, style 2D classique. Pas de deuxième géométrie, matériau autoritaire, moteur renderer ou asset inline.
+- **Gates :** sentinelle du chemin réel Material Registry → Surface Renderer, vérification absence de drawImage segmenté pour canyon mais conservation des segments sur autres matériaux, tests d'animation/collision, 520+ tests Node + npm check + Chromium Builder/Encounter, publication d'un snapshot Pages seulement si CI verte, essai smartphone avant GREEN final.
+- **Risque :** rive trop uniforme vs couleur du sol : garder plusieurs couches translucides et l'écume animée existante ; qualité finale conditionnée au contrôle créateur.
+- **État :** correctif V4 en cours. 
+
+---
+
 # Lot actif — 17/10/2026 — Canyon 2,5D, kit graphique V3 cohérent
 
 - **Retour auteur :** captures du canyon V2 montrant eau en rectangles répétés et falaise composée d'assets séparés trop géométriques. La fluidité est bonne, le rendu artistique est **NON VALIDÉ**. Le créateur demande une véritable refonte visuelle plutôt qu'ajouter des couches d'effets.
