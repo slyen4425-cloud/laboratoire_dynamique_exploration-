@@ -58,7 +58,10 @@ function drawShoreContacts(ctx,plan,camera,rect) {
     seen.add(item.river);
     const mask=riverVisualMask(item.river);
     if(!mask||typeof ctx.clip!=='function'||typeof ctx.createLinearGradient!=='function')continue;
-    const top=rect.height*0.31,bottom=Math.min(rect.height*0.5,top+Math.max(22,rect.height*0.18));
+    // Start tint well above the visible foot, but apply it ONLY where the
+    // real river clips the sprite. At waterline the alpha is already strong;
+    // otherwise a late-start gradient would be almost invisible on the rock.
+    const top=rect.height*0.07,bottom=rect.height*0.50;
     ctx.save();
     ctx.translate(-camera.x,-camera.y);
     ctx.clip(mask);
