@@ -89,12 +89,16 @@ try{
     const banner=document.querySelector('#relief-pilot-notice');
     const layout=[...document.querySelectorAll('[data-tab]')].map(x=>x.dataset.tab);
     return {id:json.id,area:area.id,objectCount:area.objects.length,
-      riverCount:area.surface.rivers.length,images,
+      riverCount:area.surface.rivers.length,
+      waterMaterial:area.surface.rivers[0]?.materialId,
+      waterOverlayLoaded:performance.getEntriesByType('resource').some(r=>r.name.includes('relief-water-overlay.js')),
+      images,
       bannerVisible:!banner.hidden,classicLink:!!banner.querySelector('a[href*="builder.html?rev="]'),
       canvasSize:[canvas.width,canvas.height],tabs:layout};
   })()`);
   console.log('Relief pilot Chromium:',JSON.stringify(data));
   if(data.id!=='relief-canyon-pilot-v1'||data.objectCount<12||data.riverCount!==1||
+     data.waterMaterial!=='water.clear_blue'||!data.waterOverlayLoaded||
      !data.bannerVisible||!data.classicLink||!data.images.every(img=>img.ok&&img.width>0)||
      data.canvasSize.some(size=>size<=0)||!data.tabs.includes('terrain')) {
     throw Error('Real Builder relief pilot smoke failed');
