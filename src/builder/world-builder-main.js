@@ -1,5 +1,6 @@
 import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=encounter-selected-elements-v1';
 import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+import { reliefCanyonPilotDocument } from '../world/relief-canyon-pilot-world.js?rev=relief-canyon-pilot-v1';
 import {
   addActorPlacement,
   addPortal,
@@ -532,6 +533,11 @@ function updateWorldObjectOverrides(
 }
 
 const builderParams = new URLSearchParams(window.location.search);
+const isReliefCanyonPilot = builderParams.get('demo') === 'relief-canyon-v1';
+const defaultBuilderDocument = isReliefCanyonPilot
+  ? reliefCanyonPilotDocument
+  : demoWorldDocument;
+$('relief-pilot-notice').hidden = !isReliefCanyonPilot;
 const resumeBuilderTest =
   builderParams.get('resumeBuilderTest') === '1';
 const resumedTestSession = resumeBuilderTest
@@ -552,7 +558,7 @@ if (resumeBuilderTest && !resumedTestDocument) {
 }
 
 let draft = createWorldBuilderDraft(
-  resumedTestDocument ?? demoWorldDocument
+  resumedTestDocument ?? defaultBuilderDocument
 );
 let selectedAreaId =
   draft.initialAreaId ??
@@ -7422,7 +7428,7 @@ $('import-json').addEventListener('change', async () => {
 });
 
 $('reset-demo').addEventListener('click', () => {
-  draft = createWorldBuilderDraft(demoWorldDocument);
+  draft = createWorldBuilderDraft(defaultBuilderDocument);
   selectedStampPreset = null;
   selectedPortalId =
     draft.portals?.[0]?.id ?? null;
