@@ -25,6 +25,12 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
   assert.equal(registry.resolve('road.dirt')?.kind, 'path');
   assert.equal(registry.resolve('water.forest_stream')?.kind, 'water');
   assert.equal(registry.resolve('floor.wood.house')?.kind, 'surface');
+  assert.equal(registry.resolve('floor.wood.house')?.assets.base, 'texture.floor.wood.oak.01');
+  for (const id of ['floor.wood.dark', 'floor.tile.light', 'floor.tile.sandstone', 'floor.concrete.gray']) {
+    const floor = registry.require(id, 'surface');
+    assert.equal(floor.terrainFamilyId, null);
+    assert.ok(floor.assets.base.startsWith('texture.floor.'));
+  }
   assert.equal(registry.resolve('ground.dirt')?.kind, 'surface');
   assert.equal(registry.resolve('ground.sand')?.kind, 'surface');
   assert.equal(registry.resolve('ground.snow')?.kind, 'surface');
@@ -81,7 +87,7 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
   );
   assert.equal(registry.resolve('ground.sea')?.kind, 'surface');
   assert.equal(registry.resolve('ground.road')?.kind, 'surface');
-  assert.equal(registry.list().length, 16);
+  assert.equal(registry.list().length, 20);
 });
 
 test('unknown material ids never silently fall back', () => {

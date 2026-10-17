@@ -40,6 +40,16 @@ const EXPECTED = Object.freeze({
     './assets/exploration/materials/forest/water/lava_flow_stylized_01.webp',
   'texture.ground.volcanic_ash_lava.stylized.01':
     './assets/exploration/materials/forest/surfaces/volcanic_ash_lava_stylized_01.webp',
+  'texture.floor.wood.oak.01':
+    './assets/exploration/materials/interior/surfaces/floor_wood_oak_01.webp',
+  'texture.floor.wood.dark.01':
+    './assets/exploration/materials/interior/surfaces/floor_wood_dark_01.webp',
+  'texture.floor.tile.light.01':
+    './assets/exploration/materials/interior/surfaces/floor_tile_light_01.webp',
+  'texture.floor.tile.sandstone.01':
+    './assets/exploration/materials/interior/surfaces/floor_tile_sandstone_01.webp',
+  'texture.floor.concrete.gray.01':
+    './assets/exploration/materials/interior/surfaces/floor_concrete_gray_01.webp',
   'transition.road.dirt_to_grass_forest.edge.01':
     './assets/exploration/materials/forest/transitions/road_dirt_to_grass_forest_edge_01.webp',
   'transition.water.forest_stream_to_grass_forest.bank.01':
@@ -53,7 +63,7 @@ const EXPECTED = Object.freeze({
 test('Material Asset Adapter exposes the pilot assets plus stylized terrain surfaces', () => {
   const assets = listMaterialAssets();
 
-  assert.equal(assets.length, 17);
+  assert.equal(assets.length, 22);
 
   for (const [id, path] of Object.entries(EXPECTED)) {
     const asset = resolveMaterialAsset(id);
@@ -76,7 +86,7 @@ test('Material Pack v1 references every generated pilot asset semantically', () 
   const ids = collectMaterialAssetIds(materialPackV1.materials);
 
   assert.deepEqual(new Set(ids), new Set(Object.keys(EXPECTED)));
-  assert.equal(ids.length, 17);
+  assert.equal(ids.length, 22);
 });
 
 test('Material Texture Loader has explicit load/get/dispose lifecycle', () => {
@@ -146,7 +156,7 @@ test('forest manifest and semantic Asset Adapter stay in sync', async () => {
   const manifestIds = new Set(manifest.files.map((item) => item.assetId));
   const adapterIds = new Set(listMaterialAssets().map((item) => item.id));
 
-  assert.deepEqual(manifestIds, adapterIds);
+  assert.deepEqual(manifestIds, new Set([...adapterIds].filter((id) => !id.startsWith('texture.floor.'))));
 });
 
 test('material manifest hashes and byte sizes match committed binaries', async () => {
@@ -170,5 +180,28 @@ test('material manifest hashes and byte sizes match committed binaries', async (
       item.sha256,
       item.path
     );
+  }
+});
+
+test('indoor manifest owns 5 verified WebP textures with exact committed hashes', async () => {
+  const manifest = JSON.parse(await readFile(
+    new URL('../assets/exploration/materials/interior/manifest.v1.json', import.meta.url), 'utf8'
+  ));
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.packId, 'exploration-interior-floors-v1');
+  assert.equal(manifest.profile, 'mobile-test-128');
+  assert.equal(manifest.ownership, 'exploration-material-pack');
+  const ids = Object.keys(EXPECTED).filter((id) => id.startsWith('texture.floor.'));
+  assert.equal(ids.length, 5);
+  assert.deepEqual(new Set(manifest.files.map((file) => file.assetId)), new Set(ids));
+  for (const item of manifest.files) {
+    assert.equal(item.width, 128);
+    assert.equal(item.height, 128);
+    const bytes = await readFile(new URL(`../${item.path}`, import.meta.url));
+    assert.equal(bytes.byteLength, item.bytes);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), item.sha256);
+    assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
+    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP');
+    assert.equal(bytes.readUInt32LE(4) + 8, bytes.byteLength);
   }
 });
