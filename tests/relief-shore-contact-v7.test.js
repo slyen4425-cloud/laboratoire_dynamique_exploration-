@@ -48,6 +48,11 @@ test('water type controls thematic contact colors and other objects remain clean
  assert.ok(changed.every(p=>p.shadowColor==='#772c18'&&p.highlightColor==='#ffc73b'));
  const plain={...resolved,visual:{assetId:resolved.visual.assetId}};
  assert.deepEqual(plan(plain),[]);
+ const standard={...base,render:{...base.render,shoreContact:undefined}};
+ const fallback=plan(resolved,area.surface,{resolve:()=>standard});
+ assert.ok(fallback.length>0);
+ assert.ok(fallback.every(p=>p.shadowColor===base.render.innerBankColor &&
+   p.highlightColor===base.render.highlightColor));
 });
 
 test('same WorldObject Renderer draws the contacts and never draws them off-river',()=>{
