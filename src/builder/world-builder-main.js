@@ -352,7 +352,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v8'
+        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v9'
     });
 
   const assetIds = [
