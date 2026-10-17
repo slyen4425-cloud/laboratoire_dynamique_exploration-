@@ -438,6 +438,18 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.broken_ledge.02',
+    label: '2,5D · Falaise herbeuse, arête irrégulière',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.broken_ledge.02' },
+    baseSize: { width: 768, height: 384 },
+    // Inherit exactly the same footprint as the approved long cliff.
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
+      heightRatio: 0.66, offsetX: 0, offsetY: 0.08 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.relief.cliff.corner.01',
     label: '2,5D · Angle de falaise',
     kind: 'rock',
