@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: interior-floor-texture-pack-prevalidation-2026-10-17
+# preview-revision: interior-floor-brush-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 7ea8be2370d74256aa6dda8f0be0414a6d9d84b8
+          ref: 6fb5aa394ee4769a34df60e34ce83d0f0a57c4d2
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
@@ -55,6 +55,9 @@ jobs:
 
       - name: Verify Builder checkbox elements, blank map and real Encounter in Chromium
         run: node scripts/smoke-builder-encounter-validation.mjs
+
+      - name: Verify indoor floor palette and real brush in Chromium
+        run: node scripts/smoke-interior-floor-brush.mjs
 
       - name: Verify actual encounter startup in Chromium
         run: node scripts/smoke-modern-combat-preview.mjs
