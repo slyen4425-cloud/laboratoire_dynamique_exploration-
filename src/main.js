@@ -22,7 +22,7 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&water=canyon-continuous-river-v4';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&water=canyon-continuous-river-v4&no-repeat=canyon-v5';
 import { createMaterialRegistry } from './materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   composeMaterialPackWithUserMaterials
