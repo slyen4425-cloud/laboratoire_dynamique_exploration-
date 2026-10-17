@@ -34,6 +34,10 @@ const EXPECTED = Object.freeze({
     './assets/exploration/materials/forest/water/water_clear_blue_stylized_01.webp',
   'texture.water.turquoise.stylized.01':
     './assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp',
+  'texture.water.canyon.turquoise.01':
+    './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg',
+  'transition.water.canyon.turquoise.bank.01':
+    './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_01.svg',
   'texture.water.swamp.stylized.01':
     './assets/exploration/materials/forest/water/water_swamp_stylized_01.webp',
   'texture.water.lava.stylized.01':
@@ -63,7 +67,7 @@ const EXPECTED = Object.freeze({
 test('Material Asset Adapter exposes the pilot assets plus stylized terrain surfaces', () => {
   const assets = listMaterialAssets();
 
-  assert.equal(assets.length, 22);
+  assert.equal(assets.length, 24);
 
   for (const [id, path] of Object.entries(EXPECTED)) {
     const asset = resolveMaterialAsset(id);
@@ -86,7 +90,7 @@ test('Material Pack v1 references every generated pilot asset semantically', () 
   const ids = collectMaterialAssetIds(materialPackV1.materials);
 
   assert.deepEqual(new Set(ids), new Set(Object.keys(EXPECTED)));
-  assert.equal(ids.length, 22);
+  assert.equal(ids.length, 24);
 });
 
 test('Material Texture Loader has explicit load/get/dispose lifecycle', () => {
@@ -154,7 +158,7 @@ test('forest manifest and semantic Asset Adapter stay in sync', async () => {
   assert.equal(manifest.ownership, 'exploration-material-pack');
 
   const manifestIds = new Set(manifest.files.map((item) => item.assetId));
-  const adapterIds = new Set(listMaterialAssets().map((item) => item.id));
+  const adapterIds = new Set(listMaterialAssets().filter((item) => item.path.endsWith('.webp')).map((item) => item.id));
 
   assert.deepEqual(manifestIds, new Set([...adapterIds].filter((id) => !id.startsWith('texture.floor.'))));
 });
