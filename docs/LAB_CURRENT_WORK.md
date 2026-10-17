@@ -7,7 +7,8 @@
 - **Gel :** locomotion et terrain-family-speed, géométrie/bâtiments/portails, combats, collision, encounter, sauvegardes/WorldDocument, Game UI hors cache de modules.
 - **Tests :** assetId/pack/adapter/manifest, hash et taille du binaire réellement commité, rétrocompatibilité floor.wood.house et sélection des 5 sols sur WorldArea intérieure, npm tests + check + CI GitHub + gate navigateur/smartphone avant GREEN final.
 - **Risques :** binaire tronqué, vieux cache navigateur, matériaux intérieurs absents du sélecteur, collision avec chantier terrain speed encore en prévalidation.
-- **Prochaine action :** raccorder les 5 fichiers puis prévalidation ; ne pas fusionner directement sur main et ne pas certifier GREEN final sans test utilisateur.
+- **État technique (17/10) :** 5 WebP de 128×128 déposés en binaire exacts (sha Git des originaux contrôlés), Material Pack + Asset Adapter + manifest avec SHA-256/bytes/WebP intégrés ; ancien ID `floor.wood.house` conservé ; choix des 5 sols dans le sélecteur d'Area intérieur (sans nouvelle UI). Tests Node 499/499, npm check et Chromium CI [39014881060](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39014881060) SUCCESS. Prévalidation technique seulement, smartphone en attente. Une sentinelle de cache existante a été mise à jour pour inclure `floors=interior-floor-textures-v1` après échec transitoire identifié et corrigé.
+- **Prochaine action :** figer checkpoint technique ; publier une preview Pages depuis SHA immuable via branche infrastructure isolée, puis vérifier sur smartphone la sélection des 5 matériaux et leur rendu intérieur. Pas de GREEN final avant verdict utilisateur.
 
 ---
 
