@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: terrain-family-speed-editor-prevalidation-2026-10-17
+# preview-revision: interior-floor-texture-pack-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 1b9524c06277efe1fd34263f0a0ed3f026c1a7e9
+          ref: 7ea8be2370d74256aa6dda8f0be0414a6d9d84b8
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
