@@ -425,6 +425,38 @@ const DEFINITIONS = frozen([
     visual: { assetId: 'object.stairs.stone.grand.01' },
     baseSize: { width: 230, height: 170 }
   }
+  ,{
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.grassy_edge.01',
+    label: '2,5D · Falaise herbeuse longue',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.grassy_edge.01' },
+    baseSize: { width: 768, height: 384 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
+      heightRatio: 0.43, offsetX: 0, offsetY: 0.24 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.corner.01',
+    label: '2,5D · Angle de falaise',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.corner.01' },
+    baseSize: { width: 420, height: 405 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.82,
+      heightRatio: 0.48, offsetX: 0, offsetY: 0.21 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.waterfall.blue.01',
+    label: '2,5D · Cascade bleue décorative',
+    kind: 'decor',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.waterfall.blue.01' },
+    baseSize: { width: 280, height: 440 }
+  }
+
 ]);
 
 export function createObjectDefinitionCatalog(
