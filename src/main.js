@@ -21,14 +21,14 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=terrain-family-palette-editable-v2';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=interior-floor-textures-v1';
 import { createMaterialRegistry } from './materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   composeMaterialPackWithUserMaterials
 } from './materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
-} from './assets/material-asset-adapter.js?rev=user-texture-import-v1';
+} from './assets/material-asset-adapter.js?rev=interior-floor-textures-v1';
 import {
   createUserMaterialAssetResolver
 } from './assets/user-material-asset-resolver.js?rev=user-texture-import-v1';

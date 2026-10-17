@@ -232,9 +232,9 @@ export const materialPackV1 = Object.freeze({
     Object.freeze({
       id: 'floor.wood.house',
       kind: 'surface',
-      label: 'Plancher bois intérieur',
+      label: 'Plancher bois clair',
       assets: Object.freeze({
-        base: null,
+        base: 'texture.floor.wood.oak.01',
         variants: Object.freeze([]),
         edge: null,
         decals: Object.freeze([])
@@ -252,6 +252,54 @@ export const materialPackV1 = Object.freeze({
         decalMinSize: 0,
         decalMaxSize: 0,
         decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'floor.wood.dark', kind: 'surface', label: 'Plancher bois foncé',
+      assets: Object.freeze({
+        base: 'texture.floor.wood.dark.01', variants: Object.freeze([]),
+        edge: null, decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#4d2e20', variationColors: Object.freeze([]),
+        detailSpacing: 0, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'floor.tile.light', kind: 'surface', label: 'Carrelage clair',
+      assets: Object.freeze({
+        base: 'texture.floor.tile.light.01', variants: Object.freeze([]),
+        edge: null, decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#d9d7cf', variationColors: Object.freeze([]),
+        detailSpacing: 0, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'floor.tile.sandstone', kind: 'surface', label: 'Carrelage pierre beige',
+      assets: Object.freeze({
+        base: 'texture.floor.tile.sandstone.01', variants: Object.freeze([]),
+        edge: null, decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#ba9162', variationColors: Object.freeze([]),
+        detailSpacing: 0, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
+      })
+    }),
+    Object.freeze({
+      id: 'floor.concrete.gray', kind: 'surface', label: 'Béton gris',
+      assets: Object.freeze({
+        base: 'texture.floor.concrete.gray.01', variants: Object.freeze([]),
+        edge: null, decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#92908e', variationColors: Object.freeze([]),
+        detailSpacing: 0, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
       })
     }),
     Object.freeze({

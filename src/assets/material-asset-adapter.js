@@ -64,6 +64,26 @@ const MATERIAL_ASSETS = Object.freeze({
     kind: 'texture',
     path: './assets/exploration/materials/forest/surfaces/volcanic_ash_lava_stylized_01.webp'
   }),
+  'texture.floor.wood.oak.01': Object.freeze({
+    id: 'texture.floor.wood.oak.01', kind: 'texture',
+    path: './assets/exploration/materials/interior/surfaces/floor_wood_oak_01.webp'
+  }),
+  'texture.floor.wood.dark.01': Object.freeze({
+    id: 'texture.floor.wood.dark.01', kind: 'texture',
+    path: './assets/exploration/materials/interior/surfaces/floor_wood_dark_01.webp'
+  }),
+  'texture.floor.tile.light.01': Object.freeze({
+    id: 'texture.floor.tile.light.01', kind: 'texture',
+    path: './assets/exploration/materials/interior/surfaces/floor_tile_light_01.webp'
+  }),
+  'texture.floor.tile.sandstone.01': Object.freeze({
+    id: 'texture.floor.tile.sandstone.01', kind: 'texture',
+    path: './assets/exploration/materials/interior/surfaces/floor_tile_sandstone_01.webp'
+  }),
+  'texture.floor.concrete.gray.01': Object.freeze({
+    id: 'texture.floor.concrete.gray.01', kind: 'texture',
+    path: './assets/exploration/materials/interior/surfaces/floor_concrete_gray_01.webp'
+  }),
   'transition.road.dirt_to_grass_forest.edge.01': Object.freeze({
     id: 'transition.road.dirt_to_grass_forest.edge.01',
     kind: 'transition',

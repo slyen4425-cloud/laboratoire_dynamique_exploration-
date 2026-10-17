@@ -126,7 +126,7 @@ import {
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=terrain-family-palette-editable-v2';
+} from '../materials/material-pack-v1.js?rev=interior-floor-textures-v1';
 import {
   USER_TEXTURE_MAX_BYTES,
   composeMaterialPackWithUserMaterials,
@@ -150,7 +150,7 @@ import {
 } from '../materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
-} from '../assets/material-asset-adapter.js?rev=user-texture-import-v1';
+} from '../assets/material-asset-adapter.js?rev=interior-floor-textures-v1';
 import {
   createUserMaterialAssetResolver
 } from '../assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
@@ -1801,8 +1801,13 @@ function refreshAreaControls() {
   );
   $('area-family').value = familyId;
 
+  // Interior materials first; keep all legacy/custom surface choices available.
   const areaMaterialOptions = area.kind === 'interior'
-    ? surfaceMaterials : surfaceMaterialsForFamily(surfaceMaterials, familyId, families);
+    ? [
+        ...surfaceMaterials.filter((material) => material.id.startsWith('floor.')),
+        ...surfaceMaterials.filter((material) => !material.id.startsWith('floor.'))
+      ]
+    : surfaceMaterialsForFamily(surfaceMaterials, familyId, families);
   setOptions(
     $('area-material'),
     areaMaterialOptions,
