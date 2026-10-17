@@ -22,7 +22,7 @@ test('canyon v2 uses a dedicated semantic water material without changing classi
   assert.equal(material.assets.center, null, 'V5 removes repeating center texture in canyon only');
   assert.equal(material.assets.bank, null, 'V4 retires segmented bank sprite for canyon');
   assert.ok(material.render.outerBankPadding >= 30);
-  for (const id of [material.assets.center, 'transition.water.canyon.turquoise.bank.01']) {
+  for (const id of ['texture.water.canyon.turquoise.01', 'transition.water.canyon.turquoise.bank.01']) {
     const asset = resolveMaterialAsset(id);
     assert.ok(asset, id);
     assert.match(asset.path, /assets\/exploration\/materials\/forest\/(water|transitions)\/.+\.svg$/);
