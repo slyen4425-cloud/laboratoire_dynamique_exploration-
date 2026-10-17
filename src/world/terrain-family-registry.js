@@ -77,10 +77,12 @@ export function normalizeTerrainFamilyDefinitions(
       id,
       label,
       ...(paintKind ? { paintKind } : {}),
-      traversalModes: normalizeTerrainFamilyTraversalModes(
-        raw?.traversalModes,
-        defaultTerrainFamilyTraversalModes(id, paintKind)
-      ),
+      ...(raw?.traversalModes && typeof raw.traversalModes === 'object'
+        ? { traversalModes: normalizeTerrainFamilyTraversalModes(
+            raw.traversalModes,
+            defaultTerrainFamilyTraversalModes(id, paintKind)
+          ) }
+        : {}),
       ...(surfaceMaterialIds ? { surfaceMaterialIds } : {})
     }));
   }
