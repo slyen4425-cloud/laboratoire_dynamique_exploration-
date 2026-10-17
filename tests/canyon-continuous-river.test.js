@@ -58,7 +58,9 @@ test('canyon draws one curved sequence with ZERO rectangular ribbon images, even
   assert.equal(calls.strokes.length, 4, 'continuous outer bank, inner bank, water and highlight');
   assert.equal(calls.strokes[0].width, river.width + registry.require(river.materialId).render.outerBankPadding);
   assert.equal(calls.strokes[2].width, river.width);
-  assert.ok(calls.patterns.length > 0, 'canonical center texture remains referenced');
+  assert.equal(calls.patterns.length, 0, 'V5 canyon never creates a repeated water pattern');
+  assert.equal(calls.strokes[2].style, registry.require('water.canyon_turquoise').render.waterColor,
+    'continuous river surface uses its canonical opaque material color');
   assert.equal(JSON.stringify(river), snapshot, 'renderer never mutates authoritative geometry');
 });
 
