@@ -3,7 +3,7 @@ import {
 } from '../encounters/terrain-family-encounter-config.js?rev=terrain-family-extensibility-v1';
 import {
   normalizeTerrainFamilyDefinitions
-} from './terrain-family-registry.js?rev=terrain-family-palette-editable-v2';
+} from './terrain-family-registry.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 
 import {
   findWorldArea,
