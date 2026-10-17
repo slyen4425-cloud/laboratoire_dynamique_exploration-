@@ -49,6 +49,16 @@ const MATERIAL_ASSETS = Object.freeze({
     kind: 'texture',
     path: './assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp'
   }),
+  'texture.water.canyon.turquoise.01': Object.freeze({
+    id: 'texture.water.canyon.turquoise.01',
+    kind: 'texture',
+    path: './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg'
+  }),
+  'transition.water.canyon.turquoise.bank.01': Object.freeze({
+    id: 'transition.water.canyon.turquoise.bank.01',
+    kind: 'transition',
+    path: './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_01.svg'
+  }),
   'texture.water.swamp.stylized.01': Object.freeze({
     id: 'texture.water.swamp.stylized.01',
     kind: 'texture',
