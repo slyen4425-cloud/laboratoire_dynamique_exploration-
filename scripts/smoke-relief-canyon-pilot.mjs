@@ -190,6 +190,44 @@ try{
   if(contactGate.contacts<1||contactGate.changed<200||contactGate.tinted<100||contactGate.imageWidth<100)
     throw Error('Builder WorldDocument to real Canvas water-rock contact failed');
 
+  // V9: verify that the actual terrain texture raster remains visible through the cliff crest.
+  const crestGate=await run(`(async()=> {
+ const cliffs=[
+ ['./assets/exploration/objects/relief/cliff_grassy_edge_01.svg',768,384,384,82],
+ ['./assets/exploration/objects/relief/cliff_broken_ledge_02.svg',768,384,384,82],
+ ['./assets/exploration/objects/relief/cliff_corner_01.svg',420,405,210,85]];
+ const grounds=[
+ './assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp',
+ './assets/exploration/materials/forest/surfaces/snow_ground_stylized_01.webp'];
+ function load(src){return new Promise((resolve,reject)=>{
+  const image=new Image();image.onload=()=>resolve(image);
+  image.onerror=()=>reject(Error(src));image.src=src;
+ });}
+ function rgba(ctx,x,y){return [...ctx.getImageData(x,y,1,1).data];}
+ const textures=await Promise.all(grounds.map(load));
+ let transparent=0,stone=0,distinct=0;
+ for(const [src,width,height,px,py] of cliffs){
+  const cliff=await load(src);const observed=[];
+  for(const ground of textures){
+   const canvas=document.createElement('canvas');
+   canvas.width=width;canvas.height=height;
+   const ctx=canvas.getContext('2d',{willReadFrequently:true});
+   ctx.fillStyle=ctx.createPattern(ground,'repeat');ctx.fillRect(0,0,width,height);
+   const before=rgba(ctx,px,py);
+   ctx.drawImage(cliff,0,0,width,height);
+   const crest=rgba(ctx,px,py),face=rgba(ctx,px,250);
+   if(before.every((v,i)=>v===crest[i]))transparent++;
+   if(face.some((v,i)=>i<3 && Math.abs(v-crest[i])>20))stone++;
+   observed.push(crest.join(','));
+  }
+  if(observed[0]!==observed[1])distinct++;
+ }
+ return {transparent,stone,distinct};
+})()`);
+  console.log('V9 true ground texture crest Chromium:',JSON.stringify(crestGate));
+  if(crestGate.transparent!==6||crestGate.stone<5||crestGate.distinct!==3)
+    throw Error('V9 transparent cliff crest does not reveal grass/snow material textures');
+
   console.log('GREEN: same Builder, optional canyon WorldDocument, six SVG assets loaded, classic link present');
 }finally{
   socket?.close();
