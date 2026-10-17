@@ -14,7 +14,7 @@ const area = reliefCanyonPilotDocument.areas[0];
 function recorder() {
   const calls = { strokes: [], images: [], patterns: [] };
   const context = {
-    save() {}, restore() {}, beginPath() {}, moveTo() {}, lineTo() {},
+    save() {}, restore() {}, translate() {}, rotate() {}, beginPath() {}, moveTo() {}, lineTo() {},
     quadraticCurveTo() {},
     stroke() { calls.strokes.push({ width: this.lineWidth, style: this.strokeStyle, alpha: this.globalAlpha }); },
     drawImage(...args) { calls.images.push(args); },
