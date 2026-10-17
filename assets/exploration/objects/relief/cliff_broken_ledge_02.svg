@@ -20,7 +20,7 @@
 <!-- broken sections of exposed warm rock interrupt the green edge -->
 <path d="M138 133Q168 132 188 130L207 136 219 150 182 157 160 146Z" fill="#b6a18a" opacity=".82"/>
 <path d="M517 140Q548 128 568 141L585 145 572 156 540 152Z" fill="#cbb299" opacity=".88"/>
-<path d="M18 115Q80 134 135 139T251 146T365 146T479 147T596 145T744 128" stroke="#c4a584" stroke-width="2.1" opacity=".20" fill="none" stroke-linecap="round" opacity=".9"/>
+<path d="M18 115Q80 134 135 139T251 146T365 146T479 147T596 145T744 128" stroke="#c4a584" stroke-width="2.1" fill="none" stroke-linecap="round" opacity=".20"/>
 <path d="M34 103Q99 117 163 124T300 127T451 131T594 131" stroke="#e3efba" stroke-width="4" fill="none" opacity=".52"/>
 <g stroke="#49783f" stroke-width="2.0" fill="none" stroke-linecap="round"><path d="m66 108-9-18 13 11 7-20 7 22M272 118l-7-17 12 7 7-22 7 25M421 118l-11-17 16 8 7-18 8 26M699 112l-9-15 13 8 7-20 9 25"/></g>
 <g fill="#96bd71" opacity=".63"><ellipse cx="111" cy="99" rx="25" ry="8"/><ellipse cx="352" cy="100" rx="34" ry="9"/><ellipse cx="617" cy="104" rx="29" ry="7"/></g>
