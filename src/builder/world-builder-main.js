@@ -2326,6 +2326,11 @@ function refreshTerrainFamilyDefinitionControls() {
   $('terrain-family-label').disabled = !family;
   $('terrain-family-paint-kind').value = family?.paintKind || 'terrain';
   $('terrain-family-paint-kind').disabled = !family;
+  for (const mode of ['ground', 'swim', 'fly']) {
+    const input = $('terrain-family-speed-' + mode);
+    input.value = Math.round((family?.traversalModes?.[mode] ?? 0) * 100);
+    input.disabled = !family;
+  }
   const assignmentPanel = $('terrain-family-materials-panel');
   assignmentPanel.hidden = !family || (family.paintKind || 'terrain') !== 'terrain';
   const assignmentList = $('terrain-family-materials');
@@ -5296,6 +5301,25 @@ $('terrain-family-paint-kind').addEventListener('change', () => {
     { paintKind: $('terrain-family-paint-kind').value });
   refreshControls();
 });
+
+// Authoring only: commit numeric data to the Terrain Family Definition.
+ // All runtime speed calculations remain in Surface Traversal + Movement.
+for (const mode of ['ground', 'swim', 'fly']) {
+  $('terrain-family-speed-' + mode).addEventListener('change', () => {
+    if (!selectedTerrainFamilyDefinitionId) return;
+    const percent = Number($('terrain-family-speed-' + mode).value);
+    if (!Number.isFinite(percent) || percent < 0 || percent > 1000) {
+      refreshTerrainFamilyDefinitionControls();
+      return;
+    }
+    draft = updateTerrainFamilyDefinition(
+      draft,
+      selectedTerrainFamilyDefinitionId,
+      { traversalModes: { [mode]: percent / 100 } }
+    );
+    refreshControls();
+  });
+}
 
 $('terrain-family-materials-save').addEventListener('click', () => {
   if (!selectedTerrainFamilyDefinitionId) return;
