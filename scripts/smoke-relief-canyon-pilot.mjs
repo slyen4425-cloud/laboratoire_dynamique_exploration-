@@ -76,11 +76,11 @@ try{
   const data=await run(`(async()=> {
     const json=JSON.parse(document.querySelector('#json-preview').value);
     const paths=[
-      './assets/exploration/objects/relief/cliff_grassy_edge_01.svg',
-      './assets/exploration/objects/relief/cliff_corner_01.svg',
-      './assets/exploration/objects/relief/waterfall_blue_01.svg',
-      './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg',
-      './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_01.svg'
+      './assets/exploration/objects/relief/cliff_grassy_edge_02.svg',
+      './assets/exploration/objects/relief/cliff_corner_02.svg',
+      './assets/exploration/objects/relief/waterfall_rockfall_02.svg',
+      './assets/exploration/materials/forest/water/water_canyon_turquoise_02.svg',
+      './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_02.svg'
     ];
     const images=await Promise.all(paths.map(src=>new Promise(resolve=>{
       const image=new Image();image.onload=()=>resolve({src,width:image.naturalWidth,ok:true});
