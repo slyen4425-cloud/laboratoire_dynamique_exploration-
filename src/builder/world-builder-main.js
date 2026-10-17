@@ -136,8 +136,9 @@ import {
 } from '../materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createTerrainFamilyRegistry,
-  terrainFamiliesForPaintKind
-} from '../world/terrain-family-registry.js?rev=terrain-family-palette-editable-v2';
+  terrainFamiliesForPaintKind,
+  defaultTerrainFamilyTraversalModes
+} from '../world/terrain-family-registry.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
   createCaptureCreatureCatalogProvider
 } from '../capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
@@ -2328,7 +2329,8 @@ function refreshTerrainFamilyDefinitionControls() {
   $('terrain-family-paint-kind').disabled = !family;
   for (const mode of ['ground', 'swim', 'fly']) {
     const input = $('terrain-family-speed-' + mode);
-    input.value = Math.round((family?.traversalModes?.[mode] ?? 0) * 100);
+    const defaults = defaultTerrainFamilyTraversalModes(family?.id, family?.paintKind);
+    input.value = Math.round((family?.traversalModes?.[mode] ?? defaults[mode]) * 100);
     input.disabled = !family;
   }
   const assignmentPanel = $('terrain-family-materials-panel');
