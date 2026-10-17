@@ -5,7 +5,7 @@ import { reliefCanyonPilotDocument } from '../src/world/relief-canyon-pilot-worl
 import { demoWorldDocument } from '../src/world/demo-world.js';
 import { isBlocked } from '../src/core/collision.js';
 import { normalizeWorldDocument } from '../src/world/world-document-model.js';
-import { drawReliefRiverGlints, drawReliefWaterfallGlints,
+import { drawReliefRiverGlints, drawReliefRiverBankFoam, drawReliefWaterfallGlints,
   reliefWaterMarks, shouldRenderReliefWater } from '../src/render/relief-water-overlay.js';
 
 const area = reliefCanyonPilotDocument.areas[0];
@@ -29,10 +29,10 @@ test('water art remains opt-in on the canyon document and separate from the clas
   assert.equal(shouldRenderReliefWater(reliefCanyonPilotDocument.id, area), true);
   assert.equal(shouldRenderReliefWater(demoWorldDocument.id, area), false);
   assert.equal(shouldRenderReliefWater(reliefCanyonPilotDocument.id, demoWorldDocument.areas[0]), false);
-  assert.equal(area.surface.rivers[0].materialId, 'water.clear_blue');
+  assert.equal(area.surface.rivers[0].materialId, 'water.canyon_turquoise');
   assert.equal(area.surface.rivers[0].traversalRuleId, 'terrain.water');
   const clone = normalizeWorldDocument(JSON.parse(JSON.stringify(reliefCanyonPilotDocument)));
-  assert.equal(clone.areas[0].surface.rivers[0].materialId, 'water.clear_blue');
+  assert.equal(clone.areas[0].surface.rivers[0].materialId, 'water.canyon_turquoise');
   assert.equal(clone.areas[0].surface.rivers[0].traversalRuleId, 'terrain.water');
 });
 
@@ -56,6 +56,7 @@ test('waterlight overlay draws river shimmer and waterfall streaks in visual-onl
     viewport: { width: area.width, height: area.height }, timeSeconds: 0.8 };
   const snapshot = JSON.stringify(area);
   assert.ok(drawReliefRiverGlints(ctx, view) > 2);
+  assert.ok(drawReliefRiverBankFoam(ctx, view) >= 10);
   assert.ok(drawReliefWaterfallGlints(ctx, view) >= 7);
   assert.ok(ctx.counts.get('stroke') > 10);
   assert.equal(JSON.stringify(area), snapshot);
