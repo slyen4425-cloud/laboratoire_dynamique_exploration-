@@ -1,20 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<!-- Canyon V3: seamless all edges. No full-tile gradients or bright rectangles. -->
 <defs>
-  <linearGradient id="lagoon" x1="0" y1="0" x2="0.8" y2="1">
-    <stop stop-color="#1e92ad"/><stop offset=".42" stop-color="#32aac0"/><stop offset=".72" stop-color="#28a1b7"/><stop offset="1" stop-color="#1d8ca9"/>
-  </linearGradient>
-  <pattern id="shallows" width="128" height="128" patternUnits="userSpaceOnUse">
-    <path d="M-20 32Q10 14 48 30T144 27L144 46Q96 59 48 43T-20 50Z" fill="#75d5cf" opacity=".15"/>
-    <path d="M-15 91Q42 72 89 87T143 78L143 103Q76 108 30 102T-15 105Z" fill="#004b78" opacity=".12"/>
-    <path d="M-12 19Q22 12 48 16T132 12M-4 72Q33 66 65 72T132 66" stroke="#ddf9ec" stroke-width="2" stroke-linecap="round" fill="none" opacity=".26"/>
-    <path d="M27 56q15-8 28-2M90 113q14-7 30-2M7 115q11-6 24-3" stroke="#b6f3eb" stroke-width="3" fill="none" stroke-linecap="round" opacity=".28"/>
-    <path d="M73 42q9-5 20-2M8 119l5-1M108 28l8-1" stroke="#096d91" stroke-width="2" fill="none" stroke-linecap="round" opacity=".32"/>
-    <ellipse cx="86" cy="20" rx="26" ry="7" fill="#aff0e3" opacity=".09"/>
-    <ellipse cx="34" cy="84" rx="39" ry="8" fill="#095b82" opacity=".14"/>
+  <radialGradient id="glow"><stop stop-color="#b5fff0" stop-opacity=".29"/><stop offset=".53" stop-color="#72dddb" stop-opacity=".10"/><stop offset="1" stop-color="#72dddb" stop-opacity="0"/></radialGradient>
+  <radialGradient id="deep"><stop stop-color="#0c668e" stop-opacity=".24"/><stop offset="1" stop-color="#0c668e" stop-opacity="0"/></radialGradient>
+  <pattern id="currents" width="128" height="128" patternUnits="userSpaceOnUse">
+    <path d="M15 24Q35 13 56 23T102 22M27 40Q52 32 78 37T113 34" fill="none" stroke="#c6f8ec" opacity=".16" stroke-width="2.3" stroke-linecap="round"/>
+    <path d="M12 76Q34 69 58 77T107 72M22 91Q46 83 73 89T117 87" fill="none" stroke="#0a6b94" opacity=".13" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M38 61q11-5 23-1M86 105q14-7 24-2M15 112q13-5 23-1" stroke="#e1fff5" stroke-width="2" fill="none" opacity=".23" stroke-linecap="round"/>
+    <path d="M80 16q9-3 16-2M11 49l11-3M56 116l9-2" stroke="#2a7795" stroke-width="2" fill="none" opacity=".28" stroke-linecap="round"/>
   </pattern>
 </defs>
-<rect width="256" height="256" fill="url(#lagoon)"/>
-<rect width="256" height="256" fill="url(#shallows)"/>
-<path d="M0 155Q60 129 122 148T256 155V173Q168 150 122 168T0 173Z" fill="#2fbbbc" opacity=".13"/>
-<path d="M0 210Q64 184 128 203T256 210" fill="none" stroke="#b5e9e0" stroke-width="2" opacity=".22"/>
+<rect width="256" height="256" fill="#279fb2"/>
+<ellipse cx="66" cy="81" rx="59" ry="37" fill="url(#glow)"/>
+<ellipse cx="185" cy="195" rx="64" ry="39" fill="url(#glow)"/>
+<ellipse cx="193" cy="66" rx="42" ry="48" fill="url(#deep)"/>
+<ellipse cx="63" cy="194" rx="48" ry="38" fill="url(#deep)"/>
+<rect width="256" height="256" fill="url(#currents)"/>
 </svg>
