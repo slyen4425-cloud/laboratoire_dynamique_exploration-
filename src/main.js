@@ -7,6 +7,7 @@ import {
 } from './core/surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
+import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefWaterfallGlints } from './render/relief-water-overlay.js?rev=relief-water-fx-v1';
 import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
 import {
   clipWorldArea
@@ -1067,6 +1068,10 @@ function render(timeSeconds = 0) {
 
     drawGround();
 
+    if (shouldRenderReliefWater(activeWorldDocument.id, area)) {
+      drawReliefRiverGlints(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
+    }
+
     area.obstacles.forEach(drawObstacle);
 
     worldObjectRenderer.draw(ctx, {
@@ -1077,6 +1082,10 @@ function render(timeSeconds = 0) {
       },
       objects: area.objects
     });
+
+    if (shouldRenderReliefWater(activeWorldDocument.id, area)) {
+      drawReliefWaterfallGlints(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
+    }
 
     portalRenderer.draw(ctx, {
       camera,
