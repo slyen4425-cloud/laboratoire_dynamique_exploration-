@@ -7,6 +7,8 @@
 - **Gel :** autres zones/extérieurs, routes/rivières, encounter/collision, combat, mouvement, bâtiments, entrées/portals, assets WebP.
 - **Tests :** sélection des 5 sols, peinture à points/touch, couches multiples, sérialisation/rechargement, taille du pinceau, gate ancien terrain/mouvement, CI npm test/check/Chromium, contrôle smartphone avant GREEN final.
 - **Risques :** UI masquée selon Area, pinceau ancien dirigé vers Terrain extérieur, persistances des calques, cache PWA. Publication sur preview isolée après succès des gates.
+- **Résultat de vérification (17/10) :** CI réelle [39016961336](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39016961336) SUCCESS : 503/503 tests Node, npm check et Chromium. Le navigateur a changé le fond vers `floor.wood.dark`, activé le pinceau intérieur, peint une zone `floor.tile.light` de largeur 64, avec famille de traversée intacte (`plain`), bouton Undo opérationnel, onglet Terrain extérieur masqué ; tests Encounter Capture inchangés.
+- **État :** GREEN technique / prévalidation, en attente de déploiement sur Pages et test smartphone auteur. Aucune fusion de sources de travail dans main.
 
 ---
 
