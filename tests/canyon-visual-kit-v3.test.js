@@ -67,8 +67,8 @@ test('canyon V3 uses versioned external art, not encoded assets inside HTML or r
   assert.match(runtime, /&kit=canyon-art-v3/);
   assert.match(builderMain, /cacheRevision: 'canyon-art-v3'/);
   assert.match(runtimeMain, /cacheRevision: 'canyon-art-v3'/);
-  assert.match(builderMain, /building-interiors-passages-ux-r1-canyon-art-v3-relief-v7/);
-  assert.match(runtimeMain, /world-object-library-v1-orientation-v1-canyon-art-v3-relief-v7/);
+  assert.match(builderMain, /building-interiors-passages-ux-r1-canyon-art-v3-relief-v8/);
+  assert.match(runtimeMain, /world-object-library-v1-orientation-v1-canyon-art-v3-relief-v8/);
   for (const script of [builderMain, runtimeMain]) {
     assert.doesNotMatch(script, /data:image\/svg\+xml|<svg xmlns=/);
   }
