@@ -1,10 +1,10 @@
 import { normalize } from './core/vector.js';
-import { stepMovement } from './core/movement.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import { stepMovement } from './core/movement.js?rev=collision-boundary-worldobject-obstacles-v1-r2&speed=terrain-family-speed-editor-v1';
 import { normalizeExplorationConfig } from './core/config.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
   createWorldTraversalRuleRegistry,
   resolveSurfaceTraversal
-} from './core/surface-traversal.js?rev=surface-traversal-replay-v1';
+} from './core/surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
 import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
@@ -70,7 +70,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=terrain-family-palette-editable-v2';
+} from './world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
   applyPortalTransition,
   findTriggeredPortal
@@ -78,7 +78,7 @@ import {
 import {
   createWorldEventController
 } from './world/world-event-controller.js?rev=world-event-message-v1';
-import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-palette-editable-v2';
+import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
   readWorldBuilderTestHandoff,
   readWorldBuilderTestSession
