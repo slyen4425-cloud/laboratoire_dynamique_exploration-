@@ -76,15 +76,36 @@ function drawShoreContacts(ctx,plan,camera,rect) {
     ctx.fillRect(-rect.width/2,top,rect.width,bottom-top);
     ctx.restore();
   }
-  // Sparse, fine foam; no broad shadow stroke or repeated thick white tilde.
+  // V9: a thin but readable white shoreline plus two broken spray flecks.
+  // Exactly the intersection anchors from the canonical WorldSurface river.
   for(const item of plan){
-    ctx.save();ctx.translate(item.x-camera.x,item.y-camera.y);
+    const brightness=Math.min(.92,.34+item.opacity*.78);
+    ctx.save();
+    ctx.translate(item.x-camera.x,item.y-camera.y);
     ctx.rotate(item.angle);
-    ctx.beginPath();ctx.moveTo(-item.length*.40,0);
-    ctx.quadraticCurveTo(-item.length*.12,-1.2,item.length*.14,.5);
-    ctx.globalAlpha=Math.min(.52,item.opacity*.68);
-    ctx.lineWidth=1.2;ctx.lineCap='round';
-    ctx.strokeStyle=item.highlightColor;ctx.stroke();ctx.restore();
+    ctx.lineCap='round';
+    ctx.strokeStyle=item.highlightColor;
+    // The low-opacity underglow is NOT a thick painted line.
+    ctx.globalAlpha=brightness*.26;
+    ctx.lineWidth=3.2;
+    ctx.beginPath();
+    ctx.moveTo(-item.length*.47,.7);
+    ctx.quadraticCurveTo(-item.length*.12,-2.7,item.length*.41,.7);
+    ctx.stroke();
+    // Bright slim interrupted surface foam at the same contact.
+    ctx.globalAlpha=brightness;
+    ctx.lineWidth=1.65;
+    ctx.beginPath();
+    ctx.moveTo(-item.length*.43,.2);
+    ctx.quadraticCurveTo(-item.length*.18,-1.6,item.length*.12,.5);
+    ctx.stroke();
+    ctx.globalAlpha=brightness*.83;
+    ctx.lineWidth=1.05;
+    ctx.beginPath();
+    ctx.moveTo(item.length*.18,-.5);
+    ctx.quadraticCurveTo(item.length*.29,-1.3,item.length*.39,-.4);
+    ctx.stroke();
+    ctx.restore();
   }
 }
 function drawBridgeImage(
