@@ -4,6 +4,8 @@ import test from 'node:test';
 import { demoWorldDocument } from '../src/world/demo-world.js';
 import { reliefCanyonPilotDocument, reliefCanyonPilotSummary } from '../src/world/relief-canyon-pilot-world.js';
 import { objectDefinitionCatalogV1 } from '../src/objects/object-definition-catalog.js';
+import { createMaterialRegistry } from '../src/materials/material-registry.js';
+import { materialPackV1 } from '../src/materials/material-pack-v1.js';
 import { resolveWorldObjectAsset } from '../src/assets/world-object-asset-adapter.js';
 import {
   createWorldBuilderDraft,
@@ -29,6 +31,12 @@ test('relief canyon is an opt-in canonical WorldDocument and keeps classic demo 
   assert.equal(area.encounters.randomEnabled, false);
   assert.equal(area.surface.rivers.length, 1);
   assert.equal(area.surface.routes.length, 2);
+  const materials = createMaterialRegistry(materialPackV1);
+  for (const feature of [area.surface, ...area.surface.zones,
+    ...area.surface.routes, ...area.surface.rivers]) {
+    assert.ok(materials.get(feature.materialId ?? feature.baseMaterialId),
+      'All visual material IDs must resolve before rendering');
+  }
   assert.ok(area.objects.length > 10);
   for (const object of area.objects) assert.ok(objectDefinitionCatalogV1.get(object.objectDefinitionId));
   const draft = createWorldBuilderDraft(reliefCanyonPilotDocument);
