@@ -41,7 +41,7 @@ export const reliefCanyonPilotDocument = normalizeWorldDocument({
       ],
       rivers: [
         { id: 'canyon-river', width: 182, terrainFamilyId: 'sea',
-          materialId: 'water.clear_blue', traversalRuleId: 'terrain.water',
+          materialId: 'water.canyon_turquoise', traversalRuleId: 'terrain.water',
           points: [{x:-60,y:820},{x:280,y:815},{x:620,y:845},{x:1060,y:822},
             {x:1480,y:860},{x:1830,y:830},{x:2450,y:840}] }
       ]
