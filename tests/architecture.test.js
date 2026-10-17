@@ -284,7 +284,14 @@ test('architecture sentinel: bridge renderer has no alternate visual fallback au
   );
 
   assert.equal(renderer.includes('drawBridgeFallback'), false);
-  assert.equal(renderer.includes('fillRect('), false);
+  // Keep the strict no-fallback rule on ordinary bridge/static render paths.
+  // V8 water immersion legitimately uses a river-clipped translucent fill
+  // inside drawShoreContacts, not a second WorldObject visual authority.
+  const bridgePath=renderer.split('function drawBridgeImage(')[1].split('function drawStaticImage(')[0];
+  const staticPath=renderer.split('function drawStaticImage(')[1].split('export function createWorldObjectRenderer(')[0];
+  assert.equal(bridgePath.includes('fillRect('), false);
+  assert.equal(staticPath.includes('fillRect('), false);
+  assert.match(renderer, /ctx\.clip\(mask\)/);
 });
 
 test('architecture sentinel: bootstrap waits for required WorldObject visuals', async () => {
