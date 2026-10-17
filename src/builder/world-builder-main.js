@@ -351,7 +351,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'building-interiors-passages-ux-r1'
+        'building-interiors-passages-ux-r1-canyon-art-v3'
     });
 
   const assetIds = [
