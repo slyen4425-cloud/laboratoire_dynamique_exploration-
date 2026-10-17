@@ -7,7 +7,9 @@
 - **Gel :** mouvement, Collision World, falaises après correction validée, rencontres, Combat, caméra, éditeur de terrain, couches statiques/culling et cache, catalog d'assets binaires.
 - **Gates :** tests purs de plans d'ondulation, filtrage de la démo, sérialisation/matériaux inchangés côté gameplay, CI Node/check/Chromium du Builder et Encounter, benchmark de surcharge visuelle à confirmer sur téléphone en mouvement. Pas de GREEN final sans contrôle auteur.
 - **Risques :** sur-rendu des marques hors champ, surcoût du canvas mobile et lecture visuelle avec personnages. Garder le raster statique et limiter les motifs visibles. Une image de référence n'est pas un ensemble de sprites directement découpables.
-- **État :** ouvert ; prévalidation technique à vérifier avant publication Pages isolée.
+- **État technique (17/10) :** CI [39031516266](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39031516266) **SUCCESS** (tests Node + check + Chromium réel : Builder, textures/pinceau intérieurs, carte relief opt-in et Encounter). Tests de courant, d'animation de chute, de non-mutation de WorldDocument/collision et de cache-busting. Un échec transitoire de sentinelle d'entrée HTML a été diagnostiqué et corrigé. **Prévalidation seulement** : attente de déploiement Pages et d'essai visuel/performance sur smartphone.
+- **Point d'attention produit :** le retour « collision falaise légèrement trop stricte » est conservé comme micro-lot ultérieur indépendant des effets d'eau, sans toucher au Collision World.
+- **Prochaine action :** checkpoint technique, publication Pages depuis snapshot immuable via PR infrastructure, essai visuel du courant/écume dans « Tester en jeu », puis décision sur assets finaux peints. Aucune validation GREEN finale sans verdict créateur.
 
 ---
 
