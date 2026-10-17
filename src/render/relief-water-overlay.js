@@ -100,6 +100,45 @@ export function drawReliefRiverGlints(ctx, { area, camera, viewport, timeSeconds
   return drawn;
 }
 
+// Subtle moving foam clinging to both canonical riverbanks. These are only
+// translucent strokes, not a second water geometry or collision polygon.
+export function drawReliefRiverBankFoam(ctx, { area, camera, viewport, timeSeconds = 0 } = {}) {
+  if (!area?.surface?.rivers) return 0;
+  const t = Number.isFinite(timeSeconds) ? timeSeconds : 0;
+  let drawn = 0;
+  for (const river of area.surface.rivers) {
+    if (river.materialId !== 'water.canyon_turquoise') continue;
+    const { result } = riverSamples(river);
+    if (result.length < 2) continue;
+    const count = Math.min(20, Math.floor(result.length / 3));
+    for (let index = 0; index < count; index += 1) {
+      const sample = result[Math.min(result.length - 1, Math.floor((index + 0.5) * result.length / count))];
+      for (const side of [-1, 1]) {
+        const offset = side * river.width * 0.463;
+        const x = sample.x - Math.sin(sample.angle) * offset - camera.x;
+        const y = sample.y + Math.cos(sample.angle) * offset - camera.y;
+        if (x < -40 || y < -40 || x > viewport.width + 40 || y > viewport.height + 40) continue;
+        const sway = Math.sin(t * 1.2 + index * 0.95 + side) * 3;
+        const width = 8 + (index % 4) * 3;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(sample.angle);
+        ctx.strokeStyle = side > 0 ? '#e6fff0' : '#d7fbef';
+        ctx.globalAlpha = 0.32 + 0.13 * Math.sin(t * 0.9 + index);
+        ctx.lineWidth = 2.4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-width, sway);
+        ctx.quadraticCurveTo(0, sway - side * 4, width, sway);
+        ctx.stroke();
+        ctx.restore();
+        drawn++;
+      }
+    }
+  }
+  return drawn;
+}
+
 export function drawReliefWaterfallGlints(ctx, { area, camera, viewport, timeSeconds = 0 } = {}) {
   if (!area?.objects) return 0;
   const t = Number.isFinite(timeSeconds) ? timeSeconds : 0;
