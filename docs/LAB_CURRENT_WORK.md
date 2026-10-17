@@ -1,3 +1,14 @@
+# Lot actif — 17/10/2026 — V9 : falaise habillage de sol, bases arrondies et écume lisible
+
+- **Validation partielle auteur :** V8 immersion eau/roche ACCEPTÉE ; écume trop discrète et graphisme des trois falaises pas acceptable (bases pointues, roche encore trop simple). Nouveau besoin : sommet de falaise qui reprend **réellement le matériau de sol présent derrière**, librement modifiable dans Builder (herbe/neige/volcan/ville).
+- **Base technique V8 :** snapshot immuable `b252bea83b3c473cd02d97ca0efcbc70a6597454` (CI 39071270373 SUCCESS, Pages 39071380752 SUCCESS). START `checkpoint/exploration-start-cliff-topography-v9-2026-10-17`, branche `work/exploration-cliff-topography-v9-2026-10-17`. V8 reste rollback.
+- **Propriétaires réutilisés :** WorldSurface seul géomètre, Material Registry seul décrit le matériau, Image/Material Loader donne la texture existante ; WorldObject Definition décrit une bande purement visuelle `terrainCrest`, WorldObject Renderer affiche le sommet et l'eau ; V8 helper `object-shore-contact` calcule uniquement des effets visuels. Builder et runtime même fonction, pas de duplication.
+- **Lot :** optimiser l'écume au vrai bord d'eau, restyler les 3 SVG existants (sous-couche arrondie, volume illustratif plus naturel sans modification des dimensions), projeter le `surface.baseMaterialId` ou le matériau d'une zone/route recouvrant le **point canonique au-dessus de la falaise** avec son asset existant; valeur de repli depuis la palette Material Registry. Aucune texture encodée dans JS ni nouveau duplicata, aucun changement du schéma WorldDocument.
+- **Gels :** positions/rotation/scale des objets, empreintes/collisions, déplacement et caméra, surfaces/rivières/éditeur, Combat/Encounter, cascade V8, eau animée V6, autres thèmes, rendu ordinaire. Le rendu ne déduit jamais la géométrie ou la collision depuis les pixels.
+- **Gates :** preview et runtime utilisent même renderer; mutation des zones du WorldDocument change immédiatement le sommet; contrôle de texture réelle (pas seulement couleur), fallbacks propres, échelle/rotation, écume visible limitée au contact, pas de modification sans contact, Node/check/Chromium Builder/Encounter/Combat + CI; sortie artistique après test Pixel créateur seulement.
+
+---
+
 # Lot actif — 17/10/2026 — V8 : immersion eau/roche et nettoyage des traits (correctif artistique V7)
 
 - **Retour créateur :** V7 rejetée (falaises trop cartoon, bandes marron aux sommets, aucune immersion perceptible ; cascade traversée de bandes blanches trop épaisses). Rejeter GREEN artistique V7. Ne pas annoncer résultat définitif avant essai mobile.
