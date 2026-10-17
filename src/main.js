@@ -29,7 +29,7 @@ import {
 } from './materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
-} from './assets/material-asset-adapter.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
+} from './assets/material-asset-adapter.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&kit=canyon-v3';
 import {
   createUserMaterialAssetResolver
 } from './assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
@@ -42,7 +42,7 @@ import {
 import {
   createWorldObjectAssetResolver,
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from './assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2&kit=canyon-v3';
 import {
   createUserWorldObjectAssetResolver
 } from './assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
