@@ -6,4 +6,31 @@
 <path d="M77 53Q92 34 120 37Q152 28 190 47" fill="none" stroke="#f9fffc" stroke-width="13" stroke-linecap="round"/>
 <path d="M72 330Q55 353 73 372Q91 387 128 378Q164 394 199 369Q218 376 235 370" fill="none" stroke="#e7fcff" stroke-width="16" stroke-linecap="round" opacity=".8"/>
 <g fill="#eefeff"><circle cx="43" cy="372" r="8"/><circle cx="77" cy="405" r="6"/><circle cx="237" cy="386" r="8"/><circle cx="221" cy="411" r="5"/><circle cx="115" cy="420" r="5"/></g>
+
+<defs>
+ <linearGradient id="glass" x1="0" x2="1" y1="0" y2=".2">
+  <stop stop-color="#073c70" stop-opacity=".78"/><stop offset=".31" stop-color="#72e3e8" stop-opacity=".38"/>
+  <stop offset=".68" stop-color="#c7fbf0" stop-opacity=".23"/><stop offset="1" stop-color="#187caf" stop-opacity=".76"/>
+ </linearGradient>
+ <linearGradient id="pool" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#0c7196" stop-opacity=".62"/><stop offset="1" stop-color="#5ce2db" stop-opacity=".04"/>
+ </linearGradient>
+</defs>
+<!-- A translucent shaded water curtain gives depth while preserving the existing silhouette. -->
+<path d="M73 70Q88 119 77 182T78 297Q70 328 91 365Q107 359 111 341Q99 283 114 225T110 116L110 52Z" fill="url(#glass)" opacity=".50"/>
+<path d="M178 56Q192 112 182 177Q178 249 192 324Q203 349 216 365L231 365Q203 325 209 257T199 114L208 63Z" fill="#06739f" opacity=".34"/>
+<path d="M111 62Q116 114 108 170T112 273Q107 320 126 348" fill="none" stroke="#aaf4ed" stroke-width="7" opacity=".45" stroke-linecap="round"/>
+<path d="M141 44Q131 91 146 145T143 252T153 343" fill="none" stroke="#f4ffef" stroke-width="4" opacity=".52" stroke-linecap="round"/>
+<path d="M177 87Q180 128 172 177T184 271T179 333" fill="none" stroke="#e6fff3" stroke-width="5" opacity=".53" stroke-linecap="round"/>
+<path d="M94 140Q101 162 94 204M121 223Q117 244 124 265M162 142Q170 165 163 179M193 220Q187 242 197 259" fill="none" stroke="#f3ffff" stroke-width="3" opacity=".44" stroke-linecap="round"/>
+<!-- Soft, layered splash pool; no collision: this is the canonical object's artwork. -->
+<ellipse cx="144" cy="381" rx="123" ry="31" fill="url(#pool)" opacity=".88"/>
+<path d="M37 386Q86 366 112 385T190 379T253 389" fill="none" stroke="#91fff1" stroke-width="9" stroke-linecap="round" opacity=".42"/>
+<path d="M38 389Q83 372 115 389T197 384T252 389" fill="none" stroke="#f1fff4" stroke-width="3" stroke-linecap="round" opacity=".66"/>
+<path d="M28 397Q63 383 84 399M109 412Q149 400 181 410M195 394Q217 383 254 396" fill="none" stroke="#defef2" stroke-width="4" opacity=".65" stroke-linecap="round"/>
+<path d="M64 362Q81 348 91 360M124 365Q143 351 157 364M183 363Q198 349 215 361" fill="none" stroke="#f6ffff" stroke-width="5" opacity=".74" stroke-linecap="round"/>
+<g fill="#ebfff7" opacity=".76">
+ <circle cx="58" cy="360" r="4"/><circle cx="91" cy="393" r="5"/><circle cx="117" cy="357" r="3"/>
+ <circle cx="179" cy="404" r="4"/><circle cx="201" cy="355" r="5"/><circle cx="246" cy="371" r="3"/>
+</g>
 </svg>
