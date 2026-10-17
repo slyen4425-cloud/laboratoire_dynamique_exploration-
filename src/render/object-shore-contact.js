@@ -37,7 +37,16 @@ export function planObjectShoreContacts({object,surface,materialRegistry}={}) {
   const plan=[];
   for(const river of rivers) {
     const material=materialRegistry.resolve?.(river.materialId);
-    const style=material?.kind==='water' ? material.render?.shoreContact : null;
+    const appearance=material?.render;
+    // Every current/future water material can participate. The optional
+    // contact palette overrides default visual colors without a new biome engine.
+    const style=material?.kind==='water' && appearance
+      ? (appearance.shoreContact ?? {
+          shadowColor: appearance.innerBankColor ?? appearance.waterColor,
+          highlightColor: appearance.highlightColor,
+          opacity: 0.34
+        })
+      : null;
     if(!style || !Number.isFinite(river.width)||river.width<=0)continue;
     const path=samplesFor(river);
     if(path.length<2)continue;
