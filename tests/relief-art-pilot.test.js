@@ -113,6 +113,6 @@ test('cliff rim adjustment is cache-busted in both published entrypoints and cat
   }
   for (const path of ['src/main.js', 'src/builder/world-builder-main.js']) {
     const source = fs.readFileSync(path, 'utf8');
-    assert.match(source, /object-definition-catalog\\.js\\?rev=[^'"]+&rim=relief-cliff-rim-v1/);
+    assert.ok(source.includes('object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1'));
   }
 });
