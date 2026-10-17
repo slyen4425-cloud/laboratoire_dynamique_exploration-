@@ -71,7 +71,7 @@ test('foam pass is bounded, viewport culled, animated and read-only', () => {
 
 test('waterfall artwork adds layered foam while retaining the unique canonical sprite', () => {
   const source = fs.readFileSync('assets/exploration/objects/relief/waterfall_blue_01.svg','utf8');
-  assert.match(source, /id="glass"/);
+  assert.match(source, /id="deep"/);
   assert.match(source, /id="pool"/);
   assert.match(source, /<\/svg>\s*$/);
   const script = fs.readFileSync('src/main.js','utf8');
