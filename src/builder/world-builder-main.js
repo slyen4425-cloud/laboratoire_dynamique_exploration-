@@ -62,7 +62,7 @@ import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../material
 import {
   clipWorldArea
 } from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2&shore=themeable-v7';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2&shore=themeable-v8';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -352,7 +352,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v7'
+        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v8'
     });
 
   const assetIds = [
