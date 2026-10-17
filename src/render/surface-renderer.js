@@ -637,6 +637,37 @@ function drawWaterMaterialRaw(ctx, river, camera, material, textureLoader) {
   const centerImage = textureLoader?.get(material.assets.center);
   const centerPattern = worldPattern(ctx, centerImage, camera);
 
+  // One continuous curved river for explicitly opted-in materials.
+  // Unlike the segmented drawImage bank ribbon, this cannot expose the
+  // individual rectangular slices at changes of tangent. Geometry and
+  // traversal still come exclusively from WorldArea.surface.rivers[].
+  if (render.ribbonMode === 'continuous-stroke') {
+    strokePath(
+      ctx, river, camera,
+      river.width + render.outerBankPadding,
+      render.outerBankColor,
+      0.30
+    );
+    strokePath(
+      ctx, river, camera,
+      river.width + render.innerBankPadding,
+      render.innerBankColor,
+      0.70
+    );
+    strokePath(
+      ctx, river, camera,
+      river.width,
+      centerPattern ?? render.waterColor
+    );
+    strokePath(
+      ctx, river, camera,
+      Math.max(3, river.width * render.highlightRatio),
+      render.highlightColor,
+      render.highlightOpacity
+    );
+    return;
+  }
+
   const hasTexturedBank = drawTexturedRibbon(
     ctx,
     river,
