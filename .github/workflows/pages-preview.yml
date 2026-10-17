@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: canyon-continuous-river-v4-prevalidation-2026-10-17
+# preview-revision: canyon-no-tile-water-v5-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 76fb8b6d946be7bb06e8c7b854313059986733ac
+          ref: c5b1af6e4cc8168628bce7f13a039ba8981dc047
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
