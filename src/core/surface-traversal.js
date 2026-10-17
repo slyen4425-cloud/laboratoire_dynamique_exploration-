@@ -88,6 +88,20 @@ export function createTraversalRuleRegistry(pack = traversalRulePackV1) {
 export const defaultTraversalRuleRegistry =
   createTraversalRuleRegistry(traversalRulePackV1);
 
+// Build one canonical registry from WorldDocument gameplay data. No renderer,
+ // materialId or Builder-specific speed logic participates in traversal.
+export function createWorldTraversalRuleRegistry(worldDocument) {
+  const rules = [...traversalRulePackV1.rules];
+  for (const family of worldDocument?.terrainFamilies ?? []) {
+    if (!family?.id || !family.traversalModes) continue;
+    rules.push({
+      id: `terrain.family.${family.id}`,
+      modes: family.traversalModes
+    });
+  }
+  return createTraversalRuleRegistry({ rules });
+}
+
 export function normalizeLocomotionProfile(raw = null) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const requested = Array.isArray(source.modes)
@@ -197,6 +211,7 @@ export function resolveBaseSurfaceFeature(
       return Object.freeze({
         kind: 'river',
         id: river.id,
+        terrainFamilyId: river.terrainFamilyId ?? 'sea',
         traversalRuleId:
           river.traversalRuleId ?? 'terrain.water'
       });
@@ -208,8 +223,24 @@ export function resolveBaseSurfaceFeature(
       return Object.freeze({
         kind: 'route',
         id: route.id,
+        terrainFamilyId: route.terrainFamilyId ?? 'road',
         traversalRuleId:
           route.traversalRuleId ?? 'terrain.road'
+      });
+    }
+  }
+
+  // Last painted zone is visually uppermost; traversal uses the same
+  // stored geometry but never reads the visual material/feather mask.
+  const zones = surface.zones ?? [];
+  for (let i = zones.length - 1; i >= 0; i--) {
+    const zone = zones[i];
+    if (surfaceFeatureContainsPoint(zone, x, y, 0)) {
+      return Object.freeze({
+        kind: 'zone',
+        id: zone.id,
+        terrainFamilyId: zone.terrainFamilyId ?? surface.baseTerrainFamilyId,
+        traversalRuleId: surface.baseTraversalRuleId ?? 'terrain.ground'
       });
     }
   }
@@ -217,6 +248,7 @@ export function resolveBaseSurfaceFeature(
   return Object.freeze({
     kind: 'base',
     id: 'surface-base',
+    terrainFamilyId: surface.baseTerrainFamilyId ?? 'forest',
     traversalRuleId:
       surface.baseTraversalRuleId ?? 'terrain.ground'
   });
@@ -270,7 +302,11 @@ export function resolveSurfaceTraversal(
   const feature =
     bridgeOverrideAt(world, baseFeature, x, y) ??
     baseFeature;
-  const rule = registry.require(feature.traversalRuleId);
+  const familyRuleId = feature.terrainFamilyId
+    ? `terrain.family.${feature.terrainFamilyId}`
+    : null;
+  const rule = (familyRuleId && registry.get(familyRuleId))
+    ?? registry.require(feature.traversalRuleId);
   const actorResolution = resolveRuleForActor(rule, actor);
 
   return Object.freeze({
