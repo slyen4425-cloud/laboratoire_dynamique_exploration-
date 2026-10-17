@@ -7,7 +7,7 @@ import {
 } from './core/surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
-import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefWaterfallGlints } from './render/relief-water-overlay.js?rev=relief-water-fx-v1';
+import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefRiverBankFoam, drawReliefWaterfallGlints } from './render/relief-water-overlay.js?rev=relief-water-fx-v1&art=canyon-water-art-v2';
 import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
 import {
   clipWorldArea
@@ -22,14 +22,14 @@ import {
 import {
   createCaptureActorPreviewProviderV1
 } from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
-import { materialPackV1 } from './materials/material-pack-v1.js?rev=interior-floor-textures-v1';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
 import { createMaterialRegistry } from './materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   composeMaterialPackWithUserMaterials
 } from './materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
-} from './assets/material-asset-adapter.js?rev=interior-floor-textures-v1';
+} from './assets/material-asset-adapter.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
 import {
   createUserMaterialAssetResolver
 } from './assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
@@ -1070,6 +1070,7 @@ function render(timeSeconds = 0) {
 
     if (shouldRenderReliefWater(activeWorldDocument.id, area)) {
       drawReliefRiverGlints(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
+      drawReliefRiverBankFoam(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
     }
 
     area.obstacles.forEach(drawObstacle);
