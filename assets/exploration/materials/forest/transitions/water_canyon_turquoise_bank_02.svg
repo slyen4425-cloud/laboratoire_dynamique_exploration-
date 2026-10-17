@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 192">
+<defs>
+<!-- Soft riverbank: alpha 0 at outermost pixels means no hard rectangular tile boundary -->
+<linearGradient id="bank" x1="0" y1="0" x2="0" y2="1">
+<stop stop-color="#d5cba2" stop-opacity="0"/>
+<stop offset=".07" stop-color="#688b6b" stop-opacity=".11"/>
+<stop offset=".115" stop-color="#d9cc9b" stop-opacity=".37"/>
+<stop offset=".15" stop-color="#e4e0ae" stop-opacity=".48"/>
+<stop offset=".19" stop-color="#a7eadb" stop-opacity=".28"/>
+<stop offset=".27" stop-color="#38b4bd" stop-opacity=".18"/>
+<stop offset=".35" stop-color="#239cae" stop-opacity=".05"/>
+<stop offset=".5" stop-color="#239cae" stop-opacity="0"/>
+<stop offset=".65" stop-color="#239cae" stop-opacity=".05"/>
+<stop offset=".73" stop-color="#38b4bd" stop-opacity=".18"/>
+<stop offset=".81" stop-color="#a7eadb" stop-opacity=".28"/>
+<stop offset=".85" stop-color="#e4e0ae" stop-opacity=".48"/>
+<stop offset=".885" stop-color="#d9cc9b" stop-opacity=".37"/>
+<stop offset=".93" stop-color="#688b6b" stop-opacity=".11"/>
+<stop offset="1" stop-color="#d5cba2" stop-opacity="0"/>
+</linearGradient>
+</defs>
+<rect width="512" height="192" fill="url(#bank)"/>
+<!-- No long stripes and both x ends are blank; irregular short foam only -->
+<g fill="none" stroke-linecap="round">
+<path d="M51 29q11-5 27-1t28-1M140 30q19-3 32 3m35-3q15-8 35-1m40 0q10-4 21-1M356 31q18-7 33-1m50-3q13-1 19 2" stroke="#f0fff0" stroke-width="2.3" opacity=".52"/>
+<path d="M62 158q22-7 39-2M143 159q20-3 32 0m34 2q16-7 33-4M300 158q12-3 29 1M371 163q19-7 36-4m29-1q11-2 23 0" stroke="#edfff3" stroke-width="2.5" opacity=".55"/>
+<path d="M103 39q7 1 12-2m142 1q12-4 18 1m99-4q8 3 17-1M133 150q8 2 19-2m131 4q9-3 17 0m105-4q8 2 17-1" stroke="#d8fff1" stroke-width="2.1" opacity=".55"/>
+</g>
+<g fill="#faf8db" opacity=".25"><ellipse cx="120" cy="28" rx="3" ry="2"/><ellipse cx="326" cy="162" rx="5" ry="2"/><ellipse cx="403" cy="27" rx="3" ry="2"/></g>
+</svg>
