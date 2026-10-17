@@ -87,6 +87,23 @@ try{
       const image=new Image();image.onload=()=>resolve({src,width:image.naturalWidth,ok:true});
       image.onerror=()=>resolve({src,ok:false});image.src=src;
     })));
+    // Real browser pixels, not mocked calls: a square viewBox without intrinsic SVG
+    // dimensions letterboxes in the default 300x150 Image viewport. The repeated
+    // CanvasPattern then alternates opaque turquoise and transparent ground.
+    const waterTile=await new Promise(resolve=>{
+      const image=new Image();
+      image.onload=()=>{
+        const probe=document.createElement('canvas');probe.width=630;probe.height=300;
+        const ctx=probe.getContext('2d');
+        const pattern=ctx.createPattern(image,'repeat');
+        ctx.fillStyle=pattern;ctx.fillRect(0,0,probe.width,probe.height);
+        const alphas=[10,70,130,170,220,270,310,370,430,470,530,590]
+          .map(x=>ctx.getImageData(x,70,1,1).data[3]);
+        resolve({width:image.naturalWidth,height:image.naturalHeight,opaque:alphas.every(a=>a===255),alphas});
+      };
+      image.onerror=()=>resolve({error:'water asset load'});
+      image.src='./assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg';
+    });
     const canvas=document.querySelector('#builder-preview');
     const area=json.areas[0];
     const banner=document.querySelector('#relief-pilot-notice');
@@ -95,7 +112,7 @@ try{
       riverCount:area.surface.rivers.length,
       waterMaterial:area.surface.rivers[0]?.materialId,
       waterOverlayLoaded:performance.getEntriesByType('resource').some(r=>r.name.includes('relief-water-overlay.js')),
-      images,
+      images,waterTile,
       bannerVisible:!banner.hidden,classicLink:!!banner.querySelector('a[href*="builder.html?rev="]'),
       canvasSize:[canvas.width,canvas.height],tabs:layout};
   })()`);
@@ -103,6 +120,7 @@ try{
   if(data.id!=='relief-canyon-pilot-v1'||data.objectCount<12||data.riverCount!==1||
      data.waterMaterial!=='water.canyon_turquoise'||!data.waterOverlayLoaded||
      !data.bannerVisible||!data.classicLink||!data.images.every(img=>img.ok&&img.width>0)||
+     data.waterTile?.width!==256||data.waterTile?.height!==256||!data.waterTile?.opaque||
      data.canvasSize.some(size=>size<=0)||!data.tabs.includes('terrain')) {
     throw Error('Real Builder relief pilot smoke failed');
   }
