@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: interior-floor-brush-prevalidation-2026-10-17
+# preview-revision: relief-art-pilot-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 6fb5aa394ee4769a34df60e34ce83d0f0a57c4d2
+          ref: 4a28b71b1b92ac191568cde93101a13fac43daa6
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
@@ -58,6 +58,9 @@ jobs:
 
       - name: Verify indoor floor palette and real brush in Chromium
         run: node scripts/smoke-interior-floor-brush.mjs
+
+      - name: Verify optional canyon relief WorldDocument and SVG in Chromium
+        run: node scripts/smoke-relief-canyon-pilot.mjs
 
       - name: Verify actual encounter startup in Chromium
         run: node scripts/smoke-modern-combat-preview.mjs
