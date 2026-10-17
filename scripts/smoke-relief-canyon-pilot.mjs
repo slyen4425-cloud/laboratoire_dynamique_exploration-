@@ -106,6 +106,37 @@ try{
      data.canvasSize.some(size=>size<=0)||!data.tabs.includes('terrain')) {
     throw Error('Real Builder relief pilot smoke failed');
   }
+
+  // Real Chromium Canvas: check gentle world-anchored shimmer changes its
+  // actual pixels with time while using one already-loaded WorldArea geometry.
+  const waterMotion=await run(`(async()=>{
+    const {drawReliefRiverGlints, drawReliefRiverBankFoam} =
+      await import('./src/render/relief-water-overlay.js?smoke=organic-reflections-v6');
+    const area=JSON.parse(document.querySelector('#json-preview').value).areas[0];
+    function renderWater(seconds){
+      const probe=document.createElement('canvas');
+      probe.width=850;probe.height=330;
+      const context=probe.getContext('2d',{willReadFrequently:true});
+      context.fillStyle='#209bb9';
+      context.fillRect(0,0,850,330);
+      const view={area,camera:{x:280,y:690},viewport:{width:850,height:330},timeSeconds:seconds};
+      const glints=drawReliefRiverGlints(context,view);
+      const foam=drawReliefRiverBankFoam(context,view);
+      return {pixels:context.getImageData(0,0,850,330).data,glints,foam};
+    }
+    const first=renderWater(0),next=renderWater(9);
+    let changed=0;
+    for(let i=0;i<first.pixels.length;i+=16){
+      if(first.pixels[i]!==next.pixels[i]||
+         first.pixels[i+1]!==next.pixels[i+1]||
+         first.pixels[i+2]!==next.pixels[i+2])changed++;
+    }
+    return {changed,glints:first.glints,foam:first.foam,riverCount:area.surface.rivers.length};
+  })()`);
+  console.log('Relief water shimmer Chromium:',JSON.stringify(waterMotion));
+  if(waterMotion.riverCount!==1 || waterMotion.glints<2 ||
+     waterMotion.foam<2 || waterMotion.changed<40)
+    throw Error('Real Canvas water reflections static, absent or not flowing');
   console.log('GREEN: same Builder, optional canyon WorldDocument, six SVG assets loaded, classic link present');
 }finally{
   socket?.close();

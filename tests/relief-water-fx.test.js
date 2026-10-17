@@ -102,6 +102,10 @@ test('the pilot dynamic overlay is gated in both real entrypoints, with no force
   assert.match(builder, /shouldRenderReliefWater\(document\.id, area\)/);
   assert.match(builder, /drawReliefRiverGlints\(ctx, \{ area, camera, viewport, timeSeconds: 0 \}\)/);
   assert.match(builder, /drawReliefWaterfallGlints\(ctx, \{ area, camera, viewport, timeSeconds: 0 \}\)/);
+  assert.match(runtime, /relief-water-overlay\.js\?rev=relief-water-fx-v1&art=canyon-water-art-v2&shimmer=organic-reflections-v6/);
+  assert.match(builder, /relief-water-overlay\.js\?rev=relief-water-fx-v1&art=canyon-water-art-v2&shimmer=organic-reflections-v6/);
+  assert.match(index, /&shimmer=organic-reflections-v6/);
+  assert.match(html, /&shimmer=organic-reflections-v6/);
   assert.match(index, /&water=relief-water-fx-v1/);
   assert.match(html, /&water=relief-water-fx-v1/);
 });
