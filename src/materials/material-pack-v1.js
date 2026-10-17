@@ -388,7 +388,7 @@ export const materialPackV1 = Object.freeze({
       label: 'Canyon · eau turquoise à berges claires',
       assets: Object.freeze({
         center: 'texture.water.canyon.turquoise.01',
-        bank: null // Canyon river uses continuous vector banks; no sprite strip loaded,
+        bank: null, // Canyon uses continuous vector banks; no sprite strip loaded
         decals: Object.freeze([])
       }),
       render: Object.freeze({
