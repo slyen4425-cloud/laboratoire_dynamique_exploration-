@@ -23,7 +23,7 @@ import {
   defaultTraversalRuleRegistry,
   resolveBaseSurfaceFeature,
   resolveSurfaceTraversal
-} from './surface-traversal.js?rev=surface-traversal-replay-v1';
+} from './surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 
 const COLLISION_EPSILON = 1e-6;
 
