@@ -1,3 +1,16 @@
+# Lot actif — 17/10/2026 — Eau canyon 2,5D : reflets organiques V6
+
+- **Verdict auteur :** V5 sans rectangles validée (« beaucoup mieux ») ; micro-vagues répétées jugées inesthétiques. Aucun changement de géométrie voulu.
+- **Source publique de référence :** `preview/exploration-canyon-water-seamless-v5-2026-10-17` @ `c5b1af6e4cc8168628bce7f13a039ba8981dc047` (CI `39050092523` SUCCESS ; PR Pages #143). Cette V5 est le rollback, résultat artistique de l'animation toujours NON GREEN.
+- **START exact :** `checkpoint/exploration-start-water-reflections-v6-2026-10-17` au SHA V5, branche unique `work/exploration-water-reflections-v6-2026-10-17`.
+- **Cause :** `src/render/relief-water-overlay.js` dessine ~32 doubles arcs blancs répétés sur l'axe du courant et 2 × ~20 courtes lignes de rive, espacés régulièrement (séries artificielles). La forme du fleuve et sa teinte unie sont maintenant correctes.
+- **Périmètre :** **un seul propriétaire du rendu animé** : modifier les fonctions existantes `reliefWaterMarks`, `drawReliefRiverGlints` et `drawReliefRiverBankFoam` pour produire des reflets plus longs, irréguliers, doux, translucides, dérivant avec le courant, écume rare et discrète uniquement sur les berges. Garder `drawReliefWaterfallGlints` inchangée. Pas de moteur WebGL, nouveau canvas global, filtre, texture carrelée, shader, effet visuel inline ou nouveau service.
+- **Gel :** V5 couleur eau et matériau center=null ; WorldDocument/World Surface/Traversal/Collision World, vitesse, caméra, sprite cascade, objets, Combat/Encounter, input et Builder édition ; TerrainTileCache et pré-render statique inchangés. Runtime `requestAnimationFrame` préexistant seulement ; Builder toujours image statique à t=0.
+- **Critères :** formes non identiques/non régulièrement espacées et position monde stable à caméra donnée, changements animés déterministes dans le temps, pas de répétition de sprites, aucun travail hors-champ massif, aucune altération du WorldDocument, carte classique inchangée. TDD/sentinelles Node, rendu Canvas réel dans Chromium Builder, npm check, CI Builder/Encounter ; prévalidation technique seulement puis test Pixel créateur avant GREEN final.
+- **Risques :** davantage de reflets peut créer du bruit ou compromettre la fluidité ; nombre de traces strictement plafonné, opacités faibles, pas de re-raster terrain. Vérifier avant publication qu'aucune PR concurrente n'a modifié le pin Pages.
+
+---
+
 # Lot actif — 17/10/2026 — V5 : suppression totale des motifs répétés dans l'eau du canyon
 
 - **Retour utilisateur / défaut à reproduire :** screenshot 18:25 du canyon montrant une rivière en alternance de blocs bleu turquoise et vert pâle, malgré les essais V2/V3. Le test de fluidité était OK mais le rendu artistique est **NON GREEN**.
