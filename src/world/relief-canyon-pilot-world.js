@@ -3,8 +3,6 @@
 import { demoWorldDocument } from './demo-world.js?rev=relief-canyon-pilot-v1';
 import { normalizeWorldDocument } from './world-document-model.js?rev=relief-canyon-pilot-v1';
 
-const forest = demoWorldDocument.areas.find((area) => area.id === 'forest-exterior');
-
 function prop(id, objectDefinitionId, x, y, scaleX = 1, scaleY = scaleX) {
   return { id, objectDefinitionId, transform: { x, y, rotationDeg: 0, scaleX, scaleY } };
 }
