@@ -172,19 +172,19 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
   'object.relief.cliff.grassy_edge.01': Object.freeze({
     id: 'object.relief.cliff.grassy_edge.01',
     kind: 'rock-visual',
-    path: './assets/exploration/objects/relief/cliff_grassy_edge_01.svg',
+    path: './assets/exploration/objects/relief/cliff_grassy_edge_02.svg',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.relief.cliff.corner.01': Object.freeze({
     id: 'object.relief.cliff.corner.01',
     kind: 'rock-visual',
-    path: './assets/exploration/objects/relief/cliff_corner_01.svg',
+    path: './assets/exploration/objects/relief/cliff_corner_02.svg',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.relief.waterfall.blue.01': Object.freeze({
     id: 'object.relief.waterfall.blue.01',
     kind: 'decor-visual',
-    path: './assets/exploration/objects/relief/waterfall_blue_01.svg',
+    path: './assets/exploration/objects/relief/waterfall_rockfall_02.svg',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.stairs.stone.grand.01': Object.freeze({
