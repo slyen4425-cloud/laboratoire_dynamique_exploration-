@@ -76,6 +76,6 @@ test('public Exploration entry cache-busts the interior random encounter policy 
 
   assert.match(
     html,
-    /src=["']\.\/src\/main\.js\?rev=builder-paint-workflow-fix-v1&runtime=terrain-tile-hitch-culling-v1&encounter=selected-elements-v1&speed=terrain-family-speed-editor-v1["']/
+    /src=["']\.\/src\/main\.js\?rev=builder-paint-workflow-fix-v1&runtime=terrain-tile-hitch-culling-v1&encounter=selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1["']/
   );
 });
