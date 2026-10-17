@@ -31,8 +31,8 @@ function surfaceFor(river) {
 
 test('canyon water SVG intrinsic dimensions match its square viewBox, preventing transparent repetition bands', () => {
   const svg = readFileSync(new URL('../assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg', import.meta.url), 'utf8');
-  assert.match(svg, /<svg\\b[^>]*\\bwidth="256"[^>]*\\bheight="256"[^>]*\\bviewBox="0 0 256 256"/);
-  assert.match(svg, /<rect width="256" height="256" fill="#279fb2"\\/>/);
+  assert.match(svg, /<svg\b[^>]*\bwidth="256"[^>]*\bheight="256"[^>]*\bviewBox="0 0 256 256"/);
+  assert.match(svg, /<rect width="256" height="256" fill="#279fb2"\/>/);
 });
 
 test('canyon only opts into the single continuous WaterSurface renderer path', () => {
