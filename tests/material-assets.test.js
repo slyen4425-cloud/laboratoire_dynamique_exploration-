@@ -35,9 +35,9 @@ const EXPECTED = Object.freeze({
   'texture.water.turquoise.stylized.01':
     './assets/exploration/materials/forest/water/water_turquoise_stylized_01.webp',
   'texture.water.canyon.turquoise.01':
-    './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg',
+    './assets/exploration/materials/forest/water/water_canyon_turquoise_02.svg',
   'transition.water.canyon.turquoise.bank.01':
-    './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_01.svg',
+    './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_02.svg',
   'texture.water.swamp.stylized.01':
     './assets/exploration/materials/forest/water/water_swamp_stylized_01.webp',
   'texture.water.lava.stylized.01':
