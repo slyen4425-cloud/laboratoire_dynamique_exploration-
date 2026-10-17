@@ -1,3 +1,5 @@
+import { traversalRulePackV1 } from '../core/traversal-rule-pack-v1.js?rev=terrain-family-speed-editor-v1';
+
 export const DEFAULT_TERRAIN_FAMILY_DEFINITIONS =
   Object.freeze([
     Object.freeze({ id: 'plain', label: 'Plaine', paintKind: 'terrain' }),
@@ -13,11 +15,17 @@ export const DEFAULT_TERRAIN_FAMILY_DEFINITIONS =
 // Gameplay parameters belong to terrain families, never to image materials.
 export function defaultTerrainFamilyTraversalModes(id, paintKind = 'terrain') {
   const kind = id === 'road' ? 'route' : id === 'sea' ? 'river' : paintKind;
-  return Object.freeze(kind === 'route'
-    ? { ground: 1.25, swim: 0, fly: 1 }
+  const ruleId = kind === 'route'
+    ? 'terrain.road'
     : kind === 'river'
-      ? { ground: 0, swim: 0.75, fly: 1 }
-      : { ground: 1, swim: 0, fly: 1 });
+      ? 'terrain.water'
+      : 'terrain.ground';
+  const modes = traversalRulePackV1.rules.find((rule) => rule.id === ruleId)?.modes ?? {};
+  return Object.freeze({
+    ground: modes.ground ?? 0,
+    swim: modes.swim ?? 0,
+    fly: modes.fly ?? 0
+  });
 }
 
 export function normalizeTerrainFamilyTraversalModes(raw, fallback) {
