@@ -11,6 +11,7 @@ import {
 import {
   traversalRulePackV1
 } from './traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
+import { defaultTerrainFamilyTraversalModes } from '../world/terrain-family-registry.js?rev=terrain-family-speed-editor-v1';
 
 const VALID_MODES = Object.freeze(['ground', 'swim', 'fly']);
 
@@ -89,14 +90,15 @@ export const defaultTraversalRuleRegistry =
   createTraversalRuleRegistry(traversalRulePackV1);
 
 // Build one canonical registry from WorldDocument gameplay data. No renderer,
- // materialId or Builder-specific speed logic participates in traversal.
+ // visual appearance or Builder-specific speed logic participates in traversal.
 export function createWorldTraversalRuleRegistry(worldDocument) {
   const rules = [...traversalRulePackV1.rules];
   for (const family of worldDocument?.terrainFamilies ?? []) {
-    if (!family?.id || !family.traversalModes) continue;
+    if (!family?.id) continue;
     rules.push({
       id: `terrain.family.${family.id}`,
-      modes: family.traversalModes
+      modes: family.traversalModes ??
+        defaultTerrainFamilyTraversalModes(family.id, family.paintKind)
     });
   }
   return createTraversalRuleRegistry({ rules });
