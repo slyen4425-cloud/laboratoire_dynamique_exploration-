@@ -527,7 +527,7 @@ const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset:
     resolveWorldObjectAssetComposed,
   cacheRevision:
-    'world-object-library-v1-orientation-v1'
+    'world-object-library-v1-orientation-v1-canyon-art-v3'
 });
 
 const requiredWorldObjectAssetIds = Object.freeze([
