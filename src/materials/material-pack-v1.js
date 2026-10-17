@@ -404,7 +404,9 @@ export const materialPackV1 = Object.freeze({
         shoreContact: Object.freeze({
           shadowColor: '#214858',
           highlightColor: '#ddfff5',
-          opacity: 0.56
+          opacity: 0.56,
+          waterColor: '#209bb9',
+          immersionOpacity: 0.56
         })
       })
     }),

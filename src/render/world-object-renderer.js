@@ -1,4 +1,4 @@
-import { planObjectShoreContacts } from './object-shore-contact.js?rev=themeable-relief-v7';
+import { planObjectShoreContacts, riverVisualMask } from './object-shore-contact.js?rev=themeable-relief-v7';
 import {
   bridgeVisualRect,
   worldObjectVisualRect
@@ -47,27 +47,41 @@ function requireVisualAsset(object, imageLoader, resolveVisualAsset) {
   return Object.freeze({ assetId, asset, image });
 }
 
-function drawShoreContacts(ctx, plan, camera) {
-  for (const item of plan) {
+// Render ocean-color translucency OVER the already-painted cliff's submerged
+// foot. Both mask and contact originate in the canonical river; no gameplay
+// surface or second water geometry is introduced.
+function drawShoreContacts(ctx,plan,camera,rect) {
+  if(!plan.length)return;
+  const seen=new Set();
+  for(const item of plan){
+    if(seen.has(item.river))continue;
+    seen.add(item.river);
+    const mask=riverVisualMask(item.river);
+    if(!mask||typeof ctx.clip!=='function'||typeof ctx.createLinearGradient!=='function')continue;
+    const top=rect.height*0.31,bottom=Math.min(rect.height*0.5,top+Math.max(22,rect.height*0.18));
     ctx.save();
-    ctx.translate(item.x - camera.x, item.y - camera.y);
-    ctx.rotate(item.angle);
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-item.length / 2, -1);
-    ctx.quadraticCurveTo(-item.length * 0.1, 2.4, item.length / 2, 0);
-    ctx.globalAlpha = item.opacity * 0.66;
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = item.shadowColor;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-item.length * 0.38, 1.3);
-    ctx.quadraticCurveTo(0, -1.5, item.length * 0.32, 1.6);
-    ctx.globalAlpha = item.opacity * 0.5;
-    ctx.lineWidth = 2.1;
-    ctx.strokeStyle = item.highlightColor;
-    ctx.stroke();
+    ctx.translate(-camera.x,-camera.y);
+    ctx.clip(mask);
+    ctx.translate(rect.x,rect.y);
+    ctx.rotate(rect.rotation);
+    const wash=ctx.createLinearGradient(0,top,0,bottom);
+    wash.addColorStop(0,'rgba(0,0,0,0)');
+    wash.addColorStop(.35,item.waterColor);
+    wash.addColorStop(1,item.waterColor);
+    ctx.globalAlpha=item.immersionOpacity;
+    ctx.fillStyle=wash;
+    ctx.fillRect(-rect.width/2,top,rect.width,bottom-top);
     ctx.restore();
+  }
+  // Sparse, fine foam; no broad shadow stroke or repeated thick white tilde.
+  for(const item of plan){
+    ctx.save();ctx.translate(item.x-camera.x,item.y-camera.y);
+    ctx.rotate(item.angle);
+    ctx.beginPath();ctx.moveTo(-item.length*.40,0);
+    ctx.quadraticCurveTo(-item.length*.12,-1.2,item.length*.14,.5);
+    ctx.globalAlpha=Math.min(.52,item.opacity*.68);
+    ctx.lineWidth=1.2;ctx.lineCap='round';
+    ctx.strokeStyle=item.highlightColor;ctx.stroke();ctx.restore();
   }
 }
 function drawBridgeImage(
@@ -257,7 +271,8 @@ export function createWorldObjectRenderer({
             drawShoreContacts(
               ctx,
               planObjectShoreContacts({ object, surface, materialRegistry }),
-              camera
+              camera,
+              rect
             );
           }
         }

@@ -4,6 +4,26 @@ import {sampleSmoothPath} from './path-ribbon.js';
 import {worldObjectVisualRect} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 const pathCache=new WeakMap();
+const maskCache=new WeakMap();
+// Paint-only mask derived from canonical WorldSurface.rivers, never persisted.
+export function riverVisualMask(river) {
+  if (!river || !Number.isFinite(river.width) || river.width<=0 ||
+      typeof Path2D === 'undefined') return null;
+  const saved=maskCache.get(river);if(saved)return saved;
+  const pts=samplesFor(river);if(pts.length<2)return null;
+  const left=[],right=[],rad=river.width/2;
+  for(let i=0;i<pts.length;i++){
+    const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];
+    const dx=b.x-a.x,dy=b.y-a.y,mag=Math.hypot(dx,dy)||1;
+    left.push([pts[i].x-dy/mag*rad,pts[i].y+dx/mag*rad]);
+    right.push([pts[i].x+dy/mag*rad,pts[i].y-dx/mag*rad]);
+  }
+  const shape=new Path2D();shape.moveTo(...left[0]);
+  for(const pt of left.slice(1))shape.lineTo(...pt);
+  for(const pt of right.reverse())shape.lineTo(...pt);
+  shape.closePath();maskCache.set(river,shape);return shape;
+}
+
 function samplesFor(river) {
   const previous=pathCache.get(river);
   if(previous)return previous;
@@ -62,6 +82,8 @@ export function planObjectShoreContacts({object,surface,materialRegistry}={}) {
       plan.push({
         x,y,angle:rect.rotation,
         length:Math.max(9,Math.min(66,rect.width*0.095*(0.85+(i%3)*0.10))),
+        river, waterColor:style.waterColor ?? appearance.waterColor,
+        immersionOpacity:Math.max(0,Math.min(0.80,Number(style.immersionOpacity ?? 0.48))),
         shadowColor:style.shadowColor,
         highlightColor:style.highlightColor,
         materialId:river.materialId,
