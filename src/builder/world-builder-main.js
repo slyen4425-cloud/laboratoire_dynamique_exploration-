@@ -2000,6 +2000,7 @@ function pushDrawUndoReference(reference) {
   }
 
   syncPaintModeUi();
+  if (isInteriorArea() && reference.kind === 'terrain') refreshInteriorFloorControls();
   return true;
 }
 
@@ -5103,6 +5104,7 @@ function updatePinch() {
 function finishPointerEditing() {
   canvas.dataset.dragging = 'false';
   refreshAreaControls();
+  refreshInteriorFloorControls();
   refreshTerrainControls();
   refreshObjectControls();
   refreshJson();
