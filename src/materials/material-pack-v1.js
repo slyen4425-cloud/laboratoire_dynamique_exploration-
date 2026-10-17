@@ -383,6 +383,26 @@ export const materialPackV1 = Object.freeze({
       })
     }),
     Object.freeze({
+      id: 'water.canyon_turquoise',
+      kind: 'water',
+      label: 'Canyon · eau turquoise à berges claires',
+      assets: Object.freeze({
+        center: 'texture.water.canyon.turquoise.01',
+        bank: 'transition.water.canyon.turquoise.bank.01',
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        outerBankColor: '#91b1a0',
+        innerBankColor: '#c6eddf',
+        waterColor: '#209bb9',
+        highlightColor: '#ddfcf3',
+        outerBankPadding: 38,
+        innerBankPadding: 16,
+        highlightRatio: 0.09,
+        highlightOpacity: 0.20
+      })
+    }),
+    Object.freeze({
       id: 'water.swamp',
       kind: 'water',
       label: 'Eau sombre / marais',
