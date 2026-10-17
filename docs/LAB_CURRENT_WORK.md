@@ -6,7 +6,10 @@
 - **Gel :** Collision World, collisions d'objets, déplacement, caméra, route/rivière X/Y/traversal, rendu du cache statique, animations existantes, combattants, Encounter, stockage. Pas de images/audio inline dans HTML/JS. Aucune hauteur réellement traversable.
 - **Tests :** existence/intégrité SVG + dimensions/viewBox, ID/catalog/resolver, styles de carte opt-in, non-régression WorldDocument / collision, CI Node/check + vraie page Builder et Encounter Chromium ; rendu écran et fluidité réelle sur smartphone indispensables pour GREEN final.
 - **Risques :** tuiles de texture/sprites géants, bords visuellement répétitifs, qualité subjective de l'art produit. Ne pas présenter comme équivalent à l'image de référence. Diff documenté, checkpoint avant publication isolée.
-- **État :** implémentation en cours ; aucune promesse de GREEN avant CI et test manuel auteur.
+- **État technique au 17/10 :** cinq assets SVG V3 externes livrés : falaise herbeuse longue, angle de falaise, chute d'eau et ses rives rocheuses, eau turquoise 512x512 sans gradient/tuilage abrupt, berge 512x192 à l'écume discontinue. IDs et géométrie WorldDocument préservés ; fichiers remplacés uniquement au niveau Asset Adapter. Les vues classiques et le Collision World restent inchangés. Cache d'entrées HTML/ESM mis à jour pour éviter les anciens sprites en PWA.
+- **Gate :** CI [39041287384](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39041287384) **SUCCESS** après correction des sentinelles qui attendaient les anciennes paths/révisions. Tests Node, `npm run check` et Chromium réels (Builder + Encounter) ; contrôle de chargement des cinq SVG V3. État GREEN **technique** uniquement.
+- **Publication prévue :** checkpoint et snapshot de prévalidation au SHA exact validé, puis PR infrastructure Pages isolée ; ne pas fusionner les sources du nouveau kit dans `main`. Vérifier sur smartphone la disparition des bandes répétées, les nouveaux décors et l'absence de lags avant GREEN final. Le micro-recalage des falaises trop strictes reste un autre lot.
+
 
 ---
 
