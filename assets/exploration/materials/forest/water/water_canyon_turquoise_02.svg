@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<!-- Seamless at all four edges: no x/y-linear gradient, opaque identical base color -->
+<rect width="512" height="512" fill="#239cae"/>
+<!-- Large, soft painterly underwater pools; clipped well inside tile to avoid hard seams -->
+<path d="M59 88Q109 42 193 79T338 77Q404 77 446 133T423 231Q377 265 310 224T148 242Q58 214 45 173T59 88Z" fill="#137e9c" opacity=".09"/>
+<path d="M82 308Q152 267 217 313T337 301Q420 288 447 343T397 434Q323 468 258 417T115 434Q59 407 82 308Z" fill="#67c9c0" opacity=".10"/>
+<path d="M67 310Q139 287 212 310M280 118Q346 93 401 113" fill="none" stroke="#8dded5" stroke-width="10" stroke-linecap="round" opacity=".06"/>
+<!-- Small independent ripples, rather than continuous vertical/broad horizontal bands -->
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="m44 65q22-9 43-2t38 0m-42 8q16-4 32 0" stroke="#b3f4e5" stroke-width="2.5" opacity=".24"/>
+<path d="m301 61q27-11 52-3t47-2m-47 12q18-2 30 2" stroke="#a9e9e0" stroke-width="3" opacity=".19"/>
+<path d="m166 159q21-8 44-2t44-1m-69 9q23-2 33 0" stroke="#d1fff0" stroke-width="2.8" opacity=".23"/>
+<path d="m350 189q22-7 42-2t30-4" stroke="#bdf3e5" stroke-width="2.5" opacity=".16"/>
+<path d="m77 262q23-8 44-3t32 0m-62 8q24-1 32 2" stroke="#bff4e2" stroke-width="3" opacity=".18"/>
+<path d="m229 269q30-9 59-1t38-4" stroke="#d2fff0" stroke-width="2.5" opacity=".19"/>
+<path d="m374 321q25-6 41-1t36-5m-60 14q18-3 33 0" stroke="#c8faf0" stroke-width="2.8" opacity=".20"/>
+<path d="m131 392q24-9 48-2t35-2m-59 9q19-2 32 0" stroke="#e5fff0" stroke-width="2.5" opacity=".17"/>
+<path d="m296 430q27-10 51-2t42-2" stroke="#ccfcf0" stroke-width="3" opacity=".22"/>
+<path d="m51 460q24-10 48-3m330-394q18-4 30-1" stroke="#0e6889" stroke-width="3" opacity=".17"/>
+</g>
+<!-- Very faint caustic arcs with zero dependence on frame/time; water animation remains a separate overlay -->
+<g fill="none" stroke="#70d3ca" stroke-width="5" opacity=".095" stroke-linecap="round">
+<path d="M184 70q-31 31-6 57M380 248q-29 23-12 51M79 342q-17 33 7 50M283 347q26 22 14 48"/>
+</g>
+</svg>
