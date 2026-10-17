@@ -83,3 +83,29 @@ test('three enriched cliff assets remain separate transparent SVG files with sta
    assert.doesNotMatch(svg,/<image\b|data:image/);
  }
 });
+
+
+test('V8 immersion uses canonical river mask and material-controlled water transparency',()=>{
+ const rock=readFileSync(new URL('../src/render/world-object-renderer.js',import.meta.url),'utf8');
+ const shore=readFileSync(new URL('../src/render/object-shore-contact.js',import.meta.url),'utf8');
+ assert.match(rock,/ctx\.clip\(mask\)/);
+ assert.match(rock,/ctx\.createLinearGradient/);
+ assert.match(rock,/ctx\.fillRect\(-rect\.width\/2/);
+ assert.match(shore,/export function riverVisualMask/);
+ const contacts=plan(resolved);
+ assert.ok(contacts.length>0);
+ assert.ok(contacts.every(x=>x.river===area.surface.rivers[0]));
+ assert.ok(contacts.every(x=>x.waterColor && x.immersionOpacity>0));
+ assert.deepEqual(plan(resolved,{...area.surface,rivers:[]}),[]);
+});
+test('V8 external cliff and cascade art have no thick cartoon outline strokes',()=>{
+ for(const f of ['cliff_grassy_edge_01.svg','cliff_broken_ledge_02.svg','cliff_corner_01.svg']){
+  const svg=readFileSync(new URL('../assets/exploration/objects/relief/'+f,import.meta.url),'utf8');
+  assert.match(svg,/v8-rock-depth/);
+  assert.doesNotMatch(svg,/stroke-width="(?:12|13)"/);
+  assert.ok(svg.length<18500);
+ }
+ const cascade=readFileSync(new URL('../assets/exploration/objects/relief/waterfall_blue_01.svg',import.meta.url),'utf8');
+ assert.doesNotMatch(cascade,/stroke-width="(?:17|13|12|10|9)"/);
+ assert.doesNotMatch(cascade,/<image\b|data:image/);
+});
