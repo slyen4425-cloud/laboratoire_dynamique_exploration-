@@ -26,9 +26,9 @@ export const reliefCanyonPilotDocument = normalizeWorldDocument({
       baseTraversalRuleId: 'terrain.ground',
       zones: [
         { id: 'pine-clearing', width: 240, terrainFamilyId: 'plain',
-          materialId: 'grass.plain', points: [{x: 120, y: 1120},{x: 660, y: 1200},{x: 1200, y: 1120}] },
+          materialId: 'ground.forest_floor', points: [{x: 120, y: 1120},{x: 660, y: 1200},{x: 1200, y: 1120}] },
         { id: 'upper-path-clearing', width: 165, terrainFamilyId: 'plain',
-          materialId: 'grass.plain', points: [{x: 130,y: 220},{x: 660,y: 170},{x: 1110,y: 220}] }
+          materialId: 'grass.forest', points: [{x: 130,y: 220},{x: 660,y: 170},{x: 1110,y: 220}] }
       ],
       routes: [
         { id: 'canyon-sand-road', width: 96, terrainFamilyId: 'road',
