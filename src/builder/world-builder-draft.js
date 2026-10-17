@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2';
+} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
   defaultTerrainFamilyTraversalModes,
   normalizeTerrainFamilyTraversalModes
