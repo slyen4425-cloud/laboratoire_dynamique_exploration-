@@ -50,6 +50,31 @@ test('water animation computes bounded deterministic highlights without modifyin
   assert.equal(isBlocked(area, { radius: 12, locomotion: { modes: ['swim'] } }, 1000, 822), false);
 });
 
+
+test('river reflections vary in length, shoreline offset and rhythm instead of uniform doubled cartoon waves', () => {
+  const river = area.surface.rivers[0];
+  const marks = reliefWaterMarks(river, 4.5);
+  assert.ok(marks.length >= 10 && marks.length <= 24, 'limit count on mobile');
+  assert.ok(marks.every(m => m.length >= 18 && m.length <= 78), 'elongated glints, no repeated tiny arc glyph');
+  assert.ok(new Set(marks.map(m => Math.round(m.length))).size > marks.length / 2, 'variable glint lengths');
+  assert.ok(new Set(marks.map(m => Math.round(m.offset))).size > 7, 'uneven normal offsets across water');
+  assert.ok(marks.every(m => m.opacity >= 0.05 && m.opacity <= 0.29), 'glints must stay translucent');
+  assert.equal(marks.some(m => m.length > 45), true, 'broad painterly streaks are present');
+});
+
+test('animated overlay is bounded: few foam accents, real screen culling, no edits of river geometry', () => {
+  const before = JSON.stringify(area.surface.rivers);
+  const probe = makeRecorder();
+  const full = {area, camera: {x: 0,y:0}, viewport: {width:area.width,height:area.height},timeSeconds:1.7};
+  const banks = drawReliefRiverBankFoam(probe, full);
+  assert.ok(banks >= 10 && banks <= 24, 'riverbanks do not use 40 repetitive marks');
+  const outside = makeRecorder();
+  assert.equal(drawReliefRiverGlints(outside,{...full,camera:{x:-9000,y:-9000},viewport:{width:160,height:90}}),0);
+  assert.equal(drawReliefRiverBankFoam(outside,{...full,camera:{x:-9000,y:-9000},viewport:{width:160,height:90}}),0);
+  assert.equal(outside.counts.size,0,'nothing drawn entirely out of camera');
+  assert.equal(JSON.stringify(area.surface.rivers),before);
+});
+
 test('waterlight overlay draws river shimmer and waterfall streaks in visual-only canvas layer', () => {
   const ctx = makeRecorder();
   const view = { area, camera: { x: 0, y: 0 },
