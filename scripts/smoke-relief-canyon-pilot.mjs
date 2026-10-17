@@ -77,6 +77,7 @@ try{
     const json=JSON.parse(document.querySelector('#json-preview').value);
     const paths=[
       './assets/exploration/objects/relief/cliff_grassy_edge_01.svg',
+      './assets/exploration/objects/relief/cliff_broken_ledge_02.svg',
       './assets/exploration/objects/relief/cliff_corner_01.svg',
       './assets/exploration/objects/relief/waterfall_blue_01.svg',
       './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg',
@@ -105,7 +106,7 @@ try{
      data.canvasSize.some(size=>size<=0)||!data.tabs.includes('terrain')) {
     throw Error('Real Builder relief pilot smoke failed');
   }
-  console.log('GREEN: same Builder, optional canyon WorldDocument, five SVG assets loaded, classic link present');
+  console.log('GREEN: same Builder, optional canyon WorldDocument, six SVG assets loaded, classic link present');
 }finally{
   socket?.close();
   if(chrome&&chrome.exitCode===null&&chrome.signalCode===null){
