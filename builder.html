@@ -293,6 +293,15 @@
               <option value="river">Rivière / mer</option>
             </select>
           </label>
+          <div class="terrain-family-speed-panel">
+            <h4>Vitesse de déplacement sur cette famille</h4>
+            <p class="builder-hint">100 % = vitesse normale. 125 % = +25 %. 0 % interdit ce mode de déplacement. Les zones peintes et les routes utilisent ces réglages en jeu, indépendamment de la texture.</p>
+            <div class="grid-2">
+              <label>Marche (%) <input id="terrain-family-speed-ground" type="number" min="0" max="1000" step="5" inputmode="decimal" /></label>
+              <label>Nage (%) <input id="terrain-family-speed-swim" type="number" min="0" max="1000" step="5" inputmode="decimal" /></label>
+              <label>Vol (%) <input id="terrain-family-speed-fly" type="number" min="0" max="1000" step="5" inputmode="decimal" /></label>
+            </div>
+          </div>
           <div id="terrain-family-materials-panel">
             <p class="builder-hint">Textures de cette famille (modifiables). Coche les textures disponibles dans ce monde.</p>
             <div id="terrain-family-materials" class="terrain-family-materials"></div>
@@ -739,6 +748,6 @@
     </section>
   </main>
 
-  <script type="module" src="./src/builder/world-builder-main.js?rev=encounter-selected-elements-v1"></script>
+  <script type="module" src="./src/builder/world-builder-main.js?rev=terrain-family-speed-editor-v1"></script>
 </body>
 </html>
