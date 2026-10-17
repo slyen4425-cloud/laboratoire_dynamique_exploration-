@@ -246,12 +246,20 @@ export function createWorldObjectRenderer({
           visual.image,
           visual.asset
         );
-        if (materialRegistry && surface?.rivers?.length) {
-          drawShoreContacts(
-            ctx,
-            planObjectShoreContacts({ object, surface, materialRegistry }),
-            camera
-          );
+        if (materialRegistry && surface?.rivers?.length && object.visual?.shoreContact) {
+          const rect = worldObjectVisualRect(object);
+          if (rect && !isOffscreen(
+            rect.x - camera.x,
+            rect.y - camera.y,
+            cullRadius(rect.width, rect.height),
+            viewport
+          )) {
+            drawShoreContacts(
+              ctx,
+              planObjectShoreContacts({ object, surface, materialRegistry }),
+              camera
+            );
+          }
         }
       }
     }
