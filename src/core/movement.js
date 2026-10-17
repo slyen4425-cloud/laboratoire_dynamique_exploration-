@@ -5,7 +5,7 @@ import {
 import {
   defaultTraversalRuleRegistry,
   resolveSurfaceTraversal
-} from './surface-traversal.js?rev=surface-traversal-replay-v1';
+} from './surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 import { normalize } from './vector.js';
 
 export function stepMovement(
