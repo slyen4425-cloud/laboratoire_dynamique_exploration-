@@ -1,3 +1,16 @@
+# Reprise active — 2026-10-17 — Prototype artistique 2,5D Canyon (opt-in)
+
+- **Branche unique :** `work/exploration-relief-art-pilot-2026-10-17`; base documentaire et fonctionnelle `035fd01d0101036ea6c7dcaf66b1a7a5f2518f19`, checkpoint START `checkpoint/exploration-start-relief-art-pilot-2026-10-17`.
+- **Périmètre :** trois premiers assets indépendants et transparents, `cliff_grassy_edge_01.svg`, `cliff_corner_01.svg`, `waterfall_blue_01.svg` dans `assets/exploration/objects/relief/`; Asset Adapter + catalog WorldObject canonique ; `src/world/relief-canyon-pilot-world.js` comme WorldDocument de démonstration éditable ; accès explicite `builder.html?demo=relief-canyon-v1&rev=relief-canyon-pilot-v1`.
+- **Cohabitation des styles :** `builder.html` sans `demo` continue d'ouvrir la carte classique existante. La démo opt-in n'installe ni nouveau moteur, ni style global ; retour classique par lien visible dans la démo. Les 3 sprites de ce POC sont des placeholders dessinés vectoriellement cohérents, non la grande illustration générée en conversation (concept uniquement).
+- **Autorités :** WorldDocument / WorldArea.surface / WorldObject Definition Catalog / WorldObject Asset Adapter / renderer existants ; les 2 falaises déclarent collision d'obstacle existante, la cascade est un décor non interactif. La rivière est la surface eau canonique ; aucune altitude traversable ou caméra 3D.
+- **Gel :** Exploration Core/mouvement, collision resolver, caméra, surfaces/rivières et pont, capture encounter/combat, génération, persistance, dépôt principal ; aucune modification du style classique par défaut.
+- **Gates :** tests unitaires de la démo opt-in, catalogue et roundtrip WorldDocument, Node/check, CI Chromium Builder et session de jeu, contrôle smartphone par le créateur avant GREEN final. Vérifier notamment si les SVG se chargent correctement sur Pages et si la profondeur des éléments est lisible.
+- **Risques :** le relief est décoratif et n'offre pas encore de plateaux sur plusieurs hauteurs jouables ; le tri de profondeur des objets reste celui du moteur existant. Recharger le Builder via lien de démo change de carte en cours (exporter les changements d'abord).
+- **Prochaine étape :** publier une preview via snapshot immuable Pages après CI. Tester visuellement sur smartphone et recueillir le retour esthétique avant tout chantier de hauteur jouable ou refonte du rendu.
+
+---
+
 # Reprise active — 2026-10-17 — Pinceau et palette dédiés aux sols intérieurs
 
 - **Branche unique :** `work/exploration-interior-floor-brush-2026-10-17` depuis le snapshot d'assets prévalidé `7ea8be2370d74256aa6dda8f0be0414a6d9d84b8`; checkpoint de départ `checkpoint/exploration-start-interior-floor-brush-2026-10-17`.
