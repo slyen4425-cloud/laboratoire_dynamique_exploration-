@@ -78,7 +78,9 @@ try{
     const paths=[
       './assets/exploration/objects/relief/cliff_grassy_edge_01.svg',
       './assets/exploration/objects/relief/cliff_corner_01.svg',
-      './assets/exploration/objects/relief/waterfall_blue_01.svg'
+      './assets/exploration/objects/relief/waterfall_blue_01.svg',
+      './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg',
+      './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_01.svg'
     ];
     const images=await Promise.all(paths.map(src=>new Promise(resolve=>{
       const image=new Image();image.onload=()=>resolve({src,width:image.naturalWidth,ok:true});
@@ -98,12 +100,12 @@ try{
   })()`);
   console.log('Relief pilot Chromium:',JSON.stringify(data));
   if(data.id!=='relief-canyon-pilot-v1'||data.objectCount<12||data.riverCount!==1||
-     data.waterMaterial!=='water.clear_blue'||!data.waterOverlayLoaded||
+     data.waterMaterial!=='water.canyon_turquoise'||!data.waterOverlayLoaded||
      !data.bannerVisible||!data.classicLink||!data.images.every(img=>img.ok&&img.width>0)||
      data.canvasSize.some(size=>size<=0)||!data.tabs.includes('terrain')) {
     throw Error('Real Builder relief pilot smoke failed');
   }
-  console.log('GREEN: same Builder, optional canyon WorldDocument, three SVG assets loaded, classic link present');
+  console.log('GREEN: same Builder, optional canyon WorldDocument, five SVG assets loaded, classic link present');
 }finally{
   socket?.close();
   if(chrome&&chrome.exitCode===null&&chrome.signalCode===null){
