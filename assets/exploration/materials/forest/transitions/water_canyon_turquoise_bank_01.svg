@@ -1,21 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 128">
+<!-- Canyon V3: tileable along X; banks fade to zero alpha at Y edges. -->
 <defs>
- <linearGradient id="shore" x1="0" y1="0" x2="0" y2="1">
-  <stop stop-color="#b7b281" stop-opacity="0"/><stop offset=".028" stop-color="#8eaa7d" stop-opacity=".55"/>
-  <stop offset=".07" stop-color="#b8bd91" stop-opacity=".8"/><stop offset=".098" stop-color="#dddfbb" stop-opacity=".96"/>
-  <stop offset=".13" stop-color="#bbf5e7"/><stop offset=".21" stop-color="#4ec8ca"/>
-  <stop offset=".31" stop-color="#2c91b0"/><stop offset=".5" stop-color="#207f9f"/>
-  <stop offset=".69" stop-color="#2c91b0"/><stop offset=".79" stop-color="#4ec8ca"/>
-  <stop offset=".87" stop-color="#bbf5e7"/><stop offset=".902" stop-color="#dddfbb" stop-opacity=".96"/>
-  <stop offset=".93" stop-color="#b8bd91" stop-opacity=".8"/><stop offset=".972" stop-color="#8eaa7d" stop-opacity=".55"/>
-  <stop offset="1" stop-color="#b7b281" stop-opacity="0"/>
- </linearGradient>
- <pattern id="tinyfoam" width="64" height="128" patternUnits="userSpaceOnUse">
-  <path d="M0 11Q18 5 32 12T64 10M0 117Q18 121 34 116T64 117" stroke="#f0fff2" opacity=".63" stroke-width="3" fill="none"/>
-  <path d="M8 15q7 3 14 1M32 112q11-4 20-1M47 16l7 2M12 115l5-1" stroke="#effff6" opacity=".65" stroke-width="1.7" fill="none"/>
-  <path d="M0 5q22 10 64 0M0 124q27-8 64 0" stroke="#6e8f76" opacity=".39" stroke-width="4" fill="none"/>
- </pattern>
+  <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+    <stop stop-color="#8aa57c" stop-opacity="0"/>
+    <stop offset=".053" stop-color="#8ba57b" stop-opacity=".25"/>
+    <stop offset=".095" stop-color="#c1cda6" stop-opacity=".54"/>
+    <stop offset=".132" stop-color="#e8f5da" stop-opacity=".64"/>
+    <stop offset=".18" stop-color="#a8e6d6" stop-opacity=".68"/>
+    <stop offset=".245" stop-color="#4ac5c4" stop-opacity=".87"/>
+    <stop offset=".34" stop-color="#299eb4"/>
+    <stop offset=".5" stop-color="#238ea9"/>
+    <stop offset=".66" stop-color="#299eb4"/>
+    <stop offset=".755" stop-color="#4ac5c4" stop-opacity=".87"/>
+    <stop offset=".82" stop-color="#a8e6d6" stop-opacity=".68"/>
+    <stop offset=".868" stop-color="#e8f5da" stop-opacity=".64"/>
+    <stop offset=".905" stop-color="#c1cda6" stop-opacity=".54"/>
+    <stop offset=".947" stop-color="#8ba57b" stop-opacity=".25"/>
+    <stop offset="1" stop-color="#8aa57c" stop-opacity="0"/>
+  </linearGradient>
+  <pattern id="foam" width="128" height="128" patternUnits="userSpaceOnUse">
+    <path d="M15 19q14-5 27-1M59 22q19-6 29 0M101 17q9-3 18-1
+             M12 108q14 5 27 1M60 105q17 5 28-1M105 111q8 2 14 0"
+      fill="none" stroke="#e6fff2" stroke-width="2.2" opacity=".49" stroke-linecap="round"/>
+    <path d="M26 26q9-4 18-2M78 28q10-5 21-1
+             M27 101q8 3 16 1M78 99q8 3 19 0" fill="none"
+      stroke="#c4f9ee" stroke-width="1.4" opacity=".49" stroke-linecap="round"/>
+    <path d="M21 13l5 1M116 25l4-1M10 99l5 1M119 114l4 1" fill="none"
+      stroke="#d6ebc1" stroke-width="2" opacity=".34" stroke-linecap="round"/>
+  </pattern>
 </defs>
-<rect width="256" height="128" fill="url(#shore)"/>
-<rect width="256" height="128" fill="url(#tinyfoam)"/>
+<rect width="256" height="128" fill="url(#edge)"/>
+<rect width="256" height="128" fill="url(#foam)"/>
 </svg>
