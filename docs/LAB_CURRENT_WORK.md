@@ -1,3 +1,16 @@
+# Reprise active — 2026-10-17 — Sols intérieurs : pack de 5 textures
+
+- **Branche unique :** `work/exploration-interior-floor-texture-pack-2026-10-17` ; **base** `1b9524c06277efe1fd34263f0a0ed3f026c1a7e9` (CI technique GREEN, terrain-family-speed prévalidation toujours non final utilisateur).
+- **Checkpoint de départ :** `checkpoint/exploration-start-interior-floor-texture-pack-2026-10-17`.
+- **Périmètre :** assets purement visuels pour WorldArea intérieur : parquet chêne clair, parquet foncé, carrelage clair, dalles sable, béton gris. Images WebP 128×128 optimisées, manifest SHA-256/bytes, adaptation Material Pack et Asset Adapter existants ; choix dans le sélecteur existant « Texture du sol » ; sans moteur de rendu ni nouvelle source de vérité.
+- **Autorités réutilisées :** WorldArea.surface.baseMaterialId → Material Registry → Material Asset Adapter → renderer. `floor.wood.house` existant conserve son ID et obtient son asset réel. Les quatre autres matériaux sont des IDs de surface dédiés ; pas de famille de terrain extérieure ajoutée.
+- **Gel :** locomotion et terrain-family-speed, géométrie/bâtiments/portails, combats, collision, encounter, sauvegardes/WorldDocument, Game UI hors cache de modules.
+- **Tests :** assetId/pack/adapter/manifest, hash et taille du binaire réellement commité, rétrocompatibilité floor.wood.house et sélection des 5 sols sur WorldArea intérieure, npm tests + check + CI GitHub + gate navigateur/smartphone avant GREEN final.
+- **Risques :** binaire tronqué, vieux cache navigateur, matériaux intérieurs absents du sélecteur, collision avec chantier terrain speed encore en prévalidation.
+- **Prochaine action :** raccorder les 5 fichiers puis prévalidation ; ne pas fusionner directement sur main et ne pas certifier GREEN final sans test utilisateur.
+
+---
+
 # Reprise active — 2026-10-17 — Réglages vitesse par famille de terrain
 
 - **Branche unique :** `work/exploration-terrain-family-speed-editor-2026-10-17`
