@@ -109,3 +109,32 @@ test('V8 external cliff and cascade art have no thick cartoon outline strokes',(
  assert.doesNotMatch(cascade,/stroke-width="(?:17|13|12|10|9)"/);
  assert.doesNotMatch(cascade,/<image\b|data:image/);
 });
+
+test('V9 crest exposes true authored terrain, no hard-coded grass or duplicated material authority',()=>{
+ for (const f of ['cliff_grassy_edge_01.svg','cliff_broken_ledge_02.svg','cliff_corner_01.svg']) {
+  const svg=readFileSync(new URL('../assets/exploration/objects/relief/'+f,import.meta.url),'utf8');
+  assert.match(svg,/V9 cliff: fully transparent crest/);
+  assert.match(svg,/v9-cliff-face/);
+  assert.match(svg,/v9-bedrock/);
+  assert.doesNotMatch(svg,/url\(#(?:grass|green|turf)\)/);
+  assert.doesNotMatch(svg,/data:image|<image\b/);
+ }
+ const renderer=readFileSync(new URL('../src/render/world-object-renderer.js',import.meta.url),'utf8');
+ assert.equal(renderer.includes('terrainCrest'),false,'no duplicate surface material resolver');
+ assert.equal(renderer.includes('drawCliffTopMaterial'),false,'the ground itself remains the only texture authority');
+ const original=JSON.stringify(area);
+ const cloned=importWorldBuilderDocument(serializeWorldBuilderDraft(createWorldBuilderDraft(reliefCanyonPilotDocument)));
+ assert.equal(JSON.stringify(area),original);
+ assert.deepEqual(cloned.areas[0].objects,area.objects);
+});
+
+test('V9 strong thin foam only follows verified canonical water-cliff contacts',()=>{
+ const renderer=readFileSync(new URL('../src/render/world-object-renderer.js',import.meta.url),'utf8');
+ assert.match(renderer,/const brightness=Math\.min\(\.92,\.34\+item\.opacity\*\.78\)/);
+ assert.match(renderer,/ctx\.lineWidth=1\.65/);
+ assert.match(renderer,/ctx\.lineWidth=1\.05/);
+ const withWater=plan(resolved,area.surface);
+ assert.ok(withWater.length>0);
+ assert.ok(withWater.every(x=>x.river===area.surface.rivers[0]));
+ assert.equal(plan(resolved,{...area.surface,rivers:[]}).length,0);
+});
