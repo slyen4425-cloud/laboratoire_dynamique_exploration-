@@ -1,3 +1,16 @@
+# Lot actif — 17/10/2026 — Canyon 2,5D, kit graphique V3 cohérent
+
+- **Retour auteur :** captures du canyon V2 montrant eau en rectangles répétés et falaise composée d'assets séparés trop géométriques. La fluidité est bonne, le rendu artistique est **NON VALIDÉ**. Le créateur demande une véritable refonte visuelle plutôt qu'ajouter des couches d'effets.
+- **Branche unique :** `work/exploration-canyon-visual-kit-v3-2026-10-17` depuis le snapshot vérifié V2 `1facaf42caf291ffb523bbd2b669638f8c5c27fc` (CI `39036100313` SUCCESS), checkpoint de départ `checkpoint/exploration-start-canyon-visual-kit-v3-2026-10-17`.
+- **Périmètre :** remplacer les SVG externes **uniquement canyon** : eau *sans rupture de tuile* (couleur homogène + détails périodiques subtils), berge transparente/blendable, falaises moins polygonales avec arêtes herbeuses/strates et cascade rattachée au même langage graphique ; créer un second segment/angle de falaise réutilisable avec Asset Adapter et Object Definition Catalog s'il est requis pour rompre les répétitions. Ajuster le placement du WorldDocument pilote uniquement, sans modifier les positions gameplay ni le moteur.
+- **Autorités réutilisées :** WorldDocument canonique -> Material Registry -> Material Asset Adapter -> renderer actuel ; WorldObject Definition Catalog -> WorldObject Asset Adapter -> renderer. SVG externes légers exclusivement ; aucune image encodée dans JS/HTML, aucun son.
+- **Gel strict :** style classique, Camera, Core Movement, Collision World, footprints existants, rivière/traversalRule/Encounter/Combat, Builder mutations, persistances, terrain cache/culling/performances. Collision trop stricte sur le bord supérieur de falaise conservée pour un micro-lot indépendant.
+- **Gates :** valider syntaxe et chargement navigateur des SVG, absence de couture horizontale/verticale de la texture, toutes les références du catalogue, import/export WorldDocument, tests antérieurs et smoke Builder + session de jeu, CI complète. Nouveau lien Pages sur snapshot immuable uniquement après CI, puis validation visuelle/performance mobile par auteur. **Pas GREEN final avant ce test**.
+- **Risques :** imagerie SVG insuffisamment aboutie, coutures le long des rubans de rivière, transparence des berges, empilement et variation entre modules. Ne pas créer d'autorité de rendu concurrente.
+- **État :** chantier V3 ouvert ; publication non réalisée.
+
+---
+
 # Lot actif — 17/10/2026 — Qualité graphique eau/cascade canyon, V2
 
 - **Branche unique :** `work/exploration-canyon-water-art-v2-2026-10-17` ; base technique CI GREEN `ae57178e97ae4c582fb3943d02d0ff2d2a1865f4`, checkpoint START `checkpoint/exploration-start-canyon-water-art-v2-2026-10-17`.
