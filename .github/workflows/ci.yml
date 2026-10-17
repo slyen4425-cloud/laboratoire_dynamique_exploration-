@@ -45,5 +45,7 @@ jobs:
         run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Real Chromium interior floor material and brush smoke
         run: node scripts/smoke-interior-floor-brush.mjs
+      - name: Real Chromium opt-in relief canyon Builder and SVG gate
+        run: node scripts/smoke-relief-canyon-pilot.mjs
       - name: Real Chromium Encounter startup smoke
         run: node scripts/smoke-modern-combat-preview.mjs
