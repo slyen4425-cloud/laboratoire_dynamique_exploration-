@@ -9,7 +9,9 @@
 - **Compatibilité :** anciens mondes sans réglages gardent ×1.00 sol, ×1.25 route et ×0.75 nage. Zéro interdit un mode ; multiplication maximale 10. Le materialId ne décide jamais de la vitesse.
 - **TDD :** sentinelles rétrocompatibilité, traversée réelle sur zone peinte, marche/nage/vol, route/mer, bridge, aller-retour Builder JSON et garde d'intégrité UI ; CI complète, puis gate smartphone avant GREEN final.
 - **Risques :** migration de paramètres existants, priorité d'overlap des zones, cache JS PWA, mauvais point de départ. Aucun autre lot ni branche parallèle.
-- **État :** chantier démarré, pas encore GREEN ; publication distincte après CI complète.
+- **État :** CI technique GREEN — [run 38993188944](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/38993188944), core-tests + Chromium SUCCESS ; compatibilité legacy et vitesse réelle sur zones peintes vérifiées. **Prévalidation uniquement** ; attendre une publication isolée et le gate utilisateur smartphone avant GREEN final.
+- **Checkpoint de prévalidation à figer :** `checkpoint/exploration-terrain-family-speed-editor-prevalidation-green-2026-10-17`.
+- **Prochaine action :** publier une preview sans modifier les sources du labo Combat ni le dépôt principal, puis faire tester la rubrique « Familles de terrain » (Marche/Nage/Vol) et la traversée Route/Neige/Forêt/Mer sur smartphone.
 
 ---
 
