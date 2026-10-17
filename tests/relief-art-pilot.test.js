@@ -7,6 +7,9 @@ import { objectDefinitionCatalogV1 } from '../src/objects/object-definition-cata
 import { createMaterialRegistry } from '../src/materials/material-registry.js';
 import { materialPackV1 } from '../src/materials/material-pack-v1.js';
 import { resolveWorldObjectAsset } from '../src/assets/world-object-asset-adapter.js';
+import { isBlocked } from '../src/core/collision.js';
+import { worldObjectObstacleRect, worldObjectVisualRect } from '../src/world/world-object-model.js';
+import { resolveWorldObjectPlacement } from '../src/world/world-object-placement-model.js';
 import {
   createWorldBuilderDraft,
   serializeWorldBuilderDraft,
@@ -70,4 +73,35 @@ test('pilot is reachable directly in Builder without overwriting regular mode', 
   assert.match(html, /relief-pilot-notice/);
   assert.match(html, /builder.html\?rev=relief-canyon-pilot-v1-classic/);
   assert.match(html, /&relief=relief-canyon-pilot-v1/);
+});
+
+test('cliff collision begins at the grassy rim, not deep inside the rock face', () => {
+  const world = reliefCanyonPilotDocument.areas[0];
+  const actor = { radius: 14, locomotion: { modes: ['ground'] } };
+  for (const [placementId, grassY, rockY] of [
+    ['upper-cliff-left', 470, 540],
+    ['upper-cliff-right', 465, 530],
+    ['upper-cliff-angle', 460, 540]
+  ]) {
+    const placement = world.objects.find((item) => item.id === placementId);
+    assert.ok(placement, placementId);
+    const cliff = resolveWorldObjectPlacement(placement);
+    const visual = worldObjectVisualRect(cliff);
+    const obstacle = worldObjectObstacleRect(cliff);
+    assert.ok(obstacle && visual, placementId);
+    const topFraction =
+      (obstacle.y - obstacle.width / 2 - (visual.y - visual.height / 2)) / visual.height;
+    const bottomFraction =
+      (obstacle.y + obstacle.width / 2 - (visual.y - visual.height / 2)) / visual.height;
+    assert.ok(topFraction >= 0.22 && topFraction <= 0.30,
+      `${placementId}: collision should begin at the visible rock rim, got ${topFraction}`);
+    assert.ok(bottomFraction >= 0.85 && bottomFraction <= 0.97,
+      `${placementId}: collision should cover the lower rock face, got ${bottomFraction}`);
+    assert.equal(isBlocked(world, actor, visual.x, grassY), false,
+      `${placementId}: neighboring upper grass must stay traversable`);
+    assert.equal(isBlocked(world, actor, visual.x, rockY), true,
+      `${placementId}: walking from grass must not reach the rock surface`);
+  }
+  assert.equal(objectDefinitionCatalogV1.require(ids[2]).collision, undefined,
+    'waterfall must not gain a second collision obstacle');
 });
