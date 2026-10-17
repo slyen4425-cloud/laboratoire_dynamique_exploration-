@@ -92,10 +92,12 @@ test('Material Pack v1 references every generated pilot asset semantically', () 
   // The V4 canyon shoreline is a continuous curve, so the former segmented
   // bank sprite remains registered for older artifacts but must not be loaded.
   const retired = 'transition.water.canyon.turquoise.bank.01';
+  const unusedCenter = 'texture.water.canyon.turquoise.01';
   assert.deepEqual(new Set(ids),
-    new Set(Object.keys(EXPECTED).filter((id) => id !== retired)));
-  assert.equal(ids.length, 23);
+    new Set(Object.keys(EXPECTED).filter((id) => id !== retired && id !== unusedCenter)));
+  assert.equal(ids.length, 22);
   assert.ok(resolveMaterialAsset(retired), 'historical asset can still be resolved');
+  assert.ok(resolveMaterialAsset(unusedCenter), 'previous texture kept for legacy references');
 });
 
 test('Material Texture Loader has explicit load/get/dispose lifecycle', () => {
