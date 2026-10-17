@@ -1,5 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 405">
-<defs><linearGradient id="r" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#b38b74"/><stop offset="1" stop-color="#5c556d"/></linearGradient></defs>
-<path d="M47 88 183 47 355 79 389 121 380 299 306 339 222 348 154 366 56 298Z" fill="url(#r)" stroke="#494960" stroke-width="7" stroke-linejoin="round"/><path d="M47 88 139 114 155 208 112 296 56 298Z" fill="#876870"/><path d="M139 114 226 144 239 237 222 348 154 366 112 296 155 208Z" fill="#c1997d"/><path d="M226 144 312 107 333 216 306 339 222 348 239 237Z" fill="#776273"/><path d="M312 107 389 121 380 299 306 339 333 216Z" fill="#ac8372"/>
-<path d="M47 88 183 47 355 79 389 121 312 155 224 145 139 117Z" fill="#82aa4a" stroke="#557c40" stroke-width="7"/><path d="M47 88Q104 121 143 117T229 145T314 156L389 121" fill="none" stroke="#d6a776" stroke-width="17" stroke-linecap="round"/><path d="m194 92-8-22 13 12 9-26 7 23" fill="none" stroke="#3e7b3e" stroke-width="7" stroke-linecap="round"/>
+<!-- Corner V3. Preserve silhouette / WorldObject collision dimensions. -->
+<defs>
+ <linearGradient id="rock" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#c49d83"/><stop offset=".46" stop-color="#907b7b"/><stop offset="1" stop-color="#525269"/></linearGradient>
+ <linearGradient id="green" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#abc76c"/><stop offset=".6" stop-color="#80a75c"/><stop offset="1" stop-color="#497542"/></linearGradient>
+</defs>
+<path d="M43 96 73 76 182 48 262 59 339 72 384 103 397 132 391 275 362 311 316 345 261 349 210 360 158 374 114 341 56 301 32 237Z"
+ fill="url(#rock)" stroke="#595666" stroke-width="5" stroke-linejoin="round"/>
+<path d="M45 101 102 125 129 188 109 268 58 298 32 236Z" fill="#827381" opacity=".82"/>
+<path d="M106 129 166 148 176 212 153 293 159 371 113 339 99 268 128 191Z" fill="#c49c80" opacity=".76"/>
+<path d="M167 147 236 160 255 213 229 315 211 357 159 373 152 294 177 215Z" fill="#655d70" opacity=".7"/>
+<path d="M240 157 312 142 333 208 312 316 262 350 213 358 228 315 254 213Z" fill="#b18f7b" opacity=".8"/>
+<path d="M318 134 397 127 389 278 360 312 314 345 313 312 335 206Z" fill="#655c6d" opacity=".67"/>
+<g fill="none" stroke="#dfbd99" stroke-width="3" opacity=".46" stroke-linecap="round"><path d="M81 189q20 7 33-4M143 252q20 10 28-3M243 247q25 8 39-4M321 270q23 9 39-3"/></g>
+<g stroke="#484657" stroke-width="4" opacity=".37" stroke-linecap="round" fill="none"><path d="M140 174q-7 31-20 40M237 187q13 44-5 77M332 178q11 33-4 65"/></g>
+<path d="M43 96 79 78 183 45 267 60 338 71 384 103 396 132 355 143 315 159 256 152 223 170 173 151 135 146 102 127 66 120Z"
+ fill="url(#green)" stroke="#527b44" stroke-width="5" stroke-linejoin="round"/>
+<path d="M47 100Q84 123 108 127T177 150T255 155T333 151T394 131" stroke="#d6b99a" stroke-width="13" fill="none" stroke-linecap="round"/>
+<path d="M58 91Q95 111 146 126T234 142T330 136" stroke="#dce7a4" stroke-width="4" opacity=".68" fill="none"/>
+<g fill="none" stroke="#447141" stroke-width="5" stroke-linecap="round">
+ <path d="m96 112-9-17 13 10 5-22 8 26M207 133l-7-16 10 7 8-22 6 26M329 123l-8-14 13 5 7-18 7 24"/>
+</g>
+<g fill="#86ad5d" opacity=".66"><ellipse cx="165" cy="96" rx="33" ry="8"/><ellipse cx="303" cy="103" rx="24" ry="7"/></g>
+<g fill="#e6c7ac" opacity=".42"><circle cx="86" cy="214" r="3"/><circle cx="209" cy="285" r="3"/><circle cx="347" cy="250" r="2.5"/></g>
 </svg>
