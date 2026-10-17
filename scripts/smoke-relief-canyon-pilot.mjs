@@ -171,16 +171,23 @@ try{
       return ctx.getImageData(0,0,900,550).data;
     };
     const before=render(false),after=render(true);
+    let tinted=0;
+    for(let i=0;i<before.length;i+=4){
+      // Bluer and less brown pixels on an already opaque cliff require a
+      // translucent water wash, not just the prior thin stroke overlay.
+      if(before[i+3]>0 && after[i+3]>0 &&
+         after[i+2]>before[i+2]+3 && after[i]<before[i]-3)tinted++;
+    }
     let changed=0;
     for(let i=0;i<before.length;i+=4){
       if(before[i]!==after[i]||before[i+1]!==after[i+1]||
          before[i+2]!==after[i+2]||before[i+3]!==after[i+3])changed++;
     }
-    return {contacts:contact.length,changed,areaId:area.id,
+    return {contacts:contact.length,changed,tinted,areaId:area.id,
       imageWidth:asset.naturalWidth,objects:area.objects.length};
   })()`);
-  console.log('V7 water-rock contact Browser pixels:',JSON.stringify(contactGate));
-  if(contactGate.contacts<1||contactGate.changed<30||contactGate.imageWidth<100)
+  console.log('V8 water-rock immersion Browser pixels:',JSON.stringify(contactGate));
+  if(contactGate.contacts<1||contactGate.changed<200||contactGate.tinted<100||contactGate.imageWidth<100)
     throw Error('Builder WorldDocument to real Canvas water-rock contact failed');
 
   console.log('GREEN: same Builder, optional canyon WorldDocument, six SVG assets loaded, classic link present');
