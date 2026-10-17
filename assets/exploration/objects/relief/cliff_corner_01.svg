@@ -1,31 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 405">
-<!-- Corner V3. Preserve silhouette / WorldObject collision dimensions. -->
+<!-- V9 cliff: fully transparent crest. The canonical WorldSurface raster beneath
+     supplies its ACTUAL edited material and texture (snow, grass, sand, etc.).
+     Only the face below the lip is an asset. Collision/placement unchanged. -->
 <defs>
- <linearGradient id="rock" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#c49d83"/><stop offset=".46" stop-color="#907b7b"/><stop offset="1" stop-color="#525269"/></linearGradient>
- <linearGradient id="green" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#abc76c"/><stop offset=".6" stop-color="#80a75c"/><stop offset="1" stop-color="#497542"/></linearGradient>
+ <linearGradient id="v9-bedrock" x1="0" y1="0" x2=".35" y2="1">
+  <stop stop-color="#c5b6ac"/><stop offset=".18" stop-color="#b6aaa6"/>
+  <stop offset=".58" stop-color="#817d83"/><stop offset="1" stop-color="#4e5364"/>
+ </linearGradient>
+ <linearGradient id="v9-ledge-shadow" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#373e4e" stop-opacity=".44"/>
+  <stop offset=".55" stop-color="#59505a" stop-opacity=".12"/>
+  <stop offset="1" stop-color="#282e3b" stop-opacity="0"/>
+ </linearGradient>
+ <clipPath id="v9-cliff-face"><path d="M43 148 Q91 127 132 144 Q178 152 222 163 Q264 153 298 158 Q350 139 396 138 L390 271 Q386 297 359 314 Q331 337 297 346 Q271 354 240 354 Q205 357 175 366 Q147 365 117 345 Q84 322 60 299 Q35 274 34 235Z"/></clipPath>
 </defs>
-<path d="M43 96 73 76 182 48 262 59 339 72 384 103 397 132 391 275 362 311 316 345 261 349 210 360 158 374 114 341 56 301 32 237Z"
- fill="url(#rock)" stroke="#595666" stroke-width="2.0" stroke-linejoin="round"/>
-<path d="M45 101 102 125 129 188 109 268 58 298 32 236Z" fill="#827381" opacity=".82"/>
-<path d="M106 129 166 148 176 212 153 293 159 371 113 339 99 268 128 191Z" fill="#c49c80" opacity=".76"/>
-<path d="M167 147 236 160 255 213 229 315 211 357 159 373 152 294 177 215Z" fill="#655d70" opacity=".7"/>
-<path d="M240 157 312 142 333 208 312 316 262 350 213 358 228 315 254 213Z" fill="#b18f7b" opacity=".8"/>
-<path d="M318 134 397 127 389 278 360 312 314 345 313 312 335 206Z" fill="#655c6d" opacity=".67"/>
-<g fill="none" stroke="#dfbd99" stroke-width="3" opacity=".46" stroke-linecap="round"><path d="M81 189q20 7 33-4M143 252q20 10 28-3M243 247q25 8 39-4M321 270q23 9 39-3"/></g>
-<g stroke="#484657" stroke-width="4" opacity=".37" stroke-linecap="round" fill="none"><path d="M140 174q-7 31-20 40M237 187q13 44-5 77M332 178q11 33-4 65"/></g>
-<path d="M43 96 79 78 183 45 267 60 338 71 384 103 396 132 355 143 315 159 256 152 223 170 173 151 135 146 102 127 66 120Z"
- fill="url(#green)" stroke="#527b44" stroke-width="2.0" stroke-linejoin="round"/>
-<path d="M47 100Q84 123 108 127T177 150T255 155T333 151T394 131" stroke="#d6b99a" stroke-width="2.1" opacity=".22" fill="none" stroke-linecap="round"/>
-<path d="M58 91Q95 111 146 126T234 142T330 136" stroke="#dce7a4" stroke-width="4" opacity=".68" fill="none"/>
-<g fill="none" stroke="#447141" stroke-width="2.0" stroke-linecap="round">
- <path d="m96 112-9-17 13 10 5-22 8 26M207 133l-7-16 10 7 8-22 6 26M329 123l-8-14 13 5 7-18 7 24"/>
+<path d="M43 148 Q91 127 132 144 Q178 152 222 163 Q264 153 298 158 Q350 139 396 138 L390 271 Q386 297 359 314 Q331 337 297 346 Q271 354 240 354 Q205 357 175 366 Q147 365 117 345 Q84 322 60 299 Q35 274 34 235Z" fill="url(#v9-bedrock)"/>
+<g clip-path="url(#v9-cliff-face)">
+ <path d="M51 173 Q89 158 119 182 Q131 216 124 256 Q120 290 104 316 L84 298 Q70 278 61 250Z" fill="#d8bfaa" opacity=".38"/>
+<path d="M145 168 Q170 185 174 225 Q173 282 151 323 L177 354 Q209 346 223 320 Q232 267 224 212Z" fill="#baa79b" opacity=".24"/>
+<path d="M277 167 Q294 182 289 224 Q296 281 281 321 Q322 317 336 286 Q350 239 337 186Z" fill="#d8cbb9" opacity=".22"/>
+ <path d="M40 147 Q98 130 206 146 T390 144 L390 187 Q210 175 40 188Z" fill="url(#v9-ledge-shadow)" opacity=".78"/>
+ <g fill="none" stroke="#e7d9c9" stroke-width="1.7" opacity=".27" stroke-linecap="round">
+ <path d="M73 215 Q104 205 125 218 M85 272 Q105 267 126 279"/><path d="M151 242 Q183 232 213 246 M169 308 Q188 294 214 302"/><path d="M266 218 Q292 211 323 223 M272 283 Q294 275 321 281"/>
+ </g>
+ <g fill="none" stroke="#3b3c4c" stroke-width="1.8" opacity=".31" stroke-linecap="round">
+ <path d="M75 168 Q92 193 79 224"/>
+ <path d="M218 173 Q210 216 226 244"/>
+ <path d="M348 167 Q340 202 352 233"/>
+ </g>
 </g>
-<g fill="#86ad5d" opacity=".66"><ellipse cx="165" cy="96" rx="33" ry="8"/><ellipse cx="303" cy="103" rx="24" ry="7"/></g>
-<g fill="#e6c7ac" opacity=".42"><circle cx="86" cy="214" r="3"/><circle cx="209" cy="285" r="3"/><circle cx="347" cy="250" r="2.5"/></g>
-
+<!-- Gentle 3/4 lip with no thick brown contour or forced green vegetation. -->
+<path d="M43 148 Q91 127 132 144 Q178 152 222 163 Q264 153 298 158 Q350 139 396 138" fill="none" stroke="#554e54" opacity=".18" stroke-width="1"/>
 <!-- V8: subdued chiseled strata; real richness without cartoon contour lines. -->
 <defs>
- <clipPath id="v7-rock-silhouette"><path d="M43 96 73 76 182 48 262 59 339 72 384 103 397 132 391 275 362 311 316 345 261 349 210 360 158 374 114 341 56 301 32 237Z"/></clipPath>
+ <clipPath id="v7-rock-silhouette"><path d="M43 148 Q91 127 132 144 Q178 152 222 163 Q264 153 298 158 Q350 139 396 138 L390 271 Q386 297 359 314 Q331 337 297 346 Q271 354 240 354 Q205 357 175 366 Q147 365 117 345 Q84 322 60 299 Q35 274 34 235Z"/></clipPath>
  <clipPath id="v7-rock-face"><rect x="0" y="150" width="420" height="255"/></clipPath>
  <linearGradient id="v8-rock-depth" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#353b44" stop-opacity="0"/><stop offset=".63" stop-color="#273141" stop-opacity=".11"/><stop offset="1" stop-color="#1b2432" stop-opacity=".34"/></linearGradient>
 </defs>
