@@ -1,4 +1,4 @@
-import { planObjectShoreContacts, riverVisualMask } from './object-shore-contact.js?rev=themeable-relief-v7';
+import { planObjectShoreContacts, riverVisualMask } from './object-shore-contact.js?rev=relief-immersion-v8';
 import {
   bridgeVisualRect,
   worldObjectVisualRect
