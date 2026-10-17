@@ -34,7 +34,7 @@ test('relief canyon is an opt-in canonical WorldDocument and keeps classic demo 
   const materials = createMaterialRegistry(materialPackV1);
   for (const feature of [area.surface, ...area.surface.zones,
     ...area.surface.routes, ...area.surface.rivers]) {
-    assert.ok(materials.get(feature.materialId ?? feature.baseMaterialId),
+    assert.ok(materials.resolve(feature.materialId ?? feature.baseMaterialId),
       'All visual material IDs must resolve before rendering');
   }
   assert.ok(area.objects.length > 10);
