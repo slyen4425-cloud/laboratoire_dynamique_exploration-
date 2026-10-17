@@ -129,7 +129,7 @@ import {
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&water=canyon-continuous-river-v4';
+} from '../materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&water=canyon-continuous-river-v4&no-repeat=canyon-v5';
 import {
   USER_TEXTURE_MAX_BYTES,
   composeMaterialPackWithUserMaterials,
