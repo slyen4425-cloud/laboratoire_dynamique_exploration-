@@ -856,3 +856,18 @@ body.builder-map-focus {
 [data-panel="interior-floor"] .row button { flex:1 1 170px; }
 [data-panel="interior-floor"] .row select { min-width:0; }
 #area-open-interior-floors { width:100%; text-align:center; }
+
+/* The relief experiment is informational only; it does not change a world engine. */
+.relief-pilot-notice {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #21392f;
+  border: 1px solid #6d936d;
+  border-radius: 12px;
+}
+.relief-pilot-notice[hidden] { display: none; }
+.relief-pilot-notice span { flex: 1 1 300px; font-size: .83rem; }
