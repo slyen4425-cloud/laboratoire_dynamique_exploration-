@@ -86,8 +86,8 @@ export function normalizeTerrainFamilyDefinitions(
   }
 
   if (result.length === 0) {
-    return Object.freeze(
-      [...DEFAULT_TERRAIN_FAMILY_DEFINITIONS]
+    return normalizeTerrainFamilyDefinitions(
+      DEFAULT_TERRAIN_FAMILY_DEFINITIONS
     );
   }
 
