@@ -20,7 +20,7 @@ test('canyon v2 uses a dedicated semantic water material without changing classi
   assert.equal(river.materialId, material.id);
   assert.equal(river.traversalRuleId, 'terrain.water');
   assert.equal(material.assets.center, 'texture.water.canyon.turquoise.01');
-  assert.equal(material.assets.bank, 'transition.water.canyon.turquoise.bank.01');
+  assert.equal(material.assets.bank, null, 'V4 retires segmented bank sprite for canyon');
   assert.ok(material.render.outerBankPadding >= 30);
   for (const id of [material.assets.center, material.assets.bank]) {
     const asset = resolveMaterialAsset(id);
