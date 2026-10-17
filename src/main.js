@@ -375,7 +375,8 @@ const resolveMaterialAsset =
 
 const textureLoader =
   createMaterialTextureLoader({
-    resolveAsset: resolveMaterialAsset
+    resolveAsset: resolveMaterialAsset,
+    cacheRevision: 'canyon-art-v3'
   });
 
 const materialLoadStatus =
