@@ -122,7 +122,8 @@ import {
   resolveWorldAreaSpawnPoint
 } from '../world/world-area-model.js?rev=interior-geometry-authoring-v1-r2';
 import {
-  worldAreaBoundaryPoints
+  worldAreaBoundaryPoints,
+  pointInWorldAreaBoundary
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
@@ -608,6 +609,14 @@ const PAINT_KINDS = Object.freeze([
 ]);
 const drawUndoStack = [];
 const MAX_DRAW_UNDO = 30;
+
+function isInteriorArea() {
+  return currentAreaRaw()?.kind === 'interior';
+}
+
+function interiorFloorMaterials() {
+  return surfaceMaterials.filter((item) => item.id.startsWith('floor.'));
+}
 const BUILDER_PAN_MARGIN_PX = 96;
 const coarsePointerMedia =
   window.matchMedia?.('(pointer: coarse)') ?? null;
@@ -1818,6 +1827,7 @@ function refreshAreaControls() {
   if (!areaMaterialOptions.some((material) => material.id === $('area-material').value)) {
     $('area-material').value = areaMaterialOptions[0]?.id ?? '';
   }
+  $('area-interior-floor-shortcut').hidden = area.kind !== 'interior';
 
   setOptions(
     $('spawn-select'),
@@ -1845,6 +1855,13 @@ function isPaintKind(kind) {
 }
 
 function paintBrushControl(kind = mapTool) {
+  if (kind === 'terrain' && isInteriorArea()) {
+    return {
+      input: $('interior-floor-brush-size'),
+      output: $('interior-floor-brush-size-value'),
+      fallback: 72
+    };
+  }
   if (kind === 'river') {
     return {
       input: $('terrain-river-width'),
@@ -1898,7 +1915,8 @@ function pruneDrawUndoStack() {
 }
 
 function syncPaintModeUi() {
-  const selectedKind =
+  const interior = isInteriorArea();
+  const selectedKind = interior ? 'terrain' :
     isPaintKind(mapTool)
       ? mapTool
       : (
@@ -1914,8 +1932,9 @@ function syncPaintModeUi() {
     route: 'Route',
     river: 'Rivière / mer'
   };
-  $('map-tool-paint').textContent =
-    `Peindre · ${paintLabels[selectedKind] ?? 'Sol'}`;
+  $('map-tool-paint').textContent = interior
+    ? 'Peindre · Sol intérieur'
+    : `Peindre · ${paintLabels[selectedKind] ?? 'Sol'}`;
 
   for (
     const panel of
@@ -1932,7 +1951,14 @@ function syncPaintModeUi() {
   $('terrain-paint-toggle').textContent = active
     ? '✓ Pinceau actif · arrêter'
     : '🖌 Activer le pinceau';
-  $('terrain-paint-toggle').setAttribute('aria-pressed', String(active));
+  $('terrain-paint-toggle').setAttribute('aria-pressed', String(active && !interior));
+  $('interior-floor-paint-toggle').textContent = active && interior
+    ? '✓ Pinceau intérieur actif · arrêter'
+    : '🖌 Activer le pinceau intérieur';
+  $('interior-floor-paint-toggle').setAttribute('aria-pressed', String(active && interior));
+  $('interior-floor-paint-guide').textContent = active && interior
+    ? 'Peins au doigt ou à la souris dans cette pièce. Deux doigts : déplacer et zoomer.'
+    : '1. Choisis une texture. 2. Active le pinceau. 3. Touche ou glisse dans la pièce.';
   $('terrain-paint-guide').textContent = active
     ? 'Pinceau actif : touche puis glisse sur la carte. Un simple appui peint un point. Deux doigts : déplacer et zoomer.'
     : '1. Choisis Sol, Route ou Rivière. 2. Choisis famille et texture. 3. Active le pinceau.';
@@ -2038,6 +2064,44 @@ function adjustPaintBrush(direction) {
   );
   renderPreview();
   return next;
+}
+
+function refreshInteriorFloorControls() {
+  const area = currentAreaRaw();
+  const interior = area?.kind === 'interior';
+  $('area-interior-floor-shortcut').hidden = !interior;
+  document.querySelector('[data-tab="interior-floor"]').hidden = !interior;
+  document.querySelector('[data-tab="terrain"]').hidden = interior;
+  if (!interior) {
+    if (document.querySelector('[data-tab="interior-floor"]').classList.contains('active')) activateTab('area');
+    return;
+  }
+
+  const options = interiorFloorMaterials();
+  const baseId = area.surface?.baseMaterialId;
+  setOptions($('interior-floor-base'), options, baseId, { label: (item) => item.label });
+  if (options.some((item) => item.id === baseId)) $('interior-floor-base').value = baseId;
+
+  const previous = $('interior-floor-material').value;
+  const brushId = options.some((item) => item.id === previous)
+    ? previous : options.some((item) => item.id === baseId) ? baseId : options[0]?.id;
+  setOptions($('interior-floor-material'), options, brushId, { label: (item) => item.label });
+  $('interior-floor-material').value = brushId ?? '';
+  $('interior-floor-brush-size-value').value = $('interior-floor-brush-size').value;
+
+  const zoneSelect = $('interior-floor-zone-select');
+  const selected = zoneSelect.value;
+  zoneSelect.replaceChildren();
+  for (const [index, zone] of (area.surface?.zones ?? []).entries()) {
+    const option = document.createElement('option');
+    option.value = zone.id;
+    option.textContent = `${index + 1} · ${materialRegistry.resolve(zone.materialId)?.label ?? zone.materialId}`;
+    zoneSelect.append(option);
+  }
+  if ([...zoneSelect.options].some((option) => option.value === selected)) zoneSelect.value = selected;
+  $('interior-floor-zone-delete').disabled = zoneSelect.options.length === 0;
+  $('interior-floor-undo').disabled = !drawUndoStack.some((entry) =>
+    entry.areaId === selectedAreaId && entry.kind === 'terrain' && surfacePathReferenceExists(entry));
 }
 
 function refreshTerrainControls() {
@@ -3746,6 +3810,7 @@ function refreshJson() {
 function refreshControls() {
   ensureSelections();
   refreshAreaControls();
+  refreshInteriorFloorControls();
   refreshTerrainFamilyDefinitionControls();
   refreshTerrainControls();
   refreshUserTextureControls();
@@ -4563,8 +4628,10 @@ function activateTab(tabName) {
 }
 
 function setMapTool(tool) {
-  const requested =
-    tool === 'paint'
+  const interior = isInteriorArea();
+  const requested = interior && (tool === 'paint' || isPaintKind(tool))
+    ? 'terrain'
+    : tool === 'paint'
       ? (
           isPaintKind($('terrain-draw-kind').value)
             ? $('terrain-draw-kind').value
@@ -4596,7 +4663,7 @@ function setMapTool(tool) {
 
   $('map-object-tools').hidden = mapTool !== 'select' && mapTool !== 'object-stamp';
   if (isPaintKind(mapTool)) {
-    activateTab('terrain');
+    activateTab(interior ? 'interior-floor' : 'terrain');
   } else if (mapTool === 'object-stamp') {
     activateTab('objects');
   } else if (mapTool === 'actor-placement') {
@@ -4875,6 +4942,8 @@ function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
 function beginSurfacePath(kind, point) {
   const area = currentAreaRaw();
   if (!area) return null;
+  const interior = area.kind === 'interior';
+  if (interior && (kind !== 'terrain' || !pointInWorldAreaBoundary(currentAreaNormalized(), point.x, point.y))) return null;
   // Each fresh stroke starts a distinct retained-layer transaction, even if
   // undo/repaint recycles the same canonical WorldSurface path ID.
   terrainCompositor.clear();
@@ -4887,14 +4956,16 @@ function beginSurfacePath(kind, point) {
     kind === 'river'
       ? numberValue($('terrain-river-width'), 72)
       : kind === 'terrain'
-        ? numberValue($('terrain-brush-size'), 180)
+        ? (interior ? numberValue($('interior-floor-brush-size'), 72) : numberValue($('terrain-brush-size'), 180))
         : numberValue($('terrain-route-width'), 82);
   const materialId =
     kind === 'river'
       ? $('terrain-river-material').value
       : kind === 'terrain'
-        ? (preferredSurfaceMaterial(surfaceMaterials, $('terrain-family').value,
-          $('terrain-paint-material').value, terrainFamilies()) ?? '')
+        ? (interior
+          ? $('interior-floor-material').value
+          : (preferredSurfaceMaterial(surfaceMaterials, $('terrain-family').value,
+            $('terrain-paint-material').value, terrainFamilies()) ?? ''))
         : $('terrain-route-material').value;
   if (!materialId) {
     setStatus('Importe une texture pour cette famille avant de peindre.', true);
@@ -4905,7 +4976,7 @@ function beginSurfacePath(kind, point) {
       ? $('terrain-river-family').value
       : kind === 'route'
         ? $('terrain-route-family').value
-        : $('terrain-family').value;
+        : (interior ? area.surface?.baseTerrainFamilyId : $('terrain-family').value);
 
   draft = addSurfacePath(
     draft,
@@ -4930,6 +5001,8 @@ function beginSurfacePath(kind, point) {
 }
 
 function appendDrawPoint(kind, pathId, point, force = false) {
+  if (isInteriorArea() && kind === 'terrain' &&
+      !pointInWorldAreaBoundary(currentAreaNormalized(), point.x, point.y)) return;
   const path = surfacePathItems(currentAreaRaw())
     .find((item) => item.kind === kind && item.id === pathId);
   const last = path?.points?.at(-1);
@@ -6368,6 +6441,60 @@ $('preview-focus').addEventListener('click', focusSelection);
 
 $('user-texture-kind').addEventListener('change', () => {
   $('user-texture-family').disabled = $('user-texture-kind').value !== 'surface';
+});
+
+$('area-open-interior-floors').addEventListener('click', () => {
+  if (isInteriorArea()) {
+    setMapTool('select');
+    activateTab('interior-floor');
+  }
+});
+
+$('interior-floor-base').addEventListener('change', () => {
+  if (!isInteriorArea()) return;
+  draft = updateAreaProperties(draft, selectedAreaId,
+    { baseMaterialId: $('interior-floor-base').value });
+  refreshAreaControls();
+  refreshJson();
+  renderPreview();
+});
+
+$('interior-floor-paint-toggle').addEventListener('click', () => {
+  if (!isInteriorArea()) return;
+  setMapTool(mapTool === 'terrain' ? 'select' : 'terrain');
+  if (mapTool === 'select') activateTab('interior-floor');
+});
+
+$('interior-floor-brush-size').addEventListener('input', () => {
+  $('interior-floor-brush-size-value').value = $('interior-floor-brush-size').value;
+  if (isInteriorArea() && mapTool === 'terrain') {
+    $('paint-brush-value').value = $('interior-floor-brush-size').value;
+    renderPreview();
+  }
+});
+
+$('interior-floor-undo').addEventListener('click', () => {
+  if (!isInteriorArea()) return;
+  const index = drawUndoStack.findLastIndex((ref) =>
+    ref.areaId === selectedAreaId && ref.kind === 'terrain' && surfacePathReferenceExists(ref));
+  if (index < 0) return;
+  const [ref] = drawUndoStack.splice(index, 1);
+  draft = deleteSurfacePath(draft, selectedAreaId, 'terrain', ref.pathId);
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  terrainCompositor.clear();
+  refreshControls();
+});
+
+$('interior-floor-zone-delete').addEventListener('click', () => {
+  if (!isInteriorArea()) return;
+  const id = $('interior-floor-zone-select').value;
+  if (!(currentAreaRaw()?.surface?.zones ?? []).some((zone) => zone.id === id)) return;
+  draft = deleteSurfacePath(draft, selectedAreaId, 'terrain', id);
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  terrainCompositor.clear();
+  refreshControls();
 });
 
 $('terrain-paint-toggle').addEventListener('click', () => {
