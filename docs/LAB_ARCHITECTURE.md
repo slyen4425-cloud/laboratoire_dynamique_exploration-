@@ -1020,3 +1020,12 @@ pour confirmer les textures et la fluidité ; aucune donnée de FPS réelle anno
 - Les outils affichent les familles selon `paintKind` pour les **nouveaux traits**. Les anciens placements importés ne sont jamais recatégorisés ni réécrits silencieusement.
 - `WorldDocument` conserve les références de familles et de matériaux indépendantes. Modifier la palette visuelle n'accorde aucune capacité de locomotion, ne change ni l'Encounter Resolver ni la collision.
 - Le rendu runtime complet garde le Surface Renderer existant. Les optimisations de masques du Builder, validées en fluidité mobile au lot R1, ne sont pas touchées.
+
+
+## 2026-10-17 — Vitesses par famille de terrain (autorité unique)
+
+Le `WorldDocument.terrainFamilies[]` peut porter `traversalModes: { ground, swim, fly }` (multiplicateurs 0..10 ; 0 = mode interdit). L'absence de `traversalModes` conserve exactement la compatibilité des anciennes cartes : valeurs par défaut dérivées du seul `traversalRulePackV1` (sol ×1, route ×1,25, eau/nage ×0,75, vol ×1).
+
+Le Builder n'enregistre que ces données sémantiques, indépendantes de `materialId`. `createWorldTraversalRuleRegistry(WorldDocument)` projette les familles vers l'unique `Traversal Rule Registry`; `resolveSurfaceTraversal()` reste l'autorité de la passabilité et du multiplicateur. Les surfaces sont résolues dans cet ordre : **rivière > route > zone peinte la plus récente > sol de base**. Le corridor d'un pont conserve sa dérogation explicite. `stepMovement()` demeure **l'unique autorité de déplacement** et consomme le multiplicateur résolu, sans calcul de terrain dans le Builder ni le Renderer. Même registre injecté aux acteurs vivants.
+
+Les réglages sont édités en pourcentage dans « Familles de terrain » (Marche, Nage, Vol), puis exportés/importés avec le WorldDocument. Les couleurs, textures et fondus restent exclusivement visuels. Anciennes cartes sans propriété de vitesse ne sont pas réécrites à l'import et conservent leurs règles par défaut.
