@@ -137,6 +137,52 @@ try{
   if(waterMotion.riverCount!==1 || waterMotion.glints<2 ||
      waterMotion.foam<2 || waterMotion.changed<40)
     throw Error('Real Canvas water reflections static, absent or not flowing');
+
+  // Real Builder document + Browser Canvas pixel gate for generic water/object contact.
+  const contactGate = await run(`(async()=> {
+    const source=JSON.parse(document.querySelector('#json-preview').value);
+    const area=source.areas[0];
+    const {planObjectShoreContacts}=await import('./src/render/object-shore-contact.js?smoke=v7');
+    const {createWorldObjectRenderer}=await import('./src/render/world-object-renderer.js?smoke=v7');
+    const {resolveWorldObjectPlacement}=await import('./src/world/world-object-placement-model.js?smoke=v7');
+    const {materialPackV1}=await import('./src/materials/material-pack-v1.js?smoke=v7');
+    const {createMaterialRegistry}=await import('./src/materials/material-registry.js?smoke=v7');
+    const registry=createMaterialRegistry(materialPackV1);
+    const placement=area.objects.find(p=>p.id==='upper-cliff-left');
+    const object=resolveWorldObjectPlacement(placement);
+    const contact=planObjectShoreContacts({object,surface:area.surface,materialRegistry:registry});
+    const asset=new Image();
+    const ready=new Promise((resolve,reject)=>{asset.onload=resolve;asset.onerror=reject;});
+    asset.src='./assets/exploration/objects/relief/cliff_grassy_edge_01.svg';
+    await ready;
+    const renderer=createWorldObjectRenderer({
+      imageLoader:{get:()=>asset},
+      resolveVisualAsset:()=>({render:{widthScale:1,heightScale:1}})
+    });
+    const render=(withWater)=>{
+      const canvas=document.createElement('canvas');canvas.width=900;canvas.height=550;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      renderer.draw(ctx,{
+        camera:{x:120,y:390},viewport:{width:900,height:550},
+        objects:[placement],
+        surface:withWater?area.surface:{...area.surface,rivers:[]},
+        materialRegistry:registry
+      });
+      return ctx.getImageData(0,0,900,550).data;
+    };
+    const before=render(false),after=render(true);
+    let changed=0;
+    for(let i=0;i<before.length;i+=4){
+      if(before[i]!==after[i]||before[i+1]!==after[i+1]||
+         before[i+2]!==after[i+2]||before[i+3]!==after[i+3])changed++;
+    }
+    return {contacts:contact.length,changed,areaId:area.id,
+      imageWidth:asset.naturalWidth,objects:area.objects.length};
+  })()`);
+  console.log('V7 water-rock contact Browser pixels:',JSON.stringify(contactGate));
+  if(contactGate.contacts<1||contactGate.changed<30||contactGate.imageWidth<100)
+    throw Error('Builder WorldDocument to real Canvas water-rock contact failed');
+
   console.log('GREEN: same Builder, optional canyon WorldDocument, six SVG assets loaded, classic link present');
 }finally{
   socket?.close();
