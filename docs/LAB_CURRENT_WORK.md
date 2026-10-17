@@ -7,7 +7,8 @@
 - **Gel :** style 2D, mouvement, collision, encounters, Combat, caméra, Builder mutations, génération, world save, culling et raster cache. Les surfaces visuelles ne déterminent jamais la traversée.
 - **Tests/gates :** cohérence material ID / SVG, Material Registry + Asset Adapter, WorldDocument export/import identique, collision/terrain inchangés, overlays bornés et animation, Node/check, CI Chromium Builder/Encounter, validation Pixel paysage sur preview Pages **avant GREEN final**.
 - **Risques :** raccord de berge artificiel, répétition de la texture, performances smartphone ; limiter les motifs et ne jamais redessiner le terrain par frame. Aucun import de nouvelle image binaire non vérifiée.
-- **État :** conception/implémentation V2 en cours, pas encore GREEN.
+- **État technique (17/10) :** nouvelle texture eau turquoise 256×256 SVG et transition de berge 256×128 SVG, Asset Adapter et Material Registry dédiés au canyon ; cascade enrichie dans son sprite SVG canonique ; lignes d'écume bornées le long de la géométrie de rivière existante. Builder statique ; runtime animé ; river traversal, route, géométrie, collisions et style classique inchangés. Tests de non-régression et vrai navigateur CI [39035794102](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39035794102) **SUCCESS** (516/516 Node, npm check, Chromium Builder + Encounter). Les échecs intermédiaires de sentinelles de nombre de matériaux et de révision cache ont été réparés ; ancien manifeste WebP conservé inchangé et les nouveaux SVG sont des assets texte distincts. **Prévalidation technique seulement : essai Pixel paysage nécessaire avant GREEN final.**
+- **Publication :** à faire par branche infrastructure Pages pointant exclusivement sur un SHA figé ; ne pas fusionner de sources de jeu dans `main`.
 
 ---
 
