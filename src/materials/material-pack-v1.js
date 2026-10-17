@@ -400,7 +400,12 @@ export const materialPackV1 = Object.freeze({
         outerBankPadding: 38,
         innerBankPadding: 16,
         highlightRatio: 0.09,
-        highlightOpacity: 0.20
+        highlightOpacity: 0.20,
+        shoreContact: Object.freeze({
+          shadowColor: '#214858',
+          highlightColor: '#ddfff5',
+          opacity: 0.56
+        })
       })
     }),
     Object.freeze({

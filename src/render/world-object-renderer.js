@@ -1,3 +1,4 @@
+import { planObjectShoreContacts } from './object-shore-contact.js?rev=themeable-relief-v7';
 import {
   bridgeVisualRect,
   worldObjectVisualRect
@@ -46,6 +47,29 @@ function requireVisualAsset(object, imageLoader, resolveVisualAsset) {
   return Object.freeze({ assetId, asset, image });
 }
 
+function drawShoreContacts(ctx, plan, camera) {
+  for (const item of plan) {
+    ctx.save();
+    ctx.translate(item.x - camera.x, item.y - camera.y);
+    ctx.rotate(item.angle);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-item.length / 2, -1);
+    ctx.quadraticCurveTo(-item.length * 0.1, 2.4, item.length / 2, 0);
+    ctx.globalAlpha = item.opacity * 0.66;
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = item.shadowColor;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-item.length * 0.38, 1.3);
+    ctx.quadraticCurveTo(0, -1.5, item.length * 0.32, 1.6);
+    ctx.globalAlpha = item.opacity * 0.5;
+    ctx.lineWidth = 2.1;
+    ctx.strokeStyle = item.highlightColor;
+    ctx.stroke();
+    ctx.restore();
+  }
+}
 function drawBridgeImage(
   ctx,
   bridge,
@@ -183,7 +207,7 @@ export function createWorldObjectRenderer({
     objectDefinitionCatalogV1
 } = {}) {
   return Object.freeze({
-    draw(ctx, { camera, viewport, objects }) {
+    draw(ctx, { camera, viewport, objects, surface = null, materialRegistry = null }) {
       for (
         const object of
           resolveWorldObjectPlacements(
@@ -222,6 +246,13 @@ export function createWorldObjectRenderer({
           visual.image,
           visual.asset
         );
+        if (materialRegistry && surface?.rivers?.length) {
+          drawShoreContacts(
+            ctx,
+            planObjectShoreContacts({ object, surface, materialRegistry }),
+            camera
+          );
+        }
       }
     }
   });

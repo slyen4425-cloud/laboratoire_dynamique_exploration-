@@ -431,7 +431,7 @@ const DEFINITIONS = frozen([
     label: '2,5D · Falaise herbeuse longue',
     kind: 'rock',
     library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
-    visual: { assetId: 'object.relief.cliff.grassy_edge.01' },
+    visual: { assetId: 'object.relief.cliff.grassy_edge.01', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
     baseSize: { width: 768, height: 384 },
     collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
       heightRatio: 0.66, offsetX: 0, offsetY: 0.08 }
@@ -442,7 +442,7 @@ const DEFINITIONS = frozen([
     label: '2,5D · Falaise herbeuse, arête irrégulière',
     kind: 'rock',
     library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
-    visual: { assetId: 'object.relief.cliff.broken_ledge.02' },
+    visual: { assetId: 'object.relief.cliff.broken_ledge.02', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
     baseSize: { width: 768, height: 384 },
     // Inherit exactly the same footprint as the approved long cliff.
     collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
@@ -454,7 +454,7 @@ const DEFINITIONS = frozen([
     label: '2,5D · Angle de falaise',
     kind: 'rock',
     library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
-    visual: { assetId: 'object.relief.cliff.corner.01' },
+    visual: { assetId: 'object.relief.cliff.corner.01', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
     baseSize: { width: 420, height: 405 },
     collision: { role: 'obstacle', shape: 'box', widthRatio: 0.82,
       heightRatio: 0.60, offsetX: 0, offsetY: 0.08 }
