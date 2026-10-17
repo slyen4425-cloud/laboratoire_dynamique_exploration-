@@ -1,5 +1,5 @@
 import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=encounter-selected-elements-v1';
-import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2';
+import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
   addActorPlacement,
   addPortal,
@@ -35,7 +35,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=encounter-selected-elements-v1';
+} from './world-builder-draft.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1';
 import {
   copyWorldObjectAsStamp,
   worldObjectStampInput
