@@ -56,7 +56,7 @@ import {
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=builder-terrain-compositor-v1';
-import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefWaterfallGlints } from '../render/relief-water-overlay.js?rev=relief-water-fx-v1';
+import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefRiverBankFoam, drawReliefWaterfallGlints } from '../render/relief-water-overlay.js?rev=relief-water-fx-v1&art=canyon-water-art-v2';
 import { createBuilderTerrainCompositor } from './builder-terrain-compositor.js?rev=builder-terrain-compositor-v1';
 import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-palette-editable-v2';
 import {
@@ -129,7 +129,7 @@ import {
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
 import {
   materialPackV1
-} from '../materials/material-pack-v1.js?rev=interior-floor-textures-v1';
+} from '../materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
 import {
   USER_TEXTURE_MAX_BYTES,
   composeMaterialPackWithUserMaterials,
@@ -153,7 +153,7 @@ import {
 } from '../materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
 import {
   createMaterialAssetResolver
-} from '../assets/material-asset-adapter.js?rev=interior-floor-textures-v1';
+} from '../assets/material-asset-adapter.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
 import {
   createUserMaterialAssetResolver
 } from '../assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
@@ -4437,6 +4437,7 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
 
       if (shouldRenderReliefWater(document.id, area)) {
         drawReliefRiverGlints(ctx, { area, camera, viewport, timeSeconds: 0 });
+        drawReliefRiverBankFoam(ctx, { area, camera, viewport, timeSeconds: 0 });
       }
 
       area.obstacles.forEach((obstacle) =>
