@@ -89,7 +89,7 @@ import {
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
