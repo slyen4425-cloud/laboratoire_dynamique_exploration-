@@ -10,6 +10,26 @@ export const DEFAULT_TERRAIN_FAMILY_DEFINITIONS =
     Object.freeze({ id: 'sand', label: 'Sable', paintKind: 'terrain' })
   ]);
 
+// Gameplay parameters belong to terrain families, never to image materials.
+export function defaultTerrainFamilyTraversalModes(id, paintKind = 'terrain') {
+  const kind = id === 'road' ? 'route' : id === 'sea' ? 'river' : paintKind;
+  return Object.freeze(kind === 'route'
+    ? { ground: 1.25, swim: 0, fly: 1 }
+    : kind === 'river'
+      ? { ground: 0, swim: 0.75, fly: 1 }
+      : { ground: 1, swim: 0, fly: 1 });
+}
+
+export function normalizeTerrainFamilyTraversalModes(raw, fallback) {
+  const modes = {};
+  for (const mode of ['ground', 'swim', 'fly']) {
+    const value = raw?.[mode];
+    modes[mode] = Number.isFinite(value) && value >= 0 && value <= 10
+      ? value : fallback[mode];
+  }
+  return Object.freeze(modes);
+}
+
 export const TERRAIN_FAMILY_IDS = Object.freeze(
   DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(
     (definition) => definition.id
@@ -57,6 +77,10 @@ export function normalizeTerrainFamilyDefinitions(
       id,
       label,
       ...(paintKind ? { paintKind } : {}),
+      traversalModes: normalizeTerrainFamilyTraversalModes(
+        raw?.traversalModes,
+        defaultTerrainFamilyTraversalModes(id, paintKind)
+      ),
       ...(surfaceMaterialIds ? { surfaceMaterialIds } : {})
     }));
   }
