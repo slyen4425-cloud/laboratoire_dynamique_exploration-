@@ -7,7 +7,7 @@
 - **Gel :** WorldDocument, tracé/largeur/traversalRule, collisions/Collision World, déplacement, caméra, générateur, Builder data layer, stockage, catalogue WorldObject, Encounter/Combat, style 2D classique. Pas de deuxième géométrie, matériau autoritaire, moteur renderer ou asset inline.
 - **Gates :** sentinelle du chemin réel Material Registry → Surface Renderer, vérification absence de drawImage segmenté pour canyon mais conservation des segments sur autres matériaux, tests d'animation/collision, 520+ tests Node + npm check + Chromium Builder/Encounter, publication d'un snapshot Pages seulement si CI verte, essai smartphone avant GREEN final.
 - **Risque :** rive trop uniforme vs couleur du sol : garder plusieurs couches translucides et l'écume animée existante ; qualité finale conditionnée au contrôle créateur.
-- **État :** correctif V4 en cours. 
+- **Prévalidation technique :** correction intégrée au Surface Renderer d'origine avec 4 passes de courbe continue (berges externes/interne, eau texturée, reflet), aucun rectangle `drawImage` pour le matériau canyon, aucun cache statique invalidé à chaque frame. Ancien sprite de berge retiré des assets chargés mais conservé dans l'Asset Adapter pour compatibilité historique. Sentinelles V4 : 0 rectangle pour canyon, rendu historique des autres matériaux préservé, collision nage/marche inchangée, ancien état de carte non muté. CI [39045941561](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39045941561) **SUCCESS** (Node/check/Chromium). Les échecs de sentinelles intermédiaires ont été corrigés ; **pas de GREEN final sans contrôle smartphone**. Checkpoint snapshot et publication infrastructure Pages à figer après CI de cette documentation.
 
 ---
 
