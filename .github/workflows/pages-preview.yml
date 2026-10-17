@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: relief-water-fx-prevalidation-2026-10-17
+# preview-revision: canyon-water-art-v2-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 0a609e7dd88c3a866761203068dc7957e7a074b1
+          ref: ea3856230f4f981be011ae9f594dc2d209eb694d
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
