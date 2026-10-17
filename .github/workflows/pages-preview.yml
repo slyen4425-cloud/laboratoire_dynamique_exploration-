@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: relief-themable-v7-prevalidation-2026-10-17
+# preview-revision: relief-immersion-v8-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 9c35fbda32b1cb23a1eb100750da5b486c08ae63
+          ref: b252bea83b3c473cd02d97ca0efcbc70a6597454
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
