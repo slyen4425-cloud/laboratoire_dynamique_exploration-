@@ -6,7 +6,7 @@ import {
   resolveSurfaceTraversal
 } from './core/surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
-import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1&water=canyon-continuous-river-v4';
 import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefRiverBankFoam, drawReliefWaterfallGlints } from './render/relief-water-overlay.js?rev=relief-water-fx-v1&art=canyon-water-art-v2';
 import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
 import {
