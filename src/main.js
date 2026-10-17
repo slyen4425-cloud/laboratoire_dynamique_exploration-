@@ -50,7 +50,7 @@ import {
 } from './world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
   createComposedObjectDefinitionCatalog
-} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1';
 import {
   objectDefinitionFromUserRecord
 } from './objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
