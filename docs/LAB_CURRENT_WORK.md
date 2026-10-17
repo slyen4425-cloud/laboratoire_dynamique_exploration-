@@ -1,3 +1,15 @@
+# Reprise active — 2026-10-17 — Pinceau et palette dédiés aux sols intérieurs
+
+- **Branche unique :** `work/exploration-interior-floor-brush-2026-10-17` depuis le snapshot d'assets prévalidé `7ea8be2370d74256aa6dda8f0be0414a6d9d84b8`; checkpoint de départ `checkpoint/exploration-start-interior-floor-brush-2026-10-17`.
+- **Retour utilisateur :** la liste « Area » ne montre que forêt/intérieur (normal : navigation entre zones) ; l'option « Texture du sol » ne règle que le fond entier ; absence de pinceau/palette intérieurs intuitifs.
+- **Périmètre :** un onglet « Sol intérieur » visible uniquement sur WorldArea intérieur ; palette des 5 matériaux `floor.*`, fond de pièce et pinceau de taille distincte, couleur choisie sur plusieurs traits, annulation/suppression, accès direct depuis Area ; conserver WorldArea.surface.zones et Renderer existants.
+- **Autorités :** WorldDocument surface zones / Material Registry / Asset Adapter, Builder éditant seulement le draft. AUCUN registre de matériaux concurrent, stockage parallèle, nouveau rendu ni déclencheur de traversée. Les zones de sol intérieures reprennent la famille de traversée du fond pour ne pas changer les vitesses en fonction des images.
+- **Gel :** autres zones/extérieurs, routes/rivières, encounter/collision, combat, mouvement, bâtiments, entrées/portals, assets WebP.
+- **Tests :** sélection des 5 sols, peinture à points/touch, couches multiples, sérialisation/rechargement, taille du pinceau, gate ancien terrain/mouvement, CI npm test/check/Chromium, contrôle smartphone avant GREEN final.
+- **Risques :** UI masquée selon Area, pinceau ancien dirigé vers Terrain extérieur, persistances des calques, cache PWA. Publication sur preview isolée après succès des gates.
+
+---
+
 # Reprise active — 2026-10-17 — Sols intérieurs : pack de 5 textures
 
 - **Branche unique :** `work/exploration-interior-floor-texture-pack-2026-10-17` ; **base** `1b9524c06277efe1fd34263f0a0ed3f026c1a7e9` (CI technique GREEN, terrain-family-speed prévalidation toujours non final utilisateur).
