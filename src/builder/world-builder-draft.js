@@ -2,6 +2,10 @@ import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2';
 import {
+  defaultTerrainFamilyTraversalModes,
+  normalizeTerrainFamilyTraversalModes
+} from '../world/terrain-family-registry.js?rev=terrain-family-speed-editor-v1';
+import {
   findWorldAreaBoundarySafePoint,
   normalizeWorldAreaBoundary
 } from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
@@ -114,7 +118,8 @@ export function addTerrainFamilyDefinition(
       label.trim()
         ? label.trim()
         : familyId,
-    paintKind: ['terrain', 'route', 'river'].includes(paintKind) ? paintKind : 'terrain'
+    paintKind: ['terrain', 'route', 'river'].includes(paintKind) ? paintKind : 'terrain',
+    traversalModes: defaultTerrainFamilyTraversalModes(familyId, paintKind)
   });
 
   next.encounterConfig ??= {
@@ -137,7 +142,8 @@ export function updateTerrainFamilyDefinition(
   {
     label,
     paintKind,
-    surfaceMaterialIds
+    surfaceMaterialIds,
+    traversalModes
   } = {}
 ) {
   const next = clone(draft);
@@ -163,6 +169,12 @@ export function updateTerrainFamilyDefinition(
     family.surfaceMaterialIds = [...new Set(surfaceMaterialIds.filter(
       (id) => typeof id === 'string' && id.trim()
     ).map((id) => id.trim()))];
+  }
+  if (traversalModes && typeof traversalModes === 'object') {
+    family.traversalModes = normalizeTerrainFamilyTraversalModes(
+      { ...(family.traversalModes ?? {}), ...traversalModes },
+      defaultTerrainFamilyTraversalModes(family.id, family.paintKind)
+    );
   }
 
   return next;
