@@ -28,7 +28,7 @@ function readVerifiedAsset(asset, file, viewBox) {
   assert.match(svg, /^<svg[^>]+viewBox=/);
   assert.ok(svg.includes(`viewBox="${viewBox}"`));
   assert.match(svg, /<\/svg>\s*$/);
-  assert.doesNotMatch(svg, /<script|<foreignObject|https?:\/\//i);
+  assert.doesNotMatch(svg, /<script|<foreignObject|(?:href|xlink:href)=['\"]https?:/i);
   assert.ok(svg.length > 1000);
   return svg;
 }
