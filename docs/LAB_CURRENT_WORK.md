@@ -1,3 +1,15 @@
+# Lot actif — 17/10/2026 — Canyon 2,5D : kit visuel V3 (refonte artistique)
+
+- **Branche exclusive :** `work/exploration-canyon-art-kit-v3-2026-10-17`, base prévalidée `1facaf42caf291ffb523bbd2b669638f8c5c27fc`, checkpoint START `checkpoint/exploration-start-canyon-art-kit-v3-2026-10-17` au même SHA.
+- **Motif :** captures smartphone de la V2 : répétitions/carrelage de la rivière visibles, bandes trop droites, falaises posées sans intégration, cascade isolée ; performance néanmoins jugée fluide. L'utilisateur demande des assets artistiquement cohérents, pas plus de JS visuel.
+- **Périmètre V3 :** SVG transparents/externes dans les dossiers d'assets existants ; falaise longue revisitée, coin rocheux et variante de rive décorative, texture d'eau réellement raccordable sans bandes répétées, bordures avec écume douce, cascade intégrée à la roche. Catalog/Asset Adapter/Material Registry continuent de fournir les seules autorités visuelles. Le pilote opte pour le nouveau style, carte classique inchangée.
+- **Gel :** Collision World, collisions d'objets, déplacement, caméra, route/rivière X/Y/traversal, rendu du cache statique, animations existantes, combattants, Encounter, stockage. Pas de images/audio inline dans HTML/JS. Aucune hauteur réellement traversable.
+- **Tests :** existence/intégrité SVG + dimensions/viewBox, ID/catalog/resolver, styles de carte opt-in, non-régression WorldDocument / collision, CI Node/check + vraie page Builder et Encounter Chromium ; rendu écran et fluidité réelle sur smartphone indispensables pour GREEN final.
+- **Risques :** tuiles de texture/sprites géants, bords visuellement répétitifs, qualité subjective de l'art produit. Ne pas présenter comme équivalent à l'image de référence. Diff documenté, checkpoint avant publication isolée.
+- **État :** implémentation en cours ; aucune promesse de GREEN avant CI et test manuel auteur.
+
+---
+
 # Lot actif — 17/10/2026 — Qualité graphique eau/cascade canyon, V2
 
 - **Branche unique :** `work/exploration-canyon-water-art-v2-2026-10-17` ; base technique CI GREEN `ae57178e97ae4c582fb3943d02d0ff2d2a1865f4`, checkpoint START `checkpoint/exploration-start-canyon-water-art-v2-2026-10-17`.
