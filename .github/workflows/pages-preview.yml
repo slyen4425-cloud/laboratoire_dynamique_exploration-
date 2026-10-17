@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: relief-cliff-rim-prevalidation-2026-10-17
+# preview-revision: relief-water-fx-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 48d0ff48b03a7d786e6cebec23e61a0a2ddec587
+          ref: 0a609e7dd88c3a866761203068dc7957e7a074b1
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
