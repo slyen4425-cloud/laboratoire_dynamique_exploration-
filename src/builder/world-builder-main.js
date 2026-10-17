@@ -56,6 +56,7 @@ import {
 } from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
 import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
 import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=builder-terrain-compositor-v1';
+import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefWaterfallGlints } from '../render/relief-water-overlay.js?rev=relief-water-fx-v1';
 import { createBuilderTerrainCompositor } from './builder-terrain-compositor.js?rev=builder-terrain-compositor-v1';
 import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-palette-editable-v2';
 import {
@@ -4434,6 +4435,10 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
         }
       });
 
+      if (shouldRenderReliefWater(document.id, area)) {
+        drawReliefRiverGlints(ctx, { area, camera, viewport, timeSeconds: 0 });
+      }
+
       area.obstacles.forEach((obstacle) =>
         drawObstacle(obstacle, camera)
       );
@@ -4443,6 +4448,10 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
         viewport,
         objects: area.objects
       });
+
+      if (shouldRenderReliefWater(document.id, area)) {
+        drawReliefWaterfallGlints(ctx, { area, camera, viewport, timeSeconds: 0 });
+      }
 
       portalRenderer.draw(ctx, {
         camera,
