@@ -62,7 +62,7 @@ import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../material
 import {
   clipWorldArea
 } from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2&shore=themeable-v7';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -90,7 +90,7 @@ import {
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&shore=themeable-v7';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
@@ -352,7 +352,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'building-interiors-passages-ux-r1-canyon-art-v3'
+        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v7'
     });
 
   const assetIds = [
@@ -4448,7 +4448,9 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
       objectRenderer.draw(ctx, {
         camera,
         viewport,
-        objects: area.objects
+        objects: area.objects,
+        surface: area.surface,
+        materialRegistry
       });
 
       if (shouldRenderReliefWater(document.id, area)) {

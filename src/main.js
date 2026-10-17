@@ -12,7 +12,7 @@ import { createTerrainTileCache } from './render/terrain-raster-compositor.js?re
 import {
   clipWorldArea
 } from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
-import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2&shore=themeable-v7';
 import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
 import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
@@ -51,7 +51,7 @@ import {
 } from './world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
   createComposedObjectDefinitionCatalog
-} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1';
+} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&shore=themeable-v7';
 import {
   objectDefinitionFromUserRecord
 } from './objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
@@ -528,7 +528,7 @@ const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset:
     resolveWorldObjectAssetComposed,
   cacheRevision:
-    'world-object-library-v1-orientation-v1-canyon-art-v3'
+    'world-object-library-v1-orientation-v1-canyon-art-v3-relief-v7'
 });
 
 const requiredWorldObjectAssetIds = Object.freeze([
@@ -1082,7 +1082,9 @@ function render(timeSeconds = 0) {
         width: innerWidth,
         height: innerHeight
       },
-      objects: area.objects
+      objects: area.objects,
+      surface: area.surface,
+      materialRegistry
     });
 
     if (shouldRenderReliefWater(activeWorldDocument.id, area)) {
