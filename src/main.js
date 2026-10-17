@@ -2,12 +2,9 @@ import { normalize } from './core/vector.js';
 import { stepMovement } from './core/movement.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import { normalizeExplorationConfig } from './core/config.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
-  createTraversalRuleRegistry,
+  createWorldTraversalRuleRegistry,
   resolveSurfaceTraversal
 } from './core/surface-traversal.js?rev=surface-traversal-replay-v1';
-import {
-  traversalRulePackV1
-} from './core/traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { createVirtualStick } from './input/virtual-stick.js';
 import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1';
 import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
@@ -247,8 +244,8 @@ if (returnedCombatEnvelope) {
 const camera = { x: 0, y: 0 };
 const keys = new Set();
 const touchInput = createVirtualStick(joystick, stick);
-const traversalRegistry = createTraversalRuleRegistry(
-  traversalRulePackV1
+const traversalRegistry = createWorldTraversalRuleRegistry(
+  activeWorldDocument
 );
 
 const captureCreatureCatalog =
