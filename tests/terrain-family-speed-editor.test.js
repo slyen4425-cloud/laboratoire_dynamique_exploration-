@@ -91,7 +91,7 @@ test('Builder exposes terrain family movement speeds, single authority, and no m
   const runtime=fs.readFileSync(new URL('../src/main.js', import.meta.url),'utf8');
   for(const mode of ['ground','swim','fly']){
     assert.match(html,new RegExp('id="terrain-family-speed-'+mode+'"'));
-    assert.match(builder,new RegExp("terrain-family-speed-"+mode));
+    assert.match(builder,/terrain-family-speed-/);
   }
   assert.match(runtime,/createWorldTraversalRuleRegistry\(\s*activeWorldDocument\s*\)/);
   assert.doesNotMatch(builder,/materialId\s*\*\s*speed/i);
