@@ -1,3 +1,14 @@
+# Lot actif — 17/10/2026 — V8 : immersion eau/roche et nettoyage des traits (correctif artistique V7)
+
+- **Retour créateur :** V7 rejetée (falaises trop cartoon, bandes marron aux sommets, aucune immersion perceptible ; cascade traversée de bandes blanches trop épaisses). Rejeter GREEN artistique V7. Ne pas annoncer résultat définitif avant essai mobile.
+- **Base immuable V7 :** `9c35fbda32b1cb23a1eb100750da5b486c08ae63`, CI `39067500096` SUCCESS, Pages `39067674689` SUCCESS ; retour V6 possible. Checkpoint START `checkpoint/exploration-start-relief-immersion-v8-2026-10-17` sur cette base ; branche `work/exploration-relief-immersion-v8-2026-10-17`. Main et Preview Pages gelés pendant correction.
+- **Propriétaires :** matériaux et palettes via Material Registry ; WorldObject Definition (ancrage visuel), WorldObject Renderer existant et helper `object-shore-contact.js` (calcul contact depuis géométrie `WorldSurface.rivers`) ; SVG externes via Asset Adapter. Builder et runtime consomment le même rendu.
+- **Périmètre V8 :** retirer les traits marron et les brins/tildes épais des 3 SVG de falaise, remplacer l'overpaint V7 lourd par une roche stratifiée sobre ; retirer grosses bandes blanches sur le SVG cascade. **Contact réel :** dessiner au-dessus de la base rocheuse un voile d'eau translucide près du pied de la paroi, limité à la *géométrie rivière canonique* et assorti d'écume fine rare. Les propriétés de teinte/opacité restent thémables via `render.shoreContact`, jamais par ID de biome hardcodé.
+- **Gels :** WorldDocument/schéma, géométrie World Surface, traversée, Collision World, mouvements, positions/scale/rotation éditables et sauvegardes, camera, Combat/Encounter, TerrainTileCache, animation V6, autres thèmes et assets. Pas d'autorité supplémentaire ni de nouveau moteur.
+- **Gates :** TDD contact vs hors rivière, couleurs paramétrables, absence d'épaisses lignes SVG, alpha/eau via rendu Canvas Chromium pixels réels, pas d'effet sur cartes classiques, Node/check/Chromium Builder/Encounter/Combat CI, prévalidation puis essai mobile avant GREEN artistique.
+
+---
+
 # Lot actif — 17/10/2026 — V7 : relief rocheux éditable et contact eau/paroi réutilisable
 
 - **Base immuable V6 publiée :** `3b50137714d44c165b0ceca0538bea4b30501de3` (CI `39055763723` SUCCESS, Pages `39061460146` SUCCESS), visuel auteur « c'est mieux ». Checkpoint START `checkpoint/exploration-start-relief-themable-v7-2026-10-17` et branche `work/exploration-relief-themable-v7-2026-10-17` depuis ce SHA. Aucune modification de `main` gameplay.
