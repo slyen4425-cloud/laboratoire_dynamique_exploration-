@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: canyon-water-art-v2-prevalidation-2026-10-17
+# preview-revision: canyon-visual-kit-v3-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: ea3856230f4f981be011ae9f594dc2d209eb694d
+          ref: a11fe22b03f9027052f87bcb89ed7fb272a972a8
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
