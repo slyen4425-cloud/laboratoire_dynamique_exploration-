@@ -1,3 +1,15 @@
+# Lot actif — 17/10/2026 — V7 : relief rocheux éditable et contact eau/paroi réutilisable
+
+- **Base immuable V6 publiée :** `3b50137714d44c165b0ceca0538bea4b30501de3` (CI `39055763723` SUCCESS, Pages `39061460146` SUCCESS), visuel auteur « c'est mieux ». Checkpoint START `checkpoint/exploration-start-relief-themable-v7-2026-10-17` et branche `work/exploration-relief-themable-v7-2026-10-17` depuis ce SHA. Aucune modification de `main` gameplay.
+- **Demande :** tendre vers la référence 2,5D (falaises striées mieux texturées, profondeur 3/4, contact naturel eau/roche), mais conserver **100 % de l'édition** et rendre la logique transposable à la neige, lave/volcan, ville et industriel sans cloner les moteurs.
+- **Périmètre de ce lot :** enrichissement des trois SVG externes de falaise existants **sans changer dimensions ni collision**, décoration de contact visuel facultative attachée à une définition d'objet et à un matériau d'eau existants, calculée par le renderer d'objets avec la géométrie canonique `WorldSurface.rivers`. Positions, scale/rotation restent uniquement dans les placements WorldDocument éditables. Palette du contact dans le Material Registry ; aucun lien hardcodé aux IDs d'objet, à la démo, ni à une carte.
+- **Systèmes réutilisés :** WorldObject Definition Catalog (métadonnée purement visuelle), WorldObject Asset Adapter (SVG externes), WorldObject Renderer propriétaire des dessins d'objets, Material Registry propriétaire des couleurs, World Surface Model propriétaire de la rivière ; Builder et runtime utilisent **le même chemin de rendu**.
+- **Gels :** aucune nouvelle géométrie/altitude de gameplay, aucune collision/WorldDocument schema, aucune sauvegarde nouvelle, aucun moteur 3D, aucun shader/texture inline, aucun asset volumineux, aucun autre thème modifié ; mouvements, combats, rencontres, portail, caméra, raster/animation V6 inchangés.
+- **Gates :** sentinelles d'absence de contact hors eau, déclenchement automatique près d'une rivière à partir d'un objet édité/translaté/scalé/roté, adaptation au matériau déclaré, non-mutation et rendu classique sans contact ; Node/check/Chromium Builder+Encounter, CI, checkpoint prévalidation, preview mobile puis validation auteur avant GREEN final.
+- **Limite affichée :** cette V7 vise le traitement visuel 3/4 d'objets ; elle n'ajoute **pas** une véritable édition des hauteurs/terrasses physiques. Cette évolution serait un autre chantier canonique du World Surface Model, pas une fausse hauteur visuelle autoritaire.
+
+---
+
 # Lot actif — 17/10/2026 — Eau canyon 2,5D : reflets organiques V6
 
 - **Verdict auteur :** V5 sans rectangles validée (« beaucoup mieux ») ; micro-vagues répétées jugées inesthétiques. Aucun changement de géométrie voulu.
