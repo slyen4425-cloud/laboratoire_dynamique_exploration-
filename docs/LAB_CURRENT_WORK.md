@@ -1,3 +1,16 @@
+# Lot actif — 2026-10-17 — Effets d'eau légère pour le prototype canyon 2,5D
+
+- **Branche unique :** `work/exploration-relief-water-fx-2026-10-17` depuis la prévalidation falaise `48d0ff48b03a7d786e6cebec23e61a0a2ddec587`, checkpoint de départ `checkpoint/exploration-start-relief-water-fx-2026-10-17`.
+- **Retour auteur :** bord des falaises beaucoup mieux mais désormais légèrement trop restrictif ; c'est un micro-recalage futur distinct, pas une réouverture du Collision World. Style 2,5D proche de la 2D conservé et jugé encourageant. Demande suivante : expliquer/augmenter l'aspect vivant de l'eau et des cascades sans sacrifier la fluidité.
+- **Périmètre :** fond de rivière du seul canyon en eau bleue déjà native, surcouche visuelle animée de courant/écume en jeu et filaments de chute d'eau animés au-dessus du WorldObject canonique. Builder conserve une prévisualisation statique lisible (pas de repaint continu en édition). Aucun asset lourd ajouté.
+- **Propriétaire :** Renderer visuel en lecture seule ; WorldDocument et WorldObject Asset Adapter existants. Activation exclusivement sur le document démo `relief-canyon-pilot-v1` : le style classique reste strictement inchangé. Aucun moteur/collision/hauteur/état parallèle.
+- **Gel :** mouvement, Collision World, falaises après correction validée, rencontres, Combat, caméra, éditeur de terrain, couches statiques/culling et cache, catalog d'assets binaires.
+- **Gates :** tests purs de plans d'ondulation, filtrage de la démo, sérialisation/matériaux inchangés côté gameplay, CI Node/check/Chromium du Builder et Encounter, benchmark de surcharge visuelle à confirmer sur téléphone en mouvement. Pas de GREEN final sans contrôle auteur.
+- **Risques :** sur-rendu des marques hors champ, surcoût du canvas mobile et lecture visuelle avec personnages. Garder le raster statique et limiter les motifs visibles. Une image de référence n'est pas un ensemble de sprites directement découpables.
+- **État :** ouvert ; prévalidation technique à vérifier avant publication Pages isolée.
+
+---
+
 # Reprise active — 2026-10-17 — Prototype artistique 2,5D Canyon (opt-in)
 
 - **Branche unique :** `work/exploration-relief-art-pilot-2026-10-17`; base documentaire et fonctionnelle `035fd01d0101036ea6c7dcaf66b1a7a5f2518f19`, checkpoint START `checkpoint/exploration-start-relief-art-pilot-2026-10-17`.
