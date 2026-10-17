@@ -16,7 +16,7 @@ test('5 native indoor surfaces resolve through Material Registry to one texture 
   const registry = createMaterialRegistry(materialPackV1);
   for (const id of FLOOR_IDS) {
     const material = registry.require(id, 'surface');
-    assert.match(material.assets.base, /^texture\\.floor\\./);
+    assert.match(material.assets.base, /^texture\.floor\./);
     assert.ok(material.label);
   }
   assert.equal(demoWorldDocument.areas.find((area) => area.kind === 'interior').surface.baseMaterialId, 'floor.wood.house');
@@ -35,6 +35,6 @@ test('all floors survive Builder draft -> canonical JSON -> reload with ID prese
 
 test('existing indoor selector lists floor materials first, while exterior family filters remain', async () => {
   const source = await readFile(new URL('../src/builder/world-builder-main.js', import.meta.url), 'utf8');
-  assert.match(source, /area\\.kind === 'interior'[\\s\\S]{0,150}surfaceMaterials\\.filter\\(\\(material\\) => material\\.id\\.startsWith\\('floor\\.'/);
-  assert.match(source, /: surfaceMaterialsForFamily\\(surfaceMaterials, familyId, families\\)/);
+  assert.match(source, /area\.kind === 'interior'[\s\S]{0,150}surfaceMaterials\.filter\(\(material\) => material\.id\.startsWith\('floor\.'/);
+  assert.match(source, /: surfaceMaterialsForFamily\(surfaceMaterials, familyId, families\)/);
 });
