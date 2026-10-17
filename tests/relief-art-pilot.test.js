@@ -105,3 +105,14 @@ test('cliff collision begins at the grassy rim, not deep inside the rock face', 
   assert.equal(objectDefinitionCatalogV1.require(ids[2]).collision, undefined,
     'waterfall must not gain a second collision obstacle');
 });
+
+test('cliff rim adjustment is cache-busted in both published entrypoints and catalog imports', () => {
+  for (const path of ['builder.html', 'index.html']) {
+    const source = fs.readFileSync(path, 'utf8');
+    assert.match(source, /&rim=relief-cliff-rim-v1/);
+  }
+  for (const path of ['src/main.js', 'src/builder/world-builder-main.js']) {
+    const source = fs.readFileSync(path, 'utf8');
+    assert.match(source, /object-definition-catalog\\.js\\?rev=[^'"]+&rim=relief-cliff-rim-v1/);
+  }
+});
