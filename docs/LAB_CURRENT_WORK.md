@@ -1,3 +1,16 @@
+# Lot actif — 17/10/2026 — Qualité graphique eau/cascade canyon, V2
+
+- **Branche unique :** `work/exploration-canyon-water-art-v2-2026-10-17` ; base technique CI GREEN `ae57178e97ae4c582fb3943d02d0ff2d2a1865f4`, checkpoint START `checkpoint/exploration-start-canyon-water-art-v2-2026-10-17`.
+- **Validation créateur :** eau V1 visible et fluide sur téléphone, mais **trop minimaliste**. Souhait : se rapprocher de l'image de référence par texture/palette/reflets/écume raccordés aux falaises. Collision falaise V1 légèrement stricte, **micro-lot différé** (ne pas toucher à Collision World ici).
+- **Périmètre V2 :** améliorer exclusivement le canyon de démonstration (opt-in) : matériau de rivière `water.canyon_turquoise` distinct et canonique, texture centrale et berge SVG légères via Material Registry/Asset Adapter, rendu de cascade enrichi via son asset WorldObject existant, légère écume dynamique sans recomposition du sol statique. Même tracé de rivière, même traversalRule, mêmes objets/positions.
+- **Propriétaires uniques :** WorldDocument référence un MaterialId ; Material Registry + Asset Adapter fournissent son apparence ; Surface Renderer et Relief Water Overlay affichent uniquement. WorldObject Asset Adapter fournit le sprite de cascade. Aucune nouvelle autorité de gameplay.
+- **Gel :** style 2D, mouvement, collision, encounters, Combat, caméra, Builder mutations, génération, world save, culling et raster cache. Les surfaces visuelles ne déterminent jamais la traversée.
+- **Tests/gates :** cohérence material ID / SVG, Material Registry + Asset Adapter, WorldDocument export/import identique, collision/terrain inchangés, overlays bornés et animation, Node/check, CI Chromium Builder/Encounter, validation Pixel paysage sur preview Pages **avant GREEN final**.
+- **Risques :** raccord de berge artificiel, répétition de la texture, performances smartphone ; limiter les motifs et ne jamais redessiner le terrain par frame. Aucun import de nouvelle image binaire non vérifiée.
+- **État :** conception/implémentation V2 en cours, pas encore GREEN.
+
+---
+
 # Lot actif — 2026-10-17 — Effets d'eau légère pour le prototype canyon 2,5D
 
 - **Branche unique :** `work/exploration-relief-water-fx-2026-10-17` depuis la prévalidation falaise `48d0ff48b03a7d786e6cebec23e61a0a2ddec587`, checkpoint de départ `checkpoint/exploration-start-relief-water-fx-2026-10-17`.
