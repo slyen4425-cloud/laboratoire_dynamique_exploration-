@@ -273,7 +273,8 @@ async function rebuildMaterialPipeline() {
 
   textureLoader =
     createMaterialTextureLoader({
-      resolveAsset: resolveMaterialAsset
+      resolveAsset: resolveMaterialAsset,
+      cacheRevision: 'canyon-art-v3'
     });
 
   const loadStatus =
