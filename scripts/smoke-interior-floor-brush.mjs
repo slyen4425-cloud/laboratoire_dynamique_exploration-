@@ -14,8 +14,9 @@ const server=createServer(async(req,res)=>{
     const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
     const path=resolve(root,'.'+pathname);
     if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
+    const bytes = await readFile(path);
     res.writeHead(200,{'Content-Type':types[extname(path)]||'application/octet-stream',
-      'Cache-Control':'no-store'}).end(await readFile(path));
+      'Cache-Control':'no-store'}).end(bytes);
   }catch{res.writeHead(404).end('missing');}
 });
 const chromePath=[process.env.CHROME_PATH,'google-chrome','chromium','chromium-browser']
