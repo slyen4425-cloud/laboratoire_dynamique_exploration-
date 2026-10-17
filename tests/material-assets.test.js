@@ -89,8 +89,13 @@ test('every Material Asset Adapter path exists in the repository', async () => {
 test('Material Pack v1 references every generated pilot asset semantically', () => {
   const ids = collectMaterialAssetIds(materialPackV1.materials);
 
-  assert.deepEqual(new Set(ids), new Set(Object.keys(EXPECTED)));
-  assert.equal(ids.length, 24);
+  // The V4 canyon shoreline is a continuous curve, so the former segmented
+  // bank sprite remains registered for older artifacts but must not be loaded.
+  const retired = 'transition.water.canyon.turquoise.bank.01';
+  assert.deepEqual(new Set(ids),
+    new Set(Object.keys(EXPECTED).filter((id) => id !== retired)));
+  assert.equal(ids.length, 23);
+  assert.ok(resolveMaterialAsset(retired), 'historical asset can still be resolved');
 });
 
 test('Material Texture Loader has explicit load/get/dispose lifecycle', () => {
