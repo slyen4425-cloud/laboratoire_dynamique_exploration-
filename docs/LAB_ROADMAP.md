@@ -378,3 +378,19 @@ Modes v1 :
 - fly.
 
 Après validation GREEN de ce replay, la suite normale reprend avec **Phase 5 — Monde vivant**.
+
+
+## Chantiers futurs — Level design, bibliothèque d'objets et style 2,5D (2026-10-17)
+
+**Backlog détaillé / source de planification : [EXPLORATION_LEVEL_DESIGN_BACKLOG.md](./EXPLORATION_LEVEL_DESIGN_BACKLOG.md).**
+
+- **P0 / LD01 :** mobilier intérieur (tables, comptoirs, chaises, lits, armoires, coffres décoratifs, éclairage).
+- **P0 / LD02 :** construction intérieure (portes, encadrements, cloisons, fenêtres, escaliers, trappes, murs/toits masquables).
+- **P1 / LD03 :** végétation et décoration extérieure (fleurs, buissons, plantes, rochers variés, falaises).
+- **P1 / LD04 :** grottes, caches souterraines, ruines, cryptes et mines via WorldArea + Portal.
+- **P1 / LD05 :** interactions configurables (portes à états, coffres, leviers, ressources, passages secrets), sous contrat d'état/événement unique.
+- **P2 / LD06 :** cascades, bassins, écume et ambiance animée légère.
+- **P2 / LD07 :** pinceau de décoration, placement par groupes, densités, variantes, alignement et contrôles d'accessibilité.
+- **Étude AR01 :** direction graphique 2,5D cartoon et vue oblique avec falaises/eau ; **prototype décoratif d'abord**, verticalité jouable seulement dans un lot séparé nécessitant contrat explicite.
+
+Ce classement n'autorise pas le démarrage des lots ni une refonte graphique tant que le chantier actif, les gates smartphone/CI et la priorité fluidité n'ont pas été validés. Toute mise en œuvre exige checkpoint de départ, branche isolée et conformité à la charte.

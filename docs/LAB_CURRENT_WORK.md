@@ -9,6 +9,7 @@
 - **Risques :** UI masquée selon Area, pinceau ancien dirigé vers Terrain extérieur, persistances des calques, cache PWA. Publication sur preview isolée après succès des gates.
 - **Résultat de vérification (17/10) :** CI réelle [39016961336](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39016961336) SUCCESS : 503/503 tests Node, npm check et Chromium. Le navigateur a changé le fond vers `floor.wood.dark`, activé le pinceau intérieur, peint une zone `floor.tile.light` de largeur 64, avec famille de traversée intacte (`plain`), bouton Undo opérationnel, onglet Terrain extérieur masqué ; tests Encounter Capture inchangés.
 - **État :** GREEN technique / prévalidation, en attente de déploiement sur Pages et test smartphone auteur. Aucune fusion de sources de travail dans main.
+- **Planification future uniquement (17/10) :** backlog d'objets/intérieurs/extérieurs/grottes/ruines et étude de style 2,5D enregistré dans [`EXPLORATION_LEVEL_DESIGN_BACKLOG.md`](./EXPLORATION_LEVEL_DESIGN_BACKLOG.md) par lot de documentation dédié `work/exploration-level-design-backlog-2026-10-17` (base/checkpoint START `6fb5aa394ee4769a34df60e34ce83d0f0a57c4d2`). Aucun travail moteur/asset engagé ; priorité fluidité et test mobile conservée.
 
 ---
 
