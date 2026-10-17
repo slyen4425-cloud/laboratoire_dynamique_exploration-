@@ -1,3 +1,15 @@
+# Lot actif — 17/10/2026 — V5 : suppression totale des motifs répétés dans l'eau du canyon
+
+- **Retour utilisateur / défaut à reproduire :** screenshot 18:25 du canyon montrant une rivière en alternance de blocs bleu turquoise et vert pâle, malgré les essais V2/V3. Le test de fluidité était OK mais le rendu artistique est **NON GREEN**.
+- **Branche isolée :** `work/exploration-canyon-water-seamless-v5-2026-10-17` ; base snapshot V4 `76fb8b6d946be7bb06e8c7b854313059986733ac`, checkpoint START `checkpoint/exploration-start-canyon-water-seamless-v5-2026-10-17` au même SHA. Ne pas réconcilier les deux branches V3 expérimentales.
+- **Diagnostic :** la V4 a déjà retiré les segments de berge rectangulaires dans le Surface Renderer, mais le matériau central garde `assets.center=texture.water.canyon.turquoise.01` (motif répétable de 256 px). V5 retire **uniquement cette dépendance d'affichage répétée** sur le matériau canyon et affiche la couleur opaque unie déjà déclarée dans son Material Registry, à l'aide des 4 strokes continus existants. Les effets de courant/écume restent via le renderer visuel actuel. Aucun autre mode de rendu, aucune géométrie parallèle.
+- **Autorités/gels :** WorldArea.surface.rivers seul propriétaire des points/largeur/traversal ; Material Registry seul propriétaire de la couleur et des assets ; Surface Renderer existant pour eau/bords. Également gelés : Collision World, déplacement, caméra, Builder éditable, autres matériaux (y compris forêt), Encounter/Combat, cache des tiles, sprites de falaise, nouveaux assets binaires et audio. Aucun asset image encodé dans JS/HTML.
+- **Gates :** sentinelles du vrai chemin canonique matériau → rasterisation avec zéro image/pattern central canyon ; même rivière/collision, eau classique non altérée, chargeur ne précharge plus le centre canyon ; tests Node/check/Chromium Builder/Encounter, snapshot immuable + PR Pages uniquement après CI verte, contrôle visuel smartphone avant GREEN final.
+- **Risque :** couleur plus uniforme que la référence ; accepter ce compromis temporaire pour supprimer les blocs avant de réintroduire des détails riches sans répétition. Vérifier le cache navigateur avec une nouvelle révision.
+- **Statut :** en cours, non publié et non GREEN final.
+
+---
+
 # Lot actif — 17/10/2026 — Rivière canyon continue, anti-rectangles (V4)
 
 - **Branche :** `work/exploration-canyon-continuous-river-2026-10-17` depuis le snapshot immutable prévalidé V3 `a11fe22b03f9027052f87bcb89ed7fb272a972a8`. Checkpoint START `checkpoint/exploration-start-canyon-continuous-river-2026-10-17` au même SHA. **Aucune fusion** avec les deux branches V3 concurrentes/expérimentales.
