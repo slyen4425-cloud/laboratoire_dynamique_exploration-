@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: relief-immersion-v8-prevalidation-2026-10-17
+# preview-revision: cliff-topography-v9-prevalidation-2026-10-17
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: b252bea83b3c473cd02d97ca0efcbc70a6597454
+          ref: a26ebd91632cf3de34d8ef08eee8a6638ff8a8a3
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
