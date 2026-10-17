@@ -1,3 +1,15 @@
+# Lot actif — 17/10/2026 — Texture canyon sans bandes transparentes (V5)
+
+- **Base publiée V4 :** snapshot immuable `76fb8b6d946be7bb06e8c7b854313059986733ac`, PR #142 Pages intégrée ; CI source V4 SUCCESS, mais **rendu Pixel REFUSÉ** sur capture 18:25 (bandes eau/sol rectangulaires). Ne jamais appeler la V4 GREEN artistique.
+- **Branche de correction :** `work/exploration-canyon-svg-intrinsic-tile-2026-10-17` depuis V4 ; checkpoint START `checkpoint/exploration-start-canyon-svg-intrinsic-tile-2026-10-17` au SHA V4.
+- **Cause racine à vérifier au navigateur :** `assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg` a un `viewBox="0 0 256 256"` mais aucune taille intrinsèque `width`/`height`. Chargé avec `Image` puis `CanvasPattern` répétée par `Surface Renderer`, un SVG sans taille peut utiliser un viewport 300×150 avec letterboxing d'un carré, donnant des bandes eau opaque / terrain transparent de chaque côté. Le test V4 ne contrôlait que les appels Canvas sans vérifier les pixels réels ni la taille de l'asset.
+- **Périmètre strict V5 :** ajouter `width="256" height="256"` à la racine SVG de l'eau canyon uniquement ; renforcer les sentinelles Node et Chromium sur dimensions intrinsèques, opacité de la tuile répétée et chemin Builder réel. Aucun autre asset, matériau, géométrie, effet, moteur ou réglage ajouté. Test RED avant correction, GREEN après.
+- **Propriétaire unique :** Asset Adapter existant -> Material Registry existant -> Surface Renderer existant. Les SVG restent externes ; aucun contenu graphique inline ou système concurrent.
+- **Gel strict :** WorldDocument, surface / traversée / collisions, vitesse, caméra, navigation, combat, animation de surface, culling/cache, Builder, style 2D classique et autres matériaux. Aucun changement de mouvement ou d'asset Combat.
+- **Sortie :** `npm test`, `npm run check`, Chromium Builder/Encounter + test pixels Canvas réel, CI complète ; après prévalidation, checkpoint et PR d'infrastructure Pages seule pour le pin immutable ; essai Pixel créateur avant GREEN final. Sans test mobile approuvé, état = **prévalidation**, jamais GREEN final.
+
+---
+
 # Lot actif — 17/10/2026 — Rivière canyon continue, anti-rectangles (V4)
 
 - **Branche :** `work/exploration-canyon-continuous-river-2026-10-17` depuis le snapshot immutable prévalidé V3 `a11fe22b03f9027052f87bcb89ed7fb272a972a8`. Checkpoint START `checkpoint/exploration-start-canyon-continuous-river-2026-10-17` au même SHA. **Aucune fusion** avec les deux branches V3 concurrentes/expérimentales.
