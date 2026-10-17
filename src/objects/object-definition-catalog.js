@@ -434,7 +434,7 @@ const DEFINITIONS = frozen([
     visual: { assetId: 'object.relief.cliff.grassy_edge.01' },
     baseSize: { width: 768, height: 384 },
     collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
-      heightRatio: 0.43, offsetX: 0, offsetY: 0.24 }
+      heightRatio: 0.66, offsetX: 0, offsetY: 0.08 }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -445,7 +445,7 @@ const DEFINITIONS = frozen([
     visual: { assetId: 'object.relief.cliff.corner.01' },
     baseSize: { width: 420, height: 405 },
     collision: { role: 'obstacle', shape: 'box', widthRatio: 0.82,
-      heightRatio: 0.48, offsetX: 0, offsetY: 0.21 }
+      heightRatio: 0.60, offsetX: 0, offsetY: 0.08 }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
