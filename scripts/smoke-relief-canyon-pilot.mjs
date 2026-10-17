@@ -62,7 +62,17 @@ try{
     ready=await run("document.querySelector('#builder-status')?.textContent?.includes('valide') && JSON.parse(document.querySelector('#json-preview')?.value||'{}').id === 'relief-canyon-pilot-v1'");
     if(ready)break;await sleep(100);
   }
-  if(!ready)throw Error('Opt-in pilot did not boot');
+  if(!ready) {
+    const snapshot=await run(`(() => ({
+      status:document.querySelector('#builder-status')?.textContent,
+      jsonId: (() => {try{return JSON.parse(document.querySelector('#json-preview')?.value||'{}').id;}catch(e){return String(e)}})(),
+      title:document.title,
+      loadedScripts:[...document.scripts].map(s=>s.src),
+      loadStatus:document.readyState,
+      resources:performance.getEntriesByType('resource').filter(r=>r.name.includes('relief')||r.name.includes('builder')).map(r=>({name:r.name,status:r.responseStatus}))
+    }))()`);
+    throw Error('Opt-in pilot did not boot: '+JSON.stringify(snapshot));
+  }
   const data=await run(`(async()=> {
     const json=JSON.parse(document.querySelector('#json-preview').value);
     const paths=[
