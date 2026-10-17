@@ -1,36 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 440">
-<defs><linearGradient id="w" x1="0" x2="1" y1="0" y2=".2"><stop stop-color="#0d6fa3"/><stop offset=".22" stop-color="#3ebee5"/><stop offset=".48" stop-color="#e2ffff"/><stop offset=".66" stop-color="#67d9e9"/><stop offset="1" stop-color="#147eaf"/></linearGradient></defs>
-<ellipse cx="145" cy="381" rx="130" ry="38" fill="#147eaf" opacity=".65"/><ellipse cx="144" cy="387" rx="113" ry="30" fill="none" stroke="#dcffff" stroke-width="9" stroke-dasharray="64 24 43 15" opacity=".85"/>
-<path d="M69 41Q117 26 198 43Q182 83 198 121Q210 212 206 313Q200 365 240 372Q172 407 89 376Q68 345 78 302Q94 229 82 138Q80 87 69 41Z" fill="url(#w)" stroke="#0c629d" stroke-width="4"/>
-<path d="M93 44Q119 34 129 44Q132 105 125 150Q115 242 126 355" fill="none" stroke="#f3ffff" stroke-width="13" stroke-linecap="round" opacity=".8"/><path d="M160 51Q166 124 160 184Q157 252 167 337" fill="none" stroke="#deffff" stroke-width="9" stroke-linecap="round" opacity=".84"/><path d="M186 65Q178 114 194 163Q200 233 187 312" fill="none" stroke="#d3fdff" stroke-width="7" stroke-linecap="round" opacity=".78"/>
-<path d="M77 53Q92 34 120 37Q152 28 190 47" fill="none" stroke="#f9fffc" stroke-width="13" stroke-linecap="round"/>
-<path d="M72 330Q55 353 73 372Q91 387 128 378Q164 394 199 369Q218 376 235 370" fill="none" stroke="#e7fcff" stroke-width="16" stroke-linecap="round" opacity=".8"/>
-<g fill="#eefeff"><circle cx="43" cy="372" r="8"/><circle cx="77" cy="405" r="6"/><circle cx="237" cy="386" r="8"/><circle cx="221" cy="411" r="5"/><circle cx="115" cy="420" r="5"/></g>
-
+<!-- Canyon V3: one complete waterfall WorldObject sprite, painterly rock-lined fall. -->
 <defs>
- <linearGradient id="glass" x1="0" x2="1" y1="0" y2=".2">
-  <stop stop-color="#073c70" stop-opacity=".78"/><stop offset=".31" stop-color="#72e3e8" stop-opacity=".38"/>
-  <stop offset=".68" stop-color="#c7fbf0" stop-opacity=".23"/><stop offset="1" stop-color="#187caf" stop-opacity=".76"/>
+ <linearGradient id="deep" x1="0" y1="0" x2="1" y2=".25">
+  <stop stop-color="#17617b"/><stop offset=".28" stop-color="#229abb"/><stop offset=".50" stop-color="#93e7e3"/>
+  <stop offset=".77" stop-color="#36b7c9"/><stop offset="1" stop-color="#1c769f"/>
  </linearGradient>
- <linearGradient id="pool" x1="0" y1="0" x2="0" y2="1">
-  <stop stop-color="#0c7196" stop-opacity=".62"/><stop offset="1" stop-color="#5ce2db" stop-opacity=".04"/>
+ <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#e5fff3" stop-opacity=".02"/><stop offset=".7" stop-color="#c6fff3" stop-opacity=".17"/><stop offset="1" stop-color="#f0fff4" stop-opacity=".82"/>
  </linearGradient>
+ <linearGradient id="rocks" x1="0" y1="0" x2=".8" y2="1">
+  <stop stop-color="#cfab87"/><stop offset=".45" stop-color="#8a7777"/><stop offset="1" stop-color="#615c70"/>
+ </linearGradient>
+ <radialGradient id="pool"><stop stop-color="#c8fff2" stop-opacity=".77"/><stop offset=".55" stop-color="#48cace" stop-opacity=".57"/><stop offset="1" stop-color="#168ba8" stop-opacity="0"/></radialGradient>
 </defs>
-<!-- A translucent shaded water curtain gives depth while preserving the existing silhouette. -->
-<path d="M73 70Q88 119 77 182T78 297Q70 328 91 365Q107 359 111 341Q99 283 114 225T110 116L110 52Z" fill="url(#glass)" opacity=".50"/>
-<path d="M178 56Q192 112 182 177Q178 249 192 324Q203 349 216 365L231 365Q203 325 209 257T199 114L208 63Z" fill="#06739f" opacity=".34"/>
-<path d="M111 62Q116 114 108 170T112 273Q107 320 126 348" fill="none" stroke="#aaf4ed" stroke-width="7" opacity=".45" stroke-linecap="round"/>
-<path d="M141 44Q131 91 146 145T143 252T153 343" fill="none" stroke="#f4ffef" stroke-width="4" opacity=".52" stroke-linecap="round"/>
-<path d="M177 87Q180 128 172 177T184 271T179 333" fill="none" stroke="#e6fff3" stroke-width="5" opacity=".53" stroke-linecap="round"/>
-<path d="M94 140Q101 162 94 204M121 223Q117 244 124 265M162 142Q170 165 163 179M193 220Q187 242 197 259" fill="none" stroke="#f3ffff" stroke-width="3" opacity=".44" stroke-linecap="round"/>
-<!-- Soft, layered splash pool; no collision: this is the canonical object's artwork. -->
-<ellipse cx="144" cy="381" rx="123" ry="31" fill="url(#pool)" opacity=".88"/>
-<path d="M37 386Q86 366 112 385T190 379T253 389" fill="none" stroke="#91fff1" stroke-width="9" stroke-linecap="round" opacity=".42"/>
-<path d="M38 389Q83 372 115 389T197 384T252 389" fill="none" stroke="#f1fff4" stroke-width="3" stroke-linecap="round" opacity=".66"/>
-<path d="M28 397Q63 383 84 399M109 412Q149 400 181 410M195 394Q217 383 254 396" fill="none" stroke="#defef2" stroke-width="4" opacity=".65" stroke-linecap="round"/>
-<path d="M64 362Q81 348 91 360M124 365Q143 351 157 364M183 363Q198 349 215 361" fill="none" stroke="#f6ffff" stroke-width="5" opacity=".74" stroke-linecap="round"/>
-<g fill="#ebfff7" opacity=".76">
- <circle cx="58" cy="360" r="4"/><circle cx="91" cy="393" r="5"/><circle cx="117" cy="357" r="3"/>
- <circle cx="179" cy="404" r="4"/><circle cx="201" cy="355" r="5"/><circle cx="246" cy="371" r="3"/>
-</g>
+<!-- Rounded rocky mouth connects to the adjacent canyon cliffs. -->
+<path d="M23 57 42 39 93 30 145 36 184 27 236 48 254 78 231 103 202 84 180 97 150 80 122 95 90 77 68 98 39 100Z"
+ fill="url(#rocks)" stroke="#676176" stroke-width="4" stroke-linejoin="round"/>
+<path d="M20 61 44 37 94 30 145 35 186 26 236 48 256 79 212 78 188 61 155 72 115 60 73 77 40 75Z"
+ fill="#86ae63" stroke="#507b44" stroke-width="4"/>
+<path d="M29 69Q80 81 119 73T199 73T247 76" fill="none" stroke="#dfbb96" stroke-width="8" opacity=".95" stroke-linecap="round"/>
+<path d="M50 69 72 83 82 128 65 201 72 274 58 345 30 356 28 296 36 221 30 136Z" fill="url(#rocks)" opacity=".94"/>
+<path d="M218 73 242 74 256 140 249 220 262 293 250 351 228 358 224 279 231 217 222 137Z" fill="#796b7a" opacity=".91"/>
+<path d="M55 123q22 14 12 47M232 165q-12 33 1 61" stroke="#dfc3a1" stroke-width="4" fill="none" opacity=".42"/>
+<!-- Shaded water curtain with distinct pale ribbons; ends in one river pool. -->
+<path d="M77 68Q116 57 142 66Q175 55 207 69 219 134 213 194T212 305Q216 337 242 366L211 388Q148 403 86 383L55 364Q83 317 72 255T80 144Z"
+ fill="url(#deep)" stroke="#166687" stroke-width="3.5"/>
+<path d="M85 72Q103 123 93 189T99 311Q97 344 112 365" fill="none" stroke="#a7f2e3" stroke-width="17" stroke-linecap="round" opacity=".68"/>
+<path d="M116 68Q128 123 118 163Q106 224 123 282T135 365" fill="none" stroke="#ecfff7" stroke-width="10" stroke-linecap="round" opacity=".72"/>
+<path d="M150 63Q146 112 154 176T148 293Q159 335 150 362" fill="none" stroke="#cafff1" stroke-width="13" stroke-linecap="round" opacity=".67"/>
+<path d="M190 72Q178 129 188 184Q198 231 190 294T197 354" fill="none" stroke="#f5fff4" stroke-width="9" stroke-linecap="round" opacity=".75"/>
+<path d="M212 124Q197 173 209 234T212 340" fill="none" stroke="#36b0c3" stroke-width="13" stroke-linecap="round" opacity=".54"/>
+<path d="M78 74Q92 90 85 117M138 97q12 22 9 44M174 170q-8 17-5 40M113 248q-5 19 4 42M194 270q-8 20-4 46" fill="none" stroke="#fbfffb" opacity=".34" stroke-width="4" stroke-linecap="round"/>
+<!-- Mist is part of the canonical image, not extra renderer instructions. -->
+<path d="M79 222Q60 310 90 361Q125 382 151 361Q178 391 209 368Q235 341 211 250L244 381 189 411 88 406 34 381Z" fill="url(#mist)"/>
+<ellipse cx="145" cy="385" rx="126" ry="42" fill="url(#pool)"/>
+<path d="M31 375Q67 353 94 374T143 374T202 377T252 369" fill="none" stroke="#e8fff3" stroke-width="12" opacity=".83" stroke-linecap="round"/>
+<path d="M29 391Q70 379 112 395T198 390T256 393" fill="none" stroke="#99f1e5" stroke-width="8" opacity=".70" stroke-linecap="round"/>
+<path d="M42 402Q91 392 116 405M136 410Q184 397 225 407" stroke="#effff2" stroke-width="4" opacity=".62" fill="none" stroke-linecap="round"/>
+<g fill="#edfff4" opacity=".85"><circle cx="47" cy="373" r="6"/><circle cx="73" cy="408" r="5"/><circle cx="104" cy="364" r="4"/><circle cx="217" cy="377" r="6"/><circle cx="242" cy="402" r="5"/></g>
 </svg>
