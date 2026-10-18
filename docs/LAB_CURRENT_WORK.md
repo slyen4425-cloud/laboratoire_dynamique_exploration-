@@ -1,3 +1,16 @@
+# Lot actif — 18/10/2026 — V16 sculpture plein écran et isolation Terre/Eau
+
+- **Retour créateur :** pinceau V15 précis et validé à l'usage, mais zone de sculpture encore trop petite ; demande d'un canevas plein écran avec petite palette flottante d'outils essentiels. Une montée rocheuse qui approche l'eau doit rester indépendante : en mode Terre, le pinceau ne doit jamais élever les cellules d'eau préexistantes.
+- **Base exacte :** V15 `7985dcaaaf93715ee89532a39a013e88a23252bc`, CI [39135342315](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39135342315) SUCCESS ; START `checkpoint/exploration-start-sculpt-fullscreen-water-isolation-v16-2026-10-18`, branche `work/exploration-sculpt-fullscreen-water-isolation-v16-2026-10-18`. Rollback V15/V14/V13 et Builder 2D sûr conservés.
+- **Responsabilités :** `sculpt-height-model` seul maître des cases de sol et de la surface d'eau absolue ; `sculpt-height-renderer` seul responsable de l'ordre des plans de rendu ; `sculpt-lab-main` arbitre les intentions, le mode plein écran et la palette ; HTML/CSS assurent l'affichage responsive. Un unique ensemble de contrôles, aucun moteur/canevas/carte supplémentaire.
+- **Contrat produit V16 :** le pinceau Terre exclut par défaut toutes les cellules à niveau d'eau explicitement défini (`waterLevels[i] >= 0`), aussi bien dans le vrai geste que dans l'empreinte affichée. Le pinceau Eau peut modifier librement l'eau sans toucher `levels` et `roundness`. Le modèle conserve une option explicite `allowUnderwaterTerrainEdit` pour tests géologiques hérités, **non exposée dans l'éditeur**. L'eau est peinte par bandes de profondeur avant les rangées de terre au premier plan, et non sur la totalité du terrain déjà fini ; aucun niveau d'eau n'est recalculé depuis la sculpture de terre.
+- **Plein écran :** bouton `Plein écran` et sortie, vraie API navigateur quand disponible avec repli `100dvh` ; canevas étendu sur la zone visible, palette flottante repliable, mode Terre/Eau, outil, hauteur, taille du pinceau, placement précis et Annuler/Rétablir toujours raccordés aux mêmes éléments. Volets avancés restent disponibles en sortie du mode ; pas de changement gameplay.
+- **Gels :** Builder 2D, WorldDocument/WorldSurface, stockage/sauvegarde, assets/material registry, paramètres de mouvement/collision, combat, rencontres, démonstrations V13/V14/V15, origine et undo/redo.
+- **Gates :** Node et `npm run check` ; tests de frontière eau/terre + empreinte ; Chromium vrai trajet UI avec chevauchement du pinceau, export JSON, Undo/Redo et viewport mobile 390 × 844 plein écran avec palette repliée/dépliée ; CI, checkpoint immuable et pin Pages seulement après GREEN technique. Le test physique sur téléphone du créateur reste distinct avant GREEN utilisateur.
+- **Statut :** correctif proposé et suite de tests ajoutée ; ne pas déclarer GREEN technique sans constater CI du SHA final.
+
+---
+
 # Lot actif — 18/10/2026 — V15 ergonomie mobile du labo sculpture
 
 - **Retour utilisateur + capture mobile :** V14 précision excellente, mais toute la hauteur de l'écran occupée par les réglages, toile invisible sans scroll ; taille du pinceau limitée à 8 et peu accessible. Conserver absolument mode précis, eau V13, annuler/rétablir et arrondi par passage.
