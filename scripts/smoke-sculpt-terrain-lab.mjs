@@ -75,6 +75,10 @@ try{
   const flat=await run("window.__sculptLabProbe()");
   if(flat.faceCount!==0)throw Error('Flat map still has cliff faces: '+JSON.stringify(flat));
   await run("document.querySelector('[data-mode=raise]').click()");
+  // Larger V11 authoring controls can place the canvas below the fold:
+  // real Chrome users must scroll the canvas into view before painting.
+  await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'})");
+  await sleep(160);
   const center=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
     return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
   const send=(method,params)=>new Promise(done=>{
@@ -86,6 +90,20 @@ try{
   await sleep(200);
   const raised=await run("window.__sculptLabProbe()");
   if(raised.faceCount<1||raised.levelSpread<2)throw Error('Real mouse stroke did not sculpt the map: '+JSON.stringify(raised));
+  // Exact-target plateau: the real pointer flow must produce level 3
+  // from one stroke, independently of the current raise/dig height.
+  await run("document.querySelector('#flat').click(); document.querySelector('[data-mode=plateau]').click(); document.querySelector('#target').value='3'; document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'})");
+  await sleep(120);
+  const plateauCenter=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:plateauCenter.x,y:plateauCenter.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:plateauCenter.x,y:plateauCenter.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:plateauCenter.x,y:plateauCenter.y,button:'left',clickCount:1});
+  await sleep(150);
+  const plateau=await run("window.__sculptLabProbe()");
+  if(plateau.centerHeight!==3||plateau.tool!=='plateau'||plateau.target!==3)
+    throw Error('V11 mobile-sized exact plateau target fails: '+JSON.stringify(plateau));
+  const terraceFaces=plateau.faceCount;
   await run(`(async()=>{const s=document.querySelector('#material');s.value='ground.snow';
    s.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#export').click();
    await new Promise(ok=>setTimeout(ok,120));return true;})()`);
@@ -97,12 +115,12 @@ try{
     throw Error('Material Registry or JSON model export invalid: '+JSON.stringify(after).slice(0,600));
   await run("document.querySelector('#import').click()");
   const imported=await run("window.__sculptLabProbe()");
-  if(imported.faceCount!==raised.faceCount)
+  if(imported.faceCount!==terraceFaces)
     throw Error('Imported experimental heightmap did not preserve cliff geometry');
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
-    material:after.probe.materialId,roundtripFaces:imported.faceCount
+    material:after.probe.materialId,roundtripFaces:imported.faceCount,plateauExactHeight:plateau.centerHeight
   }));
 }finally{
   socket?.close();
