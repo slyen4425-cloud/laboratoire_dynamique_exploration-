@@ -145,7 +145,7 @@ function drawRibbonCell(ctx,{kind,col,row,x,y,w,h,overlay}){
 // Render a volume of water per authored surface cell. Actual submerged depth
 // is the difference between water surface elevation and land elevation.
 // One cell can dry out after raising its ground without deleting water data.
-function drawWaterVolume(ctx,{terrain,overlay,tile}){
+function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.height}){
   if(!overlay?.visible||!terrain?.waterLevels)return 0;
   const {width:w,height:h,rise}=tile;
   const style=overlay.material?.render??{};
@@ -154,7 +154,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile}){
   const rim=style.highlightColor??'#d7f8ff';
   const pattern=overlay.texture&&ctx.createPattern?.(overlay.texture,'repeat');
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')pattern.setTransform(new DOMMatrix().scale(.55));
-  for(let row=0;row<terrain.height;row++)for(let col=0;col<terrain.width;col++){
+  for(let row=rowStart;row<rowEnd;row++)for(let col=0;col<terrain.width;col++){
     const depth=sculptWaterAt(terrain,col,row);
     if(!depth)continue;
     count++;
@@ -195,7 +195,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile}){
 export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftness=0,
   mode='dig',target=3,strength=1,tile=SCULPT_TILE,zoom=1}={}){
   if(!ctx||!terrain||!points.length)return Object.freeze({cells:0,centerHeight:null});
-  const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness});
+  const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness,mode});
   const waterMode=mode.startsWith('water-');
   const candidate=waterMode
     ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength})
@@ -307,6 +307,10 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       deferredToes.push({x,width,bottom:y+height,seed:idx,smoothness:runSmoothness});
       faceRuns++;col=end;
     }
+    // Painter order: water belongs to its own absolute-height layer. Paint it
+    // before the next (foreground) land row, never over every finished cliff.
+    waterCells+=drawWaterVolume(ctx,{terrain,overlay:overlays.water,tile,
+      rowStart:row,rowEnd:row+1});
   }
 
   // The NEXT ground row would otherwise paint over the rounded rock foot.
@@ -340,6 +344,5 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
     ctx.lineWidth=.65;ctx.stroke();
     ctx.restore();
   }
-  waterCells=drawWaterVolume(ctx,{terrain,overlay:overlays.water,tile});
   return {faceCount:faces.length,faceRuns,waterCells,roadCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
