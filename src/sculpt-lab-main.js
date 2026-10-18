@@ -2,14 +2,14 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
+import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
-let lastCell='',strokePoints=[],history=[],currentTexture=null,zoom=1,pan={x:0,y:0};
+let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 const ribbonTextures={water:null,road:null};
 let framePending=false;
@@ -84,7 +84,7 @@ function draw(){
   if(hoverCell&&$('preview-cursor').checked){
     const points=drawing&&strokePoints.length ? strokePoints : [{x:hoverCell.x+.5,y:hoverCell.y+.5}];
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
-    const first=points[0],target=selectedMode==='plateau' ? Number($('target').value)
+    const first=points[0],target=selectedMode.startsWith('water-')?Number($('water-target').value):selectedMode==='plateau' ? Number($('target').value)
       : sculptHeightAt(base,Math.floor(first.x),Math.floor(first.y));
     previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
@@ -94,7 +94,7 @@ function draw(){
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
   $('brush-info').textContent=hoverCell ?
     'Pinceau : '+(previewSummary?.cells??0)+' cases · '+selectedMode+
-    (selectedMode==='plateau'?' niveau '+$('target').value:'')+
+    (selectedMode==='plateau'?' niveau '+$('target').value:selectedMode.startsWith('water-')?' eau '+$('water-target').value:'')+
     ' · bord '+$('edge').value+' %' :
     'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
 }
@@ -121,11 +121,32 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
-    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages'}[mode]);
+    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
+    'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
+    'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
+    'water-lower':'Eau : abaisser sa surface','water-erase':'Eau : enlever le volume peint',
+    'water-smooth':'Eau : égaliser les hauteurs voisines'}[mode]);
+}
+function commitUndo(previous){
+  if(previous===terrain)return;
+  history.push(previous);if(history.length>40)history.shift();
+  redoHistory=[];updateHistoryButtons();
+}
+function updateHistoryButtons(){
+  $('undo').disabled=history.length===0;
+  $('redo').disabled=redoHistory.length===0;
+  $('undo').textContent='↶ Annuler ('+history.length+')';
+  $('redo').textContent='↷ Rétablir ('+redoHistory.length+')';
 }
 function undo(){
   if(!history.length){status('Aucune action à annuler');return;}
-  terrain=history.pop();scheduleDraw();status('Dernier coup de pinceau annulé');
+  redoHistory.push(terrain);terrain=history.pop();
+  updateHistoryButtons();scheduleDraw();status('Dernière action annulée (sol / eau / arrondi)');
+}
+function redo(){
+  if(!redoHistory.length){status('Aucune action à rétablir');return;}
+  history.push(terrain);terrain=redoHistory.pop();
+  updateHistoryButtons();scheduleDraw();status('Action rétablie');
 }
 function begin(event){
   if(event.button!==undefined&&event.button!==0)return;
@@ -160,18 +181,19 @@ function stroke(event){
   lastCell=key;strokePoints.push({x:cell.x+.5,y:cell.y+.5});
   // Stable immutable stroke, one height update even after revisiting same cell.
   const first=strokePoints[0];
-  const target=selectedMode==='plateau' ? Number($('target').value)
+  const waterMode=selectedMode.startsWith('water-');
+  const target=waterMode ? Number($('water-target').value):selectedMode==='plateau' ? Number($('target').value)
     : sculptHeightAt(strokeUndo,Math.floor(first.x),Math.floor(first.y));
-  terrain=applySculptStroke(strokeUndo,{
-    points:strokePoints,radius:Number($('radius').value),
+  const options={points:strokePoints,radius:Number($('radius').value),
     strength:Number($('strength').value),mode:selectedMode,target,
-    edgeSoftness:Number($('edge').value)/100
-  });
+    edgeSoftness:Number($('edge').value)/100};
+  terrain=waterMode ?applySculptWaterStroke(strokeUndo,options):
+    applySculptStroke(strokeUndo,{...options,rockRoundness:Number($('visual-smooth').value)});
   scheduleDraw();
 }
 function stop(){
   if(drawing&&strokeUndo){
-    if(strokeUndo!==terrain){history.push(strokeUndo);if(history.length>40)history.shift();}
+    commitUndo(strokeUndo);
     strokeUndo=null;
   }
   drawing=false;lastCell='';strokePoints=[];
@@ -194,8 +216,14 @@ canvas.addEventListener('wheel',event=>{
 },{passive:false});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode)));
 $('undo').addEventListener('click',undo);
-$('reset').addEventListener('click',()=>{history.push(terrain);terrain=sculptDemo();scheduleDraw();status('Relief exemple rechargé');});
-$('flat').addEventListener('click',()=>{history.push(terrain);terrain=createSculptTerrain();scheduleDraw();status('Terrain plat : prêt à sculpter');});
+$('redo').addEventListener('click',redo);
+window.addEventListener('keydown',event=>{
+  if(!(event.ctrlKey||event.metaKey)||event.key.toLowerCase()!=='z'&&event.key.toLowerCase()!=='y')return;
+  if(['TEXTAREA','INPUT'].includes(document.activeElement?.tagName))return;
+  event.preventDefault();if(event.key.toLowerCase()==='y'||event.shiftKey)redo();else undo();
+});
+$('reset').addEventListener('click',()=>{const old=terrain;terrain=sculptDemo();commitUndo(old);scheduleDraw();status('Relief exemple rechargé');});
+$('flat').addEventListener('click',()=>{const old=terrain;terrain=createSculptTerrain();commitUndo(old);scheduleDraw();status('Terrain plat : prêt à sculpter');});
 $('fit').addEventListener('click',fit);
 $('material').addEventListener('change',setTheme);
 $('rock').addEventListener('change',scheduleDraw);
@@ -211,7 +239,13 @@ $('zoom').addEventListener('input',()=>{
 $('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;scheduleDraw();});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;scheduleDraw();});
 $('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';scheduleDraw();});
-$('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textContent=$('visual-smooth').value+' %';scheduleDraw();});
+$('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textContent=$('visual-smooth').value+' %';
+  status('Arrondi '+$('visual-smooth').value+' % : uniquement au prochain passage de pinceau');
+  scheduleDraw();});
+$('water-target').addEventListener('input',()=>{
+  $('water-target-value').textContent=$('water-target').value;
+  status('Surface d’eau absolue : niveau '+$('water-target').value);scheduleDraw();
+});
 function changeTarget(level){
  const value=Math.max(0,Math.min(7,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
@@ -225,7 +259,7 @@ $('export').addEventListener('click',()=>{
 });
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptTerrain($('json').value);
-  history.push(terrain);terrain=imported;fit();status('Relief JSON importé');}
+  const old=terrain;terrain=imported;commitUndo(old);fit();status('Relief JSON importé');}
  catch(e){status(e.message);}
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
@@ -236,5 +270,11 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   previewCells:previewSummary?.cells??0,
   faceRuns:lastRenderStats?.faceRuns??0,waterCells:lastRenderStats?.waterCells??0,
   roadCells:lastRenderStats?.roadCells??0,waterVisible:!!ribbonTextures.water?.visible,
-  roadVisible:!!ribbonTextures.road?.visible,highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
-selectMode('dig');setTheme();setupRibbons();fit();
+  roadVisible:!!ribbonTextures.road?.visible,
+  authoredWaterCells:terrain.waterLevels.filter(v=>v>=0).length,
+  wetCells:terrain.waterLevels.filter((v,i)=>v>terrain.levels[i]).length,
+  centerWaterDepth:sculptWaterAt(terrain,Math.floor(terrain.width/2),Math.floor(terrain.height/2)),
+  centerRoundness:terrain.roundness[Math.floor(terrain.height/2)*terrain.width+Math.floor(terrain.width/2)],
+  undoCount:history.length,redoCount:redoHistory.length,
+  highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
+selectMode('dig');updateHistoryButtons();setTheme();setupRibbons();fit();
