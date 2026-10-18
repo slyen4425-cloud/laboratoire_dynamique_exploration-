@@ -11,6 +11,8 @@ const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
+let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
+let precisionCell=null,precisionDragging=false;
 const ribbonTextures={water:null,road:null};
 let framePending=false;
 const images=new Map();
@@ -81,8 +83,11 @@ function draw(){
     overlays:ribbonTextures});
   lastRenderStats=result;
   previewSummary=null;
-  if(hoverCell&&$('preview-cursor').checked){
-    const points=drawing&&strokePoints.length ? strokePoints : [{x:hoverCell.x+.5,y:hoverCell.y+.5}];
+  const precisionOn=$('precision-mode').checked;
+  const displayCell=precisionOn?precisionCell:hoverCell;
+  if(displayCell&&(precisionOn||$('preview-cursor').checked)){
+    const points=precisionOn?[{x:displayCell.x+.5,y:displayCell.y+.5}]
+      :drawing&&strokePoints.length?strokePoints:[{x:displayCell.x+.5,y:displayCell.y+.5}];
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
     const first=points[0],target=selectedMode.startsWith('water-')?Number($('water-target').value):selectedMode==='plateau' ? Number($('target').value)
       : sculptHeightAt(base,Math.floor(first.x),Math.floor(first.y));
@@ -92,11 +97,12 @@ function draw(){
   }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
-  $('brush-info').textContent=hoverCell ?
-    'Pinceau : '+(previewSummary?.cells??0)+' cases · '+selectedMode+
+  $('brush-info').textContent=displayCell ?
+    (precisionOn?'Visée ('+(displayCell.x+1)+','+(displayCell.y+1)+') · ':'Pinceau : ')+
+    (previewSummary?.cells??0)+' case(s) · '+selectedMode+
     (selectedMode==='plateau'?' niveau '+$('target').value:selectedMode.startsWith('water-')?' eau '+$('water-target').value:'')+
-    ' · bord '+$('edge').value+' %' :
-    'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
+    (precisionOn?' · appuie sur Appliquer pour sculpter':' · bord '+$('edge').value+' %') :
+    precisionOn?'Placement précis : vise au doigt sans modifier le terrain, puis confirme':'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
 }
 function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
 function screenToCell(event){
@@ -114,8 +120,58 @@ function screenToCell(event){
   return row>=0&&row<terrain.height?{x:col,y:row}:null;
 }
 function status(message){$('notice').textContent=message;}
+
+function updatePrecisionActions(){
+  const enabled=$('precision-mode').checked;
+  $('precision-actions').hidden=!enabled;
+  const hasTarget=enabled&&!!precisionCell;
+  $('apply-precision').disabled=!hasTarget;
+  for(const id of ['nudge-left','nudge-up','nudge-down','nudge-right'])
+    $(id).disabled=!hasTarget;
+  scheduleDraw();
+}
+function setEditorKind(kind){
+  if(kind!=='ground'&&kind!=='water')return;
+  editorKind=kind;
+  $('ground-tools').hidden=kind!=='ground';
+  $('water-tools').hidden=kind!=='water';
+  document.querySelectorAll('[data-panel="ground"]').forEach(element=>{
+    element.hidden=kind!=='ground';
+  });
+  for(const domain of ['ground','water']){
+    const btn=$('mode-'+domain),active=kind===domain;
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-pressed',String(active));
+  }
+  const wanted=kind==='ground'?lastGroundMode:lastWaterMode;
+  if(selectedMode!==wanted)selectMode(wanted);
+  else $('active-tool-label').textContent=(kind==='ground'?'Terre':'Eau')+' · '+selectedMode;
+  updatePrecisionActions();
+}
+function precisionApply(){
+  if(!$('precision-mode').checked||!precisionCell)return;
+  const cell=precisionCell,previous=terrain;
+  const water=selectedMode.startsWith('water-');
+  const options={points:[{x:cell.x+.5,y:cell.y+.5}],
+    radius:Number($('radius').value),strength:Number($('strength').value),
+    mode:selectedMode,target:water?Number($('water-target').value):
+       selectedMode==='plateau'?Number($('target').value):sculptHeightAt(previous,cell.x,cell.y),
+    edgeSoftness:Number($('edge').value)/100};
+  terrain=water?applySculptWaterStroke(previous,options):
+    applySculptStroke(previous,{...options,rockRoundness:Number($('visual-smooth').value)});
+  commitUndo(previous);
+  status(terrain!==previous?'Case ('+(cell.x+1)+','+(cell.y+1)+') appliquée · Annuler disponible':
+    'Aucun changement à cet emplacement');
+  scheduleDraw();
+}
+
 function selectMode(mode){
-  selectedMode=mode;document.querySelectorAll('[data-mode]').forEach(button=>{
+  const nextKind=mode.startsWith('water-')?'water':'ground';
+  selectedMode=mode;
+  if(nextKind==='water')lastWaterMode=mode;else lastGroundMode=mode;
+  if(editorKind!==nextKind)setEditorKind(nextKind);
+  $('active-tool-label').textContent=(nextKind==='water'?'Eau':'Terre')+' · '+mode;
+  document.querySelectorAll('[data-mode]').forEach(button=>{
     const active=button.dataset.mode===mode;
     button.classList.toggle('active',active);
     button.setAttribute('aria-pressed',String(active));
@@ -153,10 +209,21 @@ function begin(event){
   const cell=screenToCell(event);if(!cell)return;
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
+  if($('precision-mode').checked){
+    precisionDragging=true;precisionCell=cell;updatePrecisionActions();
+    status('Visée ('+(cell.x+1)+','+(cell.y+1)+') : déplace ou ajuste avec les flèches, puis Appliquer');
+    return;
+  }
   drawing=true;lastCell='';strokePoints=[];strokeUndo=terrain;
   stroke(event);
 }
 function stroke(event){
+  if(precisionDragging){
+    const next=screenToCell(event);
+    if(next){precisionCell=next;hoverCell=next;updatePrecisionActions();}
+    return;
+  }
+  if($('precision-mode').checked)return;
   if(!drawing){
     if(event.pointerType==='touch')return;
     hoverCell=screenToCell(event);
@@ -192,6 +259,11 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(){
+  if(precisionDragging){
+    precisionDragging=false;
+    updatePrecisionActions();
+    return;
+  }
   if(drawing&&strokeUndo){
     commitUndo(strokeUndo);
     strokeUndo=null;
@@ -202,7 +274,7 @@ canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
 canvas.addEventListener('pointerup',stop);
 canvas.addEventListener('pointercancel',stop);
-canvas.addEventListener('pointerleave',()=>{if(!drawing){hoverCell=null;scheduleDraw();}});
+canvas.addEventListener('pointerleave',()=>{if(!drawing&&!precisionDragging){hoverCell=null;scheduleDraw();}});
 canvas.addEventListener('lostpointercapture',stop);
 canvas.addEventListener('wheel',event=>{
   event.preventDefault();
@@ -215,6 +287,26 @@ canvas.addEventListener('wheel',event=>{
   $('zoom').value=String(Math.round(zoom*100));scheduleDraw();
 },{passive:false});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode)));
+$('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
+$('mode-water').addEventListener('click',()=>setEditorKind('water'));
+$('precision-mode').addEventListener('change',()=>{
+  precisionCell=null;precisionDragging=false;
+  $('preview-cursor').checked=true;
+  updatePrecisionActions();
+  status($('precision-mode').checked?
+   'Placement précis : vise, ajuste avec les flèches, puis Appliquer. Aucun geste ne modifie la carte avant confirmation.':
+   'Pinceau direct : touche et glisse pour peindre.');
+});
+$('apply-precision').addEventListener('click',precisionApply);
+for(const [id,dx,dy] of [['nudge-left',-1,0],['nudge-up',0,-1],
+   ['nudge-down',0,1],['nudge-right',1,0]]){
+  $(id).addEventListener('click',()=>{
+    if(!precisionCell)return;
+    precisionCell={x:Math.max(0,Math.min(terrain.width-1,precisionCell.x+dx)),
+      y:Math.max(0,Math.min(terrain.height-1,precisionCell.y+dy))};
+    updatePrecisionActions();
+  });
+}
 $('undo').addEventListener('click',undo);
 $('redo').addEventListener('click',redo);
 window.addEventListener('keydown',event=>{
@@ -267,7 +359,9 @@ window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
-  previewCells:previewSummary?.cells??0,
+  previewCells:previewSummary?.cells??0,editorKind,
+  precisionMode:$('precision-mode').checked,
+  precisionTarget:precisionCell?{...precisionCell}:null,
   faceRuns:lastRenderStats?.faceRuns??0,waterCells:lastRenderStats?.waterCells??0,
   roadCells:lastRenderStats?.roadCells??0,waterVisible:!!ribbonTextures.water?.visible,
   roadVisible:!!ribbonTextures.road?.visible,
@@ -277,4 +371,10 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   centerRoundness:terrain.roundness[Math.floor(terrain.height/2)*terrain.width+Math.floor(terrain.width/2)],
   undoCount:history.length,redoCount:redoHistory.length,
   highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
-selectMode('dig');updateHistoryButtons();setTheme();setupRibbons();fit();
+selectMode('dig');
+setEditorKind('ground');
+if(window.matchMedia?.('(pointer: coarse)').matches){
+  $('precision-mode').checked=true;
+}
+updatePrecisionActions();
+updateHistoryButtons();setTheme();setupRibbons();fit();
