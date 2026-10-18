@@ -7,7 +7,7 @@
 - **Plein écran :** bouton `Plein écran` et sortie, vraie API navigateur quand disponible avec repli `100dvh` ; canevas étendu sur la zone visible, palette flottante repliable, mode Terre/Eau, outil, hauteur, taille du pinceau, placement précis et Annuler/Rétablir toujours raccordés aux mêmes éléments. Volets avancés restent disponibles en sortie du mode ; pas de changement gameplay.
 - **Gels :** Builder 2D, WorldDocument/WorldSurface, stockage/sauvegarde, assets/material registry, paramètres de mouvement/collision, combat, rencontres, démonstrations V13/V14/V15, origine et undo/redo.
 - **Gates :** Node et `npm run check` ; tests de frontière eau/terre + empreinte ; Chromium vrai trajet UI avec chevauchement du pinceau, export JSON, Undo/Redo et viewport mobile 390 × 844 plein écran avec palette repliée/dépliée ; CI, checkpoint immuable et pin Pages seulement après GREEN technique. Le test physique sur téléphone du créateur reste distinct avant GREEN utilisateur.
-- **Statut :** correctif proposé et suite de tests ajoutée ; ne pas déclarer GREEN technique sans constater CI du SHA final.
+- **Prévalidation technique V16 :** source `bd626a7bcfbdfe54f305b2e26ab2dfd08800c5cd`, [CI 39135820612](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39135820612) **SUCCESS** ; Node + `npm run check` + Chromium Builder/Encounter/Combat/sculpt, rendu eau au premier plan et sous-pinceau protégé, emulation mobile 390×844, mode immersif/palette repliable et Undo/Redo. **GREEN technique uniquement** ; checkpoint prévalidation à figer sur le prochain HEAD documentaire puis pin Pages. Validation réelle sur téléphone créateur nécessaire avant GREEN utilisateur.
 
 ---
 
