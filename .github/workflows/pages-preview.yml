@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-terrain-2d-safe-prototype-2026-10-18
+# preview-revision: sculpt-precision-v11-prevalidation-2026-10-18
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 76cef5d3239b8988db95a0b7cf7d731820d5336d
+          ref: 748d72f77b6450b96f66775d14830fe7601c5f3e
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
