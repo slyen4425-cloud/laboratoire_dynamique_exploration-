@@ -388,6 +388,66 @@ try{
     previewCells:stagedAim.probe.previewCells,nudge:cell,changedCellCount:changed.length,
     appliedLevel:finalLevels[changed[0]],undoOk:exactUndo===stagedBefore.json,redoOk:exactRedo===applied.json
   }));
+
+  // V16: product path, not just pure model calls. Paint water, attempt to
+  // raise adjacent land with an overlapping brush, then undo/redo snapshots.
+  const layersV16=await run(`(async()=>{
+    const el=id=>document.getElementById(id);
+    const snapshot=()=>{el('export').click();return JSON.parse(el('json').value);};
+    const change=(id,value)=>{el(id).value=String(value);
+      el(id).dispatchEvent(new Event('input',{bubbles:true}));};
+    el('flat').click();
+    el('mode-water').click();
+    el('quick-tool').value='water-fill';
+    el('quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    change('radius',2);change('water-target',5);
+    const before=snapshot();
+    el('apply-precision').click();
+    const water=snapshot();
+    el('mode-ground').click();
+    el('quick-tool').value='plateau';
+    el('quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    change('radius',3);change('target',7);
+    el('apply-precision').click();
+    const withLand=snapshot();
+    const touchedWater=water.levels.reduce((n,v,i)=>
+      n+(water.waterLevels[i]>=0&&withLand.levels[i]!==v?1:0),0);
+    const dryLandRaised=water.levels.reduce((n,v,i)=>
+      n+(water.waterLevels[i]<0&&withLand.levels[i]>v?1:0),0);
+    el('undo').click();const undone=snapshot();
+    el('redo').click();const redone=snapshot();
+    return {waterCells:water.waterLevels.filter(x=>x>=0).length,
+      touchedWater,dryLandRaised,
+      immutableWater:JSON.stringify(water.waterLevels)===JSON.stringify(withLand.waterLevels),
+      groundUnchangedDuringWater:JSON.stringify(water.levels)===JSON.stringify(before.levels),
+      undoExact:JSON.stringify(undone)===JSON.stringify(water),
+      redoExact:JSON.stringify(redone)===JSON.stringify(withLand)};
+  })()`);
+  if(layersV16.waterCells<1||layersV16.touchedWater!==0||layersV16.dryLandRaised<1||
+      !layersV16.immutableWater||!layersV16.groundUnchangedDuringWater||
+      !layersV16.undoExact||!layersV16.redoExact)
+    throw Error('V16 land/water overlapping brush leaked across layers: '+JSON.stringify(layersV16));
+  const fullscreenV16=await run(`(async()=>{
+    const el=id=>document.getElementById(id);
+    const raf=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    el('fullscreen-toggle').click();await raf();await raf();
+    const full=window.__sculptLabProbe();
+    const visibleTools=getComputedStyle(document.querySelector('.sculpt-quickbar')).display!=='none';
+    const p=el('palette-toggle');
+    p.click();const collapsed=window.__sculptLabProbe().paletteCollapsed;
+    p.click();const expanded=!window.__sculptLabProbe().paletteCollapsed;
+    el('fullscreen-toggle').click();await raf();await raf();
+    const restored=window.__sculptLabProbe();
+    return {full:full.immersiveMode,canvasHeight:full.canvasHeight,viewportHeight:full.viewportHeight,
+      tools:visibleTools,collapsed,expanded,restored:!restored.immersiveMode,
+      precisionStillOn:restored.precisionMode};
+  })()`);
+  if(!fullscreenV16.full||fullscreenV16.canvasHeight<fullscreenV16.viewportHeight*.9||
+      !fullscreenV16.tools||!fullscreenV16.collapsed||!fullscreenV16.expanded||
+      !fullscreenV16.restored||!fullscreenV16.precisionStillOn)
+    throw Error('V16 immersive canvas or compact palette failed in Chromium: '+JSON.stringify(fullscreenV16));
+  console.log('V16 immersive phone and land/water separation Chromium:',
+    JSON.stringify({layersV16,fullscreenV16}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
