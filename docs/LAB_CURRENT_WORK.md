@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V25 corriger la route de démonstration sur une carte vierge
+
+- **Retour utilisateur :** V24 « Nouvelle carte » laisse une route visible. Source du défaut : `SCULPT_PREVIEW_RIBBONS.road` trace un ruban décoratif fixe indépendant des données terrain ou scene ; `show-road` restait activé sur nouvelle scène ou import. La route fantôme n'a pas d'autorité gameplay et ne doit pas être confondue avec une route éditable.
+- **Base :** V24 `4dafbfc8b8ae0d6355b066342a7fd31ce77aeaed`, CI [39158959574](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39158959574), Pages [39159097263](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39159097263) SUCCESS ; départ `checkpoint/exploration-start-sculpt-real-blank-v25-2026-10-18`, branche `work/exploration-sculpt-real-blank-v25-2026-10-18`.
+- **Périmètre :** la bande route fixe est uniquement démo et ne figure jamais sur carte vierge/importée ; l'ancien bouton de visibilité n'autorise pas à réapparaitre spontanément une route dans la scène nettoyée ; « Exemple » réactive seulement la démo. Vérification vraie Chromium.
+- **Propriétaire :** uniquement adapter UI/rendu temporaire du Labo sculpture ; les géométries WorldArea.surface, collisions et `WorldDocument` ne changent pas.
+- **Gel :** déplacement/caméra V21, eau/collisions V22, maisons/objets V23, nouvelle carte V24, Builder 2D, assets, Combat.
+- **Prochaines étapes séparées :** pinceau de zones/routes réelles avec persistance sans fausses routes ; idle/marche en réutilisant la motion native `map-actor-visual-model`. Pas de simple fake de gameplay.
+- **Statut :** CI et publication à confirmer, validation utilisateur à venir.
+
+---
+
 # Lot actif — 18/10/2026 — V24 création explicite d'une carte vierge
 
 - **Retour créateur :** « on a plus carte vierge / nouvelle map ? » ; diagnostic : `Sol plat`, caché dans ⚙, utilise `createSculptTerrain()` (36×24 par défaut), laisse les objets du monde précédent et n'est pas une vraie nouvelle scène.
