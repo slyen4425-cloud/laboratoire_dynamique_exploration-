@@ -256,3 +256,35 @@ test('V13 undo/redo, water tools and renderer live outside 2D runtime',()=>{
  assert.match(renderer,/drawWaterVolume/);
  assert.doesNotMatch(main,/WorldDocument|collision-world/);
 });
+
+
+test('V14 precision size 0.5 edits exactly the one targeted 2D surface cell',()=>{
+  const flat=createSculptTerrain({width:20,height:18});
+  const stamp=applySculptStroke(flat,{points:[{x:10.5,y:9.5}],radius:.5,
+    strength:3,mode:'plateau',target:3,edgeSoftness:0,rockRoundness:95});
+  const edits=stamp.levels.flatMap((height,index)=>height===flat.levels[index]?[]:[index]);
+  assert.deepEqual(edits,[9*20+10]);
+  assert.equal(stamp.levels[edits[0]],3);
+  const wet=applySculptWaterStroke(stamp,{points:[{x:10.5,y:9.5}],radius:.5,
+    mode:'water-fill',target:5,edgeSoftness:0});
+  const affected=wet.waterLevels.flatMap((value,index)=>value===stamp.waterLevels[index]?[]:[index]);
+  assert.deepEqual(affected,edits);
+  assert.deepEqual(wet.levels,stamp.levels,'authoring water cannot modify land height');
+  assert.deepEqual(wet.roundness,stamp.roundness,'water tools must not reshape rocks');
+});
+
+test('V14 editor panels are exclusive, fine-step and confirm-before-commit by design',()=>{
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const ui=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  for(const expected of ['id="mode-ground"','id="mode-water"','id="ground-tools"',
+    'id="water-tools"','id="precision-mode"','id="apply-precision"',
+    'id="nudge-left"','id="nudge-right"','id="nudge-up"','id="nudge-down"']){
+    assert.ok(html.includes(expected),expected);
+  }
+  assert.match(html,/id="radius"[^>]*min="0\.5"[^>]*step="0\.5"/);
+  assert.match(ui,/function setEditorKind/);
+  assert.match(ui,/function precisionApply/);
+  assert.match(ui,/precisionDragging/);
+  assert.match(ui,/commitUndo\(previous\)/);
+  assert.doesNotMatch(ui,/location\.reload|WorldDocument|collision-world/);
+});
