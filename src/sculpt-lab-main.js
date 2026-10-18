@@ -791,6 +791,76 @@ function objectCommit(next){
   objectHistory.push(placedObjects);if(objectHistory.length>40)objectHistory.shift();
   objectRedo=[];placedObjects=next;updateObjectCount();return true;
 }
+// Surface authoring reuses WorldSurface v3; only this UI owns undo/redo.
+function loadSurfacePaintAssets(){
+  const used=new Set([...surface.routes,...surface.zones].map(f=>f.materialId));
+  for(const meta of SCULPT_SURFACE_MATERIALS){
+    if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
+    imageFor(meta.id,meta.assetKind).then(texture=>{
+      if(!texture)return;
+      surfacePaintImages.set(meta.id,texture);navTerrainCache=null;scheduleDraw();
+    });
+  }
+}
+function updateSurfaceCount(){
+  const count=surface.routes.length+surface.zones.length;
+  $('surface-count').textContent=count+' route(s) / zone(s) peintes';
+  $('surface-undo').disabled=!surfaceHistory.length;
+  $('surface-redo').disabled=!surfaceRedo.length;
+  navTerrainCache=null;scheduleDraw();
+}
+function surfaceCommit(next){
+  if(JSON.stringify(next.routes)===JSON.stringify(surface.routes)&&
+     JSON.stringify(next.zones)===JSON.stringify(surface.zones))return false;
+  surfaceHistory.push(surface);if(surfaceHistory.length>40)surfaceHistory.shift();
+  surfaceRedo=[];surface=next;
+  loadSurfacePaintAssets();updateSurfaceCount();
+  status('Peinture enregistrée sur la scène · exporter la scène pour sauvegarder');
+  return true;
+}
+function setSurfaceEditing(active){
+  if(active&&objectEditing)setObjectEditing(false);
+  if(active&&navigationTesting)setNavigationTesting(false);
+  surfaceEditing=!!active;
+  if(!surfaceEditing){surfaceDrawing=false;surfaceStrokePoints=[];surfaceLastCell='';}
+  document.body.classList.toggle('surface-editing',surfaceEditing);
+  $('surface-palette').hidden=!surfaceEditing;
+  $('mode-surface').classList.toggle('active',surfaceEditing);
+  $('mode-surface').setAttribute('aria-pressed',String(surfaceEditing));
+  for(const domain of ['ground','water']){
+    $('mode-'+domain).classList.toggle('active',!surfaceEditing&&editorKind===domain);
+    $('mode-'+domain).setAttribute('aria-pressed',String(!surfaceEditing&&editorKind===domain));
+  }
+  if(surfaceEditing){
+    $('active-tool-label').textContent='Textures · dessiner route ou zone';
+    status('Pinceau textures : touche ou trace une ligne sur le relief');
+    loadSurfacePaintAssets();
+  }else $('active-tool-label').textContent=editorKind+' · '+selectedMode;
+  updatePrecisionActions();scheduleDraw();
+}
+$('surface-width').addEventListener('input',()=>{
+  $('surface-width-value').textContent=$('surface-width').value+' cases';
+});
+$('surface-undo').addEventListener('click',()=>{
+  if(!surfaceHistory.length)return;
+  surfaceRedo.push(surface);surface=surfaceHistory.pop();
+  updateSurfaceCount();
+});
+$('surface-redo').addEventListener('click',()=>{
+  if(!surfaceRedo.length)return;
+  surfaceHistory.push(surface);surface=surfaceRedo.pop();
+  loadSurfacePaintAssets();updateSurfaceCount();
+});
+window.__sculptSurfaceProbe=()=>Object.freeze({
+  active:surfaceEditing,
+  routes:surface.routes.length,zones:surface.zones.length,
+  features:[...surface.routes,...surface.zones].map(f=>({
+    id:f.id,materialId:f.materialId,width:f.width,points:f.points.length
+  })),
+  texturesLoaded:[...surfacePaintImages.keys()],
+  undoCount:surfaceHistory.length
+});
+
 function setObjectEditing(active){
   if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
