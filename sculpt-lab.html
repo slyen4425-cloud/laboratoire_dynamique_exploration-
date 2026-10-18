@@ -180,7 +180,8 @@ body.sculpt-immersive .canvas-wrap .precision-actions{
   box-shadow:0 5px 18px #0008;font-size:.78rem}
 #navigation-hud select{width:100%;padding:7px}
 #navigation-hud input[type=range]{width:100%;accent-color:#83ddc4}
-#navigation-speed-value{font-weight:800;color:#aff4df}
+#navigation-speed-value,#navigation-camera-zoom-value{font-weight:800;color:#aff4df}
+#navigation-metrics{font-size:.72rem;color:#b9d4dc;font-variant-numeric:tabular-nums}
 #navigation-status{font-size:.75rem;color:#b4f0e4;line-height:1.35}
 #navigation-stick{position:absolute;z-index:13;bottom:13px;left:13px;
   width:112px;height:112px;border-radius:50%;border:2px solid #88cbcf;
@@ -295,11 +296,17 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
       <option value="fly">Vol</option>
     </select>
   </label>
+  <label for="navigation-camera-zoom">Distance de caméra
+    <output id="navigation-camera-zoom-value" for="navigation-camera-zoom">175 %</output>
+    <input id="navigation-camera-zoom" type="range" min="100" max="240" step="5" value="175"
+      aria-label="Rapprocher ou éloigner la caméra pendant la navigation">
+  </label>
   <label for="navigation-speed">Vitesse de déplacement
     <output id="navigation-speed-value" for="navigation-speed">220</output>
     <input id="navigation-speed" type="range" min="90" max="360" step="10" value="220"
       aria-label="Vitesse du personnage pour le test">
   </label>
+  <output id="navigation-metrics" aria-label="Fluidité du test">Mesure de fluidité en cours…</output>
   <output id="navigation-status" aria-live="polite">Maintenir le joystick ou ZQSD / WASD / flèches. Une falaise trop haute bloque la marche.</output>
   <button type="button" id="navigation-reset">Replacer le personnage</button>
   <small>Test isolé : les capacités du jeu ne sont pas modifiées.</small>
@@ -383,6 +390,6 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-objects-v20"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-navigation-performance-v21"></script>
 </body>
 </html>
