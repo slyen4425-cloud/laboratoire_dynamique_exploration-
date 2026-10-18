@@ -13,6 +13,7 @@ let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zo
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
+let nativeFullscreenEntered=false;
 const ribbonTextures={water:null,road:null};
 let framePending=false;
 const images=new Map();
@@ -192,6 +193,28 @@ function adjustQuickLevel(delta){
   el.value=String(Math.max(0,Math.min(limit,Number(el.value)+delta)));
   el.dispatchEvent(new Event('input',{bubbles:true}));
 }
+// Fullscreen and the floating palette only reflow the EXISTING controls.
+function setImmersive(enabled){
+  document.body.classList.toggle('sculpt-immersive',enabled);
+  document.body.classList.remove('palette-collapsed');
+  $('palette-toggle').hidden=!enabled;
+  $('palette-toggle').setAttribute('aria-expanded','true');
+  $('palette-toggle').textContent='▴';
+  $('fullscreen-toggle').setAttribute('aria-pressed',String(enabled));
+  $('fullscreen-toggle').setAttribute('aria-label',enabled?'Quitter le plein écran':'Passer en plein écran');
+  $('fullscreen-toggle').textContent=enabled?'⤢ Quitter':'⛶ Plein écran';
+  requestAnimationFrame(fit);
+}
+function toggleImmersive(){
+  const entering=!document.body.classList.contains('sculpt-immersive');
+  setImmersive(entering);
+  if(entering&&typeof document.documentElement.requestFullscreen==='function'){
+    // Mobile browsers without Fullscreen API still use the 100dvh CSS canvas.
+    try{document.documentElement.requestFullscreen().catch(()=>{});}catch{}
+  }else if(!entering&&document.fullscreenElement&&document.exitFullscreen){
+    document.exitFullscreen().catch(()=>{});
+  }
+}
 function adjustBrushSize(delta){
   const input=$('radius');
   const size=Math.max(.5,Math.min(16,Number(input.value)+delta));
@@ -329,6 +352,21 @@ $('radius-plus').addEventListener('click',()=>adjustBrushSize(.5));
 
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
+$('fullscreen-toggle').addEventListener('click',toggleImmersive);
+$('palette-toggle').addEventListener('click',()=>{
+  const collapsed=document.body.classList.toggle('palette-collapsed');
+  $('palette-toggle').setAttribute('aria-expanded',String(!collapsed));
+  $('palette-toggle').setAttribute('aria-label',collapsed?'Afficher la palette d’outils':'Réduire la palette d’outils');
+  $('palette-toggle').textContent=collapsed?'▾':'▴';
+});
+document.addEventListener('fullscreenchange',()=>{
+  if(document.fullscreenElement)nativeFullscreenEntered=true;
+  else if(nativeFullscreenEntered){
+    nativeFullscreenEntered=false;
+    if(document.body.classList.contains('sculpt-immersive'))setImmersive(false);
+  }
+  requestAnimationFrame(fit);
+});
 $('precision-mode').addEventListener('change',()=>{
   precisionCell=null;precisionDragging=false;
   $('preview-cursor').checked=true;
@@ -401,7 +439,10 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   levelSpread:new Set(terrain.levels).size,zoom,
   previewCells:previewSummary?.cells??0,editorKind,
   brushSize:Number($('radius').value),quickTool:$('quick-tool').value,
-  canvasTop:canvas.getBoundingClientRect().top,viewportHeight:window.innerHeight,
+  canvasTop:canvas.getBoundingClientRect().top,canvasHeight:canvas.getBoundingClientRect().height,
+  viewportHeight:window.innerHeight,
+  immersiveMode:document.body.classList.contains('sculpt-immersive'),
+  paletteCollapsed:document.body.classList.contains('palette-collapsed'),
   advancedOpen:$('sculpt-settings').open,
   precisionMode:$('precision-mode').checked,
   precisionTarget:precisionCell?{...precisionCell}:null,
