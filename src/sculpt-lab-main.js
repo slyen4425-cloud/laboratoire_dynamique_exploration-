@@ -19,7 +19,9 @@ let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
-const navKeys=new Set(),navSpeed=83;
+const navKeys=new Set();
+// Preview-only navigation speed; authoritative runtime movement remains unchanged.
+const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false;
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
 if(demoActorAsset){demoActorImage.onload=scheduleDraw;demoActorImage.src=demoActorAsset.path;}
@@ -431,7 +433,7 @@ function updateNavigationInfo(forced=false){
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const value=info?'Case '+(info.col+1)+' / '+(info.row+1)+' · hauteur '+info.level+
     (info.waterDepth>0?' · eau '+info.waterDepth:'')+
-    (navBlocked?' · obstacle':''):'Hors zone';
+    (navBlocked?' · obstacle (falaise, eau ou limite)':''):'Hors zone';
   if(forced||value!==navLastState){$('navigation-status').textContent=value;navLastState=value;}
 }
 function navigationInput(){
@@ -452,7 +454,7 @@ function navigationTick(time){
     if(dt>0&&Math.hypot(intent.x,intent.y)>.13){
       const previousX=navActor.x,previousY=navActor.y;
       stepMovement(navigationWorld(),navActor,intent,dt,
-        {maxSpeed:navSpeed},undefined,navigationContext());
+        {maxSpeed:navSpeed()},undefined,navigationContext());
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navBlocked=moved<.001;
       navActor.moving=moved>.001;
@@ -479,12 +481,13 @@ function setNavigationTesting(on){
     $('navigation-locomotion').value='ground';
     navActor.locomotion={modes:['ground']};
     navStick=createVirtualStick($('navigation-stick'),$('navigation-knob'),30);
-    zoom=Math.max(.8,zoom);
+    // Keep the hero and movement legible on a small phone display.
+    zoom=Math.max(1.25,zoom);
     $('zoom').value=String(Math.round(zoom*100));
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
-    status('Test de navigation : relief, limites, eau, déplacement 360°.');
+    status('Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
     navigationTesting=false;
     cancelAnimationFrame(navFrame);navFrame=0;navPreviousTime=null;
@@ -501,6 +504,10 @@ function setNavigationTesting(on){
   }
   scheduleDraw();
 }
+$('navigation-speed').addEventListener('input',()=>{
+  $('navigation-speed-value').textContent=$('navigation-speed').value;
+  updateNavigationInfo(true);
+});
 $('navigation-toggle').addEventListener('click',()=>{
   setNavigationTesting(!navigationTesting);
 });
@@ -529,7 +536,7 @@ window.addEventListener('blur',()=>{navKeys.clear();navStick?.reset();});
 window.__sculptNavProbe=()=>Object.freeze({
   enabled:navigationTesting,player:navActor?{x:navActor.x,y:navActor.y,
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
-  blocked:navBlocked,joystickAttached:!!navStick,activeFrames:navFrame>0,
+  blocked:navBlocked,speed:navSpeed(),zoom,joystickAttached:!!navStick,activeFrames:navFrame>0,
   sameTerrainVersion:terrain.schemaVersion===1
 });
 
