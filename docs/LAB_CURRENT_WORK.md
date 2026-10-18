@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V17 Navigation sur terrain sculptable (prévalidation)
+
+- **Base :** checkpoint V16 immuable `0c7bf54cba34178e56ffcd894f6daf5317060f43` ; START `checkpoint/exploration-start-sculpt-navigation-v17-2026-10-18` ; branche `work/exploration-sculpt-navigation-v17-2026-10-18`.
+- **Demande utilisateur :** tester les déplacements sur le nouveau relief avant d’intégrer le catalogue visuel existant ; certaines textures/structures peuvent nécessiter une refonte artistique ultérieure. Décision : navigation **expérimentale** du labo sculpture, non raccord runtime Monster Capture et pas de deuxième WorldDocument.
+- **Propriétaires réutilisés :** `stepMovement` reste seul propriétaire du mouvement X/Y ; `isBlocked` / Collision World applique le nouvel adaptateur de lecture pure `sculpt-navigation-collision` uniquement via `collisionContext.sculptNavigation` explicite ; input depuis l'existant `createVirtualStick` (dispose désormais explicite) et clavier ; `sculpt-height-model` reste seul propriétaire des hauteurs/eaux ; canvas lit l'acteur dans le modèle de navigation éphémère, texture et sprite via leurs adapters.
+- **Fonctionnalité test :** bouton `🚶 Tester` / `✎ Éditer` dans le même labo, personnage SVG de démonstration (`actor.demo.hero.traveler.01`), joystick tactile, ZQSD/WASD/flèches, caméra suivant l'acteur, HUD hauteur/niveau/obstacle, locomotion simulée marche/nage/vol uniquement pour tests. Marche bloque hauteur de +1/-1 maximum par cellule et eau volumique, nage permet l'eau, vol franchit ces barrières mais jamais les limites de carte. Trajectoire échantillonnée contre le tunneling. Aucun état joueur exporté dans le JSON sculpture.
+- **Gels :** Builder 2D, WorldDocument, Surface traversal gameplay, Encounter/Combat, assets du runtime, capacités réelles des personnages, V16 terre/eau, historique de sculpture, sauvegarde, collision hors contexte `sculptNavigation`.
+- **Tests :** sentinelles Node, contrôle opt-in/hors contexte, diagonales, glissement, montée/descente, eau/nage/vol, limites et anti-tunneling. CI SHA `47c3ac74d1b21bec2687f50cb217d14ca657415c` : [39137825031](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39137825031) **SUCCESS** (Node + npm check + vrais navigateurs Builder/Encounter/Combat/sculpt, clavier et tactile en viewport mobile, sortie sans altération JSON).
+- **Statut :** GREEN technique sur code de navigation, validation artistique/manuelle smartphone créateur requise avant GREEN utilisateur ; préparer checkpoint immuable et test Pages. **Lot suivant séparé :** variantes de matériaux visuels natifs réutilisées via Material Registry/Asset Adapter ; pas de duplication des assets.
+
+---
+
 # Lot actif — 18/10/2026 — V16 sculpture plein écran et isolation Terre/Eau
 
 - **Retour créateur :** pinceau V15 précis et validé à l'usage, mais zone de sculpture encore trop petite ; demande d'un canevas plein écran avec petite palette flottante d'outils essentiels. Une montée rocheuse qui approche l'eau doit rester indépendante : en mode Terre, le pinceau ne doit jamais élever les cellules d'eau préexistantes.
