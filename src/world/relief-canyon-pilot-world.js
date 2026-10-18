@@ -48,8 +48,8 @@ export const reliefCanyonPilotDocument = normalizeWorldDocument({
     },
     objects: [
       prop('upper-cliff-left', 'objectdef.relief.cliff.grassy_edge.01', 460, 610, 1.02),
-      prop('upper-cliff-right', 'objectdef.relief.cliff.broken_ledge.02', 1530, 600, 1.02),
-      prop('upper-cliff-angle', 'objectdef.relief.cliff.corner.01', 2250, 585, 0.88),
+      prop('upper-cliff-right', 'objectdef.relief.cliff.cracked_cool.04', 1530, 600, 1.02),
+      prop('upper-cliff-angle', 'objectdef.relief.cliff.corner_sand.02', 2250, 585, 0.88),
       prop('waterfall-center', 'objectdef.relief.waterfall.blue.01', 1080, 677, 0.78),
       prop('pine-upper-a', 'objectdef.tree.forest.pine.01', 185, 255, 1.25),
       prop('pine-upper-b', 'objectdef.tree.forest.pine.01', 510, 300, 1),
