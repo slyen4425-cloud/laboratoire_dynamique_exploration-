@@ -10,6 +10,9 @@ import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collis
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {createVirtualStick} from './input/virtual-stick.js';
 import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
+import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
+import {createMapActorRenderer} from './render/map-actor-renderer.js';
+import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js';
@@ -80,7 +83,21 @@ function navigationBackground(){
   return navTerrainCache;
 }
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
-if(demoActorAsset){demoActorImage.onload=scheduleDraw;demoActorImage.src=demoActorAsset.path;}
+const navigationActorVisual=normalizeMapActorVisual({
+  assetId:'actor.demo.hero.traveler.01',role:'hero',targetHeight:37,
+  motion:{idleAmplitude:.55,idleFrequency:.8,walkAmplitude:2.0,walkFrequency:3.8}
+});
+const navigationActorPreparer=createMapActorVisualPreparer({imageLoader:{
+  get:id=>id===demoActorAsset?.id?demoActorImage:null
+}});
+const navigationActorRenderer=createMapActorRenderer({preparedVisuals:navigationActorPreparer});
+let navVisualTime=0,navLastVisualPaint=-Infinity;
+if(demoActorAsset){
+  demoActorImage.onload=()=>{
+    navigationActorPreparer.prepare([demoActorAsset.id]);scheduleDraw();
+  };
+  demoActorImage.src=demoActorAsset.path;
+}
 
 const ribbonTextures={water:null,road:null};
 // The legacy visual road belongs to the example only, not blank scene data.
@@ -472,20 +489,16 @@ function centerNavigationCamera(){
 }
 function drawNavigationActor(){
   if(!navActor)return;
-  const level=navHeight();
-  const {x,y}=navActor,footY=y-level*SCULPT_TILE.rise+3;
-  ctx.save();
-  ctx.fillStyle='rgba(0,0,0,.24)';
-  ctx.beginPath();ctx.ellipse(x,footY+2,8,3,0,0,Math.PI*2);ctx.fill();
-  if(demoActorImage.complete&&demoActorImage.naturalWidth>0){
-    const width=27,height=37;
-    ctx.translate(x,footY);ctx.scale(navActor.facingX<0?-1:1,1);
-    ctx.drawImage(demoActorImage,-width/2,-height,width,height);
-  }else{
-    ctx.fillStyle='#ffd9a5';ctx.beginPath();ctx.arc(x,footY-18,8,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#4262a3';ctx.fillRect(x-7,footY-15,14,15);
-  }
-  ctx.restore();
+  const footY=navActor.y-navHeight()*SCULPT_TILE.rise+3;
+  // The native Exploration actor renderer owns idle/walk motion, shadow,
+  // visual anchor and direction; gameplay state is read-only.
+  if(navigationActorPreparer.get(navigationActorVisual.assetId))
+    navigationActorRenderer.draw(ctx,{
+      camera:{x:0,y:0},
+      actors:[{x:navActor.x,y:footY,facingX:navActor.facingX,
+        moving:navActor.moving,mapVisual:navigationActorVisual}],
+      timeSeconds:navVisualTime
+    });
 }
 function navigationSpawn(){
   // Start in an area known to be dry in the default demo; valid for a
@@ -526,6 +539,7 @@ function navigationTick(time){
     const elapsed=Math.max(0,time-navPreviousTime);
     const intent=navigationInput();
     navMetricFrames++;
+    navVisualTime+=Math.min(250,elapsed)/1000;
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
       const previousX=navActor.x,previousY=navActor.y;
       const world=navigationWorld(),context=navigationContext();
@@ -538,9 +552,13 @@ function navigationTick(time){
       navBlocked=moved<.001;
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
-      if(moved>.001){centerNavigationCamera();scheduleDraw();}
+      if(moved>.001)centerNavigationCamera();
       updateNavigationInfo();
     }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
+    // Idle remains alive without keeping the heavy canvas redraw at 60fps.
+    if(time-navLastVisualPaint>=(navActor.moving?33:55)){
+      navLastVisualPaint=time;scheduleDraw();
+    }
     if(!navMetricLast)navMetricLast=time;
     if(time-navMetricLast>=900){
       const elapsedSec=(time-navMetricLast)/1000;
@@ -574,6 +592,7 @@ function setNavigationTesting(on){
     zoom=navigationCameraZoom();
     $('zoom').value=String(Math.round(zoom*100));
     navTerrainCache=null;navFps=0;navStepSpeed=0;
+    navVisualTime=0;navLastVisualPaint=-Infinity;
     navMetricLast=0;navMetricFrames=0;navMetricDistance=0;
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
@@ -591,6 +610,7 @@ function setNavigationTesting(on){
     if(navViewport){zoom=navViewport.zoom;pan=navViewport.pan;}
     $('zoom').value=String(Math.round(zoom*100));
     navActor=null;navViewport=null;navBlocked=false;navTerrainCache=null;
+    navLastVisualPaint=-Infinity;
     updatePrecisionActions();scheduleDraw();
     status('Édition réactivée : le test de marche n’a modifié aucune donnée.');
   }
@@ -637,6 +657,9 @@ window.__sculptNavProbe=()=>Object.freeze({
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
   blocked:navBlocked,speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
+  actorMotion:navActor?.moving?'walk':'idle',
+  actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
+  actorMotionTime:navVisualTime,
   sameTerrainVersion:terrain.schemaVersion===1
 });
 
