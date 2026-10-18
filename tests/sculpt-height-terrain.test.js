@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain,sculptDemo,sculptHeightAt,applySculptBrush,
-  sculptFaces,applySculptStroke,sculptBrushFootprint,importSculptTerrain,serializeSculptTerrain} from '../src/world/sculpt-height-model.js';
+  sculptFaces,applySculptStroke,applySculptWaterStroke,sculptWaterAt,sculptBrushFootprint,importSculptTerrain,serializeSculptTerrain} from '../src/world/sculpt-height-model.js';
 import {SCULPT_TILE,SCULPT_ROCK_PALETTES,sculptFaceContour,drawSculptTerrain,SCULPT_PREVIEW_RIBBONS,sculptRibbonY}
  from '../src/render/sculpt-height-renderer.js';
 import {materialPackV1} from '../src/materials/material-pack-v1.js';
@@ -186,4 +186,73 @@ test('V12 road and water are registry-backed visual ribbons, not gameplay surfac
  for(const path of ['index.html','builder.html']){
    assert.doesNotMatch(readFileSync(new URL('../'+path,import.meta.url),'utf8'),/sculpt-river-road-v12/);
  }
+});
+
+
+test('V13 local rock roundness applies on NEXT brush only, old regions stay fixed',()=>{
+ const original=createSculptTerrain({width:20,height:16});
+ const first=applySculptStroke(original,{points:[{x:5.5,y:6.5}],radius:2,mode:'raise',
+   strength:2,rockRoundness:20});
+ assert.equal(first.roundness[6*20+5],20);
+ assert.equal(first.roundness[6*20+15],95);
+ const second=applySculptStroke(first,{points:[{x:15.5,y:6.5}],radius:2,mode:'raise',
+   strength:2,rockRoundness:150});
+ assert.equal(second.roundness[6*20+5],20);
+ assert.equal(second.roundness[6*20+15],150);
+ assert.equal(first.roundness[6*20+15],95);
+ assert.deepEqual(importSculptTerrain(serializeSculptTerrain(second)),second);
+});
+
+test('V13 water surface volume tracks relief; excavation restores water',()=>{
+ const ground=createSculptTerrain({width:18,height:16});
+ const cut=applySculptStroke(ground,{points:[{x:8.5,y:8.5}],radius:2,mode:'dig',strength:2});
+ const water=applySculptWaterStroke(cut,{points:[{x:8.5,y:8.5}],radius:2.8,
+   mode:'water-fill',target:3});
+ assert.equal(sculptWaterAt(water,8,8),3);
+ assert.equal(sculptWaterAt(water,1,1),0);
+ assert.deepEqual(water.levels,cut.levels);
+ const raised=applySculptStroke(water,{points:[{x:8.5,y:8.5}],radius:1,
+   mode:'plateau',target:5});
+ assert.equal(sculptWaterAt(raised,8,8),0);
+ assert.equal(raised.waterLevels[8*18+8],3);
+ const dug=applySculptStroke(raised,{points:[{x:8.5,y:8.5}],radius:1,
+   mode:'plateau',target:0});
+ assert.equal(sculptWaterAt(dug,8,8),3);
+});
+
+test('V13 water raise / lower / erase and JSON snapshots are deterministic',()=>{
+ const flat=createSculptTerrain({width:18,height:14});
+ const opts={points:[{x:8.5,y:7.5}],radius:2,edgeSoftness:0};
+ const filled=applySculptWaterStroke(flat,{...opts,mode:'water-fill',target:5});
+ const raised=applySculptWaterStroke(filled,{...opts,mode:'water-rise',strength:2});
+ assert.equal(raised.waterLevels[7*18+8],7);
+ assert.deepEqual(raised.levels,filled.levels);
+ const lower=applySculptWaterStroke(raised,{...opts,mode:'water-lower',strength:1});
+ assert.equal(lower.waterLevels[7*18+8],6);
+ const erased=applySculptWaterStroke(lower,{...opts,mode:'water-erase'});
+ assert.equal(erased.waterLevels[7*18+8],-1);
+ const smooth=applySculptWaterStroke(raised,{...opts,mode:'water-smooth'});
+ assert.ok(smooth.waterLevels.every(v=>v===-1||(v>=0&&v<=10)));
+ assert.deepEqual(importSculptTerrain(serializeSculptTerrain(raised)),raised);
+});
+
+test('V13 import old height-only JSON, validate optional water/roundness arrays',()=>{
+ const old=JSON.stringify({schemaVersion:1,width:8,height:8,levels:Array(64).fill(2)});
+ const loaded=importSculptTerrain(old);
+ assert.ok(loaded.waterLevels.every(x=>x===-1));
+ assert.ok(loaded.roundness.every(x=>x===95));
+ assert.deepEqual(importSculptTerrain(serializeSculptTerrain(loaded)),loaded);
+ assert.throws(()=>importSculptTerrain(JSON.stringify({schemaVersion:1,width:8,height:8,
+ levels:Array(64).fill(2),waterLevels:Array(64).fill(99)})),/invalide/);
+});
+
+test('V13 undo/redo, water tools and renderer live outside 2D runtime',()=>{
+ const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+ for(const id of ['undo','redo','water-target'])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/data-mode="water-fill"/);
+ assert.match(main,/redoHistory/);assert.match(main,/commitUndo/);
+ assert.match(renderer,/drawWaterVolume/);
+ assert.doesNotMatch(main,/WorldDocument|collision-world/);
 });
