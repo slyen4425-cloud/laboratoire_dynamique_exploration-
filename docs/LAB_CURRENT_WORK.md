@@ -6,7 +6,10 @@
 - **Propriétaires :** Object Definition Catalog pour choix et dimensions, Asset Adapter pour SVG, WorldObject Renderer existant pour ordre visuel ; WorldSurface pour matériau vrai, Collision World pour footprint. Aucune autorité gameplay parallèle.
 - **Gels :** tailles d'objets existants, placement monde classique, collisions/mouvements/obstacles/rencontres/Combat/Camera, modèle WorldDocument et composant zoom Builder, rivière et cascade, performance mobile ; V9 conservée pour rollback.
 - **Contrôles :** SVG DOM valide / transparente, distinctivité silhouettes et palettes, catalogue/asset résolus via Builder, compatibilité JSON export/import, viewport mobile, node tests/check, Chromium monde/Builder/Encounter/Combat. Prévalidation CI GREEN avant publication ; validation artistique smartphone utilisateur distincte.
-- **Prochaine étape :** ajouter variantes et raccords de surface, mesurer tests puis checkpoint immutable.
+- **Résultat V10A :** quatre nouveaux assets SVG de falaises avec quatre formes et palettes propres (terrasses ambre, fracturée grise, courte bleu-gris, angle grès), déclarés dans Asset Adapter et Object Catalog natifs et disponibles comme objets éditables. Canyon pilote expose la variante grise et l'angle sable. Sommet irrégulier avec évidements transparents laissant passer la véritable texture WorldSurface. Les dimensions et collisions existantes et le voile d'immersion V8/V9 ne changent pas.
+- **CI source prévalidation :** `39095526274` SUCCESS, **535/535 tests Node**, `npm run check`, Chromium Builder/Encounter/Combat. 10/10 assets visuels (dont 4 nouveaux SVG) chargés par le vrai Builder ; contrôle pixels immersion V8 (4 contacts, 3 169 pixels teintés), contrôle Pixel V9 terre neige/herbe (6/6), preview Builder et sauvegardes sous sentinelles. Première CI rouge sur une sentinelle de révision d'asset a été corrigée sans assouplir le test.
+- **Validation :** V10A techniquement prévalidée, validation artistique mobile utilisateur non acquise. Le système de zoom caméra **n'a pas été modifié** ; chantier V10B séparé requis après checkpoint conformément à la règle de lot borné.
+- **Prochaine étape :** checkpoint immutable V10A, publication de preview, test du rendu par l'auteur. Puis lot séparé V10B pour zoom runtime/Builder, sans changer les collisions.
 
 ---
 
