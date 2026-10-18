@@ -1,3 +1,13 @@
+# Lot actif — 18/10/2026 — V15 ergonomie mobile du labo sculpture
+
+- **Retour utilisateur + capture mobile :** V14 précision excellente, mais toute la hauteur de l'écran occupée par les réglages, toile invisible sans scroll ; taille du pinceau limitée à 8 et peu accessible. Conserver absolument mode précis, eau V13, annuler/rétablir et arrondi par passage.
+- **Base exacte :** source V14 publiée `b2d79530b6a7ede77d9b7a5c9478a0dcbce6bb01`, Pages `39124275467` SUCCESS, Node 545/545 et Chromium Builder/Encounter/Combat et tactile précédemment GREEN. Checkpoint START `checkpoint/exploration-start-sculpt-mobile-ui-v15-2026-10-18`, branche `work/exploration-sculpt-mobile-ui-v15-2026-10-18`. Rollbacks V14, V13 et version 2D V6 préservés.
+- **Périmètre homogène :** réagencement des contrôles de `sculpt-lab.html` : canvas principal visible sans scroller au téléphone, barre compacte de domaine / outil / taille / niveau / visée et annuler ; flèches et appliquer accessibles pendant visée ; réglages avancés repliables. Plage pinceau 0,5 à 16 cellules avec un seul calcul canonique de l'empreinte, boutons +/- de taille, sans second moteur. Synchroniser les raccourcis avec les boutons existants.
+- **Propriétaires :** modèle `sculpt-height-model` pour le rayon réel, `sculpt-lab-main` pour les événements, `sculpt-height-renderer` pour le masque fidèle ; HTML/CSS pour responsive. **Gels :** WorldDocument, WorldSurface, index.html, builder.html, collision, gameplay, eau/route, stockages des cartes, caméra gameplay, Combat/Encounter.
+- **Gates :** cap du pinceau 16 réellement sculpté et aperçu cohérent, 0,5 une seule case, vraie interaction tactile 390px, preuve canvas visible avant défilement, confirmer et undo/redo, eau inchangée, CI complète, checkpoint immutable et publication unique via pin Pages. Validation mobile créateur distincte.
+
+---
+
 # Lot actif — 18/10/2026 — V14 ergonomie Terre/Eau et placement de précision
 
 - **Retour créateur :** V13 eau volumique et textures artistiquement validées ; panneau surchargé et mélange des outils Terre/Eau, pinceau trop approximatif au doigt malgré empreinte visible. Conserver impérativement la texture d'eau V13.
