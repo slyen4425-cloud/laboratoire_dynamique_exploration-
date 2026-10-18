@@ -80,6 +80,10 @@ try{
       './assets/exploration/objects/relief/cliff_broken_ledge_02.svg',
       './assets/exploration/objects/relief/cliff_corner_01.svg',
       './assets/exploration/objects/relief/waterfall_blue_01.svg',
+      './assets/exploration/objects/relief/cliff_terraced_warm_03.svg',
+      './assets/exploration/objects/relief/cliff_cracked_cool_04.svg',
+      './assets/exploration/objects/relief/cliff_short_round_01.svg',
+      './assets/exploration/objects/relief/cliff_corner_sand_02.svg',
       './assets/exploration/materials/forest/water/water_canyon_turquoise_01.svg',
       './assets/exploration/materials/forest/transitions/water_canyon_turquoise_bank_01.svg'
     ];
