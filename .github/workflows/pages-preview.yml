@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-water-volume-undo-v13-2026-10-18
+# preview-revision: sculpt-editor-precision-v14-2026-10-18
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: fb2bc0e22f9998073564d93c869c3f2f9c5e0424
+          ref: b2d79530b6a7ede77d9b7a5c9478a0dcbce6bb01
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
