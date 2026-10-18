@@ -495,6 +495,7 @@ function navigationTick(time){
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on){
+    if(objectEditing)setObjectEditing(false); // keep object palette out of the walking HUD
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
