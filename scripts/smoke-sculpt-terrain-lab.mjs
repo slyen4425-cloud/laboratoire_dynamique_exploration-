@@ -489,12 +489,23 @@ try{
     return window.__sculptNavProbe().speed;
   })()`);
   if(restored!==220)throw Error('V19 default speed not restored');
+  await sleep(175);
+  const v26Idle=await run('window.__sculptNavProbe()');
+  if(v26Idle.actorMotion!=='idle'||!v26Idle.actorPrepared||v26Idle.actorMotionTime<=0)
+    throw Error('V26 native actor idle motion not running: '+JSON.stringify(v26Idle));
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(420);
+  await sleep(220);
+  const v26Walking=await run('window.__sculptNavProbe()');
+  if(v26Walking.actorMotion!=='walk')
+    throw Error('V26 native walk motion never starts on real displacement: '+JSON.stringify(v26Walking));
+  await sleep(200);
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+  await sleep(140);
   const afterKeyboard=await run('window.__sculptNavProbe()');
+  if(afterKeyboard.actorMotion!=='idle'||!afterKeyboard.actorPrepared)
+    throw Error('V26 actor must return to idle after key release: '+JSON.stringify(afterKeyboard));
   if(afterKeyboard.player.x-navStart.before.player.x<35||!afterKeyboard.terrainCached)
     throw Error('V17 keyboard does not reach existing Exploration movement: '+JSON.stringify(afterKeyboard));
   // Force a 190ms main-thread freeze (simulates an overloaded Android device):
