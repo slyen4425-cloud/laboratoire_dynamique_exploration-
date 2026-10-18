@@ -2,14 +2,14 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptBrush,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
+import {createSculptTerrain,sculptDemo,applySculptStroke,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain} from './render/sculpt-height-renderer.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
-let lastCell='',history=[],currentTexture=null,zoom=1,pan={x:0,y:0};
+let lastCell='',strokePoints=[],history=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let framePending=false;
 const images=new Map();
 const themes=['grass.forest','ground.snow','ground.sand','ground.volcanic_ash_lava'];
@@ -60,7 +60,7 @@ function draw(){
   ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const material=registry.require($('material').value,'surface');
-  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,rockPalette:$('rock').value});
+  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100});
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois générées · '+Math.round(zoom*100)+' %';
 }
@@ -87,7 +87,7 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
-    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau'}[mode]);
+    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages'}[mode]);
 }
 function undo(){
   if(!history.length){status('Aucune action à annuler');return;}
@@ -97,7 +97,7 @@ function begin(event){
   if(event.button!==undefined&&event.button!==0)return;
   const cell=screenToCell(event);if(!cell)return;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
-  drawing=true;lastCell='';strokeUndo=terrain;
+  drawing=true;lastCell='';strokePoints=[];strokeUndo=terrain;
   stroke(event);
 }
 function stroke(event){
@@ -105,11 +105,28 @@ function stroke(event){
   const cell=screenToCell(event);if(!cell)return;
   const key=cell.x+','+cell.y;
   if(key===lastCell)return;
-  lastCell=key;
-  const target=sculptHeightAt(strokeUndo,cell.x,cell.y);
-  terrain=applySculptBrush(terrain,{x:cell.x+.5,y:cell.y+.5,
-    radius:Number($('radius').value),strength:Number($('strength').value),
-    mode:selectedMode,target});
+  // Interpolate pointer travel so a fast thumb stroke never leaves holes.
+  if(lastCell){
+    const [px,py]=lastCell.split(',').map(Number);
+    const steps=Math.max(Math.abs(cell.x-px),Math.abs(cell.y-py));
+    for(let i=1;i<steps;i++){
+      const ix=Math.round(px+(cell.x-px)*i/steps);
+      const iy=Math.round(py+(cell.y-py)*i/steps);
+      const prev=strokePoints[strokePoints.length-1];
+      if(!prev||prev.x!==ix+.5||prev.y!==iy+.5)
+        strokePoints.push({x:ix+.5,y:iy+.5});
+    }
+  }
+  lastCell=key;strokePoints.push({x:cell.x+.5,y:cell.y+.5});
+  // Stable immutable stroke, one height update even after revisiting same cell.
+  const first=strokePoints[0];
+  const target=selectedMode==='plateau' ? Number($('target').value)
+    : sculptHeightAt(strokeUndo,Math.floor(first.x),Math.floor(first.y));
+  terrain=applySculptStroke(strokeUndo,{
+    points:strokePoints,radius:Number($('radius').value),
+    strength:Number($('strength').value),mode:selectedMode,target,
+    edgeSoftness:Number($('edge').value)/100
+  });
   scheduleDraw();
 }
 function stop(){
@@ -117,7 +134,7 @@ function stop(){
     if(strokeUndo!==terrain){history.push(strokeUndo);if(history.length>40)history.shift();}
     strokeUndo=null;
   }
-  drawing=false;lastCell='';
+  drawing=false;lastCell='';strokePoints=[];
 }
 canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
@@ -149,6 +166,15 @@ $('zoom').addEventListener('input',()=>{
 });
 $('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;});
+$('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';});
+$('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textContent=$('visual-smooth').value+' %';scheduleDraw();});
+function changeTarget(level){
+ const value=Math.max(0,Math.min(7,Number(level)));
+ $('target').value=String(value);$('target-value').textContent=String(value);
+ status('Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');}
+$('target').addEventListener('input',()=>changeTarget($('target').value));
+$('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
+$('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 $('export').addEventListener('click',()=>{
  $('json').value=serializeSculptTerrain(terrain);$('json').hidden=false;
  status('JSON de hauteur généré : copiez-le pour conserver votre test');
@@ -162,5 +188,5 @@ $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidde
 window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
-  levelSpread:new Set(terrain.levels).size,zoom});
+  levelSpread:new Set(terrain.levels).size,zoom,highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
 selectMode('dig');setTheme();fit();
