@@ -21,12 +21,28 @@ export function sculptNavigationSample(terrain,x,y,{
 }
 
 export function isSculptNavigationBlocked({
-  terrain,cellWidth=28,cellHeight=21,maxStepUp=1,maxStepDown=1
+  terrain,cellWidth=28,cellHeight=21,maxStepUp=1,maxStepDown=1,
+  shoreEntryFraction=0
 }={},entity,targetX,targetY){
   if(!terrain||!entity)return false; // no implicit activation in the 2D runtime
   const options={cellWidth,cellHeight};
   const flying=entity.locomotion?.modes?.includes('fly')===true;
   const swimming=entity.locomotion?.modes?.includes('swim')===true;
+  // Only a narrow strip from dry shore into a wet cell is walkable in the
+  // sculpt pilot. Swimming remains the sole way to cross the water body.
+  // Default 0 preserves V17 and the ordinary 2D runtime unchanged.
+  const shorePermitted=(x,y,sample)=>{
+    const fraction=Math.max(0,Math.min(.22,Number(shoreEntryFraction)||0));
+    if(fraction<=0||!sample||sample.waterDepth<=0)return false;
+    const cx=sample.col,cy=sample.row;
+    const localX=x-cx*cellWidth,localY=y-cy*cellHeight;
+    const dry=(col,row)=>col>=0&&col<terrain.width&&row>=0&&row<terrain.height&&
+      sculptWaterAt(terrain,col,row)<=0;
+    return (dry(cx-1,cy)&&localX<=cellWidth*fraction)||
+      (dry(cx+1,cy)&&localX>=cellWidth*(1-fraction))||
+      (dry(cx,cy-1)&&localY<=cellHeight*fraction)||
+      (dry(cx,cy+1)&&localY>=cellHeight*(1-fraction));
+  };
   const origin=sculptNavigationSample(terrain,entity.x,entity.y,options);
   const target=sculptNavigationSample(terrain,targetX,targetY,options);
   if(!origin||!target)return true;
@@ -41,7 +57,7 @@ export function isSculptNavigationBlocked({
     const sample=sculptNavigationSample(terrain,entity.x+dx*t,entity.y+dy*t,options);
     if(!sample)return true;
     if(!flying){
-      if(sample.waterDepth>0&&!swimming)return true;
+      if(sample.waterDepth>0&&!swimming&&!shorePermitted(entity.x+dx*t,entity.y+dy*t,sample))return true;
       const rise=sample.level-previous.level;
       if(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown))return true;
     }
