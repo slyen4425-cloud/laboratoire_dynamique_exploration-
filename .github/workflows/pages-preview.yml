@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-mobile-ui-v15-prevalidation-2026-10-18
+# preview-revision: sculpt-fullscreen-water-isolation-v16-prevalidation-2026-10-18
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 7985dcaaaf93715ee89532a39a013e88a23252bc
+          ref: 0c7bf54cba34178e56ffcd894f6daf5317060f43
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
