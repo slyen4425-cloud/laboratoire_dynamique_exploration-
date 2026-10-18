@@ -508,6 +508,55 @@ try{
     JSON.stringify({keyboardDistance:afterKeyboard.player.x-navStart.before.player.x,
       touchDistance:afterStick.player.x-afterKeyboard.player.x,
       mapUnchanged:navStop.json===navStart.json,hudHidden:navStop.hudHidden}));
+
+  // V18: existing on-disk Material Registry visuals must change actual pixels
+  // without writing a single authored height or water cell.
+  const visualsV18=await run(`(async()=>{
+    document.querySelector('#reset').click();
+    const wait=async()=>{await new Promise(ok=>setTimeout(ok,180));
+      await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));};
+    const snap=()=>{document.querySelector('#export').click();
+      return document.querySelector('#json').value;};
+    const pixels=()=>new Uint8Array(document.querySelector('#sculpt-canvas')
+      .getContext('2d',{willReadFrequently:true}).getImageData(0,0,
+        document.querySelector('#sculpt-canvas').width,
+        document.querySelector('#sculpt-canvas').height).data);
+    const diff=(a,b)=>{let n=0;
+      for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||
+        a[i+1]!==b[i+1]||a[i+2]!==b[i+2])n++;
+      return n;};
+    await wait();const original=snap(),initial=pixels();
+    const ground=document.querySelector('#material');
+    ground.value='ground.forest_floor';
+    ground.dispatchEvent(new Event('change',{bubbles:true}));
+    await wait();const forest=pixels();
+    ground.value='ground.mountain_rock';
+    ground.dispatchEvent(new Event('change',{bubbles:true}));
+    await wait();const mountain=pixels();
+    const water=document.querySelector('#water-material');
+    water.value='water.turquoise';
+    water.dispatchEvent(new Event('change',{bubbles:true}));
+    await wait();const turquoise=pixels();
+    water.value='water.swamp';
+    water.dispatchEvent(new Event('change',{bubbles:true}));
+    await wait();const swamp=pixels();
+    const resourcePaths=performance.getEntriesByType('resource').map(e=>e.name);
+    return {forestPixels:diff(initial,forest),mountainPixels:diff(forest,mountain),
+      turquoisePixels:diff(mountain,turquoise),swampPixels:diff(turquoise,swamp),
+      mapUnchanged:original===snap(),
+      forestLoaded:resourcePaths.some(s=>s.includes('forest_floor_stylized_01.webp')),
+      mountainLoaded:resourcePaths.some(s=>s.includes('mountain_rock_stylized_01.webp')),
+      turquoiseLoaded:resourcePaths.some(s=>s.includes('water_turquoise_stylized_01.webp')),
+      swampLoaded:resourcePaths.some(s=>s.includes('water_swamp_stylized_01.webp')),
+      selected:window.__sculptLabProbe().waterMaterialId};
+  })()`);
+  if(visualsV18.forestPixels<30||visualsV18.mountainPixels<30||
+      visualsV18.turquoisePixels<30||visualsV18.swampPixels<30||
+      !visualsV18.forestLoaded||!visualsV18.mountainLoaded||
+      !visualsV18.turquoiseLoaded||!visualsV18.swampLoaded||
+      !visualsV18.mapUnchanged||visualsV18.selected!=='water.swamp')
+    throw Error('V18 real material image/pixel or data-isolation regression: '+JSON.stringify(visualsV18));
+  console.log('V18 native visual palette real pixels:',JSON.stringify(visualsV18));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
