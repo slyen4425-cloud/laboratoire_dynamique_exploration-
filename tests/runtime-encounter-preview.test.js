@@ -76,6 +76,6 @@ test('public Exploration entry cache-busts the interior random encounter policy 
 
   assert.match(
     html,
-    /src=["']\.\/src\/main\.js\?rev=builder-paint-workflow-fix-v1&runtime=terrain-tile-hitch-culling-v1&encounter=selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1&rim=relief-cliff-rim-v1&water=relief-water-fx-v1&art=canyon-water-art-v2&kit=canyon-art-v3&waterline=canyon-continuous-river-v4&no-repeat=canyon-v5&shimmer=organic-reflections-v6&reliefkit=themeable-v7&immersion=water-rock-v8&cliffs=ground-crest-v9["']/
+    /src=["']\.\/src\/main\.js\?rev=builder-paint-workflow-fix-v1&runtime=terrain-tile-hitch-culling-v1&encounter=selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1&rim=relief-cliff-rim-v1&water=relief-water-fx-v1&art=canyon-water-art-v2&kit=canyon-art-v3&waterline=canyon-continuous-river-v4&no-repeat=canyon-v5&shimmer=organic-reflections-v6&reliefkit=themeable-v7&immersion=water-rock-v8&cliffs=ground-crest-v9&variants=rock-variety-v10["']/
   );
 });
