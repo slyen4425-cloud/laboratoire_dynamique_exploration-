@@ -19,7 +19,7 @@ test('canyon V3 uses two long cliff drawings with the SAME canonical collision s
   assert.deepEqual(altDef.baseSize, oldDef.baseSize);
   assert.deepEqual(altDef.collision, oldDef.collision);
   assert.notEqual(altDef.visual.assetId, oldDef.visual.assetId);
-  assert.equal(area.objects.find(o => o.id === 'upper-cliff-right').objectDefinitionId, altDef.id);
+  assert.equal(area.objects.find(o => o.id === 'upper-cliff-right').objectDefinitionId, 'objectdef.relief.cliff.cracked_cool.04');
   for (const id of [oldDef.visual.assetId, altDef.visual.assetId,
     'object.relief.cliff.corner.01', 'object.relief.waterfall.blue.01']) {
     const asset = resolveWorldObjectAsset(id);
@@ -72,4 +72,32 @@ test('canyon V3 uses versioned external art, not encoded assets inside HTML or r
   for (const script of [builderMain, runtimeMain]) {
     assert.doesNotMatch(script, /data:image\/svg\+xml|<svg xmlns=/);
   }
+});
+
+
+test('V10 cliff kit offers independent shapes and rock palettes through canonical object catalog',()=>{
+ const variants=['terraced_warm.03','cracked_cool.04','short_round.01','corner_sand.02'];
+ const visualIds=new Set();
+ const svgs=new Set();
+ for(const key of variants){
+  const def=objectDefinitionCatalogV1.require('objectdef.relief.cliff.'+key);
+  const asset=resolveWorldObjectAsset(def.visual.assetId);
+  assert.equal(def.collision.role,'obstacle');
+  assert.equal(def.visual.shoreContact.anchorYRatio,.38);
+  assert.ok(asset?.path.endsWith('.svg'));
+  const svg=native(asset.path);
+  assert.match(svg,/viewBox="0 0/);
+  assert.match(svg,/transparent (?:terrain|earth|soil)|open soil|transparent terrain-intrusion/i);
+  assert.doesNotMatch(svg,/<image\b|data:image/);
+  assert.match(svg,/linearGradient/);
+  svgs.add(svg);
+  visualIds.add(def.visual.assetId);
+ }
+ assert.equal(visualIds.size,4);
+ assert.equal(svgs.size,4,'independently painted cliff silhouettes');
+ const long=objectDefinitionCatalogV1.require('objectdef.relief.cliff.cracked_cool.04');
+ const corner=objectDefinitionCatalogV1.require('objectdef.relief.cliff.corner_sand.02');
+ assert.deepEqual(long.collision,objectDefinitionCatalogV1.require('objectdef.relief.cliff.grassy_edge.01').collision);
+ assert.deepEqual(corner.collision,objectDefinitionCatalogV1.require('objectdef.relief.cliff.corner.01').collision);
+ assert.equal(area.objects.find(o=>o.id==='upper-cliff-angle').objectDefinitionId,corner.id);
 });
