@@ -13,13 +13,20 @@ export function listSculptPlaceableDefinitions(){
     validKinds.has(d.kind)&&!d.id.startsWith('objectdef.relief.')));
 }
 const allowable=new Set(listSculptPlaceableDefinitions().map(d=>d.id));
+export function sculptPreviewVariants(definitionId){
+  const def=objectDefinitionCatalogV1.get(definitionId);
+  return Object.freeze([...(def?.visual?.variants??[])]);
+}
+function validVariant(definitionId,variantId){
+  return sculptPreviewVariants(definitionId).some(v=>v.id===variantId)?variantId:null;
+}
 export function normalizeSculptPreviewObjects(raw=[]){
   const safe=Array.isArray(raw)?raw.slice(0,SCULPT_OBJECT_LIMIT):[];
   const valid=safe.filter(o=>allowable.has(o?.objectDefinitionId));
   return normalizeWorldObjectPlacements(valid,objectDefinitionCatalogV1);
 }
 export function appendSculptPreviewObject(objects,{
-  definitionId,x,y,scale=.38,rotationDeg=0
+  definitionId,x,y,scale=.38,rotationDeg=0,variantId=null
 }={}){
   const list=normalizeSculptPreviewObjects(objects);
   if(list.length>=SCULPT_OBJECT_LIMIT||!allowable.has(definitionId)||
@@ -29,9 +36,30 @@ export function appendSculptPreviewObject(objects,{
   while(used.has('sculpt-object-'+suffix))suffix++;
   const placement=normalizeWorldObjectPlacement({
     id:'sculpt-object-'+suffix,objectDefinitionId:definitionId,
-    transform:{x,y,scaleX:scale,scaleY:scale,rotationDeg}
+    transform:{x,y,scaleX:scale,scaleY:scale,rotationDeg},
+    overrides:{visualVariantId:validVariant(definitionId,variantId)}
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
+}
+export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantId}={}){
+  const items=normalizeSculptPreviewObjects(objects);
+  if(!items.some(o=>o.id===id))return items;
+  return Object.freeze(items.map((item,i)=>{
+    if(item.id!==id)return item;
+    const nextTransform={...item.transform};
+    if(Number.isFinite(scale)&&scale>=.25&&scale<=1.2){
+      nextTransform.scaleX=scale;nextTransform.scaleY=scale;
+    }
+    if(Number.isFinite(rotationDeg))nextTransform.rotationDeg=rotationDeg;
+    const nextVariant=variantId===undefined?item.overrides.visualVariantId:
+      validVariant(item.objectDefinitionId,variantId);
+    if(nextTransform.scaleX===item.transform.scaleX&&
+       nextTransform.rotationDeg===item.transform.rotationDeg&&
+       nextVariant===item.overrides.visualVariantId)return item;
+    return normalizeWorldObjectPlacement({...item,transform:nextTransform,
+      overrides:{...item.overrides,visualVariantId:nextVariant}},
+      i,objectDefinitionCatalogV1);
+  }));
 }
 export function removeSculptPreviewObject(objects,id){
   return Object.freeze(normalizeSculptPreviewObjects(objects).filter(o=>o.id!==id));
