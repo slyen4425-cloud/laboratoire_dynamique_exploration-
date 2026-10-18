@@ -401,6 +401,14 @@ function begin(event){
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
   if(objectEditing){applyObjectAtCell(cell);return;}
+  if(surfaceEditing){
+    const point={x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
+    if($('surface-action').value==='erase'){
+      surfaceCommit(removeSculptSurfaceAt(surface,point));return;
+    }
+    surfaceDrawing=true;surfaceLastCell=cell.x+','+cell.y;surfaceStrokePoints=[point];
+    return;
+  }
   if($('precision-mode').checked){
     precisionDragging=true;precisionCell=cell;updatePrecisionActions();
     status('Visée ('+(cell.x+1)+','+(cell.y+1)+') : déplace ou ajuste avec les flèches, puis Appliquer');
@@ -411,6 +419,24 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting||objectEditing)return;
+  if(surfaceEditing){
+    if(!surfaceDrawing)return;
+    const cell=screenToCell(event);if(!cell)return;
+    const key=cell.x+','+cell.y;
+    if(key===surfaceLastCell)return;
+    if(surfaceLastCell){
+      const [px,py]=surfaceLastCell.split(',').map(Number);
+      const steps=Math.max(Math.abs(cell.x-px),Math.abs(cell.y-py));
+      for(let i=1;i<steps;i++){
+        const x=Math.round(px+(cell.x-px)*i/steps),y=Math.round(py+(cell.y-py)*i/steps);
+        surfaceStrokePoints.push({x:(x+.5)*SCULPT_TILE.width,y:(y+.5)*SCULPT_TILE.height});
+      }
+    }
+    surfaceLastCell=key;
+    surfaceStrokePoints.push({x:(cell.x+.5)*SCULPT_TILE.width,
+      y:(cell.y+.5)*SCULPT_TILE.height});
+    scheduleDraw();return;
+  }
   if(precisionDragging){
     const next=screenToCell(event);
     if(next){precisionCell=next;hoverCell=next;updatePrecisionActions();}
@@ -452,6 +478,15 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(){
+  if(surfaceDrawing){
+    surfaceDrawing=false;surfaceLastCell='';
+    const changed=appendSculptSurfaceStroke(surface,{
+      materialId:$('surface-material').value,points:surfaceStrokePoints,
+      width:Number($('surface-width').value)*SCULPT_TILE.width
+    });
+    surfaceStrokePoints=[];
+    surfaceCommit(changed);return;
+  }
   if(precisionDragging){
     precisionDragging=false;
     updatePrecisionActions();
