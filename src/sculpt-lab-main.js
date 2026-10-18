@@ -566,6 +566,113 @@ window.__sculptNavProbe=()=>Object.freeze({
   sameTerrainVersion:terrain.schemaVersion===1
 });
 
+
+/* Native WorldObject definitions/placements and asset resolver own the catalog,
+   dimensions and collision semantics. Sculpt remains geometry-only. */
+function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
+  const objects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
+    .filter(o=>o.transform.y<=maxY&&o.transform.y>minY)
+    .sort((a,b)=>a.transform.y-b.transform.y);
+  for(const object of objects){
+    const art=objectImage(object.visual?.assetId);
+    if(!art?.complete||!art.naturalWidth)continue;
+    const t=object.transform,base=object.baseSize;
+    const width=(base?.width??base?.length??80)*t.scaleX;
+    const height=(base?.height??base?.width??80)*t.scaleY;
+    const x=t.x,y=t.y-sculptHeightAt(terrain,
+      Math.floor(t.x/SCULPT_TILE.width),Math.floor(t.y/SCULPT_TILE.height))*SCULPT_TILE.rise;
+    ctx.save();ctx.translate(x,y);ctx.rotate(t.rotationDeg*Math.PI/180);
+    ctx.drawImage(art,-width/2,-height,width,height);
+    ctx.restore();
+  }
+}
+function refreshObjectOptions(){
+  const current=$('object-definition').value;
+  const definitions=availableObjects.filter(o=>o.kind===$('object-category').value);
+  $('object-definition').replaceChildren(...definitions.map(o=>{
+    const option=document.createElement('option');
+    option.value=o.id;option.textContent=o.label;return option;
+  }));
+  if(definitions.some(o=>o.id===current))$('object-definition').value=current;
+}
+function updateObjectCount(){
+  $('object-count').textContent=placedObjects.length+' objet(s) sur le relief';
+  $('object-undo').disabled=objectHistory.length===0;
+  $('object-redo').disabled=objectRedo.length===0;
+  scheduleDraw();
+}
+function objectCommit(next){
+  if(next===placedObjects)return false;
+  if(next.length===placedObjects.length&&next.every((o,i)=>o===placedObjects[i]))return false;
+  objectHistory.push(placedObjects);if(objectHistory.length>40)objectHistory.shift();
+  objectRedo=[];placedObjects=next;updateObjectCount();return true;
+}
+function setObjectEditing(active){
+  objectEditing=!!active;
+  document.body.classList.toggle('object-editing',objectEditing);
+  $('object-palette').hidden=!objectEditing;
+  $('mode-objects').classList.toggle('active',objectEditing);
+  $('mode-objects').setAttribute('aria-pressed',String(objectEditing));
+  if(objectEditing){
+    for(const domain of ['ground','water']){
+      $('mode-'+domain).classList.remove('active');
+      $('mode-'+domain).setAttribute('aria-pressed','false');
+    }
+    $('active-tool-label').textContent='Objets · toucher pour placer ou supprimer';
+    status('Choisis Bâtiments, Arbres ou Rochers, puis touche la carte.');
+  }else{
+    for(const domain of ['ground','water']){
+      const active=editorKind===domain;
+      $('mode-'+domain).classList.toggle('active',active);
+      $('mode-'+domain).setAttribute('aria-pressed',String(active));
+    }
+    $('active-tool-label').textContent=editorKind+' · '+selectedMode;
+  }
+  updatePrecisionActions();scheduleDraw();
+}
+function applyObjectAtCell(cell){
+  if(!objectEditing)return;
+  const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  if($('object-action').value==='remove'){
+    const found=findSculptPreviewObjectNear(placedObjects,x,y);
+    if(!found){status('Aucun objet proche à supprimer');return;}
+    if(objectCommit(removeSculptPreviewObject(placedObjects,found.id)))
+      status('Objet supprimé : '+objectDefinitionCatalogV1.get(found.objectDefinitionId)?.label);
+    return;
+  }
+  if(sculptWaterAt(terrain,cell.x,cell.y)>0){
+    status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
+  }
+  const definitionId=$('object-definition').value;
+  const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
+    scale:Number($('object-scale').value)/100,
+    rotationDeg:Number($('object-rotation').value)});
+  if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
+    ' · Exporter scène pour conserver le décor');
+  else status('Limite de 128 objets atteinte');
+}
+$('object-category').addEventListener('change',refreshObjectOptions);
+for(const [control,output,unit] of [['object-scale','object-scale-value',' %'],
+  ['object-rotation','object-rotation-value','°']]){
+  $(control).addEventListener('input',()=>{$(output).textContent=$(control).value+unit;});
+}
+$('object-undo').addEventListener('click',()=>{
+  if(!objectHistory.length)return;
+  objectRedo.push(placedObjects);placedObjects=objectHistory.pop();updateObjectCount();
+});
+$('object-redo').addEventListener('click',()=>{
+  if(!objectRedo.length)return;
+  objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();
+});
+refreshObjectOptions();updateObjectCount();
+window.__sculptObjectsProbe=()=>Object.freeze({
+  active:objectEditing,count:placedObjects.length,
+  definitions:availableObjects.length,
+  objects:placedObjects.map(o=>({id:o.id,definition:o.objectDefinitionId,
+    x:o.transform.x,y:o.transform.y})),
+  exportsIncludeObjects:JSON.parse(serializeSculptPreviewScene(terrain,placedObjects)).objects.length===placedObjects.length
+});
+
 canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
 canvas.addEventListener('pointerup',stop);
