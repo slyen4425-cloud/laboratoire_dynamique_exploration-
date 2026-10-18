@@ -75,8 +75,12 @@ try{
   const flat=await run("window.__sculptLabProbe()");
   if(flat.faceCount!==0)throw Error('Flat map still has cliff faces: '+JSON.stringify(flat));
   await run("document.querySelector('[data-mode=raise]').click()");
-  const center=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
-    return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
+  const center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+    const x=r.x+r.width/2,y=r.y+r.height/2;
+    return {x,y,inside:document.elementFromPoint(x,y)?.id,
+      viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
+  if(center.inside!=='sculpt-canvas')throw Error('Canvas center is not clickable in Chromium: '+JSON.stringify(center));
   const send=(method,params)=>new Promise(done=>{
     const id=++seq;pending.set(id,done);socket.send(JSON.stringify({id,method,params}));
   });
