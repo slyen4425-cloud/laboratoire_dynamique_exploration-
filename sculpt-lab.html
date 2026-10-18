@@ -11,6 +11,9 @@ h1{font-size:1.08rem;margin:0;font-weight:700}header p{margin:2px 0 0;color:#adc
 main{max-width:1360px;margin:0 auto;padding:10px;display:grid;gap:10px}
 .controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
 button,select{background:#233745;border:1px solid #546979;color:#eef8f7;border-radius:9px;padding:10px 12px;cursor:pointer;font:inherit;font-size:.88rem}
+#level-up,#level-down{font-size:1.2rem;min-width:48px;min-height:44px;font-weight:800}
+.levels{display:flex;gap:5px;align-items:center;background:#16313b;border-radius:9px;padding:4px 6px}
+.levels output{font-size:1.3rem;min-width:1.5rem;text-align:center;font-weight:800;color:#a6f1d6}
 button.active{background:#376e70;border-color:#8ad7c8;color:white}
 button:focus-visible,select:focus-visible{outline:3px solid #8de2ec}
 button:hover{border-color:#c4e4e4}
@@ -36,9 +39,18 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
-<button data-mode="smooth">Adoucir</button>
+<button data-mode="smooth">Lisser les hauteurs</button>
+<button data-mode="plateau">Plateau · hauteur exacte</button>
 <span class="control"><label for="radius">Pinceau <b id="radius-value">3</b></label><input id="radius" type="range" min="1" max="8" value="3"></span>
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
+<label class="control">Bord doux <b id="edge-value">0 %</b>
+<input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
+<div class="levels" aria-label="Hauteur exacte du plateau">
+<label for="target">Hauteur</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
+<output id="target-value" for="target">3</output>
+<input id="target" type="range" min="0" max="7" value="3" step="1" aria-label="Niveau exact 0 à 7">
+<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
+</div>
 <button id="undo">Annuler</button><button id="reset">Exemple</button><button id="flat">Sol plat</button>
 </section>
 <section class="controls">
@@ -50,15 +62,17 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
 <option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option></select></label>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
+<label class="control">Arrondi visuel <b id="visual-smooth-value">72 %</b>
+<input id="visual-smooth" type="range" min="0" max="100" value="72" step="5"></label>
 <button id="fit">Ajuster la vue</button>
 </section>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
-<div class="canvas-tag">Vue de test 2,5D · carte 2D inchangée</div></div>
+<div class="canvas-tag">Plateau = hauteur exacte 0–7 · 2D du jeu inchangée</div></div>
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 <section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
 <button id="import">Importer ce JSON</button><small>Prototype isolé, aucune sauvegarde automatique ni collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-terrain-pilot-r1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-precision-v11"></script>
 </body>
 </html>
