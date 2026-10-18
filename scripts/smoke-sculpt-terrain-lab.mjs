@@ -573,6 +573,70 @@ try{
       !visualsV18.mapUnchanged||visualsV18.selected!=='water.swamp')
     throw Error('V18 real material image/pixel or data-isolation regression: '+JSON.stringify(visualsV18));
   console.log('V18 native visual palette real pixels:',JSON.stringify(visualsV18));
+
+  // V20: REAL canvas pointer places a native catalog WorldObject, then undo,
+  // redo, removal, scene export/import and native asset loading are exercised.
+  const objectBegin=await run(`(()=>{
+    document.querySelector('#flat').click();
+    document.querySelector('#fit').click();
+    document.querySelector('#mode-objects').click();
+    const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const select=document.querySelector('#object-definition');
+    return {position:{x:r.left+r.width*.5,y:r.top+r.height*.5},
+      probe:window.__sculptObjectsProbe(),
+      type:select.value,paletteVisible:!document.querySelector('#object-palette').hidden};
+  })()`);
+  if(!objectBegin.probe.active||!objectBegin.paletteVisible||
+      !objectBegin.type.startsWith('objectdef.building.'))
+    throw Error('V20 object catalog/palette missing: '+JSON.stringify(objectBegin));
+  async function placeOrEraseObject(){
+    const pt=objectBegin.position;
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:pt.x,y:pt.y});
+    await send('Input.dispatchMouseEvent',{type:'mousePressed',x:pt.x,y:pt.y,button:'left',clickCount:1});
+    await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:pt.x,y:pt.y,button:'left',clickCount:1});
+    await sleep(180);
+  }
+  await placeOrEraseObject();
+  const placed=await run(`(()=>{
+    const probe=window.__sculptObjectsProbe();
+    document.querySelector('#scene-export').click();
+    window.__v20ExportedScene=document.querySelector('#json').value;
+    return {probe,scene:JSON.parse(window.__v20ExportedScene),
+      height:window.__sculptLabProbe()};
+  })()`);
+  if(placed.probe.count!==1||placed.scene.objects.length!==1||
+      !placed.probe.exportsIncludeObjects)
+    throw Error('V20 real canvas object placement or scene export failed: '+JSON.stringify(placed));
+  await run("document.querySelector('#object-undo').click()");
+  if((await run('window.__sculptObjectsProbe().count'))!==0)
+    throw Error('V20 object undo failed');
+  await run("document.querySelector('#object-redo').click()");
+  if((await run('window.__sculptObjectsProbe().count'))!==1)
+    throw Error('V20 object redo failed');
+  await run("document.querySelector('#object-action').value='remove'");
+  await placeOrEraseObject();
+  if((await run('window.__sculptObjectsProbe().count'))!==0)
+    throw Error('V20 object removal failed');
+
+  const reimport=await run(`(()=>{
+    document.querySelector('#json').value=window.__v20ExportedScene;
+    document.querySelector('#import').click();
+    return {probe:window.__sculptObjectsProbe(),
+      terrain:window.__sculptLabProbe(),status:document.querySelector('#notice').textContent};
+  })()`);
+  if(reimport.probe.count!==1||!reimport.status.includes('Scène complète'))
+    throw Error('V20 scene import lost object: '+JSON.stringify(reimport));
+  const nativeArt=await run(`(()=>{
+    const urls=performance.getEntriesByType('resource').map(r=>r.name);
+    return urls.some(u=>u.includes('building_house_')&&u.endsWith('.webp'));
+  })()`);
+  if(!nativeArt)throw Error('V20 building visual never requested from native asset adapter');
+  await run("document.querySelector('#mode-ground').click()");
+  if((await run('window.__sculptObjectsProbe().active'))!==false)
+    throw Error('V20 returning to terrain brush did not close object palette');
+  console.log('V20 native object placement/undo/export/import/asset Chromium:',
+    JSON.stringify({objects:reimport.probe.count,assetLoaded:nativeArt,
+      untouchedHeight:placed.scene.terrain.schemaVersion===1}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
