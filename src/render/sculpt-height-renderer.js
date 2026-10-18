@@ -17,7 +17,7 @@ function color(colors,x,y,i){return colors[hash(x,y,i)%colors.length];}
 // alter a single canonical cell height, neighbor, object or collision.
 export function sculptFaceContour({width,height,smoothness=0}={}){
   const softness=Math.max(0,Math.min(1.5,Number(smoothness)||0));
-  const corner=Math.min(width*.27,height*.3,7*softness);
+  const corner=Math.min(width*.34,height*.35,13*softness);
   const undulation=Math.min(3.5*softness,height*.13);
   const foot=Math.min(24*softness,height*.40,Math.max(2,width*.17));
   const toe=Math.min(10*softness,height*.17,Math.max(1,width*.09));
