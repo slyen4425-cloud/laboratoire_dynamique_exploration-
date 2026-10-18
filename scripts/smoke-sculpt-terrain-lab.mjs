@@ -238,9 +238,15 @@ try{
     throw Error('V13 redo did not reconstruct exact water stroke: '+JSON.stringify(waterRedo.probe));
   // Fresh stroke after undo removes redo branch, including when changing rock profiles.
   await run("document.querySelector('#undo').click();document.querySelector('[data-mode=plateau]').click()");
-  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:waterPoint.x,y:waterPoint.y});
-  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:waterPoint.x,y:waterPoint.y,button:'left',clickCount:1});
-  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:waterPoint.x,y:waterPoint.y,button:'left',clickCount:1});
+  // V14 switches to the shorter Terre-only toolbar. Recalculate visible pointer
+  // coordinates after the actual layout transition, not the old Water canvas Y.
+  await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'})");
+  await sleep(160);
+  const groundPoint=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:groundPoint.x,y:groundPoint.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:groundPoint.x,y:groundPoint.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:groundPoint.x,y:groundPoint.y,button:'left',clickCount:1});
   await sleep(160);
   const divergent=await run('window.__sculptLabProbe()');
   if(divergent.redoCount!==0)throw Error('V13 new stroke failed to clear redo history');
