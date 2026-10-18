@@ -1,3 +1,14 @@
+# Lot actif — 18/10/2026 — V13 eau volumique et arrondi par passage + retour arrière
+
+- **Demande :** l'arrondi doit être appliqué uniquement aux prochains gestes, sans modifier le terrain déjà sculpté ; l'eau doit être modelable en volume comme le sol ; retour arrière très visible et fiable.
+- **Base :** V12 `90240ab035b4dd046e2749375d5f36bef7e83e94`, CI 39110032782 SUCCESS et Pages 39110139383 SUCCESS, validation artistique encore partielle. START `checkpoint/exploration-start-sculpt-water-volume-undo-v13-2026-10-18` et branche `work/exploration-sculpt-water-volume-undo-v13-2026-10-18` sur ce SHA exact. Rollback V12/V11/V6 maintenus.
+- **Périmètre :** un réglage de rondeur enregistré cellule par cellule au prochain coup de pinceau, pas de filtre global rétroactif ; eau expérimentale avec propre carte de niveau de surface, profondeur par rapport au sol, ajout/retrait/montée/descente de niveau et pinceau à bord doux ; rendu d'eau sur les plateaux et parois eau/terre ; historique Annuler/Rétablir commun (sol, eau, rondeur) et export/import JSON réversible compatible anciens fichiers V1.
+- **Propriétaires :** même source `sculpt-height-model.js` pour hauteur sol, surface eau, profil d'arrondi expérimental ; `sculpt-height-renderer.js` lit ces données sans mutation ; `sculpt-lab-main.js` contrôles et historique. Material Registry toujours propriétaire des textures.
+- **Gels :** Builder 2D classique, WorldDocument/WorldSurface, collisions/mouvements/traversée, Encounter/Combat, caméra gameplay. L'eau V13 est un modèle de volume **expérimental non hydrodynamique**, aucune autorité gameplay ni simulation de courant promise.
+- **Gates :** anciens JSON V1 acceptés, nouveau roundtrip complet ; 2 gestes d'arrondi n'affectent pas les précédents ; eau volumique indépendante, cellules sèches, profondeur et eau après creusage ; tests undo/redo et nouvelle action après undo ; tests Node, npm check, souris/tactile Chromium et rendu réel ; CI et Pages uniquement après GREEN technique.
+
+---
+
 # Lot actif — 18/10/2026 — V12 sculpture : pied de falaise, aperçu de pinceau et eau/route
 
 - **Retour créateur :** sommet rocheux mieux arrondi en V11 mais pied toujours rectangulaire ; le pinceau ne montre pas quelles cases il modifie (particulièrement au doigt) ; besoin d'un essai eau et route sur un relief sculptable.
