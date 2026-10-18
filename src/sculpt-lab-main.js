@@ -933,9 +933,9 @@ $('reset').addEventListener('click',()=>{
 });
 $('flat').addEventListener('click',()=>{
   const old=terrain;
-  terrain=createSculptTerrain({width:old.width,height:old.height,waterLevels:old.waterLevels});
+  terrain=createSculptTerrain({width:old.width,height:old.height});
   commitUndo(old);scheduleDraw();
-  status('Sol actuel aplani : dimensions, eau et objets conservés');
+  status('Sol plat : dimensions et objets conservés, eau effacée comme avant');
 });
 $('fit').addEventListener('click',fit);
 $('material').addEventListener('change',setTheme);
