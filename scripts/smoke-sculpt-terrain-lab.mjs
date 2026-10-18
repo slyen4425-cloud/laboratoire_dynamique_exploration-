@@ -768,15 +768,18 @@ try{
     const before=window.__sculptLabProbe();
     document.querySelector('#flat').click();
     const after=window.__sculptLabProbe();
+    document.querySelector('#undo').click(); // dry reset remains undoable
+    const restored=window.__sculptLabProbe();
     document.querySelector('#scene-export').click();
     window.__v24OldScene=document.querySelector('#json').value;
-    return {before,after,objects:JSON.parse(window.__v24OldScene).objects.length};
+    return {before,after,restored,objects:JSON.parse(window.__v24OldScene).objects.length};
   })()`);
   if(wetScene.before.objects<2||wetScene.after.objects!==wetScene.before.objects||
-     wetScene.after.wetCells!==wetScene.before.wetCells||
+     wetScene.after.wetCells!==0||wetScene.after.authoredWaterCells!==0||
+     wetScene.restored.wetCells!==wetScene.before.wetCells||
      wetScene.after.width!==wetScene.before.width||
      wetScene.objects!==wetScene.before.objects)
-    throw Error('V24 flat should preserve dimensions, authored water and objects: '+JSON.stringify(wetScene));
+    throw Error('V24 flat must clear water as before, keep objects/dimensions and remain undoable: '+JSON.stringify(wetScene));
   const beforeCancel=await run(`(()=>{
     document.querySelector('#new-map-toggle').click();
     return {open:!document.querySelector('#new-map-panel').hidden,
