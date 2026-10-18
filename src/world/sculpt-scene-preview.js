@@ -2,6 +2,7 @@
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from './sculpt-height-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
+import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js';
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
@@ -11,7 +12,7 @@ export const SCULPT_OBJECT_LIMIT=128;
 // This constructor is a scene-level editor command, not a second world model.
 export function createBlankSculptPreviewScene({width=36,height=24}={}){
   const terrain=createSculptTerrain({width,height});
-  return Object.freeze({terrain,objects:Object.freeze([]),isScene:true});
+  return Object.freeze({terrain,objects:Object.freeze([]),surface:createSculptSurface(),isScene:true});
 }
 const validKinds=new Set(['building','tree','rock']);
 export function listSculptPlaceableDefinitions(){
@@ -87,18 +88,20 @@ export function findSculptPreviewObjectNear(objects,x,y,maxDistance=50){
   }
   return found;
 }
-export function serializeSculptPreviewScene(terrain,objects=[]){
+export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface()){
+  const paint=normalizeSculptSurface(surface);
   return JSON.stringify({kind:SCULPT_SCENE_PREVIEW_KIND,
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
-    objects:normalizeSculptPreviewObjects(objects)});
+    objects:normalizeSculptPreviewObjects(objects),
+    ...(paint.routes.length||paint.zones.length?{surface:paint}:{})});
 }
 export function importSculptPreviewScene(raw){
   const source=typeof raw==='string'?JSON.parse(raw):raw;
   if(source?.schemaVersion===1&&Array.isArray(source.levels)){
     // Exact compatibility with earlier "export heights" users.
     return Object.freeze({terrain:importSculptTerrain(source),
-      objects:Object.freeze([]),isScene:false});
+      objects:Object.freeze([]),surface:createSculptSurface(),isScene:false});
   }
   if(source?.kind!==SCULPT_SCENE_PREVIEW_KIND||
       source?.sceneVersion!==SCULPT_SCENE_PREVIEW_VERSION||
@@ -113,5 +116,10 @@ export function importSculptPreviewScene(raw){
   if(objects.some(o=>o.transform.x<0||o.transform.x>=terrain.width*28||
      o.transform.y<0||o.transform.y>=terrain.height*21))
     throw new Error('Scène sculptable invalide : objet hors terrain');
-  return Object.freeze({terrain,objects,isScene:true});
+  const surface=normalizeSculptSurface(source.surface);
+  for(const feature of [...surface.routes,...surface.zones]){
+    if(feature.points.some(p=>p.x>=terrain.width*28||p.y>=terrain.height*21))
+      throw Error('Peinture sculptable hors de la carte');
+  }
+  return Object.freeze({terrain,objects,surface,isScene:true});
 }
