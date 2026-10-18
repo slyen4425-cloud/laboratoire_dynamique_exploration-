@@ -445,8 +445,14 @@ function begin(event){
 function stroke(event){
   if(navigationTesting||objectEditing)return;
   if(surfaceEditing){
-    if(!surfaceDrawing)return;
+    if(!surfaceDrawing){
+      if(event.pointerType!=='touch'){
+        hoverCell=screenToCell(event);scheduleDraw();
+      }
+      return;
+    }
     const cell=screenToCell(event);if(!cell)return;
+    hoverCell=cell;
     const key=cell.x+','+cell.y;
     if(key===surfaceLastCell)return;
     if(surfaceLastCell){
