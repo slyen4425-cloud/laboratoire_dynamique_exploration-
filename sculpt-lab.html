@@ -106,6 +106,14 @@ button:disabled{opacity:.43;cursor:not-allowed}
  .canvas-wrap .precision-actions #apply-precision{font-size:.78rem}
 }
 
+
+@media(max-width:600px){
+  .sculpt-quickbar #undo,.sculpt-quickbar #redo{font-size:0;padding:3px;min-width:35px;}
+  .sculpt-quickbar #undo::before{content:"↶";font-size:1.22rem;}
+  .sculpt-quickbar #redo::before{content:"↷";font-size:1.22rem;}
+  #brush-info{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .canvas-wrap .canvas-tag{padding:4px;max-width:76%;line-height:1.15;}
+}
 </style>
 </head>
 <body>
@@ -133,6 +141,7 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
 </section>
+<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <div class="canvas-tag">Les cases vertes/bleues/orangées montrent l'effet réel du pinceau · eau et route = simulation visuelle, pas de collisions</div><section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
 <span class="precision-tip">1. Vise au doigt · 2. Ajuste · 3. Applique</span>
@@ -194,12 +203,12 @@ button:disabled{opacity:.43;cursor:not-allowed}
 </section>
 </div></details>
 
-<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
+
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 <section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
 <button id="import">Importer ce JSON</button><small>Le niveau d’eau est absolu : sa profondeur dépend du sol. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-precision-switch-v14"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-mobile-ui-v15"></script>
 </body>
 </html>
