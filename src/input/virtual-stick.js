@@ -27,15 +27,17 @@ export function createVirtualStick(root, knob, radius = 42) {
     state.y = dy / radius;
   }
 
-  root.addEventListener('pointerdown', (event) => {
+  const down = (event) => {
     pointerId = event.pointerId;
     root.setPointerCapture(pointerId);
     update(event);
-  });
-
-  root.addEventListener('pointermove', (event) => {
+  };
+  const move = (event) => {
     if (event.pointerId === pointerId) update(event);
-  });
+  };
+  root.addEventListener('pointerdown', down);
+
+  root.addEventListener('pointermove', move);
 
   const release = (event) => {
     if (pointerId !== null && event.pointerId === pointerId) {
@@ -47,5 +49,14 @@ export function createVirtualStick(root, knob, radius = 42) {
   root.addEventListener('pointerup', release);
   root.addEventListener('pointercancel', release);
 
+  state.reset = reset;
+  state.dispose = () => {
+    root.removeEventListener('pointerdown', down);
+    root.removeEventListener('pointermove', move);
+    root.removeEventListener('pointerup', release);
+    root.removeEventListener('pointercancel', release);
+    pointerId = null;
+    reset();
+  };
   return state;
 }
