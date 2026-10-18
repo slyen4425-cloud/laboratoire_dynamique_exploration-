@@ -42,8 +42,8 @@ export function sculptFaces(terrain){
   for(let y=0;y<terrain.height;y++)for(let x=0;x<terrain.width;x++){
     const level=sculptHeightAt(terrain,x,y);
     const south=sculptHeightAt(terrain,x,y+1),east=sculptHeightAt(terrain,x+1,y);
-    if(level>south)faces.push(Object.freeze({x,y,orientation:'south',upper:level,lower:south}));
-    if(level>east)faces.push(Object.freeze({x,y,orientation:'east',upper:level,lower:east}));
+    if(y<terrain.height-1&&level>south)faces.push(Object.freeze({x,y,orientation:'south',upper:level,lower:south}));
+    if(x<terrain.width-1&&level>east)faces.push(Object.freeze({x,y,orientation:'east',upper:level,lower:east}));
   }
   return Object.freeze(faces);
 }
