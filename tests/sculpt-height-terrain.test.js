@@ -212,11 +212,11 @@ test('V13 water surface volume tracks relief; excavation restores water',()=>{
  assert.equal(sculptWaterAt(water,1,1),0);
  assert.deepEqual(water.levels,cut.levels);
  const raised=applySculptStroke(water,{points:[{x:8.5,y:8.5}],radius:1,
-   mode:'plateau',target:5});
+   mode:'plateau',target:5,allowUnderwaterTerrainEdit:true});
  assert.equal(sculptWaterAt(raised,8,8),0);
  assert.equal(raised.waterLevels[8*18+8],3);
  const dug=applySculptStroke(raised,{points:[{x:8.5,y:8.5}],radius:1,
-   mode:'plateau',target:0});
+   mode:'plateau',target:0,allowUnderwaterTerrainEdit:true});
  assert.equal(sculptWaterAt(dug,8,8),3);
 });
 
@@ -321,4 +321,54 @@ test('V15 mobile canvas-first layout keeps stable unique controls and advanced p
  assert.match(ui,/function adjustQuickLevel/);
  assert.match(ui,/precisionApply/);
  assert.doesNotMatch(ui,/WorldDocument|collision-world|location\.reload/);
+});
+
+test('V16 land sculpting approaching water never edits its authored cells or water levels',()=>{
+  const flat=createSculptTerrain({width:14,height:12});
+  const pool=applySculptWaterStroke(flat,{points:[{x:6.5,y:6.5}],
+    radius:2,mode:'water-fill',target:5});
+  const options={points:[{x:8.5,y:6.5}],radius:3,mode:'plateau',
+    target:7,strength:3,edgeSoftness:0,rockRoundness:110};
+  const exactFootprint=sculptBrushFootprint(pool,options);
+  const raised=applySculptStroke(pool,options);
+  const changed=new Set();
+  for(let i=0;i<flat.levels.length;i++){
+    if(pool.waterLevels[i]>=0){
+      assert.equal(raised.levels[i],pool.levels[i],'ground beneath authored water stays fixed');
+      assert.equal(raised.roundness[i],pool.roundness[i],'water cells also keep their former contour');
+    }
+    if(pool.levels[i]!==raised.levels[i])changed.add(i);
+  }
+  assert.ok(changed.size>0,'dry land beside the water can rise');
+  assert.deepEqual(raised.waterLevels,pool.waterLevels,'water absolute plane is unchanged');
+  const preview=new Set(exactFootprint.map(p=>p.y*pool.width+p.x));
+  assert.ok([...changed].every(i=>preview.has(i)),'real brush cannot paint outside displayed footprint');
+  assert.ok(exactFootprint.every(p=>pool.waterLevels[p.y*pool.width+p.x]<0),
+    'the preview also excludes water cells');
+  const directWater=applySculptWaterStroke(raised,{points:[{x:6.5,y:6.5}],
+    radius:1,mode:'water-rise',strength:1});
+  assert.deepEqual(directWater.levels,raised.levels,'water tools cannot modify land');
+  assert.notDeepEqual(directWater.waterLevels,raised.waterLevels,'water mode remains editable');
+  assert.deepEqual(importSculptTerrain(serializeSculptTerrain(raised)),raised,'roundtrip preserves isolated layers');
+});
+test('V16 water visual is composited by depth row, before foreground land',()=>{
+  const code=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+  assert.match(code,/waterCells\+=drawWaterVolume\(ctx,\{terrain,overlay:overlays\.water,tile,/);
+  assert.match(code,/rowStart:row,rowEnd:row\+1/);
+  assert.doesNotMatch(code,/waterCells=drawWaterVolume\(ctx,\{terrain,overlay:overlays\.water,tile\}\)/);
+});
+test('V16 fullscreen is a canvas-first fallback with a foldable single-source palette',()=>{
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const script=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  for(const id of ['fullscreen-toggle','palette-toggle','quick-tool','radius','precision-mode',
+    'apply-precision','undo','redo']){
+    assert.equal((html.match(new RegExp('id="'+id+'"','g'))??[]).length,1,id+' must stay unique');
+  }
+  assert.match(html,/body\.sculpt-immersive main\{position:fixed/);
+  assert.match(html,/body\.sculpt-immersive \.sculpt-quickbar\{position:absolute/);
+  assert.match(html,/body\.sculpt-immersive #sculpt-canvas\{width:100%;height:100%/);
+  assert.match(script,/document\.body\.classList\.toggle\('sculpt-immersive'/);
+  assert.match(script,/document\.documentElement\.requestFullscreen/);
+  assert.match(script,/document\.addEventListener\('fullscreenchange'/);
+  assert.match(script,/paletteCollapsed/);
 });
