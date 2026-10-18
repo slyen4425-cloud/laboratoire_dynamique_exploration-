@@ -8,6 +8,13 @@ import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
 import {createVirtualStick} from './input/virtual-stick.js';
 import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
+import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
+import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js';
+import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js';
+import {isBlocked} from './core/collision.js';
+import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
+  removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
+  importSculptPreviewScene} from './world/sculpt-scene-preview.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -18,6 +25,19 @@ let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
+let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
+function objectImage(assetId){
+  if(objectImages.has(assetId))return objectImages.get(assetId);
+  const resolved=resolveWorldObjectAsset(assetId);
+  if(!resolved)return null;
+  const picture=new Image();
+  picture.onload=scheduleDraw;
+  picture.onerror=()=>status('Impossible de charger le visuel '+assetId);
+  picture.src=resolved.path;
+  objectImages.set(assetId,picture);
+  return picture;
+}
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
 const navKeys=new Set();
 // Preview-only navigation speed; authoritative runtime movement remains unchanged.
@@ -119,11 +139,15 @@ function draw(){
     rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
     overlays:ribbonTextures});
   lastRenderStats=result;
-  if(navigationTesting)drawNavigationActor();
+  if(navigationTesting){
+    drawPreviewObjects(navActor?.y??Infinity);
+    drawNavigationActor();
+    drawPreviewObjects(Infinity,navActor?.y??Infinity);
+  }else drawPreviewObjects();
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
-  if(!navigationTesting&&displayCell&&(precisionOn||$('preview-cursor').checked)){
+  if(!navigationTesting&&!objectEditing&&displayCell&&(precisionOn||$('preview-cursor').checked)){
     const points=precisionOn?[{x:displayCell.x+.5,y:displayCell.y+.5}]
       :drawing&&strokePoints.length?strokePoints:[{x:displayCell.x+.5,y:displayCell.y+.5}];
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
@@ -160,7 +184,7 @@ function screenToCell(event){
 function status(message){$('notice').textContent=message;}
 
 function updatePrecisionActions(){
-  const enabled=!navigationTesting&&$('precision-mode').checked;
+  const enabled=!navigationTesting&&!objectEditing&&$('precision-mode').checked;
   $('precision-actions').hidden=!enabled;
   const hasTarget=enabled&&!!precisionCell;
   $('apply-precision').disabled=!hasTarget;
@@ -170,6 +194,7 @@ function updatePrecisionActions(){
 }
 function setEditorKind(kind){
   if(kind!=='ground'&&kind!=='water')return;
+  if(objectEditing)setObjectEditing(false);
   editorKind=kind;
   $('ground-tools').hidden=kind!=='ground';
   $('water-tools').hidden=kind!=='water';
@@ -304,6 +329,7 @@ function begin(event){
   const cell=screenToCell(event);if(!cell)return;
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
+  if(objectEditing){applyObjectAtCell(cell);return;}
   if($('precision-mode').checked){
     precisionDragging=true;precisionCell=cell;updatePrecisionActions();
     status('Visée ('+(cell.x+1)+','+(cell.y+1)+') : déplace ou ajuste avec les flèches, puis Appliquer');
@@ -313,7 +339,7 @@ function begin(event){
   stroke(event);
 }
 function stroke(event){
-  if(navigationTesting)return;
+  if(navigationTesting||objectEditing)return;
   if(precisionDragging){
     const next=screenToCell(event);
     if(next){precisionCell=next;hoverCell=next;updatePrecisionActions();}
@@ -372,7 +398,7 @@ function stop(){
    that movement. The editor never persists player navigation in map JSON. */
 function navigationWorld(){
   return {width:terrain.width*SCULPT_TILE.width,
-    height:terrain.height*SCULPT_TILE.height,objects:[],obstacles:[]};
+    height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[]};
 }
 function navigationContext(){
   return {sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
@@ -423,7 +449,7 @@ function navigationSpawn(){
       radius:5,locomotion:{modes:['ground']},facingX:1,moving:false};
     const level=sculptNavigationSample(terrain,candidate.x,candidate.y,
       {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
-    if(level?.waterDepth===0)return candidate;
+    if(level?.waterDepth===0&&!isBlocked(navigationWorld(),candidate,candidate.x,candidate.y,undefined,navigationContext()))return candidate;
   }
   return null;
 }
@@ -565,6 +591,7 @@ $('radius-plus').addEventListener('click',()=>adjustBrushSize(.5));
 
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
+$('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing));
 $('fullscreen-toggle').addEventListener('click',toggleImmersive);
 $('palette-toggle').addEventListener('click',()=>{
   const collapsed=document.body.classList.toggle('palette-collapsed');
@@ -637,18 +664,26 @@ function changeTarget(level){
 $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
+$('scene-export').addEventListener('click',()=>{
+  $('json').value=serializeSculptPreviewScene(terrain,placedObjects);
+  $('json').hidden=false;
+  status('Scène complète exportée : relief et '+placedObjects.length+' objets, JSON à copier.');
+});
 $('export').addEventListener('click',()=>{
  $('json').value=serializeSculptTerrain(terrain);$('json').hidden=false;
  status('JSON de hauteur généré : copiez-le pour conserver votre test');
 });
 $('import').addEventListener('click',()=>{
- try{const imported=importSculptTerrain($('json').value);
-  const old=terrain;terrain=imported;commitUndo(old);fit();status('Relief JSON importé');}
+ try{const imported=importSculptPreviewScene($('json').value);
+  const old=terrain;terrain=imported.terrain;commitUndo(old);
+  placedObjects=imported.objects;objectHistory=[];objectRedo=[];updateObjectCount();
+  fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
  catch(e){status(e.message);}
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
 window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
+  objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
