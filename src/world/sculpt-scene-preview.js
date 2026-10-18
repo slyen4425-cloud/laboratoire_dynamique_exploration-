@@ -44,8 +44,10 @@ export function findSculptPreviewObjectNear(objects,x,y,maxDistance=50){
     const height=(definition?.baseSize?.height??0)*item.transform.scaleY;
     // Pick objects using the anchor/collision footprint, independent of pixels.
     const dx=x-item.transform.x,dy=y-item.transform.y;
+    // Image is anchored at the character's foot. Permit selecting the full
+    // upper silhouette rather than requiring a tap on the invisible anchor.
     if(Math.abs(dx)>Math.max(maxDistance,width*.5)||
-       Math.abs(dy)>Math.max(maxDistance,height*.38))continue;
+       dy<-Math.max(maxDistance,height)||dy>maxDistance)continue;
     const score=Math.hypot(dx,dy);
     if(score<best){best=score;found=item;}
   }
