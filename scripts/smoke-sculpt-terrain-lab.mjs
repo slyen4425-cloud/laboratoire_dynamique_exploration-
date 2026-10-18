@@ -177,8 +177,8 @@ try{
     }
     return {changed,sameHeights:heightBefore===snap()};
   })()`);
-  if(!smoothResult.sameHeights||smoothResult.changed<10)
-    throw Error('V11 visual rounding fails to alter only pixels: '+JSON.stringify(smoothResult));
+  if(!smoothResult.sameHeights||smoothResult.changed>2)
+    throw Error('V13 changing next-stroke rounding retroactively altered terrain: '+JSON.stringify(smoothResult));
 
   // Genuine CDP touch events (not a synthetic PointerEvent) after scrolling
   // the expanded mobile-friendly toolbar out of the way.
@@ -197,6 +197,56 @@ try{
     pixelsChangedByVisualSmoothing:smoothResult.changed,touchLevel:touch.highestLevel
   }));
 
+  // V13: a water brush must edit the water volume without touching land and
+  // Undo/Redo must exactly restore BOTH data fields, never a visual-only rollback.
+  const waterSetup=await run(`(async()=>{
+ const probe=()=>window.__sculptLabProbe();
+ document.querySelector('#flat').click();
+ document.querySelector('[data-mode=water-fill]').click();
+ const target=document.querySelector('#water-target');
+ target.value='5';target.dispatchEvent(new Event('input',{bubbles:true}));
+ document.querySelector('#radius').value='2';
+ document.querySelector('#radius').dispatchEvent(new Event('input',{bubbles:true}));
+ document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
+ return {before:probe(),modeActive:[...document.querySelectorAll('[data-mode].active')].map(x=>x.dataset.mode)};
+})()`);
+  if(waterSetup.before.wetCells!==0||!waterSetup.modeActive.includes('water-fill'))
+    throw Error('V13 water tool failed to reset test: '+JSON.stringify(waterSetup));
+  await sleep(180);
+  const waterPoint=await run(`(()=>{const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  const beforeWaterJSON=await run(`(()=>{document.querySelector('#export').click();
+    return document.querySelector('#json').value;})()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:waterPoint.x,y:waterPoint.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:waterPoint.x,y:waterPoint.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:waterPoint.x,y:waterPoint.y,button:'left',clickCount:1});
+  await sleep(180);
+  const afterWater=await run(`(()=>{document.querySelector('#export').click();return {
+    probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};})()`);
+  if(afterWater.probe.wetCells<1||afterWater.probe.undoCount<1||
+     afterWater.json===beforeWaterJSON)
+    throw Error('V13 real mouse water stroke failed: '+JSON.stringify(afterWater.probe));
+  await run("document.querySelector('#undo').click()");
+  const waterUndo=await run(`(()=>{document.querySelector('#export').click();return {
+    probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};})()`);
+  if(waterUndo.json!==beforeWaterJSON||waterUndo.probe.redoCount<1)
+    throw Error('V13 undo did not restore exact water+land snapshot: '+JSON.stringify(waterUndo.probe));
+  await run("document.querySelector('#redo').click()");
+  const waterRedo=await run(`(()=>{document.querySelector('#export').click();return {
+    probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};})()`);
+  if(waterRedo.json!==afterWater.json||waterRedo.probe.redoCount!==0)
+    throw Error('V13 redo did not reconstruct exact water stroke: '+JSON.stringify(waterRedo.probe));
+  // Fresh stroke after undo removes redo branch, including when changing rock profiles.
+  await run("document.querySelector('#undo').click();document.querySelector('[data-mode=plateau]').click()");
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:waterPoint.x,y:waterPoint.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:waterPoint.x,y:waterPoint.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:waterPoint.x,y:waterPoint.y,button:'left',clickCount:1});
+  await sleep(160);
+  const divergent=await run('window.__sculptLabProbe()');
+  if(divergent.redoCount!==0)throw Error('V13 new stroke failed to clear redo history');
+  console.log('V13 water depth and exact undo/redo Chromium:',JSON.stringify({wet:afterWater.probe.wetCells,
+    undoRestored:waterUndo.json===beforeWaterJSON,redoRestored:waterRedo.json===afterWater.json,
+    redoCleared:divergent.redoCount===0}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
