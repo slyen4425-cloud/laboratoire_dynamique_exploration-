@@ -1,3 +1,14 @@
+# Lot actif — 18/10/2026 — V19 correctif allure navigation mobile
+
+- **Retour réel créateur :** mode Tester avance à peine (« millimètre par millimètre »), manque de lisibilité des contrôles ; question simultanée sur placement des bâtiments. Diagnostic code : allure démonstrateur V17 fixée à 83 unités/s, zoom smartphone plancher 0,8, pas d'option de réglage. Les bâtiments ne sont **pas intégrés** dans le labo sculpture V18 : seulement textures de sol/eau.
+- **Base :** V18 prévalidation publiée `830c8604e77eb5bee4b2d2eda7f6fb57552a83fa` (CI 39138285255, Pages 39138338924 SUCCESS), START `checkpoint/exploration-start-sculpt-navigation-comfort-v19-2026-10-18`, branche `work/exploration-sculpt-navigation-comfort-v19-2026-10-18`.
+- **Propriétés gelées :** WorldDocument, Collision World / navigation cliff-water V17, mouvement X/Y partagé `stepMovement`, capacités réelles, sculpture, JSON, objets du Builder 2D, Combat, assets. Les visuels V18 et l'interface d'import/export restent identiques.
+- **Changement :** correctif d'ergonomie local au banc d'essai : allure par défaut 220 au lieu de 83, curseur de vitesse 90–360 dans HUD, zoom minimum pendant test 1,25 au lieu de 0,8, explication des obstacles et de l'utilisation du stick. Aucune règle de collision changée. Config uniquement éphémère pour tests, jamais injectée dans stats Capture.
+- **Validation attendue :** Node/check complet, vrai Chromium téléphone testant vitesse par défaut, curseur fonctionnel, clavier, stick, collisions falaise/eau, sortie vers édition, Builder et Combat, CI GREEN, prévalidation Pages épinglée SHA immutable. Test physique du créateur requis avant GREEN utilisateur.
+- **Lot suivant séparé :** créer une palette **Objets** (arbres/rochers/bâtiments) intégrée au labo sculptable via WorldObject placement model / asset adapter existants, avec sauvegarde versionnée *distincte* du JSON hauteur v1, contrôle des collisions et test placement/suppression. Ne pas présenter les seules textures comme des objets placés.
+
+---
+
 # Lot actif — 18/10/2026 — V18 assets visuels natifs du nouveau relief
 
 - **Demande :** après test de navigation V17, raccorder les visuels déjà exploitables sans forcer la réutilisation des assets inadaptés. Référence de compatibilité : [LAB_SCULPT_VISUAL_COMPATIBILITY_V18.md](LAB_SCULPT_VISUAL_COMPATIBILITY_V18.md).
