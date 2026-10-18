@@ -855,6 +855,82 @@ try{
       oldWaterCells:wetScene.before.wetCells,newObjects:newMap.created.objects,
       newWaterCells:newMap.created.wetCells,undoCount:newMap.created.undoCount,
       navigationAfterCreate:navV24.enabled}));
+
+  // V27 REAL canvas painting, edit undo/redo, exported WorldSurface and new map cleanup.
+  const v27Ready=await run(`(()=>{
+    document.querySelector('#mode-surface').click();
+    const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const p=window.__sculptLabProbe(), w=p.width*28,h=p.height*21+7*18;
+    const panX=(r.width-w*p.zoom)/2;
+    const panY=(r.height-h*p.zoom)/2+7*18*p.zoom;
+    const cell=(col,row)=>({x:r.left+panX+(col+.5)*28*p.zoom,
+      y:r.top+panY+((row+.5)*21-2*18)*p.zoom});
+    const material=document.querySelector('#surface-material');
+    material.value='road.dirt';material.dispatchEvent(new Event('change',{bubbles:true}));
+    return {active:window.__sculptSurfaceProbe().active,
+      start:cell(3,4),end:cell(9,4),zone:cell(8,8)};
+  })()`);
+  if(!v27Ready.active)throw Error('V27 texture palette not activated');
+  async function paintSurface(from,to){
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:from.x,y:from.y});
+    await send('Input.dispatchMouseEvent',{type:'mousePressed',x:from.x,y:from.y,button:'left',clickCount:1});
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:to.x,y:to.y,button:'left',buttons:1});
+    await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:to.x,y:to.y,button:'left',clickCount:1});
+    await sleep(260);
+  }
+  await paintSurface(v27Ready.start,v27Ready.end);
+  const v27Road=await run('window.__sculptSurfaceProbe()');
+  if(v27Road.routes!==1||v27Road.zones!==0||v27Road.features[0].materialId!=='road.dirt')
+    throw Error('V27 real mouse stroke did not author WorldSurface road: '+JSON.stringify(v27Road));
+  await run("document.querySelector('#surface-undo').click()");
+  if((await run('window.__sculptSurfaceProbe().routes'))!==0)
+    throw Error('V27 undo did not remove surface route');
+  await run("document.querySelector('#surface-redo').click()");
+  if((await run('window.__sculptSurfaceProbe().routes'))!==1)
+    throw Error('V27 redo did not restore surface route');
+  await run(`(()=>{
+    document.querySelector('#surface-material').value='ground.sand';
+    return true;
+  })()`);
+  await paintSurface(v27Ready.zone,v27Ready.zone);
+  const v27Zone=await run('window.__sculptSurfaceProbe()');
+  if(v27Zone.zones!==1||v27Zone.features[1].materialId!=='ground.sand')
+    throw Error('V27 zoned sand material failed: '+JSON.stringify(v27Zone));
+  await sleep(440);
+  const v27Visual=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    window.__v27Scene=document.querySelector('#json').value;
+    return {scene:JSON.parse(window.__v27Scene),
+      probe:window.__sculptSurfaceProbe(),
+      painted:window.__sculptLabProbe().paintedCells};
+  })()`);
+  if(v27Visual.scene.surface.version!==3||
+      v27Visual.scene.surface.routes.length!==1||v27Visual.scene.surface.zones.length!==1||
+      !v27Visual.probe.texturesLoaded.includes('road.dirt')||
+      !v27Visual.probe.texturesLoaded.includes('ground.sand')||
+      v27Visual.painted<=0)
+    throw Error('V27 native texture assets/terrain raster/export missing: '+JSON.stringify(v27Visual));
+  const v27Reload=await run(`(()=>{
+    document.querySelector('#json').value=window.__v27Scene;
+    document.querySelector('#import').click();
+    return window.__sculptSurfaceProbe();
+  })()`);
+  if(v27Reload.routes!==1||v27Reload.zones!==1)
+    throw Error('V27 imported WorldSurface routes/zones lost: '+JSON.stringify(v27Reload));
+  const v27Clean=await run(`(()=>{
+    document.querySelector('#new-map-toggle').click();
+    const c=document.querySelector('#new-map-confirm');
+    c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#new-map-create').click();
+    return {paint:window.__sculptSurfaceProbe(),lab:window.__sculptLabProbe()};
+  })()`);
+  if(v27Clean.paint.routes||v27Clean.paint.zones||
+      v27Clean.lab.paintedRoutes||v27Clean.lab.paintedZones)
+    throw Error('V27 New Map retains stale painted features: '+JSON.stringify(v27Clean));
+  console.log('V27 real WorldSurface road/zone painting and cleanup Chromium:',
+    JSON.stringify({roads:v27Visual.scene.surface.routes.length,
+      zones:v27Visual.scene.surface.zones.length,
+      materialAssets:v27Visual.probe.texturesLoaded,painted:v27Visual.painted}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
