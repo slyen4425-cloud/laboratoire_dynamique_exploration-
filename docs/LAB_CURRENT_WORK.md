@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V21 navigation performance et cadrage de caméra sur téléphone
+
+- **Retour réel utilisateur :** la vitesse V19/V20 reste ressentie comme extrêmement lente, possiblement des saccades ; la caméra paraît trop haute/éloignée de l'ancien éditeur. Aucune validation utilisateur pour V20 objets. Diagnostic précis : le callback `navigationTick` bornait chaque frame à **32 ms**, perdant le temps écoulé dès que le rendu durait plus longtemps, et `draw()` recomposait le terrain complet pour chaque pas du personnage. Le test V19 ne vérifiait que >8 unités après 420ms, sans simulation d'un vrai gel mobile.
+- **Base protégée :** V20 source `b6663a329cf84f2670dce5b1cfa392c9f011d35a`, GREEN technique et Pages preview [39149814213](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39149814213) SUCCESS ; START `checkpoint/exploration-start-sculpt-navigation-perf-camera-v21-2026-10-18`, branche `work/exploration-sculpt-navigation-perf-camera-v21-2026-10-18`.
+- **Périmètre :** uniquement contrôleur temporel de la navigation expérimentale, fond visuel de sculpture mis en cache durant navigation, cadrage/zoom test et diagnostics FPS + allure ; aucune modification du contrat WorldDocument, moteur partagé `stepMovement`, collisions existantes, Asset Adapter, sauvegarde, édition du terrain, lot objets V20, Combat/Encounter, Builder 2D, 2D stable, matériaux V18.
+- **Correction :** `sculptNavigationFrameSteps` répartit l'intégralité du temps réel par pas ≤20ms (borne de reprise 250ms), puis appelle exclusivement `stepMovement` et Collision World ; l'image fixe du relief est pré-rasterisée lors de la navigation, invalidée si une texture/hauteur/matériau change. La caméra du test est réglable 100–240%, défaut **175%** contre 125%, avec FPS et vitesse réelle visibles. La projection 2,5D est inchangée, aucune fausse caméra 3D.
+- **Tests / exigences :** `npm test`, `npm run check`, Chromium réel petit viewport clavier/joystick, colision montagne et eau, 190ms de gel du thread principal simulé et distance minimale, pose d'objet V20/export, fermeture sans altération JSON, tests anciens Builder/Combat. Pas GREEN utilisateur avant essai sur son smartphone.
+- **Risques / rollback :** cache canvas temporaire détruit à la sortie de Tester, terrain raster sans nouvelle autorité ; V20 demeure rollback. Le réglage d'angle de perspective proprement dit n'est pas fourni par l'actuel renderer 2,5D.
+- **Statut :** CI V21 à vérifier sur dernier SHA incluant l'épreuve jank ; ne pas publier si rouge.
+
+---
+
 # Lot actif — 18/10/2026 — V20 palette de bâtiments, arbres et rochers sur relief sculpté
 
 - **Retour utilisateur :** ne trouve pas où placer bâtiments/objets ; V18 ne raccordait que des matériaux, et V19 corrige l'allure du mode Tester. Le chantier objets est distinct du correctif V19.
