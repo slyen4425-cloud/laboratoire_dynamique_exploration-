@@ -824,6 +824,7 @@ try{
      newMap.created.wetCells!==0||newMap.created.authoredWaterCells!==0||
      newMap.created.undoCount!==0||newMap.created.redoCount!==0||
      newMap.created.faceCount!==0||newMap.scene.objects.length!==0||
+     newMap.created.roadVisible||newMap.created.exampleRoadEnabled||
      newMap.scene.terrain.waterLevels.some(n=>n!==-1)||
      !newMap.notice.includes('Carte vierge créée'))
     throw Error('V24 new map did not reset scene and editor history: '+JSON.stringify(newMap));
@@ -831,6 +832,12 @@ try{
   const navV24=await run('window.__sculptNavProbe()');
   if(!navV24.enabled||!navV24.player||!navV24.joystickAttached||navV24.speed!==220)
     throw Error('V24 new map lost validated navigation/camera: '+JSON.stringify(navV24));
+  const v25Imported=await run(`(()=>{
+    document.querySelector('#import').click();
+    return window.__sculptLabProbe();
+  })()`);
+  if(v25Imported.roadVisible||v25Imported.exampleRoadEnabled)
+    throw Error('V25 import restored phantom decorative road: '+JSON.stringify(v25Imported));
   await run("document.querySelector('#navigation-toggle').click()");
   console.log('V24 new blank map, confirmed reset and cancellation Chromium:',
     JSON.stringify({dimensions:'18x12',oldObjects:wetScene.before.objects,
