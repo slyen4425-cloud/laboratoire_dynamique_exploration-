@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V10A : diversité sculptée et raccords sol/falaise
+
+- **Retour créateur :** V9 meilleur mais falaises encore trop identiques. Référence canyon illustré 3/4 : davantage de grandes pierres irrégulières arrondies, couleurs variables, terrain canonique pénétrant organiquement entre les strates du bord. Zoom caméra éditable demandé ; chantier distinct V10B à ouvrir après la prévalidation et checkpoint V10A pour garder un propriétaire et un risque bornés.
+- **Base immuable :** V9 `a26ebd91632cf3de34d8ef08eee8a6638ff8a8a3` ; dernière CI `39074503153` SUCCESS, preview Pages `39074609552` SUCCESS, validation esthétique V9 non acquise. START `checkpoint/exploration-start-cliff-sculpt-variety-v10-2026-10-18` ; branche `work/exploration-cliff-sculpt-variety-v10-2026-10-18`.
+- **Périmètre :** art SVG externe avec six / sept formes différentes et plusieurs teintes de roche, hauts de parois dentelés avec trouées réellement transparentes qui exposent la vraie texture WorldSurface (pas de copie, même raster et même géométrie). Enrichir le catalogue d'objets éditables et adapter assets, utiliser placements existants dans le pilote de démonstration si nécessaire. Garder l'immersion et l'écume V9. Art Capture comme référence de style, sans recopier d'asset d'un autre dépôt.
+- **Propriétaires :** Object Definition Catalog pour choix et dimensions, Asset Adapter pour SVG, WorldObject Renderer existant pour ordre visuel ; WorldSurface pour matériau vrai, Collision World pour footprint. Aucune autorité gameplay parallèle.
+- **Gels :** tailles d'objets existants, placement monde classique, collisions/mouvements/obstacles/rencontres/Combat/Camera, modèle WorldDocument et composant zoom Builder, rivière et cascade, performance mobile ; V9 conservée pour rollback.
+- **Contrôles :** SVG DOM valide / transparente, distinctivité silhouettes et palettes, catalogue/asset résolus via Builder, compatibilité JSON export/import, viewport mobile, node tests/check, Chromium monde/Builder/Encounter/Combat. Prévalidation CI GREEN avant publication ; validation artistique smartphone utilisateur distincte.
+- **Prochaine étape :** ajouter variantes et raccords de surface, mesurer tests puis checkpoint immutable.
+
+---
+
 # Lot actif — 17/10/2026 — V9 : falaise habillage de sol, bases arrondies et écume lisible
 
 - **Validation partielle auteur :** V8 immersion eau/roche ACCEPTÉE ; écume trop discrète et graphisme des trois falaises pas acceptable (bases pointues, roche encore trop simple). Nouveau besoin : sommet de falaise qui reprend **réellement le matériau de sol présent derrière**, librement modifiable dans Builder (herbe/neige/volcan/ville).
