@@ -6,6 +6,9 @@
 - **Propriétaires :** `sculpt-height-model.js` seul détenteur de hauteurs et de la forme du pinceau ; `sculpt-height-renderer.js` seul responsable des courbes et textures ; `sculpt-lab-main.js` seul relie l'UI aux opérations.
 - **Invariants :** aucune modification de `index.html`, `builder.html`, WorldDocument, WorldSurface, collisions, mouvement, caméra gameplay, Encounter/Combat et jeu 2D. Pinceau mobile sans accidental touch scrolling, conservation du prototype V1 en checkpoint.
 - **Tests requis :** plateau cible exact niveau 3, bord dur/doux, brush déterministe sans fuite hors de la carte, rendu lisse ne change pas les niveaux, roundtrip JSON, vrais événements pointer Chromium, chargement textures, CI Node et Builder/Combat complets, snapshot Pages immuable ; validation artistique sur téléphone avant GREEN final.
+- **Résultat V11 :** pinceau `plateau` + niveau absolu 0–7 avec commandes tactiles ±1, paramètre de bord/dureté 0–100 %, rayon/force conservés ; lissage des contours rocheux séparé 0–100 %, touche visuelle au canvas ; `index.html` et `builder.html` inchangés.
+- **Prévalidation :** code exact `7aaf1533e8841677da129eac75733c9b520da35c`, [CI 39107954712](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39107954712) SUCCESS : **535/535 tests Node**, npm check, Chromium Builder/Encounter/Combat + navigateur sculpture. Vraie souris : plateau exactement 3 ; vrai geste `Input.dispatchTouchEvent` sous émulation mobile 390px : plateau exactement 3 ; déformation visuelle : 148 pixels changés sans altérer la grille; JSON export/import OK. Une première CI avait révélé que la barre de réglage repoussait le canvas sous le viewport ; gate corrigé pour tester le défilement réel.
+- **Décision de sortie :** GREEN technique seulement, **validation mobile esthétique toujours en attente** ; checkpoint prévalidation et Pages V11 avant avis auteur.
 
 ---
 
