@@ -288,3 +288,37 @@ test('V14 editor panels are exclusive, fine-step and confirm-before-commit by de
   assert.match(ui,/commitUndo\(previous\)/);
   assert.doesNotMatch(ui,/location\.reload|WorldDocument|collision-world/);
 });
+
+
+test('V15 large radius 16 genuinely edits wide terrain and water, matching preview footprint',()=>{
+ const base=createSculptTerrain({width:48,height:40});
+ const pos={points:[{x:24.5,y:20.5}],radius:16,edgeSoftness:0};
+ const preview=sculptBrushFootprint(base,pos);
+ assert.ok(preview.length>700,'16-cell radius covers a wide area, not old max 9');
+ const terrain=applySculptStroke(base,{...pos,mode:'plateau',target:3});
+ const changed=terrain.levels.flatMap((v,i)=>v===base.levels[i]?[]:[i]);
+ assert.equal(changed.length,preview.length,'preview footprint must equal edited cells');
+ assert.equal(sculptHeightAt(terrain,24,20),3);
+ assert.equal(sculptHeightAt(terrain,5,5),2,'remote terrain untouched');
+ const water=applySculptWaterStroke(base,{...pos,mode:'water-fill',target:5});
+ const waterChanged=water.waterLevels.flatMap((v,i)=>v===base.waterLevels[i]?[]:[i]);
+ assert.equal(waterChanged.length,preview.length,'water brush honors the enlarged preview as well');
+});
+
+test('V15 mobile canvas-first layout keeps stable unique controls and advanced panel after canvas',()=>{
+ const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(html,/id="radius"[^>]*min="0\.5"[^>]*max="16"/);
+ for(const id of ['quick-tool','quick-level-value','quick-level-minus','quick-level-plus',
+   'radius-minus','radius-plus','sculpt-settings','precision-actions','precision-mode','undo','redo']){
+   assert.equal((html.match(new RegExp('id="'+id+'"','g'))??[]).length,1,id+' must be unique');
+ }
+ assert.ok(html.indexOf('id="sculpt-canvas"') < html.indexOf('id="ground-tools"'),
+   'canvas must come before verbose controls');
+ assert.ok(html.indexOf('id="brush-info"') < html.indexOf('id="sculpt-canvas"'));
+ assert.match(ui,/function syncQuickToolbar/);
+ assert.match(ui,/function adjustBrushSize/);
+ assert.match(ui,/function adjustQuickLevel/);
+ assert.match(ui,/precisionApply/);
+ assert.doesNotMatch(ui,/WorldDocument|collision-world|location\.reload/);
+});
