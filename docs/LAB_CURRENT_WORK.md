@@ -1,3 +1,14 @@
+# Lot actif — 18/10/2026 — Prototype isolé de terrain sculptable (retour 2D sûr)
+
+- **Décision créateur :** rejet des tentatives falaises décoratives V7–V10A, elles ne ressemblent pas à la référence. Revenir à la **vue 2D sûre** pour la carte normale. Les tests artistiques sont retirés de la publication active, pas détruits dans l'historique/checkpoints GitHub. Tester à part un relief obtenu en sculptant véritablement les hauteurs du sol.
+- **Base de départ :** V6 2D `3b50137714d44c165b0ceca0538bea4b30501de3` ; CI `39055763723` SUCCESS et Pages `39061460146` SUCCESS. Checkpoint `checkpoint/exploration-start-sculptable-terrain-prototype-2026-10-18` créé au SHA exact ; branche `work/exploration-sculptable-terrain-prototype-2026-10-18`. V10A `f9fa02a1fa41f4a3033d33f60c29108788a50858` conservée uniquement pour histoire/rollback.
+- **Périmètre :** nouvel espace autonome `sculpt-lab.html` et modules `sculpt-height-model.js` et `sculpt-height-renderer.js`. Un vrai modèle de hauteur cellulaire éditable, pinceaux creuser/surélever/égaliser, parois calculées à partir des dénivelés, changement du matériau de surface via Material Registry existant, zoom graphique expérimental. Une seule source de hauteur, export/import JSON séparé, aucun nouveau format WorldDocument tant que non approuvé.
+- **Gels :** `index.html` et `builder.html` classiques, moteur et rendu 2D validés, WorldDocument/WorldSurface, mouvement/collisions/traversée, caméra actuelle et Combat/Encounter. Ne pas intégrer la sculpture au jeu avant validation esthétique, UX et décision ultérieure sur géométrie et collision de relief.
+- **Gates :** tests modèle déterministe, opérations immutables + undo + roundtrip JSON, faces générées uniquement aux changements de hauteur, surfaces via Material Registry, preview autonome utilisable tactile et souris, Node/npm check, CI complète Browser Builder/Combat et contrôle réel de prototype Chromium avant publication.
+- **Prochaine étape :** développer un premier test jouable, CI verte, checkpoint, puis basculer GitHub Pages vers un snapshot V6+prototype isolé ; confirmation visuelle du créateur obligatoire.
+
+---
+
 # Lot actif — 17/10/2026 — Eau canyon 2,5D : reflets organiques V6
 
 - **Verdict auteur :** V5 sans rectangles validée (« beaucoup mieux ») ; micro-vagues répétées jugées inesthétiques. Aucun changement de géométrie voulu.
