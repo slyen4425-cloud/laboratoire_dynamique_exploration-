@@ -448,6 +448,66 @@ try{
     throw Error('V16 immersive canvas or compact palette failed in Chromium: '+JSON.stringify(fullscreenV16));
   console.log('V16 immersive phone and land/water separation Chromium:',
     JSON.stringify({layersV16,fullscreenV16}));
+
+  // V17: genuine navigation input -> existing stepMovement -> Collision World
+  // -> 2.5D rendered player, without mutating authored terrain.
+  const navStart=await run(`(()=>{
+    document.querySelector('#flat').click();
+    document.querySelector('#export').click();
+    const json=document.querySelector('#json').value;
+    document.querySelector('#navigation-toggle').click();
+    return {before:window.__sculptNavProbe(),json,
+      hudVisible:!document.querySelector('#navigation-hud').hidden,
+      stickVisible:!document.querySelector('#navigation-stick').hidden};
+  })()`);
+  if(!navStart.before.enabled||!navStart.before.joystickAttached||
+     !navStart.hudVisible||!navStart.stickVisible||!navStart.before.player)
+    throw Error('V17 navigation activation failed: '+JSON.stringify(navStart));
+  await send('Input.dispatchKeyEvent',
+    {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+  await sleep(420);
+  await send('Input.dispatchKeyEvent',
+    {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+  const afterKeyboard=await run('window.__sculptNavProbe()');
+  if(afterKeyboard.player.x-navStart.before.player.x<8)
+    throw Error('V17 keyboard does not reach existing Exploration movement: '+JSON.stringify(afterKeyboard));
+  const stickCenter=await run(`(()=>{
+    const r=document.querySelector('#navigation-stick').getBoundingClientRect();
+    return {x:r.left+r.width/2,y:r.top+r.height/2};
+  })()`);
+  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {id:17,x:stickCenter.x,y:stickCenter.y}]});
+  await send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[
+    {id:17,x:stickCenter.x+23,y:stickCenter.y}]});
+  await sleep(350);
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await send('Emulation.setTouchEmulationEnabled',{enabled:false});
+  const afterStick=await run('window.__sculptNavProbe()');
+  if(afterStick.player.x-afterKeyboard.player.x<5)
+    throw Error('V17 actual touch stick failed: '+JSON.stringify(afterStick));
+  const navStop=await run(`(()=>{
+    const choice=document.querySelector('#navigation-locomotion');
+    choice.value='swim';choice.dispatchEvent(new Event('change',{bubbles:true}));
+    const swimmable=window.__sculptNavProbe().player.locomotion.includes('swim');
+    choice.value='fly';choice.dispatchEvent(new Event('change',{bubbles:true}));
+    const flying=window.__sculptNavProbe().player.locomotion.includes('fly');
+    document.querySelector('#navigation-toggle').click();
+    document.querySelector('#export').click();
+    return {swimmable,flying,
+      json:document.querySelector('#json').value,
+      after:window.__sculptNavProbe(),
+      hudHidden:document.querySelector('#navigation-hud').hidden,
+      stickHidden:document.querySelector('#navigation-stick').hidden};
+  })()`);
+  if(!navStop.swimmable||!navStop.flying||navStop.after.enabled||
+      navStop.after.joystickAttached||!navStop.hudHidden||!navStop.stickHidden||
+      navStop.json!==navStart.json)
+    throw Error('V17 nav exit or immutable sculpture regression: '+JSON.stringify(navStop));
+  console.log('V17 real keyboard and touch navigation / safe exit:',
+    JSON.stringify({keyboardDistance:afterKeyboard.player.x-navStart.before.player.x,
+      touchDistance:afterStick.player.x-afterKeyboard.player.x,
+      mapUnchanged:navStop.json===navStart.json,hudHidden:navStop.hudHidden}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
