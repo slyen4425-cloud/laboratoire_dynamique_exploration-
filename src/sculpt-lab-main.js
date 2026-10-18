@@ -1056,7 +1056,7 @@ $('new-map-form').addEventListener('submit',event=>{
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
   const blank=createBlankSculptPreviewScene({width,height});
-  exampleRoadEnabled=false;$('show-road').checked=false;
+  exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
   surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
@@ -1074,7 +1074,7 @@ window.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!$('new-map-panel').hidden){event.preventDefault();setNewMapPanel(false);}
 });
 $('reset').addEventListener('click',()=>{
-  const old=terrain;terrain=sculptDemo();exampleRoadEnabled=true;
+  const old=terrain;terrain=sculptDemo();exampleRoadEnabled=true;$('show-road').disabled=false;
   if(ribbonTextures.road)ribbonTextures.road.visible=$('show-road').checked;
   commitUndo(old);scheduleDraw();
   status('Relief exemple rechargé (36 × 24) ; objets déjà placés conservés');
@@ -1127,7 +1127,7 @@ $('export').addEventListener('click',()=>{
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value);
   const old=terrain;terrain=imported.terrain;commitUndo(old);
-  exampleRoadEnabled=false;$('show-road').checked=false;
+  exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
