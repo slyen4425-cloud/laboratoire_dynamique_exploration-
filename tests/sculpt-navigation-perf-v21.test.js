@@ -9,7 +9,7 @@ test('V21 navigation no longer discards real elapsed time at 5fps',()=>{
     assert.ok(steps.length>0&&steps.every(t=>t>0&&t<=.020001));
     assert.ok(Math.abs(steps.reduce((a,b)=>a+b,0)-frameMs/1000)<1e-9);
   }
-  assert.equal(sculptNavigationFrameSteps(600).reduce((a,b)=>a+b,0),.25);
+  assert.ok(Math.abs(sculptNavigationFrameSteps(600).reduce((a,b)=>a+b,0)-.25)<1e-9);
   assert.deepEqual(sculptNavigationFrameSteps(0),[]);
   assert.deepEqual(sculptNavigationFrameSteps(-7),[]);
   assert.deepEqual(sculptNavigationFrameSteps(NaN),[]);
