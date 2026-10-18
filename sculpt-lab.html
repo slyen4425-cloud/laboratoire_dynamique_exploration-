@@ -25,11 +25,18 @@ footer{font-size:.82rem;color:#c0d2d5;display:flex;flex-wrap:wrap;gap:10px;align
 small{color:#a1b5ba}@media(max-width:600px){header{padding:8px}main{padding:6px;gap:6px}
 button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 #sculpt-canvas{height:51vh;min-height:230px}h1{font-size:.95rem}}
+
+.target-control{background:#224048;gap:6px}
+.target-control button{min-width:42px;border-color:#81b7ba;background:#305865;font-weight:700;padding:9px}
+.target-control #target{width:110px}
+@media(max-width:600px){.target-control{width:100%;justify-content:space-between}
+.target-control #target{flex:1;max-width:220px}
+.controls{gap:5px}button{min-height:38px}.target-control button{min-height:42px}}
 </style>
 </head>
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
-<p>Creuser / surélever le sol : les falaises naissent automatiquement des dénivelés.</p></div>
+<p>Hauteur exacte en un geste, bords doux et falaises arrondies. Les dénivelés restent éditables.</p></div>
 <a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
 <main>
 <section class="controls" aria-label="Outils de sculpture">
@@ -37,6 +44,14 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
 <button data-mode="smooth">Adoucir</button>
+<button data-mode="plateau">Plateau · hauteur exacte</button>
+<span class="control target-control"><label for="target">Niveau <b id="target-value">3</b></label>
+<button id="height-minus" type="button" aria-label="Baisser la hauteur cible d’un bloc">−1</button>
+<input id="target" type="range" min="0" max="7" step="1" value="3" aria-label="Hauteur cible en blocs">
+<button id="height-plus" type="button" aria-label="Monter la hauteur cible d’un bloc">+1</button></span>
+<span class="control"><label for="hardness">Bord <b id="hardness-value">65 %</b></label>
+<input id="hardness" type="range" min="0" max="100" step="5" value="65" aria-label="Dureté du bord du pinceau"></span>
+
 <span class="control"><label for="radius">Pinceau <b id="radius-value">3</b></label><input id="radius" type="range" min="1" max="8" value="3"></span>
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
 <button id="undo">Annuler</button><button id="reset">Exemple</button><button id="flat">Sol plat</button>
@@ -50,6 +65,9 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
 <option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option></select></label>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
+
+<label class="control">Arrondi visuel <b id="visual-smooth-value">70 %</b>
+<input id="visual-smooth" type="range" min="0" max="100" value="70" step="5" aria-label="Lissage visuel des parois, sans changer la hauteur"></label>
 <button id="fit">Ajuster la vue</button>
 </section>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
@@ -59,6 +77,6 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <button id="import">Importer ce JSON</button><small>Prototype isolé, aucune sauvegarde automatique ni collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-terrain-pilot-r1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-brush-v11"></script>
 </body>
 </html>
