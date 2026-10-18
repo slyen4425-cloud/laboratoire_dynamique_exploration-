@@ -1,3 +1,14 @@
+# Lot actif — 18/10/2026 — V11 précision du pinceau et arrondis visuels
+
+- **Retour créateur :** volume du prototype sculptable V1 très prometteur ; sur téléphone, difficile d’obtenir exactement trois niveaux réguliers ; rendu artistique trop cubique.
+- **Base prouvée :** V1 `76cef5d3239b8988db95a0b7cf7d731820d5336d` (531/531 tests, CI source 39104710331 et Pages 39104818988 SUCCESS). Checkpoint départ `checkpoint/exploration-start-sculpt-brush-v11-2026-10-18`, branche `work/exploration-sculpt-brush-v11-2026-10-18`. Rollback V1 et V6 2D intacts.
+- **Périmètre :** sur `sculpt-lab.html` uniquement, pinceau `plateau` à **hauteur cible exacte 0–7**, force et rayon, dureté/transition réglable, raccourcis +1/-1 tactiles ; lissage visuel des parois et sommets réglable, sans altérer la grille canonique. Les modes existants, annuler et sérialisation V1 restent compatibles.
+- **Propriétaires :** `sculpt-height-model.js` seul détenteur de hauteurs et de la forme du pinceau ; `sculpt-height-renderer.js` seul responsable des courbes et textures ; `sculpt-lab-main.js` seul relie l'UI aux opérations.
+- **Invariants :** aucune modification de `index.html`, `builder.html`, WorldDocument, WorldSurface, collisions, mouvement, caméra gameplay, Encounter/Combat et jeu 2D. Pinceau mobile sans accidental touch scrolling, conservation du prototype V1 en checkpoint.
+- **Tests requis :** plateau cible exact niveau 3, bord dur/doux, brush déterministe sans fuite hors de la carte, rendu lisse ne change pas les niveaux, roundtrip JSON, vrais événements pointer Chromium, chargement textures, CI Node et Builder/Combat complets, snapshot Pages immuable ; validation artistique sur téléphone avant GREEN final.
+
+---
+
 # Lot actif — 18/10/2026 — Prototype isolé de terrain sculptable (retour 2D sûr)
 
 - **Décision créateur :** rejet des tentatives falaises décoratives V7–V10A, elles ne ressemblent pas à la référence. Revenir à la **vue 2D sûre** pour la carte normale. Les tests artistiques sont retirés de la publication active, pas détruits dans l'historique/checkpoints GitHub. Tester à part un relief obtenu en sculptant véritablement les hauteurs du sol.
