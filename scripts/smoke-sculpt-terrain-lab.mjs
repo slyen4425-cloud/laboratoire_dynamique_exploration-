@@ -275,6 +275,44 @@ try{
      switches.land.groundHidden||!switches.land.waterHidden)
      throw Error('V14 land/water editor switch does not isolate toolbars: '+JSON.stringify(switches));
 
+
+  // V15 mobile: no scrolling is allowed to see the actual editing canvas.
+  // Size shortcuts reflect a REAL 16-cell brush and switch cleanly with Water.
+  await send('Emulation.setDeviceMetricsOverride',
+    {width:390,height:844,deviceScaleFactor:2,mobile:true});
+  const compact=await run(`(async()=>{
+    window.scrollTo(0,0);
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const canvas=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const size=document.querySelector('#radius');
+    size.value='15.5';size.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#radius-plus').click();
+    const afterPlus=window.__sculptLabProbe().brushSize;
+    document.querySelector('#radius-minus').click();
+    const afterMinus=window.__sculptLabProbe().brushSize;
+    document.querySelector('#quick-tool').value='plateau';
+    document.querySelector('#quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    const tool=window.__sculptLabProbe().quickTool;
+    document.querySelector('#mode-water').click();
+    const waterOptions=[...document.querySelector('#quick-tool').options].map(o=>o.value);
+    const waterTool=window.__sculptLabProbe().quickTool;
+    document.querySelector('#mode-ground').click();
+    const groundOptions=[...document.querySelector('#quick-tool').options].map(o=>o.value);
+    const more=document.querySelector('#sculpt-settings');
+    const hiddenByDefault=!more.open;
+    return {width:innerWidth,height:innerHeight,canvasTop:canvas.top,canvasBottom:canvas.bottom,
+      advancedClosed:hiddenByDefault,afterPlus,afterMinus,tool,waterTool,
+      waterOptions,groundOptions,precisionActionsWithinCanvas:
+        document.querySelector('.canvas-wrap').contains(document.querySelector('#precision-actions'))};
+  })()`);
+  if(compact.width!==390||compact.canvasTop<0||compact.canvasTop>compact.height*.73||
+     compact.canvasBottom<compact.height*.58||!compact.advancedClosed||
+     compact.afterPlus!==16||compact.afterMinus!==15.5||compact.tool!=='plateau'||
+     !compact.waterOptions.every(x=>x.startsWith('water-'))||
+     !compact.groundOptions.every(x=>!x.startsWith('water-'))||
+     !compact.precisionActionsWithinCanvas)
+    throw Error('V15 phone canvas-first ergonomics or brush-size shortcuts failed: '+JSON.stringify(compact));
+  console.log('V15 mobile canvas visible without scroll, 16-cell brush and quick tool switch:',JSON.stringify(compact));
   // Phone viewport with ACTUAL CDP touch and deliberately staged painting:
   // precise radius 0.5 = one cell, finger release must NEVER edit before Apply.
   await send('Emulation.setDeviceMetricsOverride',
