@@ -463,6 +463,22 @@ try{
   if(!navStart.before.enabled||!navStart.before.joystickAttached||
      !navStart.hudVisible||!navStart.stickVisible||!navStart.before.player)
     throw Error('V17 navigation activation failed: '+JSON.stringify(navStart));
+  if(navStart.before.speed!==220||navStart.before.zoom<1.25)
+    throw Error('V19 default comfortable movement/viewport missing: '+JSON.stringify(navStart.before));
+  const slower=await run(`(()=>{
+    const slider=document.querySelector('#navigation-speed');
+    slider.value='120';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    return {speed:window.__sculptNavProbe().speed,
+      label:document.querySelector('#navigation-speed-value').textContent};
+  })()`);
+  if(slower.speed!==120||slower.label!=='120')
+    throw Error('V19 speed control cannot change real movement config: '+JSON.stringify(slower));
+  const restored=await run(`(()=>{
+    const slider=document.querySelector('#navigation-speed');
+    slider.value='220';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    return window.__sculptNavProbe().speed;
+  })()`);
+  if(restored!==220)throw Error('V19 default speed not restored');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   await sleep(420);
