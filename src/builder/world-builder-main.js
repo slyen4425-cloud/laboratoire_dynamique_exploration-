@@ -90,7 +90,7 @@ import {
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&shore=themeable-v7';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&shore=themeable-v7&cliff=v10';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
@@ -167,7 +167,7 @@ import {
   createWorldObjectAssetResolver,
   listWorldObjectAssets,
   resolveWorldObjectAsset
-} from '../assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from '../assets/world-object-asset-adapter.js?rev=cliff-variety-v10';
 import {
   createUserWorldObjectAssetResolver
 } from '../assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
@@ -352,7 +352,7 @@ async function rebuildWorldObjectPipeline() {
       resolveAsset:
         resolveWorldObjectAssetComposed,
       cacheRevision:
-        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v9'
+        'building-interiors-passages-ux-r1-canyon-art-v3-relief-v10'
     });
 
   const assetIds = [
