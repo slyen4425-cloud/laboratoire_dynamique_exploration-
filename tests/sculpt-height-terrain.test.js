@@ -372,3 +372,27 @@ test('V16 fullscreen is a canvas-first fallback with a foldable single-source pa
   assert.match(script,/document\.addEventListener\('fullscreenchange'/);
   assert.match(script,/paletteCollapsed/);
 });
+
+test('V18 native material variants use the existing Material Registry and file adapter',()=>{
+  const registry=createMaterialRegistry(materialPackV1);
+  const expected=[['grass.forest','surface'],['ground.forest_floor','surface'],
+    ['ground.mountain_rock','surface'],['ground.snow','surface'],
+    ['ground.sand','surface'],['ground.volcanic_ash_lava','surface'],
+    ['water.clear_blue','water'],['water.turquoise','water'],
+    ['water.forest_stream','water'],['water.swamp','water']];
+  for(const [id,kind] of expected){
+    const material=registry.require(id,kind);
+    const assetId=kind==='water'?material.assets.center:material.assets.base;
+    const asset=resolveMaterialAsset(assetId);
+    assert.ok(asset?.path?.startsWith('./assets/exploration/materials/'),id);
+  }
+  const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  for(const [id] of expected)assert.ok(page.includes('value="'+id+'"'),id);
+  assert.match(main,/registry\.require\(id,'water'\)/);
+  assert.match(main,/ribbonTextures\.water=\{/);
+  assert.match(main,/waterMaterialRevision/);
+  assert.doesNotMatch(main,/new WorldDocument|location\.reload\(\)/);
+  const before=sculptDemo();
+  assert.deepEqual(importSculptTerrain(serializeSculptTerrain(before)),before);
+});
