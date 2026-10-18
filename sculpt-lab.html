@@ -203,6 +203,31 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
   #navigation-stick{left:12px;bottom:12px;width:108px;height:108px}
   #navigation-knob{top:28px;left:28px}
 }
+
+/* V20 object palette: visual catalog lives in the existing native object registry. */
+#object-palette{position:absolute;z-index:12;right:8px;top:8px;
+  width:min(235px,calc(100vw - 16px));max-height:70%;overflow:auto;
+  display:grid;gap:6px;padding:9px;background:rgba(19,43,52,.96);
+  border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
+#object-palette[hidden]{display:none!important}
+#object-palette label{display:grid;gap:2px}
+#object-palette select,#object-palette input[type=range]{width:100%}
+#object-palette select{padding:7px;min-height:36px}
+#object-palette input[type=range]{accent-color:#7ee0c5}
+#object-count{color:#a7f3db}
+.object-actions{display:flex;gap:5px}
+.object-actions button{flex:1;min-width:0;padding:6px}
+body.sculpt-immersive #object-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
+ right:calc(env(safe-area-inset-right,0px) + 6px);max-height:65dvh}
+body.object-editing .sculpt-quickbar{opacity:.45;pointer-events:none}
+body.sculpt-immersive.object-editing .sculpt-quickbar{display:none}
+body.object-editing .canvas-wrap .precision-actions{display:none!important}
+@media(max-width:600px){
+  #object-palette{width:min(180px,48vw);padding:5px;top:6px;right:5px}
+  body.sculpt-immersive #object-palette{max-height:63dvh}
+  .editor-switch #mode-objects{font-size:.77rem;padding:4px;min-width:0}
+  body.sculpt-immersive .editor-switch{width:min(365px,calc(100vw - 12px))}
+}
 </style>
 </head>
 <body>
@@ -213,6 +238,7 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
+<button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
 <button type="button" id="palette-toggle" aria-label="Réduire la palette d'outils" aria-expanded="true" hidden>▴</button>
@@ -235,6 +261,31 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<section id="object-palette" aria-label="Placer les objets visuels" hidden>
+ <strong>🌳 Placer un objet sur le relief</strong>
+ <label>Catégorie
+  <select id="object-category" aria-label="Catégorie d’objets">
+   <option value="building">Bâtiments</option><option value="tree">Arbres</option>
+   <option value="rock">Rochers</option>
+  </select>
+ </label>
+ <label>Visuel existant <select id="object-definition" aria-label="Objet à placer"></select></label>
+ <label>Mode <select id="object-action" aria-label="Action sur les objets">
+   <option value="place">Placer au toucher</option><option value="remove">Supprimer au toucher</option>
+ </select></label>
+ <label>Taille <output id="object-scale-value">40 %</output>
+   <input id="object-scale" type="range" min="25" max="120" step="5" value="40">
+ </label>
+ <label>Rotation <output id="object-rotation-value">0°</output>
+  <input id="object-rotation" type="range" min="0" max="355" step="5" value="0">
+ </label>
+ <div class="object-actions">
+   <button type="button" id="object-undo" disabled>↶ Objet</button>
+   <button type="button" id="object-redo" disabled>↷ Objet</button>
+ </div>
+ <output id="object-count">Aucun objet placé</output>
+ <small>Pose au doigt. Ces objets sont enregistrés avec « Exporter scène », pas avec l'export hauteurs seul.</small>
+</section>
 <section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
   <strong>🚶 Test de navigation</strong>
   <label>Locomotion simulée
@@ -327,10 +378,11 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 
 
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
-<section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
+<section class="controls"><button id="scene-export">Exporter scène (terrain + objets)</button>
+<button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-navigation-comfort-v19"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-objects-v20"></script>
 </body>
 </html>
