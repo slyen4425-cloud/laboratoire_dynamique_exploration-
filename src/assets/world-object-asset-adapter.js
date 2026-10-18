@@ -187,6 +187,26 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/relief/cliff_corner_01.svg',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.relief.cliff.terraced_warm.03': Object.freeze({
+    id: 'object.relief.cliff.terraced_warm.03', kind: 'rock-visual',
+    path: './assets/exploration/objects/relief/cliff_terraced_warm_03.svg',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.relief.cliff.cracked_cool.04': Object.freeze({
+    id: 'object.relief.cliff.cracked_cool.04', kind: 'rock-visual',
+    path: './assets/exploration/objects/relief/cliff_cracked_cool_04.svg',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.relief.cliff.short_round.01': Object.freeze({
+    id: 'object.relief.cliff.short_round.01', kind: 'rock-visual',
+    path: './assets/exploration/objects/relief/cliff_short_round_01.svg',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.relief.cliff.corner_sand.02': Object.freeze({
+    id: 'object.relief.cliff.corner_sand.02', kind: 'rock-visual',
+    path: './assets/exploration/objects/relief/cliff_corner_sand_02.svg',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.relief.waterfall.blue.01': Object.freeze({
     id: 'object.relief.waterfall.blue.01',
     kind: 'decor-visual',
