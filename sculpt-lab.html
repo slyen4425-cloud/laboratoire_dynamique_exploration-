@@ -293,7 +293,9 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 </section>
 <section class="controls">
 <span data-panel="ground"><label class="control">Sol réel
-<select id="material"><option value="grass.forest">Herbe (sol 2D)</option>
+<select id="material"><option value="grass.forest">Herbe</option>
+<option value="ground.forest_floor">Sol de forêt</option>
+<option value="ground.mountain_rock">Roche de montagne</option>
 <option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
 <option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
 <span data-panel="ground"><label class="control">Roche
@@ -303,6 +305,13 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 <label data-panel="ground" class="control">Arrondi du prochain passage <b id="visual-smooth-value">95 %</b>
 <input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi de roche appliqué uniquement aux prochaines cellules sculptées, 0 à 150 %"></label>
 <button id="fit">Ajuster la vue</button>
+<label class="control">Aspect de l’eau
+<select id="water-material" aria-label="Matériau visuel de l’eau">
+<option value="water.clear_blue">Bleue claire</option>
+<option value="water.turquoise">Turquoise</option>
+<option value="water.forest_stream">Rivière forestière</option>
+<option value="water.swamp">Eau sombre / marais</option>
+</select></label>
 <label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
 <label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route</label>
 <label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
@@ -315,6 +324,6 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-navigation-v17"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-native-materials-v18"></script>
 </body>
 </html>
