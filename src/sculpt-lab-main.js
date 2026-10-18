@@ -26,8 +26,13 @@ if(demoActorAsset){demoActorImage.onload=scheduleDraw;demoActorImage.src=demoAct
 
 const ribbonTextures={water:null,road:null};
 let framePending=false;
+let waterMaterialRevision=0,groundMaterialRevision=0;
+const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
+  'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
+const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
+  'water.forest_stream','water.swamp']);
 const images=new Map();
-const themes=['grass.forest','ground.snow','ground.sand','ground.volcanic_ash_lava'];
+const themes=sculptGroundMaterials;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
@@ -40,14 +45,28 @@ function imageFor(materialId,kind='surface'){
   });
   images.set(id,promise);return promise;
 }
+async function setWaterMaterial(){
+  const id=$('water-material').value;
+  if(!sculptWaterMaterials.includes(id))return;
+  const revision=++waterMaterialRevision;
+  // This is an existing Material Registry item, never a new texture owner.
+  const material=registry.require(id,'water');
+  const previous=ribbonTextures.water;
+  ribbonTextures.water={visible:previous?.visible??$('show-water').checked,
+    material,texture:null};
+  scheduleDraw();
+  const texture=await imageFor(id,'water');
+  if(revision!==waterMaterialRevision)return; // late image cannot overwrite current choice
+  ribbonTextures.water={...ribbonTextures.water,texture};
+  scheduleDraw();
+}
 async function setupRibbons(){
-  for(const [kind,definition] of Object.entries(SCULPT_PREVIEW_RIBBONS)){
-    const material=registry.require(definition.materialId,definition.kind);
-    ribbonTextures[kind]={visible:$('show-'+kind).checked,material,texture:null};
-    // Never mutate a canonical world; these are preview-only materials.
-    ribbonTextures[kind].texture=await imageFor(definition.materialId,definition.kind);
-    scheduleDraw();
-  }
+  const road=SCULPT_PREVIEW_RIBBONS.road;
+  const material=registry.require(road.materialId,road.kind);
+  ribbonTextures.road={visible:$('show-road').checked,material,texture:null};
+  ribbonTextures.road.texture=await imageFor(road.materialId,road.kind);
+  scheduleDraw();
+  await setWaterMaterial();
 }
 function toggleRibbon(kind){
   if(ribbonTextures[kind]){
@@ -57,7 +76,10 @@ function toggleRibbon(kind){
 async function setTheme(){
   const id=$('material').value;
   if(!themes.includes(id))return;
-  currentTexture=await imageFor(id);
+  const revision=++groundMaterialRevision;
+  const texture=await imageFor(id);
+  if(revision!==groundMaterialRevision)return;
+  currentTexture=texture;
   scheduleDraw();
 }
 function dimensions(){
@@ -580,6 +602,7 @@ $('reset').addEventListener('click',()=>{const old=terrain;terrain=sculptDemo();
 $('flat').addEventListener('click',()=>{const old=terrain;terrain=createSculptTerrain();commitUndo(old);scheduleDraw();status('Terrain plat : prêt à sculpter');});
 $('fit').addEventListener('click',fit);
 $('material').addEventListener('change',setTheme);
+$('water-material').addEventListener('change',setWaterMaterial);
 $('rock').addEventListener('change',scheduleDraw);
 $('show-water').addEventListener('change',()=>toggleRibbon('water'));
 $('show-road').addEventListener('change',()=>toggleRibbon('road'));
@@ -620,6 +643,7 @@ $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidde
 window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
+  waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
   previewCells:previewSummary?.cells??0,editorKind,
   brushSize:Number($('radius').value),quickTool:$('quick-tool').value,
