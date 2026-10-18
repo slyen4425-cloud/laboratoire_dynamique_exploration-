@@ -10,7 +10,7 @@ const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 let lastCell='',strokePoints=[],history=[],currentTexture=null,zoom=1,pan={x:0,y:0};
-let hoverCell=null,previewSummary=null;
+let hoverCell=null,previewSummary=null,lastRenderStats=null;
 const ribbonTextures={water:null,road:null};
 let framePending=false;
 const images=new Map();
@@ -79,6 +79,7 @@ function draw(){
   const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
     rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
     overlays:ribbonTextures});
+  lastRenderStats=result;
   previewSummary=null;
   if(hoverCell&&$('preview-cursor').checked){
     const points=drawing&&strokePoints.length ? strokePoints : [{x:hoverCell.x+.5,y:hoverCell.y+.5}];
@@ -232,6 +233,8 @@ window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
-  previewCells:previewSummary?.cells??0,waterVisible:!!ribbonTextures.water?.visible,
+  previewCells:previewSummary?.cells??0,
+  faceRuns:lastRenderStats?.faceRuns??0,waterCells:lastRenderStats?.waterCells??0,
+  roadCells:lastRenderStats?.roadCells??0,waterVisible:!!ribbonTextures.water?.visible,
   roadVisible:!!ribbonTextures.road?.visible,highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
 selectMode('dig');setTheme();setupRibbons();fit();
