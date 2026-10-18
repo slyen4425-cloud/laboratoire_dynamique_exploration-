@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain,sculptDemo,sculptHeightAt,applySculptBrush,
-  sculptFaces,importSculptTerrain,serializeSculptTerrain} from '../src/world/sculpt-height-model.js';
-import {SCULPT_TILE,SCULPT_ROCK_PALETTES,drawSculptTerrain}
+  sculptFaces,applySculptStroke,importSculptTerrain,serializeSculptTerrain} from '../src/world/sculpt-height-model.js';
+import {SCULPT_TILE,SCULPT_ROCK_PALETTES,sculptFaceContour,drawSculptTerrain}
  from '../src/render/sculpt-height-renderer.js';
 import {materialPackV1} from '../src/materials/material-pack-v1.js';
 import {createMaterialRegistry} from '../src/materials/material-registry.js';
@@ -80,4 +80,58 @@ test('lab uses existing Material Registry textures and lives outside 2D game Bui
  const builder=readFileSync(new URL('../builder.html',import.meta.url),'utf8');
  assert.doesNotMatch(game,/sculpt-lab-main|sculpt-height-model/);
  assert.doesNotMatch(builder,/sculpt-lab-main|sculpt-height-model/);
+});
+
+test('V11 plateau brush sets exact height 3 on first gesture and never stacks',()=>{
+ const base=createSculptTerrain({width:20,height:16});
+ const settings={mode:'plateau',target:3,radius:3,strength:1,
+   edgeSoftness:0,points:[{x:10.5,y:8.5}]};
+ const first=applySculptStroke(base,settings);
+ assert.equal(sculptHeightAt(first,10,8),3);
+ assert.equal(sculptHeightAt(first,8,8),3,'hard edge is a true flat plateau');
+ assert.equal(sculptHeightAt(first,4,8),2);
+ const overlap=applySculptStroke(base,{...settings,points:[
+  {x:10.5,y:8.5},{x:10.5,y:8.5},{x:11.5,y:8.5},{x:10.5,y:8.5}]});
+ assert.equal(sculptHeightAt(overlap,10,8),3);
+ assert.equal(sculptHeightAt(overlap,11,8),3);
+ assert.deepEqual(applySculptStroke(first,settings),first,'same target cannot stack heights');
+ assert.deepEqual(base,createSculptTerrain({width:20,height:16}),'source immutable');
+ const exported=serializeSculptTerrain(overlap);
+ assert.deepEqual(importSculptTerrain(exported),overlap);
+});
+test('V11 feathered plateau has soft rim but interior stays EXACT target',()=>{
+ const base=createSculptTerrain({width:20,height:20});
+ const plateau=applySculptStroke(base,{mode:'plateau',target:7,edgeSoftness:.55,
+   radius:5,points:[{x:10.5,y:10.5}],strength:1});
+ assert.equal(sculptHeightAt(plateau,10,10),7);
+ assert.equal(sculptHeightAt(plateau,11,10),7);
+ assert.ok(sculptHeightAt(plateau,14,10)>2 && sculptHeightAt(plateau,14,10)<7);
+ assert.equal(sculptHeightAt(plateau,16,10),2);
+});
+test('V11 brush stroke is monotonic and overlap-independent across pointer frames',()=>{
+ const base=createSculptTerrain({width:26,height:18});
+ const points=[{x:8.5,y:9.5},{x:9.5,y:9.5},{x:10.5,y:9.5},{x:11.5,y:9.5}];
+ const full=applySculptStroke(base,{points,mode:'raise',strength:2,radius:2.5});
+ const repeat=applySculptStroke(base,{points:[...points,...points],mode:'raise',strength:2,radius:2.5});
+ assert.deepEqual(full,repeat,'overlap and repeats never compound elevation');
+ assert.equal(sculptHeightAt(full,9,9),4,'one raise stroke uses strength 2, not 4/6');
+ const depression=applySculptStroke(full,{points,mode:'dig',strength:2,radius:2.5});
+ assert.equal(sculptHeightAt(depression,9,9),2);
+ assert.equal(sculptFaces(base).length,0);
+});
+test('V11 visual rounding is separate from height data and preserves original 2D schema',()=>{
+ const hard=sculptFaceContour({width:28,height:54,smoothness:0});
+ const soft=sculptFaceContour({width:28,height:54,smoothness:.85});
+ assert.equal(hard.corner,0);
+ assert.ok(soft.corner>0&&soft.undulation>0);
+ assert.deepEqual(createSculptTerrain(),createSculptTerrain());
+ const source=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+ assert.match(source,/ctx\.quadraticCurveTo/);
+ assert.match(source,/visualSmoothness/);
+ assert.doesNotMatch(source,/WorldDocument|collisionWorld|isBlocked/);
+ const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ for(const marker of ['data-mode="plateau"','id="level-up"','id="level-down"',
+   'id="target"','id="edge"','id="visual-smooth"']){
+   assert.ok(page.includes(marker),marker);
+ }
 });
