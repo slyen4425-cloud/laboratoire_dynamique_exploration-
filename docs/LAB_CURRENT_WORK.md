@@ -1,3 +1,16 @@
+# Lot actif — 18/10/2026 — V27 pinceau de vraies routes et zones peintes
+
+- **Demande :** ancienne carte vierge conservait une fausse route ; absence de pinceau pour peindre les routes et une texture différente sur l'herbe (fleurs/détails plus tard). La route décorative est corrigée dans V25 ; l'idle/marche native est raccordée dans V26.
+- **Base :** V26 source `83b3e8ade681529fe9532831732fa2157db15901`, CI [39167488794](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39167488794) SUCCESS, checkpoint `checkpoint/exploration-sculpt-native-actor-motion-v26-prevalidation-2026-10-18`. START `checkpoint/exploration-start-sculpt-surface-paint-v27-2026-10-18`, branche `work/exploration-sculpt-surface-paint-v27-2026-10-18`.
+- **Périmètre et autorité :** `normalizeWorldSurface` reste **unique autorité** des géométries de route (`routes[]`), zones (`zones[]`) et matériaux sémantiques. Un petit adapter exclusif au labo sculptable permet d'ajouter/retirer des strokes WorldSurface v3 et les range dans `sculpt-preview-scene` v1, propriété facultative `surface`. Le type enregistré est réutilisable par WorldDocument mais ce prototype **n'est pas le Builder canonique**. Aucune route fictive dérivée d'une texture. Le rendu sur hauteur 2,5D consomme le matériau via Material Registry et Asset Adapter, sans influer sur les collisions; les futures fleurs sont des decals, pas un nouveau sol.
+- **UX :** palette `🎨 Textures` visible aussi smartphone : route de terre, herbe, terre forestière, sable, neige, sol rocheux ; largeur de tracé, effacer au toucher, annuler/rétablir, aperçu pendant le geste ; JSON scène exporte/réimporte les features avec validations. `Nouvelle carte` efface routes/zones, sans altérer les formats anciens. La bande `Route exemple` reste uniquement visuelle sur la carte de démonstration et désactivée sur carte vierge/importée.
+- **Gels :** V21 caméra/vitesse/performance validés, V22 collisions/eau, V23 objets/visuels, V24 New Map, V26 MapActor natif, Builder/WorldDocument existants, Combat/Encounter, matériaux/images officiels, aucune intervention dans main code fonctionnel.
+- **Tests :** Node normalisation native et roundtrip, invalides protégés ; Chromium smartphone événements souris réels, zone et route visibles avec assets natifs, undo/redo, export/import et nouvelle carte sans anciennes textures ; full CI sentinelles et règles de gouvernance. Vérification esthétique/tactile manuelle du créateur attendue.
+- **Risques / rollback :** rendu raster des strokes 2.5D et mapping terrain/perspective encore expérimentaux ; limites 80 features, 512 points/tracé pour préservation performance. Le passage de route sur un obstacle n'implique pas autorisation de traverser une falaise ; Collision World reste propriétaire. V26 checkpoint demeure rollback.
+- **Statut :** prévalidation CI V27 du SHA final en cours ; pas de publication si rouge.
+
+---
+
 # Lot actif — 18/10/2026 — V26 rétablir idle/marche sur avatar de navigation sculpté
 
 - **Retour :** déplacement du héros dans labo sculpture ressemble à du glissement, pas d'idle ni de marche simulée contrairement au moteur précédent.
