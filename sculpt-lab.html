@@ -247,7 +247,9 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 .new-map-confirm input{flex:0 0 auto;width:20px;height:20px;accent-color:#73d3bd}
 #new-map-create{background:#276f65;border-color:#8bd2bd;font-weight:800}
 @media(max-width:600px){
- .editor-switch #new-map-toggle{font-size:.72rem;padding:5px 6px}
+ .editor-switch{width:100%;min-width:0;max-width:100%;overflow:hidden}
+ .editor-switch button{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+ .editor-switch #new-map-toggle{flex:0 0 78px;max-width:78px;min-width:0;font-size:.72rem;padding:5px 3px}
  .new-map-content{padding:12px;gap:10px}
 }
 </style>
