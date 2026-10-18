@@ -461,6 +461,50 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.terraced_warm.03',
+    label: '2,5D · Falaise terrasses · roche ambrée',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.terraced_warm.03', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
+    baseSize: { width: 768, height: 384 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
+      heightRatio: 0.66, offsetX: 0, offsetY: 0.08 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.cracked_cool.04',
+    label: '2,5D · Falaise fracturée · gris froid',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.cracked_cool.04', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
+    baseSize: { width: 768, height: 384 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
+      heightRatio: 0.66, offsetX: 0, offsetY: 0.08 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.short_round.01',
+    label: '2,5D · Falaise courte · gris bleu',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.short_round.01', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
+    baseSize: { width: 470, height: 384 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.90,
+      heightRatio: 0.66, offsetX: 0, offsetY: 0.08 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.relief.cliff.corner_sand.02',
+    label: '2,5D · Angle de falaise · grès chaud',
+    kind: 'rock',
+    library: { categoryId: 'rocks', folderId: 'rocks/general', provenance: 'pilot' },
+    visual: { assetId: 'object.relief.cliff.corner_sand.02', shoreContact: { anchorYRatio: 0.38, widthRatio: 0.84 } },
+    baseSize: { width: 420, height: 405 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.82,
+      heightRatio: 0.60, offsetX: 0, offsetY: 0.08 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.relief.waterfall.blue.01',
     label: '2,5D · Cascade bleue décorative',
     kind: 'decor',
