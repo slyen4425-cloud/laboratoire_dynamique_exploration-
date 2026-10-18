@@ -271,21 +271,30 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
   </select>
  </label>
  <label>Visuel existant <select id="object-definition" aria-label="Objet à placer"></select></label>
+ <label id="object-variant-wrap" hidden>Vue de la maison
+  <select id="object-variant" aria-label="Vue de la maison, avant côté ou arrière"></select>
+ </label>
  <label>Mode <select id="object-action" aria-label="Action sur les objets">
-   <option value="place">Placer au toucher</option><option value="remove">Supprimer au toucher</option>
+   <option value="place">Placer au toucher</option><option value="select">Sélectionner / modifier</option>
+   <option value="remove">Supprimer au toucher</option>
  </select></label>
  <label>Taille <output id="object-scale-value">40 %</output>
    <input id="object-scale" type="range" min="25" max="120" step="5" value="40">
  </label>
- <label>Rotation <output id="object-rotation-value">0°</output>
-  <input id="object-rotation" type="range" min="0" max="355" step="5" value="0">
+ <label>Rotation au sol <output id="object-rotation-value">0°</output>
+  <input id="object-rotation" type="range" min="0" max="359" step="1" value="0">
  </label>
+ <div class="object-actions">
+  <button type="button" id="object-turn-left">↶ 45°</button>
+  <button type="button" id="object-turn-right">↷ 45°</button>
+ </div>
+ <output id="object-selected">Aucun objet sélectionné</output>
  <div class="object-actions">
    <button type="button" id="object-undo" disabled>↶ Objet</button>
    <button type="button" id="object-redo" disabled>↷ Objet</button>
  </div>
  <output id="object-count">Aucun objet placé</output>
- <small>Pose au doigt. Ces objets sont enregistrés avec « Exporter scène », pas avec l'export hauteurs seul.</small>
+ <small>Choisis « Sélectionner / modifier » et touche un objet pour changer angle, taille ou vue. Angle et vue avant/côté/arrière sont distincts. Utilise Exporter scène pour sauvegarder.</small>
 </section>
 <section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
   <strong>🚶 Test de navigation</strong>
@@ -390,6 +399,6 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-navigation-performance-v21"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-object-variants-v23"></script>
 </body>
 </html>
