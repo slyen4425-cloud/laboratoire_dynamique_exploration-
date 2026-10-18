@@ -13,29 +13,55 @@ export function sculptHeightAt(terrain,x,y){
   if(!terrain||x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
   return terrain.levels[y*terrain.width+x];
 }
-export function applySculptBrush(terrain,{x,y,radius=3,strength=1,mode='raise',target=null}={}){
-  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return terrain;
-  if(!['raise','dig','flatten','smooth'].includes(mode))return terrain;
-  const r=clamp(Number(radius)||1,0.5,9),power=clamp(int(strength,1),1,3);
-  const out=[...terrain.levels],focus=int(target,sculptHeightAt(terrain,Math.floor(x),Math.floor(y)));
-  for(let cy=Math.max(0,Math.floor(y-r));cy<=Math.min(terrain.height-1,Math.ceil(y+r));cy++){
-    for(let cx=Math.max(0,Math.floor(x-r));cx<=Math.min(terrain.width-1,Math.ceil(x+r));cx++){
-      const d=Math.hypot(cx+.5-x,cy+.5-y);
-      if(d>r)continue;
-      const p=clamp(1-d/(r+.5),0,1),idx=cy*terrain.width+cx,now=terrain.levels[idx];
-      const step=clamp(Math.ceil(power*p),1,3);
-      if(mode==='raise')out[idx]=clamp(now+step,0,7);
-      if(mode==='dig')out[idx]=clamp(now-step,0,7);
-      if(mode==='flatten')out[idx]=clamp(now+clamp(focus-now,-step,step),0,7);
-      if(mode==='smooth'){
-        const neighbors=[sculptHeightAt(terrain,cx-1,cy),sculptHeightAt(terrain,cx+1,cy),
-          sculptHeightAt(terrain,cx,cy-1),sculptHeightAt(terrain,cx,cy+1)];
-        const mean=Math.round((now*2+neighbors.reduce((a,b)=>a+b,0))/6);
-        out[idx]=clamp(now+clamp(mean-now,-step,step),0,7);
+// One immutable heightfield authority. Visual roundness never changes these values.
+// hardness 100 = a flat exact-edged brush; hardness 0 = progressive feather from center.
+// "plateau" paints the selected height *exactly* in the brush core, even with one touch.
+export function applySculptBrush(
+  terrain, {
+    x, y, radius = 3, strength = 1,
+    mode = 'raise', target = null, hardness = 65
+  } = {}
+) {
+  if (!terrain || !Number.isFinite(x) || !Number.isFinite(y)) return terrain;
+  if (!['raise', 'dig', 'flatten', 'smooth', 'plateau'].includes(mode)) return terrain;
+  const r = clamp(Number(radius) || 1, 0.5, 9);
+  const power = clamp(int(strength, 1), 1, 3);
+  const edge = clamp(Number.isFinite(Number(hardness)) ? Number(hardness) : 65, 0, 100) / 100;
+  const base = terrain.levels;
+  const out = [...base];
+  const px = clamp(Math.floor(x), 0, terrain.width - 1);
+  const py = clamp(Math.floor(y), 0, terrain.height - 1);
+  const focus = clamp(int(target, sculptHeightAt(terrain, px, py)), 0, 7);
+  const core = r * edge;
+  for (let cy = Math.max(0, Math.floor(y - r)); cy <= Math.min(terrain.height - 1, Math.ceil(y + r)); cy++) {
+    for (let cx = Math.max(0, Math.floor(x - r)); cx <= Math.min(terrain.width - 1, Math.ceil(x + r)); cx++) {
+      const distance = Math.hypot(cx + .5 - x, cy + .5 - y);
+      if (distance > r) continue;
+      const influence = distance <= core || edge >= 1 ? 1 :
+        clamp((r - distance) / Math.max(.0001, r - core), 0, 1);
+      if (influence <= 0) continue;
+      const idx = cy * terrain.width + cx, now = base[idx];
+      const step = Math.max(1, Math.ceil(power * influence));
+      if (mode === 'raise') out[idx] = clamp(now + step, 0, 7);
+      if (mode === 'dig') out[idx] = clamp(now - step, 0, 7);
+      if (mode === 'flatten') out[idx] = clamp(now + clamp(focus - now, -step, step), 0, 7);
+      if (mode === 'plateau') out[idx] = clamp(Math.round(now + (focus - now) * influence), 0, 7);
+      if (mode === 'smooth') {
+        let sum = now * 2, count = 2;
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nx = cx + dx, ny = cy + dy;
+          if (nx >= 0 && ny >= 0 && nx < terrain.width && ny < terrain.height) {
+            sum += sculptHeightAt(terrain, nx, ny);
+            count++;
+          }
+        }
+        const mean = Math.round(sum / count);
+        out[idx] = clamp(now + clamp(mean - now, -step, step), 0, 7);
       }
     }
   }
-  return Object.freeze({...terrain,levels:Object.freeze(out)});
+  if (out.every((v, i) => v === base[i])) return terrain;
+  return Object.freeze({ ...terrain, levels: Object.freeze(out) });
 }
 export function sculptFaces(terrain){
   const faces=[];
