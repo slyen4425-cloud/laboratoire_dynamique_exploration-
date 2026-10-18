@@ -128,7 +128,7 @@ try{
     throw Error('V11 feathered brush not producing level 6 and intermediate heights: '+JSON.stringify(feather));
 
   // Render smoothing toggles pixels only; the serialized heightfield stays byte identical.
-  const smoothResult=await run(\`(async()=> {
+  const smoothResult=await run(`(async()=> {
     const slider=document.querySelector('#visual-smooth');
     const snap=()=>{document.querySelector('#export').click();return document.querySelector('#json').value;};
     const heightBefore=snap();
@@ -145,7 +145,7 @@ try{
       if(hard[i]!==curved[i]||hard[i+1]!==curved[i+1]||hard[i+2]!==curved[i+2])changed++;
     }
     return {changed,sameHeights:heightBefore===snap()};
-  })()\`);
+  })()`);
   if(!smoothResult.sameHeights||smoothResult.changed<10)
     throw Error('V11 visual rounding fails to alter only pixels: '+JSON.stringify(smoothResult));
 
