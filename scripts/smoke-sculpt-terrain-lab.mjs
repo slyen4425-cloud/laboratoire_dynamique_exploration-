@@ -80,12 +80,13 @@ try{
   const send=(method,params)=>new Promise(done=>{
     const id=++seq;pending.set(id,done);socket.send(JSON.stringify({id,method,params}));
   });
+  await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:center.x,y:center.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:center.x,y:center.y,button:'left',clickCount:1});
   await sleep(200);
   const raised=await run("window.__sculptLabProbe()");
-  if(raised.faceCount<1||raised.levelSpread<2)throw Error('Real mouse stroke did not sculpt the map: '+JSON.stringify(raised));
+  if(raised.faceCount<1||raised.levelSpread<2)throw Error('Real mouse stroke did not sculpt the map: '+JSON.stringify({raised,center,events:await run('window.__sculptInputEvents')}));
   await run(`(async()=>{const s=document.querySelector('#material');s.value='ground.snow';
    s.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#export').click();
    await new Promise(ok=>setTimeout(ok,120));return true;})()`);
