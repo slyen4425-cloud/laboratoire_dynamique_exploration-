@@ -1,3 +1,16 @@
+# Lot actif — 18/10/2026 — V18 assets visuels natifs du nouveau relief
+
+- **Demande :** après test de navigation V17, raccorder les visuels déjà exploitables sans forcer la réutilisation des assets inadaptés. Référence de compatibilité : [LAB_SCULPT_VISUAL_COMPATIBILITY_V18.md](LAB_SCULPT_VISUAL_COMPATIBILITY_V18.md).
+- **Base :** V17 `babb31eff6bafc8423f06af6a833e1b5a41ba0c8` ; START `checkpoint/exploration-start-sculpt-visual-materials-v18-2026-10-18`, branche `work/exploration-sculpt-visual-materials-v18-2026-10-18`. V16 et V17 ont leurs checkpoints prévalidation, rollback de l'éditeur 2D V6 intact.
+- **Périmètre homogène :** choix de six surfaces déjà déclarées (herbe, sol forêt, montagne, neige, sable, volcan) et quatre matériaux d'eau (bleue, turquoise, rivière forestière, marais) dans le laboratoire sculptable. Textures via Material Registry + Asset Adapter seulement ; chargements d'images protégés contre les retours asynchrones inversés. Le héros SVG du test V17 reste le visuel acteur officiel du laboratoire, sans nouvelle autorité.
+- **Responsabilités :** Material Registry/Asset Adapter possèdent identifiants, visuels et fichiers ; renderer rend les volumes à partir du modèle ; `sculpt-height-model` conserve sol/eau, aucun matériau ne définit la collision. La navigation est la version V17 sans modification de règle.
+- **Gels :** fichiers `index.html`/`builder.html`, WorldDocument, Collision World et stepMovement V17, structures de données, sauvegarde JSON, waterLevels, roundness, historique, Combat/Encounter, routes canoniques, WorldObjects et faux contacts hauteur issus des sprites.
+- **Validation :** `npm test` + `npm run check`, vrai Chromium en 390×844 vérifiant les téléchargements des WebP et des pixels différents selon les textures, JSON inchangé, tests de navigation clavier/tactile V17, régressions eau/terre V16 et Builder/Combat. CI [39138102580](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39138102580) SUCCESS pour le SHA code `1e93bc10b8ec27472c9f90d57a4985e7b05ecd61`.
+- **Décision :** falaises SVG historiques, cascade, arbres/rochers placés, matériau lave et eau vectorielle canyon ne sont pas raccordés naïvement : revoir selon leurs responsabilités, collision et règles de rendu. Le pack visuel actuel est volontairement `mobile-test-128`, pas une livraison artistique HD.
+- **Statut :** GREEN technique source à consolider après dernier ajout documentaire ; prévalidation preview Pages possible via pin immuable et CI ; test sur téléphone et jugement artistique utilisateur encore attendus.
+
+---
+
 # Lot actif — 18/10/2026 — V17 Navigation sur terrain sculptable (prévalidation)
 
 - **Base :** checkpoint V16 immuable `0c7bf54cba34178e56ffcd894f6daf5317060f43` ; START `checkpoint/exploration-start-sculpt-navigation-v17-2026-10-18` ; branche `work/exploration-sculpt-navigation-v17-2026-10-18`.
