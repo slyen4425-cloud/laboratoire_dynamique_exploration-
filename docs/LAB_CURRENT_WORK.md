@@ -1,3 +1,16 @@
+# Lot actif — 18/10/2026 — V23 vues maisons et édition d'objets déjà placés
+
+- **Demande :** permettre de choisir les vues face/dos/côté des maisons existantes, rendre la rotation plus précise et modifier un objet déjà posé. Conserver V21 navigation/caméra validées et V22 contacts/protection de l'eau.
+- **Base vérifiée :** V22 source `fb640ea69743ffb00f5f0cf2fd4250b94d828c0b`, CI [39156714686](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39156714686) SUCCESS, checkpoint `checkpoint/exploration-sculpt-collision-fidelity-v22-prevalidation-2026-10-18`. START `checkpoint/exploration-start-sculpt-object-variants-v23-2026-10-18`, branche `work/exploration-sculpt-object-variants-v23-2026-10-18`.
+- **Périmètre :** raccord au `visual.variants` préexistant du catalogue `objectDefinitionCatalogV1` pour toit bleu, toit rouge et auberge. Les trois images Avant/Côté/Arrière restent fournies par l'Asset Adapter existant. Le `WorldObjectPlacement v1` garde sa structure intacte et son `overrides.visualVariantId`. Pose avec variante choisie ; mode « Sélectionner / modifier » pour une maison déjà posée ; rotation au degré (0–359) et boutons ±45°, changement d'échelle et variant sur sélection ; undo/redo et export/import scène v1 roundtrip. Aucun faux rendu 3D : une rotation plane ne remplace pas une vue latérale.
+- **Propriétaires :** Object Definition Catalog/Asset Adapter seuls propriétaires images et variantes ; WorldObject placements seuls propriétaires objet enregistré ; renderer lit la variante résolue ; input/éditeur ne modifie pas de données de relief ni WorldDocument.
+- **Gels :** navigation V21 acceptée, collisions pilotes V22, relief/eau, objets gameplay hors preview, Bridge, Builder 2D, Combat/Encounter, sauvegarde officielle et contrats.
+- **Tests :** Node validations variantes réelles / placements / formats legacy ; Chromium tactile avec pose maison vue côté, sélection, rotation 137°, passage vue arrière, asset chargé, export/import, tests anciens Builder/Combat/terrain. Validation graphique des visuels par utilisateur requise.
+- **Hors périmètre :** revoir le rendu d'arbres trois-quarts (sens artistique à préciser) ; ponts franchissables demandent le prochain lot de traversal, pas de pont visuel mensonger. Rochers standards déjà disponibles.
+- **Statut :** CI finale et publication prévalidation à confirmer, ne pas déclarer GREEN utilisateur.
+
+---
+
 # Lot actif — 18/10/2026 — V22 précision des contacts dans labo sculpté
 
 - **Retour créateur :** vitesse et caméra V21 validées ; collisions rochers jugées trop larges, eau accessible trop loin par rapport au visuel, contact arbres/maisons bancal ; conserver une petite lisière accessible pour les créatures aquatiques. Autres demandes (vues maisons, rotation/arbres, ponts) = lots visuels/fonctionnels séparés après collision.
