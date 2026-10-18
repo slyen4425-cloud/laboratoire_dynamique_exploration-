@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V22 précision des contacts dans labo sculpté
+
+- **Retour créateur :** vitesse et caméra V21 validées ; collisions rochers jugées trop larges, eau accessible trop loin par rapport au visuel, contact arbres/maisons bancal ; conserver une petite lisière accessible pour les créatures aquatiques. Autres demandes (vues maisons, rotation/arbres, ponts) = lots visuels/fonctionnels séparés après collision.
+- **Base :** source V21 `e9efec53680fd2a777cbee467260ded06142e6db`, CI [39153739660](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39153739660) et Pages [39153861190](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39153861190) SUCCESS ; START `checkpoint/exploration-start-sculpt-collision-fidelity-v22-2026-10-18`, branche `work/exploration-sculpt-collision-fidelity-v22-2026-10-18`.
+- **Périmètre / propriétaires :** Collision World reste seul décideur ; nouvelles règles pilotes de profil via `collisionContext.objectCatalog` (catalogue natif dérivé sans modifier les ObjectDefinitions du jeu) et `sculptNavigation.shoreEntryFraction`. Les formes d'objets sont rapprochées du pied visible : blocs de roches plus étroits, maisons et arbres contact de sol seulement. Approche dans une faible bordure d'eau (14% d'une cellule depuis un bord sec), puis blocage natation : les créatures capables de nager traversent, vol inchangé. Aucun autre chemin collision affecté en l'absence du contexte explicite.
+- **Gels :** déplacements/horloge/caméra/perf V21, editor surface et eau v16, Builder 2D, WorldDocument, vrais ObjectDefinitions, props Asset Adapter, matériaux, sauvegardes et formats, Combat/Encounter, autres modules.
+- **Tests :** Node profils obstacles canoniques vs preview, étroite lisière, centre océan bloqué, nager/voler, contrepropriété 2D inchangé, sentinelles générales et Chromium mobile. Validation du ressenti mobile par utilisateur attendue avant GREEN utilisateur.
+- **Hors lot :** silhouettes d'arbres trop en trois-quarts, vues face/dos/côté existantes à exposer et rotation, remise en place des ponts avec vrai contrat traversable.
+- **Statut :** tests et CI en cours ; publication interdite si rouge.
+
+---
+
 # Lot actif — 18/10/2026 — V21 navigation performance et cadrage de caméra sur téléphone
 
 - **Retour réel utilisateur :** la vitesse V19/V20 reste ressentie comme extrêmement lente, possiblement des saccades ; la caméra paraît trop haute/éloignée de l'ancien éditeur. Aucune validation utilisateur pour V20 objets. Diagnostic précis : le callback `navigationTick` bornait chaque frame à **32 ms**, perdant le temps écoulé dès que le rendu durait plus longtemps, et `draw()` recomposait le terrain complet pour chaque pas du personnage. Le test V19 ne vérifiait que >8 unités après 420ms, sans simulation d'un vrai gel mobile.
