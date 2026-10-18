@@ -39,21 +39,51 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 #undo,#redo{min-width:118px;font-weight:700}
 button:disabled{opacity:.43;cursor:not-allowed}
 @media(max-width:600px){.water-authoring{gap:5px}.water-authoring strong{width:100%}.water-authoring button{flex:1 1 28%}}
+
+.editor-switch{display:flex;align-items:center;gap:9px;background:#172c36;border:1px solid #3e6971;border-radius:12px;padding:7px}
+.editor-switch button{flex:1;min-height:46px;font-weight:800;font-size:1.05rem}
+.editor-switch button.active{background:#28646b;border-color:#9be9db}
+#active-tool-label{color:#b8d8dc;font-size:.81rem;min-width:9rem}
+[hidden]{display:none!important}
+.tool-panel{background:#13242b;border-radius:10px;padding:6px}
+.precision-toggle{border:1px solid #68a9a1;font-weight:750}
+.precision-toggle input{width:20px;height:20px;accent-color:#62d8c0}
+.precision-actions{background:#162f35;border:1px solid #4b777c;padding:6px;border-radius:10px}
+.precision-actions button{min-height:43px;min-width:43px}
+#apply-precision{background:#2e796c;border-color:#b1efd8;font-weight:850}
+.precision-tip{font-size:.8rem;color:#c1e3df;flex:1}
+[data-panel]{display:flex;align-items:center}
+@media(max-width:600px){.editor-switch{flex-wrap:wrap}.editor-switch button{flex:1;min-height:44px}
+#active-tool-label{width:100%;min-width:0}
+.precision-tip{width:100%;flex:1 1 100%}
+#apply-precision{flex:1}
+}
 </style>
 </head>
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
-<p>Volume du terrain et de l’eau sculptables, arrondi par coup de pinceau, Annuler / Rétablir.</p></div>
+<p>Terre ou Eau · viser, ajuster et confirmer avec précision, sans toucher à la texture de l’eau.</p></div>
 <a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
 <main>
-<section class="controls" aria-label="Outils de sculpture">
+<nav class="editor-switch" aria-label="Choisir la matière à sculpter">
+<button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
+<button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
+<span id="active-tool-label" role="status">Terre · Creuser</span>
+</nav>
+<section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
 <button data-mode="smooth">Lisser les hauteurs</button>
 <button data-mode="plateau">Plateau · hauteur exacte</button>
+<div class="levels" aria-label="Hauteur exacte du plateau">
+<label for="target">Hauteur</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
+<output id="target-value" for="target">3</output>
+<input id="target" type="range" min="0" max="7" value="3" step="1" aria-label="Niveau exact 0 à 7">
+<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
+</div>
 </section>
-<section class="controls water-authoring" aria-label="Eau volumique sculptable">
+<section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
 <strong>💧 Sculpter l’eau</strong>
 <button data-mode="water-fill">Remplir au niveau</button>
 <button data-mode="water-rise">Monter l’eau +</button>
@@ -64,28 +94,32 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
 </section>
 <section class="controls" aria-label="Paramètres communs des pinceaux">
-<span class="control"><label for="radius">Pinceau <b id="radius-value">3</b></label><input id="radius" type="range" min="1" max="8" value="3"></span>
+<span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="8" value="3" step="0.5"></span>
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
 <label class="control">Bord doux <b id="edge-value">0 %</b>
 <input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
-<div class="levels" aria-label="Hauteur exacte du plateau">
-<label for="target">Hauteur</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
-<output id="target-value" for="target">3</output>
-<input id="target" type="range" min="0" max="7" value="3" step="1" aria-label="Niveau exact 0 à 7">
-<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
-</div>
+
+<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button><button id="redo" type="button" disabled>↷ Rétablir</button><button id="reset">Exemple</button><button id="flat">Sol plat</button>
 </section>
+<section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
+<span class="precision-tip">1. Vise au doigt · 2. Ajuste · 3. Applique</span>
+<button type="button" id="nudge-left" aria-label="Déplacer le pinceau d'une case à gauche">←</button>
+<button type="button" id="nudge-up" aria-label="Déplacer le pinceau d'une case en haut">↑</button>
+<button type="button" id="nudge-down" aria-label="Déplacer le pinceau d'une case en bas">↓</button>
+<button type="button" id="nudge-right" aria-label="Déplacer le pinceau d'une case à droite">→</button>
+<button type="button" id="apply-precision" disabled>✓ Appliquer ici</button>
+</section>
 <section class="controls">
-<label class="control">Sol réel
+<span data-panel="ground"><label class="control">Sol réel
 <select id="material"><option value="grass.forest">Herbe (sol 2D)</option>
 <option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
-<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label>
-<label class="control">Roche
+<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
+<span data-panel="ground"><label class="control">Roche
 <select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
-<option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option></select></label>
+<option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option></select></label></span>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
-<label class="control">Arrondi du prochain passage <b id="visual-smooth-value">95 %</b>
+<label data-panel="ground" class="control">Arrondi du prochain passage <b id="visual-smooth-value">95 %</b>
 <input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi de roche appliqué uniquement aux prochaines cellules sculptées, 0 à 150 %"></label>
 <button id="fit">Ajuster la vue</button>
 <label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
@@ -100,6 +134,6 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <button id="import">Importer ce JSON</button><small>Le niveau d’eau est absolu : sa profondeur dépend du sol. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-water-volume-v13"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-precision-switch-v14"></script>
 </body>
 </html>
