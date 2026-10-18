@@ -1,3 +1,14 @@
+# Lot actif — 18/10/2026 — V12 sculpture : pied de falaise, aperçu de pinceau et eau/route
+
+- **Retour créateur :** sommet rocheux mieux arrondi en V11 mais pied toujours rectangulaire ; le pinceau ne montre pas quelles cases il modifie (particulièrement au doigt) ; besoin d'un essai eau et route sur un relief sculptable.
+- **Base GREEN technique, artistique à confirmer :** V11 publiée `748d72f77b6450b96f66775d14830fe7601c5f3e` ; CI 39106968520 SUCCESS et Pages 39107021794 SUCCESS ; V6 2D `3b50137714d44c165b0ceca0538bea4b30501de3` reste sauvegardée. Checkpoint START `checkpoint/exploration-start-sculpt-river-road-v12-2026-10-18` sur la base exacte et branche `work/exploration-sculpt-river-road-v12-2026-10-18`.
+- **Périmètre :** sans modifier le modèle de hauteur, profil visuel plus rond au pied des parois, notamment faces continues ; aperçu du pinceau dérivé du calcul de sa véritable empreinte, cellules centrales et bord doux visibles, pointeur tactile et hauteur cible ; projection facultative de rivière et de route **sur les surfaces rehaussées**, à partir de chemins de démonstration purement visuels et des matériaux existants Material Registry. Essai isolé dans `sculpt-lab.html` uniquement.
+- **Propriétaires :** `sculpt-height-model` unique source hauteur/empreinte ; `sculpt-height-renderer` affiche roches, preview et overlays ; `sculpt-lab-main` porte entrées écran et visibilité de démo ; Material Registry et Asset Adapter fournissent eau/route. Aucun second modèle de WorldSurface/WorldDocument.
+- **Gels :** `index.html`, `builder.html`, format de sauvegarde V1 heightfield, gameplay Collision/Traversal/Camera, couches Monde/Surface, mouvement, Encounter/Combat et chemins 2D sûrs. Eau et route sont d'abord **des aperçus graphiques expérimentaux** sans logique de baignade ou franchissement.
+- **Gates :** vrais pixels de pied arrondi (0 vs max), empreinte dessinée identique au masque de la sculpture, clic souris et tactile via Chromium, zones eau/route visibles et interrupteurs fonctionnels, matériaux canonisés, performance, Node / npm check / CI Builder/Encounter/Combat, rollback et preview immutable ; avis esthétique sur téléphone obligatoire.
+
+---
+
 # Lot actif — 18/10/2026 — V11 : pinceau niveaux précis et habillage de relief adouci
 
 - **Retour auteur sur premier prototype :** volume jugé prometteur mais difficile de former au doigt un plateau lisse d'exactement trois niveaux ; rochers et relief trop cubiques et artistiquement faibles.
