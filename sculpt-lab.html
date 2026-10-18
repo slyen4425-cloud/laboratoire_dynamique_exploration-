@@ -230,6 +230,26 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
   .editor-switch #mode-objects{font-size:.77rem;padding:4px;min-width:0}
   body.sculpt-immersive .editor-switch{width:min(365px,calc(100vw - 12px))}
 }
+/* V24: explicit protected new-map action; never compete with immersive canvas. */
+.editor-switch #new-map-toggle{flex:0 0 auto;font-size:.82rem;min-height:37px;padding:6px 8px}
+#new-map-panel{position:absolute;inset:0;z-index:24;display:grid;place-items:center;
+ background:rgba(8,19,27,.79);padding:12px;overflow-y:auto;overscroll-behavior:contain}
+#new-map-panel[hidden]{display:none!important}
+.new-map-content{display:grid;gap:13px;width:min(420px,100%);max-height:100%;
+ overflow-y:auto;background:#1c303b;border:1px solid #86c6be;border-radius:13px;
+ box-shadow:0 12px 28px #000b;padding:16px}
+.new-map-content strong{font-size:1.09rem}
+.new-map-dimensions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.new-map-dimensions label{display:grid;gap:6px;font-size:.82rem}
+.new-map-dimensions input{width:100%;min-width:0;padding:10px;font:inherit;
+ background:#122630;color:#e9f1f2;border:1px solid #65918e;border-radius:8px}
+.new-map-confirm{display:flex;align-items:flex-start;gap:9px;font-size:.81rem;line-height:1.45}
+.new-map-confirm input{flex:0 0 auto;width:20px;height:20px;accent-color:#73d3bd}
+#new-map-create{background:#276f65;border-color:#8bd2bd;font-weight:800}
+@media(max-width:600px){
+ .editor-switch #new-map-toggle{font-size:.72rem;padding:5px 6px}
+ .new-map-content{padding:12px;gap:10px}
+}
 </style>
 </head>
 <body>
@@ -242,6 +262,7 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
+<button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
 <button type="button" id="palette-toggle" aria-label="Réduire la palette d'outils" aria-expanded="true" hidden>▴</button>
 <button type="button" id="fullscreen-toggle" aria-label="Passer en plein écran" aria-pressed="false">⛶ Plein écran</button>
@@ -263,6 +284,27 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<section id="new-map-panel" role="dialog" aria-modal="true" aria-label="Créer une carte vierge" hidden>
+ <form id="new-map-form" class="new-map-content">
+  <strong>🗺 Nouvelle carte vierge</strong>
+  <small>Sol plat, sans eau ni objet. La carte actuelle et ses annulations seront effacées.</small>
+  <div class="new-map-dimensions">
+   <label for="new-map-width">Largeur (cases)
+    <input type="number" id="new-map-width" min="8" max="80" step="1" value="36" required>
+   </label>
+   <label for="new-map-height">Hauteur (cases)
+    <input type="number" id="new-map-height" min="8" max="64" step="1" value="24" required>
+   </label>
+  </div>
+  <label class="new-map-confirm"><input id="new-map-confirm" type="checkbox" required>
+   Je confirme la suppression de la carte actuelle, de son eau et de ses objets.
+  </label>
+  <div class="object-actions">
+   <button type="button" id="new-map-cancel">Annuler</button>
+   <button type="submit" id="new-map-create" disabled>Créer la carte vierge</button>
+  </div>
+ </form>
+</section>
 <section id="object-palette" aria-label="Placer les objets visuels" hidden>
  <strong>🌳 Placer un objet sur le relief</strong>
  <label>Catégorie
@@ -364,7 +406,7 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
 
 
-<button id="reset">Exemple</button><button id="flat">Sol plat</button>
+<button id="reset">Exemple (relief seul)</button><button id="flat">Aplanir le terrain actuel</button>
 </section>
 <section class="controls">
 <span data-panel="ground"><label class="control">Sol réel
@@ -400,6 +442,6 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-object-variants-v23"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-new-blank-map-v24"></script>
 </body>
 </html>
