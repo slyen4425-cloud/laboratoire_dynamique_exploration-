@@ -42,7 +42,7 @@ import {
 import {
   createWorldObjectAssetResolver,
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from './assets/world-object-asset-adapter.js?rev=cliff-variety-v10';
 import {
   createUserWorldObjectAssetResolver
 } from './assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
@@ -51,7 +51,7 @@ import {
 } from './world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
   createComposedObjectDefinitionCatalog
-} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&shore=themeable-v7';
+} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&shore=themeable-v7&cliff=v10';
 import {
   objectDefinitionFromUserRecord
 } from './objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
@@ -528,7 +528,7 @@ const worldObjectImageLoader = createImageAssetLoader({
   resolveAsset:
     resolveWorldObjectAssetComposed,
   cacheRevision:
-    'world-object-library-v1-orientation-v1-canyon-art-v3-relief-v9'
+    'world-object-library-v1-orientation-v1-canyon-art-v3-relief-v10'
 });
 
 const requiredWorldObjectAssetIds = Object.freeze([
