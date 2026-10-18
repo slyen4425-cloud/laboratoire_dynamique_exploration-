@@ -756,6 +756,82 @@ try{
   await run("document.querySelector('#mode-ground').click()");
   console.log('V23 house 3 views/rotate/selected edit roundtrip Chromium:',
     JSON.stringify({views:v23Config.views,rotation:137,backAssetLoaded:rearLoaded}));
+
+  // V24: In Chromium with an existing nonempty V23 house/tree scene, simulate
+  // authored water, then test flatten-in-place, cancel New Map and confirm New Map.
+  const wetScene=await run(`(()=>{
+    const scene=JSON.parse(window.__v23Scene);
+    const col=7,row=5;
+    scene.terrain.waterLevels[row*scene.terrain.width+col]=6;
+    document.querySelector('#json').value=JSON.stringify(scene);
+    document.querySelector('#import').click();
+    const before=window.__sculptLabProbe();
+    document.querySelector('#flat').click();
+    const after=window.__sculptLabProbe();
+    document.querySelector('#scene-export').click();
+    window.__v24OldScene=document.querySelector('#json').value;
+    return {before,after,objects:JSON.parse(window.__v24OldScene).objects.length};
+  })()`);
+  if(wetScene.before.objects<2||wetScene.after.objects!==wetScene.before.objects||
+     wetScene.after.wetCells!==wetScene.before.wetCells||
+     wetScene.after.width!==wetScene.before.width||
+     wetScene.objects!==wetScene.before.objects)
+    throw Error('V24 flat should preserve dimensions, authored water and objects: '+JSON.stringify(wetScene));
+  const beforeCancel=await run(`(()=>{
+    document.querySelector('#new-map-toggle').click();
+    return {open:!document.querySelector('#new-map-panel').hidden,
+      expanded:document.querySelector('#new-map-toggle').getAttribute('aria-expanded'),
+      createDisabled:document.querySelector('#new-map-create').disabled,
+      proposedWidth:document.querySelector('#new-map-width').value};
+  })()`);
+  if(!beforeCancel.open||beforeCancel.expanded!=='true'||!beforeCancel.createDisabled||
+     Number(beforeCancel.proposedWidth)!==wetScene.before.width)
+    throw Error('V24 new map panel/confirmation not exposed: '+JSON.stringify(beforeCancel));
+  const canceled=await run(`(()=>{
+    document.querySelector('#new-map-width').value='18';
+    document.querySelector('#new-map-height').value='12';
+    document.querySelector('#new-map-cancel').click();
+    document.querySelector('#scene-export').click();
+    return {map:window.__sculptLabProbe(),
+      scene:document.querySelector('#json').value,
+      closed:document.querySelector('#new-map-panel').hidden};
+  })()`);
+  if(!canceled.closed||canceled.scene!==window.__v24OldScene||
+     canceled.map.objects!==wetScene.before.objects)
+    throw Error('V24 cancel mutated existing scene: '+JSON.stringify(canceled));
+  const newMap=await run(`(()=>{
+    document.querySelector('#new-map-toggle').click();
+    document.querySelector('#new-map-width').value='18';
+    document.querySelector('#new-map-height').value='12';
+    const agreed=document.querySelector('#new-map-confirm');
+    agreed.checked=true;agreed.dispatchEvent(new Event('change',{bubbles:true}));
+    const ready=!document.querySelector('#new-map-create').disabled;
+    document.querySelector('#new-map-create').click();
+    document.querySelector('#scene-export').click();
+    return {ready,created:window.__sculptLabProbe(),
+      scene:JSON.parse(document.querySelector('#json').value),
+      oldJson:document.querySelector('#json').value,
+      panelClosed:document.querySelector('#new-map-panel').hidden,
+      notice:document.querySelector('#notice').textContent};
+  })()`);
+  if(!newMap.ready||!newMap.panelClosed||newMap.created.width!==18||
+     newMap.created.height!==12||newMap.created.objects!==0||
+     newMap.created.wetCells!==0||newMap.created.authoredWaterCells!==0||
+     newMap.created.undoCount!==0||newMap.created.redoCount!==0||
+     newMap.created.faceCount!==0||newMap.scene.objects.length!==0||
+     newMap.scene.terrain.waterLevels.some(n=>n!==-1)||
+     !newMap.notice.includes('Carte vierge créée'))
+    throw Error('V24 new map did not reset scene and editor history: '+JSON.stringify(newMap));
+  await run("document.querySelector('#navigation-toggle').click()");
+  const navV24=await run('window.__sculptNavProbe()');
+  if(!navV24.enabled||!navV24.player||!navV24.joystickAttached||navV24.speed!==220)
+    throw Error('V24 new map lost validated navigation/camera: '+JSON.stringify(navV24));
+  await run("document.querySelector('#navigation-toggle').click()");
+  console.log('V24 new blank map, confirmed reset and cancellation Chromium:',
+    JSON.stringify({dimensions:'18x12',oldObjects:wetScene.before.objects,
+      oldWaterCells:wetScene.before.wetCells,newObjects:newMap.created.objects,
+      newWaterCells:newMap.created.wetCells,undoCount:newMap.created.undoCount,
+      navigationAfterCreate:navV24.enabled}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
