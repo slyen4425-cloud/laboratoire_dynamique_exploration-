@@ -1,6 +1,6 @@
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
-import {sculptHeightAt,sculptFaces} from '../world/sculpt-height-model.js';
+import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke} from '../world/sculpt-height-model.js';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
@@ -18,23 +18,35 @@ function color(colors,x,y,i){return colors[hash(x,y,i)%colors.length];}
 export function sculptFaceContour({width,height,smoothness=0}={}){
   const softness=Math.max(0,Math.min(1,Number(smoothness)||0));
   const corner=Math.min(width*.27,height*.3,7*softness);
-  const undulation=Math.min(2.4*softness,height*.10);
-  return Object.freeze({corner,undulation});
+  const undulation=Math.min(3.5*softness,height*.13);
+  const foot=Math.min(24*softness,height*.40,Math.max(2,width*.17));
+  const toe=Math.min(10*softness,height*.17,Math.max(1,width*.09));
+  return Object.freeze({corner,undulation,foot,toe});
 }
 function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   if(height<=0)return;
-  const {corner,undulation}=sculptFaceContour({width,height,smoothness});
-  // Rounded upper lip + sculpted foot: removes perfectly square hanging walls.
+  const {corner,undulation,foot,toe}=sculptFaceContour({width,height,smoothness});
+  // V12: the foot now curves OUTWARD into a broad rock toe, rather than
+  // a tiny rounded corner at each 28px voxel cell. Faces are rendered as
+  // continuous horizontal runs (see drawSculptTerrain).
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(x,y+corner);
-  ctx.quadraticCurveTo(x,y,x+corner,y);
-  ctx.quadraticCurveTo(x+width*.49,y+undulation,x+width-corner,y);
+  ctx.moveTo(x+corner,y);
+  ctx.quadraticCurveTo(x+width*.50,y-undulation*.42,x+width-corner,y);
   ctx.quadraticCurveTo(x+width,y,x+width,y+corner);
-  ctx.lineTo(x+width,y+height-corner);
-  ctx.quadraticCurveTo(x+width,y+height,x+width-corner,y+height);
-  ctx.quadraticCurveTo(x+width*.50,y+height-undulation*.75,x+corner,y+height);
-  ctx.quadraticCurveTo(x,y+height,x,y+height-corner);
+  ctx.lineTo(x+width,y+height*.72);
+  ctx.bezierCurveTo(x+width+toe*.10,y+height*.86,
+    x+width+toe,y+height-foot*.43,x+width+toe,y+height-foot*.17);
+  ctx.quadraticCurveTo(x+width+toe*.53,y+height+undulation*.48,
+    x+width-foot*.72,y+height+undulation*.33);
+  ctx.quadraticCurveTo(x+width*.5,y+height+undulation*.75,
+    x+foot*.72,y+height+undulation*.25);
+  ctx.quadraticCurveTo(x-toe*.52,y+height+undulation*.15,
+    x-toe,y+height-foot*.2);
+  ctx.bezierCurveTo(x-toe,y+height-foot*.55,
+    x-toe*.08,y+height*.84,x,y+height*.72);
+  ctx.lineTo(x,y+corner);
+  ctx.quadraticCurveTo(x,y,x+corner,y);
   ctx.closePath();
   ctx.clip();
   const gradient=ctx.createLinearGradient(x,y,x,y+height);
@@ -42,7 +54,7 @@ function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   gradient.addColorStop(.20,colors[1]);
   gradient.addColorStop(.72,colors[2]);
   gradient.addColorStop(1,colors[3]);
-  ctx.fillStyle=gradient;ctx.fillRect(x,y,width,height);
+  ctx.fillStyle=gradient;ctx.fillRect(x-toe-1,y-undulation-1,width+2*toe+2,height+2*undulation+2);
   // Broad mineral planes, softer than the old rectangular one-color extrusion.
   const shift=(hash(seed,91,2)%100)/100;
   const sideGradient=ctx.createLinearGradient(x,y,x+width,y+height*.35);
@@ -79,7 +91,99 @@ function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   }
   ctx.restore();
 }
-export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette='warm',visualSmoothness=.72,tile=SCULPT_TILE}={}){
+// Optional demonstration ribbons. These are NOT WorldSurface rivers/routes:
+// they only test material appearance on the independent heightfield raster.
+export const SCULPT_PREVIEW_RIBBONS=Object.freeze({
+  water:Object.freeze({materialId:'water.clear_blue',kind:'water',widthCells:2.8}),
+  road:Object.freeze({materialId:'road.dirt',kind:'path',widthCells:1.65})
+});
+export function sculptRibbonY(kind,cellX){
+  if(kind==='water')return 12.2+Math.sin(cellX*.32)*2.05+Math.sin(cellX*.81)*.18;
+  if(kind==='road')return 3.6+cellX*.16+Math.sin(cellX*.22)*.9;
+  return NaN;
+}
+function drawRibbonCell(ctx,{kind,col,row,x,y,w,h,overlay}){
+  if(!overlay?.visible)return false;
+  const feature=SCULPT_PREVIEW_RIBBONS[kind];
+  const span=feature.widthCells*h;
+  const leftY=sculptRibbonY(kind,col-1);
+  const middleY=sculptRibbonY(kind,col+.5);
+  const rightY=sculptRibbonY(kind,col+2);
+  const minY=Math.min(leftY,middleY,rightY)-feature.widthCells*.5-1;
+  const maxY=Math.max(leftY,middleY,rightY)+feature.widthCells*.5+1;
+  if(row+.5<minY||row+.5>maxY)return false;
+  ctx.save();ctx.beginPath();ctx.rect(x,y,w+.6,h+.6);ctx.clip();
+  const line=()=>{
+    ctx.beginPath();
+    for(let step=0;step<=12;step++){
+      const sx=x-w+step*(w*3/12);
+      const sy=y+(sculptRibbonY(kind,col-1+step*3/12)-row)*h;
+      if(step===0)ctx.moveTo(sx,sy);else ctx.lineTo(sx,sy);
+    }
+  };
+  const style=overlay.material?.render??{};
+  ctx.lineCap='round';ctx.lineJoin='round';
+  line();ctx.lineWidth=span+3;ctx.strokeStyle=
+    kind==='water'?(style.outerBankColor??'#507a7b'):(style.outerEdgeColor??'#544536');
+  ctx.globalAlpha=.72;ctx.stroke();
+  line();ctx.lineWidth=span;ctx.strokeStyle=
+    kind==='water'?(style.waterColor??'#39aee5'):(style.centerColor??'#977750');
+  ctx.globalAlpha=1;ctx.stroke();
+  if(overlay.texture&&typeof ctx.createPattern==='function'){
+    const pattern=ctx.createPattern(overlay.texture,'repeat');
+    if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
+      pattern.setTransform(new DOMMatrix().scale(.55));
+    if(pattern){line();ctx.lineWidth=span*.91;ctx.globalAlpha=.85;ctx.strokeStyle=pattern;ctx.stroke();}
+  }
+  line();ctx.lineWidth=Math.max(.55,span*.045);ctx.globalAlpha=kind==='water'?.36:.21;
+  ctx.strokeStyle=kind==='water'?(style.highlightColor??'#d7f8ff'):(style.highlightColor??'#e9c894');
+  ctx.stroke();
+  ctx.restore();return true;
+}
+
+// Preview uses the EXACT same footprint weights as applySculptStroke.
+// Each tinted tile is a cell that a click here would really affect.
+export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftness=0,
+  mode='dig',target=3,strength=1,tile=SCULPT_TILE,zoom=1}={}){
+  if(!ctx||!terrain||!points.length)return Object.freeze({cells:0,centerHeight:null});
+  const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness});
+  const candidate=applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength});
+  const w=tile.width,h=tile.height,rise=tile.rise;
+  const tint=mode==='dig'?'#ffc181':mode==='raise'?'#9ee2ff':
+    mode==='plateau'?'#b2ffb0':'#f4e6ba';
+  ctx.save();
+  for(const m of marks){
+    const level=sculptHeightAt(terrain,m.x,m.y);
+    const next=sculptHeightAt(candidate,m.x,m.y);
+    const x=m.x*w,y=m.y*h-level*rise;
+    ctx.globalAlpha=.12+.29*m.weight;
+    ctx.fillStyle=tint;ctx.fillRect(x+.7,y+.7,w-1.4,h-1.4);
+    ctx.globalAlpha=.30+.50*m.weight;
+    ctx.strokeStyle=next!==level?'#f5ffff':'#d1d9dd';
+    ctx.lineWidth=Math.max(.65,1/Math.max(.32,zoom));
+    ctx.strokeRect(x+.9,y+.9,w-1.8,h-1.8);
+  }
+  const head=points[points.length-1];
+  const cx=Math.floor(head.x),cy=Math.floor(head.y);
+  const centerLevel=sculptHeightAt(terrain,cx,cy);
+  const after=sculptHeightAt(candidate,cx,cy);
+  if(cx>=0&&cy>=0&&cx<terrain.width&&cy<terrain.height){
+    const px=(cx+.5)*w,py=(cy+.5)*h-centerLevel*rise;
+    ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=1.5/Math.max(.32,zoom);
+    ctx.beginPath();ctx.moveTo(px-6,py);ctx.lineTo(px+6,py);
+    ctx.moveTo(px,py-6);ctx.lineTo(px,py+6);ctx.stroke();
+    const label=mode==='plateau'?'Niveau '+after:centerLevel+' → '+after;
+    ctx.font='bold 12px system-ui,sans-serif';
+    const labelW=ctx.measureText(label).width+18;
+    const lx=Math.max(2,Math.min(terrain.width*w-labelW-2,px+10));
+    const ly=py-56/Math.max(.7,zoom);
+    ctx.fillStyle='rgba(15,31,42,.93)';ctx.fillRect(lx,ly-17,labelW,23);
+    ctx.fillStyle='#f6fff9';ctx.fillText(label,lx+9,ly-1);
+  }
+  ctx.restore();
+  return Object.freeze({cells:marks.length,centerHeight:after});
+}
+export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette='warm',visualSmoothness=.72,overlays={},tile=SCULPT_TILE}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -93,38 +197,59 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
   const faces=sculptFaces(terrain);
   const south=new Map(),east=new Map();
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
-  for(let row=0;row<terrain.height;row++)for(let col=0;col<terrain.width;col++){
-    const idx=row*terrain.width+col,level=terrain.levels[idx];
-    const x=col*w,y=row*h-level*rise;
-    // Top surfaces retain the EXISTING material texture, not a separate cliff skin.
-    ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
-    ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
-      'rgba(0,0,0,.01)'],col,row,2);ctx.fillRect(x,y,w,h);
-    if(level>0){
-      const variation=hash(col,row,91)%5;
-      ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
-      ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
+  let waterCells=0,roadCells=0,faceRuns=0;
+  for(let row=0;row<terrain.height;row++){
+    // Draw all top surfaces of a row first, then contiguous wall runs.
+    // A 6-cell cliff has one curved foot, not six square block bottoms.
+    for(let col=0;col<terrain.width;col++){
+      const idx=row*terrain.width+col,level=terrain.levels[idx];
+      const x=col*w,y=row*h-level*rise;
+      ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
+      ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
+        'rgba(0,0,0,.01)'],col,row,2);
+      ctx.fillRect(x,y,w,h);
+      if(level>0){
+        const variation=hash(col,row,91)%5;
+        ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
+        ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
+      }
+      if(drawRibbonCell(ctx,{kind:'water',col,row,x,y,w,h,overlay:overlays.water}))waterCells++;
+      if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
+      const side=east.get(idx);
+      if(side)rockFace(ctx,{x:x+w-3,y:y+3,width:4.5,
+        height:(side.upper-side.lower)*rise+h-3,
+        colors,seed:idx+54,sun:0,smoothness:visualSmoothness});
     }
-    // A thin organic top bevel draws the terrain over the rock face.
-    // Visual only: true tile level stays untouched.
-    if(visualSmoothness>0 && south.has(idx)){
-      const soften=Math.max(0,Math.min(1,visualSmoothness));
-      ctx.beginPath();
-      ctx.moveTo(x,y+h-3*soften);
-      ctx.quadraticCurveTo(x+w*.22,y+h+1.4*soften,x+w*.45,y+h-1.2*soften);
-      ctx.quadraticCurveTo(x+w*.78,y+h+2*soften,x+w,y+h-2.5*soften);
-      ctx.lineTo(x+w,y+h-5*soften);
-      ctx.lineTo(x,y+h-5*soften);
-      ctx.closePath();
-      ctx.fillStyle=pattern??baseColor;ctx.fill();
-      ctx.strokeStyle='rgba(34,35,32,.11)';ctx.lineWidth=.7;ctx.stroke();
+    for(let col=0;col<terrain.width;){
+      const idx=row*terrain.width+col,first=south.get(idx);
+      if(!first){col++;continue;}
+      let end=col+1;
+      while(end<terrain.width){
+        const adjacent=south.get(row*terrain.width+end);
+        if(!adjacent||adjacent.upper!==first.upper||adjacent.lower!==first.lower)break;
+        end++;
+      }
+      const x=col*w,y=row*h-first.upper*rise+h;
+      const width=(end-col)*w,height=(first.upper-first.lower)*rise;
+      // Cliff-wide base shade follows the long wall rather than square tiles.
+      if(visualSmoothness>0){
+        ctx.save();ctx.fillStyle='rgba(35,36,45,.16)';
+        ctx.beginPath();ctx.ellipse(x+width*.5,y+height+3*visualSmoothness,
+          width*.46,Math.max(1.5,5*visualSmoothness),0,0,Math.PI*2);
+        ctx.fill();ctx.restore();
+      }
+      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:visualSmoothness});
+      if(visualSmoothness>0){
+        ctx.save();
+        ctx.strokeStyle='rgba(45,48,48,.18)';ctx.lineWidth=.9;
+        ctx.beginPath();ctx.moveTo(x+2,y+1);
+        ctx.quadraticCurveTo(x+width*.3,y+visualSmoothness*2,
+          x+width*.59,y+1);
+        ctx.quadraticCurveTo(x+width*.84,y-visualSmoothness*1.2,x+width-2,y+1);
+        ctx.stroke();ctx.restore();
+      }
+      faceRuns++;col=end;
     }
-    const front=south.get(idx);
-    if(front)rockFace(ctx,{x,y:y+h,width:w+.6,height:(front.upper-front.lower)*rise,
-      colors,seed:idx,sun:1,smoothness:visualSmoothness});
-    const side=east.get(idx);
-    if(side)rockFace(ctx,{x:x+w-3,y:y+3,width:4.5,
-      height:(side.upper-side.lower)*rise+h-3,colors,seed:idx+54,sun:0,smoothness:visualSmoothness});
   }
-  return {faceCount:faces.length,worldWidth:totalWidth,worldHeight:totalHeight};
+  return {faceCount:faces.length,faceRuns,waterCells,roadCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
