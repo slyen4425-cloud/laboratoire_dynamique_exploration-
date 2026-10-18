@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-contacts-house-perspectives-v23-prevalidation-2026-10-18
+# preview-revision: sculpt-new-blank-map-v24-prevalidation-2026-10-18
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 92690f80ace8a84d988bdb26d8f6fe2fc12c0e65
+          ref: 4dafbfc8b8ae0d6355b066342a7fd31ce77aeaed
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
