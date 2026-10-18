@@ -1,12 +1,18 @@
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
-import {importSculptTerrain,serializeSculptTerrain} from './sculpt-height-model.js';
+import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from './sculpt-height-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js';
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
 export const SCULPT_SCENE_PREVIEW_KIND='sculpt-preview-scene';
 export const SCULPT_OBJECT_LIMIT=128;
+// Only the existing sculpt terrain and placement formats own the data.
+// This constructor is a scene-level editor command, not a second world model.
+export function createBlankSculptPreviewScene({width=36,height=24}={}){
+  const terrain=createSculptTerrain({width,height});
+  return Object.freeze({terrain,objects:Object.freeze([]),isScene:true});
+}
 const validKinds=new Set(['building','tree','rock']);
 export function listSculptPlaceableDefinitions(){
   return Object.freeze(objectDefinitionCatalogV1.list().filter(d=>
