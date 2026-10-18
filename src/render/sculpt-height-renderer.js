@@ -1,6 +1,6 @@
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
-import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke} from '../world/sculpt-height-model.js';
+import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
@@ -141,38 +141,91 @@ function drawRibbonCell(ctx,{kind,col,row,x,y,w,h,overlay}){
   ctx.restore();return true;
 }
 
+
+// Render a volume of water per authored surface cell. Actual submerged depth
+// is the difference between water surface elevation and land elevation.
+// One cell can dry out after raising its ground without deleting water data.
+function drawWaterVolume(ctx,{terrain,overlay,tile}){
+  if(!overlay?.visible||!terrain?.waterLevels)return 0;
+  const {width:w,height:h,rise}=tile;
+  const style=overlay.material?.render??{};
+  let count=0;
+  const water=style.waterColor??'#39aee5';
+  const rim=style.highlightColor??'#d7f8ff';
+  const pattern=overlay.texture&&ctx.createPattern?.(overlay.texture,'repeat');
+  if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')pattern.setTransform(new DOMMatrix().scale(.55));
+  for(let row=0;row<terrain.height;row++)for(let col=0;col<terrain.width;col++){
+    const depth=sculptWaterAt(terrain,col,row);
+    if(!depth)continue;
+    count++;
+    const surface=terrain.waterLevels[row*terrain.width+col];
+    const x=col*w,y=row*h-surface*rise;
+    const southDepth=sculptWaterAt(terrain,col,row+1);
+    const eastDepth=sculptWaterAt(terrain,col+1,row);
+    const southSurface=southDepth?terrain.waterLevels[(row+1)*terrain.width+col]:
+      sculptHeightAt(terrain,col,row+1);
+    const visibleWall=Math.max(0,(surface-southSurface)*rise);
+    // Water surface, optionally textured from the canonical Material Registry.
+    ctx.save();ctx.globalAlpha=.94;ctx.fillStyle=water;ctx.fillRect(x,y,w+.65,h+.65);
+    if(pattern){ctx.globalAlpha=.52;ctx.fillStyle=pattern;ctx.fillRect(x,y,w+.65,h+.65);}
+    ctx.globalAlpha=.28;ctx.strokeStyle=rim;ctx.lineWidth=.75;
+    ctx.beginPath();ctx.moveTo(x+3,y+h*.45);ctx.bezierCurveTo(x+w*.38,y+h*.32,
+      x+w*.61,y+h*.60,x+w-3,y+h*.41);ctx.stroke();
+    ctx.restore();
+    if(visibleWall>0&&row<terrain.height-1){
+      const grad=ctx.createLinearGradient(x,y+h,x,y+h+visibleWall);
+      grad.addColorStop(0,'rgba(107,217,240,.83)');
+      grad.addColorStop(.65,'rgba(39,142,185,.83)');
+      grad.addColorStop(1,'rgba(19,83,130,.64)');
+      ctx.fillStyle=grad;
+      ctx.fillRect(x,y+h,w+.7,visibleWall);
+      ctx.fillStyle='rgba(226,252,250,.42)';
+      ctx.fillRect(x,y+h,w,.85);
+    }
+    if(col<terrain.width-1 && surface>
+      (eastDepth?terrain.waterLevels[row*terrain.width+col+1]:sculptHeightAt(terrain,col+1,row))){
+      ctx.fillStyle='rgba(24,91,139,.44)';
+      ctx.fillRect(x+w-2,y+h,3,Math.max(2,Math.min(depth*rise,6)));
+    }
+  }
+  return count;
+}
 // Preview uses the EXACT same footprint weights as applySculptStroke.
 // Each tinted tile is a cell that a click here would really affect.
 export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftness=0,
   mode='dig',target=3,strength=1,tile=SCULPT_TILE,zoom=1}={}){
   if(!ctx||!terrain||!points.length)return Object.freeze({cells:0,centerHeight:null});
   const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness});
-  const candidate=applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength});
+  const waterMode=mode.startsWith('water-');
+  const candidate=waterMode
+    ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength})
+    :applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength});
   const w=tile.width,h=tile.height,rise=tile.rise;
-  const tint=mode==='dig'?'#ffc181':mode==='raise'?'#9ee2ff':
+  const tint=mode.startsWith('water-')?'#6be9ff':mode==='dig'?'#ffc181':mode==='raise'?'#9ee2ff':
     mode==='plateau'?'#b2ffb0':'#f4e6ba';
   ctx.save();
   for(const m of marks){
     const level=sculptHeightAt(terrain,m.x,m.y);
-    const next=sculptHeightAt(candidate,m.x,m.y);
+    const next=waterMode?sculptWaterAt(candidate,m.x,m.y):sculptHeightAt(candidate,m.x,m.y);
+    const before=waterMode?sculptWaterAt(terrain,m.x,m.y):level;
     const x=m.x*w,y=m.y*h-level*rise;
     ctx.globalAlpha=.12+.29*m.weight;
     ctx.fillStyle=tint;ctx.fillRect(x+.7,y+.7,w-1.4,h-1.4);
     ctx.globalAlpha=.30+.50*m.weight;
-    ctx.strokeStyle=next!==level?'#f5ffff':'#d1d9dd';
+    ctx.strokeStyle=next!==before?'#f5ffff':'#d1d9dd';
     ctx.lineWidth=Math.max(.65,1/Math.max(.32,zoom));
     ctx.strokeRect(x+.9,y+.9,w-1.8,h-1.8);
   }
   const head=points[points.length-1];
   const cx=Math.floor(head.x),cy=Math.floor(head.y);
   const centerLevel=sculptHeightAt(terrain,cx,cy);
-  const after=sculptHeightAt(candidate,cx,cy);
+  const after=waterMode?sculptWaterAt(candidate,cx,cy):sculptHeightAt(candidate,cx,cy);
   if(cx>=0&&cy>=0&&cx<terrain.width&&cy<terrain.height){
     const px=(cx+.5)*w,py=(cy+.5)*h-centerLevel*rise;
     ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=1.5/Math.max(.32,zoom);
     ctx.beginPath();ctx.moveTo(px-6,py);ctx.lineTo(px+6,py);
     ctx.moveTo(px,py-6);ctx.lineTo(px,py+6);ctx.stroke();
-    const label=mode==='plateau'?'Niveau '+after:centerLevel+' → '+after;
+    const label=waterMode?'Eau '+after+' blocs':mode==='plateau'?'Niveau '+after:centerLevel+' → '+after;
     ctx.font='bold 12px system-ui,sans-serif';
     const labelW=ctx.measureText(label).width+18;
     const lx=Math.max(2,Math.min(terrain.width*w-labelW-2,px+10));
@@ -198,6 +251,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
   const south=new Map(),east=new Map();
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
   let waterCells=0,roadCells=0,faceRuns=0;
+  const hasProfiles=Array.isArray(terrain.roundness);
   const deferredToes=[];
   for(let row=0;row<terrain.height;row++){
     // Draw all top surfaces of a row first, then contiguous wall runs.
@@ -214,12 +268,11 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
         ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
         ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
       }
-      if(drawRibbonCell(ctx,{kind:'water',col,row,x,y,w,h,overlay:overlays.water}))waterCells++;
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       const side=east.get(idx);
       if(side)rockFace(ctx,{x:x+w-3,y:y+3,width:4.5,
         height:(side.upper-side.lower)*rise+h-3,
-        colors,seed:idx+54,sun:0,smoothness:visualSmoothness});
+        colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness});
     }
     for(let col=0;col<terrain.width;){
       const idx=row*terrain.width+col,first=south.get(idx);
@@ -227,29 +280,31 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       let end=col+1;
       while(end<terrain.width){
         const adjacent=south.get(row*terrain.width+end);
-        if(!adjacent||adjacent.upper!==first.upper||adjacent.lower!==first.lower)break;
+        if(!adjacent||adjacent.upper!==first.upper||adjacent.lower!==first.lower||
+          (hasProfiles&&terrain.roundness[row*terrain.width+end]!==terrain.roundness[idx]))break;
         end++;
       }
       const x=col*w,y=row*h-first.upper*rise+h;
       const width=(end-col)*w,height=(first.upper-first.lower)*rise;
+      const runSmoothness=hasProfiles?terrain.roundness[idx]/100:visualSmoothness;
       // Cliff-wide base shade follows the long wall rather than square tiles.
-      if(visualSmoothness>0){
+      if(runSmoothness>0){
         ctx.save();ctx.fillStyle='rgba(35,36,45,.16)';
-        ctx.beginPath();ctx.ellipse(x+width*.5,y+height+3*visualSmoothness,
-          width*.46,Math.max(1.5,5*visualSmoothness),0,0,Math.PI*2);
+        ctx.beginPath();ctx.ellipse(x+width*.5,y+height+3*runSmoothness,
+          width*.46,Math.max(1.5,5*runSmoothness),0,0,Math.PI*2);
         ctx.fill();ctx.restore();
       }
-      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:visualSmoothness});
-      if(visualSmoothness>0){
+      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:runSmoothness});
+      if(runSmoothness>0){
         ctx.save();
         ctx.strokeStyle='rgba(45,48,48,.18)';ctx.lineWidth=.9;
         ctx.beginPath();ctx.moveTo(x+2,y+1);
-        ctx.quadraticCurveTo(x+width*.3,y+visualSmoothness*2,
+        ctx.quadraticCurveTo(x+width*.3,y+runSmoothness*2,
           x+width*.59,y+1);
-        ctx.quadraticCurveTo(x+width*.84,y-visualSmoothness*1.2,x+width-2,y+1);
+        ctx.quadraticCurveTo(x+width*.84,y-runSmoothness*1.2,x+width-2,y+1);
         ctx.stroke();ctx.restore();
       }
-      deferredToes.push({x,width,bottom:y+height,seed:idx});
+      deferredToes.push({x,width,bottom:y+height,seed:idx,smoothness:runSmoothness});
       faceRuns++;col=end;
     }
   }
@@ -258,8 +313,9 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
   // Compositing a slender irregular rock toe AFTER all ground is drawn makes
   // the curved base actually visible against lower dirt, road and water.
   // No pixels are used to decide physics; these are decorative only.
-  const soften=Math.max(0,Math.min(1.5,Number(visualSmoothness)||0));
-  if(soften>0)for(const toe of deferredToes){
+  for(const toe of deferredToes){
+    const soften=Math.max(0,Math.min(1.5,Number(toe.smoothness)||0));
+    if(soften<=0)continue;
     const depth=Math.min(15*soften,Math.max(3,toe.width*.10));
     const {x,width,bottom,seed}=toe;
     const phase=(hash(seed,27,2)%7-3)*.15;
@@ -284,5 +340,6 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
     ctx.lineWidth=.65;ctx.stroke();
     ctx.restore();
   }
+  waterCells=drawWaterVolume(ctx,{terrain,overlay:overlays.water,tile});
   return {faceCount:faces.length,faceRuns,waterCells,roadCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
