@@ -252,6 +252,24 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
  .editor-switch #new-map-toggle{flex:0 0 78px;max-width:78px;min-width:0;font-size:.72rem;padding:5px 3px}
  .new-map-content{padding:12px;gap:10px}
 }
+/* Canonical WorldSurface routes/zones, exposed as an isolated sculpt paint mode. */
+#surface-palette{position:absolute;z-index:12;right:8px;top:8px;
+ width:min(225px,calc(100vw - 16px));max-height:73%;overflow:auto;
+ display:grid;gap:7px;padding:9px;background:rgba(19,43,52,.97);
+ border:1px solid #6ba9bb;border-radius:11px;box-shadow:0 6px 20px #000a;font-size:.78rem}
+#surface-palette[hidden]{display:none!important}
+#surface-palette label{display:grid;gap:3px}
+#surface-palette select,#surface-palette input[type=range]{width:100%}
+#surface-palette #surface-count{color:#a6ebd6}
+body.surface-editing .sculpt-quickbar{opacity:.45;pointer-events:none}
+body.sculpt-immersive.surface-editing .sculpt-quickbar{display:none}
+body.surface-editing .canvas-wrap .precision-actions{display:none!important}
+body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
+ right:calc(env(safe-area-inset-right,0px) + 6px);max-height:64dvh}
+@media(max-width:600px){
+ #surface-palette{width:min(184px,49vw);padding:6px;top:6px}
+ .editor-switch #mode-surface{font-size:.73rem;padding:5px 4px}
+}
 </style>
 </head>
 <body>
@@ -263,6 +281,7 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
+<button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
 <button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
@@ -306,6 +325,28 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
    <button type="submit" id="new-map-create" disabled>Créer la carte vierge</button>
   </div>
  </form>
+</section>
+<section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
+ <strong>🎨 Pinceau de textures</strong>
+ <label>Texture <select id="surface-material">
+  <option value="road.dirt">Route de terre</option>
+  <option value="grass.forest">Herbe</option>
+  <option value="ground.forest_floor">Terre forestière</option>
+  <option value="ground.sand">Sable</option>
+  <option value="ground.snow">Neige</option>
+  <option value="ground.mountain_rock">Sol rocheux</option>
+ </select></label>
+ <label>Action <select id="surface-action">
+  <option value="paint">Peindre une route / une zone</option>
+  <option value="erase">Effacer une route / une zone au toucher</option>
+ </select></label>
+ <label>Largeur <output id="surface-width-value">3 cases</output>
+  <input type="range" id="surface-width" min="1" max="12" step="0.5" value="3">
+ </label>
+ <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
+  <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
+ <output id="surface-count">Aucune zone peinte</output>
+ <small>Trace une route ou recouvre l'herbe d'une autre texture. Les zones sont sauvegardées avec « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
 </section>
 <section id="object-palette" aria-label="Placer les objets visuels" hidden>
  <strong>🌳 Placer un objet sur le relief</strong>
@@ -444,6 +485,6 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-new-blank-map-v24"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-surface-paint-v27"></script>
 </body>
 </html>
