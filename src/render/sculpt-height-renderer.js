@@ -16,7 +16,7 @@ function color(colors,x,y,i){return colors[hash(x,y,i)%colors.length];}
 // Pure visual fillet: one projected face curves at its corners but does not
 // alter a single canonical cell height, neighbor, object or collision.
 export function sculptFaceContour({width,height,smoothness=0}={}){
-  const softness=Math.max(0,Math.min(1,Number(smoothness)||0));
+  const softness=Math.max(0,Math.min(1.5,Number(smoothness)||0));
   const corner=Math.min(width*.27,height*.3,7*softness);
   const undulation=Math.min(3.5*softness,height*.13);
   const foot=Math.min(24*softness,height*.40,Math.max(2,width*.17));
@@ -198,6 +198,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
   const south=new Map(),east=new Map();
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
   let waterCells=0,roadCells=0,faceRuns=0;
+  const deferredToes=[];
   for(let row=0;row<terrain.height;row++){
     // Draw all top surfaces of a row first, then contiguous wall runs.
     // A 6-cell cliff has one curved foot, not six square block bottoms.
@@ -248,8 +249,40 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
         ctx.quadraticCurveTo(x+width*.84,y-visualSmoothness*1.2,x+width-2,y+1);
         ctx.stroke();ctx.restore();
       }
+      deferredToes.push({x,width,bottom:y+height,seed:idx});
       faceRuns++;col=end;
     }
+  }
+
+  // The NEXT ground row would otherwise paint over the rounded rock foot.
+  // Compositing a slender irregular rock toe AFTER all ground is drawn makes
+  // the curved base actually visible against lower dirt, road and water.
+  // No pixels are used to decide physics; these are decorative only.
+  const soften=Math.max(0,Math.min(1.5,Number(visualSmoothness)||0));
+  if(soften>0)for(const toe of deferredToes){
+    const depth=Math.min(15*soften,Math.max(3,toe.width*.10));
+    const {x,width,bottom,seed}=toe;
+    const phase=(hash(seed,27,2)%7-3)*.15;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x+Math.min(4,width*.08),bottom-2);
+    ctx.bezierCurveTo(x+width*.19,bottom-3.2*soften,
+      x+width*.41,bottom+phase,x+width*.57,bottom-2.2*soften);
+    ctx.bezierCurveTo(x+width*.82,bottom-3.3*soften,
+      x+width-2,bottom-1.5*soften,x+width-1,bottom+.6*depth);
+    ctx.bezierCurveTo(x+width*.84,bottom+depth*.96,
+      x+width*.65,bottom+depth*.42,x+width*.49,bottom+depth);
+    ctx.bezierCurveTo(x+width*.31,bottom+depth*.52,
+      x+width*.12,bottom+depth*.94,x+1,bottom+depth*.52);
+    ctx.closePath();
+    const gradient=ctx.createLinearGradient(x,bottom-2,x,bottom+depth);
+    gradient.addColorStop(0,colors[2]);
+    gradient.addColorStop(.45,colors[3]);
+    gradient.addColorStop(1,'rgba(44,45,51,0)');
+    ctx.fillStyle=gradient;ctx.globalAlpha=.84;ctx.fill();
+    ctx.globalAlpha=.40;ctx.strokeStyle=colors[2];
+    ctx.lineWidth=.65;ctx.stroke();
+    ctx.restore();
   }
   return {faceCount:faces.length,faceRuns,waterCells,roadCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
