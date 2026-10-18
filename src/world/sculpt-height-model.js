@@ -43,7 +43,7 @@ function footprintWeights(terrain,clean,r,soften){
 export function sculptBrushFootprint(terrain,{points=[],radius=3,edgeSoftness=0}={}){
   if(!terrain||!Array.isArray(points))return Object.freeze([]);
   const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
-  const weights=footprintWeights(terrain,clean,clamp(Number.isFinite(radius)?radius:3,.5,9),clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1));
+  const weights=footprintWeights(terrain,clean,clamp(Number.isFinite(radius)?radius:3,.5,16),clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1));
   const visible=[];
   for(let i=0;i<weights.length;i++)if(weights[i]>0)visible.push(Object.freeze({x:i%terrain.width,y:Math.floor(i/terrain.width),weight:weights[i]}));
   return Object.freeze(visible);
@@ -55,7 +55,7 @@ export function applySculptStroke(terrain,{
      !Array.isArray(points)||points.length===0)return terrain;
   const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
   if(clean.length===0)return terrain;
-  const r=clamp(Number.isFinite(radius)?radius:3,.5,9);
+  const r=clamp(Number.isFinite(radius)?radius:3,.5,16);
   const power=clamp(int(strength,1),1,3);
   const soften=clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1);
   const limit=terrain.width*terrain.height;
@@ -113,7 +113,7 @@ export function applySculptWaterStroke(terrain,{
   const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
   if(!clean.length)return terrain;
   const weights=footprintWeights(terrain,clean,
-    clamp(Number.isFinite(radius)?radius:3,.5,9),
+    clamp(Number.isFinite(radius)?radius:3,.5,16),
     clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1));
   const next=[...terrain.waterLevels];
   const level=clamp(int(target,3),0,10);
