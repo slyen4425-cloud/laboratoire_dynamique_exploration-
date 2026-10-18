@@ -16,16 +16,8 @@ export function sculptHeightAt(terrain,x,y){
 // One height update per gesture, regardless of overlapping pointer samples.
 // A stroke is calculated from its ORIGINAL terrain to avoid unintentional stacking.
 // 'plateau' can set an exact level; soft edges are opt-in and remain deterministic.
-export function applySculptStroke(terrain,{
-  points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0
-}={}){
-  if(!terrain||!['raise','dig','flatten','smooth','plateau'].includes(mode)||
-     !Array.isArray(points)||points.length===0)return terrain;
-  const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
-  if(clean.length===0)return terrain;
-  const r=clamp(Number.isFinite(radius)?radius:3,.5,9);
-  const power=clamp(int(strength,1),1,3);
-  const soften=clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1);
+// Shared footprint authority for BOTH actual strokes and the on-canvas preview.
+function footprintWeights(terrain,clean,r,soften){
   const limit=terrain.width*terrain.height;
   const weights=new Float32Array(limit);
   for(const center of clean){
@@ -44,6 +36,28 @@ export function applySculptStroke(terrain,{
       weights[idx]=Math.max(weights[idx],weight);
     }
   }
+  return weights;
+}
+export function sculptBrushFootprint(terrain,{points=[],radius=3,edgeSoftness=0}={}){
+  if(!terrain||!Array.isArray(points))return Object.freeze([]);
+  const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
+  const weights=footprintWeights(terrain,clean,clamp(Number.isFinite(radius)?radius:3,.5,9),clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1));
+  const visible=[];
+  for(let i=0;i<weights.length;i++)if(weights[i]>0)visible.push(Object.freeze({x:i%terrain.width,y:Math.floor(i/terrain.width),weight:weights[i]}));
+  return Object.freeze(visible);
+}
+export function applySculptStroke(terrain,{
+  points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0
+}={}){
+  if(!terrain||!['raise','dig','flatten','smooth','plateau'].includes(mode)||
+     !Array.isArray(points)||points.length===0)return terrain;
+  const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
+  if(clean.length===0)return terrain;
+  const r=clamp(Number.isFinite(radius)?radius:3,.5,9);
+  const power=clamp(int(strength,1),1,3);
+  const soften=clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1);
+  const limit=terrain.width*terrain.height;
+  const weights=footprintWeights(terrain,clean,r,soften);
   const chosen=clamp(int(target,sculptHeightAt(terrain,
     Math.floor(clean[0].x),Math.floor(clean[0].y))),0,7);
   const next=[...terrain.levels];
