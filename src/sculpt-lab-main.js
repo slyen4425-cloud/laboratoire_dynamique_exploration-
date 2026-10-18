@@ -83,6 +83,8 @@ const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo
 if(demoActorAsset){demoActorImage.onload=scheduleDraw;demoActorImage.src=demoActorAsset.path;}
 
 const ribbonTextures={water:null,road:null};
+// The legacy visual road belongs to the example only, not blank scene data.
+let exampleRoadEnabled=true;
 let framePending=false;
 let waterMaterialRevision=0,groundMaterialRevision=0;
 const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
@@ -121,14 +123,14 @@ async function setWaterMaterial(){
 async function setupRibbons(){
   const road=SCULPT_PREVIEW_RIBBONS.road;
   const material=registry.require(road.materialId,road.kind);
-  ribbonTextures.road={visible:$('show-road').checked,material,texture:null};
+  ribbonTextures.road={visible:exampleRoadEnabled&&$('show-road').checked,material,texture:null};
   ribbonTextures.road.texture=await imageFor(road.materialId,road.kind);
   scheduleDraw();
   await setWaterMaterial();
 }
 function toggleRibbon(kind){
   if(ribbonTextures[kind]){
-    ribbonTextures[kind].visible=$('show-'+kind).checked;scheduleDraw();
+    ribbonTextures[kind].visible=(kind!=='road'||exampleRoadEnabled)&&$('show-'+kind).checked;scheduleDraw();
   }
 }
 async function setTheme(){
@@ -914,6 +916,8 @@ $('new-map-form').addEventListener('submit',event=>{
   if(navigationTesting)setNavigationTesting(false);
   if(objectEditing)setObjectEditing(false);
   const blank=createBlankSculptPreviewScene({width,height});
+  exampleRoadEnabled=false;$('show-road').checked=false;
+  if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
   objectHistory=[];objectRedo=[];history=[];redoHistory=[];
   drawing=false;strokeUndo=null;strokePoints=[];lastCell='';
@@ -928,7 +932,9 @@ window.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!$('new-map-panel').hidden){event.preventDefault();setNewMapPanel(false);}
 });
 $('reset').addEventListener('click',()=>{
-  const old=terrain;terrain=sculptDemo();commitUndo(old);scheduleDraw();
+  const old=terrain;terrain=sculptDemo();exampleRoadEnabled=true;
+  if(ribbonTextures.road)ribbonTextures.road.visible=$('show-road').checked;
+  commitUndo(old);scheduleDraw();
   status('Relief exemple rechargé (36 × 24) ; objets déjà placés conservés');
 });
 $('flat').addEventListener('click',()=>{
@@ -979,6 +985,8 @@ $('export').addEventListener('click',()=>{
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value);
   const old=terrain;terrain=imported.terrain;commitUndo(old);
+  exampleRoadEnabled=false;$('show-road').checked=false;
+  if(ribbonTextures.road)ribbonTextures.road.visible=false;
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
   fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
  catch(e){status(e.message);}
@@ -1001,7 +1009,7 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   precisionTarget:precisionCell?{...precisionCell}:null,
   faceRuns:lastRenderStats?.faceRuns??0,waterCells:lastRenderStats?.waterCells??0,
   roadCells:lastRenderStats?.roadCells??0,waterVisible:!!ribbonTextures.water?.visible,
-  roadVisible:!!ribbonTextures.road?.visible,
+  roadVisible:!!ribbonTextures.road?.visible,exampleRoadEnabled,
   authoredWaterCells:terrain.waterLevels.filter(v=>v>=0).length,
   wetCells:terrain.waterLevels.filter((v,i)=>v>terrain.levels[i]).length,
   centerWaterDepth:sculptWaterAt(terrain,Math.floor(terrain.width/2),Math.floor(terrain.height/2)),
