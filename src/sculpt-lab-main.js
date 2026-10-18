@@ -21,6 +21,8 @@ import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene} from './world/sculpt-scene-preview.js';
+import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
+  SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -32,6 +34,9 @@ let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
+let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
+const surfacePaintImages=new Map();
 let objectSelectedId=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
 function objectImage(assetId){
@@ -64,7 +69,8 @@ function navigationBackground(){
   const same=navTerrainCache&&navTerrainCache.terrain===terrain&&
     navTerrainCache.texture===currentTexture&&navTerrainCache.signature===signature&&
     navTerrainCache.waterTexture===ribbonTextures.water?.texture&&
-    navTerrainCache.roadTexture===ribbonTextures.road?.texture;
+    navTerrainCache.roadTexture===ribbonTextures.road?.texture&&
+    navTerrainCache.paintSurface===surface;
   if(same)return navTerrainCache;
   const paddingX=18,paddingY=7*SCULPT_TILE.rise+18;
   const raster=document.createElement('canvas');
@@ -76,10 +82,11 @@ function navigationBackground(){
   imageContext.translate(paddingX,paddingY);
   const material=registry.require(materialId,'surface');
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
-    rockPalette,visualSmoothness:smoothness,overlays:ribbonTextures});
+    rockPalette,visualSmoothness:smoothness,overlays:ribbonTextures,
+    paintSurface:surface,paintImages:surfacePaintImages});
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
-    image:raster,scale,paddingX,paddingY,result};
+    paintSurface:surface,image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
 }
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
@@ -199,7 +206,7 @@ function draw(){
     const material=registry.require($('material').value,'surface');
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
       rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
-      overlays:ribbonTextures});
+      overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
   if(navigationTesting){
@@ -210,7 +217,7 @@ function draw(){
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
-  if(!navigationTesting&&!objectEditing&&displayCell&&(precisionOn||$('preview-cursor').checked)){
+  if(!navigationTesting&&!objectEditing&&!surfaceEditing&&displayCell&&(precisionOn||$('preview-cursor').checked)){
     const points=precisionOn?[{x:displayCell.x+.5,y:displayCell.y+.5}]
       :drawing&&strokePoints.length?strokePoints:[{x:displayCell.x+.5,y:displayCell.y+.5}];
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
@@ -247,7 +254,7 @@ function screenToCell(event){
 function status(message){$('notice').textContent=message;}
 
 function updatePrecisionActions(){
-  const enabled=!navigationTesting&&!objectEditing&&$('precision-mode').checked;
+  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&$('precision-mode').checked;
   $('precision-actions').hidden=!enabled;
   const hasTarget=enabled&&!!precisionCell;
   $('apply-precision').disabled=!hasTarget;
@@ -258,6 +265,7 @@ function updatePrecisionActions(){
 function setEditorKind(kind){
   if(kind!=='ground'&&kind!=='water')return;
   if(objectEditing)setObjectEditing(false);
+  if(surfaceEditing)setSurfaceEditing(false);
   editorKind=kind;
   $('ground-tools').hidden=kind!=='ground';
   $('water-tools').hidden=kind!=='water';
@@ -576,6 +584,7 @@ function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on){
     if(objectEditing)setObjectEditing(false); // keep object palette out of the walking HUD
+    if(surfaceEditing)setSurfaceEditing(false);
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
@@ -748,6 +757,7 @@ function objectCommit(next){
   objectRedo=[];placedObjects=next;updateObjectCount();return true;
 }
 function setObjectEditing(active){
+  if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
   document.body.classList.toggle('object-editing',objectEditing);
   $('object-palette').hidden=!objectEditing;
