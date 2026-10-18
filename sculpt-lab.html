@@ -58,11 +58,59 @@ button:disabled{opacity:.43;cursor:not-allowed}
 .precision-tip{width:100%;flex:1 1 100%}
 #apply-precision{flex:1}
 }
+
+/* V15 MOBILE FIRST: real viewport belongs to the sculptable canvas, not controls. */
+.sculpt-quickbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px;
+ background:#172d35;border:1px solid #3f666d;border-radius:10px}
+.sculpt-quickbar button{padding:5px 9px;min-height:38px;font-weight:750}
+.quick-tool-label{display:flex;align-items:center;gap:6px;flex:1 1 170px;min-width:120px;font-size:.81rem}
+.quick-tool-label select{flex:1;min-width:0;max-width:100%;min-height:38px}
+.quick-level{display:flex;gap:5px;align-items:center;background:#143b40;padding:4px 6px;border-radius:8px}
+.quick-level output{min-width:20px;text-align:center;color:#93f0d4;font-weight:800;font-size:1.17rem}
+.quick-size{display:flex;align-items:center;flex:1 1 205px;gap:5px;min-width:0}
+.quick-size>.control{flex:1;min-width:0}
+.quick-size input[type=range]{flex:1;min-width:45px;width:100%}
+.quick-size label{white-space:nowrap}
+#radius-minus,#radius-plus{font-size:1.2rem;min-width:35px}
+.sculpt-quickbar .precision-toggle{min-height:38px;padding:5px 7px}
+.sculpt-quickbar #undo,.sculpt-quickbar #redo{min-width:42px;flex:0 0 auto}
+#sculpt-settings{border:1px solid #375b62;border-radius:10px;background:#182b33}
+#sculpt-settings>summary{list-style:revert;cursor:pointer;padding:11px;font-weight:700}
+#sculpt-settings .settings-interior{padding:8px;display:grid;gap:8px}
+.canvas-wrap{position:relative;min-height:0}
+.canvas-wrap .precision-actions{position:absolute;left:8px;right:8px;bottom:8px;
+ top:auto;z-index:6;display:flex;align-items:center;flex-wrap:nowrap;gap:4px;padding:5px;
+ background:rgba(17,44,51,.94);border:1px solid #68aeb2;border-radius:10px}
+.canvas-wrap .precision-actions[hidden]{display:none}
+.canvas-wrap .precision-actions button{min-width:35px;min-height:40px;flex:0 0 auto;padding:6px}
+.canvas-wrap .precision-actions #apply-precision{flex:1;min-width:80px;min-height:40px}
+.canvas-wrap .precision-tip{display:none}
+@media(max-width:600px){
+ header{padding:6px 9px} header h1{font-size:.91rem} header p{display:none} header a{font-size:.77rem}
+ main{padding:5px;gap:6px}
+ .editor-switch{padding:4px;gap:5px;flex-wrap:nowrap}
+ .editor-switch button{font-size:.84rem;min-height:37px;padding:5px 7px}
+ #active-tool-label{display:none}
+ .sculpt-quickbar{padding:5px;gap:4px}
+ .quick-tool-label{flex:1 1 55%}
+ .quick-level{flex:0 0 auto;font-size:.77rem}
+ .quick-level button{min-width:28px;padding:4px}
+ .quick-size{flex:1 1 55%;order:1}
+ .quick-size>.control{padding:4px}
+ .sculpt-quickbar .precision-toggle{order:2;flex:1 1 32%;font-size:.72rem}
+ .sculpt-quickbar #undo{order:3;flex:1 1 24%;font-size:.72rem;min-height:36px}
+ .sculpt-quickbar #redo{order:4;flex:1 1 24%;font-size:.72rem;min-height:36px}
+ #sculpt-canvas{height:clamp(280px,53dvh,660px);min-height:280px}
+ .canvas-tag{max-width:85%;font-size:.65rem}
+ .canvas-wrap .precision-actions button{min-width:34px}
+ .canvas-wrap .precision-actions #apply-precision{font-size:.78rem}
+}
+
 </style>
 </head>
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
-<p>Terre ou Eau · viser, ajuster et confirmer avec précision, sans toucher à la texture de l’eau.</p></div>
+<p>Terrain visible en priorité · outils avancés sous la carte.</p></div>
 <a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
 <main>
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
@@ -70,7 +118,33 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
 </nav>
-<section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
+<section class="sculpt-quickbar" aria-label="Commandes principales de sculpture">
+<label class="quick-tool-label">Outil <select id="quick-tool" aria-label="Outil actif"></select></label>
+<div class="quick-level" role="group" aria-label="Hauteur cible">
+<span id="quick-level-label">Hauteur</span>
+<button type="button" id="quick-level-minus" aria-label="Réduire la hauteur cible">−</button>
+<output id="quick-level-value" aria-live="polite">3</output>
+<button type="button" id="quick-level-plus" aria-label="Augmenter la hauteur cible">+</button></div>
+<div class="quick-size" role="group" aria-label="Taille du pinceau, de 0,5 à 16 cases">
+<button type="button" id="radius-minus" aria-label="Réduire la taille du pinceau">−</button>
+<span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="16" value="3" step="0.5"></span>
+<button type="button" id="radius-plus" aria-label="Agrandir le pinceau">+</button></div>
+<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
+<button id="undo" type="button" disabled>↶ Annuler</button>
+<button id="redo" type="button" disabled>↷ Rétablir</button>
+</section>
+<div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<div class="canvas-tag">Les cases vertes/bleues/orangées montrent l'effet réel du pinceau · eau et route = simulation visuelle, pas de collisions</div><section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
+<span class="precision-tip">1. Vise au doigt · 2. Ajuste · 3. Applique</span>
+<button type="button" id="nudge-left" aria-label="Déplacer le pinceau d'une case à gauche">←</button>
+<button type="button" id="nudge-up" aria-label="Déplacer le pinceau d'une case en haut">↑</button>
+<button type="button" id="nudge-down" aria-label="Déplacer le pinceau d'une case en bas">↓</button>
+<button type="button" id="nudge-right" aria-label="Déplacer le pinceau d'une case à droite">→</button>
+<button type="button" id="apply-precision" disabled>✓ Appliquer ici</button>
+</section>
+</div>
+<details id="sculpt-settings"><summary>⚙ Outils détaillés, force, bord, matériaux et réglages</summary>
+<div class="settings-interior"><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
@@ -94,21 +168,13 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
 </section>
 <section class="controls" aria-label="Paramètres communs des pinceaux">
-<span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="8" value="3" step="0.5"></span>
+
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
 <label class="control">Bord doux <b id="edge-value">0 %</b>
 <input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
 
-<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
-<button id="undo" type="button" disabled>↶ Annuler</button><button id="redo" type="button" disabled>↷ Rétablir</button><button id="reset">Exemple</button><button id="flat">Sol plat</button>
-</section>
-<section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
-<span class="precision-tip">1. Vise au doigt · 2. Ajuste · 3. Applique</span>
-<button type="button" id="nudge-left" aria-label="Déplacer le pinceau d'une case à gauche">←</button>
-<button type="button" id="nudge-up" aria-label="Déplacer le pinceau d'une case en haut">↑</button>
-<button type="button" id="nudge-down" aria-label="Déplacer le pinceau d'une case en bas">↓</button>
-<button type="button" id="nudge-right" aria-label="Déplacer le pinceau d'une case à droite">→</button>
-<button type="button" id="apply-precision" disabled>✓ Appliquer ici</button>
+
+<button id="reset">Exemple</button><button id="flat">Sol plat</button>
 </section>
 <section class="controls">
 <span data-panel="ground"><label class="control">Sol réel
@@ -126,8 +192,8 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route</label>
 <label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
 </section>
-<div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
-<div class="canvas-tag">Les cases vertes/bleues/orangées montrent l'effet réel du pinceau · eau et route = simulation visuelle, pas de collisions</div></div>
+</div></details>
+
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 <section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
