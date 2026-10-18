@@ -17,6 +17,12 @@ button,select{background:#233745;border:1px solid #546979;color:#eef8f7;border-r
 button.active{background:#376e70;border-color:#8ad7c8;color:white}
 button:focus-visible,select:focus-visible{outline:3px solid #8de2ec}
 button:hover{border-color:#c4e4e4}
+.control.checkbox-control{border:1px solid #476e76;gap:8px}
+.checkbox-control input{width:19px;height:19px;accent-color:#70c7ae}
+#brush-info{font-size:.8rem;color:#baf9e3;min-height:1.2em;font-weight:650}
+.canvas-tag{max-width:65%;line-height:1.5}
+#sculpt-canvas{overscroll-behavior:contain}
+
 .control{display:flex;align-items:center;gap:7px;font-size:.82rem;background:#182935;padding:6px 9px;border-radius:8px}
 input[type=range]{accent-color:#79c8b3;width:98px}
 #sculpt-canvas{width:100%;height:min(65vh,630px);min-height:260px;display:block;border-radius:12px;touch-action:none;
@@ -32,7 +38,7 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 </head>
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
-<p>Creuser / surélever le sol : les falaises naissent automatiquement des dénivelés.</p></div>
+<p>Hauteurs éditables, pieds de falaises arrondis, pinceau visible et raccord eau / route expérimental.</p></div>
 <a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
 <main>
 <section class="controls" aria-label="Outils de sculpture">
@@ -65,14 +71,18 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <label class="control">Arrondi visuel <b id="visual-smooth-value">72 %</b>
 <input id="visual-smooth" type="range" min="0" max="100" value="72" step="5"></label>
 <button id="fit">Ajuster la vue</button>
+<label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
+<label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route</label>
+<label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
 </section>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
-<div class="canvas-tag">Plateau = hauteur exacte 0–7 · 2D du jeu inchangée</div></div>
+<div class="canvas-tag">Les cases vertes/bleues/orangées montrent l'effet réel du pinceau · eau et route = simulation visuelle, pas de collisions</div></div>
+<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 <section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
 <button id="import">Importer ce JSON</button><small>Prototype isolé, aucune sauvegarde automatique ni collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-precision-v11"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-river-road-v12"></script>
 </body>
 </html>
