@@ -114,6 +114,63 @@ button:disabled{opacity:.43;cursor:not-allowed}
   #brush-info{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .canvas-wrap .canvas-tag{padding:4px;max-width:76%;line-height:1.15;}
 }
+
+/* V16: one real canvas, one set of toolbar controls; immersive layout only.
+   Works as a 100dvh fallback even if mobile Fullscreen API is unavailable. */
+.editor-switch #fullscreen-toggle{flex:0 0 auto;font-size:.83rem;min-height:37px}
+.editor-switch #palette-toggle{flex:0 0 auto;min-height:37px}
+body.sculpt-immersive{overflow:hidden}
+body.sculpt-immersive header,
+body.sculpt-immersive #brush-info,
+body.sculpt-immersive #sculpt-settings,
+body.sculpt-immersive footer,
+body.sculpt-immersive main>section.controls,
+body.sculpt-immersive main>textarea,
+body.sculpt-immersive .canvas-tag{display:none!important}
+body.sculpt-immersive main{position:fixed;inset:0;z-index:100;display:block;
+  width:100%;max-width:none;margin:0;padding:0;overflow:hidden;background:#101a21}
+body.sculpt-immersive .canvas-wrap{position:absolute;inset:0;min-height:0}
+body.sculpt-immersive #sculpt-canvas{width:100%;height:100%;min-height:0;
+  border:0;border-radius:0;box-shadow:none}
+body.sculpt-immersive .editor-switch{position:absolute;
+  top:calc(env(safe-area-inset-top,0px) + 6px);
+  left:calc(env(safe-area-inset-left,0px) + 6px);
+  z-index:15;width:min(280px,calc(100vw - 12px));margin:0;padding:4px;gap:4px;
+  flex-wrap:nowrap;box-shadow:0 4px 18px #0009;background:#132c35ef}
+body.sculpt-immersive .editor-switch button{flex:1 1 auto;min-width:0;
+  min-height:34px;font-size:.77rem;padding:4px 5px}
+body.sculpt-immersive .editor-switch #fullscreen-toggle{flex:0 0 36px;font-size:0}
+body.sculpt-immersive .editor-switch #fullscreen-toggle::before{content:"⤢";font-size:1.2rem}
+body.sculpt-immersive .editor-switch #palette-toggle{flex:0 0 30px;font-size:1.1rem}
+body.sculpt-immersive #active-tool-label{display:none}
+body.sculpt-immersive .sculpt-quickbar{position:absolute;
+  top:calc(env(safe-area-inset-top,0px) + 51px);
+  left:calc(env(safe-area-inset-left,0px) + 6px);
+  z-index:14;width:min(280px,calc(100vw - 12px));max-height:min(61dvh,430px);
+  margin:0;padding:5px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;
+  gap:4px;box-shadow:0 6px 22px #000a;background:#142b35ed;align-items:center}
+body.sculpt-immersive .quick-tool-label,
+body.sculpt-immersive .quick-level,
+body.sculpt-immersive .quick-size{grid-column:1/-1;flex:auto;min-width:0;order:initial}
+body.sculpt-immersive .quick-size>.control{min-width:0}
+body.sculpt-immersive .sculpt-quickbar .precision-toggle{grid-column:1/-1;
+  flex:auto;order:initial;min-height:32px;font-size:.74rem}
+body.sculpt-immersive .sculpt-quickbar #undo,
+body.sculpt-immersive .sculpt-quickbar #redo{order:initial;flex:auto;min-width:0;
+  min-height:32px;font-size:.75rem}
+body.sculpt-immersive .sculpt-quickbar button{min-height:32px;padding:3px 7px}
+body.sculpt-immersive.palette-collapsed .sculpt-quickbar{display:none}
+body.sculpt-immersive .canvas-wrap .precision-actions{
+  left:50%;right:auto;transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  width:min(490px,calc(100vw - 16px));max-width:calc(100vw - 16px)}
+@media(max-width:600px){
+  .editor-switch #fullscreen-toggle{font-size:.74rem;padding:4px 6px}
+  body.sculpt-immersive .sculpt-quickbar #undo,
+  body.sculpt-immersive .sculpt-quickbar #redo{font-size:0}
+  body.sculpt-immersive .sculpt-quickbar #undo::before,
+  body.sculpt-immersive .sculpt-quickbar #redo::before{font-size:1.15rem}
+}
 </style>
 </head>
 <body>
@@ -125,6 +182,8 @@ button:disabled{opacity:.43;cursor:not-allowed}
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
+<button type="button" id="palette-toggle" aria-label="Réduire la palette d'outils" aria-expanded="true" hidden>▴</button>
+<button type="button" id="fullscreen-toggle" aria-label="Passer en plein écran" aria-pressed="false">⛶ Plein écran</button>
 </nav>
 <section class="sculpt-quickbar" aria-label="Commandes principales de sculpture">
 <label class="quick-tool-label">Outil <select id="quick-tool" aria-label="Outil actif"></select></label>
@@ -143,7 +202,7 @@ button:disabled{opacity:.43;cursor:not-allowed}
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
-<div class="canvas-tag">Les cases vertes/bleues/orangées montrent l'effet réel du pinceau · eau et route = simulation visuelle, pas de collisions</div><section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
+<div class="canvas-tag">Le pinceau Terre respecte l’eau existante · eau et route = laboratoire visuel, sans collisions</div><section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
 <span class="precision-tip">1. Vise au doigt · 2. Ajuste · 3. Applique</span>
 <button type="button" id="nudge-left" aria-label="Déplacer le pinceau d'une case à gauche">←</button>
 <button type="button" id="nudge-up" aria-label="Déplacer le pinceau d'une case en haut">↑</button>
@@ -206,9 +265,9 @@ button:disabled{opacity:.43;cursor:not-allowed}
 
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 <section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
-<button id="import">Importer ce JSON</button><small>Le niveau d’eau est absolu : sa profondeur dépend du sol. La route reste illustrative ; aucune collision gameplay.</small></section>
+<button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-mobile-ui-v15"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-fullscreen-water-v16"></script>
 </body>
 </html>
