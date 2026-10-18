@@ -253,6 +253,103 @@ try{
   console.log('V13 water depth and exact undo/redo Chromium:',JSON.stringify({wet:afterWater.probe.wetCells,
     undoRestored:waterUndo.json===beforeWaterJSON,redoRestored:waterRedo.json===afterWater.json,
     redoCleared:divergent.redoCount===0}));
+
+  // V14: changing editor material really hides unrelated controls, preserving
+  // independent current tools and leaving the existing V13 water rendering alone.
+  const switches=await run(`(()=>{
+    const initial={groundHidden:document.querySelector('#ground-tools').hidden,
+      waterHidden:document.querySelector('#water-tools').hidden};
+    document.querySelector('#mode-water').click();
+    const water={groundHidden:document.querySelector('#ground-tools').hidden,
+      waterHidden:document.querySelector('#water-tools').hidden,
+      selected:window.__sculptLabProbe().editorKind};
+    document.querySelector('#mode-ground').click();
+    const land={groundHidden:document.querySelector('#ground-tools').hidden,
+      waterHidden:document.querySelector('#water-tools').hidden,
+      selected:window.__sculptLabProbe().editorKind};
+    return {initial,water,land};
+  })()`);
+  if(!switches.initial.waterHidden||switches.initial.groundHidden||
+     !switches.water.groundHidden||switches.water.waterHidden||
+     switches.water.selected!=='water'||switches.land.selected!=='ground'||
+     switches.land.groundHidden||!switches.land.waterHidden)
+     throw Error('V14 land/water editor switch does not isolate toolbars: '+JSON.stringify(switches));
+
+  // Phone viewport with ACTUAL CDP touch and deliberately staged painting:
+  // precise radius 0.5 = one cell, finger release must NEVER edit before Apply.
+  await send('Emulation.setDeviceMetricsOverride',
+    {width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  await run(`(()=>{
+    document.querySelector('#mode-ground').click();
+    document.querySelector('#flat').click();
+    document.querySelector('[data-mode=plateau]').click();
+    document.querySelector('#target').value='3';
+    const radius=document.querySelector('#radius');radius.value='0.5';
+    radius.dispatchEvent(new Event('input',{bubbles:true}));
+    const edge=document.querySelector('#edge');edge.value='0';
+    edge.dispatchEvent(new Event('input',{bubbles:true}));
+    const precise=document.querySelector('#precision-mode');
+    if(!precise.checked)precise.click();
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
+  })()`);
+  await sleep(230);
+  const stagedBefore=await run(`(()=>{
+    document.querySelector('#export').click();
+    return {json:document.querySelector('#json').value,probe:window.__sculptLabProbe()};
+  })()`);
+  const thumb=await run(`(()=>{
+    const b=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:b.left+b.width/2,y:b.top+b.height/2};
+  })()`);
+  await send('Input.dispatchTouchEvent',{type:'touchStart',
+    touchPoints:[{x:thumb.x,y:thumb.y,id:1,radiusX:5,radiusY:5,force:1}]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(170);
+  const stagedAim=await run(`(()=>{
+    document.querySelector('#export').click();
+    return {json:document.querySelector('#json').value,probe:window.__sculptLabProbe(),
+      canApply:!document.querySelector('#apply-precision').disabled};
+  })()`);
+  if(stagedAim.json!==stagedBefore.json||!stagedAim.probe.precisionTarget||
+     !stagedAim.canApply||stagedAim.probe.previewCells!==1)
+    throw Error('V14 touch must aim exactly one cell without painting: '+JSON.stringify(stagedAim.probe));
+  await run("document.querySelector('#nudge-right').click()");
+  const nudged=await run(`(()=>{
+    document.querySelector('#export').click();
+    return {probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};
+  })()`);
+  if(nudged.probe.precisionTarget.x!==Math.min(35,stagedAim.probe.precisionTarget.x+1)||
+     nudged.json!==stagedBefore.json)
+    throw Error('V14 nudge moved heights instead of just moving preview');
+  await run("document.querySelector('#apply-precision').click()");
+  const applied=await run(`(()=>{
+    document.querySelector('#export').click();
+    return {json:document.querySelector('#json').value,probe:window.__sculptLabProbe()};
+  })()`);
+  const initialLevels=JSON.parse(stagedBefore.json).levels;
+  const finalLevels=JSON.parse(applied.json).levels;
+  const changed=finalLevels.flatMap((n,i)=>n!==initialLevels[i]?[i]:[]);
+  const cell=nudged.probe.precisionTarget;
+  if(changed.length!==1||changed[0]!==cell.y*36+cell.x||
+     finalLevels[changed[0]]!==3||applied.probe.undoCount<1)
+    throw Error('V14 precise 0.5-cell stamp moved incorrect terrain: '+JSON.stringify({changed,cell}));
+  await run("document.querySelector('#undo').click()");
+  const exactUndo=await run(`(()=>{
+    document.querySelector('#export').click();return document.querySelector('#json').value;
+  })()`);
+  await run("document.querySelector('#redo').click()");
+  const exactRedo=await run(`(()=>{
+    document.querySelector('#export').click();return document.querySelector('#json').value;
+  })()`);
+  if(exactUndo!==stagedBefore.json||exactRedo!==applied.json)
+    throw Error('V14 precise edit must support exact water+ground undo/redo');
+
+  console.log('V14 editor switch / phone precise aim+confirm Chromium:',JSON.stringify({
+    tabs:switches,phoneWidth:390,aimNoMutation:stagedAim.json===stagedBefore.json,
+    previewCells:stagedAim.probe.previewCells,nudge:cell,changedCellCount:changed.length,
+    appliedLevel:finalLevels[changed[0]],undoOk:exactUndo===stagedBefore.json,redoOk:exactRedo===applied.json
+  }));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
