@@ -986,6 +986,7 @@ $('radius-plus').addEventListener('click',()=>adjustBrushSize(.5));
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
 $('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing));
+$('mode-surface').addEventListener('click',()=>setSurfaceEditing(!surfaceEditing));
 $('fullscreen-toggle').addEventListener('click',toggleImmersive);
 $('palette-toggle').addEventListener('click',()=>{
   const collapsed=document.body.classList.toggle('palette-collapsed');
@@ -1053,10 +1054,13 @@ $('new-map-form').addEventListener('submit',event=>{
      !Number.isInteger(height)||height<8||height>64)return;
   if(navigationTesting)setNavigationTesting(false);
   if(objectEditing)setObjectEditing(false);
+  if(surfaceEditing)setSurfaceEditing(false);
   const blank=createBlankSculptPreviewScene({width,height});
   exampleRoadEnabled=false;$('show-road').checked=false;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
+  surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
+  updateSurfaceCount();
   objectHistory=[];objectRedo=[];history=[];redoHistory=[];
   drawing=false;strokeUndo=null;strokePoints=[];lastCell='';
   hoverCell=null;precisionCell=null;precisionDragging=false;
@@ -1112,7 +1116,7 @@ $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 $('scene-export').addEventListener('click',()=>{
-  $('json').value=serializeSculptPreviewScene(terrain,placedObjects);
+  $('json').value=serializeSculptPreviewScene(terrain,placedObjects,surface);
   $('json').hidden=false;
   status('Scène complète exportée : relief et '+placedObjects.length+' objets, JSON à copier.');
 });
@@ -1126,6 +1130,8 @@ $('import').addEventListener('click',()=>{
   exampleRoadEnabled=false;$('show-road').checked=false;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
+  surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
+  loadSurfacePaintAssets();updateSurfaceCount();
   fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
  catch(e){status(e.message);}
 });
@@ -1133,6 +1139,7 @@ $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidde
 window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
+  paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
@@ -1160,4 +1167,4 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
   $('precision-mode').checked=true;
 }
 updatePrecisionActions();
-updateHistoryButtons();setTheme();setupRibbons();fit();
+updateHistoryButtons();updateSurfaceCount();setTheme();setupRibbons();fit();
