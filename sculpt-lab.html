@@ -179,6 +179,8 @@ body.sculpt-immersive .canvas-wrap .precision-actions{
   background:#142934f0;border:1px solid #6ba8a1;border-radius:12px;
   box-shadow:0 5px 18px #0008;font-size:.78rem}
 #navigation-hud select{width:100%;padding:7px}
+#navigation-hud input[type=range]{width:100%;accent-color:#83ddc4}
+#navigation-speed-value{font-weight:800;color:#aff4df}
 #navigation-status{font-size:.75rem;color:#b4f0e4;line-height:1.35}
 #navigation-stick{position:absolute;z-index:13;bottom:13px;left:13px;
   width:112px;height:112px;border-radius:50%;border:2px solid #88cbcf;
@@ -242,7 +244,12 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
       <option value="fly">Vol</option>
     </select>
   </label>
-  <output id="navigation-status" aria-live="polite">Utilise ZQSD / WASD / flèches ou le joystick.</output>
+  <label for="navigation-speed">Vitesse de déplacement
+    <output id="navigation-speed-value" for="navigation-speed">220</output>
+    <input id="navigation-speed" type="range" min="90" max="360" step="10" value="220"
+      aria-label="Vitesse du personnage pour le test">
+  </label>
+  <output id="navigation-status" aria-live="polite">Maintenir le joystick ou ZQSD / WASD / flèches. Une falaise trop haute bloque la marche.</output>
   <button type="button" id="navigation-reset">Replacer le personnage</button>
   <small>Test isolé : les capacités du jeu ne sont pas modifiées.</small>
 </section>
@@ -324,6 +331,6 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-native-materials-v18"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-navigation-comfort-v19"></script>
 </body>
 </html>
