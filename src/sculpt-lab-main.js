@@ -10,6 +10,7 @@ const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 let lastCell='',history=[],currentTexture=null,zoom=1,pan={x:0,y:0};
+let strokeTarget=null,hoverCell=null;
 let framePending=false;
 const images=new Map();
 const themes=['grass.forest','ground.snow','ground.sand','ground.volcanic_ash_lava'];
@@ -60,7 +61,20 @@ function draw(){
   ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const material=registry.require($('material').value,'surface');
-  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,rockPalette:$('rock').value});
+  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
+    rockPalette:$('rock').value,roundness:Number($('visual-smooth').value)/100});
+  if(hoverCell){
+    const radius=Number($('radius').value),hardness=Number($('hardness').value)/100;
+    const cx=(hoverCell.x+.5)*SCULPT_TILE.width;
+    const cy=(hoverCell.y+.5)*SCULPT_TILE.height-sculptHeightAt(terrain,hoverCell.x,hoverCell.y)*SCULPT_TILE.rise;
+    ctx.save();ctx.strokeStyle='rgba(238,251,231,.83)';ctx.lineWidth=1.3/zoom;
+    ctx.beginPath();ctx.ellipse(cx,cy,radius*SCULPT_TILE.width,
+      radius*SCULPT_TILE.height,0,0,Math.PI*2);ctx.stroke();
+    if(hardness<1){ctx.strokeStyle='rgba(147,235,213,.62)';ctx.setLineDash([5/zoom,5/zoom]);
+      ctx.beginPath();ctx.ellipse(cx,cy,Math.max(1,radius*hardness)*SCULPT_TILE.width,
+        Math.max(1,radius*hardness)*SCULPT_TILE.height,0,0,Math.PI*2);ctx.stroke();}
+    ctx.restore();
+  }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois générées · '+Math.round(zoom*100)+' %';
 }
@@ -87,7 +101,9 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
-    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau'}[mode]);
+    flatten:'Aplanir : nivelle vers la première hauteur touchée',
+    plateau:'Plateau : peindre directement à la hauteur exacte '+$('target').value,
+    smooth:'Adoucir : lisse les différences de niveau'}[mode]);
 }
 function undo(){
   if(!history.length){status('Aucune action à annuler');return;}
@@ -98,18 +114,21 @@ function begin(event){
   const cell=screenToCell(event);if(!cell)return;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
   drawing=true;lastCell='';strokeUndo=terrain;
+  strokeTarget=selectedMode==='plateau' ? Number($('target').value) :
+    sculptHeightAt(strokeUndo,cell.x,cell.y);
+  hoverCell=cell;
   stroke(event);
 }
 function stroke(event){
-  if(!drawing)return;
+  if(!drawing){hoverCell=screenToCell(event);scheduleDraw();return;}
   const cell=screenToCell(event);if(!cell)return;
   const key=cell.x+','+cell.y;
   if(key===lastCell)return;
   lastCell=key;
-  const target=sculptHeightAt(strokeUndo,cell.x,cell.y);
+  hoverCell=cell;
   terrain=applySculptBrush(terrain,{x:cell.x+.5,y:cell.y+.5,
     radius:Number($('radius').value),strength:Number($('strength').value),
-    mode:selectedMode,target});
+    hardness:Number($('hardness').value),mode:selectedMode,target:strokeTarget});
   scheduleDraw();
 }
 function stop(){
@@ -117,7 +136,7 @@ function stop(){
     if(strokeUndo!==terrain){history.push(strokeUndo);if(history.length>40)history.shift();}
     strokeUndo=null;
   }
-  drawing=false;lastCell='';
+  drawing=false;lastCell='';strokeTarget=null;
 }
 canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
@@ -149,6 +168,19 @@ $('zoom').addEventListener('input',()=>{
 });
 $('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;});
+$('hardness').addEventListener('input',()=>{$('hardness-value').textContent=$('hardness').value+' %';scheduleDraw();});
+$('visual-smooth').addEventListener('input',()=>{
+  $('visual-smooth-value').textContent=$('visual-smooth').value+' %';scheduleDraw();
+});
+function updateTarget(next){
+  const height=Math.max(0,Math.min(7,Number(next)||0));
+  $('target').value=String(height);$('target-value').textContent=String(height);
+  if(selectedMode==='plateau')status('Plateau : niveau '+height+' exact au cœur du pinceau');
+  scheduleDraw();
+}
+$('target').addEventListener('input',()=>updateTarget($('target').value));
+$('height-minus').addEventListener('click',()=>updateTarget(Number($('target').value)-1));
+$('height-plus').addEventListener('click',()=>updateTarget(Number($('target').value)+1));
 $('export').addEventListener('click',()=>{
  $('json').value=serializeSculptTerrain(terrain);$('json').hidden=false;
  status('JSON de hauteur généré : copiez-le pour conserver votre test');
@@ -162,5 +194,8 @@ $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidde
 window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
-  levelSpread:new Set(terrain.levels).size,zoom});
+  levelSpread:new Set(terrain.levels).size,zoom,
+  tool:selectedMode,target:Number($('target').value),hardness:Number($('hardness').value),
+  visualSmooth:Number($('visual-smooth').value),
+  centerHeight:sculptHeightAt(terrain,Math.floor(terrain.width/2),Math.floor(terrain.height/2))});
 selectMode('dig');setTheme();fit();
