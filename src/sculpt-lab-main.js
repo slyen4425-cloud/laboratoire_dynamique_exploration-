@@ -4,6 +4,10 @@ import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js';
+import {stepMovement} from './core/movement.js';
+import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
+import {createVirtualStick} from './input/virtual-stick.js';
+import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -14,6 +18,12 @@ let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
+let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+const navKeys=new Set(),navSpeed=83;
+let navViewport=null,navLastState='',navBlocked=false;
+const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
+if(demoActorAsset){demoActorImage.onload=scheduleDraw;demoActorImage.src=demoActorAsset.path;}
+
 const ribbonTextures={water:null,road:null};
 let framePending=false;
 const images=new Map();
@@ -60,7 +70,9 @@ function fit(){
   const worldHeight=terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise;
   zoom=Math.max(.32,Math.min(1.6,Math.min((width-30)/worldWidth,(height-20)/worldHeight)));
   $('zoom').value=String(Math.round(zoom*100));
-  center();scheduleDraw();
+  if(navigationTesting)centerNavigationCamera();
+  else center();
+  scheduleDraw();
 }
 function center(){
   const {width,height}=dimensions();
@@ -83,10 +95,11 @@ function draw(){
     rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
     overlays:ribbonTextures});
   lastRenderStats=result;
+  if(navigationTesting)drawNavigationActor();
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
-  if(displayCell&&(precisionOn||$('preview-cursor').checked)){
+  if(!navigationTesting&&displayCell&&(precisionOn||$('preview-cursor').checked)){
     const points=precisionOn?[{x:displayCell.x+.5,y:displayCell.y+.5}]
       :drawing&&strokePoints.length?strokePoints:[{x:displayCell.x+.5,y:displayCell.y+.5}];
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
@@ -123,7 +136,7 @@ function screenToCell(event){
 function status(message){$('notice').textContent=message;}
 
 function updatePrecisionActions(){
-  const enabled=$('precision-mode').checked;
+  const enabled=!navigationTesting&&$('precision-mode').checked;
   $('precision-actions').hidden=!enabled;
   const hasTarget=enabled&&!!precisionCell;
   $('apply-precision').disabled=!hasTarget;
@@ -262,6 +275,7 @@ function redo(){
   updateHistoryButtons();scheduleDraw();status('Action rétablie');
 }
 function begin(event){
+  if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
   const cell=screenToCell(event);if(!cell)return;
   hoverCell=cell;
@@ -275,6 +289,7 @@ function begin(event){
   stroke(event);
 }
 function stroke(event){
+  if(navigationTesting)return;
   if(precisionDragging){
     const next=screenToCell(event);
     if(next){precisionCell=next;hoverCell=next;updatePrecisionActions();}
@@ -327,6 +342,175 @@ function stop(){
   }
   drawing=false;lastCell='';strokePoints=[];
 }
+
+/* V17 isolated gameplay probe. Position and movement use the existing Exploration
+   stepMovement. Collision World alone decides whether the sculpt terrain blocks
+   that movement. The editor never persists player navigation in map JSON. */
+function navigationWorld(){
+  return {width:terrain.width*SCULPT_TILE.width,
+    height:terrain.height*SCULPT_TILE.height,objects:[],obstacles:[]};
+}
+function navigationContext(){
+  return {sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
+    cellHeight:SCULPT_TILE.height,maxStepUp:1,maxStepDown:1}};
+}
+function navHeight(){
+  const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
+    {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
+  return info?.level??0;
+}
+function centerNavigationCamera(){
+  if(!navigationTesting||!navActor)return;
+  const {width,height}=dimensions();
+  const worldWidth=terrain.width*SCULPT_TILE.width*zoom;
+  const worldHeight=(terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise)*zoom;
+  const targetX=width*.5-navActor.x*zoom;
+  const targetY=height*.52-(navActor.y-navHeight()*SCULPT_TILE.rise)*zoom;
+  pan.x=worldWidth<width?(width-worldWidth)*.5:
+    Math.max(width-worldWidth,Math.min(0,targetX));
+  // Heightfield can extend above row zero by a few rises; leave that margin.
+  pan.y=worldHeight<height?(height-worldHeight)*.5+7*SCULPT_TILE.rise*zoom:
+    Math.max(height-worldHeight,Math.min(7*SCULPT_TILE.rise*zoom,targetY));
+}
+function drawNavigationActor(){
+  if(!navActor)return;
+  const level=navHeight();
+  const {x,y}=navActor,footY=y-level*SCULPT_TILE.rise+3;
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,.24)';
+  ctx.beginPath();ctx.ellipse(x,footY+2,8,3,0,0,Math.PI*2);ctx.fill();
+  if(demoActorImage.complete&&demoActorImage.naturalWidth>0){
+    const width=27,height=37;
+    ctx.translate(x,footY);ctx.scale(navActor.facingX<0?-1:1,1);
+    ctx.drawImage(demoActorImage,-width/2,-height,width,height);
+  }else{
+    ctx.fillStyle='#ffd9a5';ctx.beginPath();ctx.arc(x,footY-18,8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#4262a3';ctx.fillRect(x-7,footY-15,14,15);
+  }
+  ctx.restore();
+}
+function navigationSpawn(){
+  // Start in an area known to be dry in the default demo; valid for a
+  // user-imported terrain too, because the fallback searches dry cells.
+  const preferred=[[3,3],[2,2],[terrain.width-3,2],[2,terrain.height-3]];
+  for(let y=1;y<terrain.height-1;y++)for(let x=1;x<terrain.width-1;x++)preferred.push([x,y]);
+  for(const [x,y] of preferred){
+    const candidate={x:(x+.5)*SCULPT_TILE.width,y:(y+.5)*SCULPT_TILE.height,
+      radius:5,locomotion:{modes:['ground']},facingX:1,moving:false};
+    const level=sculptNavigationSample(terrain,candidate.x,candidate.y,
+      {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
+    if(level?.waterDepth===0)return candidate;
+  }
+  return null;
+}
+function updateNavigationInfo(forced=false){
+  if(!navigationTesting||!navActor)return;
+  const info=sculptNavigationSample(terrain,navActor.x,navActor.y,
+    {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
+  const value=info?'Case '+(info.col+1)+' / '+(info.row+1)+' · hauteur '+info.level+
+    (info.waterDepth>0?' · eau '+info.waterDepth:'')+
+    (navBlocked?' · obstacle':''):'Hors zone';
+  if(forced||value!==navLastState){$('navigation-status').textContent=value;navLastState=value;}
+}
+function navigationInput(){
+  let x=(navKeys.has('arrowright')||navKeys.has('d')?1:0)-
+    (navKeys.has('arrowleft')||navKeys.has('a')||navKeys.has('q')?1:0);
+  let y=(navKeys.has('arrowdown')||navKeys.has('s')?1:0)-
+    (navKeys.has('arrowup')||navKeys.has('w')||navKeys.has('z')?1:0);
+  if(navStick&&Math.hypot(navStick.x,navStick.y)>.13){
+    x=navStick.x;y=navStick.y;
+  }
+  return {x,y};
+}
+function navigationTick(time){
+  if(!navigationTesting)return;
+  if(navPreviousTime!==null){
+    const dt=Math.min(.032,Math.max(0,(time-navPreviousTime)/1000));
+    const intent=navigationInput();
+    if(dt>0&&Math.hypot(intent.x,intent.y)>.13){
+      const previousX=navActor.x,previousY=navActor.y;
+      stepMovement(navigationWorld(),navActor,intent,dt,
+        {maxSpeed:navSpeed},undefined,navigationContext());
+      const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
+      navBlocked=moved<.001;
+      navActor.moving=moved>.001;
+      if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
+      if(moved>.001){centerNavigationCamera();scheduleDraw();}
+      updateNavigationInfo();
+    }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
+  }
+  navPreviousTime=time;
+  navFrame=requestAnimationFrame(navigationTick);
+}
+function setNavigationTesting(on){
+  if(on===navigationTesting)return;
+  if(on){
+    navActor=navigationSpawn();
+    if(!navActor){status('Aucune case sèche disponible pour le test');return;}
+    navigationTesting=true;
+    navViewport={zoom,pan:{...pan}};
+    navKeys.clear();navBlocked=false;navLastState='';
+    $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
+    $('navigation-toggle').textContent='✎ Éditer';
+    $('navigation-toggle').setAttribute('aria-pressed','true');
+    document.body.classList.add('navigation-testing');
+    $('navigation-locomotion').value='ground';
+    navActor.locomotion={modes:['ground']};
+    navStick=createVirtualStick($('navigation-stick'),$('navigation-knob'),30);
+    zoom=Math.max(.8,zoom);
+    $('zoom').value=String(Math.round(zoom*100));
+    centerNavigationCamera();
+    updatePrecisionActions();updateNavigationInfo(true);
+    navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
+    status('Test de navigation : relief, limites, eau, déplacement 360°.');
+  }else{
+    navigationTesting=false;
+    cancelAnimationFrame(navFrame);navFrame=0;navPreviousTime=null;
+    navStick?.dispose();navStick=null;navKeys.clear();
+    document.body.classList.remove('navigation-testing');
+    $('navigation-hud').hidden=true;$('navigation-stick').hidden=true;
+    $('navigation-toggle').textContent='🚶 Tester';
+    $('navigation-toggle').setAttribute('aria-pressed','false');
+    if(navViewport){zoom=navViewport.zoom;pan=navViewport.pan;}
+    $('zoom').value=String(Math.round(zoom*100));
+    navActor=null;navViewport=null;navBlocked=false;
+    updatePrecisionActions();scheduleDraw();
+    status('Édition réactivée : le test de marche n’a modifié aucune donnée.');
+  }
+  scheduleDraw();
+}
+$('navigation-toggle').addEventListener('click',()=>{
+  setNavigationTesting(!navigationTesting);
+});
+$('navigation-reset').addEventListener('click',()=>{
+  if(!navigationTesting)return;
+  navActor=navigationSpawn();
+  const mode=$('navigation-locomotion').value;
+  navActor.locomotion={modes:mode==='fly'?['fly']:mode==='swim'?['ground','swim']:['ground']};
+  navBlocked=false;centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+});
+$('navigation-locomotion').addEventListener('change',()=>{
+  if(!navigationTesting)return;
+  const mode=$('navigation-locomotion').value;
+  navActor.locomotion={modes:mode==='fly'?['fly']:mode==='swim'?['ground','swim']:['ground']};
+  navBlocked=false;updateNavigationInfo(true);scheduleDraw();
+});
+window.addEventListener('keydown',event=>{
+  if(!navigationTesting||event.ctrlKey||event.altKey||event.metaKey)return;
+  const key=event.key.toLowerCase();
+  if(!['arrowup','arrowdown','arrowleft','arrowright','z','q','s','d','w','a'].includes(key))return;
+  if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+  event.preventDefault();navKeys.add(key);
+});
+window.addEventListener('keyup',event=>navKeys.delete(event.key.toLowerCase()));
+window.addEventListener('blur',()=>{navKeys.clear();navStick?.reset();});
+window.__sculptNavProbe=()=>Object.freeze({
+  enabled:navigationTesting,player:navActor?{x:navActor.x,y:navActor.y,
+    level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
+  blocked:navBlocked,joystickAttached:!!navStick,activeFrames:navFrame>0,
+  sameTerrainVersion:terrain.schemaVersion===1
+});
+
 canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
 canvas.addEventListener('pointerup',stop);
