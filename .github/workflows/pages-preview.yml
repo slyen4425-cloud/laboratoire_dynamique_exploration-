@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-navigation-comfort-v19-prevalidation-2026-10-18
+# preview-revision: sculpt-object-palette-v20-prevalidation-2026-10-18
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 397ed378802d24da9442feaee2eb2a772cb1a45f
+          ref: b6663a329cf84f2670dce5b1cfa392c9f011d35a
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
