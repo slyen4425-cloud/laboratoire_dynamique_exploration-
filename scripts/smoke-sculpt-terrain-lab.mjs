@@ -463,8 +463,18 @@ try{
   if(!navStart.before.enabled||!navStart.before.joystickAttached||
      !navStart.hudVisible||!navStart.stickVisible||!navStart.before.player)
     throw Error('V17 navigation activation failed: '+JSON.stringify(navStart));
-  if(navStart.before.speed!==220||navStart.before.zoom<1.25)
+  if(navStart.before.speed!==220||navStart.before.zoom<1.7)
     throw Error('V19 default comfortable movement/viewport missing: '+JSON.stringify(navStart.before));
+  const camera=await run(`(()=>{
+    const slider=document.querySelector('#navigation-camera-zoom');
+    slider.value='215';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const close=window.__sculptNavProbe().zoom;
+    slider.value='175';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    return {close,restored:window.__sculptNavProbe().zoom,
+      label:document.querySelector('#navigation-camera-zoom-value').textContent};
+  })()`);
+  if(camera.close!==2.15||camera.restored!==1.75||camera.label!=='175 %')
+    throw Error('V21 camera does not follow actual zoom config: '+JSON.stringify(camera));
   const slower=await run(`(()=>{
     const slider=document.querySelector('#navigation-speed');
     slider.value='120';slider.dispatchEvent(new Event('input',{bubbles:true}));
@@ -485,7 +495,7 @@ try{
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   const afterKeyboard=await run('window.__sculptNavProbe()');
-  if(afterKeyboard.player.x-navStart.before.player.x<8)
+  if(afterKeyboard.player.x-navStart.before.player.x<35||!afterKeyboard.terrainCached)
     throw Error('V17 keyboard does not reach existing Exploration movement: '+JSON.stringify(afterKeyboard));
   const stickCenter=await run(`(()=>{
     const r=document.querySelector('#navigation-stick').getBoundingClientRect();
@@ -500,7 +510,7 @@ try{
   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await send('Emulation.setTouchEmulationEnabled',{enabled:false});
   const afterStick=await run('window.__sculptNavProbe()');
-  if(afterStick.player.x-afterKeyboard.player.x<5)
+  if(afterStick.player.x-afterKeyboard.player.x<20)
     throw Error('V17 actual touch stick failed: '+JSON.stringify(afterStick));
   const navStop=await run(`(()=>{
     const choice=document.querySelector('#navigation-locomotion');
