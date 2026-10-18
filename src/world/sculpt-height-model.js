@@ -3,11 +3,13 @@
 export const SCULPT_SCHEMA_VERSION=1;
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const int=(v,f)=>Number.isInteger(v)?v:f;
-export function createSculptTerrain({width=36,height=24,levels=null}={}){
+export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null}={}){
   const w=clamp(int(width,36),8,80),h=clamp(int(height,24),8,64);
   const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,7));
+  const water=Array.from({length:w*h},(_,i)=>clamp(int(waterLevels?.[i],-1),-1,10));
+  const contours=Array.from({length:w*h},(_,i)=>clamp(int(roundness?.[i],95),0,150));
   return Object.freeze({schemaVersion:SCULPT_SCHEMA_VERSION,width:w,height:h,
-    levels:Object.freeze(data)});
+    levels:Object.freeze(data),waterLevels:Object.freeze(water),roundness:Object.freeze(contours)});
 }
 export function sculptHeightAt(terrain,x,y){
   if(!terrain||x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
@@ -47,7 +49,7 @@ export function sculptBrushFootprint(terrain,{points=[],radius=3,edgeSoftness=0}
   return Object.freeze(visible);
 }
 export function applySculptStroke(terrain,{
-  points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0
+  points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0,rockRoundness=null
 }={}){
   if(!terrain||!['raise','dig','flatten','smooth','plateau'].includes(mode)||
      !Array.isArray(points)||points.length===0)return terrain;
@@ -61,6 +63,8 @@ export function applySculptStroke(terrain,{
   const chosen=clamp(int(target,sculptHeightAt(terrain,
     Math.floor(clean[0].x),Math.floor(clean[0].y))),0,7);
   const next=[...terrain.levels];
+  const profiles=[...terrain.roundness];
+  const profile=rockRoundness===null?null:clamp(Math.round(Number(rockRoundness)||0),0,150);
   let modified=false;
   for(let i=0;i<limit;i++){
     const weight=weights[i];
@@ -85,12 +89,68 @@ export function applySculptStroke(terrain,{
     }
     value=clamp(value,0,7);
     if(value!==old){next[i]=value;modified=true;}
+    if(profile!==null && profiles[i]!==profile){profiles[i]=profile;modified=true;}
   }
-  return modified ? Object.freeze({...terrain,levels:Object.freeze(next)}) : terrain;
+  return modified ? Object.freeze({...terrain,levels:Object.freeze(next),roundness:Object.freeze(profiles)}) : terrain;
 }
 export function applySculptBrush(terrain,options={}){
   return applySculptStroke(terrain,{...options,
     points:[{x:options.x,y:options.y}]});
+}
+
+// Experimental absolute water surface height. -1 = no authored water; water has
+// positive volume only when its surface is above the canonical land elevation.
+export function sculptWaterAt(terrain,x,y){
+  if(!terrain || x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
+  const i=y*terrain.width+x;
+  return Math.max(0,terrain.waterLevels[i]-terrain.levels[i]);
+}
+export function applySculptWaterStroke(terrain,{
+  points=[],radius=3,strength=1,mode='water-fill',target=3,edgeSoftness=0
+}={}){
+  if(!terrain||!['water-fill','water-rise','water-lower','water-erase','water-smooth'].includes(mode)
+    ||!Array.isArray(points))return terrain;
+  const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
+  if(!clean.length)return terrain;
+  const weights=footprintWeights(terrain,clean,
+    clamp(Number.isFinite(radius)?radius:3,.5,9),
+    clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1));
+  const next=[...terrain.waterLevels];
+  const level=clamp(int(target,3),0,10);
+  const power=clamp(int(strength,1),1,3);
+  let changed=false;
+  for(let i=0;i<weights.length;i++){
+    const influence=weights[i];
+    if(influence<=0)continue;
+    const previous=terrain.waterLevels[i];
+    const ground=terrain.levels[i];
+    const step=Math.max(1,Math.round(power*influence));
+    let value=previous;
+    if(mode==='water-fill') {
+      // A constant water plane: its depth comes directly from the land below.
+      value=previous<0?Math.round(ground+(level-ground)*influence):
+        Math.round(previous+(level-previous)*influence);
+    }
+    if(mode==='water-rise')value=(previous<0?ground:previous)+step;
+    if(mode==='water-lower')value=previous<0?-1:previous-step;
+    if(mode==='water-erase')value=influence>=.5?-1:previous;
+    if(mode==='water-smooth'){
+      let sum=0,count=0;const x=i%terrain.width,y=Math.floor(i/terrain.width);
+      for(const [dx,dy] of [[0,0],[-1,0],[1,0],[0,-1],[0,1]]){
+        const nx=x+dx,ny=y+dy;
+        if(nx<0||ny<0||nx>=terrain.width||ny>=terrain.height)continue;
+        const sample=terrain.waterLevels[ny*terrain.width+nx];
+        if(sample>=0){sum+=sample;count++;}
+      }
+      if(count && previous>=0)value=Math.round(previous+(sum/count-previous)*influence);
+    }
+    value=clamp(value,-1,10);
+    if(value!==previous){next[i]=value;changed=true;}
+  }
+  return changed?Object.freeze({...terrain,waterLevels:Object.freeze(next)}):terrain;
+}
+export function applySculptWaterBrush(terrain,options={}){
+  return applySculptWaterStroke(terrain,{...options,points:[{x:options.x,y:options.y}]});
 }
 export function sculptFaces(terrain){
   const faces=[];
@@ -112,11 +172,15 @@ export function sculptDemo(){
     const channel=Math.abs(y-(12+Math.sin(x*.32)*2.1));
     return channel<2.0?1:channel<3.1?2:bank;
   });
-  return createSculptTerrain({width:map.width,height:map.height,levels});
+  const waterLevels=levels.map((land,i)=>{
+    const x=i%map.width,y=Math.floor(i/map.width);
+    return Math.abs(y-(12+Math.sin(x*.32)*2.1))<2.35&&land<3?3:-1;
+  });
+  return createSculptTerrain({width:map.width,height:map.height,levels,waterLevels});
 }
 export function serializeSculptTerrain(terrain){
   return JSON.stringify({schemaVersion:1,width:terrain.width,height:terrain.height,
-    levels:[...terrain.levels]});
+    levels:[...terrain.levels],waterLevels:[...terrain.waterLevels],roundness:[...terrain.roundness]});
 }
 export function importSculptTerrain(serialized){
   const input=typeof serialized==='string'?JSON.parse(serialized):serialized;
@@ -124,7 +188,13 @@ export function importSculptTerrain(serialized){
      !Number.isInteger(input.height)||input.width<8||input.width>80||
      input.height<8||input.height>64||
      !Array.isArray(input.levels)||input.levels.length!==input.width*input.height||
-     !input.levels.every(v=>Number.isInteger(v)&&v>=0&&v<=7))
+     !input.levels.every(v=>Number.isInteger(v)&&v>=0&&v<=7)||
+     (input.waterLevels!==undefined&&(!Array.isArray(input.waterLevels)||
+      input.waterLevels.length!==input.width*input.height||
+      !input.waterLevels.every(v=>Number.isInteger(v)&&v>=-1&&v<=10)))||
+     (input.roundness!==undefined&&(!Array.isArray(input.roundness)||
+      input.roundness.length!==input.width*input.height||
+      !input.roundness.every(v=>Number.isInteger(v)&&v>=0&&v<=150))))
     throw new Error('Carte sculptable invalide (schemaVersion 1)');
   return createSculptTerrain(input);
 }
