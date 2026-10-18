@@ -1,3 +1,14 @@
+# Lot actif — 18/10/2026 — V14 ergonomie Terre/Eau et placement de précision
+
+- **Retour créateur :** V13 eau volumique et textures artistiquement validées ; panneau surchargé et mélange des outils Terre/Eau, pinceau trop approximatif au doigt malgré empreinte visible. Conserver impérativement la texture d'eau V13.
+- **Base technique sûre :** V13 `fb2bc0e22f9998073564d93c869c3f2f9c5e0424` avec CI 39113426529 et Pages 39113483632 SUCCESS. Checkpoint START `checkpoint/exploration-start-sculpt-editor-precision-v14-2026-10-18` et travail `work/exploration-sculpt-editor-precision-v14-2026-10-18` sur SHA exact. Rollbacks V13, V12 et 2D V6 intacts.
+- **Périmètre :** **switch Terre / Eau** exposant uniquement les commandes du domaine ; conserver contrôles communs (rayon, force, bord, annuler/rétablir) ; mode **Placement précis** permettant d'abord de viser sur le terrain (sans déformer), déplacement par flèches d'une cellule, puis bouton **Appliquer** ; taille du pinceau dès 0,5 cellule, visibilité de l'empreinte exacte, pas de nouveaux champs de sculpture.
+- **Propriétaires :** `sculpt-height-model` et `sculpt-height-renderer` restent seuls détenteurs de la sculpture et du rendu ; `sculpt-lab-main` responsable UI, pointer et validation des gestes. Eau V13 et Material Registry inchangés.
+- **Gels :** V13 eau `waterLevels`, texture, transparence, volumes, sauvegarde et démo ; `index.html`/`builder.html` 2D, WorldDocument, collisions, mouvement, caméra gameplay, Encounter/Combat ; pas de branche d'autorité parallèle ni de modification d'hydrologie.
+- **Validation :** CI tests Node + npm check, contrôle navigateur souris (navigation panneaux et pinceau), vrai pointer tactile en mode précis, aucune mutation de hauteur avant confirmation, Annuler/Rétablir, eau inchangée en pixels après changement de mode ; tests réels Builder/Combat, checkpoint et Pages uniquement après GREEN technique, validation auteur encore nécessaire.
+
+---
+
 # Lot actif — 18/10/2026 — V13 eau volumique et arrondi par passage + retour arrière
 
 - **Demande :** l'arrondi doit être appliqué uniquement aux prochains gestes, sans modifier le terrain déjà sculpté ; l'eau doit être modelable en volume comme le sol ; retour arrière très visible et fiable.
