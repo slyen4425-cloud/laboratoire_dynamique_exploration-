@@ -6,6 +6,7 @@ import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
+import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {createVirtualStick} from './input/virtual-stick.js';
 import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
@@ -442,8 +443,10 @@ function navigationWorld(){
     height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[]};
 }
 function navigationContext(){
-  return {sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
-    cellHeight:SCULPT_TILE.height,maxStepUp:1,maxStepDown:1}};
+  return {objectCatalog:sculptPreviewCollisionCatalog,
+    sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
+      cellHeight:SCULPT_TILE.height,maxStepUp:1,maxStepDown:1,
+      shoreEntryFraction:.14}};
 }
 function navHeight(){
   const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
@@ -500,7 +503,7 @@ function updateNavigationInfo(forced=false){
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const value=info?'Case '+(info.col+1)+' / '+(info.row+1)+' · hauteur '+info.level+
     (info.waterDepth>0?' · eau '+info.waterDepth:'')+
-    (navBlocked?' · obstacle (falaise, eau ou limite)':''):'Hors zone';
+    (navBlocked?' · obstacle (falaise, profondeur d’eau ou limite)':''):'Hors zone';
   if(forced||value!==navLastState){$('navigation-status').textContent=value;navLastState=value;}
 }
 function navigationInput(){
