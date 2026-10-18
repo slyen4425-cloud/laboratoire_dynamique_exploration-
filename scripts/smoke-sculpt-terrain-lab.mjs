@@ -497,6 +497,24 @@ try{
   const afterKeyboard=await run('window.__sculptNavProbe()');
   if(afterKeyboard.player.x-navStart.before.player.x<35||!afterKeyboard.terrainCached)
     throw Error('V17 keyboard does not reach existing Exploration movement: '+JSON.stringify(afterKeyboard));
+  // Force a 190ms main-thread freeze (simulates an overloaded Android device):
+  // old 32ms frame clamp lost 158ms of real movement per dropped frame.
+  await send('Input.dispatchKeyEvent',
+    {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+  await sleep(35);
+  const preJank=await run('window.__sculptNavProbe()');
+  await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
+    return true;})()`);
+  await sleep(60);
+  await send('Input.dispatchKeyEvent',
+    {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+  const postJank=await run('window.__sculptNavProbe()');
+  if(postJank.player.x-preJank.player.x<35)
+    throw Error('V21 main-thread 190ms stall caused unrealistic player crawl: '+
+      JSON.stringify({distance:postJank.player.x-preJank.player.x,preJank,postJank}));
+  console.log('V21 throttled Android-style jank movement:',JSON.stringify({
+    moved:postJank.player.x-preJank.player.x,terrainCached:postJank.terrainCached,
+    cameraZoom:postJank.zoom,fps:postJank.fps}));
   const stickCenter=await run(`(()=>{
     const r=document.querySelector('#navigation-stick').getBoundingClientRect();
     return {x:r.left+r.width/2,y:r.top+r.height/2};
