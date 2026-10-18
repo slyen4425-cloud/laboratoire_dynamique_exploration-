@@ -811,12 +811,13 @@ try{
     agreed.checked=true;agreed.dispatchEvent(new Event('change',{bubbles:true}));
     const ready=!document.querySelector('#new-map-create').disabled;
     document.querySelector('#new-map-create').click();
+    const notice=document.querySelector('#notice').textContent;
     document.querySelector('#scene-export').click();
     return {ready,created:window.__sculptLabProbe(),
       scene:JSON.parse(document.querySelector('#json').value),
       oldJson:document.querySelector('#json').value,
       panelClosed:document.querySelector('#new-map-panel').hidden,
-      notice:document.querySelector('#notice').textContent};
+      notice};
   })()`);
   if(!newMap.ready||!newMap.panelClosed||newMap.created.width!==18||
      newMap.created.height!==12||newMap.created.objects!==0||
