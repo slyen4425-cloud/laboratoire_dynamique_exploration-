@@ -34,11 +34,16 @@ footer{font-size:.82rem;color:#c0d2d5;display:flex;flex-wrap:wrap;gap:10px;align
 small{color:#a1b5ba}@media(max-width:600px){header{padding:8px}main{padding:6px;gap:6px}
 button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 #sculpt-canvas{height:51vh;min-height:230px}h1{font-size:.95rem}}
+.water-authoring{padding:6px 9px;background:#123544;border:1px solid #2d778e;border-radius:10px}
+.water-authoring strong{color:#91e7f6;font-size:.82rem}
+#undo,#redo{min-width:118px;font-weight:700}
+button:disabled{opacity:.43;cursor:not-allowed}
+@media(max-width:600px){.water-authoring{gap:5px}.water-authoring strong{width:100%}.water-authoring button{flex:1 1 28%}}
 </style>
 </head>
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
-<p>Hauteurs éditables, pieds de falaises arrondis, pinceau visible et raccord eau / route expérimental.</p></div>
+<p>Volume du terrain et de l’eau sculptables, arrondi par coup de pinceau, Annuler / Rétablir.</p></div>
 <a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
 <main>
 <section class="controls" aria-label="Outils de sculpture">
@@ -47,6 +52,18 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <button data-mode="flatten">Aplanir</button>
 <button data-mode="smooth">Lisser les hauteurs</button>
 <button data-mode="plateau">Plateau · hauteur exacte</button>
+</section>
+<section class="controls water-authoring" aria-label="Eau volumique sculptable">
+<strong>💧 Sculpter l’eau</strong>
+<button data-mode="water-fill">Remplir au niveau</button>
+<button data-mode="water-rise">Monter l’eau +</button>
+<button data-mode="water-lower">Baisser l’eau −</button>
+<button data-mode="water-erase">Effacer l’eau</button>
+<button data-mode="water-smooth">Lisser l’eau</button>
+<label class="control">Niveau d’eau <b id="water-target-value">3</b>
+<input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
+</section>
+<section class="controls" aria-label="Paramètres communs des pinceaux">
 <span class="control"><label for="radius">Pinceau <b id="radius-value">3</b></label><input id="radius" type="range" min="1" max="8" value="3"></span>
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
 <label class="control">Bord doux <b id="edge-value">0 %</b>
@@ -57,7 +74,7 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <input id="target" type="range" min="0" max="7" value="3" step="1" aria-label="Niveau exact 0 à 7">
 <button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
 </div>
-<button id="undo">Annuler</button><button id="reset">Exemple</button><button id="flat">Sol plat</button>
+<button id="undo" type="button" disabled>↶ Annuler</button><button id="redo" type="button" disabled>↷ Rétablir</button><button id="reset">Exemple</button><button id="flat">Sol plat</button>
 </section>
 <section class="controls">
 <label class="control">Sol réel
@@ -68,8 +85,8 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
 <option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option></select></label>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
-<label class="control">Arrondi visuel <b id="visual-smooth-value">95 %</b>
-<input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi roche et pied de falaise, 0 à 150 %"></label>
+<label class="control">Arrondi du prochain passage <b id="visual-smooth-value">95 %</b>
+<input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi de roche appliqué uniquement aux prochaines cellules sculptées, 0 à 150 %"></label>
 <button id="fit">Ajuster la vue</button>
 <label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
 <label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route</label>
@@ -80,9 +97,9 @@ button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 <section class="controls"><button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
-<button id="import">Importer ce JSON</button><small>Prototype isolé, aucune sauvegarde automatique ni collision gameplay.</small></section>
+<button id="import">Importer ce JSON</button><small>Le niveau d’eau est absolu : sa profondeur dépend du sol. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-river-road-v12"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-water-volume-v13"></script>
 </body>
 </html>
