@@ -15,6 +15,7 @@ import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js'
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js';
 import {isBlocked} from './core/collision.js';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
+  updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene} from './world/sculpt-scene-preview.js';
 
@@ -28,6 +29,7 @@ let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+let objectSelectedId=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
 function objectImage(assetId){
   if(objectImages.has(assetId))return objectImages.get(assetId);
@@ -653,6 +655,10 @@ function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
       Math.floor(t.x/SCULPT_TILE.width),Math.floor(t.y/SCULPT_TILE.height))*SCULPT_TILE.rise;
     ctx.save();ctx.translate(x,y);ctx.rotate(t.rotationDeg*Math.PI/180);
     ctx.drawImage(art,-width/2,-height,width,height);
+    if(objectEditing&&objectSelectedId===object.id){
+      ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
+      ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height,width,height);
+    }
     ctx.restore();
   }
 }
@@ -664,11 +670,50 @@ function refreshObjectOptions(){
     option.value=o.id;option.textContent=o.label;return option;
   }));
   if(definitions.some(o=>o.id===current))$('object-definition').value=current;
+  refreshObjectVariants();
+}
+function refreshObjectVariants(preferred=null){
+  const definitionId=$('object-definition').value;
+  const definition=objectDefinitionCatalogV1.get(definitionId);
+  const variants=sculptPreviewVariants(definitionId);
+  $('object-variant-wrap').hidden=variants.length===0;
+  $('object-variant').replaceChildren(...variants.map(v=>{
+    const option=document.createElement('option');
+    option.value=v.id;option.textContent=v.label;return option;
+  }));
+  if(variants.length){
+    const wanted=variants.find(v=>v.id===preferred)?.id??
+      definition.visual.defaultVariantId??variants[0].id;
+    $('object-variant').value=wanted;
+  }
+}
+function syncObjectSelectedControls(){
+  const selected=placedObjects.find(o=>o.id===objectSelectedId);
+  if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
+  const def=objectDefinitionCatalogV1.get(selected.objectDefinitionId);
+  $('object-category').value=def.kind;refreshObjectOptions();
+  $('object-definition').value=def.id;
+  refreshObjectVariants(selected.overrides.visualVariantId);
+  $('object-scale').value=String(Math.round(selected.transform.scaleX*100));
+  $('object-scale-value').textContent=$('object-scale').value+' %';
+  $('object-rotation').value=String(Math.round(selected.transform.rotationDeg));
+  $('object-rotation-value').textContent=$('object-rotation').value+'°';
+  $('object-selected').textContent='Sélection : '+def.label+' ('+selected.id+')';
+}
+function editSelectedObject(patch){
+  if(!$('object-palette').hidden&&objectSelectedId){
+    const changed=updateSculptPreviewObject(placedObjects,objectSelectedId,patch);
+    if(objectCommit(changed)){
+      syncObjectSelectedControls();
+      status('Objet modifié · Annuler disponible · Exporter scène pour conserver');
+    }
+  }
 }
 function updateObjectCount(){
   $('object-count').textContent=placedObjects.length+' objet(s) sur le relief';
   $('object-undo').disabled=objectHistory.length===0;
   $('object-redo').disabled=objectRedo.length===0;
+  if(objectSelectedId&&!placedObjects.some(o=>o.id===objectSelectedId))objectSelectedId=null;
   scheduleDraw();
 }
 function objectCommit(next){
@@ -703,11 +748,20 @@ function setObjectEditing(active){
 function applyObjectAtCell(cell){
   if(!objectEditing)return;
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  if($('object-action').value==='select'){
+    const found=findSculptPreviewObjectNear(placedObjects,x,y);
+    objectSelectedId=found?.id??null;
+    syncObjectSelectedControls();scheduleDraw();
+    status(found?'Objet sélectionné : change sa vue, sa rotation ou sa taille':'Aucun objet proche à sélectionner');
+    return;
+  }
   if($('object-action').value==='remove'){
     const found=findSculptPreviewObjectNear(placedObjects,x,y);
     if(!found){status('Aucun objet proche à supprimer');return;}
-    if(objectCommit(removeSculptPreviewObject(placedObjects,found.id)))
+    if(objectCommit(removeSculptPreviewObject(placedObjects,found.id))){
+      syncObjectSelectedControls();
       status('Objet supprimé : '+objectDefinitionCatalogV1.get(found.objectDefinitionId)?.label);
+    }
     return;
   }
   if(sculptWaterAt(terrain,cell.x,cell.y)>0){
@@ -716,30 +770,53 @@ function applyObjectAtCell(cell){
   const definitionId=$('object-definition').value;
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
     scale:Number($('object-scale').value)/100,
-    rotationDeg:Number($('object-rotation').value)});
+    rotationDeg:Number($('object-rotation').value),
+    variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
   else status('Limite de 128 objets atteinte');
 }
-$('object-category').addEventListener('change',refreshObjectOptions);
+$('object-category').addEventListener('change',()=>{objectSelectedId=null;
+  syncObjectSelectedControls();refreshObjectOptions();});
+$('object-definition').addEventListener('change',()=>{objectSelectedId=null;
+  syncObjectSelectedControls();refreshObjectVariants();});
+$('object-variant').addEventListener('change',()=>editSelectedObject({
+  variantId:$('object-variant').value
+}));
+$('object-action').addEventListener('change',()=>{
+  if($('object-action').value!=='select'){objectSelectedId=null;syncObjectSelectedControls();scheduleDraw();}
+});
 for(const [control,output,unit] of [['object-scale','object-scale-value',' %'],
   ['object-rotation','object-rotation-value','°']]){
   $(control).addEventListener('input',()=>{$(output).textContent=$(control).value+unit;});
+  $(control).addEventListener('change',()=>editSelectedObject(
+    control==='object-scale'?{scale:Number($(control).value)/100}:
+    {rotationDeg:Number($(control).value)}));
+}
+for(const [id,direction] of [['object-turn-left',-45],['object-turn-right',45]]){
+  $(id).addEventListener('click',()=>{
+    const next=(Number($('object-rotation').value)+direction+360)%360;
+    $('object-rotation').value=String(next);
+    $('object-rotation-value').textContent=next+'°';
+    editSelectedObject({rotationDeg:next});
+  });
 }
 $('object-undo').addEventListener('click',()=>{
   if(!objectHistory.length)return;
-  objectRedo.push(placedObjects);placedObjects=objectHistory.pop();updateObjectCount();
+  objectRedo.push(placedObjects);placedObjects=objectHistory.pop();updateObjectCount();syncObjectSelectedControls();
 });
 $('object-redo').addEventListener('click',()=>{
   if(!objectRedo.length)return;
-  objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();
+  objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();syncObjectSelectedControls();
 });
 refreshObjectOptions();updateObjectCount();
 window.__sculptObjectsProbe=()=>Object.freeze({
-  active:objectEditing,count:placedObjects.length,
+  active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
+  variantChoices:[...$('object-variant').options].map(o=>o.value),
   definitions:availableObjects.length,
   objects:placedObjects.map(o=>({id:o.id,definition:o.objectDefinitionId,
-    x:o.transform.x,y:o.transform.y})),
+    x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
+    visualVariantId:o.overrides.visualVariantId})),
   exportsIncludeObjects:JSON.parse(serializeSculptPreviewScene(terrain,placedObjects)).objects.length===placedObjects.length
 });
 
