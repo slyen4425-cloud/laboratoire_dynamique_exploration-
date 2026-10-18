@@ -214,6 +214,31 @@ function draw(){
     drawNavigationActor();
     drawPreviewObjects(Infinity,navActor?.y??Infinity);
   }else drawPreviewObjects();
+  // A temporary stroke preview is visual only; WorldSurface is committed on
+  // pointerup. No hidden draft geometry is persisted by the renderer.
+  if(surfaceEditing){
+    const points=surfaceDrawing&&surfaceStrokePoints.length?surfaceStrokePoints:
+      hoverCell?[{x:(hoverCell.x+.5)*SCULPT_TILE.width,
+        y:(hoverCell.y+.5)*SCULPT_TILE.height}]:[];
+    if(points.length){
+      const width=Number($('surface-width').value)*SCULPT_TILE.width;
+      ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+      ctx.globalAlpha=.42;ctx.strokeStyle=$('surface-material').value==='road.dirt'?'#d1a772':'#adedd1';
+      ctx.lineWidth=width;
+      ctx.beginPath();
+      for(let i=0;i<points.length;i++){
+        const p=points[i];
+        const level=sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
+          Math.floor(p.y/SCULPT_TILE.height));
+        const yy=p.y-level*SCULPT_TILE.rise;
+        if(!i)ctx.moveTo(p.x,yy);else ctx.lineTo(p.x,yy);
+      }
+      if(points.length===1){const p=points[0];ctx.lineTo(p.x+.001,
+        p.y-sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
+          Math.floor(p.y/SCULPT_TILE.height))*SCULPT_TILE.rise);}
+      ctx.stroke();ctx.restore();
+    }
+  }
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
