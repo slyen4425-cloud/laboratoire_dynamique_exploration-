@@ -236,7 +236,56 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
   ctx.restore();
   return Object.freeze({cells:marks.length,centerHeight:after});
 }
-export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette='warm',visualSmoothness=.72,overlays={},tile=SCULPT_TILE}={}){
+// Canonical WorldSurface strokes are rasterized on top of sculpt terrain.
+function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
+  if(!surface||!paintImages)return ()=>0;
+  const features=[...(surface.zones??[]),...(surface.routes??[])];
+  if(!features.length)return ()=>0;
+  const {width:w,height:h,rise}=tile;
+  const buckets=new Array(terrain.width*terrain.height);
+  const patterns=new Map();
+  for(const feature of features){
+    const img=paintImages.get(feature.materialId);
+    if(!img?.naturalWidth)continue;
+    if(!patterns.has(feature.materialId)){
+      const pattern=ctx.createPattern(img,'repeat');
+      if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
+        pattern.setTransform(new DOMMatrix().scale(.55));
+      patterns.set(feature.materialId,pattern);
+    }
+    if(!patterns.get(feature.materialId))continue;
+    const reach=feature.width/2+6;
+    const xs=feature.points.map(p=>p.x),ys=feature.points.map(p=>p.y);
+    const minx=Math.max(0,Math.floor((Math.min(...xs)-reach)/w));
+    const maxx=Math.min(terrain.width-1,Math.floor((Math.max(...xs)+reach)/w));
+    const miny=Math.max(0,Math.floor((Math.min(...ys)-reach)/h));
+    const maxy=Math.min(terrain.height-1,Math.floor((Math.max(...ys)+reach)/h));
+    for(let row=miny;row<=maxy;row++)for(let col=minx;col<=maxx;col++){
+      const i=row*terrain.width+col;
+      if(!buckets[i])buckets[i]=[];
+      buckets[i].push(feature);
+    }
+  }
+  return (col,row,level,x,y)=>{
+    const items=buckets[row*terrain.width+col];
+    if(!items?.length)return 0;
+    ctx.save();ctx.beginPath();ctx.rect(x,y,w+.65,h+.65);ctx.clip();
+    for(const feature of items){
+      const pattern=patterns.get(feature.materialId);
+      if(!pattern||feature.points.length<2)continue;
+      ctx.beginPath();
+      ctx.moveTo(feature.points[0].x,feature.points[0].y-level*rise);
+      for(let i=1;i<feature.points.length;i++)
+        ctx.lineTo(feature.points[i].x,feature.points[i].y-level*rise);
+      ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=pattern;
+      ctx.lineWidth=feature.width+6;ctx.globalAlpha=.20;ctx.stroke();
+      ctx.lineWidth=feature.width;ctx.globalAlpha=.95;ctx.stroke();
+    }
+    ctx.restore();return items.length;
+  };
+}
+
+export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette='warm',visualSmoothness=.72,overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -252,6 +301,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
   let waterCells=0,roadCells=0,faceRuns=0;
   const hasProfiles=Array.isArray(terrain.roundness);
+  const drawPaint=sculptPaintByCell(ctx,terrain,tile,paintSurface,paintImages);
+  let paintedCells=0;
   const deferredToes=[];
   for(let row=0;row<terrain.height;row++){
     // Draw all top surfaces of a row first, then contiguous wall runs.
@@ -269,6 +320,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
         ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
       }
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
+      paintedCells+=drawPaint(col,row,level,x,y);
       const side=east.get(idx);
       if(side)rockFace(ctx,{x:x+w-3,y:y+3,width:4.5,
         height:(side.upper-side.lower)*rise+h-3,
@@ -344,5 +396,5 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
     ctx.lineWidth=.65;ctx.stroke();
     ctx.restore();
   }
-  return {faceCount:faces.length,faceRuns,waterCells,roadCells,worldWidth:totalWidth,worldHeight:totalHeight};
+  return {faceCount:faces.length,faceRuns,waterCells,roadCells,paintedCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
