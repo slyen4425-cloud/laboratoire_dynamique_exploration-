@@ -17,7 +17,7 @@ import {isBlocked} from './core/collision.js';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
-  importSculptPreviewScene} from './world/sculpt-scene-preview.js';
+  importSculptPreviewScene,createBlankSculptPreviewScene} from './world/sculpt-scene-preview.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -886,8 +886,57 @@ window.addEventListener('keydown',event=>{
   if(['TEXTAREA','INPUT'].includes(document.activeElement?.tagName))return;
   event.preventDefault();if(event.key.toLowerCase()==='y'||event.shiftKey)redo();else undo();
 });
-$('reset').addEventListener('click',()=>{const old=terrain;terrain=sculptDemo();commitUndo(old);scheduleDraw();status('Relief exemple rechargé');});
-$('flat').addEventListener('click',()=>{const old=terrain;terrain=createSculptTerrain();commitUndo(old);scheduleDraw();status('Terrain plat : prêt à sculpter');});
+// New scene is a deliberately separate action from "flatten current terrain".
+// Everything deleted is explicit in the confirm dialog, with no hidden state.
+function setNewMapPanel(open){
+  const value=!!open;
+  $('new-map-panel').hidden=!value;
+  $('new-map-toggle').setAttribute('aria-expanded',String(value));
+  if(value){
+    $('new-map-width').value=String(terrain.width);
+    $('new-map-height').value=String(terrain.height);
+    $('new-map-confirm').checked=false;
+    $('new-map-create').disabled=true;
+    $('new-map-width').focus();
+  }else $('new-map-toggle').focus();
+}
+$('new-map-toggle').addEventListener('click',()=>setNewMapPanel($('new-map-panel').hidden));
+$('new-map-cancel').addEventListener('click',()=>setNewMapPanel(false));
+$('new-map-confirm').addEventListener('change',()=>{
+  $('new-map-create').disabled=!$('new-map-confirm').checked;
+});
+$('new-map-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!$('new-map-confirm').checked||!$('new-map-form').reportValidity())return;
+  const width=Number($('new-map-width').value),height=Number($('new-map-height').value);
+  if(!Number.isInteger(width)||width<8||width>80||
+     !Number.isInteger(height)||height<8||height>64)return;
+  if(navigationTesting)setNavigationTesting(false);
+  if(objectEditing)setObjectEditing(false);
+  const blank=createBlankSculptPreviewScene({width,height});
+  terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
+  objectHistory=[];objectRedo=[];history=[];redoHistory=[];
+  drawing=false;strokeUndo=null;strokePoints=[];lastCell='';
+  hoverCell=null;precisionCell=null;precisionDragging=false;
+  navTerrainCache=null;navLastState='';
+  $('json').value='';$('json').hidden=true;
+  updateHistoryButtons();updateObjectCount();syncObjectSelectedControls();
+  updatePrecisionActions();setNewMapPanel(false);fit();
+  status('Carte vierge créée : '+width+' × '+height+' cases · aucun objet · aucune eau. Prête à sculpter.');
+});
+window.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!$('new-map-panel').hidden){event.preventDefault();setNewMapPanel(false);}
+});
+$('reset').addEventListener('click',()=>{
+  const old=terrain;terrain=sculptDemo();commitUndo(old);scheduleDraw();
+  status('Relief exemple rechargé (36 × 24) ; objets déjà placés conservés');
+});
+$('flat').addEventListener('click',()=>{
+  const old=terrain;
+  terrain=createSculptTerrain({width:old.width,height:old.height,waterLevels:old.waterLevels});
+  commitUndo(old);scheduleDraw();
+  status('Sol actuel aplani : dimensions, eau et objets conservés');
+});
 $('fit').addEventListener('click',fit);
 $('material').addEventListener('change',setTheme);
 $('water-material').addEventListener('change',setWaterMaterial);
