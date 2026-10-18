@@ -147,6 +147,7 @@ function setEditorKind(kind){
   if(selectedMode!==wanted)selectMode(wanted);
   else $('active-tool-label').textContent=(kind==='ground'?'Terre':'Eau')+' · '+selectedMode;
   updatePrecisionActions();
+  syncQuickToolbar();
 }
 function precisionApply(){
   if(!$('precision-mode').checked||!precisionCell)return;
@@ -165,6 +166,38 @@ function precisionApply(){
   scheduleDraw();
 }
 
+// One quick toolbar follows the established Terre/Eau tools (no duplicate tool state).
+function syncQuickToolbar(){
+  const select=$('quick-tool'),wanted=selectedMode;
+  const group=editorKind;
+  const available=[...document.querySelectorAll('[data-mode]')].filter(button=>
+    (button.dataset.mode.startsWith('water-')?'water':'ground')===group);
+  if(select.options.length!==available.length ||
+      available.some((button,i)=>select.options[i]?.value!==button.dataset.mode)){
+    select.replaceChildren(...available.map(button=>{
+      const option=document.createElement('option');
+      option.value=button.dataset.mode;
+      option.textContent=button.textContent.trim().replace(/\s+/g,' ');
+      return option;
+    }));
+  }
+  select.value=wanted;
+  $('quick-level-label').textContent=group==='water'?'Eau':'Hauteur';
+  $('quick-level-value').textContent=group==='water'?
+    $('water-target').value:$('target').value;
+}
+function adjustQuickLevel(delta){
+  const el=editorKind==='water' ? $('water-target') : $('target');
+  const limit=editorKind==='water'?10:7;
+  el.value=String(Math.max(0,Math.min(limit,Number(el.value)+delta)));
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function adjustBrushSize(delta){
+  const input=$('radius');
+  const size=Math.max(.5,Math.min(16,Number(input.value)+delta));
+  input.value=String(size);
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+}
 function selectMode(mode){
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
@@ -176,6 +209,7 @@ function selectMode(mode){
     button.classList.toggle('active',active);
     button.setAttribute('aria-pressed',String(active));
   });
+  syncQuickToolbar();
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
@@ -287,6 +321,12 @@ canvas.addEventListener('wheel',event=>{
   $('zoom').value=String(Math.round(zoom*100));scheduleDraw();
 },{passive:false});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode)));
+$('quick-tool').addEventListener('change',()=>selectMode($('quick-tool').value));
+$('quick-level-minus').addEventListener('click',()=>adjustQuickLevel(-1));
+$('quick-level-plus').addEventListener('click',()=>adjustQuickLevel(1));
+$('radius-minus').addEventListener('click',()=>adjustBrushSize(-.5));
+$('radius-plus').addEventListener('click',()=>adjustBrushSize(.5));
+
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
 $('precision-mode').addEventListener('change',()=>{
@@ -336,12 +376,12 @@ $('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textCo
   scheduleDraw();});
 $('water-target').addEventListener('input',()=>{
   $('water-target-value').textContent=$('water-target').value;
-  status('Surface d’eau absolue : niveau '+$('water-target').value);scheduleDraw();
+  syncQuickToolbar();status('Surface d’eau absolue : niveau '+$('water-target').value);scheduleDraw();
 });
 function changeTarget(level){
  const value=Math.max(0,Math.min(7,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
- status('Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
+ syncQuickToolbar();status('Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
 $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
@@ -360,6 +400,9 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
   previewCells:previewSummary?.cells??0,editorKind,
+  brushSize:Number($('radius').value),quickTool:$('quick-tool').value,
+  canvasTop:canvas.getBoundingClientRect().top,viewportHeight:window.innerHeight,
+  advancedOpen:$('sculpt-settings').open,
   precisionMode:$('precision-mode').checked,
   precisionTarget:precisionCell?{...precisionCell}:null,
   faceRuns:lastRenderStats?.faceRuns??0,waterCells:lastRenderStats?.waterCells??0,
