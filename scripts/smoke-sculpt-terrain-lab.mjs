@@ -797,9 +797,10 @@ try{
     document.querySelector('#scene-export').click();
     return {map:window.__sculptLabProbe(),
       scene:document.querySelector('#json').value,
+      oldScene:window.__v24OldScene,
       closed:document.querySelector('#new-map-panel').hidden};
   })()`);
-  if(!canceled.closed||canceled.scene!==window.__v24OldScene||
+  if(!canceled.closed||canceled.scene!==canceled.oldScene||
      canceled.map.objects!==wetScene.before.objects)
     throw Error('V24 cancel mutated existing scene: '+JSON.stringify(canceled));
   const newMap=await run(`(()=>{
