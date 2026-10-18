@@ -6,6 +6,7 @@ import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
+import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {createVirtualStick} from './input/virtual-stick.js';
 import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
@@ -43,6 +44,38 @@ const navKeys=new Set();
 // Preview-only navigation speed; authoritative runtime movement remains unchanged.
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false;
+let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
+let navTerrainCache=null;
+function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigation-camera-zoom').value)/100||1.75));}
+/* Only the static sculpt raster is cached. Actor, objects, collision, input,
+   camera and height data retain their existing owners and update separately. */
+function navigationBackground(){
+  const rockPalette=$('rock').value,materialId=$('material').value;
+  const smoothness=Number($('visual-smooth').value)/100;
+  const signature=[rockPalette,materialId,smoothness,
+    ribbonTextures.water?.visible,ribbonTextures.road?.visible,
+    ribbonTextures.water?.material?.id,ribbonTextures.road?.material?.id].join('|');
+  const same=navTerrainCache&&navTerrainCache.terrain===terrain&&
+    navTerrainCache.texture===currentTexture&&navTerrainCache.signature===signature&&
+    navTerrainCache.waterTexture===ribbonTextures.water?.texture&&
+    navTerrainCache.roadTexture===ribbonTextures.road?.texture;
+  if(same)return navTerrainCache;
+  const paddingX=18,paddingY=7*SCULPT_TILE.rise+18;
+  const raster=document.createElement('canvas');
+  const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
+  raster.width=Math.ceil((terrain.width*SCULPT_TILE.width+paddingX*2)*scale);
+  raster.height=Math.ceil((terrain.height*SCULPT_TILE.height+paddingY+20)*scale);
+  const imageContext=raster.getContext('2d',{alpha:true});
+  imageContext.scale(scale,scale);
+  imageContext.translate(paddingX,paddingY);
+  const material=registry.require(materialId,'surface');
+  const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
+    rockPalette,visualSmoothness:smoothness,overlays:ribbonTextures});
+  navTerrainCache={terrain,texture:currentTexture,signature,
+    waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
+    image:raster,scale,paddingX,paddingY,result};
+  return navTerrainCache;
+}
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
 if(demoActorAsset){demoActorImage.onload=scheduleDraw;demoActorImage.src=demoActorAsset.path;}
 
@@ -134,10 +167,18 @@ function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
-  const material=registry.require($('material').value,'surface');
-  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
-    rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
-    overlays:ribbonTextures});
+  let result;
+  if(navigationTesting){
+    const snapshot=navigationBackground();
+    ctx.drawImage(snapshot.image,-snapshot.paddingX,-snapshot.paddingY,
+      snapshot.image.width/snapshot.scale,snapshot.image.height/snapshot.scale);
+    result=snapshot.result;
+  }else{
+    const material=registry.require($('material').value,'surface');
+    result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
+      rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
+      overlays:ribbonTextures});
+  }
   lastRenderStats=result;
   if(navigationTesting){
     drawPreviewObjects(navActor?.y??Infinity);
@@ -415,7 +456,7 @@ function centerNavigationCamera(){
   const worldWidth=terrain.width*SCULPT_TILE.width*zoom;
   const worldHeight=(terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise)*zoom;
   const targetX=width*.5-navActor.x*zoom;
-  const targetY=height*.52-(navActor.y-navHeight()*SCULPT_TILE.rise)*zoom;
+  const targetY=height*.57-(navActor.y-navHeight()*SCULPT_TILE.rise)*zoom;
   pan.x=worldWidth<width?(width-worldWidth)*.5:
     Math.max(width-worldWidth,Math.min(0,targetX));
   // Heightfield can extend above row zero by a few rises; leave that margin.
@@ -475,19 +516,33 @@ function navigationInput(){
 function navigationTick(time){
   if(!navigationTesting)return;
   if(navPreviousTime!==null){
-    const dt=Math.min(.032,Math.max(0,(time-navPreviousTime)/1000));
+    const elapsed=Math.max(0,time-navPreviousTime);
     const intent=navigationInput();
-    if(dt>0&&Math.hypot(intent.x,intent.y)>.13){
+    navMetricFrames++;
+    if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
       const previousX=navActor.x,previousY=navActor.y;
-      stepMovement(navigationWorld(),navActor,intent,dt,
-        {maxSpeed:navSpeed()},undefined,navigationContext());
+      const world=navigationWorld(),context=navigationContext();
+      // Critical V21: retain elapsed time during dropped frames, but apply
+      // movement with short steps so Collision World still stops cliffs/water.
+      for(const dt of sculptNavigationFrameSteps(elapsed))
+        stepMovement(world,navActor,intent,dt,{maxSpeed:navSpeed()},undefined,context);
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
+      navMetricDistance+=moved;
       navBlocked=moved<.001;
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
       if(moved>.001){centerNavigationCamera();scheduleDraw();}
       updateNavigationInfo();
     }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
+    if(!navMetricLast)navMetricLast=time;
+    if(time-navMetricLast>=900){
+      const elapsedSec=(time-navMetricLast)/1000;
+      navFps=Math.round(navMetricFrames/elapsedSec);
+      navStepSpeed=Math.round(navMetricDistance/elapsedSec);
+      $('navigation-metrics').textContent=navFps+' FPS · '+navStepSpeed+
+        ' unités/s réelles'+(navBlocked?' · obstacle':'');
+      navMetricFrames=0;navMetricDistance=0;navMetricLast=time;
+    }
   }
   navPreviousTime=time;
   navFrame=requestAnimationFrame(navigationTick);
@@ -509,8 +564,11 @@ function setNavigationTesting(on){
     navActor.locomotion={modes:['ground']};
     navStick=createVirtualStick($('navigation-stick'),$('navigation-knob'),30);
     // Keep the hero and movement legible on a small phone display.
-    zoom=Math.max(1.25,zoom);
+    zoom=navigationCameraZoom();
     $('zoom').value=String(Math.round(zoom*100));
+    navTerrainCache=null;navFps=0;navStepSpeed=0;
+    navMetricLast=0;navMetricFrames=0;navMetricDistance=0;
+    $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
@@ -525,12 +583,19 @@ function setNavigationTesting(on){
     $('navigation-toggle').setAttribute('aria-pressed','false');
     if(navViewport){zoom=navViewport.zoom;pan=navViewport.pan;}
     $('zoom').value=String(Math.round(zoom*100));
-    navActor=null;navViewport=null;navBlocked=false;
+    navActor=null;navViewport=null;navBlocked=false;navTerrainCache=null;
     updatePrecisionActions();scheduleDraw();
     status('Édition réactivée : le test de marche n’a modifié aucune donnée.');
   }
   scheduleDraw();
 }
+$('navigation-camera-zoom').addEventListener('input',()=>{
+  $('navigation-camera-zoom-value').textContent=$('navigation-camera-zoom').value+' %';
+  if(navigationTesting){
+    zoom=navigationCameraZoom();$('zoom').value=String(Math.round(zoom*100));
+    centerNavigationCamera();scheduleDraw();
+  }
+});
 $('navigation-speed').addEventListener('input',()=>{
   $('navigation-speed-value').textContent=$('navigation-speed').value;
   updateNavigationInfo(true);
@@ -563,7 +628,8 @@ window.addEventListener('blur',()=>{navKeys.clear();navStick?.reset();});
 window.__sculptNavProbe=()=>Object.freeze({
   enabled:navigationTesting,player:navActor?{x:navActor.x,y:navActor.y,
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
-  blocked:navBlocked,speed:navSpeed(),zoom,joystickAttached:!!navStick,activeFrames:navFrame>0,
+  blocked:navBlocked,speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
+  terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   sameTerrainVersion:terrain.schemaVersion===1
 });
 
