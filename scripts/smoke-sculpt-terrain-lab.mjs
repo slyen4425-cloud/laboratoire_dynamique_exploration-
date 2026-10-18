@@ -71,6 +71,34 @@ try{
      let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
      return {visible,w:canvas.width,h:canvas.height};})()`);
   if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
+  // V12 real Chromium feature pixels, not just toggles or SVG flags.
+  const overlayGate=await run(`(async()=>{
+ await new Promise(ok=>setTimeout(ok,220));
+ const pixels=()=>{const canvas=document.querySelector('#sculpt-canvas');
+   return Uint8Array.from(canvas.getContext('2d',{willReadFrequently:true})
+    .getImageData(0,0,canvas.width,canvas.height).data);};
+ const redraw=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+ const changed=(a,b)=>{let n=0;for(let i=0;i<a.length;i+=4)
+   if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])n++;return n;};
+ const serialize=()=>{document.querySelector('#export').click();return document.querySelector('#json').value;};
+ const saved=serialize(),initial=window.__sculptLabProbe(),on=pixels();
+ const water=document.querySelector('#show-water'),road=document.querySelector('#show-road');
+ water.checked=false;water.dispatchEvent(new Event('change',{bubbles:true}));
+ await redraw();await redraw();const withoutWater=pixels();
+ road.checked=false;road.dispatchEvent(new Event('change',{bubbles:true}));
+ await redraw();await redraw();const withoutRoad=pixels();
+ water.checked=true;water.dispatchEvent(new Event('change',{bubbles:true}));
+ road.checked=true;road.dispatchEvent(new Event('change',{bubbles:true}));
+ await redraw();await redraw();
+ return {waterChanged:changed(on,withoutWater),roadChanged:changed(withoutWater,withoutRoad),
+   unchanged:saved===serialize(),faceRuns:initial.faceRuns,faces:initial.faceCount,
+   waterCells:initial.waterCells,roadCells:initial.roadCells};
+})()`);
+  if(overlayGate.waterChanged<25||overlayGate.roadChanged<25||
+    overlayGate.waterCells<1||overlayGate.roadCells<1||
+    overlayGate.faceRuns>=overlayGate.faces||!overlayGate.unchanged)
+    throw Error('V12 water/road or continuous cliff foot: '+JSON.stringify(overlayGate));
+  console.log('V12 water/road pixels:',JSON.stringify(overlayGate));
   await run("document.querySelector('#flat').click()");
   const flat=await run("window.__sculptLabProbe()");
   if(flat.faceCount!==0)throw Error('Flat map still has cliff faces: '+JSON.stringify(flat));
@@ -86,6 +114,9 @@ try{
   });
   await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
+  await sleep(70);
+  const brushPreview=await run("window.__sculptLabProbe()");
+  if(brushPreview.previewCells<5)throw Error('V12 pointer preview absent: '+JSON.stringify(brushPreview));
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:center.x,y:center.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:center.x,y:center.y,button:'left',clickCount:1});
   await sleep(200);
