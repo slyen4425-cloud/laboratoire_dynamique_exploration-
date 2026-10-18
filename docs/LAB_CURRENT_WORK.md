@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V26 rétablir idle/marche sur avatar de navigation sculpté
+
+- **Retour :** déplacement du héros dans labo sculpture ressemble à du glissement, pas d'idle ni de marche simulée contrairement au moteur précédent.
+- **Base :** V25 `237974a489a1d1c1f9c05fefdb770474a3c09753` (CI [39167226760](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39167226760) SUCCESS), START `checkpoint/exploration-start-sculpt-native-actor-motion-v26-2026-10-18`, work `work/exploration-sculpt-native-actor-motion-v26-2026-10-18`.
+- **Cause :** labo sculpté dessinait un SVG fixe à x/y, tandis que le moteur officiel possède déjà `normalizeMapActorVisual`, `createMapActorVisualPreparer` et `createMapActorRenderer` (ancre, miroir, ombre, idleAmplitude/Frequency, walkAmplitude/Frequency).
+- **Implémentation :** réutilisation exclusive des trois composants natifs ; sprite préparé une fois à l'onload ; mouvement visuel idle/marche piloté par `navActor.moving` du vrai `stepMovement`; repaint idle 18fps environ, marche 30fps environ, terrain toujours mis en cache. Aucun nouveau contrat d'animation, ni modification de vitesse, entrée clavier/joystick, collisions, caméra ou objet.
+- **Tests :** Chromium vrai viewport : visage natif chargé, horloge idle après départ, marche durant la touche, retour idle après relâchement, V21 smartphone jank et V24 carte vierge, CI tous domaines. Le rythme exact et sensation esthétique restent soumis à validation utilisateur.
+- **Hors lot :** pinceau de textures et véritables routes/zones doit réutiliser le modèle `WorldSurface`, éviter la création d'un deuxième modèle de monde. Le SVG seul ne fournit pas un vrai sprite sheet de pas.
+- **Statut :** CI du SHA final à vérifier avant publication.
+
+---
+
 # Lot actif — 18/10/2026 — V25 corriger la route de démonstration sur une carte vierge
 
 - **Retour utilisateur :** V24 « Nouvelle carte » laisse une route visible. Source du défaut : `SCULPT_PREVIEW_RIBBONS.road` trace un ruban décoratif fixe indépendant des données terrain ou scene ; `show-road` restait activé sur nouvelle scène ou import. La route fantôme n'a pas d'autorité gameplay et ne doit pas être confondue avec une route éditable.
