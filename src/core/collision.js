@@ -25,6 +25,8 @@ import {
   resolveSurfaceTraversal
 } from './surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 
+import {isSculptNavigationBlocked} from './sculpt-navigation-collision.js';
+
 const COLLISION_EPSILON = 1e-6;
 
 export {
@@ -64,6 +66,11 @@ export function isBlocked(
   if (!boundaryFits) {
     return true;
   }
+
+  // Experimental relief is read only when its explicit lab context is supplied.
+  // This leaves all existing 2D movement/collision paths unchanged.
+  if (collisionContext?.sculptNavigation &&
+      isSculptNavigationBlocked(collisionContext.sculptNavigation,entity,x,y))return true;
 
   for (const obstacle of Array.isArray(world.obstacles) ? world.obstacles : []) {
     if (circleIntersectsRect(x, y, entity.radius, obstacle)) {
