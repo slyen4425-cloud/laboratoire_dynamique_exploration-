@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain,sculptDemo,sculptHeightAt,applySculptBrush,
-  sculptFaces,applySculptStroke,importSculptTerrain,serializeSculptTerrain} from '../src/world/sculpt-height-model.js';
-import {SCULPT_TILE,SCULPT_ROCK_PALETTES,sculptFaceContour,drawSculptTerrain}
+  sculptFaces,applySculptStroke,sculptBrushFootprint,importSculptTerrain,serializeSculptTerrain} from '../src/world/sculpt-height-model.js';
+import {SCULPT_TILE,SCULPT_ROCK_PALETTES,sculptFaceContour,drawSculptTerrain,SCULPT_PREVIEW_RIBBONS,sculptRibbonY}
  from '../src/render/sculpt-height-renderer.js';
 import {materialPackV1} from '../src/materials/material-pack-v1.js';
 import {createMaterialRegistry} from '../src/materials/material-registry.js';
@@ -133,5 +133,57 @@ test('V11 visual rounding is separate from height data and preserves original 2D
  for(const marker of ['data-mode="plateau"','id="level-up"','id="level-down"',
    'id="target"','id="edge"','id="visual-smooth"']){
    assert.ok(page.includes(marker),marker);
+ }
+});
+
+test('V12 brush visual footprint shares precisely the same influence with real stroke',()=>{
+ const base=createSculptTerrain({width:22,height:16});
+ const options={mode:'plateau',target:6,points:[{x:8.5,y:7.5},{x:10.5,y:7.5}],
+   radius:4.5,edgeSoftness:.55,strength:1};
+ const marks=sculptBrushFootprint(base,options);
+ const candidate=applySculptStroke(base,options);
+ assert.ok(marks.length>10);
+ assert.ok(marks.some(p=>p.weight===1));
+ assert.ok(marks.some(p=>p.weight>0&&p.weight<1));
+ const changed=new Set(candidate.levels.map((v,i)=>v!==base.levels[i]?i:-1).filter(i=>i>=0));
+ const preview=new Set(marks.map(p=>p.y*base.width+p.x));
+ for(const i of changed)assert.ok(preview.has(i),'no painted cell outside preview');
+ assert.deepEqual(candidate,applySculptStroke(base,options),'deterministic');
+ assert.deepEqual(base,createSculptTerrain({width:22,height:16}),'original unchanged');
+ assert.equal(sculptBrushFootprint(base,{points:[]}).length,0);
+});
+
+test('V12 continuous cliff foot has stronger toe than V11 square face; smoothing does not modify geometry',()=>{
+ const cliff=sculptFaceContour({width:168,height:60,smoothness:1});
+ const hard=sculptFaceContour({width:168,height:60,smoothness:0});
+ assert.ok(cliff.foot>8,'large merged wall supports visibly round base');
+ assert.ok(cliff.toe>5,'foot extends beyond its former vertical rectangular edge');
+ assert.equal(hard.foot,0);
+ assert.equal(hard.toe,0);
+ assert.deepEqual(sculptDemo(),importSculptTerrain(serializeSculptTerrain(sculptDemo())));
+});
+
+test('V12 road and water are registry-backed visual ribbons, not gameplay surfaces',()=>{
+ const registry=createMaterialRegistry(materialPackV1);
+ for(const kind of ['road','water']){
+  const ribbon=SCULPT_PREVIEW_RIBBONS[kind];
+  const material=registry.require(ribbon.materialId,ribbon.kind);
+  assert.ok(material);
+  assert.ok(resolveMaterialAsset(material.assets.center)?.path);
+  assert.ok(Number.isFinite(sculptRibbonY(kind,3.5)));
+  assert.ok(ribbon.widthCells>1);
+ }
+ assert.notEqual(sculptRibbonY('road',14),sculptRibbonY('water',14));
+ const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+ for(const id of ['show-water','show-road','preview-cursor','brush-info']){
+   assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(ui,/drawSculptBrushPreview/);
+ assert.match(render,/sculptBrushFootprint/);
+ assert.match(render,/faceRuns/);
+ for(const path of ['index.html','builder.html']){
+   assert.doesNotMatch(readFileSync(new URL('../'+path,import.meta.url),'utf8'),/sculpt-river-road-v12/);
  }
 });
