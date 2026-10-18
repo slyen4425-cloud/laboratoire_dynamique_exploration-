@@ -1,3 +1,15 @@
+# Lot actif — 18/10/2026 — V11 : pinceau niveaux précis et habillage de relief adouci
+
+- **Retour auteur sur premier prototype :** volume jugé prometteur mais difficile de former au doigt un plateau lisse d'exactement trois niveaux ; rochers et relief trop cubiques et artistiquement faibles.
+- **GREEN technique source :** V10 prototype isolé `76cef5d3239b8988db95a0b7cf7d731820d5336d` (CI 39104710331 SUCCESS et Pages 39104818988 SUCCESS) ; auteur a validé l'approche volume, pas la finition.
+- **Checkpoint de départ :** `checkpoint/exploration-start-sculpt-brush-smooth-v11-2026-10-18` sur SHA ci-dessus ; travail `work/exploration-sculpt-brush-smooth-v11-2026-10-18`.
+- **Lot borné :** pinceau de hauteur cible 0–7 / mode plateau EXACT ; adoucissement réglable des bords, rayon/force, boutons tactiles +/- hauteur ; coups de pinceau stables sur un seul geste sans cumul intempestif ; lissage visuel indépendant des vraies hauteurs ; parois aux angles/bases moins cubiques et roche moins mécanique en utilisant le renderer sculpt existant.
+- **Propriétaires :** `sculpt-height-model` unique autorité des niveaux, `sculpt-height-renderer` projection visuelle, `sculpt-lab-main` outils et entrée tactile, Material Registry pour sol. **Gels :** toute la 2D classique (`index.html`, `builder.html`, WorldSurface, WorldDocument, mouvements, collisions, Combat, Encounter), la CI générale et les archives V7–V10 ; ne pas créer de deuxième source de relief ni modifier gameplay.
+- **Gates :** tests modèle plateau de niveau 3 stable, pression contrôlée/feathering, curseurs, undo/export/import, projection adoucie sans modifier le modèle canonique, vrai pinceau souris ET tactile Chromium, 2D existante non régressée, Node + check + CI complète + publication opt-in. Esthétique attend test créateur.
+- **Prochaine action :** coder et tester les outils + rendu, puis checkpoint et preview V11 isolée.
+
+---
+
 # Lot actif — 18/10/2026 — Prototype isolé de terrain sculptable (retour 2D sûr)
 
 - **Décision créateur :** rejet des tentatives falaises décoratives V7–V10A, elles ne ressemblent pas à la référence. Revenir à la **vue 2D sûre** pour la carte normale. Les tests artistiques sont retirés de la publication active, pas détruits dans l'historique/checkpoints GitHub. Tester à part un relief obtenu en sculptant véritablement les hauteurs du sol.
