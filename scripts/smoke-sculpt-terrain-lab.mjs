@@ -117,10 +117,51 @@ try{
   const imported=await run("window.__sculptLabProbe()");
   if(imported.faceCount!==terraceFaces)
     throw Error('Imported experimental heightmap did not preserve cliff geometry');
+  // V11 render-only rounding changes pixels without mutating canonical height data.
+  const renderBefore=await run(`(async()=>{
+ const slider=document.querySelector('#visual-smooth');slider.value='0';
+ slider.dispatchEvent(new Event('input',{bubbles:true}));
+ await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+ const canvas=document.querySelector('#sculpt-canvas');
+ window.__v11BasePixels=Uint8Array.from(canvas.getContext('2d',{willReadFrequently:true})
+   .getImageData(0,0,canvas.width,canvas.height).data);
+ return JSON.stringify(JSON.parse(document.querySelector('#json').value).levels);
+})()`);
+  const renderAfter=await run(`(async()=>{
+ const slider=document.querySelector('#visual-smooth');slider.value='100';
+ slider.dispatchEvent(new Event('input',{bubbles:true}));
+ await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+ const canvas=document.querySelector('#sculpt-canvas');
+ const pixels=canvas.getContext('2d',{willReadFrequently:true})
+  .getImageData(0,0,canvas.width,canvas.height).data;
+ let changed=0;for(let i=0;i<pixels.length;i+=4)
+  if(pixels[i]!==window.__v11BasePixels[i]||
+     pixels[i+1]!==window.__v11BasePixels[i+1]||
+     pixels[i+2]!==window.__v11BasePixels[i+2])changed++;
+ return {changed,heights:JSON.stringify(JSON.parse(document.querySelector('#json').value).levels)};
+})()`);
+  if(renderAfter.changed<25||renderBefore!==renderAfter.heights)
+    throw Error('V11 smoothing changed levels or not pixels: '+JSON.stringify(renderAfter));
+  // Actual 390px mobile viewport; one finger paints the exact 3-block plateau.
+  await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:2,mobile:true});
+  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  await run("document.querySelector('#flat').click(); document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'})");
+  await sleep(240);
+  const touchAt=await run(`(()=>{const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+ return {x:rect.x+rect.width/2,y:rect.y+rect.height/2};})()`);
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:touchAt.x,y:touchAt.y,id:1,radiusX:4,radiusY:4,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(220);
+  const touchProbe=await run("window.__sculptLabProbe()");
+  if(touchProbe.centerHeight!==3||touchProbe.tool!=='plateau'||touchProbe.faceCount<1)
+    throw Error('V11 mobile one-touch exact height fails: '+JSON.stringify(touchProbe));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
-    material:after.probe.materialId,roundtripFaces:imported.faceCount,plateauExactHeight:plateau.centerHeight
+    material:after.probe.materialId,roundtripFaces:imported.faceCount,plateauExactHeight:plateau.centerHeight,visualPixelChange:renderAfter.changed,
+    touchExactHeight:touchProbe.centerHeight
   }));
 }finally{
   socket?.close();
