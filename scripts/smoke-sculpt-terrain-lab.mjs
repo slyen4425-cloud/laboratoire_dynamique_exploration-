@@ -631,6 +631,30 @@ try{
     return urls.some(u=>u.includes('building_house_')&&u.endsWith('.webp'));
   })()`);
   if(!nativeArt)throw Error('V20 building visual never requested from native asset adapter');
+  const touchStart=await run(`(()=>{
+    document.querySelector('#object-category').value='tree';
+    document.querySelector('#object-category').dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#object-action').value='place';
+    return window.__sculptObjectsProbe();
+  })()`);
+  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
+  await send('Input.dispatchTouchEvent',{type:'touchStart',
+    touchPoints:[{id:26,x:objectBegin.position.x,y:objectBegin.position.y}]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(190);
+  await send('Emulation.setTouchEmulationEnabled',{enabled:false});
+  const afterObjectTouch=await run('window.__sculptObjectsProbe()');
+  if(afterObjectTouch.count!==2||!afterObjectTouch.objects.some(o=>o.definition.includes('tree')))
+    throw Error('V20 actual touch planting a tree failed: '+JSON.stringify({touchStart,afterObjectTouch}));
+  await run("document.querySelector('#navigation-toggle').click()");
+  const walkingWithObjects=await run(`(()=>({
+    walking:window.__sculptNavProbe().enabled,
+    paletteHidden:document.querySelector('#object-palette').hidden,
+    objects:window.__sculptObjectsProbe().count
+  }))()`);
+  if(!walkingWithObjects.walking||!walkingWithObjects.paletteHidden||walkingWithObjects.objects!==2)
+    throw Error('V20 object palette overlaps live walking test: '+JSON.stringify(walkingWithObjects));
+  await run("document.querySelector('#navigation-toggle').click()");
   await run("document.querySelector('#mode-ground').click()");
   if((await run('window.__sculptObjectsProbe().active'))!==false)
     throw Error('V20 returning to terrain brush did not close object palette');
