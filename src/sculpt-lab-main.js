@@ -3,19 +3,21 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain} from './render/sculpt-height-renderer.js';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 let lastCell='',strokePoints=[],history=[],currentTexture=null,zoom=1,pan={x:0,y:0};
+let hoverCell=null,previewSummary=null;
+const ribbonTextures={water:null,road:null};
 let framePending=false;
 const images=new Map();
 const themes=['grass.forest','ground.snow','ground.sand','ground.volcanic_ash_lava'];
-function imageFor(materialId){
-  const material=registry.require(materialId,'surface');
-  const id=material.assets?.base;
+function imageFor(materialId,kind='surface'){
+  const material=registry.require(materialId,kind);
+  const id=kind==='surface' ? material.assets?.base : material.assets?.center;
   const path=resolveMaterialAsset(id)?.path;
   if(!path)return Promise.resolve(null);
   if(images.has(id))return images.get(id);
@@ -24,6 +26,20 @@ function imageFor(materialId){
     img.src=path;
   });
   images.set(id,promise);return promise;
+}
+async function setupRibbons(){
+  for(const [kind,definition] of Object.entries(SCULPT_PREVIEW_RIBBONS)){
+    const material=registry.require(definition.materialId,definition.kind);
+    ribbonTextures[kind]={visible:$('show-'+kind).checked,material,texture:null};
+    // Never mutate a canonical world; these are preview-only materials.
+    ribbonTextures[kind].texture=await imageFor(definition.materialId,definition.kind);
+    scheduleDraw();
+  }
+}
+function toggleRibbon(kind){
+  if(ribbonTextures[kind]){
+    ribbonTextures[kind].visible=$('show-'+kind).checked;scheduleDraw();
+  }
 }
 async function setTheme(){
   const id=$('material').value;
@@ -60,9 +76,26 @@ function draw(){
   ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const material=registry.require($('material').value,'surface');
-  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100});
+  const result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
+    rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
+    overlays:ribbonTextures});
+  previewSummary=null;
+  if(hoverCell&&$('preview-cursor').checked){
+    const points=drawing&&strokePoints.length ? strokePoints : [{x:hoverCell.x+.5,y:hoverCell.y+.5}];
+    const base=drawing&&strokeUndo ? strokeUndo : terrain;
+    const first=points[0],target=selectedMode==='plateau' ? Number($('target').value)
+      : sculptHeightAt(base,Math.floor(first.x),Math.floor(first.y));
+    previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
+      radius:Number($('radius').value),strength:Number($('strength').value),
+      edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,zoom});
+  }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
-    ' parois générées · '+Math.round(zoom*100)+' %';
+    ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
+  $('brush-info').textContent=hoverCell ?
+    'Pinceau : '+(previewSummary?.cells??0)+' cases · '+selectedMode+
+    (selectedMode==='plateau'?' niveau '+$('target').value:'')+
+    ' · bord '+$('edge').value+' %' :
+    'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
 }
 function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
 function screenToCell(event){
@@ -96,13 +129,19 @@ function undo(){
 function begin(event){
   if(event.button!==undefined&&event.button!==0)return;
   const cell=screenToCell(event);if(!cell)return;
+  hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
   drawing=true;lastCell='';strokePoints=[];strokeUndo=terrain;
   stroke(event);
 }
 function stroke(event){
-  if(!drawing)return;
+  if(!drawing){
+    if(event.pointerType==='touch')return;
+    hoverCell=screenToCell(event);
+    scheduleDraw();return;
+  }
   const cell=screenToCell(event);if(!cell)return;
+  hoverCell=cell;
   const key=cell.x+','+cell.y;
   if(key===lastCell)return;
   // Interpolate pointer travel so a fast thumb stroke never leaves holes.
@@ -140,6 +179,7 @@ canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
 canvas.addEventListener('pointerup',stop);
 canvas.addEventListener('pointercancel',stop);
+canvas.addEventListener('pointerleave',()=>{if(!drawing){hoverCell=null;scheduleDraw();}});
 canvas.addEventListener('lostpointercapture',stop);
 canvas.addEventListener('wheel',event=>{
   event.preventDefault();
@@ -158,20 +198,23 @@ $('flat').addEventListener('click',()=>{history.push(terrain);terrain=createScul
 $('fit').addEventListener('click',fit);
 $('material').addEventListener('change',setTheme);
 $('rock').addEventListener('change',scheduleDraw);
+$('show-water').addEventListener('change',()=>toggleRibbon('water'));
+$('show-road').addEventListener('change',()=>toggleRibbon('road'));
+$('preview-cursor').addEventListener('change',scheduleDraw);
 $('zoom').addEventListener('input',()=>{
  const old=zoom;zoom=Number($('zoom').value)/100;
  const {width,height}=dimensions();
  pan.x=width/2-(width/2-pan.x)*zoom/old;
  pan.y=height/2-(height/2-pan.y)*zoom/old;scheduleDraw();
 });
-$('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;});
-$('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;});
-$('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';});
+$('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;scheduleDraw();});
+$('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;scheduleDraw();});
+$('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';scheduleDraw();});
 $('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textContent=$('visual-smooth').value+' %';scheduleDraw();});
 function changeTarget(level){
  const value=Math.max(0,Math.min(7,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
- status('Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');}
+ status('Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
 $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
@@ -188,5 +231,7 @@ $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidde
 window.addEventListener('resize',fit);
 window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
-  levelSpread:new Set(terrain.levels).size,zoom,highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
-selectMode('dig');setTheme();fit();
+  levelSpread:new Set(terrain.levels).size,zoom,
+  previewCells:previewSummary?.cells??0,waterVisible:!!ribbonTextures.water?.visible,
+  roadVisible:!!ribbonTextures.road?.visible,highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
+selectMode('dig');setTheme();setupRibbons();fit();
