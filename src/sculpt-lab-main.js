@@ -930,7 +930,7 @@ $('export').addEventListener('click',()=>{
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value);
   const old=terrain;terrain=imported.terrain;commitUndo(old);
-  placedObjects=imported.objects;objectHistory=[];objectRedo=[];updateObjectCount();
+  placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
   fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
  catch(e){status(e.message);}
 });
