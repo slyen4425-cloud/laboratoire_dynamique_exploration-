@@ -689,6 +689,73 @@ try{
   console.log('V20 native object placement/undo/export/import/asset Chromium:',
     JSON.stringify({objects:reimport.probe.count,assetLoaded:nativeArt,
       untouchedHeight:placed.scene.terrain.schemaVersion===1}));
+
+  // V23 real mobile canvas: place 3-view house, select after placement,
+  // rotate 137 degrees, switch front -> rear, export and import intact.
+  const v23Config=await run(`(()=>{
+    document.querySelector('#mode-objects').click();
+    const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const defs=document.querySelector('#object-definition');
+    defs.value='objectdef.building.house.blue_cottage.01';
+    defs.dispatchEvent(new Event('change',{bubbles:true}));
+    const variant=document.querySelector('#object-variant');
+    const views=[...variant.options].map(o=>o.value);
+    variant.value='side';variant.dispatchEvent(new Event('change',{bubbles:true}));
+    const mode=document.querySelector('#object-action');
+    mode.value='place';mode.dispatchEvent(new Event('change',{bubbles:true}));
+    return {views,visible:!document.querySelector('#object-variant-wrap').hidden};
+  })()`);
+  if(!v23Config.visible||v23Config.views.join(',')!=='front,side,back')
+    throw Error('V23 existing house visual variants not exposed: '+JSON.stringify(v23Config));
+  const sidePt={x:objectBegin.position.x-85,y:objectBegin.position.y};
+  async function tapV23(){
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:sidePt.x,y:sidePt.y});
+    await send('Input.dispatchMouseEvent',{type:'mousePressed',x:sidePt.x,y:sidePt.y,button:'left',clickCount:1});
+    await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:sidePt.x,y:sidePt.y,button:'left',clickCount:1});
+    await sleep(180);
+  }
+  await tapV23();
+  const sidePlaced=await run('window.__sculptObjectsProbe()');
+  if(sidePlaced.count!==3||!sidePlaced.objects.some(o=>o.visualVariantId==='side'))
+    throw Error('V23 house placed in side perspective failed: '+JSON.stringify(sidePlaced));
+  await run(`(()=>{
+    const mode=document.querySelector('#object-action');
+    mode.value='select';mode.dispatchEvent(new Event('change',{bubbles:true}));
+    return true;
+  })()`);
+  await tapV23();
+  const edited=await run(`(()=>{
+    const variant=document.querySelector('#object-variant');
+    variant.value='back';variant.dispatchEvent(new Event('change',{bubbles:true}));
+    const angle=document.querySelector('#object-rotation');
+    angle.value='137';angle.dispatchEvent(new Event('input',{bubbles:true}));
+    angle.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#scene-export').click();
+    window.__v23Scene=document.querySelector('#json').value;
+    return {probe:window.__sculptObjectsProbe(),scene:JSON.parse(window.__v23Scene)};
+  })()`);
+  const updated=edited.probe.objects.find(o=>o.id===edited.probe.selectedId);
+  if(!updated||updated.visualVariantId!=='back'||updated.rotationDeg!==137||
+     edited.scene.objects.find(o=>o.id===updated.id)?.overrides.visualVariantId!=='back')
+    throw Error('V23 house edit/rotation/export failed: '+JSON.stringify(edited));
+  await sleep(220);
+  const rearLoaded=await run(`(()=>{
+    const urls=performance.getEntriesByType('resource').map(r=>r.name);
+    return urls.some(u=>u.includes('building_house_blue_cottage_back_01.webp'));
+  })()`);
+  if(!rearLoaded)throw Error('V23 rear house WebP was not loaded from the official catalog');
+  await run(`(()=>{
+    document.querySelector('#json').value=window.__v23Scene;
+    document.querySelector('#import').click();
+    return true;
+  })()`);
+  const afterV23Import=await run('window.__sculptObjectsProbe()');
+  if(!afterV23Import.objects.some(o=>o.visualVariantId==='back'&&o.rotationDeg===137))
+    throw Error('V23 house rear perspective lost after scene import: '+JSON.stringify(afterV23Import));
+  await run("document.querySelector('#mode-ground').click()");
+  console.log('V23 house 3 views/rotate/selected edit roundtrip Chromium:',
+    JSON.stringify({views:v23Config.views,rotation:137,backAssetLoaded:rearLoaded}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
