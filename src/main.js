@@ -42,7 +42,7 @@ import {
 import {
   createWorldObjectAssetResolver,
   resolveWorldObjectAsset
-} from './assets/world-object-asset-adapter.js?rev=cliff-variety-v10';
+} from './assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2&cliff=variety-v10';
 import {
   createUserWorldObjectAssetResolver
 } from './assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
