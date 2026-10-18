@@ -6,7 +6,7 @@
 - **Gel :** Monster Capture, Builder 2D, Combat, runtime Exploration, Camera V21 validée, vitesse/perf, Collision World V22, Object catalog/variants V23, import/export JSON V1 et palettes matières.
 - **Tests :** Node contrat création heightfield, Chromium réel avec ouverture/annulation puis confirmation sur scène non vierge, dimensions, eau et objets effacés, historique nettoyé, export/import scène, navigation toujours fonctionnelle et toutes sentinelles CI. Ne pas déclarer validation utilisateur avant essai.
 - **Risques / rollback :** suppression de scène exige confirmation ; sauvegarder par « Exporter scène » avant création ; ancien JSON en textarea remis à zéro pour éviter confusion ; V23 reste rollback.
-- **Statut :** en développement, pas de publication sans CI SUCCESS.
+- **Statut :** CI complète [39158882527](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39158882527) **SUCCESS**, source `0b9871b4458b5cedcdea1bb6eccdb72505412d41` (Node + Chromium mobile, nonrégressions Builder/Combat, véritable création carte vierge et annulation). Prévalidation GREEN technique ; validation réelle smartphone encore à obtenir. Publication Pages à faire sur un pin immuable, `main` sans code métier.
 
 ---
 
