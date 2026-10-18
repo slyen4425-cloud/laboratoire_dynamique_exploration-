@@ -1153,6 +1153,7 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   precisionMode:$('precision-mode').checked,
   precisionTarget:precisionCell?{...precisionCell}:null,
   faceRuns:lastRenderStats?.faceRuns??0,waterCells:lastRenderStats?.waterCells??0,
+  paintedCells:lastRenderStats?.paintedCells??0,
   roadCells:lastRenderStats?.roadCells??0,waterVisible:!!ribbonTextures.water?.visible,
   roadVisible:!!ribbonTextures.road?.visible,exampleRoadEnabled,
   authoredWaterCells:terrain.waterLevels.filter(v=>v>=0).length,
