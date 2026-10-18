@@ -13,29 +13,70 @@ export function sculptHeightAt(terrain,x,y){
   if(!terrain||x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
   return terrain.levels[y*terrain.width+x];
 }
-export function applySculptBrush(terrain,{x,y,radius=3,strength=1,mode='raise',target=null}={}){
-  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return terrain;
-  if(!['raise','dig','flatten','smooth'].includes(mode))return terrain;
-  const r=clamp(Number(radius)||1,0.5,9),power=clamp(int(strength,1),1,3);
-  const out=[...terrain.levels],focus=int(target,sculptHeightAt(terrain,Math.floor(x),Math.floor(y)));
-  for(let cy=Math.max(0,Math.floor(y-r));cy<=Math.min(terrain.height-1,Math.ceil(y+r));cy++){
-    for(let cx=Math.max(0,Math.floor(x-r));cx<=Math.min(terrain.width-1,Math.ceil(x+r));cx++){
-      const d=Math.hypot(cx+.5-x,cy+.5-y);
-      if(d>r)continue;
-      const p=clamp(1-d/(r+.5),0,1),idx=cy*terrain.width+cx,now=terrain.levels[idx];
-      const step=clamp(Math.ceil(power*p),1,3);
-      if(mode==='raise')out[idx]=clamp(now+step,0,7);
-      if(mode==='dig')out[idx]=clamp(now-step,0,7);
-      if(mode==='flatten')out[idx]=clamp(now+clamp(focus-now,-step,step),0,7);
-      if(mode==='smooth'){
-        const neighbors=[sculptHeightAt(terrain,cx-1,cy),sculptHeightAt(terrain,cx+1,cy),
-          sculptHeightAt(terrain,cx,cy-1),sculptHeightAt(terrain,cx,cy+1)];
-        const mean=Math.round((now*2+neighbors.reduce((a,b)=>a+b,0))/6);
-        out[idx]=clamp(now+clamp(mean-now,-step,step),0,7);
-      }
+// One height update per gesture, regardless of overlapping pointer samples.
+// A stroke is calculated from its ORIGINAL terrain to avoid unintentional stacking.
+// 'plateau' can set an exact level; soft edges are opt-in and remain deterministic.
+export function applySculptStroke(terrain,{
+  points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0
+}={}){
+  if(!terrain||!['raise','dig','flatten','smooth','plateau'].includes(mode)||
+     !Array.isArray(points)||points.length===0)return terrain;
+  const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
+  if(clean.length===0)return terrain;
+  const r=clamp(Number.isFinite(radius)?radius:3,.5,9);
+  const power=clamp(int(strength,1),1,3);
+  const soften=clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1);
+  const limit=terrain.width*terrain.height;
+  const weights=new Float32Array(limit);
+  for(const center of clean){
+    const xmin=Math.max(0,Math.floor(center.x-r));
+    const xmax=Math.min(terrain.width-1,Math.ceil(center.x+r));
+    const ymin=Math.max(0,Math.floor(center.y-r));
+    const ymax=Math.min(terrain.height-1,Math.ceil(center.y+r));
+    for(let cy=ymin;cy<=ymax;cy++)for(let cx=xmin;cx<=xmax;cx++){
+      const distance=Math.hypot(cx+.5-center.x,cy+.5-center.y);
+      if(distance>r)continue;
+      // Full opacity inside the inner radius; only the outer rim is feathered.
+      const inner=r*(1-soften);
+      const weight=soften===0||distance<=inner ? 1
+        : clamp((r-distance)/(r-inner),0,1);
+      const idx=cy*terrain.width+cx;
+      weights[idx]=Math.max(weights[idx],weight);
     }
   }
-  return Object.freeze({...terrain,levels:Object.freeze(out)});
+  const chosen=clamp(int(target,sculptHeightAt(terrain,
+    Math.floor(clean[0].x),Math.floor(clean[0].y))),0,7);
+  const next=[...terrain.levels];
+  let modified=false;
+  for(let i=0;i<limit;i++){
+    const weight=weights[i];
+    if(weight<=0)continue;
+    const old=terrain.levels[i];
+    const step=Math.max(1,Math.round(power*weight));
+    let value=old;
+    if(mode==='raise')value=old+step;
+    if(mode==='dig')value=old-step;
+    if(mode==='flatten')value=old+clamp(chosen-old,-step,step);
+    if(mode==='plateau')value=Math.round(old+(chosen-old)*weight);
+    if(mode==='smooth'){
+      const x=i%terrain.width,y=Math.floor(i/terrain.width);
+      let sum=old*2,count=2;
+      for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]]){
+        const nx=x+dx,ny=y+dy;
+        if(nx>=0&&ny>=0&&nx<terrain.width&&ny<terrain.height){
+          sum+=sculptHeightAt(terrain,nx,ny);count++;
+        }
+      }
+      value=old+clamp(Math.round(sum/count)-old,-step,step);
+    }
+    value=clamp(value,0,7);
+    if(value!==old){next[i]=value;modified=true;}
+  }
+  return modified ? Object.freeze({...terrain,levels:Object.freeze(next)}) : terrain;
+}
+export function applySculptBrush(terrain,options={}){
+  return applySculptStroke(terrain,{...options,
+    points:[{x:options.x,y:options.y}]});
 }
 export function sculptFaces(terrain){
   const faces=[];
