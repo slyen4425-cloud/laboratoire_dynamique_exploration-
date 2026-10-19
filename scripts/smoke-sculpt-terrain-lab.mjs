@@ -1082,6 +1082,12 @@ try{
     throw Error('V35 dry-cliff dark lip missing or artificial flat-terrain seam: '+
       JSON.stringify(v35Ledge));
   console.log('V35 real Chromium dark upper ledge:',JSON.stringify(v35Ledge));
+  // V36: user screenshot requires a visibly stronger front lip, not just a
+  // barely perceptible tint. Keep the V35 flat-ground seam rejection above.
+  if(v35Ledge.lipDarkening<50)
+    throw Error('V36 upper hill edge still insufficiently distinct from grass: '+
+      JSON.stringify(v35Ledge));
+  console.log('V36 Chromium stronger upper plateau rim:',JSON.stringify(v35Ledge));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
