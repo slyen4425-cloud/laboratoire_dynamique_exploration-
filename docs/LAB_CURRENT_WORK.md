@@ -1,3 +1,15 @@
+# Lot actif — 19/10/2026 — V39 caméra inclinable en jeu, édition simple par défaut
+
+- **Retour créateur (priorité) :** « Lisere parfait » puis « Et on peut pas régler l angle de caméra en jeu ?? Ainsi l édition reste simple ». Conserver l'édition facile ; déplacer le réglage continu d'inclinaison **dans Tester**, pas dans la surface de dessin.
+- **Base immuable réelle :** source V38 pilote déjà publiée `2b886832ea9cf46b5ca5d18b3e6471d670c3fd65` via PR #173 et son contrôle navigateur réel ; cette base remplace la première branche expérimentale V38 construite en parallèle sur V37. START `checkpoint/exploration-start-game-camera-angle-v39-2026-10-19`, travail `work/exploration-game-camera-angle-v39-2026-10-19`.
+- **Propriétaire / plan :** réutiliser sans duplication le seul adapter `src/render/sculpt-camera-projection.js` pour une vue dynamique 35°–90° en mode Tester ; conserver la vue classique par défaut en édition (la comparaison trois-quarts reste accessible dans réglages avancés). Rendu terrain incliné et affichage des sprites décor/acteurs sur des points projetés sans écraser verticalement les sprites. Caméra de suivi et bornes recalculées en lecture seule ; cache statique du terrain inchangé par l'angle (reprojection GPU/Canvas seulement).
+- **Fichiers :** `src/render/sculpt-camera-projection.js`, `src/sculpt-lab-main.js`, `sculpt-lab.html`, `scripts/smoke-sculpt-terrain-lab.mjs`, document et checkpoint.
+- **Gels :** heightfield, épaisseur et arrondis rocheux V37, rayons, matériaux, assets, pinceaux, joystick, collisions, moteur `stepMovement`, Monde, captures/objets, sauvegardes, autres labos. L'azimut/orbite 360° et la texture artistique des roches sont différés.
+- **Sentinelles :** vrai Chromium 35/55/90 ; pixels réellement différents en jeu ; export JSON inchangé ; mode édition classique avant/après, ciblage de la bonne case en mode avancé trois-quarts préservé ; actor/projectile non déformé verticalement ; pas de fuite d'état en retour d'édition ; CI et Pages sur SHA immuable.
+- **Statut :** en cours, validation smartphone indispensable avant GREEN utilisateur.
+
+---
+
 # Lot actif — 19/10/2026 — V38 pilote caméra trois-quarts réversible
 
 - **Retour validé :** liseré V37 jugé parfait par le créateur ; souhaite maintenant rapprocher l'angle du labo de sa référence paysage 2.5D : plateaux plus lisibles de trois-quarts, sensation de profondeur, davantage de lecture des façades rocheuses. **Pas de génération d'images.**
