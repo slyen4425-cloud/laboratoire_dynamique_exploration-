@@ -1,3 +1,15 @@
+# Lot actif — 19/10/2026 — V30 raccord des placements Map Actor comme le premier Builder
+
+- **Retour créateur :** « On peut raccorder les acteurs comme dans première version ? ». Contrat déjà disponible : Builder dynamique `createCaptureActorPreviewProviderV1` -> `createMapActorAssetResolver` -> `createImageAssetLoader` -> `createMapActorVisualPreparer` -> `createMapActorRenderer`, placement natif `WorldActorPlacement v1`. Les assets publiés proviennent des checkouts officiels Combat et Capture du workflow Pages.
+- **Base GREEN CI :** V29 `208a4c3978302404f56fa72198c9d159058f9d58`, [39205007907](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39205007907) SUCCESS, checkpoint `checkpoint/exploration-sculpt-smooth-step-v29-prevalidation-2026-10-19`; publication isolée PR #163. START `checkpoint/exploration-start-sculpt-capture-actor-v30-2026-10-19`, branche `work/exploration-sculpt-capture-actor-v30-2026-10-19`.
+- **Périmètre / propriétaires :** dans le pilote sculpté, palette flottante « Acteurs » pour choisir une **définition du catalogue Capture disponible** (actuellement showcase Loup), placer/supprimer ses références `WorldActorPlacement v1` sur la surface, miroir gauche/droite et affichage idle par **MapActorRenderer natif**. Les réglages visuels intrinsèques restent propriété de la définition Capture, pas de ce Builder. Le JSON `sculpt-preview-scene v1` conserve un champ `actors` facultatif sans changement de version et sans altérer anciens exports; `Nouvelle carte` efface aussi les références acteur.
+- **Hors lot :** générateur IA de PNJ, déplacement autonome des créatures, comportement Combat, raccord exhaustif des créatures GenSrpG, éditeur intrinsèque de MapActor ; pas de nouvelle collision. Le personnage de navigation et ses paramètres validés restent inchangés.
+- **Tests :** Node placement v1 normalisé + scène roundtrip ancienne/nouvelle ; Chromium chargement réels assets du catalogue de démonstration, place/efface, undo/redo et export/import ; CI sentinelles et preview sur GitHub Pages réelle. Si catalogue indisponible, panneau acteur explicitement indisponible, aucun fallback visuel mensonger.
+- **Risques :** capture-assets et combat-preview ne sont pas dans le dépôt pilote mais disponibles sur Pages ; tests navigateur des assets via workflow Preview obligatoire, et aucune prévalidation publique sans assets vérifiés.
+- **Statut :** développement, CI/Pages GREEN et validation utilisateur en attente.
+
+---
+
 # Lot actif — 19/10/2026 — V29 adoucir les franchissements de petites hauteurs en navigation
 
 - **Signalement smartphone :** saccade occasionnelle surtout au passage d'une petite marche, bien que la vitesse et la caméra générales aient été validées V21. Analyse : `navHeight()` retourne le niveau de cellule immédiatement (0–7) et est soustrait d'un coup (`*rise=18`) dans le dessin du héros ET la position cible panY ; traverser une frontière de cellule crée donc un saut visuel d'au moins 18 unités malgré un FPS stable.
