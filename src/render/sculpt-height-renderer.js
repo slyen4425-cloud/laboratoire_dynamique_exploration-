@@ -23,6 +23,14 @@ export function sculptFaceContour({width,height,smoothness=0}={}){
   const toe=Math.min(10*softness,height*.17,Math.max(1,width*.09));
   return Object.freeze({corner,undulation,foot,toe});
 }
+// Exact east-facing cliff strip, without overlap onto the adjacent cell.
+export function sculptEastSeamBounds(tile,col,row,upper,lower){
+  const {width:w,height:h,rise}=tile;
+  const thickness=Math.min(3,w*.11);
+  return Object.freeze({x:(col+1)*w-thickness,
+    y:row*h-upper*rise+3,
+    width:thickness,height:(upper-lower)*rise+h-3});
+}
 function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   if(height<=0)return;
   const {corner,undulation,foot,toe}=sculptFaceContour({width,height,smoothness});
@@ -30,8 +38,9 @@ function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   // a tiny rounded corner at each 28px voxel cell. Faces are rendered as
   // continuous horizontal runs (see drawSculptTerrain).
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(x+corner,y);
+  // Face silhouette must not intrude on a visually walkable neighbor.
+  ctx.beginPath();ctx.rect(x,y,width,height);ctx.clip();
+  ctx.beginPath();ctx.moveTo(x+corner,y);
   ctx.quadraticCurveTo(x+width*.50,y-undulation*.42,x+width-corner,y);
   ctx.quadraticCurveTo(x+width,y,x+width,y+corner);
   ctx.lineTo(x+width,y+height*.72);
@@ -379,8 +388,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       paintedCells+=drawPaint(col,row,level,x,y);
       const side=east.get(idx);
-      if(side)rockFace(ctx,{x:x+w-3,y:y+3,width:4.5,
-        height:(side.upper-side.lower)*rise+h-3,
+      if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
         colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness});
     }
     for(let col=0;col<terrain.width;){
@@ -432,7 +440,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
     if(soften<=0)continue;
     for(const dry of sculptRockToeSegments(terrain,toe.row,toe.from,toe.to)){
     const x=dry.from*w,width=(dry.to-dry.from)*w,bottom=toe.bottom,seed=toe.seed;
-    const depth=Math.min(15*soften,Math.max(3,width*.10));
+    // Minimize detached-looking bumps over the LOWER dry ground.
+    const depth=Math.min(7*soften,Math.max(1.5,width*.05));
     const phase=(hash(seed,27,2)%7-3)*.15;
     ctx.save();
     ctx.beginPath();
