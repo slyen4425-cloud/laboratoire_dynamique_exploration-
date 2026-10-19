@@ -6,7 +6,7 @@
 - **Gels :** V21 comportement joystick/vitesse/caméra horizontale et zoom, V22 collisions, V26 MapActor idle, V27 panneaux/peinture, V28 rendu eau/écume, Builder et Combat ; aucun changement des contrôles utilisateur.
 - **Tests :** échantillons de step 16/30/190ms, convergence monotone et sans overshoot, absence de changement de niveau sur terrain plat, CI Node + Chromium terrain/collision/navigation.
 - **Risque :** amortissement trop visible sur transitions rapides ; à ajuster après validation utilisateur ; rollback V28.
-- **Statut :** en développement ; ne pas déclarer GREEN créateur avant validation smartphone.
+- **Statut :** CI [39204818306](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39204818306) **SUCCESS** sur source `7c8d1065aea686b9abc349292ad0cef8e1a4ed37` ; checkpoint technique et publication prévalidation à finaliser. Validation smartphone de la sensation de passage d'une marche attendue.
 
 ---
 
@@ -19,7 +19,7 @@
 - **Tests :** tests purs des segments de roche secs et contacts mouillé/sec ; validation visuelle Chromium mobile en carte créée, eau peinte puis relief, capture, CI sentinelles complètes ; validation finale esthétique créateur requise.
 - **Autres demandes reçues (lots distincts) :** micro-saccade quand l'acteur franchit une marche, à diagnostiquer mesure FPS/caméra/hauteur sans toucher à la vitesse ; raccord des acteurs depuis la première version via contrat MapActor définitions et placements, sans recopier l'éditeur d'acteur intrinsèque.
 - **Risques :** effet visuel trop dense ou coût des parcours ; contour purement cosmétique sur cases d'eau, les limites géométriques restent discrétisées. Rollback V27.
-- **Statut :** démarrage, tests/publish en attente.
+- **Statut :** CI V28 [39204482422](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39204482422) **SUCCESS** sur `3a97cfb76afcceeb3fb94feaae9ab091f4028a20`, checkpoint `checkpoint/exploration-sculpt-shore-foam-v28-prevalidation-2026-10-19`. En attente d'avis visuel smartphone.
 
 ---
 
