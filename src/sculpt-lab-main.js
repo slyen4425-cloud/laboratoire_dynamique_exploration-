@@ -4,6 +4,7 @@ import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37';
+import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld} from './render/sculpt-camera-projection.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
@@ -179,22 +180,24 @@ function dimensions(){
   const bounds=canvas.getBoundingClientRect();
   return {width:Math.max(1,bounds.width),height:Math.max(1,bounds.height)};
 }
+function cameraView(){return sculptCameraView($('camera-view').value);}
+function cameraBounds(){
+  return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
+    terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
+}
 function fit(){
   const {width,height}=dimensions();
-  const worldWidth=terrain.width*SCULPT_TILE.width;
-  const worldHeight=terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise;
-  zoom=Math.max(.32,Math.min(1.6,Math.min((width-30)/worldWidth,(height-20)/worldHeight)));
+  const bounds=cameraBounds();
+  zoom=Math.max(.32,Math.min(1.6,Math.min((width-30)/bounds.width,(height-20)/bounds.height)));
   $('zoom').value=String(Math.round(zoom*100));
   if(navigationTesting)centerNavigationCamera();
   else center();
   scheduleDraw();
 }
 function center(){
-  const {width,height}=dimensions();
-  const worldWidth=terrain.width*SCULPT_TILE.width;
-  const worldHeight=terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise;
-  pan={x:Math.round((width-worldWidth*zoom)/2),
-    y:Math.round((height-worldHeight*zoom)/2+7*SCULPT_TILE.rise*zoom)};
+  const {width,height}=dimensions(),bounds=cameraBounds();
+  pan={x:Math.round((width-bounds.width*zoom)/2),
+    y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
 }
 function draw(){
   framePending=false;
@@ -205,6 +208,8 @@ function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+  const view=cameraView();
+  ctx.transform(1,view.shear,0,view.pitch,0,0);
   let result;
   if(navigationTesting){
     const snapshot=navigationBackground();
@@ -278,8 +283,9 @@ function draw(){
 function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
 function screenToCell(event){
   const rect=canvas.getBoundingClientRect();
-  const x=((event.clientX-rect.left-pan.x)/zoom);
-  const y=((event.clientY-rect.top-pan.y)/zoom);
+  // Exact inverse of the same affine camera used to draw terrain/preview.
+  const {x,y}=sculptCameraScreenToWorld(cameraView(),{
+    screenX:event.clientX-rect.left,screenY:event.clientY-rect.top,pan,zoom});
   const col=Math.floor(x/SCULPT_TILE.width);
   if(col<0||col>=terrain.width)return null;
   // Pick the exposed top face, not a static projected pixel geometry.
@@ -568,15 +574,15 @@ function navHeight(){
 function centerNavigationCamera(){
   if(!navigationTesting||!navActor)return;
   const {width,height}=dimensions();
-  const worldWidth=terrain.width*SCULPT_TILE.width*zoom;
-  const worldHeight=(terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise)*zoom;
-  const targetX=width*.5-navActor.x*zoom;
-  const targetY=height*.57-(navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise)*zoom;
+  const bounds=cameraBounds(),point=sculptCameraProject(cameraView(),
+    navActor.x,navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise);
+  const worldWidth=bounds.width*zoom,worldHeight=bounds.height*zoom;
+  const targetX=width*.5-point.x*zoom;
+  const targetY=height*.57-point.y*zoom;
   pan.x=worldWidth<width?(width-worldWidth)*.5:
-    Math.max(width-worldWidth,Math.min(0,targetX));
-  // Heightfield can extend above row zero by a few rises; leave that margin.
-  pan.y=worldHeight<height?(height-worldHeight)*.5+7*SCULPT_TILE.rise*zoom:
-    Math.max(height-worldHeight,Math.min(7*SCULPT_TILE.rise*zoom,targetY));
+    Math.max(width-bounds.maxX*zoom,Math.min(-bounds.minX*zoom,targetX));
+  pan.y=worldHeight<height?(height-worldHeight)*.5-bounds.minY*zoom:
+    Math.max(height-bounds.maxY*zoom,Math.min(-bounds.minY*zoom,targetY));
 }
 function drawNavigationActor(){
   if(!navActor)return;
@@ -1246,6 +1252,12 @@ $('flat').addEventListener('click',()=>{
   status('Sol plat : dimensions et objets conservés, eau effacée comme avant');
 });
 $('fit').addEventListener('click',fit);
+$('camera-view').addEventListener('change',()=>{
+  fit();
+  status($('camera-view').value==='threeQuarter'
+    ?'Vue trois-quarts pilote : caméra inclinée ; les hauteurs, collisions et coups de pinceau restent identiques.'
+    :'Vue précédente restaurée : aucun changement des données de terrain.');
+});
 $('material').addEventListener('change',setTheme);
 $('water-material').addEventListener('change',setWaterMaterial);
 $('rock').addEventListener('change',scheduleDraw);
@@ -1303,6 +1315,7 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
   paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
+  cameraView:$('camera-view').value,
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
   previewCells:previewSummary?.cells??0,editorKind,
