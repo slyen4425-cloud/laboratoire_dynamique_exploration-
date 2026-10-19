@@ -207,6 +207,35 @@ function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim}){
   ctx.restore();
 }
 
+// A WATER wall exists only at a change of surface level between TWO
+// actually submerged cells. Ground next door is a shore, not a second
+// water plane: using its ground level caused tall turquoise blocks.
+export function sculptWaterFaceDrop(terrain,col,row,orientation='south'){
+  if(sculptWaterAt(terrain,col,row)<=0)return 0;
+  const nx=col+(orientation==='east'?1:0);
+  const ny=row+(orientation==='south'?1:0);
+  if((orientation!=='east'&&orientation!=='south')||
+     sculptWaterAt(terrain,nx,ny)<=0)return 0;
+  return Math.max(0,terrain.waterLevels[row*terrain.width+col]-
+    terrain.waterLevels[ny*terrain.width+nx]);
+}
+// Visible portion of one ROCK wall above a neighboring water surface.
+// The solid canonical heightfield still controls collision; clip only art.
+export function sculptRockVisibleHeight(terrain,col,row,orientation,upper,lower,tile=SCULPT_TILE){
+  const neighborX=col+(orientation==='east'?1:0);
+  const neighborY=row+(orientation==='south'?1:0);
+  const full=(upper-lower)*tile.rise+(orientation==='east'?tile.height-3:0);
+  if((orientation!=='east'&&orientation!=='south')||
+     sculptWaterAt(terrain,neighborX,neighborY)<=0)return full;
+  const plane=terrain.waterLevels[neighborY*terrain.width+neighborX];
+  // The origin of a SOUTH face lies at the near row's bottom edge.
+  // The thin EAST face begins 3px below the top of the upper cell.
+  const upperY=orientation==='east'
+    ?row*tile.height-upper*tile.rise+3
+    :(row+1)*tile.height-upper*tile.rise;
+  const waterY=neighborY*tile.height-plane*tile.rise;
+  return Math.max(0,Math.min(full,waterY-upperY));
+}
 // Render a volume of water per authored surface cell. Actual submerged depth
 // is the difference between water surface elevation and land elevation.
 // One cell can dry out after raising its ground without deleting water data.
@@ -225,11 +254,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     count++;
     const surface=terrain.waterLevels[row*terrain.width+col];
     const x=col*w,y=row*h-surface*rise;
-    const southDepth=sculptWaterAt(terrain,col,row+1);
-    const eastDepth=sculptWaterAt(terrain,col+1,row);
-    const southSurface=southDepth?terrain.waterLevels[(row+1)*terrain.width+col]:
-      sculptHeightAt(terrain,col,row+1);
-    const visibleWall=Math.max(0,(surface-southSurface)*rise);
+    const visibleWall=sculptWaterFaceDrop(terrain,col,row,'south')*rise;
     // Water surface, optionally textured from the canonical Material Registry.
     ctx.save();ctx.globalAlpha=.94;ctx.fillStyle=water;ctx.fillRect(x,y,w+.65,h+.65);
     if(pattern){ctx.globalAlpha=.52;ctx.fillStyle=pattern;ctx.fillRect(x,y,w+.65,h+.65);}
@@ -248,8 +273,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
       ctx.fillStyle='rgba(226,252,250,.42)';
       ctx.fillRect(x,y+h,w,.85);
     }
-    if(col<terrain.width-1 && surface>
-      (eastDepth?terrain.waterLevels[row*terrain.width+col+1]:sculptHeightAt(terrain,col+1,row))){
+    if(col<terrain.width-1&&sculptWaterFaceDrop(terrain,col,row,'east')>0){
       ctx.fillStyle='rgba(24,91,139,.44)';
       ctx.fillRect(x+w-2,y+h,3,Math.max(2,Math.min(depth*rise,6)));
     }
@@ -388,8 +412,19 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       paintedCells+=drawPaint(col,row,level,x,y);
       const side=east.get(idx);
-      if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
-        colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness});
+      if(side){
+        const bounds=sculptEastSeamBounds(tile,col,row,side.upper,side.lower);
+        const visible=sculptRockVisibleHeight(terrain,col,row,'east',
+          side.upper,side.lower,tile);
+        if(visible>0.01){
+          ctx.save();ctx.beginPath();
+          ctx.rect(bounds.x,bounds.y,bounds.width,Math.min(bounds.height,visible));
+          ctx.clip();
+          rockFace(ctx,{...bounds,colors,seed:idx+54,sun:0,
+            smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness});
+          ctx.restore();
+        }
+      }
     }
     for(let col=0;col<terrain.width;){
       const idx=row*terrain.width+col,first=south.get(idx);
@@ -404,6 +439,16 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       const x=col*w,y=row*h-first.upper*rise+h;
       const width=(end-col)*w,height=(first.upper-first.lower)*rise;
       const runSmoothness=hasProfiles?terrain.roundness[idx]/100:visualSmoothness;
+      // Clip each column's rock face to the adjacent water plane. Columns
+      // in one native run may have different shore heights; never infer a
+      // shared water level or clip based on decorative pixels.
+      ctx.save();ctx.beginPath();
+      for(let c=col;c<end;c++){
+        const visible=sculptRockVisibleHeight(terrain,c,row,'south',
+          first.upper,first.lower,tile);
+        if(visible>0.01)ctx.rect(c*w,y,w,visible);
+      }
+      ctx.clip();
       // Cliff-wide base shade follows the long wall rather than square tiles.
       if(runSmoothness>0){
         ctx.save();ctx.fillStyle='rgba(35,36,45,.16)';
@@ -421,6 +466,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
         ctx.quadraticCurveTo(x+width*.84,y-runSmoothness*1.2,x+width-2,y+1);
         ctx.stroke();ctx.restore();
       }
+      ctx.restore();
       deferredToes.push({x,width,bottom:y+height,seed:idx,smoothness:runSmoothness,
          row,from:col,to:end});
       faceRuns++;col=end;
