@@ -72,10 +72,32 @@ function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
     if(horizontal)ctx.fillRect(start,y,band,h);
     else ctx.fillRect(x,top,w,band);
   }
-  // Short charcoal upper lip on actual dry drops: strengthen the contrast
-  // against the same grass texture behind the hill, without tracing equal
-  // heights or changing cliff faces, water, materials or collision. Both the
-  // inward fade and the thin edge stay INSIDE the high ground tile.
+  // Dark top lip only along REAL dry height drops. The V36 front (south/east)
+  // already worked, but the rear (north) and left (west) were entirely
+  // absent. These two missing silhouettes are what blends high grass into
+  // background grass when looking down at a hill in the sculpt editor.
+  // Stay within each raised tile; never add collision or modify height data.
+  if(info.exposedEdges.includes('north')){
+    const band=Math.min(5.5,h*.28);
+    const rim=ctx.createLinearGradient(0,y,0,y+band);
+    rim.addColorStop(0,'rgba(17,30,28,.52)');
+    rim.addColorStop(.42,'rgba(19,32,30,.28)');
+    rim.addColorStop(1,'rgba(19,32,30,0)');
+    ctx.fillStyle=rim;ctx.fillRect(x,y,w,band);
+    ctx.fillStyle='rgba(16,28,27,.32)';
+    ctx.fillRect(x,y,w,1.3);
+  }
+  if(info.exposedEdges.includes('west')){
+    const band=Math.min(4.5,w*.17);
+    const rim=ctx.createLinearGradient(x,0,x+band,0);
+    rim.addColorStop(0,'rgba(17,30,28,.46)');
+    rim.addColorStop(.45,'rgba(19,32,30,.23)');
+    rim.addColorStop(1,'rgba(19,32,30,0)');
+    ctx.fillStyle=rim;ctx.fillRect(x,y,band,h);
+    ctx.fillStyle='rgba(16,28,27,.30)';
+    ctx.fillRect(x,y,1.3,h);
+  }
+  // Existing front faces and their V36 inner fade stay unchanged.
   if(info.exposedEdges.includes('south')){
     const band=Math.min(4.4,h*.24);
     const rim=ctx.createLinearGradient(0,y+h-band,0,y+h);
