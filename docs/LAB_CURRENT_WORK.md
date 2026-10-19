@@ -6,7 +6,7 @@
 - **Gels :** `sculpt-height-model`, SCULPT_TILE et `sculpt-height-renderer` (physique et rendu V37), collision / mouvement, scène / objets / acteurs / eau / pinceau et matériaux, GenSrpG, laboratoire Combat, World Builder. Aucun shader 3D, aucun nouveau mesh, aucune modification de la géométrie enregistrée.
 - **Tests :** pureté/roundtrip projection-inverse, cadrage et bornes, comparaison pixel navigateur des deux vues sans changement des données, toucher réel en édition (case visée), navigation caméra, régressions Node/Chromium/Combat/Builder. CI GREEN et Pages distinctes ; validation esthétique mobile du créateur avant GREEN final.
 - **Risque reconnu :** la projection affine pilote influe aussi sur la silhouette des objets/acteurs ; les textures rocheuses facettées/indépendantes constituent un futur lot séparé. Le pilote n'est pas encore le rendu artistique final de la référence.
-- **Statut :** en cours ; pas GREEN tant que la vue réelle n'est pas testée sur smartphone.
+- **Statut :** **prévalidation technique réussie**. V38 source testée `2b886832ea9cf46b5ca5d18b3e6471d670c3fd65`, [CI complète #39315653522](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39315653522) SUCCESS, [CI checkpoint #39315870319](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39315870319) SUCCESS, [Pages #39315982591](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39315982591) SUCCESS ; preview `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/sculpt-lab.html?v=38`, PR infra #173. Comparaison et précision du clic réels testées sous Chromium. **Validation esthétique smartphone encore en attente ; pas GREEN créateur.**
 
 ---
 
