@@ -1,3 +1,14 @@
+# Lot actif — 19/10/2026 — V37 vraie arête arrière des collines, liseré manquant
+
+- **Retour créateur / diagnostic réel :** la capture smartphone de V36 ne permet toujours pas de lire la séparation du haut de la colline avec l'herbe derrière. Les tests V35/V36 mesuraient uniquement un liseré **sud** ; `drawSculptGroundReliefLighting` n'implémentait effectivement que les orientations sud et est, alors que `sculptGroundReliefLighting` donne aussi les bords nord et ouest. Ces arêtes arrière/latérales réelles restaient non dessinées.
+- **Base technique :** V36 source publiée `682b3958412a66b1ef924daa7aaeaff941c6d7aa`, [CI source verte #39291173873](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39291173873), [Pages verte #39291544230](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39291544230) ; checkpoint de départ `checkpoint/exploration-start-sculpt-rear-rim-v37-2026-10-19`, branche `work/exploration-sculpt-rear-rim-v37-2026-10-19`.
+- **Propriétaire / périmètre :** renderer `src/render/sculpt-height-renderer.js`. Compléter le liseré sombre **sur les bords nord et ouest** de la tuile supérieure au voisinage d'un véritable sol sec plus bas, sans changer les bords sud/est V36. Tests Chromium du Canvas pour le bord arrière, le côté gauche, un plateau uniforme (pas de fausse ligne) et l'eau (pas d'arête). Seule l'autorité existante `exposedEdges` décide de ce qui doit être dessiné.
+- **Gel / exclusions :** géométrie du terrain, hauteur, eau, écume, roches et leurs ombres, couches terrain, matériaux/textures, collisions, gameplay, pinceaux, contrôles, zoom/navigation, acteurs, Builder, Combat et GenSrpG ; **aucune génération d'image**. Comparaison de la vraie vue de dessus avec la référence trois-quarts enregistrée comme **futur chantier séparé** (projection/caméra puis matériaux des faces rocheuses), sans modifier la projection dans ce lot.
+- **Critères :** liseré lisible sur chaque côté en cas de vrai décroché sec, cohérent avec la texture, aucun trait sur un terrain plat ou une cellule mouillée, pas de bord artificiel entre deux cases d'égale altitude. Tests Node, vrai rendu Chromium, CI et déploiement Pages sur SHA épinglé avant validation visuelle mobile.
+- **Statut :** en cours, **non GREEN créateur**.
+
+---
+
 # Lot actif — 19/10/2026 — V36 lisibilité renforcée de l'arête supérieure des collines
 
 - **Signal utilisateur :** capture de la preview Labo Sculpture montrant un dessus de colline en herbe encore peu distinguable du sol vert derrière, bien que les parois et leurs ombres soient satisfaisantes. La V35, publiée et testée en Chromium, possède déjà une lèvre sombre mais trop faible en pratique.
