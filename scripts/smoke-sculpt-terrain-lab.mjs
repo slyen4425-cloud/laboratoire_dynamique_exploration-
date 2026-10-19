@@ -1171,7 +1171,14 @@ try{
     // Choose an actually clickable projected tile, not one hidden behind
     // the floating "Appliquer" precision toolbar on narrow viewports.
     let client=null,target=null,hit=null;
-    for(const row of [7,8,6,9,5,10,11,12])for(const col of [18,16,20,14]){
+    // Prior real integration smokes can import a 16x12 or 18x14 map. Never
+    // assume the original 36x24 demo still exists at this point of the run.
+    const cols=[Math.floor(probe.width/2),Math.floor(probe.width/2)-2,
+      Math.floor(probe.width/2)+2,Math.floor(probe.width/2)-4];
+    const rows=[Math.floor(probe.height/2),Math.floor(probe.height/2)-2,
+      Math.floor(probe.height/2)+2,Math.floor(probe.height/2)-4];
+    for(const row of rows)for(const col of cols){
+      if(col<0||row<0||col>=probe.width||row>=probe.height)continue;
       const x=(col+.5)*28,y=(row+.5)*21-2*18;
       const p=projection.sculptCameraProject(projection.sculptCameraView('threeQuarter'),x,y);
       const at={x:rect.left+probe.cameraPan.x+p.x*probe.zoom,
