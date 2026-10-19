@@ -1311,7 +1311,9 @@ $('import').addEventListener('click',()=>{
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
 window.addEventListener('resize',fit);
-window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length,
+window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
+  probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
+  surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
   paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
