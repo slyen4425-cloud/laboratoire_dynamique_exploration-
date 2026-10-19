@@ -5,7 +5,7 @@
 - **Périmètre / propriétaire :** uniquement renderer de `sculpt-height-renderer.js` ; clips au rectangle exact de paroi pour empêcher le débordement rocheux sur des cases non concernées, bords est contenus dans leur colonne, pieds au sol raccourcis pour éviter les pointes ; maintenir l'écume, le rendu eau et les zones peintes.
 - **Invariant critique :** ne jamais changer `sculptHeightAt`, `stepMovement`, Collision World ni seuil maxStepUp/Down pour cacher les rochers : les vraies parois de deux niveaux restent volontairement bloquantes. La forme carrée V31 permet des bords réguliers, et le pinceau Lisser existant traite les anciennes bosses.
 - **Tests :** CI complète Node + vrai Chromium en conservant V28 berges, V31 formes et fonctionnalité de navigation ; vérifier screenshot créateur sur preview (acceptation smartphone).
-- **Risque :** une découpe stricte peut rendre l'extrémité de falaise plus anguleuse ; petits pieds réservés aux contacts secs ; rollback V31. **Statut :** travail en cours.
+- **Risque :** une découpe stricte peut rendre l'extrémité de falaise plus anguleuse ; petits pieds réservés aux contacts secs ; rollback V31. **Statut :** source V32 `e1b526d12c637ddc5e786deb204136792c7fb018` CI [39222767835](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39222767835) **SUCCESS**, incluant tests de géométrie, terrain, Collision World, MapActor et navigateur Chromium. Prévalidation technique seulement : contrôle visuel et du ressenti de passage demandé au créateur avant GREEN utilisateur. Le blocage d'une véritable marche supérieure à `maxStepUp` reste une règle de gameplay voulue.
 ---
 # Lot V31 — choix de forme de pinceau (prévalidation technique réussie)
 
