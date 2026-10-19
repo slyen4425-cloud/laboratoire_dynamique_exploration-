@@ -1,3 +1,14 @@
+# Lot actif — 19/10/2026 — V31 pinceaux carrés, ronds et en croix
+
+- **Demande créateur :** pinceau rond actuel pixellisé/croix avec excroissances, voudrait explicitement carrés pleins (uniquement cases entières), ronds, croix et choix de forme, avec prévisualisation réelle.
+- **Base CI+Pages :** V30 source `406eea79b15f9b5cbc8edef8ebc2b8d7455fff40` CI [39206219779](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39206219779) SUCCESS, Pages [39206376270](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39206376270) SUCCESS, checkpoint `checkpoint/exploration-sculpt-capture-actor-v30-prevalidation-2026-10-19`. START `checkpoint/exploration-start-sculpt-brush-shapes-v31-2026-10-19`; branche `work/exploration-sculpt-brush-shapes-v31-2026-10-19`.
+- **Périmètre :** une autorité pure `footprintWeights` dans `sculpt-height-model.js` consommée par effets terre, eau et **aperçu**, forme `circle` (historique compatible), `square` (bloc carré plein de cases, sans diagonales) ou `cross` (axes seuls); sélection visible et persistante en session (non sauvegardée dans données de carte). Geler données terrain version1, histoire undo/redo et contrats collision.
+- **Tests :** unitaires formes et identité preview/application réel, eau protégée, vieux defaults et tailles fractionnaires, navigateur Chromium mobile et CI. Vérifier zoom/immersive/perf/panels, aucune mutation hors labo.
+- **Hors périmètre :** artefacts de transition rocheuse et nav = lot ultérieur rendu/collision, sans masquer un blocage gameplay réel ; textures WorldSurface et objets intactes.
+- **Statut :** démarrage. 
+
+---
+
 # Lot actif — 19/10/2026 — V30 raccord des placements Map Actor comme le premier Builder
 
 - **Retour créateur :** « On peut raccorder les acteurs comme dans première version ? ». Contrat déjà disponible : Builder dynamique `createCaptureActorPreviewProviderV1` -> `createMapActorAssetResolver` -> `createImageAssetLoader` -> `createMapActorVisualPreparer` -> `createMapActorRenderer`, placement natif `WorldActorPlacement v1`. Les assets publiés proviennent des checkouts officiels Combat et Capture du workflow Pages.
