@@ -1133,6 +1133,55 @@ try{
     throw Error('V37 user screenshot rear grassy plateau rim missing or false seam: '+
       JSON.stringify(v37RearRim));
   console.log('V37 real Chromium rear and west raised hill silhouettes:',JSON.stringify(v37RearRim));
+  // V38: game camera inclination is display-only. Exercise the REAL HUD and
+  // Canvas at two angles, then return to editor and compare authoritative JSON.
+  const v38Camera=await run(`(async()=>{
+    const {sculptCameraProjection}=await import('./src/render/sculpt-camera-projection.js');
+    const top=sculptCameraProjection(90),oblique=sculptCameraProjection(40);
+    const equalCliff=Math.abs(
+      (oblique.projectSurfaceY(140,2)-oblique.projectSurfaceY(140,5))-54)<.0001;
+    const restored=Math.abs(top.projectGroundY(140)-140)<.0001;
+    const button=document.querySelector('#navigation-toggle');
+    const slider=document.querySelector('#navigation-camera-angle');
+    const before=window.__sculptLabProbe();
+    const scene=()=>{document.querySelector('#scene-export').click();return document.querySelector('#json').value;};
+    const saved=scene();
+    const redraw=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const pixels=()=>{
+      const canvas=document.querySelector('#sculpt-canvas');
+      return new Uint8Array(canvas.getContext('2d',{willReadFrequently:true})
+        .getImageData(0,0,canvas.width,canvas.height).data);
+    };
+    if(before.navigationTesting)return {error:'navigation unexpectedly active'};
+    button.click();await redraw();await redraw();
+    slider.value='90';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    await redraw();await redraw();
+    const aerial=window.__sculptLabProbe(),a=pixels();
+    slider.value='40';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    await redraw();await redraw();
+    const tilted=window.__sculptLabProbe(),b=pixels();
+    let changed=0;
+    for(let i=0;i<a.length;i+=4)
+      if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])changed++;
+    button.click();await redraw();await redraw();
+    const after=window.__sculptLabProbe();
+    return {equalCliff,restored,angle90:aerial.cameraAngle,angle40:tilted.cameraAngle,
+      scale90:aerial.cameraGroundScale,scale40:tilted.cameraGroundScale,
+      navAtBoth:aerial.navigationTesting&&tilted.navigationTesting,changed,
+      editorRestored:!after.navigationTesting&&after.zoom===before.zoom&&
+        after.undoCount===before.undoCount&&after.faceCount===before.faceCount,
+      unchangedJSON:saved===scene(),originalEditorAngle:before.cameraAngle,
+      uiValue:document.querySelector('#navigation-camera-angle-value').textContent};
+  })()`);
+  if(v38Camera.error||!v38Camera.equalCliff||!v38Camera.restored||
+    v38Camera.angle90!==90||v38Camera.angle40!==40||
+    Math.abs(v38Camera.scale90-1)>.0001||v38Camera.scale40>=.8||
+    !v38Camera.navAtBoth||v38Camera.changed<250||
+    !v38Camera.editorRestored||!v38Camera.unchangedJSON||
+    v38Camera.uiValue!=='40°')
+    throw Error('V38 game-only camera pitch changed world/editor or failed real Canvas: '+
+      JSON.stringify(v38Camera));
+  console.log('V38 Chromium gameplay camera inclination and unchanged editor:',JSON.stringify(v38Camera));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
