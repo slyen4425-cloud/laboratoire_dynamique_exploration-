@@ -1182,7 +1182,10 @@ try{
       }
     }
     return {classic,angled,returned,sameSave:before===saved(),
-      mode:probe.cameraView,client,target,hit,editing:probe.objectEditing,
+      mode:probe.cameraView,client,target,hit,
+      picked:client?window.__sculptLabProbe(client).probedCell:null,
+      precisionChecked:precision.checked,
+      editing:probe.objectEditing,
       navigating:document.body.classList.contains('navigation-testing'),
       within:!!client};
   })()`);
@@ -1209,6 +1212,10 @@ try{
     const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
     const hit=document.elementFromPoint(window.__v38TestClient.x,window.__v38TestClient.y)?.id;
     return {target,ready,got,view:probe.cameraView,hit,
+      picked:window.__sculptLabProbe(window.__v38TestClient).probedCell,
+      precisionChecked:document.querySelector('#precision-mode').checked,
+      surfaceEditing:probe.surfaceEditing,
+      notice:document.querySelector('#notice').textContent,
       events:window.__v38PointerEvents,viewport:[innerWidth,innerHeight],
       rect:{x:rect.left,y:rect.top,width:rect.width,height:rect.height},
       pan:probe.cameraPan,zoom:probe.zoom};
