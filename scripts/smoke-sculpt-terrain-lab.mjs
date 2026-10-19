@@ -1088,6 +1088,51 @@ try{
     throw Error('V36 upper hill edge still insufficiently distinct from grass: '+
       JSON.stringify(v35Ledge));
   console.log('V36 Chromium stronger upper plateau rim:',JSON.stringify(v35Ledge));
+  // V37: reproduce the user's actual missing case, the BACK of the raised
+  // grassy plateau blending into flat grass behind it. V35/V36 only proved
+  // the SOUTH/front rim, never the NORTH/rear or WEST/left.
+  const v37RearRim=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const renderer=await import('./src/render/sculpt-height-renderer.js');
+    const make=(raised,withWater=false,withEqual=false)=>{
+      const levels=Array(8*8).fill(2),waterLevels=Array(8*8).fill(-1);
+      if(raised)levels[5*8+3]=4;
+      if(withEqual)levels[5*8+4]=4;
+      if(withWater)waterLevels[4*8+3]=5;
+      return model.createSculptTerrain({width:8,height:8,levels,waterLevels});
+    };
+    const paint=(terrain)=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=8*28;canvas.height=8*21+7*18;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      renderer.drawSculptTerrain(ctx,{terrain,material:{render:{baseColor:'#528d42'}}});
+      return (x,y)=>Array.from(ctx.getImageData(x,y,1,1).data).slice(0,3);
+    };
+    const raised=make(true),high=paint(raised),flat=paint(make(false));
+    const sum=v=>v.reduce((a,b)=>a+b,0);
+    const topY=5*21-4*18,plainY=5*21-2*18,x=3*28;
+    const inside=high(x+14,topY+9);
+    const rear=high(x+14,topY+1),left=high(x+1,topY+9);
+    const flatInside=flat(x+14,plainY+9);
+    const flatRear=flat(x+14,plainY+1),flatLeft=flat(x+1,plainY+9);
+    const withWater=make(true,true),equal=make(true,false,true);
+    return {inside,rear,left,flatInside,flatRear,flatLeft,
+      rearContrast:sum(inside)-sum(rear),
+      westContrast:sum(inside)-sum(left),
+      fakeRear:sum(flatInside)-sum(flatRear),
+      fakeWest:sum(flatInside)-sum(flatLeft),
+      northEdge:renderer.sculptGroundReliefLighting(raised,3,5).exposedEdges.includes('north'),
+      westEdge:renderer.sculptGroundReliefLighting(raised,3,5).exposedEdges.includes('west'),
+      noWetBorder:!renderer.sculptGroundReliefLighting(withWater,3,5).exposedEdges.includes('north'),
+      noEqualBorder:!renderer.sculptGroundReliefLighting(equal,4,5).exposedEdges.includes('west')};
+  })()`);
+  if(v37RearRim.rearContrast<65||v37RearRim.westContrast<45||
+    Math.abs(v37RearRim.fakeRear)>12||Math.abs(v37RearRim.fakeWest)>12||
+    !v37RearRim.northEdge||!v37RearRim.westEdge||
+    !v37RearRim.noWetBorder||!v37RearRim.noEqualBorder)
+    throw Error('V37 user screenshot rear grassy plateau rim missing or false seam: '+
+      JSON.stringify(v37RearRim));
+  console.log('V37 real Chromium rear and west raised hill silhouettes:',JSON.stringify(v37RearRim));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
