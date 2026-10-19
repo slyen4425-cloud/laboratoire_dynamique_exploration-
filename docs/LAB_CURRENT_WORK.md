@@ -1,3 +1,17 @@
+# Lot actif — 19/10/2026 — V38 inclinaison de caméra en mode Tester uniquement
+
+- **Retour créateur :** liseré V37 validé (« parfait »). Après comparaison à la référence trois-quarts, le créateur privilégie une édition facile dans sa perspective actuelle, **mais une caméra réglable en jeu**.
+- **Dernière source technique GREEN publiée et acceptée visuellement pour le liseré :** `8cde0b308675c3463718c661e2b67d56567a6e8d`, [CI 39293795443](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39293795443), [Pages 39294140867](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39294140867) SUCCESS. Départ `checkpoint/exploration-start-navigation-camera-angle-v38-2026-10-19`. Travail isolé `work/exploration-navigation-camera-angle-v38-2026-10-19`.
+- **Périmètre/propriétaire :** seul laboratoire Sculpture et mode `Tester`. Ajouter un curseur d'**inclinaison caméra** (35° jusqu'à 90°, vue de dessus = 90°) qui raccourcit visuellement la profondeur du sol mais préserve la hauteur verticale des falaises. Une **projection d'affichage unique** pilote raster terrain, objets, acteurs et suivi caméra ; le gameplay conserve ses coordonnées d'origine. Éditeur strictement inchangé (rendu, précision pointer/tactile, zoom, cartes, sauvegardes).
+- **Fichiers prévus :** `src/render/sculpt-camera-projection.js` (adaptateur projection pur, unique), `src/sculpt-lab-main.js` (rendu navigation uniquement + suivi), `sculpt-lab.html` (curseur HUD Tester, cache), `scripts/smoke-sculpt-terrain-lab.mjs` (sentinelles Chromium du vrai chemin), présent document et journal checkpoint.
+- **Invariants gelés :** `src/world/sculpt-height-model.js`, Collision World, mouvements, données terrain, hauteur, éditeur des pinceaux, sélection précise, roches/ombres V37, textures de roche, eau, marques/rubans, effets, modules Capture/Builder/Combat, autres dépôts. Une vue inclinée ne doit jamais étirer verticalement sprites/acteurs et ne doit jamais créer de coordonnées gameplay alternatives.
+- **Tests :** interpolation de la projection à 35/55/90°, préservation altitudes physiques/JSON, terrain et objets visibles en mode Tester, comparaison réelle des pixels Canvas aux deux extrémités, persistance inchangée, état éditorial inchangé avant/après, navigation continue sur collision, CI complète et Pages sur SHA immuable.
+- **Risques :** décrochage objet/sol, découpe du terrain à l'angle le plus bas, cache de la PWA, coût de reconstruire le raster pendant le glissement. Prévoir cache invalidé seulement au changement d'angle et curseur limité.
+- **Hors périmètre :** orbite 360°, changement d'azimut, gestion nouvelle profondeur 3D, resculpture des roches/textures. Une **inclinaison 2.5D** est le premier palier honnête pour approcher l'image recherchée.
+- **Statut :** implémentation en cours ; **non GREEN avant validation smartphone**.
+
+---
+
 # Lot actif — 19/10/2026 — V37 vraie arête arrière des collines, liseré manquant
 
 - **Retour créateur / diagnostic réel :** la capture smartphone de V36 ne permet toujours pas de lire la séparation du haut de la colline avec l'herbe derrière. Les tests V35/V36 mesuraient uniquement un liseré **sud** ; `drawSculptGroundReliefLighting` n'implémentait effectivement que les orientations sud et est, alors que `sculptGroundReliefLighting` donne aussi les bords nord et ouest. Ces arêtes arrière/latérales réelles restaient non dessinées.
