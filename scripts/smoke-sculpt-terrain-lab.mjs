@@ -1232,6 +1232,67 @@ try{
     throw Error('V38 real Canvas click painted wrong cell after camera tilt: '+
       JSON.stringify({v38Visual,v38Pick}));
   console.log('V38 Chromium camera pitch, reversible pixels, JSON and real pointer:',JSON.stringify({v38Visual,v38Pick}));
+  // V39 creator pivot: default editing must be classic/easy, while the
+  // published V38 projection authority now provides a live angle in Tester.
+  const v39GameAngle=await run(`(async()=>{
+    const camera=await import('./src/render/sculpt-camera-projection.js');
+    const a90=camera.sculptCameraGameView(90),a35=camera.sculptCameraGameView(35);
+    const p=camera.sculptCameraProject(a35,90,140);
+    const u=camera.sculptCameraUnproject(a35,p.x,p.y);
+    const roundTrip=Math.abs(u.x-90)<.00001&&Math.abs(u.y-140)<.00001;
+    const pick=document.querySelector('#camera-view'),button=document.querySelector('#navigation-toggle');
+    const slider=document.querySelector('#navigation-camera-angle');
+    const redraw=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const pixelHash=()=>{
+      const c=document.querySelector('#sculpt-canvas');
+      const data=c.getContext('2d',{willReadFrequently:true})
+        .getImageData(0,0,c.width,c.height).data;
+      let sum=0;
+      for(let i=0;i<data.length;i+=4)
+        sum=(sum+Math.imul(data[i]+2*data[i+1]+3*data[i+2],(i>>>2)%127+1))>>>0;
+      return sum;
+    };
+    const scene=()=>{document.querySelector('#scene-export').click();
+      return document.querySelector('#json').value;};
+    pick.value='classic';pick.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();
+    const before=window.__sculptLabProbe(),editorHash=pixelHash(),saved=scene();
+    button.click();await redraw();await redraw();
+    slider.value='90';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    await redraw();await redraw();
+    const top=window.__sculptLabProbe(),topNav=window.__sculptNavProbe(),topHash=pixelHash();
+    slider.value='35';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    await redraw();await redraw();
+    const oblique=window.__sculptLabProbe(),lowNav=window.__sculptNavProbe(),obliqueHash=pixelHash();
+    button.click();await redraw();await redraw();
+    const after=window.__sculptLabProbe(),returnedHash=pixelHash();
+    return {roundTrip,topScale:a90.pitch,lowScale:a35.pitch,topShear:a90.shear,
+      topAngle:top.cameraAngle,lowAngle:oblique.cameraAngle,
+      topPitch:top.liveCameraPitch,lowPitch:oblique.liveCameraPitch,
+      bothTesting:top.navigationTesting&&oblique.navigationTesting,
+      gamePixelsDifferent:topHash!==obliqueHash,
+      gameHashes:[topHash,obliqueHash],
+      actorStayedInWorld:topNav.player?.x===lowNav.player?.x&&
+        topNav.player?.y===lowNav.player?.y,
+      editorWasClassic:before.cameraView==='classic'&&Math.abs(before.liveCameraPitch-1)<.0001,
+      editorRestored:after.cameraView==='classic'&&!after.navigationTesting&&
+        after.faceCount===before.faceCount&&after.undoCount===before.undoCount&&
+        after.zoom===before.zoom,
+      editorPixelsUnchanged:returnedHash===editorHash,
+      jsonUnchanged:saved===scene(),
+      label:document.querySelector('#navigation-camera-angle-value').textContent};
+  })()`);
+  if(!v39GameAngle.roundTrip||Math.abs(v39GameAngle.topScale-1)>.0001||
+    v39GameAngle.lowScale>=.7||Math.abs(v39GameAngle.topShear)>.0001||
+    v39GameAngle.topAngle!==90||v39GameAngle.lowAngle!==35||
+    Math.abs(v39GameAngle.topPitch-1)>.0001||v39GameAngle.lowPitch>=.7||
+    !v39GameAngle.bothTesting||!v39GameAngle.gamePixelsDifferent||
+    !v39GameAngle.actorStayedInWorld||!v39GameAngle.editorWasClassic||
+    !v39GameAngle.editorRestored||!v39GameAngle.editorPixelsUnchanged||
+    !v39GameAngle.jsonUnchanged||v39GameAngle.label!=='35°')
+    throw Error('V39 game camera angle/editor separation or real Chromium pixels failed: '+
+      JSON.stringify(v39GameAngle));
+  console.log('V39 Chromium game-only camera pitch, stable actor and editor:',JSON.stringify(v39GameAngle));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
