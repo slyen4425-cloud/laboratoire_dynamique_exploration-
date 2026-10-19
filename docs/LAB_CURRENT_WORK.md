@@ -6,7 +6,7 @@
 - **Fichiers :** `src/render/sculpt-camera-projection.js`, `src/sculpt-lab-main.js`, `sculpt-lab.html`, `scripts/smoke-sculpt-terrain-lab.mjs`, document et checkpoint.
 - **Gels :** heightfield, épaisseur et arrondis rocheux V37, rayons, matériaux, assets, pinceaux, joystick, collisions, moteur `stepMovement`, Monde, captures/objets, sauvegardes, autres labos. L'azimut/orbite 360° et la texture artistique des roches sont différés.
 - **Sentinelles :** vrai Chromium 35/55/90 ; pixels réellement différents en jeu ; export JSON inchangé ; mode édition classique avant/après, ciblage de la bonne case en mode avancé trois-quarts préservé ; actor/projectile non déformé verticalement ; pas de fuite d'état en retour d'édition ; CI et Pages sur SHA immuable.
-- **Statut :** en cours, validation smartphone indispensable avant GREEN utilisateur.
+- **Statut :** **prévalidation technique réussie**, source gelée `fb9f373ecfcd422df1f0cd132205d5abdc692357`, [CI source #39318891988](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39318891988) SUCCESS, [CI checkpoint #39319045694](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39319045694) SUCCESS, [Pages #39319158175](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39319158175) SUCCESS après [PR #174](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/174). Journal `docs/checkpoints/EXPLORATION_GAME_CAMERA_ANGLE_V39_PREVALIDATION_2026-10-19.md`. **Non GREEN utilisateur** avant vérification smartphone.
 
 ---
 
