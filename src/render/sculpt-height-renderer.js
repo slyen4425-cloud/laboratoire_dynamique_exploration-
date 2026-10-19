@@ -142,6 +142,62 @@ function drawRibbonCell(ctx,{kind,col,row,x,y,w,h,overlay}){
 }
 
 
+// Contacts use only the sculpt heightfield's water volume, never pixels.
+// No shore effect is drawn against another submerged cell or off-map.
+export function sculptWetShoreEdges(terrain,col,row){
+  if(sculptWaterAt(terrain,col,row)<=0)return Object.freeze([]);
+  const edges=[];
+  for(const [side,dx,dy] of [['north',0,-1],['east',1,0],['south',0,1],['west',-1,0]]){
+    const x=col+dx,y=row+dy;
+    if(x>=0&&y>=0&&x<terrain.width&&y<terrain.height&&
+       sculptWaterAt(terrain,x,y)<=0)edges.push(side);
+  }
+  return Object.freeze(edges);
+}
+// Draw the native full-width cliff-toe run only over DRY cells in front
+// of the rock. A previously deferred toe rendered over a lake creates
+// dark floating rock islands disconnected from the wall.
+export function sculptRockToeSegments(terrain,row,from,to){
+  const segments=[];let start=null;
+  for(let c=from;c<=to;c++){
+    const wet=c<to&&row+1<terrain.height&&sculptWaterAt(terrain,c,row+1)>0;
+    if(c<to&&!wet&&start===null)start=c;
+    if((wet||c===to)&&start!==null){
+      segments.push(Object.freeze({from:start,to:c}));
+      start=null;
+    }
+  }
+  return Object.freeze(segments);
+}
+function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim}){
+  const edges=sculptWetShoreEdges(terrain,col,row);
+  if(!edges.length)return;
+  const phase=(hash(col,row,83)%100)/100;
+  const jitter=(hash(col,row,84)%5-2)*.18;
+  ctx.save();
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  ctx.lineCap='round';ctx.lineJoin='round';
+  for(const edge of edges){
+    // Overlay only within the water tile, softly break the straight edge
+    // with a shallow shoreline wave; preserve the real cell geometry.
+    let a,b,c,d;
+    if(edge==='north'){a=[x-.8,y+1.8];b=[x+w/2,y+2.9+jitter];c=[x+w+.8,y+1.8];d=[0,1];}
+    else if(edge==='south'){a=[x-.8,y+h-1.8];b=[x+w/2,y+h-2.9-jitter];c=[x+w+.8,y+h-1.8];d=[0,-1];}
+    else if(edge==='west'){a=[x+1.8,y-.8];b=[x+2.9+jitter,y+h/2];c=[x+1.8,y+h+.8];d=[1,0];}
+    else {a=[x+w-1.8,y-.8];b=[x+w-2.9-jitter,y+h/2];c=[x+w-1.8,y+h+.8];d=[-1,0];}
+    ctx.beginPath();ctx.moveTo(...a);ctx.quadraticCurveTo(...b,...c);
+    ctx.globalAlpha=.27;ctx.strokeStyle=rim;ctx.lineWidth=4.2;ctx.stroke();
+    ctx.globalAlpha=.58;ctx.lineWidth=1.4;ctx.stroke();
+    // A small second broken froth arc adds sparkle without a solid outline.
+    ctx.beginPath();
+    const dotT=.26+phase*.45;
+    const px=a[0]+(c[0]-a[0])*dotT,py=a[1]+(c[1]-a[1])*dotT;
+    ctx.moveTo(px,py);ctx.lineTo(px+d[0]*1.6,py+d[1]*1.6);
+    ctx.globalAlpha=.45;ctx.lineWidth=1;ctx.stroke();
+  }
+  ctx.restore();
+}
+
 // Render a volume of water per authored surface cell. Actual submerged depth
 // is the difference between water surface elevation and land elevation.
 // One cell can dry out after raising its ground without deleting water data.
@@ -172,6 +228,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     ctx.beginPath();ctx.moveTo(x+3,y+h*.45);ctx.bezierCurveTo(x+w*.38,y+h*.32,
       x+w*.61,y+h*.60,x+w-3,y+h*.41);ctx.stroke();
     ctx.restore();
+    drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim});
     if(visibleWall>0&&row<terrain.height-1){
       const grad=ctx.createLinearGradient(x,y+h,x,y+h+visibleWall);
       grad.addColorStop(0,'rgba(107,217,240,.83)');
@@ -356,7 +413,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
         ctx.quadraticCurveTo(x+width*.84,y-runSmoothness*1.2,x+width-2,y+1);
         ctx.stroke();ctx.restore();
       }
-      deferredToes.push({x,width,bottom:y+height,seed:idx,smoothness:runSmoothness});
+      deferredToes.push({x,width,bottom:y+height,seed:idx,smoothness:runSmoothness,
+         row,from:col,to:end});
       faceRuns++;col=end;
     }
     // Painter order: water belongs to its own absolute-height layer. Paint it
@@ -372,8 +430,9 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
   for(const toe of deferredToes){
     const soften=Math.max(0,Math.min(1.5,Number(toe.smoothness)||0));
     if(soften<=0)continue;
-    const depth=Math.min(15*soften,Math.max(3,toe.width*.10));
-    const {x,width,bottom,seed}=toe;
+    for(const dry of sculptRockToeSegments(terrain,toe.row,toe.from,toe.to)){
+    const x=dry.from*w,width=(dry.to-dry.from)*w,bottom=toe.bottom,seed=toe.seed;
+    const depth=Math.min(15*soften,Math.max(3,width*.10));
     const phase=(hash(seed,27,2)%7-3)*.15;
     ctx.save();
     ctx.beginPath();
@@ -395,6 +454,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
     ctx.globalAlpha=.40;ctx.strokeStyle=colors[2];
     ctx.lineWidth=.65;ctx.stroke();
     ctx.restore();
+    }
   }
   return {faceCount:faces.length,faceRuns,waterCells,roadCells,paintedCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
