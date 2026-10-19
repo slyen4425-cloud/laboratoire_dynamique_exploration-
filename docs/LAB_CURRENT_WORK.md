@@ -1,3 +1,15 @@
+# Lot actif — 19/10/2026 — V38 pilote caméra trois-quarts réversible
+
+- **Retour validé :** liseré V37 jugé parfait par le créateur ; souhaite maintenant rapprocher l'angle du labo de sa référence paysage 2.5D : plateaux plus lisibles de trois-quarts, sensation de profondeur, davantage de lecture des façades rocheuses. **Pas de génération d'images.**
+- **Source de départ immuable :** V37 `8cde0b308675c3463718c661e2b67d56567a6e8d`, CI [39293795443](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39293795443) GREEN, Pages [39294140867](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39294140867) SUCCESS, validation visuelle créateur du liseré. START `checkpoint/exploration-start-sculpt-perspective-v38-2026-10-19`, travail `work/exploration-sculpt-perspective-v38-2026-10-19`.
+- **Périmètre / propriétaire :** renderer/adapter d'interface du seul `sculpt-lab.html` (caméra visuelle réversible `sculpt-camera-projection.js` + raccord dans `src/sculpt-lab-main.js`). Un mode **trois-quarts pilote** (foreshortening du sol + très léger biais oblique) et retour à la projection actuelle, choisis dans les réglages ; transform Canvas unique pour terrain, eau, roche, décor, acteurs et pinceau ; inverse exacte du pointage tactile/clic. Même cache navigation et mêmes coordonnées monde, aucun état caméra sauvegardé dans le terrain.
+- **Gels :** `sculpt-height-model`, SCULPT_TILE et `sculpt-height-renderer` (physique et rendu V37), collision / mouvement, scène / objets / acteurs / eau / pinceau et matériaux, GenSrpG, laboratoire Combat, World Builder. Aucun shader 3D, aucun nouveau mesh, aucune modification de la géométrie enregistrée.
+- **Tests :** pureté/roundtrip projection-inverse, cadrage et bornes, comparaison pixel navigateur des deux vues sans changement des données, toucher réel en édition (case visée), navigation caméra, régressions Node/Chromium/Combat/Builder. CI GREEN et Pages distinctes ; validation esthétique mobile du créateur avant GREEN final.
+- **Risque reconnu :** la projection affine pilote influe aussi sur la silhouette des objets/acteurs ; les textures rocheuses facettées/indépendantes constituent un futur lot séparé. Le pilote n'est pas encore le rendu artistique final de la référence.
+- **Statut :** en cours ; pas GREEN tant que la vue réelle n'est pas testée sur smartphone.
+
+---
+
 # Lot actif — 19/10/2026 — V37 vraie arête arrière des collines, liseré manquant
 
 - **Retour créateur / diagnostic réel :** la capture smartphone de V36 ne permet toujours pas de lire la séparation du haut de la colline avec l'herbe derrière. Les tests V35/V36 mesuraient uniquement un liseré **sud** ; `drawSculptGroundReliefLighting` n'implémentait effectivement que les orientations sud et est, alors que `sculptGroundReliefLighting` donne aussi les bords nord et ouest. Ces arêtes arrière/latérales réelles restaient non dessinées.
