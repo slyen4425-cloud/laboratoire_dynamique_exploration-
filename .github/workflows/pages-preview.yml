@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-capture-actor-v30-prevalidation-2026-10-19
+# preview-revision: sculpt-brush-shapes-rock-seams-v32-prevalidation-2026-10-19
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 406eea79b15f9b5cbc8edef8ebc2b8d7455fff40
+          ref: 69ebbc0f79fc1deadffee1e66eafd902aee43ec0
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
