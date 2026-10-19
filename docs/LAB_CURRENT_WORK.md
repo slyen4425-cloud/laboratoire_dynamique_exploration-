@@ -1,3 +1,16 @@
+# Lot actif — 19/10/2026 — V28 raccords visuels eau/roche et écume
+
+- **Retour smartphone du créateur :** capture V27 : mer peinte puis sculpture terre, berges très carrées et petites excroissances de roche semblant flotter à la surface ; demande d'écume légère contre les rochers. Panneaux flottants et repliables appréciés : totalement gelés.
+- **Base :** V27 `0fb3d577dc9188dd8412f6293b664088ce333e73`, CI [39168433703](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39168433703) SUCCESS, preview [39168475354](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39168475354) SUCCESS, checkpoint `checkpoint/exploration-sculpt-surface-paint-v27-prevalidation-2026-10-18`. START `checkpoint/exploration-start-sculpt-shore-foam-v28-2026-10-19` ; branche `work/exploration-sculpt-shore-foam-v28-2026-10-19`.
+- **Périmètre / autorité :** uniquement le renderer 2.5D `sculpt-height-renderer.js`. Le `sculptWaterAt` canonique détermine les contacts mouillés secs ; supprimer les protrusions `deferredToes` lorsqu'elles peignent sur la cellule mouillée en contrebas, conserver les pieds rocheux devant terrain sec ; bord mousse/écume légère anti-crénelage aux quatre contacts eau/terre, dessin déterministe, couches limitées. Pas d'asset ajouté, pas d'autorité de collision ou de passage.
+- **Gels :** heightfield/eau, WorldSurface/materials, Navigation V21/V26 et performance, collision V22, objects V23, panneaux/pinceaux V27, Builder/Combat/GenSrpG et sauvegardes. Aucun déplacement de textures, aucun changement de logique gameplay.
+- **Tests :** tests purs des segments de roche secs et contacts mouillé/sec ; validation visuelle Chromium mobile en carte créée, eau peinte puis relief, capture, CI sentinelles complètes ; validation finale esthétique créateur requise.
+- **Autres demandes reçues (lots distincts) :** micro-saccade quand l'acteur franchit une marche, à diagnostiquer mesure FPS/caméra/hauteur sans toucher à la vitesse ; raccord des acteurs depuis la première version via contrat MapActor définitions et placements, sans recopier l'éditeur d'acteur intrinsèque.
+- **Risques :** effet visuel trop dense ou coût des parcours ; contour purement cosmétique sur cases d'eau, les limites géométriques restent discrétisées. Rollback V27.
+- **Statut :** démarrage, tests/publish en attente.
+
+---
+
 # Lot actif — 18/10/2026 — V27 pinceau de vraies routes et zones peintes
 
 - **Demande :** ancienne carte vierge conservait une fausse route ; absence de pinceau pour peindre les routes et une texture différente sur l'herbe (fleurs/détails plus tard). La route décorative est corrigée dans V25 ; l'idle/marche native est raccordée dans V26.
