@@ -1,3 +1,18 @@
+# Lot actif — 19/10/2026 — V32 raccords rocheux sans débordement
+
+- **Retour :** petites arêtes/artefacts lors du raccord entre cases de sol sculptées, gêne visuelle pouvant laisser croire à une collision invisible. Diagnostic de code V30 : `rockFace` déborde volontairement de la largeur de sa paroi via `toe` ; les parements `east` commencent 3 pixels avant le bord et s'étendent 4.5 pixels, donc recouvrent les cases voisines malgré la grille canonique. De plus les pieds `deferredToes` se projettent jusqu'à 15 pixels sur les zones en contrebas ; V28 prévient déjà leur dessin au-dessus de l'eau.
+- **Base :** V31 source `f42ef16ed17b9916d465928b38116f2273bd7c65` CI [39222163358](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39222163358) SUCCESS, checkpoint `checkpoint/exploration-sculpt-brush-shapes-v31-prevalidation-2026-10-19`. START `checkpoint/exploration-start-sculpt-rock-seams-v32-2026-10-19`, branche `work/exploration-sculpt-rock-seams-v32-2026-10-19`.
+- **Périmètre / propriétaire :** uniquement renderer de `sculpt-height-renderer.js` ; clips au rectangle exact de paroi pour empêcher le débordement rocheux sur des cases non concernées, bords est contenus dans leur colonne, pieds au sol raccourcis pour éviter les pointes ; maintenir l'écume, le rendu eau et les zones peintes.
+- **Invariant critique :** ne jamais changer `sculptHeightAt`, `stepMovement`, Collision World ni seuil maxStepUp/Down pour cacher les rochers : les vraies parois de deux niveaux restent volontairement bloquantes. La forme carrée V31 permet des bords réguliers, et le pinceau Lisser existant traite les anciennes bosses.
+- **Tests :** CI complète Node + vrai Chromium en conservant V28 berges, V31 formes et fonctionnalité de navigation ; vérifier screenshot créateur sur preview (acceptation smartphone).
+- **Risque :** une découpe stricte peut rendre l'extrémité de falaise plus anguleuse ; petits pieds réservés aux contacts secs ; rollback V31. **Statut :** travail en cours.
+---
+# Lot V31 — choix de forme de pinceau (prévalidation technique réussie)
+
+- CI [39222163358](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39222163358) SUCCESS. Formes rond, carré plein, croix reliées aux empreintes terre/eau et prévisualisation. Validation smartphone en attente.
+
+---
+
 # Lot actif — 19/10/2026 — V31 pinceaux carrés, ronds et en croix
 
 - **Demande créateur :** pinceau rond actuel pixellisé/croix avec excroissances, voudrait explicitement carrés pleins (uniquement cases entières), ronds, croix et choix de forme, avec prévisualisation réelle.
