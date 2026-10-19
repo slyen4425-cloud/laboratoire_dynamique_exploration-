@@ -1133,6 +1133,66 @@ try{
     throw Error('V37 user screenshot rear grassy plateau rim missing or false seam: '+
       JSON.stringify(v37RearRim));
   console.log('V37 real Chromium rear and west raised hill silhouettes:',JSON.stringify(v37RearRim));
+  // V38 real published path: both camera modes must redraw different actual
+  // pixels without touching serialized terrain, and the screen->world inverse
+  // must land a REAL browser click on the intended raised tile.
+  const v38Visual=await run(`(async()=>{
+    document.querySelector('#flat').click();
+    const select=document.querySelector('#camera-view');
+    const redraw=()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
+    const pixels=()=>{const c=document.querySelector('#sculpt-canvas'),
+       p=c.getContext('2d',{willReadFrequently:true}).getImageData(0,0,c.width,c.height).data;
+       let sum=0;for(let i=0;i<p.length;i+=4)
+         sum=(sum+Math.imul(p[i]+p[i+1]*2+p[i+2]*3,(i>>>2)%127+1))>>>0;
+       return sum;};
+    const saved=()=>{document.querySelector('#export').click();
+      return document.querySelector('#json').value;};
+    const before=saved();
+    select.value='classic';select.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();const classic=pixels();
+    select.value='threeQuarter';select.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();const angled=pixels();
+    select.value='classic';select.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();const returned=pixels();
+    select.value='threeQuarter';select.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();
+    const probe=window.__sculptLabProbe();
+    const projection=await import('./src/render/sculpt-camera-projection.js');
+    const x=(18+.5)*28,y=(12+.5)*21-2*18;
+    const projected=projection.sculptCameraProject(projection.sculptCameraView('threeQuarter'),x,y);
+    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const client={x:rect.left+probe.cameraPan.x+projected.x*probe.zoom,
+      y:rect.top+probe.cameraPan.y+projected.y*probe.zoom};
+    const precision=document.querySelector('#precision-mode');
+    precision.checked=true;precision.dispatchEvent(new Event('change',{bubbles:true}));
+    return {classic,angled,returned,sameSave:before===saved(),
+      mode:probe.cameraView,client,within:client.x>rect.left&&client.x<rect.right&&
+        client.y>rect.top&&client.y<rect.bottom};
+  })()`);
+  if(v38Visual.classic===v38Visual.angled||
+      v38Visual.classic!==v38Visual.returned||!v38Visual.sameSave||
+      v38Visual.mode!=='threeQuarter'||!v38Visual.within)
+    throw Error('V38 camera visual comparison or preserved terrain failed: '+JSON.stringify(v38Visual));
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v38Visual.client.x,y:v38Visual.client.y});
+  await sleep(70);
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:v38Visual.client.x,y:v38Visual.client.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:v38Visual.client.x,y:v38Visual.client.y,button:'left',clickCount:1});
+  const v38Pick=await run(`(()=>{
+    const probe=window.__sculptLabProbe(),target=probe.precisionTarget;
+    document.querySelector('#target').value='5';
+    document.querySelector('#target').dispatchEvent(new Event('input',{bubbles:true}));
+    const ready=!document.querySelector('#apply-precision').disabled;
+    if(ready)document.querySelector('#apply-precision').click();
+    document.querySelector('#export').click();
+    const exportTerrain=JSON.parse(document.querySelector('#json').value);
+    const got=exportTerrain.levels[12*exportTerrain.width+18];
+    return {target,ready,got,view:probe.cameraView};
+  })()`);
+  if(v38Pick.target?.x!==18||v38Pick.target?.y!==12||
+     !v38Pick.ready||v38Pick.got!==5)
+    throw Error('V38 real Canvas click painted wrong cell after camera tilt: '+
+      JSON.stringify({v38Visual,v38Pick}));
+  console.log('V38 Chromium camera pitch, reversible pixels, JSON and real pointer:',JSON.stringify({v38Visual,v38Pick}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
