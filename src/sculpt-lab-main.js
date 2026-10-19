@@ -8,6 +8,7 @@ import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
+import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
 import {createVirtualStick} from './input/virtual-stick.js';
 import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
@@ -51,6 +52,8 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+// Display-only altitude, separate from native Collision World coordinates.
+let navVisualLevel=null;
 const navKeys=new Set();
 // Preview-only navigation speed; authoritative runtime movement remains unchanged.
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
@@ -554,7 +557,7 @@ function centerNavigationCamera(){
   const worldWidth=terrain.width*SCULPT_TILE.width*zoom;
   const worldHeight=(terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise)*zoom;
   const targetX=width*.5-navActor.x*zoom;
-  const targetY=height*.57-(navActor.y-navHeight()*SCULPT_TILE.rise)*zoom;
+  const targetY=height*.57-(navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise)*zoom;
   pan.x=worldWidth<width?(width-worldWidth)*.5:
     Math.max(width-worldWidth,Math.min(0,targetX));
   // Heightfield can extend above row zero by a few rises; leave that margin.
@@ -563,7 +566,7 @@ function centerNavigationCamera(){
 }
 function drawNavigationActor(){
   if(!navActor)return;
-  const footY=navActor.y-navHeight()*SCULPT_TILE.rise+3;
+  const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3;
   // The native Exploration actor renderer owns idle/walk motion, shadow,
   // visual anchor and direction; gameplay state is read-only.
   if(navigationActorPreparer.get(navigationActorVisual.assetId))
@@ -626,9 +629,15 @@ function navigationTick(time){
       navBlocked=moved<.001;
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
-      if(moved>.001)centerNavigationCamera();
+      // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
     }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
+    const previousVisualLevel=navVisualLevel;
+    navVisualLevel=sculptVisualHeightStep(navVisualLevel,navHeight(),elapsed);
+    // Smooth only the pictured elevation and vertical follow, never collision.
+    if(Math.hypot(intent.x,intent.y)>.13 ||
+       Math.abs(navVisualLevel-previousVisualLevel)>.0001)
+      centerNavigationCamera();
     // Idle remains alive without keeping the heavy canvas redraw at 60fps.
     if(time-navLastVisualPaint>=(navActor.moving?33:55)){
       navLastVisualPaint=time;scheduleDraw();
@@ -667,6 +676,7 @@ function setNavigationTesting(on){
     zoom=navigationCameraZoom();
     $('zoom').value=String(Math.round(zoom*100));
     navTerrainCache=null;navFps=0;navStepSpeed=0;
+    navVisualLevel=navHeight();
     navVisualTime=0;navLastVisualPaint=-Infinity;
     navMetricLast=0;navMetricFrames=0;navMetricDistance=0;
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
@@ -685,6 +695,7 @@ function setNavigationTesting(on){
     if(navViewport){zoom=navViewport.zoom;pan=navViewport.pan;}
     $('zoom').value=String(Math.round(zoom*100));
     navActor=null;navViewport=null;navBlocked=false;navTerrainCache=null;
+    navVisualLevel=null;
     navLastVisualPaint=-Infinity;
     updatePrecisionActions();scheduleDraw();
     status('Édition réactivée : le test de marche n’a modifié aucune donnée.');
@@ -708,6 +719,7 @@ $('navigation-toggle').addEventListener('click',()=>{
 $('navigation-reset').addEventListener('click',()=>{
   if(!navigationTesting)return;
   navActor=navigationSpawn();
+  navVisualLevel=navHeight();
   const mode=$('navigation-locomotion').value;
   navActor.locomotion={modes:mode==='fly'?['fly']:mode==='swim'?['ground','swim']:['ground']};
   navBlocked=false;centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
@@ -734,7 +746,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
-  actorMotionTime:navVisualTime,
+  actorMotionTime:navVisualTime,actorVisualLevel:navVisualLevel,
   sameTerrainVersion:terrain.schemaVersion===1
 });
 
