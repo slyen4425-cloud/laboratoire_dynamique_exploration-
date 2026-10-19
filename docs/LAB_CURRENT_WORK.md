@@ -6,7 +6,7 @@
 - **Gels :** pas de création d'image/asset, pas de deuxième moteur, aucune modification de terrain, pinceaux V31, WorldSurface, eau+écume V33, Renderer de roche et contact, navigation/collision/sauts, actifs Capture et panneaux flottants, Builder/Combat.
 - **Tests :** fonctions d'éclairage pur vérifier terrain plat -> aucune ombre, élévation locale -> ombre uniquement coté bas, pas d'ombre sur eau et pas de teinte démesurée ; vrai Chromium rendu du relief, tests CI sentinelles, contrôle publication avant smartphone. Comparaison esthétique réelle attendue.
 - **Risques / retour arrière :** dégradé trop voyant ou perf éditeur (pas de redraw supplémentaire par frame) ; pilot V33 rollback direct.
-- **Statut :** chantier en cours, aucune annonce de livraison avant CI et preview.
+- **Statut :** tests Node et Chromium réels réussis [39273539400](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39273539400) au commit `c4272ea60bb11e5da75b7a0c6254822296c7ca1b` (palette herbe inchangée, ombre au contact d'un vrai relief, eau/terre et vieux outils vérifiés). Prévalidation technique, publication à réaliser avec pin immuable et validation esthétique smartphone encore nécessaire.
 
 ---
 
