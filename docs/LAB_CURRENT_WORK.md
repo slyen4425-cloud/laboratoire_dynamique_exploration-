@@ -1,3 +1,15 @@
+# Lot actif — 19/10/2026 — V29 adoucir les franchissements de petites hauteurs en navigation
+
+- **Signalement smartphone :** saccade occasionnelle surtout au passage d'une petite marche, bien que la vitesse et la caméra générales aient été validées V21. Analyse : `navHeight()` retourne le niveau de cellule immédiatement (0–7) et est soustrait d'un coup (`*rise=18`) dans le dessin du héros ET la position cible panY ; traverser une frontière de cellule crée donc un saut visuel d'au moins 18 unités malgré un FPS stable.
+- **Base :** V28 source `3a97cfb76afcceeb3fb94feaae9ab091f4028a20`, CI [39204482422](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39204482422) SUCCESS, checkpoint `checkpoint/exploration-sculpt-shore-foam-v28-prevalidation-2026-10-19`. START `checkpoint/exploration-start-sculpt-smooth-step-v29-2026-10-19`, branche `work/exploration-sculpt-smooth-step-v29-2026-10-19`.
+- **Propriétaire unique :** adapter de rendu du pilote ; calcul pur `sculptVisualHeightStep` avec durée d'amortissement fixée, application à l'ancrage visuel et suivi caméra (même hauteur visuelle). `stepMovement` et Collision World restent les seuls responsables de x/y, vitesse, franchissement et collision ; aucune interpolation dans l'état de navigation canonique. Repainting uniquement tant que niveau visuel converge.
+- **Gels :** V21 comportement joystick/vitesse/caméra horizontale et zoom, V22 collisions, V26 MapActor idle, V27 panneaux/peinture, V28 rendu eau/écume, Builder et Combat ; aucun changement des contrôles utilisateur.
+- **Tests :** échantillons de step 16/30/190ms, convergence monotone et sans overshoot, absence de changement de niveau sur terrain plat, CI Node + Chromium terrain/collision/navigation.
+- **Risque :** amortissement trop visible sur transitions rapides ; à ajuster après validation utilisateur ; rollback V28.
+- **Statut :** en développement ; ne pas déclarer GREEN créateur avant validation smartphone.
+
+---
+
 # Lot actif — 19/10/2026 — V28 raccords visuels eau/roche et écume
 
 - **Retour smartphone du créateur :** capture V27 : mer peinte puis sculpture terre, berges très carrées et petites excroissances de roche semblant flotter à la surface ; demande d'écume légère contre les rochers. Panneaux flottants et repliables appréciés : totalement gelés.
