@@ -7,7 +7,7 @@
 - **Invariants gelés :** niveaux et eau, créateur de scène, `sculptHeightAt`, `sculptFaces`, collisions/stepMovement/hauteur et caméra V21-V29, écume V28/V33, pinceaux V31, objets/acteurs, UI et panneaux flottants, WorldSurface, Asset Loader, Builder/Combat, sauvegardes.
 - **Tests :** V34 pure geometry tests unchanged, nouveau test pixels Canvas Chromium visible sur plateau et sol plat, vraie CI Node + navigateur et non-régressions ; publication seulement CI GREEN sur source SHA verrouillé. L'intensité de la lèvre attend validation esthétique smartphone.
 - **Risques :** trait trop visible à grande échelle, effets de bord entre zones peintes ; opacité faible et contour strictement aux véritables marches sèches, rollback V34 disponible.
-- **Statut :** V35 en développement.
+- **Statut :** rendu et test pixel du vrai navigateur Chromium **SUCCESS** sur SHA `d22a538b65cbe2cbead38f239f413c8b59397bea`, CI [39279724144](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39279724144) **GREEN** (Node, navigateur, Builder, Combat, gouvernance) ; le trait sombre n'apparaît pas sur herbe plate. Checkpoint source final et publication de prévalidation à créer après CI finale du journal. **Validation esthétique sur smartphone toujours attendue** ; ne pas déclarer GREEN créateur.
 
 ---
 
