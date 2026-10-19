@@ -969,6 +969,22 @@ try{
      v30ActorRoundtrip.before.count!==1||v30ActorRoundtrip.after.count!==0)
     throw Error('V30 native ActorPlacement import-export and New Map cleanup failed: '+
       JSON.stringify(v30ActorRoundtrip));
+  // V31: real Chromium controls visible and wired in editor + quickbar,
+  // including returning to the legacy round default.
+  const v31Shapes=await run(`(()=>{
+    document.querySelector('#mode-ground').click();
+    const control=document.querySelector('#brush-shape');
+    const states=[];
+    for(const shape of ['square','cross','circle']){
+      control.value=shape;control.dispatchEvent(new Event('change',{bubbles:true}));
+      states.push(window.__sculptLabProbe().brushShape);
+    }
+    return {states,visible:control.getBoundingClientRect().width>0,
+      buttonCount:control.options.length};
+  })()`);
+  if(v31Shapes.states.join(',')!=='square,cross,circle'||
+     !v31Shapes.visible||v31Shapes.buttonCount!==3)
+    throw Error('V31 selectable mobile brush shapes failed: '+JSON.stringify(v31Shapes));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
