@@ -4,7 +4,7 @@ import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37';
-import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld} from './render/sculpt-camera-projection.js';
+import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
@@ -180,7 +180,9 @@ function dimensions(){
   const bounds=canvas.getBoundingClientRect();
   return {width:Math.max(1,bounds.width),height:Math.max(1,bounds.height)};
 }
-function cameraView(){return sculptCameraView($('camera-view').value);}
+function cameraView(){return navigationTesting
+  ?sculptCameraGameView(Number($('navigation-camera-angle').value))
+  :sculptCameraView($('camera-view').value);}
 function cameraBounds(){
   return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
     terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
@@ -209,12 +211,16 @@ function draw(){
   ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const view=cameraView();
-  ctx.transform(1,view.shear,0,view.pitch,0,0);
+  // Editor keeps the published V38 exact inverse pointer projection. In
+  // Tester, project only the background texture, not standing actor sprites.
+  if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   let result;
   if(navigationTesting){
     const snapshot=navigationBackground();
+    ctx.save();ctx.transform(1,view.shear,0,view.pitch,0,0);
     ctx.drawImage(snapshot.image,-snapshot.paddingX,-snapshot.paddingY,
       snapshot.image.width/snapshot.scale,snapshot.image.height/snapshot.scale);
+    ctx.restore();
     result=snapshot.result;
   }else{
     const material=registry.require($('material').value,'surface');
@@ -587,12 +593,13 @@ function centerNavigationCamera(){
 function drawNavigationActor(){
   if(!navActor)return;
   const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3;
+  const projected=sculptCameraProject(cameraView(),navActor.x,footY);
   // The native Exploration actor renderer owns idle/walk motion, shadow,
   // visual anchor and direction; gameplay state is read-only.
   if(navigationActorPreparer.get(navigationActorVisual.assetId))
     navigationActorRenderer.draw(ctx,{
       camera:{x:0,y:0},
-      actors:[{x:navActor.x,y:footY,facingX:navActor.facingX,
+      actors:[{x:projected.x,y:projected.y,facingX:navActor.facingX,
         moving:navActor.moving,mapVisual:navigationActorVisual}],
       timeSeconds:navVisualTime
     });
@@ -722,6 +729,11 @@ function setNavigationTesting(on){
   }
   scheduleDraw();
 }
+$('navigation-camera-angle').addEventListener('input',()=>{
+  $('navigation-camera-angle-value').textContent=$('navigation-camera-angle').value+'°';
+  // The cache is unmodified; affine reprojection of the existing raster is cheap.
+  if(navigationTesting){centerNavigationCamera();scheduleDraw();}
+});
 $('navigation-camera-zoom').addEventListener('input',()=>{
   $('navigation-camera-zoom-value').textContent=$('navigation-camera-zoom').value+' %';
   if(navigationTesting){
@@ -778,9 +790,15 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
   const renderActors=placedActors.filter(p=>p.y<maxY&&p.y>=minY)
     .map(p=>createPlacedMapActorView(p,captureActorProvider.resolveDefinition))
     .filter(Boolean)
-    .map(actor=>({...actor,
-      y:actor.y-sculptHeightAt(terrain,Math.floor(actor.x/SCULPT_TILE.width),
-        Math.floor(actor.y/SCULPT_TILE.height))*SCULPT_TILE.rise+3}));
+    .map(actor=>{
+      const footY=actor.y-sculptHeightAt(terrain,
+        Math.floor(actor.x/SCULPT_TILE.width),
+        Math.floor(actor.y/SCULPT_TILE.height))*SCULPT_TILE.rise+3;
+      const point=navigationTesting
+        ?sculptCameraProject(cameraView(),actor.x,footY)
+        :{x:actor.x,y:footY};
+      return {...actor,x:point.x,y:point.y};
+    });
   if(renderActors.length)
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
@@ -797,7 +815,8 @@ function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
     const height=(base?.height??base?.width??80)*t.scaleY;
     const x=t.x,y=t.y-sculptHeightAt(terrain,
       Math.floor(t.x/SCULPT_TILE.width),Math.floor(t.y/SCULPT_TILE.height))*SCULPT_TILE.rise;
-    ctx.save();ctx.translate(x,y);ctx.rotate(t.rotationDeg*Math.PI/180);
+    const point=navigationTesting?sculptCameraProject(cameraView(),x,y):{x,y};
+    ctx.save();ctx.translate(point.x,point.y);ctx.rotate(t.rotationDeg*Math.PI/180);
     ctx.drawImage(art,-width/2,-height,width,height);
     if(objectEditing&&objectSelectedId===object.id){
       ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
@@ -1318,6 +1337,8 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   cameraView:$('camera-view').value,
+  cameraAngle:Number($('navigation-camera-angle').value),
+  liveCameraPitch:cameraView().pitch,navigationTesting,
   cameraPan:{...pan},
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
