@@ -6,7 +6,7 @@
 - **Hors lot :** générateur IA de PNJ, déplacement autonome des créatures, comportement Combat, raccord exhaustif des créatures GenSrpG, éditeur intrinsèque de MapActor ; pas de nouvelle collision. Le personnage de navigation et ses paramètres validés restent inchangés.
 - **Tests :** Node placement v1 normalisé + scène roundtrip ancienne/nouvelle ; Chromium chargement réels assets du catalogue de démonstration, place/efface, undo/redo et export/import ; CI sentinelles et preview sur GitHub Pages réelle. Si catalogue indisponible, panneau acteur explicitement indisponible, aucun fallback visuel mensonger.
 - **Risques :** capture-assets et combat-preview ne sont pas dans le dépôt pilote mais disponibles sur Pages ; tests navigateur des assets via workflow Preview obligatoire, et aucune prévalidation publique sans assets vérifiés.
-- **Statut :** développement, CI/Pages GREEN et validation utilisateur en attente.
+- **Statut :** premier raccord source + test Chromium GREEN [39205909537](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39205909537) ; validation finale du dernier SHA et publication Pages encore en cours. Catalogue Capture publié actuellement : vitrine Loup volcanique ; aucune promesse de catalogue GenSrpG complet. Test manuel du visuel Capture requis.
 
 ---
 
