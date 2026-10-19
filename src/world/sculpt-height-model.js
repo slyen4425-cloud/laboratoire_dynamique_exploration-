@@ -19,7 +19,9 @@ export function sculptHeightAt(terrain,x,y){
 // A stroke is calculated from its ORIGINAL terrain to avoid unintentional stacking.
 // 'plateau' can set an exact level; soft edges are opt-in and remain deterministic.
 // Shared footprint authority for BOTH actual strokes and the on-canvas preview.
-function footprintWeights(terrain,clean,r,soften,{protectWater=false}={}){
+export const SCULPT_BRUSH_SHAPES=Object.freeze(['circle','square','cross']);
+function footprintWeights(terrain,clean,r,soften,{protectWater=false,shape='circle'}={}){
+  const selected=SCULPT_BRUSH_SHAPES.includes(shape)?shape:'circle';
   const limit=terrain.width*terrain.height;
   const weights=new Float32Array(limit);
   for(const center of clean){
@@ -28,7 +30,11 @@ function footprintWeights(terrain,clean,r,soften,{protectWater=false}={}){
     const ymin=Math.max(0,Math.floor(center.y-r));
     const ymax=Math.min(terrain.height-1,Math.ceil(center.y+r));
     for(let cy=ymin;cy<=ymax;cy++)for(let cx=xmin;cx<=xmax;cx++){
-      const distance=Math.hypot(cx+.5-center.x,cy+.5-center.y);
+      const dx=Math.abs(cx+.5-center.x),dy=Math.abs(cy+.5-center.y);
+      // All footprints use the same grid-cell centres as gameplay strokes.
+      // A square is an entire filled rectangle, not a rounded fringe.
+      if(selected==='cross'&&Math.min(dx,dy)>.001)continue;
+      const distance=selected==='circle'?Math.hypot(dx,dy):Math.max(dx,dy);
       if(distance>r)continue;
       // Full opacity inside the inner radius; only the outer rim is feathered.
       const inner=r*(1-soften);
@@ -43,18 +49,18 @@ function footprintWeights(terrain,clean,r,soften,{protectWater=false}={}){
   }
   return weights;
 }
-export function sculptBrushFootprint(terrain,{points=[],radius=3,edgeSoftness=0,mode='raise',allowUnderwaterTerrainEdit=false}={}){
+export function sculptBrushFootprint(terrain,{points=[],radius=3,edgeSoftness=0,mode='raise',allowUnderwaterTerrainEdit=false,shape='circle'}={}){
   if(!terrain||!Array.isArray(points))return Object.freeze([]);
   const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
   const weights=footprintWeights(terrain,clean,clamp(Number.isFinite(radius)?radius:3,.5,16),clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1),
-    {protectWater:!mode.startsWith('water-')&&!allowUnderwaterTerrainEdit});
+    {protectWater:!mode.startsWith('water-')&&!allowUnderwaterTerrainEdit,shape});
   const visible=[];
   for(let i=0;i<weights.length;i++)if(weights[i]>0)visible.push(Object.freeze({x:i%terrain.width,y:Math.floor(i/terrain.width),weight:weights[i]}));
   return Object.freeze(visible);
 }
 export function applySculptStroke(terrain,{
   points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0,rockRoundness=null,
-  allowUnderwaterTerrainEdit=false
+  allowUnderwaterTerrainEdit=false,shape='circle'
 }={}){
   if(!terrain||!['raise','dig','flatten','smooth','plateau'].includes(mode)||
      !Array.isArray(points)||points.length===0)return terrain;
@@ -64,7 +70,7 @@ export function applySculptStroke(terrain,{
   const power=clamp(int(strength,1),1,3);
   const soften=clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1);
   const limit=terrain.width*terrain.height;
-  const weights=footprintWeights(terrain,clean,r,soften,{protectWater:!allowUnderwaterTerrainEdit});
+  const weights=footprintWeights(terrain,clean,r,soften,{protectWater:!allowUnderwaterTerrainEdit,shape});
   const chosen=clamp(int(target,sculptHeightAt(terrain,
     Math.floor(clean[0].x),Math.floor(clean[0].y))),0,7);
   const next=[...terrain.levels];
@@ -111,7 +117,7 @@ export function sculptWaterAt(terrain,x,y){
   return Math.max(0,terrain.waterLevels[i]-terrain.levels[i]);
 }
 export function applySculptWaterStroke(terrain,{
-  points=[],radius=3,strength=1,mode='water-fill',target=3,edgeSoftness=0
+  points=[],radius=3,strength=1,mode='water-fill',target=3,edgeSoftness=0,shape='circle'
 }={}){
   if(!terrain||!['water-fill','water-rise','water-lower','water-erase','water-smooth'].includes(mode)
     ||!Array.isArray(points))return terrain;
@@ -119,7 +125,7 @@ export function applySculptWaterStroke(terrain,{
   if(!clean.length)return terrain;
   const weights=footprintWeights(terrain,clean,
     clamp(Number.isFinite(radius)?radius:3,.5,16),
-    clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1));
+    clamp(Number.isFinite(edgeSoftness)?edgeSoftness:0,0,1),{shape});
   const next=[...terrain.waterLevels];
   const level=clamp(int(target,3),0,10);
   const power=clamp(int(strength,1),1,3);
