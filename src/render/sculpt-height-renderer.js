@@ -72,28 +72,29 @@ function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
     if(horizontal)ctx.fillRect(start,y,band,h);
     else ctx.fillRect(x,top,w,band);
   }
-  // Subtle DARK upper lip before an actual dry cliff. This replaces the
-  // old light rim that hid the step. Keep both the soft shade and the thin
-  // edge INSIDE the high top tile, with no fake geometry or equal-level seams.
+  // Short charcoal upper lip on actual dry drops: strengthen the contrast
+  // against the same grass texture behind the hill, without tracing equal
+  // heights or changing cliff faces, water, materials or collision. Both the
+  // inward fade and the thin edge stay INSIDE the high ground tile.
   if(info.exposedEdges.includes('south')){
-    const band=Math.min(3.6,h*.19);
+    const band=Math.min(4.4,h*.24);
     const rim=ctx.createLinearGradient(0,y+h-band,0,y+h);
     rim.addColorStop(0,'rgba(19,32,30,0)');
-    rim.addColorStop(.65,'rgba(19,32,30,.09)');
-    rim.addColorStop(1,'rgba(19,32,30,.25)');
+    rim.addColorStop(.55,'rgba(19,32,30,.13)');
+    rim.addColorStop(1,'rgba(19,32,30,.43)');
     ctx.fillStyle=rim;ctx.fillRect(x,y+h-band,w,band);
-    ctx.fillStyle='rgba(16,28,27,.17)';
-    ctx.fillRect(x,y+h-1,w,1);
+    ctx.fillStyle='rgba(16,28,27,.34)';
+    ctx.fillRect(x,y+h-1.2,w,1.2);
   }
   if(info.exposedEdges.includes('east')){
-    const band=Math.min(3,w*.12);
+    const band=Math.min(3.8,w*.14);
     const rim=ctx.createLinearGradient(x+w-band,0,x+w,0);
     rim.addColorStop(0,'rgba(19,32,30,0)');
-    rim.addColorStop(.65,'rgba(19,32,30,.07)');
-    rim.addColorStop(1,'rgba(19,32,30,.21)');
+    rim.addColorStop(.55,'rgba(19,32,30,.10)');
+    rim.addColorStop(1,'rgba(19,32,30,.35)');
     ctx.fillStyle=rim;ctx.fillRect(x+w-band,y,band,h);
-    ctx.fillStyle='rgba(16,28,27,.14)';
-    ctx.fillRect(x+w-1,y,1,h);
+    ctx.fillStyle='rgba(16,28,27,.30)';
+    ctx.fillRect(x+w-1.2,y,1.2,h);
   }
 }
 
