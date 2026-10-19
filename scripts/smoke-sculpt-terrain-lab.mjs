@@ -985,6 +985,43 @@ try{
   if(v31Shapes.states.join(',')!=='square,cross,circle'||
      !v31Shapes.visible||v31Shapes.buttonCount!==3)
     throw Error('V31 selectable mobile brush shapes failed: '+JSON.stringify(v31Shapes));
+  // V33 REAL Chromium raster regression: square land, then square water
+  // raised to a higher level. A wet/dry SOUTH bank must not generate
+  // a giant dangling cyan rectangle across grass (V32 user screenshot).
+  const v33WaterPixels=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const render=await import('./src/render/sculpt-height-renderer.js');
+    const base=model.createSculptTerrain({width:8,height:8,
+      levels:Array(64).fill(0)});
+    const raised=model.applySculptStroke(base,{
+      points:[{x:6.5,y:6.5}],radius:1,shape:'square',
+      mode:'plateau',target:1});
+    const wet=model.applySculptWaterStroke(raised,{
+      points:[{x:3.5,y:2.5}],radius:2,shape:'square',
+      mode:'water-fill',target:2});
+    const moved=model.applySculptWaterStroke(wet,{
+      points:[{x:3.5,y:2.5}],radius:2,shape:'square',
+      mode:'water-rise',strength:1});
+    const c=document.createElement('canvas');
+    c.width=8*28;c.height=8*21+7*18;
+    const cx=c.getContext('2d',{willReadFrequently:true});
+    const stats=render.drawSculptTerrain(cx,{
+      terrain:moved,material:{render:{baseColor:'#16782d'}},
+      overlays:{water:{visible:true,material:{render:{
+        waterColor:'#26b6ef',highlightColor:'#eefaff'}},texture:null}}});
+    const sample=(x,y)=>Array.from(cx.getImageData(x,y,1,1).data).slice(0,3);
+    return {bank:sample(3*28+14,75),water:sample(3*28+14,36),
+      wet:stats.waterCells,physicalGround:moved.levels[5*8+3],
+      waterAtBank:model.sculptWaterAt(moved,3,4),
+      noWaterOnLand:model.sculptWaterAt(moved,3,5)};
+  })()`);
+  if(v33WaterPixels.wet<10||v33WaterPixels.water[2]<100||
+     v33WaterPixels.bank[1]<=v33WaterPixels.bank[2]||
+     v33WaterPixels.noWaterOnLand!==0||
+     v33WaterPixels.waterAtBank<=0)
+    throw Error('V33 wet/dry renderer still paints a floating cyan water wall: '+
+      JSON.stringify(v33WaterPixels));
+  console.log('V33 real Chromium water/land seam pixels:',JSON.stringify(v33WaterPixels));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
