@@ -15,12 +15,12 @@ test('V32 east-facing cliff seam remains inside source column at all elevations'
 });
 test('V32 aesthetic joins never weaken true Collision World steps',()=>{
  const levels=Array(12*12).fill(2);
- levels[6*12+7]=3;levels[6*12+8]=4;
+ levels[6*12+7]=3;levels[6*12+8]=5;
  const terrain=createSculptTerrain({width:12,height:12,levels});
  const entity={x:6.5*28,y:6.5*21,radius:5,locomotion:{modes:['ground']}};
  const context={terrain,cellWidth:28,cellHeight:21,maxStepUp:1,maxStepDown:1};
  assert.equal(isSculptNavigationBlocked(context,entity,7.5*28,6.5*21),false);
  assert.equal(isSculptNavigationBlocked(context,entity,8.5*28,6.5*21),true);
  // The clip only changes the artist's raster, not canonical world heights.
- assert.equal(terrain.levels[6*12+8],4);
+ assert.equal(terrain.levels[6*12+8],5);
 });
