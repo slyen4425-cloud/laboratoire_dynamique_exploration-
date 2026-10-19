@@ -6,7 +6,7 @@
 - **Invariant gelé :** conserver les pixels des parois rocheuses et leurs ombres existantes, le matériau/texture herbe, les dalles d'altitude égale, les transitions eau/terre/écume, le modèle des hauteurs, les collisions et la navigation, les pinceaux, les assets, l'UI, les acteurs, les sauvegardes, les autres laboratoires et GenSrpG. Aucune géométrie/autorité gameplay ajoutée.
 - **Validation attendue :** terrain plat sans faux trait, vrai rebord sud visiblement assombri, préservation eau et peinture ; tests Node + navigateur Chromium réel, CI verte, preview épinglée et validation esthétique sur téléphone **avant GREEN créateur**.
 - **Risques / rollback :** contour trop marqué sur certains zooms ou textures ; éviter un trait noir dur, privilégier une bande courte et dégradée ; rollback exact sur V35.
-- **Statut :** lot ouvert, en cours de réalisation.
+- **Statut :** **prévalidation technique réussie** : code SHA `682b3958412a66b1ef924daa7aaeaff941c6d7aa`, CI source [39291173873](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39291173873) SUCCESS, checkpoint source [39291379845](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39291379845) SUCCESS et Pages [39291544230](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39291544230) SUCCESS. Preview `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/sculpt-lab.html`. Test visuel smartphone en attente : **pas GREEN créateur**.
 
 ---
 
