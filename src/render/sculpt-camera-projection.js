@@ -8,6 +8,19 @@ export const SCULPT_CAMERA_VIEWS=Object.freeze({
 export function sculptCameraView(key='threeQuarter'){
   return SCULPT_CAMERA_VIEWS[key]??SCULPT_CAMERA_VIEWS.threeQuarter;
 }
+// Continuous view angle for TESTER. Reuses the same affine projection,
+// inverse and camera bounds as the published V38 editorial comparison.
+// 90 degrees looks straight down; lower angles emphasize depth.
+export const SCULPT_GAME_CAMERA_ANGLE=Object.freeze({min:35,max:90,default:55});
+export function sculptCameraGameView(angle=SCULPT_GAME_CAMERA_ANGLE.default){
+  const requested=Number(angle);
+  const degrees=Math.max(SCULPT_GAME_CAMERA_ANGLE.min,
+    Math.min(SCULPT_GAME_CAMERA_ANGLE.max,
+      Number.isFinite(requested)?requested:SCULPT_GAME_CAMERA_ANGLE.default));
+  const pitch=Math.sin(degrees*Math.PI/180);
+  const shear=-.10*(90-degrees)/55;
+  return Object.freeze({pitch,shear,angle:degrees,label:'Inclinaison Tester '+degrees+'°'});
+}
 export function sculptCameraProject(view,x,y){
   return Object.freeze({x,y:view.pitch*y+view.shear*x});
 }
