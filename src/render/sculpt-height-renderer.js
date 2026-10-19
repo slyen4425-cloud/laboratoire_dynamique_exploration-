@@ -72,13 +72,27 @@ function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
     if(horizontal)ctx.fillRect(start,y,band,h);
     else ctx.fillRect(x,top,w,band);
   }
-  // Tiny sunlit lip marks a ledge without placing any false wall or seam.
+  // Subtle DARK upper lip before an actual dry cliff. This replaces the
+  // old light rim that hid the step. Keep both the soft shade and the thin
+  // edge INSIDE the high top tile, with no fake geometry or equal-level seams.
   if(info.exposedEdges.includes('south')){
-    ctx.fillStyle='rgba(252,248,206,.17)';
-    ctx.fillRect(x,y+h-1.1,w,1.1);
+    const band=Math.min(3.6,h*.19);
+    const rim=ctx.createLinearGradient(0,y+h-band,0,y+h);
+    rim.addColorStop(0,'rgba(19,32,30,0)');
+    rim.addColorStop(.65,'rgba(19,32,30,.09)');
+    rim.addColorStop(1,'rgba(19,32,30,.25)');
+    ctx.fillStyle=rim;ctx.fillRect(x,y+h-band,w,band);
+    ctx.fillStyle='rgba(16,28,27,.17)';
+    ctx.fillRect(x,y+h-1,w,1);
   }
   if(info.exposedEdges.includes('east')){
-    ctx.fillStyle='rgba(253,248,213,.10)';
+    const band=Math.min(3,w*.12);
+    const rim=ctx.createLinearGradient(x+w-band,0,x+w,0);
+    rim.addColorStop(0,'rgba(19,32,30,0)');
+    rim.addColorStop(.65,'rgba(19,32,30,.07)');
+    rim.addColorStop(1,'rgba(19,32,30,.21)');
+    ctx.fillStyle=rim;ctx.fillRect(x+w-band,y,band,h);
+    ctx.fillStyle='rgba(16,28,27,.14)';
     ctx.fillRect(x+w-1,y,1,h);
   }
 }
