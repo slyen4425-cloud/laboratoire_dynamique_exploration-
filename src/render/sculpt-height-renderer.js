@@ -23,6 +23,66 @@ export function sculptFaceContour({width,height,smoothness=0}={}){
   const toe=Math.min(10*softness,height*.17,Math.max(1,width*.09));
   return Object.freeze({corner,undulation,foot,toe});
 }
+// Pure, read-only lighting cues calculated from canonical terrain elevations.
+// The top texture, collision geometry and water model remain untouched.
+export function sculptGroundReliefLighting(terrain,col,row){
+  if(!terrain||sculptWaterAt(terrain,col,row)>0)
+    return Object.freeze({tone:0,contactShadows:Object.freeze([]),exposedEdges:Object.freeze([])});
+  const level=sculptHeightAt(terrain,col,row);
+  // Shared elevation tint over entire plateaus (no outlines between equal cells).
+  const tone=Math.max(-.065,Math.min(.105,(level-2)*.029));
+  const contactShadows=[],exposedEdges=[];
+  for(const [side,dx,dy] of [['north',0,-1],['east',1,0],['south',0,1],['west',-1,0]]){
+    const x=col+dx,y=row+dy;
+    if(x<0||y<0||x>=terrain.width||y>=terrain.height||
+       sculptWaterAt(terrain,x,y)>0)continue;
+    const delta=sculptHeightAt(terrain,x,y)-level;
+    if(delta>0)contactShadows.push(Object.freeze({
+      side,opacity:Math.min(.37,.19+Math.min(delta,3)*.055)
+    }));
+    else if(delta<0)exposedEdges.push(side);
+  }
+  return Object.freeze({tone,
+    contactShadows:Object.freeze(contactShadows),
+    exposedEdges:Object.freeze(exposedEdges)});
+}
+function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
+  const info=sculptGroundReliefLighting(terrain,col,row);
+  if(info.tone!==0){
+    ctx.fillStyle=info.tone>0
+      ?'rgba(251,243,206,'+info.tone+')'
+      :'rgba(15,35,39,'+(-info.tone)+')';
+    ctx.fillRect(x,y,w,h);
+  }
+  for(const {side,opacity} of info.contactShadows){
+    const horizontal=side==='west'||side==='east';
+    const band=horizontal?w*.30:h*.31;
+    const start=side==='east'?(x+w-band):x;
+    const top=side==='south'?(y+h-band):y;
+    const grad=horizontal
+      ?ctx.createLinearGradient(start,0,start+band,0)
+      :ctx.createLinearGradient(0,top,0,top+band);
+    const dark='rgba(16,31,34,'+opacity+')';
+    if(side==='north'||side==='west'){
+      grad.addColorStop(0,dark);grad.addColorStop(1,'rgba(16,31,34,0)');
+    }else{
+      grad.addColorStop(0,'rgba(16,31,34,0)');grad.addColorStop(1,dark);
+    }
+    ctx.fillStyle=grad;
+    if(horizontal)ctx.fillRect(start,y,band,h);
+    else ctx.fillRect(x,top,w,band);
+  }
+  // Tiny sunlit lip marks a ledge without placing any false wall or seam.
+  if(info.exposedEdges.includes('south')){
+    ctx.fillStyle='rgba(252,248,206,.17)';
+    ctx.fillRect(x,y+h-1.1,w,1.1);
+  }
+  if(info.exposedEdges.includes('east')){
+    ctx.fillStyle='rgba(253,248,213,.10)';
+    ctx.fillRect(x+w-1,y,1,h);
+  }
+}
+
 // Exact east-facing cliff strip, without overlap onto the adjacent cell.
 export function sculptEastSeamBounds(tile,col,row,upper,lower){
   const {width:w,height:h,rise}=tile;
@@ -397,6 +457,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       }
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       paintedCells+=drawPaint(col,row,level,x,y);
+      // Height-aware ambient contact shadow on existing land material only.
+      drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
       const side=east.get(idx);
       if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
         colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness});
