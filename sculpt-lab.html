@@ -270,6 +270,10 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
  #surface-palette{width:min(184px,49vw);padding:6px;top:6px}
  .editor-switch #mode-surface{font-size:.73rem;padding:5px 4px}
 }
+#object-controls,#actor-controls{display:grid;gap:7px}
+#object-controls[hidden],#actor-controls[hidden]{display:none!important}
+#actor-controls #actor-source-status{color:#a6ebd6}
+#actor-controls button{min-height:34px}
 </style>
 </head>
 <body>
@@ -348,8 +352,10 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
  <output id="surface-count">Aucune zone peinte</output>
  <small>Trace une route ou recouvre l'herbe d'une autre texture. Les zones sont sauvegardées avec « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
 </section>
-<section id="object-palette" aria-label="Placer les objets visuels" hidden>
+<section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
+ <div id="object-controls">
  <strong>🌳 Placer un objet sur le relief</strong>
+ <button type="button" id="actor-open">👥 Acteurs de map</button>
  <label>Catégorie
   <select id="object-category" aria-label="Catégorie d’objets">
    <option value="building">Bâtiments</option><option value="tree">Arbres</option>
@@ -381,6 +387,23 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
  </div>
  <output id="object-count">Aucun objet placé</output>
  <small>Choisis « Sélectionner / modifier » et touche un objet pour changer angle, taille ou vue. Angle et vue avant/côté/arrière sont distincts. Utilise Exporter scène pour sauvegarder.</small>
+ </div>
+ <section id="actor-controls" hidden>
+  <strong>👥 Acteurs de map</strong>
+  <button type="button" id="actor-back">← Revenir aux objets</button>
+  <label>Définition Capture
+   <select id="actor-definition" aria-label="Définition d’acteur Capture" disabled></select>
+  </label>
+  <label>Action <select id="actor-action"><option value="place">Placer sur la map</option><option value="remove">Supprimer au toucher</option></select></label>
+  <label>Orientation <select id="actor-facing"><option value="1">Droite →</option><option value="-1">Gauche ←</option></select></label>
+  <div class="object-actions">
+   <button type="button" id="actor-undo" disabled>↶ Acteur</button>
+   <button type="button" id="actor-redo" disabled>↷ Acteur</button>
+  </div>
+  <output id="actor-count">Aucun acteur placé</output>
+  <small id="actor-source-status">Chargement du catalogue Capture…</small>
+  <small>Les visuels et animations viennent des définitions Capture. Ce pilote place des références MapActor, sans IA ni nouvelles collisions.</small>
+ </section>
 </section>
 <section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
   <strong>🚶 Test de navigation</strong>
@@ -485,6 +508,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-surface-paint-v27"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-capture-actor-v30"></script>
 </body>
 </html>
