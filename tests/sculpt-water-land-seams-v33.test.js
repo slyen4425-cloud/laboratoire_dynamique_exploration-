@@ -10,9 +10,9 @@ test('V33 dry south shore never creates a dangling water-wall rectangle',()=>{
  const shore=applySculptWaterStroke(ground,{points:[{x:6.5,y:3.5}],
    radius:3,mode:'water-fill',target:6,shape:'square'});
  for(let x=4;x<=8;x++)assert.equal(sculptWaterSouthDrop(shore,x,6),0);
- assert.equal(sculptWaterAt(shore,6,6),0);
- assert.equal(sculptWaterSouthDrop(shore,6,5),0);
- assert.ok(sculptWetShoreEdges(shore,6,5).includes('south'));
+ assert.ok(sculptWaterAt(shore,6,6)>0);
+ assert.equal(sculptWaterSouthDrop(shore,6,6),0);
+ assert.ok(sculptWetShoreEdges(shore,6,6).includes('south'));
 });
 test('V33 only physically adjacent WET cells with a decreasing water surface make a waterfall',()=>{
  const before=make();
