@@ -7,7 +7,7 @@
 - **Gels :** V21 vitesse/caméra, V22 collision, V24 New Map, V27 surfaces, V28 mousse, V29 amortissement, V30 acteurs, V31/V32 trois pinceaux et clips, UI panneaux repliables, schéma scène, tous les moteurs hors pilote.
 - **Tests :** échantillons purs wet-to-dry/wet-to-wet 4 directions, sous eau et eau à niveau variable, Node + vrai smoke Chromium V32, capture visuelle avant/après à reproduire localement si possible, sentinelles CI GREEN ; validation smartphone par créateur impérative.
 - **Non-objectif :** ne pas rendre traversables les réelles différences de hauteur > maxStepUp ni masquer une collision réelle. L'apparence du dessin n'est jamais propriétaire du blocage.
-- **Rollback :** V32 exacte toujours publiée avant merge infra. **Statut :** développement, aucune publication ni acceptation utilisateur revendiquée.
+- **Rollback :** V32 exacte conservée au checkpoint et preview précédente jusqu'au merge infra. **Statut :** correctif et test Canvas Chromium réel GREEN, ainsi que Node, Builder, Combat et CI [39250708889](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39250708889) **SUCCESS**, SHA technique `d0dc468065c333d1a060108a46618675c74fd2ab`. Documentation de clôture ci-présente à revérifier par CI avant checkpoint final et épinglage Pages, puis validation visuelle du créateur demandée. La suppression des faux murs bleus a été vérifiée pixel par pixel ; aucune traversabilité supplémentaire promise.
 
 ---
 
