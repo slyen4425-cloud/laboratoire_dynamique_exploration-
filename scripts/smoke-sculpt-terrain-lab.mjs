@@ -1156,23 +1156,41 @@ try{
     await redraw();await redraw();const returned=pixels();
     select.value='threeQuarter';select.dispatchEvent(new Event('change',{bubbles:true}));
     await redraw();await redraw();
-    const probe=window.__sculptLabProbe();
-    const projection=await import('./src/render/sculpt-camera-projection.js');
-    const x=(18+.5)*28,y=(12+.5)*21-2*18;
-    const projected=projection.sculptCameraProject(projection.sculptCameraView('threeQuarter'),x,y);
-    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
-    const client={x:rect.left+probe.cameraPan.x+projected.x*probe.zoom,
-      y:rect.top+probe.cameraPan.y+projected.y*probe.zoom};
+    // Earlier smokes can leave object/navigation tools active; explicitly
+    // return to the existing ground editor before exercising pointer picking.
+    if(document.body.classList.contains('navigation-testing'))
+      document.querySelector('#navigation-toggle').click();
+    if(window.__sculptLabProbe().objectEditing)
+      document.querySelector('#mode-objects').click();
+    document.querySelector('#mode-ground').click();
     const precision=document.querySelector('#precision-mode');
     precision.checked=true;precision.dispatchEvent(new Event('change',{bubbles:true}));
+    const probe=window.__sculptLabProbe();
+    const projection=await import('./src/render/sculpt-camera-projection.js');
+    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    // Choose an actually clickable projected tile, not one hidden behind
+    // the floating "Appliquer" precision toolbar on narrow viewports.
+    let client=null,target=null,hit=null;
+    for(const row of [7,8,6,9,5,10,11,12])for(const col of [18,16,20,14]){
+      const x=(col+.5)*28,y=(row+.5)*21-2*18;
+      const p=projection.sculptCameraProject(projection.sculptCameraView('threeQuarter'),x,y);
+      const at={x:rect.left+probe.cameraPan.x+p.x*probe.zoom,
+        y:rect.top+probe.cameraPan.y+p.y*probe.zoom};
+      const found=document.elementFromPoint(at.x,at.y)?.id;
+      if(found==='sculpt-canvas'){
+        client=at;target={x:col,y:row};hit=found;break;
+      }
+    }
     return {classic,angled,returned,sameSave:before===saved(),
-      mode:probe.cameraView,client,within:client.x>rect.left&&client.x<rect.right&&
-        client.y>rect.top&&client.y<rect.bottom};
+      mode:probe.cameraView,client,target,hit,editing:probe.objectEditing,
+      navigating:document.body.classList.contains('navigation-testing'),
+      within:!!client};
   })()`);
   if(v38Visual.classic===v38Visual.angled||
       v38Visual.classic!==v38Visual.returned||!v38Visual.sameSave||
       v38Visual.mode!=='threeQuarter'||!v38Visual.within)
     throw Error('V38 camera visual comparison or preserved terrain failed: '+JSON.stringify(v38Visual));
+  await run(`window.__v38HitTarget=${JSON.stringify(v38Visual.target)}`);
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v38Visual.client.x,y:v38Visual.client.y});
   await sleep(70);
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:v38Visual.client.x,y:v38Visual.client.y,button:'left',clickCount:1});
@@ -1185,10 +1203,11 @@ try{
     if(ready)document.querySelector('#apply-precision').click();
     document.querySelector('#export').click();
     const exportTerrain=JSON.parse(document.querySelector('#json').value);
-    const got=exportTerrain.levels[12*exportTerrain.width+18];
+    const requested=window.__v38HitTarget;
+    const got=requested?exportTerrain.levels[requested.y*exportTerrain.width+requested.x]:null;
     return {target,ready,got,view:probe.cameraView};
   })()`);
-  if(v38Pick.target?.x!==18||v38Pick.target?.y!==12||
+  if(v38Pick.target?.x!==v38Visual.target.x||v38Pick.target?.y!==v38Visual.target.y||
      !v38Pick.ready||v38Pick.got!==5)
     throw Error('V38 real Canvas click painted wrong cell after camera tilt: '+
       JSON.stringify({v38Visual,v38Pick}));
