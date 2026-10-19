@@ -163,13 +163,24 @@ export function sculptWetShoreEdges(terrain,col,row){
   }
   return Object.freeze(edges);
 }
+// A wet surface can fall into a LOWER wet surface, but cannot form a
+// waterfall wall over dry land. At a dry neighbor the water's terminus is a
+// shore; painting a vertical water slab there caused V32 blue rectangles.
+export function sculptWaterSouthDrop(terrain,col,row){
+  if(!terrain||row<0||col<0||col>=terrain.width||row>=terrain.height-1)return 0;
+  if(sculptWaterAt(terrain,col,row)<=0 ||
+     sculptWaterAt(terrain,col,row+1)<=0)return 0;
+  const i=row*terrain.width+col;
+  return Math.max(0,terrain.waterLevels[i]-terrain.waterLevels[i+terrain.width]);
+}
 // Draw the native full-width cliff-toe run only over DRY cells in front
 // of the rock. A previously deferred toe rendered over a lake creates
 // dark floating rock islands disconnected from the wall.
 export function sculptRockToeSegments(terrain,row,from,to){
   const segments=[];let start=null;
   for(let c=from;c<=to;c++){
-    const wet=c<to&&row+1<terrain.height&&sculptWaterAt(terrain,c,row+1)>0;
+    const wet=c<to&&(sculptWaterAt(terrain,c,row)>0||
+      (row+1<terrain.height&&sculptWaterAt(terrain,c,row+1)>0));
     if(c<to&&!wet&&start===null)start=c;
     if((wet||c===to)&&start!==null){
       segments.push(Object.freeze({from:start,to:c}));
@@ -225,11 +236,10 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     count++;
     const surface=terrain.waterLevels[row*terrain.width+col];
     const x=col*w,y=row*h-surface*rise;
-    const southDepth=sculptWaterAt(terrain,col,row+1);
     const eastDepth=sculptWaterAt(terrain,col+1,row);
-    const southSurface=southDepth?terrain.waterLevels[(row+1)*terrain.width+col]:
-      sculptHeightAt(terrain,col,row+1);
-    const visibleWall=Math.max(0,(surface-southSurface)*rise);
+    // Compare WATER surfaces only, never the elevation of a dry south cell.
+    // A dry neighbor is an ordinary shore with foam, not a blue falling wall.
+    const visibleWall=sculptWaterSouthDrop(terrain,col,row)*rise;
     // Water surface, optionally textured from the canonical Material Registry.
     ctx.save();ctx.globalAlpha=.94;ctx.fillStyle=water;ctx.fillRect(x,y,w+.65,h+.65);
     if(pattern){ctx.globalAlpha=.52;ctx.fillStyle=pattern;ctx.fillRect(x,y,w+.65,h+.65);}
@@ -238,7 +248,7 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
       x+w*.61,y+h*.60,x+w-3,y+h*.41);ctx.stroke();
     ctx.restore();
     drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim});
-    if(visibleWall>0&&row<terrain.height-1){
+    if(visibleWall>0){
       const grad=ctx.createLinearGradient(x,y+h,x,y+h+visibleWall);
       grad.addColorStop(0,'rgba(107,217,240,.83)');
       grad.addColorStop(.65,'rgba(39,142,185,.83)');
