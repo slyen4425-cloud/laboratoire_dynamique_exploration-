@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-ground-depth-v34-prevalidation-2026-10-19
+# preview-revision: sculpt-dark-upper-lip-v35-prevalidation-2026-10-19
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 8e323a91850bc74031728e00c10a6b1aa3f8a8df
+          ref: d22a538b65cbe2cbead38f239f413c8b59397bea
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
