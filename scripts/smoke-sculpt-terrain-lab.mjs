@@ -1051,6 +1051,37 @@ try{
     throw Error('V34 real canvas raised ground must cast localized gradient only: '+
       JSON.stringify(v34Relief));
   console.log('V34 Chromium land plateau contact shadow pixels:',JSON.stringify(v34Relief));
+  // V35: real Canvas regression. A plateau lip is slightly darker than
+  // its own grass top; a uniform dry plain has no artificial dark border.
+  const v35Ledge=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const renderer=await import('./src/render/sculpt-height-renderer.js');
+    const terrain=(raised)=>{
+      const levels=Array(8*8).fill(2);
+      if(raised)levels[5*8+3]=4;
+      return model.createSculptTerrain({width:8,height:8,levels});
+    };
+    const paint=(t)=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=8*28;canvas.height=8*21+7*18;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      renderer.drawSculptTerrain(ctx,{terrain:t,material:{render:{baseColor:'#528d42'}}});
+      return (x,y)=>Array.from(ctx.getImageData(x,y,1,1).data).slice(0,3);
+    };
+    const high=paint(terrain(true)),flat=paint(terrain(false));
+    const sum=v=>v.reduce((a,b)=>a+b,0);
+    const upperInner=high(3*28+14,5*21-4*18+9);
+    const upperLip=high(3*28+14,5*21-4*18+20);
+    const flatInner=flat(3*28+14,5*21-2*18+9);
+    const flatEdge=flat(3*28+14,5*21-2*18+20);
+    return {upperInner,upperLip,flatInner,flatEdge,
+      lipDarkening:sum(upperInner)-sum(upperLip),
+      fakePlainBorder:sum(flatInner)-sum(flatEdge)};
+  })()`);
+  if(v35Ledge.lipDarkening<18||Math.abs(v35Ledge.fakePlainBorder)>12)
+    throw Error('V35 dry-cliff dark lip missing or artificial flat-terrain seam: '+
+      JSON.stringify(v35Ledge));
+  console.log('V35 real Chromium dark upper ledge:',JSON.stringify(v35Ledge));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
