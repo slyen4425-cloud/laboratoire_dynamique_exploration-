@@ -931,6 +931,44 @@ try{
     JSON.stringify({roads:v27Visual.scene.surface.routes.length,
       zones:v27Visual.scene.surface.zones.length,
       materialAssets:v27Visual.probe.texturesLoaded,painted:v27Visual.painted}));
+  // V30: same floating object panel can switch to Actor references, while
+  // the local isolated CI runner intentionally lacks the external Capture checkout.
+  const v30Palette=await run(`(()=>{
+    document.querySelector('#mode-objects').click();
+    document.querySelector('#actor-open').click();
+    const selected=window.__sculptActorsProbe();
+    const actorPanelVisible=!document.querySelector('#actor-controls').hidden;
+    document.querySelector('#actor-back').click();
+    const backToObjects=!document.querySelector('#object-controls').hidden;
+    return {selected,actorPanelVisible,backToObjects};
+  })()`);
+  if(!v30Palette.selected.active||!v30Palette.actorPanelVisible||
+     !v30Palette.backToObjects)
+    throw Error('V30 native Capture actor palette not reachable: '+JSON.stringify(v30Palette));
+  const v30ActorRoundtrip=await run(`(()=>{
+    document.querySelector('#mode-objects').click(); // close palette
+    document.querySelector('#scene-export').click();
+    const json=document.querySelector('#json');
+    const scene=JSON.parse(json.value);
+    scene.actors=[{schemaVersion:1,id:'actor-smoke-1',
+      actorDefinitionId:'capture:creature:crea-loup',x:98,y:75,facingX:-1}];
+    json.value=JSON.stringify(scene);
+    document.querySelector('#import').click();
+    document.querySelector('#scene-export').click();
+    const saved=JSON.parse(json.value);
+    const actor=window.__sculptActorsProbe();
+    document.querySelector('#new-map-toggle').click();
+    const c=document.querySelector('#new-map-confirm');
+    c.checked=true;c.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#new-map-create').click();
+    return {savedActor:saved.actors?.[0],before:actor,
+      after:window.__sculptActorsProbe()};
+  })()`);
+  if(v30ActorRoundtrip.savedActor?.actorDefinitionId!=='capture:creature:crea-loup'||
+     v30ActorRoundtrip.savedActor?.facingX!==-1||
+     v30ActorRoundtrip.before.count!==1||v30ActorRoundtrip.after.count!==0)
+    throw Error('V30 native ActorPlacement import-export and New Map cleanup failed: '+
+      JSON.stringify(v30ActorRoundtrip));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
