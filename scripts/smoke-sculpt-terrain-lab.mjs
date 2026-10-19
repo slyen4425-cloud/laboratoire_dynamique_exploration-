@@ -1022,6 +1022,35 @@ try{
     throw Error('V33 wet/dry renderer still paints a floating cyan water wall: '+
       JSON.stringify(v33WaterPixels));
   console.log('V33 real Chromium water/land seam pixels:',JSON.stringify(v33WaterPixels));
+  // V34 real Chromium raster: a higher dry plateau produces a local shadow
+  // on the adjacent lower LAND tile, without darkening flat remote tiles.
+  const v34Relief=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const renderer=await import('./src/render/sculpt-height-renderer.js');
+    const levels=Array(8*8).fill(2);
+    const flat=model.createSculptTerrain({width:8,height:8,levels});
+    levels[3*8+4]=4;
+    const raised=model.createSculptTerrain({width:8,height:8,levels});
+    const draw=t=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=8*28;canvas.height=8*21+7*18;
+      const g=canvas.getContext('2d',{willReadFrequently:true});
+      renderer.drawSculptTerrain(g,{terrain:t,material:{render:{baseColor:'#528d42'}}});
+      return (x,y)=>Array.from(g.getImageData(x,y,1,1).data).slice(0,3);
+    };
+    const before=draw(flat),after=draw(raised);
+    const contact=[3*28+26,3*21-2*18+10];
+    const undisturbed=[1*28+14,5*21-2*18+10];
+    const sum=c=>c.reduce((a,b)=>a+b,0);
+    return {contactBefore:before(...contact),contactAfter:after(...contact),
+      stillBefore:before(...undisturbed),stillAfter:after(...undisturbed),
+      diff:sum(before(...contact))-sum(after(...contact))};
+  })()`);
+  if(v34Relief.diff<9||
+     v34Relief.stillBefore.join(',')!==v34Relief.stillAfter.join(','))
+    throw Error('V34 real canvas raised ground must cast localized gradient only: '+
+      JSON.stringify(v34Relief));
+  console.log('V34 Chromium land plateau contact shadow pixels:',JSON.stringify(v34Relief));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
