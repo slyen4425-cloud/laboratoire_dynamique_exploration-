@@ -10,7 +10,10 @@ import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collis
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
 import {createVirtualStick} from './input/virtual-stick.js';
-import {resolveMapActorAsset} from './assets/map-actor-asset-adapter.js';
+import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-actor-asset-adapter.js';
+import {createImageAssetLoader} from './assets/image-asset-loader.js';
+import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
+import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
@@ -21,7 +24,8 @@ import {isBlocked} from './core/collision.js';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
-  importSculptPreviewScene,createBlankSculptPreviewScene} from './world/sculpt-scene-preview.js';
+  importSculptPreviewScene,createBlankSculptPreviewScene,
+  appendSculptPreviewActor,removeSculptPreviewActorAt} from './world/sculpt-scene-preview.js';
 import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
@@ -35,6 +39,8 @@ let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
+let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
@@ -214,9 +220,14 @@ function draw(){
   lastRenderStats=result;
   if(navigationTesting){
     drawPreviewObjects(navActor?.y??Infinity);
+    drawPlacedActors(navActor?.y??Infinity);
     drawNavigationActor();
     drawPreviewObjects(Infinity,navActor?.y??Infinity);
-  }else drawPreviewObjects();
+    drawPlacedActors(Infinity,navActor?.y??Infinity);
+  }else{
+    drawPreviewObjects();
+    drawPlacedActors();
+  }
   // A temporary stroke preview is visual only; WorldSurface is committed on
   // pointerup. No hidden draft geometry is persisted by the renderer.
   if(surfaceEditing){
@@ -428,7 +439,10 @@ function begin(event){
   const cell=screenToCell(event);if(!cell)return;
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
-  if(objectEditing){applyObjectAtCell(cell);return;}
+  if(objectEditing){
+    if(actorSubmode)applyActorAtCell(cell);else applyObjectAtCell(cell);
+    return;
+  }
   if(surfaceEditing){
     const point={x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
     if($('surface-action').value==='erase'){
@@ -753,6 +767,18 @@ window.__sculptNavProbe=()=>Object.freeze({
 
 /* Native WorldObject definitions/placements and asset resolver own the catalog,
    dimensions and collision semantics. Sculpt remains geometry-only. */
+function drawPlacedActors(maxY=Infinity,minY=-Infinity){
+  if(!captureActorProvider||!captureActorRenderer||!placedActors.length)return;
+  const renderActors=placedActors.filter(p=>p.y<maxY&&p.y>=minY)
+    .map(p=>createPlacedMapActorView(p,captureActorProvider.resolveDefinition))
+    .filter(Boolean)
+    .map(actor=>({...actor,
+      y:actor.y-sculptHeightAt(terrain,Math.floor(actor.x/SCULPT_TILE.width),
+        Math.floor(actor.y/SCULPT_TILE.height))*SCULPT_TILE.rise+3}));
+  if(renderActors.length)
+    captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
+      actors:renderActors,timeSeconds:navVisualTime});
+}
 function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
   const objects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
     .filter(o=>o.transform.y<=maxY&&o.transform.y>minY)
@@ -904,9 +930,99 @@ window.__sculptSurfaceProbe=()=>Object.freeze({
   undoCount:surfaceHistory.length
 });
 
+// Actor definitions, visuals and asset paths are owned by Capture,
+ // while this sculpt preview stores only native WorldActorPlacement references.
+async function loadCaptureActorCatalog(){
+  try{
+    const provider=await createCaptureActorPreviewProviderV1();
+    const assets=provider.listAssets();
+    const loader=createImageAssetLoader({resolveAsset:createMapActorAssetResolver(assets)});
+    const results=await loader.load(assets.map(a=>a.id));
+    if(results.ready!==assets.length||results.missing||results.errors)
+      throw Error('Visuels Capture indisponibles : '+JSON.stringify(results));
+    const preparer=createMapActorVisualPreparer({imageLoader:loader});
+    const prepared=preparer.prepare(assets.map(a=>a.id));
+    if(prepared.ready!==assets.length||prepared.errors)
+      throw Error('Préparation visuelle Capture impossible');
+    captureActorProvider=provider;
+    captureActorRenderer=createMapActorRenderer({preparedVisuals:preparer});
+    captureActorImageLoader=loader;
+    const definitions=provider.listDefinitions();
+    $('actor-definition').replaceChildren(...definitions.map(def=>{
+      const opt=document.createElement('option');
+      opt.value=def.id;opt.textContent=(def.displayName||def.id)+' · '+def.role;
+      return opt;
+    }));
+    $('actor-definition').disabled=!definitions.length;
+    $('actor-source-status').textContent=definitions.length+
+      ' acteur(s) disponibles depuis Capture · placement natif';
+    scheduleDraw();
+  }catch(e){
+    $('actor-definition').disabled=true;
+    $('actor-source-status').textContent='Catalogue Capture indisponible : '+e.message;
+  }
+}
+function updateActorCount(){
+  $('actor-count').textContent=placedActors.length+' acteur(s) placés';
+  $('actor-undo').disabled=!actorHistory.length;
+  $('actor-redo').disabled=!actorRedo.length;
+  scheduleDraw();
+}
+function actorCommit(next){
+  if(next.length===placedActors.length&&next.every((a,i)=>a===placedActors[i]))return false;
+  actorHistory.push(placedActors);if(actorHistory.length>40)actorHistory.shift();
+  actorRedo=[];placedActors=next;updateActorCount();
+  return true;
+}
+function setActorSubmode(active){
+  actorSubmode=!!active;
+  $('object-controls').hidden=actorSubmode;
+  $('actor-controls').hidden=!actorSubmode;
+  $('active-tool-label').textContent=actorSubmode?'Objets · Acteurs Capture':'Objets · toucher pour placer ou supprimer';
+  status(actorSubmode?'Acteurs : choisis une définition Capture et touche la carte':'Palette des objets ouverte');
+  scheduleDraw();
+}
+function applyActorAtCell(cell){
+  const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  if($('actor-action').value==='remove'){
+    if(actorCommit(removeSculptPreviewActorAt(placedActors,x,y)))status('Acteur supprimé');
+    else status('Aucun acteur proche à supprimer');
+    return;
+  }
+  const definitionId=$('actor-definition').value;
+  if(!captureActorProvider?.resolveDefinition(definitionId)){
+    status('Définition Capture non chargée : aucun acteur placé');return;
+  }
+  if(actorCommit(appendSculptPreviewActor(placedActors,{
+    definitionId,x,y,facingX:Number($('actor-facing').value)
+  })))status('Acteur Capture placé · exporter la scène pour sauvegarder');
+}
+$('actor-open').addEventListener('click',()=>setActorSubmode(true));
+$('actor-back').addEventListener('click',()=>setActorSubmode(false));
+$('actor-undo').addEventListener('click',()=>{
+  if(!actorHistory.length)return;
+  actorRedo.push(placedActors);placedActors=actorHistory.pop();updateActorCount();
+});
+$('actor-redo').addEventListener('click',()=>{
+  if(!actorRedo.length)return;
+  actorHistory.push(placedActors);placedActors=actorRedo.pop();updateActorCount();
+});
+window.__sculptActorsProbe=()=>Object.freeze({
+  active:objectEditing&&actorSubmode,
+  catalogReady:!!captureActorProvider,
+  definitions:captureActorProvider?.listDefinitions().map(d=>d.id)??[],
+  count:placedActors.length,
+  actors:placedActors.map(p=>({id:p.id,definitionId:p.actorDefinitionId,
+    x:p.x,y:p.y,facingX:p.facingX})),
+  undoCount:actorHistory.length,redoCount:actorRedo.length
+});
+loadCaptureActorCatalog();
 function setObjectEditing(active){
   if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
+  if(!objectEditing){
+    actorSubmode=false;$('object-controls').hidden=false;$('actor-controls').hidden=true;
+  }
   document.body.classList.toggle('object-editing',objectEditing);
   $('object-palette').hidden=!objectEditing;
   $('mode-objects').classList.toggle('active',objectEditing);
@@ -1102,6 +1218,7 @@ $('new-map-form').addEventListener('submit',event=>{
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
+  placedActors=blank.actors;actorHistory=[];actorRedo=[];updateActorCount();
   surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
   updateSurfaceCount();
   objectHistory=[];objectRedo=[];history=[];redoHistory=[];
@@ -1159,7 +1276,7 @@ $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 $('scene-export').addEventListener('click',()=>{
-  $('json').value=serializeSculptPreviewScene(terrain,placedObjects,surface);
+  $('json').value=serializeSculptPreviewScene(terrain,placedObjects,surface,placedActors);
   $('json').hidden=false;
   status('Scène complète exportée : relief et '+placedObjects.length+' objets, JSON à copier.');
 });
@@ -1173,6 +1290,7 @@ $('import').addEventListener('click',()=>{
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
+  placedActors=imported.actors;actorHistory=[];actorRedo=[];updateActorCount();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   loadSurfacePaintAssets();updateSurfaceCount();
   fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
