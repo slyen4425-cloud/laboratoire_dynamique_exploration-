@@ -264,7 +264,7 @@ function draw(){
       : sculptHeightAt(base,Math.floor(first.x),Math.floor(first.y));
     previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
-      edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,zoom});
+      shape:$('brush-shape').value,edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,zoom});
   }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
@@ -328,7 +328,7 @@ function precisionApply(){
   const water=selectedMode.startsWith('water-');
   const options={points:[{x:cell.x+.5,y:cell.y+.5}],
     radius:Number($('radius').value),strength:Number($('strength').value),
-    mode:selectedMode,target:water?Number($('water-target').value):
+    shape:$('brush-shape').value,mode:selectedMode,target:water?Number($('water-target').value):
        selectedMode==='plateau'?Number($('target').value):sculptHeightAt(previous,cell.x,cell.y),
     edgeSoftness:Number($('edge').value)/100};
   terrain=water?applySculptWaterStroke(previous,options):
@@ -519,7 +519,7 @@ function stroke(event){
   const target=waterMode ? Number($('water-target').value):selectedMode==='plateau' ? Number($('target').value)
     : sculptHeightAt(strokeUndo,Math.floor(first.x),Math.floor(first.y));
   const options={points:strokePoints,radius:Number($('radius').value),
-    strength:Number($('strength').value),mode:selectedMode,target,
+    shape:$('brush-shape').value,strength:Number($('strength').value),mode:selectedMode,target,
     edgeSoftness:Number($('edge').value)/100};
   terrain=waterMode ?applySculptWaterStroke(strokeUndo,options):
     applySculptStroke(strokeUndo,{...options,rockRoundness:Number($('visual-smooth').value)});
@@ -1259,6 +1259,7 @@ $('zoom').addEventListener('input',()=>{
  pan.y=height/2-(height/2-pan.y)*zoom/old;scheduleDraw();
 });
 $('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;scheduleDraw();});
+$('brush-shape').addEventListener('change',()=>{scheduleDraw();status('Forme du pinceau : '+$('brush-shape').selectedOptions[0].textContent);});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;scheduleDraw();});
 $('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';scheduleDraw();});
 $('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textContent=$('visual-smooth').value+' %';
@@ -1305,7 +1306,7 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
   previewCells:previewSummary?.cells??0,editorKind,
-  brushSize:Number($('radius').value),quickTool:$('quick-tool').value,
+  brushSize:Number($('radius').value),brushShape:$('brush-shape').value,quickTool:$('quick-tool').value,
   canvasTop:canvas.getBoundingClientRect().top,canvasHeight:canvas.getBoundingClientRect().height,
   viewportHeight:window.innerHeight,
   immersiveMode:document.body.classList.contains('sculpt-immersive'),
