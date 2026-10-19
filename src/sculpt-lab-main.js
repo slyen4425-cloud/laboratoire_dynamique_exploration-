@@ -4,6 +4,7 @@ import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37';
+import {sculptCameraProjection} from './render/sculpt-camera-projection.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
@@ -67,12 +68,16 @@ let navViewport=null,navLastState='',navBlocked=false;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
 let navTerrainCache=null;
 function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigation-camera-zoom').value)/100||1.75));}
+// A read-only camera adapter only for the navigation preview. Editor picking,
+// authored world positions and collision always use canonical SCULPT_TILE.
+function gameCamera(){return sculptCameraProjection(Number($('navigation-camera-angle').value),SCULPT_TILE);}
 /* Only the static sculpt raster is cached. Actor, objects, collision, input,
    camera and height data retain their existing owners and update separately. */
 function navigationBackground(){
+  const projection=gameCamera();
   const rockPalette=$('rock').value,materialId=$('material').value;
   const smoothness=Number($('visual-smooth').value)/100;
-  const signature=[rockPalette,materialId,smoothness,
+  const signature=[rockPalette,materialId,smoothness,projection.angle,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
     ribbonTextures.water?.material?.id,ribbonTextures.road?.material?.id].join('|');
   const same=navTerrainCache&&navTerrainCache.terrain===terrain&&
@@ -85,14 +90,14 @@ function navigationBackground(){
   const raster=document.createElement('canvas');
   const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
   raster.width=Math.ceil((terrain.width*SCULPT_TILE.width+paddingX*2)*scale);
-  raster.height=Math.ceil((terrain.height*SCULPT_TILE.height+paddingY+20)*scale);
+  raster.height=Math.ceil((terrain.height*projection.tile.height+paddingY+20)*scale);
   const imageContext=raster.getContext('2d',{alpha:true});
   imageContext.scale(scale,scale);
   imageContext.translate(paddingX,paddingY);
   const material=registry.require(materialId,'surface');
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
     rockPalette,visualSmoothness:smoothness,overlays:ribbonTextures,
-    paintSurface:surface,paintImages:surfacePaintImages});
+    paintSurface:surface,paintImages:surfacePaintImages,tile:projection.tile});
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
     paintSurface:surface,image:raster,scale,paddingX,paddingY,result};
@@ -567,11 +572,11 @@ function navHeight(){
 }
 function centerNavigationCamera(){
   if(!navigationTesting||!navActor)return;
-  const {width,height}=dimensions();
-  const worldWidth=terrain.width*SCULPT_TILE.width*zoom;
-  const worldHeight=(terrain.height*SCULPT_TILE.height+7*SCULPT_TILE.rise)*zoom;
+  const {width,height}=dimensions(),projection=gameCamera();
+  const worldWidth=projection.worldWidth(terrain.width)*zoom;
+  const worldHeight=projection.worldHeight(terrain.height)*zoom;
   const targetX=width*.5-navActor.x*zoom;
-  const targetY=height*.57-(navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise)*zoom;
+  const targetY=height*.57-projection.projectSurfaceY(navActor.y,navVisualLevel??navHeight())*zoom;
   pan.x=worldWidth<width?(width-worldWidth)*.5:
     Math.max(width-worldWidth,Math.min(0,targetX));
   // Heightfield can extend above row zero by a few rises; leave that margin.
@@ -580,7 +585,7 @@ function centerNavigationCamera(){
 }
 function drawNavigationActor(){
   if(!navActor)return;
-  const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3;
+  const footY=gameCamera().projectSurfaceY(navActor.y,navVisualLevel??navHeight())+3;
   // The native Exploration actor renderer owns idle/walk motion, shadow,
   // visual anchor and direction; gameplay state is read-only.
   if(navigationActorPreparer.get(navigationActorVisual.assetId))
@@ -716,6 +721,11 @@ function setNavigationTesting(on){
   }
   scheduleDraw();
 }
+$('navigation-camera-angle').addEventListener('input',()=>{
+  $('navigation-camera-angle-value').textContent=$('navigation-camera-angle').value+'°';
+  // Only the cached visual raster changes. Do not touch actor/world positions.
+  if(navigationTesting){navTerrainCache=null;centerNavigationCamera();scheduleDraw();}
+});
 $('navigation-camera-zoom').addEventListener('input',()=>{
   $('navigation-camera-zoom-value').textContent=$('navigation-camera-zoom').value+' %';
   if(navigationTesting){
@@ -773,8 +783,9 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
     .map(p=>createPlacedMapActorView(p,captureActorProvider.resolveDefinition))
     .filter(Boolean)
     .map(actor=>({...actor,
-      y:actor.y-sculptHeightAt(terrain,Math.floor(actor.x/SCULPT_TILE.width),
-        Math.floor(actor.y/SCULPT_TILE.height))*SCULPT_TILE.rise+3}));
+      y:(navigationTesting?gameCamera().projectGroundY(actor.y):actor.y)-
+        sculptHeightAt(terrain,Math.floor(actor.x/SCULPT_TILE.width),
+          Math.floor(actor.y/SCULPT_TILE.height))*SCULPT_TILE.rise+3}));
   if(renderActors.length)
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
@@ -789,8 +800,9 @@ function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
     const t=object.transform,base=object.baseSize;
     const width=(base?.width??base?.length??80)*t.scaleX;
     const height=(base?.height??base?.width??80)*t.scaleY;
-    const x=t.x,y=t.y-sculptHeightAt(terrain,
-      Math.floor(t.x/SCULPT_TILE.width),Math.floor(t.y/SCULPT_TILE.height))*SCULPT_TILE.rise;
+    const x=t.x,y=(navigationTesting?gameCamera().projectGroundY(t.y):t.y)-
+      sculptHeightAt(terrain,Math.floor(t.x/SCULPT_TILE.width),
+        Math.floor(t.y/SCULPT_TILE.height))*SCULPT_TILE.rise;
     ctx.save();ctx.translate(x,y);ctx.rotate(t.rotationDeg*Math.PI/180);
     ctx.drawImage(art,-width/2,-height,width,height);
     if(objectEditing&&objectSelectedId===object.id){
@@ -1305,6 +1317,8 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
+  navigationTesting,cameraAngle:Number($('navigation-camera-angle').value),
+  cameraGroundScale:gameCamera().groundScale,
   previewCells:previewSummary?.cells??0,editorKind,
   brushSize:Number($('radius').value),brushShape:$('brush-shape').value,quickTool:$('quick-tool').value,
   canvasTop:canvas.getBoundingClientRect().top,canvasHeight:canvas.getBoundingClientRect().height,
