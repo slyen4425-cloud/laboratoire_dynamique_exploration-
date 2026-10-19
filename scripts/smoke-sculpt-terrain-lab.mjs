@@ -985,6 +985,33 @@ try{
   if(v31Shapes.states.join(',')!=='square,cross,circle'||
      !v31Shapes.visible||v31Shapes.buttonCount!==3)
     throw Error('V31 selectable mobile brush shapes failed: '+JSON.stringify(v31Shapes));
+  // V33: render the problematic user sequence in an actual Chromium canvas:
+  // a high authored water plane with neighboring dry lower terrain.
+  // V32 painted a tall TURQUOISE curtain over the green bank.
+  const v33WetDry=await run(`(async()=>{
+    const {createSculptTerrain}=await import('./src/world/sculpt-height-model.js');
+    const {drawSculptTerrain}=await import('./src/render/sculpt-height-renderer.js');
+    const width=12,height=12;
+    const levels=Array(width*height).fill(2);
+    const waterLevels=Array(width*height).fill(-1);
+    for(let x=3;x<9;x++){levels[6*width+x]=1;waterLevels[6*width+x]=5;}
+    const terrain=createSculptTerrain({width,height,levels,waterLevels});
+    const c=document.createElement('canvas');c.width=420;c.height=420;
+    const ctx=c.getContext('2d',{willReadFrequently:true});
+    const stats=drawSculptTerrain(ctx,{terrain,
+      material:{render:{baseColor:'#59784c'}},
+      overlays:{water:{visible:true,material:{render:{
+        waterColor:'#39aee5',highlightColor:'#d7f8ff'}},
+        texture:null},road:{visible:false}}});
+    const p=ctx.getImageData(5*28+14,80,1,1).data;
+    return {rgb:[p[0],p[1],p[2]],waterCells:stats.waterCells,
+      faces:stats.faceCount};
+  })()`);
+  if(v33WetDry.rgb[1]<=v33WetDry.rgb[2]||v33WetDry.waterCells!==6)
+    throw Error('V33 fake high-water turquoise curtain remained on dry ground in real Canvas: '+
+      JSON.stringify(v33WetDry));
+  console.log('V33 wet-dry real Chromium Canvas: no fake water wall',
+    JSON.stringify(v33WetDry));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
