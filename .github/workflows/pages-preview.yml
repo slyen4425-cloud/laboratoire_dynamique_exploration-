@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-rear-rim-v37-prevalidation-2026-10-19
+# preview-revision: sculpt-rear-rim-v37-mobile-cache-prevalidation-2026-10-19
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 64264afb32710dfa1d11d5edcce0920d4c4987ce
+          ref: 8cde0b308675c3463718c661e2b67d56567a6e8d
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
