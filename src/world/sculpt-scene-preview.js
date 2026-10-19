@@ -92,7 +92,10 @@ export function findSculptPreviewObjectNear(objects,x,y,maxDistance=50){
 }
 // Actor definitions and asset visuals are resolved by Capture, never owned here.
 export function normalizeSculptPreviewActors(raw=[]){
-  if(!Array.isArray(raw)||raw.length>SCULPT_ACTOR_LIMIT)
+  if(!Array.isArray(raw)||raw.length>SCULPT_ACTOR_LIMIT||
+     raw.some(item=>!item||typeof item.actorDefinitionId!=='string'||
+       !item.actorDefinitionId.trim()||!Number.isFinite(item.x)||
+       !Number.isFinite(item.y)))
     throw Error('Scène sculptable : placements acteur invalides');
   const placements=normalizeWorldActorPlacements(raw);
   if(placements.length!==raw.length)throw Error('Scène sculptable : acteurs incohérents');
