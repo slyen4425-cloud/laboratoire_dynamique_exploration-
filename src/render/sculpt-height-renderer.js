@@ -250,13 +250,13 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
 // Preview uses the EXACT same footprint weights as applySculptStroke.
 // Each tinted tile is a cell that a click here would really affect.
 export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftness=0,
-  mode='dig',target=3,strength=1,tile=SCULPT_TILE,zoom=1}={}){
+  mode='dig',target=3,strength=1,shape='circle',tile=SCULPT_TILE,zoom=1}={}){
   if(!ctx||!terrain||!points.length)return Object.freeze({cells:0,centerHeight:null});
-  const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness,mode});
+  const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness,mode,shape});
   const waterMode=mode.startsWith('water-');
   const candidate=waterMode
-    ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength})
-    :applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength});
+    ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape})
+    :applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape});
   const w=tile.width,h=tile.height,rise=tile.rise;
   const tint=mode.startsWith('water-')?'#6be9ff':mode==='dig'?'#ffc181':mode==='raise'?'#9ee2ff':
     mode==='plateau'?'#b2ffb0':'#f4e6ba';
