@@ -1,3 +1,15 @@
+# Lot actif — 19/10/2026 — V36 lisibilité renforcée de l'arête supérieure des collines
+
+- **Signal utilisateur :** capture de la preview Labo Sculpture montrant un dessus de colline en herbe encore peu distinguable du sol vert derrière, bien que les parois et leurs ombres soient satisfaisantes. La V35, publiée et testée en Chromium, possède déjà une lèvre sombre mais trop faible en pratique.
+- **Base immuable :** V35 source `d22a538b65cbe2cbead38f239f413c8b59397bea` ; CI [39279724144](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39279724144) SUCCESS ; Pages [39286835566](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39286835566) SUCCESS ; checkpoint départ `checkpoint/exploration-start-sculpt-upper-rim-contrast-v36-2026-10-19` ; travail `work/exploration-sculpt-upper-rim-contrast-v36-2026-10-19`.
+- **Propriétaire / périmètre :** exclusivement renderer Sculpture (`drawSculptGroundReliefLighting` dans `src/render/sculpt-height-renderer.js`), avec renforcement mesuré du filet assombri et de son fondu **dans la tuile supérieure**, seulement en présence d'un vrai voisin sec plus bas (`sculptGroundReliefLighting().exposedEdges`). Sentinelle pixel Chromium dans `scripts/smoke-sculpt-terrain-lab.mjs` ; documentation du lot.
+- **Invariant gelé :** conserver les pixels des parois rocheuses et leurs ombres existantes, le matériau/texture herbe, les dalles d'altitude égale, les transitions eau/terre/écume, le modèle des hauteurs, les collisions et la navigation, les pinceaux, les assets, l'UI, les acteurs, les sauvegardes, les autres laboratoires et GenSrpG. Aucune géométrie/autorité gameplay ajoutée.
+- **Validation attendue :** terrain plat sans faux trait, vrai rebord sud visiblement assombri, préservation eau et peinture ; tests Node + navigateur Chromium réel, CI verte, preview épinglée et validation esthétique sur téléphone **avant GREEN créateur**.
+- **Risques / rollback :** contour trop marqué sur certains zooms ou textures ; éviter un trait noir dur, privilégier une bande courte et dégradée ; rollback exact sur V35.
+- **Statut :** lot ouvert, en cours de réalisation.
+
+---
+
 # Lot actif — 19/10/2026 — V35 assombrissement discret de la lèvre supérieure des creux
 
 - **Retour validé du créateur :** l'ombrage général du relief V34 rend bien. Il souhaite seulement que la **bordure juste avant le creux**, sur le dessus de la terre haute, soit un peu plus foncée. Il n'a jamais demandé une génération d'image.
