@@ -1,3 +1,16 @@
+# Lot actif — 19/10/2026 — V33 régression visuelle eau/terre V32
+
+- **Signalement créateur :** capture tactile après nouveau pinceau, eau puis sculpture du relief : blocs verticaux bleu turquoise en bord sec, petites traces rocheuses détachées, raccords inadmissibles. Capture utilisateur du 19/10 09:42Z. V32 n'est PAS validée visuellement malgré CI et prévalidation Pages.
+- **Base :** V32 `69ebbc0f79fc1deadffee1e66eafd902aee43ec0`, CI [39223049526](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39223049526) SUCCESS et Pages [39223128981](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39223128981) SUCCESS via PR #165. START `checkpoint/exploration-start-sculpt-water-terrain-seam-v33-2026-10-19`, branche `work/exploration-sculpt-water-terrain-seam-v33-2026-10-19`.
+- **Cause identifiée :** `drawWaterVolume` calcule une hauteur de paroi d'eau jusqu'au niveau d'un voisin SUD SEC. Ce pseudo-volume dessine une façade bleue à angle droit sur la terre, alors que la cellule voisine n'est pas dans la masse d'eau. Le même anti-modèle existe côté EST. Les `rockFace` s'étendent sous les surfaces d'eau voisines sans rognage au niveau de la surface : détachements rocheux.
+- **Périmètre :** `src/render/sculpt-height-renderer.js` seulement, rendu dérivé des `waterLevels/levels` canoniques. Visages verticaux d'eau uniquement aux vraies différences eau-eau, aucun mur ou ombre turquoise face au sec ; clippe les parois rocheuses visibles au-dessus de la surface de l'eau du voisin, conserve falaises sèches et écume, sans toucher à la forme des pinceaux.
+- **Gels :** V21 vitesse/caméra, V22 collision, V24 New Map, V27 surfaces, V28 mousse, V29 amortissement, V30 acteurs, V31/V32 trois pinceaux et clips, UI panneaux repliables, schéma scène, tous les moteurs hors pilote.
+- **Tests :** échantillons purs wet-to-dry/wet-to-wet 4 directions, sous eau et eau à niveau variable, Node + vrai smoke Chromium V32, capture visuelle avant/après à reproduire localement si possible, sentinelles CI GREEN ; validation smartphone par créateur impérative.
+- **Non-objectif :** ne pas rendre traversables les réelles différences de hauteur > maxStepUp ni masquer une collision réelle. L'apparence du dessin n'est jamais propriétaire du blocage.
+- **Rollback :** V32 exacte toujours publiée avant merge infra. **Statut :** développement, aucune publication ni acceptation utilisateur revendiquée.
+
+---
+
 # Lot actif — 19/10/2026 — V32 raccords rocheux sans débordement
 
 - **Retour :** petites arêtes/artefacts lors du raccord entre cases de sol sculptées, gêne visuelle pouvant laisser croire à une collision invisible. Diagnostic de code V30 : `rockFace` déborde volontairement de la largeur de sa paroi via `toe` ; les parements `east` commencent 3 pixels avant le bord et s'étendent 4.5 pixels, donc recouvrent les cases voisines malgré la grille canonique. De plus les pieds `deferredToes` se projettent jusqu'à 15 pixels sur les zones en contrebas ; V28 prévient déjà leur dessin au-dessus de l'eau.
