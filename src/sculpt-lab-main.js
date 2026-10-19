@@ -1316,6 +1316,7 @@ window.__sculptLabProbe=()=>Object.freeze({faceCount:sculptFaces(terrain).length
   paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
   cameraView:$('camera-view').value,
+  cameraPan:{...pan},
   waterMaterialId:$('water-material').value,
   levelSpread:new Set(terrain.levels).size,zoom,
   previewCells:previewSummary?.cells??0,editorKind,
