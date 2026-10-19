@@ -1,3 +1,15 @@
+# Lot actif — 19/10/2026 — V34 lisibilité des hauteurs du sol sans changer la texture
+
+- **Retour du créateur (avec capture) :** le sol sculpté en herbe manque de profondeur lisible : hauteurs voisines semblent identiques ; il souhaite une petite ombre au contact ou un léger dégradé, **dans le vrai éditeur**, surtout pas d'image générée.
+- **Base réelle GREEN publiée :** V33 `4b66b9f362d8c194146314c89fc5e05e0e1144a6`, CI [39250930918](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39250930918) SUCCESS, Pages [39251034944](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39251034944) SUCCESS ; START `checkpoint/exploration-start-sculpt-ground-depth-v34-2026-10-19`, work `work/exploration-sculpt-ground-depth-v34-2026-10-19`. PR infra #167 en cours de validation, ne pas confondre avec la version Pages effectivement épinglée.
+- **Contrat / propriétaire :** uniquement rendu du **dessus des cases** dans `src/render/sculpt-height-renderer.js` qui lit les hauteurs canoniques du heightfield : nuance colorimétrique très discrète par altitude, ombrage de contact localisé **sur une case sèche plus basse** au contact d'une case plus haute (nord/sud/est/ouest), ombre dégradée et limité dans la cellule pour ne pas générer de fausses arêtes. Texture et matériaux originaux conservés sans transformation du sprite.
+- **Gels :** pas de création d'image/asset, pas de deuxième moteur, aucune modification de terrain, pinceaux V31, WorldSurface, eau+écume V33, Renderer de roche et contact, navigation/collision/sauts, actifs Capture et panneaux flottants, Builder/Combat.
+- **Tests :** fonctions d'éclairage pur vérifier terrain plat -> aucune ombre, élévation locale -> ombre uniquement coté bas, pas d'ombre sur eau et pas de teinte démesurée ; vrai Chromium rendu du relief, tests CI sentinelles, contrôle publication avant smartphone. Comparaison esthétique réelle attendue.
+- **Risques / retour arrière :** dégradé trop voyant ou perf éditeur (pas de redraw supplémentaire par frame) ; pilot V33 rollback direct.
+- **Statut :** chantier en cours, aucune annonce de livraison avant CI et preview.
+
+---
+
 # Lot actif — 19/10/2026 — V33 régression eau-terre après nouveau pinceau (reprise du screenshot créateur)
 
 - **Échec validation utilisateur V32 :** image créateur 19/10 09:42 : eau déplacée après sculpture du sol carré, bandes bleues verticales sous l'eau et éclats rocheux flottants. V32 prévalidation `69ebbc0f79fc1deadffee1e66eafd902aee43ec0`, CI [39223049526](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39223049526) SUCCESS, mais ***NON VALIDÉE par le créateur*** malgré publication via PR #165/Pages [39223128981](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39223128981).
