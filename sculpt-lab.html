@@ -274,6 +274,10 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 #object-controls[hidden],#actor-controls[hidden]{display:none!important}
 #actor-controls #actor-source-status{color:#a6ebd6}
 #actor-controls button{min-height:34px}
+/* Same floating quickbar, no second tool panel. */
+.brush-shape-control{white-space:nowrap;font-weight:650}
+.brush-shape-control select{min-height:35px;max-width:145px;padding:6px}
+@media(max-width:600px){.brush-shape-control{flex:1 1 110px}.brush-shape-control select{min-width:0;max-width:100%}}
 </style>
 </head>
 <body>
@@ -303,6 +307,12 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button type="button" id="radius-minus" aria-label="Réduire la taille du pinceau">−</button>
 <span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="16" value="3" step="0.5"></span>
 <button type="button" id="radius-plus" aria-label="Agrandir le pinceau">+</button></div>
+<label class="control brush-shape-control" for="brush-shape">Forme
+<select id="brush-shape" aria-label="Forme du pinceau terre et eau">
+<option value="circle">◯ Rond</option>
+<option value="square">▦ Carré plein</option>
+<option value="cross">✚ Croix</option>
+</select></label>
 <label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
@@ -508,6 +518,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-capture-actor-v30"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-brush-shapes-v31"></script>
 </body>
 </html>
