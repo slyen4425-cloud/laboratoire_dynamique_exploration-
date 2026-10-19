@@ -1190,7 +1190,8 @@ try{
       v38Visual.classic!==v38Visual.returned||!v38Visual.sameSave||
       v38Visual.mode!=='threeQuarter'||!v38Visual.within)
     throw Error('V38 camera visual comparison or preserved terrain failed: '+JSON.stringify(v38Visual));
-  await run(`window.__v38HitTarget=${JSON.stringify(v38Visual.target)}`);
+  await run(`window.__v38HitTarget=${JSON.stringify(v38Visual.target)};window.__v38PointerEvents=[];
+    document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__v38PointerEvents.push({type:e.type,button:e.button,x:e.clientX,y:e.clientY}));window.__v38TestClient=${JSON.stringify(v38Visual.client)};`);
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v38Visual.client.x,y:v38Visual.client.y});
   await sleep(70);
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:v38Visual.client.x,y:v38Visual.client.y,button:'left',clickCount:1});
@@ -1205,7 +1206,12 @@ try{
     const exportTerrain=JSON.parse(document.querySelector('#json').value);
     const requested=window.__v38HitTarget;
     const got=requested?exportTerrain.levels[requested.y*exportTerrain.width+requested.x]:null;
-    return {target,ready,got,view:probe.cameraView};
+    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const hit=document.elementFromPoint(window.__v38TestClient.x,window.__v38TestClient.y)?.id;
+    return {target,ready,got,view:probe.cameraView,hit,
+      events:window.__v38PointerEvents,viewport:[innerWidth,innerHeight],
+      rect:{x:rect.left,y:rect.top,width:rect.width,height:rect.height},
+      pan:probe.cameraPan,zoom:probe.zoom};
   })()`);
   if(v38Pick.target?.x!==v38Visual.target.x||v38Pick.target?.y!==v38Visual.target.y||
      !v38Pick.ready||v38Pick.got!==5)
