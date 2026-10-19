@@ -1,3 +1,16 @@
+# Lot actif — 19/10/2026 — V35 assombrissement discret de la lèvre supérieure des creux
+
+- **Retour validé du créateur :** l'ombrage général du relief V34 rend bien. Il souhaite seulement que la **bordure juste avant le creux**, sur le dessus de la terre haute, soit un peu plus foncée. Il n'a jamais demandé une génération d'image.
+- **Diagnostic :** le renderer V34 `drawSculptGroundReliefLighting` calcule déjà `exposedEdges` à partir de `sculptHeightAt` ; mais dessine une lèvre **claire** (blanc jaunâtre) au sud et à l'est. L'inverser en un fin filet sombre avec une légère pénombre de 2-3 pixels à l'intérieur est purement esthétique et non géométrique.
+- **Base immuable CI + Pages :** V34 source `8e323a91850bc74031728e00c10a6b1aa3f8a8df`, CI [39274050150](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39274050150) SUCCESS, Pages [39274138608](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39274138608) SUCCESS ; checkpoint START `checkpoint/exploration-start-sculpt-dark-upper-lip-v35-2026-10-19` ; branch `work/exploration-sculpt-dark-upper-lip-v35-2026-10-19`.
+- **Périmètre/propriétaire :** uniquement `src/render/sculpt-height-renderer.js`, rendu visuel du dessus des cases sèches `drawSculptGroundReliefLighting`. Réutiliser `sculptGroundReliefLighting` et ses exposedEdges existants ; remplacer le trait clair au bord de plateau haut par le trait sombre léger et fondu, dessin limité à l'intérieur de la même tuile, le reste de l'ombre V34 inchangé.
+- **Invariants gelés :** niveaux et eau, créateur de scène, `sculptHeightAt`, `sculptFaces`, collisions/stepMovement/hauteur et caméra V21-V29, écume V28/V33, pinceaux V31, objets/acteurs, UI et panneaux flottants, WorldSurface, Asset Loader, Builder/Combat, sauvegardes.
+- **Tests :** V34 pure geometry tests unchanged, nouveau test pixels Canvas Chromium visible sur plateau et sol plat, vraie CI Node + navigateur et non-régressions ; publication seulement CI GREEN sur source SHA verrouillé. L'intensité de la lèvre attend validation esthétique smartphone.
+- **Risques :** trait trop visible à grande échelle, effets de bord entre zones peintes ; opacité faible et contour strictement aux véritables marches sèches, rollback V34 disponible.
+- **Statut :** V35 en développement.
+
+---
+
 # Lot actif — 19/10/2026 — V34 lisibilité des hauteurs du sol sans changer la texture
 
 - **Retour du créateur (avec capture) :** le sol sculpté en herbe manque de profondeur lisible : hauteurs voisines semblent identiques ; il souhaite une petite ombre au contact ou un léger dégradé, **dans le vrai éditeur**, surtout pas d'image générée.
