@@ -1,3 +1,16 @@
+# Lot documentaire — 19/10/2026 — Charte artistique Exploration V0.1
+
+- **Demande créateur :** conserver pour le fil principal de production visuelle uniquement un prompt général de direction artistique, à affiner progressivement par catégorie et objet.
+- **Référence validée :** seconde image fournie le 19/10/2026 (paysage fantasy 2,5D, vue plongeante trois-quarts, falaises, cascades, arbres, chemins, rochers). La capture de l'interface actuelle du labo montre l'état de travail, **pas** la qualité ni le style des anciens assets à copier.
+- **Base :** source Exploration épinglée V38 `2b886832ea9cf46b5ca5d18b3e6471d670c3fd65` ; checkpoint START `checkpoint/exploration-start-asset-visual-charter-v01-2026-10-19` ; branche `work/exploration-asset-visual-charter-v01-2026-10-19`.
+- **Périmètre/propriétaire :** documentation de direction artistique `docs/LAB_ASSET_VISUAL_CHARTER.md` seulement, plus cette entrée de suivi. Aucun asset, moteur, vue caméra ou rendu n'est modifié.
+- **Invariants gelés :** Charte technique Exploration et propriétaires WorldModel/Renderer/Collision, images et manifests existants, CI et preview, Builder, Combat, GenSrpG.
+- **Vérifications :** fichier présent, prompt lisible, absence de préconisations chiffrées prématurées, aucune mutation runtime.
+- **Risques :** angle de vue et conventions par catégorie encore à affiner avec le créateur. Pas d'annonce GREEN runtime pour ce lot documentaire.
+- **Suite :** valider les paramètres de production au fil de l'eau, sans imposer pour le moment une charte complète de vues ou de dimensions.
+
+---
+
 # Lot actif — 19/10/2026 — V38 pilote caméra trois-quarts réversible
 
 - **Retour validé :** liseré V37 jugé parfait par le créateur ; souhaite maintenant rapprocher l'angle du labo de sa référence paysage 2.5D : plateaux plus lisibles de trois-quarts, sensation de profondeur, davantage de lecture des façades rocheuses. **Pas de génération d'images.**
