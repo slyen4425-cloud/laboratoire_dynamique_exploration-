@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: cliff-depth-variety-v48-prevalidation-2026-10-20
+# preview-revision: cliff-hd-v49-prevalidation-2026-10-20
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 623bc4a84254793b9073b24508448333da5f1014
+          ref: d4dd683ac4d0bcd302f9c2647819cd130f1c42f1
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
