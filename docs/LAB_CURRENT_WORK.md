@@ -6,7 +6,7 @@
 - **Fichiers/propriétaire :** `src/render/sculpt-sky-backdrop.js` (source visuelle unique), `src/sculpt-lab-main.js` (fond Tester et cache), `sculpt-lab.html` (choix HUD), `tests/sculpt-sky-v41.test.js`, `scripts/smoke-sculpt-terrain-lab.mjs`, docs/checkpoints.
 - **Invariants :** hauteurs, liseré V37, caméra V39, collisions, passabilité V40, spawn, terrain, roches, objets, acteurs, pinceaux/éditeur, logique rencontres et sauvegardes restent inchangés ; pas de météorologie gameplay ni de skybox 3D.
 - **Gate :** rendu réellement visible hors terrain dans Chromium, modes distincts, étoiles uniquement la nuit, édition pixels inchangés et données JSON intactes ; CI et preview sur SHA épinglé, validation esthétique mobile créateur avant GREEN.
-- **Statut :** ouvert, pas GREEN.
+- **Statut :** **prévalidation technique réussie** : code source figé `5c6d727baac2f29a8e4ec676ffe99ca569285cb3`, [CI source #39366098566](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39366098566) et [CI checkpoint #39366227551](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39366227551) SUCCESS, [Pages #39366293530](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39366293530) SUCCESS via [PR #179](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/179). Preview `/sculpt-lab.html?v=41`, journal `docs/checkpoints/EXPLORATION_SCULPT_SKY_V41_PREVALIDATION_2026-10-20.md`. Ciel quatre ambiances, étoiles nuit, nuages/brume et retour éditeur vérifiés en vrai Chromium. **GREEN créateur en attente de validation visuelle mobile**. La passabilité V40 demeure à valider également.
 
 ---
 
