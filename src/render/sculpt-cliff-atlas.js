@@ -1,3 +1,4 @@
+import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 // Sculpt-Lab visual asset adapter only. The cliff surface, shape,
 // passability and Material Registry remain owned by existing systems.
 // Atlas is precompiled from the five hand-reviewed generated art layers.
@@ -78,14 +79,16 @@ export function sculptCliffVariationPlan({width=0,height=0,seed=0}={}){
 // Called from within rockFace's PREEXISTING clipping path. Pattern coordinates
 // are world-anchored to keep neighboring horizontal cliff runs continuous.
 export function drawSculptCliffAtlas(ctx,{
-  image,rockPalette='warm',colors,x,y,width,height,seed=0,moss=false
+  image,hdImage=null,rockPalette='warm',colors,x,y,width,height,seed=0,moss=false
 }={}){
   if(!ctx||!sculptCliffAtlasHasLayers(image)||width<=0||height<=0)return false;
   const layers=splitAtlas(image);
   if(!layers)return false;
+  const hiRes=sculptCliffHDLayers(hdImage);
+  const paintLayers=hiRes?Object.freeze({...layers,gray:hiRes.gray,ochre:hiRes.ochre}):layers;
   ctx.save();
   const paint=(name,opacity,offset=0)=>{
-    const pattern=ctx.createPattern(layers[name],'repeat');
+    const pattern=ctx.createPattern(paintLayers[name],'repeat');
     if(!pattern)return;
     if(pattern.setTransform&&typeof DOMMatrix!=='undefined'){
       const shift=offset?((seed*29+17)%37):0;
