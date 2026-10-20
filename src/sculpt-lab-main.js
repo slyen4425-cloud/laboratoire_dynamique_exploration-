@@ -1317,6 +1317,7 @@ $('object-redo').addEventListener('click',()=>{
 refreshObjectOptions();updateObjectCount();
 window.__sculptObjectsProbe=()=>Object.freeze({
   active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
+  undoCount:objectHistory.length,redoCount:objectRedo.length,
   variantChoices:[...$('object-variant').options].map(o=>o.value),
   definitions:availableObjects.length,
   objects:placedObjects.map(o=>({id:o.id,definition:o.objectDefinitionId,
