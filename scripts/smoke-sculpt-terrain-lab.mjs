@@ -1379,6 +1379,119 @@ try{
     !v41Sky.editorRestored||!v41Sky.allOpaqueEditor||!v41Sky.originalData)
     throw Error('V41 real sky/time/night or editor separation failed: '+JSON.stringify(v41Sky));
   console.log('V41 Chromium four sky modes weather stars and editor unchanged:',JSON.stringify(v41Sky));
+  // V42: real Chromium/touch-equivalent click path through existing
+  // Objects -> Capture Actors palette. Never fake the app's selection API.
+  const v42Setup=await run(`(async()=>{
+    const projection=await import('./src/render/sculpt-camera-projection.js');
+    const redraw=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const cv=document.querySelector('#camera-view');
+    cv.value='classic';cv.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#flat').click();
+    if(!window.__sculptLabProbe().objectEditing)document.querySelector('#mode-objects').click();
+    if(!window.__sculptActorsProbe().active)document.querySelector('#actor-open').click();
+    await redraw();await redraw();
+    const palette=window.__sculptActorsProbe(),probe=window.__sculptLabProbe();
+    if(!palette.catalogReady||!palette.definitions.length)return {error:'Capture Actor Catalog missing',palette};
+    const definition=document.querySelector('#actor-definition');
+    definition.value=palette.definitions[0];
+    definition.dispatchEvent(new Event('change',{bubbles:true}));
+    const back=[...document.querySelector('#actor-view').options].find(o=>o.value==='back');
+    if(!back||back.disabled)return {error:'Capture back view not usable',palette};
+    document.querySelector('#actor-action').value='place';
+    document.querySelector('#actor-view').value='back';
+    document.querySelector('#actor-facing').value='-1';
+    const scale=document.querySelector('#actor-scale');
+    scale.value='135';scale.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
+    await redraw();await redraw();
+    const p=window.__sculptLabProbe();
+    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    let target=null,client=null;
+    const cols=[Math.floor(p.width/2),Math.floor(p.width/2)-2,Math.floor(p.width/2)+2];
+    const rows=[Math.floor(p.height/2),Math.floor(p.height/2)-2,Math.floor(p.height/2)+2,Math.floor(p.height/2)-4];
+    for(const row of rows){if(client)break;for(const col of cols){
+      if(col<0||row<0||col>=p.width||row>=p.height)continue;
+      const x=(col+.5)*28,y=(row+.5)*21-2*18;
+      const point=projection.sculptCameraProject(projection.sculptCameraView('classic'),x,y);
+      const at={x:rect.left+p.cameraPan.x+point.x*p.zoom,
+        y:rect.top+p.cameraPan.y+point.y*p.zoom};
+      if(document.elementFromPoint(at.x,at.y)?.id==='sculpt-canvas'){
+        client=at;target={col,row};break;
+      }
+    }}
+    window.__v42Target=target;window.__v42Client=client;
+    return {definition:definition.value,client,target,catalogReady:palette.catalogReady,
+      backEnabled:!back.disabled,initialCount:palette.count};
+  })()`);
+  if(v42Setup.error||!v42Setup.client||!v42Setup.backEnabled)
+    throw Error('V42 Capture actor palette or drawable placement point unavailable: '+
+      JSON.stringify(v42Setup));
+  const clickV42=async()=>{
+    const c=v42Setup.client;
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:c.x,y:c.y});
+    await sleep(55);
+    await send('Input.dispatchMouseEvent',{type:'mousePressed',x:c.x,y:c.y,button:'left',clickCount:1});
+    await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:c.x,y:c.y,button:'left',clickCount:1});
+    await sleep(85);
+  };
+  await clickV42();
+  const v42Placed=await run(`(()=>{
+    const p=window.__sculptActorsProbe(),a=p.actors.at(-1);
+    const scene=()=>{document.querySelector('#scene-export').click();
+      return JSON.parse(document.querySelector('#json').value)};
+    return {count:p.count,actor:a,exported:scene().actors?.at(-1)};
+  })()`);
+  if(v42Placed.count!==v42Setup.initialCount+1||v42Placed.actor?.visualScale!==1.35||
+     v42Placed.actor?.visualView!=='back'||v42Placed.actor?.facingX!==-1||
+     v42Placed.exported?.visualView!=='back')
+    throw Error('V42 real Canvas placement lost Capture actor size/back: '+JSON.stringify(v42Placed));
+  await run("document.querySelector('#actor-action').value='select';document.querySelector('#actor-action').dispatchEvent(new Event('change',{bubbles:true}));");
+  await clickV42();
+  const v42Edit=await run(`(()=>{
+    const before=window.__sculptActorsProbe(),scale=document.querySelector('#actor-scale');
+    scale.value='175';scale.dispatchEvent(new Event('input',{bubbles:true}));
+    scale.dispatchEvent(new Event('change',{bubbles:true}));
+    const view=document.querySelector('#actor-view');
+    view.value='front';view.dispatchEvent(new Event('change',{bubbles:true}));
+    const facing=document.querySelector('#actor-facing');
+    facing.value='1';facing.dispatchEvent(new Event('change',{bubbles:true}));
+    const after=window.__sculptActorsProbe(),actor=after.actors.find(a=>a.id===before.selectedId);
+    const scene=()=>{document.querySelector('#scene-export').click();
+      return document.querySelector('#json').value};
+    const exported=JSON.parse(scene()).actors.find(a=>a.id===actor?.id);
+    document.querySelector('#actor-undo').click();
+    const undone=window.__sculptActorsProbe().actors.find(a=>a.id===actor?.id);
+    document.querySelector('#actor-redo').click();
+    const redone=window.__sculptActorsProbe().actors.find(a=>a.id===actor?.id);
+    return {selectedId:before.selectedId,actor,exported,
+      undoneScale:undone?.visualScale,redoneScale:redone?.visualScale,
+      count:after.count,viewOptions:after.viewChoices,hasUndo:after.undoCount>0};
+  })()`);
+  if(v42Edit.selectedId!==v42Placed.actor.id||v42Edit.actor?.visualScale!==1.75||
+    v42Edit.actor?.visualView!=='front'||v42Edit.actor?.facingX!==1||
+    v42Edit.exported?.visualScale!==1.75||!v42Edit.hasUndo||
+    v42Edit.redoneScale!==1.75)
+    throw Error('V42 real actor select/edit/undo/export failed: '+JSON.stringify(v42Edit));
+  await run("window.__v42ExportedActorId="+JSON.stringify(v42Edit.actor.id));
+  const v42Imported=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const saved=document.querySelector('#json').value;
+    document.querySelector('#import').click();
+    const after=window.__sculptActorsProbe();
+    document.querySelector('#scene-export').click();
+    const sameScene=document.querySelector('#json').value===saved;
+    const actor=after.actors.find(a=>a.id===window.__v42ExportedActorId);
+    return {actor,afterCount:after.count,selectedId:after.selectedId,
+      sameScene,undoCount:after.undoCount};
+  })()`);
+  if(!v42Imported.actor||v42Imported.actor.visualScale!==1.75||
+    v42Imported.actor.visualView!=='front'||v42Imported.afterCount!==v42Edit.count||
+    v42Imported.selectedId!==null||!v42Imported.sameScene||
+    v42Imported.undoCount!==0)
+    throw Error('V42 actual scene export/import or selection reset failed: '+JSON.stringify(v42Imported));
+  console.log('V42 Chromium real actor placement, selection, scale and Capture views:',
+    JSON.stringify({setup:v42Setup,placed:v42Placed.actor,edit:v42Edit,
+      imported:v42Imported}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,

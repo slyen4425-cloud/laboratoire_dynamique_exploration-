@@ -92,15 +92,9 @@ function definitionFromTransfer(
     return null;
   }
 
-  const sourceAssetId =
-    text(
-      presentation.visual?.front
-        ?.assetId
-    ) ??
-    text(
-      presentation.visual?.back
-        ?.assetId
-    );
+  const frontAssetId = text(presentation.visual?.front?.assetId);
+  const backAssetId = text(presentation.visual?.back?.assetId);
+  const sourceAssetId = frontAssetId ?? backAssetId;
 
   if (!sourceAssetId) {
     return null;
@@ -119,6 +113,26 @@ function definitionFromTransfer(
 
   const id =
     PREFIX + creatureId;
+  // Use real Capture artwork for both orientations. No synthetic 90-degree
+  // sprite rotation and no copy of assets into a WorldActorPlacement.
+  const rearPhysical=backAssetId?assetsById.get(backAssetId):null;
+  const mapVisual=normalizeMapActorVisual({assetId:sourceAssetId,role:'creature'});
+  const mapVisualByView=Object.freeze({
+    front:mapVisual,
+    ...(rearPhysical?{back:normalizeMapActorVisual({
+      assetId:backAssetId,role:'creature'
+    })}:{})
+  });
+  const viewAssets=Object.freeze([
+    Object.freeze({id:sourceAssetId,kind:'map-actor-source',
+      path:joinPath(assetRoot,physicalAsset.file),
+      label:text(transfer.draft.displayName)??creatureId}),
+    ...(rearPhysical&&backAssetId!==sourceAssetId?[
+      Object.freeze({id:backAssetId,kind:'map-actor-source',
+        path:joinPath(assetRoot,rearPhysical.file),
+        label:(text(transfer.draft.displayName)??creatureId)+' · dos'})
+    ]:[])
+  ]);
 
   return Object.freeze({
     id,
@@ -129,23 +143,10 @@ function definitionFromTransfer(
         transfer.draft.displayName
       ) ?? creatureId,
     role: 'creature',
-    mapVisual:
-      normalizeMapActorVisual({
-        assetId: sourceAssetId,
-        role: 'creature'
-      }),
-    asset: Object.freeze({
-      id: sourceAssetId,
-      kind: 'map-actor-source',
-      path: joinPath(
-        assetRoot,
-        physicalAsset.file
-      ),
-      label:
-        text(
-          transfer.draft.displayName
-        ) ?? creatureId
-    })
+    mapVisual,
+    mapVisualByView,
+    asset: viewAssets[0],
+    viewAssets
   });
 }
 
@@ -191,10 +192,8 @@ export function createCaptureActorDefinitionProviderV1({
       definition.id,
       definition
     );
-    actorAssets.set(
-      definition.asset.id,
-      definition.asset
-    );
+    for(const asset of definition.viewAssets??[definition.asset])
+      actorAssets.set(asset.id,asset);
   }
 
   const list =

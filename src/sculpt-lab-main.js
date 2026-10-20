@@ -27,7 +27,8 @@ import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
-  appendSculptPreviewActor,removeSculptPreviewActorAt} from './world/sculpt-scene-preview.js';
+  appendSculptPreviewActor,removeSculptPreviewActorAt,
+  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js';
 import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
@@ -42,6 +43,7 @@ let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
+let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
@@ -1040,12 +1042,38 @@ async function loadCaptureActorCatalog(){
     }));
     $('actor-definition').disabled=!definitions.length;
     $('actor-source-status').textContent=definitions.length+
-      ' acteur(s) disponibles depuis Capture · placement natif';
+      ' acteur(s) disponibles depuis Capture · vues natives';
+    syncActorViewAvailability();
     scheduleDraw();
   }catch(e){
     $('actor-definition').disabled=true;
     $('actor-source-status').textContent='Catalogue Capture indisponible : '+e.message;
   }
+}
+function syncActorViewAvailability(){
+  const definition=captureActorProvider?.resolveDefinition($('actor-definition').value);
+  const back=$('actor-view').querySelector('option[value="back"]');
+  if(back)back.disabled=!definition?.mapVisualByView?.back;
+  if(back?.disabled&&$('actor-view').value==='back')$('actor-view').value='front';
+}
+function syncActorSelectedControls(){
+  const selected=placedActors.find(actor=>actor.id===actorSelectedId);
+  $('actor-selected').textContent=selected?
+    'Acteur sélectionné : '+selected.id:'Aucun acteur sélectionné';
+  if(!selected)return;
+  $('actor-definition').value=selected.actorDefinitionId;
+  syncActorViewAvailability();
+  $('actor-facing').value=String(selected.facingX);
+  $('actor-view').value=selected.visualView==='back'&&
+    !!captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.mapVisualByView?.back
+    ?'back':'front';
+  $('actor-scale').value=String(Math.round((selected.visualScale??1)*100));
+  $('actor-scale-value').textContent=$('actor-scale').value+' %';
+}
+function editSelectedActor(patch){
+  if(!actorSelectedId||$('actor-action').value!=='select')return;
+  if(actorCommit(updateSculptPreviewActor(placedActors,actorSelectedId,patch)))
+    status('Acteur modifié : taille/orientation enregistrées dans la scène');
 }
 function updateActorCount(){
   $('actor-count').textContent=placedActors.length+' acteur(s) placés';
@@ -1057,10 +1085,12 @@ function actorCommit(next){
   if(next.length===placedActors.length&&next.every((a,i)=>a===placedActors[i]))return false;
   actorHistory.push(placedActors);if(actorHistory.length>40)actorHistory.shift();
   actorRedo=[];placedActors=next;updateActorCount();
+  syncActorSelectedControls();
   return true;
 }
 function setActorSubmode(active){
   actorSubmode=!!active;
+  if(!actorSubmode)actorSelectedId=null;
   $('object-controls').hidden=actorSubmode;
   $('actor-controls').hidden=!actorSubmode;
   $('active-tool-label').textContent=actorSubmode?'Objets · Acteurs Capture':'Objets · toucher pour placer ou supprimer';
@@ -1069,7 +1099,16 @@ function setActorSubmode(active){
 }
 function applyActorAtCell(cell){
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  if($('actor-action').value==='select'){
+    const found=findSculptPreviewActorNear(placedActors,x,y);
+    actorSelectedId=found?.id??null;
+    syncActorSelectedControls();scheduleDraw();
+    status(found?'Acteur sélectionné : modifie taille, vue ou direction':
+      'Aucun acteur proche à sélectionner');
+    return;
+  }
   if($('actor-action').value==='remove'){
+    actorSelectedId=null;syncActorSelectedControls();
     if(actorCommit(removeSculptPreviewActorAt(placedActors,x,y)))status('Acteur supprimé');
     else status('Aucun acteur proche à supprimer');
     return;
@@ -1078,27 +1117,48 @@ function applyActorAtCell(cell){
   if(!captureActorProvider?.resolveDefinition(definitionId)){
     status('Définition Capture non chargée : aucun acteur placé');return;
   }
+  syncActorViewAvailability();
   if(actorCommit(appendSculptPreviewActor(placedActors,{
-    definitionId,x,y,facingX:Number($('actor-facing').value)
+    definitionId,x,y,facingX:Number($('actor-facing').value),
+    visualScale:Number($('actor-scale').value)/100,
+    visualView:$('actor-view').value
   })))status('Acteur Capture placé · exporter la scène pour sauvegarder');
 }
+$('actor-definition').addEventListener('change',syncActorViewAvailability);
+$('actor-action').addEventListener('change',()=>{
+  if($('actor-action').value!=='select')actorSelectedId=null;
+  syncActorSelectedControls();scheduleDraw();
+});
+$('actor-scale').addEventListener('input',()=>{
+  $('actor-scale-value').textContent=$('actor-scale').value+' %';
+});
+$('actor-scale').addEventListener('change',()=>
+  editSelectedActor({visualScale:Number($('actor-scale').value)/100}));
+$('actor-facing').addEventListener('change',()=>
+  editSelectedActor({facingX:Number($('actor-facing').value)}));
+$('actor-view').addEventListener('change',()=>
+  editSelectedActor({visualView:$('actor-view').value}));
 $('actor-open').addEventListener('click',()=>setActorSubmode(true));
 $('actor-back').addEventListener('click',()=>setActorSubmode(false));
 $('actor-undo').addEventListener('click',()=>{
   if(!actorHistory.length)return;
   actorRedo.push(placedActors);placedActors=actorHistory.pop();updateActorCount();
+  syncActorSelectedControls();
 });
 $('actor-redo').addEventListener('click',()=>{
   if(!actorRedo.length)return;
   actorHistory.push(placedActors);placedActors=actorRedo.pop();updateActorCount();
+  syncActorSelectedControls();
 });
 window.__sculptActorsProbe=()=>Object.freeze({
   active:objectEditing&&actorSubmode,
   catalogReady:!!captureActorProvider,
   definitions:captureActorProvider?.listDefinitions().map(d=>d.id)??[],
-  count:placedActors.length,
+  count:placedActors.length,selectedId:actorSelectedId,
+  viewChoices:[...$('actor-view').options].map(o=>({value:o.value,disabled:o.disabled})),
   actors:placedActors.map(p=>({id:p.id,definitionId:p.actorDefinitionId,
-    x:p.x,y:p.y,facingX:p.facingX})),
+    x:p.x,y:p.y,facingX:p.facingX,visualScale:p.visualScale??1,
+    visualView:p.visualView??'front'})),
   undoCount:actorHistory.length,redoCount:actorRedo.length
 });
 loadCaptureActorCatalog();
@@ -1303,7 +1363,8 @@ $('new-map-form').addEventListener('submit',event=>{
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
-  placedActors=blank.actors;actorHistory=[];actorRedo=[];updateActorCount();
+  placedActors=blank.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
+  updateActorCount();syncActorSelectedControls();
   surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
   updateSurfaceCount();
   objectHistory=[];objectRedo=[];history=[];redoHistory=[];
@@ -1382,7 +1443,8 @@ $('import').addEventListener('click',()=>{
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
-  placedActors=imported.actors;actorHistory=[];actorRedo=[];updateActorCount();
+  placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
+  updateActorCount();syncActorSelectedControls();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   loadSurfacePaintAssets();updateSurfaceCount();
   fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}

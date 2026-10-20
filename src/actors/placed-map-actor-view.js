@@ -31,6 +31,8 @@ export function createPlacedMapActorView(
         ? -1
         : 1,
     moving: false,
-    mapVisual: definition.mapVisual
+    visualScale: Number.isFinite(placement.visualScale)?placement.visualScale:1,
+    mapVisual: (placement.visualView==='back'
+      ?definition.mapVisualByView?.back:null)??definition.mapVisual
   });
 }

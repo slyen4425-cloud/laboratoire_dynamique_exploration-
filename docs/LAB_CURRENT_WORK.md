@@ -1,13 +1,27 @@
-# Lot assets — 20/10/2026 — Cinq arbres générés en 2,5D
+# Lot assets — 20/10/2026 — Arbres 2,5D, intégration compatible V42
 
-- Demande : enregistrer cinq nouveaux arbres dans Végétation / Arbres sur le labo Exploration.
-- Base source prévalidation V41 : `5c6d727baac2f29a8e4ec676ffe99ca569285cb3`; dernier jalon caméra validé créateur V39. Le présent lot ne déclare pas V41 GREEN.
-- START : `checkpoint/exploration-start-trees-generated-v1-2026-10-20`; travail : `work/exploration-trees-generated-v1-2026-10-20`.
-- Périmètre : cinq WebP RGBA 384×384, 1 manifeste SHA-256/octet, adapter et catalogue natifs, sentinelle d'intégrité et palette.
-- Propriétaire : Asset Adapter / ObjectDefinitionCatalog / catégorie native `vegetation/trees`; Builder et Sculpt relisent ce même catalogue.
-- Gel : collisions/mouvement, caméra et relief V41, Actor/Combat, scènes et sauvegardes, UI et autres dépôts.
-- Gates : bytes/SHA/RIFF des fichiers réellement commités, Node + Chromium/CI, placement smartphone avant GREEN esthétique.
-- Statut : en préparation ; validation non présumée.
+- **Demande :** intégrer les cinq arbres générés dans le catalogue Végétation / Arbres des deux éditeurs Exploration.
+- **Base fonctionnelle prévalidation retenue :** V42 `d3878ceb9ffbeac0c9da81f007b786d69590ea6b` (dérivée V41), en conservant tous les changements d'acteurs V42. Ce lot ne déclare pas GREEN esthétique V42.
+- **Provenance :** commit des cinq arbres `66d5ffa40474fa4e62a476ec9312b261031a65a0`, tests CI GREEN [#39400347224](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39400347224).
+- **START originel :** `checkpoint/exploration-start-trees-generated-v1-2026-10-20` ; **branche dédiée :** `work/exploration-trees-generated-v1-2026-10-20`.
+- **Périmètre :** cinq fichiers WebP RGBA 384×384, manifeste SHA-256/bytes, adapter et catalogue natifs, tests; aucune modification de la caméra, du moteur d'objets, de la collision ou des autres catalogues.
+- **Gels :** V42 acteurs, UI / Builder / Combat, sculpt heights, ciel, eau, collisions, gameplay et sauvegardes.
+- **Gates :** GitHub blob/octet SHA validés ; nouvelle CI sur V42 à réaliser, tests navigateur et vérification visuelle smartphone utilisateur avant GREEN final.
+- **État :** lot de compatibilité V42, validation en cours.
+
+---
+
+# Lot actif — 20/10/2026 — V42 réglages des acteurs sur la carte sculptée
+
+- **Demande créateur :** compléter taille et orientation des bâtiments et acteurs. Les bâtiments ont déjà scale/rotation fonctionnels ; ne pas doubler ce système. Le Labo Sculpture ne propose pour les acteurs que gauche/droite ; le catalogue Capture possède des visuels face et dos. Regrouper placement/sélection/modification acteur dans la palette existante.
+- **Base / gouvernance :** V41 source immuable `5c6d727baac2f29a8e4ec676ffe99ca569285cb3`, [CI #39366098566](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39366098566) SUCCESS, [Pages #39366293530](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39366293530) SUCCESS, V41 **encore en attente retour esthétique spécifique** ; V39 caméra validée. START `checkpoint/exploration-start-sculpt-actor-presentation-v42-2026-10-20`, branche `work/exploration-sculpt-actor-presentation-v42-2026-10-20`.
+- **Propriétaires :** conserver `WorldActorPlacement` comme seul modèle de placement et `Capture Actor Definition` / assets catalog comme sources uniques pour les vues ; option de taille visuelle (sans altérer collision ni stats), vue face/dos si véritable visuel correspondant fourni par Capture, miroir gauche/droite. Éditeur existant : ajouter sélection de l'acteur placé, modification taille/vue/orientation et export/import/undo/redo. Ne jamais transformer par rotation arbitraire l'asset pour simuler une vue inexistante.
+- **Fichiers prévus :** `src/actors/world-actor-placement-model.js`, `src/actors/placed-map-actor-view.js`, `src/capture/capture-actor-definition-provider-v1.js`, `src/render/map-actor-renderer.js` (extension backward-compatible du paramètre de taille optionnel), `src/world/sculpt-scene-preview.js`, `src/sculpt-lab-main.js`, `sculpt-lab.html`, tests Node/Chromium et journal.
+- **Gels :** caméra V39, passabilité V40, ciel V41, rendu roches V37, éditeur terrain/eau/objets, Collision World, moteur Movement, Actor Definition Capture (pas de copie d'assets dans WorldDocument), gameplay rencontres, GenSrpG, Combat/Builder. L'échelle acteur n'est qu'une **option de présentation** et ne modifie pas hitbox/position/physique.
+- **Critères :** anciens placements v1 sérialisés identiques par défaut ; nouvelles tailles 25–200 %, face/dos uniquement avec source réelle et fallback explicite ; acteur placé trouvable/sélectionnable au toucher, même palette modifie les données, undo/redo + export/import fidèle ; contraintes UI mobile ; source/tests CI GREEN, publication SHA épinglé en preview, validation smartphone avant GREEN créateur.
+- **Risques :** les assets Capture face/dos sont distincts mais le provider de carte ne chargeait que la face ; raccommodage des refs et du cache, pas de faux sprite ; généralisation WorldActorPlacement peut affecter Builder : sentinelles existantes protégées.
+- **Hors périmètre :** rencontres [#177](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/177), textures [#181](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/181), verrouillage réglages par créateur [#180](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/180), ciel art final.
+- **Statut :** en cours, pas GREEN.
 
 ---
 
