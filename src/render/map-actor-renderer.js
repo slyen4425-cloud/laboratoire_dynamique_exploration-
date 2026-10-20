@@ -48,7 +48,7 @@ export function createMapActorRenderer({
           );
         }
 
-        // Scale only the picture and contact shadow; movement/collision stay
+        // Scale only the picture and contact shadow; movement stays
         // in World coordinates controlled elsewhere.
         const visualScale=Number.isFinite(actor.visualScale)&&actor.visualScale>=.25&&actor.visualScale<=2
           ?actor.visualScale:1;
