@@ -1597,6 +1597,74 @@ try{
   console.log('V43 Chromium landscape toolbar, real mouse drag, touch cancel and undo:',
     JSON.stringify({bar:v43Toolbar,oldPosition,newPosition,
       undoRedo:v43UndoRedo,cancelled:v43Cancelled.objects[0]}));
+  // V44: the V43 drag got choppy on real phones because every pointer move
+  // rebuilt the full sculpt map and hit-tests used invisible ground cells.
+  // Import an elevated object, tap its visible rotated silhouette, then drag:
+  // the native selection must work and cached ground must NOT re-render.
+  const v44Setup=await run(`(async()=>{
+    document.querySelector('#scene-export').click();
+    const raw=JSON.parse(document.querySelector('#json').value);
+    const o=raw.objects[0];
+    const col=Math.floor(o.transform.x/28),row=Math.floor(o.transform.y/21);
+    raw.terrain.levels[row*raw.terrain.width+col]=5;
+    o.transform.rotationDeg=45;
+    document.querySelector('#json').value=JSON.stringify(raw);
+    document.querySelector('#import').click();
+    const editor=document.querySelector('#camera-view');
+    editor.value='classic';editor.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#object-action').value='select';
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const projection=await import('./src/render/sculpt-object-picking.js');
+    const world=(await import('./src/world/world-object-placement-model.js'));
+    const catalog=(await import('./src/objects/object-definition-catalog.js'));
+    const model=(await import('./src/world/sculpt-height-model.js'));
+    const r=world.resolveWorldObjectPlacements(raw.objects,catalog.objectDefinitionCatalogV1)[0];
+    const terrain=model.importSculptTerrain(raw.terrain);
+    const rect=projection.sculptObjectVisualRect(r,terrain);
+    const p=window.__sculptLabProbe();
+    const bounds=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const rad=Math.PI/4,localY=-rect.height*.23;
+    const visual={x:rect.x-localY*Math.sin(rad),y:rect.y+localY*Math.cos(rad)};
+    const at={x:bounds.left+p.cameraPan.x+visual.x*p.zoom,
+      y:bounds.top+p.cameraPan.y+visual.y*p.zoom};
+    return {at,visual,rect,hit:document.elementFromPoint(at.x,at.y)?.id,
+      id:r.id,builds:window.__sculptObjectsProbe().terrainRasterBuilds,
+      old:raw.objects[0].transform};
+  })()`);
+  if(v44Setup.hit!=='sculpt-canvas')
+    throw Error('V44 raised rotated object visual selection target hidden: '+JSON.stringify(v44Setup));
+  await v43Mouse('mouseMoved',v44Setup.at);
+  await v43Mouse('mousePressed',v44Setup.at,1);
+  await v43Mouse('mouseReleased',v44Setup.at);
+  const v44Picked=await run('window.__sculptObjectsProbe()');
+  if(v44Picked.selectedId!==v44Setup.id||v44Picked.count!==1)
+    throw Error('V44 real visual hit missed raised rotated object: '+JSON.stringify({v44Setup,v44Picked}));
+  const nextV44={x:v44Setup.at.x+35,y:v44Setup.at.y+15};
+  await v43Mouse('mouseMoved',v44Setup.at);
+  await v43Mouse('mousePressed',v44Setup.at,1);
+  for(let i=1;i<=12;i++){
+    await v43Mouse('mouseMoved',{
+      x:v44Setup.at.x+(nextV44.x-v44Setup.at.x)*i/12,
+      y:v44Setup.at.y+(nextV44.y-v44Setup.at.y)*i/12},1);
+  }
+  await v43Mouse('mouseReleased',nextV44);
+  const v44Moved=await run(`(async()=>{
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const state=window.__sculptObjectsProbe();
+    document.querySelector('#scene-export').click();
+    return {...state,exported:JSON.parse(document.querySelector('#json').value).objects[0]};
+  })()`);
+  if(v44Moved.terrainRasterBuilds!==v44Picked.terrainRasterBuilds||
+     v44Picked.terrainRasterBuilds!==v44Setup.builds||
+     v44Moved.selectedId!==v44Setup.id||
+     v44Moved.undoCount!==v44Picked.undoCount+1||
+     Math.abs(v44Moved.objects[0].x-v44Setup.old.x-35/v43Ready.p.zoom)>.09||
+     Math.abs(v44Moved.exported.transform.x-v44Moved.objects[0].x)>.0001)
+    throw Error('V44 mobile fast drag hit/cache/export regression: '+
+      JSON.stringify({v44Setup,v44Picked,v44Moved}));
+  console.log('V44 Chromium raised rotated sprite touch and cached mobile drag:',
+    JSON.stringify({spriteHit:v44Picked.selectedId,groundBuilds:v44Moved.terrainRasterBuilds,
+      dragged:v44Moved.objects[0],picks:v44Picked.count}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
