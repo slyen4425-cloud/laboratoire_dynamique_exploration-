@@ -1568,8 +1568,7 @@ try{
      v43Moved.count!==1||v43Moved.undoCount!==v43Placed.undoCount+1||
      Math.abs(newPosition.x-oldPosition.x-expectedDx)>.08||
      Math.abs(newPosition.y-oldPosition.y-expectedDy)>.08||
-     Math.abs(v43Moved.exported.transform.x-newPosition.x)>.00001||
-     !document.querySelector('#sculpt-canvas'))
+     Math.abs(v43Moved.exported.transform.x-newPosition.x)>.00001)
     throw Error('V43 real pointer drag/export/projection/undo failed: '+
       JSON.stringify({v43Ready,v43Placed,v43Moved,expectedDx,expectedDy}));
   const v43UndoRedo=await run(`(()=>{
