@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
 import assert from 'node:assert/strict';
 import {SCULPT_CLIFF_ATLAS_V47,cliffAtlasTheme,sculptCliffAtlasHasLayers,
   resolveSculptCliffAtlasUrl,drawSculptCliffAtlas} from '../src/render/sculpt-cliff-atlas.js';
@@ -38,4 +40,13 @@ test('V47 unloaded/unexpected atlas keeps the existing nonempty rock renderer fa
   assert.equal(drawSculptCliffAtlas({},{
     image:null,colors:SCULPT_ROCK_PALETTES.warm,x:10,y:10,width:40,height:36
   }),false);
+});
+
+test('V47 temporary asset SHA/bytes audit from committed runtime WebP',()=>{
+  const bytes=readFileSync(new URL('../assets/sculpt/cliff-atlas-v47.webp',import.meta.url));
+  const sha256=createHash('sha256').update(bytes).digest('hex');
+  console.log('V47-COMMITTED-ASSET-AUDIT',JSON.stringify({bytes:bytes.length,sha256,header:bytes.toString('ascii',0,4),webp:bytes.toString('ascii',8,12),declared:bytes.readUInt32LE(4)+8}));
+  assert.equal(bytes.toString('ascii',0,4),'RIFF');
+  assert.equal(bytes.toString('ascii',8,12),'WEBP');
+  assert.equal(bytes.readUInt32LE(4)+8,bytes.length);
 });
