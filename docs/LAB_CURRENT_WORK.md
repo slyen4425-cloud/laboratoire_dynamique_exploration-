@@ -1,3 +1,14 @@
+# Lot assets — 20/10/2026 — Raccord maisons 2,5D sur source V46
+
+- **Objectif :** conserver les six bâtiments 2,5D / 23 vues de la branche assets prévalidée et les rendre disponibles dans Bâtiments sans remplacer les objets historiques.
+- **Base source publiée V46 :** `4a0f2d78e5a2fe86d801d38874750ab98742f149`. Lot images initial : `cad1b30c1b6d42f550c5524ac42bf4de5cd57c96` (CI #39431809188 SUCCESS, 624 tests).
+- **START :** `checkpoint/exploration-start-houses-2p5d-v46-integration-2026-10-20` ; **travail :** `work/exploration-houses-2p5d-v46-integration-2026-10-20`.
+- **Portée :** 23 WebP nommés `*_2p5d_*`, adapter natif WorldObjects, six définitions Bâtiments / Auberges, manifeste SHA-256/bytes, test d'intégrité. Aucun changement gameplay, caméra, surface, relief, eau, input ni collision.
+- **Validations :** empreintes binaires, npm test / npm run check, sentinelles Chromium, CI ; publication de preview contrôlée à partir de la source V46 sans retour arrière ; validation visuelle sur téléphone requise pour GREEN final.
+- **Statut :** lot d'intégration en cours, GREEN non déclaré avant validation.
+
+---
+
 # Lot actif — 20/10/2026 — V46 arrondis visuels des berges d'eau sculptée
 
 - **Demande créateur :** « pour l'eau, quand on la dessine ... vachement carré ... arrondis par moments ». La V45 roche visuelle `8dca9d98640f3af4397b5ed2b02b21e9a10b6bd7` est GREEN technique mais **attend l'avis esthétique de l'utilisateur** ; V44 ergonomie validée.
