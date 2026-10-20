@@ -5,6 +5,7 @@ import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37-rock-v45-shore-v46-atlas-v47-depth-v48';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
+import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
@@ -83,6 +84,17 @@ cliffAtlasLoader.onerror=()=>{
   status('Texture de roche absente : rendu classique conservé');
 };
 cliffAtlasLoader.src=resolveSculptCliffAtlasUrl();
+let cliffHDImage=null,cliffHDLoaded=false;
+const cliffHDLoader=new Image();
+cliffHDLoader.onload=()=>{
+  if(!sculptCliffHDReady(cliffHDLoader)){
+    status('Asset roche HD non conforme : rendu V48 conservé');return;
+  }
+  cliffHDImage=cliffHDLoader;cliffHDLoaded=true;
+  navTerrainCache=null;scheduleDraw();
+};
+cliffHDLoader.onerror=()=>status('Base HD absente : roches V48 conservées');
+cliffHDLoader.src=resolveSculptCliffHDUrl();
 // Background only. Cache by actual viewport + sky options, not by character
 // position or frame: stars/clouds never allocate a new canvas each movement.
 function navigationSkyBackdrop(width,height){
@@ -107,7 +119,7 @@ function navigationBackground(){
   const rockPalette=$('rock').value,materialId=$('material').value;
   const smoothness=Number($('visual-smooth').value)/100;
   const signature=[rockPalette,materialId,smoothness,
-    cliffAtlasReady,!!$('rock-moss')?.checked,
+    cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
     ribbonTextures.water?.material?.id,ribbonTextures.road?.material?.id].join('|');
   const same=navTerrainCache&&navTerrainCache.terrain===terrain&&
@@ -126,7 +138,8 @@ function navigationBackground(){
   imageContext.translate(paddingX,paddingY);
   const material=registry.require(materialId,'surface');
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
-    rockPalette,cliffAtlas:cliffAtlasImage,cliffMoss:$('rock-moss')?.checked,
+    rockPalette,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
+    cliffMoss:$('rock-moss')?.checked,
     visualSmoothness:smoothness,overlays:ribbonTextures,
     paintSurface:surface,paintImages:surfacePaintImages});
   terrainRasterBuilds++;
@@ -269,7 +282,7 @@ function draw(){
   }else{
     const material=registry.require($('material').value,'surface');
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
-      rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,
+      rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       visualSmoothness:Number($('visual-smooth').value)/100,
       overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
