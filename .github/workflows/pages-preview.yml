@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-game-angle-v39-prevalidation-2026-10-19
+# preview-revision: sculpt-passability-v40-prevalidation-2026-10-20
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: fb9f373ecfcd422df1f0cd132205d5abdc692357
+          ref: 316099aa0cfb64c09723940a7f6e0f5e15faa809
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
