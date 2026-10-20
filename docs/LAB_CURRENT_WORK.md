@@ -1,3 +1,16 @@
+# Lot actif — 20/10/2026 — V46 arrondis visuels des berges d'eau sculptée
+
+- **Demande créateur :** « pour l'eau, quand on la dessine ... vachement carré ... arrondis par moments ». La V45 roche visuelle `8dca9d98640f3af4397b5ed2b02b21e9a10b6bd7` est GREEN technique mais **attend l'avis esthétique de l'utilisateur** ; V44 ergonomie validée.
+- **Base immuable et séparation :** source V45 `8dca9d98640f3af4397b5ed2b02b21e9a10b6bd7` (même source CI #39428130429 / checkpoint #39428284597), START `checkpoint/exploration-start-sculpt-water-shore-v46-2026-10-20`, branche `work/exploration-sculpt-water-shore-v46-2026-10-20`. V45 publiée via infra PR #186 en attente de confirmation de Pages au lancement du lot.
+- **Périmètre :** rendu **visuel uniquement** des cellules d'eau peintes, coins arrondis et ondulation douce des rives, en utilisant uniquement `sculptWetShoreEdges` calculé par le renderer canonique ; masque intérieur ne dessine jamais d'eau au-delà des cellules réellement humides. Aucun changement du pinceau, des `waterLevels`, du niveau terrestre ou des interactions.
+- **Propriétaire :** `src/render/sculpt-height-renderer.js` génère le tracé fluide du contour d'une cellule d'eau ; `sculpt-lab.html` et `src/sculpt-lab-main.js` seulement pour les cache-bust si utiles. Tests purs et Chromium réels ; un lot visuel eau distinct du lot V45 roche.
+- **Gels :** collision World, navigation et passabilité, V37 liseré, texture minérale V45, caméra V39, ciel, acteurs V42, V44 sélection tactile/texture cache, WorldSurface, routes, bâtiments, imports/export, engagements Capture. La mousse d'origine et cascades humide→humide restent visibles et sont masquées par la même bordure sans masquer les vraies rives.
+- **Tests :** une cellule isolée a des coins rentrants et eau au centre ; deux cellules humides adjacentes restent jointives sans couture ; côtés secs ondulés, échantillon de pixels de coin humide exposé laisse apparaître terre; mêmes JSON/collisions, même ancien contour sur les segments intérieurs, tests V33 littoraux et V34–V37 liseré, CI+Pages et retour téléphone créateur.
+- **Limites :** arrondi **graphique**, la carte reste à cellules et le Collision World la lit telle quelle (pas de rivage polygonal avec navigation). Pinceau et hydrologie évolués dans un lot futur si nécessaire ; aucune génération d'image sans demander.
+- **Statut :** V46 en cours, PAS GREEN.
+
+---
+
 # Lot actif — 20/10/2026 — V45 matériau roche/terre sculptée 2,5D
 
 - **Validation récente :** V44 créateur GREEN esthétique/ergonomique (« La perfection, c'est magnifique ») le 20/10/2026 ; objectif suivant rendu **roches de falaise moins répétitives, vraies aspérités, différentes formes et teintes**, conserver choix de palettes, sans asset généré par défaut.
