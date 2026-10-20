@@ -252,6 +252,30 @@ body.object-editing .canvas-wrap .precision-actions{display:none!important}
  .editor-switch #new-map-toggle{flex:0 0 78px;max-width:78px;min-width:0;font-size:.72rem;padding:5px 3px}
  .new-map-content{padding:12px;gap:10px}
 }
+/* V43 — free space in landscape belongs to the top action bar.
+   Keep a single responsive toolbar; narrow portrait scrolls, never crushes
+   the categories or overlaps the object editing drawer below. */
+body.sculpt-immersive .editor-switch{
+  width:min(900px,calc(100vw - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px) - 12px));
+  max-width:calc(100vw - 12px);overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;overscroll-behavior-x:contain;
+  gap:6px;padding:6px;
+}
+body.sculpt-immersive .editor-switch button{
+  flex:1 0 auto;white-space:nowrap;min-width:max-content;
+  padding:6px 10px;font-size:clamp(.77rem,.9vw + .52rem,.94rem);
+}
+body.sculpt-immersive .editor-switch #new-map-toggle{flex:0 0 auto}
+body.sculpt-immersive .editor-switch #palette-toggle{flex:0 0 34px;min-width:34px}
+body.sculpt-immersive .editor-switch #fullscreen-toggle{flex:0 0 40px;min-width:40px}
+@media(max-width:600px){
+  body.sculpt-immersive .editor-switch{width:calc(100vw - 12px);max-width:calc(100vw - 12px)}
+  body.sculpt-immersive .editor-switch button{flex:0 0 auto;font-size:.79rem;padding:5px 8px}
+  body.sculpt-immersive .editor-switch #new-map-toggle{
+    flex:0 0 auto;min-width:max-content;max-width:none;padding:5px 8px;font-size:.79rem}
+}
+body.object-editing #sculpt-canvas.object-dragging{cursor:grabbing}
+
 /* Canonical WorldSurface routes/zones, exposed as an isolated sculpt paint mode. */
 #surface-palette{position:absolute;z-index:12;right:8px;top:8px;
  width:min(225px,calc(100vw - 16px));max-height:73%;overflow:auto;
@@ -396,7 +420,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
    <button type="button" id="object-redo" disabled>↷ Objet</button>
  </div>
  <output id="object-count">Aucun objet placé</output>
- <small>Choisis « Sélectionner / modifier » et touche un objet pour changer angle, taille ou vue. Angle et vue avant/côté/arrière sont distincts. Utilise Exporter scène pour sauvegarder.</small>
+ <small>« Sélectionner / modifier » : touche un objet et garde le doigt appuyé pour le glisser à sa nouvelle place. Taille, rotation et vue sont conservées. ↶ Objet annule le déplacement ; Exporter scène le sauvegarde.</small>
  </div>
  <section id="actor-controls" hidden>
   <strong>👥 Acteurs de map</strong>
@@ -553,6 +577,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-actor-presentation-v42"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-toolbar-object-drag-v43"></script>
 </body>
 </html>
