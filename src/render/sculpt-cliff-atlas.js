@@ -12,6 +12,9 @@ export const SCULPT_CLIFF_ATLAS_V47=Object.freeze({
     moss:Object.freeze({x:170,y:128,width:85,height:85})
   })
 });
+export function resolveSculptCliffAtlasUrl(){
+  return new URL(SCULPT_CLIFF_ATLAS_V47.file,import.meta.url).href;
+}
 const textureCache=new WeakMap();
 export function cliffAtlasTheme(palette){
   return ['warm','sandstone','ochre'].includes(palette)?'ochre':'gray';
