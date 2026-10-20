@@ -1,3 +1,13 @@
+# Lot V47 — Prévalidation technique GREEN, publié pour test créateur (20/10/2026)
+
+- **Source immutable épinglée :** `3b79161355b6c65ec10afe0dabc5851f71fca513` ; CI source [#39460619430](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39460619430) **SUCCESS** (632 Node + réel Chromium) ; checkpoint [#39460848397](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39460848397) SUCCESS, branche `checkpoint/exploration-cliff-atlas-v47-manifest-prevalidation-2026-10-20`.
+- **Fichiers réels GitHub :** `assets/sculpt/cliff-atlas-v47.webp`, 8304 octets, 192×160, 5 couches (gris/ocre/fissures/éclats/mousse). **SHA-256 du binaire GitHub** `ebaf2db3249c6901fd3cd81b1e606f022d116f7058c4d90f8791a0cd0cb30673`, manifeste `assets/sculpt/cliff-atlas-v47.manifest.json`, vérification size/RIFF/SHA par CI.
+- **Publication :** [PR infra #189](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/189) mergée, main `ab9db02f56a654cf39d7c854660984f061ac6b67` et [Pages #39461194018](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39461194018) **SUCCESS** ; [prévisualisation V47](https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/sculpt-lab.html?v=47).
+- **Réserves réelles :** prototype atlas *petite résolution* ; risque répétition ou flou, esthétique à valider créateur téléphone **avant GREEN définitif**. Le vieux procédural V45 est remplacé sur les parois quand l'image est chargée ; eau V46 acceptée, pas de changement de hauteur/collisions/caméra/maisons/Builder/Combat.
+- **Checkpoint détaillé :** `docs/checkpoints/EXPLORATION_CLIFF_ATLAS_V47_MANIFEST_PREVALIDATION_2026-10-20.md`. Ancien checkpoint exploratoire antérieur à la validation du manifeste à ne pas utiliser pour publication.
+
+---
+
 # Lot V47 — 20/10/2026 — textures illustrées de falaise, motifs et variations
 
 - **Demande créateur :** eau V46 validée ; roche V45 rejetée visuellement. Tester un **vrai atlas d'images** (base grise et ocre, fissures et facettes, mousse optionnelle) sur les faces verticales plutôt que le bruit procédural, avec différentes palettes éditables.
