@@ -1273,6 +1273,46 @@ try{
     throw Error('V47 browser actual WebP atlas/rock pixels/flat invariant: '+JSON.stringify(v47Cliff));
   console.log('V47 Chromium real binary WebP, cliff facings, palettes and ground:',
     JSON.stringify(v47Cliff));
+  // V48 real WebP: gradient must shade the bottom of an exposed wall AFTER
+  // applying the texture (V47 lost this in opaque paint). Painterly islands
+  // vary by face seed while raster caching and V46 water continue unchanged.
+  const v48CliffDepth=await run(`(async()=>{
+    const atlas=await import('./src/render/sculpt-cliff-atlas.js?rev=cliff-depth-v48');
+    const image=new Image();image.src=atlas.resolveSculptCliffAtlasUrl();
+    await image.decode();
+    const canvas=document.createElement('canvas');
+    canvas.width=145;canvas.height=235;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const colors=['#bba58e','#947968','#65595b','#414452'];
+    const draw=seed=>{
+      ctx.clearRect(0,0,145,235);
+      ctx.fillStyle='#8f8f8f';ctx.fillRect(0,0,145,235);
+      if(!atlas.drawSculptCliffAtlas(ctx,{image,rockPalette:'slate',
+        colors,x:7,y:4,width:130,height:230,seed,moss:false}))
+        throw Error('V48 physical atlas failed to load');
+      return ctx.getImageData(0,0,145,235).data.slice();
+    };
+    const a=draw(3),b=draw(67);
+    const sample=(data,x,y)=>[0,1,2].map(n=>data[(y*145+x)*4+n]);
+    const lum=rgb=>rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
+    // Samples at 20 and 212 have identical 96px native texture phase.
+    const points=[24,37,51,65,79,93,106,121];
+    const top=points.reduce((sum,x)=>sum+lum(sample(a,x,20)),0)/points.length;
+    const bottom=points.reduce((sum,x)=>sum+lum(sample(a,x,212)),0)/points.length;
+    let variants=0;
+    for(let y=40;y<193;y+=4)for(let x=20;x<127;x+=4){
+      const i=(y*145+x)*4;
+      if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])variants++;
+    }
+    return {top,bottom,depthDifference:top-bottom,variants,
+      patchCount:atlas.sculptCliffVariationPlan({width:260,height:180,seed:18}).length,
+      rockMossPresent:!!document.querySelector('#rock-moss')};
+  })()`);
+  if(v48CliffDepth.depthDifference<18||v48CliffDepth.variants<30||
+     v48CliffDepth.patchCount<2||!v48CliffDepth.rockMossPresent)
+    throw Error('V48 restored post-texture depth/variety not visible in Chromium: '+JSON.stringify(v48CliffDepth));
+  console.log('V48 Chromium real shaded vertical wall and irregular facet offsets:',
+    JSON.stringify(v48CliffDepth));
   // V38 real published path: both camera modes must redraw different actual
   // pixels without touching serialized terrain, and the screen->world inverse
   // must land a REAL browser click on the intended raised tile.
