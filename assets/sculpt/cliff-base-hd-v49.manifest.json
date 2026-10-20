@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "sculpt.cliff.base.hd.v49",
+  "file": "cliff-base-hd-v49.webp",
+  "width": 512,
+  "height": 256,
+  "bytes": 8412,
+  "sha256": "b32bb9da1c33c865d62adc2c9c53107fcf2189a7ddfc9d51c3fa35c3e53a3d49",
+  "format": "RIFF/WEBP",
+  "baseResolution": 256,
+  "sourceImages": [
+    "texture_de_paroi_rocheuse_stylisée.png (1254x1254)",
+    "texture_de_falaise_en_grès_stylisée.png (1254x1254)"
+  ],
+  "layers": {
+    "gray": {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 256
+    },
+    "ochre": {
+      "x": 256,
+      "y": 0,
+      "width": 256,
+      "height": 256
+    }
+  },
+  "note": "Both 256px native pictures are directly sampled from 1254px originals, not enlarged V47 96px tiles. V47 overlays, V48 shadows and V46 water are preserved."
+}
