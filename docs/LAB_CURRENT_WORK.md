@@ -1,3 +1,15 @@
+# Lot V47 — 20/10/2026 — textures illustrées de falaise, motifs et variations
+
+- **Demande créateur :** eau V46 validée ; roche V45 rejetée visuellement. Tester un **vrai atlas d'images** (base grise et ocre, fissures et facettes, mousse optionnelle) sur les faces verticales plutôt que le bruit procédural, avec différentes palettes éditables.
+- **Branche/checkpoint :** `work/exploration-cliff-texture-atlas-v47-2026-10-20`, START `checkpoint/exploration-start-cliff-texture-atlas-v47-2026-10-20` ; point de départ **source publiée V46 + bâtiments** `957f93f55d0e632594b6dc780cd93a041c52b467`, [Pages #39436248689](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39436248689) SUCCESS.
+- **Assets disponibles dans cette conversation :** roche grise `texture_de_paroi_rocheuse_stylisée.png`, ocre `texture_de_falaise_en_grès_stylisée.png`, `texture_de_fissures_rocheuses_stylisées.png`, `fragments_rocheux_stylisés_en_éclats.png`, `nappage_de_falaise_rocheuse_moussu.png` ; sélection initiale visuelle du créateur, **pas encore des binaires commités**.
+- **Contrôles obligatoires avant publication :** bords tileable vérifiés en mosaïque (le caractère seamless annoncé par génération n'est pas une preuve), vraie transparence alpha et absence de halos colorés, taille/SHA-256/RIFF-WebP des fichiers réellement commités (charte §12.1), tests Canvas navigateur sur niveaux 1 à 5, orientation et raccord roche/eau/herbe, cache V44, palettes, export/undo ; **aucune écriture dans le terrain ou Collision World**.
+- **Architecture :** `Exploration Renderer` propriétaire du dessin ; `Material Registry/Asset Adapter` propriétaire des chemins ; palette existante grès/gris/ocre conservée, variantes déterministes par segment. Garder V37 liseré et V46 courbes d'eau. Les assets binaires ne doivent pas être remplacés par une simulation trompeuse.
+- **Livraison :** un lot sur branche de travail, checkpoint et CI, publication par PR infrastructure épinglant la source vérifiée ; **avis créateur** sur smartphone avant GREEN. En cas d'échec binaire répété, escalade documentée charte §12.1.1 sans prétendre la branche déployée.
+- **Statut :** préparation atlas et validations techniques en cours. **Aucun raccordement/push binaire validé à ce stade.**
+
+---
+
 # Lot actif — 20/10/2026 — V47 atlas visuel de falaise illustrée (test créateur)
 
 - **Commande du créateur :** intégrer les cinq visuels déjà générés (base grise, base ocre, overlay fissures, éclats et mousse) au labo sculptable, avec thèmes colorés réglables; tests de rendu, sans demander de redéposer ni créer une image de paysage.
