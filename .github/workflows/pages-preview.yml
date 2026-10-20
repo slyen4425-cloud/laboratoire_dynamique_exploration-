@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: houses-2p5d-v46-prevalidation-2026-10-20
+# preview-revision: cliff-atlas-v47-manifest-prevalidation-2026-10-20
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 957f93f55d0e632594b6dc780cd93a041c52b467
+          ref: 3b79161355b6c65ec10afe0dabc5851f71fca513
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
