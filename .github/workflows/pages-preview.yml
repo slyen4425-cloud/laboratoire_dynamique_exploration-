@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-rock-detail-v45-prevalidation-2026-10-20
+# preview-revision: sculpt-water-shore-v46-prevalidation-2026-10-20
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 8dca9d98640f3af4397b5ed2b02b21e9a10b6bd7
+          ref: 4a0f2d78e5a2fe86d801d38874750ab98742f149
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
