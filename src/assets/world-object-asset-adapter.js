@@ -103,6 +103,31 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/buildings/building_inn_golden_thatch_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.tree.forest.pine_dense.01': Object.freeze({
+    id: 'object.tree.forest.pine_dense.01', kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_forest_pine_dense_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.forest.spruce_tall.01': Object.freeze({
+    id: 'object.tree.forest.spruce_tall.01', kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_forest_spruce_tall_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.forest.broadleaf.01': Object.freeze({
+    id: 'object.tree.forest.broadleaf.01', kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_forest_broadleaf_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.fantasy.blossom.01': Object.freeze({
+    id: 'object.tree.fantasy.blossom.01', kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_fantasy_blossom_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.fantasy.ancient_twist.01': Object.freeze({
+    id: 'object.tree.fantasy.ancient_twist.01', kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_fantasy_ancient_twist_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.tree.forest.oak.01': Object.freeze({
     id: 'object.tree.forest.oak.01',
     kind: 'tree-visual',

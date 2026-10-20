@@ -1,3 +1,16 @@
+# Lot assets — 20/10/2026 — Cinq arbres générés en 2,5D
+
+- Demande : enregistrer cinq nouveaux arbres dans Végétation / Arbres sur le labo Exploration.
+- Base source prévalidation V41 : `5c6d727baac2f29a8e4ec676ffe99ca569285cb3`; dernier jalon caméra validé créateur V39. Le présent lot ne déclare pas V41 GREEN.
+- START : `checkpoint/exploration-start-trees-generated-v1-2026-10-20`; travail : `work/exploration-trees-generated-v1-2026-10-20`.
+- Périmètre : cinq WebP RGBA 384×384, 1 manifeste SHA-256/octet, adapter et catalogue natifs, sentinelle d'intégrité et palette.
+- Propriétaire : Asset Adapter / ObjectDefinitionCatalog / catégorie native `vegetation/trees`; Builder et Sculpt relisent ce même catalogue.
+- Gel : collisions/mouvement, caméra et relief V41, Actor/Combat, scènes et sauvegardes, UI et autres dépôts.
+- Gates : bytes/SHA/RIFF des fichiers réellement commités, Node + Chromium/CI, placement smartphone avant GREEN esthétique.
+- Statut : en préparation ; validation non présumée.
+
+---
+
 # Lot actif — 20/10/2026 — V41 atmosphère et ciel du mode Tester
 
 - **Besoin créateur :** supprimer la rupture du fond noir autour de la carte et intégrer ciel, brume, nuages, étoiles avec choix **matin, midi, soir, nuit**. Complète [issue #175](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/175). Pas de génération d'images : rendu léger procédural sur Canvas, illustrations temporelles fixes.

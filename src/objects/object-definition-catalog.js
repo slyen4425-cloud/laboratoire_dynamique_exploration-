@@ -283,6 +283,41 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.forest.pine_dense.01', label: 'Pin dense 2,5D', kind: 'tree',
+    visual: { assetId: 'object.tree.forest.pine_dense.01' },
+    baseSize: { width: 180, height: 230 },
+    collision: {role:'obstacle',shape:'box',widthRatio:0.28,heightRatio:0.22,offsetX:0,offsetY:0.3}
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.forest.spruce_tall.01', label: 'Sapin élancé 2,5D', kind: 'tree',
+    visual: { assetId: 'object.tree.forest.spruce_tall.01' },
+    baseSize: { width: 170, height: 250 },
+    collision: {role:'obstacle',shape:'box',widthRatio:0.28,heightRatio:0.22,offsetX:0,offsetY:0.3}
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.forest.broadleaf.01', label: 'Chêne feuillu 2,5D', kind: 'tree',
+    visual: { assetId: 'object.tree.forest.broadleaf.01' },
+    baseSize: { width: 220, height: 210 },
+    collision: {role:'obstacle',shape:'box',widthRatio:0.3,heightRatio:0.24,offsetX:0,offsetY:0.28}
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.fantasy.blossom.01', label: 'Arbre fleuri rose 2,5D', kind: 'tree',
+    visual: { assetId: 'object.tree.fantasy.blossom.01' },
+    baseSize: { width: 240, height: 225 },
+    collision: {role:'obstacle',shape:'box',widthRatio:0.32,heightRatio:0.24,offsetX:0,offsetY:0.28}
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.fantasy.ancient_twist.01', label: 'Vieil arbre noueux 2,5D', kind: 'tree',
+    visual: { assetId: 'object.tree.fantasy.ancient_twist.01' },
+    baseSize: { width: 240, height: 230 },
+    collision: {role:'obstacle',shape:'box',widthRatio:0.32,heightRatio:0.24,offsetX:0,offsetY:0.28}
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.tree.forest.oak.01',
     label: 'Chêne forestier',
     kind: 'tree',
