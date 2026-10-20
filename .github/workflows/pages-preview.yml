@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-v42-plus-generated-trees-v1-prevalidation-2026-10-20
+# preview-revision: sculpt-toolbar-drag-v43-prevalidation-2026-10-20
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: dc8cb651e88916332515aa2ff6e0846af362bba0
+          ref: 29e85ef92f1d07f42edafa7f79429bb4377afb7d
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
