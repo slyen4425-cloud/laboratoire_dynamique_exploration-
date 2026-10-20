@@ -404,15 +404,22 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
   <label>Définition Capture
    <select id="actor-definition" aria-label="Définition d’acteur Capture" disabled></select>
   </label>
-  <label>Action <select id="actor-action"><option value="place">Placer sur la map</option><option value="remove">Supprimer au toucher</option></select></label>
-  <label>Orientation <select id="actor-facing"><option value="1">Droite →</option><option value="-1">Gauche ←</option></select></label>
+  <label>Action <select id="actor-action"><option value="place">Placer sur la map</option><option value="select">Sélectionner / modifier</option><option value="remove">Supprimer au toucher</option></select></label>
+  <label>Vue du personnage
+    <select id="actor-view" aria-label="Vue Capture réelle de l'acteur"><option value="front">Face</option><option value="back">Dos</option></select>
+  </label>
+  <label>Direction <select id="actor-facing"><option value="1">Droite →</option><option value="-1">Gauche ←</option></select></label>
+  <label>Taille acteur <output id="actor-scale-value">100 %</output>
+    <input id="actor-scale" type="range" min="25" max="200" step="5" value="100" aria-label="Taille visuelle de l'acteur en pourcentage">
+  </label>
+  <output id="actor-selected">Aucun acteur sélectionné</output>
   <div class="object-actions">
    <button type="button" id="actor-undo" disabled>↶ Acteur</button>
    <button type="button" id="actor-redo" disabled>↷ Acteur</button>
   </div>
   <output id="actor-count">Aucun acteur placé</output>
   <small id="actor-source-status">Chargement du catalogue Capture…</small>
-  <small>Les visuels et animations viennent des définitions Capture. Ce pilote place des références MapActor, sans IA ni nouvelles collisions.</small>
+  <small>Les vues Face/Dos utilisent les vrais visuels Capture quand ils existent. Pour modifier la taille et la direction après placement, choisis « Sélectionner / modifier », puis touche l'acteur. Aucune modification des collisions.</small>
  </section>
 </section>
 <section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
@@ -546,6 +553,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-sky-v41"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-actor-presentation-v42"></script>
 </body>
 </html>
