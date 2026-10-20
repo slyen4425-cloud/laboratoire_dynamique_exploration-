@@ -1584,10 +1584,10 @@ try{
      Math.abs(v43UndoRedo.redo.y-newPosition.y)>.0001)
     throw Error('V43 one-action undo/redo for drag failed: '+JSON.stringify(v43UndoRedo));
   const unchangedBeforeCancel=await run('window.__sculptObjectsProbe()');
-  const touchStart={x:dest.x,y:dest.y};
-  const touchMove={x:dest.x+33,y:dest.y-12};
-  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...touchStart,id:7}]});
-  await send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...touchMove,id:7}]});
+  const v43TouchStart={x:dest.x,y:dest.y};
+  const v43TouchMove={x:dest.x+33,y:dest.y-12};
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...v43TouchStart,id:7}]});
+  await send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...v43TouchMove,id:7}]});
   await send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
   const v43Cancelled=await run('window.__sculptObjectsProbe()');
   if(Math.abs(v43Cancelled.objects[0].x-newPosition.x)>.0001||
