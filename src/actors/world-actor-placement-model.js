@@ -40,7 +40,15 @@ export function normalizeWorldActorPlacement(
     facingX:
       Number(raw.facingX) < 0
         ? -1
-        : 1
+        : 1,
+    // Optional, strictly visual placement overrides. Older actor placements
+    // keep their exact serialized v1 shape; physics and actor definitions
+    // never inherit these presentation settings.
+    ...(Number.isFinite(raw.visualScale) && raw.visualScale >= 0.25 &&
+       raw.visualScale <= 2
+      ? { visualScale: raw.visualScale } : {}),
+    ...(raw.visualView === 'front' || raw.visualView === 'back'
+      ? { visualView: raw.visualView } : {})
   });
 }
 
