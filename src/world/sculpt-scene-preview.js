@@ -111,7 +111,8 @@ export function appendSculptPreviewActor(raw,{
   while(ids.has('sculpt-actor-'+serial))serial++;
   const placed=normalizeWorldActorPlacement({
     id:'sculpt-actor-'+serial,actorDefinitionId:definitionId,x,y,facingX,
-    visualScale,visualView
+    ...(visualScale===1?{}:{visualScale}),
+    ...(visualView==='front'?{}:{visualView})
   },actors.length);
   return Object.freeze([...actors,placed]);
 }
