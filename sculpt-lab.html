@@ -424,6 +424,17 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
       <option value="fly">Vol</option>
     </select>
   </label>
+  <label for="navigation-sky-time">Ambiance du ciel
+    <select id="navigation-sky-time" aria-label="Moment de la journée en mode Tester">
+      <option value="morning">Matin</option>
+      <option value="midday" selected>Midi</option>
+      <option value="evening">Soir</option>
+      <option value="night">Nuit</option>
+    </select>
+  </label>
+  <label><input id="navigation-sky-clouds" type="checkbox" checked> Nuages</label>
+  <label><input id="navigation-sky-mist" type="checkbox" checked> Brume lointaine</label>
+  <label><input id="navigation-sky-stars" type="checkbox" checked> Étoiles (nuit seulement)</label>
   <label for="navigation-camera-zoom">Distance de caméra
     <output id="navigation-camera-zoom-value" for="navigation-camera-zoom">175 %</output>
     <input id="navigation-camera-zoom" type="range" min="100" max="240" step="5" value="175"
@@ -535,6 +546,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-passability-v40"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-sky-v41"></script>
 </body>
 </html>
