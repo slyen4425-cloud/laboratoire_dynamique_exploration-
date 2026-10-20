@@ -1,3 +1,16 @@
+# Lot actif — 20/10/2026 — V43 barre d'outils paysage + glisser-déposer natif des objets
+
+- **Retour créateur et capture :** « Juste parfait » sur V42 (échelle/vues + arbres). Deux retouches avant le raccord des rencontres : la barre principale immersive est écrasée en haut à gauche malgré la largeur disponible et les objets placés (bâtiments/arbres/roches) devraient pouvoir être repositionnés au doigt maintenu en mode « Sélectionner / modifier ».
+- **Source de départ :** published compatible V42 + cinq arbres `dc8cb651e88916332515aa2ff6e0846af362bba0`, [CI #39400916025](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39400916025), [Pages #39401721602](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39401721602) SUCCESS ; source V42 des acteurs `d3878ceb9ffbeac0c9da81f007b786d69590ea6b` et caméra V39 valides. Checkpoint START `checkpoint/exploration-start-sculpt-toolbar-drag-v43-2026-10-20` ; branche de travail `work/exploration-sculpt-toolbar-drag-v43-2026-10-20`.
+- **Périmètre/propriétaire :** CSS/UI du seul `sculpt-lab.html` (largeur dynamique et contrôles tactiles lisibles en immersive paysage) ; éditeur de placements existant `src/sculpt-lab-main.js` / commandes `src/world/sculpt-scene-preview.js` (drag direct d'un objet sélectionné, projection inverse de la caméra, sans saut au point initial, bornes et eau, sauvegarde et un unique undo/redo par glissé).
+- **Gels :** objets WorldObjectPlacement/registry unique, dimensions et rotations inchangées ; caméras, terrains V37, ciel V41, passabilité V40, acteurs V42, cinq nouveaux arbres, collisions/mouvement, sauvegardes, rendez-vous Capture/Combat, Builder et GenSrpG inchangés. Pas de deuxième drag pour modifier le terrain ni les acteurs dans ce lot.
+- **Tests :** modèle préserve identité/variants/rotation et refuse les placements hors carte ; vrai Chromium (paysage toolbar sans écrasement, toucher/souris select→drag, rendu et JSON repositionnés, undo/redo une action, annulation pointercancel, retour pinceau normal, projection trois-quarts), npm test/check et CI/pin Pages ; smartphone utilisateur avant GREEN final.
+- **Risques :** capture pointeur, sélection sur plateau surélevé, coordonnées monde vs pixels écran, pointercancel, objets flottants sur eau ; aucune nouvelle autorité collision.
+- **Hors périmètre :** rencontre Capture [#177](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/177), textures [#181](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/181), verrouillage créateur [#180](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/180).
+- **Statut :** chantier V43 en cours, NON GREEN.
+
+---
+
 # Lot assets — 20/10/2026 — Arbres 2,5D, intégration compatible V42
 
 - **Demande :** intégrer les cinq arbres générés dans le catalogue Végétation / Arbres des deux éditeurs Exploration.
