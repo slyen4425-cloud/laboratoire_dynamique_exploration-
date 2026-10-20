@@ -1472,8 +1472,26 @@ try{
     v42Edit.exported?.visualScale!==1.75||!v42Edit.hasUndo||
     v42Edit.redoneScale!==1.75)
     throw Error('V42 real actor select/edit/undo/export failed: '+JSON.stringify(v42Edit));
+  await run("window.__v42ExportedActorId="+JSON.stringify(v42Edit.actor.id));
+  const v42Imported=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const saved=document.querySelector('#json').value;
+    document.querySelector('#import').click();
+    const after=window.__sculptActorsProbe();
+    document.querySelector('#scene-export').click();
+    const sameScene=document.querySelector('#json').value===saved;
+    const actor=after.actors.find(a=>a.id===window.__v42ExportedActorId);
+    return {actor,afterCount:after.count,selectedId:after.selectedId,
+      sameScene,undoCount:after.undoCount};
+  })()`);
+  if(!v42Imported.actor||v42Imported.actor.visualScale!==1.75||
+    v42Imported.actor.visualView!=='front'||v42Imported.afterCount!==v42Edit.count||
+    v42Imported.selectedId!==null||!v42Imported.sameScene||
+    v42Imported.undoCount!==0)
+    throw Error('V42 actual scene export/import or selection reset failed: '+JSON.stringify(v42Imported));
   console.log('V42 Chromium real actor placement, selection, scale and Capture views:',
-    JSON.stringify({setup:v42Setup,placed:v42Placed.actor,edit:v42Edit}));
+    JSON.stringify({setup:v42Setup,placed:v42Placed.actor,edit:v42Edit,
+      imported:v42Imported}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
