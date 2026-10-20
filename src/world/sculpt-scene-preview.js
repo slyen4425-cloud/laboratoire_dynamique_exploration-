@@ -101,21 +101,54 @@ export function normalizeSculptPreviewActors(raw=[]){
   if(placements.length!==raw.length)throw Error('Scène sculptable : acteurs incohérents');
   return placements;
 }
-export function appendSculptPreviewActor(raw,{definitionId,x,y,facingX=1}={}){
+export function appendSculptPreviewActor(raw,{
+  definitionId,x,y,facingX=1,visualScale=1,visualView='front'
+}={}){
   const actors=normalizeSculptPreviewActors(raw);
   if(actors.length>=SCULPT_ACTOR_LIMIT||!definitionId||
      !Number.isFinite(x)||!Number.isFinite(y))return actors;
   const ids=new Set(actors.map(a=>a.id));let serial=1;
   while(ids.has('sculpt-actor-'+serial))serial++;
   const placed=normalizeWorldActorPlacement({
-    id:'sculpt-actor-'+serial,actorDefinitionId:definitionId,x,y,facingX
+    id:'sculpt-actor-'+serial,actorDefinitionId:definitionId,x,y,facingX,
+    visualScale,visualView
   },actors.length);
   return Object.freeze([...actors,placed]);
 }
+export function findSculptPreviewActorNear(raw,x,y,threshold=28){
+  const actors=normalizeSculptPreviewActors(raw);
+  let best=null,bestDistance=Infinity;
+  for(const actor of actors){
+    const scale=actor.visualScale??1;
+    const dx=x-actor.x,dy=y-actor.y;
+    // The actor asset stands ABOVE its ground anchor; allow tapping its body.
+    // Still use world-coordinate anchors, never a second sprite collision.
+    if(Math.abs(dx)>Math.max(threshold,scale*44)||
+       dy< -Math.max(threshold,scale*95)||dy>threshold)continue;
+    const distance=Math.hypot(dx,Math.max(0,dy));
+    if(distance<bestDistance){best=actor;bestDistance=distance;}
+  }
+  return best;
+}
+export function updateSculptPreviewActor(raw,id,{
+  facingX,visualScale,visualView
+}={}){
+  const actors=normalizeSculptPreviewActors(raw);
+  if(!actors.some(actor=>actor.id===id))return actors;
+  return Object.freeze(actors.map((actor,index)=>{
+    if(actor.id!==id)return actor;
+    const next=normalizeWorldActorPlacement({
+      ...actor,
+      facingX:facingX===undefined?actor.facingX:facingX,
+      visualScale:visualScale===undefined?(actor.visualScale??1):visualScale,
+      visualView:visualView===undefined?(actor.visualView??'front'):visualView
+    },index);
+    return JSON.stringify(next)===JSON.stringify(actor)?actor:next;
+  }));
+}
 export function removeSculptPreviewActorAt(raw,x,y,threshold=24){
   const actors=normalizeSculptPreviewActors(raw);
-  const found=actors.filter(a=>Math.hypot(a.x-x,a.y-y)<=threshold)
-    .sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
+  const found=findSculptPreviewActorNear(actors,x,y,threshold);
   return found?Object.freeze(actors.filter(a=>a.id!==found.id)):actors;
 }
 export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[]){
