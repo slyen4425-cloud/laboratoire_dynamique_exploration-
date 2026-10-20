@@ -20,11 +20,11 @@ export function sculptNavigationSample(terrain,x,y,{
     waterDepth:sculptWaterAt(terrain,col,row)});
 }
 
-export function isSculptNavigationBlocked({
+export function sculptNavigationBlockDetail({
   terrain,cellWidth=28,cellHeight=21,maxStepUp=1,maxStepDown=1,
   shoreEntryFraction=0
 }={},entity,targetX,targetY){
-  if(!terrain||!entity)return false; // no implicit activation in the 2D runtime
+  if(!terrain||!entity)return null; // opt-in only: ordinary 2D runtime unchanged
   const options={cellWidth,cellHeight};
   const flying=entity.locomotion?.modes?.includes('fly')===true;
   const swimming=entity.locomotion?.modes?.includes('swim')===true;
@@ -45,7 +45,7 @@ export function isSculptNavigationBlocked({
   };
   const origin=sculptNavigationSample(terrain,entity.x,entity.y,options);
   const target=sculptNavigationSample(terrain,targetX,targetY,options);
-  if(!origin||!target)return true;
+  if(!origin||!target)return Object.freeze({kind:'bounds'});
   // Sample the whole segment, not only its end: a slow frame or large dt may
   // never tunnel through a one-cell cliff or a thin stretch of water.
   const dx=targetX-entity.x,dy=targetY-entity.y;
@@ -55,13 +55,24 @@ export function isSculptNavigationBlocked({
   for(let step=1;step<=stride;step++){
     const t=step/stride;
     const sample=sculptNavigationSample(terrain,entity.x+dx*t,entity.y+dy*t,options);
-    if(!sample)return true;
+    if(!sample)return Object.freeze({kind:'bounds'});
     if(!flying){
-      if(sample.waterDepth>0&&!swimming&&!shorePermitted(entity.x+dx*t,entity.y+dy*t,sample))return true;
+      if(sample.waterDepth>0&&!swimming&&!shorePermitted(entity.x+dx*t,entity.y+dy*t,sample))
+        return Object.freeze({kind:'water',col:sample.col,row:sample.row,waterDepth:sample.waterDepth});
       const rise=sample.level-previous.level;
-      if(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown))return true;
+      if(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown))
+        return Object.freeze({kind:rise>0?'height-up':'height-down',
+          col:sample.col,row:sample.row,from:previous.level,to:sample.level,
+          delta:Math.abs(rise),limit:rise>0?Math.max(0,maxStepUp):Math.max(0,maxStepDown)});
     }
     previous=sample;
   }
-  return false;
+  return null;
 }
+
+// Boolean Collision World adapter and user-facing diagnostics read the exact
+// SAME canonical swept-cell check. No visual rounding becomes gameplay physics.
+export function isSculptNavigationBlocked(config,entity,targetX,targetY){
+  return sculptNavigationBlockDetail(config,entity,targetX,targetY)!==null;
+}
+
