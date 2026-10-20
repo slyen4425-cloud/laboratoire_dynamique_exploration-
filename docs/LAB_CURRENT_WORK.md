@@ -1,3 +1,17 @@
+# Lot actif — 20/10/2026 — V47 atlas visuel de falaise illustrée (test créateur)
+
+- **Commande du créateur :** intégrer les cinq visuels déjà générés (base grise, base ocre, overlay fissures, éclats et mousse) au labo sculptable, avec thèmes colorés réglables; tests de rendu, sans demander de redéposer ni créer une image de paysage.
+- **Procédure autorisée :** GitHub connecté via outils `mcp__GitHub__`, dont `create_blob(base64)`, `create_tree`, `create_commit`, `update_ref` pour les assets binaires; ne pas prétendre ne pas avoir accès. Suivre `docs/LAB_CHARTE.md` et `docs/LAB_CHECKPOINT_POLICY.md`. Ne jamais toucher le code de `main`.
+- **Base compatible publiée V46 + 6 maisons/23 vues :** source immutable `957f93f55d0e632594b6dc780cd93a041c52b467`, [Pages #39436248689](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39436248689) SUCCESS, déploiement main infra PR #188; V46 eau acceptée, V45 roche rejetée esthétiquement. Checkpoint START `checkpoint/exploration-start-cliff-texture-atlas-v47-2026-10-20`; travail `work/exploration-cliff-texture-atlas-v47-2026-10-20`.
+- **Assets :** 2 plaques de paroi illustrée WebP (gris/ocre), 3 overlays alpha (fissures/éclats/mousse), sous forme d'un **atlas WebP compact** unique côté runtime avec un manifeste des rectangles source, données et SHA intégrité; versions sources haute résolution dans fichiers fournis à la conversation conservées hors repo tant que le rendu-test est discuté. Attention aux franges rouges/jaunes parasites des overlays générés : elles sont nettoyées avant intégration. Aucun nouvel asset illustré supplémentaire sans validation.
+- **Implémentation :** `src/render/sculpt-cliff-atlas.js` est uniquement un adapter de rendu Canvas (mémoire cache des 5 sections et alpha), `src/render/sculpt-height-renderer.js` remplace le V45 procédural sur parois lorsque l'atlas est chargé, préserve sa forme/ombre/liseré V37 et fallback en absence d'asset. `src/sculpt-lab-main.js` charge une fois l'atlas, invalide une fois le cache terrain V44; palette roche grise/granite/sombre utilise base grise et tons chauds utilise base ocre; mode "mousse" overlay discret optionnel seulement si activé.
+- **Aucun changement :** heightfield, collisions, caméra, rivière/eau V46, navigation, image des bâtiments 2,5D/23 variantes, placement/drag V44, Actor Capture, matériaux de sol, sauvegarde/import/export JSON, Builder/Combat/GenSrpG.
+- **Tests attendus :** manifest atlas bytes et cinq régions, transparence overlay, source SHA de commit binaire; preuve pixels roche sur véritable Chromium, palette froid/chaud, fallback avant chargement, sol plat invariant, eau identique, texture chargée une fois, cache portrait/paysage et drag toujours fluide; CI Node+Chromium, checkpoint prévalidation, infra-only publication, retour créateur smartphone avant GREEN esthétique.
+- **Attention :** prototype avec images réduites pour charge smartphone ; ne pas affirmer que la génération produit automatiquement des bords parfaits ou un style approuvé avant test réel.
+- **Statut :** V47 en cours, NON GREEN.
+
+---
+
 # Lot assets visuels — 20/10/2026 — Six bâtiments 2,5D raccordés à V46
 
 - **Demande créateur :** découper 6 bâtiments / 23 vues, conserver les trois-quarts d'origine et ajouter les vues plus frontales, dans Bâtiments du laboratoire Exploration.
