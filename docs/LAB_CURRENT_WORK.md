@@ -1,3 +1,16 @@
+# Lot actif — 20/10/2026 — V49 résolution source réelle des parois rocheuses
+
+- **Retour créateur :** direction des roches V48 validée visuellement (« beaucoup mieux »), mais demande de **corriger netteté/résolution**. Dégradé haut→bas + ombre latérale V48 à préserver impérativement. Suite demandée : ponts, rencontres/Combat, intérieurs **lots séparés** après ce rendu.
+- **Base figée :** source V48 publiée `623bc4a84254793b9073b24508448333da5f1014`, [Pages #39479522106](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39479522106) SUCCESS, main infra `da27bae9c8ab5f55771582226e9986e0c41499f2`; checkpoint `checkpoint/exploration-start-cliff-hd-v49-2026-10-20`, branche `work/exploration-cliff-hd-v49-2026-10-20`.
+- **Périmètre et propriétaire :** compiler une **nouvelle base grise/ocre depuis les PNG 1254×1254**, pas d'agrandissement du prototype 96×96. Les 3 overlays V47 (fissures, éclats, mousse) restent d'abord inchangés. Adapter visuel `src/render/sculpt-cliff-atlas.js` + chargement dans `src/sculpt-lab-main.js`, profil visuel V48 inchangé. Compression WebP raisonnable, SHA-256/bytes/RIFF vérifiés depuis les octets commités, tests Node + Chromium.
+- **Invariants gelés :** V48 relief/gradients, V46 eau arrondie et passabilité, V37 liseré, V39 caméra, V41 ciel, V44 glisser/déposer, 6 maisons/23 vues, navigation et Collision World, Actor Capture, WorldDocument et textures sol, export/import et HUD.
+- **Gates :** source pixel 320px par base (ou plus) réellement prélevée des originaux ; bytes WebP/manifestes exacts sur commit, rétrocompat atlas 192×160 pour overlays ; texture réelle en Chromium après chargement, dégradé V48 et palettes, sol plat/eau inchangés, sentinelles CI entières, source checkpoint immuable et Pages par PR infra. **GREEN esthétique uniquement après essai téléphone du créateur**.
+- **Transport assets :** GitHub connecté `mcp__GitHub__create_blob(base64)`, `create_tree/create_commit/update_ref`. En cas de 2 échecs binaires, charte §12.1.1 : demander au créateur dépôt manuel des binaires préparés, sans les simuler.
+- **Hors périmètre V49 :** systèmes ponts, rencontres/Combat Capture, intérieurs bâtiment, gameplay, nouveaux types de collision. Ceux-ci seront cadrés/repris depuis les autorités existantes en lots successifs.
+- **État :** en cours, pas encore GREEN.
+
+---
+
 # Lot actif — 20/10/2026 — V48 relief roche : dégradé d'ombre, variations et netteté
 
 - **Retour visuel créateur sur V47 (20 octobre)** : direction du vrai motif roche confirmée (« c'est mieux, la direction est mieux »), mais atlas **trop répétitif et flou**, demande explicite de **garder le dégradé d'ombre pour la profondeur**. V47 **NON GREEN esthétique**.
