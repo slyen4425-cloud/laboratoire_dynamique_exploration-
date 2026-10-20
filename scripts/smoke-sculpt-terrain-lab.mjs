@@ -1022,6 +1022,51 @@ try{
     throw Error('V33 wet/dry renderer still paints a floating cyan water wall: '+
       JSON.stringify(v33WaterPixels));
   console.log('V33 real Chromium water/land seam pixels:',JSON.stringify(v33WaterPixels));
+  // V46: real water shoreline raster gets curved exposed wet corners
+  // without making the dry neighboring tile or wet collision geometry blue.
+  const v46Shore=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const renderer=await import('./src/render/sculpt-height-renderer.js');
+    const width=8,height=8,waterLevels=Array(width*height).fill(-1);
+    waterLevels[5*width+5]=4;
+    const terrain=model.createSculptTerrain({width,height,
+      levels:Array(width*height).fill(2),waterLevels});
+    const flat=model.createSculptTerrain({width,height,
+      levels:Array(width*height).fill(2)});
+    const paint=(t)=>{
+      const c=document.createElement('canvas');c.width=8*28;c.height=8*21+7*18;
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      renderer.drawSculptTerrain(ctx,{terrain:t,material:{render:{baseColor:'#337d46'}},
+        overlays:{water:{visible:true,material:{render:{waterColor:'#20b6ed',
+          highlightColor:'#efffff'}},texture:null}}});
+      return ctx;
+    };
+    const before=JSON.stringify(terrain),wet=paint(terrain),dry=paint(flat);
+    const x=5*28,y=5*21-4*18;
+    const rgb=(ctx,cx,cy)=>Array.from(ctx.getImageData(cx,cy,1,1).data).slice(0,3);
+    const corner=rgb(wet,x,y),cornerDry=rgb(dry,x,y);
+    const middle=rgb(wet,x+14,y+9);
+    const topEdge=rgb(wet,x+14,y);
+    const topEdgeDry=rgb(dry,x+14,y);
+    // With a wet neighbor east, the common seam must remain full blue.
+    const joinedLevels=[...waterLevels];joinedLevels[5*width+6]=4;
+    const joinedTerrain=model.createSculptTerrain({width,height,
+      levels:Array(width*height).fill(2),waterLevels:joinedLevels});
+    const joined=paint(joinedTerrain);
+    return {corner,cornerDry,middle,topEdge,topEdgeDry,
+      seamLeft:rgb(joined,x+27,y+9),seamRight:rgb(joined,x+28,y+9),
+      afterSame:before===JSON.stringify(terrain),
+      centerWet:model.sculptWaterAt(terrain,5,5),
+      outsideWet:model.sculptWaterAt(terrain,5,4)};
+  })()`);
+  const blueDominant=c=>c[2]>c[1]&&c[2]>c[0]+30;
+  if(v46Shore.corner.join(',')!==v46Shore.cornerDry.join(',')||
+     v46Shore.topEdge.join(',')!==v46Shore.topEdgeDry.join(',')||
+     !blueDominant(v46Shore.middle)||
+     !blueDominant(v46Shore.seamLeft)||!blueDominant(v46Shore.seamRight)||
+     !v46Shore.afterSame||v46Shore.centerWet!==2||v46Shore.outsideWet!==0)
+    throw Error('V46 curved shoreline pixels/canonical water regression: '+JSON.stringify(v46Shore));
+  console.log('V46 Chromium water dry corner, smoothed shoreline and connected wet tiles:',JSON.stringify(v46Shore));
   // V34 real Chromium raster: a higher dry plateau produces a local shadow
   // on the adjacent lower LAND tile, without darkening flat remote tiles.
   const v34Relief=await run(`(async()=>{
