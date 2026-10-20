@@ -3,7 +3,8 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37-rock-v45-shore-v46';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37-rock-v45-shore-v46-atlas-v47';
+import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
@@ -71,6 +72,17 @@ const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)|
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
 let navTerrainCache=null,navSkyCache=null,terrainRasterBuilds=0;
+let cliffAtlasImage=null,cliffAtlasReady=false,cliffAtlasError=false;
+const cliffAtlasLoader=new Image();
+cliffAtlasLoader.onload=()=>{
+  cliffAtlasImage=cliffAtlasLoader;cliffAtlasReady=true;
+  navTerrainCache=null;scheduleDraw();
+};
+cliffAtlasLoader.onerror=()=>{
+  cliffAtlasError=true;
+  status('Texture de roche absente : rendu classique conservé');
+};
+cliffAtlasLoader.src=resolveSculptCliffAtlasUrl();
 // Background only. Cache by actual viewport + sky options, not by character
 // position or frame: stars/clouds never allocate a new canvas each movement.
 function navigationSkyBackdrop(width,height){
@@ -95,6 +107,7 @@ function navigationBackground(){
   const rockPalette=$('rock').value,materialId=$('material').value;
   const smoothness=Number($('visual-smooth').value)/100;
   const signature=[rockPalette,materialId,smoothness,
+    cliffAtlasReady,!!$('rock-moss')?.checked,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
     ribbonTextures.water?.material?.id,ribbonTextures.road?.material?.id].join('|');
   const same=navTerrainCache&&navTerrainCache.terrain===terrain&&
@@ -113,7 +126,8 @@ function navigationBackground(){
   imageContext.translate(paddingX,paddingY);
   const material=registry.require(materialId,'surface');
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
-    rockPalette,visualSmoothness:smoothness,overlays:ribbonTextures,
+    rockPalette,cliffAtlas:cliffAtlasImage,cliffMoss:$('rock-moss')?.checked,
+    visualSmoothness:smoothness,overlays:ribbonTextures,
     paintSurface:surface,paintImages:surfacePaintImages});
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
@@ -255,7 +269,9 @@ function draw(){
   }else{
     const material=registry.require($('material').value,'surface');
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
-      rockPalette:$('rock').value,visualSmoothness:Number($('visual-smooth').value)/100,
+      rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,
+      cliffMoss:$('rock-moss')?.checked,
+      visualSmoothness:Number($('visual-smooth').value)/100,
       overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
@@ -1475,7 +1491,8 @@ $('camera-view').addEventListener('change',()=>{
 });
 $('material').addEventListener('change',setTheme);
 $('water-material').addEventListener('change',setWaterMaterial);
-$('rock').addEventListener('change',scheduleDraw);
+$('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
+$('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('show-water').addEventListener('change',()=>toggleRibbon('water'));
 $('show-road').addEventListener('change',()=>toggleRibbon('road'));
 $('preview-cursor').addEventListener('change',scheduleDraw);
