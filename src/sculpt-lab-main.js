@@ -6,7 +6,7 @@ import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37';
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
 import {stepMovement} from './core/movement.js';
-import {sculptNavigationSample} from './core/sculpt-navigation-collision.js';
+import {sculptNavigationSample,sculptNavigationBlockDetail} from './core/sculpt-navigation-collision.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -64,7 +64,7 @@ let navVisualLevel=null;
 const navKeys=new Set();
 // Preview-only navigation speed; authoritative runtime movement remains unchanged.
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
-let navViewport=null,navLastState='',navBlocked=false;
+let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
 let navTerrainCache=null;
 function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigation-camera-zoom').value)/100||1.75));}
@@ -566,11 +566,26 @@ function navigationWorld(){
   return {width:terrain.width*SCULPT_TILE.width,
     height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[]};
 }
+function navigationMaxStep(){
+  return Math.max(1,Math.min(3,Math.round(Number($('navigation-max-step').value)||2)));
+}
 function navigationContext(){
+  const maxStep=navigationMaxStep();
   return {objectCatalog:sculptPreviewCollisionCatalog,
     sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
-      cellHeight:SCULPT_TILE.height,maxStepUp:1,maxStepDown:1,
+      cellHeight:SCULPT_TILE.height,maxStepUp:maxStep,maxStepDown:maxStep,
       shoreEntryFraction:.14}};
+}
+// Explain actual rejection from the SAME swept-height check used by Collision
+// World; never guess physics from rounded visual cliff pixels.
+function navigationBlockMessage(reason){
+  if(!reason)return 'obstacle, bâtiment ou bord de la carte';
+  if(reason.kind==='bounds')return 'limite de la carte';
+  if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
+  if(reason.kind==='height-up'||reason.kind==='height-down')
+    return (reason.kind==='height-up'?'montée':'descente')+' '+reason.from+'→'+reason.to+
+      ' (écart '+reason.delta+', franchissement '+reason.limit+')';
+  return 'obstacle';
 }
 function navHeight(){
   const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
@@ -624,7 +639,7 @@ function updateNavigationInfo(forced=false){
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const value=info?'Case '+(info.col+1)+' / '+(info.row+1)+' · hauteur '+info.level+
     (info.waterDepth>0?' · eau '+info.waterDepth:'')+
-    (navBlocked?' · obstacle (falaise, profondeur d’eau ou limite)':''):'Hors zone';
+    (navBlocked?' · bloqué : '+navigationBlockMessage(navBlockReason):''):'Hors zone';
   if(forced||value!==navLastState){$('navigation-status').textContent=value;navLastState=value;}
 }
 function navigationInput(){
@@ -654,6 +669,13 @@ function navigationTick(time){
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navMetricDistance+=moved;
       navBlocked=moved<.001;
+      navBlockReason=null;
+      if(navBlocked){
+        const magnitude=Math.hypot(intent.x,intent.y);
+        const probe=8/magnitude;
+        navBlockReason=sculptNavigationBlockDetail(context.sculptNavigation,navActor,
+          navActor.x+intent.x*probe,navActor.y+intent.y*probe);
+      }
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
       // Camera tracks x/y and the smoothed altitude after the movement loop.
@@ -691,7 +713,7 @@ function setNavigationTesting(on){
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
     navViewport={zoom,pan:{...pan}};
-    navKeys.clear();navBlocked=false;navLastState='';
+    navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
     $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
     $('navigation-toggle').textContent='✎ Éditer';
     $('navigation-toggle').setAttribute('aria-pressed','true');
@@ -721,7 +743,7 @@ function setNavigationTesting(on){
     $('navigation-toggle').setAttribute('aria-pressed','false');
     if(navViewport){zoom=navViewport.zoom;pan=navViewport.pan;}
     $('zoom').value=String(Math.round(zoom*100));
-    navActor=null;navViewport=null;navBlocked=false;navTerrainCache=null;
+    navActor=null;navViewport=null;navBlocked=false;navBlockReason=null;navTerrainCache=null;
     navVisualLevel=null;
     navLastVisualPaint=-Infinity;
     updatePrecisionActions();scheduleDraw();
@@ -729,6 +751,11 @@ function setNavigationTesting(on){
   }
   scheduleDraw();
 }
+$('navigation-max-step').addEventListener('input',()=>{
+  $('navigation-max-step-value').textContent=String(navigationMaxStep());
+  navBlocked=false;navBlockReason=null;
+  updateNavigationInfo(true);
+});
 $('navigation-camera-angle').addEventListener('input',()=>{
   $('navigation-camera-angle-value').textContent=$('navigation-camera-angle').value+'°';
   // The cache is unmodified; affine reprojection of the existing raster is cheap.
@@ -774,7 +801,8 @@ window.addEventListener('blur',()=>{navKeys.clear();navStick?.reset();});
 window.__sculptNavProbe=()=>Object.freeze({
   enabled:navigationTesting,player:navActor?{x:navActor.x,y:navActor.y,
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
-  blocked:navBlocked,speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
+  blocked:navBlocked,blockReason:navBlockReason,maxStep:navigationMaxStep(),
+  speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
