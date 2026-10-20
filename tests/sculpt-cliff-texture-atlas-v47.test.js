@@ -45,7 +45,12 @@ test('V47 unloaded/unexpected atlas keeps the existing nonempty rock renderer fa
 test('V47 temporary asset SHA/bytes audit from committed runtime WebP',()=>{
   const bytes=readFileSync(new URL('../assets/sculpt/cliff-atlas-v47.webp',import.meta.url));
   const sha256=createHash('sha256').update(bytes).digest('hex');
-  console.log('V47-COMMITTED-ASSET-AUDIT',JSON.stringify({bytes:bytes.length,sha256,header:bytes.toString('ascii',0,4),webp:bytes.toString('ascii',8,12),declared:bytes.readUInt32LE(4)+8}));
+  const manifest=JSON.parse(readFileSync(new URL('../assets/sculpt/cliff-atlas-v47.manifest.json',import.meta.url),'utf8'));
+  assert.equal(bytes.length,manifest.bytes,'committed binary bytes must match pinned manifest');
+  assert.equal(sha256,manifest.sha256,'committed SHA-256 must match pinned manifest');
+  assert.equal(manifest.width,SCULPT_CLIFF_ATLAS_V47.width);
+  assert.equal(manifest.height,SCULPT_CLIFF_ATLAS_V47.height);
+  assert.deepEqual(manifest.layers,SCULPT_CLIFF_ATLAS_V47.layers);
   assert.equal(bytes.toString('ascii',0,4),'RIFF');
   assert.equal(bytes.toString('ascii',8,12),'WEBP');
   assert.equal(bytes.readUInt32LE(4)+8,bytes.length);
