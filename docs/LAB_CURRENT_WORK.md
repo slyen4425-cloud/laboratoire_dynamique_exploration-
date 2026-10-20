@@ -1,3 +1,15 @@
+# Lot actif — 20/10/2026 — V41 atmosphère et ciel du mode Tester
+
+- **Besoin créateur :** supprimer la rupture du fond noir autour de la carte et intégrer ciel, brume, nuages, étoiles avec choix **matin, midi, soir, nuit**. Complète [issue #175](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/175). Pas de génération d'images : rendu léger procédural sur Canvas, illustrations temporelles fixes.
+- **Base source technique :** V40 `316099aa0cfb64c09723940a7f6e0f5e15faa809` CI et Pages SUCCESS. **V40 attend toujours validation smartphone** ; V39 caméra est GREEN créateur. START `checkpoint/exploration-start-sculpt-sky-v41-2026-10-20`, travail `work/exploration-sculpt-sky-v41-2026-10-20`. Séparer strictement visuels de toute collision.
+- **Périmètre :** uniquement arrière-plan hors carte en mode Tester ; quatre palettes cohérentes matin/midi/soir/nuit, étoiles discrètes la nuit seulement, nuages et brume optionnels ; un cache raster statique recalculé seulement pour taille d'écran ou configuration. Mode édition inchangé. Aucune génération d'images ou asset.
+- **Fichiers/propriétaire :** `src/render/sculpt-sky-backdrop.js` (source visuelle unique), `src/sculpt-lab-main.js` (fond Tester et cache), `sculpt-lab.html` (choix HUD), `tests/sculpt-sky-v41.test.js`, `scripts/smoke-sculpt-terrain-lab.mjs`, docs/checkpoints.
+- **Invariants :** hauteurs, liseré V37, caméra V39, collisions, passabilité V40, spawn, terrain, roches, objets, acteurs, pinceaux/éditeur, logique rencontres et sauvegardes restent inchangés ; pas de météorologie gameplay ni de skybox 3D.
+- **Gate :** rendu réellement visible hors terrain dans Chromium, modes distincts, étoiles uniquement la nuit, édition pixels inchangés et données JSON intactes ; CI et preview sur SHA épinglé, validation esthétique mobile créateur avant GREEN.
+- **Statut :** ouvert, pas GREEN.
+
+---
+
 # Lot actif — 20/10/2026 — V40 passabilité des jonctions sculptées en mode Tester
 
 - **Retour créateur :** sur les cartes sculptées, le héros reste souvent bloqué aux jonctions de niveaux qui paraissent franchissables. Les contours visuels arrondis ne changent pas les niveaux physiques. Diagnostic code : le contexte `sculptNavigation` impose `maxStepUp=maxStepDown=1` à toutes les marches, même lorsqu'un pinceau crée un écart de 2 niveaux.
