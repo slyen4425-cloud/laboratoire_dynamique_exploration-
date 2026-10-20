@@ -529,9 +529,10 @@ function stroke(event){
     // Placement in water is not valid for the normal object tool either.
     if(sculptWaterAt(terrain,Math.floor(x/SCULPT_TILE.width),
       Math.floor(y/SCULPT_TILE.height))>0)return;
+    const current=placedObjects.find(o=>o.id===source.id);
+    if(!current||Math.abs(current.transform.x-x)<.0001&&
+       Math.abs(current.transform.y-y)<.0001)return;
     const next=updateSculptPreviewObject(placedObjects,source.id,{x,y});
-    if(next.length!==placedObjects.length||
-       next.every((obj,i)=>obj===placedObjects[i]))return;
     objectDrag.active=true;
     canvas.classList.add('object-dragging');
     placedObjects=next;scheduleDraw();
@@ -610,7 +611,11 @@ function stop(event){
       placedObjects=drag.before;scheduleDraw();
       status('Déplacement annulé : objet remis à sa place');return;
     }
-    const changed=placedObjects.some((obj,i)=>obj!==drag.before[i]);
+    const original=drag.before.find(obj=>obj.id===drag.id);
+    const moved=placedObjects.find(obj=>obj.id===drag.id);
+    const changed=!!original&&!!moved&&(
+      Math.abs(original.transform.x-moved.transform.x)>.0001||
+      Math.abs(original.transform.y-moved.transform.y)>.0001);
     if(changed){
       objectHistory.push(drag.before);
       if(objectHistory.length>40)objectHistory.shift();
@@ -1252,7 +1257,7 @@ function applyObjectAtCell(cell){
     const found=findSculptPreviewObjectNear(placedObjects,x,y);
     objectSelectedId=found?.id??null;
     syncObjectSelectedControls();scheduleDraw();
-    status(found?'Objet sélectionné : change sa vue, sa rotation ou sa taille':'Aucun objet proche à sélectionner');
+    status(found?'Objet sélectionné : garde le doigt appuyé et glisse pour le déplacer':'Aucun objet proche à sélectionner');
     return;
   }
   if($('object-action').value==='remove'){
