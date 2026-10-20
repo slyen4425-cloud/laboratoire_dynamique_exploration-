@@ -1313,6 +1313,53 @@ try{
     throw Error('V48 restored post-texture depth/variety not visible in Chromium: '+JSON.stringify(v48CliffDepth));
   console.log('V48 Chromium real shaded vertical wall and irregular facet offsets:',
     JSON.stringify(v48CliffDepth));
+  // V49 actual binary replacement: two native 256px source textures from
+  // the original 1254px artworks, NOT resampled from V47's 96px preview.
+  // Preserve the V48 shadow gradients and all three V47 decal overlays.
+  const v49HD=await run(`(async()=>{
+    const atlas=await import('./src/render/sculpt-cliff-atlas.js');
+    const hd=await import('./src/render/sculpt-cliff-hd.js');
+    const image=new Image(),hi=new Image();
+    image.src=atlas.resolveSculptCliffAtlasUrl();
+    hi.src=hd.resolveSculptCliffHDUrl();
+    await Promise.all([image.decode(),hi.decode()]);
+    const canvas=document.createElement('canvas');canvas.width=146;canvas.height=236;
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    const colors=['#bba58e','#947968','#65595b','#414452'];
+    const draw=(palette,withHD)=>{
+      ctx.clearRect(0,0,146,236);ctx.fillStyle='#929292';
+      ctx.fillRect(0,0,146,236);
+      if(!atlas.drawSculptCliffAtlas(ctx,{image,hdImage:withHD?hi:null,
+        rockPalette:palette,colors,x:7,y:4,width:130,height:230,seed:5,moss:true}))
+        throw Error('V49 material layer failed to render');
+      return ctx.getImageData(0,0,146,236).data.slice();
+    };
+    const legacy=draw('slate',false),high=draw('slate',true);
+    const ochre=draw('ochre',true);
+    const at=(d,x,y)=>Array.from(d.slice((y*146+x)*4,(y*146+x)*4+3));
+    const lum=p=>p[0]*.2126+p[1]*.7152+p[2]*.0722;
+    let changed=0,palette=0;
+    for(let y=30;y<206;y+=3)for(let x=18;x<126;x+=3){
+      const a=at(legacy,x,y),b=at(high,x,y),c=at(ochre,x,y);
+      if(a.join(',')!==b.join(','))changed++;
+      if(b.join(',')!==c.join(','))palette++;
+    }
+    const xs=[27,43,59,75,91,107,119];
+    const top=xs.reduce((t,x)=>t+lum(at(high,x,20)),0)/xs.length;
+    const bottom=xs.reduce((t,x)=>t+lum(at(high,x,212)),0)/xs.length;
+    return {sourceWidth:hi.naturalWidth,sourceHeight:hi.naturalHeight,
+      hasRealPath:hi.currentSrc.endsWith('/assets/sculpt/cliff-base-hd-v49.webp'),
+      regions:Object.keys(hd.SCULPT_CLIFF_HD_V49.layers),changed,palette,
+      shadow:top-bottom,legacyWidth:image.naturalWidth,
+      artNative:hd.SCULPT_CLIFF_HD_V49.layers.gray.width,
+      cacheFlag:document.querySelector('script[type=module]')?.src.includes('hd-v49')};
+  })()`);
+  if(v49HD.sourceWidth!==512||v49HD.sourceHeight!==256||
+     !v49HD.hasRealPath||v49HD.artNative!==256||
+     v49HD.changed<200||v49HD.palette<200||v49HD.shadow<8||
+     !v49HD.cacheFlag||v49HD.legacyWidth!==192)
+    throw Error('V49 actual HD rock WebP, shadow and palette visual regression: '+JSON.stringify(v49HD));
+  console.log('V49 real committed original-image HD rock and post-texture shadow:',JSON.stringify(v49HD));
   // V38 real published path: both camera modes must redraw different actual
   // pixels without touching serialized terrain, and the screen->world inverse
   // must land a REAL browser click on the intended raised tile.
