@@ -269,6 +269,43 @@ export function sculptWetShoreEdges(terrain,col,row){
   }
   return Object.freeze(edges);
 }
+// V46 water smoothing is a MASK inside the author's wet cell, not a
+// change to wet-cell geometry. No source of gameplay passability depends on it.
+export function sculptWetShoreProfile(terrain,col,row,tile=SCULPT_TILE){
+  const edges=sculptWetShoreEdges(terrain,col,row);
+  const {width:w,height:h}=tile;
+  const radius=Math.min(6.8,w*.245,h*.325);
+  const inset=Math.min(1.6,Math.max(.75,h*.058));
+  const bend=1.1+((hash(col,row,92)%100)/100)*1.3;
+  return Object.freeze({edges,radius,inset,bend});
+}
+function sculptWetShorePath(ctx,x,y,w,h,profile){
+  const edges=profile.edges;
+  const n=edges.includes('north'),e=edges.includes('east'),
+        s=edges.includes('south'),west=edges.includes('west');
+  const {radius,inset,bend}=profile;
+  const tl=n&&west?radius:0,tr=n&&e?radius:0,
+        br=s&&e?radius:0,bl=s&&west?radius:0;
+  const left=x+(west?inset:0),right=x+w-(e?inset:0),
+        top=y+(n?inset:0),bottom=y+h-(s?inset:0);
+  ctx.beginPath();
+  // The four outward dry-facing sides are gently concave; adjacent wet
+  // tiles meet exactly at their common edge, avoiding internal gaps.
+  ctx.moveTo(x+tl,top);
+  ctx.quadraticCurveTo(x+w*.5,top+(n?bend:0),x+w-tr,top);
+  if(tr)ctx.quadraticCurveTo(right,top,right,y+tr);
+  else ctx.lineTo(right,top);
+  ctx.quadraticCurveTo(right-(e?bend:0),y+h*.5,right,y+h-br);
+  if(br)ctx.quadraticCurveTo(right,bottom,x+w-br,bottom);
+  else ctx.lineTo(right,bottom);
+  ctx.quadraticCurveTo(x+w*.5,bottom-(s?bend:0),x+bl,bottom);
+  if(bl)ctx.quadraticCurveTo(left,bottom,left,y+h-bl);
+  else ctx.lineTo(left,bottom);
+  ctx.quadraticCurveTo(left+(west?bend:0),y+h*.5,left,y+tl);
+  if(tl)ctx.quadraticCurveTo(left,top,x+tl,top);
+  else ctx.lineTo(x,top);
+  ctx.closePath();
+}
 // A wet surface can fall into a LOWER wet surface, but cannot form a
 // waterfall wall over dry land. At a dry neighbor the water's terminus is a
 // shore; painting a vertical water slab there caused V32 blue rectangles.
@@ -301,7 +338,8 @@ function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim}){
   const phase=(hash(col,row,83)%100)/100;
   const jitter=(hash(col,row,84)%5-2)*.18;
   ctx.save();
-  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  sculptWetShorePath(ctx,x,y,w,h,sculptWetShoreProfile(terrain,col,row,{width:w,height:h}));
+  ctx.clip();
   ctx.lineCap='round';ctx.lineJoin='round';
   for(const edge of edges){
     // Overlay only within the water tile, softly break the straight edge
@@ -347,7 +385,13 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
     // A dry neighbor is an ordinary shore with foam, not a blue falling wall.
     const visibleWall=sculptWaterSouthDrop(terrain,col,row)*rise;
     // Water surface, optionally textured from the canonical Material Registry.
-    ctx.save();ctx.globalAlpha=.94;ctx.fillStyle=water;ctx.fillRect(x,y,w+.65,h+.65);
+    ctx.save();
+    const shore=sculptWetShoreProfile(terrain,col,row,tile);
+    if(shore.edges.length){
+      sculptWetShorePath(ctx,x,y,w,h,shore);
+      ctx.clip();
+    }
+    ctx.globalAlpha=.94;ctx.fillStyle=water;ctx.fillRect(x,y,w+.65,h+.65);
     if(pattern){ctx.globalAlpha=.52;ctx.fillStyle=pattern;ctx.fillRect(x,y,w+.65,h+.65);}
     ctx.globalAlpha=.28;ctx.strokeStyle=rim;ctx.lineWidth=.75;
     ctx.beginPath();ctx.moveTo(x+3,y+h*.45);ctx.bezierCurveTo(x+w*.38,y+h*.32,
