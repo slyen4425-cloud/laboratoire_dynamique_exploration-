@@ -50,12 +50,14 @@ export function appendSculptPreviewObject(objects,{
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantId}={}){
+export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantId,x,y}={}){
   const items=normalizeSculptPreviewObjects(objects);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
     if(item.id!==id)return item;
     const nextTransform={...item.transform};
+    if(Number.isFinite(x))nextTransform.x=x;
+    if(Number.isFinite(y))nextTransform.y=y;
     if(Number.isFinite(scale)&&scale>=.25&&scale<=1.2){
       nextTransform.scaleX=scale;nextTransform.scaleY=scale;
     }
@@ -63,6 +65,7 @@ export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantI
     const nextVariant=variantId===undefined?item.overrides.visualVariantId:
       validVariant(item.objectDefinitionId,variantId);
     if(nextTransform.scaleX===item.transform.scaleX&&
+       nextTransform.x===item.transform.x&&nextTransform.y===item.transform.y&&
        nextTransform.rotationDeg===item.transform.rotationDeg&&
        nextVariant===item.overrides.visualVariantId)return item;
     return normalizeWorldObjectPlacement({...item,transform:nextTransform,
