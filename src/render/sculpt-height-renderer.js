@@ -2,6 +2,7 @@
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
+import {drawSculptCliffAtlas} from './sculpt-cliff-atlas.js';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
@@ -131,7 +132,8 @@ export function sculptEastSeamBounds(tile,col,row,upper,lower){
     y:row*h-upper*rise+3,
     width:thickness,height:(upper-lower)*rise+h-3});
 }
-function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
+function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72,
+  cliffAtlas=null,rockPalette='warm',cliffMoss=false}={}){
   if(height<=0)return;
   const {corner,undulation,foot,toe}=sculptFaceContour({width,height,smoothness});
   // V12: the foot now curves OUTWARD into a broad rock toe, rather than
@@ -172,7 +174,9 @@ function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   sideGradient.addColorStop(1,'rgba(19,30,46,.19)');
   ctx.fillStyle=sideGradient;ctx.fillRect(x,y,width,height);
   // V45: mineral grain and uneven natural facets, clipped to old geometry.
-  paintSculptRockDetails(ctx,{x,y,width,height,seed,colors});
+  if(!drawSculptCliffAtlas(ctx,{image:cliffAtlas,rockPalette,colors,
+    x,y,width,height,seed,moss:cliffMoss}))
+    paintSculptRockDetails(ctx,{x,y,width,height,seed,colors});
   const layers=Math.min(5,Math.max(1,Math.floor(height/21)));
   for(let i=0;i<layers;i++){
     const offset=(hash(seed,i,17)%21-10)*.2;
@@ -511,7 +515,9 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   };
 }
 
-export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette='warm',visualSmoothness=.72,overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
+export function drawSculptTerrain(ctx,{terrain,material,texture=null,
+  rockPalette='warm',cliffAtlas=null,cliffMoss=false,visualSmoothness=.72,
+  overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -551,7 +557,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
       drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
       const side=east.get(idx);
       if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
-        colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness});
+        colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
+        rockPalette,cliffAtlas,cliffMoss});
     }
     for(let col=0;col<terrain.width;){
       const idx=row*terrain.width+col,first=south.get(idx);
@@ -573,7 +580,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,rockPalette
           width*.46,Math.max(1.5,5*runSmoothness),0,0,Math.PI*2);
         ctx.fill();ctx.restore();
       }
-      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:runSmoothness});
+      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:runSmoothness,
+        rockPalette,cliffAtlas,cliffMoss});
       if(runSmoothness>0){
         ctx.save();
         ctx.strokeStyle='rgba(45,48,48,.18)';ctx.lineWidth=.9;
