@@ -1,3 +1,14 @@
+# Lot assets visuels — 20/10/2026 — Maisons 2,5D (6 modèles, 23 vues)
+
+- **Demande créateur :** conserver les maisons obliques et ajouter des vues plus frontales, toujours en 2,5D, pour les retrouver dans Bâtiments / maisons (et auberge).
+- **Source V44 prévisualisée :** `809802015eb91d752016bafe1103e4d02ddd50e4` (commit figé référencé dans le workflow Pages de `main`).
+- **Checkpoint START :** `checkpoint/exploration-start-houses-2p5d-v1-2026-10-20` ; **branche :** `work/exploration-houses-2p5d-v1-2026-10-20`.
+- **Périmètre :** 23 fichiers WebP RGBA isolés, adaptateur WorldObject natif, définitions Building, manifeste SHA-256/bytes, test dédié ; aucun changement caméra, moteur, collision, placement ou données existantes.
+- **Critères :** tous les octets Git = sources (SHA Git), intégrité SHA-256 + RIFF/WEBP, six objets visibles, 4 vues sauf terre cuite (3), sentinelles `npm test && npm run check` et validation mobile du créateur avant GREEN final.
+- **État :** en cours de validation technique sur branche dédiée ; ne pas déclarer GREEN avant la CI et la validation utilisateur.
+
+---
+
 # Lot actif — 20/10/2026 — V44 sélection tactile et glissé d'objets fluides
 
 - **Retour créateur V43 :** « Parfait. Le déplacement et même la sélection d'objet placé sur la map galère (ralentissement etc) fonctionne mais galère ». V43 publiée techniquement GREEN, mais **refus de GREEN ergonomique et performance** par l'utilisateur ; on corrige avant les rencontres.
