@@ -47,11 +47,11 @@ function assertCompleteWebP(bytes, label) {
   );
 }
 
-test('World Object Asset Adapter exposes the four Bridge visuals', () => {
+test('World Object Asset Adapter preserves four legacy bridges and 28 new views', () => {
   const assets = listWorldObjectAssets()
     .filter((asset) => asset.kind === 'bridge-visual');
 
-  assert.equal(assets.length, 4);
+  assert.equal(assets.length, 32);
 
   for (const [id, path] of Object.entries(BRIDGE_EXPECTED)) {
     const asset = resolveWorldObjectAsset(id);

@@ -1,4 +1,173 @@
 const WORLD_OBJECT_ASSETS = Object.freeze({
+  'object.bridge.wood_rustic_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.wood_rustic_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_wood_rustic_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.wood_rustic_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.wood_rustic_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_wood_rustic_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.wood_rustic_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.wood_rustic_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_wood_rustic_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.wood_rustic_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.wood_rustic_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_wood_rustic_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.stone_arch_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.stone_arch_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_stone_arch_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.stone_arch_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.stone_arch_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_stone_arch_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.stone_arch_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.stone_arch_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_stone_arch_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.stone_arch_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.stone_arch_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_stone_arch_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.old_wood_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.old_wood_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_old_wood_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.old_wood_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.old_wood_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_old_wood_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.old_wood_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.old_wood_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_old_wood_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.old_wood_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.old_wood_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_old_wood_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.elegant_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.elegant_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_elegant_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.elegant_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.elegant_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_elegant_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.elegant_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.elegant_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_elegant_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.elegant_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.elegant_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_elegant_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.castle_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.castle_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_castle_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.castle_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.castle_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_castle_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.castle_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.castle_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_castle_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.castle_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.castle_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_castle_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.cobblestone_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.cobblestone_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_cobblestone_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.cobblestone_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.cobblestone_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_cobblestone_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.cobblestone_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.cobblestone_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_cobblestone_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.cobblestone_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.cobblestone_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_cobblestone_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.earth_crossing_2p5d.horizontal.01': Object.freeze({
+    id: 'object.bridge.earth_crossing_2p5d.horizontal.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_earth_crossing_2p5d_horizontal_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.earth_crossing_2p5d.vertical.01': Object.freeze({
+    id: 'object.bridge.earth_crossing_2p5d.vertical.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_earth_crossing_2p5d_vertical_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.earth_crossing_2p5d.diagonal_left.01': Object.freeze({
+    id: 'object.bridge.earth_crossing_2p5d.diagonal_left.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_earth_crossing_2p5d_diagonal_left_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+  'object.bridge.earth_crossing_2p5d.diagonal_right.01': Object.freeze({
+    id: 'object.bridge.earth_crossing_2p5d.diagonal_right.01',
+    kind: 'bridge-visual',
+    path: './assets/exploration/objects/bridges/bridge_earth_crossing_2p5d_diagonal_right_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, lengthScale: 1.35, widthScale: 2.35 })
+  }),
+
   'object.bridge.wood.rustic_bank.01': Object.freeze({
     id: 'object.bridge.wood.rustic_bank.01',
     kind: 'bridge-visual',

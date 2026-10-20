@@ -74,6 +74,133 @@ function normalizeDefinition(definition) {
 const DEFINITIONS = frozen([
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.wood_rustic_2p5d.01',
+    label: 'Pont en bois rustique 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.wood_rustic_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.wood_rustic_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.wood_rustic_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.wood_rustic_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.wood_rustic_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.stone_arch_2p5d.01',
+    label: 'Pont en pierre voûté 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.stone_arch_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.stone_arch_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.stone_arch_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.stone_arch_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.stone_arch_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.old_wood_2p5d.01',
+    label: 'Vieux pont en bois 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.old_wood_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.old_wood_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.old_wood_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.old_wood_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.old_wood_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.elegant_2p5d.01',
+    label: 'Pont élégant 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.elegant_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.elegant_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.elegant_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.elegant_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.elegant_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.castle_2p5d.01',
+    label: 'Pont de château 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.castle_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.castle_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.castle_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.castle_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.castle_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.cobblestone_2p5d.01',
+    label: 'Pont pavé 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.cobblestone_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.cobblestone_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.cobblestone_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.cobblestone_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.cobblestone_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.bridge.earth_crossing_2p5d.01',
+    label: 'Passage de terre 2,5D',
+    kind: 'bridge',
+    visual: {
+      assetId: 'object.bridge.earth_crossing_2p5d.horizontal.01',
+      defaultVariantId: 'horizontal',
+      variants: [
+        { id: 'horizontal', label: 'Horizontal', assetId: 'object.bridge.earth_crossing_2p5d.horizontal.01' },
+        { id: 'vertical', label: 'Vertical', assetId: 'object.bridge.earth_crossing_2p5d.vertical.01' },
+        { id: 'diagonal_left', label: 'Diagonale gauche', assetId: 'object.bridge.earth_crossing_2p5d.diagonal_left.01' },
+        { id: 'diagonal_right', label: 'Diagonale droite', assetId: 'object.bridge.earth_crossing_2p5d.diagonal_right.01' }
+      ]
+    },
+    baseSize: { length: 170, width: 96 },
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+  },
+
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.bridge.wood.rustic_bank.01',
     label: 'Pont bois rustique',
     kind: 'bridge',
