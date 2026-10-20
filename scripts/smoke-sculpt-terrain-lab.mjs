@@ -1293,6 +1293,42 @@ try{
     throw Error('V39 game camera angle/editor separation or real Chromium pixels failed: '+
       JSON.stringify(v39GameAngle));
   console.log('V39 Chromium game-only camera pitch, stable actor and editor:',JSON.stringify(v39GameAngle));
+  // V40: the ACTUAL Tester panel, live navigation context and editor
+  // scene must agree. Earlier V17/V39 real keyboard/pointer/camera gates remain.
+  const v40Passability=await run(`(async()=>{
+    const button=document.querySelector('#navigation-toggle');
+    const slider=document.querySelector('#navigation-max-step');
+    const label=document.querySelector('#navigation-max-step-value');
+    const scene=()=>{document.querySelector('#scene-export').click();
+      return document.querySelector('#json').value;};
+    const saved=scene(),before=window.__sculptLabProbe();
+    if(before.navigationTesting)return {error:'already navigating'};
+    button.click();
+    const initial=window.__sculptNavProbe(),
+      visible=!document.querySelector('#navigation-hud').hidden;
+    slider.value='1';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const strict=window.__sculptNavProbe(),strictLabel=label.textContent;
+    slider.value='3';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const permissive=window.__sculptNavProbe(),permissiveLabel=label.textContent;
+    slider.value='2';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const returned=window.__sculptNavProbe();
+    button.click();
+    const after=window.__sculptLabProbe();
+    return {initial:initial.maxStep,strict:strict.maxStep,strictLabel,
+      permissive:permissive.maxStep,permissiveLabel,returned:returned.maxStep,
+      visible,enabled:initial.enabled&&strict.enabled&&permissive.enabled,
+      editorRestored:!after.navigationTesting&&after.cameraView===before.cameraView,
+      terrainUnchanged:saved===scene()};
+  })()`);
+  if(v40Passability.error||v40Passability.initial!==2||
+    v40Passability.strict!==1||v40Passability.permissive!==3||
+    v40Passability.returned!==2||v40Passability.strictLabel!=='1'||
+    v40Passability.permissiveLabel!=='3'||!v40Passability.visible||
+    !v40Passability.enabled||!v40Passability.editorRestored||
+    !v40Passability.terrainUnchanged)
+    throw Error('V40 real Tester passability control or scene isolation failed: '+
+      JSON.stringify(v40Passability));
+  console.log('V40 Chromium real navigation step height UI, scene unchanged:',JSON.stringify(v40Passability));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
