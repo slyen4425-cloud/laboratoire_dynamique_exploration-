@@ -1492,6 +1492,112 @@ try{
   console.log('V42 Chromium real actor placement, selection, scale and Capture views:',
     JSON.stringify({setup:v42Setup,placed:v42Placed.actor,edit:v42Edit,
       imported:v42Imported}));
+
+  // V43: real wide landscape immersive toolbar; the old hard-coded 280px
+  // squeezed Terre/Eau/Objets into illegible icons even on large phones.
+  await send('Emulation.setDeviceMetricsOverride',{
+    width:1100,height:620,deviceScaleFactor:1,mobile:false});
+  const v43Toolbar=await run(`(()=>{ 
+    if(!document.body.classList.contains('sculpt-immersive'))
+      document.querySelector('#fullscreen-toggle').click();
+    const bar=document.querySelector('.editor-switch');
+    const br=bar.getBoundingClientRect();
+    const keys=['mode-ground','mode-water','mode-objects','mode-surface',
+      'navigation-toggle','new-map-toggle'];
+    const nodes=keys.map(id=>document.querySelector('#'+id));
+    return {immersive:document.body.classList.contains('sculpt-immersive'),
+      barWidth:br.width,viewport:innerWidth,buttonWidths:nodes.map(n=>n.getBoundingClientRect().width),
+      scrollWidth:bar.scrollWidth,clientWidth:bar.clientWidth};
+  })()`);
+  if(!v43Toolbar.immersive||v43Toolbar.barWidth<760||
+     v43Toolbar.buttonWidths.some(width=>width<48))
+    throw Error('V43 landscape toolbar still crammed: '+JSON.stringify(v43Toolbar));
+  // Create a dry scene using the REAL public new-map form, then use mouse
+  // and touch events through the native Canvas handlers, not a fake model call.
+  const v43Ready=await run(`(async()=>{
+    const cv=document.querySelector('#camera-view');
+    cv.value='classic';cv.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#new-map-toggle').click();
+    document.querySelector('#new-map-width').value='18';
+    document.querySelector('#new-map-height').value='12';
+    const confirm=document.querySelector('#new-map-confirm');
+    confirm.checked=true;confirm.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#new-map-create').click();
+    if(window.__sculptLabProbe().objectEditing)document.querySelector('#mode-objects').click();
+    document.querySelector('#mode-objects').click();
+    const category=document.querySelector('#object-category');
+    category.value='building';category.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#object-action').value='place';
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    // The top painted surface is offset by two levels (18px each).
+    const col=9,row=6,x=(col+.5)*28,y=(row+.5)*21-36;
+    const client={x:r.left+p.cameraPan.x+x*p.zoom,
+      y:r.top+p.cameraPan.y+y*p.zoom};
+    return {client,p,hit:document.elementFromPoint(client.x,client.y)?.id};
+  })()`);
+  if(v43Ready.hit!=='sculpt-canvas')
+    throw Error('V43 dry scene target hidden under UI: '+JSON.stringify(v43Ready));
+  const v43Mouse=async(type,point,buttons=0)=>send('Input.dispatchMouseEvent',{
+    type,x:point.x,y:point.y,button:buttons?'left':'none',buttons,
+    ...(type==='mousePressed'||type==='mouseReleased'?{button:'left',clickCount:1}:{})});
+  const originalPoint=v43Ready.client;
+  await v43Mouse('mouseMoved',originalPoint);
+  await v43Mouse('mousePressed',originalPoint,1);
+  await v43Mouse('mouseReleased',originalPoint);
+  const v43Placed=await run('window.__sculptObjectsProbe()');
+  if(v43Placed.count!==1)throw Error('V43 placement failed: '+JSON.stringify(v43Placed));
+  await run("document.querySelector('#object-action').value='select';"+
+    "document.querySelector('#object-action').dispatchEvent(new Event('change',{bubbles:true}));");
+  const dest={x:originalPoint.x+64,y:originalPoint.y+20};
+  await v43Mouse('mouseMoved',originalPoint);
+  await v43Mouse('mousePressed',originalPoint,1);
+  for(const f of [.25,.5,.75,1]){
+    await v43Mouse('mouseMoved',{x:originalPoint.x+(dest.x-originalPoint.x)*f,
+      y:originalPoint.y+(dest.y-originalPoint.y)*f},1);
+    await sleep(30);
+  }
+  await v43Mouse('mouseReleased',dest);
+  const v43Moved=await run(`(()=>{const p=window.__sculptObjectsProbe();
+    document.querySelector('#scene-export').click();
+    return {...p,exported:JSON.parse(document.querySelector('#json').value).objects[0]};
+  })()`);
+  const oldPosition=v43Placed.objects[0],newPosition=v43Moved.objects[0];
+  const expectedDx=64/v43Ready.p.zoom,expectedDy=20/v43Ready.p.zoom;
+  if(v43Moved.selectedId!==oldPosition.id||
+     v43Moved.count!==1||v43Moved.undoCount!==v43Placed.undoCount+1||
+     Math.abs(newPosition.x-oldPosition.x-expectedDx)>.08||
+     Math.abs(newPosition.y-oldPosition.y-expectedDy)>.08||
+     Math.abs(v43Moved.exported.transform.x-newPosition.x)>.00001||
+     !document.querySelector('#sculpt-canvas'))
+    throw Error('V43 real pointer drag/export/projection/undo failed: '+
+      JSON.stringify({v43Ready,v43Placed,v43Moved,expectedDx,expectedDy}));
+  const v43UndoRedo=await run(`(()=>{
+    document.querySelector('#object-undo').click();
+    const undo=window.__sculptObjectsProbe().objects[0];
+    document.querySelector('#object-redo').click();
+    return {undo,redo:window.__sculptObjectsProbe().objects[0]};
+  })()`);
+  if(Math.abs(v43UndoRedo.undo.x-oldPosition.x)>.0001||
+     Math.abs(v43UndoRedo.undo.y-oldPosition.y)>.0001||
+     Math.abs(v43UndoRedo.redo.x-newPosition.x)>.0001||
+     Math.abs(v43UndoRedo.redo.y-newPosition.y)>.0001)
+    throw Error('V43 one-action undo/redo for drag failed: '+JSON.stringify(v43UndoRedo));
+  const unchangedBeforeCancel=await run('window.__sculptObjectsProbe()');
+  const touchStart={x:dest.x,y:dest.y};
+  const touchMove={x:dest.x+33,y:dest.y-12};
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{...touchStart,id:7}]});
+  await send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{...touchMove,id:7}]});
+  await send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
+  const v43Cancelled=await run('window.__sculptObjectsProbe()');
+  if(Math.abs(v43Cancelled.objects[0].x-newPosition.x)>.0001||
+     Math.abs(v43Cancelled.objects[0].y-newPosition.y)>.0001||
+     v43Cancelled.undoCount!==unchangedBeforeCancel.undoCount)
+    throw Error('V43 pointercancel must restore object with no extra undo: '+
+      JSON.stringify({v43Cancelled,unchangedBeforeCancel}));
+  console.log('V43 Chromium landscape toolbar, real mouse drag, touch cancel and undo:',
+    JSON.stringify({bar:v43Toolbar,oldPosition,newPosition,
+      undoRedo:v43UndoRedo,cancelled:v43Cancelled.objects[0]}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
