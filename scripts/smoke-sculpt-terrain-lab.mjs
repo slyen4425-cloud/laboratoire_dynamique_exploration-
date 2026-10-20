@@ -1133,6 +1133,47 @@ try{
     throw Error('V37 user screenshot rear grassy plateau rim missing or false seam: '+
       JSON.stringify(v37RearRim));
   console.log('V37 real Chromium rear and west raised hill silhouettes:',JSON.stringify(v37RearRim));
+  // V45 mineral-rock prototype: actual painted Canvas pixels must show
+  // many natural color variations on a long cliff, without touching a flat
+  // terrain's top or the V37 grassy plateau rims tested above.
+  const v45Rock=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const renderer=await import('./src/render/sculpt-height-renderer.js');
+    const levels=Array(9*9).fill(2);
+    for(let x=2;x<=6;x++)levels[4*9+x]=5;
+    const lifted=model.createSculptTerrain({width:9,height:9,levels});
+    const flat=model.createSculptTerrain({width:9,height:9});
+    const render=(terrain,rockPalette)=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=9*28;canvas.height=9*21+7*18;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      const stats=renderer.drawSculptTerrain(ctx,{terrain,rockPalette,
+        material:{render:{baseColor:'#528d42'}}});
+      return {ctx,stats};
+    };
+    const warm=render(lifted,'warm'),granite=render(lifted,'granite');
+    const plain=render(flat,'warm'),plainOther=render(flat,'granite');
+    const colors=new Set();let variantPixels=0;
+    const rgb=(ctx,x,y)=>Array.from(ctx.getImageData(x,y,1,1).data).slice(0,3);
+    for(let y=23;y<=55;y+=2)for(let x=60;x<=188;x+=2){
+      const a=rgb(warm.ctx,x,y),b=rgb(granite.ctx,x,y);
+      colors.add(a.join(','));
+      if(a.join(',')!==b.join(','))variantPixels++;
+    }
+    let unchangedPlain=true;
+    for(const [x,y] of [[24,45],[80,62],[125,91],[167,140]]){
+      if(rgb(plain.ctx,x,y).join(',')!==rgb(plainOther.ctx,x,y).join(','))
+        unchangedPlain=false;
+    }
+    const selector=[...document.querySelector('#rock').options].map(o=>o.value);
+    return {variants:colors.size,differentPalettePixels:variantPixels,
+      unchangedPlain,faceRuns:warm.stats.faceRuns,choices:selector};
+  })()`);
+  if(v45Rock.variants<50||v45Rock.differentPalettePixels<120||
+     !v45Rock.unchangedPlain||v45Rock.faceRuns<1||
+     !['warm','slate','sandstone','dark','granite','ochre'].every(x=>v45Rock.choices.includes(x)))
+    throw Error('V45 true Canvas mineral texture, palette or old flat top regression: '+JSON.stringify(v45Rock));
+  console.log('V45 Chromium textured cliff mineral facets, six palettes, untouched plains:',JSON.stringify(v45Rock));
   // V38 real published path: both camera modes must redraw different actual
   // pixels without touching serialized terrain, and the screen->world inverse
   // must land a REAL browser click on the intended raised tile.
