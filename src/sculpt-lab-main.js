@@ -1363,7 +1363,8 @@ $('new-map-form').addEventListener('submit',event=>{
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
-  placedActors=blank.actors;actorHistory=[];actorRedo=[];updateActorCount();
+  placedActors=blank.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
+  updateActorCount();syncActorSelectedControls();
   surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
   updateSurfaceCount();
   objectHistory=[];objectRedo=[];history=[];redoHistory=[];
@@ -1442,7 +1443,8 @@ $('import').addEventListener('click',()=>{
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
-  placedActors=imported.actors;actorHistory=[];actorRedo=[];updateActorCount();
+  placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
+  updateActorCount();syncActorSelectedControls();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   loadSurfacePaintAssets();updateSurfaceCount();
   fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
