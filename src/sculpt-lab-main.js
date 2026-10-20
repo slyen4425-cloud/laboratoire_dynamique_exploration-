@@ -48,7 +48,7 @@ let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
-let objectSelectedId=null;
+let objectSelectedId=null,objectDrag=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
 function objectImage(assetId){
   if(objectImages.has(assetId))return objectImages.get(assetId);
@@ -312,11 +312,16 @@ function draw(){
     precisionOn?'Placement précis : vise au doigt sans modifier le terrain, puis confirme':'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
 }
 function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
-function screenToCell(event){
+function screenToWorldPoint(event){
   const rect=canvas.getBoundingClientRect();
-  // Exact inverse of the same affine camera used to draw terrain/preview.
-  const {x,y}=sculptCameraScreenToWorld(cameraView(),{
+  // One inverse shared by brush picking and object drag; drag itself NEVER
+  // snaps to a painted cell or subtracts an invented height offset.
+  return sculptCameraScreenToWorld(cameraView(),{
     screenX:event.clientX-rect.left,screenY:event.clientY-rect.top,pan,zoom});
+}
+function screenToCell(event){
+  // Exact inverse of the same affine camera used to draw terrain/preview.
+  const {x,y}=screenToWorldPoint(event);
   const col=Math.floor(x/SCULPT_TILE.width);
   if(col<0||col>=terrain.width)return null;
   // Pick the exposed top face, not a static projected pixel geometry.
@@ -477,7 +482,18 @@ function begin(event){
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
   if(objectEditing){
-    if(actorSubmode)applyActorAtCell(cell);else applyObjectAtCell(cell);
+    if(actorSubmode)applyActorAtCell(cell);
+    else{
+      applyObjectAtCell(cell);
+      if($('object-action').value==='select'&&objectSelectedId){
+        const selected=placedObjects.find(o=>o.id===objectSelectedId);
+        if(selected){
+          objectDrag={pointerId:event.pointerId,id:selected.id,
+            start:screenToWorldPoint(event),origin:{x:selected.transform.x,y:selected.transform.y},
+            before:placedObjects,client:{x:event.clientX,y:event.clientY},active:false};
+        }
+      }
+    }
     return;
   }
   if(surfaceEditing){
@@ -497,7 +513,30 @@ function begin(event){
   stroke(event);
 }
 function stroke(event){
-  if(navigationTesting||objectEditing)return;
+  if(navigationTesting)return;
+  if(objectEditing){
+    if(!objectDrag||objectDrag.pointerId!==event.pointerId)return;
+    if(event.pointerType==='mouse'&&event.buttons===0)return;
+    const source=objectDrag,world=screenToWorldPoint(event);
+    if(!Number.isFinite(world.x)||!Number.isFinite(world.y))return;
+    // Four CSS pixels avoid turning a simple select tap into a move.
+    if(!source.active&&Math.hypot(event.clientX-source.client.x,
+      event.clientY-source.client.y)<4)return;
+    const x=Math.max(.001,Math.min(terrain.width*SCULPT_TILE.width-.001,
+      source.origin.x+world.x-source.start.x));
+    const y=Math.max(.001,Math.min(terrain.height*SCULPT_TILE.height-.001,
+      source.origin.y+world.y-source.start.y));
+    // Placement in water is not valid for the normal object tool either.
+    if(sculptWaterAt(terrain,Math.floor(x/SCULPT_TILE.width),
+      Math.floor(y/SCULPT_TILE.height))>0)return;
+    const next=updateSculptPreviewObject(placedObjects,source.id,{x,y});
+    if(next.length!==placedObjects.length||
+       next.every((obj,i)=>obj===placedObjects[i]))return;
+    objectDrag.active=true;
+    canvas.classList.add('object-dragging');
+    placedObjects=next;scheduleDraw();
+    return;
+  }
   if(surfaceEditing){
     if(!surfaceDrawing){
       if(event.pointerType!=='touch'){
@@ -562,7 +601,24 @@ function stroke(event){
     applySculptStroke(strokeUndo,{...options,rockRoundness:Number($('visual-smooth').value)});
   scheduleDraw();
 }
-function stop(){
+function stop(event){
+  if(objectDrag){
+    const drag=objectDrag;objectDrag=null;
+    canvas.classList.remove('object-dragging');
+    const cancelled=event?.type==='pointercancel'||event?.type==='lostpointercapture';
+    if(cancelled){
+      placedObjects=drag.before;scheduleDraw();
+      status('Déplacement annulé : objet remis à sa place');return;
+    }
+    const changed=placedObjects.some((obj,i)=>obj!==drag.before[i]);
+    if(changed){
+      objectHistory.push(drag.before);
+      if(objectHistory.length>40)objectHistory.shift();
+      objectRedo=[];updateObjectCount();
+      status('Objet déplacé · ↶ Objet pour annuler · Exporter scène pour sauvegarder');
+    }
+    return;
+  }
   if(surfaceDrawing){
     surfaceDrawing=false;surfaceLastCell='';
     const changed=appendSculptSurfaceStroke(surface,{
