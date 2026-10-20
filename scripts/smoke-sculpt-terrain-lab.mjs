@@ -1219,6 +1219,60 @@ try{
      !['warm','slate','sandstone','dark','granite','ochre'].every(x=>v45Rock.choices.includes(x)))
     throw Error('V45 true Canvas mineral texture, palette or old flat top regression: '+JSON.stringify(v45Rock));
   console.log('V45 Chromium textured cliff mineral facets, six palettes, untouched plains:',JSON.stringify(v45Rock));
+  // V47: exercise the REAL binary WebP committed into source, not just
+  // palette/asset IDs. Missing binary must fail the browser gate, never pass
+  // silently via the old V45 renderer fallback.
+  const v47Cliff=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const renderer=await import('./src/render/sculpt-height-renderer.js');
+    const atlas=await import('./src/render/sculpt-cliff-atlas.js');
+    const image=new Image();
+    image.src=atlas.resolveSculptCliffAtlasUrl();
+    await image.decode();
+    if(!atlas.sculptCliffAtlasHasLayers(image))throw Error('V47 atlas wrong dimensions');
+    const levels=Array(9*9).fill(2);
+    for(let x=2;x<=6;x++)levels[4*9+x]=5;
+    const terrain=model.createSculptTerrain({width:9,height:9,levels});
+    const flat=model.createSculptTerrain({width:9,height:9});
+    const render=(t,rockPalette,img,moss=false)=>{
+      const c=document.createElement('canvas');
+      c.width=252;c.height=315;
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      renderer.drawSculptTerrain(ctx,{terrain:t,rockPalette,cliffAtlas:img,
+        cliffMoss:moss,material:{render:{baseColor:'#528d42'}}});
+      return ctx;
+    };
+    const old=render(terrain,'warm',null);
+    const newGray=render(terrain,'slate',image);
+    const newOchre=render(terrain,'warm',image);
+    const oldFlat=render(flat,'warm',null);
+    const newFlat=render(flat,'warm',image);
+    const get=(ctx,x,y)=>Array.from(ctx.getImageData(x,y,1,1).data).slice(0,3);
+    let changed=0,paletteChanged=0,flatChanged=0;
+    for(let y=22;y<=67;y+=2)for(let x=60;x<=192;x+=2){
+      const a=get(old,x,y).join(','),b=get(newGray,x,y).join(',');
+      const c=get(newOchre,x,y).join(',');
+      if(a!==b)changed++;
+      if(b!==c)paletteChanged++;
+    }
+    for(let y=18;y<177;y+=9)for(let x=18;x<224;x+=9)
+      if(get(oldFlat,x,y).join(',')!==get(newFlat,x,y).join(','))flatChanged++;
+    const palette=[...document.querySelector('#rock').options].map(x=>x.value);
+    const mossControl=document.querySelector('#rock-moss');
+    const hasActualPath=image.currentSrc.endsWith('/assets/sculpt/cliff-atlas-v47.webp');
+    const atlasLoaded=await new Promise(ok=>setTimeout(
+      ()=>ok(document.querySelector('#rock-moss')!==null),35));
+    return {dimensions:[image.naturalWidth,image.naturalHeight],hasActualPath,
+      changed,paletteChanged,flatChanged,
+      paletteCount:palette.length,mossAvailable:!!mossControl,atlasLoaded};
+  })()`);
+  if(v47Cliff.dimensions[0]!==192||v47Cliff.dimensions[1]!==160||
+     !v47Cliff.hasActualPath||v47Cliff.changed<100||
+     v47Cliff.paletteChanged<100||v47Cliff.flatChanged!==0||
+     v47Cliff.paletteCount<6||!v47Cliff.mossAvailable||!v47Cliff.atlasLoaded)
+    throw Error('V47 browser actual WebP atlas/rock pixels/flat invariant: '+JSON.stringify(v47Cliff));
+  console.log('V47 Chromium real binary WebP, cliff facings, palettes and ground:',
+    JSON.stringify(v47Cliff));
   // V38 real published path: both camera modes must redraw different actual
   // pixels without touching serialized terrain, and the screen->world inverse
   // must land a REAL browser click on the intended raised tile.
