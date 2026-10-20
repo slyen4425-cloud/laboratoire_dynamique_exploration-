@@ -1,3 +1,17 @@
+# Lot actif — 20/10/2026 — V44 sélection tactile et glissé d'objets fluides
+
+- **Retour créateur V43 :** « Parfait. Le déplacement et même la sélection d'objet placé sur la map galère (ralentissement etc) fonctionne mais galère ». V43 publiée techniquement GREEN, mais **refus de GREEN ergonomique et performance** par l'utilisateur ; on corrige avant les rencontres.
+- **Base publiée V43** `29e85ef92f1d07f42edafa7f79429bb4377afb7d`, [CI #39415813739](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39415813739) GREEN, [Pages #39416225444](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39416225444) SUCCESS ; checkpoint départ `checkpoint/exploration-start-sculpt-object-pick-perf-v44-2026-10-20`, branche `work/exploration-sculpt-object-pick-perf-v44-2026-10-20`.
+- **Diagnostic confirmé :** en édition Objets, chaque `pointermove` V43 provoque un `drawSculptTerrain` complet ; la sélection part d'un `screenToCell` (case visible/centre) et cherche autour de l'ancre brute, ignorant la vraie position visuelle décalée par le relief et la rotation.
+- **Périmètre/propriétaire :** uniquement éditeur Labo Sculpture, optimisation de `draw()` via cache de décor existant `navigationBackground()` en mode Objets sans changer le cache en mode Terrain ; autorité unique de rectangle *visuel* dérivé du WorldObjectPlacement + ObjectCatalog, partagée entre `drawPreviewObjects` et ciblage de sélection/suppression. Glisser continu écran->monde, un seul undo/redo par geste ; aucun clic raté converti en drag du dernier objet sélectionné.
+- **Fichiers :** `src/render/sculpt-object-picking.js` (bornes/rotation dérivées, non collision), `src/sculpt-lab-main.js` (sélection directe au doigt + cache décor), `sculpt-lab.html` (cache bust), tests Node réels + smoke Chromium tactile (hit visuel sur relief, rotation, sélection mauvaise-case, cache invalidation, glissé, ancienne V43), journal checkpoint.
+- **Invariants gelés :** caméra V39/V43, sommet/texture/liseré V37, ciel V41, passabilité V40, objets natifs et données sérialisées, cinq arbres, acteurs V42, physique/mouvement, Editor sol et eau, Capture/Combat, Builder, GenSrpG. Cache seulement visuel, ne modifie pas WorldDocument.
+- **Tests/Gate :** preuve que `navigationBackground` ne reconstruit pas la surface à chaque déplacement d'objet, même 10 événements ; même image décor, sélection sur silhouette surélevée et pivotée, retrait, annulation tactile, touch/mouse, retour éditeur sans fuite ; CI Node/Chromium/Builder/Combat, source épinglée, Pages ; validation mobile créateur avant GREEN.
+- **Hors périmètre :** rencontres [#177](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/177), textures [#181](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/181), réglages verrouillables [#180](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/180).
+- **Statut :** V44 en cours ; aucune publication avant CI verte.
+
+---
+
 # Lot actif — 20/10/2026 — V43 barre d'outils paysage + glisser-déposer natif des objets
 
 - **Retour créateur et capture :** « Juste parfait » sur V42 (échelle/vues + arbres). Deux retouches avant le raccord des rencontres : la barre principale immersive est écrasée en haut à gauche malgré la largeur disponible et les objets placés (bâtiments/arbres/roches) devraient pouvoir être repositionnés au doigt maintenu en mode « Sélectionner / modifier ».
