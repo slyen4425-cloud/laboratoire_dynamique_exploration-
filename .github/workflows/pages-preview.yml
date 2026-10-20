@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-actor-presentation-v42-prevalidation-2026-10-20
+# preview-revision: sculpt-v42-plus-generated-trees-v1-prevalidation-2026-10-20
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: d3878ceb9ffbeac0c9da81f007b786d69590ea6b
+          ref: dc8cb651e88916332515aa2ff6e0846af362bba0
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
