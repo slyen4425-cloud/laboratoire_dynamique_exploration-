@@ -48,7 +48,11 @@ export function createMapActorRenderer({
           );
         }
 
-        const worldHeight = visual.targetHeight;
+        // Scale only the picture and contact shadow; movement/collision stay
+        // in World coordinates controlled elsewhere.
+        const visualScale=Number.isFinite(actor.visualScale)&&actor.visualScale>=.25&&actor.visualScale<=2
+          ?actor.visualScale:1;
+        const worldHeight = visual.targetHeight * visualScale;
         const worldWidth =
           worldHeight * prepared.aspectRatio;
         const anchor = actorAnchor(visual, prepared);
