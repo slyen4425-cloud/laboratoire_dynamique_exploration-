@@ -5,6 +5,7 @@ import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rear-rim-v37';
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
+import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample,sculptNavigationBlockDetail} from './core/sculpt-navigation-collision.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
@@ -66,7 +67,24 @@ const navKeys=new Set();
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
-let navTerrainCache=null;
+let navTerrainCache=null,navSkyCache=null;
+// Background only. Cache by actual viewport + sky options, not by character
+// position or frame: stars/clouds never allocate a new canvas each movement.
+function navigationSkyBackdrop(width,height){
+  const time=$('navigation-sky-time').value;
+  const clouds=$('navigation-sky-clouds').checked;
+  const mist=$('navigation-sky-mist').checked;
+  const stars=$('navigation-sky-stars').checked;
+  const key=[Math.ceil(width),Math.ceil(height),time,clouds,mist,stars].join('|');
+  if(navSkyCache?.key===key)return navSkyCache;
+  const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
+  const image=document.createElement('canvas');
+  image.width=Math.ceil(width*scale);image.height=Math.ceil(height*scale);
+  const imageCtx=image.getContext('2d',{alpha:false});
+  imageCtx.setTransform(scale,0,0,scale,0,0);
+  const stats=drawSculptSkyBackdrop(imageCtx,{width,height,time,clouds,mist,stars});
+  return navSkyCache={key,image,stats};
+}
 function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigation-camera-zoom').value)/100||1.75));}
 /* Only the static sculpt raster is cached. Actor, objects, collision, input,
    camera and height data retain their existing owners and update separately. */
@@ -208,7 +226,12 @@ function draw(){
   if(canvas.width!==desiredW)canvas.width=desiredW;
   if(canvas.height!==desiredH)canvas.height=desiredH;
   ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
+  if(navigationTesting){
+    const sky=navigationSkyBackdrop(width,height);
+    ctx.drawImage(sky.image,0,0,width,height);
+  }else{
+    ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
+  }
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const view=cameraView();
   // Editor keeps the published V38 exact inverse pointer projection. In
@@ -751,6 +774,15 @@ function setNavigationTesting(on){
   }
   scheduleDraw();
 }
+for(const id of ['navigation-sky-time','navigation-sky-clouds','navigation-sky-mist','navigation-sky-stars']){
+  $(id).addEventListener('change',()=>{navSkyCache=null;scheduleDraw();});
+}
+window.__sculptSkyProbe=()=>Object.freeze({
+  time:$('navigation-sky-time').value,clouds:$('navigation-sky-clouds').checked,
+  mist:$('navigation-sky-mist').checked,stars:$('navigation-sky-stars').checked,
+  cached:!!navSkyCache,stats:navSkyCache?.stats??null,
+  size:navSkyCache?{width:navSkyCache.image.width,height:navSkyCache.image.height}:null
+});
 $('navigation-max-step').addEventListener('input',()=>{
   $('navigation-max-step-value').textContent=String(navigationMaxStep());
   navBlocked=false;navBlockReason=null;
