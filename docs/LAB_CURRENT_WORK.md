@@ -1,3 +1,16 @@
+# Lot actif — 20/10/2026 — V48 relief roche : dégradé d'ombre, variations et netteté
+
+- **Retour visuel créateur sur V47 (20 octobre)** : direction du vrai motif roche confirmée (« c'est mieux, la direction est mieux »), mais atlas **trop répétitif et flou**, demande explicite de **garder le dégradé d'ombre pour la profondeur**. V47 **NON GREEN esthétique**.
+- **Référence et gel :** V47 source publiée immuable `3b79161355b6c65ec10afe0dabc5851f71fca513`, CI [#39460619430](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39460619430) SUCCESS, Pages [#39461194018](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39461194018) SUCCESS, PR #189. START `checkpoint/exploration-start-cliff-depth-variety-v48-2026-10-20` et branche `work/exploration-cliff-depth-variety-v48-2026-10-20`. Pas d'écriture de code dans `main`.
+- **Objectif immédiat (correctif sans nouvel asset)** : sur l'Atlas V47 existant, rétablir les ombres *par-dessus* la texture (gradient doux haut→bas et accent directionnel sur les flancs), ajouter quelques zones facettées de variation de motif à offsets déterministes **sans quadrillage ni recouvrement opaque**, conserver plusieurs palettes et la mousse optionnelle. Pas de redessin du sol ou du liseré V37.
+- **Problème encore identifié mais non résolu par seul code** : la base atlas V47 est à **96×96 px** par texture. Cette résolution native explique une grande part du flou ; ce correctif ne prétend **pas** fabriquer des détails absents. Le lot suivant (ou sous-lot asset) doit compiler un atlas à partir des PNG sources 1254×1254 vérifiées et réellement commités, avec source SHA-256/bytes/RIFF, sans upscaler le 96×96. Ne jamais appeler une simple interpolation « haute résolution ». Si transfert binaire impossible après deux essais : appliquer charte §12.1.1.
+- **Propriétaire** : Exploration Renderer/Asset Adapter `src/render/sculpt-cliff-atlas.js`; garde `src/render/sculpt-height-renderer.js` et coordonnées monde ; test `tests/sculpt-cliff-texture-atlas-v47.test.js` et vrai Chromium du labo.
+- **Gel des lots acceptés** : eau V46 et mousse de rive, liseré V37, caméra V39, passabilité V40, ciel V41, acteurs V42, objets/drag V44, 6 bâtiments V46 et leurs 23 variantes, WorldDocument, heightfield, Collision World, Combat/Builder. Ne pas ajouter de paramètre de collision depuis la texture.
+- **Gates** : plan de variations déterministes-borné; pixels réels vérifient gradient de profondeur sur paroi pleine en palette grise/ocre et absence de variation hors paroi; niveau d'eau et surface herbe intacts; performance raster V44, 6 palettes, RIFF/SHA atlas V47; CI complète, checkpoint SHA figé, publication infra seulement, retour visuel du créateur avant GREEN.
+- **Statut** : V48 en développement ; le flou intrinsèque de l'image base n'est pas résolu avant nouvel asset haute définition.
+
+---
+
 # Lot V47 — 20/10/2026 — textures illustrées de falaise, motifs et variations
 
 - **Demande créateur :** eau V46 validée ; roche V45 rejetée visuellement. Tester un **vrai atlas d'images** (base grise et ocre, fissures et facettes, mousse optionnelle) sur les faces verticales plutôt que le bruit procédural, avec différentes palettes éditables.
