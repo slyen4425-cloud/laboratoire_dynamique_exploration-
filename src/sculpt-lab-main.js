@@ -22,6 +22,7 @@ import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js';
+import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js';
 import {isBlocked} from './core/collision.js';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
@@ -69,7 +70,7 @@ const navKeys=new Set();
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
-let navTerrainCache=null,navSkyCache=null;
+let navTerrainCache=null,navSkyCache=null,terrainRasterBuilds=0;
 // Background only. Cache by actual viewport + sky options, not by character
 // position or frame: stars/clouds never allocate a new canvas each movement.
 function navigationSkyBackdrop(width,height){
@@ -114,6 +115,7 @@ function navigationBackground(){
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
     rockPalette,visualSmoothness:smoothness,overlays:ribbonTextures,
     paintSurface:surface,paintImages:surfacePaintImages});
+  terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
     paintSurface:surface,image:raster,scale,paddingX,paddingY,result};
@@ -240,12 +242,15 @@ function draw(){
   // Tester, project only the background texture, not standing actor sprites.
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   let result;
-  if(navigationTesting){
+  if(navigationTesting||objectEditing){
+    // Reuse the EXISTING terrain-only raster while editing object placements.
+    // The ground doesn't change during a drag: mobile pointermove now paints
+    // just a cached background plus live objects, never 36x24 tile effects.
     const snapshot=navigationBackground();
-    ctx.save();ctx.transform(1,view.shear,0,view.pitch,0,0);
+    if(navigationTesting){ctx.save();ctx.transform(1,view.shear,0,view.pitch,0,0);}
     ctx.drawImage(snapshot.image,-snapshot.paddingX,-snapshot.paddingY,
       snapshot.image.width/snapshot.scale,snapshot.image.height/snapshot.scale);
-    ctx.restore();
+    if(navigationTesting)ctx.restore();
     result=snapshot.result;
   }else{
     const material=registry.require($('material').value,'surface');
@@ -478,22 +483,31 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(objectEditing&&!actorSubmode&&$('object-action').value!=='place'){
+    // Aim at what the finger SEES: elevated, rotated visible object artwork.
+    // A touch never needs to hit the invisible ground cell/center.
+    const at=screenToWorldPoint(event);
+    const hit=findSculptVisualObjectAtPoint(placedObjects,terrain,at,{zoom});
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    if($('object-action').value==='remove'){
+      if(hit&&objectCommit(removeSculptPreviewObject(placedObjects,hit.id))){
+        syncObjectSelectedControls();status('Objet supprimé');
+      }else if(!hit)status('Aucun objet sous le doigt');
+      return;
+    }
+    objectSelectedId=hit?.id??null;
+    syncObjectSelectedControls();scheduleDraw();
+    objectDrag=hit?{pointerId:event.pointerId,id:hit.id,start:at,
+      origin:{x:hit.transform.x,y:hit.transform.y},
+      before:placedObjects,client:{x:event.clientX,y:event.clientY},active:false}:null;
+    status(hit?'Objet sélectionné : glisse directement pour déplacer':'Aucun objet sous le doigt');
+    return;
+  }
   const cell=screenToCell(event);if(!cell)return;
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
   if(objectEditing){
-    if(actorSubmode)applyActorAtCell(cell);
-    else{
-      applyObjectAtCell(cell);
-      if($('object-action').value==='select'&&objectSelectedId){
-        const selected=placedObjects.find(o=>o.id===objectSelectedId);
-        if(selected){
-          objectDrag={pointerId:event.pointerId,id:selected.id,
-            start:screenToWorldPoint(event),origin:{x:selected.transform.x,y:selected.transform.y},
-            before:placedObjects,client:{x:event.clientX,y:event.clientY},active:false};
-        }
-      }
-    }
+    if(actorSubmode)applyActorAtCell(cell);else applyObjectAtCell(cell);
     return;
   }
   if(surfaceEditing){
@@ -933,13 +947,11 @@ function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
   for(const object of objects){
     const art=objectImage(object.visual?.assetId);
     if(!art?.complete||!art.naturalWidth)continue;
-    const t=object.transform,base=object.baseSize;
-    const width=(base?.width??base?.length??80)*t.scaleX;
-    const height=(base?.height??base?.width??80)*t.scaleY;
-    const x=t.x,y=t.y-sculptHeightAt(terrain,
-      Math.floor(t.x/SCULPT_TILE.width),Math.floor(t.y/SCULPT_TILE.height))*SCULPT_TILE.rise;
-    const point=navigationTesting?sculptCameraProject(cameraView(),x,y):{x,y};
-    ctx.save();ctx.translate(point.x,point.y);ctx.rotate(t.rotationDeg*Math.PI/180);
+    const rect=sculptObjectVisualRect(object,terrain,{
+      tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
+    const {width,height}=rect;
+    const point=navigationTesting?sculptCameraProject(cameraView(),rect.x,rect.y):rect;
+    ctx.save();ctx.translate(point.x,point.y);ctx.rotate(rect.angle);
     ctx.drawImage(art,-width/2,-height,width,height);
     if(objectEditing&&objectSelectedId===object.id){
       ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
@@ -1317,6 +1329,7 @@ $('object-redo').addEventListener('click',()=>{
 refreshObjectOptions();updateObjectCount();
 window.__sculptObjectsProbe=()=>Object.freeze({
   active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
+  terrainRasterBuilds,cachedGround:!!navTerrainCache,
   undoCount:objectHistory.length,redoCount:objectRedo.length,
   variantChoices:[...$('object-variant').options].map(o=>o.value),
   definitions:availableObjects.length,
