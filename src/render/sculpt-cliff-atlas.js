@@ -3,13 +3,13 @@
 // Atlas is precompiled from the five hand-reviewed generated art layers.
 export const SCULPT_CLIFF_ATLAS_V47=Object.freeze({
   file:'../../assets/sculpt/cliff-atlas-v47.webp',
-  width:256,height:213,
+  width:192,height:160,
   layers:Object.freeze({
-    gray:Object.freeze({x:0,y:0,width:128,height:128}),
-    ochre:Object.freeze({x:128,y:0,width:128,height:128}),
-    cracks:Object.freeze({x:0,y:128,width:85,height:85}),
-    chunks:Object.freeze({x:85,y:128,width:85,height:85}),
-    moss:Object.freeze({x:170,y:128,width:85,height:85})
+    gray:Object.freeze({x:0,y:0,width:96,height:96}),
+    ochre:Object.freeze({x:96,y:0,width:96,height:96}),
+    cracks:Object.freeze({x:0,y:96,width:64,height:64}),
+    chunks:Object.freeze({x:64,y:96,width:64,height:64}),
+    moss:Object.freeze({x:128,y:96,width:64,height:64})
   })
 });
 export function resolveSculptCliffAtlasUrl(){
