@@ -43,6 +43,38 @@ function splitAtlas(image){
   textureCache.set(image,cached);
   return cached;
 }
+// Stable low-cost visual relief islands. The base atlas stays world-anchored;
+// only limited patches are offset to break the visible 96px repeat. Never
+// create a second geometry, collision or surface model.
+function cliffHash(seed,salt){
+  let n=Math.imul((seed|0)^(salt*761),2246822519)|0;
+  n=Math.imul(n^(n>>>13),3266489917);
+  return (n^(n>>>16))>>>0;
+}
+export function sculptCliffVariationPlan({width=0,height=0,seed=0}={}){
+  if(!Number.isFinite(width)||!Number.isFinite(height)||width<42||height<27)
+    return Object.freeze([]);
+  const count=Math.max(1,Math.min(6,Math.floor(width/110)+Math.floor(height/92)+1));
+  const out=[];
+  for(let i=0;i<count;i++){
+    const q=cliffHash(seed,i+17),col=(i+.5)/count;
+    const centerX=width*(col+((q%29)-14)/160/count);
+    const centerY=height*(.18+((q>>>8)%61)/100);
+    const radiusX=Math.min(65,width/count*.47);
+    const radiusY=Math.min(30,height*.26);
+    const points=Object.freeze([
+      Object.freeze([centerX-radiusX*.88,centerY-radiusY*.2]),
+      Object.freeze([centerX-radiusX*.35,centerY-radiusY]),
+      Object.freeze([centerX+radiusX*.49,centerY-radiusY*.85]),
+      Object.freeze([centerX+radiusX,centerY+radiusY*.17]),
+      Object.freeze([centerX+radiusX*.31,centerY+radiusY]),
+      Object.freeze([centerX-radiusX*.74,centerY+radiusY*.54])
+    ]);
+    out.push(Object.freeze({points,opacity:.12+(q%12)/100,
+      offsetSeed:(q%40)+1}));
+  }
+  return Object.freeze(out);
+}
 // Called from within rockFace's PREEXISTING clipping path. Pattern coordinates
 // are world-anchored to keep neighboring horizontal cliff runs continuous.
 export function drawSculptCliffAtlas(ctx,{
@@ -63,7 +95,19 @@ export function drawSculptCliffAtlas(ctx,{
     ctx.fillStyle=pattern;
     ctx.fillRect(x,y,width,height);
   };
-  paint(cliffAtlasTheme(rockPalette),.88);
+  const base=cliffAtlasTheme(rockPalette);
+  paint(base,.86);
+  // Distinct soft, faceted irregular islands offset the original artwork
+  // without a seam-producing horizontal tile grid; only a handful per run.
+  for(const patch of sculptCliffVariationPlan({width,height,seed})){
+    ctx.save();ctx.beginPath();
+    patch.points.forEach(([dx,dy],i)=>{
+      if(i===0)ctx.moveTo(x+dx,y+dy);else ctx.lineTo(x+dx,y+dy);
+    });
+    ctx.closePath();ctx.clip();
+    paint(base,patch.opacity,patch.offsetSeed);
+    ctx.restore();
+  }
   // Keep existing palette's directional lighting: dark preset should stay
   // dark, warm presets remain golden without adding new material authorities.
   if(colors&&rockPalette==='dark'){
@@ -77,6 +121,22 @@ export function drawSculptCliffAtlas(ctx,{
   paint('cracks',.35,1);
   if((seed&3)!==1)paint('chunks',.18,1);
   if(moss&&seed%5===0)paint('moss',.22,1);
+  // The V47 texture had hidden most of the V37/V45 rock depth gradient
+  // underneath opaque paint. Reintroduce it LAST, within the already clipped
+  // cliff silhouette: pale upper wall, deeper shadow down at the rock foot.
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  const depth=ctx.createLinearGradient(x,y,x,y+height);
+  depth.addColorStop(0,'rgba(14,21,34,0.00)');
+  depth.addColorStop(.28,'rgba(14,21,34,0.04)');
+  depth.addColorStop(.73,'rgba(14,21,34,0.18)');
+  depth.addColorStop(1,'rgba(14,21,34,0.33)');
+  ctx.fillStyle=depth;ctx.fillRect(x,y,width,height);
+  // Directional shade gives the flat cliff its side-facing volume as in V37.
+  const side=ctx.createLinearGradient(x,y,x+width,y);
+  side.addColorStop(0,'rgba(249,229,194,.10)');
+  side.addColorStop(.40,'rgba(15,22,33,.01)');
+  side.addColorStop(1,'rgba(13,20,34,.17)');
+  ctx.fillStyle=side;ctx.fillRect(x,y,width,height);
   ctx.restore();
   return true;
 }
