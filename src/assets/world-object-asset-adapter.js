@@ -106,139 +106,139 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
   'object.building.house.blue_cottage_2p5d.front.01': Object.freeze({
     id: 'object.building.house.blue_cottage_2p5d.front.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_blue_cottage_front_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_front_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.blue_cottage_2p5d.oblique.01': Object.freeze({
     id: 'object.building.house.blue_cottage_2p5d.oblique.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_blue_cottage_oblique_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_oblique_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.blue_cottage_2p5d.side.01': Object.freeze({
     id: 'object.building.house.blue_cottage_2p5d.side.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_blue_cottage_side_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.blue_cottage_2p5d.back.01': Object.freeze({
     id: 'object.building.house.blue_cottage_2p5d.back.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_blue_cottage_back_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.red_tile_2p5d.front.01': Object.freeze({
     id: 'object.building.house.red_tile_2p5d.front.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_red_tile_front_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_red_tile_2p5d_front_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.red_tile_2p5d.oblique.01': Object.freeze({
     id: 'object.building.house.red_tile_2p5d.oblique.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_red_tile_oblique_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_red_tile_2p5d_oblique_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.red_tile_2p5d.side.01': Object.freeze({
     id: 'object.building.house.red_tile_2p5d.side.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_red_tile_side_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_red_tile_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.red_tile_2p5d.back.01': Object.freeze({
     id: 'object.building.house.red_tile_2p5d.back.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_red_tile_back_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_red_tile_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.green_moss_2p5d.front.01': Object.freeze({
     id: 'object.building.house.green_moss_2p5d.front.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_green_moss_front_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_green_moss_2p5d_front_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.green_moss_2p5d.oblique.01': Object.freeze({
     id: 'object.building.house.green_moss_2p5d.oblique.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_green_moss_oblique_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_green_moss_2p5d_oblique_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.green_moss_2p5d.side.01': Object.freeze({
     id: 'object.building.house.green_moss_2p5d.side.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_green_moss_side_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_green_moss_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.green_moss_2p5d.back.01': Object.freeze({
     id: 'object.building.house.green_moss_2p5d.back.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_green_moss_back_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_green_moss_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.inn.golden_thatch_2p5d.front.01': Object.freeze({
     id: 'object.building.inn.golden_thatch_2p5d.front.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_front_01.webp',
+    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_front_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.inn.golden_thatch_2p5d.oblique.01': Object.freeze({
     id: 'object.building.inn.golden_thatch_2p5d.oblique.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_oblique_01.webp',
+    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_oblique_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.inn.golden_thatch_2p5d.side.01': Object.freeze({
     id: 'object.building.inn.golden_thatch_2p5d.side.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_side_01.webp',
+    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.inn.golden_thatch_2p5d.back.01': Object.freeze({
     id: 'object.building.inn.golden_thatch_2p5d.back.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_back_01.webp',
+    path: './assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.purple_ivy_2p5d.front.01': Object.freeze({
     id: 'object.building.house.purple_ivy_2p5d.front.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_purple_ivy_front_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_front_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.purple_ivy_2p5d.oblique.01': Object.freeze({
     id: 'object.building.house.purple_ivy_2p5d.oblique.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_purple_ivy_oblique_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_oblique_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.purple_ivy_2p5d.side.01': Object.freeze({
     id: 'object.building.house.purple_ivy_2p5d.side.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_purple_ivy_side_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.purple_ivy_2p5d.back.01': Object.freeze({
     id: 'object.building.house.purple_ivy_2p5d.back.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_purple_ivy_back_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.terracotta_2p5d.oblique.01': Object.freeze({
     id: 'object.building.house.terracotta_2p5d.oblique.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_terracotta_oblique_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_terracotta_2p5d_oblique_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.terracotta_2p5d.side.01': Object.freeze({
     id: 'object.building.house.terracotta_2p5d.side.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_terracotta_side_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_terracotta_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.building.house.terracotta_2p5d.back.01': Object.freeze({
     id: 'object.building.house.terracotta_2p5d.back.01',
     kind: 'building-visual',
-    path: './assets/exploration/objects/buildings/building_house_terracotta_back_01.webp',
+    path: './assets/exploration/objects/buildings/building_house_terracotta_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
   'object.tree.forest.pine_dense.01': Object.freeze({

@@ -76,7 +76,7 @@ test('six new 2.5D houses resolve in the native building catalog and reuse the e
   for(const v of item.views){
    const asset='object.building.'+item.family+'.'+item.name+'_2p5d.'+v+'.01';
    assert.equal(def.visual.variants.find(x=>x.id===v).assetId,asset);
-   assert.equal(resolveWorldObjectAsset(asset)?.path,'./assets/exploration/objects/buildings/building_'+item.family+'_'+item.name+'_'+v+'_01.webp');
+   assert.equal(resolveWorldObjectAsset(asset)?.path,'./assets/exploration/objects/buildings/building_'+item.family+'_'+item.name+'_2p5d_'+v+'_01.webp');
   }
  }
 });
