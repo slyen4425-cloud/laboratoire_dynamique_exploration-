@@ -1329,6 +1329,56 @@ try{
     throw Error('V40 real Tester passability control or scene isolation failed: '+
       JSON.stringify(v40Passability));
   console.log('V40 Chromium real navigation step height UI, scene unchanged:',JSON.stringify(v40Passability));
+  // V41: real Canvas background, four time-of-day choices, optional cloud/fog,
+  // stars at night only, and exact editor return with no authored data changes.
+  const v41Sky=await run(`(async()=>{
+    const button=document.querySelector('#navigation-toggle');
+    const time=document.querySelector('#navigation-sky-time');
+    const clouds=document.querySelector('#navigation-sky-clouds');
+    const mist=document.querySelector('#navigation-sky-mist');
+    const stars=document.querySelector('#navigation-sky-stars');
+    const redraw=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const sample=()=>{
+      const ctx=document.querySelector('#sculpt-canvas').getContext('2d',{willReadFrequently:true});
+      return Array.from(ctx.getImageData(3,3,1,1).data).slice(0,3);
+    };
+    const scene=()=>{document.querySelector('#scene-export').click();
+      return document.querySelector('#json').value;};
+    const before=window.__sculptLabProbe(),saved=scene();
+    await redraw();await redraw();const editorPixel=sample();
+    if(before.navigationTesting)return {error:'unexpected Tester mode at start'};
+    button.click();await redraw();await redraw();
+    const palette={};
+    for(const value of ['morning','midday','evening','night']){
+      time.value=value;time.dispatchEvent(new Event('change',{bubbles:true}));
+      await redraw();await redraw();
+      palette[value]={pixel:sample(),sky:window.__sculptSkyProbe()};
+    }
+    const paintedStars=palette.night.sky.stats.starsDrawn;
+    stars.checked=false;stars.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();const starsOff=window.__sculptSkyProbe().stats.starsDrawn;
+    clouds.checked=false;clouds.dispatchEvent(new Event('change',{bubbles:true}));
+    mist.checked=false;mist.dispatchEvent(new Event('change',{bubbles:true}));
+    await redraw();await redraw();const noWeather=window.__sculptSkyProbe().stats;
+    button.click();await redraw();await redraw();
+    const after=window.__sculptLabProbe(),returnPixel=sample();
+    const rgb=p=>p.join(',');
+    return {dayPixels:Object.fromEntries(Object.entries(palette).map(([k,v])=>[k,v.pixel])),
+      uniqueColors:new Set(Object.values(palette).map(v=>rgb(v.pixel))).size,
+      allOpaqueEditor:editorPixel.join(',')===returnPixel.join(','),
+      editorRestored:!after.navigationTesting&&after.cameraView===before.cameraView,
+      originalData:saved===scene(),
+      nightStars:paintedStars,dayStars:Object.fromEntries(
+        ['morning','midday','evening'].map(k=>[k,palette[k].sky.stats.starsDrawn])),
+      starsOff,cloudsOff:noWeather.cloudsDrawn===0,
+      mistOff:noWeather.mist===false};
+  })()`);
+  if(v41Sky.error||v41Sky.uniqueColors<4||v41Sky.nightStars!==72||
+    Object.values(v41Sky.dayStars).some(n=>n!==0)||
+    v41Sky.starsOff!==0||!v41Sky.cloudsOff||!v41Sky.mistOff||
+    !v41Sky.editorRestored||!v41Sky.allOpaqueEditor||!v41Sky.originalData)
+    throw Error('V41 real sky/time/night or editor separation failed: '+JSON.stringify(v41Sky));
+  console.log('V41 Chromium four sky modes weather stars and editor unchanged:',JSON.stringify(v41Sky));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
