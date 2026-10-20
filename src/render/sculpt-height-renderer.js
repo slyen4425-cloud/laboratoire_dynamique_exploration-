@@ -1,12 +1,15 @@
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js';
+import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
   slate:['#abb4b5','#7d929a','#566a78','#3b4e5d'],
   sandstone:['#d6b68e','#b98e72','#966f61','#745861'],
-  dark:['#89878c','#65616e','#494b58','#323843']
+  dark:['#89878c','#65616e','#494b58','#323843'],
+  granite:['#c9c4b9','#a7a39f','#777c7b','#484f51'],
+  ochre:['#e3c4a0','#c59673','#96694f','#5f514b']
 });
 function hash(x,y,z=0){
   let n=Math.imul(x+71,374761393)+Math.imul(y+19,668265263)+Math.imul(z+3,1442695041);
@@ -168,16 +171,22 @@ function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72}){
   sideGradient.addColorStop(.38+shift*.18,'rgba(245,227,197,.035)');
   sideGradient.addColorStop(1,'rgba(19,30,46,.19)');
   ctx.fillStyle=sideGradient;ctx.fillRect(x,y,width,height);
-  const layers=Math.min(8,Math.max(1,Math.floor(height/13)));
+  // V45: mineral grain and uneven natural facets, clipped to old geometry.
+  paintSculptRockDetails(ctx,{x,y,width,height,seed,colors});
+  const layers=Math.min(5,Math.max(1,Math.floor(height/21)));
   for(let i=0;i<layers;i++){
     const offset=(hash(seed,i,17)%21-10)*.2;
     const lineY=y+height*(i+.42)/layers+offset;
     ctx.beginPath();
-    ctx.moveTo(x+2,lineY+2);
-    ctx.bezierCurveTo(x+width*.28,lineY-2,x+width*.7,lineY+2.2,
-      x+width-2,lineY-1);
-    ctx.lineWidth=.72;
-    ctx.strokeStyle=i%3===0?'rgba(239,214,182,.23)':'rgba(28,36,51,.16)';
+    const start=x+width*((hash(seed,i,29)%39)/100);
+    const span=width*(.20+(hash(seed,i,31)%39)/100);
+    const end=Math.min(x+width-1,start+span);
+    ctx.moveTo(start,lineY+2);
+    ctx.lineTo(start+span*.31,lineY-1+(hash(seed,i,45)%5));
+    ctx.lineTo(start+span*.65,lineY+2-(hash(seed,i,46)%4));
+    ctx.lineTo(end,lineY-1);
+    ctx.lineWidth=.55+(hash(seed,i,44)%6)*.055;
+    ctx.strokeStyle=i%3===0?'rgba(239,214,182,.20)':'rgba(28,36,51,.14)';
     ctx.stroke();
   }
   // Small recessed seams and shaded facets, deterministic per world cell.
