@@ -1,3 +1,15 @@
+# Lot visuels — 20/10/2026 — Sept ponts 2,5D multidirectionnels (28 vues)
+
+- **Demande créateur :** générer les 7 styles bois, pierre, vieux, chic, château, pavé, passage de terre, puis découper/nommer/raccorder au labo Exploration > Ponts, en 4 orientations : horizontale, verticale, diagonale gauche et diagonale droite.
+- **Source immuable V48 / dernier GREEN technique de publication :** `623bc4a84254793b9073b24508448333da5f1014` ; START `checkpoint/exploration-start-bridges-2p5d-v1-2026-10-20` ; BRANCHE `work/exploration-bridges-2p5d-v1-2026-10-20`.
+- **Périmètre :** 28 WebP RGBA 512×512 issus des 7 planches PNG 1254×1254 ; intégration au registre Asset Adapter existant et 7 définitions Bridge avec variantes natives ; manifeste SHA-256 + octets réels, RIFF/WEBP, test dédié. Aucune nouvelle autorité de sélection ou de traversée.
+- **Gel obligatoire :** intégrité des anciens ponts, anciens bâtiments 2,5D, arbre, WorldModel/Placement/Renderer/Collision, corridor/edgeAssist, caméra, sculpture relief V48 (ombres, roche, eau), Capture Combat, GenSrpG, World Builder UI.
+- **Risque suivi :** le visuel par orientation ne remplace pas le transform de passage existant ; contrôle manuel smartphone des 4 variantes + rotation, lisibilité, liaison aux berges. Fond mat clair supprimé après génération ; tout halo doit être vérifié visuellement.
+- **Sentinelles :** Node test des 7×4 images, adapter/catégorie/variants, hash+bytes sur binaires Git, `npm test && npm run check`, vraie CI branche, Pages sur source figée ; ne pas confondre publication technique et GREEN créateur.
+- **Prochaine étape :** publier pour test visuel mobile après CI, en préservant les chantiers plus récents s'ils surviennent.
+
+---
+
 # Lot actif — 20/10/2026 — V48 relief roche : dégradé d'ombre, variations et netteté
 
 - **Retour visuel créateur sur V47 (20 octobre)** : direction du vrai motif roche confirmée (« c'est mieux, la direction est mieux »), mais atlas **trop répétitif et flou**, demande explicite de **garder le dégradé d'ombre pour la profondeur**. V47 **NON GREEN esthétique**.
