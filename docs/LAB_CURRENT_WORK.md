@@ -1,3 +1,17 @@
+# Lot actif — 20/10/2026 — V45 matériau roche/terre sculptée 2,5D
+
+- **Validation récente :** V44 créateur GREEN esthétique/ergonomique (« La perfection, c'est magnifique ») le 20/10/2026 ; objectif suivant rendu **roches de falaise moins répétitives, vraies aspérités, différentes formes et teintes**, conserver choix de palettes, sans asset généré par défaut.
+- **Base publiée validée :** code V44 immuable `809802015eb91d752016bafe1103e4d02ddd50e4` ; [CI source #39423716320](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39423716320) et [Pages #39424251818](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39424251818) SUCCESS ; main infra `ce1aaccd1f9b832869392c3060d4869c429318f8`. Checkpoint départ `checkpoint/exploration-start-sculpt-rock-detail-v45-2026-10-20` ; travail `work/exploration-sculpt-rock-detail-v45-2026-10-20`.
+- **Périmètre :** rendu visuel **roches/parois** du `src/render/sculpt-height-renderer.js` : sous-texture minérale déterministe et réutilisée en cache, facettes de roche naturelles variables par segment, fines fissures/veines, contraste directionnel et palettes chaudes/froides existantes. Liseré V37 et forme du plateau conservés. **Aucun changement des hauteurs, faces canonisées, collisions ou matériel WorldDocument.**
+- **Responsabilités :** rendu = Exploration Renderer ; choix palettes visuelles existantes ; module `src/render/sculpt-rock-detail.js` pour la planification déterministe/la texture de grain cachée ; no second material registry or shape authority. `sculpt-lab.html` et `src/sculpt-lab-main.js` seulement si cache-bust requis.
+- **Invariants :** V44 sélection/glissé fluide (terrain raster mis en cache), V39 caméra, V40 passabilité, V41 ciel, V42 acteurs, V37 liseré quatre côtés, eau V33, objet/terrain/export/surface/collisions inchangés. Le rendu ne fait pas de texture recalculée par frame. Conserver rendu ancien plateau hors paroi.
+- **Gate :** test pur bornes/seed/grain réutilisé ; vraie toile Chromium (pixel rock visible et non uniforme; 4 palettes discriminables; points de bord V37 inchangés; surfaces plates identiques; export JSON inchangé; cache de V44), CI complète, checkpoint prevalidation SHA figé, infra PR Pages, retour smartphone créateur avant GREEN.
+- **Exclu :** arrondissement **des berges d'eau** (lot V46 dédié après validation/prévalidation V45, sans toucher collisions), rencontre Capture [#177](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/177), nouvelles illustrations bitmap décidées avec créateur uniquement si V45 procédural insuffisant.
+- **Risque :** petites falaises trop chargées / ligne de fracture ressemblant à briques, performance création sur mobile ; limiter détails à la taille de surface et cache fractal unique.
+- **État :** en développement, pas GREEN.
+
+---
+
 # Lot actif — 20/10/2026 — V44 sélection tactile et glissé d'objets fluides
 
 - **Retour créateur V43 :** « Parfait. Le déplacement et même la sélection d'objet placé sur la map galère (ralentissement etc) fonctionne mais galère ». V43 publiée techniquement GREEN, mais **refus de GREEN ergonomique et performance** par l'utilisateur ; on corrige avant les rencontres.
