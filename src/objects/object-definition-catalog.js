@@ -283,6 +283,119 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.blue_cottage_2p5d.01',
+    label: 'Maison 2,5D · Toit bleu',
+    kind: 'building',
+    visual: {
+      assetId: 'object.building.house.blue_cottage_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Avant 2,5D', assetId: 'object.building.house.blue_cottage_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.building.house.blue_cottage_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.building.house.blue_cottage_2p5d.side.01' },
+        { id: 'back', label: 'Arrière', assetId: 'object.building.house.blue_cottage_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 260, height: 240 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.red_tile_2p5d.01',
+    label: 'Maison 2,5D · Toit rouge',
+    kind: 'building',
+    visual: {
+      assetId: 'object.building.house.red_tile_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Avant 2,5D', assetId: 'object.building.house.red_tile_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.building.house.red_tile_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.building.house.red_tile_2p5d.side.01' },
+        { id: 'back', label: 'Arrière', assetId: 'object.building.house.red_tile_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 280, height: 250 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.green_moss_2p5d.01',
+    label: 'Maison 2,5D · Toit vert',
+    kind: 'building',
+    visual: {
+      assetId: 'object.building.house.green_moss_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Avant 2,5D', assetId: 'object.building.house.green_moss_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.building.house.green_moss_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.building.house.green_moss_2p5d.side.01' },
+        { id: 'back', label: 'Arrière', assetId: 'object.building.house.green_moss_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 270, height: 245 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.inn.golden_thatch_2p5d.01',
+    label: 'Auberge 2,5D · Chaume doré',
+    kind: 'building',
+    visual: {
+      assetId: 'object.building.inn.golden_thatch_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Avant 2,5D', assetId: 'object.building.inn.golden_thatch_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.building.inn.golden_thatch_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.building.inn.golden_thatch_2p5d.side.01' },
+        { id: 'back', label: 'Arrière', assetId: 'object.building.inn.golden_thatch_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 440, height: 330 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.purple_ivy_2p5d.01',
+    label: 'Maison 2,5D · Toit violet',
+    kind: 'building',
+    visual: {
+      assetId: 'object.building.house.purple_ivy_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Avant 2,5D', assetId: 'object.building.house.purple_ivy_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.building.house.purple_ivy_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.building.house.purple_ivy_2p5d.side.01' },
+        { id: 'back', label: 'Arrière', assetId: 'object.building.house.purple_ivy_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 275, height: 245 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.terracotta_2p5d.01',
+    label: 'Maison 2,5D · Terre cuite',
+    kind: 'building',
+    visual: {
+      assetId: 'object.building.house.terracotta_2p5d.oblique.01',
+      defaultVariantId: 'oblique',
+      variants: [
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.building.house.terracotta_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.building.house.terracotta_2p5d.side.01' },
+        { id: 'back', label: 'Arrière', assetId: 'object.building.house.terracotta_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 270, height: 240 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.tree.forest.pine_dense.01', label: 'Pin dense 2,5D', kind: 'tree',
     visual: { assetId: 'object.tree.forest.pine_dense.01' },
     baseSize: { width: 180, height: 230 },

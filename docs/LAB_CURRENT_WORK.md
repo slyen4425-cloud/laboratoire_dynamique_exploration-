@@ -1,3 +1,15 @@
+# Lot assets visuels — 20/10/2026 — Six bâtiments 2,5D raccordés à V46
+
+- **Demande créateur :** découper 6 bâtiments / 23 vues, conserver les trois-quarts d'origine et ajouter les vues plus frontales, dans Bâtiments du laboratoire Exploration.
+- **Base de reprise protégée :** V46 `4a0f2d78e5a2fe86d801d38874750ab98742f149` (roches V45 et berges V46 conservées). Lot de maisons validé techniquement sur V44 : `cad1b30c1b6d42f550c5524ac42bf4de5cd57c96` ; [CI GREEN #39431809188](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39431809188).
+- **START :** `checkpoint/exploration-start-houses-2p5d-v1-v46-2026-10-20` ; **branche :** `work/exploration-houses-2p5d-v1-v46-2026-10-20`.
+- **Périmètre :** 23 WebP transparents natifs (384 × 384), manifeste SHA-256/bytes/RIFF, adapter visuel natif, catalogue Building avec variantes avant / trois-quarts / côté / arrière (terre cuite : trois vues) et tests spécifiques. Fichiers anciens et conventions existantes conservés.
+- **Propriétaires :** Asset Adapter (résolution unique) et ObjectDefinitionCatalog (variants) ; **gelés :** moteur, caméra, rendu, collisions, hauteur/roches, eau V46, rencontre, Builder, Combat, GenSrpG, UI.
+- **Validation :** CI complète `npm test && npm run check` et sentinelles navigateur, intégrité des binaires commités, présence des 6 objets dans catégorie native Bâtiments ; validation visuelle smartphone du créateur attendue avant GREEN final.
+- **Prochaine action :** vérifier CI sur cette base V46, puis publier en conservant la source figée, sans rétrograder les autres chantiers.
+
+---
+
 # Lot actif — 20/10/2026 — V46 arrondis visuels des berges d'eau sculptée
 
 - **Demande créateur :** « pour l'eau, quand on la dessine ... vachement carré ... arrondis par moments ». La V45 roche visuelle `8dca9d98640f3af4397b5ed2b02b21e9a10b6bd7` est GREEN technique mais **attend l'avis esthétique de l'utilisateur** ; V44 ergonomie validée.
