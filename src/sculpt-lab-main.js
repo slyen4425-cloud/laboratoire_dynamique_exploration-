@@ -487,7 +487,9 @@ function selectMode(mode){
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
   if(nextKind==='water')lastWaterMode=mode;else lastGroundMode=mode;
-  if(editorKind!==nextKind)setEditorKind(nextKind);
+  // Quickbar can be used while Objects or Textures is active even when the
+  // last terrain kind was already 'ground'. Always exit the overlay editor.
+  if(editorKind!==nextKind||objectEditing||surfaceEditing)setEditorKind(nextKind);
   $('active-tool-label').textContent=(nextKind==='water'?'Eau':'Terre')+' · '+mode;
   document.querySelectorAll('[data-mode]').forEach(button=>{
     const active=button.dataset.mode===mode;
@@ -500,6 +502,12 @@ function selectMode(mode){
     // One tap selects one plateau, and the tool starts with a VISIBLE effect.
     // The old 95 % persisted from prior controls and silently did nothing.
     $('radius').value='.5';$('radius').dispatchEvent(new Event('input',{bubbles:true}));
+    // This tool promises one tap. The precision selector previously swallowed
+    // the tap and waited for a second hidden confirmation action.
+    if($('precision-mode').checked){
+      $('precision-mode').checked=false;
+      $('precision-mode').dispatchEvent(new Event('change',{bubbles:true}));
+    }
     if(Number($('visual-smooth').value)<=95){
       $('visual-smooth').value='150';
       $('visual-smooth').dispatchEvent(new Event('input',{bubbles:true}));
