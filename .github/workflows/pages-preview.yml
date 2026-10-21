@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: rocks-2p5d-v59-prevalidation-2026-10-21
+# preview-revision: bridge-bank-v62-prevalidation-2026-10-21
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: b3d9068f29066ac90f9b38773cce5753555897a3
+          ref: 62cf2f200dee8a92a4d184ecc427e38af196b1db
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
