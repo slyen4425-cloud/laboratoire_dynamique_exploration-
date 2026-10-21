@@ -17,10 +17,21 @@ export function sculptBridgeDeckArtShift(rect,object){
 export function sculptBridgeForegroundClip({width,height}={},artShift=0){
   const w=Math.max(0,Number(width)||0),h=Math.max(0,Number(height)||0);
   if(!w||!h)return Object.freeze({x:0,y:0,width:0,height:0});
-  // The original square WebP includes both far and near rail in one image.
-  // Near rail and supports occupy its front-most lower portion. Keep them in
-  // front of the hero but leave the far rail and decking behind the hero.
-  return Object.freeze({x:-w*.5,y:-h*.60+Math.max(0,Number(artShift)||0),width:w,height:h*.60});
+  // V68: a billboard bridge is painted in full BEHIND the character.
+  // The second pass must include only the rail/outer stone skirt BELOW the
+  // walkable deck. V67 started at y = -.05*h and repainted boards across the
+  // hero's torso, despite correct WorldObject x/y and bridge-deck anchoring.
+  // The centre of the deck is local y=0 after artShift=.55*h. Clip starts
+  // strictly after the actor's standing plane (+.12h), so its feet and body
+  // remain on top of the planks at all camera angles. Historic sprites
+  // without a deck anchor retain the legacy clipping contract.
+  const shifted=Math.max(0,Number(artShift)||0);
+  if(shifted<=0)
+    return Object.freeze({x:-w*.5,y:-h*.60,width:w,height:h*.60});
+  const lowerArtEdge=shifted;
+  const nearRailTop=h*.12;
+  return Object.freeze({x:-w*.5,y:nearRailTop,width:w,
+    height:Math.max(0,lowerArtEdge-nearRailTop)});
 }
 export function sculptBridgeVisualFootLift(rect,object=null){
   // The V67 sprite itself is now deck-aligned: no per-character compensation.
