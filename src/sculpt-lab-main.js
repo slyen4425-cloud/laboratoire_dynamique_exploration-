@@ -33,7 +33,7 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
-  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-polish-v56';
+  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64';
 import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
