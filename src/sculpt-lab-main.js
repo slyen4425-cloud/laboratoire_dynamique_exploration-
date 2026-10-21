@@ -1280,7 +1280,7 @@ function setObjectEditing(active){
       $('mode-'+domain).setAttribute('aria-pressed','false');
     }
     $('active-tool-label').textContent='Objets · toucher pour placer ou supprimer';
-    status('Choisis Bâtiments, Arbres ou Rochers, puis touche la carte.');
+    status('Choisis Bâtiments, Arbres, Rochers ou Ponts, puis touche la carte.');
   }else{
     for(const domain of ['ground','water']){
       const active=editorKind===domain;
@@ -1310,10 +1310,13 @@ function applyObjectAtCell(cell){
     }
     return;
   }
-  if(sculptWaterAt(terrain,cell.x,cell.y)>0){
+  const definitionId=$('object-definition').value;
+  const definition=objectDefinitionCatalogV1.get(definitionId);
+  // Only canonical bridges may span water. No water height, collision or
+  // traversal rule is changed by the editor placement decision.
+  if(sculptWaterAt(terrain,cell.x,cell.y)>0&&definition?.kind!=='bridge'){
     status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
   }
-  const definitionId=$('object-definition').value;
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
     scale:Number($('object-scale').value)/100,
     rotationDeg:Number($('object-rotation').value),
@@ -1362,6 +1365,8 @@ window.__sculptObjectsProbe=()=>Object.freeze({
   undoCount:objectHistory.length,redoCount:objectRedo.length,
   variantChoices:[...$('object-variant').options].map(o=>o.value),
   definitions:availableObjects.length,
+  categories:[...$('object-category').options].map(o=>o.value),
+  filteredDefinitions:[...$('object-definition').options].map(o=>o.value),
   objects:placedObjects.map(o=>({id:o.id,definition:o.objectDefinitionId,
     x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
     visualVariantId:o.overrides.visualVariantId})),
