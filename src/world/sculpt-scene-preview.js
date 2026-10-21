@@ -58,7 +58,9 @@ export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantI
     const nextTransform={...item.transform};
     if(Number.isFinite(x))nextTransform.x=x;
     if(Number.isFinite(y))nextTransform.y=y;
-    if(Number.isFinite(scale)&&scale>=.25&&scale<=1.2){
+    const definition=objectDefinitionCatalogV1.get(item.objectDefinitionId);
+    const maxScale=definition?.kind==='bridge'?3:1.2;
+    if(Number.isFinite(scale)&&scale>=.25&&scale<=maxScale){
       nextTransform.scaleX=scale;nextTransform.scaleY=scale;
     }
     if(Number.isFinite(rotationDeg))nextTransform.rotationDeg=rotationDeg;
