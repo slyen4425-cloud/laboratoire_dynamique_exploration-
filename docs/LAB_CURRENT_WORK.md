@@ -1,3 +1,17 @@
+# Lot actif — 21/10/2026 — V50 conciliation falaises HD V49 et ponts publiés
+
+- **Retour créateur :** roches V47/V48 meilleure direction mais encore floues et répétitives ; conserver impérativement le dégradé d'ombre supérieur→pied et les ombres latérales. L'eau V46 est acceptée. Les 7 ponts / 28 vues 2,5D ont été publiés depuis sur le socle V48 : ne surtout pas les rétrograder.
+- **Base publique immuable :** `e8b8c52ccc382a3b2cccf3bb05416ee0607165b1` (ponts sur V48), [Pages #39494477615](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39494477615) SUCCESS ; START `checkpoint/exploration-start-cliff-hd-bridge-reconcile-v50-2026-10-21` et branche `work/exploration-cliff-hd-bridge-reconcile-v50-2026-10-21`, créées sur exactement cette source.
+- **Origine compatible du changement :** V49 HD code prévalidé `d4dd683ac4d0bcd302f9c2647819cd130f1c42f1` (source sur V48) avec [CI #39492624038](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39492624038), [checkpoint CI #39492806773](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39492806773) SUCCESS. PR infra #191 désormais **en conflit** suite à publication des ponts PR #192 sur main ; ne pas merger V49 ancien pin (régression).
+- **Périmètre unique :** reporter UNIQUEMENT les 9 fichiers runtime/test/atlas/manifest de V49 HD sur le socle ponts sans écraser l'adapter/catégories ponts et sans mélanger les autorités. Nouvelle source intégrée V50, tests Node/Chromium + 28 ponts, nouvelle prévalidation, nouvelle PR infra épinglant CE SHA. Close superseded #191 seulement après publication sans régression.
+- **Ownership :** Renderer / Asset Adapter visuel lit base grise/ocre HD 256px tirée des PNG originaux 1254px ; dégradés et décals de V48 conservés. Pas de nouvelles règles de collisions, aucune écriture terrain ou WorldDocument.
+- **Sentinelles gelées :** V46 eau douce validée, V37 liseré, V39 caméra, V40 passage, V41 ciel, V42 acteurs, V44 drag mobile, six maisons/23 vues, sept ponts/28 vues, Builder/Combat et rencontres existantes, Material Registry, export/import ; portrait/paysage et cache raster stables.
+- **Prévalidation :** les octets du WebP V49 et le SHA-256 manifest sont identiques aux fichiers source testés; tests V49 pixel netteté/gradient/réelle image; 28 ponts depuis leur manifeste et Chromium; aucune double autorité. La qualité sur téléphone reste **NON GREEN créateur** avant son prochain test.
+- **Exclus :** changements esthétiques supplémentaires, nouveaux assets et raccord Rencontre/Combat ; uniquement conciliation cohérente de deux lots GREEN techniques déjà existants.
+- **Statut :** intégration en cours, aucun déploiement annoncé.
+
+---
+
 # Lot visuels — 20/10/2026 — Sept ponts 2,5D multidirectionnels (28 vues)
 
 - **Demande créateur :** générer les 7 styles bois, pierre, vieux, chic, château, pavé, passage de terre, puis découper/nommer/raccorder au labo Exploration > Ponts, en 4 orientations : horizontale, verticale, diagonale gauche et diagonale droite.
