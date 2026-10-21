@@ -8,7 +8,7 @@
 - **Gel :** V54 herbe/roche, V55 couloir et axes, eau V46, HD V50, V52 bordures, Catalog/ObjectDefinitions, WorldDocument/Core, performance de drag V44, moteurs Combat et rencontres.
 - **Tests :** échelle jusqu'à 300% pont seulement, export/import, vraie scène navigateur, composant blanc isolé retiré / détail connecté conservé / halo légèrement adouci, 28 assets toujours byte-identiques, CI et perf raster. Gate Pixel visuel ensuite.
 - **Risque :** ne pas effacer de vrais petits détails clairs (surveillance visuelle nécessaire) ; filtres ciblés et conservation d'un fallback image si contexte Canvas inaccessible.
-- **Statut :** nouveau lot ouvert sur source technique V55, pas encore publié ni GREEN esthétique.
+- **Statut :** V56 GREEN technique prévalidation sur source `4a241028341495324b18a1be31a6807a19e92b05`, CI #39579812751 SUCCESS (tests Node / check / Chromium). Les 3 lots V54/V55/V56 sont codés et techniquement contrôlés ; publication Pages commune en préparation, avis Pixel toujours requis. Checkpoint documentaire `EXPLORATION_BRIDGE_POLISH_V56_PREVALIDATION_2026-10-21.md`.
 
 ---
 
