@@ -206,7 +206,7 @@ try{
     document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
     document.querySelector('#export').click();
     return JSON.parse(document.querySelector('#json').value);
-  })`);
+  })()`);
   await sleep(130);
   const v52Point=await run(`(()=>{
     const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
