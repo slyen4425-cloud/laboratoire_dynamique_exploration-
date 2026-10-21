@@ -50,6 +50,6 @@ test('V65 controller and Tester expose live physical corridor, no gameplay write
  assert.match(src,/ctx\.lineTo\(point\.x,point\.y\)/);
  assert.match(src,/navigation-show-bridge-corridor/);
  assert.match(html,/Afficher le passage réel des ponts/);
- assert.match(html,/rev=sculpt-bridge-camera-v65/);
+ assert.match(html,/rev=sculpt-(?:bridge-camera-v65|bridge-input-v66)/);
  assert.doesNotMatch(src,/navActor\.y\s*[-+]=\s*sculptBridgeVisualFootLift/);
 });
