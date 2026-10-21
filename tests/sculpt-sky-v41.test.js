@@ -46,5 +46,5 @@ test('V41 is scoped to Tester and uses one fixed background cache, no animated t
   assert.equal((html.match(/id="navigation-sky-clouds"/g)||[]).length,1);
   assert.equal((html.match(/id="navigation-sky-mist"/g)||[]).length,1);
   assert.equal((html.match(/id="navigation-sky-stars"/g)||[]).length,1);
-  assert.match(html,/rev=sculpt-(?:sky-v41|actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54|bridge-crossing-v55)/);
+  assert.match(html,/rev=sculpt-(?:sky-v41|actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56)/);
 });
