@@ -77,6 +77,8 @@ test('V61 controller makes one tap effective and renderer applies one coherent g
  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  assert.match(main,/TOUCHE UNE FOIS LE MILIEU/);
  assert.match(main,/\$\('radius'\)\.value='\.5'/);
+ assert.match(main,/editorKind!==nextKind\|\|objectEditing\|\|surfaceEditing/);
+ assert.match(main,/\$\('precision-mode'\)\.checked=false/);
  assert.match(renderer,/sculptRoundedHillRegions\(terrain\)/);
  assert.match(renderer,/sculptClipRoundedHill\(ctx,roundedHill,tile\)/);
  assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-whole-hill-v61/);
