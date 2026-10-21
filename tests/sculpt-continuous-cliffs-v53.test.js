@@ -60,8 +60,8 @@ test('V53 gesture preview reports the same roundness modification as the real br
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
-  assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-continuous-cliff-v53/);
-  assert.match(main,/sculpt-height-renderer\.js\?rev=sculpt-continuous-cliff-v53/);
+  assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-rounded-hills-v54/);
+  assert.match(main,/sculpt-height-renderer\.js\?rev=sculpt-rounded-hills-v54/);
   assert.match(main,/rockRoundness:selectedMode==='cliff-round'/);
   assert.match(render,/mode==='cliff-round'\?'Arrondi '\+after\+' %'/);
   assert.match(render,/sculptSouthCliffContinuousPath\(ctx,faces,profiles,tile/);
