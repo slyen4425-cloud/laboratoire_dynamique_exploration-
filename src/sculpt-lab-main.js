@@ -22,6 +22,7 @@ import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.j
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
+import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-polish-v56';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js';
@@ -58,7 +59,13 @@ function objectImage(assetId){
   const resolved=resolveWorldObjectAsset(assetId);
   if(!resolved)return null;
   const picture=new Image();
-  picture.onload=scheduleDraw;
+  picture.onload=()=>{
+    // Preserve the original asset and authoritative collision transform:
+    // this is an image-only cached alpha presentation for bridge sprites.
+    if(resolved.kind==='bridge-visual')
+      objectImages.set(assetId,prepareSculptBridgeImage(picture));
+    scheduleDraw();
+  };
   picture.onerror=()=>status('Impossible de charger le visuel '+assetId);
   picture.src=resolved.path;
   objectImages.set(assetId,picture);
@@ -990,7 +997,8 @@ function drawPreviewObjects(maxY=Infinity,minY=-Infinity){
     .sort((a,b)=>a.transform.y-b.transform.y);
   for(const object of objects){
     const art=objectImage(object.visual?.assetId);
-    if(!art?.complete||!art.naturalWidth)continue;
+    if(!art||(art instanceof Image&&!art.complete)||
+       !(art.naturalWidth??art.width))continue;
     const rect=sculptObjectVisualRect(object,terrain,{
       tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
     const {width,height}=rect;
