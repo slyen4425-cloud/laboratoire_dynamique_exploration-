@@ -1,3 +1,16 @@
+# V64 — 21/10/2026 — Déplacer les ponts sur l’eau / dans un ravin, édition tactile cohérente
+
+- **Retour utilisateur sur deux plateaux hauts :** aligner pont aux berges difficile ; l'éditeur autorise pont placé dans l'eau mais refuse ensuite de le glisser sur l'eau (code `stroke` et `applyObjectAtCell` en conflit).
+- **Source technique de départ :** V63 immuable `c48cb79e6a00cff61c1865d050da6a7b485b37bc`, [CI #39646484427](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39646484427) SUCCESS ; checkpoint `checkpoint/exploration-high-platform-bridge-v63-prevalidation-2026-10-21`. START `checkpoint/exploration-start-bridge-tactile-water-v64-2026-10-21`; branche `work/exploration-bridge-tactile-water-v64-2026-10-21`, tirée exactement de V63.
+- **Cause :** lors d'un drag Object palette, le contrôle interdit toute cellule humide avant même de lire le `kind` de l'objet, alors que la pose d'un WorldObject bridge la permet. Le moteur de traversée n'a aucune autorité dans le geste de l'éditeur.
+- **Périmètre :** centraliser dans l'éditeur de scène le droit de poser/déplacer un WorldObject bridge sur la case humide, et maintenir l'interdiction pour Bâtiments/Arbres/Rochers. Corriger le chemin réel doigt → sélection visuelle → drag → WorldObject transform → export/import, avec sentinelles. Aucun ajustement automatique de la position des ponts ni de la collision.
+- **Propriétaire :** Sculpt Scene Preview possède les commandes de placement/validation ; Controller adapte le pointer. Le Water Model reste source de `waterLevels[]`; Collision World et Bridge Traversal intouchés.
+- **Gel :** source V63 dimensions visuelles, V60 traversée, V61 collines, V62 projection des appuis, V58 alpha, eau V46, roche V50, 20 rochers, Combat, sauvegarde map.
+- **Tests :** poser puis glisser pont au-dessus de l'eau, autres objets rejetés, variantes/scale restent lors drag, vrai navigateur Chromium et CI, conservation scene.
+- **Statut :** en cours, sans GREEN esthétique Pixel. Publication seulement après CI complète sur source immuable et autorisation preview infra.
+
+---
+
 # V63 — 21/10/2026 — Parcours entre DEUX plateaux surélevés, ponts selon leur échelle
 
 - **Retour direct du créateur :** deux surfaces hautes + pont entre elles = passage difficile ou impossible. Retour répété sur l'impression de traverser le pont. V60/V62 GREEN **uniquement techniques**, pas de validation gameplay/visuelle Pixel.
