@@ -1,3 +1,15 @@
+# Lot actif — 21/10/2026 — V53 contour de falaise continu après retour esthétique négatif
+
+- **Retour créateur :** l'outil d'adoucissement V52 « rend pas ouf ». La roche V50 reste validée ; la V52 n'est PAS GREEN esthétique. Diagnostic code : arrondi de chaque rectangle de paroi, rayon immédiatement saturé par la largeur native (28 px), ruptures visibles aux frontières de hauteur ; l'aperçu affiche des hauteurs inchangées à tort au lieu du changement visuel.
+- **Base immuable publique V52 :** `d71face4ba39f1118f5f5b494a13fc66444e85ef`, intégrant V51 ponts. V52 CI #39541632186 SUCCESS, Pages #39541814549 SUCCESS, mais retour créateur négatif sur arrondi. START `checkpoint/exploration-start-cliff-contours-v53-2026-10-21`, BRANCHE `work/exploration-cliff-contours-v53-2026-10-21`, créées depuis exactement V52.
+- **Périmètre :** remodeler **uniquement le masque de présentation** des faces frontales de falaise aux frontières de niveaux pour obtenir un arrondi continu, à la demande via `roundness[]`, dans le rendu 2,5D. Réutiliser la même peinture roche/ombre HD existante et la prévisualisation du pinceau ; ne pas toucher au matériau V50 lui-même. Garder les falaises non retouchées (profil natif 95 %) pixel-identiques à V52.
+- **Autorité :** Height Model garde `levels[]`, `waterLevels[]` et `roundness[]` ; Sculpt Height Renderer seul transforme une série de faces calculées en chemin visuel. WorldDocument/Collision World/Traversal restent intacts. Un seuil de compatibilité préservera les faces V50/V52 non retouchées ; les transitions ne doivent jamais traverser une case d'eau ou déborder du carré de terrain.
+- **Tests ciblés :** unité géométrie de joint et limites 0/95/150, continuité des transitions, aucune mutation, pinceau et Undo/export/import ; vrai Chromium dans la CI, sentinelles eau V46, ombre/atlas V50, bord sud V52, ponts V51, drag et Combat ; perf mobile testée avant toute validation créateur.
+- **Hors périmètre :** géométrie physique, modification automatique de toutes les falaises, bordure extérieure V52, eau, textures, Builder 2D, collisions, gameplay pont et publication sur main avant gate complet.
+- **Statut :** démarrage V53, correctif esthétique NON VALIDÉ ; future preview soumise au contrôle smartphone avant GREEN utilisateur.
+
+---
+
 # Lot actif — 21/10/2026 — V52 Bordures de carte rocheuses et adoucissement optionnel des falaises
 
 - **Retour créateur :** V50 falaise esthétique validée, mais la limite extérieure de la carte apparaît en large bande unie gris/vert, non habillée de roche ; souhaite pouvoir arrondir/adoucir les angles de falaise comme les berges d'eau, **à la demande seulement**.
