@@ -62,7 +62,7 @@ export function applySculptStroke(terrain,{
   points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0,rockRoundness=null,
   allowUnderwaterTerrainEdit=false,shape='circle'
 }={}){
-  if(!terrain||!['raise','dig','flatten','smooth','plateau'].includes(mode)||
+  if(!terrain||!['raise','dig','flatten','smooth','plateau','cliff-round'].includes(mode)||
      !Array.isArray(points)||points.length===0)return terrain;
   const clean=points.filter(p=>p&&Number.isFinite(p.x)&&Number.isFinite(p.y)).slice(0,512);
   if(clean.length===0)return terrain;
@@ -81,6 +81,15 @@ export function applySculptStroke(terrain,{
     const weight=weights[i];
     if(weight<=0)continue;
     const old=terrain.levels[i];
+    // An opt-in cosmetic brush: edit existing contour profile only. Reuse
+    // the canonical brush footprint, never touch land/water or navigation.
+    if(mode==='cliff-round'){
+      if(profile!==null){
+        const nextProfile=clamp(Math.round(profiles[i]+(profile-profiles[i])*weight),0,150);
+        if(nextProfile!==profiles[i]){profiles[i]=nextProfile;modified=true;}
+      }
+      continue;
+    }
     const step=Math.max(1,Math.round(power*weight));
     let value=old;
     if(mode==='raise')value=old+step;
@@ -102,7 +111,9 @@ export function applySculptStroke(terrain,{
     if(value!==old){next[i]=value;modified=true;}
     if(profile!==null && profiles[i]!==profile){profiles[i]=profile;modified=true;}
   }
-  return modified ? Object.freeze({...terrain,levels:Object.freeze(next),roundness:Object.freeze(profiles)}) : terrain;
+  return modified ? Object.freeze({...terrain,
+    levels:mode==='cliff-round'?terrain.levels:Object.freeze(next),
+    roundness:Object.freeze(profiles)}) : terrain;
 }
 export function applySculptBrush(terrain,options={}){
   return applySculptStroke(terrain,{...options,
