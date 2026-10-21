@@ -86,6 +86,7 @@
       <button type="button" data-tab="actors">Acteurs</button>
       <button type="button" data-tab="portals">Passages</button>
       <button type="button" data-tab="events">Événements</button>
+      <button type="button" data-tab="soundtrack">Musiques</button>
       <button type="button" data-tab="json">JSON</button>
     </nav>
 
@@ -770,6 +771,60 @@
         </p>
       </section>
 
+      <section class="builder-tab" data-panel="soundtrack" data-exploration-soundtrack-editor>
+        <h2>Musiques et ambiances d'exploration</h2>
+        <p class="builder-hint">Associe des identifiants de scènes musicales aux zones et aux familles de terrain. Les listes de musiques, leurs volumes et leurs transitions appartiennent à la bande-son du jeu. Ces associations s'exportent séparément de la carte, sans ajouter de fichier audio au WorldDocument.</p>
+        <div class="grid-2">
+          <label>Identifiant du jeu
+            <input data-exploration-soundtrack-project value="capture-demo" autocomplete="off" spellcheck="false"/>
+          </label>
+          <div>
+            <button data-exploration-soundtrack-new-project type="button">Créer un nouveau jeu</button>
+          </div>
+        </div>
+        <div class="grid-2">
+          <label>Situation
+            <select data-exploration-soundtrack-kind>
+              <option value="area">Zone particulière (Area)</option>
+              <option value="terrainFamily">Famille de terrain</option>
+              <option value="default">Exploration par défaut</option>
+              <option value="combat">Rencontre / combat</option>
+            </select>
+          </label>
+          <label>Identifiant de zone ou terrain
+            <input data-exploration-soundtrack-context autocomplete="off" spellcheck="false" placeholder="ex. forest"/>
+          </label>
+        </div>
+        <div class="row">
+          <button data-exploration-soundtrack-current-area type="button">Choisir l'Area active</button>
+        </div>
+        <label>Scène de la bande-son du jeu
+          <input data-exploration-soundtrack-scene list="exploration-soundtrack-suggestions" autocomplete="off" spellcheck="false" placeholder="capture:exploration:forest"/>
+          <datalist id="exploration-soundtrack-suggestions">
+            <option value="capture:exploration:forest"></option>
+            <option value="capture:exploration:cave"></option>
+            <option value="capture:exploration:village"></option>
+            <option value="capture:combat:normal"></option>
+            <option value="capture:combat:boss"></option>
+          </datalist>
+        </label>
+        <p class="builder-hint">Le réglage d'une Area l'emporte sur celui de sa famille de terrain, puis sur la scène d'exploration par défaut. La scène de combat prend le relais lors d'une rencontre et la précédente revient ensuite.</p>
+        <div class="row">
+          <button data-exploration-soundtrack-save type="button">Enregistrer l'association</button>
+          <button data-exploration-soundtrack-remove type="button">Retirer l'association</button>
+          <button data-exploration-soundtrack-preview type="button">Aperçu de la résolution</button>
+        </div>
+        <h3>Associations de ce jeu</h3>
+        <ul data-exploration-soundtrack-bindings></ul>
+        <div class="row">
+          <button data-exploration-soundtrack-export type="button">Exporter les associations audio (.json)</button>
+          <label>Importer une configuration audio (.json)
+            <input data-exploration-soundtrack-import type="file" accept=".json,application/json" />
+          </label>
+        </div>
+        <p class="builder-hint" data-exploration-soundtrack-status data-tone="info" role="status">Aucun fichier audio inséré ; ces associations seront raccordées au lecteur commun sans créer un second moteur.</p>
+      </section>
+
       <section class="builder-tab" data-panel="json">
         <h2>WorldDocument</h2>
         <p class="builder-hint">Exporter en .world.json conserve les données éditables de la carte. Ce fichier se réimporte ici pour continuer la création, sans remplacer les textures personnelles stockées sur l'appareil.</p>
@@ -788,5 +843,6 @@
   </main>
 
   <script type="module" src="./src/builder/world-builder-main.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1&brush=interior-floor-brush-v1&relief=relief-canyon-pilot-v1&rim=relief-cliff-rim-v1&water=relief-water-fx-v1&art=canyon-water-art-v2&kit=canyon-art-v3&waterline=canyon-continuous-river-v4&no-repeat=canyon-v5&shimmer=organic-reflections-v6"></script>
+  <script type="module" src="./src/ui/exploration-soundtrack-editor-v1.js?rev=soundtrack-authoring-v1"></script>
 </body>
 </html>
