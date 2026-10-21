@@ -45,6 +45,6 @@ test('V59 stays wholly in renderer visual authority, with original grass materia
  assert.match(render,/sculptHillGrassShoulderWidth\(terrain,c,row,tile\)/);
  assert.match(render,/sculptHillTopPath\(ctx,x,y,w,h,hill\)/);
  assert.match(main,/sculpt-(?:hill-shoulder-v59|whole-hill-v61)/);
- assert.match(html,/sculpt-(?:hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61)/);
+ assert.match(html,/sculpt-(?:hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62)/);
  assert.doesNotMatch(render,/isBlocked\(/);
 });
