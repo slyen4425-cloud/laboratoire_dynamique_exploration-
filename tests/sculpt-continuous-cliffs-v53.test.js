@@ -60,8 +60,8 @@ test('V53 gesture preview reports the same roundness modification as the real br
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
-  assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-(?:rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60)/);
-  assert.match(main,/sculpt-height-renderer\.js\?rev=sculpt-(?:rounded-hills-v54|hill-shoulder-v59|bridge-crossing-v60)/);
+  assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-(?:rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61)/);
+  assert.match(main,/sculpt-height-renderer\.js\?rev=sculpt-(?:rounded-hills-v54|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61)/);
   assert.match(main,/rockRoundness:selectedMode==='cliff-round'/);
   assert.match(render,/mode==='cliff-round'\?'Arrondi '\+after\+' %'/);
   assert.match(render,/sculptSouthCliffContinuousPath\(ctx,faces,profiles,tile/);
