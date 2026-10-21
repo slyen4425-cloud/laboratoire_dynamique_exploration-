@@ -1,3 +1,15 @@
+# 2026-10-21 — Audio C : édition des associations de scènes Exploration (lot isolé)
+
+- Demande auteur : musique et ambiance choisies pour chaque jeu, commune entre les modes, configuration Exploration selon Area/famille/rencontre. Aucun son binaire à ce stade. Menus Shell exclus.
+- Base source `checkpoint/exploration-soundtrack-bridge-v1-technical-green-2026-10-21@788e5e41cda12f9091b47fd0a757e3f5cac90ae0` (CI Node + Encounter SUCCESS) construite depuis V62, sans prétendre que V62 est GREEN artistique Pixel. START `checkpoint/exploration-start-soundtrack-authoring-v1-2026-10-21`, travail `work/exploration-soundtrack-authoring-v1-2026-10-21`.
+- Propriété : nouvelle `src/adapters/exploration-soundtrack-bindings-v1.js` normalise uniquement les associations entre contexte monde et **identifiant de scène de musique**. `src/ui/exploration-soundtrack-editor-v1.js` édite une ressource de configuration **hors WorldDocument** avec export/import explicites. `createExplorationSoundtrackIntentsV1` existant reste seul producteur d'intentions et recevra le sélecteur pur; aucun nouveau moteur de lecture. Le catalogue de musique du projet sera résolu par le service partagé du lot Combat dans le futur raccord.
+- Fichiers autorisés : deux nouveaux JS, insertion d'un onglet dans `builder.html`, montage séparé via script module `src/ui/exploration-soundtrack-editor-v1.js`, tests `tests/exploration-soundtrack-authoring-v1.test.mjs`, doc et journal. Extension navigateur seulement si expressément recadrée avant code. Ne pas modifier `src/builder/world-builder-main.js`, WorldDocument, Surface, Area model, Preview CI ou main.
+- Gel : ponts/contours/rochers V62, collision, moteur mouvement, rencontres, caméra, builder navigation/serialization, dépôt Combat, dépôt audio privé, droits des assets, exports utilisateurs existants.
+- Tests : associations Area prioritaire/famille/fallback, même `projectId` que la configuration musique, validation/roundtrip/rejet sans mutation, onglet réutilisant la navigation existante, jamais de second audio player ; tests Node CI + Chromium si possible, validation mobile UI séparée.
+- Statut : lot ouvert, aucune publication de Page, validation technique et artistique distinctes.
+
+---
+
 # 2026-10-21 — Contrat de raccord musique Exploration (lot B isolé)
 
 - Décision auteur : bibliothèque de sons commune à tous les modes, bande-son propre à chaque jeu, transitions / playlists / volumes ; cible immédiate Exploration + Combat seulement, hors Shell GenSrpG et média privé.
