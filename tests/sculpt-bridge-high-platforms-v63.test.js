@@ -105,3 +105,16 @@ test('V63 two tall platform shores separated by MULTI-ROW canyon, vertical bridg
   assert.ok(a.y<6.5*CH,`vertical failed reverse wet=${wet} scale=${scale} y=${a.y}`);
  }
 });
+
+test('V63 sprite and canonical traversal dimensions share the SAME bridge length/width at different scales',()=>{
+ const t=terrain();
+ for(const scale of [.5,.9,1.1,1.7,2.5,3]){
+  const o=bridge({scale}).objects[0];
+  const rect=sculptObjectVisualRect(o,t);
+  const corridor=bridgeTraversalRect(o);
+  assert.ok(Math.abs(rect.width-170*scale)<1e-8,`sprite LENGTH must use native length at scale ${scale}: ${rect.width}`);
+  assert.ok(Math.abs(rect.height-96*scale)<1e-8,`sprite WIDTH must use native width at scale ${scale}: ${rect.height}`);
+  assert.ok(Math.abs(corridor.length/rect.width-o.traversal.lengthRatio)<1e-10);
+  assert.ok(Math.abs(corridor.width/rect.height-o.traversal.widthRatio)<1e-10);
+ }
+});
