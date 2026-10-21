@@ -3,7 +3,7 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-continuous-cliff-v53';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-rounded-hills-v54';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
@@ -482,9 +482,10 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   syncQuickToolbar();
+  if(mode==='cliff-round')$('sculpt-settings').open=true;
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
-    'cliff-round':'Arrondi visuel des falaises : peins la zone avec le réglage Arrondi (0 % = net). Aucun niveau de terrain ou eau n’est modifié.',
+    'cliff-round':'Colline arrondie : règle le curseur « Arrondi de colline » (150 % = très arrondi), puis PEINS le sommet herbeux avec le doigt. Aucun niveau de terrain ou eau n’est modifié.',
     plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
