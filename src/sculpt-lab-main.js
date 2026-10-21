@@ -334,7 +334,8 @@ function draw(){
       : sculptHeightAt(base,Math.floor(first.x),Math.floor(first.y));
     previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
-      shape:$('brush-shape').value,edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,zoom});
+      shape:$('brush-shape').value,edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,
+      rockRoundness:selectedMode==='cliff-round'?Number($('visual-smooth').value):null,zoom});
   }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
