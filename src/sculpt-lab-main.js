@@ -3,7 +3,7 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-hill-shoulder-v59';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
@@ -496,9 +496,13 @@ function selectMode(mode){
   });
   syncQuickToolbar();
   $('hill-radius-wrap').hidden=mode!=='cliff-round';
+  if(mode==='cliff-round'){
+    // One gesture selects one plateau. Do not modify neighbouring levels.
+    $('radius').value='.5';$('radius').dispatchEvent(new Event('input',{bubbles:true}));
+  }
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
-    'cliff-round':'Colline arrondie : règle le curseur « Arrondi de colline » (150 % = très arrondi), puis PEINS le sommet herbeux avec le doigt. Aucun niveau de terrain ou eau n’est modifié.',
+    'cliff-round':'Colline ronde : règle 150 % et TOUCHE UNE FOIS LE MILIEU du sommet vert. Le contour entier de ce plateau s’arrondit (pas seulement la case). 95 % = aspect initial. Altitudes et eau inchangées.',
     plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
