@@ -50,5 +50,5 @@ test('V56 clean data is pure alpha repair and not an object collision authority'
   assert.match(main,/prepareSculptBridgeImage\(picture\)/);
   assert.match(src,/ctx\.getImageData/);
   assert.doesNotMatch(src,/isBlocked|CollisionWorld|WorldDocument/);
-  assert.match(page,/rev=sculpt-(?:bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65)/);
+  assert.match(page,/rev=sculpt-(?:bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66)/);
 });
