@@ -497,8 +497,13 @@ function selectMode(mode){
   syncQuickToolbar();
   $('hill-radius-wrap').hidden=mode!=='cliff-round';
   if(mode==='cliff-round'){
-    // One gesture selects one plateau. Do not modify neighbouring levels.
+    // One tap selects one plateau, and the tool starts with a VISIBLE effect.
+    // The old 95 % persisted from prior controls and silently did nothing.
     $('radius').value='.5';$('radius').dispatchEvent(new Event('input',{bubbles:true}));
+    if(Number($('visual-smooth').value)<=95){
+      $('visual-smooth').value='150';
+      $('visual-smooth').dispatchEvent(new Event('input',{bubbles:true}));
+    }
   }
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
