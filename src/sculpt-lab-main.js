@@ -6,7 +6,7 @@ import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
-import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
+import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-camera-v65';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60';
@@ -305,6 +305,7 @@ function draw(){
     if(deckBridge)drawPreviewObject(deckBridge);
     drawNavigationActor();
     if(deckBridge)drawPreviewObject(deckBridge,{foregroundRailOnly:true});
+    if($('navigation-show-bridge-corridor')?.checked)drawNavigationBridgeCorridors();
     drawPreviewObjects(Infinity,navActor?.y??Infinity,deckBridge?.id);
     drawPlacedActors(Infinity,navActor?.y??Infinity);
   }else{
@@ -785,16 +786,35 @@ function centerNavigationCamera(){
   pan.y=worldHeight<height?(height-worldHeight)*.5-bounds.minY*zoom:
     Math.max(height-bounds.maxY*zoom,Math.min(-bounds.minY*zoom,targetY));
 }
+function drawNavigationBridgeCorridors(){
+  // Diagnostics are presentation-only and read the exact resolved deck that
+  // sculptNavigationBlockDetail / Collision World uses, at current camera pitch.
+  const view=cameraView();
+  for(const bridge of resolvedSculptBridges()){
+    const corridor=sculptBridgeDeckAt([bridge],bridge.transform.x,bridge.transform.y,0);
+    if(!corridor)continue;
+    const level=sculptBridgeDeckHeight(terrain,[bridge],bridge.transform.x,bridge.transform.y,
+      {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height})??0;
+    const points=sculptCameraProjectBridgeCorridor(view,corridor,
+      {level,rise:SCULPT_TILE.rise});
+    if(points.length!==4)continue;
+    ctx.save();ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+    for(const point of points.slice(1))ctx.lineTo(point.x,point.y);
+    ctx.closePath();ctx.fillStyle='rgba(85,233,193,.12)';ctx.fill();
+    ctx.strokeStyle='rgba(84,233,193,.85)';ctx.lineWidth=1.8;ctx.stroke();ctx.restore();
+  }
+}
 function drawNavigationActor(){
   if(!navActor)return;
   const deckBridge=activeSculptBridge();
   const visualRect=deckBridge?sculptObjectVisualRect(deckBridge,terrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise}):null;
-  // Raise ONLY the picture of the feet onto the boards. Player x/y and
-  // canonical Collision World remain unchanged and control actual passage.
-  const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3-
-    sculptBridgeVisualFootLift(visualRect);
-  const projected=sculptCameraProject(cameraView(),navActor.x,footY);
+  // First project the world elevation like any ground point; then lift
+  // the actor feet in SCREEN units. Bridge artwork is not pitch-scaled, so
+  // pre-projection lift was 43% smaller at 35° than at 90°.
+  const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3;
+  const projected=sculptCameraProjectBridgeFoot(cameraView(),navActor.x,footY,
+    sculptBridgeVisualFootLift(visualRect));
   // The native Exploration actor renderer owns idle/walk motion, shadow,
   // visual anchor and direction; gameplay state is read-only.
   if(navigationActorPreparer.get(navigationActorVisual.assetId))
@@ -965,6 +985,7 @@ $('navigation-camera-zoom').addEventListener('input',()=>{
     centerNavigationCamera();scheduleDraw();
   }
 });
+$('navigation-show-bridge-corridor').addEventListener('change',scheduleDraw);
 $('navigation-speed').addEventListener('input',()=>{
   $('navigation-speed-value').textContent=$('navigation-speed').value;
   updateNavigationInfo(true);
@@ -1003,6 +1024,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
+  bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
   actorMotionTime:navVisualTime,actorVisualLevel:navVisualLevel,
   sameTerrainVersion:terrain.schemaVersion===1
