@@ -40,7 +40,7 @@ test('V58 only the cached Sculpt visual image is prepared; no game geometry chan
  const src=readFileSync(new URL('../src/assets/sculpt-bridge-alpha.js',import.meta.url),'utf8');
  assert.match(main,/prepareSculptBridgeImage\(picture\)/);
  assert.match(main,/sculpt-bridge-foot-clean-v58/);
- assert.match(page,/sculpt-(?:bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65)/);
+ assert.match(page,/sculpt-(?:bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66)/);
  assert.match(src,/visitedWhite=new Uint8Array\(count\)/);
  assert.doesNotMatch(src,/WorldDocument|isBlocked\(/);
 });
