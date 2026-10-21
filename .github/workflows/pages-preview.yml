@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: cliff-hd-bridges-v50-prevalidation-2026-10-21
+# preview-revision: cliff-edge-contours-v52-prevalidation-2026-10-21
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: d43d58494bc1f918bcb213846501bc790774ed02
+          ref: d71face4ba39f1118f5f5b494a13fc66444e85ef
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
