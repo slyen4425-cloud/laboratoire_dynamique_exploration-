@@ -1,3 +1,16 @@
+# V67 — 21/10/2026 — Ancrage réel des visuels de ponts au tablier physique
+
+- **Retour Pixel 35°/90° :** personnage sous le pont ou devant/derrière le mauvais garde-corps. V65 et V66 sont corrections de projection et Input GREEN techniques mais ne réparent pas la divergence de l'ancrage du WebP.
+- **Base technique source contrôlée :** V66 immuable e7d823c291629d627648e76a9042412f0580c741, [CI #39659074209](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39659074209) SUCCESS ; checkpoint checkpoint/exploration-camera-input-v66-prevalidation-2026-10-21. START checkpoint/exploration-start-bridge-deck-anchor-v67-2026-10-21, branche work/exploration-bridge-deck-anchor-v67-2026-10-21 depuis exactement ce SHA.
+- **Cause :** WorldObject.transform est le CENTRE du corridor de franchissement, mais le renderer plaçait la BASE du WebP au centre de ce corridor. Les planches sont à ~45% de la hauteur de l'image depuis le haut et se retrouvaient ~55% hauteur au-dessus du corridor physique. L'ancien V57 remontait artificiellement les pieds de l'acteur, ce qui masquait sans corriger cette désynchronisation.
+- **Périmètre :** définir une ancre visuelle EXPLICITE de tablier pour les 28 ponts 2,5D dans Render adapter. Raccorder painter, clip garde-corps, hit-test éditeur et pied de personnage à l'UNIQUE x/y + altitude de WorldObject/collision. L'image WebP reste inchangée. Aucun offset gameplay, aucune génération géométrique depuis alpha. Les ponts historiques et objets non pont conservent rendu d'origine.
+- **Propriétaires :** WorldObject/Collision World centre physique inchangé ; Camera projection transforme le même centre ; Render adapter gère offset graphique/clip, Object Picking même transform visuel. Pas de double autorité ou de correction par frame.
+- **Risques :** la hauteur des planches dans les WebP varie entre styles/vues ; ratio commun provisoire à vérifier sur Pixel. Garder un diagnostic visuel de corridor en Tester à 35° et 90° pour ajuster la DONNÉE d'ancrage plutôt que collision.
+- **Tests :** même centre physique/visuel, angle 35/90, 4 variantes, différentes échelles (40–300%), clip avant derrière, hit-test, ne modifie pas WorldDocument, Navigation collision, V50, eau V46, V61 colline, Capture Combat, audio.
+- **Statut :** lot ouvert, pas de GREEN visuel, publication seulement après CI.
+
+---
+
 # V66 — 21/10/2026 — Commandes de marche cohérentes avec caméra inclinée
 
 - **Retour créateur Pixel :** à 35° vs 90°, sensations de déplacement difficiles et absence de correspondance visuelle au sommet des collines. Ne pas confondre pente interdite et joystick mal projeté.
