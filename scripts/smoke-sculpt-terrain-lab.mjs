@@ -251,6 +251,53 @@ try{
     throw Error('V52 outer south boundary not textured in real Chromium: '+JSON.stringify(v52Edge));
   console.log('V52 cosmetic contour brush/Undo + textured outer map rim Chromium:',
     JSON.stringify({brushOnlyRoundness:true,undo:true,rock:v52Edge}));
+  // V53: truly continuous dry cliff ramp instead of saturated per-box corners.
+  // Compare real Canvas pixels with canonical heights held strictly equal.
+  const v53Curves=await run(`(async()=>{
+    const mod=await import('./src/render/sculpt-height-renderer.js');
+    const m=await import('./src/world/sculpt-height-model.js');
+    const w=9,h=9,levels=Array(w*h).fill(2);
+    for(const [c,v] of [[2,5],[3,4],[4,6],[5,5]])levels[4*w+c]=v;
+    const original=m.createSculptTerrain({width:w,height:h,levels});
+    const changed=m.applySculptStroke(original,{points:[{x:3.5,y:4.5}],
+      radius:.5,rockRoundness:150,mode:'cliff-round'});
+    const draw=t=>{
+      const c=document.createElement('canvas');
+      c.width=w*28;c.height=h*21+7*18;
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      mod.drawSculptTerrain(ctx,{terrain:t,rockPalette:'warm',
+        material:{render:{baseColor:'#528d42'}}});
+      return ctx;
+    };
+    const baseline=draw(original),rounded=draw(changed);
+    const before=baseline.getImageData(0,0,w*28,h*21).data;
+    const after=rounded.getImageData(0,0,w*28,h*21).data;
+    let cliffDiff=0,farDiff=0;
+    for(let y=0;y<h*21;y++)for(let x=0;x<w*28;x++){
+      const i=(y*w*28+x)*4;
+      const different=before[i]!==after[i]||before[i+1]!==after[i+1]||
+        before[i+2]!==after[i+2];
+      if(different){
+        if(x>=2*28&&x<5*28&&y<=100)cliffDiff++;
+        if(x<28&&y<110)farDiff++;
+      }
+    }
+    const preview=(name)=>document.querySelector(name)?.textContent??'';
+    return {cliffDiff,farDiff,edited:m.serializeSculptTerrain(changed)!==
+      m.serializeSculptTerrain(original),
+      unchangedHeights:JSON.stringify(changed.levels)===JSON.stringify(original.levels),
+      unchangedWater:JSON.stringify(changed.waterLevels)===JSON.stringify(original.waterLevels),
+      untouchedPath:mod.sculptRoundedSouthColumns(original,4).length,
+      joined:mod.sculptRoundedSouthColumns(changed,4),
+      nativePreviewControl:!!document.querySelector('[data-mode=cliff-round]'),
+      legacyFaceCount:m.sculptFaces(original).length===m.sculptFaces(changed).length};
+  })()`);
+  if(!v53Curves.edited||!v53Curves.unchangedHeights||!v53Curves.unchangedWater||
+      v53Curves.untouchedPath!==0||v53Curves.joined.join(',')!=='2,3,4'||
+      v53Curves.cliffDiff<45||v53Curves.farDiff!==0||
+      !v53Curves.nativePreviewControl||!v53Curves.legacyFaceCount)
+    throw Error('V53 continuous dry cliff contour pixels or guardrails failed: '+JSON.stringify(v53Curves));
+  console.log('V53 real Chromium joined cliff, stable far pixels/height/water:',JSON.stringify(v53Curves));
   // V13: a water brush must edit the water volume without touching land and
   // Undo/Redo must exactly restore BOTH data fields, never a visual-only rollback.
   const waterSetup=await run(`(async()=>{
