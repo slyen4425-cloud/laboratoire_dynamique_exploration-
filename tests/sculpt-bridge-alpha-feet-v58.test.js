@@ -7,7 +7,7 @@ function fixture(){
  const put=(x,y,rgb,alpha=255)=>data.set([...rgb,alpha],(y*width+x)*4);
  for(let y=30;y<=56;y++)for(let x=15;x<=29;x++)put(x,y,[115,111,100]);
  // Opaque white triangular garbage TOUCHING the dark masonry at x30.
- for(let y=44;y<=53;y++)for(let x=30;x<=45-(y-44))put(x,y,[252,250,251]);
+ for(let y=44;y<=53;y++)for(let x=30;x<=45-(y-44);x++)put(x,y,[252,250,251]);
  // A true connected pale stone speck and one white bolt above the foot.
  put(20,50,[245,243,245]);put(20,35,[246,245,244]);
  // Ivory paint inside stone should remain (not on transparent exterior).
