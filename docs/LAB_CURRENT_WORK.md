@@ -1,3 +1,16 @@
+# Lot V58 — 21/10/2026 — Retirer les triangles blancs sous les pieds de pont
+
+- **Preuve :** capture Pixel du pont bois 2,5D horizontal, deux triangles blancs clairs sous les supports en pierre. V56 nettoyage alpha a laissé ces gros fragments ; le précédent filtre regroupait chaque tache blanche **avec le pont entier** via composantes d'alpha, puis ne retirait que les très petits fragments détachés.
+- **Base technique vérifiée :** V57 source `067f8659aac9ddcc682154b76d8526be0109c394`, [CI #39603083562](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39603083562) SUCCESS et checkpoint `checkpoint/exploration-bridge-deck-occlusion-v57-prevalidation-2026-10-21`. START `checkpoint/exploration-start-bridge-alpha-feet-v58-2026-10-21`, branche `work/exploration-bridge-alpha-feet-v58-2026-10-21` depuis exactement la source V57 testée.
+- **Périmètre :** dans le seul adapter alpha `src/assets/sculpt-bridge-alpha.js`, traiter une deuxième couche de résidus **chromatiquement blancs** de petite surface collés au bas des ponts, avec frontière transparente et contraintes de taille/position. Réduire les fins halos adjacents. Préparer l'asset une seule fois à l'initialisation, jamais par frame.
+- **Propriétaires :** Asset Adapter, aucune écriture WebP, aucune image générée, aucun changement SHA asset ID, WorldObject, collision/traversée, Renderer d'acteur, texture de roche.
+- **Gel :** V57 pont/personnage, 28 images source, détails blancs valides sur le corps du pont, échelles V56, eau V46, falaises V50, herbe V54, GenSrpG et Combat.
+- **Tests :** reproduction en pixels blancs d'une grande tache reliée à la structure, aucune perte de reflet blanc intérieur, fond transparent conservé, 28 WebP SHA identiques, Chromium et CI. **Validation des véritables sept ponts sur Pixel requise.**
+- **Prochaine action :** V59 arrondi de colline supérieur après prévalidation technique, autre branche et START.
+- **Statut :** correctif en chantier, non publié / non GREEN créateur.
+
+---
+
 # Lot V57 — 21/10/2026 — Ponts : vraie profondeur visuelle du personnage sur tablier
 
 - **Retour Pixel + capture 21/10 :** en mode marche, le personnage apparaît visuellement derrière / au travers du pont bois 2,5D alors que V55 autorise le corridor. Collines V54 un peu mieux mais encore trop anguleuses ; triangles blancs d'alpha sous les deux pieds du pont toujours présents. **V55/V56 NE SONT PAS validées visuellement** malgré CI GREEN et Pages publiée V56.
