@@ -1,3 +1,16 @@
+# Lot actif — 21/10/2026 — V51 ponts visibles dans la palette Sculpture (UI/placement)
+
+- **Retour créateur :** esthétique V50 validée ; les sept ponts / 28 vues existent mais catégorie absente de l'outil « Objets ». Les deux autres retours (bordure hors carte, adoucissement optionnel des angles de falaise) auront des lots renderer/sculpture dédiés et ne sont pas inclus dans celui-ci.
+- **Dernière source V50 GREEN technique, maintenant validée esthétique créateur :** `d43d58494bc1f918bcb213846501bc790774ed02`, CI source #39539039602 / Pages #39539288589 SUCCESS. START `checkpoint/exploration-start-bridge-picker-v51-2026-10-21`, branche `work/exploration-bridge-picker-v51-2026-10-21`, créées depuis la source figée V50.
+- **Périmètre :** rendre les définitions Bridge natives éligibles à la palette Sculpt (catégorie + choix de la vue existante), permettre leur pose d'éditeur au-dessus d'une case d'eau (pas de réinterprétation de l'eau). Import/export/Undo doivent conserver la variante et le même format de placement WorldObject.
+- **Propriétaire :** WorldObject preview composition et adaptation Builder/Sculpt UI. Réutiliser `objectDefinitionCatalogV1`, `sculptPreviewVariants`, `resolveWorldObjectPlacements` et `Collision World` ; aucune copie de registry/assets et aucun changement de traversalRuleId/corridor.
+- **Gel :** renderer roche V50, eau V46, courbes, falaises, soleil/caméra, géométrie hauteur, 28 images ponts, bâtiments, arbres, rochers, scène legacy, Combat/Capture/GenSrpG.
+- **Tests :** catalogue des 7 ponts et 28 vues, UI HTML, option/variant, placement sur eau, round-trip scène et anciennes définitions, `npm test && npm run check`, CI GitHub et smoke Chromium ciblé. Pas de publication main/Pages ou GREEN mobile avant validation.
+- **Risque :** placement mobile, superposition au-dessus de l'eau, alignement visuel et cohérence des orientations à tester sur téléphone ; ne jamais promettre une traversée validée par un simple visuel.
+- **Statut :** branche de travail ouverte, implémentation et tests en attente ; les deux autres retours restent documentés et ouverts.
+
+---
+
 # Lot actif — 21/10/2026 — V50 conciliation falaises HD V49 et ponts publiés
 
 - **Retour créateur :** roches V47/V48 meilleure direction mais encore floues et répétitives ; conserver impérativement le dégradé d'ombre supérieur→pied et les ombres latérales. L'eau V46 est acceptée. Les 7 ponts / 28 vues 2,5D ont été publiés depuis sur le socle V48 : ne surtout pas les rétrograder.
