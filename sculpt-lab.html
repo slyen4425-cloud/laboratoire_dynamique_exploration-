@@ -337,6 +337,8 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <option value="square">▦ Carré plein</option>
 <option value="cross">✚ Croix</option>
 </select></label>
+<label id="hill-radius-wrap" class="control hill-radius-control" hidden>Colline <b id="visual-smooth-value">150 %</b>
+<input id="visual-smooth" type="range" min="0" max="150" value="150" step="5" aria-label="Arrondi de colline : règle à 150 pour un sommet rond, puis peins la colline au doigt"></label>
 <label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
@@ -557,8 +559,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <option value="threeQuarter">Vue trois-quarts (comparaison)</option>
 </select></label>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
-<label data-panel="ground" class="control">Arrondi de colline (95 % = aspect initial, 150 % = sommet arrondi) <b id="visual-smooth-value">95 %</b>
-<input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi local de colline, peindre après réglage. 95 % aspect initial, 150 % sommet arrondi"></label>
+
 <button id="fit">Ajuster la vue</button>
 <label class="control">Aspect de l’eau
 <select id="water-material" aria-label="Matériau visuel de l’eau">
