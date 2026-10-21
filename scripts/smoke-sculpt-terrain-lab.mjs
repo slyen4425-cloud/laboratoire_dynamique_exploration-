@@ -1503,7 +1503,7 @@ try{
       regions:Object.keys(hd.SCULPT_CLIFF_HD_V49.layers),changed,palette,
       shadow:top-bottom,legacyWidth:image.naturalWidth,
       artNative:hd.SCULPT_CLIFF_HD_V49.layers.gray.width,
-      cacheFlag:/rev=sculpt-(?:actor-presentation-v42|continuous-cliff-v53)/.test(document.querySelector('script[type=module]')?.src??'')};
+      cacheFlag:/rev=sculpt-(?:actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54)/.test(document.querySelector('script[type=module]')?.src??'')};
   })()`);
   if(v49HD.sourceWidth!==512||v49HD.sourceHeight!==256||
      !v49HD.hasRealPath||v49HD.artNative!==256||
