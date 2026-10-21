@@ -77,3 +77,31 @@ test('V63 surface is high on both sides for MULTIPLE rows, not a 1-row fake gorg
   assert.equal(t.waterLevels[row*W+9],8);
  }
 });
+
+test('V63 two tall platform shores separated by MULTI-ROW canyon, vertical bridge forwards and reverse',()=>{
+ const H2=18,W2=20,center={x:9.5*CW,y:8.5*CH};
+ for(const wet of [false,true])for(const scale of [1.1,1.4]){
+  const levels=Array(W2*H2),waterLevels=Array(W2*H2).fill(-1);
+  for(let row=0;row<H2;row++)for(let col=0;col<W2;col++){
+    const index=row*W2+col;
+    levels[index]=row<6||row>11?6:0;
+    if(wet&&row>=6&&row<=11)waterLevels[index]=9;
+  }
+  const t=createSculptTerrain({width:W2,height:H2,levels,waterLevels});
+  const placed=appendSculptPreviewObject([],{
+    definitionId:'objectdef.bridge.wood_rustic_2p5d.01',
+    ...center,variantId:'vertical',scale
+  });
+  const objects=resolveWorldObjectPlacements(placed);
+  const context={sculptNavigation:{terrain:t,bridges:objects,cellWidth:CW,cellHeight:CH,maxStepUp:2,maxStepDown:2}};
+  const w={width:W2*CW,height:H2*CH,objects:placed,obstacles:[]};
+  const a={x:center.x,y:4.5*CH,radius:5,locomotion:{modes:['ground']}};
+  const destY=14.5*CH;
+  assert.deepEqual(sculptBridgeBankHeights(t,bridgeTraversalRect(objects[0]),{cellWidth:CW,cellHeight:CH}),[6,6]);
+  assert.equal(isBlocked(w,a,a.x,destY,undefined,context),false,`vertical wet=${wet} scale=${scale}`);
+  stepMovement(w,a,{x:0,y:1},3.1,{maxSpeed:80},undefined,context);
+  assert.ok(a.y>12.5*CH,`vertical did not arrive wet=${wet} scale=${scale} y=${a.y}`);
+  stepMovement(w,a,{x:0,y:-1},3.1,{maxSpeed:80},undefined,context);
+  assert.ok(a.y<6.5*CH,`vertical failed reverse wet=${wet} scale=${scale} y=${a.y}`);
+ }
+});
