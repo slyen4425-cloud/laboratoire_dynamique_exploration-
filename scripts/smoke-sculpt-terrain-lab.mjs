@@ -768,6 +768,54 @@ try{
   console.log('V23 house 3 views/rotate/selected edit roundtrip Chromium:',
     JSON.stringify({views:v23Config.views,rotation:137,backAssetLoaded:rearLoaded}));
 
+  // V51: Full browser path: the 7 native bridge families are selectable, a
+  // four-direction view is applied, and a bridge alone may be placed on water.
+  const bridgePicker=await run(`(()=>{
+    const saved=JSON.parse(window.__v23Scene);
+    saved.terrain.waterLevels=saved.terrain.levels.map(()=>7);
+    document.querySelector('#json').value=JSON.stringify(saved);
+    document.querySelector('#import').click();
+    document.querySelector('#mode-objects').click();
+    const category=document.querySelector('#object-category');
+    category.value='bridge';category.dispatchEvent(new Event('change',{bubbles:true}));
+    const choices=[...document.querySelector('#object-definition').options].map(o=>o.value);
+    const bridge='objectdef.bridge.wood_rustic_2p5d.01';
+    const def=document.querySelector('#object-definition');
+    def.value=bridge;def.dispatchEvent(new Event('change',{bubbles:true}));
+    const views=[...document.querySelector('#object-variant').options].map(o=>o.value);
+    const variant=document.querySelector('#object-variant');
+    variant.value='diagonal_right';variant.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#object-action').value='place';
+    return {choices,views,sceneObjects:saved.objects.length,
+      category:window.__sculptObjectsProbe().categories};
+  })()`);
+  if(!bridgePicker.category.includes('bridge')||bridgePicker.choices.filter(x=>
+      x.includes('_2p5d.')).length!==7||
+      bridgePicker.views.join(',')!=='horizontal,vertical,diagonal_left,diagonal_right')
+    throw Error('V51 bridge categories or directional views missing in real Chromium: '+JSON.stringify(bridgePicker));
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',
+    x:objectBegin.position.x,y:objectBegin.position.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',
+    x:objectBegin.position.x,y:objectBegin.position.y,button:'left',clickCount:1});
+  const bridgePlaced=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const exported=JSON.parse(document.querySelector('#json').value);
+    const probe=window.__sculptObjectsProbe();
+    return {probe,object:exported.objects.find(o=>o.objectDefinitionId===
+      'objectdef.bridge.wood_rustic_2p5d.01')};
+  })()`);
+  if(bridgePlaced.probe.count!==bridgePicker.sceneObjects+1||
+     bridgePlaced.object?.overrides.visualVariantId!=='diagonal_right')
+    throw Error('V51 bridge cannot be placed over water / variant lost: '+JSON.stringify(bridgePlaced));
+  await run(`(()=>{
+    document.querySelector('#json').value=window.__v23Scene;
+    document.querySelector('#import').click();
+    document.querySelector('#mode-ground').click();
+    return true;
+  })()`);
+  console.log('V51 canonical bridges selectable/4 views/placed over water Chromium:',
+    JSON.stringify({bridgeFamilies:7,views:bridgePicker.views,variant:'diagonal_right'}));
+
   // V24: In Chromium with an existing nonempty V23 house/tree scene, simulate
   // authored water, then test flatten-in-place, cancel New Map and confirm New Map.
   const wetScene=await run(`(()=>{
