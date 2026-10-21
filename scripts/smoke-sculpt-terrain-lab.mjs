@@ -2079,9 +2079,11 @@ try{
     return {client,radius:document.querySelector('#radius').value,
       intensity:document.querySelector('#visual-smooth').value,
       mode:quick.value,view:p.cameraView,pan:p.cameraPan,zoom:p.zoom,
+      objectEditing:p.objectEditing,surfaceEditing:p.surfaceEditing,precisionMode:p.precisionMode,
       hit:document.elementFromPoint(client.x,client.y)?.id};
   })()`);
-  if(v61Before.hit!=='sculpt-canvas'||Number(v61Before.radius)!==.5||v61Before.intensity!=='150'||v61Before.mode!=='cliff-round')
+  if(v61Before.hit!=='sculpt-canvas'||Number(v61Before.radius)!==.5||v61Before.intensity!=='150'||v61Before.mode!=='cliff-round'||
+     v61Before.objectEditing||v61Before.surfaceEditing||v61Before.precisionMode)
     throw Error('V61 one-touch whole-hill control not usable on real canvas: '+JSON.stringify(v61Before));
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',...v61Before.client});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',...v61Before.client,button:'left',clickCount:1});
