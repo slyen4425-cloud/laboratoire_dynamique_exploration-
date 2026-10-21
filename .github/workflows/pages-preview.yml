@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: cliff-continuous-contours-v53-cachefix-r2-2026-10-21
+# preview-revision: rounded-hills-bridge-crossing-alpha-v56-2026-10-21
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: defdac8099f3bdd6720633972707c0ffaf73273f
+          ref: eabb936639686a41fa31cf469d135c58e4cfbea4
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
