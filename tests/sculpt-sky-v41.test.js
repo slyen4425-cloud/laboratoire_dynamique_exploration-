@@ -46,5 +46,5 @@ test('V41 is scoped to Tester and uses one fixed background cache, no animated t
   assert.equal((html.match(/id="navigation-sky-clouds"/g)||[]).length,1);
   assert.equal((html.match(/id="navigation-sky-mist"/g)||[]).length,1);
   assert.equal((html.match(/id="navigation-sky-stars"/g)||[]).length,1);
-  assert.match(html,/rev=sculpt-(?:sky-v41|actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66)/);
+  assert.match(html,/rev=sculpt-(?:sky-v41|actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66|bridge-deck-anchor-v67)/);
 });
