@@ -937,6 +937,59 @@ try{
     throw Error('V63 real visible bridge sprite dimensions diverge from crossing at 250%: '+
       JSON.stringify(v63RealScale));
   console.log('V63 browser bridge 250% visual/physical aspect agrees:',JSON.stringify(v63RealScale));
+  // V64 real pointer/selection/DRAG on a fully wet scene. The old editor
+  // refused every pointermove across water, although the same bridge could
+  // be placed there. Exercise the user-facing workflow, no synthetic model.
+  const v64BridgeDrag=await run(`(async()=>{
+    const camera=await import('./src/render/sculpt-camera-projection.js');
+    const picking=await import('./src/render/sculpt-object-picking.js?rev=sculpt-bridge-dimensions-v63');
+    const world=await import('./src/world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55');
+    const model=await import('./src/world/sculpt-height-model.js');
+    const editor=document.querySelector('#camera-view');
+    editor.value='classic';editor.dispatchEvent(new Event('change',{bubbles:true}));
+    const select=document.querySelector('#object-action');select.value='select';
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+    const canvas=document.querySelector('#sculpt-canvas');
+    canvas.scrollIntoView({block:'center',behavior:'instant'});
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    const placement=scene.objects.find(o=>o.objectDefinitionId==='objectdef.bridge.wood_rustic_2p5d.01');
+    const o=world.resolveWorldObjectPlacements([placement])[0];
+    const visual=picking.sculptObjectVisualRect(o,model.importSculptTerrain(scene.terrain));
+    const p=window.__sculptLabProbe(),bounds=canvas.getBoundingClientRect();
+    const candidates=[0,-.12,-.23,.12].map(f=>{
+      const v=camera.sculptCameraProject(camera.sculptCameraView('classic'),
+        visual.x,visual.y+visual.height*f);
+      const at={x:bounds.left+p.cameraPan.x+v.x*p.zoom,
+        y:bounds.top+p.cameraPan.y+v.y*p.zoom};
+      return {...at,hit:document.elementFromPoint(at.x,at.y)?.id};
+    });
+    return {at:candidates.find(c=>c.hit==='sculpt-canvas'),candidates,
+      originalX:placement.transform.x,originalY:placement.transform.y,
+      originalScale:placement.transform.scaleX,id:placement.id};
+  })()`);
+  if(!v64BridgeDrag.at)throw Error('V64 bridge drag target hidden: '+JSON.stringify(v64BridgeDrag));
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v64BridgeDrag.at.x,y:v64BridgeDrag.at.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:v64BridgeDrag.at.x,y:v64BridgeDrag.at.y,button:'left',clickCount:1});
+  const v64DragEnd={x:v64BridgeDrag.at.x+24,y:v64BridgeDrag.at.y};
+  for(let k=1;k<=8;k++)await send('Input.dispatchMouseEvent',{
+    type:'mouseMoved',x:v64BridgeDrag.at.x+24*k/8,y:v64BridgeDrag.at.y,
+    button:'left',buttons:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:v64DragEnd.x,y:v64DragEnd.y,button:'left',clickCount:1});
+  const v64Moved=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    const placement=scene.objects.find(o=>o.id===${JSON.stringify(v64BridgeDrag.id)});
+    const probe=window.__sculptObjectsProbe();
+    return {x:placement?.transform.x,y:placement?.transform.y,
+      scale:placement?.transform.scaleX,selected:probe.selectedId};
+  })()`);
+  if(!(v64Moved.x>v64BridgeDrag.originalX+2)||
+     v64Moved.scale!==v64BridgeDrag.originalScale)
+    throw Error('V64 real wet bridge drag did not edit WorldObject center or lost scale: '+
+      JSON.stringify({v64BridgeDrag,v64Moved}));
+  console.log('V64 Chromium real 250% water bridge selected and dragged:',JSON.stringify(v64Moved));
   await run(`(()=>{
     document.querySelector('#json').value=window.__v23Scene;
     document.querySelector('#import').click();
