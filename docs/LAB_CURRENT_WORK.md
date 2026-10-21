@@ -1,3 +1,16 @@
+# V65 — 21/10/2026 — Raccord caméra/tablier : bug réel constaté à 35° et 90°
+
+- **Retour créateur Pixel (2 captures 35° / 90°) :** avatar au-dessous/au travers du bois, visuel incompatible avec le corridor physique. Déplacements sur les hauts plateaux difficiles. Les V60–V64 sont GREEN **techniques** mais PAS validation tactile/artistique.
+- **Base GREEN technique publique + rochers :** `bb32a1b257fd7672af28678cc6504da428da1f8c`, source épinglée au workflow main Pages de la PR #201 (V64). START `checkpoint/exploration-start-bridge-camera-depth-v65-2026-10-21`; branche `work/exploration-bridge-camera-depth-v65-2026-10-21` depuis même SHA. Dernière source son/musique sur autres branches ISOLÉES ; ne pas déplacer leur autorité.
+- **Diagnostic précis :** `drawNavigationActor` retranche la hauteur graphique du pont `rect.height*0.35` AVANT `sculptCameraProject`, multipliant donc la hauteur du pied par `sin(cameraAngle)` ; le pont complet conserve ses dimensions écran. Selon angle, avatar passe sous le tablier. De plus, la zone visuelle de pont n'affiche pas la zone de traversée physique pour vérifier une pose/scale erronée.
+- **Périmètre V65 :** isoler dans l'adapter de projection une conversion **après projection** de l'élévation graphique en pixels Canvas, indépendante du pitch, et exposer optionnellement en Tester la silhouette du corridor physique projetée dans la vraie caméra (diagnostic temporaire, affichage lecture seule). La hauteur terrain et le WorldObject continuent d'être projetés normalement. Corriger le rendu acteur **sans** changer ses x/y, son rayon, ou les pixels des 28 ponts. Une même coordonnée pied/tablier doit rester cohérente à 35°, 55°, 90°.
+- **Propriétaires :** Camera projection + Sculpt Actor Render adapter (calcul pure screen point), Collision World + WorldObject Model gardent corridor (read-only), UI n'autorise ni déplacement ni collision. Test régression angle + 2 ponts différentes échelles, snapshot probe.
+- **Gel / hors périmètre :** collisions/traversal et eau V46, pont dimensions V63, drag eau V64, texture roche V50, rond de colline V61, Combat, actifs son, WorldDocument. **Difficulté terrain haut** dans lot séparé après cette prévalidation, pas de rustine combinée.
+- **Validation :** tests unitaires de projection et variation angle, CI Node/npm check/Chromium builder-sculpt-combat, vrai test Pixel exigé avant GREEN esthétique. Aucune publication sans CI réussite.
+- **Statut :** ouvert, non GREEN utilisateur.
+
+---
+
 # V64 — 21/10/2026 — Déplacer les ponts sur l’eau / dans un ravin, édition tactile cohérente
 
 - **Retour utilisateur sur deux plateaux hauts :** aligner pont aux berges difficile ; l'éditeur autorise pont placé dans l'eau mais refuse ensuite de le glisser sur l'eau (code `stroke` et `applyObjectAtCell` en conflit).
