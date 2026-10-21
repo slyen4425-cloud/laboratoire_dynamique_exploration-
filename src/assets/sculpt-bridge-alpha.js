@@ -83,7 +83,7 @@ export function cleanSculptBridgePixels({width,height,data}={}){
       }
     }
     if(touchesClear&&members.length>=3&&members.length<=maxStain&&
-       xMax-xMin<width*.23&&yMax-yMin<height*.24){
+       xMax-xMin<width*.30&&yMax-yMin<height*.24){
       for(const index of members){data[index*4+3]=0;erasedWhite[index]=1;removed++;}
     }
   }
