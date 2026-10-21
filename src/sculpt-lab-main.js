@@ -27,7 +27,7 @@ import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js';
 import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-occlusion-v57';
-import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v55';
+import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
