@@ -423,21 +423,22 @@ function drawWaterVolume(ctx,{terrain,overlay,tile,rowStart=0,rowEnd=terrain.hei
 // Preview uses the EXACT same footprint weights as applySculptStroke.
 // Each tinted tile is a cell that a click here would really affect.
 export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftness=0,
-  mode='dig',target=3,strength=1,shape='circle',tile=SCULPT_TILE,zoom=1}={}){
+  mode='dig',target=3,strength=1,shape='circle',rockRoundness=null,tile=SCULPT_TILE,zoom=1}={}){
   if(!ctx||!terrain||!points.length)return Object.freeze({cells:0,centerHeight:null});
   const marks=sculptBrushFootprint(terrain,{points,radius,edgeSoftness,mode,shape});
   const waterMode=mode.startsWith('water-');
   const candidate=waterMode
     ?applySculptWaterStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape})
-    :applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape});
+    :applySculptStroke(terrain,{points,radius,edgeSoftness,mode,target,strength,shape,rockRoundness});
   const w=tile.width,h=tile.height,rise=tile.rise;
   const tint=mode.startsWith('water-')?'#6be9ff':mode==='dig'?'#ffc181':mode==='raise'?'#9ee2ff':
-    mode==='plateau'?'#b2ffb0':'#f4e6ba';
+    mode==='plateau'?'#b2ffb0':mode==='cliff-round'?'#ffdbaa':'#f4e6ba';
   ctx.save();
   for(const m of marks){
     const level=sculptHeightAt(terrain,m.x,m.y);
-    const next=waterMode?sculptWaterAt(candidate,m.x,m.y):sculptHeightAt(candidate,m.x,m.y);
-    const before=waterMode?sculptWaterAt(terrain,m.x,m.y):level;
+    const profileMode=mode==='cliff-round',mi=m.y*terrain.width+m.x;
+    const next=profileMode?candidate.roundness[mi]:waterMode?sculptWaterAt(candidate,m.x,m.y):sculptHeightAt(candidate,m.x,m.y);
+    const before=profileMode?terrain.roundness[mi]:waterMode?sculptWaterAt(terrain,m.x,m.y):level;
     const x=m.x*w,y=m.y*h-level*rise;
     ctx.globalAlpha=.12+.29*m.weight;
     ctx.fillStyle=tint;ctx.fillRect(x+.7,y+.7,w-1.4,h-1.4);
@@ -449,13 +450,15 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
   const head=points[points.length-1];
   const cx=Math.floor(head.x),cy=Math.floor(head.y);
   const centerLevel=sculptHeightAt(terrain,cx,cy);
-  const after=waterMode?sculptWaterAt(candidate,cx,cy):sculptHeightAt(candidate,cx,cy);
+  const after=mode==='cliff-round'&&cx>=0&&cy>=0&&cx<terrain.width&&cy<terrain.height
+    ?candidate.roundness[cy*terrain.width+cx]:waterMode?sculptWaterAt(candidate,cx,cy):sculptHeightAt(candidate,cx,cy);
   if(cx>=0&&cy>=0&&cx<terrain.width&&cy<terrain.height){
     const px=(cx+.5)*w,py=(cy+.5)*h-centerLevel*rise;
     ctx.globalAlpha=1;ctx.strokeStyle='#fff';ctx.lineWidth=1.5/Math.max(.32,zoom);
     ctx.beginPath();ctx.moveTo(px-6,py);ctx.lineTo(px+6,py);
     ctx.moveTo(px,py-6);ctx.lineTo(px,py+6);ctx.stroke();
-    const label=waterMode?'Eau '+after+' blocs':mode==='plateau'?'Niveau '+after:centerLevel+' → '+after;
+    const label=mode==='cliff-round'?'Arrondi '+after+' %':waterMode?'Eau '+after+' blocs':
+      mode==='plateau'?'Niveau '+after:centerLevel+' → '+after;
     ctx.font='bold 12px system-ui,sans-serif';
     const labelW=ctx.measureText(label).width+18;
     const lx=Math.max(2,Math.min(terrain.width*w-labelW-2,px+10));
