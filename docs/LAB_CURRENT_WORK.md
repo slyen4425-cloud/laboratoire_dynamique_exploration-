@@ -1,3 +1,15 @@
+# Lot assets visuels — 21/10/2026 — 20 rochers 2,5D (5 familles × 4 variantes)
+
+- **Demande créateur :** découper proprement les cinq planches approuvées (gris, mousse, désert, volcan, fantasy), nommer et intégrer à la catégorie native **Rochers**.
+- **Base source publiée :** V59 `361fc9e676273ac50810e72558ece1b5e06bdca0` (CI #39605948149 SUCCESS) ; checkpoint START `checkpoint/exploration-start-rocks-2p5d-v1-2026-10-21` ; branche `work/exploration-rocks-2p5d-v1-2026-10-21`.
+- **Périmètre :** 20 nouveaux WebP 384×384 à canal alpha, dossier `assets/exploration/objects/rocks/`, ajout unique au manifeste `manifest.v1.json`, Asset Adapter natif et ObjectDefinitionCatalog (kind rock, bibliothèque rocks/general), sans remplacement des anciens objets.
+- **Autorités et fonctions gelées :** Asset Adapter + catalogue natif seuls propriétaires visuels ; modèle collision/transform, renderer, surfaces, caméra, relief V59, eau, ponts, bâtiments, arbres, Builder, Combat, Core intouchés. Collision d'obstacle paramétrée exclusivement dans la définition rock existante.
+- **Validation obligatoire :** 20 SHA-256/bytes des binaires réellement commités, signatures RIFF/WEBP, synchronisation manifest/adapter/catalogue, tests Node & npm check + vraie CI, preview Pages et test mobile utilisateur avant GREEN final.
+- **Risque :** bords des découpes sur les anciennes planches et échelles visuelles au sol à contrôler sur smartphone ; toute correction reste dans l'asset ou sa définition, sans rustine de renderer.
+- **Suite :** finir la pose binaire + raccord dans cette branche, CI puis publication sur source immuable sans écraser un travail plus récent.
+
+---
+
 # Lot V59 — 21/10/2026 — Arrondi de colline plus généreux, jusqu'à l'herbe
 
 - **Retour Pixel :** V54 améliore un peu les collines mais le contour complet (dessus herbeux + sommet rocheux) reste trop carré. Le créateur attend une **vraie silhouette de colline plus douce**, pas une modification seule de la texture roche.
