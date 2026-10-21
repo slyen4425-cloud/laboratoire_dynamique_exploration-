@@ -88,7 +88,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -106,7 +106,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -124,7 +124,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -142,7 +142,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -160,7 +160,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -178,7 +178,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -196,7 +196,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge' }
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.82, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',\n      viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
 
   {
