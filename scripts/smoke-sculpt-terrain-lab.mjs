@@ -2265,8 +2265,9 @@ try{
     document.querySelector('#navigation-show-bridge-corridor').checked=true;
     document.querySelector('#scene-export').click();
     window.__v67OriginalScene=document.querySelector('#json').value;
+    const saved=JSON.parse(window.__v67OriginalScene).terrain;
     return {objects:window.__sculptObjectsProbe().count,
-      wet:window.__sculptLabProbe().wetCells};
+      wet:saved.waterLevels.filter((level,i)=>level>saved.levels[i]).length};
   })()`);
   if(v67Setup.objects!==1||v67Setup.wet<16)
     throw Error('V67 real bridge crossing fixture failed: '+JSON.stringify(v67Setup));
