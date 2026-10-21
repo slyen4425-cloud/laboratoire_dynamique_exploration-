@@ -35,7 +35,7 @@ test('V57 actual sculpt draw path draws bridge once behind then partial near rai
  assert.match(source,/const deckBridge=activeSculptBridge\(\)/);
  assert.match(source,/if\(deckBridge\)drawPreviewObject\(deckBridge\);\s*drawNavigationActor\(\);\s*if\(deckBridge\)drawPreviewObject\(deckBridge,\{foregroundRailOnly:true\}\)/);
  assert.match(source,/sculptBridgeDeckAt\(\s*\[bridge\],navActor\.x,navActor\.y/);
- assert.match(source,/ctx\.drawImage\(art,-width\/2,-height,width,height\)/);
+ assert.match(source,/ctx\.drawImage\(art,-width\/2,-height\\+artShift,width,height\)/);
  assert.match(source,/ctx\.rect\(rail\.x,rail\.y,rail\.width,rail\.height\);ctx\.clip\(\)/);
  assert.match(source,/sculptBridgeVisualFootLift\(visualRect\)/);
  assert.match(source,/deckBridgeId:activeSculptBridge\(\)\?\.id\?\?null/);
