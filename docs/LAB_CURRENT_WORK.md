@@ -1,3 +1,17 @@
+# Lot V57 — 21/10/2026 — Ponts : vraie profondeur visuelle du personnage sur tablier
+
+- **Retour Pixel + capture 21/10 :** en mode marche, le personnage apparaît visuellement derrière / au travers du pont bois 2,5D alors que V55 autorise le corridor. Collines V54 un peu mieux mais encore trop anguleuses ; triangles blancs d'alpha sous les deux pieds du pont toujours présents. **V55/V56 NE SONT PAS validées visuellement** malgré CI GREEN et Pages publiée V56.
+- **Base technique exacte publiée :** `eabb936639686a41fa31cf469d135c58e4cfbea4` (V54–V56 ; CI #39580148411, checkpoint #39580302774, Pages #39580693584 SUCCESS). START `checkpoint/exploration-start-bridge-deck-occlusion-v57-2026-10-21`, branche `work/exploration-bridge-deck-occlusion-v57-2026-10-21` depuis ce SHA.
+- **Cause :** renderer `src/sculpt-lab-main.js` ordonne une seule image complète de pont par `transform.y`; dessin tout ou rien avant/après l'acteur. Le corridor physique V55 n'influe pas sur le composite visuel ; l'acteur est masqué par le pont entier malgré présence réelle sur son tablier.
+- **Périmètre :** uniquement au test de navigation et lorsque le Collision World identifie le personnage dans un corridor `bridgeTraversalRect`, dessiner le pont en arrière-plan, ensuite le personnage sur le tablier, puis les seuls éléments visuels de garde-corps du premier plan. Les autres objets et les situations hors pont gardent le tri historique. Petit décalage de pied **visuel** vers le dessus du tablier. Aucune modification de la position gameplay ni du corridor de collision.
+- **Propriétaires :** Collision World / WorldObject Model déterminent le corridor ; Render Sculpt adapter gère composition et décalage d'ancrage ; Assets adapter fournit le même WebP (non modifié).
+- **Gel :** eau V46, HD roche V50, arrondi herbe V54, étendue ponts V56, traversal V55, drag V44, Combat, WorldDocument ; ni changement gameplay ni override d'obstacle.
+- **Sentinelles :** pont traversé centre/entrée/sortie, absence de double dessin et derrière/hors tablier, quatre vues, acteur devant tablier mais derrière garde-corps, projection 2,5D, tests Node + Chromium réel + CI. Pixel utilisateur avant esthétique GREEN.
+- **Suite :** V58 alpha sous pieds sur branche dédiée, V59 arrondi colline plus global après une nouvelle base source testée. Aucune prétention de validation artistique tant que test Pixel non réussi.
+- **Statut :** lot en chantier, publication suspendue aux tests CI.
+
+---
+
 # Lot V56 — 21/10/2026 — Ponts plus grands et nettoyage des résidus alpha
 
 - **Retour créateur :** permettre de grossir les ponts plus que 120 %, et éliminer les traces claires/losanges blancs et bords sales visibles au pied du sprite, sans abîmer ses textures valides.
