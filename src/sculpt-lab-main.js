@@ -26,7 +26,7 @@ import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=scul
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-dimensions-v63';
-import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-occlusion-v57';
+import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60';
 import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
@@ -814,7 +814,7 @@ function drawNavigationActor(){
   // pre-projection lift was 43% smaller at 35° than at 90°.
   const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3;
   const projected=sculptCameraProjectBridgeFoot(cameraView(),navActor.x,footY,
-    sculptBridgeVisualFootLift(visualRect));
+    sculptBridgeVisualFootLift(visualRect,deckBridge));
   // The native Exploration actor renderer owns idle/walk motion, shadow,
   // visual anchor and direction; gameplay state is read-only.
   if(navigationActorPreparer.get(navigationActorVisual.assetId))
@@ -1062,17 +1062,20 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   const rect=sculptObjectVisualRect(object,terrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
   const {width,height}=rect;
+  const artShift=sculptBridgeDeckArtShift(rect,object);
   const point=navigationTesting?sculptCameraProject(cameraView(),rect.x,rect.y):rect;
   ctx.save();ctx.translate(point.x,point.y);ctx.rotate(rect.angle);
   if(foregroundRailOnly){
     if(object.kind!=='bridge'){ctx.restore();return;}
-    const rail=sculptBridgeForegroundClip(rect);
+    const rail=sculptBridgeForegroundClip(rect,artShift);
     ctx.beginPath();ctx.rect(rail.x,rail.y,rail.width,rail.height);ctx.clip();
   }
-  ctx.drawImage(art,-width/2,-height,width,height);
+  // Artwork's wooden deck is aligned to the canonical corridor center.
+  // All camera pitches project that same WorldObject point.
+  ctx.drawImage(art,-width/2,-height+artShift,width,height);
   if(!foregroundRailOnly&&objectEditing&&objectSelectedId===object.id){
     ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
-    ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height,width,height);
+    ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height+artShift,width,height);
   }
   ctx.restore();
 }
