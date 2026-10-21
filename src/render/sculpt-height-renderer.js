@@ -133,7 +133,7 @@ export function sculptEastSeamBounds(tile,col,row,upper,lower){
     width:thickness,height:(upper-lower)*rise+h-3});
 }
 function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72,
-  cliffAtlas=null,rockPalette='warm',cliffMoss=false}={}){
+  cliffAtlas=null,cliffHD=null,rockPalette='warm',cliffMoss=false}={}){
   if(height<=0)return;
   const {corner,undulation,foot,toe}=sculptFaceContour({width,height,smoothness});
   // V12: the foot now curves OUTWARD into a broad rock toe, rather than
@@ -174,7 +174,7 @@ function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72,
   sideGradient.addColorStop(1,'rgba(19,30,46,.19)');
   ctx.fillStyle=sideGradient;ctx.fillRect(x,y,width,height);
   // V45: mineral grain and uneven natural facets, clipped to old geometry.
-  if(!drawSculptCliffAtlas(ctx,{image:cliffAtlas,rockPalette,colors,
+  if(!drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,rockPalette,colors,
     x,y,width,height,seed,moss:cliffMoss}))
     paintSculptRockDetails(ctx,{x,y,width,height,seed,colors});
   const layers=Math.min(5,Math.max(1,Math.floor(height/21)));
@@ -516,7 +516,7 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
 }
 
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
-  rockPalette='warm',cliffAtlas=null,cliffMoss=false,visualSmoothness=.72,
+  rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,visualSmoothness=.72,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
@@ -558,7 +558,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       const side=east.get(idx);
       if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
         colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
-        rockPalette,cliffAtlas,cliffMoss});
+        rockPalette,cliffAtlas,cliffHD,cliffMoss});
     }
     for(let col=0;col<terrain.width;){
       const idx=row*terrain.width+col,first=south.get(idx);
@@ -581,7 +581,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
         ctx.fill();ctx.restore();
       }
       rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:runSmoothness,
-        rockPalette,cliffAtlas,cliffMoss});
+        rockPalette,cliffAtlas,cliffHD,cliffMoss});
       if(runSmoothness>0){
         ctx.save();
         ctx.strokeStyle='rgba(45,48,48,.18)';ctx.lineWidth=.9;
