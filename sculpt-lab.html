@@ -511,6 +511,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
 <button data-mode="smooth">Lisser les hauteurs</button>
+<button data-mode="cliff-round">🏔 Arrondir / adoucir les falaises</button>
 <button data-mode="plateau">Plateau · hauteur exacte</button>
 <div class="levels" aria-label="Hauteur exacte du plateau">
 <label for="target">Hauteur</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
@@ -556,7 +557,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <option value="threeQuarter">Vue trois-quarts (comparaison)</option>
 </select></label>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
-<label data-panel="ground" class="control">Arrondi du prochain passage <b id="visual-smooth-value">95 %</b>
+<label data-panel="ground" class="control">Arrondi des falaises (0 % net, 150 % très doux) <b id="visual-smooth-value">95 %</b>
 <input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi de roche appliqué uniquement aux prochaines cellules sculptées, 0 à 150 %"></label>
 <button id="fit">Ajuster la vue</button>
 <label class="control">Aspect de l’eau
