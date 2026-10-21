@@ -8,7 +8,7 @@
 - **Gel :** V67 ancre 55 %, V66 joystick, V65 caméra, V64 drag, V60/V63 corridor, V61 collines, V50 HD, V46 eau, 28 WebP, son, Combat, WorldDocument.
 - **Tests :** centre du tablier NON masqué, clip inférieur strictement positif par rapport au pied, plusieurs variantes/échelles et 35°, 55°, 80°, 90° ; vérifier régressions Node/Chromium/smoke/Combat et absence de nouveau travail par frame ; gate photo smartphone encore NON GREEN esthétique.
 - **Hors périmètre :** création de nouvelles textures ou géométrie 3D, physique, peinture de collines, retouches WebP.
-- **Statut :** démarrage V68, correctif visuel non validé utilisateur.
+- **Statut vérifié :** source immuable `9cce0e7dfdcff26c4385442babd4234175ba1c21`, CI complète [#39667868628](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39667868628) SUCCESS (Node/npm check + Chromium Exploration/Builder/Combat), checkpoint `checkpoint/exploration-bridge-rail-mask-v68-prevalidation-2026-10-21`. PR infrastructure seule [#206](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/206) fusionnée `08eb2a4d29493d57fc2607ab52f633968975fef9`, Pages [#39668206294](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39668206294) SUCCESS. Preview `sculpt-lab.html?v=68`. **GREEN technique de prévalidation uniquement ; non GREEN visuel/tactile Pixel** avant re-test 35°/80° et passage complet.
 
 ---
 
