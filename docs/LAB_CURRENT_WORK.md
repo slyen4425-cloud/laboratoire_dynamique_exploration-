@@ -1,3 +1,16 @@
+# Lot V54 — 21/10/2026 — Collines vraiment arrondies (herbe + roche)
+
+- **Retour créateur :** V53 arrondit une paroi rocheuse mais laisse le dessus herbeux et la silhouette d'une colline carrés. Le contrôle de V53 est ambigu à appliquer ; l'esthétique V50 de texture roche/ombres reste validée.
+- **Base de départ publiée :** V53 cache-safe source `defdac8099f3bdd6720633972707c0ffaf73273f`, Pages main `19e27f66af84dab4c69e5d4af8a9695f1761886b` CI #39565936717 SUCCESS. START `checkpoint/exploration-start-rounded-hills-v54-2026-10-21`, branche `work/exploration-rounded-hills-v54-2026-10-21` depuis ce SHA.
+- **Périmètre :** appliquer aux surfaces hautes texturées la même commande opt-in de profil `roundness[]`, découper la bordure herbeuse avec courbe et épaissir visuellement le raccord roche/herbe, garder l'ancienne image pixel-identique pour profil 95. Rendre l'activation au doigt intelligible (outil + valeur explicite) sans autre géométrie autoritaire.
+- **Autorité :** `Sculpt Height Model` garde `levels[]`, `waterLevels[]` et `roundness[]` ; `Sculpt Height Renderer` compose les seuls pixels de sol et falaise; UI édite le draft via `applySculptStroke`. Pas de changement collision/traversée ni de copie WorldDocument.
+- **Gel :** eau V46, textures roche/ombres V50, ponts V51, bord carte V52, joins V53, silhouettes non éditées, navigation, Combat, perf raster.
+- **Sentinelles :** cas convexe 2 bords secs, case sèche intérieure, bord eau, 0/95/150, tests Node + vrai Chromium + CI GitHub, export/import/undo; mobile créateur requis avant GREEN esthétique.
+- **Suite après prévalidation :** ouvrir V55 passage sur ponts depuis exactement le checkpoint source V54, puis V56 agrandissement + alpha, sur leurs propres branches.
+- **Statut :** lot ouvert ; non publié, non GREEN créateur.
+
+---
+
 # Lot actif — 21/10/2026 — V53 contour de falaise continu après retour esthétique négatif
 
 - **Retour créateur :** l'outil d'adoucissement V52 « rend pas ouf ». La roche V50 reste validée ; la V52 n'est PAS GREEN esthétique. Diagnostic code : arrondi de chaque rectangle de paroi, rayon immédiatement saturé par la largeur native (28 px), ruptures visibles aux frontières de hauteur ; l'aperçu affiche des hauteurs inchangées à tort au lieu du changement visuel.
