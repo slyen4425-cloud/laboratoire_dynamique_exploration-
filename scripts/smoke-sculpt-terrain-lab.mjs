@@ -2243,6 +2243,65 @@ try{
     throw Error('V66 camera pitch still alters visible walking speed: '+JSON.stringify(v66Results));
   await run(`document.querySelector('#navigation-toggle').click();true`);
   console.log('V66 real keydown->Movement->Collision World camera view 35°/90°:',JSON.stringify(v66Results));
+  // V67 real bridge crossing, unlike the earlier synthetic corridor tests:
+  // import a deep wet gorge + native bridge, then HOLD actual keyboard input
+  // until the hero reaches the other bank. Repeat at both camera angles.
+  const v67Setup=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js');
+    const scene=await import('./src/world/sculpt-scene-preview.js');
+    const width=20,height=12,levels=Array(width*height).fill(6),
+      waterLevels=Array(width*height).fill(-1);
+    for(let y=2;y<10;y++)for(const x of [5,6,7]){
+      levels[y*width+x]=0;waterLevels[y*width+x]=8;
+    }
+    const terrain=model.createSculptTerrain({width,height,levels,waterLevels});
+    const objects=scene.appendSculptPreviewObject([],
+      {definitionId:'objectdef.bridge.wood_rustic_2p5d.01',
+       x:6.5*28,y:3.5*21,scale:1.3,variantId:'horizontal'});
+    document.querySelector('#json').value=scene.serializeSculptPreviewScene(terrain,objects);
+    document.querySelector('#import').click();
+    const speed=document.querySelector('#navigation-speed');
+    speed.value='150';speed.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#navigation-show-bridge-corridor').checked=true;
+    document.querySelector('#scene-export').click();
+    window.__v67OriginalScene=document.querySelector('#json').value;
+    return {objects:window.__sculptObjectsProbe().count,
+      wet:window.__sculptLabProbe().wetCells};
+  })()`);
+  if(v67Setup.objects!==1||v67Setup.wet<16)
+    throw Error('V67 real bridge crossing fixture failed: '+JSON.stringify(v67Setup));
+  const v67Crossings=[];
+  for(const angle of [35,90]){
+    const start=await run(`(()=>{
+      const a=document.querySelector('#navigation-camera-angle');
+      a.value='${angle}';a.dispatchEvent(new Event('input',{bubbles:true}));
+      if(!window.__sculptNavProbe().enabled)
+        document.querySelector('#navigation-toggle').click();
+      document.querySelector('#navigation-reset').click();
+      document.activeElement?.blur?.();
+      return window.__sculptNavProbe();
+    })()`);
+    await run(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));true`);
+    await sleep(780);
+    const middle=await run(`window.__sculptNavProbe()`);
+    await sleep(640);
+    await run(`window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowRight',bubbles:true}));true`);
+    const end=await run(`window.__sculptNavProbe()`);
+    const trial={angle,start:start.player,middle:middle.player,
+      deckAtMiddle:middle.deckBridgeId,end:end.player,endReason:end.blockReason};
+    v67Crossings.push(trial);
+    if(!trial.start||!trial.middle||!trial.end||
+       !trial.deckAtMiddle||trial.middle.x<=5*28||trial.end.x<=8*28)
+      throw Error('V67 real bridge route fails across deep water: '+JSON.stringify(trial));
+    await run(`document.querySelector('#navigation-toggle').click();true`);
+  }
+  const v67Persist=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    return document.querySelector('#json').value===window.__v67OriginalScene;
+  })()`);
+  if(!v67Persist)throw Error('V67 actual bridge travel mutated saved terrain/objects');
+  console.log('V67 REAL Chromium hero crosses deep gorge bridge at 35° and 90°:',
+    JSON.stringify(v67Crossings));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
