@@ -6,7 +6,7 @@
 - **Autorité :** Height Model garde `levels[]`, `waterLevels[]` et `roundness[]` ; Sculpt Height Renderer seul transforme une série de faces calculées en chemin visuel. WorldDocument/Collision World/Traversal restent intacts. Un seuil de compatibilité préservera les faces V50/V52 non retouchées ; les transitions ne doivent jamais traverser une case d'eau ou déborder du carré de terrain.
 - **Tests ciblés :** unité géométrie de joint et limites 0/95/150, continuité des transitions, aucune mutation, pinceau et Undo/export/import ; vrai Chromium dans la CI, sentinelles eau V46, ombre/atlas V50, bord sud V52, ponts V51, drag et Combat ; perf mobile testée avant toute validation créateur.
 - **Hors périmètre :** géométrie physique, modification automatique de toutes les falaises, bordure extérieure V52, eau, textures, Builder 2D, collisions, gameplay pont et publication sur main avant gate complet.
-- **Statut :** démarrage V53, correctif esthétique NON VALIDÉ ; future preview soumise au contrôle smartphone avant GREEN utilisateur.
+- **Statut :** V53 correctif prévalidé techniquement sur source `2cb35c165f2065179efbba1f1bcc63c3cb735f98`, [CI #39564714425](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39564714425) SUCCESS (tests Node et Chromium Builder/Exploration/Combat). Test natif des pixels de falaise ajouté, zones non retouchées préservées, aperçu de pinceau corrigé. Dossier `docs/checkpoints/EXPLORATION_CLIFF_CONTOURS_V53_PREVALIDATION_2026-10-21.md`. **Aucun GREEN esthétique créateur : preview Pixel à venir.**
 
 ---
 
