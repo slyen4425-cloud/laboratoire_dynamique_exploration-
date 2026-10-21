@@ -8,3 +8,10 @@
 - Risque ouvert : ce traitement algorithmique ne garantit pas la disparition de toutes les imperfections de chaque sprite ; inspection visuelle ciblée des sept ponts requise par le créateur. Aucune prétention de remplacement des 28 binaires ; pas de GREEN artistique.
 - Gel : V46 eau, V50 atlas HD, V51 visuels ponts, V52 limite sud, V53 falaise, V54 sommet, V55 corridor, Collision World et Capture Combat inchangés.
 - Publication Pages seulement après CI finale sur le SHA documentaire, PR infrastructure pinning strict et validation navigateur.
+
+## Publication de test groupée V54-V56 (sans GREEN esthétique)
+- Source finale immuable `eabb936639686a41fa31cf469d135c58e4cfbea4`, CI finale [#39580148411](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39580148411) SUCCESS, checkpoint CI [#39580302774](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39580302774) SUCCESS.
+- PR infra seule [#197](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/197), fusion sur main `2622449bbf6ad7cc5f11b17051a1f43ae10e11a6`, Pages [#39580693584](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39580693584) **SUCCESS**.
+- URL test Pixel : `https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/sculpt-lab.html?v=56`.
+- Validation visuelle/tactile et qualité du nettoyage alpha à confirmer par le créateur. Pas de GREEN final tant qu'il n'a pas testé.
+- Retour arrière immédiat : ancienne source V53 `defdac8099f3bdd6720633972707c0ffaf73273f` (workflow Pages seulement).
