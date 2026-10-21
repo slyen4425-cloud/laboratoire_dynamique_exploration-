@@ -1,12 +1,17 @@
 // Visual-only hit testing for the SAME resolved WorldObject rectangles
 // used by the sculpt renderer. Never creates a gameplay collision shape.
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
+import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=sculpt-bridge-dimensions-v63';
 import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60';
 import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 
 export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=21,rise=18}={}){
-  const t=object.transform,base=object.baseSize;
+  const t=object.transform;
+  // Shared canonical dimensions: Bridge baseSize.length is the long axis,
+  // baseSize.width the short axis. An older UI shortcut used width TWICE,
+  // creating a square sprite on top of a rectangular collision corridor.
+  const base=worldObjectBaseDimensions(object);
   const col=Math.floor(t.x/tileWidth),row=Math.floor(t.y/tileHeight);
   const groundLevel=terrain&&col>=0&&row>=0&&col<terrain.width&&row<terrain.height
     ?sculptHeightAt(terrain,col,row):0;
@@ -20,8 +25,8 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
   const level=bridgeDeck??groundLevel;
   return Object.freeze({
     x:t.x,y:t.y-level*rise,
-    width:(base?.width??base?.length??80)*t.scaleX,
-    height:(base?.height??base?.width??80)*t.scaleY,
+    width:(base?.width??80)*t.scaleX,
+    height:(base?.height??80)*t.scaleY,
     angle:(t.rotationDeg??0)*Math.PI/180
   });
 }
