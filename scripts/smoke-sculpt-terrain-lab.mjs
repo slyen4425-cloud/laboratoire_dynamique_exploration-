@@ -954,7 +954,14 @@ try{
     await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
     document.querySelector('#scene-export').click();
     const scene=JSON.parse(document.querySelector('#json').value);
+    // The phone's Objects palette overlays the right of the Canvas.
+    // Move only the test fixture bridge to an actually tappable left-side
+    // position through the public scene Import action, not any editor API.
     const placement=scene.objects.find(o=>o.objectDefinitionId==='objectdef.bridge.wood_rustic_2p5d.01');
+    placement.transform.x=Math.max(80,placement.transform.x-300);
+    document.querySelector('#json').value=JSON.stringify(scene);
+    document.querySelector('#import').click();
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
     const o=world.resolveWorldObjectPlacements([placement])[0];
     const visual=picking.sculptObjectVisualRect(o,model.importSculptTerrain(scene.terrain));
     const p=window.__sculptLabProbe(),bounds=canvas.getBoundingClientRect();
