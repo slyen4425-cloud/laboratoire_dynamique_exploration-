@@ -54,7 +54,7 @@ test('V51 mobile object picker includes bridges and native placement over author
   assert.match(html,/<option value="bridge">[^<]*Ponts<\/option>/);
   assert.match(html,/id="object-variant-wrap"[^>]*>Vue \/ orientation/);
   assert.match(js,/const definition=objectDefinitionCatalogV1.get\(definitionId\)/);
-  assert.match(js,/sculptWaterAt\(terrain,cell.x,cell.y\)>0&&definition\?\.kind!=='bridge'/);
+  assert.match(js,/sculptObjectCanOccupyCell\\(terrain,definitionId,cell\\.x,cell\\.y\\)/);
   assert.match(js,/sculptPreviewVariants\(definitionId\)/);
   assert.match(js,/categories:\[\.\.\.\$\('object-category'\)\.options\]/);
 });
