@@ -518,6 +518,42 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   };
 }
 
+// V54: same per-cell authored visual profile now also rounds the GRASS
+// shoulder of a convex hill. The canonical height-grid and the unedited
+// 95 % cells stay byte-for-byte/pixel-for-pixel on their old paint path.
+export function sculptHillTopProfile(terrain,col,row,tile=SCULPT_TILE){
+  if(!terrain||!Array.isArray(terrain.roundness)||col<0||row<0||
+     col>=terrain.width||row>=terrain.height||sculptWaterAt(terrain,col,row)>0)
+    return Object.freeze({radius:0,corners:Object.freeze([])});
+  const i=row*terrain.width+col,amount=terrain.roundness[i];
+  // Reversibility: 95 is the published V50 default and is not an opt-in.
+  if(amount<=95)return Object.freeze({radius:0,corners:Object.freeze([])});
+  const level=terrain.levels[i];
+  const exposed=(dx,dy)=>{
+    const x=col+dx,y=row+dy;
+    return x>=0&&y>=0&&x<terrain.width&&y<terrain.height&&
+      sculptWaterAt(terrain,x,y)===0&&sculptHeightAt(terrain,x,y)<level;
+  };
+  const n=exposed(0,-1),e=exposed(1,0),s=exposed(0,1),w=exposed(-1,0);
+  const corners=Object.freeze([n&&w,n&&e,s&&e,s&&w]);
+  if(!corners.some(Boolean))return Object.freeze({radius:0,corners});
+  const amountNormalized=(amount-95)/55;
+  const radius=Math.min(tile.width,tile.height)*.48*amountNormalized;
+  return Object.freeze({radius,corners});
+}
+function sculptHillTopPath(ctx,x,y,w,h,{radius,corners}){
+  const [tl,tr,br,bl]=corners.map(active=>active?radius:0);
+  ctx.beginPath();ctx.moveTo(x+tl,y);
+  ctx.lineTo(x+w-tr,y);
+  if(tr)ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
+  ctx.lineTo(x+w,y+h-br);
+  if(br)ctx.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+  ctx.lineTo(x+bl,y+h);
+  if(bl)ctx.quadraticCurveTo(x,y+h,x,y+h-bl);
+  ctx.lineTo(x,y+tl);
+  if(tl)ctx.quadraticCurveTo(x,y,x+tl,y);
+  ctx.closePath();
+}
 // V52: visible outside SOUTH edge, derived only from the last canonical row.
 // Rock facing never participates in geometry, collision, water or traversal.
 // Adjacent equal elevations/profiles are one wall to avoid tiled box seams.
@@ -643,6 +679,13 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     for(let col=0;col<terrain.width;col++){
       const idx=row*terrain.width+col,level=terrain.levels[idx];
       const x=col*w,y=row*h-level*rise;
+      const hill=sculptHillTopProfile(terrain,col,row,tile);
+      if(hill.radius>0){
+        // When grass rounds back, expose the mineral shoulder below it,
+        // rather than a transparent black corner or a second level of land.
+        ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
+        ctx.save();sculptHillTopPath(ctx,x,y,w,h,hill);ctx.clip();
+      }
       ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
       ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
         'rgba(0,0,0,.01)'],col,row,2);
@@ -656,6 +699,12 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       paintedCells+=drawPaint(col,row,level,x,y);
       // Height-aware ambient contact shadow on existing land material only.
       drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
+      if(hill.radius>0){
+        // Thin earthy rim is painted along the curved lip, above the same
+        // V50 rock texture, without altering grass outside edited tiles.
+        ctx.strokeStyle='rgba(42,50,41,.30)';ctx.lineWidth=1.25;
+        sculptHillTopPath(ctx,x,y,w,h,hill);ctx.stroke();ctx.restore();
+      }
       const side=east.get(idx);
       if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
         colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
