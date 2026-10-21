@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-high-platform-v63-tactile-water-v64-prevalidation-2026-10-21
+# preview-revision: bridge-camera-depth-v65-joystick-input-v66-test-2026-10-21
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: bb32a1b257fd7672af28678cc6504da428da1f8c
+          ref: e7d823c291629d627648e76a9042412f0580c741
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
