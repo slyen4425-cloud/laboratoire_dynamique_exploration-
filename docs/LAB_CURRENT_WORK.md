@@ -1,3 +1,16 @@
+# V61 — 2026-10-21 — Remplacer arrondi par contour continu de colline (retour utilisateur négatif V59)
+
+- **Retour utilisateur :** V59 « pas du tout ce que je veux », trop carré, peu intuitif. Le pinceau local ne changeait qu'un coin de case : toucher le milieu d'un plateau ne touchait aucun contour visible.
+- **Base testée V60 :** `0341a40315e03c8d3c3b550becea1889d76302c4`, CI #39613192812 SUCCESS. START `checkpoint/exploration-start-whole-hill-contour-v61-2026-10-21`, branche `work/exploration-whole-hill-contour-v61-2026-10-21` depuis ce SHA, séparée du lot pont V60.
+- **Objectif distinct :** un seul toucher sur le sommet d'un plateau sélectionne VISUELLEMENT toute sa composante connexe sèche et à niveau égal, et applique l'arrondi sur le **contour global** du sommet herbeux, pas une collection de petits coins. Courbes à rayon pouvant englober plusieurs cases, sans modifier le heightfield/collision ou le Material Registry. Modifier l'explication d'outil pour « touche une fois au milieu de la colline » ; 95 % reste neutre, 150 % arrondi marqué.
+- **Propriété des données :** `levels[]/waterLevels[]/roundness[]` dans Height Model. Le Renderer Sculpt calcule, met en cache et clippe les composantes et leurs boucles de contour par Path2D uniquement pour le rendu ; pas de persistences ni deuxième hauteur. L'intensité est dérivée de `roundness[]` existant (une cellule touchée sur un plateau active toute sa composante), sans nouvelle clé de schéma.
+- **Gel :** passage pont V60, profondeur V57, alpha V58, matériaux HD V50, eau V46, assets 20 rochers, caméra/tactile, sauvegardes compatibles, tous modes Combat et gameplay. Les zones 95 restent sur chemin rendu historique pixel-identique.
+- **Tests requis :** plateau rectangulaire 4x4 et sommet intérieur touché, vrai rayon >1 case, contour connecté avec concavité et éventuel trou, chevauchement d'objets de hauteur différente, eau = aucune courbe à travers, undo/export-import, isolation des collisions, tests Node et **vrai Chromium image**, perf mobile (masque mis en cache). Publication sur nouvelle source immuable après CI ; avis Pixel requis pour GREEN esthétique.
+- **Risque :** courbe visuelle sans modification des collisions, et pente forte encore brusque (un futur vrai maillage de pente serait un changement de géométrie à discuter, hors lot). Éviter les masques générés par frame.
+- **Statut :** lot ouvert, non publié/ non validé créateur.
+
+---
+
 # V60 — 2026-10-21 — Ponts réellement franchissables entre deux hauteurs (retour Pixel)
 
 - **Retour créateur V59 (NON GREEN) :** aucune différence sensible au passage sur le pont ; impossible de passer dessus, et arrondi de colline toujours cubique/non intuitif. NE PAS revendiquer leur validation sur la base de CI seule.
