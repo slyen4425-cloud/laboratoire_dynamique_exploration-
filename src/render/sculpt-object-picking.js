@@ -5,6 +5,7 @@ import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=scul
 import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60';
 import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
+import {sculptBridgeDeckArtShift} from './sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67';
 
 export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=21,rise=18}={}){
   const t=object.transform;
@@ -43,8 +44,13 @@ export function findSculptVisualObjectAtPoint(placements,terrain,{x,y},{
     const dx=x-rect.x,dy=y-rect.y;
     const cos=Math.cos(rect.angle),sin=Math.sin(rect.angle);
     const localX=dx*cos+dy*sin,localY=-dx*sin+dy*cos;
+    // V67: bridge artwork is intentionally deck-centered in its visual
+    // adapter, not centered in the PNG bounds; selection must use exactly
+    // that same visible anchor, without changing any WorldObject transform.
+    const deckShift=sculptBridgeDeckArtShift(rect,object);
+    const localCenterY=deckShift>0?deckShift-rect.height*.5:0;
     if(Math.abs(localX)>rect.width/2+padding||
-       Math.abs(localY)>rect.height/2+padding)continue;
+       Math.abs(localY-localCenterY)>rect.height/2+padding)continue;
     if(object.transform.y>=depth){found=object;depth=object.transform.y;}
   }
   return found;
