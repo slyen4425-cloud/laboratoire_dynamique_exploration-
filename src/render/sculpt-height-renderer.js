@@ -542,6 +542,77 @@ export function sculptOuterSouthCliffRuns(terrain){
   return Object.freeze(runs);
 }
 
+// V53: optical seam continuity is strictly opt-in. Native 95 % profiles
+// continue through V50/V52's exact legacy rock-face painter.
+export function sculptRoundedSouthColumns(terrain,row){
+  if(!terrain||!Array.isArray(terrain.roundness)||row<0||row>=terrain.height-1)
+    return Object.freeze([]);
+  const width=terrain.width,selected=new Set();
+  const dryFace=col=>col>=0&&col<width&&
+    sculptHeightAt(terrain,col,row)>sculptHeightAt(terrain,col,row+1)&&
+    sculptWaterAt(terrain,col,row)<=0&&sculptWaterAt(terrain,col,row+1)<=0;
+  for(let col=0;col<width;col++){
+    if(!dryFace(col)||terrain.roundness[row*width+col]===95)continue;
+    // Include a single neighbouring dry cliff face: the edited endpoint
+    // blends into its neighbour instead of ending in a second square wall.
+    for(let n=col-1;n<=col+1;n++)if(dryFace(n))selected.add(n);
+  }
+  return Object.freeze([...selected].sort((a,b)=>a-b));
+}
+// Span is proportional to the step and to the actual authored roundness.
+// The old rectangle formula saturated for a 28px tile already at 95 %.
+export function sculptSouthCliffJointSpan({width=28,delta=0,left=95,right=95}={}){
+  const soften=Math.max(0,Math.min(1.5,(Number(left)+Number(right))/200));
+  return Math.min(Math.max(0,Number(width))*.46,
+    Math.max(0,Math.abs(Number(delta)||0))*.65)*(soften/1.5);
+}
+// Pure visual mask, never reused for collisions or surface geometry. Both
+// top and foot are joined with a cubic fillet between adjacent height spans.
+function sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,{capLeft=true,capRight=true}={}){
+  const {width:w,height:h,rise}=tile;
+  const top=face=>face.y*h-face.upper*rise+h;
+  const bottom=face=>face.y*h-face.lower*rise+h;
+  const first=faces[0],last=faces[faces.length-1];
+  const start=first.x*w,end=(last.x+1)*w;
+  const cornerL=capLeft?sculptFaceContour({width:w,height:bottom(first)-top(first),
+    smoothness:profiles[0]/100}).corner:0;
+  const cornerR=capRight?sculptFaceContour({width:w,height:bottom(last)-top(last),
+    smoothness:profiles.at(-1)/100}).corner:0;
+  ctx.beginPath();
+  ctx.moveTo(start,top(first)+cornerL);
+  if(cornerL)ctx.quadraticCurveTo(start,top(first),start+cornerL,top(first));
+  else ctx.lineTo(start,top(first));
+  for(let i=0;i<faces.length-1;i++){
+    const a=faces[i],b=faces[i+1],border=(a.x+1)*w;
+    const ay=top(a),by=top(b);
+    const span=sculptSouthCliffJointSpan({width:w,delta:by-ay,
+      left:profiles[i],right:profiles[i+1]});
+    ctx.lineTo(border-span,ay);
+    if(span>0)ctx.bezierCurveTo(border-span*.18,ay,
+      border+span*.18,by,border+span,by);
+    else ctx.lineTo(border,by);
+  }
+  ctx.lineTo(end-cornerR,top(last));
+  if(cornerR)ctx.quadraticCurveTo(end,top(last),end,top(last)+cornerR);
+  else ctx.lineTo(end,top(last));
+  ctx.lineTo(end,bottom(last)-cornerR);
+  if(cornerR)ctx.quadraticCurveTo(end,bottom(last),end-cornerR,bottom(last));
+  else ctx.lineTo(end,bottom(last));
+  for(let i=faces.length-2;i>=0;i--){
+    const a=faces[i],b=faces[i+1],border=(a.x+1)*w;
+    const ay=bottom(a),by=bottom(b);
+    const span=sculptSouthCliffJointSpan({width:w,delta:ay-by,
+      left:profiles[i],right:profiles[i+1]});
+    ctx.lineTo(border+span,by);
+    if(span>0)ctx.bezierCurveTo(border+span*.18,by,
+      border-span*.18,ay,border-span,ay);
+    else ctx.lineTo(border,ay);
+  }
+  ctx.lineTo(start+cornerL,bottom(first));
+  if(cornerL)ctx.quadraticCurveTo(start,bottom(first),start,bottom(first)-cornerL);
+  else ctx.lineTo(start,bottom(first));
+  ctx.closePath();
+}
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,visualSmoothness=.72,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
@@ -587,13 +658,37 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
         colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
         rockPalette,cliffAtlas,cliffHD,cliffMoss});
     }
+    const blendedColumns=new Set(sculptRoundedSouthColumns(terrain,row));
     for(let col=0;col<terrain.width;){
       const idx=row*terrain.width+col,first=south.get(idx);
       if(!first){col++;continue;}
+      if(blendedColumns.has(col)){
+        let end=col+1;
+        while(end<terrain.width&&blendedColumns.has(end)&&
+          south.has(row*terrain.width+end))end++;
+        const faces=Array.from({length:end-col},(_,i)=>south.get(row*terrain.width+col+i));
+        const profiles=faces.map(face=>terrain.roundness[row*terrain.width+face.x]);
+        const leftNeighbour=col>0&&south.has(row*terrain.width+col-1);
+        const rightNeighbour=end<terrain.width&&south.has(row*terrain.width+end);
+        const minTop=Math.min(...faces.map(face=>row*h-face.upper*rise+h));
+        const maxBottom=Math.max(...faces.map(face=>row*h-face.lower*rise+h));
+        ctx.save();
+        sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,
+          {capLeft:!leftNeighbour,capRight:!rightNeighbour});
+        ctx.clip();
+        // Reuse the same HD atlas, palette, cracks and vertical depth shade.
+        // The mask is never stored as a second terrain or collision shape.
+        rockFace(ctx,{x:col*w,y:minTop,width:(end-col)*w,height:maxBottom-minTop,
+          colors,seed:idx,sun:1,smoothness:0,
+          rockPalette,cliffAtlas,cliffHD,cliffMoss});
+        ctx.restore();
+        faceRuns++;col=end;continue;
+      }
       let end=col+1;
       while(end<terrain.width){
         const adjacent=south.get(row*terrain.width+end);
-        if(!adjacent||adjacent.upper!==first.upper||adjacent.lower!==first.lower||
+        if(!adjacent||blendedColumns.has(end)||
+          adjacent.upper!==first.upper||adjacent.lower!==first.lower||
           (hasProfiles&&terrain.roundness[row*terrain.width+end]!==terrain.roundness[idx]))break;
         end++;
       }
