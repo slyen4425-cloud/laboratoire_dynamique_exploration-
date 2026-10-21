@@ -75,7 +75,7 @@ test('V61 controller makes one tap effective and renderer applies one coherent g
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
- assert.match(main,/Touche UNE FOIS LE MILIEU/);
+ assert.match(main,/TOUCHE UNE FOIS LE MILIEU/);
  assert.match(main,/\$\('radius'\)\.value='\.5'/);
  assert.match(renderer,/sculptRoundedHillRegions\(terrain\)/);
  assert.match(renderer,/sculptClipRoundedHill\(ctx,roundedHill,tile\)/);
