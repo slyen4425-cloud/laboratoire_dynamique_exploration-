@@ -120,8 +120,16 @@ export function sculptNavigationBlockDetail({
       // Side-entry from outside the corridor cannot evade cliffs either.
       const endEntry=deck&&previousDeck||crossingDeck&&bridgeEndTransition(
         crossingDeck,previousX,previousY,x,y,radius);
+      // The bridge carries steps ALONG its longitudinal axis. V55 accepted
+      // an approach from the SIDE and could thus tunnel through a cliff.
+      const vx=x-previousX,vy=y-previousY;
+      const along=crossingDeck?Math.abs(vx*Math.cos(crossingDeck.rotation)+
+        vy*Math.sin(crossingDeck.rotation)):0;
+      const sideways=crossingDeck?Math.abs(vy*Math.cos(crossingDeck.rotation)-
+        vx*Math.sin(crossingDeck.rotation)):Infinity;
+      const walkingAlongDeck=along>=sideways*.85;
       const levelIsBelowDeck=banks&&Math.min(previous.level,sample.level)<Math.min(...banks);
-      const supportedBridgeStep=Boolean(banks&&endEntry&&levelIsBelowDeck&&
+      const supportedBridgeStep=Boolean(banks&&endEntry&&walkingAlongDeck&&levelIsBelowDeck&&
         Math.max(previous.level,sample.level)<=highestBank);
       if(!supportedBridgeStep&&
          (rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown)))
