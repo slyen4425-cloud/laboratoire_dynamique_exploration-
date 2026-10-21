@@ -805,7 +805,9 @@ function updateNavigationInfo(forced=false){
   if(!navigationTesting||!navActor)return;
   const info=sculptNavigationSample(terrain,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
+  const deck=activeSculptBridge();
   const value=info?'Case '+(info.col+1)+' / '+(info.row+1)+' · hauteur '+info.level+
+    (deck?' · 🌉 SUR LE PONT':'')+
     (info.waterDepth>0?' · eau '+info.waterDepth:'')+
     (navBlocked?' · bloqué : '+navigationBlockMessage(navBlockReason):''):'Hors zone';
   if(forced||value!==navLastState){$('navigation-status').textContent=value;navLastState=value;}
