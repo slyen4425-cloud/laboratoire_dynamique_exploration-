@@ -13,7 +13,7 @@ test('20 native 2.5D rocks in 5 families reuse the Rock catalog and semantic ada
  for(const entry of additions){
   const asset=resolveWorldObjectAsset(entry.assetId);
   assert.ok(asset,entry.assetId); assert.equal(asset.kind,'rock-visual'); assert.equal(asset.path,'./'+entry.path);
-  const id=entry.assetId.replace(/^object\\.rock\\./,'objectdef.rock.');
+  const id=entry.assetId.replace('object.rock.','objectdef.rock.');
   const def=objectDefinitionCatalogV1.get(id);
   assert.ok(def,id); assert.equal(def.kind,'rock'); assert.equal(def.library.categoryId,'rocks'); assert.equal(def.library.folderId,'rocks/general');
   assert.equal(def.visual.assetId,entry.assetId); assert.equal(def.collision.role,'obstacle');
