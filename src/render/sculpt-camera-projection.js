@@ -50,6 +50,21 @@ export function sculptCameraProjectBridgeCorridor(view,corridor,{level=0,rise=18
 export function sculptCameraUnproject(view,x,y){
   return Object.freeze({x,y:(y-view.shear*x)/view.pitch});
 }
+// Camera/input adapter only: convert a SCREEN joystick vector into the
+// exact WORLD vector consumed by the unmodified Exploration stepMovement.
+// The engine normalizes the vector. To preserve visually equal screen speed,
+// compensate the length change due to the inverse camera transform. This
+// never changes obstacle checks, physics, or authored terrain heights.
+export function sculptCameraWorldInput(view,screenX=0,screenY=0){
+  const sx=Number.isFinite(screenX)?screenX:0,sy=Number.isFinite(screenY)?screenY:0;
+  const screenMagnitude=Math.hypot(sx,sy);
+  if(screenMagnitude<=1e-9)return Object.freeze({x:0,y:0,speedMultiplier:1});
+  const pitch=Math.max(.35,Number(view?.pitch)||1);
+  const shear=Number(view?.shear)||0;
+  const x=sx,y=(sy-shear*sx)/pitch;
+  const speedMultiplier=Math.max(.85,Math.min(2,Math.hypot(x,y)/screenMagnitude));
+  return Object.freeze({x,y,speedMultiplier});
+}
 export function sculptCameraBounds(view,width,height,maxElevation){
   const elevated=Number(maxElevation)||0;
   const corners=[
