@@ -9,7 +9,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
-import {sculptNavigationSample,sculptNavigationBlockDetail} from './core/sculpt-navigation-collision.js';
+import {sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v55';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -22,10 +22,10 @@ import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.j
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
-import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js';
-import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js';
+import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55';
+import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js';
-import {isBlocked} from './core/collision.js';
+import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v55';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
@@ -702,12 +702,21 @@ function navigationWorld(){
 function navigationMaxStep(){
   return Math.max(1,Math.min(3,Math.round(Number($('navigation-max-step').value)||2)));
 }
+let navBridgePlacements=null,navBridgeProjection=null;
+function resolvedSculptBridges(){
+  if(navBridgePlacements!==placedObjects){
+    navBridgePlacements=placedObjects;
+    navBridgeProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
+      .filter(o=>o.kind==='bridge');
+  }
+  return navBridgeProjection;
+}
 function navigationContext(){
   const maxStep=navigationMaxStep();
   return {objectCatalog:sculptPreviewCollisionCatalog,
     sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
       cellHeight:SCULPT_TILE.height,maxStepUp:maxStep,maxStepDown:maxStep,
-      shoreEntryFraction:.14}};
+      shoreEntryFraction:.14,bridges:resolvedSculptBridges()}};
 }
 // Explain actual rejection from the SAME swept-height check used by Collision
 // World; never guess physics from rounded visual cliff pixels.
@@ -723,7 +732,9 @@ function navigationBlockMessage(reason){
 function navHeight(){
   const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
-  return info?.level??0;
+  const deck=navActor?sculptBridgeDeckHeight(terrain,resolvedSculptBridges(),
+    navActor.x,navActor.y,{cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
+  return deck??info?.level??0;
 }
 function centerNavigationCamera(){
   if(!navigationTesting||!navActor)return;
