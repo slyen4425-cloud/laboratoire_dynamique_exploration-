@@ -1023,10 +1023,10 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
     const rail=sculptBridgeForegroundClip(rect);
     ctx.beginPath();ctx.rect(rail.x,rail.y,rail.width,rail.height);ctx.clip();
   }
-  ctx.drawImage(art,-width/2,-height/2,width,height);
+  ctx.drawImage(art,-width/2,-height,width,height);
   if(!foregroundRailOnly&&objectEditing&&objectSelectedId===object.id){
     ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
-    ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height/2,width,height);
+    ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height,width,height);
   }
   ctx.restore();
 }
