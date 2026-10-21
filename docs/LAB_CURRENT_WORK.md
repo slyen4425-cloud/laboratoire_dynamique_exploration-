@@ -1,3 +1,16 @@
+# V60 — 2026-10-21 — Ponts réellement franchissables entre deux hauteurs (retour Pixel)
+
+- **Retour créateur V59 (NON GREEN) :** aucune différence sensible au passage sur le pont ; impossible de passer dessus, et arrondi de colline toujours cubique/non intuitif. NE PAS revendiquer leur validation sur la base de CI seule.
+- **Base immuable publiée (conserve 20 rochers) :** `b3d9068f29066ac90f9b38773cce5753555897a3`, Pages #39609657544 SUCCESS. Checkpoint START `checkpoint/exploration-start-bridge-real-crossing-v60-2026-10-21`, branche `work/exploration-bridge-real-crossing-v60-2026-10-21`, créés avant codage sur exactement ce SHA.
+- **Cause bloquante reproduite en code :** V55 saute l'interdiction de l'eau sur le rectangle bridgeTraversalRect mais conserve une restriction de saut en hauteur (>maxStep) calculée sur le fond de la gorge. Le perso ne peut donc pas franchir une coupure profonde, bien qu'un tablier soit placé. V57 dépend d'un test `activeSculptBridge` non activé avant l'entrée, donc le rendu ne peut pas sauver la traversée.
+- **Périmètre V60 :** le Collision World accepte un grand écart de niveau **uniquement** au passage entre rive et corridor de pont validé, et durant la traversée du corridor ; refus inchangé à l'extérieur, en eau hors pont ou en l'absence de pont. L'axe, le scale, la rotation, l'entrée et la sortie proviennent de WorldObject/bridgeTraversalRect (pas des pixels). Ajouter un retour explicite dans le HUD Testeur `Sur le pont` / `Pas sur le pont` pour différencier visuel et collision, vérifier le corridor effectif sur Pixel. Tester 360°, marche inverse, grandes différences haut/bas, aucune fuite hors corridor ni sur une falaise non raccordée.
+- **Propriétaire :** `src/core/sculpt-navigation-collision.js` appelé seulement par `src/core/collision.js` pour le labo; `src/sculpt-lab-main.js` affiche un diagnostic lecture seule; pas de nouvelle autorité physique. Fichiers de test ciblés, cache JS, CI/Chromium. Aucun changement de visage des 20 rochers.
+- **Gel :** GenSrpG principal, Canvas/PWA, Combat, V46 eau, V50 roche, V57 rendu, V58 alpha, V59 herbe et map import. V59 arrondi **non validé** et reste à **redessiner conceptuellement** dans un futur lot V61 séparé (contour continu de toute la colline plutôt que coins de cases).
+- **Risques :** autoriser une falaise hors pont par lissage excessif; faux raccord de pont trop court ou trop petit; tester la vraie entrée/sortie à vitesse normale sur terrain discontinu. Maintenir comportement V17/V40 non-pont inchangé. Pas de publication si CI rouge; GREEN artistique seulement après nouveau vrai test Pixel.
+- **Statut :** lot ouvert, non publié / non validé utilisateur.
+
+---
+
 # Lot assets visuels — 21/10/2026 — 20 rochers 2,5D (5 familles × 4 variantes)
 
 - **Demande créateur :** découper proprement les cinq planches approuvées (gris, mousse, désert, volcan, fantasy), nommer et intégrer à la catégorie native **Rochers**.
