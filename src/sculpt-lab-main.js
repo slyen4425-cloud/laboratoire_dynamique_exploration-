@@ -482,7 +482,9 @@ function selectMode(mode){
   });
   syncQuickToolbar();
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
-    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
+    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
+    'cliff-round':'Arrondi visuel des falaises : peins la zone avec le réglage Arrondi (0 % = net). Aucun niveau de terrain ou eau n’est modifié.',
+    plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
     'water-lower':'Eau : abaisser sa surface','water-erase':'Eau : enlever le volume peint',
