@@ -12,15 +12,15 @@ const hill=()=>{
 };
 test('V59 150% rounds the grass plateau more strongly and adds visual grass over dry cliffs',()=>{
  const original=hill(),soft=applySculptStroke(original,{
-   mode:'cliff-round',points:[{x:3.5,y:3.5}],radius:.5,rockRoundness:150});
+   mode:'cliff-round',points:[{x:3.5,y:3.5},{x:3.5,y:5.5}],radius:.5,rockRoundness:150});
  const profile=sculptHillTopProfile(soft,3,3);
  assert.ok(profile.radius>SCULPT_TILE.height*.70,
    'real grass top rounding should be substantially wider than V54 0.48 x tile');
  assert.deepEqual(profile.corners,[true,false,false,false]);
- assert.ok(sculptHillGrassShoulderWidth(soft,3,3,SCULPT_TILE)>9);
- assert.ok(sculptHillGrassShoulderWidth(soft,3,3,SCULPT_TILE,'east')===0,
+ assert.ok(sculptHillGrassShoulderWidth(soft,3,5,SCULPT_TILE)>9);
+ assert.ok(sculptHillGrassShoulderWidth(soft,3,5,SCULPT_TILE,'east')===0,
    'east cliff must be real (not only selected pixel)');
- assert.equal(sculptHillGrassShoulderWidth(original,3,3),0);
+ assert.equal(sculptHillGrassShoulderWidth(original,3,5),0);
  assert.equal(soft.levels,original.levels);
  assert.equal(soft.waterLevels,original.waterLevels);
  assert.deepEqual(sculptFaces(soft),sculptFaces(original));
@@ -28,12 +28,12 @@ test('V59 150% rounds the grass plateau more strongly and adds visual grass over
 });
 test('V59 only painted dry cliffs have grass shoulders, not lake walls',()=>{
  const first=hill(),waterLevels=[...first.waterLevels];
- waterLevels[4*10+3]=5;
- const roundness=[...first.roundness];roundness[3*10+3]=150;
+ waterLevels[6*10+3]=5;
+ const roundness=[...first.roundness];roundness[5*10+3]=150;
  const t=createSculptTerrain({width:10,height:10,levels:first.levels,roundness,waterLevels});
- assert.equal(sculptHillGrassShoulderWidth(t,3,3),0,
+ assert.equal(sculptHillGrassShoulderWidth(t,3,5),0,
    'sensitive water masks remain unchanged');
- assert.equal(sculptHillGrassShoulderWidth(t,3,3,SCULPT_TILE,'east'),0);
+ assert.equal(sculptHillGrassShoulderWidth(t,3,5,SCULPT_TILE,'east'),0);
  assert.equal(sculptHillGrassShoulderWidth(t,4,4),0);
 });
 test('V59 stays wholly in renderer visual authority, with original grass materials',()=>{
