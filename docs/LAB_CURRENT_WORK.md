@@ -7,7 +7,7 @@
 - **Gel :** renderer roche V50, eau V46, courbes, falaises, soleil/caméra, géométrie hauteur, 28 images ponts, bâtiments, arbres, rochers, scène legacy, Combat/Capture/GenSrpG.
 - **Tests :** catalogue des 7 ponts et 28 vues, UI HTML, option/variant, placement sur eau, round-trip scène et anciennes définitions, `npm test && npm run check`, CI GitHub et smoke Chromium ciblé. Pas de publication main/Pages ou GREEN mobile avant validation.
 - **Risque :** placement mobile, superposition au-dessus de l'eau, alignement visuel et cohérence des orientations à tester sur téléphone ; ne jamais promettre une traversée validée par un simple visuel.
-- **Statut :** branche de travail ouverte, implémentation et tests en attente ; les deux autres retours restent documentés et ouverts.
+- **Statut :** V51 GREEN technique prévalidation ; UI et logique de composition corrigées, contrôles 7×4 vues + export/import + pose réellement cliquée sur eau en Chromium ; CI source [#39540750409](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39540750409) SUCCESS (Node + check + Chromium Builder/Exploration/Combat). HEAD runtime `3f2a7eec782b5cfd212cd6ccc469cf907fb13d71`. **Validation tactile et publication Pages toujours attendues** ; pas de GREEN utilisateur anticipé. Les retours bordure / angles restent ouverts en lots de rendu dédiés.
 
 ---
 
