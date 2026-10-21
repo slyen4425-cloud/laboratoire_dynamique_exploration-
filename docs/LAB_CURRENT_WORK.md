@@ -1,3 +1,17 @@
+# Lot V55 — 21/10/2026 — Ponts réellement traversables en labo Sculpture
+
+- **Retour créateur :** les 7 ponts 2,5D placés visuellement doivent devenir réellement franchissables et permettre au héros de rester sur le tablier ; orientation du corridor et image doivent correspondre.
+- **Base technique V54 :** `f137316bee95509e0ae0842cb60a3321010411e1` CI [#39577836502](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39577836502) SUCCESS, checkpoint `checkpoint/exploration-rounded-hills-v54-prevalidation-2026-10-21`; toujours NON GREEN esthétique créateur.
+- **START** `checkpoint/exploration-start-bridge-crossing-v55-2026-10-21`, branche `work/exploration-bridge-crossing-v55-2026-10-21` depuis ce SHA.
+- **Cause :** le contrôle eau/sauts dans `sculptNavigationBlockDetail` rejette l'eau avant de considérer les corridors du catalogue WorldObject ; les variantes « vertical/diagonale » n'exposent pas encore d'axe physique déclaré et le héros s'affiche au niveau inférieur de l'eau.
+- **Périmètre :** fournir à la vérification de collision sculpt un jeu de ponts résolus à partir du catalogue canonique, y tester la présence dans le `bridgeTraversalRect` avec rayon joueur, et résoudre la hauteur visuelle du tablier à partir des rives. Axes explicites des 4 vues de ponts stockés dans le contrat de traversée des définitions, jamais déduits des pixels. L'orientation du WorldObject reste canonique. Garder limites et obstacles bloquants, sans franchissement hors corridor.
+- **Propriétaires :** Collision World (délégation existante vers sculpt-navigation), WorldObject Definition/Placement (corridor et orientation), Actor Renderer (hauteur visuelle dérivée), UI lecture seule. Aucune géométrie de rivière concurrente ni gameplay dans le renderer.
+- **Gel :** V54 arrondis, V50 roches, V46 eau, V51 choix/visuels, V52 bord, V53 raccords, WorldDocument/Core, navigation hors labo et Capture Combat.
+- **Tests :** franchissement terrestre réellement bloqué hors pont, franchissement pont horizontal/vertical et diagonal, marche inverse, largeur selon scale/rotation, gros saut non autorisé hors pont, persistances, CI npm+check+Chromium, mobile final utilisateur.
+- **Statut :** développement isolé, aucune publication Pages ni GREEN créateur.
+
+---
+
 # Lot V54 — 21/10/2026 — Collines vraiment arrondies (herbe + roche)
 
 - **Retour créateur :** V53 arrondit une paroi rocheuse mais laisse le dessus herbeux et la silhouette d'une colline carrés. Le contrôle de V53 est ambigu à appliquer ; l'esthétique V50 de texture roche/ombres reste validée.
