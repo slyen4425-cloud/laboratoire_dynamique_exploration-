@@ -2199,6 +2199,50 @@ try{
     throw Error('V61 real one-tap hill roundness/Canvas pixels/terrain isolation failed: '+
       JSON.stringify({v61Before,v61After}));
   console.log('V61 real Chromium one-touch whole-hill terrain silhouette:',JSON.stringify(v61After));
+  // V66 REAL Chrome: the same UP key must move vertically on SCREEN at
+  // either camera angle, at comparable *visible* speed. This deliberately
+  // exercises a real key event -> nav loop -> stepMovement -> Collision World.
+  const v66Start=await run(`(()=>{
+    document.querySelector('#flat').click();
+    const speed=document.querySelector('#navigation-speed');
+    speed.value='90';speed.dispatchEvent(new Event('input',{bubbles:true}));
+    if(!window.__sculptNavProbe().enabled)
+      document.querySelector('#navigation-toggle').click();
+    const diagnostic=document.querySelector('#navigation-show-bridge-corridor');
+    diagnostic.checked=true;diagnostic.dispatchEvent(new Event('change',{bubbles:true}));
+    return {enabled:window.__sculptNavProbe().enabled,
+      overlay:window.__sculptNavProbe().bridgeCorridorVisible};
+  })()`);
+  if(!v66Start.enabled||!v66Start.overlay)
+    throw Error('V66 real navigation screen-space diagnostic toggle failed: '+JSON.stringify(v66Start));
+  const v66Results=[];
+  for(const angle of [35,90]){
+    const initial=await run(`(()=>{
+      const a=document.querySelector('#navigation-camera-angle');
+      a.value='${angle}';a.dispatchEvent(new Event('input',{bubbles:true}));
+      document.querySelector('#navigation-reset').click();
+      document.activeElement?.blur?.();
+      return window.__sculptNavProbe().player;
+    })()`);
+    await run(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));true`);
+    await sleep(135);
+    await run(`window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));true`);
+    const current=await run(`window.__sculptNavProbe().player`);
+    const projection=await run(`(async()=>{
+      const p=await import('./src/render/sculpt-camera-projection.js');
+      const view=p.sculptCameraGameView(${angle});
+      const a=p.sculptCameraProject(view,${initial.x},${initial.y});
+      const b=p.sculptCameraProject(view,${current.x},${current.y});
+      return {dx:b.x-a.x,dy:b.y-a.y};
+    })()`);
+    const v={angle,initial,current,screenDelta:projection};v66Results.push(v);
+    if(projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
+      throw Error('V66 actual key travel not screen-aligned: '+JSON.stringify(v));
+  }
+  if(Math.abs(v66Results[0].screenDelta.dy/v66Results[1].screenDelta.dy-1)>.50)
+    throw Error('V66 camera pitch still alters visible walking speed: '+JSON.stringify(v66Results));
+  await run(`document.querySelector('#navigation-toggle').click();true`);
+  console.log('V66 real keydown->Movement->Collision World camera view 35°/90°:',JSON.stringify(v66Results));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
