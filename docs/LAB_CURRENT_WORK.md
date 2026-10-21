@@ -1,3 +1,17 @@
+# Lot V56 — 21/10/2026 — Ponts plus grands et nettoyage des résidus alpha
+
+- **Retour créateur :** permettre de grossir les ponts plus que 120 %, et éliminer les traces claires/losanges blancs et bords sales visibles au pied du sprite, sans abîmer ses textures valides.
+- **Base technique V55 :** `8a33bfa40dc38a86edcf264fb8982ead1d9edbb7`, CI [#39579068820](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39579068820) SUCCESS, checkpoint `checkpoint/exploration-bridge-crossing-v55-prevalidation-2026-10-21`. V54/V55 restent en gate visuel utilisateur.
+- **START** `checkpoint/exploration-start-bridge-polish-v56-2026-10-21`, branche `work/exploration-bridge-polish-v56-2026-10-21` depuis exactement le SHA V55 testé.
+- **Périmètre :** élargir **uniquement** le scale des ponts dans l'interface Sculpt et les contrôles de placement (jusqu'à 300 %) ; les autres objets restent plafonnés à 120 %. Traiter une fois au chargement via l'adapter visuel (cache) les petits composants d'alpha détachés à dominante blanche et atténuer les halos blancs partiellement transparents ; ne pas redessiner les ponts ni toucher leurs WebP originaux/manifestes. Les données d'objets et corridors restent les mêmes WorldObject contractuels.
+- **Propriétaires :** WorldObject Placement Model (transform canonique), Sculpt Scene Preview (commandes d'édition), Asset Adapter du visuel (préparation alpha) et Sculpt Object Renderer (affichage). Aucune règle de collision dans une image.
+- **Gel :** V54 herbe/roche, V55 couloir et axes, eau V46, HD V50, V52 bordures, Catalog/ObjectDefinitions, WorldDocument/Core, performance de drag V44, moteurs Combat et rencontres.
+- **Tests :** échelle jusqu'à 300% pont seulement, export/import, vraie scène navigateur, composant blanc isolé retiré / détail connecté conservé / halo légèrement adouci, 28 assets toujours byte-identiques, CI et perf raster. Gate Pixel visuel ensuite.
+- **Risque :** ne pas effacer de vrais petits détails clairs (surveillance visuelle nécessaire) ; filtres ciblés et conservation d'un fallback image si contexte Canvas inaccessible.
+- **Statut :** nouveau lot ouvert sur source technique V55, pas encore publié ni GREEN esthétique.
+
+---
+
 # Lot V55 — 21/10/2026 — Ponts réellement traversables en labo Sculpture
 
 - **Retour créateur :** les 7 ponts 2,5D placés visuellement doivent devenir réellement franchissables et permettre au héros de rester sur le tablier ; orientation du corridor et image doivent correspondre.
