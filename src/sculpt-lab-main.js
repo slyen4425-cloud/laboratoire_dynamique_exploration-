@@ -6,7 +6,7 @@ import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
-import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-camera-v65';
+import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60';
@@ -864,7 +864,10 @@ function navigationTick(time){
   if(!navigationTesting)return;
   if(navPreviousTime!==null){
     const elapsed=Math.max(0,time-navPreviousTime);
-    const intent=navigationInput();
+    const rawIntent=navigationInput();
+    // Joystick and keyboard are screen-relative; Collision World still
+    // receives a normal, single-authority X/Y world movement intention.
+    const intent=sculptCameraWorldInput(cameraView(),rawIntent.x,rawIntent.y);
     navMetricFrames++;
     navVisualTime+=Math.min(250,elapsed)/1000;
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
@@ -873,7 +876,8 @@ function navigationTick(time){
       // Critical V21: retain elapsed time during dropped frames, but apply
       // movement with short steps so Collision World still stops cliffs/water.
       for(const dt of sculptNavigationFrameSteps(elapsed))
-        stepMovement(world,navActor,intent,dt,{maxSpeed:navSpeed()},undefined,context);
+        stepMovement(world,navActor,intent,dt,
+          {maxSpeed:navSpeed()*intent.speedMultiplier},undefined,context);
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navMetricDistance+=moved;
       navBlocked=moved<.001;
