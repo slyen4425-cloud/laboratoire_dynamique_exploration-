@@ -54,7 +54,7 @@ export function cleanSculptBridgePixels({width,height,data}={}){
   // Only remove small white islands that touch transparent exterior pixels
   // below the middle of a sprite (never touch the wooden deck, bolts or rails).
   const visitedWhite=new Uint8Array(count),erasedWhite=new Uint8Array(count);
-  const lowerFrom=Math.floor(height*.58),maxStain=Math.ceil(count*.018);
+  const lowerFrom=Math.floor(height*.58),maxStain=Math.ceil(count*.035);
   const nearWhite=index=>{
     const i=index*4;
     if(data[i+3]<18)return false;
