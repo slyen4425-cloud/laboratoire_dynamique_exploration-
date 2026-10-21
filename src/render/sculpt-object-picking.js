@@ -1,14 +1,23 @@
 // Visual-only hit testing for the SAME resolved WorldObject rectangles
 // used by the sculpt renderer. Never creates a gameplay collision shape.
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
+import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60';
 import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 
 export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=21,rise=18}={}){
   const t=object.transform,base=object.baseSize;
   const col=Math.floor(t.x/tileWidth),row=Math.floor(t.y/tileHeight);
-  const level=terrain&&col>=0&&row>=0&&col<terrain.width&&row<terrain.height
+  const groundLevel=terrain&&col>=0&&row>=0&&col<terrain.width&&row<terrain.height
     ?sculptHeightAt(terrain,col,row):0;
+  // The anchor for the 2.5D bridge image is its DECK, not the riverbed below.
+  // Its true walkable support altitude already belongs to canonical WorldObject
+  // navigation; reuse it read-only. Other object types retain exact V44 anchor.
+  const bridgeDeck=terrain&&object.kind==='bridge'&&
+    object.visual?.assetId?.includes('_2p5d.')
+    ?sculptBridgeDeckHeight(terrain,[object],t.x,t.y,
+      {cellWidth:tileWidth,cellHeight:tileHeight}):null;
+  const level=bridgeDeck??groundLevel;
   return Object.freeze({
     x:t.x,y:t.y-level*rise,
     width:(base?.width??base?.length??80)*t.scaleX,
