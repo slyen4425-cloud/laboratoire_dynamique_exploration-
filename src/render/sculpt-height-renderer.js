@@ -515,6 +515,33 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   };
 }
 
+// V52: visible outside SOUTH edge, derived only from the last canonical row.
+// Rock facing never participates in geometry, collision, water or traversal.
+// Adjacent equal elevations/profiles are one wall to avoid tiled box seams.
+export function sculptOuterSouthCliffRuns(terrain){
+  if(!terrain||!Number.isInteger(terrain.width)||!Number.isInteger(terrain.height)||
+     terrain.width<1||terrain.height<1)return Object.freeze([]);
+  const row=terrain.height-1,runs=[];
+  const roundness=Array.isArray(terrain.roundness)?terrain.roundness:null;
+  for(let col=0;col<terrain.width;){
+    const index=row*terrain.width+col;
+    const level=terrain.levels[index];
+    if(level<=0||sculptWaterAt(terrain,col,row)>0){col++;continue;}
+    const profile=roundness?roundness[index]:95;
+    let end=col+1;
+    while(end<terrain.width){
+      const next=row*terrain.width+end;
+      if(terrain.levels[next]!==level||
+         (roundness?roundness[next]:95)!==profile||
+         sculptWaterAt(terrain,end,row)>0)break;
+      end++;
+    }
+    runs.push(Object.freeze({start:col,end,level,smoothness:profile/100}));
+    col=end;
+  }
+  return Object.freeze(runs);
+}
+
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,visualSmoothness=.72,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
@@ -601,6 +628,15 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       rowStart:row,rowEnd:row+1});
   }
 
+  // Outside-world front rim is a V50 HD cliff, not untextured baseColor.
+  // Derive it from the final canonical dry row; no phantom gameplay faces.
+  const outerSouthRuns=sculptOuterSouthCliffRuns(terrain);
+  for(const run of outerSouthRuns){
+    rockFace(ctx,{x:run.start*w,y:totalHeight-run.level*rise,
+      width:(run.end-run.start)*w,height:run.level*rise,
+      colors,seed:terrain.width*terrain.height+run.start,
+      sun:1,smoothness:run.smoothness,rockPalette,cliffAtlas,cliffHD,cliffMoss});
+  }
   // The NEXT ground row would otherwise paint over the rounded rock foot.
   // Compositing a slender irregular rock toe AFTER all ground is drawn makes
   // the curved base actually visible against lower dirt, road and water.
@@ -635,5 +671,5 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     ctx.restore();
     }
   }
-  return {faceCount:faces.length,faceRuns,waterCells,roadCells,paintedCells,worldWidth:totalWidth,worldHeight:totalHeight};
+  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,worldWidth:totalWidth,worldHeight:totalHeight};
 }
