@@ -1357,7 +1357,9 @@ try{
       if(a!==b)changed++;
       if(b!==c)paletteChanged++;
     }
-    for(let y=18;y<177;y+=9)for(let x=18;x<224;x+=9)
+    // Top of a flat plateau must be pixel-identical; V52 intentionally textures
+    // its outer SOUTH skirt below y=132, which is not part of the plain top.
+    for(let y=18;y<128;y+=9)for(let x=18;x<224;x+=9)
       if(get(oldFlat,x,y).join(',')!==get(newFlat,x,y).join(','))flatChanged++;
     const palette=[...document.querySelector('#rock').options].map(x=>x.value);
     const mossControl=document.querySelector('#rock-moss');
