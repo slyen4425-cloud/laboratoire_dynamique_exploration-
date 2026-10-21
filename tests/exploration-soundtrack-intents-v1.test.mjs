@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createExplorationSoundtrackIntentsV1,EXPLORATION_SOUNDTRACK_INTENT_V1} from "../../src/adapters/exploration-soundtrack-intents-v1.js";
+import {createExplorationSoundtrackIntentsV1,EXPLORATION_SOUNDTRACK_INTENT_V1} from "../src/adapters/exploration-soundtrack-intents-v1.js";
 
 const setup=(projectId="game-capture")=>createExplorationSoundtrackIntentsV1({
  projectId, battleSceneId:"capture:combat:normal",
