@@ -24,6 +24,29 @@ export function sculptCameraGameView(angle=SCULPT_GAME_CAMERA_ANGLE.default){
 export function sculptCameraProject(view,x,y){
   return Object.freeze({x,y:view.pitch*y+view.shear*x});
 }
+// Screen-space sprite lift belongs AFTER terrain world->screen projection.
+// Bridge PNG/WebP is a billboard at every camera angle; its deck position in
+// that bitmap is expressed in Canvas units, not unprojected world altitude.
+// Applying lift in world Y scales it by pitch (sin 35°) and pulls the hero
+// UNDER the near board at oblique angles. Never alter gameplay X/Y here.
+export function sculptCameraProjectBridgeFoot(view,x,worldFootY,deckLift=0){
+  const projected=sculptCameraProject(view,x,worldFootY);
+  return Object.freeze({x:projected.x,y:projected.y-Math.max(0,Number(deckLift)||0)});
+}
+// Draw/debug only: the *same* authoritative oriented rectangle as Collision
+// World, projected in the selected camera including canonical bank altitude.
+export function sculptCameraProjectBridgeCorridor(view,corridor,{level=0,rise=18}={}){
+  if(!corridor||!Number.isFinite(corridor.length)||!Number.isFinite(corridor.width)||
+     corridor.length<=0||corridor.width<=0)return Object.freeze([]);
+  const c=Math.cos(corridor.rotation),s=Math.sin(corridor.rotation);
+  const result=[];
+  for(const [along,side] of [[-1,-1],[1,-1],[1,1],[-1,1]]){
+    const u=along*corridor.length*.5,v=side*corridor.width*.5;
+    result.push(sculptCameraProject(view,corridor.x+u*c-v*s,
+      corridor.y+u*s+v*c-level*rise));
+  }
+  return Object.freeze(result);
+}
 export function sculptCameraUnproject(view,x,y){
   return Object.freeze({x,y:(y-view.shear*x)/view.pitch});
 }
