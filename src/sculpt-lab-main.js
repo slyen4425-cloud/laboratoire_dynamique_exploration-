@@ -482,7 +482,7 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   syncQuickToolbar();
-  if(mode==='cliff-round')$('sculpt-settings').open=true;
+  $('hill-radius-wrap').hidden=mode!=='cliff-round';
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
     'cliff-round':'Colline arrondie : règle le curseur « Arrondi de colline » (150 % = très arrondi), puis PEINS le sommet herbeux avec le doigt. Aucun niveau de terrain ou eau n’est modifié.',
