@@ -3,6 +3,7 @@
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
+import {sculptRoundedHillRegions,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
@@ -701,6 +702,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
   let waterCells=0,roadCells=0,faceRuns=0;
   const hasProfiles=Array.isArray(terrain.roundness);
+  const roundedHillRegions=sculptRoundedHillRegions(terrain);
   const drawPaint=sculptPaintByCell(ctx,terrain,tile,paintSurface,paintImages);
   let paintedCells=0;
   const deferredToes=[];
@@ -710,8 +712,12 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     for(let col=0;col<terrain.width;col++){
       const idx=row*terrain.width+col,level=terrain.levels[idx];
       const x=col*w,y=row*h-level*rise;
-      const hill=sculptHillTopProfile(terrain,col,row,tile);
-      if(hill.radius>0){
+      const roundedHill=roundedHillRegions.get(idx);
+      const hill=roundedHill?{radius:0}:sculptHillTopProfile(terrain,col,row,tile);
+      if(roundedHill){
+        ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
+        ctx.save();sculptClipRoundedHill(ctx,roundedHill,tile);
+      }else if(hill.radius>0){
         // When grass rounds back, expose the mineral shoulder below it,
         // rather than a transparent black corner or a second level of land.
         ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
@@ -730,6 +736,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       paintedCells+=drawPaint(col,row,level,x,y);
       // Height-aware ambient contact shadow on existing land material only.
       drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
+      if(roundedHill)ctx.restore();
       if(hill.radius>0){
         // Thin earthy rim is painted along the curved lip, above the same
         // V50 rock texture, without altering grass outside edited tiles.
