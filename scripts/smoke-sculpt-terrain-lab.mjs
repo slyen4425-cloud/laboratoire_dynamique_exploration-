@@ -2078,7 +2078,8 @@ try{
     window.__v61TerrainBefore=JSON.stringify(scene.terrain.levels)+'|'+JSON.stringify(scene.terrain.waterLevels);
     return {client,radius:document.querySelector('#radius').value,
       intensity:document.querySelector('#visual-smooth').value,
-      mode:quick.value,hit:document.elementFromPoint(client.x,client.y)?.id};
+      mode:quick.value,view:p.cameraView,pan:p.cameraPan,zoom:p.zoom,
+      hit:document.elementFromPoint(client.x,client.y)?.id};
   })()`);
   if(v61Before.hit!=='sculpt-canvas'||Number(v61Before.radius)!==.5||v61Before.intensity!=='150'||v61Before.mode!=='cliff-round')
     throw Error('V61 one-touch whole-hill control not usable on real canvas: '+JSON.stringify(v61Before));
@@ -2102,6 +2103,9 @@ try{
     const regions=await import('./src/render/sculpt-hill-region-contour.js');
     const r=regions.sculptRoundedHillRegions(terrain).get(5*terrain.width+5);
     return {changed,edited:terrain.roundness[5*terrain.width+5],
+      editedCells:terrain.roundness.flatMap((v,i)=>v!==95?[{index:i,x:i%terrain.width,y:Math.floor(i/terrain.width),value:v}]:[]).slice(0,24),
+      notice:document.querySelector('#notice').textContent,
+      info:document.querySelector('#brush-info').textContent,
       regionCells:r?.cells?.length,contourCorners:r?.loops?.[0]?.length,
       unchangedHeightWater:window.__v61TerrainBefore===
         JSON.stringify(terrain.levels)+'|'+JSON.stringify(terrain.waterLevels)};
