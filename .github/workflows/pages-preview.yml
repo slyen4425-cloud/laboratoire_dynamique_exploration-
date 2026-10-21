@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-camera-depth-v65-joystick-input-v66-test-2026-10-21
+# preview-revision: real-deck-anchor-v67-canyon-chromium-2026-10-21
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: e7d823c291629d627648e76a9042412f0580c741
+          ref: 28e68818913ffd822d581618140d520759f30a90
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
