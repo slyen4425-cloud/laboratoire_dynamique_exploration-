@@ -538,11 +538,18 @@ export function sculptHillTopProfile(terrain,col,row,tile=SCULPT_TILE){
   const corners=Object.freeze([n&&w,n&&e,s&&e,s&&w]);
   if(!corners.some(Boolean))return Object.freeze({radius:0,corners});
   const amountNormalized=(amount-95)/55;
-  const radius=Math.min(tile.width,tile.height)*.48*amountNormalized;
+  const radius=Math.min(tile.width*.60,tile.height*.76)*amountNormalized;
   return Object.freeze({radius,corners});
 }
 function sculptHillTopPath(ctx,x,y,w,h,{radius,corners}){
-  const [tl,tr,br,bl]=corners.map(active=>active?radius:0);
+  const radii=corners.map(active=>active?radius:0);
+  // A larger V59 radius must not make opposing corner arcs overlap within
+  // the same cell (e.g. a thin strip one tile wide).
+  for(const [i,j,limit] of [[0,1,w],[1,2,h],[2,3,w],[3,0,h]]){
+    if(radii[i]+radii[j]>limit){const factor=limit/(radii[i]+radii[j]);
+      radii[i]*=factor;radii[j]*=factor;}
+  }
+  const [tl,tr,br,bl]=radii;
   ctx.beginPath();ctx.moveTo(x+tl,y);
   ctx.lineTo(x+w-tr,y);
   if(tr)ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
@@ -553,6 +560,30 @@ function sculptHillTopPath(ctx,x,y,w,h,{radius,corners}){
   ctx.lineTo(x,y+tl);
   if(tl)ctx.quadraticCurveTo(x,y,x+tl,y);
   ctx.closePath();
+}
+// V59: a textured grass shoulder reaches slightly onto a DRY cliff lip.
+// No second heightmap, collision, or walkable ramp is ever created.
+export function sculptHillGrassShoulderWidth(terrain,col,row,tile=SCULPT_TILE,orientation='south'){
+  if(!terrain||!Array.isArray(terrain.roundness)||col<0||row<0||
+     col>=terrain.width||row>=terrain.height)return 0;
+  const dx=orientation==='east'?1:0,dy=orientation==='east'?0:1;
+  if(col+dx>=terrain.width||row+dy>=terrain.height||
+     sculptWaterAt(terrain,col,row)>0||sculptWaterAt(terrain,col+dx,row+dy)>0||
+     sculptHeightAt(terrain,col,row)<=sculptHeightAt(terrain,col+dx,row+dy))return 0;
+  const intensity=Math.max(0,Math.min(1,(terrain.roundness[row*terrain.width+col]-95)/55));
+  return Math.min(tile.width*.36,tile.height*.56)*intensity;
+}
+function drawSculptGrassShoulder(ctx,{x,y,band,width,pattern,baseColor,vertical=false}){
+  if(band<=0)return;
+  // Use the SAME grass material pattern as the upper walkable top. Rounded
+  // stroke caps soften the tile-step silhouette rather than painting rocks.
+  const pad=Math.min(band*.35,width*.28);
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.strokeStyle=pattern??baseColor;ctx.lineWidth=band;
+  ctx.beginPath();
+  if(vertical){ctx.moveTo(x,y+pad);ctx.lineTo(x,y+width-pad);}
+  else{ctx.moveTo(x+pad,y);ctx.lineTo(x+width-pad,y);}
+  ctx.stroke();ctx.restore();
 }
 // V52: visible outside SOUTH edge, derived only from the last canonical row.
 // Rock facing never participates in geometry, collision, water or traversal.
@@ -706,9 +737,14 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
         sculptHillTopPath(ctx,x,y,w,h,hill);ctx.stroke();ctx.restore();
       }
       const side=east.get(idx);
-      if(side)rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
-        colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
-        rockPalette,cliffAtlas,cliffHD,cliffMoss});
+      if(side){
+        rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
+          colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
+          rockPalette,cliffAtlas,cliffHD,cliffMoss});
+        const band=sculptHillGrassShoulderWidth(terrain,col,row,tile,'east');
+        if(band>0)drawSculptGrassShoulder(ctx,{x:x+w-1,y:y+1,width:h-2,
+          band,pattern,baseColor,vertical:true});
+      }
     }
     const blendedColumns=new Set(sculptRoundedSouthColumns(terrain,row));
     for(let col=0;col<terrain.width;){
@@ -734,6 +770,11 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
           colors,seed:idx,sun:1,smoothness:0,
           rockPalette,cliffAtlas,cliffHD,cliffMoss});
         ctx.restore();
+        for(const face of faces){
+          const band=sculptHillGrassShoulderWidth(terrain,face.x,row,tile);
+          if(band>0)drawSculptGrassShoulder(ctx,{
+            x:face.x*w,y:row*h-face.upper*rise+h,width:w,band,pattern,baseColor});
+        }
         faceRuns++;col=end;continue;
       }
       let end=col+1;
@@ -756,6 +797,11 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       }
       rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:runSmoothness,
         rockPalette,cliffAtlas,cliffHD,cliffMoss});
+      for(let c=col;c<end;c++){
+        const band=sculptHillGrassShoulderWidth(terrain,c,row,tile);
+        if(band>0)drawSculptGrassShoulder(ctx,{
+          x:c*w,y,width:w,band,pattern,baseColor});
+      }
       if(runSmoothness>0){
         ctx.save();
         ctx.strokeStyle='rgba(45,48,48,.18)';ctx.lineWidth=.9;
