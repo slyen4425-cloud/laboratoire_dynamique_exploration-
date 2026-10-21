@@ -100,7 +100,7 @@ export function sculptHillRegionOutline(ctx,region,tile={width:28,height:21,rise
   if(!ctx||!region)return;
   const w=tile.width,h=tile.height,offset=region.level*tile.rise;
   const target=sculptHillRegionCornerRadius(region,tile);
-  ctx.beginPath();
+  if(typeof ctx.beginPath==='function')ctx.beginPath();
   for(const loop of region.loops){
     const count=loop.length;
     for(let i=0;i<count;i++){
