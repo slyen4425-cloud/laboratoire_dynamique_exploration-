@@ -1012,6 +1012,13 @@ function refreshObjectOptions(){
     option.value=o.id;option.textContent=o.label;return option;
   }));
   if(definitions.some(o=>o.id===current))$('object-definition').value=current;
+  // Bridge dimensions use the same canonical transform; only the editor cap
+  // differs. Other objects keep their published 120 % range.
+  $('object-scale').max=$('object-category').value==='bridge'?'300':'120';
+  if(Number($('object-scale').value)>Number($('object-scale').max)){
+    $('object-scale').value=$('object-scale').max;
+    $('object-scale-value').textContent=$('object-scale').value+' %';
+  }
   refreshObjectVariants();
 }
 function refreshObjectVariants(preferred=null){
