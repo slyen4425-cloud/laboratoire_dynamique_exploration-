@@ -1,3 +1,16 @@
+# V63 — 21/10/2026 — Parcours entre DEUX plateaux surélevés, ponts selon leur échelle
+
+- **Retour direct du créateur :** deux surfaces hautes + pont entre elles = passage difficile ou impossible. Retour répété sur l'impression de traverser le pont. V60/V62 GREEN **uniquement techniques**, pas de validation gameplay/visuelle Pixel.
+- **Base technique publiée :** V62 source immuable `62cf2f200dee8a92a4d184ecc427e38af196b1db`, CI #39621253411 SUCCESS, checkpoint `checkpoint/exploration-bridge-bank-alignment-v62-prevalidation-2026-10-21`; Pages main #39623439617 SUCCESS. START `checkpoint/exploration-start-high-platform-bridge-v63-2026-10-21`; work `work/exploration-high-platform-bridge-v63-2026-10-21` créée sur SHA strict V62.
+- **Périmètre :** reproduire le vrai scénario plateaux hauts séparés par une gorge sèche ou humide sur PLUSIEURS RANGÉES (pas juste 3 cases d'une rangée), ponts aux diverses échelles 25–300 %, horizontal, vertical, diagonales, aller/retour, position du héros + tablier visible. Corriger dans Collision World adapter et son contrat WorldObject la recherche des appuis sèches et la continuité deck/rive si une taille réaliste traverse vraiment le vide. Exposer une raison fiable quand le pont ne rejoint pas deux appuis ou est trop court ; ne jamais rendre l'eau libre ou les falaises franchissables hors corridor.
+- **Autorité :** WorldObject Placement → `bridgeTraversalRect` ; HeightModel `levels[]/waterLevels[]`; Collision World `sculptNavigationBlockDetail` et `sculptBridgeBankHeights`; Renderer lit seulement `sculptBridgeDeckHeight`. Aucun doublon de géométrie dans l'UI, aucun changement de schéma/sauvegarde.
+- **Gel :** arrondi de colline V61, roc V50, eau V46, ombres, ponts alpha V58, visuel pont V62, 20 rochers, Builder, Exploration Core, Capture Combat, performance tactiles et sauvegardes.
+- **Tests :** vrai `stepMovement` depuis chaque plateau, point intermédiaire et arrivée, barrages hors corridor, pont court/trop long et scale variant; sélection réelle de variantes via catalogue, check/Node/Chromium; test Pixel exigé avant GREEN utilisateur.
+- **Risque :** pont graphique visuellement sur un rivage mais transform WorldObject n'y touche pas ; aucun 'aimant' magique ni franchissement hors appuis réels. Si échec de placement, préférer un diagnostic explicite plutôt que forcer la collision.
+- **Statut :** démarrage, test de régression à écrire AVANT correction, CI requise. Aucun GREEN esthétique.
+
+---
+
 # V62 — 2026-10-21 — Pont au niveau des rives : corriger ancre visuelle, pas collision
 
 - **Retour Pixel non validé :** malgré V55/V57 le joueur semble derrière/traverser le pont. Analyse : `sculptObjectVisualRect` ancre toujours la totalité de l'image à la hauteur du sol de la **case centrale** du pont, souvent le fond du ravin ; V55/V60 placent les pieds de l'acteur au niveau des deux berges. Image et vraie position divergeaient verticalement.
