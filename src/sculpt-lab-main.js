@@ -10,7 +10,7 @@ import {sculptCameraView,sculptCameraProject,sculptCameraBounds,sculptCameraScre
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js';
 import {sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v55';
-import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js';
+import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
 import {createVirtualStick} from './input/virtual-stick.js';
