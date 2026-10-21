@@ -261,10 +261,16 @@ export function resolveWorldObjectPlacement(
   };
 
   if (definition.kind === 'bridge') {
+    // Explicit authoring metadata, not an orientation guessed from pixels.
+    // Visual view + placement rotation jointly determine deck axis.
+    const selectedView = placement.overrides.visualVariantId ??
+      definition.visual?.defaultVariantId ?? 'horizontal';
+    const axisOffsetDeg = definition.traversal?.viewAxesDeg?.[selectedView] ?? 0;
     return Object.freeze({
       ...common,
       traversal: Object.freeze({
         ...definition.traversal,
+        axisOffsetDeg,
         overridesSurfaceFeatureIds:
           placement.overrides
             .traversalSurfaceFeatureIds
