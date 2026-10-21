@@ -1,3 +1,16 @@
+# Lot V59 — 21/10/2026 — Arrondi de colline plus généreux, jusqu'à l'herbe
+
+- **Retour Pixel :** V54 améliore un peu les collines mais le contour complet (dessus herbeux + sommet rocheux) reste trop carré. Le créateur attend une **vraie silhouette de colline plus douce**, pas une modification seule de la texture roche.
+- **Base technique vérifiée :** V58 `7a5983a636917bb158a6deeb662723fd70914a9c` CI #39604544134 SUCCESS, checkpoint `checkpoint/exploration-bridge-alpha-feet-v58-prevalidation-2026-10-21`. START `checkpoint/exploration-start-hill-grass-shoulder-v59-2026-10-21`, branche `work/exploration-hill-grass-shoulder-v59-2026-10-21` depuis exactement la source technique V58.
+- **Cause :** le V54 masque un rayon limité à 0,48 hauteur d'une seule petite case. La paroi rocheuse s'arrondit, mais le débord herbe/roche reste une simple arête carrée et de petites marches juxtaposées.
+- **Périmètre :** majorer le rayon aux angles convexes du plateau herbeux, protéger sa validité dans les petits carrés (pas de croisements de Bezier), et prolonger localement le sommet végétal par une courte **épaule herbeuse texturée** arrondie qui relie herbe et roche en haut des véritables parois sèches. Strictement uniquement aux cellules où `roundness > 95` (action explicite du pinceau). Aucun effet sur herbe non peinte, plan d'eau, collisions et édition de hauteur. Réutiliser même pattern de gazon + ombrage V50.
+- **Propriétaire :** Height Model conserve `levels[]` + `roundness[]`, Renderer sculpt seul trace la courbe et l'épaule, Controller sélectionne le pinceau sans autre autorité.
+- **Gel :** V57 acteur/pont, V58 nettoyage alpha, eau V46, textures falaises V50 et relief non édité, décors et perf drag V44, moteur Capture Combat.
+- **Tests :** ancien 95 pixel-identique, 0 non arrondi, 150 rayon élargi et bande herbe positive ; isolation eau, sauvegarde/undo et hauteur inchangés ; Node + vrai Chromium + CI. Validation visuelle Pixel du degré de courbe exigée pour GREEN esthétique.
+- **Statut :** non GREEN, développement de l'épaule herbeuse. Publication Pages groupée V57–V59 strictement après CI.
+
+---
+
 # Lot V58 — 21/10/2026 — Retirer les triangles blancs sous les pieds de pont
 
 - **Preuve :** capture Pixel du pont bois 2,5D horizontal, deux triangles blancs clairs sous les supports en pierre. V56 nettoyage alpha a laissé ces gros fragments ; le précédent filtre regroupait chaque tache blanche **avec le pont entier** via composantes d'alpha, puis ne retirait que les très petits fragments détachés.
