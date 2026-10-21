@@ -7,7 +7,7 @@
 - **Gel :** eau V46, textures roche/ombres V50, ponts V51, bord carte V52, joins V53, silhouettes non éditées, navigation, Combat, perf raster.
 - **Sentinelles :** cas convexe 2 bords secs, case sèche intérieure, bord eau, 0/95/150, tests Node + vrai Chromium + CI GitHub, export/import/undo; mobile créateur requis avant GREEN esthétique.
 - **Suite après prévalidation :** ouvrir V55 passage sur ponts depuis exactement le checkpoint source V54, puis V56 agrandissement + alpha, sur leurs propres branches.
-- **Statut :** lot ouvert ; non publié, non GREEN créateur.
+- **Statut :** V54 prévalidation technique CI #39577423832 SUCCESS sur source `61ff9bd90a14e4d192b9b51cf7e353b9acc3cec8` ; preuve Node / check / Chromium Builder+Exploration+Combat. Contrôle esthétique mobile encore NON GREEN, publication à regrouper après lots V55/V56. Checkpoint documenté `EXPLORATION_ROUNDED_HILLS_V54_PREVALIDATION_2026-10-21.md`.
 
 ---
 
