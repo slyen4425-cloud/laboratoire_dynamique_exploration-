@@ -37,7 +37,7 @@ test('V57 actual sculpt draw path draws bridge once behind then partial near rai
  assert.match(source,/sculptBridgeDeckAt\(\s*\[bridge\],navActor\.x,navActor\.y/);
  assert.match(source,/ctx\.drawImage\(art,-width\/2,-height\+artShift,width,height\)/);
  assert.match(source,/ctx\.rect\(rail\.x,rail\.y,rail\.width,rail\.height\);ctx\.clip\(\)/);
- assert.match(source,/sculptBridgeVisualFootLift\(visualRect\)/);
+ assert.match(source,/sculptBridgeVisualFootLift\(visualRect,deckBridge\)/);
  assert.match(source,/deckBridgeId:activeSculptBridge\(\)\?\.id\?\?null/);
  assert.match(script,/src\/sculpt-lab-main\.js\?rev=sculpt-(?:bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66|bridge-deck-anchor-v67)/);
 });
