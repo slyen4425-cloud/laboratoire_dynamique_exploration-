@@ -913,6 +913,30 @@ try{
      bridgePlaced.object?.overrides.visualVariantId!=='diagonal_right'||
      bridgePlaced.object?.transform.scaleX!==2.5)
     throw Error('V51 bridge cannot be placed over water / variant lost: '+JSON.stringify(bridgePlaced));
+  // V63 real Chromium: use the ACTUAL bridge placed at 250% by the Objects
+  // palette (not a fabricated mock) and compare its displayed rectangle to
+  // the canonical WorldObject corridor. Former renderer used 96x96 square.
+  const v63RealScale=await run(`(async()=>{
+    const placements=await import('./src/world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55');
+    const worldObject=await import('./src/world/world-object-model.js?rev=sculpt-bridge-crossing-v55');
+    const drawing=await import('./src/render/sculpt-object-picking.js?rev=sculpt-bridge-dimensions-v63');
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    const placed=scene.objects.find(o=>o.objectDefinitionId==='objectdef.bridge.wood_rustic_2p5d.01');
+    const bridge=placements.resolveWorldObjectPlacements([placed])[0];
+    const rect=drawing.sculptObjectVisualRect(bridge,scene.terrain);
+    const crossing=worldObject.bridgeTraversalRect(bridge);
+    return {width:rect.width,height:rect.height,length:crossing.length,
+      across:crossing.width,scale:placed.transform.scaleX};
+  })()`);
+  if(v63RealScale.scale!==2.5||
+     Math.abs(v63RealScale.width-425)>0.01||
+     Math.abs(v63RealScale.height-240)>0.01||
+     Math.abs(v63RealScale.length/v63RealScale.width-.92)>0.01||
+     Math.abs(v63RealScale.across/v63RealScale.height-.82)>0.01)
+    throw Error('V63 real visible bridge sprite dimensions diverge from crossing at 250%: '+
+      JSON.stringify(v63RealScale));
+  console.log('V63 browser bridge 250% visual/physical aspect agrees:',JSON.stringify(v63RealScale));
   await run(`(()=>{
     document.querySelector('#json').value=window.__v23Scene;
     document.querySelector('#import').click();
