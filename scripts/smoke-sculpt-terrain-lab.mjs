@@ -2048,6 +2048,68 @@ try{
   console.log('V44 Chromium raised rotated sprite touch and cached mobile drag:',
     JSON.stringify({spriteHit:v44Picked.selectedId,groundBuilds:v44Moved.terrainRasterBuilds,
       dragged:v44Moved.objects[0],picks:v44Picked.count}));
+  // V61: REAL one-touch browser gesture on an interior hill cell. The old
+  // V59 tiny tile-corner brush had no visible effect there. Assert actual
+  // rendered pixels change across the connected plateau without height edits.
+  const v61Before=await run(`(async()=>{
+    document.querySelector('#mode-ground').click();
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    const w=scene.terrain.width,h=scene.terrain.height,n=w*h;
+    scene.objects=[];scene.actors=[];
+    scene.terrain.levels=Array(n).fill(2);
+    scene.terrain.waterLevels=Array(n).fill(-1);
+    scene.terrain.roundness=Array(n).fill(95);
+    for(let y=3;y<=6;y++)for(let x=4;x<=7;x++)scene.terrain.levels[y*w+x]=5;
+    document.querySelector('#json').value=JSON.stringify(scene);
+    document.querySelector('#import').click();
+    const quick=document.querySelector('#quick-tool');
+    quick.value='cliff-round';quick.dispatchEvent(new Event('change',{bubbles:true}));
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const canvas=document.querySelector('#sculpt-canvas');
+    canvas.scrollIntoView({block:'center',behavior:'instant'});
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const rect=canvas.getBoundingClientRect(),p=window.__sculptLabProbe();
+    const wx=5.5*28,wy=5.5*21-5*18;
+    const client={x:rect.left+p.cameraPan.x+wx*p.zoom,
+      y:rect.top+p.cameraPan.y+wy*p.zoom};
+    window.__v61PixelsBefore=Uint8Array.from(canvas.getContext('2d',
+      {willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height).data);
+    window.__v61TerrainBefore=JSON.stringify(scene.terrain.levels)+'|'+JSON.stringify(scene.terrain.waterLevels);
+    return {client,radius:document.querySelector('#radius').value,
+      mode:quick.value,hit:document.elementFromPoint(client.x,client.y)?.id};
+  })()`);
+  if(v61Before.hit!=='sculpt-canvas'||v61Before.radius!=='.5'||v61Before.mode!=='cliff-round')
+    throw Error('V61 one-touch whole-hill control not usable on real canvas: '+JSON.stringify(v61Before));
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',...v61Before.client});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',...v61Before.client,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',...v61Before.client,button:'left',clickCount:1});
+  await sleep(160);
+  const v61After=await run(`(async()=>{
+    const canvas=document.querySelector('#sculpt-canvas');
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const pixels=canvas.getContext('2d',{willReadFrequently:true})
+      .getImageData(0,0,canvas.width,canvas.height).data;
+    let changed=0;
+    for(let i=0;i<pixels.length;i+=4){
+      if(pixels[i]!==window.__v61PixelsBefore[i]||
+         pixels[i+1]!==window.__v61PixelsBefore[i+1]||
+         pixels[i+2]!==window.__v61PixelsBefore[i+2])changed++;
+    }
+    document.querySelector('#scene-export').click();
+    const terrain=JSON.parse(document.querySelector('#json').value).terrain;
+    const regions=await import('./src/render/sculpt-hill-region-contour.js');
+    const r=regions.sculptRoundedHillRegions(terrain).get(5*terrain.width+5);
+    return {changed,edited:terrain.roundness[5*terrain.width+5],
+      regionCells:r?.cells?.length,contourCorners:r?.loops?.[0]?.length,
+      unchangedHeightWater:window.__v61TerrainBefore===
+        JSON.stringify(terrain.levels)+'|'+JSON.stringify(terrain.waterLevels)};
+  })()`);
+  if(v61After.edited!==150||v61After.regionCells!==16||
+     v61After.contourCorners!==4||v61After.changed<30||!v61After.unchangedHeightWater)
+    throw Error('V61 real one-tap hill roundness/Canvas pixels/terrain isolation failed: '+
+      JSON.stringify({v61Before,v61After}));
+  console.log('V61 real Chromium one-touch whole-hill terrain silhouette:',JSON.stringify(v61After));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
