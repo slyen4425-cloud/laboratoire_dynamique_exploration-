@@ -1,3 +1,15 @@
+# V66 — 21/10/2026 — Commandes de marche cohérentes avec caméra inclinée
+
+- **Retour créateur Pixel :** à 35° vs 90°, sensations de déplacement difficiles et absence de correspondance visuelle au sommet des collines. Ne pas confondre pente interdite et joystick mal projeté.
+- **Base immuable V65 :** `deb7386571786961446cc7a46d6592605254b96a`, CI [#39658041232](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39658041232) SUCCESS, checkpoint `checkpoint/exploration-bridge-camera-depth-v65-prevalidation-2026-10-21`. START `checkpoint/exploration-start-camera-input-v66-2026-10-21`, work `work/exploration-camera-input-v66-2026-10-21` depuis même SHA.
+- **Cause :** `navigationInput()` renvoie joystick / clavier en coordonnées écran, `stepMovement` interprète directement comme coordonnées monde. En mode Tester, le monde est projeté avec une matrice `x'=x, y'=pitch*y+shear*x` (pitch `sin(35°)` vs 1). Cette différence rend la commande haut/bas 43% moins rapide à l'écran et décale les diagonales.
+- **Périmètre :** convertir l'intention joystick/touches dans l'INVERSE de la projection utilisée par la caméra pour le seul Tester, puis ajuster le multiplicateur de vitesse visuelle de façon bornée, sans toucher à `stepMovement`, `isBlocked`, `WorldDocument`, caméra ni position autoritaires. Caméra et Input adapters restent de présentation, Exploration Core conserve les coordonnées flottantes et la normalisation 360°.
+- **Gel :** V65 sprites/pont, V60/V63 collision pont, eau V46, V61 arrondi, HD V50, 20 rochers, audio, Core, Combat. Hors périmètre: rendre une falaise verticale grimpable / ajouter une rampe artificielle. Toute vraie pente devra être modélisée par un lot de sculpture physique/rendu distinct.
+- **Tests :** joystick cardinal/diagonal sur 35°,55°,90° -> angle écran exact, vitesse écran régulière, sans accélération diagonale, extension mobile d'origine inchangée en mode édition, tests CI/Chromium et gate Pixel.
+- **Statut :** ouvert, NON validé par créateur. Ne pas publier tant que CI rouge.
+
+---
+
 # V65 — 21/10/2026 — Raccord caméra/tablier : bug réel constaté à 35° et 90°
 
 - **Retour créateur Pixel (2 captures 35° / 90°) :** avatar au-dessous/au travers du bois, visuel incompatible avec le corridor physique. Déplacements sur les hauts plateaux difficiles. Les V60–V64 sont GREEN **techniques** mais PAS validation tactile/artistique.
