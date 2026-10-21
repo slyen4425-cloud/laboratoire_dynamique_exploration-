@@ -107,7 +107,7 @@ test('V42 UI owns exactly one actor presentation palette and all relevant action
     assert.equal((html.match(new RegExp('id="'+id+'"','g'))??[]).length,1,id);
   }
   assert.match(html,/value="select">Sélectionner \/ modifier/);
-  assert.match(html,/rev=sculpt-actor-presentation-v42/);
+  assert.match(html,/rev=sculpt-(?:actor-presentation-v42|continuous-cliff-v53)/);
   assert.match(app,/findSculptPreviewActorNear\(placedActors,x,y\)/);
   assert.match(app,/updateSculptPreviewActor\(placedActors,actorSelectedId,patch\)/);
   assert.match(app,/syncActorSelectedControls\(\)/);
