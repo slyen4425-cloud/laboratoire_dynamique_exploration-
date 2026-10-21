@@ -25,7 +25,7 @@ import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55';
-import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-bank-v62';
+import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-dimensions-v63';
 import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-occlusion-v57';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60';
 import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
