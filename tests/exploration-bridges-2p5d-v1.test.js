@@ -17,7 +17,10 @@ test('seven bridge families expose native four-direction variants without new ru
     assert.equal(def.kind,'bridge');
     assert.equal(def.library.categoryId,'bridges');
     assert.deepEqual(def.baseSize,canonical.baseSize,'unchanged bridge dimensions');
-    assert.deepEqual(def.traversal,canonical.traversal,'unchanged traversal corridor');
+    assert.equal(def.traversal.lengthRatio,canonical.traversal.lengthRatio,'unchanged corridor length');
+    assert.equal(def.traversal.widthRatio,canonical.traversal.widthRatio,'unchanged corridor width');
+    assert.equal(def.traversal.edgeAssistRatio,canonical.traversal.edgeAssistRatio,'unchanged edge assist');
+    assert.deepEqual(def.traversal.viewAxesDeg,{horizontal:0,vertical:90,diagonal_left:-45,diagonal_right:45});
     assert.equal(def.visual.defaultVariantId,'horizontal');
     assert.deepEqual(def.visual.variants.map(v=>v.id),views.map(v=>v[0]));
     for(const [view] of views){
