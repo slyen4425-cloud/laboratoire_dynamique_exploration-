@@ -6,7 +6,7 @@
 - **Autorité :** WorldObject Placement/Collision définissent corridor, transform, appuis ; Render adapter n'a que la projection de l'image/hit test. Pas d'altitude physique dans l'asset, pas de changement schéma ni collision.
 - **Gel :** V60 collision dry/wet, V61 herbe contours, V58 alpha, eau V46, roche V50, assets 20 rochers, éditeur tactile V44, Builder/Core/Combat.
 - **Tests :** ravin profond 0 sous pont et rives 6 => artwork haut de six niveaux et pieds acteur même niveau ; horizontal/diagonal/vertical, support absent fallback, autre type objet inchangé; Node+Chromium CI et vraie revue sur Pixel obligatoires. Pas de publication si CI rouge.
-- **Statut :** lot en développement, aucune revendication GREEN esthétique. Publication groupée V60–V62 après CI.
+- **Statut :** V62 **CI SUCCESS** sur source immuable `62cf2f200dee8a92a4d184ecc427e38af196b1db`, [run #39621253411](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39621253411), checkpoint `checkpoint/exploration-bridge-bank-alignment-v62-prevalidation-2026-10-21`. Lots V60–V62 prévalidés TECHNIQUEMENT uniquement. Publication de test Pages par PR infra à réaliser. **Aucun GREEN esthétique/tactile créateur**, retour V59 négatif toujours applicable jusqu'au vrai test Pixel.
 
 ---
 
