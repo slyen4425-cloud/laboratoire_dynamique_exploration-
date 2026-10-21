@@ -2077,9 +2077,10 @@ try{
       {willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height).data);
     window.__v61TerrainBefore=JSON.stringify(scene.terrain.levels)+'|'+JSON.stringify(scene.terrain.waterLevels);
     return {client,radius:document.querySelector('#radius').value,
+      intensity:document.querySelector('#visual-smooth').value,
       mode:quick.value,hit:document.elementFromPoint(client.x,client.y)?.id};
   })()`);
-  if(v61Before.hit!=='sculpt-canvas'||Number(v61Before.radius)!==.5||v61Before.mode!=='cliff-round')
+  if(v61Before.hit!=='sculpt-canvas'||Number(v61Before.radius)!==.5||v61Before.intensity!=='150'||v61Before.mode!=='cliff-round')
     throw Error('V61 one-touch whole-hill control not usable on real canvas: '+JSON.stringify(v61Before));
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',...v61Before.client});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',...v61Before.client,button:'left',clickCount:1});
