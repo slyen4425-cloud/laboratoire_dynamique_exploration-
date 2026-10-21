@@ -2,6 +2,8 @@
 // authority: it calls this pure geometry check through collisionContext only.
 // Never persist this preview adapter in WorldDocument or a gameplay save.
 import {sculptHeightAt,sculptWaterAt} from '../world/sculpt-height-model.js';
+import {bridgeTraversalRect} from '../world/world-object-model.js';
+import {circleFitsOrientedRect} from './geometry.js';
 
 export const SCULPT_NAVIGATION_PROBE_DEFAULTS=Object.freeze({
   cellWidth:28,cellHeight:21,maxStepUp:1,maxStepDown:1
@@ -20,9 +22,35 @@ export function sculptNavigationSample(terrain,x,y,{
     waterDepth:sculptWaterAt(terrain,col,row)});
 }
 
+// Canonical Bridge corridor is the only authority for allowing walking above
+// authored sculpt water. It is supplied from resolved WorldObject definitions;
+// neither image alpha nor rounded hill pixels decide traversal.
+export function sculptBridgeDeckAt(bridges=[],x,y,radius=0){
+  for(const bridge of bridges){
+    const corridor=bridgeTraversalRect(bridge);
+    if(corridor&&circleFitsOrientedRect(x,y,radius,corridor))return corridor;
+  }
+  return null;
+}
+export function sculptBridgeDeckHeight(terrain,bridges=[],x,y,{cellWidth=28,cellHeight=21}={}){
+  const corridor=sculptBridgeDeckAt(bridges,x,y,0);
+  if(!corridor)return null;
+  const heights=[];
+  // Read the two dry bank endpoints along the authoritative rotated corridor;
+  // never infer walkability or shadow height from the bridge sprite.
+  for(const direction of [-1,1]){
+    for(const fraction of [.50,.56,.62,.68]){
+      const px=corridor.x+direction*Math.cos(corridor.rotation)*corridor.length*fraction;
+      const py=corridor.y+direction*Math.sin(corridor.rotation)*corridor.length*fraction;
+      const sample=sculptNavigationSample(terrain,px,py,{cellWidth,cellHeight});
+      if(sample&&sample.waterDepth===0){heights.push(sample.level);break;}
+    }
+  }
+  return heights.length?Math.max(...heights):sculptNavigationSample(terrain,x,y,{cellWidth,cellHeight})?.level??null;
+}
 export function sculptNavigationBlockDetail({
   terrain,cellWidth=28,cellHeight=21,maxStepUp=1,maxStepDown=1,
-  shoreEntryFraction=0
+  shoreEntryFraction=0,bridges=[]
 }={},entity,targetX,targetY){
   if(!terrain||!entity)return null; // opt-in only: ordinary 2D runtime unchanged
   const options={cellWidth,cellHeight};
@@ -57,7 +85,10 @@ export function sculptNavigationBlockDetail({
     const sample=sculptNavigationSample(terrain,entity.x+dx*t,entity.y+dy*t,options);
     if(!sample)return Object.freeze({kind:'bounds'});
     if(!flying){
-      if(sample.waterDepth>0&&!swimming&&!shorePermitted(entity.x+dx*t,entity.y+dy*t,sample))
+      const onDeck=sculptBridgeDeckAt(bridges,entity.x+dx*t,entity.y+dy*t,
+        Math.max(0,Number(entity.radius)||0))!==null;
+      if(sample.waterDepth>0&&!swimming&&!onDeck&&
+         !shorePermitted(entity.x+dx*t,entity.y+dy*t,sample))
         return Object.freeze({kind:'water',col:sample.col,row:sample.row,waterDepth:sample.waterDepth});
       const rise=sample.level-previous.level;
       if(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown))
