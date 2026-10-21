@@ -18,7 +18,7 @@ test('V56 bridge scale reaches 300 %, keeps geometry, and other objects stay <=1
   assert.equal(bridges[0].transform.scaleY,3);
   const after=bridgeTraversalRect(resolveWorldObjectPlacements(bridges)[0]);
   assert.ok(after.length>before.length*7);
-  assert.equal(after.width/before.width,7.5);
+  assert.ok(Math.abs(after.width/before.width-7.5)<1e-10);
   assert.equal(importSculptPreviewScene(serializeSculptPreviewScene(w,bridges)).objects[0].transform.scaleX,3);
   const house=appendSculptPreviewObject([],{definitionId:'objectdef.building.house.blue_cottage.01',x:180,y:140,scale:.4});
   const prevented=updateSculptPreviewObject(house,house[0].id,{scale:3});
