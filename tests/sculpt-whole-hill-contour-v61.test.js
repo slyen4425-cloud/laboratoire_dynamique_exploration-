@@ -79,6 +79,6 @@ test('V61 controller makes one tap effective and renderer applies one coherent g
  assert.match(main,/\$\('radius'\)\.value='\.5'/);
  assert.match(renderer,/sculptRoundedHillRegions\(terrain\)/);
  assert.match(renderer,/sculptClipRoundedHill\(ctx,roundedHill,tile\)/);
- assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-whole-hill-v61/);
+ assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-(?:whole-hill-v61|bridge-bank-v62)/);
  assert.doesNotMatch(renderer,/levels\[idx\]=/);
 });
