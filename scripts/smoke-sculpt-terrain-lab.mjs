@@ -887,12 +887,16 @@ try{
     const variant=document.querySelector('#object-variant');
     variant.value='diagonal_right';variant.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('#object-action').value='place';
-    return {choices,views,sceneObjects:saved.objects.length,
+    const scale=document.querySelector('#object-scale'),scaleMax=scale.max;
+    // V56 real browser: 250% is allowed on a Bridge, not on buildings.
+    scale.value='250';scale.dispatchEvent(new Event('input',{bubbles:true}));
+    return {choices,views,sceneObjects:saved.objects.length,scaleMax,
       category:window.__sculptObjectsProbe().categories};
   })()`);
   if(!bridgePicker.category.includes('bridge')||bridgePicker.choices.filter(x=>
       x.includes('_2p5d.')).length!==7||
-      bridgePicker.views.join(',')!=='horizontal,vertical,diagonal_left,diagonal_right')
+      bridgePicker.views.join(',')!=='horizontal,vertical,diagonal_left,diagonal_right'||
+      bridgePicker.scaleMax!=='300')
     throw Error('V51 bridge categories or directional views missing in real Chromium: '+JSON.stringify(bridgePicker));
   await send('Input.dispatchMouseEvent',{type:'mousePressed',
     x:objectBegin.position.x,y:objectBegin.position.y,button:'left',clickCount:1});
@@ -906,7 +910,8 @@ try{
       'objectdef.bridge.wood_rustic_2p5d.01')};
   })()`);
   if(bridgePlaced.probe.count!==bridgePicker.sceneObjects+1||
-     bridgePlaced.object?.overrides.visualVariantId!=='diagonal_right')
+     bridgePlaced.object?.overrides.visualVariantId!=='diagonal_right'||
+     bridgePlaced.object?.transform.scaleX!==2.5)
     throw Error('V51 bridge cannot be placed over water / variant lost: '+JSON.stringify(bridgePlaced));
   await run(`(()=>{
     document.querySelector('#json').value=window.__v23Scene;
