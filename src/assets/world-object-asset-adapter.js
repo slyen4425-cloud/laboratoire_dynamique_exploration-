@@ -453,6 +453,126 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/trees/tree_fantasy_ancient_blossom_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.rock.desert.layered_plateau.01': Object.freeze({
+    id: 'object.rock.desert.layered_plateau.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_desert_layered_plateau_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.desert.tall_spire.01': Object.freeze({
+    id: 'object.rock.desert.tall_spire.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_desert_tall_spire_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.desert.cracked_cluster.01': Object.freeze({
+    id: 'object.rock.desert.cracked_cluster.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_desert_cracked_cluster_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.desert.rounded_sandstone.01': Object.freeze({
+    id: 'object.rock.desert.rounded_sandstone.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_desert_rounded_sandstone_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.gray.round_boulder.01': Object.freeze({
+    id: 'object.rock.gray.round_boulder.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_gray_round_boulder_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.gray.tall_spire.01': Object.freeze({
+    id: 'object.rock.gray.tall_spire.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_gray_tall_spire_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.gray.layered_slab.01': Object.freeze({
+    id: 'object.rock.gray.layered_slab.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_gray_layered_slab_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.gray.block_cluster.01': Object.freeze({
+    id: 'object.rock.gray.block_cluster.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_gray_block_cluster_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.moss.wide_boulder.01': Object.freeze({
+    id: 'object.rock.moss.wide_boulder.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_moss_wide_boulder_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.moss.tall_monolith.01': Object.freeze({
+    id: 'object.rock.moss.tall_monolith.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_moss_tall_monolith_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.moss.split_cluster.01': Object.freeze({
+    id: 'object.rock.moss.split_cluster.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_moss_split_cluster_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.moss.layered_stack.01': Object.freeze({
+    id: 'object.rock.moss.layered_stack.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_moss_layered_stack_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.volcanic.dark_spire.01': Object.freeze({
+    id: 'object.rock.volcanic.dark_spire.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_volcanic_dark_spire_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.volcanic.lava_plateau.01': Object.freeze({
+    id: 'object.rock.volcanic.lava_plateau.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_volcanic_lava_plateau_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.volcanic.stacked_blocks.01': Object.freeze({
+    id: 'object.rock.volcanic.stacked_blocks.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_volcanic_stacked_blocks_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.volcanic.lava_block.01': Object.freeze({
+    id: 'object.rock.volcanic.lava_block.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_volcanic_lava_block_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.fantasy.crystal_spire.01': Object.freeze({
+    id: 'object.rock.fantasy.crystal_spire.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_fantasy_crystal_spire_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.fantasy.violet_moss_boulder.01': Object.freeze({
+    id: 'object.rock.fantasy.violet_moss_boulder.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_fantasy_violet_moss_boulder_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.fantasy.turquoise_layered.01': Object.freeze({
+    id: 'object.rock.fantasy.turquoise_layered.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_fantasy_turquoise_layered_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.rock.fantasy.pale_lichen_block.01': Object.freeze({
+    id: 'object.rock.fantasy.pale_lichen_block.01',
+    kind: 'rock-visual',
+    path: './assets/exploration/objects/rocks/rock_fantasy_pale_lichen_block_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.rock.forest.boulder.01': Object.freeze({
     id: 'object.rock.forest.boulder.01',
     kind: 'rock-visual',

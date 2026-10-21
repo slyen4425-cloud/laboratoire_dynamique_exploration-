@@ -613,6 +613,246 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.desert.layered_plateau.01',
+    label: 'Roche désertique · Strates',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.desert.layered_plateau.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.desert.tall_spire.01',
+    label: 'Roche désertique · Monolithe',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.desert.tall_spire.01' },
+    baseSize: { width: 150, height: 225 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.62, heightRatio: 0.38, offsetX: 0, offsetY: 0.16
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.desert.cracked_cluster.01',
+    label: 'Roche désertique · Fractures',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.desert.cracked_cluster.01' },
+    baseSize: { width: 185, height: 175 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.desert.rounded_sandstone.01',
+    label: 'Roche désertique · Galet massif',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.desert.rounded_sandstone.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.gray.round_boulder.01',
+    label: 'Roche grise · Bloc arrondi',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.gray.round_boulder.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.gray.tall_spire.01',
+    label: 'Roche grise · Pic',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.gray.tall_spire.01' },
+    baseSize: { width: 150, height: 225 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.62, heightRatio: 0.38, offsetX: 0, offsetY: 0.16
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.gray.layered_slab.01',
+    label: 'Roche grise · Dalles',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.gray.layered_slab.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.gray.block_cluster.01',
+    label: 'Roche grise · Blocs',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.gray.block_cluster.01' },
+    baseSize: { width: 185, height: 175 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.moss.wide_boulder.01',
+    label: 'Roche moussue · Large',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.moss.wide_boulder.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.moss.tall_monolith.01',
+    label: 'Roche moussue · Monolithe',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.moss.tall_monolith.01' },
+    baseSize: { width: 150, height: 225 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.62, heightRatio: 0.38, offsetX: 0, offsetY: 0.16
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.moss.split_cluster.01',
+    label: 'Roche moussue · Double',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.moss.split_cluster.01' },
+    baseSize: { width: 185, height: 175 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.moss.layered_stack.01',
+    label: 'Roche moussue · Empilée',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.moss.layered_stack.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.volcanic.dark_spire.01',
+    label: 'Roche volcanique · Pic noir',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.volcanic.dark_spire.01' },
+    baseSize: { width: 150, height: 225 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.62, heightRatio: 0.38, offsetX: 0, offsetY: 0.16
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.volcanic.lava_plateau.01',
+    label: 'Roche volcanique · Lave fissurée',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.volcanic.lava_plateau.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.volcanic.stacked_blocks.01',
+    label: 'Roche volcanique · Blocs empilés',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.volcanic.stacked_blocks.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.volcanic.lava_block.01',
+    label: 'Roche volcanique · Bloc incandescent',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.volcanic.lava_block.01' },
+    baseSize: { width: 185, height: 175 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.fantasy.crystal_spire.01',
+    label: 'Roche fantastique · Cristal bleu',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.fantasy.crystal_spire.01' },
+    baseSize: { width: 150, height: 225 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.62, heightRatio: 0.38, offsetX: 0, offsetY: 0.16
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.fantasy.violet_moss_boulder.01',
+    label: 'Roche fantastique · Violet moussu',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.fantasy.violet_moss_boulder.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.fantasy.turquoise_layered.01',
+    label: 'Roche fantastique · Turquoise',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.fantasy.turquoise_layered.01' },
+    baseSize: { width: 220, height: 155 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.rock.fantasy.pale_lichen_block.01',
+    label: 'Roche fantastique · Lichen doré',
+    kind: 'rock',
+    visual: { assetId: 'object.rock.fantasy.pale_lichen_block.01' },
+    baseSize: { width: 185, height: 175 },
+    collision: {
+      role: 'obstacle', shape: 'box',
+      widthRatio: 0.78, heightRatio: 0.6, offsetX: 0, offsetY: 0.1
+    }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.rock.forest.boulder.01',
     label: 'Rochers moussus',
     kind: 'rock',
