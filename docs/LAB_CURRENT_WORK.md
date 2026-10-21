@@ -1,3 +1,15 @@
+# V62 — 2026-10-21 — Pont au niveau des rives : corriger ancre visuelle, pas collision
+
+- **Retour Pixel non validé :** malgré V55/V57 le joueur semble derrière/traverser le pont. Analyse : `sculptObjectVisualRect` ancre toujours la totalité de l'image à la hauteur du sol de la **case centrale** du pont, souvent le fond du ravin ; V55/V60 placent les pieds de l'acteur au niveau des deux berges. Image et vraie position divergeaient verticalement.
+- **Source V61 indépendante GREEN technique :** `96b0526755f56a3655f976d93429e14722ac2226` CI [#39617017632](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39617017632) SUCCESS avec vrai Chromium : un clic sur sommet active la courbe entière de 16 cases, 48 558 pixels du Canvas changent, eau/altitudes intactes. Checkpoint `checkpoint/exploration-whole-hill-contour-v61-prevalidation-2026-10-21`. START `checkpoint/exploration-start-bridge-bank-alignment-v62-2026-10-21`, work `work/exploration-bridge-bank-alignment-v62-2026-10-21` depuis exactement V61.
+- **Périmètre :** pour les seuls ponts 2,5D, le Render Sculpt / hit testing résout la **hauteur du tablier depuis les deux berges sèches** via la fonction canonique `sculptBridgeDeckHeight` ; l'image est ancrée à cette altitude plutôt qu'à l'eau/fond du ravin. Le perso utilise déjà cette hauteur en mode Tester. Un seul WorldObject transform y conservé ; aucune duplication du passage. Pont sans deux rives : fallback au comportement V59, pas de pont traversable par magie.
+- **Autorité :** WorldObject Placement/Collision définissent corridor, transform, appuis ; Render adapter n'a que la projection de l'image/hit test. Pas d'altitude physique dans l'asset, pas de changement schéma ni collision.
+- **Gel :** V60 collision dry/wet, V61 herbe contours, V58 alpha, eau V46, roche V50, assets 20 rochers, éditeur tactile V44, Builder/Core/Combat.
+- **Tests :** ravin profond 0 sous pont et rives 6 => artwork haut de six niveaux et pieds acteur même niveau ; horizontal/diagonal/vertical, support absent fallback, autre type objet inchangé; Node+Chromium CI et vraie revue sur Pixel obligatoires. Pas de publication si CI rouge.
+- **Statut :** lot en développement, aucune revendication GREEN esthétique. Publication groupée V60–V62 après CI.
+
+---
+
 # V61 — 2026-10-21 — Remplacer arrondi par contour continu de colline (retour utilisateur négatif V59)
 
 - **Retour utilisateur :** V59 « pas du tout ce que je veux », trop carré, peu intuitif. Le pinceau local ne changeait qu'un coin de case : toucher le milieu d'un plateau ne touchait aucun contour visible.
