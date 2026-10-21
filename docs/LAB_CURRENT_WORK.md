@@ -1,3 +1,14 @@
+# 2026-10-21 — Contrat de raccord musique Exploration (lot B isolé)
+
+- Décision auteur : bibliothèque de sons commune à tous les modes, bande-son propre à chaque jeu, transitions / playlists / volumes ; cible immédiate Exploration + Combat seulement, hors Shell GenSrpG et média privé.
+- Base source technique V62 62cf2f200dee8a92a4d184ecc427e38af196b1db (non GREEN esthétique ponts/reliefs) ; checkpoint checkpoint/exploration-start-soundtrack-bridge-v1-2026-10-21 ; branche work/exploration-soundtrack-bridge-v1-2026-10-21. Aucun changement de publication main ni de workflow.
+- Périmètre autorisé : nouvel adaptateur pur src/adapters/exploration-soundtrack-intents-v1.js, tests/exploration-soundtrack-intents-v1.test.mjs, docs/LAB_SOUNDTRACK_BRIDGE_V1.md et le présent journal. L'adaptateur émet des intentions audio explicites vers l'unique lecteur partagé ; aucun second moteur, aucune manipulation DOM/audio dans Exploration Core, aucun accès direct au dépôt Combat, aucune mutation du WorldDocument ou des encounters.
+- Propriétaire : Area / Terrain Family Resolver transmet contexte ; Encounter Bridge émet entrée/sortie ; le futur lecteur Audio Session demeure l'unique autorité de lecture. L'adaptateur ne fait que construire une clé de scène / token de restauration, les fichiers restent résolus par Asset Resolver dédié lors du raccord.
+- Tests : monde puis changement d'Area, biome, encounter, retour, invalid inputs, projets isolés ; aucun changement collision/caméra/terrain/Builder. Node/CI. Validation mobile nécessaire après vrai raccord visuel et musiques.
+- Statut : fondation sans mise en lecture des médias, aucun GREEN de fonctionnalité musicale à revendiquer.
+
+---
+
 # V62 — 2026-10-21 — Pont au niveau des rives : corriger ancre visuelle, pas collision
 
 - **Retour Pixel non validé :** malgré V55/V57 le joueur semble derrière/traverser le pont. Analyse : `sculptObjectVisualRect` ancre toujours la totalité de l'image à la hauteur du sol de la **case centrale** du pont, souvent le fond du ravin ; V55/V60 placent les pieds de l'acteur au niveau des deux berges. Image et vraie position divergeaient verticalement.
