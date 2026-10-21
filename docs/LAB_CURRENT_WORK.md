@@ -7,7 +7,7 @@
 - **Propriétaire :** Sculpt Scene Preview possède les commandes de placement/validation ; Controller adapte le pointer. Le Water Model reste source de `waterLevels[]`; Collision World et Bridge Traversal intouchés.
 - **Gel :** source V63 dimensions visuelles, V60 traversée, V61 collines, V62 projection des appuis, V58 alpha, eau V46, roche V50, 20 rochers, Combat, sauvegarde map.
 - **Tests :** poser puis glisser pont au-dessus de l'eau, autres objets rejetés, variantes/scale restent lors drag, vrai navigateur Chromium et CI, conservation scene.
-- **Statut :** en cours, sans GREEN esthétique Pixel. Publication seulement après CI complète sur source immuable et autorisation preview infra.
+- **Statut :** prévalidation technique V64 sur source immuable `bb32a1b257fd7672af28678cc6504da428da1f8c` ; [CI #39647884699](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39647884699) SUCCESS, Node/check + vrai Chromium objet pont 250 % drag sur eau et Builder/Exploration/Combat. Checkpoint `checkpoint/exploration-bridge-tactile-water-v64-prevalidation-2026-10-21`. **NON GREEN esthétique/tactile Pixel**, preview technique à publier après CI épinglée.
 
 ---
 
