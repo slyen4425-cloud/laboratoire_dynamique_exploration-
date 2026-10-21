@@ -1,3 +1,17 @@
+# Lot V68 — 21/10/2026 — Panneau avant du pont recouvre le héros
+
+- **Retour créateur Pixel :** sur photo à ~80°, seulement tête et épaules émergent du pont bien que V67 ait corrigé la position du WebP. Le joueur exige de marcher **sur les planches** sans disparaître derrière l'image.
+- **Base exacte publiée V67 :** `28e68818913ffd822d581618140d520759f30a90`, CI #39661442528 SUCCESS, checkpoint `checkpoint/exploration-bridge-deck-anchor-v67-prevalidation-2026-10-21`; main Pages #39661933805 SUCCESS. START `checkpoint/exploration-start-bridge-rail-mask-v68-2026-10-21`, branche `work/exploration-bridge-rail-mask-v68-2026-10-21` depuis cette source, sans modifier main.
+- **Cause reproductible :** `sculptBridgeForegroundClip()` V67 applique le deuxième rendu de tout le **bas du WebP** depuis **-5 % de hauteur sous l'ancre tablier**. Il repeint donc des planches entières **sur le corps et les jambes** de l'acteur, annulant visuellement la correction V67.
+- **Périmètre :** rendre prioritaire la totalité de l'acteur tant qu'il se trouve physiquement sur le corridor canonique ; ne remettre par-dessus que le rebord **sous la position des pieds** et les éléments d'avant-plan si leur masque ne remonte pas sur la surface de marche. Ne toucher qu'au calcul de découpe graphique dans Render adapter, pas aux coordonnées/hauteur, sprite, collision, entrée/sortie, positionnement de WorldObject.
+- **Propriétaire :** `src/render/sculpt-bridge-deck-layers.js` (clip graphique uniquement), `src/sculpt-lab-main.js` consomme son contrat inchangé. Tester avec la projection caméra native et WorldObject inchangés.
+- **Gel :** V67 ancre 55 %, V66 joystick, V65 caméra, V64 drag, V60/V63 corridor, V61 collines, V50 HD, V46 eau, 28 WebP, son, Combat, WorldDocument.
+- **Tests :** centre du tablier NON masqué, clip inférieur strictement positif par rapport au pied, plusieurs variantes/échelles et 35°, 55°, 80°, 90° ; vérifier régressions Node/Chromium/smoke/Combat et absence de nouveau travail par frame ; gate photo smartphone encore NON GREEN esthétique.
+- **Hors périmètre :** création de nouvelles textures ou géométrie 3D, physique, peinture de collines, retouches WebP.
+- **Statut :** démarrage V68, correctif visuel non validé utilisateur.
+
+---
+
 # V67 — 21/10/2026 — Ancrage réel des visuels de ponts au tablier physique
 
 - **Retour Pixel 35°/90° :** personnage sous le pont ou devant/derrière le mauvais garde-corps. V65 et V66 sont corrections de projection et Input GREEN techniques mais ne réparent pas la divergence de l'ancrage du WebP.
