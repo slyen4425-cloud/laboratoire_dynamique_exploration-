@@ -23,8 +23,8 @@ test('V57 bridge render uses the same center-passable corridor as V55 Collision 
 });
 test('V57 deck is base sprite behind hero, narrow near-rail foreground only',()=>{
  const rect=sculptBridgeForegroundClip({width:170,height:96});
- assert.deepEqual(rect,{x:-85,y:-57.6,width:170,height:57.599999999999994});
- assert.equal(sculptBridgeVisualFootLift({height:96}),33.6);
+ assert.equal(rect.x,-85); assert.ok(Math.abs(rect.y+57.6)<1e-9);\n assert.equal(rect.width,170); assert.ok(Math.abs(rect.height-57.6)<1e-9);
+ assert.ok(Math.abs(sculptBridgeVisualFootLift({height:96})-33.6)<1e-9);
  assert.equal(sculptBridgeVisualFootLift(null),0);
  assert.equal(sculptBridgeForegroundClip({width:0,height:96}).width,0);
 });
