@@ -107,7 +107,7 @@ test('V42 UI owns exactly one actor presentation palette and all relevant action
     assert.equal((html.match(new RegExp('id="'+id+'"','g'))??[]).length,1,id);
   }
   assert.match(html,/value="select">Sélectionner \/ modifier/);
-  assert.match(html,/rev=sculpt-(?:actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64)/);
+  assert.match(html,/rev=sculpt-(?:actor-presentation-v42|continuous-cliff-v53|rounded-hills-v54|bridge-crossing-v55|bridge-polish-v56|bridge-deck-v57|bridge-foot-clean-v58|hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65)/);
   assert.match(app,/findSculptPreviewActorNear\(placedActors,x,y\)/);
   assert.match(app,/updateSculptPreviewActor\(placedActors,actorSelectedId,patch\)/);
   assert.match(app,/syncActorSelectedControls\(\)/);
