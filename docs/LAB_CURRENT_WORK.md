@@ -1,3 +1,16 @@
+# Lot actif — 21/10/2026 — V52 Bordures de carte rocheuses et adoucissement optionnel des falaises
+
+- **Retour créateur :** V50 falaise esthétique validée, mais la limite extérieure de la carte apparaît en large bande unie gris/vert, non habillée de roche ; souhaite pouvoir arrondir/adoucir les angles de falaise comme les berges d'eau, **à la demande seulement**.
+- **Base contrôlée :** V51 GREEN technique / checkpoint prévalidation `checkpoint/exploration-bridge-picker-v51-prevalidation-2026-10-21`, source `f2d62a3b0d5dbcf95a879b79bdfdb36ae3e86c6c`, CI [#39540905752](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/39540905752) SUCCESS ; V50 créateur valide pour roche. Checkpoint START `checkpoint/exploration-start-cliff-edge-contours-v52-2026-10-21`, travail `work/exploration-cliff-edge-contours-v52-2026-10-21`.
+- **Périmètre de présentation / authoring du relief :** remplir la paroi extérieure **frontale sud** du terrain depuis les hauteurs canoniques existantes avec la même fonction de peinture de roche HD V50 et dégradé sombre ; permettre un pinceau dédié qui change **uniquement** la donnée de profil visuel `roundness[]`, déjà versionnée dans le modèle, sans aucun changement de `levels[]`/`waterLevels[]`. Les angles actuels restent par défaut identiques jusqu'au geste utilisateur.
+- **Propriétaires :** Sculpt Height Model possède le profil `roundness` et la mutation contrôlée par pinceau ; Sculpt Height Renderer lit ce profil et dessine la bordure, Builder/Scuplt UI ne conserve aucun double état ; Asset Adapter roche HD existant.
+- **Gel :** V50 atlas HD / palettes / gradients / mousse, eau V46 et arrondi rive, V51 ponts, matériau herbe, caméra, navigation, Collision World, WorldDocument, combats, scène legacy, drag, performance cache raster.
+- **Sentinelles :** tous niveaux 0..7 et transitions de limite, roche et ombres d'origine, falaise côté eau, profils de contour (0 % net vs 150 % arrondi), maintien strict des hauteurs, export/import/Undo, test Node + Chromium + CI. Éviter la frange en dehors des dimensions et le halo sur l'eau.
+- **Hors périmètre :** réécrire géométrie d'Area, collisions, rendu FX eau, texture source, gameplay pont/traversée et changement de 2D Builder.
+- **Statut :** branche déclarée avant changements, implémentation et tests à faire ; checkpoint GREEN technique/retour Pixel requis avant publication.
+
+---
+
 # Lot actif — 21/10/2026 — V51 ponts visibles dans la palette Sculpture (UI/placement)
 
 - **Retour créateur :** esthétique V50 validée ; les sept ponts / 28 vues existent mais catégorie absente de l'outil « Objets ». Les deux autres retours (bordure hors carte, adoucissement optionnel des angles de falaise) auront des lots renderer/sculpture dédiés et ne sont pas inclus dans celui-ci.
