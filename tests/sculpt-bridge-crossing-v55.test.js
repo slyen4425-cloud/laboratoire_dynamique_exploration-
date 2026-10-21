@@ -51,7 +51,7 @@ test('V55 vertical and diagonal artwork have declared traversal axes, not inferr
   const oblique=bridge('diagonal_left',.9,15).objects[0];
   assert.equal(Math.round(bridgeTraversalRect(oblique).rotation*180/Math.PI),-30);
   const other=bridge('diagonal_right',.9,-15).objects[0];
-  assert.equal(Math.round(bridgeTraversalRect(other).rotation*180/Math.PI),30);
+  assert.equal(Math.round((bridgeTraversalRect(other).rotation*180/Math.PI+360)%360),30);
   assert.equal(objectDefinitionCatalogV1.get('objectdef.bridge.wood.rustic_bank.01').traversal.viewAxesDeg,undefined,
     'historical native bridge unchanged');
 });
