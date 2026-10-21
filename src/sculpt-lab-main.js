@@ -28,7 +28,7 @@ import {resolveWorldObjectPlacements} from './world/world-object-placement-model
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-dimensions-v63';
 import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-occlusion-v57';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60';
-import {listSculptPlaceableDefinitions,appendSculptPreviewObject,
+import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
@@ -603,10 +603,11 @@ function stroke(event){
       source.origin.x+world.x-source.start.x));
     const y=Math.max(.001,Math.min(terrain.height*SCULPT_TILE.height-.001,
       source.origin.y+world.y-source.start.y));
-    // Placement in water is not valid for the normal object tool either.
-    if(sculptWaterAt(terrain,Math.floor(x/SCULPT_TILE.width),
-      Math.floor(y/SCULPT_TILE.height))>0)return;
+    // The SAME native bridge permission as placement: a bridge may be
+    // repositioned on wet cells, all other kinds must stay on dry ground.
     const current=placedObjects.find(o=>o.id===source.id);
+    if(!current||!sculptObjectCanOccupyCell(terrain,current.objectDefinitionId,
+      Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height)))return;
     if(!current||Math.abs(current.transform.x-x)<.0001&&
        Math.abs(current.transform.y-y)<.0001)return;
     const next=updateSculptPreviewObject(placedObjects,source.id,{x,y});
@@ -1384,10 +1385,8 @@ function applyObjectAtCell(cell){
     return;
   }
   const definitionId=$('object-definition').value;
-  const definition=objectDefinitionCatalogV1.get(definitionId);
-  // Only canonical bridges may span water. No water height, collision or
-  // traversal rule is changed by the editor placement decision.
-  if(sculptWaterAt(terrain,cell.x,cell.y)>0&&definition?.kind!=='bridge'){
+  // Placement and drag use one Scene Preview authoring permission.
+  if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y)){
     status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
   }
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
