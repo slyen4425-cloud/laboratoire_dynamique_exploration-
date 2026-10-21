@@ -511,7 +511,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
 <button data-mode="smooth">Lisser les hauteurs</button>
-<button data-mode="cliff-round">🏔 Arrondir / adoucir les falaises</button>
+<button data-mode="cliff-round">🏔 Arrondir les collines (herbe + roche)</button>
 <button data-mode="plateau">Plateau · hauteur exacte</button>
 <div class="levels" aria-label="Hauteur exacte du plateau">
 <label for="target">Hauteur</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
@@ -557,8 +557,8 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <option value="threeQuarter">Vue trois-quarts (comparaison)</option>
 </select></label>
 <label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
-<label data-panel="ground" class="control">Arrondi des falaises (0 % net, 150 % très doux) <b id="visual-smooth-value">95 %</b>
-<input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi de roche appliqué uniquement aux prochaines cellules sculptées, 0 à 150 %"></label>
+<label data-panel="ground" class="control">Arrondi de colline (95 % = aspect initial, 150 % = sommet arrondi) <b id="visual-smooth-value">95 %</b>
+<input id="visual-smooth" type="range" min="0" max="150" value="95" step="5" aria-label="Arrondi local de colline, peindre après réglage. 95 % aspect initial, 150 % sommet arrondi"></label>
 <button id="fit">Ajuster la vue</button>
 <label class="control">Aspect de l’eau
 <select id="water-material" aria-label="Matériau visuel de l’eau">
@@ -580,6 +580,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-continuous-cliff-v53"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-rounded-hills-v54"></script>
 </body>
 </html>
