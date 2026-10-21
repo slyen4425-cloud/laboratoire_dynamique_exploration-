@@ -48,7 +48,7 @@ test('V54 UI explains a real paint gesture and keeps canonical rendering',()=>{
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
-  assert.match(html,/Arrondir les collines \(herbe \+ roche\)/);
+  assert.match(html,/Arrondir (?:les collines \(herbe \+ roche\)|toute la colline)/);
   assert.match(main,/\$\('hill-radius-wrap'\)\.hidden=mode!=='cliff-round'/);
   assert.match(render,/sculptHillTopPath\(ctx,x,y,w,h,hill\);ctx\.clip\(\)/);
   assert.doesNotMatch(render,/isBlocked\(/);
