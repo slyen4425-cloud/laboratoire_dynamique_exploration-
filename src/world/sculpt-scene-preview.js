@@ -1,6 +1,6 @@
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
-import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from './sculpt-height-model.js';
+import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt} from './sculpt-height-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
@@ -22,6 +22,16 @@ export function listSculptPlaceableDefinitions(){
     validKinds.has(d.kind)&&!d.id.startsWith('objectdef.relief.')));
 }
 const allowable=new Set(listSculptPlaceableDefinitions().map(d=>d.id));
+// One Sculpt authoring policy for BOTH placing and dragging native objects.
+// The heightfield owns the wetness, the canonical ObjectDefinition owns kind.
+// No pixel, image alpha or collision shortcut can declare water passable.
+export function sculptObjectCanOccupyCell(terrain,definitionId,col,row){
+  if(!terrain||!Number.isInteger(col)||!Number.isInteger(row)||
+    col<0||row<0||col>=terrain.width||row>=terrain.height)return false;
+  const definition=objectDefinitionCatalogV1.get(definitionId);
+  if(!definition||!allowable.has(definitionId))return false;
+  return sculptWaterAt(terrain,col,row)<=0||definition.kind==='bridge';
+}
 export function sculptPreviewVariants(definitionId){
   const def=objectDefinitionCatalogV1.get(definitionId);
   return Object.freeze([...(def?.visual?.variants??[])]);
