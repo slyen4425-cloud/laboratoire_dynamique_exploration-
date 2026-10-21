@@ -197,6 +197,60 @@ try{
     pixelsChangedByVisualSmoothing:smoothResult.changed,touchLevel:touch.highestLevel
   }));
 
+  // V52: real sculpt canvas interaction paints ONLY cosmetic cliff contours.
+  const v52Before=await run(`(()=>{
+    document.querySelector('#flat').click();
+    document.querySelector('[data-mode=cliff-round]').click();
+    const smooth=document.querySelector('#visual-smooth');
+    smooth.value='0';smooth.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
+    document.querySelector('#export').click();
+    return JSON.parse(document.querySelector('#json').value);
+  })`);
+  await sleep(130);
+  const v52Point=await run(`(()=>{
+    const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+r.width/2,y:r.y+r.height/2};
+  })()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v52Point.x,y:v52Point.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',
+    x:v52Point.x,y:v52Point.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',
+    x:v52Point.x,y:v52Point.y,button:'left',clickCount:1});
+  await sleep(100);
+  const v52After=await run(`(()=>{
+    document.querySelector('#export').click();
+    return JSON.parse(document.querySelector('#json').value);
+  })()`);
+  if(JSON.stringify(v52After.levels)!==JSON.stringify(v52Before.levels)||
+     JSON.stringify(v52After.waterLevels)!==JSON.stringify(v52Before.waterLevels)||
+     JSON.stringify(v52After.roundness)===JSON.stringify(v52Before.roundness))
+    throw Error('V52 real cosmetic brush modified height/water or failed to paint contours');
+  await run("document.querySelector('#undo').click()");
+  const v52Undone=await run(`(()=>{
+    document.querySelector('#export').click();
+    return JSON.parse(document.querySelector('#json').value);
+  })()`);
+  if(JSON.stringify(v52Undone)!==JSON.stringify(v52Before))
+    throw Error('V52 cosmetic cliff brush undo failed');
+  const v52Edge=await run(`(async()=>{
+    const mod=await import('./src/render/sculpt-height-renderer.js');
+    const m=await import('./src/world/sculpt-height-model.js');
+    const terrain=m.createSculptTerrain({width:8,height:8});
+    const c=document.createElement('canvas');c.width=224;c.height=168;
+    const ctx=c.getContext('2d',{willReadFrequently:true});
+    const outcome=mod.drawSculptTerrain(ctx,{terrain,material:{render:{baseColor:'#677955'}},
+      rockPalette:'slate'});
+    const at=(x,y)=>Array.from(ctx.getImageData(x,y,1,1).data).slice(0,3);
+    return {runs:outcome.outerCliffRuns,rockPixel:at(82,156),
+      upperPixel:at(82,141)};
+  })()`);
+  if(v52Edge.runs!==1||
+     v52Edge.rockPixel.join(',')===v52Edge.upperPixel.join(',')||
+     v52Edge.rockPixel.join(',')==='103,121,85')
+    throw Error('V52 outer south boundary not textured in real Chromium: '+JSON.stringify(v52Edge));
+  console.log('V52 cosmetic contour brush/Undo + textured outer map rim Chromium:',
+    JSON.stringify({brushOnlyRoundness:true,undo:true,rock:v52Edge}));
   // V13: a water brush must edit the water volume without touching land and
   // Undo/Redo must exactly restore BOTH data fields, never a visual-only rollback.
   const waterSetup=await run(`(async()=>{
