@@ -34,5 +34,5 @@ test('V66 uses the real controller -> Core stepMovement and leaves collision aut
  assert.match(main,/const intent=sculptCameraWorldInput\(cameraView\(\),rawIntent\.x,rawIntent\.y\)/);
  assert.match(main,/maxSpeed:navSpeed\(\)\*intent\.speedMultiplier/);
  assert.match(main,/sculptNavigationBlockDetail\(context\.sculptNavigation/);
- assert.match(html,/rev=sculpt-bridge-input-v66/);
+ assert.match(html,/rev=sculpt-(?:bridge-input-v66|bridge-deck-anchor-v67)/);
 });
