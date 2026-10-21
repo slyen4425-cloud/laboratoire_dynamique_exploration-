@@ -8,7 +8,7 @@
 - **Propriétaires :** Collision World (délégation existante vers sculpt-navigation), WorldObject Definition/Placement (corridor et orientation), Actor Renderer (hauteur visuelle dérivée), UI lecture seule. Aucune géométrie de rivière concurrente ni gameplay dans le renderer.
 - **Gel :** V54 arrondis, V50 roches, V46 eau, V51 choix/visuels, V52 bord, V53 raccords, WorldDocument/Core, navigation hors labo et Capture Combat.
 - **Tests :** franchissement terrestre réellement bloqué hors pont, franchissement pont horizontal/vertical et diagonal, marche inverse, largeur selon scale/rotation, gros saut non autorisé hors pont, persistances, CI npm+check+Chromium, mobile final utilisateur.
-- **Statut :** développement isolé, aucune publication Pages ni GREEN créateur.
+- **Statut :** V55 GREEN technique sur source `8d82a83dbf421ba2d5e18ba2d30beb1864336fd3`, CI #39578894348 SUCCESS, navigation/Combat Chromium et passage réel moteur contrôlés. Checkpoint prévalidation documenté ; PAS GREEN tactile/esthétique avant test créateur. Publication groupée prévue après V56.
 
 ---
 
