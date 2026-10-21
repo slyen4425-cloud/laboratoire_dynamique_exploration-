@@ -169,7 +169,8 @@ export function bridgeTraversalRect(bridge) {
   return Object.freeze({
     x: visual.x,
     y: visual.y,
-    rotation: visual.rotation,
+    rotation: visual.rotation +
+      (Number(bridge.traversal.axisOffsetDeg) || 0) * Math.PI / 180,
     length:
       visual.length *
       bridge.traversal.lengthRatio,
