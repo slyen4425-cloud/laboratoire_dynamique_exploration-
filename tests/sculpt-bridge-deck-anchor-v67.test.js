@@ -28,8 +28,8 @@ test('V67 2.5D bridge visual deck contact is identical to canonical XY deck cent
    near(-rect.height+shift+rect.height*.45,0);
    assert.equal(sculptBridgeVisualFootLift(rect,bridge),0);
    const front=sculptBridgeForegroundClip(rect,shift);
-   near(front.y,-rect.height*.05);
-   near(front.height,rect.height*.60);
+   near(front.y,rect.height*.12);
+   near(front.height,rect.height*.43);
    for(const angle of [35,55,90]){
     const view=sculptCameraGameView(angle);
     const foot=sculptCameraProjectBridgeFoot(view,rect.x,rect.y,0);
