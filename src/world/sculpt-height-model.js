@@ -1,15 +1,64 @@
 // Experimental heightfield. Isolated from WorldSurface/WorldDocument and Collision World.
 // Cells, heights and brush results are deterministic, immutable, JSON-compatible data.
 export const SCULPT_SCHEMA_VERSION=1;
+// V76: canonical continuous spherical relief; never inferred from painted pixels.
+export const SCULPT_SPHERE_LIMIT=24;
+const sphericalKinds=new Set(['hill','basin']);
+const validSphere=(f,w,h)=>f&&typeof f.id==='string'&&/^sculpt-sphere-[1-9][0-9]*$/.test(f.id)&&
+  sphericalKinds.has(f.kind)&&[f.x,f.y,f.radius].every(Number.isFinite)&&
+  f.radius>=14&&f.radius<=448&&f.x-f.radius>=0&&f.y-f.radius>=0&&
+  f.x+f.radius<=w*28&&f.y+f.radius<=h*21&&
+  Number.isInteger(f.height)&&f.height>=1&&f.height<=7&&
+  Number.isInteger(f.baseLevel)&&f.baseLevel>=0&&f.baseLevel<=7;
+export function sculptSphereDisplacementAt(terrain,x,y){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return 0;
+  let offset=0;
+  for(const f of terrain.spheres??[]){
+    const dx=(x-f.x)/f.radius,dy=(y-f.y)/f.radius;
+    const d2=dx*dx+dy*dy;
+    if(d2<1)offset+=(f.kind==='hill'?1:-1)*f.height*Math.sqrt(1-d2);
+  }
+  return offset;
+}
+export function sculptSphereAt(terrain,x,y,padding=0){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  return (terrain.spheres??[]).find(f=>Math.hypot(x-f.x,y-f.y)<f.radius+Math.max(0,padding))??null;
+}
+export function appendSculptSphere(terrain,{kind='hill',x,y,radius=112,height=3}={}){
+  if(!terrain||!sphericalKinds.has(kind)||!Number.isFinite(x)||!Number.isFinite(y)||
+     !Number.isFinite(radius)||!Number.isInteger(height)||height<1||height>7||
+     (terrain.spheres?.length??0)>=SCULPT_SPHERE_LIMIT)return terrain;
+  const baseLevel=sculptHeightAt(terrain,Math.floor(x/28),Math.floor(y/21));
+  const ids=new Set((terrain.spheres??[]).map(f=>f.id));
+  let index=1;while(ids.has('sculpt-sphere-'+index))index++;
+  const f=Object.freeze({id:'sculpt-sphere-'+index,kind,x,y,radius,height,baseLevel});
+  if(!validSphere(f,terrain.width,terrain.height))return terrain;
+  // For V76, keep caps truly continuous: place only over a dry, flat patch
+  // without overlapping another sphere or secretly modifying grid heights.
+  const a=Math.floor((x-radius)/28),b=Math.min(terrain.width-1,Math.floor((x+radius)/28));
+  const c=Math.floor((y-radius)/21),d=Math.min(terrain.height-1,Math.floor((y+radius)/21));
+  for(let row=c;row<=d;row++)for(let col=a;col<=b;col++)
+    if(sculptHeightAt(terrain,col,row)!==baseLevel||sculptWaterAt(terrain,col,row)>0)
+      return terrain;
+  if((terrain.spheres??[]).some(old=>Math.hypot(x-old.x,y-old.y)<radius+old.radius))
+    return terrain;
+  return Object.freeze({...terrain,spheres:Object.freeze([...(terrain.spheres??[]),f])});
+}
+export function removeSculptSphereAt(terrain,x,y){
+  const found=sculptSphereAt(terrain,x,y);
+  return found?Object.freeze({...terrain,spheres:Object.freeze(terrain.spheres.filter(f=>f.id!==found.id))}):terrain;
+}
+
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const int=(v,f)=>Number.isInteger(v)?v:f;
-export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null}={}){
+export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null}={}){
   const w=clamp(int(width,36),8,80),h=clamp(int(height,24),8,64);
   const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,7));
   const water=Array.from({length:w*h},(_,i)=>clamp(int(waterLevels?.[i],-1),-1,10));
   const contours=Array.from({length:w*h},(_,i)=>clamp(int(roundness?.[i],95),0,150));
   return Object.freeze({schemaVersion:SCULPT_SCHEMA_VERSION,width:w,height:h,
-    levels:Object.freeze(data),waterLevels:Object.freeze(water),roundness:Object.freeze(contours)});
+    levels:Object.freeze(data),waterLevels:Object.freeze(water),roundness:Object.freeze(contours),
+    spheres:Object.freeze((Array.isArray(spheres)?spheres:[]).map(f=>Object.freeze({...f})))});
 }
 export function sculptHeightAt(terrain,x,y){
   if(!terrain||x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
@@ -81,6 +130,9 @@ export function applySculptStroke(terrain,{
     const weight=weights[i];
     if(weight<=0)continue;
     const old=terrain.levels[i];
+    // Keep the flat base under an authored continuous sphere immutable.
+    if(sculptSphereAt(terrain,(i%terrain.width+.5)*28,
+      (Math.floor(i/terrain.width)+.5)*21))continue;
     // An opt-in cosmetic brush: edit existing contour profile only. Reuse
     // the canonical brush footprint, never touch land/water or navigation.
     if(mode==='cliff-round'){
@@ -202,7 +254,8 @@ export function sculptDemo(){
 }
 export function serializeSculptTerrain(terrain){
   return JSON.stringify({schemaVersion:1,width:terrain.width,height:terrain.height,
-    levels:[...terrain.levels],waterLevels:[...terrain.waterLevels],roundness:[...terrain.roundness]});
+    levels:[...terrain.levels],waterLevels:[...terrain.waterLevels],roundness:[...terrain.roundness],
+    spheres:(terrain.spheres??[]).map(f=>({...f}))});
 }
 export function importSculptTerrain(serialized){
   const input=typeof serialized==='string'?JSON.parse(serialized):serialized;
@@ -216,7 +269,11 @@ export function importSculptTerrain(serialized){
       !input.waterLevels.every(v=>Number.isInteger(v)&&v>=-1&&v<=10)))||
      (input.roundness!==undefined&&(!Array.isArray(input.roundness)||
       input.roundness.length!==input.width*input.height||
-      !input.roundness.every(v=>Number.isInteger(v)&&v>=0&&v<=150))))
+      !input.roundness.every(v=>Number.isInteger(v)&&v>=0&&v<=150)))||
+     (input.spheres!==undefined&&(!Array.isArray(input.spheres)||
+       input.spheres.length>SCULPT_SPHERE_LIMIT||
+       !input.spheres.every(f=>validSphere(f,input.width,input.height))||
+       new Set(input.spheres.map(f=>f.id)).size!==input.spheres.length)))
     throw new Error('Carte sculptable invalide (schemaVersion 1)');
   return createSculptTerrain(input);
 }
