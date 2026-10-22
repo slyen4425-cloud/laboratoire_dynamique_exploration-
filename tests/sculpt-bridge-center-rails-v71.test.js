@@ -125,7 +125,7 @@ test('V71 physical sides reuse one WorldObject traversability, not a parallel ob
  const source=readFileSync(new URL('../src/objects/object-definition-catalog.js',import.meta.url),'utf8');
  const navigation=readFileSync(new URL('../src/core/sculpt-navigation-collision.js',import.meta.url),'utf8');
  const model=readFileSync(new URL('../src/world/world-object-model.js',import.meta.url),'utf8');
- assert.match(source,/central 35%/);
+ assert.match(source,/centered 35%/);
  assert.match(model,/visual\.width\s*\*\s*bridge\.traversal\.widthRatio/);
  assert.match(navigation,/return reject\(Object\.freeze\(\{kind:'bridge-edge'\}\)\)/);
  assert.doesNotMatch(navigation,/getImageData\(|naturalWidth|sprite\.alpha|image\.src/);
