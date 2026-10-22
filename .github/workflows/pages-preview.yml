@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 8065703f9e09bb41c2e38982e14d9a58c72ca0e9
+          ref: 8b1a894f33afbfcd907596ad8d271f2862b2f2cf
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
