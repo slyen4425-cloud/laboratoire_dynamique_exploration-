@@ -780,7 +780,8 @@ function navHeight(){
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const activeBridge=navActor?.sculptBridgeId?resolvedSculptBridges().find(bridge=>
     bridge.id===navActor.sculptBridgeId):null;
-  const deck=activeBridge?sculptBridgeDeckHeight(terrain,[activeBridge],
+  const deck=activeBridge?sculptBridgeDeckHeight(terrain,resolvedSculptBridges()
+    .filter(bridge=>bridge.id===activeBridge.id),
     navActor.x,navActor.y,{cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
   return deck??info?.level??0;
 }
