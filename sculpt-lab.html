@@ -213,7 +213,7 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 #object-palette[hidden]{display:none!important}
 #hill-radius-wrap[hidden]{display:none!important}
 #object-palette label{display:grid;gap:2px}
-#object-variant-wrap[hidden]{display:none!important}
+#object-variant-wrap[hidden],#object-scale-wrap[hidden],#object-bridge-length-wrap[hidden],#object-bridge-width-wrap[hidden]{display:none!important}
 #object-palette select,#object-palette input[type=range]{width:100%}
 #object-palette select{padding:7px;min-height:36px}
 #object-palette input[type=range]{accent-color:#7ee0c5}
@@ -407,8 +407,16 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
    <option value="place">Placer au toucher</option><option value="select">Sélectionner / modifier</option>
    <option value="remove">Supprimer au toucher</option>
  </select></label>
- <label>Taille <output id="object-scale-value">40 %</output>
+ <label id="object-scale-wrap">Taille uniforme <output id="object-scale-value">40 %</output>
    <input id="object-scale" type="range" min="25" max="120" step="5" value="40">
+ </label>
+ <label id="object-bridge-length-wrap" hidden>🌉 Longueur <output id="object-bridge-length-value">40 %</output>
+   <input id="object-bridge-length" type="range" min="25" max="300" step="5" value="40"
+     aria-label="Longueur du pont sans élargir le passage">
+ </label>
+ <label id="object-bridge-width-wrap" hidden>🌉 Largeur <output id="object-bridge-width-value">40 %</output>
+   <input id="object-bridge-width" type="range" min="25" max="300" step="5" value="40"
+     aria-label="Largeur du pont sans modifier sa longueur">
  </label>
  <label>Rotation au sol <output id="object-rotation-value">0°</output>
   <input id="object-rotation" type="range" min="0" max="359" step="1" value="0">
@@ -423,7 +431,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
    <button type="button" id="object-redo" disabled>↷ Objet</button>
  </div>
  <output id="object-count">Aucun objet placé</output>
- <small>« Sélectionner / modifier » : touche un objet et garde le doigt appuyé pour le glisser à sa nouvelle place. Taille, rotation et vue sont conservées. ↶ Objet annule le déplacement ; Exporter scène le sauvegarde.</small>
+ <small>« Sélectionner / modifier » : touche un objet et garde le doigt appuyé pour le glisser à sa nouvelle place. Longueur et largeur du pont sont indépendantes ; rotation et vue restent conservées. ↶ Objet annule le déplacement ; Exporter scène le sauvegarde.</small>
  </div>
  <section id="actor-controls" hidden>
   <strong>👥 Acteurs de map</strong>
@@ -583,6 +591,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72"></script>
 </body>
 </html>
