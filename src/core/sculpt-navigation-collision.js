@@ -132,9 +132,11 @@ export function sculptNavigationRoute({
       const banks=sculptBridgeBankHeights(terrain,corridor,options);
       const local=orientedLocalPoint(previousX,previousY,corridor);
       const bank=banks?.[local.x<0?0:1];
-      if(bank!==undefined&&bridgeEndGate(corridor,previousX,previousY,
-        radius,cellWidth,cellHeight)&&
-        origin.level>=bank-maxStepUp&&origin.level<=bank+maxStepDown)
+      // Wide bridge art can cover a large part of its real HIGH approach
+      // bank, not merely its last 21px. Starting there is on the deck;
+      // starting on the LOW floor below it is never on the deck.
+      if(bank!==undefined&&origin.level>=bank-maxStepUp&&
+        origin.level<=bank+maxStepDown)
         bridgeId=previousCarrier.bridge.id;
     }
   }
