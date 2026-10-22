@@ -1,10 +1,10 @@
 import {
   bridgeTraversalRect,
   worldObjectObstacleRect
-} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2&bridge-axis-v55';
+} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2&bridge-axis-v55-deck-v70';
 import {
   resolveWorldObjectPlacements
-} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2&bridge-axis-v55';
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2&bridge-axis-v55-deck-v70';
 import {
   clamp,
   circleFitsOrientedRect,
@@ -25,7 +25,7 @@ import {
   resolveSurfaceTraversal
 } from './surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 
-import {isSculptNavigationBlocked,sculptNavigationNextBridgeId} from './sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69';
+import {isSculptNavigationBlocked,sculptNavigationNextBridgeId} from './sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70';
 export {sculptNavigationNextBridgeId};
 
 const COLLISION_EPSILON = 1e-6;
