@@ -45,7 +45,7 @@ export function normalizeSculptPreviewObjects(raw=[]){
   return normalizeWorldObjectPlacements(valid,objectDefinitionCatalogV1);
 }
 export function appendSculptPreviewObject(objects,{
-  definitionId,x,y,scale=.38,rotationDeg=0,variantId=null
+  definitionId,x,y,scale=.38,scaleX=scale,scaleY=scale,rotationDeg=0,variantId=null
 }={}){
   const list=normalizeSculptPreviewObjects(objects);
   if(list.length>=SCULPT_OBJECT_LIMIT||!allowable.has(definitionId)||
@@ -55,12 +55,12 @@ export function appendSculptPreviewObject(objects,{
   while(used.has('sculpt-object-'+suffix))suffix++;
   const placement=normalizeWorldObjectPlacement({
     id:'sculpt-object-'+suffix,objectDefinitionId:definitionId,
-    transform:{x,y,scaleX:scale,scaleY:scale,rotationDeg},
+    transform:{x,y,scaleX,scaleY,rotationDeg},
     overrides:{visualVariantId:validVariant(definitionId,variantId)}
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantId,x,y}={}){
+export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y}={}){
   const items=normalizeSculptPreviewObjects(objects);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
@@ -73,10 +73,17 @@ export function updateSculptPreviewObject(objects,id,{scale,rotationDeg,variantI
     if(Number.isFinite(scale)&&scale>=.25&&scale<=maxScale){
       nextTransform.scaleX=scale;nextTransform.scaleY=scale;
     }
+    // Canonical independent axes: X is bridge LONGITUDINAL length even
+    // when the selected bitmap faces vertically; Y is the deck width.
+    if(Number.isFinite(scaleX)&&scaleX>=.25&&scaleX<=maxScale)
+      nextTransform.scaleX=scaleX;
+    if(Number.isFinite(scaleY)&&scaleY>=.25&&scaleY<=maxScale)
+      nextTransform.scaleY=scaleY;
     if(Number.isFinite(rotationDeg))nextTransform.rotationDeg=rotationDeg;
     const nextVariant=variantId===undefined?item.overrides.visualVariantId:
       validVariant(item.objectDefinitionId,variantId);
     if(nextTransform.scaleX===item.transform.scaleX&&
+       nextTransform.scaleY===item.transform.scaleY&&
        nextTransform.x===item.transform.x&&nextTransform.y===item.transform.y&&
        nextTransform.rotationDeg===item.transform.rotationDeg&&
        nextVariant===item.overrides.visualVariantId)return item;
