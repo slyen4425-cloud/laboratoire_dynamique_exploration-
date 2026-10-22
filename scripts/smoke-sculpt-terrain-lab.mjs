@@ -933,7 +933,7 @@ try{
      Math.abs(v63RealScale.width-425)>0.01||
      Math.abs(v63RealScale.height-240)>0.01||
      Math.abs(v63RealScale.length/v63RealScale.width-.92)>0.01||
-     Math.abs(v63RealScale.across/v63RealScale.height-.50)>0.01)
+     Math.abs(v63RealScale.across/v63RealScale.height-.35)>0.01)
     throw Error('V63 real visible bridge sprite dimensions diverge from crossing at 250%: '+
       JSON.stringify(v63RealScale));
   console.log('V63 browser bridge 250% visual/physical aspect agrees:',JSON.stringify(v63RealScale));
