@@ -1,0 +1,54 @@
+name: Exploration V74 clean source WebP bridge assets
+on:
+  push:
+    branches:
+      - work/exploration-bridge-asset-clean-v74-2026-10-22
+    paths:
+      - scripts/clean-bridge-webps-v74.py
+      - .github/workflows/v74-bridge-source-clean.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: exploration-v74-source-assets
+  cancel-in-progress: false
+
+jobs:
+  clean-source-bridges:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout only V74 work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/exploration-bridge-asset-clean-v74-2026-10-22
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Pillow WebP deterministic decoder/encoder
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Fixture test and clean 28 originals
+        run: |
+          python scripts/clean-bridge-webps-v74.py --self-test
+          python scripts/clean-bridge-webps-v74.py --apply > /tmp/v74-bridge-asset-report.json
+          python - <<'PY'
+          import json
+          r=json.load(open('/tmp/v74-bridge-asset-report.json'))
+          assert r['files']==28
+          assert r['modified']>0, 'No artifacts altered; investigate rather than claiming cleanup'
+          print('Bridge source cleanup:',r['modified'],'images changed,',r['pixels'],'pixels adjusted')
+          print('Modified files:',[x['file'] for x in r['details'] if x['sha256Before']!=x['sha256After']])
+          PY
+      - name: Commit ONLY cleaned source WebPs to the V74 work branch
+        run: |
+          git add assets/exploration/objects/bridges/*_2p5d_*.webp
+          git diff --cached --check
+          git diff --cached --quiet && { echo "No source-WebP change produced"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "assets(bridges): commit cleaned 2.5D WebP originals [asset-clean-v74]"
+          git push origin HEAD:work/exploration-bridge-asset-clean-v74-2026-10-22
