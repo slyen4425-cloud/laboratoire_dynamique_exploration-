@@ -71,5 +71,9 @@ test('V40 gameplay HUD uses one setting and non-conflicting editor/camera author
   assert.match(js,/maxStepUp:maxStep,maxStepDown:maxStep/);
   assert.match(js,/sculptNavigationBlockDetail\(context\.sculptNavigation/);
   assert.match(js,/navigationTesting\s*\?sculptCameraGameView/);
-  assert.match(html,/value="2"[^\n]*\n\s*aria-label="Dénivelé maximum franchissable/);
+  // V75 supersedes V40's intentionally permissive TESTER slider. The
+  // low-level Collision World still owns all height checks; the live game
+  // must now use the declared zero-step default until ramps are authored.
+  assert.match(js,/return SCULPT_NAVIGATION_PROBE_DEFAULTS\.maxStepUp/);
+  assert.match(html,/min="0" max="0" step="1" value="0" disabled/);
 });
