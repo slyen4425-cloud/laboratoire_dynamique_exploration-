@@ -1,7 +1,7 @@
 // Optional sculpt laboratory collision adapter. The Collision World remains the
 // authority: it calls this pure geometry check through collisionContext only.
 // Never persist this preview adapter in WorldDocument or a gameplay save.
-import {sculptHeightAt,sculptWaterAt} from '../world/sculpt-height-model.js';
+import {sculptHeightAt,sculptWaterAt,sculptSphereAt} from '../world/sculpt-height-model.js';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
 
@@ -236,6 +236,17 @@ export function sculptNavigationRoute({
         if(banks&&sample.level>Math.max(...banks))
           return reject(bridgeHeightReason(previous,sample,maxStepUp));
       }else{
+        // V76: the precise circle/radius in the sculpt data is the only
+        // spherical collision footprint. No painted pixels or extra obstacles.
+        // Spheres remain inaccessible on foot until authored V77 ramps; a
+        // stranded actor already inside may retreat radially OUT, never enter.
+        const sphere=sculptSphereAt(terrain,x,y,radius);
+        const priorSphere=sculptSphereAt(terrain,previousX,previousY,radius);
+        if(!dismounting&&sphere&&(!priorSphere||priorSphere.id!==sphere.id||
+          Math.hypot(x-sphere.x,y-sphere.y)<
+            Math.hypot(previousX-sphere.x,previousY-sphere.y)-1e-6))
+          return reject(Object.freeze({kind:'sphere-wall',id:sphere.id,
+            variant:sphere.kind,limit:0}));
         // The user must stop at the *visible* northern wall, not several
         // cells later at its unprojected footprint. The carried bridge deck
         // and flying locomotion are explicit exceptions, preserved above.
