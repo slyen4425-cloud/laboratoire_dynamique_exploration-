@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-directional-scales-v72-vertical-length-width-2026-10-22
+# preview-revision: bridge-vertical-occlusion-v73-rails-only-2026-10-22
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: dc08370a922858f51fb9be6935561c6c70a84199
+          ref: 2d95caba255a201be738f33ada1cccebbafd8ec5
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
