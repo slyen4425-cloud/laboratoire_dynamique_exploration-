@@ -120,7 +120,7 @@ test('V75 R2: north approach stops before the projected cliff cap, in the REAL m
     return x>=4&&x<=7&&y>=8&&y<=10?6:2;
   });
   const terrain=createSculptTerrain({width:W,height:H,levels});
-  const config=cfg(terrain),x=at(5,4).x;
+  const config={...cfg(terrain),projectionRise:18},x=at(5,4).x;
   const northEdge=8*CH,visibleEdge=northEdge-(6-2)*18;
   const actor={...player(5,4),x,y:visibleEdge-10};
   const targetY=visibleEdge+8;
