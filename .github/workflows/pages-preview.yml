@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-vertical-occlusion-v73-rails-only-2026-10-22
+# preview-revision: bridge-source-alpha-clean-v74-28-lossless-webps-2026-10-22
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 2d95caba255a201be738f33ada1cccebbafd8ec5
+          ref: 8b1a894f33afbfcd907596ad8d271f2862b2f2cf
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
