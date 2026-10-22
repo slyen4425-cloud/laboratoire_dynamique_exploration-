@@ -489,11 +489,11 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
       aria-label="Changer l'inclinaison de la caméra du jeu : 35 degrés vue oblique, 90 degrés vue du dessus">
     <small>35° : oblique · 90° : dessus</small>
   </label>
-  <label for="navigation-max-step">Franchissement du relief (niveaux)
-    <output id="navigation-max-step-value" for="navigation-max-step">2</output>
-    <input id="navigation-max-step" type="range" min="1" max="3" step="1" value="2"
-      aria-label="Dénivelé maximum franchissable en marche dans Tester">
-    <small>1 : prudent · 2 : raccords faciles · 3 : plus permissif. Falaises très hautes interdites.</small>
+  <label for="navigation-max-step">Falaises : franchissement libre interdit
+    <output id="navigation-max-step-value" for="navigation-max-step">0</output>
+    <input id="navigation-max-step" type="range" min="0" max="0" step="1" value="0" disabled
+      aria-label="Franchissement vertical interdit sans pente, pont ou escalier">
+    <small>Une bordure abrupte bloque depuis tous les côtés, même pour 1 niveau. Futurs accès : pentes puis escaliers.</small>
   </label>
   <label for="navigation-speed">Vitesse de déplacement
     <output id="navigation-speed-value" for="navigation-speed">220</output>
@@ -591,6 +591,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-cliffs-v75-vertical-v73-assets-v74"></script>
 </body>
 </html>
