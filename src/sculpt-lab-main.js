@@ -2,8 +2,9 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61';
+import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt} from './world/sculpt-height-model.js';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76';
+import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
@@ -358,7 +359,12 @@ function draw(){
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
     const first=points[0],target=selectedMode.startsWith('water-')?Number($('water-target').value):selectedMode==='plateau' ? Number($('target').value)
       : sculptHeightAt(base,Math.floor(first.x),Math.floor(first.y));
-    previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
+    if(selectedMode.startsWith('sphere-')){
+      drawSculptSphereCursor(ctx,{terrain:base,x:first.x*SCULPT_TILE.width,
+        y:first.y*SCULPT_TILE.height,radius:Number($('radius').value)*SCULPT_TILE.width,
+        tile:SCULPT_TILE,kind:selectedMode==='sphere-basin'?'basin':'hill'});
+      previewSummary={cells:1,centerHeight:target};
+    }else previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
       shape:$('brush-shape').value,edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,
       rockRoundness:selectedMode==='cliff-round'?Number($('visual-smooth').value):null,zoom});
@@ -447,7 +453,13 @@ function precisionApply(){
     shape:$('brush-shape').value,mode:selectedMode,target:water?Number($('water-target').value):
        selectedMode==='plateau'?Number($('target').value):sculptHeightAt(previous,cell.x,cell.y),
     edgeSoftness:Number($('edge').value)/100};
-  terrain=water?applySculptWaterStroke(previous,options):
+  if(selectedMode.startsWith('sphere-')){
+    const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+    terrain=selectedMode==='sphere-erase'?removeSculptSphereAt(previous,x,y):
+      appendSculptSphere(previous,{kind:selectedMode==='sphere-hill'?'hill':'basin',
+        x,y,radius:Number($('radius').value)*SCULPT_TILE.width,
+        height:Math.max(1,Number($('target').value))});
+  }else terrain=water?applySculptWaterStroke(previous,options):
     applySculptStroke(previous,{...options,rockRoundness:Number($('visual-smooth').value)});
   commitUndo(previous);
   status(terrain!==previous?'Case ('+(cell.x+1)+','+(cell.y+1)+') appliquée · Annuler disponible':
@@ -524,6 +536,11 @@ function selectMode(mode){
   });
   syncQuickToolbar();
   $('hill-radius-wrap').hidden=mode!=='cliff-round';
+  if(mode==='sphere-hill'||mode==='sphere-basin'){
+    $('brush-shape').value='circle';
+    if(Number($('radius').value)<2){$('radius').value='4';
+      $('radius').dispatchEvent(new Event('input',{bubbles:true}));}
+  }
   if(mode==='cliff-round'){
     // One tap selects one plateau, and the tool starts with a VISIBLE effect.
     // The old 95 % persisted from prior controls and silently did nothing.
@@ -543,6 +560,9 @@ function selectMode(mode){
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
     'cliff-round':'Colline ronde : règle 150 % et TOUCHE UNE FOIS LE MILIEU du sommet vert. Le contour entier de ce plateau s’arrondit (pas seulement la case). 95 % = aspect initial. Altitudes et eau inchangées.',
     plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
+    'sphere-hill':'V76 : touche un terrain PLAT et SEC pour une vraie calotte sphérique, sans cases. Taille = rayon ; hauteur = élévation centrale. Pentes non accessibles avant V77.',
+    'sphere-basin':'V76 : touche un terrain PLAT et SEC pour une cavité sphérique circulaire réelle. Taille = rayon ; hauteur = profondeur centrale. Accès futur par pente V77.',
+    'sphere-erase':'V76 : touche une colline/cavité sphérique pour la supprimer, sans modifier les cases.',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
     'water-lower':'Eau : abaisser sa surface','water-erase':'Eau : enlever le volume peint',
@@ -681,6 +701,19 @@ function stroke(event){
   hoverCell=cell;
   const key=cell.x+','+cell.y;
   if(key===lastCell)return;
+  if(selectedMode.startsWith('sphere-')){
+    // Exactly one authored radial shape per gesture, not a trail of circles.
+    if(lastCell)return;
+    lastCell=key;
+    const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+    const before=strokeUndo;
+    terrain=selectedMode==='sphere-erase'?removeSculptSphereAt(before,x,y):
+      appendSculptSphere(before,{kind:selectedMode==='sphere-hill'?'hill':'basin',
+        x,y,radius:Number($('radius').value)*SCULPT_TILE.width,
+        height:Math.max(1,Number($('target').value))});
+    if(terrain===before)status('V76 : choisissez une zone plane et sèche, avec assez de place pour tout le cercle.');
+    scheduleDraw();return;
+  }
   // Interpolate pointer travel so a fast thumb stroke never leaves holes.
   if(lastCell){
     const [px,py]=lastCell.split(',').map(Number);
@@ -790,6 +823,7 @@ function navigationBlockMessage(reason){
   if(!reason)return 'obstacle, bâtiment ou bord de la carte';
   if(reason.kind==='bounds')return 'limite de la carte';
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
+  if(reason.kind==='sphere-wall')return 'relief sphérique : accès par une pente à créer (V77)';
   if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
   if(reason.kind==='cliff-projection')return 'falaise nord : rebord bloqué avant le sommet visible';
   if(reason.kind==='height-up'||reason.kind==='height-down')
@@ -872,7 +906,8 @@ function navigationSpawn(){
       radius:5,locomotion:{modes:['ground']},facingX:1,moving:false};
     const level=sculptNavigationSample(terrain,candidate.x,candidate.y,
       {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
-    if(level?.waterDepth===0&&!isBlocked(navigationWorld(),candidate,candidate.x,candidate.y,undefined,navigationContext()))return candidate;
+    if(level?.waterDepth===0&&!sculptSphereAt(terrain,candidate.x,candidate.y,candidate.radius)&&
+      !isBlocked(navigationWorld(),candidate,candidate.x,candidate.y,undefined,navigationContext()))return candidate;
   }
   return null;
 }
