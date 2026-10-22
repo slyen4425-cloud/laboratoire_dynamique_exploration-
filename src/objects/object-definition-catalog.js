@@ -71,10 +71,12 @@ function normalizeDefinition(definition) {
   };
 }
 
-// V70: the painted bridge includes railings, skirts and pillars. Only the
-// central 50% of its short dimension is real walkable decking in 2.5D.
-// This is authored WorldObject geometry, NOT a sprite-alpha collision mask.
-// Longitudinal length, rotation/variant axes, scale and legacy bridges stay put.
+// V71: the authentic 2.5D bridge has raised border rails on BOTH sides.
+// Only the centered 35% of its short dimension is walkable; the actor's full
+// collision radius must fit inside that strip. Outside it, the existing
+// Collision World bridge-edge gate blocks lateral moves as a solid rail.
+// No independent rail obstacle/alpha collider: one authored WorldObject truth.
+// Preserve full length, variant rotation, scale and historical bridge styles.
 const DEFINITIONS = frozen([
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -92,7 +94,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
@@ -111,7 +113,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
@@ -130,7 +132,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
@@ -149,7 +151,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
@@ -168,7 +170,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
@@ -187,7 +189,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
   {
@@ -206,7 +208,7 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { length: 170, width: 96 },
-    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.50, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
+    traversal: { enabled: true, lengthRatio: 0.92, widthRatio: 0.35, edgeAssistRatio: 0.15, traversalRuleId: 'terrain.bridge',
       viewAxesDeg: { horizontal: 0, vertical: 90, diagonal_left: -45, diagonal_right: 45 } }
   },
 
