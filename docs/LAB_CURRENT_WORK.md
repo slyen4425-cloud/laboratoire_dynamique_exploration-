@@ -1,3 +1,19 @@
+# Lot V70 — 22/10/2026 — Largeur réelle du tablier (retour Pixel)
+
+- **Retour utilisateur V69 confirmé :** marcher dessus / dessous fonctionne. À 35° le héros peut encore avancer à la hauteur du tablier dans une bande latérale où il n'y a plus de planches (capture Pixel 1536×684, pont bois horizontal).
+- **Base source V69 prévalidée :** `111594186b8911e1643c3babef5e49ae2926a0a8`, CI intégrale SUCCESS `#39719138147`, déploiement Pages SUCCESS `#39719340952`. GREEN automatique technique uniquement, visuel non validé par utilisateur.
+- **Checkpoint START immuable :** `checkpoint/exploration-start-bridge-deck-width-v70-2026-10-22` ; **branche unique :** `work/exploration-bridge-deck-width-v70-2026-10-22`.
+- **Diagnostic :** les sept familles de ponts 2,5D ont une largeur de traversée `widthRatio: .82` de leur `baseSize.width=96`, incluant visuellement les gardes et les parties hors-plancher. Le rectangle de collision reste au niveau du pont tant que son large périmètre autorise les pas latéraux. Même WorldObject autoritaire pour rendu et collision ; aucun pixel WebP utilisé pour décider les déplacements.
+- **Périmètre :** ajuster uniquement le **rapport de largeur du corridor du tablier** dans l'ObjectDefinition des sept ponts 2,5D, conserver les ponts historiques et la longueur/axe/scale des ponts. La même définition doit guider Collision World et le diagnostique du corridor.
+- **Règle à tester :** pieds et rayon complet du personnage sur la surface marchable ; blocage dès qu'une sortie latérale atteint la zone hors-planches ; toujours deux niveaux traversables au-dessus/en-dessous ; sorties par les vrais bouts secs ; aucun changement de vitesse/caméra/tactile.
+- **Tests :** sept familles × quatre orientations × plusieurs scales/rotations, marge de collision du héros et contrôle de sortie latérale sur plateau haut, canyons secs et eau, aller-retour, angles 35°–90° sans modifier la physique, sentinelles V55–V69 + CI Chromium.
+- **Propriétaire :** `src/objects/object-definition-catalog.js` (WorldObject / traversée déclarée) consommé par le World Model/COLLISION ; Exploration Engine garde position/couche ; Render lecture seule.
+- **Gel :** 28 WebP, ponts historiques, profil d'altitude, V67/V68 ancrage et masque, V69 séparation des couches, WorldDocument et autres dépôts.
+- **Risques :** ratio trop étroit pour l'acteur aux petites échelles ; seuil d'entrée depuis les berges ; vue diagonale ; décalage entre le visuel dessiné et la zone physique.
+- **Statut :** en chantier. Nécessite CI intégrale + prévalidation source SHA exacte + test Pixel avant GREEN visuel.
+
+---
+
 # Lot V69 — 22/10/2026 — Deux niveaux physiques sur/sous les ponts
 
 - **Retour créateur Pixel V68 :** esthétique du pont beaucoup mieux. Reste une chute hors du tablier par le côté et une montée instantanée sur le pont lorsqu'un héros passe sur le sol au-dessous.
