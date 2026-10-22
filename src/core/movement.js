@@ -1,6 +1,7 @@
 import {
   isBlocked,
-  resolveBridgeGuidedPosition
+  resolveBridgeGuidedPosition,
+  sculptNavigationNextBridgeId
 } from './collision.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
 import {
   defaultTraversalRuleRegistry,
@@ -37,6 +38,17 @@ export function stepMovement(
   const targetX = entity.x + dx;
   const targetY = entity.y + dy;
 
+  // Exploration Engine is the SINGLE owner of the actor's deck layer.
+  // Collision World previews a transition without mutating the actor; only
+  // accepted coordinates commit the same resolved layer atomically.
+  const commitPosition = (x,y) => {
+    if(collisionContext?.sculptNavigation)
+      entity.sculptBridgeId=sculptNavigationNextBridgeId(
+        collisionContext.sculptNavigation,entity,x,y);
+    entity.x=x;
+    entity.y=y;
+  };
+
   if (
     !isBlocked(
       world,
@@ -47,8 +59,7 @@ export function stepMovement(
       collisionContext
     )
   ) {
-    entity.x = targetX;
-    entity.y = targetY;
+    commitPosition(targetX,targetY);
     return entity;
   }
 
@@ -62,8 +73,7 @@ export function stepMovement(
   );
 
   if (guided) {
-    entity.x = guided.x;
-    entity.y = guided.y;
+    commitPosition(guided.x,guided.y);
     return entity;
   }
 
@@ -78,7 +88,7 @@ export function stepMovement(
       collisionContext
     )
   ) {
-    entity.x = nextX;
+    commitPosition(nextX,entity.y);
   }
 
   const nextY = entity.y + dy;
@@ -92,7 +102,7 @@ export function stepMovement(
       collisionContext
     )
   ) {
-    entity.y = nextY;
+    commitPosition(entity.x,nextY);
   }
 
   return entity;
