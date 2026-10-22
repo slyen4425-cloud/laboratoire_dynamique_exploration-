@@ -7,7 +7,7 @@
 - **Gel :** longueur `.92`, vues et rotations, scale, 28 WebP, assets et ancrage V67/masque V68, séparation dessus/dessous V69, franchissements V60/V63, vieux ponts `.82`, mode 2D Builder, Surface/WorldDocument, caméra/joystick, Combat et autres dépôts.
 - **Tests :** cas ciblés V71 sur les deux bords en collision/mouvement réels, centre et acteur complet, petites/grandes tailles, 7 familles × 4 variantes × rotations et angles 35/55/80/90 ; passage longitudinal et dessous restent valides. Adapter les sentinelles V70 qui affirment `.50`, tester le vrai navigateur Chromium + CI complète ; anti-cache navigateur V71.
 - **Risques :** très faible largeur à petite échelle (0.5 × 96 × .35 = 16.8 unités) comparée au diamètre héros 10 ; vérifier qu'il reste réellement un passage de 6.8 unités pour le centre, ainsi que l'accès par les extrémités. Vérifier les contre-plongées visuelles Pixel.
-- **Statut :** en cours ; checkpoint de prévalidation seulement après CI verte. GREEN tactile et visuel différé jusqu'au nouveau retour utilisateur Pixel.
+- **Statut :** V71 code et sentinelles Node/Chromium/Combat **CI SUCCESS** #39755354274 sur SHA code `55efd47066808c293cf9b217c2748b573b4d92ad` ; documentation de prévalidation créée, CI finale après documentation encore requise avant checkpoint/source preview. **NON GREEN visuel/tactile** jusqu'au retour Pixel sur les 2 bordures (35°/80°), les franchissements haut/bas et dessous.
 
 ---
 
