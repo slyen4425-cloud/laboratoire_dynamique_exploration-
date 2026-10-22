@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: animated-waterfalls-v3-2026-10-22
+# preview-revision: sculpt-cliff-lock-v75-preserve-waterfalls-v3-2026-10-22
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: cf6131423eda4974baf58e6687eb3d91428e3f52
+          ref: b0bd167833a26ed677adc14559775ebb70851cd0
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
