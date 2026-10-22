@@ -19,7 +19,7 @@ test('seven bridge families expose native four-direction variants without new ru
     assert.deepEqual(def.baseSize,canonical.baseSize,'unchanged bridge dimensions');
     assert.equal(def.traversal.lengthRatio,canonical.traversal.lengthRatio,'unchanged corridor length');
     assert.equal(canonical.traversal.widthRatio,.82,'historical native bridge corridor frozen');
-    assert.equal(def.traversal.widthRatio,.50,'V70 restricted to visible 2.5D walkway rather than railings');
+    assert.equal(def.traversal.widthRatio,.35,'V71 centered clearance between both nonwalkable 2.5D rails');
     assert.equal(def.traversal.edgeAssistRatio,canonical.traversal.edgeAssistRatio,'unchanged edge assist');
     assert.deepEqual(def.traversal.viewAxesDeg,{horizontal:0,vertical:90,diagonal_left:-45,diagonal_right:45});
     assert.equal(def.visual.defaultVariantId,'horizontal');
