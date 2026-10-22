@@ -1,3 +1,16 @@
+# Lot V69 — 22/10/2026 — Deux niveaux physiques sur/sous les ponts
+
+- **Retour créateur Pixel V68 :** esthétique du pont beaucoup mieux. Reste une chute hors du tablier par le côté et une montée instantanée sur le pont lorsqu'un héros passe sur le sol au-dessous.
+- **Base de reprise immuable :** source V68 `9cce0e7dfdcff26c4385442babd4234175ba1c21`, CI de base SUCCESS. Checkpoint de départ `checkpoint/exploration-start-bridge-grade-separation-v69-2026-10-22`, lot unique `work/exploration-bridge-grade-separation-v69-2026-10-22`.
+- **Propriétaire unique :** `src/core/sculpt-navigation-collision.js` calcule en lecture seule chemin traversable et transition de couche ; `src/core/movement.js` valide les positions puis écrit sur l'acteur la couche `sculptBridgeId` (état temporaire de mouvement), via le contrat exporté par Collision World. Pas de seconde altitude dans le WorldDocument.
+- **Contrat :** pont surélevé accessible depuis une vraie berge sèche au niveau du tablier ; sortie par une extrémité sèche compatible avec le dénivelé ; aucune sortie latérale dans le vide ; marche ou nage sous un pont reste sur le niveau bas, sans montée automatique. Les collisions du fond et les falaises subsistent sous l'ouvrage ; pas de passage à travers un rocher dépassant le tablier.
+- **Présentation :** `src/sculpt-lab-main.js` lit la couche possédée par le moteur pour le pied du personnage et pour l'occlusion du pont ; aucune inférence depuis un WebP ; versions de modules actualisées pour éviter le cache Pixel.
+- **Gel :** 28 WebP, dimensions WorldObject, axe/scale des 7 ponts, V67 ancrage tablier et V68 avant-plan, V66 joystick, V65 caméra, V64 tactile, V61 relief, V46 eau, Encounter/Combat, Builder/WorldDocument et autres dépôts.
+- **Tests :** `tests/sculpt-bridge-grade-separation-v69.test.js` couvre bords, dessous, eau/nage, entrées/sorties dans deux sens, grandes échelles, angles caméra, compatibilité runtime 2D. Relancer toute la suite Node et Chromium ; validation tactile/visuelle Pixel requise avant GREEN utilisateur.
+- **Statut :** lot de travail V69, GREEN automatique technique conditionné aux CI finales ; pas de GREEN esthétique/utilisateur. Publication uniquement en prévisualisation épinglée à un SHA testé, sans fusion du moteur sur main.
+
+---
+
 # Lot V68 — 21/10/2026 — Panneau avant du pont recouvre le héros
 
 - **Retour créateur Pixel :** sur photo à ~80°, seulement tête et épaules émergent du pont bien que V67 ait corrigé la position du WebP. Le joueur exige de marcher **sur les planches** sans disparaître derrière l'image.
