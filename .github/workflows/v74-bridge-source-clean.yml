@@ -5,6 +5,7 @@ on:
       - work/exploration-bridge-asset-clean-v74-2026-10-22
     paths:
       - scripts/clean-bridge-webps-v74.py
+      - scripts/update-bridge-manifest-v74.py
       - .github/workflows/v74-bridge-source-clean.yml
   workflow_dispatch:
 
@@ -31,24 +32,29 @@ jobs:
           python-version: '3.12'
       - name: Pillow WebP deterministic decoder/encoder
         run: python -m pip install 'Pillow==11.3.0'
-      - name: Fixture test and clean 28 originals
+      - name: Fixture test / regenerate only uncured originals / reconcile manifest
         run: |
           python scripts/clean-bridge-webps-v74.py --self-test
-          python scripts/clean-bridge-webps-v74.py --apply > /tmp/v74-bridge-asset-report.json
           python - <<'PY'
-          import json
-          r=json.load(open('/tmp/v74-bridge-asset-report.json'))
-          assert r['files']==28
-          assert r['modified']>0, 'No artifacts altered; investigate rather than claiming cleanup'
-          print('Bridge source cleanup:',r['modified'],'images changed,',r['pixels'],'pixels adjusted')
-          print('Modified files:',[x['file'] for x in r['details'] if x['sha256Before']!=x['sha256After']])
+          from pathlib import Path
+          a=list(Path('assets/exploration/objects/bridges').glob('bridge_*_2p5d_*.webp'))
+          assert len(a)==28
+          already=all(p.read_bytes()[12:16]==b'VP8L' for p in a)
+          Path('/tmp/v74-already-cleaned').write_text('yes' if already else 'no')
+          print('28 cleaned lossless sources already committed:',already)
           PY
-      - name: Commit ONLY cleaned source WebPs to the V74 work branch
+          if [ "$(cat /tmp/v74-already-cleaned)" != yes ]; then
+            python scripts/clean-bridge-webps-v74.py --apply >/tmp/v74-bridge-asset-report.json
+          fi
+          python scripts/update-bridge-manifest-v74.py --write
+          python scripts/update-bridge-manifest-v74.py
+      - name: Commit ONLY corrected WebPs and matching integrity manifest
         run: |
           git add assets/exploration/objects/bridges/*_2p5d_*.webp
+          git add assets/exploration/objects/bridges/manifest.v1.json
           git diff --cached --check
-          git diff --cached --quiet && { echo "No source-WebP change produced"; exit 1; }
+          if git diff --cached --quiet; then echo "Already synchronized"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "assets(bridges): commit cleaned 2.5D WebP originals [asset-clean-v74]"
+          git commit -m "assets(bridges): reconcile cleaned WebP integrity manifest [asset-clean-v74]"
           git push origin HEAD:work/exploration-bridge-asset-clean-v74-2026-10-22
