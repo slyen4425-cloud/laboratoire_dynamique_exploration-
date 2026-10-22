@@ -143,7 +143,7 @@ export function sculptNavigationRoute({
   terrain,cellWidth=28,cellHeight=21,
   maxStepUp=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp,
   maxStepDown=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepDown,
-  shoreEntryFraction=0,bridges=[],projectionRise=SCULPT_NAVIGATION_PROBE_DEFAULTS.projectionRise
+  shoreEntryFraction=0,bridges=[],projectionRise=0
 }={},entity,targetX,targetY){
   if(!terrain||!entity)return Object.freeze({reason:null,bridgeId:entity?.sculptBridgeId??null});
   const options={cellWidth,cellHeight};
@@ -241,7 +241,8 @@ export function sculptNavigationRoute({
         // and flying locomotion are explicit exceptions, preserved above.
         // Allow retreat north from a previously stranded position.
         const projectionConfig={cellWidth,cellHeight,projectionRise,radius};
-        const visualBlock=sculptNorthCliffProjectionBlock(terrain,x,y,projectionConfig);
+        const visualBlock=projectionRise>0&&!candidate&&!previousCarrier&&
+          sculptNorthCliffProjectionBlock(terrain,x,y,projectionConfig);
         const priorVisualBlock=visualBlock&&sculptNorthCliffProjectionBlock(
           terrain,previousX,previousY,projectionConfig);
         if(!dismounting&&visualBlock&&
