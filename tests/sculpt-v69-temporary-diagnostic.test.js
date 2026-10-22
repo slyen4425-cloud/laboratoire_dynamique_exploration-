@@ -3,6 +3,8 @@ import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
 import {appendSculptPreviewObject} from '../src/world/sculpt-scene-preview.js';
 import {resolveWorldObjectPlacements} from '../src/world/world-object-placement-model.js';
 import {sculptNavigationRoute,sculptNavigationBlockDetail,sculptBridgeBankHeights} from '../src/core/sculpt-navigation-collision.js';
+import {stepMovement} from '../src/core/movement.js';
+import {isBlocked} from '../src/core/collision.js';
 import {bridgeTraversalRect} from '../src/world/world-object-model.js';
 test('Temporary V69 vertical bridge diagnostic',()=>{
  const W=20,H=18,CW=28,CH=21,center={x:9.5*CW,y:8.5*CH};
@@ -15,6 +17,11 @@ test('Temporary V69 vertical bridge diagnostic',()=>{
  let p={x:center.x,y:4.5*CH,radius:5,locomotion:{modes:['ground']}};
  const dest=14.5*CH;
  const direct=sculptNavigationRoute(c,p,p.x,dest);
+ const targetFull=p.y+3.1*80;
+ const full=sculptNavigationRoute(c,p,p.x,targetFull);
+ const world={width:W*CW,height:H*CH,objects:placements,obstacles:[]};
+ const blocked=isBlocked(world,p,p.x,targetFull,undefined,{sculptNavigation:c});
+ const moved={...p};stepMovement(world,moved,{x:0,y:1},3.1,{maxSpeed:80},undefined,{sculptNavigation:c});
  let events=[];
  for(let i=0;i<30;i++){
     const nextY=p.y+8;
@@ -23,5 +30,5 @@ test('Temporary V69 vertical bridge diagnostic',()=>{
     if(r.reason)break;
     p={...p,y:nextY,sculptBridgeId:r.bridgeId};
  }
- console.log('V69_DIAG',JSON.stringify({corridor,banks:sculptBridgeBankHeights(t,corridor,{cellWidth:CW,cellHeight:CH}),direct,events}));
+ console.log('V69_DIAG',JSON.stringify({full,blocked,moved,targetFull,corridor,banks:sculptBridgeBankHeights(t,corridor,{cellWidth:CW,cellHeight:CH}),direct,events}));
 });
