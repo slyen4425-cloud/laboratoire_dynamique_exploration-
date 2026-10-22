@@ -10,7 +10,7 @@ import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
 // slope from camera projection or the softened cliff sprite. Bridges retain
 // their existing separate carried-deck rule; flying still bypasses cliffs.
 export const SCULPT_NAVIGATION_PROBE_DEFAULTS=Object.freeze({
-  cellWidth:28,cellHeight:21,maxStepUp:0,maxStepDown:0
+  cellWidth:28,cellHeight:21,projectionRise:18,maxStepUp:0,maxStepDown:0
 });
 const finitePositive=(n,f)=>Number.isFinite(n)&&n>0?n:f;
 
@@ -24,6 +24,48 @@ export function sculptNavigationSample(terrain,x,y,{
   if(col<0||row<0||col>=terrain.width||row>=terrain.height)return null;
   return Object.freeze({col,row,level:sculptHeightAt(terrain,col,row),
     waterDepth:sculptWaterAt(terrain,col,row)});
+}
+
+// R2 (Pixel): the raised north-facing terrain CAP is drawn at
+// y = row * cellHeight - height * projectionRise. On a lower approach, the
+// actor's foot is drawn at y - lowerHeight * projectionRise. Checking only
+// floor(row) lets a walker advance *under the cap* for several ground cells,
+// appearing to descend onto a cliff even while the old boundary test is GREEN.
+// This is a read-only, world-height-derived cliff footprint owned by Collision
+// World, not an alpha test, duplicate mesh or camera-specific rule.
+export function sculptNorthCliffProjectionBlock(terrain,x,y,{
+  cellWidth=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellWidth,
+  cellHeight=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellHeight,
+  projectionRise=SCULPT_NAVIGATION_PROBE_DEFAULTS.projectionRise,
+  radius=0
+}={}){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const w=finitePositive(cellWidth,28),h=finitePositive(cellHeight,21);
+  const rise=Number.isFinite(projectionRise)&&projectionRise>0?projectionRise:0;
+  if(rise===0)return null;
+  const here=sculptNavigationSample(terrain,x,y,{cellWidth:w,cellHeight:h});
+  if(!here)return null;
+  const rad=Math.max(0,Number(radius)||0);
+  const reach=7*rise+rad;
+  const lastRow=Math.min(terrain.height-1,Math.floor((y+reach)/h)+1);
+  const fromCol=Math.max(0,Math.floor((x-rad)/w));
+  const toCol=Math.min(terrain.width-1,Math.floor((x+rad)/w));
+  for(let row=here.row+1;row<=lastRow;row++){
+    const bankY=row*h;
+    if(bankY>y+reach+1e-6)break;
+    for(let col=fromCol;col<=toCol;col++){
+      const upper=sculptHeightAt(terrain,col,row);
+      if(upper<=here.level||upper<=sculptHeightAt(terrain,col,row-1))
+        continue; // only an actually exposed northern cliff face
+      const visibleStart=bankY-(upper-here.level)*rise;
+      // An actor on the LOWER floor cannot enter the space visibly occupied
+      // by a higher cap. A high-floor actor remains free on its own plateau.
+      if(y+rad>=visibleStart-1e-6 && y-rad<bankY)
+        return Object.freeze({kind:'cliff-projection',col,row,
+          from:here.level,to:upper,delta:upper-here.level,limit:0});
+    }
+  }
+  return null;
 }
 
 // Canonical Bridge corridor is the only authority for allowing walking above
@@ -101,7 +143,7 @@ export function sculptNavigationRoute({
   terrain,cellWidth=28,cellHeight=21,
   maxStepUp=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp,
   maxStepDown=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepDown,
-  shoreEntryFraction=0,bridges=[]
+  shoreEntryFraction=0,bridges=[],projectionRise=SCULPT_NAVIGATION_PROBE_DEFAULTS.projectionRise
 }={},entity,targetX,targetY){
   if(!terrain||!entity)return Object.freeze({reason:null,bridgeId:entity?.sculptBridgeId??null});
   const options={cellWidth,cellHeight};
@@ -194,6 +236,17 @@ export function sculptNavigationRoute({
         if(banks&&sample.level>Math.max(...banks))
           return reject(bridgeHeightReason(previous,sample,maxStepUp));
       }else{
+        // The user must stop at the *visible* northern wall, not several
+        // cells later at its unprojected footprint. The carried bridge deck
+        // and flying locomotion are explicit exceptions, preserved above.
+        // Allow retreat north from a previously stranded position.
+        const projectionConfig={cellWidth,cellHeight,projectionRise,radius};
+        const visualBlock=sculptNorthCliffProjectionBlock(terrain,x,y,projectionConfig);
+        const priorVisualBlock=visualBlock&&sculptNorthCliffProjectionBlock(
+          terrain,previousX,previousY,projectionConfig);
+        if(!dismounting&&visualBlock&&
+           (stepY>=-1e-7||!priorVisualBlock))
+          return reject(visualBlock);
         if(sample.waterDepth>0&&!swimming&&!shorePermitted(x,y,sample))
           return reject(Object.freeze({kind:'water',col:sample.col,row:sample.row,
             waterDepth:sample.waterDepth}));
