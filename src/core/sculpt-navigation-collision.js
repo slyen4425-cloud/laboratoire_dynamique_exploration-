@@ -57,24 +57,55 @@ export function sculptBridgeDeckHeight(terrain,bridges=[],x,y,options={}){
   const heights=sculptBridgeBankHeights(terrain,corridor,options);
   return heights?Math.max(...heights):null;
 }
-function bridgeEndTransition(corridor,fromX,fromY,toX,toY,radius){
-  const from=orientedLocalPoint(fromX,fromY,corridor);
-  const to=orientedLocalPoint(toX,toY,corridor);
-  const edge=corridor.length/2;
-  const near=radius+Math.max(2,Math.min(7,corridor.width*.12));
-  return Math.abs(from.x)>=edge-near||Math.abs(to.x)>=edge-near;
+// A bridge has TWO physical layers at the same X/Y: ground below and a
+// supported deck above. Only the Exploration movement owner persists the deck
+// identifier, after Collision World has accepted the whole swept movement.
+// Merely standing below the sprite never mounts the deck.
+function bridgeCarrier(bridges,id){
+  if(!id)return null;
+  const bridge=bridges.find(candidate=>candidate.id===id);
+  const corridor=bridge&&bridgeTraversalRect(bridge);
+  return corridor?{bridge,corridor}:null;
 }
-export function sculptNavigationBlockDetail({
+function bridgeCarrierAt(bridges,x,y,radius){
+  for(const bridge of bridges){
+    const corridor=bridgeTraversalRect(bridge);
+    if(corridor&&circleFitsOrientedRect(x,y,radius,corridor))
+      return {bridge,corridor};
+  }
+  return null;
+}
+function bridgeEndGate(corridor,x,y,radius,cellWidth,cellHeight){
+  const local=orientedLocalPoint(x,y,corridor);
+  const margin=Math.max(radius+2,Math.min(cellWidth,cellHeight));
+  return Math.abs(local.x)>=corridor.length/2-margin &&
+    Math.abs(local.y)<=corridor.width/2-radius+1e-6;
+}
+function bridgeLongitudinal(corridor,dx,dy){
+  const along=Math.abs(dx*Math.cos(corridor.rotation)+dy*Math.sin(corridor.rotation));
+  const side=Math.abs(dy*Math.cos(corridor.rotation)-dx*Math.sin(corridor.rotation));
+  return along>1e-8&&along>=side*.85;
+}
+function bridgeHeightReason(previous,sample,limit=0){
+  return Object.freeze({kind:'height-up',col:sample.col,row:sample.row,
+    from:previous.level,to:sample.level,delta:Math.max(0,sample.level-previous.level),limit});
+}
+// Return BOTH the collision decision and the proposed elevation layer.
+// Renderer/input must never write the layer. isBlocked reads only "reason";
+// stepMovement commits "bridgeId" along with accepted X/Y.
+export function sculptNavigationRoute({
   terrain,cellWidth=28,cellHeight=21,maxStepUp=1,maxStepDown=1,
   shoreEntryFraction=0,bridges=[]
 }={},entity,targetX,targetY){
-  if(!terrain||!entity)return null; // opt-in only: ordinary 2D runtime unchanged
+  if(!terrain||!entity)return Object.freeze({reason:null,bridgeId:entity?.sculptBridgeId??null});
   const options={cellWidth,cellHeight};
+  const radius=Math.max(0,Number(entity.radius)||0);
   const flying=entity.locomotion?.modes?.includes('fly')===true;
   const swimming=entity.locomotion?.modes?.includes('swim')===true;
-  // Only a narrow strip from dry shore into a wet cell is walkable in the
-  // sculpt pilot. Swimming remains the sole way to cross the water body.
-  // Default 0 preserves V17 and the ordinary 2D runtime unchanged.
+  const origin=sculptNavigationSample(terrain,entity.x,entity.y,options);
+  const target=sculptNavigationSample(terrain,targetX,targetY,options);
+  const reject=reason=>Object.freeze({reason,bridgeId:entity.sculptBridgeId??null});
+  if(!origin||!target)return reject(Object.freeze({kind:'bounds'}));
   const shorePermitted=(x,y,sample)=>{
     const fraction=Math.max(0,Math.min(.22,Number(shoreEntryFraction)||0));
     if(fraction<=0||!sample||sample.waterDepth<=0)return false;
@@ -87,60 +118,92 @@ export function sculptNavigationBlockDetail({
       (dry(cx,cy-1)&&localY<=cellHeight*fraction)||
       (dry(cx,cy+1)&&localY>=cellHeight*(1-fraction));
   };
-  const origin=sculptNavigationSample(terrain,entity.x,entity.y,options);
-  const target=sculptNavigationSample(terrain,targetX,targetY,options);
-  if(!origin||!target)return Object.freeze({kind:'bounds'});
-  // Sample the whole segment, not only its end: a slow frame or large dt may
-  // never tunnel through a one-cell cliff or a thin stretch of water.
+  let previous=origin,previousX=entity.x,previousY=entity.y;
+  let previousCarrier=bridgeCarrierAt(bridges,previousX,previousY,radius);
+  // A hero may start on an actual dry bridgehead already *inside* a wide
+  // corridor (V60). Bootstrap ONLY from a supported endpoint at bank height.
+  let bridgeId=null;
+  if(!flying){
+    const stored=bridgeCarrier(bridges,entity.sculptBridgeId);
+    if(stored&&circleFitsOrientedRect(previousX,previousY,radius,stored.corridor))
+      bridgeId=stored.bridge.id;
+    else if(previousCarrier&&origin.waterDepth===0){
+      const corridor=previousCarrier.corridor;
+      const banks=sculptBridgeBankHeights(terrain,corridor,options);
+      const local=orientedLocalPoint(previousX,previousY,corridor);
+      const bank=banks?.[local.x<0?0:1];
+      if(bank!==undefined&&bridgeEndGate(corridor,previousX,previousY,
+        radius,cellWidth,cellHeight)&&
+        origin.level>=bank-maxStepUp&&origin.level<=bank+maxStepDown)
+        bridgeId=previousCarrier.bridge.id;
+    }
+  }
   const dx=targetX-entity.x,dy=targetY-entity.y;
   const stride=Math.max(1,Math.ceil(Math.hypot(dx,dy)/
     (Math.min(finitePositive(cellWidth,28),finitePositive(cellHeight,21))*.4)));
-  let previous=origin;
-  let previousX=entity.x,previousY=entity.y;
-  let previousDeck=sculptBridgeDeckAt(bridges,previousX,previousY,
-    Math.max(0,Number(entity.radius)||0));
   for(let step=1;step<=stride;step++){
-    const t=step/stride;
-    const x=entity.x+dx*t,y=entity.y+dy*t;
+    const t=step/stride,x=entity.x+dx*t,y=entity.y+dy*t;
     const sample=sculptNavigationSample(terrain,x,y,options);
-    if(!sample)return Object.freeze({kind:'bounds'});
-    const radius=Math.max(0,Number(entity.radius)||0);
-    const deck=sculptBridgeDeckAt(bridges,x,y,radius);
+    if(!sample)return reject(Object.freeze({kind:'bounds'}));
+    const candidate=bridgeCarrierAt(bridges,x,y,radius);
+    const stepX=x-previousX,stepY=y-previousY;
     if(!flying){
-      const onDeck=deck!==null;
-      if(sample.waterDepth>0&&!swimming&&!onDeck&&
-         !shorePermitted(entity.x+dx*t,entity.y+dy*t,sample))
-        return Object.freeze({kind:'water',col:sample.col,row:sample.row,waterDepth:sample.waterDepth});
-      const rise=sample.level-previous.level;
-      const crossingDeck=deck??previousDeck;
-      const banks=crossingDeck?sculptBridgeBankHeights(terrain,crossingDeck,options):null;
-      const highestBank=banks?Math.max(...banks):null;
-      // Skip ONLY the artificial fall/rise of a supported bridge above a
-      // depression. A tall rock SPIKE through its deck is still a cliff.
-      // Side-entry from outside the corridor cannot evade cliffs either.
-      const endEntry=deck&&previousDeck||crossingDeck&&bridgeEndTransition(
-        crossingDeck,previousX,previousY,x,y,radius);
-      // The bridge carries steps ALONG its longitudinal axis. V55 accepted
-      // an approach from the SIDE and could thus tunnel through a cliff.
-      const vx=x-previousX,vy=y-previousY;
-      const along=crossingDeck?Math.abs(vx*Math.cos(crossingDeck.rotation)+
-        vy*Math.sin(crossingDeck.rotation)):0;
-      const sideways=crossingDeck?Math.abs(vy*Math.cos(crossingDeck.rotation)-
-        vx*Math.sin(crossingDeck.rotation)):Infinity;
-      const walkingAlongDeck=along>=sideways*.85;
-      const levelIsBelowDeck=banks&&Math.min(previous.level,sample.level)<Math.min(...banks);
-      const supportedBridgeStep=Boolean(banks&&endEntry&&walkingAlongDeck&&levelIsBelowDeck&&
-        Math.max(previous.level,sample.level)<=highestBank);
-      if(!supportedBridgeStep&&
-         (rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown)))
-        return Object.freeze({kind:rise>0?'height-up':'height-down',
-          col:sample.col,row:sample.row,from:previous.level,to:sample.level,
-          delta:Math.abs(rise),limit:rise>0?Math.max(0,maxStepUp):Math.max(0,maxStepDown)});
+      if(bridgeId&&candidate?.bridge.id!==bridgeId){
+        const active=bridgeCarrier(bridges,bridgeId);
+        const corridor=active?.corridor;
+        // No step off the side rail, no leap down from the deck and no
+        // transition to a second bridge without touching real dry land.
+        const properExit=corridor&&bridgeEndGate(corridor,x,y,radius,
+          cellWidth,cellHeight)&&bridgeLongitudinal(corridor,stepX,stepY);
+        const banks=corridor?sculptBridgeBankHeights(terrain,corridor,options):null;
+        const height=banks?Math.max(...banks):null;
+        const safeBank=height!==null&&sample.waterDepth===0&&
+          sample.level>=height-maxStepDown&&sample.level<=height+maxStepUp;
+        if(!properExit||!safeBank)
+          return reject(Object.freeze({kind:'bridge-edge'}));
+        bridgeId=null;
+      }
+      if(!bridgeId&&candidate&&previousCarrier?.bridge.id!==candidate.bridge.id){
+        const crossingDeck=candidate.corridor;
+        const banks=sculptBridgeBankHeights(terrain,crossingDeck,options);
+        const oldLocal=orientedLocalPoint(previousX,previousY,crossingDeck);
+        const bank=banks?.[oldLocal.x<0?0:1];
+        // Boarding is an END transition from a supported dry bank at matching
+        // height. Lateral entrance and under-bridge traversal stay on ground.
+        const endEntry=bridgeEndGate(crossingDeck,x,y,radius,cellWidth,cellHeight);
+        const walkingAlongDeck=bridgeLongitudinal(crossingDeck,stepX,stepY);
+        if(bank!==undefined&&endEntry&&walkingAlongDeck&&previous.waterDepth===0&&
+          previous.level>=bank-maxStepUp&&previous.level<=bank+maxStepDown)
+          bridgeId=candidate.bridge.id;
+      }
+      const supportedBridgeStep=!!bridgeId&&candidate?.bridge.id===bridgeId;
+      if(supportedBridgeStep){
+        const crossingDeck=candidate.corridor;
+        const banks=sculptBridgeBankHeights(terrain,crossingDeck,options);
+        // Peaks higher than the deck remain real solid cliffs (V60 spike).
+        if(banks&&sample.level>Math.max(...banks))
+          return reject(bridgeHeightReason(previous,sample,maxStepUp));
+      }else{
+        if(sample.waterDepth>0&&!swimming&&!shorePermitted(x,y,sample))
+          return reject(Object.freeze({kind:'water',col:sample.col,row:sample.row,
+            waterDepth:sample.waterDepth}));
+        const rise=sample.level-previous.level;
+        if(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown))
+          return reject(Object.freeze({kind:rise>0?'height-up':'height-down',
+            col:sample.col,row:sample.row,from:previous.level,to:sample.level,
+            delta:Math.abs(rise),limit:rise>0?Math.max(0,maxStepUp):Math.max(0,maxStepDown)}));
+      }
     }
-    previous=sample;
-    previousX=x;previousY=y;previousDeck=deck;
+    previous=sample;previousX=x;previousY=y;previousCarrier=candidate;
   }
-  return null;
+  return Object.freeze({reason:null,bridgeId:flying?null:bridgeId});
+}
+export function sculptNavigationBlockDetail(config,entity,targetX,targetY){
+  return sculptNavigationRoute(config,entity,targetX,targetY).reason;
+}
+export function sculptNavigationNextBridgeId(config,entity,targetX,targetY){
+  const result=sculptNavigationRoute(config,entity,targetX,targetY);
+  return result.reason?entity?.sculptBridgeId??null:result.bridgeId;
 }
 
 // Boolean Collision World adapter and user-facing diagnostics read the exact
