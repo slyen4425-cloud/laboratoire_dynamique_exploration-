@@ -31,7 +31,7 @@ const player=(p,bridgeId)=>({x:p.x,y:p.y,radius:5,
 test('V70 the 28 authentic 2.5D bridge assets use narrow declared decking, never rail or art alpha',()=>{
   assert.equal(FAMILIES.length,7);
   for(const def of FAMILIES){
-    assert.equal(def.traversal.widthRatio,.50,def.id);
+    assert.equal(def.traversal.widthRatio,.35,def.id);
     assert.equal(def.traversal.lengthRatio,.92,def.id);
     assert.equal(def.baseSize.width,96,def.id);
     assert.equal(def.baseSize.length,170,def.id);
@@ -54,7 +54,7 @@ test('V70 every view, scale and rotation uses the exact authoring corridor for t
     assert.equal(bridge.visual.variantId,variantId);
     const deck=bridgeTraversalRect(bridge),visual=bridgeVisualRect(bridge);
     assert.ok(deck);
-    assert.ok(Math.abs(deck.width-visual.width*.5)<1e-8,def.id);
+    assert.ok(Math.abs(deck.width-visual.width*.35)<1e-8,def.id);
     assert.ok(Math.abs(deck.length-visual.length*.92)<1e-8,def.id);
     assert.ok(Math.abs(deck.rotation-(rotationDeg+def.traversal.viewAxesDeg[variantId])*
       Math.PI/180)<1e-8);
