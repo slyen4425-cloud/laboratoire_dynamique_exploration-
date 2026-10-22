@@ -300,13 +300,20 @@ function draw(){
     // V57: the collision-owned deck identifies which bridge actually carries
     // the hero. One bridge sprite is split into backdrop and near-rail pass.
     const deckBridge=activeSculptBridge();
-    drawPreviewObjects(navActor?.y??Infinity,-Infinity,deckBridge?.id);
+    const underBridge=navActor&&!deckBridge?resolvedSculptBridges().find(bridge=>
+      sculptBridgeDeckAt([bridge],navActor.x,navActor.y,
+        Math.max(0,Number(navActor.radius)||0))):null;
+    const layeredBridge=deckBridge??underBridge;
+    drawPreviewObjects(navActor?.y??Infinity,-Infinity,layeredBridge?.id);
     drawPlacedActors(navActor?.y??Infinity);
     if(deckBridge)drawPreviewObject(deckBridge);
     drawNavigationActor();
     if(deckBridge)drawPreviewObject(deckBridge,{foregroundRailOnly:true});
+    // Ground-level traffic is physically BELOW the entire bridge, not just
+    // behind its low front rail. Do not promote it to the deck in the renderer.
+    if(underBridge)drawPreviewObject(underBridge);
     if($('navigation-show-bridge-corridor')?.checked)drawNavigationBridgeCorridors();
-    drawPreviewObjects(Infinity,navActor?.y??Infinity,deckBridge?.id);
+    drawPreviewObjects(Infinity,navActor?.y??Infinity,layeredBridge?.id);
     drawPlacedActors(Infinity,navActor?.y??Infinity);
   }else{
     drawPreviewObjects();
@@ -744,9 +751,10 @@ function resolvedSculptBridges(){
   return navBridgeProjection;
 }
 function activeSculptBridge(){
-  if(!navigationTesting||!navActor)return null;
-  return resolvedSculptBridges().find(bridge=>sculptBridgeDeckAt(
-    [bridge],navActor.x,navActor.y,Math.max(0,Number(navActor.radius)||0)))??null;
+  if(!navigationTesting||!navActor?.sculptBridgeId)return null;
+  return resolvedSculptBridges().find(bridge=>bridge.id===navActor.sculptBridgeId&&
+    sculptBridgeDeckAt([bridge],navActor.x,navActor.y,
+      Math.max(0,Number(navActor.radius)||0)))??null;
 }
 function navigationContext(){
   const maxStep=navigationMaxStep();
@@ -761,6 +769,7 @@ function navigationBlockMessage(reason){
   if(!reason)return 'obstacle, bâtiment ou bord de la carte';
   if(reason.kind==='bounds')return 'limite de la carte';
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
+  if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
   if(reason.kind==='height-up'||reason.kind==='height-down')
     return (reason.kind==='height-up'?'montée':'descente')+' '+reason.from+'→'+reason.to+
       ' (écart '+reason.delta+', franchissement '+reason.limit+')';
@@ -769,7 +778,9 @@ function navigationBlockMessage(reason){
 function navHeight(){
   const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
-  const deck=navActor?sculptBridgeDeckHeight(terrain,resolvedSculptBridges(),
+  const activeBridge=navActor?.sculptBridgeId?resolvedSculptBridges().find(bridge=>
+    bridge.id===navActor.sculptBridgeId):null;
+  const deck=activeBridge?sculptBridgeDeckHeight(terrain,[activeBridge],
     navActor.x,navActor.y,{cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
   return deck??info?.level??0;
 }
@@ -1028,6 +1039,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
+  physicalBridgeLayer:navActor?.sculptBridgeId?'deck':'ground',
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
   actorMotionTime:navVisualTime,actorVisualLevel:navVisualLevel,
