@@ -1841,19 +1841,23 @@ try{
     const after=window.__sculptLabProbe();
     return {initial:initial.maxStep,strict:strict.maxStep,strictLabel,
       permissive:permissive.maxStep,permissiveLabel,returned:returned.maxStep,
-      visible,enabled:initial.enabled&&strict.enabled&&permissive.enabled,
+      visible,sliderDisabled:slider.disabled,sliderMin:slider.min,sliderMax:slider.max,
+      enabled:initial.enabled&&strict.enabled&&permissive.enabled,
       editorRestored:!after.navigationTesting&&after.cameraView===before.cameraView,
       terrainUnchanged:saved===scene()};
   })()`);
-  if(v40Passability.error||v40Passability.initial!==2||
-    v40Passability.strict!==1||v40Passability.permissive!==3||
-    v40Passability.returned!==2||v40Passability.strictLabel!=='1'||
-    v40Passability.permissiveLabel!=='3'||!v40Passability.visible||
-    !v40Passability.enabled||!v40Passability.editorRestored||
-    !v40Passability.terrainUnchanged)
-    throw Error('V40 real Tester passability control or scene isolation failed: '+
+  // V75: attempts to set the obsolete height slider to 1 or 3 MUST NOT
+  // grant free climbing. Its value is displayed as zero and it is disabled.
+  if(v40Passability.error||v40Passability.initial!==0||
+    v40Passability.strict!==0||v40Passability.permissive!==0||
+    v40Passability.returned!==0||v40Passability.strictLabel!=='0'||
+    v40Passability.permissiveLabel!=='0'||!v40Passability.sliderDisabled||
+    v40Passability.sliderMin!=='0'||v40Passability.sliderMax!=='0'||
+    !v40Passability.visible||!v40Passability.enabled||
+    !v40Passability.editorRestored||!v40Passability.terrainUnchanged)
+    throw Error('V75 real Tester must NOT enable free-cliff traversal: '+
       JSON.stringify(v40Passability));
-  console.log('V40 Chromium real navigation step height UI, scene unchanged:',JSON.stringify(v40Passability));
+  console.log('V75 Chromium fixed no-cliff height HUD, scene unchanged:',JSON.stringify(v40Passability));
   // V41: real Canvas background, four time-of-day choices, optional cloud/fog,
   // stars at night only, and exact editor return with no authored data changes.
   const v41Sky=await run(`(async()=>{
