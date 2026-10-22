@@ -1,7 +1,7 @@
 // Isolated pilot of object contact footprints for 2.5D sculpt preview.
 // Uses the official ObjectDefinition catalog and Collision World geometry.
 // NEVER changes canonical Builder, WorldDocument, or object asset definitions.
-import {createObjectDefinitionCatalog,listNativeObjectDefinitions} from '../objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55';
+import {createObjectDefinitionCatalog,listNativeObjectDefinitions} from '../objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70';
 
 const PROFILES=Object.freeze({
   building:Object.freeze({widthRatio:.66,heightRatio:.27,offsetX:0,offsetY:-.13}),
