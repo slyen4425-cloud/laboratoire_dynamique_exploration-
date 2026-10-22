@@ -1,3 +1,17 @@
+# Lot V76 — 22/10/2026 — Relief sphérique analytique (1/1, NON GREEN utilisateur)
+
+- **Autorisation** : le créateur a validé V75 R2 (« Parfait, je valide. ») après la prévisualisation corrigée. Source GREEN figée `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`, checkpoint `checkpoint/exploration-cliff-lock-v75-north-r2-green-2026-10-22`.
+- **Checkpoint START** : `checkpoint/exploration-start-spherical-relief-v76-2026-10-22` créé depuis le SHA GREEN exact AVANT tout code. **Branche unique** : `work/exploration-spherical-relief-v76-2026-10-22` sur ce SHA.
+- **Objectif** : créer une vraie colline ou cavité en calotte de sphère continue, parfaitement circulaire dans le plan X/Y (pas des cubes à coins floutés). Un geste = une forme, rayon et amplitude paramétrables, Undo/Redo, scènes JSON anciennes et nouvelles compatibles.
+- **Autorité et fichiers** : `sculpt-height-model` stocke les primitives sphériques dans l'état unique de terrain; les coordonnées sont en unités de monde. Le rendu `sculpt-sphere-mesh` triangule la même fonction analytique (sans texture propriétaire de géométrie). Le Collision World résout le rayon physique; aucun nouvel obstacle/collider persistant. `sculpt-lab-main` reste adaptateur UI, sans second modèle.
+- **Portée V76** : modèles colline/cuvette, visualisation en grille de triangles sub-tuile dans Canvas, outils tactiles de pose/suppression, sérialisation, règles d'inaccessibilité à pied en attendant les pentes explicites. Pour éviter les raccords arbitraires, les formes V76 se posent uniquement sur une zone sèche et plane, sans chevauchement.
+- **Fonctions gelées** : V75 R2 nord et autres directions, V73 ponts sur/sous, largeur et scales, 28 WebP V74, 20 Cascades V3, lac et nage, vol, anciens pinceaux et anciennes cartes, Builder 2D, Combat. Toute modification de géométrie via rendu seule est interdite.
+- **Tests attendus** : hauteur 3D analytique et symétrie radiale, trous négatifs, rayon/padding collision, vrai trajet `stepMovement -> Collision World`, survol autorisé, import/export exact, reprise et annulation, véritable pointer Chromium, CI Node + Chromium Sculpt/Builder/Combat sur SHA exact.
+- **Risques connus** : l'acteur à pied ne peut pas emprunter une calotte/cuvette en V76; l'autorisation de pente sera un contrat explicite V77. Les formes ne remplacent pas rétroactivement le relief carré historique; V76 crée une option de géométrie différente, sans double autorité de traversée.
+- **Validation finale** : aucune déclaration GREEN utilisateur sans test sur Pixel d'une colline et d'un trou vraiment circulaires, leur échelle visuelle, le contournement à pied, ponts et cascades. V77 et V78 restent gelés jusqu'au GREEN de V76.
+
+---
+
 # Lot V75 R2 — 22/10/2026 — Falaise nord: empreinte de collision avant la calotte visible (NON GREEN Pixel)
 
 - **Retour créateur :** capture smartphone du 22/10, le personnage avance encore depuis le haut de la carte jusque dans la zone visuellement surélevée. V75 initiale non validée ; V76/V77/V78 bloquées.
