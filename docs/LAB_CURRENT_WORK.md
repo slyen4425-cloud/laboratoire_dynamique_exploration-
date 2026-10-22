@@ -1,3 +1,16 @@
+# Lot V71 — 22/10/2026 — Passage central 35 % et bords physiques du pont
+
+- **Retour manuel créateur V70 :** dessus/dessous validé, mais marge latérale encore trop large aux deux côtés à 35° et certaines autres vues. Demande : ratio ≈ 35 %, centré, bords agissant comme obstacles pour empêcher de marcher sur rambardes.
+- **Source immuable V70 :** `b0235eab980a3311b4d899edc40ebe79d4049fd9`. CI `#39742491813` SUCCESS ; Pages `#39742730218` SUCCESS. V70 demeure prévalidation technique, pas validation visuelle totale.
+- **Checkpoint de départ créé AVANT modification :** `checkpoint/exploration-start-bridge-center-rails-v71-2026-10-22`. Travail dédié `work/exploration-bridge-center-rails-v71-2026-10-22`, même SHA source.
+- **Responsabilités :** données géométriques déclarées uniquement dans les 7 ObjectDefinitions des ponts 2,5D (`traversal.widthRatio` de .50 à .35, axe transverse toujours centré). Collision World utilise déjà le corridor orienté et le rayon total de l'acteur pour bloquer les deux côtés avec `bridge-edge` ; pas de nouveaux obstacles séparés. Exploration Engine seul propriétaire de `sculptBridgeId` et des déplacements. Rendu/débogage en lecture seule du même WorldObject.
+- **Gel :** longueur `.92`, vues et rotations, scale, 28 WebP, assets et ancrage V67/masque V68, séparation dessus/dessous V69, franchissements V60/V63, vieux ponts `.82`, mode 2D Builder, Surface/WorldDocument, caméra/joystick, Combat et autres dépôts.
+- **Tests :** cas ciblés V71 sur les deux bords en collision/mouvement réels, centre et acteur complet, petites/grandes tailles, 7 familles × 4 variantes × rotations et angles 35/55/80/90 ; passage longitudinal et dessous restent valides. Adapter les sentinelles V70 qui affirment `.50`, tester le vrai navigateur Chromium + CI complète ; anti-cache navigateur V71.
+- **Risques :** très faible largeur à petite échelle (0.5 × 96 × .35 = 16.8 unités) comparée au diamètre héros 10 ; vérifier qu'il reste réellement un passage de 6.8 unités pour le centre, ainsi que l'accès par les extrémités. Vérifier les contre-plongées visuelles Pixel.
+- **Statut :** en cours ; checkpoint de prévalidation seulement après CI verte. GREEN tactile et visuel différé jusqu'au nouveau retour utilisateur Pixel.
+
+---
+
 # Lot V70 — 22/10/2026 — Largeur réelle du tablier (retour Pixel)
 
 - **Retour utilisateur V69 confirmé :** marcher dessus / dessous fonctionne. À 35° le héros peut encore avancer à la hauteur du tablier dans une bande latérale où il n'y a plus de planches (capture Pixel 1536×684, pont bois horizontal).
