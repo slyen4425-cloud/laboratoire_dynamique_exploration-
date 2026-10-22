@@ -60,15 +60,19 @@ function objectImage(assetId){
   const resolved=resolveWorldObjectAsset(assetId);
   if(!resolved)return null;
   const picture=new Image();
+  const sourceCleaned2p5d=resolved.kind==='bridge-visual'&&
+    resolved.path.includes('_2p5d_');
   picture.onload=()=>{
-    // Preserve the original asset and authoritative collision transform:
-    // this is an image-only cached alpha presentation for bridge sprites.
-    if(resolved.kind==='bridge-visual')
+    // V74: 28 native 2.5D WebPs have already been cleaned AT SOURCE.
+    // Do not alpha-erase their legitimate pale stones/rails a second time.
+    // Historic bridge assets retain the existing V56 runtime fallback.
+    if(resolved.kind==='bridge-visual'&&!sourceCleaned2p5d)
       objectImages.set(assetId,prepareSculptBridgeImage(picture));
     scheduleDraw();
   };
   picture.onerror=()=>status('Impossible de charger le visuel '+assetId);
-  picture.src=resolved.path;
+  // Image-cache revision ONLY; the asset resolver and IDs remain unchanged.
+  picture.src=sourceCleaned2p5d?resolved.path+'?source-clean-v74':resolved.path;
   objectImages.set(assetId,picture);
   return picture;
 }
