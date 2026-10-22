@@ -2,7 +2,7 @@ import {
   WORLD_OBJECT_PLACEMENT_LIMITS,
   normalizeWorldObjectPlacements,
   resolveWorldObjectPlacements
-} from './world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1&bridge-axis-v55-deck-v70';
+} from './world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1&bridge-axis-v55-deck-v70-rails-v71';
 
 export const WORLD_OBJECT_SCHEMA_VERSION = 3;
 
