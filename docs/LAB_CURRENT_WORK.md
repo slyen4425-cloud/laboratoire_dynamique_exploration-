@@ -1,3 +1,15 @@
+# Lot visuel — 22/10/2026 — Cascades 2,5D V3 animées (5 palettes × 4 vues)
+
+- **Créateur :** valide la V3 à mouvement vertical descendant ; refuse toute régénération, tout gonflement latéral et toute bordure de terre. Réutiliser uniquement les sprites V3 existants.
+- **Base source / START :** `8b1a894f33afbfcd907596ad8d271f2862b2f2cf` (V74 ponts nettoyés), checkpoint `checkpoint/exploration-start-waterfalls-v3-2026-10-22` et branche `work/exploration-waterfalls-v3-2026-10-22`. Production `main` inchangée pendant le lot.
+- **Livrable :** 20 spritesheets WebP 4×4 (16 frames, 12 fps, cellule 256²) recadrées depuis les **séquences V3 déjà validées**, 4 angles (face large, côté étroit, trois-quarts, paliers) et 5 palettes canoniques (ruisseau, bleu clair, turquoise, canyon, marais). Effet purement décoratif et transparent, sans terrain.
+- **Autorité :** `WorldObjectAssetAdapter` et `ObjectDefinitionCatalog`, un seul chemin visuel pour chaque définition. Sprite animation lue par les rendus d’objets existants ; pas de moteur d’assets parallèle. Conserver la vieille cascade SVG et ses glints seulement dans l’ancien pilote.
+- **Périmètre des changements :** nouveau sous-dossier `assets/exploration/objects/waterfalls/` + manifeste / SHA-256/bytes + aide de frame pure + raccords rendus de la prévisualisation Builder et Sculpt, anti-cache ciblé, tests dédiés.
+- **Gel :** ponts V74, navigation, caméra, terrain, eau, collision, FPS des acteurs, scènes existantes, autres dépôts. Aucun ajustement de la géométrie ni du moteur de collision.
+- **Gates :** tests Node + navigateur, CI complète, contrôle WebP RIFF octets Git réels, visual mobile, et prévisualisation stable ; **pas GREEN utilisateur avant test visuel smartphone**.
+
+---
+
 # Lot V74 — 22/10/2026 — Nettoyage à la source des 28 sprites WebP de pont 2,5D
 
 - **Validation utilisateur V73 :** « ok parfait », « les passages sont ok ». Le correctif V73 de calque vertical, passage inférieur et traversée des ponts est accepté pour cette série de tests. Checkpoint figé `checkpoint/exploration-bridge-vertical-occlusion-v73-green-2026-10-22` sur SHA `2d95caba255a201be738f33ada1cccebbafd8ec5` ; CI `#39798922299` SUCCESS, Pages `#39800306731` SUCCESS.
