@@ -1,3 +1,18 @@
+# Lot V75 — 22/10/2026 — Bloquer les falaises sans pente (priorité 1/4)
+
+- **Demande Pixel explicite :** les reliefs surélevés se franchissent encore lorsqu'on vient de certains côtés (notamment depuis le haut de l'écran). Une paroi franche ne doit jamais être montable/descendable sans un accès créé volontairement ; même de petits changements brusques de niveaux sont concernés.
+- **Ordre demandé :** V75 verrouillage falaise (CE LOT) → V76 géométrie vraie colline/trou ronds → V77 pentes autorisées explicitement → V78 escalier (seulement après validations séparées). Un lot = une branche, pas de chantier simultané.
+- **Dernier GREEN manuel ponts :** V73 `2d95caba255a201be738f33ada1cccebbafd8ec5`. **Source opérationnelle prise en base V75 :** V74 prévalidée techniquement `8b1a894f33afbfcd907596ad8d271f2862b2f2cf` (GitHub Pages V74, nettoyage WebP ; validation esthétique V74 toujours pendante). En cas de régression, rollback V74 puis V73.
+- **Checkpoint START immuable avant modification :** `checkpoint/exploration-start-cliff-lock-v75-2026-10-22`. **Branche unique :** `work/exploration-cliff-lock-v75-2026-10-22`.
+- **Diagnostic :** `sculpt-lab.html` donne un curseur `navigation-max-step` de 1–3 niveaux, `src/sculpt-lab-main.js` passe cette permission à `sculptNavigationRoute`, qui considère toute variation de hauteur sous ce seuil comme franchissable. La vue caméra ne fait aucune distinction : c'est bien un droit gameplay excessif, pas un défaut de pixel.
+- **Autorité :** Collision World via `src/core/sculpt-navigation-collision.js` conserve l'unique test swept. Pour le mode Tester du Sculpt, la règle normale sol est à **zéro saut vertical** en montée et descente. Désactiver proprement le curseur qui rendrait cette règle contournable ; modifier l'indication à l'utilisateur. Le système ne crée PAS encore de pente, de nouvelle cellule ou de collider. Les futurs liens authorés (pente/escalier) seront explicitement validés par cette même autorité, dans leurs propres lots.
+- **Gel :** ponts V69 à V73 sur/sous, entrée/sortie propre, V71 bande 35 %, V72 longueur/largeur, assets V74, eau/nage/vol, caméra et joystick, WorldDocument, relief visuel, autre Builder 2D et Combat. Aucun ajustement cosmétique de contours/texture dans ce lot.
+- **Tests ciblés :** marches 1–7 de toutes directions cardinales, haut vers bas et bas vers haut, diagonales, mouvement réellement exécuté avec `stepMovement` et `isBlocked`, terrain plat et mode vol, ponts physiques séparés, compatibilité 2D, préservation des imports/exports. Chromium doit lire panneau Tester fermé à 0 sans écrire dans le monde, y compris après changement d'angle 35–90°, et parcourir le chemin réel.
+- **Gates :** CI Node/Chromium/Combat + checkpoint prévalidation technique avant éventuelle preview Pages. **NON GREEN mobile** avant essai Pixel d'une falaise depuis quatre côtés, ponts et caméra. V76 attend une prévalidation ou validation utilisateur V75 conformément à la charte.
+- **Risques :** terrains sculptés sur plateaux isolés temporairement inaccessibles tant qu'aucune pente n'existe ; c'est volontaire. Eviter de bloquer une passerelle GREEN.
+
+---
+
 # Lot V74 — 22/10/2026 — Nettoyage à la source des 28 sprites WebP de pont 2,5D
 
 - **Validation utilisateur V73 :** « ok parfait », « les passages sont ok ». Le correctif V73 de calque vertical, passage inférieur et traversée des ponts est accepté pour cette série de tests. Checkpoint figé `checkpoint/exploration-bridge-vertical-occlusion-v73-green-2026-10-22` sur SHA `2d95caba255a201be738f33ada1cccebbafd8ec5` ; CI `#39798922299` SUCCESS, Pages `#39800306731` SUCCESS.
