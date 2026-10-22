@@ -5,8 +5,12 @@ import {sculptHeightAt,sculptWaterAt} from '../world/sculpt-height-model.js';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
 
+// V75: a heightfield cell boundary is a sheer CLIFF unless a later explicit
+// world-owned ramp/stair authoring contract permits it. Never guess a walkable
+// slope from camera projection or the softened cliff sprite. Bridges retain
+// their existing separate carried-deck rule; flying still bypasses cliffs.
 export const SCULPT_NAVIGATION_PROBE_DEFAULTS=Object.freeze({
-  cellWidth:28,cellHeight:21,maxStepUp:1,maxStepDown:1
+  cellWidth:28,cellHeight:21,maxStepUp:0,maxStepDown:0
 });
 const finitePositive=(n,f)=>Number.isFinite(n)&&n>0?n:f;
 
@@ -94,7 +98,9 @@ function bridgeHeightReason(previous,sample,limit=0){
 // Renderer/input must never write the layer. isBlocked reads only "reason";
 // stepMovement commits "bridgeId" along with accepted X/Y.
 export function sculptNavigationRoute({
-  terrain,cellWidth=28,cellHeight=21,maxStepUp=1,maxStepDown=1,
+  terrain,cellWidth=28,cellHeight=21,
+  maxStepUp=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp,
+  maxStepDown=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepDown,
   shoreEntryFraction=0,bridges=[]
 }={},entity,targetX,targetY){
   if(!terrain||!entity)return Object.freeze({reason:null,bridgeId:entity?.sculptBridgeId??null});
