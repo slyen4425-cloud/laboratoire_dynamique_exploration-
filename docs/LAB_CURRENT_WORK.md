@@ -9,7 +9,7 @@
 - **Tests et publication :** tests de la fonction de nettoyage sur fixtures de franges, ponts clairs/légitimes, petites taches blanches, provenance/identité des 28 fichiers ; CI Node + Chromium Sculpt/Builder + Combat avant PR infra épinglée. Pixel requis pour valider le rendu final en jeu.
 - **Risque :** si une bavure est très blanche mais identique en couleur à une pierre légitime, ne pas effacer agressivement sans vérification visuelle ; source V73 gardée pour rollback.
 - **Lot SUIVANT (distinct V75, non commencé) :** pente en édition Terre + escaliers placables, franchissement progressif de hauteur par Collision World, et tests d'accès au plateau haut depuis le bas sans permettre l'escalade de falaises ailleurs. Prise de décision « rampe de terrain » versus « objet escalier » dans l'autorité World existante ; fixer dimensions et pente maxi configurables avant code.
-- **Statut :** lot V74 ouvert, actifs et pipeline en cours ; V75 strictement en planification.
+- **Statut :** 28 sources WebP nettoyées et commitées, 39 582 pixels ajustés (Actions #39812999536 SUCCESS), manifeste d'intégrité resynchronisé (Actions #39814241325 SUCCESS), cache WebP V74 ; Node/Chromium/Combat verts sur SHA code #39814282596. Checkpoint documentaire `docs/checkpoints/EXPLORATION_BRIDGE_ASSET_CLEAN_V74_PREVALIDATION_2026-10-22.md`. Exige encore CI sur SHA final, PR Pages infra et retour esthétique Pixel. V75 en planification documentée dans `docs/plans/EXPLORATION_PENTES_ESCALIERS_V75_SCOPE_2026-10-22.md` ; aucune modification de son moteur.
 
 ---
 
