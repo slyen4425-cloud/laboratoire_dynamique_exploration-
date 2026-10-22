@@ -1,10 +1,10 @@
 // Visual-only hit testing for the SAME resolved WorldObject rectangles
 // used by the sculpt renderer. Never creates a gameplay collision shape.
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
-import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=sculpt-bridge-dimensions-v63-deck-v70';
-import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-deck-v70';
-import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js?rev=deck-v70';
-import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=deck-v70';
+import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=sculpt-bridge-dimensions-v63-deck-v70-rails-v71';
+import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
+import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js?rev=deck-v70-rails-v71';
+import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=deck-v70-rails-v71';
 import {sculptBridgeDeckArtShift} from './sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67';
 
 export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=21,rise=18}={}){
