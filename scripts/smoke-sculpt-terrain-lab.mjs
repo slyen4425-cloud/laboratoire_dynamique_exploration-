@@ -1025,11 +1025,21 @@ try{
     const bridge=placements.resolveWorldObjectPlacements([placement])[0];
     const sprite=drawing.sculptObjectVisualRect(bridge,h.importSculptTerrain(scene.terrain));
     const deck=model.bridgeTraversalRect(bridge);
+    // V73: real selected vertical bridge in Chromium must repaint ONLY the
+    // left/right rail strips, not a full-width plank band over the hero.
+    const masker=await import('./src/render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73');
+    const lift=masker.sculptBridgeDeckArtShift(sprite,bridge);
+    const strips=masker.sculptBridgeForegroundRegions(sprite,lift,bridge);
+    const covers=(r,x,y)=>x>=r.x&&x<=r.x+r.width&&y>=r.y&&y<=r.y+r.height;
     return {selected:window.__sculptObjectsProbe().selectedId,
       x:placement.transform.scaleX,y:placement.transform.scaleY,
       variant:bridge.visual.variantId,
       sprite:{width:sprite.width,height:sprite.height},
-      deck:{length:deck.length,width:deck.width}};
+      deck:{length:deck.length,width:deck.width},
+      verticalRailPass:{count:strips.length,
+        leftRail:strips.some(r=>covers(r,-sprite.width*.45,sprite.height*.2)),
+        rightRail:strips.some(r=>covers(r,sprite.width*.45,sprite.height*.2)),
+        centerBoardsRepainted:strips.some(r=>covers(r,0,sprite.height*.2))}};
   })()`);
   if(v72Dimensions.selected!==v64BridgeDrag.id||
     v72Dimensions.x!==2||v72Dimensions.y!==.7||
@@ -1037,7 +1047,11 @@ try{
     Math.abs(v72Dimensions.sprite.width-96*.7)>.01||
     Math.abs(v72Dimensions.sprite.height-170*2)>.01||
     Math.abs(v72Dimensions.deck.width-96*.7*.35)>.01||
-    Math.abs(v72Dimensions.deck.length-170*2*.92)>.01)
+    Math.abs(v72Dimensions.deck.length-170*2*.92)>.01||
+    v72Dimensions.verticalRailPass.count!==2||
+    !v72Dimensions.verticalRailPass.leftRail||
+    !v72Dimensions.verticalRailPass.rightRail||
+    v72Dimensions.verticalRailPass.centerBoardsRepainted)
     throw Error('V72 selected bridge dimensions or vertical geometry diverged: '+
       JSON.stringify(v72Dimensions));
   console.log('V72 Chromium independent length/width and vertical bitmap PASS:',JSON.stringify(v72Dimensions));
