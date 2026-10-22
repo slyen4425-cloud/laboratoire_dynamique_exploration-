@@ -9,7 +9,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71';
-import {sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71';
+import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -743,7 +743,9 @@ function navigationWorld(){
     height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[]};
 }
 function navigationMaxStep(){
-  return Math.max(1,Math.min(3,Math.round(Number($('navigation-max-step').value)||2)));
+  // V75: an abrupt sculpt cell boundary is NEVER a free walking step. The
+  // old 1-3 level HUD toggle bypassed the authored-height access design.
+  return SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp;
 }
 let navBridgePlacements=null,navBridgeProjection=null;
 function resolvedSculptBridges(){
@@ -775,8 +777,11 @@ function navigationBlockMessage(reason){
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
   if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
   if(reason.kind==='height-up'||reason.kind==='height-down')
-    return (reason.kind==='height-up'?'montée':'descente')+' '+reason.from+'→'+reason.to+
-      ' (écart '+reason.delta+', franchissement '+reason.limit+')';
+    return reason.limit===0
+      ?'falaise infranchissable : '+reason.from+'→'+reason.to+
+        ' (accès par pente ou escalier à créer)'
+      :(reason.kind==='height-up'?'montée':'descente')+' '+reason.from+'→'+reason.to+
+        ' (écart '+reason.delta+', franchissement '+reason.limit+')';
   return 'obstacle';
 }
 function navHeight(){
