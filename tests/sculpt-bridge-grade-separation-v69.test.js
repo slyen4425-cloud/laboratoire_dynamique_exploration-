@@ -110,7 +110,7 @@ test('V69 render layers and navigation altitude follow persisted engine bridge s
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const engine=readFileSync(new URL('../src/core/movement.js',import.meta.url),'utf8');
  assert.match(engine,/entity\.sculptBridgeId=sculptNavigationNextBridgeId/);
- assert.match(main,/navActor\?\.sculptBridgeId\?'resolvedSculptBridges/);
+ assert.match(main,/const activeBridge=navActor\?\.sculptBridgeId\?resolvedSculptBridges/);
  assert.match(main,/if\(underBridge\)drawPreviewObject\(underBridge\)/);
  assert.match(main,/physicalBridgeLayer:navActor\?\.sculptBridgeId\?'deck':'ground'/);
 });
