@@ -4,10 +4,12 @@ import {
 } from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1';
 import {
   resolveWorldObjectPlacements
-} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1';
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-waterfalls-v3';
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-waterfalls-v3';
+
+import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterfalls-v3';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
@@ -105,7 +107,8 @@ function drawStaticImage(
   camera,
   viewport,
   image,
-  asset
+  asset,
+  timeSeconds = 0
 ) {
   const rect =
     worldObjectVisualRect(object);
@@ -166,13 +169,9 @@ function drawStaticImage(
       asset.render.rotationOffsetDeg
     )
   );
-  ctx.drawImage(
-    image,
-    -renderWidth / 2,
-    -renderHeight / 2,
-    renderWidth,
-    renderHeight
-  );
+  drawWorldObjectSprite(ctx, image, asset,
+    {x: -renderWidth / 2, y: -renderHeight / 2,
+      width: renderWidth, height: renderHeight}, timeSeconds);
   ctx.restore();
 }
 
@@ -183,7 +182,7 @@ export function createWorldObjectRenderer({
     objectDefinitionCatalogV1
 } = {}) {
   return Object.freeze({
-    draw(ctx, { camera, viewport, objects }) {
+    draw(ctx, { camera, viewport, objects, timeSeconds = 0 }) {
       for (
         const object of
           resolveWorldObjectPlacements(
@@ -220,7 +219,8 @@ export function createWorldObjectRenderer({
           camera,
           viewport,
           visual.image,
-          visual.asset
+          visual.asset,
+          timeSeconds
         );
       }
     }

@@ -21,10 +21,11 @@ import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
-import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
+import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
+import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
-import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
-import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
+import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3';
+import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
@@ -33,7 +34,7 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
-  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72';
+  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3';
 import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
@@ -370,6 +371,19 @@ function draw(){
     (selectedMode==='plateau'?' niveau '+$('target').value:selectedMode.startsWith('water-')?' eau '+$('water-target').value:'')+
     (precisionOn?' · appuie sur Appliquer pour sculpter':' · bord '+$('edge').value+' %') :
     precisionOn?'Placement précis : vise au doigt sans modifier le terrain, puis confirme':'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
+  ensureWaterfallPump();
+}
+// One 12 FPS redraw pump only while animated decorations are placed.
+// The existing Sculpt renderer remains the sole drawing path.
+let waterfallPumpHandle=0,waterfallLastPaintMs=0;
+function waterfallPresent(){return placedObjects.some(o=>Boolean(resolveWorldObjectAsset(o.visual?.assetId)?.animation));}
+function pumpWaterfallFrame(now){
+  if(!waterfallPresent()){waterfallPumpHandle=0;return;}
+  if(now-waterfallLastPaintMs>=83){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
+  waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
+}
+function ensureWaterfallPump(){
+  if(!waterfallPumpHandle&&waterfallPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
 function screenToWorldPoint(event){
@@ -1094,7 +1108,8 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   }
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
-  ctx.drawImage(art,-width/2,-height+artShift,width,height);
+  drawWorldObjectSprite(ctx,art,resolveWorldObjectAsset(object.visual?.assetId),
+    {x:-width/2,y:-height+artShift,width,height},performance.now()/1000);
   if(!foregroundRailOnly&&objectEditing&&objectSelectedId===object.id){
     ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
     ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height+artShift,width,height);

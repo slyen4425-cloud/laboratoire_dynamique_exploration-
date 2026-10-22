@@ -1,4 +1,144 @@
 const WORLD_OBJECT_ASSETS = Object.freeze({
+  'object.waterfall.front_wide.forest_stream.flow.01': Object.freeze({
+    id: 'object.waterfall.front_wide.forest_stream.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_front_wide_forest_stream_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.front_wide.clear_blue.flow.01': Object.freeze({
+    id: 'object.waterfall.front_wide.clear_blue.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_front_wide_clear_blue_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.front_wide.turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.front_wide.turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_front_wide_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.front_wide.canyon_turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.front_wide.canyon_turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_front_wide_canyon_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.front_wide.swamp.flow.01': Object.freeze({
+    id: 'object.waterfall.front_wide.swamp.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_front_wide_swamp_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.side_narrow.forest_stream.flow.01': Object.freeze({
+    id: 'object.waterfall.side_narrow.forest_stream.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_side_narrow_forest_stream_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.side_narrow.clear_blue.flow.01': Object.freeze({
+    id: 'object.waterfall.side_narrow.clear_blue.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_side_narrow_clear_blue_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.side_narrow.turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.side_narrow.turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_side_narrow_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.side_narrow.canyon_turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.side_narrow.canyon_turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_side_narrow_canyon_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.side_narrow.swamp.flow.01': Object.freeze({
+    id: 'object.waterfall.side_narrow.swamp.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_side_narrow_swamp_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.three_quarter.forest_stream.flow.01': Object.freeze({
+    id: 'object.waterfall.three_quarter.forest_stream.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_three_quarter_forest_stream_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.three_quarter.clear_blue.flow.01': Object.freeze({
+    id: 'object.waterfall.three_quarter.clear_blue.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_three_quarter_clear_blue_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.three_quarter.turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.three_quarter.turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_three_quarter_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.three_quarter.canyon_turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.three_quarter.canyon_turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_three_quarter_canyon_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.three_quarter.swamp.flow.01': Object.freeze({
+    id: 'object.waterfall.three_quarter.swamp.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_three_quarter_swamp_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.tiered.forest_stream.flow.01': Object.freeze({
+    id: 'object.waterfall.tiered.forest_stream.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_tiered_forest_stream_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.tiered.clear_blue.flow.01': Object.freeze({
+    id: 'object.waterfall.tiered.clear_blue.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_tiered_clear_blue_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.tiered.turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.tiered.turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_tiered_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.tiered.canyon_turquoise.flow.01': Object.freeze({
+    id: 'object.waterfall.tiered.canyon_turquoise.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_tiered_canyon_turquoise_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.waterfall.tiered.swamp.flow.01': Object.freeze({
+    id: 'object.waterfall.tiered.swamp.flow.01',
+    kind: 'decor-visual',
+    path: './assets/exploration/objects/waterfalls/waterfall_tiered_swamp_flow_2p5d_01_sheet.webp',
+    animation: Object.freeze({ columns: 4, rows: 4, frames: 16, fps: 12, frameWidth: 256, frameHeight: 256, loop: true }),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.bridge.wood_rustic_2p5d.horizontal.01': Object.freeze({
     id: 'object.bridge.wood_rustic_2p5d.horizontal.01',
     kind: 'bridge-visual',
