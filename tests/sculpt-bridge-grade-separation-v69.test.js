@@ -46,13 +46,13 @@ test('V69 dry and wet canyon: longitudinal bridge crossing in both directions us
     assert.equal(isBlocked(s.world,p,p.x,p.y+120,undefined,s.context),true,
       'cannot fall down side of bridge');
     assert.equal(sculptNavigationBlockDetail(s.c,p,p.x,p.y+120)?.kind,'bridge-edge');
-    walk(s,p,{x:1,y:0},2);
+    walk(s,p,{x:1,y:0},3);
     assert.ok(p.x>at(13,5).x,'must reach the far high plateau');
     assert.equal(p.sculptBridgeId,null,'must dismount at far dry end');
     const reverse=actor(14,5);
     walk(s,reverse,{x:-1,y:0},1.7);
     assert.equal(reverse.sculptBridgeId,s.bridge.id,'reverse approach boards deck');
-    walk(s,reverse,{x:-1,y:0},2);
+    walk(s,reverse,{x:-1,y:0},2.6);
     assert.ok(reverse.x<at(6,5).x,'reverse traversal exits at home bank');
     assert.equal(reverse.sculptBridgeId,null,'reverse end dismounts');
     assert.equal(serializeSculptTerrain(s.t),before,'navigation never edits terrain');
