@@ -2,7 +2,7 @@ import {
   isBlocked,
   resolveBridgeGuidedPosition,
   sculptNavigationNextBridgeId
-} from './collision.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from './collision.js?rev=collision-boundary-worldobject-obstacles-v1-r2-bridge-grade-v69';
 import {
   defaultTraversalRuleRegistry,
   resolveSurfaceTraversal
