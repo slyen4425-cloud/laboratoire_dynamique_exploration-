@@ -13,6 +13,13 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
   // baseSize.width the short axis. An older UI shortcut used width TWICE,
   // creating a square sprite on top of a rectangular collision corridor.
   const base=worldObjectBaseDimensions(object);
+  // A vertical 2.5D bridge is authored as a VERTICAL image, while the
+  // canonical WorldObject bridge geometry has X=length and Y=width.
+  // Transpose only the visual rectangle for this authored bitmap variant;
+  // the physical deck keeps length scaleX, width scaleY, and its 90° axis.
+  // Horizontal / diagonals / historic bridge artwork stays unchanged.
+  const verticalBridgeArt=object.kind==='bridge'&&
+    object.visual?.assetId?.includes('_2p5d.vertical.')===true;
   const col=Math.floor(t.x/tileWidth),row=Math.floor(t.y/tileHeight);
   const groundLevel=terrain&&col>=0&&row>=0&&col<terrain.width&&row<terrain.height
     ?sculptHeightAt(terrain,col,row):0;
@@ -26,8 +33,8 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
   const level=bridgeDeck??groundLevel;
   return Object.freeze({
     x:t.x,y:t.y-level*rise,
-    width:(base?.width??80)*t.scaleX,
-    height:(base?.height??80)*t.scaleY,
+    width:verticalBridgeArt?(base?.height??80)*t.scaleY:(base?.width??80)*t.scaleX,
+    height:verticalBridgeArt?(base?.width??80)*t.scaleX:(base?.height??80)*t.scaleY,
     angle:(t.rotationDeg??0)*Math.PI/180
   });
 }
