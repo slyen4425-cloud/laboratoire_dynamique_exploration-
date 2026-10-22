@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain,sculptHeightAt} from '../src/world/sculpt-height-model.js';
-import {sculptNavigationSample,sculptNavigationRoute,sculptNavigationBlockDetail,
+import {sculptNavigationSample,sculptNavigationRoute,sculptNavigationBlockDetail,sculptNorthCliffProjectionBlock,
   SCULPT_NAVIGATION_PROBE_DEFAULTS} from '../src/core/sculpt-navigation-collision.js';
 import {appendSculptPreviewObject} from '../src/world/sculpt-scene-preview.js';
 import {resolveWorldObjectPlacements} from '../src/world/world-object-placement-model.js';
@@ -109,4 +109,38 @@ test('V75 Tester cannot re-enable cliff climbing via a permissive slider or came
   // module revision AND this cliff-lock revision in the same entrypoint.
   assert.match(html,/waterfalls-v3-cliff-lock-v75/);
   assert.doesNotMatch(src,/navActor\.y\s*[-+]=\s*sculpt/);
+});
+
+// Reproduces the Pixel report: the visual top of a north-facing cliff is
+// projected ABOVE its canonical cell boundary. Both steps here are on the
+// exact same lower cell; V75's eight-direction test did not detect this.
+test('V75 R2: north approach stops before the projected cliff cap, in the REAL movement path',()=>{
+  const levels=Array.from({length:W*H},(_,i)=>{
+    const x=i%W,y=Math.floor(i/W);
+    return x>=4&&x<=7&&y>=8&&y<=10?6:2;
+  });
+  const terrain=createSculptTerrain({width:W,height:H,levels});
+  const config=cfg(terrain),x=at(5,4).x;
+  const northEdge=8*CH,visibleEdge=northEdge-(6-2)*18;
+  const actor={...player(5,4),x,y:visibleEdge-10};
+  const targetY=visibleEdge+8;
+  assert.equal(sculptNavigationSample(terrain,x,actor.y,config).level,2);
+  assert.equal(sculptNavigationSample(terrain,x,targetY,config).level,2,
+    'regression must take place entirely BEFORE the logical cliff cell');
+  assert.equal(sculptNorthCliffProjectionBlock(terrain,x,actor.y,{radius:5}),null);
+  assert.equal(sculptNorthCliffProjectionBlock(terrain,x,targetY,{radius:5})?.kind,'cliff-projection');
+  assert.equal(isBlocked(world,actor,x,targetY,undefined,{sculptNavigation:config}),true);
+  const originalY=actor.y;
+  stepMovement(world,actor,{x:0,y:1},1,{maxSpeed:targetY-originalY},undefined,
+    {sculptNavigation:config});
+  assert.equal(actor.y,originalY,'the REAL player must not walk into raised plateau artwork');
+  const offEdge={...player(2,4),y:originalY};
+  assert.equal(sculptNavigationRoute(config,offEdge,offEdge.x,targetY).reason,null,
+    'same-distance flat travel away from the cliff stays available');
+  const airborne={...actor,locomotion:{modes:['fly']}};
+  assert.equal(sculptNavigationRoute(config,airborne,airborne.x,targetY).reason,null,
+    'flight stays exempt');
+  const trapped={...actor,y:targetY};
+  assert.equal(sculptNavigationRoute(config,trapped,trapped.x,originalY).reason,null,
+    'older saved positions can still retreat north to safety');
 });
