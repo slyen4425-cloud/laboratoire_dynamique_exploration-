@@ -1,3 +1,17 @@
+# Lot V73 — 22/10/2026 — Masque de rambardes du pont VERTICAL (retour Pixel à 55°)
+
+- **Retour créateur V72 :** horizontaux validés, pont vertical/longueur-largeur beaucoup mieux ; un point précis du tablier vertical masque encore le corps du héros (capture Pixel à 55°). Ne modifier aucun autre comportement.
+- **Base source V72 immuable :** `dc08370a922858f51fb9be6935561c6c70a84199`, CI `#39785831673` SUCCESS, Pages `#39786465498` SUCCESS. Prévalidation technique V72, visuel vertical non encore GREEN.
+- **Checkpoint START créé avant code :** `checkpoint/exploration-start-bridge-vertical-occlusion-v73-2026-10-22`. Unique branche de travail `work/exploration-bridge-vertical-occlusion-v73-2026-10-22`, même base.
+- **Diagnostic :** V68 découpe le deuxième passage de rendu de TOUS les ponts 2,5D comme un rectangle horizontal pleine largeur, au-dessous du plancher central (`sculptBridgeForegroundClip`). Sur la vue verticale V72, cette bande contient **des planches centrales** (les rambardes sont longitudinales sur les côtés) et repeint ces planches PAR-DESSUS le héros malgré le bon niveau physique. Ce n'est pas une erreur de collision.
+- **Lot et autorité :** propriétaire RENDER uniquement `src/render/sculpt-bridge-deck-layers.js` pour une sélection de clips de rambarde spécifique au visuel `_2p5d.vertical.`; le canvas applique leurs régions en un seul chemin de découpe sans écraser les pixels du tablier central. Le masque historique du pont horizontal reste exactement inchangé ; pas de deuxième altitude ou de sprite modifié.
+- **Gel :** geometry/longueur/largeur V72, `scaleX/scaleY`, 28 WebP, passage central 35 % V71, collision WorldObject, dessus/dessous V69, mouvements, caméra, navigation, joystick, autres variantes horizontales/diagonales, WorldDocument/Combat.
+- **Tests :** régression pure du masque vertical par 7 familles, scales X/Y non proportionnels et pitches 35/55/80/90° ; certifier qu'aucune planche centrale n'est recouverte par le second passage et que seules les rambardes extérieures restent devant ; sentinelles V67/V68/V69/V72 + vraie navigation/browser Chromium + CI intégrale. Cache module V73.
+- **Gate :** pas de GREEN visuel avant retour Pixel 55° sur ce point, et 35°/80°, avec dessus/dessous. Preview GitHub Pages seulement sur SHA CI SUCCESS via PR infra épinglée. Repli sur V72 `dc08370a922858f51fb9be6935561c6c70a84199`.
+- **Statut :** ouverture du lot, diagnostic établi ; tests, code, CI et prévisualisation à venir.
+
+---
+
 # Lot V72 — 22/10/2026 — Orientation pont vertical et échelles longueur / largeur indépendantes
 
 - **Retour utilisateur Pixel V71 :** le pont horizontal est bon ; le pont vertical reste désaligné dans son passage et son dessin. Besoin d'allonger le pont sans élargir sa chaussée ni ses rampes, et inversement.
