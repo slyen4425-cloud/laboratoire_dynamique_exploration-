@@ -1,3 +1,18 @@
+# Lot V74 — 22/10/2026 — Nettoyage à la source des 28 sprites WebP de pont 2,5D
+
+- **Validation utilisateur V73 :** « ok parfait », « les passages sont ok ». Le correctif V73 de calque vertical, passage inférieur et traversée des ponts est accepté pour cette série de tests. Checkpoint figé `checkpoint/exploration-bridge-vertical-occlusion-v73-green-2026-10-22` sur SHA `2d95caba255a201be738f33ada1cccebbafd8ec5` ; CI `#39798922299` SUCCESS, Pages `#39800306731` SUCCESS.
+- **Nouvelle demande :** bavures blanches encore visibles sur certains visuels de pont ; nettoyer **les fichiers WebP sources** sans dégrader les pierres claires ou les détails légitimes.
+- **Checkpoint START :** `checkpoint/exploration-start-bridge-asset-clean-v74-2026-10-22`, branche unique `work/exploration-bridge-asset-clean-v74-2026-10-22` à partir du SHA V73 accepté.
+- **Périmètre/autorité :** Asset Adapter et sources `assets/exploration/objects/bridges/bridge_*_2p5d_*.webp` (7 familles × 4 vues) ; script de détourage déterministe, tests des silhouettes, couleur et transparence, pipeline GitHub dédié pour produire des WebP nettoyés et vérifiés. **Ne pas** corriger les silhouettes en changeant leur scale, la caméra, le masque de rail, ni leurs collisions.
+- **Gels :** angles, textures du bois/pierre, modèles, 28 IDs et chemins, 7 définitions, WorldObject, rail V73, corridor 35 %, niveaux sur/sous V69, échelles indépendantes V72, contrôles tactiles, Builder, Combat, et 4 anciens ponts hors lot.
+- **Critères qualité :** pixels du corps opaques non blancs conservés, suppression de petits fragments blancs isolés et neutralisation contrôlée des franges claires *semi-transparentes* au contour, sans déformer l'objet ni réencoder inutilement les fichiers inchangés. Preuve stats/diff par asset et sauvegarde WebP réelle dans GitHub.
+- **Tests et publication :** tests de la fonction de nettoyage sur fixtures de franges, ponts clairs/légitimes, petites taches blanches, provenance/identité des 28 fichiers ; CI Node + Chromium Sculpt/Builder + Combat avant PR infra épinglée. Pixel requis pour valider le rendu final en jeu.
+- **Risque :** si une bavure est très blanche mais identique en couleur à une pierre légitime, ne pas effacer agressivement sans vérification visuelle ; source V73 gardée pour rollback.
+- **Lot SUIVANT (distinct V75, non commencé) :** pente en édition Terre + escaliers placables, franchissement progressif de hauteur par Collision World, et tests d'accès au plateau haut depuis le bas sans permettre l'escalade de falaises ailleurs. Prise de décision « rampe de terrain » versus « objet escalier » dans l'autorité World existante ; fixer dimensions et pente maxi configurables avant code.
+- **Statut :** lot V74 ouvert, actifs et pipeline en cours ; V75 strictement en planification.
+
+---
+
 # Lot V73 — 22/10/2026 — Masque de rambardes du pont VERTICAL (retour Pixel à 55°)
 
 - **Retour créateur V72 :** horizontaux validés, pont vertical/longueur-largeur beaucoup mieux ; un point précis du tablier vertical masque encore le corps du héros (capture Pixel à 55°). Ne modifier aucun autre comportement.
