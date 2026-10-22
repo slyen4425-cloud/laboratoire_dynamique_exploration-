@@ -43,9 +43,9 @@ test('V69 dry and wet canyon: longitudinal bridge crossing in both directions us
     walk(s,p,{x:1,y:0},1.3);
     assert.equal(p.sculptBridgeId,s.bridge.id,
       'actual bank approach must board the deck at scale '+scale);
-    assert.equal(isBlocked(s.world,p,p.x,p.y+240,undefined,s.context),true,
+    assert.equal(isBlocked(s.world,p,p.x,p.y+120,undefined,s.context),true,
       'cannot fall down side of bridge');
-    assert.equal(sculptNavigationBlockDetail(s.c,p,p.x,p.y+240)?.kind,'bridge-edge');
+    assert.equal(sculptNavigationBlockDetail(s.c,p,p.x,p.y+120)?.kind,'bridge-edge');
     walk(s,p,{x:1,y:0},2);
     assert.ok(p.x>at(13,5).x,'must reach the far high plateau');
     assert.equal(p.sculptBridgeId,null,'must dismount at far dry end');
