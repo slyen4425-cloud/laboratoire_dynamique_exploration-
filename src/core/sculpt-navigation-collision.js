@@ -150,6 +150,7 @@ export function sculptNavigationRoute({
     const candidate=bridgeCarrierAt(bridges,x,y,radius);
     const stepX=x-previousX,stepY=y-previousY;
     if(!flying){
+      let dismounting=false;
       if(bridgeId&&candidate?.bridge.id!==bridgeId){
         const active=bridgeCarrier(bridges,bridgeId);
         const corridor=active?.corridor;
@@ -164,6 +165,7 @@ export function sculptNavigationRoute({
         if(!properExit||!safeBank)
           return reject(Object.freeze({kind:'bridge-edge'}));
         bridgeId=null;
+        dismounting=true; // real deck->bank exit supersedes canyon floor sample
       }
       if(!bridgeId&&candidate&&previousCarrier?.bridge.id!==candidate.bridge.id){
         const crossingDeck=candidate.corridor;
@@ -190,7 +192,7 @@ export function sculptNavigationRoute({
           return reject(Object.freeze({kind:'water',col:sample.col,row:sample.row,
             waterDepth:sample.waterDepth}));
         const rise=sample.level-previous.level;
-        if(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown))
+        if(!dismounting&&(rise>Math.max(0,maxStepUp)||-rise>Math.max(0,maxStepDown)))
           return reject(Object.freeze({kind:rise>0?'height-up':'height-down',
             col:sample.col,row:sample.row,from:previous.level,to:sample.level,
             delta:Math.abs(rise),limit:rise>0?Math.max(0,maxStepUp):Math.max(0,maxStepDown)}));
