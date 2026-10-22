@@ -26,7 +26,7 @@ import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=scul
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72';
-import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68';
+import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
 import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
@@ -1080,8 +1080,13 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   ctx.save();ctx.translate(point.x,point.y);ctx.rotate(rect.angle);
   if(foregroundRailOnly){
     if(object.kind!=='bridge'){ctx.restore();return;}
-    const rail=sculptBridgeForegroundClip(rect,artShift);
-    ctx.beginPath();ctx.rect(rail.x,rail.y,rail.width,rail.height);ctx.clip();
+    const regions=sculptBridgeForegroundRegions(rect,artShift,object);
+    // One foreground path: vertical variants expose only their lateral
+    // handrails; never repaint centre planks over a bridge-mounted actor.
+    if(!regions.length){ctx.restore();return;}
+    ctx.beginPath();
+    for(const rail of regions)ctx.rect(rail.x,rail.y,rail.width,rail.height);
+    ctx.clip();
   }
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
