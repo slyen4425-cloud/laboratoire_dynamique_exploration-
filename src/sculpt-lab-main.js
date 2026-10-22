@@ -1108,8 +1108,12 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   }
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
-  drawWorldObjectSprite(ctx,art,resolveWorldObjectAsset(object.visual?.assetId),
-    {x:-width/2,y:-height+artShift,width,height},performance.now()/1000);
+  // Preserve exact historic bridge/static draw and its regression-tested order.
+  const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
+  if(waterfallArt?.animation)
+    drawWorldObjectSprite(ctx,art,waterfallArt,
+      {x:-width/2,y:-height+artShift,width,height},performance.now()/1000);
+  else ctx.drawImage(art,-width/2,-height+artShift,width,height);
   if(!foregroundRailOnly&&objectEditing&&objectSelectedId===object.id){
     ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
     ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height+artShift,width,height);
