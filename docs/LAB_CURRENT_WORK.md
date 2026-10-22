@@ -8,7 +8,7 @@
 - **Gel :** geometry/longueur/largeur V72, `scaleX/scaleY`, 28 WebP, passage central 35 % V71, collision WorldObject, dessus/dessous V69, mouvements, caméra, navigation, joystick, autres variantes horizontales/diagonales, WorldDocument/Combat.
 - **Tests :** régression pure du masque vertical par 7 familles, scales X/Y non proportionnels et pitches 35/55/80/90° ; certifier qu'aucune planche centrale n'est recouverte par le second passage et que seules les rambardes extérieures restent devant ; sentinelles V67/V68/V69/V72 + vraie navigation/browser Chromium + CI intégrale. Cache module V73.
 - **Gate :** pas de GREEN visuel avant retour Pixel 55° sur ce point, et 35°/80°, avec dessus/dessous. Preview GitHub Pages seulement sur SHA CI SUCCESS via PR infra épinglée. Repli sur V72 `dc08370a922858f51fb9be6935561c6c70a84199`.
-- **Statut :** ouverture du lot, diagnostic établi ; tests, code, CI et prévisualisation à venir.
+- **Statut :** code du masque vertical, route de rendu et sentinelle Node/Chromium réellement poussés sur GitHub ; fichier de prévalidation créé ; CI complète du SHA documentaire final à confirmer avant Pages. **NON GREEN manuel** jusqu'au test Pixel.
 
 ---
 
