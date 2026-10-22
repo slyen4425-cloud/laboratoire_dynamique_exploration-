@@ -887,16 +887,20 @@ try{
     const variant=document.querySelector('#object-variant');
     variant.value='diagonal_right';variant.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('#object-action').value='place';
-    const scale=document.querySelector('#object-scale'),scaleMax=scale.max;
-    // V56 real browser: 250% is allowed on a Bridge, not on buildings.
-    scale.value='250';scale.dispatchEvent(new Event('input',{bubbles:true}));
-    return {choices,views,sceneObjects:saved.objects.length,scaleMax,
+    const length=document.querySelector('#object-bridge-length');
+    const width=document.querySelector('#object-bridge-width');
+    // V72: the 250% legacy V51 fixture now uses explicit independent axes.
+    length.value='250';length.dispatchEvent(new Event('input',{bubbles:true}));
+    width.value='250';width.dispatchEvent(new Event('input',{bubbles:true}));
+    return {choices,views,sceneObjects:saved.objects.length,scaleMax:length.max,
+      lengthVisible:!document.querySelector('#object-bridge-length-wrap').hidden,
+      widthVisible:!document.querySelector('#object-bridge-width-wrap').hidden,
       category:window.__sculptObjectsProbe().categories};
   })()`);
   if(!bridgePicker.category.includes('bridge')||bridgePicker.choices.filter(x=>
       x.includes('_2p5d.')).length!==7||
       bridgePicker.views.join(',')!=='horizontal,vertical,diagonal_left,diagonal_right'||
-      bridgePicker.scaleMax!=='300')
+      bridgePicker.scaleMax!=='300'||!bridgePicker.lengthVisible||!bridgePicker.widthVisible)
     throw Error('V51 bridge categories or directional views missing in real Chromium: '+JSON.stringify(bridgePicker));
   await send('Input.dispatchMouseEvent',{type:'mousePressed',
     x:objectBegin.position.x,y:objectBegin.position.y,button:'left',clickCount:1});
@@ -997,6 +1001,46 @@ try{
     throw Error('V64 real wet bridge drag did not edit WorldObject center or lost scale: '+
       JSON.stringify({v64BridgeDrag,v64Moved}));
   console.log('V64 Chromium real 250% water bridge selected and dragged:',JSON.stringify(v64Moved));
+  // V72 browser gate: use the REAL selected bridge after drag, operate each
+  // visible slider and change the visual orientation before scene export.
+  const v72Dimensions=await run(`(async()=>{
+    const length=document.querySelector('#object-bridge-length');
+    const width=document.querySelector('#object-bridge-width');
+    const variant=document.querySelector('#object-variant');
+    const probe=window.__sculptObjectsProbe();
+    if(!probe.bridgeDimensionsVisible||!probe.selectedId)
+      return {error:'selected bridge controls hidden',probe};
+    length.value='200';length.dispatchEvent(new Event('input',{bubbles:true}));
+    length.dispatchEvent(new Event('change',{bubbles:true}));
+    width.value='70';width.dispatchEvent(new Event('input',{bubbles:true}));
+    width.dispatchEvent(new Event('change',{bubbles:true}));
+    variant.value='vertical';variant.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    const placement=scene.objects.find(o=>o.id===window.__sculptObjectsProbe().selectedId);
+    const placements=await import('./src/world/world-object-placement-model.js');
+    const model=await import('./src/world/world-object-model.js');
+    const drawing=await import('./src/render/sculpt-object-picking.js');
+    const h=await import('./src/world/sculpt-height-model.js');
+    const bridge=placements.resolveWorldObjectPlacements([placement])[0];
+    const sprite=drawing.sculptObjectVisualRect(bridge,h.importSculptTerrain(scene.terrain));
+    const deck=model.bridgeTraversalRect(bridge);
+    return {selected:window.__sculptObjectsProbe().selectedId,
+      x:placement.transform.scaleX,y:placement.transform.scaleY,
+      variant:bridge.visual.variantId,
+      sprite:{width:sprite.width,height:sprite.height},
+      deck:{length:deck.length,width:deck.width}};
+  })()`);
+  if(v72Dimensions.selected!==v64BridgeDrag.id||
+    v72Dimensions.x!==2||v72Dimensions.y!==.7||
+    v72Dimensions.variant!=='vertical'||
+    Math.abs(v72Dimensions.sprite.width-96*.7)>.01||
+    Math.abs(v72Dimensions.sprite.height-170*2)>.01||
+    Math.abs(v72Dimensions.deck.width-96*.7*.35)>.01||
+    Math.abs(v72Dimensions.deck.length-170*2*.92)>.01)
+    throw Error('V72 selected bridge dimensions or vertical geometry diverged: '+
+      JSON.stringify(v72Dimensions));
+  console.log('V72 Chromium independent length/width and vertical bitmap PASS:',JSON.stringify(v72Dimensions));
   await run(`(()=>{
     document.querySelector('#json').value=window.__v23Scene;
     document.querySelector('#import').click();
