@@ -36,7 +36,7 @@ test('seven bridge families expose native four-direction variants without new ru
   assert.equal(assetIds.length,32);
   assert.equal(new Set(assetIds).size,32);
 });
-test('28 committed transparent 512-square WebP files match manifest SHA-256 bytes RIFF VP8X',async()=>{
+test('28 committed transparent 512-square WebPs match updated SHA-256 and VP8L/VP8X profiles',async()=>{
   assert.equal(manifest.schemaVersion,1);
   const all=manifest.files;
   assert.equal(all.length,32);
@@ -49,10 +49,22 @@ test('28 committed transparent 512-square WebP files match manifest SHA-256 byte
     assert.equal(b.toString('ascii',0,4),'RIFF');
     assert.equal(b.toString('ascii',8,12),'WEBP');
     assert.equal(b.readUInt32LE(4)+8,b.length,'RIFF size');
-    assert.equal(b.toString('ascii',12,16),'VP8X','extended WebP profile');
-    assert.ok((b[20]&16)!==0,'alpha flag required');
-    const width=1+b[24]+(b[25]<<8)+(b[26]<<16);
-    const height=1+b[27]+(b[28]<<8)+(b[29]<<16);
+    const codec=b.toString('ascii',12,16);
+    assert.ok(codec==='VP8X'||codec==='VP8L',
+      'transparent extended WebP or cleaned lossless WebP only');
+    let width,height;
+    if(codec==='VP8X'){
+      assert.ok((b[20]&16)!==0,'alpha flag required');
+      width=1+b[24]+(b[25]<<8)+(b[26]<<16);
+      height=1+b[27]+(b[28]<<8)+(b[29]<<16);
+    }else{
+      assert.equal(b[20],0x2f,'valid lossless VP8L signature');
+      const dimensions=b.readUInt32LE(21);
+      width=1+(dimensions&0x3fff);
+      height=1+((dimensions>>>14)&0x3fff);
+      assert.equal(item.runtimeProfile,'mobile-webp-512x512-lossless-v74',
+        'cleaned lossless-source manifest profile must match');
+    }
     assert.deepEqual([width,height],[512,512],item.assetId+' dimensions');
   }
 });
