@@ -25,7 +25,7 @@ import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
-import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71';
+import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72';
 import {sculptBridgeForegroundClip,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
 import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
@@ -33,7 +33,7 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
-  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71';
+  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72';
 import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
@@ -1108,7 +1108,11 @@ function refreshObjectOptions(){
   if(definitions.some(o=>o.id===current))$('object-definition').value=current;
   // Bridge dimensions use the same canonical transform; only the editor cap
   // differs. Other objects keep their published 120 % range.
-  $('object-scale').max=$('object-category').value==='bridge'?'300':'120';
+  const bridgeMode=$('object-category').value==='bridge';
+  $('object-scale-wrap').hidden=bridgeMode;
+  $('object-bridge-length-wrap').hidden=!bridgeMode;
+  $('object-bridge-width-wrap').hidden=!bridgeMode;
+  $('object-scale').max=bridgeMode?'300':'120';
   if(Number($('object-scale').value)>Number($('object-scale').max)){
     $('object-scale').value=$('object-scale').max;
     $('object-scale-value').textContent=$('object-scale').value+' %';
@@ -1139,6 +1143,10 @@ function syncObjectSelectedControls(){
   refreshObjectVariants(selected.overrides.visualVariantId);
   $('object-scale').value=String(Math.round(selected.transform.scaleX*100));
   $('object-scale-value').textContent=$('object-scale').value+' %';
+  $('object-bridge-length').value=String(Math.round(selected.transform.scaleX*100));
+  $('object-bridge-width').value=String(Math.round(selected.transform.scaleY*100));
+  $('object-bridge-length-value').textContent=$('object-bridge-length').value+' %';
+  $('object-bridge-width-value').textContent=$('object-bridge-width').value+' %';
   $('object-rotation').value=String(Math.round(selected.transform.rotationDeg));
   $('object-rotation-value').textContent=$('object-rotation').value+'°';
   $('object-selected').textContent='Sélection : '+def.label+' ('+selected.id+')';
@@ -1431,8 +1439,11 @@ function applyObjectAtCell(cell){
   if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y)){
     status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
   }
+  const bridgeMode=objectDefinitionCatalogV1.get(definitionId)?.kind==='bridge';
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
     scale:Number($('object-scale').value)/100,
+    scaleX:bridgeMode?Number($('object-bridge-length').value)/100:undefined,
+    scaleY:bridgeMode?Number($('object-bridge-width').value)/100:undefined,
     rotationDeg:Number($('object-rotation').value),
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
@@ -1455,6 +1466,11 @@ for(const [control,output,unit] of [['object-scale','object-scale-value',' %'],
   $(control).addEventListener('change',()=>editSelectedObject(
     control==='object-scale'?{scale:Number($(control).value)/100}:
     {rotationDeg:Number($(control).value)}));
+}
+for(const [id,axis] of [['object-bridge-length','scaleX'],['object-bridge-width','scaleY']]){
+  const control=$(id),output=$(id+'-value');
+  control.addEventListener('input',()=>{output.textContent=control.value+' %';});
+  control.addEventListener('change',()=>editSelectedObject({[axis]:Number(control.value)/100}));
 }
 for(const [id,direction] of [['object-turn-left',-45],['object-turn-right',45]]){
   $(id).addEventListener('click',()=>{
@@ -1483,7 +1499,12 @@ window.__sculptObjectsProbe=()=>Object.freeze({
   filteredDefinitions:[...$('object-definition').options].map(o=>o.value),
   objects:placedObjects.map(o=>({id:o.id,definition:o.objectDefinitionId,
     x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
+    scaleX:o.transform.scaleX,scaleY:o.transform.scaleY,
     visualVariantId:o.overrides.visualVariantId})),
+  bridgeDimensionsVisible:!$('object-bridge-length-wrap').hidden&&
+    !$('object-bridge-width-wrap').hidden,
+  bridgeLengthPercent:Number($('object-bridge-length').value),
+  bridgeWidthPercent:Number($('object-bridge-width').value),
   exportsIncludeObjects:JSON.parse(serializeSculptPreviewScene(terrain,placedObjects)).objects.length===placedObjects.length
 });
 
