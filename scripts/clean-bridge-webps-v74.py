@@ -114,7 +114,9 @@ def clean_rgba(image):
         if color:
             pixels[i] = (*color, a)
             recolored += 1
-        elif any(abs(i % width - j % width) <= 1 and abs(i // width - j // width) <= 1 for j in removed if abs(j-i) <= width + 1):
+        elif any(((y + dy) * width + (x + dx)) in removed
+                 for dy in (-1, 0, 1) for dx in (-1, 0, 1)
+                 if 0 <= x + dx < width and 0 <= y + dy < height):
             pixels[i] = (r, g, b, round(a * .28))
             faded += 1
     changed = sum(a != b for a, b in zip(original, pixels))
