@@ -105,6 +105,8 @@ test('V75 Tester cannot re-enable cliff climbing via a permissive slider or came
   assert.match(src,/falaise infranchissable/);
   assert.match(html,/id="navigation-max-step"[^\n]*min="0" max="0"[^\n]*value="0" disabled/);
   assert.match(html,/Falaises : franchissement libre interdit/);
-  assert.match(html,/directions-v72-cliffs-v75/);
+  // Another approved lot published Waterfalls V3 concurrently. Preserve its
+  // module revision AND this cliff-lock revision in the same entrypoint.
+  assert.match(html,/waterfalls-v3-cliff-lock-v75/);
   assert.doesNotMatch(src,/navActor\.y\s*[-+]=\s*sculpt/);
 });
