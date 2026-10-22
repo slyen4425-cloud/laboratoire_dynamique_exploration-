@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-deck-width-v70-visible-footprint-2026-10-22
+# preview-revision: bridge-center-rails-v71-deck-35pct-2026-10-22
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: b0235eab980a3311b4d899edc40ebe79d4049fd9
+          ref: 8ca851aada87f75a6157150b47191b7e0400be0c
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
