@@ -9,7 +9,7 @@
 - **Gel :** rendu/collision du pont horizontal validé, 28 WebP, 7 ObjectDefinitions (.35/.92), couche supérieure/inférieure V69, vieux ponts .82, caméra, input, WorldDocument, Combat, Générateur/Builder 2D.
 - **Tests requis :** 7 familles et 4 variantes × scales non uniformes ; projection visuelle verticale correctement transposée ; collisions bords et longueur des ponts ; édition et rechargement sérialisé, rotation et undo ; test browser Chromium du vrai panneau et de la géométrie ; CI complète + preview source épinglée. Validation Pixel verticale 35/80/90° avant GREEN complet.
 - **Risque :** perspective 2,5D et silhouette des modèles de vue verticale ; petits ponts et collisions aux berges ; prévalence des valeurs précédentes à l'import. Rollback preview V71 immédiat.
-- **Statut :** développement démarré, aucune validation visuelle déclarée.
+- **Statut :** code, tests Node, Chromium Sculpt/Builder/Combat validés par CI #39785396478 (SHA code fe0b77fd03b6ae2405775dc5af8966d2db6f73ee). Nouveau checkpoint documentaire `docs/checkpoints/EXPLORATION_BRIDGE_DIRECTIONAL_SCALES_V72_PREVALIDATION_2026-10-22.md`. CI du SHA final documentaire encore nécessaire avant épinglage Pages ; GREEN Pixel suspendu au test du pont vertical et des échelles indépendantes.
 
 ---
 
