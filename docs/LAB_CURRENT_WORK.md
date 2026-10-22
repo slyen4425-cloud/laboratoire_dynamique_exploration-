@@ -9,7 +9,19 @@
 - **Gel :** ponts V69 à V73 sur/sous, entrée/sortie propre, V71 bande 35 %, V72 longueur/largeur, assets V74, eau/nage/vol, caméra et joystick, WorldDocument, relief visuel, autre Builder 2D et Combat. Aucun ajustement cosmétique de contours/texture dans ce lot.
 - **Tests ciblés :** marches 1–7 de toutes directions cardinales, haut vers bas et bas vers haut, diagonales, mouvement réellement exécuté avec `stepMovement` et `isBlocked`, terrain plat et mode vol, ponts physiques séparés, compatibilité 2D, préservation des imports/exports. Chromium doit lire panneau Tester fermé à 0 sans écrire dans le monde, y compris après changement d'angle 35–90°, et parcourir le chemin réel.
 - **Gates :** CI technique complète SUCCESS `#39837293202` sur SHA code `bd0ede8d409f5ce741dfc2ffcc3b0bcfd25a1f4b`, 8 directions en Node et HUD réel Chromium. Document `docs/checkpoints/EXPLORATION_CLIFF_LOCK_V75_PREVALIDATION_2026-10-22.md` ajouté. **CI du SHA documentaire final encore requise** avant checkpoint et preview épinglée. **NON GREEN mobile** avant essai Pixel depuis quatre côtés et sur ponts. V76 démarre uniquement après gate V75 conformément à la charte.
-- **Risques :** terrains sculptés sur plateaux isolés temporairement inaccessibles tant qu'aucune pente n'existe ; c'est volontaire. Eviter de bloquer une passerelle GREEN.
+- **Risques :** terrains sculptés sur plateaux isolés temporairement inaccessibles tant qu'aucune pente n'existe ; c'est volontaire. Eviter de bloquer une passerelle GREEN. **Intégration concurrente obligatoire :** source Cascades V3 `cf6131423eda4974baf58e6687eb3d91428e3f52` conservée dans le SHA d'intégration ; CI et preview à rejouer. La V75 publiée ne doit jamais retirer les 20 sprites de cascades et le registre de rendu.
+
+---
+
+# Lot visuel — 22/10/2026 — Cascades 2,5D V3 animées (5 palettes × 4 vues)
+
+- **Créateur :** valide la V3 à mouvement vertical descendant ; refuse toute régénération, tout gonflement latéral et toute bordure de terre. Réutiliser uniquement les sprites V3 existants.
+- **Base source / START :** `8b1a894f33afbfcd907596ad8d271f2862b2f2cf` (V74 ponts nettoyés), checkpoint `checkpoint/exploration-start-waterfalls-v3-2026-10-22` et branche `work/exploration-waterfalls-v3-2026-10-22`. Production `main` inchangée pendant le lot.
+- **Livrable :** 20 spritesheets WebP 4×4 (16 frames, 12 fps, cellule 256²) recadrées depuis les **séquences V3 déjà validées**, 4 angles (face large, côté étroit, trois-quarts, paliers) et 5 palettes canoniques (ruisseau, bleu clair, turquoise, canyon, marais). Effet purement décoratif et transparent, sans terrain.
+- **Autorité :** `WorldObjectAssetAdapter` et `ObjectDefinitionCatalog`, un seul chemin visuel pour chaque définition. Sprite animation lue par les rendus d’objets existants ; pas de moteur d’assets parallèle. Conserver la vieille cascade SVG et ses glints seulement dans l’ancien pilote.
+- **Périmètre des changements :** nouveau sous-dossier `assets/exploration/objects/waterfalls/` + manifeste / SHA-256/bytes + aide de frame pure + raccords rendus de la prévisualisation Builder et Sculpt, anti-cache ciblé, tests dédiés.
+- **Gel :** ponts V74, navigation, caméra, terrain, eau, collision, FPS des acteurs, scènes existantes, autres dépôts. Aucun ajustement de la géométrie ni du moteur de collision.
+- **Gates :** tests Node + navigateur, CI complète, contrôle WebP RIFF octets Git réels, visual mobile, et prévisualisation stable ; **pas GREEN utilisateur avant test visuel smartphone**.
 
 ---
 

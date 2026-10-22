@@ -80,6 +80,82 @@ function normalizeDefinition(definition) {
 const DEFINITIONS = frozen([
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.waterfall.front_wide.01',
+    label: '2,5D · Cascade animée · Large de face',
+    kind: 'decor',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    visual: {
+      assetId: 'object.waterfall.front_wide.forest_stream.flow.01',
+      defaultVariantId: 'forest_stream',
+      variants: [
+        { id: 'forest_stream', label: 'Ruisseau', assetId: 'object.waterfall.front_wide.forest_stream.flow.01' },
+        { id: 'clear_blue', label: 'Bleu clair', assetId: 'object.waterfall.front_wide.clear_blue.flow.01' },
+        { id: 'turquoise', label: 'Turquoise', assetId: 'object.waterfall.front_wide.turquoise.flow.01' },
+        { id: 'canyon_turquoise', label: 'Canyon', assetId: 'object.waterfall.front_wide.canyon_turquoise.flow.01' },
+        { id: 'swamp', label: 'Marais', assetId: 'object.waterfall.front_wide.swamp.flow.01' }
+      ]
+    },
+    baseSize: { width: 260, height: 350 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.waterfall.side_narrow.01',
+    label: '2,5D · Cascade animée · Étroite de côté',
+    kind: 'decor',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    visual: {
+      assetId: 'object.waterfall.side_narrow.forest_stream.flow.01',
+      defaultVariantId: 'forest_stream',
+      variants: [
+        { id: 'forest_stream', label: 'Ruisseau', assetId: 'object.waterfall.side_narrow.forest_stream.flow.01' },
+        { id: 'clear_blue', label: 'Bleu clair', assetId: 'object.waterfall.side_narrow.clear_blue.flow.01' },
+        { id: 'turquoise', label: 'Turquoise', assetId: 'object.waterfall.side_narrow.turquoise.flow.01' },
+        { id: 'canyon_turquoise', label: 'Canyon', assetId: 'object.waterfall.side_narrow.canyon_turquoise.flow.01' },
+        { id: 'swamp', label: 'Marais', assetId: 'object.waterfall.side_narrow.swamp.flow.01' }
+      ]
+    },
+    baseSize: { width: 170, height: 355 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.waterfall.three_quarter.01',
+    label: '2,5D · Cascade animée · Trois-quarts',
+    kind: 'decor',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    visual: {
+      assetId: 'object.waterfall.three_quarter.forest_stream.flow.01',
+      defaultVariantId: 'forest_stream',
+      variants: [
+        { id: 'forest_stream', label: 'Ruisseau', assetId: 'object.waterfall.three_quarter.forest_stream.flow.01' },
+        { id: 'clear_blue', label: 'Bleu clair', assetId: 'object.waterfall.three_quarter.clear_blue.flow.01' },
+        { id: 'turquoise', label: 'Turquoise', assetId: 'object.waterfall.three_quarter.turquoise.flow.01' },
+        { id: 'canyon_turquoise', label: 'Canyon', assetId: 'object.waterfall.three_quarter.canyon_turquoise.flow.01' },
+        { id: 'swamp', label: 'Marais', assetId: 'object.waterfall.three_quarter.swamp.flow.01' }
+      ]
+    },
+    baseSize: { width: 280, height: 340 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.waterfall.tiered.01',
+    label: '2,5D · Cascade animée · Paliers',
+    kind: 'decor',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    visual: {
+      assetId: 'object.waterfall.tiered.forest_stream.flow.01',
+      defaultVariantId: 'forest_stream',
+      variants: [
+        { id: 'forest_stream', label: 'Ruisseau', assetId: 'object.waterfall.tiered.forest_stream.flow.01' },
+        { id: 'clear_blue', label: 'Bleu clair', assetId: 'object.waterfall.tiered.clear_blue.flow.01' },
+        { id: 'turquoise', label: 'Turquoise', assetId: 'object.waterfall.tiered.turquoise.flow.01' },
+        { id: 'canyon_turquoise', label: 'Canyon', assetId: 'object.waterfall.tiered.canyon_turquoise.flow.01' },
+        { id: 'swamp', label: 'Marais', assetId: 'object.waterfall.tiered.swamp.flow.01' }
+      ]
+    },
+    baseSize: { width: 310, height: 340 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.bridge.wood_rustic_2p5d.01',
     label: 'Pont en bois rustique 2,5D',
     kind: 'bridge',

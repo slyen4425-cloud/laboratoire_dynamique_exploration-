@@ -4,7 +4,7 @@ import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWat
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
-import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js';
+import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js?rev=waterfalls-v3';
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
 export const SCULPT_SCENE_PREVIEW_KIND='sculpt-preview-scene';
@@ -16,7 +16,7 @@ export function createBlankSculptPreviewScene({width=36,height=24}={}){
   const terrain=createSculptTerrain({width,height});
   return Object.freeze({terrain,objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:true});
 }
-const validKinds=new Set(['building','tree','rock','bridge']);
+const validKinds=new Set(['building','tree','rock','bridge','decor']);
 export function listSculptPlaceableDefinitions(){
   return Object.freeze(objectDefinitionCatalogV1.list().filter(d=>
     validKinds.has(d.kind)&&!d.id.startsWith('objectdef.relief.')));

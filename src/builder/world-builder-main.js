@@ -62,7 +62,7 @@ import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../material
 import {
   clipWorldArea
 } from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
-import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2-waterfalls-v3';
 import { createPortalRenderer } from '../render/portal-renderer.js';
 import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
 import {
@@ -86,11 +86,11 @@ import {
 import {
   resolveWorldObjectPlacement as resolveWorldObjectPlacementRaw,
   resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
-} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2-waterfalls-v3';
 import {
   createComposedObjectDefinitionCatalog,
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&waterfalls-v3';
 import {
   categoryIdFromFolderId,
   createCustomObjectLibraryFolder,
@@ -167,7 +167,7 @@ import {
   createWorldObjectAssetResolver,
   listWorldObjectAssets,
   resolveWorldObjectAsset
-} from '../assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+} from '../assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2-waterfalls-v3';
 import {
   createUserWorldObjectAssetResolver
 } from '../assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
@@ -4367,6 +4367,7 @@ function previewPixelRatio() {
   return nativeRatio;
 }
 
+let waterfallPreviewTimer=0;
 function renderPreview(timeSeconds = performance.now() / 1000) {
   const result = currentValidation();
   if (!result.document) return;
@@ -4448,7 +4449,8 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
       objectRenderer.draw(ctx, {
         camera,
         viewport,
-        objects: area.objects
+        objects: area.objects,
+        timeSeconds
       });
 
       if (shouldRenderReliefWater(document.id, area)) {
@@ -4482,6 +4484,15 @@ function renderPreview(timeSeconds = performance.now() / 1000) {
   }
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // Mobile-friendly 12 Hz animation only while a waterfall is on this map.
+  const hasWaterfall = resolveWorldObjectPlacements(area.objects ?? []).some(o =>
+    Boolean(resolveWorldObjectAsset(o.visual?.assetId)?.animation));
+  if (hasWaterfall && !waterfallPreviewTimer && window.document.visibilityState !== 'hidden') {
+    waterfallPreviewTimer = window.setTimeout(() => {
+      waterfallPreviewTimer = 0;
+      schedulePreviewRender();
+    }, 83);
+  }
 }
 
 function applyTransformInputs() {
