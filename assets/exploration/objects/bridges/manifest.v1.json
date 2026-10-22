@@ -75,11 +75,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "horizontal",
-      "sha256": "f6f9038258abad3884984f44eab762643b4cfab30b916b5be5d4e837798f1e0a",
-      "bytes": 30518,
+      "sha256": "f734bae209ff24b3ee69b6b1e5686a5ac77f050a67d0cb4c8598ff1ed2d55c45",
+      "bytes": 109256,
       "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
       "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.wood_rustic_2p5d.vertical.01",
@@ -88,11 +88,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "vertical",
-      "sha256": "7a4b66cf5e9a9cc5be1f8248b4ce8e11fb23676127ca5df8719e0bc2ccf3064f",
-      "bytes": 30106,
+      "sha256": "9c65f94d6f1fd4395e958382a02acd7cfd4af5d08b4e54b4d9b44727e1da3eda",
+      "bytes": 125228,
       "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
       "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.wood_rustic_2p5d.diagonal_left.01",
@@ -101,11 +101,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "diagonal_left",
-      "sha256": "251e20f5531771d175bab99d6681dd225303b6725f397eb79a6d3d295ffdff57",
-      "bytes": 35860,
+      "sha256": "5de26e895a427150e35a5c4ca732b07155b17919fb614197b5d7095cf5d5948f",
+      "bytes": 132694,
       "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
       "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.wood_rustic_2p5d.diagonal_right.01",
@@ -114,11 +114,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "diagonal_right",
-      "sha256": "7e6cd94437d107bfc25746b0985b1c44fa11ec82f9f472943b446e4d76ed27ec",
-      "bytes": 37428,
+      "sha256": "2702f62a36b0b54071f6cb3794674604d81cc4b972dbd99d8226c348e59f2421",
+      "bytes": 141462,
       "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
       "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.stone_arch_2p5d.horizontal.01",
@@ -127,11 +127,11 @@
       "family": "stone_arch",
       "variant": "stone_arch",
       "view": "horizontal",
-      "sha256": "b6987e3a8f583978bf1e7d9f4a59b83193a65ca4fe93c80e779ee6f825a219b8",
-      "bytes": 27248,
+      "sha256": "e2fe4dcfb6c59ba6d5ba76eb64c031128f138d227892e43c4edfbc3c20d3160d",
+      "bytes": 107014,
       "sourceFile": "feuille_d_assets_de_ponts_en_pierre.png",
       "sourceSha256": "d77ab9be385ffc75d8b9847dafff0d86ab16015f427c5681a5bef6c06e953081",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.stone_arch_2p5d.vertical.01",
@@ -140,11 +140,11 @@
       "family": "stone_arch",
       "variant": "stone_arch",
       "view": "vertical",
-      "sha256": "c5b926b09a76b0dd5f60c187641ccc3a382491d185f0001a447b70d8aafed463",
-      "bytes": 31658,
+      "sha256": "694411dd72956abb044a56b9a2ffaa7eebf62cebd8ca4526d5defa3412a3c1ec",
+      "bytes": 130544,
       "sourceFile": "feuille_d_assets_de_ponts_en_pierre.png",
       "sourceSha256": "d77ab9be385ffc75d8b9847dafff0d86ab16015f427c5681a5bef6c06e953081",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.stone_arch_2p5d.diagonal_left.01",
@@ -153,11 +153,11 @@
       "family": "stone_arch",
       "variant": "stone_arch",
       "view": "diagonal_left",
-      "sha256": "bf8011fd707088a4599c701ccf58ef5fe41d2ed904a99ae5de4986a2e9991407",
-      "bytes": 31968,
+      "sha256": "38f529d0ed202ffd30b3edfc9f96b775a2c96d1e9ea282cc4d4dd9f1ce70f7d3",
+      "bytes": 124124,
       "sourceFile": "feuille_d_assets_de_ponts_en_pierre.png",
       "sourceSha256": "d77ab9be385ffc75d8b9847dafff0d86ab16015f427c5681a5bef6c06e953081",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.stone_arch_2p5d.diagonal_right.01",
@@ -166,11 +166,11 @@
       "family": "stone_arch",
       "variant": "stone_arch",
       "view": "diagonal_right",
-      "sha256": "4b716dee86d0933fd555d1a104e1ed82f353e8cd3a7270f601af82a21b42b8b5",
-      "bytes": 33542,
+      "sha256": "fd470c88f04f8a9b44a81e1081246cfc2628fb6bd1227a0c962242b349430469",
+      "bytes": 136434,
       "sourceFile": "feuille_d_assets_de_ponts_en_pierre.png",
       "sourceSha256": "d77ab9be385ffc75d8b9847dafff0d86ab16015f427c5681a5bef6c06e953081",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.old_wood_2p5d.horizontal.01",
@@ -179,11 +179,11 @@
       "family": "old_wood",
       "variant": "old_wood",
       "view": "horizontal",
-      "sha256": "1a640a1c768440e4eb067152f47ccd5be7e74c878212f06d6ae0228fe8d1637f",
-      "bytes": 36862,
+      "sha256": "42ffc81529ed2425453ef164edb93cb815bf0aaee15dc3970c70a87e8a0fcf08",
+      "bytes": 128088,
       "sourceFile": "planche_d_assets_ponts_en_bois_usés.png",
       "sourceSha256": "a72234f8d7f9fc94829c65cb93bc12ceed7842431951aea874eeb96086bd05a5",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.old_wood_2p5d.vertical.01",
@@ -192,11 +192,11 @@
       "family": "old_wood",
       "variant": "old_wood",
       "view": "vertical",
-      "sha256": "1ab3bcab455f28473e2a6d569c738cfdf1300156f05b4eff928d4f306e1bfb2a",
-      "bytes": 37220,
+      "sha256": "7fe071005f67fa961fed34d628990d9d04363180dc2992903212004e30109351",
+      "bytes": 150850,
       "sourceFile": "planche_d_assets_ponts_en_bois_usés.png",
       "sourceSha256": "a72234f8d7f9fc94829c65cb93bc12ceed7842431951aea874eeb96086bd05a5",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.old_wood_2p5d.diagonal_left.01",
@@ -205,11 +205,11 @@
       "family": "old_wood",
       "variant": "old_wood",
       "view": "diagonal_left",
-      "sha256": "654b6e6cd25d282fd08a94e3f889da3237a98617b74e1ba5d730c5f3afccfa6d",
-      "bytes": 39928,
+      "sha256": "7ee792b9dada390fc021de9e0997f7ecf0bbcb8648619d3ab1ca08704b07e99f",
+      "bytes": 146944,
       "sourceFile": "planche_d_assets_ponts_en_bois_usés.png",
       "sourceSha256": "a72234f8d7f9fc94829c65cb93bc12ceed7842431951aea874eeb96086bd05a5",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.old_wood_2p5d.diagonal_right.01",
@@ -218,11 +218,11 @@
       "family": "old_wood",
       "variant": "old_wood",
       "view": "diagonal_right",
-      "sha256": "470f0f08ffb36b43ba29d522865c61eab1bcb6a09843f2dfcc4ebbee2cc91845",
-      "bytes": 42446,
+      "sha256": "cf2daab3d651614dcf018bc4ae7f5bbefc0f1b76eadfe180b25eef20eac2bbd6",
+      "bytes": 158798,
       "sourceFile": "planche_d_assets_ponts_en_bois_usés.png",
       "sourceSha256": "a72234f8d7f9fc94829c65cb93bc12ceed7842431951aea874eeb96086bd05a5",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.elegant_2p5d.horizontal.01",
@@ -231,11 +231,11 @@
       "family": "elegant",
       "variant": "elegant",
       "view": "horizontal",
-      "sha256": "c198d114c0bce0622a73eef07213295c1a4c5c77cf4c6d3c37778bcde433a48f",
-      "bytes": 38568,
+      "sha256": "3f99ec84f90f43a5882a7dc1da5189c2de6a17ca743edd43ecf23908087e7635",
+      "bytes": 136330,
       "sourceFile": "planche_de_pont_féerique_sous_quatre_angles.png",
       "sourceSha256": "8fe2007cfec53f3d857799be53698c53159d0d1d19ffd8838e3dfa24c8338c21",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.elegant_2p5d.vertical.01",
@@ -244,11 +244,11 @@
       "family": "elegant",
       "variant": "elegant",
       "view": "vertical",
-      "sha256": "389d67776452af7d3383b4e692c662888fc98e101e50320644ea38b56e096921",
-      "bytes": 38104,
+      "sha256": "0ab46ec7fda1c30ed8f326171d0ae988bef777fe638d74f36aba375c5731634e",
+      "bytes": 155762,
       "sourceFile": "planche_de_pont_féerique_sous_quatre_angles.png",
       "sourceSha256": "8fe2007cfec53f3d857799be53698c53159d0d1d19ffd8838e3dfa24c8338c21",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.elegant_2p5d.diagonal_left.01",
@@ -257,11 +257,11 @@
       "family": "elegant",
       "variant": "elegant",
       "view": "diagonal_left",
-      "sha256": "a840837a8b8ceefe3e78bea2aacf3181932c12972a7c75483e67edcf578dfc74",
-      "bytes": 41818,
+      "sha256": "a238ff5b9735b1b2ca40d9ea9379f8930607ab1cfc8776c68dc8fe7890179df7",
+      "bytes": 159264,
       "sourceFile": "planche_de_pont_féerique_sous_quatre_angles.png",
       "sourceSha256": "8fe2007cfec53f3d857799be53698c53159d0d1d19ffd8838e3dfa24c8338c21",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.elegant_2p5d.diagonal_right.01",
@@ -270,11 +270,11 @@
       "family": "elegant",
       "variant": "elegant",
       "view": "diagonal_right",
-      "sha256": "f863dd0af277e0a37390a5df6f7011a48493a94fbb95670a9562529c7d94ae80",
-      "bytes": 42776,
+      "sha256": "b76968b65196c651cb260e6cb85c5f33aea3fa2787837ccb66e66c67bff873c8",
+      "bytes": 167992,
       "sourceFile": "planche_de_pont_féerique_sous_quatre_angles.png",
       "sourceSha256": "8fe2007cfec53f3d857799be53698c53159d0d1d19ffd8838e3dfa24c8338c21",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.castle_2p5d.horizontal.01",
@@ -283,11 +283,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "horizontal",
-      "sha256": "255343fde7f3a4878c33d15725a68e0810858a56fc430e389a5d7925a76bf110",
-      "bytes": 24620,
+      "sha256": "2ed800d1257b9902d44c8ff3f3efa6c206c5174891b30f9049e30be6990d7161",
+      "bytes": 95306,
       "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
       "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.castle_2p5d.vertical.01",
@@ -296,11 +296,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "vertical",
-      "sha256": "393e490c16179d966d19822d796b9b12a716fb98235d068dfdcbb4f46e38ee6b",
-      "bytes": 29642,
+      "sha256": "02a1ebadac797290f36839daab1bbf1d9d57f4ad1d1ae2603426a525433aba69",
+      "bytes": 126582,
       "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
       "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.castle_2p5d.diagonal_left.01",
@@ -309,11 +309,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "diagonal_left",
-      "sha256": "e5047ce52a97409881b29d69014e98ef384ca79f6165515f4fd782e0cbc495d5",
-      "bytes": 32148,
+      "sha256": "9be588286af68d1e2b650334775fa115b39a7f2d25349dee9f125d4d43d42921",
+      "bytes": 126240,
       "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
       "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.castle_2p5d.diagonal_right.01",
@@ -322,11 +322,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "diagonal_right",
-      "sha256": "6d8ff07acea8b60f393dfbb423e438fa1d25b1f1d75d679c6b3bf0bad6d51764",
-      "bytes": 32202,
+      "sha256": "8f9df828e4cb29bf5161350c37e899483ee272c38bc0076e732cbfbf08f082d0",
+      "bytes": 129336,
       "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
       "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.cobblestone_2p5d.horizontal.01",
@@ -335,11 +335,11 @@
       "family": "cobblestone",
       "variant": "cobblestone",
       "view": "horizontal",
-      "sha256": "ec4a17492a270ff5c391625c69f589a3b8b533f702a3f3feb1f075d6cb060350",
-      "bytes": 25790,
+      "sha256": "21b70af1ce991d3139df0bb2cde3432df4f91de26df0dd71e3ba4ba59845f479",
+      "bytes": 100608,
       "sourceFile": "planche_d_asset_pont_médiéval_en_pierre.png",
       "sourceSha256": "cc67ec6a14551156d5217b3f1dfcb2838aa3529deeddf86918429d32b2a80e10",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.cobblestone_2p5d.vertical.01",
@@ -348,11 +348,11 @@
       "family": "cobblestone",
       "variant": "cobblestone",
       "view": "vertical",
-      "sha256": "ffbc44286717afdcf1f3c8bcb187073a78cac66b5a48b89e476e163a801bca6e",
-      "bytes": 31990,
+      "sha256": "acb202b62742c5b367d7e4fa98c29acb64850b7b42c5f4508a132295740bbd34",
+      "bytes": 132558,
       "sourceFile": "planche_d_asset_pont_médiéval_en_pierre.png",
       "sourceSha256": "cc67ec6a14551156d5217b3f1dfcb2838aa3529deeddf86918429d32b2a80e10",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.cobblestone_2p5d.diagonal_left.01",
@@ -361,11 +361,11 @@
       "family": "cobblestone",
       "variant": "cobblestone",
       "view": "diagonal_left",
-      "sha256": "1f3dfea5e15511404b52592d14fd05c58e0cdecfe59d1ed50911a8835f21477d",
-      "bytes": 30406,
+      "sha256": "b6fb523ebd25f2428827eec5508c7a3ef70d2480a09803c5b74efd94619c77a7",
+      "bytes": 118406,
       "sourceFile": "planche_d_asset_pont_médiéval_en_pierre.png",
       "sourceSha256": "cc67ec6a14551156d5217b3f1dfcb2838aa3529deeddf86918429d32b2a80e10",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.cobblestone_2p5d.diagonal_right.01",
@@ -374,11 +374,11 @@
       "family": "cobblestone",
       "variant": "cobblestone",
       "view": "diagonal_right",
-      "sha256": "c1026575532b18e4dcc6dbf3288993916ab2f9b90738391a6fabb5df76f1e660",
-      "bytes": 31458,
+      "sha256": "14cc2dcedd42f200769ecbbeed10e74b11fa53dc1b70eb9cbbd70473156ef780",
+      "bytes": 130422,
       "sourceFile": "planche_d_asset_pont_médiéval_en_pierre.png",
       "sourceSha256": "cc67ec6a14551156d5217b3f1dfcb2838aa3529deeddf86918429d32b2a80e10",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.earth_crossing_2p5d.horizontal.01",
@@ -387,11 +387,11 @@
       "family": "earth_crossing",
       "variant": "earth_crossing",
       "view": "horizontal",
-      "sha256": "a4e1adacddc5460976a2863235d2712158e765c3dafc04e52e27d8c52a07900f",
-      "bytes": 28234,
+      "sha256": "b1808b47b7d8d01909c6c7e90e38b790e77b6641a803ca0dd9f5fd029620965a",
+      "bytes": 115112,
       "sourceFile": "planche_de_ponts_rustiques_en_terre.png",
       "sourceSha256": "c217c9b0f89c27fe52dc0cf4fd7e9db2a453b617a3cf2d9a3418257b197f028a",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.earth_crossing_2p5d.vertical.01",
@@ -400,11 +400,11 @@
       "family": "earth_crossing",
       "variant": "earth_crossing",
       "view": "vertical",
-      "sha256": "c840a760cc77e603efcecf7f8acf50f8d5fe7e8c4fe0d03dbc60242efed36a2f",
-      "bytes": 35194,
+      "sha256": "e0d26e68ccedf4c402f4158b768dd66b1a7c98ce13b04c13b7146894536c6e33",
+      "bytes": 159646,
       "sourceFile": "planche_de_ponts_rustiques_en_terre.png",
       "sourceSha256": "c217c9b0f89c27fe52dc0cf4fd7e9db2a453b617a3cf2d9a3418257b197f028a",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.earth_crossing_2p5d.diagonal_left.01",
@@ -413,11 +413,11 @@
       "family": "earth_crossing",
       "variant": "earth_crossing",
       "view": "diagonal_left",
-      "sha256": "6f75aeecabd01eab3e3b6587b9918d0bfba1aa7b3b307d39974ac3e7c95f4d87",
-      "bytes": 31960,
+      "sha256": "5d6f23bbbfe22d7e1012f9ba177292ea2b3cf6dbb4999dce829ce03c91efa45c",
+      "bytes": 129122,
       "sourceFile": "planche_de_ponts_rustiques_en_terre.png",
       "sourceSha256": "c217c9b0f89c27fe52dc0cf4fd7e9db2a453b617a3cf2d9a3418257b197f028a",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     },
     {
       "assetId": "object.bridge.earth_crossing_2p5d.diagonal_right.01",
@@ -426,12 +426,18 @@
       "family": "earth_crossing",
       "variant": "earth_crossing",
       "view": "diagonal_right",
-      "sha256": "6600d7ae50e142c487a8f8dee29e21a34e9ee85d1a61a3f32b18167ab6931ea8",
-      "bytes": 32806,
+      "sha256": "600edc1ce564c622e2feaf3243ebd657361c9074f05cf28f12f86f8994021404",
+      "bytes": 134698,
       "sourceFile": "planche_de_ponts_rustiques_en_terre.png",
       "sourceSha256": "c217c9b0f89c27fe52dc0cf4fd7e9db2a453b617a3cf2d9a3418257b197f028a",
-      "runtimeProfile": "mobile-webp-512x512-q84"
+      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
     }
   ],
-  "additionalRuntimeProfile": "mobile-webp-512x512-q84 for 2.5D multidirectional variants"
+  "additionalRuntimeProfile": "mobile-webp-512x512-q84 for 2.5D multidirectional variants",
+  "assetCleanup": {
+    "revision": "v74",
+    "format": "WebP lossless RGBA",
+    "scope": "28 native 2.5D bridges only",
+    "legacyFilesUnchanged": 4
+  }
 }
