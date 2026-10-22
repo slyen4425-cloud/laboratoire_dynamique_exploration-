@@ -2397,6 +2397,71 @@ try{
   if(!v67Persist)throw Error('V67 actual bridge travel mutated saved terrain/objects');
   console.log('V67 REAL Chromium hero crosses deep gorge bridge at 35° and 90°:',
     JSON.stringify(v67Crossings));
+  // V76 real Chromium: one actual pointer gesture creates a continuous
+  // spherical hill in the existing Sculpt editor; Undo/Redo and scene export
+  // must retain EXACT same canonical geometry, without changing old tiles.
+  const v76Setup=await run(`(async()=>{
+    const m=await import('./src/world/sculpt-height-model.js');
+    const sc=await import('./src/world/sculpt-scene-preview.js');
+    document.querySelector('#navigation-toggle')?.getAttribute('aria-pressed')==='true'&&
+      document.querySelector('#navigation-toggle').click();
+    document.querySelector('#json').value=sc.serializeSculptPreviewScene(
+      m.createSculptTerrain({width:40,height:40}),[]);
+    document.querySelector('#import').click();
+    document.querySelector('#mode-ground').click();
+    document.querySelector('[data-mode="sphere-hill"]').click();
+    const precise=document.querySelector('#precision-mode');
+    if(precise.checked){precise.checked=false;precise.dispatchEvent(new Event('change',{bubbles:true}));}
+    const radius=document.querySelector('#radius');
+    radius.value='3';radius.dispatchEvent(new Event('input',{bubbles:true}));
+    const level=document.querySelector('#target');
+    level.value='4';level.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
+    return {count:window.__sculptLabProbe().sphereCount,selected:window.__sculptLabProbe().quickTool};
+  })()`);
+  if(v76Setup.count!==0||v76Setup.selected!=='sphere-hill')
+    throw Error('V76 spherical brush was not armed in Chromium: '+JSON.stringify(v76Setup));
+  await sleep(180);
+  const v76Pointer=await run(`(()=>{
+    const b=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const x=b.x+b.width*.5,y=b.y+b.height*.50;
+    return {x,y,cell:window.__sculptLabProbe({x,y}).probedCell};
+  })()`);
+  if(!v76Pointer.cell||v76Pointer.cell.x<4||v76Pointer.cell.y<4||
+      v76Pointer.cell.x>35||v76Pointer.cell.y>35)
+    throw Error('V76 real canvas center did not land inside flat world: '+JSON.stringify(v76Pointer));
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v76Pointer.x,y:v76Pointer.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:v76Pointer.x,y:v76Pointer.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:v76Pointer.x,y:v76Pointer.y,button:'left',clickCount:1});
+  await sleep(140);
+  const v76Drawn=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const t=JSON.parse(document.querySelector('#json').value).terrain;
+    const f=t.spheres?.[0];
+    const count=window.__sculptLabProbe().sphereCount;
+    return {count,feature:f,levelsUntouched:t.levels.every(v=>v===2),
+      wetUntouched:t.waterLevels.every(v=>v===-1)};
+  })()`);
+  if(v76Drawn.count!==1||v76Drawn.feature?.kind!=='hill'||
+    v76Drawn.feature?.height!==4||v76Drawn.feature?.radius!==84||
+    !v76Drawn.levelsUntouched||!v76Drawn.wetUntouched)
+    throw Error('V76 real Chromium tap failed to create ONLY canonical spherical mesh: '+
+      JSON.stringify({v76Pointer,v76Drawn}));
+  const v76Undo=await run(`(()=>{
+    document.querySelector('#undo').click();
+    const undone=window.__sculptLabProbe().sphereCount;
+    document.querySelector('#redo').click();
+    const redone=window.__sculptLabProbe().sphereCount;
+    document.querySelector('#scene-export').click();
+    const saved=document.querySelector('#json').value;
+    document.querySelector('#import').click();
+    return {undone,redone,reimported:window.__sculptLabProbe().sphereCount,
+      exact:document.querySelector('#json').value===saved};
+  })()`);
+  if(v76Undo.undone!==0||v76Undo.redone!==1||v76Undo.reimported!==1||!v76Undo.exact)
+    throw Error('V76 real Chromium scene roundtrip or undo/redo failed: '+JSON.stringify(v76Undo));
+  console.log('V76 real Chromium one-tap spherical relief / Undo / scene reimport:',
+    JSON.stringify({pointer:v76Pointer,feature:v76Drawn.feature,roundtrip:v76Undo}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
