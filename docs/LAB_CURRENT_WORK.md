@@ -1,3 +1,16 @@
+# Lot V75 R2 — 22/10/2026 — Falaise nord: empreinte de collision avant la calotte visible (NON GREEN Pixel)
+
+- **Retour créateur :** capture smartphone du 22/10, le personnage avance encore depuis le haut de la carte jusque dans la zone visuellement surélevée. V75 initiale non validée ; V76/V77/V78 bloquées.
+- **START :** source opérationnelle intégrée V75 + Cascades V3 `273e1b9cd7d900647003013b0952e95871f49d50` ; checkpoint `checkpoint/exploration-start-cliff-lock-v75-north-occlusion-r2-2026-10-22` ; branche unique `work/exploration-cliff-lock-v75-north-occlusion-r2-2026-10-22`.
+- **Diagnostic ciblé :** Collision World V75 stoppe aux limites logiques hauteur/cellules ; le sommet nord d'une falaise est dessiné plusieurs cellules plus haut (`row * tileHeight - level * rise`). En avançant depuis le nord au sol bas, le héros paraît passer sur la falaise avant d'atteindre la cellule canonique. Le test antérieur examinait seulement le franchissement de la frontière logique et manquait ce cas.
+- **Solution R2 :** empreinte de précollision nord calculée par l'autorité existante `sculpt-navigation-collision.js`, depuis les niveaux canoniques (pas l'alpha image). Paramètre `projectionRise` passé explicitement par le Tester Sculpt ; pas de collision supplémentaire persistée, ni de dépendance DOM/render dans le noyau. Les anciens chemins 2D restent inchangés sans ce contexte. Vol et ponts porteurs/inférieurs conservés. Les positions héritées peuvent reculer.
+- **Test de régression :** parcours réel `stepMovement -> isBlocked -> sculptNavigationRoute` depuis une cellule basse située AVANT le pied logique du relief, à hauteur identique à destination ; Chromium 35°/55°/80°/90°. Les sentinelles 2D, V60-V75, ponts/nage/vol et la CI totale doivent rester GREEN avant preview.
+- **Gel :** 20 sprites cascades V3, 28 ponts V74 et règles V69-V73, caméra, rendu 2,5D, relief actuel, WorldDocument, eau/nage, Combat, Builder historique. Aucune branche V76/V77/V78 tant que Pixel V75 R2 n'est pas approuvé.
+- **Gate :** CI sur SHA final, documentation checkpoint, preview depuis SHA épinglé, puis TEST MANUEL Pixel nord/sud/est/ouest, diagonales, ponts sur/sous et cascades. NE PAS revendiquer GREEN visuel avant validation du créateur.
+- **Risque résiduel :** perspective 2,5D discrète à corriger structurellement dans V76; l'empreinte nord est conservatrice et ne transforme pas la grille en surface sphérique.
+
+---
+
 # Lot V75 — 22/10/2026 — Bloquer les falaises sans pente (priorité 1/4)
 
 - **Demande Pixel explicite :** les reliefs surélevés se franchissent encore lorsqu'on vient de certains côtés (notamment depuis le haut de l'écran). Une paroi franche ne doit jamais être montable/descendable sans un accès créé volontairement ; même de petits changements brusques de niveaux sont concernés.
