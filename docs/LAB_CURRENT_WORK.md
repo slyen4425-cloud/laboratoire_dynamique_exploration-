@@ -1,3 +1,18 @@
+# Lot V72 — 22/10/2026 — Orientation pont vertical et échelles longueur / largeur indépendantes
+
+- **Retour utilisateur Pixel V71 :** le pont horizontal est bon ; le pont vertical reste désaligné dans son passage et son dessin. Besoin d'allonger le pont sans élargir sa chaussée ni ses rampes, et inversement.
+- **Base immuable V71 :** `8ca851aada87f75a6157150b47191b7e0400be0c` ; CI `#39755630447` SUCCESS, Pages `#39755913034` SUCCESS. Prévalidation technique seulement ; V71 mobile vertical rejetée.
+- **Checkpoint avant changements :** `checkpoint/exploration-start-bridge-directional-scales-v72-2026-10-22`, branche dédiée `work/exploration-bridge-directional-scales-v72-2026-10-22` depuis ce SHA.
+- **Diagnostic :** le contrat natif `transform.scaleX / scaleY` est déjà indépendant, mais le Sculpt Editor écrit toujours un `scale` unique. Le sprite vertical garde actuellement les dimensions d'un pont horizontal (longueur en X, largeur en Y) alors que son corridor canonique et son illustration verticale sont orientés sur Y : incohérence visuelle visible en caméra haute.
+- **Périmètre :** réutiliser `scaleX` (axe longitudinal, 25-300 %) et `scaleY` (largeur, 25-300 %) dans l'auteur d'objets Sculpt, en conservant le slider uniforme des objets non-ponts ; corriger uniquement le rectangle bitmap 2,5D de la vue `vertical` en transposant les dimensions sur Y. Contrôles sélection/édition/placement/export-import/undo issus de la même donnée canonique. Collision World continue de lire `bridgeTraversalRect()` sans nouveau collider, largeur centrale V71 35 % et rayon acteur inchangés.
+- **Propriétaires :** WorldObjectPlacement (transform déjà existant), Scene Preview (commandes d'édition), Sculpt Editor UI (adapteur d'entrée), Sculpt Visual Adapter (bitmap vertical). Collision World lecture seule de la géométrie native.
+- **Gel :** rendu/collision du pont horizontal validé, 28 WebP, 7 ObjectDefinitions (.35/.92), couche supérieure/inférieure V69, vieux ponts .82, caméra, input, WorldDocument, Combat, Générateur/Builder 2D.
+- **Tests requis :** 7 familles et 4 variantes × scales non uniformes ; projection visuelle verticale correctement transposée ; collisions bords et longueur des ponts ; édition et rechargement sérialisé, rotation et undo ; test browser Chromium du vrai panneau et de la géométrie ; CI complète + preview source épinglée. Validation Pixel verticale 35/80/90° avant GREEN complet.
+- **Risque :** perspective 2,5D et silhouette des modèles de vue verticale ; petits ponts et collisions aux berges ; prévalence des valeurs précédentes à l'import. Rollback preview V71 immédiat.
+- **Statut :** développement démarré, aucune validation visuelle déclarée.
+
+---
+
 # Lot V71 — 22/10/2026 — Passage central 35 % et bords physiques du pont
 
 - **Retour manuel créateur V70 :** dessus/dessous validé, mais marge latérale encore trop large aux deux côtés à 35° et certaines autres vues. Demande : ratio ≈ 35 %, centré, bords agissant comme obstacles pour empêcher de marcher sur rambardes.
