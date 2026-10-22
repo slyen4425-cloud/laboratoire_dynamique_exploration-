@@ -1858,6 +1858,38 @@ try{
     throw Error('V75 real Tester must NOT enable free-cliff traversal: '+
       JSON.stringify(v40Passability));
   console.log('V75 Chromium fixed no-cliff height HUD, scene unchanged:',JSON.stringify(v40Passability));
+  // V75 R2: reproduce the Pixel north-entry report in real Chromium, using
+  // the same browser-loaded movement + Collision World contract as the Tester.
+  const v75North=await run(`(async()=>{
+    const {createSculptTerrain}=await import('./src/world/sculpt-height-model.js');
+    const {stepMovement}=await import('./src/core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2');
+    const {sculptNavigationRoute}=await import('./src/core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2');
+    const w=12,h=12,levels=Array.from({length:w*h},(_,i)=>{
+      const x=i%w,y=Math.floor(i/w);
+      return x>=4&&x<=7&&y>=8&&y<=10?6:2;
+    });
+    const terrain=createSculptTerrain({width:w,height:h,levels});
+    const cfg={terrain,cellWidth:28,cellHeight:21,projectionRise:18,
+      maxStepUp:0,maxStepDown:0,bridges:[]};
+    const world={width:w*28,height:h*21,objects:[],obstacles:[]};
+    const y0=8*21-(6-2)*18-10,y1=y0+18;
+    const actual=[];
+    for(const angle of ['35','55','80','90']){
+      const slider=document.querySelector('#navigation-camera-angle');
+      slider.value=angle;slider.dispatchEvent(new Event('input',{bubbles:true}));
+      const actor={x:154,y:y0,radius:5,locomotion:{modes:['ground']}};
+      const denial=sculptNavigationRoute(cfg,actor,actor.x,y1).reason;
+      stepMovement(world,actor,{x:0,y:1},1,{maxSpeed:18},undefined,{sculptNavigation:cfg});
+      const fly={x:154,y:y0,radius:5,locomotion:{modes:['fly']}};
+      stepMovement(world,fly,{x:0,y:1},1,{maxSpeed:18},undefined,{sculptNavigation:cfg});
+      actual.push({angle,block:denial?.kind,stopped:actor.y===y0,fly:fly.y===y1});
+    }
+    return {actual,stillUsingCanonicalScene:window.__sculptLabProbe().schemaVersion!==0};
+  })()`);
+  if(v75North.actual.length!==4||v75North.actual.some(o=>
+    o.block!=='cliff-projection'||!o.stopped||!o.fly))
+    throw Error('V75 R2 real Chromium north-wall movement regression: '+JSON.stringify(v75North));
+  console.log('V75 R2 Chromium north cliff 35/55/80/90 deg, pedestrian blocked, flight allowed:',JSON.stringify(v75North));
   // V41: real Canvas background, four time-of-day choices, optional cloud/fog,
   // stars at night only, and exact editor return with no authored data changes.
   const v41Sky=await run(`(async()=>{
