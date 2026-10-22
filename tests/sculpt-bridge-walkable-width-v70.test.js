@@ -106,10 +106,20 @@ test('V70 actual Collision World movement stops on plank edge (no invisible high
 test('V70 ground-level underpass retains full passage width and no automatic elevation',()=>{
   for(const variantId of VARIANTS)for(const scale of [1,1.4,2]){
     const {bridge,ctx}=bridgeAt(FAMILIES[0].id,variantId,scale);
-    const deck=bridgeTraversalRect(bridge),ground=player(orientedWorldPoint(0,0,deck),null);
+    const deck=bridgeTraversalRect(bridge);
+    // A REAL low underpass cuts across the bridge, while actual bank ends
+    // remain six levels high. Flat terrain at the same height as the deck
+    // would quite correctly count as a supported high bridge approach.
+    const lowStrip=Array.from({length:36*36},(_,i)=>{
+      const point={x:(i%36+.5)*28,y:(Math.floor(i/36)+.5)*21};
+      return Math.abs(orientedLocalPoint(point.x,point.y,deck).x)<42?0:6;
+    });
+    const c={...ctx,terrain:createSculptTerrain({width:36,height:36,levels:lowStrip})};
+    const start=orientedWorldPoint(0,-deck.width*.65,deck);
+    const ground=player(start,null);
     const end=orientedWorldPoint(0,deck.width*.65,deck);
-    const route=sculptNavigationRoute(ctx,ground,end.x,end.y);
-    assert.equal(route.reason,null,'ground underpass remains continuous on dry floor');
+    const route=sculptNavigationRoute(c,ground,end.x,end.y);
+    assert.equal(route.reason,null,'ground underpass remains continuous on actual low dry floor');
     assert.equal(route.bridgeId,null,'must not mount from the middle or underside');
   }
 });
