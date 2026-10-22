@@ -8,8 +8,8 @@ import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
-import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71';
-import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75';
+import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2';
+import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -28,7 +28,7 @@ import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
-import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
+import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2';
 import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
@@ -780,7 +780,8 @@ function navigationContext(){
   const maxStep=navigationMaxStep();
   return {objectCatalog:sculptPreviewCollisionCatalog,
     sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
-      cellHeight:SCULPT_TILE.height,maxStepUp:maxStep,maxStepDown:maxStep,
+      cellHeight:SCULPT_TILE.height,projectionRise:SCULPT_TILE.rise,
+       maxStepUp:maxStep,maxStepDown:maxStep,
       shoreEntryFraction:.14,bridges:resolvedSculptBridges()}};
 }
 // Explain actual rejection from the SAME swept-height check used by Collision
@@ -790,6 +791,7 @@ function navigationBlockMessage(reason){
   if(reason.kind==='bounds')return 'limite de la carte';
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
   if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
+  if(reason.kind==='cliff-projection')return 'falaise nord : rebord bloqué avant le sommet visible';
   if(reason.kind==='height-up'||reason.kind==='height-down')
     return reason.limit===0
       ?'falaise infranchissable : '+reason.from+'→'+reason.to+
