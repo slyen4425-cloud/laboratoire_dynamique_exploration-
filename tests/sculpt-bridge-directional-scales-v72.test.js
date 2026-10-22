@@ -103,5 +103,5 @@ test('V72 uniform resizing remains compatible with historic and non-bridge objec
   assert.equal(old[0].transform.scaleX,1.7);
   assert.equal(old[0].transform.scaleY,1.7);
   const same=updateSculptPreviewObject(old,old[0].id,{scaleY:1.7});
-  assert.equal(same[0],old[0],'no-op independent axis update should not churn');
+  assert.deepEqual(same,old,'same physical dimensions must not change when re-normalized');
 });
