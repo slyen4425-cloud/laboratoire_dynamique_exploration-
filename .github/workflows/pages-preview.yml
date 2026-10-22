@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sculpt-cliff-lock-v75-north-r2-preserve-waterfalls-v3-2026-10-22
+# preview-revision: spherical-relief-v76-preserve-bridges-and-waterfalls-v3-2026-10-22
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 9cb6610fbf5a42896811e7c02cc3c5d353b844ef
+          ref: 25b6004c48643d0e82a5b8b5b8be9ba68bd43725
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
