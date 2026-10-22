@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: bridge-rail-mask-v68-canyon-chromium-2026-10-21
+# preview-revision: bridge-grade-separation-v69-deck-underpass-2026-10-22
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 9cce0e7dfdcff26c4385442babd4234175ba1c21
+          ref: 111594186b8911e1643c3babef5e49ae2926a0a8
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
