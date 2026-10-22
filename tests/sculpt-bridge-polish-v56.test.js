@@ -46,7 +46,9 @@ test('V56 clean data is pure alpha repair and not an object collision authority'
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const src=readFileSync(new URL('../src/assets/sculpt-bridge-alpha.js',import.meta.url),'utf8');
   const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
-  assert.match(main,/object-scale'\)\.max=\$\('object-category'/);
+  assert.match(main,/object-scale'\)\.max=bridgeMode\?'300':'120'/);
+  assert.match(main,/object-bridge-length-wrap/);
+  assert.match(main,/object-bridge-width-wrap/);
   assert.match(main,/prepareSculptBridgeImage\(picture\)/);
   assert.match(src,/ctx\.getImageData/);
   assert.doesNotMatch(src,/isBlocked|CollisionWorld|WorldDocument/);
