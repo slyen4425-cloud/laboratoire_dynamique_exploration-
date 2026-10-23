@@ -2499,6 +2499,52 @@ try{
     throw Error('V76 R2 actual Canvas has no clearly drawn volume: '+JSON.stringify(volumePixels));
   console.log('V76 R2 REAL Chromium mineral hills / clipped crater depths 1/3/7:',
     JSON.stringify(volumePixels));
+  // V76 R3 mobile authoring contract: actual pointer placement must persist
+  // summit width and chosen flank texture, while the preview guide vanishes.
+  const r3Setup=await run(`(async()=>{
+    const m=await import('./src/world/sculpt-height-model.js');
+    const sc=await import('./src/world/sculpt-scene-preview.js');
+    document.querySelector('#json').value=sc.serializeSculptPreviewScene(
+      m.createSculptTerrain({width:40,height:40}),[]);
+    document.querySelector('#import').click();
+    document.querySelector('[data-mode="sphere-hill"]').click();
+    const precise=document.querySelector('#precision-mode');
+    if(precise.checked){precise.checked=false;precise.dispatchEvent(new Event('change',{bubbles:true}));}
+    const radius=document.querySelector('#radius');radius.value='3';radius.dispatchEvent(new Event('input',{bubbles:true}));
+    const summit=document.querySelector('#sphere-summit-ratio');summit.value='75';
+    summit.dispatchEvent(new Event('input',{bubbles:true}));
+    const wall=document.querySelector('#sphere-wall-material');wall.value='earth';
+    wall.dispatchEvent(new Event('change',{bubbles:true}));
+    const height=document.querySelector('#target');height.value='5';
+    height.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
+    const box=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {profileVisible:!document.querySelector('#sphere-profile-wrap').hidden,
+      label:document.querySelector('#sphere-summit-ratio-value').textContent,
+      pos:{x:box.x+box.width*.5,y:box.y+box.height*.5}};
+  })()`);
+  if(!r3Setup.profileVisible||r3Setup.label!=='75 %')
+    throw Error('V76 R3 mobile controls did not expose flat summit: '+JSON.stringify(r3Setup));
+  await sleep(120);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:r3Setup.pos.x,y:r3Setup.pos.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:r3Setup.pos.x,y:r3Setup.pos.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:r3Setup.pos.x,y:r3Setup.pos.y,button:'left',clickCount:1});
+  await sleep(90);
+  const r3Painted=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const terrain=JSON.parse(document.querySelector('#json').value).terrain;
+    const p=window.__sculptLabProbe();
+    return {sphere:terrain.spheres[0],count:p.sphereCount,
+      guideVisible:p.sphereGuideVisible,chosenMaterial:p.wallMaterial,
+      chosenSummit:p.summitRatio};
+  })()`);
+  if(r3Painted.count!==1||r3Painted.sphere?.summitRatio!==.75||
+     r3Painted.sphere?.wallMaterial!=='earth'||r3Painted.guideVisible||
+     r3Painted.chosenSummit!==.75||r3Painted.chosenMaterial!=='earth')
+    throw Error('V76 R3 real pointer failed summit/material or left a brush outline: '+
+      JSON.stringify(r3Painted));
+  console.log('V76 R3 real Chromium plateau + earth texture + temporary brush:',
+    JSON.stringify(r3Painted));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
