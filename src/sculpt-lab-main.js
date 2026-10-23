@@ -3,14 +3,14 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2';
-import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9';
+import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76';
-import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2-sphere-v76';
+import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2-sphere-v76-frustum-r9';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -598,8 +598,8 @@ function selectMode(mode){
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
     'cliff-round':'Colline ronde : règle 150 % et TOUCHE UNE FOIS LE MILIEU du sommet vert. Le contour entier de ce plateau s’arrondit (pas seulement la case). 95 % = aspect initial. Altitudes et eau inchangées.',
     plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
-    'sphere-hill':'V76 R3 : zone sèche et plane. Taille = rayon extérieur ; largeur du sommet = plateau ; flancs = roche/herbe/terre. Pente V77.',
-    'sphere-basin':'V76 R3 : zone sèche et plane. Taille = rayon ; largeur du sommet = fond plat ; flancs texturés. Pente V77.',
+    'sphere-hill':'V76 R9 : 0 % sphère ; de 5 à 95 % colline à flanc conique ; 100 % plateau rond vertical. Accès à pied sur les pentes : V77.',
+    'sphere-basin':'V76 R9 : creux rond à fond plat et flancs coniques, ou bord vertical à 100 %. Accès par pente : V77.',
     'sphere-erase':'V76 : touche une colline/cavité sphérique pour la supprimer, sans modifier les cases.',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
@@ -871,7 +871,8 @@ function navigationBlockMessage(reason){
   if(!reason)return 'obstacle, bâtiment ou bord de la carte';
   if(reason.kind==='bounds')return 'limite de la carte';
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
-  if(reason.kind==='sphere-wall')return 'relief sphérique : accès par une pente à créer (V77)';
+  if(reason.kind==='sphere-wall'||reason.kind==='sphere-projection')
+    return 'colline haute : flanc et sommet bloqués depuis le sol (pentes V77)';
   if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
   if(reason.kind==='cliff-projection')return 'falaise nord : rebord bloqué avant le sommet visible';
   if(reason.kind==='height-up'||reason.kind==='height-down')
@@ -955,6 +956,9 @@ function navigationSpawn(){
     const level=sculptNavigationSample(terrain,candidate.x,candidate.y,
       {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
     if(level?.waterDepth===0&&!sculptSphereAt(terrain,candidate.x,candidate.y,candidate.radius)&&
+      !sculptSphereProjectionBlock(terrain,candidate.x,candidate.y,
+        {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height,
+          projectionRise:SCULPT_TILE.rise,radius:candidate.radius})&&
       !isBlocked(navigationWorld(),candidate,candidate.x,candidate.y,undefined,navigationContext()))return candidate;
   }
   return null;
