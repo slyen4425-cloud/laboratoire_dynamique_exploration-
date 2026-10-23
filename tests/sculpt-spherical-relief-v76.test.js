@@ -132,3 +132,59 @@ test('V76 R2 painter draws visible mineral flanks, contact shadow and a clipped 
   assert.match(html,/sphere-v76-volume-r2/);
   assert.match(main,/mode==='sphere-basin'\?'Profondeur'/);
 });
+
+
+test('V76 R3 summit radius makes a REAL flat cap / flat cavity floor with unchanged collision footprint',()=>{
+  for(const kind of ['hill','basin']){
+    const t=appendSculptSphere(base(),{kind,x,y,radius:r,height:5,summitRatio:.6,wallMaterial:'grass'});
+    const sign=kind==='hill'?1:-1;
+    const f=t.spheres[0];
+    assert.equal(f.summitRatio,.6);
+    assert.equal(f.wallMaterial,'grass');
+    for(const d of [0,.25,.5,.6])
+      assert.ok(Math.abs(sculptSphereDisplacementAt(t,x+r*d,y)-sign*5)<1e-8,
+        'flat summit/floor extends exactly to the configured radius');
+    const d=.8,local=(d-.6)/(1-.6);
+    assert.ok(Math.abs(sculptSphereDisplacementAt(t,x+r*d,y)-sign*5*Math.sqrt(1-local*local))<1e-8);
+    assert.equal(sculptSphereAt(t,x+r+6,y),null);
+    assert.equal(sculptNavigationBlockDetail(config(t),entity(x-r-11),x-r+11,y)?.kind,'sphere-wall');
+    assert.deepEqual(importSculptTerrain(serializeSculptTerrain(t)).spheres,t.spheres);
+  }
+  const column=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:7,summitRatio:.85,wallMaterial:'earth'});
+  assert.equal(sculptSphereDisplacementAt(column,x+r*.8,y),7);
+  assert.equal(sculptSphereDisplacementAt(column,x+r*.96,y)<7,true);
+  const json=JSON.parse(serializeSculptTerrain(column));
+  json.spheres[0].summitRatio=.9;
+  assert.throws(()=>importSculptTerrain(json),/invalide/);
+  json.spheres[0].summitRatio=.5;json.spheres[0].wallMaterial='glass';
+  assert.throws(()=>importSculptTerrain(json),/invalide/);
+});
+
+test('V76 R3 old spherical JSON remains readable and material options change flank fill',()=>{
+  const old=JSON.parse(serializeSculptTerrain(sphere()));
+  delete old.spheres[0].summitRatio;delete old.spheres[0].wallMaterial;
+  const legacy=importSculptTerrain(old);
+  assert.equal(sculptSphereDisplacementAt(legacy,x+r*.5,y),3*Math.sqrt(.75));
+  const colorFor=wallMaterial=>{
+    const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:4,wallMaterial});
+    const colors=[];
+    const ctx={fillStyle:'',strokeStyle:'',lineWidth:1,
+      save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},
+      ellipse(){},arc(){},clip(){},fill(){colors.push(this.fillStyle);},stroke(){},
+      createPattern(){return null;}};
+    drawSculptSphereMeshes(ctx,{terrain:t,tile,baseColor:'#677955',
+      rockPaletteColors:['#bea28c','#947c70','#6c6064','#4b4a56']});
+    return colors;
+  };
+  assert.ok(colorFor('rock').includes('#947c70'));
+  assert.ok(colorFor('grass').includes('#638c45'));
+  assert.ok(colorFor('earth').includes('#94765a'));
+  const mesh=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.doesNotMatch(mesh,/paintContours\\(ctx/,'no permanent concentric brush rings on authored relief');
+  assert.match(html,/id="sphere-summit-ratio"/);
+  assert.match(html,/id="sphere-wall-material"/);
+  assert.match(main,/spherePreviewDismissed=true;hoverCell=null;scheduleDraw/);
+  assert.match(main,/summitRatio:Number\\(\\$\\('sphere-summit-ratio'\\)\\.value\\)\\/100/);
+});
