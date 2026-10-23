@@ -140,6 +140,67 @@ function shadeLayer(ctx,faces,color){
   for(const face of faces)quad(ctx,face.q);
   ctx.fillStyle=color;ctx.fill();
 }
+// V76 R10: A capped hill is ONE front-facing frustum curtain rather than
+// hundreds of independently projected overlapping annular quads. Those quads
+// fold and overlap in screen space on steep cones, causing the triangular
+// rock spikes and bare texture holes reported for small summits on Pixel.
+// Keep the original analytic mesh/cache; assemble the two correct silhouettes
+// from its already-projected nodes and from the same summit seam (R8).
+export function sculptSphereFrustumContours(terrain,sphere,tile){
+  if(sphere?.kind!=='hill'||!(sphere.summitRatio>0))return null;
+  const mesh=projectedMesh(terrain,sphere,tile);
+  const idx=mesh.radii.findIndex(r=>Math.abs(r-mesh.border)<1e-9);
+  if(idx<0)throw Error('The canonical summit ring is missing from frustum');
+  const cap=mesh.nodes[idx],foot=mesh.nodes[mesh.nodes.length-1];
+  // The visible front is the SOUTH (positive-world-Y) semicircle. Front
+  // wall starts exactly where the green cap ends, with no independent radius.
+  const topFront=cap.slice(0,SECTORS/2+1);
+  const baseFront=foot.slice(0,SECTORS/2+1);
+  return Object.freeze({cap,topFront,baseFront,
+    seamRadius:mesh.border*sphere.radius,baseRadius:sphere.radius});
+}
+function circleContour(ctx,points){
+  ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+  for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
+  ctx.closePath();
+}
+function frustumCurtainContour(ctx,profile){
+  const {topFront,baseFront}=profile;
+  ctx.beginPath();ctx.moveTo(topFront[0].x,topFront[0].y);
+  for(let i=1;i<topFront.length;i++)
+    ctx.lineTo(topFront[i].x,topFront[i].y);
+  for(let i=baseFront.length-1;i>=0;i--)
+    ctx.lineTo(baseFront[i].x,baseFront[i].y);
+  ctx.closePath();
+}
+function paintContinuousFrustum(ctx,terrain,sphere,tile,groundColor,material,
+  lighting,vertical,side,foot,tone){
+  const contour=sculptSphereFrustumContours(terrain,sphere,tile);
+  const x=sphere.x,y=sphere.y-sphere.baseLevel*tile.rise,
+    topY=y-sphere.height*tile.rise;
+  // 1. Fill the ENTIRE cap as a single closed disk, including a tiny summit.
+  // No tessellated annuli = no self-intersecting fill-rule holes.
+  circleContour(ctx,contour.cap);
+  ctx.fillStyle=groundColor;ctx.fill();
+  if(lighting.topTone!==0){ctx.fillStyle=tone;ctx.fill();}
+  // An organic-looking shaded shoulder strictly inside the cap, never a
+  // larger grass overhang or a hard black circumference.
+  const capShade=gradient(ctx,x,topY-contour.seamRadius,
+    x,topY+contour.seamRadius,
+    ['rgba(17,35,34,.18)','rgba(17,35,34,.015)','rgba(72,52,36,.13)'],
+    'rgba(17,35,34,.10)');
+  ctx.fillStyle=capShade;ctx.fill();
+  // 2. The wall is a single contiguous SOUTH curtain between the same
+  // summit ring and the outer foot. A conical wall thus has a coherent
+  // semicircular base and uninterrupted taper even for a 5% summit.
+  // One anchored image pattern (not per-triangle UVs) and three shared
+  // lighting passes preserve the R5/7 visual language and performance.
+  frustumCurtainContour(ctx,contour);
+  ctx.fillStyle=material.color;ctx.fill();
+  ctx.fillStyle=vertical;ctx.fill();
+  ctx.fillStyle=side;ctx.fill();
+  ctx.fillStyle=foot;ctx.fill();
+}
 function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   const mesh=projectedMesh(terrain,sphere,tile);
   const ground=worldPattern(ctx,texture);
@@ -192,8 +253,15 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   const tone=lighting.topTone>0
     ?'rgba(251,243,206,'+lighting.topTone+')'
     :'rgba(15,35,39,'+(-lighting.topTone)+')';
-  // Preserve R6's validated occlusion order: the REAR rock/side shading goes
-  // behind the green crown; only the near wall may overlap its front rim.
+  // R10: capped HILLS are genuine front-facing cone/cylinder silhouettes.
+  // The old triangulated rear/front painter remains for the pure round dome
+  // (summit=0) and excavated basins; its shared collision model is untouched.
+  if(sphere.kind==='hill'&&(sphere.summitRatio??0)>0){
+    paintContinuousFrustum(ctx,terrain,sphere,tile,groundColor,material,
+      lighting,vertical,side,foot,tone);
+    return mesh;
+  }
+  // Preserve R6's validated occlusion order on legacy round reliefs.
   fillLayer(ctx,mesh.faces,groundColor);
   fillLayer(ctx,rearWalls,material.color);
   shadeLayer(ctx,rearWalls,vertical);
