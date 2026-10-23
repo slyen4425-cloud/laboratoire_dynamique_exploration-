@@ -272,14 +272,16 @@ test('V76 R6 far wall dark crescent stays BEHIND continuous full grassy summit',
     drawSculptSphereMeshes(ctx,{terrain:t,tile,texture:groundImage,
       sphereWallImages:{earth:earthImage}});
     const earth=fills.flatMap((f,i)=>f.style?.image===earthImage?[i]:[]);
-    const grass=fills.flatMap((f,i)=>f.style?.image===groundImage?[i]:[]);
+    const crown=fills.flatMap((f,i)=>kind==='hill'
+      ?(f.style?.image===groundImage?[i]:[])
+      :(f.style==='#35483f'?[i]:[]));
     const rearShade=fills.findIndex(f=>f.style===
       (kind==='hill'?'rgba(19,27,29,.24)':'rgba(7,17,29,.35)'));
     assert.equal(earth.length,2,'two seamless rock walls: back and foreground');
-    assert.equal(grass.length,2,'full base then full raised crown');
-    assert.ok(earth[0]<rearShade&&rearShade<grass[1]&&grass[1]<earth[1],
-      'far rock + shaded crescent are below grassy crown; foreground rock above');
-    assert.ok(fills[grass[1]].count>15,'the entire summit surface is filled');
+    assert.equal(crown.length,2,'base then crown/floor drawn as separate layers');
+    assert.ok(earth[0]<rearShade&&rearShade<crown[1]&&crown[1]<earth[1],
+      'far wall and shade are below the upper surface; near wall above');
+    assert.ok(fills[crown[1]].count>15,'the entire summit/floor surface is filled');
   }
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.ok(main.includes('spherePreviewDismissed=false;'));
