@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-continuous-flank-v76-r10-no-triangle-spikes-2026-10-23
+# preview-revision: sphere-depth-v76-r11-brighter-grass-radial-rim-small-collision-clearance-2026-10-23
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 0a568f9a6f1483069a21bbe8607d365c20f52958
+          ref: ec5f4ed79e448693fbc434c7e06f1d04dac624e5
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
