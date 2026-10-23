@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-perf-v76-r5-hd-textures-rear-volume-and-cache-2026-10-23
+# preview-revision: sphere-cap-guide-v76-r6-continuous-grass-brush-2026-10-23
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 195ff6a5975a1307ce26fbc5fd53520496a5bd2f
+          ref: bfff4855395930bb134f7e48dec18ee15198479a
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
