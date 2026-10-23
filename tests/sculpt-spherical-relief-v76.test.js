@@ -7,7 +7,7 @@ import {createSculptTerrain,appendSculptSphere,removeSculptSphereAt,
 import {sculptNavigationBlockDetail} from '../src/core/sculpt-navigation-collision.js';
 import {stepMovement} from '../src/core/movement.js';
 import {isBlocked} from '../src/core/collision.js';
-import {drawSculptSphereMeshes} from '../src/render/sculpt-sphere-mesh.js';
+import {drawSculptSphereMeshes,sculptSphereProjectedPoint} from '../src/render/sculpt-sphere-mesh.js';
 
 const tile={width:28,height:21,rise:18};
 const base=()=>createSculptTerrain({width:40,height:40});
@@ -78,7 +78,7 @@ test('V76 renderer samples the same true spherical surface without cell-stroke a
   const t=sphere(),frames=[];
   const ctx={fillStyle:'',strokeStyle:'',lineWidth:1,
     save(){},restore(){},beginPath(){},moveTo(a,b){frames.push([a,b]);},
-    lineTo(){},closePath(){},fill(){},ellipse(){},stroke(){},
+    lineTo(){},closePath(){},fill(){},ellipse(){},arc(){},clip(){},stroke(){},
     createPattern(){return null;}};
   assert.equal(drawSculptSphereMeshes(ctx,{terrain:t,tile}),1);
   assert.ok(frames.length>700,'actual radial polygons from geometric profile');
@@ -87,4 +87,46 @@ test('V76 renderer samples the same true spherical surface without cell-stroke a
   assert.match(html,/data-mode="sphere-hill"/);
   assert.match(html,/data-mode="sphere-basin"/);
   assert.match(html,/sphere-v76/);
+});
+
+test('V76 R2 hill and basin project real 1/3/7-level vertical relief, not flat discs',()=>{
+  for(const kind of ['hill','basin']){
+    for(const height of [1,3,7]){
+      const t=appendSculptSphere(base(),{kind,x,y,radius:r,height});
+      const f=t.spheres[0],center=sculptSphereProjectedPoint(t,f,0,0,tile);
+      const edge=sculptSphereProjectedPoint(t,f,1,0,tile);
+      assert.equal(Math.round((edge.y-center.y)/tile.rise),
+        kind==='hill'?height:-height,`kind ${kind} amplitude ${height}`);
+      assert.equal(edge.level,2);
+      assert.equal(center.level,kind==='hill'?2+height:2-height);
+    }
+  }
+});
+test('V76 R2 painter draws visible mineral flanks, contact shadow and a clipped recessed cavity',()=>{
+  const draw=kind=>{
+    const fills=[],shapes=[],strokes=[];
+    const ctx={fillStyle:'',strokeStyle:'',lineWidth:1,
+      save(){},restore(){},beginPath(){},moveTo(x,y){shapes.push({x,y});},
+      lineTo(){},closePath(){},ellipse(){},arc(){},clip(){strokes.push('clipped');},
+      fill(){fills.push(this.fillStyle);},stroke(){strokes.push(this.strokeStyle);},
+      createPattern(){return null;}};
+    drawSculptSphereMeshes(ctx,{terrain:sphere(kind),tile,baseColor:'#677955',
+      rockPaletteColors:['#ded2be','#ad9f88','#776b5b','#3b4146']});
+    return {fills,shapes,strokes};
+  };
+  const hill=draw('hill'),pit=draw('basin');
+  assert.ok(hill.fills.includes('rgba(12,24,27,.29)'),'ground contact shadow');
+  assert.ok(hill.fills.includes('#ad9f88')||hill.fills.includes('#776b5b')||
+    hill.fills.includes('#3b4146'),'mineral height flanks');
+  assert.ok(!hill.strokes.includes('clipped'),'hill rises above host perimeter');
+  assert.ok(pit.strokes.includes('clipped'),'cavity is carved within circular rim');
+  assert.ok(pit.fills.includes('#182b32'),'dark opening below host surface');
+  assert.ok(pit.fills.some(s=>String(s).includes('rgba(9,18,32,')),
+    'recessed walls are darker than ordinary ground');
+  assert.ok(hill.shapes.length>1000&&pit.shapes.length>1000);
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.match(html,/id="height-label"/);
+  assert.match(html,/sphere-v76-volume-r2/);
+  assert.match(main,/mode==='sphere-basin'\?'Profondeur'/);
 });
