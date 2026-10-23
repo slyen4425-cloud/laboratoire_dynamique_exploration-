@@ -36,7 +36,7 @@ function rockColor(rockPaletteColors,angle,band){
   const index=bounded(Math.floor(band+1.05-light*.88),0,3);
   return palette[index];
 }
-function paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors){
+function paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors,rockPattern){
   const faces=[];
   for(let ring=0;ring<BANDS;ring++){
     const inner=ring/BANDS,outer=(ring+1)/BANDS;
@@ -46,7 +46,7 @@ function paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors)
         sculptSphereProjectedPoint(terrain,sphere,inner,b,tile),
         sculptSphereProjectedPoint(terrain,sphere,outer,b,tile),
         sculptSphereProjectedPoint(terrain,sphere,outer,a,tile)];
-      faces.push({quad,inner,outer,angle:(a+b)/2,
+      faces.push({quad,inner,outer,ring,sector,angle:(a+b)/2,
         depth:quad.reduce((v,p)=>v+p.worldY,0)/4});
     }
   }
@@ -55,7 +55,12 @@ function paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors)
   for(const face of faces){
     const {inner,angle,quad}=face;
     const isHill=sphere.kind==='hill';
-    const isWall=isHill?inner>=.53:inner>=.33;
+    // Wall vs terrace follows the authored plateau radius, not a flat ring
+    // texture that could disagree with the canonical height profile.
+    const summit=sphere.summitRatio??0;
+    const flank=Math.max(0,(inner-summit)/(1-summit));
+    const isWall=isHill?flank>=.53:flank>=.33;
+    const wallMaterial=sphere.wallMaterial??'rock';
     const light=Math.cos(angle-3.9);
     ctx.beginPath();ctx.moveTo(quad[0].x,quad[0].y);
     for(let i=1;i<quad.length;i++)ctx.lineTo(quad[i].x,quad[i].y);
@@ -63,13 +68,31 @@ function paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors)
     if(isWall){
       // Mineral flanks make the HEIGHT (or DEPTH) obvious even with the
       // exact same grass texture as surrounding ground. Band = actual slope.
-      ctx.fillStyle=rockColor(rockPaletteColors,angle,
-        isHill?(inner>.81?1.7:.8):(inner>.76?1.15:2.15));
+      ctx.fillStyle=wallMaterial==='grass'?(pattern??'#638c45'):
+        wallMaterial==='earth'?(isHill?'#94765a':'#796149'):
+          rockColor(rockPaletteColors,angle,isHill?(flank>.81?1.7:.8):
+            (flank>.76?1.15:2.15));
     }else{
       ctx.fillStyle=isHill?(pattern??baseColor):'#35483f';
     }
     ctx.fill();
-    const slope=inner/Math.sqrt(Math.max(.005,1-inner*inner));
+    // Optical shading follows the actual flank rather than the global radius:
+    // a wide flat summit must stay flat, even on a high column.
+    if(isWall&&rockPattern&&wallMaterial!=='grass'){
+      ctx.fillStyle=rockPattern;ctx.globalAlpha=wallMaterial==='rock'?.32:.16;
+      ctx.fill();ctx.globalAlpha=1;
+    }
+    if(isWall&&face.ring%2===0&&face.sector%4===0){
+      // Sparse mineral seams / soil flecks / short grass strokes: visible
+      // texture even if the user has no external atlas loaded on mobile.
+      const a=quad[2],b=quad[3];
+      ctx.beginPath();ctx.moveTo(a.x*.7+b.x*.3,a.y*.7+b.y*.3);
+      ctx.lineTo(a.x*.42+b.x*.58,a.y*.42+b.y*.58);
+      ctx.strokeStyle=wallMaterial==='grass'?'rgba(169,216,130,.56)':
+        wallMaterial==='earth'?'rgba(210,174,120,.49)':'rgba(219,209,190,.40)';
+      ctx.lineWidth=wallMaterial==='grass'?1.1:.7;ctx.stroke();
+    }
+    const slope=flank/Math.sqrt(Math.max(.005,1-flank*flank));
     const directional=bounded(.5-light*.5,0,1);
     const alpha=isHill
       ?bounded(.06+Math.min(1,slope/3)*.21+directional*.22,0,.53)
@@ -80,26 +103,18 @@ function paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors)
     ctx.fill();
   }
 }
-function paintContours(ctx,terrain,sphere,tile){
-  // Each contour follows the real surface: the rings get taller for hills
-  // and descend for basins. They are NOT concentric flat painted circles.
-  for(const ratio of [.26,.51,.75,.91]){
-    ringPath(ctx,terrain,sphere,ratio,tile);
-    ctx.lineWidth=ratio>.86?1.8:1.1;
-    ctx.strokeStyle=sphere.kind==='hill'
-      ?'rgba(233,220,190,'+(ratio>.86?.24:.17)+')'
-      :'rgba(155,181,192,'+(ratio>.86?.29:.20)+')';
-    ctx.stroke();
-  }
-}
 export function drawSculptSphereMeshes(ctx,{
-  terrain,tile,texture=null,baseColor='#677955',rockPaletteColors=null
+  terrain,tile,texture=null,baseColor='#677955',rockPaletteColors=null,rockTexture=null
 }={}){
   if(!terrain?.spheres?.length||!ctx)return 0;
   const pattern=texture&&typeof ctx.createPattern==='function'
     ?ctx.createPattern(texture,'repeat'):null;
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
     pattern.setTransform(new DOMMatrix().scale(.55));
+  const rockPattern=rockTexture&&typeof ctx.createPattern==='function'
+    ?ctx.createPattern(rockTexture,'repeat'):null;
+  if(rockPattern?.setTransform&&typeof DOMMatrix!=='undefined')
+    rockPattern.setTransform(new DOMMatrix().scale(.24));
   for(const sphere of terrain.spheres){
     const cy=sphere.y-sphere.baseLevel*tile.rise;
     const r=sphere.radius;
@@ -120,14 +135,14 @@ export function drawSculptSphereMeshes(ctx,{
       ctx.clip();
       ctx.fillStyle='#182b32';ctx.fill();
     }
-    paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors);
-    paintContours(ctx,terrain,sphere,tile);
+    paintFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors,rockPattern);
+    // R3: no permanent concentric guide rings. Brush circles are editor-only.
     ctx.restore();
     // A single canonical circular rim, like the actual collision outline.
     // The cavity's front lip is deliberately darker than its rear lip.
     ctx.save();
     ringPath(ctx,terrain,sphere,1,tile);
-    ctx.lineWidth=sphere.kind==='hill'?2.2:3;
+    ctx.lineWidth=sphere.kind==='hill'?1.1:2.5;
     ctx.strokeStyle=sphere.kind==='hill'
       ?'rgba(47,57,45,.68)':'rgba(15,28,34,.83)';
     ctx.stroke();ctx.restore();
