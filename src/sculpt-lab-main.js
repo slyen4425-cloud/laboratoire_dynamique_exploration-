@@ -45,6 +45,7 @@ const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
+let spherePreviewDismissed=false;
 let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
@@ -353,7 +354,8 @@ function draw(){
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
-  if(!navigationTesting&&!objectEditing&&!surfaceEditing&&displayCell&&(precisionOn||$('preview-cursor').checked)){
+  if(!navigationTesting&&!objectEditing&&!surfaceEditing&&displayCell&&(precisionOn||$('preview-cursor').checked)&&
+     (!selectedMode.startsWith('sphere-')||!spherePreviewDismissed)){
     const points=precisionOn?[{x:displayCell.x+.5,y:displayCell.y+.5}]
       :drawing&&strokePoints.length?strokePoints:[{x:displayCell.x+.5,y:displayCell.y+.5}];
     const base=drawing&&strokeUndo ? strokeUndo : terrain;
@@ -458,10 +460,13 @@ function precisionApply(){
     terrain=selectedMode==='sphere-erase'?removeSculptSphereAt(previous,x,y):
       appendSculptSphere(previous,{kind:selectedMode==='sphere-hill'?'hill':'basin',
         x,y,radius:Number($('radius').value)*SCULPT_TILE.width,
-        height:Math.max(1,Number($('target').value))});
+        height:Math.max(1,Number($('target').value)),
+        summitRatio:Number($('sphere-summit-ratio').value)/100,
+        wallMaterial:$('sphere-wall-material').value});
   }else terrain=water?applySculptWaterStroke(previous,options):
     applySculptStroke(previous,{...options,rockRoundness:Number($('visual-smooth').value)});
   commitUndo(previous);
+  if(selectedMode.startsWith('sphere-'))spherePreviewDismissed=true;
   status(terrain!==previous?'Case ('+(cell.x+1)+','+(cell.y+1)+') appliquée · Annuler disponible':
     'Aucun changement à cet emplacement');
   scheduleDraw();
@@ -529,7 +534,8 @@ function adjustBrushSize(delta){
 function selectMode(mode){
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
-  if(nextKind==='water')lastWaterMode=mode;else lastGroundMode=mode;
+  spherePreviewDismissed=false;
+  if(nextKind==='water'lastWaterMode=mode;else lastGroundMode=mode;
   // Quickbar can be used while Objects or Textures is active even when the
   // last terrain kind was already 'ground'. Always exit the overlay editor.
   if(editorKind!==nextKind||objectEditing||surfaceEditing)setEditorKind(nextKind);
@@ -541,6 +547,7 @@ function selectMode(mode){
   });
   syncQuickToolbar();
   $('hill-radius-wrap').hidden=mode!=='cliff-round';
+  $('sphere-profile-wrap').hidden=mode!=='sphere-hill'&&mode!=='sphere-basin';
   $('height-label').textContent=mode==='sphere-basin'?'Profondeur':mode==='sphere-hill'?'Hauteur de colline':'Hauteur du plateau';
   $('target').min=mode==='sphere-hill'||mode==='sphere-basin'?'1':'0';
   if(mode==='sphere-hill'||mode==='sphere-basin'){
@@ -568,8 +575,8 @@ function selectMode(mode){
     flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
     'cliff-round':'Colline ronde : règle 150 % et TOUCHE UNE FOIS LE MILIEU du sommet vert. Le contour entier de ce plateau s’arrondit (pas seulement la case). 95 % = aspect initial. Altitudes et eau inchangées.',
     plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
-    'sphere-hill':'V76 : touche un terrain PLAT et SEC pour une vraie calotte sphérique, sans cases. Taille = rayon ; hauteur = élévation centrale. Pentes non accessibles avant V77.',
-    'sphere-basin':'V76 : touche un terrain PLAT et SEC pour une cavité sphérique circulaire réelle. Taille = rayon ; hauteur = profondeur centrale. Accès futur par pente V77.',
+    'sphere-hill':'V76 R3 : zone sèche et plane. Taille = rayon extérieur ; largeur du sommet = plateau ; flancs = roche/herbe/terre. Pente V77.',
+    'sphere-basin':'V76 R3 : zone sèche et plane. Taille = rayon ; largeur du sommet = fond plat ; flancs texturés. Pente V77.',
     'sphere-erase':'V76 : touche une colline/cavité sphérique pour la supprimer, sans modifier les cases.',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
@@ -621,6 +628,7 @@ function begin(event){
     return;
   }
   const cell=screenToCell(event);if(!cell)return;
+  spherePreviewDismissed=false;
   hoverCell=cell;
   event.preventDefault();canvas.setPointerCapture(event.pointerId);
   if(objectEditing){
@@ -702,6 +710,7 @@ function stroke(event){
   if($('precision-mode').checked)return;
   if(!drawing){
     if(event.pointerType==='touch')return;
+    spherePreviewDismissed=false;
     hoverCell=screenToCell(event);
     scheduleDraw();return;
   }
@@ -718,7 +727,9 @@ function stroke(event){
     terrain=selectedMode==='sphere-erase'?removeSculptSphereAt(before,x,y):
       appendSculptSphere(before,{kind:selectedMode==='sphere-hill'?'hill':'basin',
         x,y,radius:Number($('radius').value)*SCULPT_TILE.width,
-        height:Math.max(1,Number($('target').value))});
+        height:Math.max(1,Number($('target').value)),
+        summitRatio:Number($('sphere-summit-ratio').value)/100,
+        wallMaterial:$('sphere-wall-material').value});
     if(terrain===before)status('V76 : choisissez une zone plane et sèche, avec assez de place pour tout le cercle.');
     scheduleDraw();return;
   }
@@ -780,6 +791,7 @@ function stop(event){
   }
   if(precisionDragging){
     precisionDragging=false;
+    spherePreviewDismissed=false;
     updatePrecisionActions();
     return;
   }
@@ -788,6 +800,7 @@ function stop(event){
     strokeUndo=null;
   }
   drawing=false;lastCell='';strokePoints=[];
+  if(selectedMode.startsWith('sphere-')){spherePreviewDismissed=true;hoverCell=null;scheduleDraw();}
 }
 
 /* V17 isolated gameplay probe. Position and movement use the existing Exploration
@@ -1733,6 +1746,11 @@ $('zoom').addEventListener('input',()=>{
  pan.x=width/2-(width/2-pan.x)*zoom/old;
  pan.y=height/2-(height/2-pan.y)*zoom/old;scheduleDraw();
 });
+$('sphere-summit-ratio').addEventListener('input',()=>{
+  $('sphere-summit-ratio-value').textContent=$('sphere-summit-ratio').value+' %';
+  spherePreviewDismissed=false;scheduleDraw();
+});
+$('sphere-wall-material').addEventListener('change',()=>{spherePreviewDismissed=false;scheduleDraw();});
 $('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;scheduleDraw();});
 $('brush-shape').addEventListener('change',()=>{scheduleDraw();status('Forme du pinceau : '+$('brush-shape').selectedOptions[0].textContent);});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;scheduleDraw();});
@@ -1782,6 +1800,9 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
+  sphereGuideVisible:!spherePreviewDismissed&&selectedMode.startsWith('sphere-'),
+  summitRatio:Number($('sphere-summit-ratio').value)/100,
+  wallMaterial:$('sphere-wall-material').value,
   objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
   paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
   width:terrain.width,height:terrain.height,materialId:$('material').value,
