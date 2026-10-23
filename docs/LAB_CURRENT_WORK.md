@@ -1,3 +1,15 @@
+# Lot V76 R7 — 23/10/2026 — Ombres des reliefs sphériques comme les hauteurs standards (NON GREEN Pixel)
+
+- **Retour utilisateur V76 R6** : mieux, mais ombrage roche/herbe insuffisant et contours externes plats. Demande volume lumineux équivalent aux reliefs standards.
+- **Dernier GREEN** : V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`. **Base R6** : `bfff4855395930bb134f7e48dec18ee15198479a`.
+- **START immuable** : `checkpoint/exploration-start-sphere-lighting-v76-r7-2026-10-23`. **Branche unique** : `work/exploration-sphere-lighting-v76-r7-2026-10-23`.
+- **Travaux strictement visuels** : gradients du haut vers le pied de relief, lumière directionnelle roche/herbe/terre, ombrage progressif des bords externes/du sommet, contact plus sombre pour grande hauteur. Conserver texture native et ordre des couches R6.
+- **Gels** : World Model/Collision World, V75, escaliers V78 et pente V77, ponts, cascades, textures et assets, sauvegarde, caméra, cache et performances validées R5.
+- **Tests et gouvernance** : `tests/sculpt-spherical-relief-v76.test.js`, CI Node + Chromium Sculpt/Builder/Combat, SHA final, comparaison sans asset modifié, publication Preview par pin d'infra seulement. Voir `docs/checkpoints/EXPLORATION_SPHERE_LIGHTING_V76_R7_PREVALIDATION_2026-10-23.md`.
+- **Statut** : NON GREEN avant retour Pixel.
+
+---
+
 # Lot V76 R6 — 23/10/2026 — Plateau herbeux continu et guide toujours prêt (NON GREEN Pixel)
 
 - **Retour R5** : fluidité approuvée en test utilisateur ; guide de pose disparaît aussitôt ; sommet herbeux des colonnes partiellement masqué par les flancs arrière (capture).
