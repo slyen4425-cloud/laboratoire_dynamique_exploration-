@@ -2,7 +2,7 @@
 // authority: it calls this pure geometry check through collisionContext only.
 // Never persist this preview adapter in WorldDocument or a gameplay save.
 import {sculptHeightAt,sculptWaterAt,sculptSphereAt,
-  sculptSphereDisplacementAt} from '../world/sculpt-height-model.js';
+  sculptSphereDisplacementAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
 
