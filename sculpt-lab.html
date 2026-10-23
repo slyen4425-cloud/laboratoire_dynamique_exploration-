@@ -346,10 +346,10 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 </select></label>
 <div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
   <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
-    <input id="sphere-summit-ratio" type="range" min="0" max="85" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
+    <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
   <label class="control" for="sphere-wall-material">Flancs
     <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
-  <small>0 % : sphère arrondie · 50 % : plateau large · 85 % : colonne à plateau. S’applique aux prochains reliefs.</small>
+  <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
 </div>
 <label id="hill-radius-wrap" class="control hill-radius-control" hidden>1. Touche le sommet · Arrondi <b id="visual-smooth-value">150 %</b>
 <input id="visual-smooth" type="range" min="0" max="150" value="150" step="5" aria-label="Arrondir un plateau entier : choisir 150 %, puis toucher une seule fois le milieu du sommet herbeux"></label>
@@ -608,6 +608,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9"></script>
 </body>
 </html>
