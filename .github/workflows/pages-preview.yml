@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-visual-v76-r3-plateau-textures-cursor-preserve-v75-and-waterfalls-2026-10-23
+# preview-revision: sphere-visual-v76-r4-smooth-flanks-floating-controls-precise-guide-2026-10-23
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 94d2ffca9a8340f20720f7f7b90e41974143f07e
+          ref: 7236f81591b326f732acacf82d7dc6d97771a292
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
