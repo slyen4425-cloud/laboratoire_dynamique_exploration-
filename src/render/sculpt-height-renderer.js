@@ -687,6 +687,7 @@ function sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,{capLeft=true,ca
 }
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,visualSmoothness=.72,
+  sphereWallImages=null,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
@@ -875,6 +876,6 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
   const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,
-    rockPaletteColors:colors,rockTexture:cliffAtlas??cliffHD});
+    rockPaletteColors:colors,rockTexture:cliffHD,rockPalette,sphereWallImages});
   return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,worldWidth:totalWidth,worldHeight:totalHeight};
 }
