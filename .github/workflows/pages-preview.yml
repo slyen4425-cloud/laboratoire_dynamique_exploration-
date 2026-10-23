@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-contact-v76-r8-exact-shared-grass-rock-ring-2026-10-23
+# preview-revision: sphere-frustum-v76-r9-100percent-and-projected-collision-2026-10-23
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 356bdfb83b19fa10ee4f06db3612fe0f036cbeab
+          ref: f5ca685a5ff3e6f9063f389cee12c873ec6caf63
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
