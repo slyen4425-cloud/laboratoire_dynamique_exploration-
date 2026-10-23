@@ -82,6 +82,11 @@ export function sculptSphereProjectionBlock(terrain,x,y,{
   const ground=sculptNavigationSample(terrain,x,y,{cellWidth,cellHeight});
   if(!ground)return null;
   const bodyRadius=Math.max(0,Number(radius)||0);
+  // Small upper-lip safety margin owned by Collision World, scaled to
+  // the actual actor footprint. At 205% camera zoom a 3–4 world-pixel
+  // premature overlap is visibly large; this prevents feet reaching the
+  // grass artwork while still physically on low ground. No texture test.
+  const clearance=Math.min(6,Math.max(2,bodyRadius*.8));
   for(const hill of terrain.spheres??[]){
     if(hill.kind!=='hill'||hill.height<=0||ground.level!==hill.baseLevel)continue;
     const dx=x-hill.x,absX=Math.abs(dx);
@@ -92,7 +97,7 @@ export function sculptSphereProjectionBlock(terrain,x,y,{
     const northEdge=hill.y-width;
     // The character is physically on LOW GROUND north of the circular foot.
     // Physically entering the foot is already blocked by sculptSphereAt.
-    if(y-bodyRadius>=northEdge+1e-6)continue;
+    if(y-bodyRadius>=northEdge+clearance+1e-6)continue;
     const base=hill.baseLevel*projectionRise;
     const projectedFoot=y-ground.level*projectionRise;
     let upper=Infinity;
@@ -114,10 +119,10 @@ export function sculptSphereProjectionBlock(terrain,x,y,{
       }
     }
     const depth=projectedFoot-upper;
-    if(depth>=-bodyRadius&&projectedFoot<
-      northEdge-base+bodyRadius+1e-6)
+    if(depth>=-bodyRadius-clearance&&projectedFoot<
+      northEdge-base+bodyRadius+clearance+1e-6)
       return Object.freeze({kind:'sphere-projection',id:hill.id,
-        variant:hill.kind,depth,centerX:hill.x,limit:0});
+        variant:hill.kind,depth,centerX:hill.x,clearance,limit:0});
   }
   return null;
 }
