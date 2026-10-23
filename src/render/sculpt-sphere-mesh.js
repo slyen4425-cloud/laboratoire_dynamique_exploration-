@@ -68,10 +68,9 @@ function drawFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors){
     ctx.closePath();
     // Real terrain texture only on the crown or a grass slope. Mineral
     // walls are shaded as a coherent surface: no UV tile per triangle.
-    ctx.fillStyle=isWall&&materials.material!=='grass'
-      ?materials.wall
-      :sphere.kind==='hill'?(pattern??baseColor)
-        :isWall?materials.wall:'#35483f';
+    ctx.fillStyle=isWall
+      ?(materials.material==='grass'&&pattern?pattern:materials.wall)
+      :sphere.kind==='hill'?(pattern??baseColor):'#35483f';
     ctx.fill();
     // Underlying gradient uses identical world coordinates on each polygon.
     ctx.fillStyle=materials.shade;
