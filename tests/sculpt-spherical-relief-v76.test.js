@@ -327,8 +327,8 @@ test('V76 R7 real material persists under vertical/lateral shade and soft outer 
         sphereWallImages:{grass:asset,earth:asset},
         rockPaletteColors:['#ded2be','#ad9f88','#776b5b','#3b4146']});
       const shadeStrings=gradients.flatMap(g=>g.colors).join('|');
-      assert.match(shadeStrings,/rgba\\(16,31,34,/,'vertical depth/contact-shadow family');
-      assert.match(shadeStrings,/rgba\\(245,227,197,/,'standard cliff directional highlight');
+      assert.ok(shadeStrings.includes('rgba(16,31,34,'),'vertical depth/contact-shadow family');
+      assert.ok(shadeStrings.includes('rgba(245,227,197,'),'standard cliff directional highlight');
       assert.ok(gradients.length<9,'gradients are shared at sphere level, not one per cell');
       assert.ok(fills.length<23,'compound path passes prevent 360+ repeated fills');
       assert.ok(fills.includes(kind==='hill'?'rgba(19,27,29,.24)':'rgba(7,17,29,.35)'),
