@@ -182,9 +182,9 @@ test('V76 R3 old spherical JSON remains readable and material options change fla
   const mesh=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
-  assert.doesNotMatch(mesh,/paintContours\\(ctx/,'no permanent concentric brush rings on authored relief');
+  assert.ok(!mesh.includes('paintContours(ctx'),'no permanent concentric brush rings on authored relief');
   assert.match(html,/id="sphere-summit-ratio"/);
   assert.match(html,/id="sphere-wall-material"/);
   assert.match(main,/spherePreviewDismissed=true;hoverCell=null;scheduleDraw/);
-  assert.match(main,/summitRatio:Number\\(\\$\\('sphere-summit-ratio'\\)\\.value\\)\\/100/);
+  assert.ok(main.includes("summitRatio:Number($(\'sphere-summit-ratio\').value)/100"));
 });
