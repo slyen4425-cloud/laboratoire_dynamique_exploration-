@@ -4,6 +4,23 @@ import {sculptSphereDisplacementAt} from '../world/sculpt-height-model.js';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 const TAU=2*Math.PI, SECTORS=36, BANDS=10;
 const meshCache=new WeakMap();
+// The same visual cues used by sculpt-height-renderer.js for standard cliffs:
+// height-dependent terrain tint, contact shadows (max .37), a dark upper lip
+// (max .52), directional rock light (.12 / .19) and a darker cliff foot.
+// No separate height, collision or material authority is introduced here.
+export function sculptSphereReliefLighting(sphere){
+  const levels=Math.max(1,Math.min(7,Number(sphere?.height)||1));
+  const signed=(sphere?.kind==='basin'?-1:1)*levels;
+  return Object.freeze({
+    topTone:Math.max(-.065,Math.min(.105,
+      ((Number(sphere?.baseLevel)||0)+signed-2)*.029)),
+    contactOpacity:Math.min(.37,.19+Math.min(levels,3)*.055),
+    rimOpacity:Math.min(.52,.28+levels*.034),
+    footOpacity:Math.min(.42,.20+levels*.032),
+    lightOpacity:.12,
+    sideOpacity:.19
+  });
+}
 export function sculptSphereProjectedPoint(terrain,sphere,ratio,angle,tile){
   const x=sphere.x+Math.cos(angle)*sphere.radius*ratio;
   const worldY=sphere.y+Math.sin(angle)*sphere.radius*ratio;
@@ -35,7 +52,7 @@ function projectedMesh(terrain,sphere,tile){
       const radial=(band+.5)/BANDS,summit=sphere.summitRatio??0;
       const flank=Math.max(0,(radial-summit)/(1-summit));
       faces.push({q,wall:sphere.kind==='hill'?flank>=.45:flank>=.24,
-        depth:q.reduce((v,p)=>v+p.worldY,0)/4});
+        radial,depth:q.reduce((v,p)=>v+p.worldY,0)/4});
     }
   }
   faces.sort((a,b)=>a.depth-b.depth);
@@ -103,8 +120,6 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   const ground=worldPattern(ctx,texture);
   const groundColor=sphere.kind==='hill'?(ground??baseColor):'#35483f';
   const rearWalls=[],frontWalls=[],crown=[];
-  // Only depth order changes. Each quad still samples the exact World Model.
-  // The rear half has a smaller worldY (the far side of the view).
   for(const face of mesh.faces){
     if(!face.wall)crown.push(face);
     else if(face.depth<sphere.y)rearWalls.push(face);
@@ -112,21 +127,58 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   }
   const material=wallMaterial(ctx,sphere,tile,opts);
   const x=sphere.x,y=sphere.y-sphere.baseLevel*tile.rise,r=sphere.radius;
-  const shade=gradient(ctx,x-r,y-r,x+r,y+r,
-    ['rgba(246,230,194,.08)','rgba(20,27,25,0)','rgba(11,20,26,.35)'],
-    'rgba(11,20,26,.15)');
-  // Background first. Back-facing rocks and their dark crescent MUST go
-  // BEHIND the grassy top; R5 painted them on top, making a fake hole.
+  const lighting=sculptSphereReliefLighting(sphere);
+  const rock=sphere.wallMaterial!=='grass';
+  // Standard cliffs use pale upper rock, medium neutral middle, and dark
+  // lower foot. Both gradients are WORLD anchored and reused for all faces.
+  const vertical=gradient(ctx,x,y-r-sphere.height*tile.rise,x,y+r,
+    [
+      rock?'rgba(245,227,197,.09)':'rgba(234,249,210,.07)',
+      'rgba(16,31,34,.05)',
+      'rgba(16,31,34,'+lighting.footOpacity+')'
+    ],'rgba(16,31,34,.16)');
+  const side=gradient(ctx,x-r,y,x+r,y,
+    [
+      'rgba(245,227,197,'+lighting.lightOpacity+')',
+      'rgba(245,227,197,.015)',
+      'rgba(19,30,46,'+lighting.sideOpacity+')'
+    ],'rgba(19,30,46,.10)');
+  const foot=gradient(ctx,x,y-r,x,y+r,
+    ['rgba(16,31,34,0)','rgba(16,31,34,.06)',
+      'rgba(16,31,34,'+lighting.contactOpacity+')'],
+    'rgba(16,31,34,.16)');
+  // Lower outside skirt only, shared by grass/earth/rock and scaled to height.
+  const footRear=rearWalls.filter(f=>f.radial>=.78);
+  const footFront=frontWalls.filter(f=>f.radial>=.78);
+  // The upper grass keeps a lightly illuminated center and a FEATHERED
+  // shadow band where its edge falls into the rock wall. No inked ring.
+  const crownMax=crown.length?Math.max(...crown.map(f=>f.radial)):0;
+  const crownLip=crown.filter(f=>f.radial>=crownMax-.105);
+  const rim=gradient(ctx,x-r,y-r,x+r,y+r,
+    [
+      'rgba(16,31,34,'+(lighting.rimOpacity*.74)+')',
+      'rgba(16,31,34,'+(lighting.rimOpacity*.15)+')',
+      'rgba(16,31,34,'+lighting.rimOpacity+')'
+    ],'rgba(16,31,34,.20)');
+  const tone=lighting.topTone>0
+    ?'rgba(251,243,206,'+lighting.topTone+')'
+    :'rgba(15,35,39,'+(-lighting.topTone)+')';
+  // Preserve R6's validated occlusion order: the REAR rock/side shading goes
+  // behind the green crown; only the near wall may overlap its front rim.
   fillLayer(ctx,mesh.faces,groundColor);
   fillLayer(ctx,rearWalls,material.color);
-  shadeLayer(ctx,rearWalls,shade);
+  shadeLayer(ctx,rearWalls,vertical);
+  shadeLayer(ctx,rearWalls,side);
+  shadeLayer(ctx,footRear,foot);
   if(sphere.kind==='basin')shadeLayer(ctx,rearWalls,'rgba(9,18,32,.30)');
   paintRearBand(ctx,sphere,mesh);
-  // The cap/plateau is continuous grass across its FULL radius, including
-  // the far edge. The near rocks can correctly obscure its front rim.
   fillLayer(ctx,crown,groundColor);
+  if(lighting.topTone!==0)shadeLayer(ctx,crown,tone);
+  shadeLayer(ctx,crownLip,rim);
   fillLayer(ctx,frontWalls,material.color);
-  shadeLayer(ctx,frontWalls,shade);
+  shadeLayer(ctx,frontWalls,vertical);
+  shadeLayer(ctx,frontWalls,side);
+  shadeLayer(ctx,footFront,foot);
   if(sphere.kind==='basin')shadeLayer(ctx,frontWalls,'rgba(9,18,32,.30)');
   return mesh;
 }
