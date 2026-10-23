@@ -2589,6 +2589,33 @@ try{
      !v76R4UI.newAimGuide||!v76R4UI.moved)
     throw Error('V76 R4 fullscreen / preview / no persistent guide contract: '+JSON.stringify(v76R4UI));
   console.log('V76 R4 real Chromium fullscreen controls / aim before / guide removed after:',JSON.stringify(v76R4UI));
+  // V76 R5: actual image assets (HD cliff, forest grass and forest earth)
+  // must be loaded before validating that pointer hovering cannot re-bake
+  // all 36x24 ground cells and spherical meshes on each event.
+  const v76R5Before=await run(`(()=>{
+    document.querySelector('#precision-mode').checked=false;
+    document.querySelector('#precision-mode').dispatchEvent(new Event('change',{bubbles:true}));
+    const c=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {probe:window.__sculptLabProbe(),
+      rect:{x:c.x,y:c.y,width:c.width,height:c.height}};
+  })()`);
+  await sleep(180);
+  const v76R5Start=await run(`window.__sculptLabProbe()`);
+  for(let i=0;i<24;i++){
+    const rx=v76R5Before.rect.x+v76R5Before.rect.width*(.24+i%6*.09);
+    const ry=v76R5Before.rect.y+v76R5Before.rect.height*(.24+Math.floor(i/6)*.12);
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rx,y:ry});
+  }
+  await sleep(140);
+  const v76R5End=await run(`window.__sculptLabProbe()`);
+  const v76R5Stats={assets:v76R5End.sphereMaterialAssets,
+    before:v76R5Start.terrainRasterBuilds,after:v76R5End.terrainRasterBuilds,
+    cached:v76R5End.cachedGround,sphereCount:v76R5End.sphereCount};
+  if(!v76R5Stats.assets?.rock||!v76R5Stats.assets?.grass||
+     !v76R5Stats.assets?.earth||!v76R5Stats.cached||
+     v76R5Stats.after-v76R5Stats.before>1)
+    throw Error('V76 R5 assets/cache real Chromium regression: '+JSON.stringify(v76R5Stats));
+  console.log('V76 R5 REAL Chromium canonical HD rock/grass/earth + cached pointer:',JSON.stringify(v76R5Stats));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
