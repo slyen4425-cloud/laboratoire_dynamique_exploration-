@@ -2462,6 +2462,43 @@ try{
     throw Error('V76 real Chromium scene roundtrip or undo/redo failed: '+JSON.stringify(v76Undo));
   console.log('V76 real Chromium one-tap spherical relief / Undo / scene reimport:',
     JSON.stringify({pointer:v76Pointer,feature:v76Drawn.feature,roundtrip:v76Undo}));
+  // V76 R2 actual Chromium Canvas: verify visible depth in REAL pixels,
+  // not only the JSON shape or a mocked draw command in Node.
+  const volumePixels=await run(`(async()=>{
+    const m=await import('./src/world/sculpt-height-model.js');
+    const mesh=await import('./src/render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2');
+    const results=[];
+    for(const kind of ['hill','basin'])for(const height of [1,3,7]){
+      const terrain=m.appendSculptSphere(m.createSculptTerrain({width:40,height:40}),
+        {kind,x:560,y:420,radius:112,height});
+      const sphere=terrain.spheres[0],tile={width:28,height:21,rise:18};
+      const c=document.createElement('canvas');c.width=1120;c.height=840;
+      const ctx=c.getContext('2d',{willReadFrequently:true});
+      ctx.fillStyle='#677955';ctx.fillRect(0,0,c.width,c.height);
+      const count=mesh.drawSculptSphereMeshes(ctx,{terrain,tile,baseColor:'#677955',
+        rockPaletteColors:['#bea28c','#947c70','#6c6064','#4b4a56']});
+      const focus=mesh.sculptSphereProjectedPoint(terrain,sphere,0,0,tile);
+      const pixels=ctx.getImageData(560,240,1,280).data;
+      let distinct=0,dark=0;
+      for(let i=0;i<pixels.length;i+=4){
+        if(pixels[i]!==103||pixels[i+1]!==121||pixels[i+2]!==85)distinct++;
+        if(pixels[i]<70&&pixels[i+1]<90)dark++;
+      }
+      results.push({kind,height,count,distinct,dark,depth:focus.y-
+        (sphere.y-sphere.baseLevel*tile.rise)});
+    }
+    return {results,hillLabel:document.querySelector('#height-label')?.textContent,
+      active:document.querySelector('[data-mode="sphere-hill"]')?.textContent};
+  })()`);
+  if(volumePixels.results.length!==6||volumePixels.results.some(x=>x.count!==1||
+     x.distinct<35||x.dark<10)||
+     !(volumePixels.results.find(x=>x.kind==='hill'&&x.height===7).depth<
+       volumePixels.results.find(x=>x.kind==='hill'&&x.height===1).depth)||
+     !(volumePixels.results.find(x=>x.kind==='basin'&&x.height===7).depth>
+       volumePixels.results.find(x=>x.kind==='basin'&&x.height===1).depth))
+    throw Error('V76 R2 actual Canvas has no clearly drawn volume: '+JSON.stringify(volumePixels));
+  console.log('V76 R2 REAL Chromium mineral hills / clipped crater depths 1/3/7:',
+    JSON.stringify(volumePixels));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
