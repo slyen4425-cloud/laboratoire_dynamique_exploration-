@@ -186,13 +186,29 @@ function paintContinuousFrustum(ctx,terrain,sphere,tile,groundColor,material,
   // No tessellated annuli = no self-intersecting fill-rule holes.
   circleContour(ctx,contour.cap);
   ctx.fillStyle=groundColor;ctx.fill();
-  if(lighting.topTone!==0){ctx.fillStyle=tone;ctx.fill();}
-  // An organic-looking shaded shoulder strictly inside the cap, never a
-  // larger grass overhang or a hard black circumference.
-  const capShade=gradient(ctx,x,topY-contour.seamRadius,
-    x,topY+contour.seamRadius,
-    ['rgba(17,35,34,.18)','rgba(17,35,34,.015)','rgba(72,52,36,.13)'],
-    'rgba(17,35,34,.10)');
+  // R11: upper grass must read as a higher, sunlit surface, not the same
+  // texture brightness as the foot of the hill. One translucent pass is
+  // cheaper than relighting every atlas tile and preserves the R5 raster.
+  const sunlitStrength=Math.min(.22,.065+sphere.height*.025);
+  ctx.fillStyle='rgba(239,255,202,'+sunlitStrength+')';ctx.fill();
+  // The shadow at the edge must follow the WHOLE circular contour.
+  // A vertical gradient on the cap gave a dark semicircle and a flat edge.
+  // Radial soft shading fades in only near the outer 20% of the cap, without
+  // drawing a black stroke, expanding the cap, or creating a second shape.
+  let capShade;
+  if(typeof ctx.createRadialGradient==='function'){
+    capShade=ctx.createRadialGradient(x,topY,contour.seamRadius*.70,
+      x,topY,Math.max(.5,contour.seamRadius));
+    capShade.addColorStop(0,'rgba(15,43,26,0)');
+    capShade.addColorStop(.70,'rgba(16,37,27,.035)');
+    capShade.addColorStop(1,'rgba(9,33,24,'+
+      Math.min(.43,.24+sphere.height*.023)+')');
+  }else{
+    capShade=gradient(ctx,x,topY-contour.seamRadius,
+      x,topY+contour.seamRadius,
+      ['rgba(20,45,28,.21)','rgba(20,45,28,.02)','rgba(20,45,28,.23)'],
+      'rgba(20,45,28,.13)');
+  }
   ctx.fillStyle=capShade;ctx.fill();
   // 2. The wall is a single contiguous SOUTH curtain between the same
   // summit ring and the outer foot. A conical wall thus has a coherent
@@ -204,6 +220,12 @@ function paintContinuousFrustum(ctx,terrain,sphere,tile,groundColor,material,
   ctx.fillStyle=vertical;ctx.fill();
   ctx.fillStyle=side;ctx.fill();
   ctx.fillStyle=foot;ctx.fill();
+  // Additional gentle contact occlusion along the OUTER base of the cone.
+  // Shared one-pass gradient: no per-face work and no hard perimeter line.
+  ctx.fillStyle=gradient(ctx,x,topY,x,y+contour.baseRadius*.7,
+    ['rgba(11,28,24,0)','rgba(11,28,24,.035)','rgba(8,23,23,.20)'],
+    'rgba(8,23,23,.12)');
+  ctx.fill();
 }
 function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   const mesh=projectedMesh(terrain,sphere,tile);
