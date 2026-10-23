@@ -1,3 +1,15 @@
+# Lot V76 R11 — 23/10/2026 — Ajustement collision + profondeur herbe/ombre (NON GREEN Pixel)
+
+- **Retour R10** : « Mieux » ; retouches légères de collision, ombre des bordures à renforcer, herbe en hauteur à éclaircir. **Peaufinage des très petits sommets reporté**, sans ouvrir un chantier supplémentaire.
+- **Base R10** : `0a568f9a6f1483069a21bbe8607d365c20f52958`. Dernier GREEN utilisateur : V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **Checkpoint START** : `checkpoint/exploration-start-sphere-depth-v76-r11-2026-10-23`. **Branche de travail unique** : `work/exploration-sphere-depth-v76-r11-2026-10-23`.
+- **Collision World seulement** : petite marge projetée de l'acteur bornée à 4 unités, sans second maillage ou collision, vol/pon­ts/retrait inchangés.
+- **Rendu seulement** : herbe sommet plus lumineuse avec hauteur 1–7, bord radial naturellement sombre, ombre de contact du pied plus marquée. Préserver les vraies textures, le profil conique et le cache/performance V76 R5/R10.
+- **Gel** : World Model/JSON, très petits sommets, V75, V77 pentes, V78 escaliers, ponts V74, 20 cascades V3, caméra, Builder/Combat, autres mécaniques.
+- **Gates** : Node collision et lumière, Chromium pixels RGB + Sculpt/Builder/Combat, CI SHA final et comparaison sans assets/World Model, publication Pages par PR infra uniquement. **NON GREEN jusqu'au test Pixel**. Voir `docs/checkpoints/EXPLORATION_SPHERE_DEPTH_V76_R11_PREVALIDATION_2026-10-23.md`.
+
+---
+
 # Lot V76 R10 — 23/10/2026 — Paroi conique continue et texture sans pointes (NON GREEN Pixel)
 
 - **Retour sur V76 R9** : à largeur 50 % ou moindre, la roche affiche des pics triangulaires, surfaces creuses et raccord de texture non naturel ; le sommet petit diamètre n'est pas encore correctement porté par la pente.
