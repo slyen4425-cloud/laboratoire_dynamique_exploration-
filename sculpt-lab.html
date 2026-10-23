@@ -212,9 +212,12 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
   border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
 #object-palette[hidden]{display:none!important}
 #hill-radius-wrap[hidden],#sphere-profile-wrap[hidden]{display:none!important}
-#sphere-profile-wrap{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
-#sphere-profile-wrap .control{flex:1 1 195px;min-width:0}
-#sphere-profile-wrap select{min-width:95px}
+#sphere-profile-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
+#sphere-profile-wrap .control{display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
+#sphere-profile-wrap select,#sphere-profile-wrap input[type=range]{width:100%;min-width:0}
+.sculpt-quickbar #sphere-profile-wrap{grid-column:1/-1;min-width:0}
+#sphere-profile-wrap small{color:#adcac1;font-size:.69rem;line-height:1.3}
+body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset 0 0 0 1px #477d76}
 #object-palette label{display:grid;gap:2px}
 #object-variant-wrap[hidden],#object-scale-wrap[hidden],#object-bridge-length-wrap[hidden],#object-bridge-width-wrap[hidden]{display:none!important}
 #object-palette select,#object-palette input[type=range]{width:100%}
@@ -341,6 +344,13 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <option value="square">▦ Carré plein</option>
 <option value="cross">✚ Croix</option>
 </select></label>
+<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
+  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
+    <input id="sphere-summit-ratio" type="range" min="0" max="85" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
+  <label class="control" for="sphere-wall-material">Flancs
+    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
+  <small>0 % : sphère arrondie · 50 % : plateau large · 85 % : colonne à plateau. S’applique aux prochains reliefs.</small>
+</div>
 <label id="hill-radius-wrap" class="control hill-radius-control" hidden>1. Touche le sommet · Arrondi <b id="visual-smooth-value">150 %</b>
 <input id="visual-smooth" type="range" min="0" max="150" value="150" step="5" aria-label="Arrondir un plateau entier : choisir 150 %, puis toucher une seule fois le milieu du sommet herbeux"></label>
 <label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
@@ -530,13 +540,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button data-mode="sphere-hill">🟢 V76 · Colline sphérique réelle</button>
 <button data-mode="sphere-basin">🔵 V76 · Trou sphérique réel</button>
 <button data-mode="sphere-erase">⌫ Effacer relief sphérique</button>
-<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
-  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
-    <input id="sphere-summit-ratio" type="range" min="0" max="85" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
-  <label class="control" for="sphere-wall-material">Flancs
-    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
-  <small>0 % : sphère arrondie · 50 % : plateau large · 85 % : colonne à plateau. S’applique aux prochains reliefs.</small>
-</div>
+
 <button data-mode="plateau">Plateau · hauteur exacte</button>
 <div class="levels" aria-label="Hauteur exacte du plateau">
 <label id="height-label" for="target">Hauteur du plateau</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
@@ -604,6 +608,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4"></script>
 </body>
 </html>
