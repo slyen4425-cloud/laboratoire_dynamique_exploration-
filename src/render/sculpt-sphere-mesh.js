@@ -84,28 +84,50 @@ function wallMaterial(ctx,sphere,tile,{
   const color=pattern??gradient(ctx,x-r,y-r,x+r,y+r,colors,fallback);
   return {color,assetUsed:!!pattern};
 }
+// Paint all faces of one depth layer as ONE Canvas path. Rock/grass assets
+// remain world-anchored; no tile is stamped onto an individual triangle.
+function fillLayer(ctx,faces,color){
+  if(!faces.length)return;
+  ctx.beginPath();
+  for(const face of faces)quad(ctx,face.q);
+  ctx.fillStyle=color;ctx.fill();
+}
+function shadeLayer(ctx,faces,color){
+  if(!faces.length)return;
+  ctx.beginPath();
+  for(const face of faces)quad(ctx,face.q);
+  ctx.fillStyle=color;ctx.fill();
+}
 function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   const mesh=projectedMesh(terrain,sphere,tile);
   const ground=worldPattern(ctx,texture);
-  // Only two compound fills instead of 3,072 individually shaded triangles.
-  // Geometry is built once per immutable sphere/terrain pair.
-  ctx.beginPath();
-  for(const face of mesh.faces)quad(ctx,face.q);
-  ctx.fillStyle=sphere.kind==='hill'?(ground??baseColor):'#35483f';
-  ctx.fill();
-  ctx.beginPath();
-  for(const face of mesh.faces)if(face.wall)quad(ctx,face.q);
+  const groundColor=sphere.kind==='hill'?(ground??baseColor):'#35483f';
+  const rearWalls=[],frontWalls=[],crown=[];
+  // Only depth order changes. Each quad still samples the exact World Model.
+  // The rear half has a smaller worldY (the far side of the view).
+  for(const face of mesh.faces){
+    if(!face.wall)crown.push(face);
+    else if(face.depth<sphere.y)rearWalls.push(face);
+    else frontWalls.push(face);
+  }
   const material=wallMaterial(ctx,sphere,tile,opts);
-  ctx.fillStyle=material.color;ctx.fill();
-  // One continuous world-space light/shade pass over all wall fragments.
   const x=sphere.x,y=sphere.y-sphere.baseLevel*tile.rise,r=sphere.radius;
-  ctx.fillStyle=gradient(ctx,x-r,y-r,x+r,y+r,
+  const shade=gradient(ctx,x-r,y-r,x+r,y+r,
     ['rgba(246,230,194,.08)','rgba(20,27,25,0)','rgba(11,20,26,.35)'],
     'rgba(11,20,26,.15)');
-  ctx.fill();
-  if(sphere.kind==='basin'){
-    ctx.fillStyle='rgba(9,18,32,.30)';ctx.fill();
-  }
+  // Background first. Back-facing rocks and their dark crescent MUST go
+  // BEHIND the grassy top; R5 painted them on top, making a fake hole.
+  fillLayer(ctx,mesh.faces,groundColor);
+  fillLayer(ctx,rearWalls,material.color);
+  shadeLayer(ctx,rearWalls,shade);
+  if(sphere.kind==='basin')shadeLayer(ctx,rearWalls,'rgba(9,18,32,.30)');
+  paintRearBand(ctx,sphere,mesh);
+  // The cap/plateau is continuous grass across its FULL radius, including
+  // the far edge. The near rocks can correctly obscure its front rim.
+  fillLayer(ctx,crown,groundColor);
+  fillLayer(ctx,frontWalls,material.color);
+  shadeLayer(ctx,frontWalls,shade);
+  if(sphere.kind==='basin')shadeLayer(ctx,frontWalls,'rgba(9,18,32,.30)');
   return mesh;
 }
 function paintRearBand(ctx,sphere,mesh){
@@ -139,7 +161,7 @@ export function drawSculptSphereMeshes(ctx,{
     }
     const mesh=paintMesh(ctx,terrain,sphere,tile,texture,baseColor,
       {rockTexture,rockPalette,rockPaletteColors,sphereWallImages});
-    paintRearBand(ctx,sphere,mesh);
+    // Shadow band already painted behind the crown by paintMesh.
     ctx.restore();
   }
   return terrain.spheres.length;
