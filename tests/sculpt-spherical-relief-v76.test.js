@@ -248,9 +248,9 @@ test('V76 R5 real registered material images are painted once across whole curve
       'material paints the entire union of wall faces once, not squares');
   }
   const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
-  assert.match(sculpt,/loadSphereWallImages\\(\\)/);
-  assert.match(sculpt,/navigationTesting\\|\\|objectEditing\\|\\|!drawing/);
+  assert.ok(sculpt.includes('loadSphereWallImages()'));
+  assert.ok(sculpt.includes('navigationTesting||objectEditing||!drawing'));
   const renderer=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
-  assert.match(renderer,/sculptCliffHDLayers\\(rockTexture\\)/);
-  assert.match(renderer,/paintRearBand\\(ctx,sphere,mesh\\)/);
+  assert.ok(renderer.includes('sculptCliffHDLayers(rockTexture)'));
+  assert.ok(renderer.includes('paintRearBand(ctx,sphere,mesh)'));
 });
