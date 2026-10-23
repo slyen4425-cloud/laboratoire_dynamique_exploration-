@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-volume-v76-r2-preserve-bridges-and-waterfalls-v3-2026-10-23
+# preview-revision: sphere-visual-v76-r3-plateau-textures-cursor-preserve-v75-and-waterfalls-2026-10-23
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 43e6082afdaac4c85e2bbaa828d4cb3e8c23b08f
+          ref: 94d2ffca9a8340f20720f7f7b90e41974143f07e
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
