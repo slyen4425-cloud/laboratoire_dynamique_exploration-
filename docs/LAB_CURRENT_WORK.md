@@ -1,3 +1,14 @@
+# Lot V76 R4 — 23/10/2026 — Anti-mosaïque + panneaux immersifs + guide avant placement (NON GREEN Pixel)
+
+- **Retour créateur** : sur V76 R3, flancs constitués de petits carrés, commandes de sommet/matière absentes du panneau flottant plein écran ; cercle noir permanent après pose et aucun guide avant.
+- **Base exacte** : V76 R3 `94d2ffca9a8340f20720f7f7b90e41974143f07e`; GREEN utilisateur V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **START immuable** : `checkpoint/exploration-start-sphere-visual-v76-r4-2026-10-23`; **branche unique** : `work/exploration-sphere-visual-v76-r4-2026-10-23`.
+- **Périmètre** : flancs continus roche/terre/herbe par gradient partagé en coordonnées monde plutôt que texture en quads; aucun anneau sombre permanent; empreinte pointillée avant placement réactivée même sans option générique, y compris sur mobile placement précis. Un seul `sphere-profile-wrap` déplacé vers la barre rapide flottante repliable en mode immersif.
+- **Gels** : géométrie World Model, collisions, vol/nage, ponts V73/V74, 20 cascades V3, caméra, Builder/Combat, anciens JSON. V77 pente marchable et V78 escaliers **non commencés**.
+- **Tests / portes** : tests Node gradients partagés et absence de trace; Chromium plein écran, panneau repliable, empreinte avant/après et export; CI SHA final success obligatoire; checkpoint prévalidation `docs/checkpoints/EXPLORATION_SPHERE_VISUAL_V76_R4_PREVALIDATION_2026-10-23.md`; Pages seulement par PR d'infrastructure épinglant SHA immuable. Pas de GREEN Pixel sans test créateur.
+
+---
+
 # Lot V76 R3 — 23/10/2026 — Flancs texturés, sommets plats paramétrables, guide éphémère (NON GREEN Pixel)
 
 - **Demande créateur** : capture V76 R2 confirme le volume, mais refuse les flancs gris; veut roche/herbe/terre, réglage largeur de sommet (colonne + plateau) et disparition du trait de pinceau après édition.
