@@ -1,10 +1,10 @@
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
-import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js';
+import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
 import {sculptRoundedHillRegions,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
-import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2';
+import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
