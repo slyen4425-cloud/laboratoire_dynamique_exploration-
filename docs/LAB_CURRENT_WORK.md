@@ -1,3 +1,16 @@
+# Lot V76 R10 — 23/10/2026 — Paroi conique continue et texture sans pointes (NON GREEN Pixel)
+
+- **Retour sur V76 R9** : à largeur 50 % ou moindre, la roche affiche des pics triangulaires, surfaces creuses et raccord de texture non naturel ; le sommet petit diamètre n'est pas encore correctement porté par la pente.
+- **Dernier GREEN** V75 R2 : `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`. **Base R9** `f5ca685a5ff3e6f9063f389cee12c873ec6caf63`.
+- **Checkpoint START** : `checkpoint/exploration-start-sphere-continuous-flank-v76-r10-2026-10-23`. **Branche unique** : `work/exploration-sphere-continuous-flank-v76-r10-2026-10-23`.
+- **Renderer propriétaire de la présentation seulement** : remplacer les quads rocheux qui se croisent en écran par un seul rideau SUD continu reliant exactement le bord herbeux au demi-cercle du sol. Corriger l'échantillonnage de la limite r=1 contre les erreurs d'arrondi flottant. Les textures HD/Forest et éclairages existants restent la seule source.
+- **Garanties** : sommet 5–100 %, plateau 0 % sphérique historique, cavités, 100 % cylindre, JSON, cache/perf R5, guide R6, ombres R7, projection/collision R9 inchangés ; V75, ponts V74 et cascades V3 gelés.
+- **Gates** : tests Node sur contours, tests Chromium réels 5/20/50/75/100 % sans pixels transparents sur le mur, CI au SHA final, comparaison sans mutation assets et publication Pages par PR infra seulement.
+- **V77/V78 gelés ; R10 NON GREEN tant que le créateur n'a pas testé sur Pixel.**
+- Voir `docs/checkpoints/EXPLORATION_SPHERE_CONTINUOUS_FLANK_V76_R10_PREVALIDATION_2026-10-23.md`.
+
+---
+
 # Lot V76 R9 — 23/10/2026 — Colline conique + sommet rond 100 % + verrou visuel à pied (NON GREEN Pixel)
 
 - **Retour V76 R8** : joueur au niveau bas visible sur l'herbe du sommet ; la forme à plateau ressemble à deux cercles superposés au lieu d'une base demi-circulaire et des flancs tronconiques ; pourcentage sommet plafonné à 85 % au lieu de 100 %.
