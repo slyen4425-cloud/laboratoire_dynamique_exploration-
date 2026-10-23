@@ -3,8 +3,8 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt} from './world/sculpt-height-model.js';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76';
-import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2';
+import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
@@ -536,7 +536,10 @@ function selectMode(mode){
   });
   syncQuickToolbar();
   $('hill-radius-wrap').hidden=mode!=='cliff-round';
+  $('height-label').textContent=mode==='sphere-basin'?'Profondeur':mode==='sphere-hill'?'Hauteur de colline':'Hauteur du plateau';
+  $('target').min=mode==='sphere-hill'||mode==='sphere-basin'?'1':'0';
   if(mode==='sphere-hill'||mode==='sphere-basin'){
+    if(Number($('target').value)<1){$('target').value='3';$('target').dispatchEvent(new Event('input',{bubbles:true}));}
     $('brush-shape').value='circle';
     if(Number($('radius').value)<2){$('radius').value='4';
       $('radius').dispatchEvent(new Event('input',{bubbles:true}));}
