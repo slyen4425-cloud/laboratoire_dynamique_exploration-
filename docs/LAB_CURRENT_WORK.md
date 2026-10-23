@@ -1,3 +1,14 @@
+# Lot V76 R3 — 23/10/2026 — Flancs texturés, sommets plats paramétrables, guide éphémère (NON GREEN Pixel)
+
+- **Demande créateur** : capture V76 R2 confirme le volume, mais refuse les flancs gris; veut roche/herbe/terre, réglage largeur de sommet (colonne + plateau) et disparition du trait de pinceau après édition.
+- **Dernier GREEN** : V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`. **Base V76 R2** : `43e6082afdaac4c85e2bbaa828d4cb3e8c23b08f`. **Checkpoint START** : `checkpoint/exploration-start-sphere-visual-v76-r3-2026-10-23`. **Branche unique** : `work/exploration-sphere-visual-v76-r3-2026-10-23`.
+- **World Model** : `summitRatio` facultatif 0..0.85 et `wallMaterial` facultatif roche/herbe/terre, JSON V76 et anciens préservés. Plateau horizontal physique à l'intérieur du rayon sommital, même fonction analytique pour le maillage. Aucune mutation du gameplay.
+- **Renderer / interface** : vraies matières sur flancs (atlas rocher existant quand disponible, détail de texture natif), arrêt des courbes concentriques permanentes du maillage, contrôle mobile largeur de sommet et matière, masque du guide après pose.
+- **Gel** : V75 falaises, collisions V76, ponts, 28 assets V74, 20 cascades V3, eau/nage/vol, caméra, Builder/Combat, moteurs GenSrpG. **Ne pas démarrer V77 avant GREEN Pixel V76 R3** ; franchissement petites collines demandé sera traité en V77 (Collision World unique).
+- **Gates** : `tests/sculpt-spherical-relief-v76.test.js`, Chromium `scripts/smoke-sculpt-terrain-lab.mjs`, CI source SHA final, comparaison des assets et Pages preview infra séparée. Checkpoint détaillé `docs/checkpoints/EXPLORATION_SPHERE_VISUAL_V76_R3_PREVALIDATION_2026-10-23.md`. **NON GREEN** sans validation sur téléphone.
+
+---
+
 # Lot V76 R2 — 23/10/2026 — Volume réellement lisible des collines et cavités (NON GREEN Pixel)
 
 - **Retour créateur V76 :** « Ok j ai bien une sphère qui bloque le passage, Mais pas de hauteur / profondeur. » La V76 ne peut pas devenir GREEN avec une silhouette plate ; V77 et V78 restent gelés.
