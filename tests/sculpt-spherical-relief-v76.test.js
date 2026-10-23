@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createSculptTerrain,appendSculptSphere,removeSculptSphereAt,
   sculptSphereAt,sculptSphereDisplacementAt,serializeSculptTerrain,
   importSculptTerrain,applySculptStroke} from '../src/world/sculpt-height-model.js';
-import {sculptNavigationBlockDetail} from '../src/core/sculpt-navigation-collision.js';
+import {sculptNavigationBlockDetail,sculptSphereProjectionBlock} from '../src/core/sculpt-navigation-collision.js';
 import {stepMovement} from '../src/core/movement.js';
 import {isBlocked} from '../src/core/collision.js';
 import {drawSculptSphereMeshes,sculptSphereProjectedPoint,
@@ -150,7 +150,8 @@ test('V76 R3 summit radius makes a REAL flat cap / flat cavity floor with unchan
       assert.ok(Math.abs(sculptSphereDisplacementAt(t,x+r*d,y)-sign*5)<1e-8,
         'flat summit/floor extends exactly to the configured radius');
     const d=.8,local=(d-.6)/(1-.6);
-    assert.ok(Math.abs(sculptSphereDisplacementAt(t,x+r*d,y)-sign*5*Math.sqrt(1-local*local))<1e-8);
+    assert.ok(Math.abs(sculptSphereDisplacementAt(t,x+r*d,y)-sign*5*(1-local))<1e-8,
+      'flat-topped hills use the frustum slope, not a dome segment');
     assert.equal(sculptSphereAt(t,x+r+6,y),null);
     assert.equal(sculptNavigationBlockDetail(config(t),entity(x-r-11),x-r+11,y)?.kind,'sphere-wall');
     assert.deepEqual(importSculptTerrain(serializeSculptTerrain(t)).spheres,t.spheres);
@@ -159,7 +160,9 @@ test('V76 R3 summit radius makes a REAL flat cap / flat cavity floor with unchan
   assert.equal(sculptSphereDisplacementAt(column,x+r*.8,y),7);
   assert.equal(sculptSphereDisplacementAt(column,x+r*.96,y)<7,true);
   const json=JSON.parse(serializeSculptTerrain(column));
-  json.spheres[0].summitRatio=.9;
+  json.spheres[0].summitRatio=1;
+  assert.equal(importSculptTerrain(json).spheres[0].summitRatio,1);
+  json.spheres[0].summitRatio=1.01;
   assert.throws(()=>importSculptTerrain(json),/invalide/);
   json.spheres[0].summitRatio=.5;json.spheres[0].wallMaterial='glass';
   assert.throws(()=>importSculptTerrain(json),/invalide/);
@@ -401,4 +404,63 @@ test('V76 R8 compositor paints grass exactly to shared rock seam, never oversize
       'rock wall begins at precisely the same edge as grass '+ratio);
     assert.ok(paints.length<26,'no per-face painting performance regression');
   }
+});
+
+
+test('V76 R9 round dome, truncated cone and 100% round vertical mesa use canonical world elevation',()=>{
+  const pure=sphere();
+  assert.ok(Math.abs(sculptSphereDisplacementAt(pure,x+r*.5,y)-3*Math.sqrt(.75))<1e-9);
+  for(const kind of ['hill','basin'])for(const ratio of [.2,.5,.75,.95,1]){
+    const t=appendSculptSphere(base(),{kind,x,y,radius:r,height:6,summitRatio:ratio});
+    const sign=kind==='hill'?1:-1,shape=t.spheres[0];
+    assert.ok(shape,'canonical sphere shape is accepted up to 100%');
+    assert.equal(sculptSphereDisplacementAt(t,x,y),sign*6);
+    assert.equal(sculptSphereDisplacementAt(t,x+r*.5*ratio,y),sign*6);
+    assert.equal(sculptSphereDisplacementAt(t,x+r,y),0);
+    if(ratio<1){
+      const midpoint=(ratio+1)/2;
+      assert.ok(Math.abs(sculptSphereDisplacementAt(t,x+r*midpoint,y)-sign*3)<1e-9,
+        'side is a true straight frustum slope, not a partial circular dome');
+    }else{
+      assert.equal(sculptSphereDisplacementAt(t,x+r*.999,y),sign*6,
+        'vertical cylindrical wall until outer footprint');
+      assert.equal(sculptSphereVisualContact(shape),.999);
+      assert.ok(sculptSphereRadialRings(shape).includes(.999),
+        '100% mesa has an extra inner top vertex and a vertical face');
+    }
+    assert.deepEqual(importSculptTerrain(serializeSculptTerrain(t)).spheres,t.spheres);
+  }
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  assert.match(html,/id="sphere-summit-ratio"[^>]*max="100"/);
+});
+
+test('V76 R9 collision authority blocks walking onto visually projected elevated cap from lower northern ground',()=>{
+  const actor=(xx,yy,modes=['ground'])=>({x:xx,y:yy,radius:5,
+    locomotion:{modes}});
+  for(const ratio of [0,.5,.75,1]){
+    const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:7,summitRatio:ratio});
+    const conf=config(t);
+    const rearY=y-r-55; // World ground, physically OUTSIDE the spherical footprint.
+    const closeY=y-r-16; // Still OUTSIDE the footprint, but painted under upper grass.
+    const farther=actor(x,rearY);
+    const projected=sculptSphereProjectionBlock(t,x,closeY,{projectionRise:18,radius:5});
+    assert.equal(projected?.kind,'sphere-projection','upper hill overhang is a real restricted view-zone '+ratio);
+    assert.equal(sculptSphereAt(t,x,closeY,5),null,'actual XY footprint is NOT entered');
+    assert.equal(sculptNavigationBlockDetail(conf,farther,x,closeY)?.kind,'sphere-projection');
+    const blockedMover=actor(x,rearY);
+    stepMovement(world,blockedMover,{x:0,y:1},1,{maxSpeed:55},undefined,{sculptNavigation:conf});
+    assert.ok(blockedMover.y<closeY,'actual walking cannot advance beneath the raised hill');
+    const side=actor(x+r+30,closeY);
+    assert.equal(sculptNavigationBlockDetail(conf,side,x+r+35,closeY),null,
+      'low ground beside the projected hill remains traversable');
+    const fly=actor(x,rearY,['fly']);
+    assert.equal(sculptNavigationBlockDetail(conf,fly,x,closeY),null,
+      'flight ignores upper hill occlusion');
+    // If a saved character is already visually occluded, escape north is legal.
+    const stranded=actor(x,closeY);
+    assert.equal(sculptNavigationBlockDetail(conf,stranded,x,closeY-3),null);
+    assert.equal(sculptNavigationBlockDetail(conf,stranded,x,closeY+3)?.kind,'sphere-projection');
+  }
+  const flat=base();
+  assert.equal(sculptSphereProjectionBlock(flat,x,y,{projectionRise:18,radius:5}),null);
 });
