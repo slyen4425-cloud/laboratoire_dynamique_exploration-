@@ -1,7 +1,8 @@
 // Optional sculpt laboratory collision adapter. The Collision World remains the
 // authority: it calls this pure geometry check through collisionContext only.
 // Never persist this preview adapter in WorldDocument or a gameplay save.
-import {sculptHeightAt,sculptWaterAt,sculptSphereAt} from '../world/sculpt-height-model.js';
+import {sculptHeightAt,sculptWaterAt,sculptSphereAt,
+  sculptSphereDisplacementAt} from '../world/sculpt-height-model.js';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
 
@@ -64,6 +65,59 @@ export function sculptNorthCliffProjectionBlock(terrain,x,y,{
         return Object.freeze({kind:'cliff-projection',col,row,
           from:here.level,to:upper,delta:upper-here.level,limit:0});
     }
+  }
+  return null;
+}
+
+// V76 R9: ground characters must not visually walk INSIDE the lifted top
+// of a hill when their actual coordinates remain behind its circular foot.
+// This is a read-only, height-model-derived OCCLUSION footprint, analogous to
+// the validated V75 projected north cliff gate above. It is not pixel alpha,
+// and it never creates a second geometry, movement or collision authority.
+export function sculptSphereProjectionBlock(terrain,x,y,{
+  cellWidth=28,cellHeight=21,projectionRise=18,radius=0
+}={}){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y)||
+     !(projectionRise>0))return null;
+  const ground=sculptNavigationSample(terrain,x,y,{cellWidth,cellHeight});
+  if(!ground)return null;
+  const bodyRadius=Math.max(0,Number(radius)||0);
+  for(const hill of terrain.spheres??[]){
+    if(hill.kind!=='hill'||hill.height<=0||ground.level!==hill.baseLevel)continue;
+    const dx=x-hill.x,absX=Math.abs(dx);
+    if(absX>hill.radius+bodyRadius)continue;
+    const insideX=hill.x+Math.sign(dx||1)*Math.min(absX,hill.radius-1e-5);
+    const width=Math.sqrt(Math.max(0,hill.radius*hill.radius-
+      (insideX-hill.x)*(insideX-hill.x)));
+    const northEdge=hill.y-width;
+    // The character is physically on LOW GROUND north of the circular foot.
+    // Physically entering the foot is already blocked by sculptSphereAt.
+    if(y-bodyRadius>=northEdge+1e-6)continue;
+    const base=hill.baseLevel*projectionRise;
+    const projectedFoot=y-ground.level*projectionRise;
+    let upper=Infinity;
+    // The shape is smooth and capped at seven levels. These inexpensive
+    // deterministic probes sample the CANONICAL elevation profile, not art.
+    for(let i=0;i<=18;i++){
+      const worldY=northEdge+(2*width*i/18);
+      const level=sculptSphereDisplacementAt(terrain,insideX,worldY);
+      upper=Math.min(upper,worldY-base-level*projectionRise);
+    }
+    // Also sample the exact rear lip of the flat plateau/frustum.
+    const summit=hill.summitRatio??0;
+    if(summit>0&&summit<1){
+      const capR=hill.radius*summit;
+      if(Math.abs(insideX-hill.x)<capR){
+        const lipY=hill.y-Math.sqrt(capR*capR-
+          (insideX-hill.x)*(insideX-hill.x));
+        upper=Math.min(upper,lipY-base-hill.height*projectionRise);
+      }
+    }
+    const depth=projectedFoot-upper;
+    if(depth>=-bodyRadius&&projectedFoot<
+      northEdge-base+bodyRadius+1e-6)
+      return Object.freeze({kind:'sphere-projection',id:hill.id,
+        variant:hill.kind,depth,centerX:hill.x,limit:0});
   }
   return null;
 }
@@ -247,6 +301,20 @@ export function sculptNavigationRoute({
             Math.hypot(previousX-sphere.x,previousY-sphere.y)-1e-6))
           return reject(Object.freeze({kind:'sphere-wall',id:sphere.id,
             variant:sphere.kind,limit:0}));
+        const projectedSphere=projectionRise>0&&!candidate&&!previousCarrier&&
+          sculptSphereProjectionBlock(terrain,x,y,
+            {cellWidth,cellHeight,projectionRise,radius});
+        if(projectedSphere&&!dismounting){
+          const priorProjection=sculptSphereProjectionBlock(terrain,
+            previousX,previousY,{cellWidth,cellHeight,projectionRise,radius});
+          // A stranded player may retreat NORTH or sideways OUT of the
+          // visible hill. Movement deeper beneath the upper grass stays locked.
+          const retreating=priorProjection?.id===projectedSphere.id&&(
+            projectedSphere.depth<priorProjection.depth-1e-6||
+            Math.abs(x-projectedSphere.centerX)>
+              Math.abs(previousX-projectedSphere.centerX)+1e-6);
+          if(!retreating)return reject(projectedSphere);
+        }
         // The user must stop at the *visible* northern wall, not several
         // cells later at its unprojected footprint. The carried bridge deck
         // and flying locomotion are explicit exceptions, preserved above.
