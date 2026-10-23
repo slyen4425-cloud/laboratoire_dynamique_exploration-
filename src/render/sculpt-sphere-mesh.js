@@ -11,7 +11,10 @@ const meshCache=new WeakMap();
 // For legacy round spheres (summitRatio = 0), retain a curved grass crown.
 export function sculptSphereVisualContact(sphere){
   const flat=sphere?.summitRatio??0;
-  return flat>0?flat:(sphere?.kind==='basin'?.24:.45);
+  // A 100%-wide summit has a vertical wall. The canonical height remains
+  // full until radius=1 and drops precisely at the perimeter; the tiny inner
+  // rendering ring (~0.1px) supplies the vertical face without new geometry.
+  return flat>=1?.999:flat>0?flat:(sphere?.kind==='basin'?.24:.45);
 }
 export function sculptSphereRadialRings(sphere){
   const seam=sculptSphereVisualContact(sphere);
