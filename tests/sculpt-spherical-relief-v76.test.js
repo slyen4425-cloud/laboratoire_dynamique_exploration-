@@ -7,7 +7,8 @@ import {createSculptTerrain,appendSculptSphere,removeSculptSphereAt,
 import {sculptNavigationBlockDetail} from '../src/core/sculpt-navigation-collision.js';
 import {stepMovement} from '../src/core/movement.js';
 import {isBlocked} from '../src/core/collision.js';
-import {drawSculptSphereMeshes,sculptSphereProjectedPoint} from '../src/render/sculpt-sphere-mesh.js';
+import {drawSculptSphereMeshes,sculptSphereProjectedPoint,
+  sculptSphereReliefLighting} from '../src/render/sculpt-sphere-mesh.js';
 
 const tile={width:28,height:21,rise:18};
 const base=()=>createSculptTerrain({width:40,height:40});
@@ -287,4 +288,55 @@ test('V76 R6 far wall dark crescent stays BEHIND continuous full grassy summit',
   assert.ok(main.includes('spherePreviewDismissed=false;'));
   assert.ok(!main.includes('spherePreviewDismissed=true;hoverCell=null;scheduleDraw()'),
     'placing a sphere does not disable next brush preview');
+});
+
+
+test('V76 R7 shading scales with altitude like standard cliffs without mutating geometry',()=>{
+  const low=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:1});
+  const high=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:7});
+  const a=sculptSphereReliefLighting(low.spheres[0]);
+  const b=sculptSphereReliefLighting(high.spheres[0]);
+  assert.ok(a.contactOpacity>0&&a.contactOpacity<b.contactOpacity);
+  assert.ok(a.rimOpacity<b.rimOpacity&&b.rimOpacity<=.52);
+  assert.ok(a.footOpacity<b.footOpacity&&b.footOpacity<=.42);
+  assert.equal(a.lightOpacity,.12);
+  assert.equal(a.sideOpacity,.19);
+  assert.equal(a.topTone,(low.spheres[0].baseLevel+1-2)*.029);
+  const basin=appendSculptSphere(base(),{kind:'basin',x,y,radius:r,height:7});
+  assert.ok(sculptSphereReliefLighting(basin.spheres[0]).topTone<0);
+  assert.deepEqual(low.spheres[0],importSculptTerrain(serializeSculptTerrain(low)).spheres[0]);
+});
+
+test('V76 R7 real material persists under vertical/lateral shade and soft outer foot/rim',()=>{
+  for(const kind of ['hill','basin']){
+    for(const material of ['rock','grass','earth']){
+      const t=appendSculptSphere(base(),{kind,x,y,radius:r,height:6,
+        summitRatio:.6,wallMaterial:material});
+      const gradients=[],fills=[],asset={rock:'HD rock',grass:'forest grass',earth:'forest earth'};
+      const chosen={material},grass={top:true};
+      const ctx={fillStyle:null,strokeStyle:'',lineWidth:1,
+        save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},
+        ellipse(){},clip(){},stroke(){throw Error('no black permanent circle')},
+        fill(){fills.push(this.fillStyle);},
+        createPattern(image){return {image};},
+        createLinearGradient(...args){
+          const g={args,colors:[],addColorStop(t,c){this.colors.push(c)}};
+          gradients.push(g);return g;
+        }};
+      drawSculptSphereMeshes(ctx,{terrain:t,tile,texture:grass,
+        sphereWallImages:{grass:asset,earth:asset},
+        rockPaletteColors:['#ded2be','#ad9f88','#776b5b','#3b4146']});
+      const shadeStrings=gradients.flatMap(g=>g.colors).join('|');
+      assert.match(shadeStrings,/rgba\\(16,31,34,/,'vertical depth/contact-shadow family');
+      assert.match(shadeStrings,/rgba\\(245,227,197,/,'standard cliff directional highlight');
+      assert.ok(gradients.length<9,'gradients are shared at sphere level, not one per cell');
+      assert.ok(fills.length<23,'compound path passes prevent 360+ repeated fills');
+      assert.ok(fills.includes(kind==='hill'?'rgba(19,27,29,.24)':'rgba(7,17,29,.35)'),
+        'the R6 far shadow remains behind the continuous crown');
+    }
+  }
+  const renderer=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
+  assert.ok(renderer.includes('crownLip'));
+  assert.ok(renderer.includes('footFront'));
+  assert.ok(renderer.includes('fillLayer(ctx,crown,groundColor)'));
 });
