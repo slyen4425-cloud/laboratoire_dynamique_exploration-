@@ -81,7 +81,8 @@ test('V76 renderer samples the same true spherical surface without cell-stroke a
     lineTo(){},closePath(){},fill(){},ellipse(){},arc(){},clip(){},stroke(){},
     createPattern(){return null;}};
   assert.equal(drawSculptSphereMeshes(ctx,{terrain:t,tile}),1);
-  assert.ok(frames.length>700,'actual radial polygons from geometric profile');
+  assert.ok(frames.length>300&&frames.length<700,
+    'R5: analytic projected mesh is bounded, not 1,024+ polygons per redraw');
   assert.equal(drawSculptSphereMeshes(ctx,{terrain:base(),tile}),0);
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   assert.match(html,/data-mode="sphere-hill"/);
@@ -125,7 +126,9 @@ test('V76 R2 painter draws visible mineral flanks, contact shadow and a clipped 
   assert.ok(pit.fills.includes('#182b32'),'dark opening below host surface');
   assert.ok(pit.fills.some(s=>String(s).includes('rgba(9,18,32,')),
     'recessed walls are darker than ordinary ground');
-  assert.ok(hill.shapes.length>1000&&pit.shapes.length>1000);
+  assert.ok(hill.shapes.length>300&&pit.shapes.length>300&&
+    hill.shapes.length<700&&pit.shapes.length<700,
+    'R5: true projected radial surface with fewer compound polygon subpaths');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(html,/id="height-label"/);
@@ -205,8 +208,8 @@ test('V76 R4 material uses one continuous gradient frame rather than tile per po
     rockTexture:fakeRockImage,rockPaletteColors:['#a0a0a0','#8c897d','#5d6060','#36393a']}),1);
   assert.ok(gradients.length>=2&&gradients.length<9,
     'only a handful of SHARED gradients for the whole mesh');
-  assert.ok(fills.filter(v=>v===gradients[0]).length>100,
-    'same wall gradient shared by many different polygon faces');
+  assert.equal(fills.filter(v=>v===gradients[0]).length,1,
+    'R5: the shared wall material is painted only ONCE over a compound path');
   assert.equal(strokes.length,0,'no black circle/ring baked into finished terrain');
   const source=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
   assert.ok(!source.includes('face.sector%'),'old square procedural patches removed');
@@ -225,4 +228,29 @@ test('V76 R4 fullscreen palette owns the unique material and summit controls',()
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(main,/const hasFootprint=/);
   assert.ok(main.includes('spherePreviewDismissed=false;'));
+});
+
+
+test('V76 R5 real registered material images are painted once across whole curved flank',()=>{
+  for(const material of ['grass','earth']){
+    const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:5,wallMaterial:material});
+    const image={material},ground={ground:true};
+    const applied=[],patternCalls=[];
+    const ctx={fillStyle:'',strokeStyle:'',lineWidth:1,
+      save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},
+      ellipse(){},clip(){},fill(){applied.push(this.fillStyle);},stroke(){},
+      createPattern(value){patternCalls.push(value);return {from:value};}};
+    drawSculptSphereMeshes(ctx,{terrain:t,tile,texture:ground,
+      sphereWallImages:{[material]:image}});
+    assert.equal(patternCalls.filter(v=>v===image).length,1,
+      'authoritative material image becomes ONE shared world-pattern');
+    assert.equal(applied.filter(v=>v?.from===image).length,1,
+      'material paints the entire union of wall faces once, not squares');
+  }
+  const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.match(sculpt,/loadSphereWallImages\\(\\)/);
+  assert.match(sculpt,/navigationTesting\\|\\|objectEditing\\|\\|!drawing/);
+  const renderer=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
+  assert.match(renderer,/sculptCliffHDLayers\\(rockTexture\\)/);
+  assert.match(renderer,/paintRearBand\\(ctx,sphere,mesh\\)/);
 });
