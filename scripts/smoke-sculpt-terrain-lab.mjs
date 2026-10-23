@@ -2641,6 +2641,37 @@ try{
      r9Check.heightOutside!==0||r9Check.collision!=='sphere-projection')
     throw Error('V76 R9 real Chromium 100% mesa/JSON/ground-occlusion regression: '+JSON.stringify(r9Check));
   console.log('V76 R9 REAL Chromium 100% flat round plateau / canonical JSON / projected hill lock:',JSON.stringify(r9Check));
+  // V76 R10: real Chromium 2D canvas checks the FRONT cone is a continuous
+  // painted curtain at small/medium/full summit sizes, not individual spiky
+  // triangles. The same already-registered renderer is exercised directly.
+  const r10Check=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js?rev=sphere-frustum-v76-r9');
+    const render=await import('./src/render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9');
+    const tile={width:28,height:21,rise:18},samples=[];
+    for(const ratio of [.05,.2,.5,.75,1]){
+      const terrain=model.appendSculptSphere(model.createSculptTerrain({width:40,height:40}),
+        {kind:'hill',x:560,y:420,radius:112,height:6,summitRatio:ratio});
+      const cap=render.sculptSphereFrustumContours(terrain,terrain.spheres[0],tile);
+      const test=document.createElement('canvas');test.width=1120;test.height=840;
+      const context=test.getContext('2d',{willReadFrequently:true});
+      render.drawSculptSphereMeshes(context,{terrain,tile,baseColor:'#72ab53'});
+      const alpha=[];
+      for(const sector of [3,7,9,11,15]){
+        const a=cap.topFront[sector],b=cap.baseFront[sector];
+        for(const amount of [.25,.5,.75]){
+          const px=Math.round(a.x*(1-amount)+b.x*amount),
+            py=Math.round(a.y*(1-amount)+b.y*amount);
+          alpha.push(context.getImageData(px,py,1,1).data[3]);
+        }
+      }
+      samples.push({ratio,continuous:alpha.every(v=>v>0),
+        minAlpha:Math.min(...alpha),border:cap.seamRadius});
+    }
+    return samples;
+  })()`);
+  if(r10Check.some(s=>!s.continuous||s.minAlpha<1))
+    throw Error('V76 R10 actual Chromium conical wall contains unpainted triangles: '+JSON.stringify(r10Check));
+  console.log('V76 R10 REAL Chromium 5%–100% continuous painted front rock (no missing triangles):',JSON.stringify(r10Check));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
