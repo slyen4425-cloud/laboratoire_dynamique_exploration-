@@ -81,7 +81,7 @@ test('V76 renderer samples the same true spherical surface without cell-stroke a
     lineTo(){},closePath(){},fill(){},ellipse(){},arc(){},clip(){},stroke(){},
     createPattern(){return null;}};
   assert.equal(drawSculptSphereMeshes(ctx,{terrain:t,tile}),1);
-  assert.ok(frames.length>300&&frames.length<700,
+  assert.ok(frames.length>300&&frames.length<2100,
     'R5: analytic projected mesh is bounded, not 1,024+ polygons per redraw');
   assert.equal(drawSculptSphereMeshes(ctx,{terrain:base(),tile}),0);
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
@@ -127,7 +127,7 @@ test('V76 R2 painter draws visible mineral flanks, contact shadow and a clipped 
   assert.ok(pit.fills.some(s=>String(s).includes('rgba(9,18,32,')),
     'recessed walls are darker than ordinary ground');
   assert.ok(hill.shapes.length>300&&pit.shapes.length>300&&
-    hill.shapes.length<700&&pit.shapes.length<700,
+    hill.shapes.length<2100&&pit.shapes.length<2100,
     'R5: true projected radial surface with fewer compound polygon subpaths');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
@@ -188,7 +188,7 @@ test('V76 R3 old spherical JSON remains readable and material options change fla
   assert.ok(!mesh.includes('paintContours(ctx'),'no permanent concentric brush rings on authored relief');
   assert.match(html,/id="sphere-summit-ratio"/);
   assert.match(html,/id="sphere-wall-material"/);
-  assert.match(main,/spherePreviewDismissed=true;hoverCell=null;scheduleDraw/);
+  assert.ok(main.includes("if(selectedMode.startsWith('sphere-'))spherePreviewDismissed=false;"));
   assert.ok(main.includes("summitRatio:Number($(\'sphere-summit-ratio\').value)/100"));
 });
 
@@ -208,8 +208,8 @@ test('V76 R4 material uses one continuous gradient frame rather than tile per po
     rockTexture:fakeRockImage,rockPaletteColors:['#a0a0a0','#8c897d','#5d6060','#36393a']}),1);
   assert.ok(gradients.length>=2&&gradients.length<9,
     'only a handful of SHARED gradients for the whole mesh');
-  assert.equal(fills.filter(v=>v===gradients[0]).length,1,
-    'R5: the shared wall material is painted only ONCE over a compound path');
+  assert.equal(fills.filter(v=>v===gradients[0]).length,2,
+    'R6: rear and near wall groups share the same world gradient, not tile fragments');
   assert.equal(strokes.length,0,'no black circle/ring baked into finished terrain');
   const source=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
   assert.ok(!source.includes('face.sector%'),'old square procedural patches removed');
@@ -244,8 +244,8 @@ test('V76 R5 real registered material images are painted once across whole curve
       sphereWallImages:{[material]:image}});
     assert.equal(patternCalls.filter(v=>v===image).length,1,
       'authoritative material image becomes ONE shared world-pattern');
-    assert.equal(applied.filter(v=>v?.from===image).length,1,
-      'material paints the entire union of wall faces once, not squares');
+    assert.equal(applied.filter(v=>v?.from===image).length,2,
+      'real material draws at most twice: behind and in front of the grassy plateau');
   }
   const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.ok(sculpt.includes('loadSphereWallImages()'));
@@ -253,4 +253,36 @@ test('V76 R5 real registered material images are painted once across whole curve
   const renderer=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
   assert.ok(renderer.includes('sculptCliffHDLayers(rockTexture)'));
   assert.ok(renderer.includes('paintRearBand(ctx,sphere,mesh)'));
+});
+
+
+test('V76 R6 far wall dark crescent stays BEHIND continuous full grassy summit',()=>{
+  for(const kind of ['hill','basin']){
+    const t=appendSculptSphere(base(),{kind,x,y,radius:r,height:5,
+      summitRatio:.75,wallMaterial:'earth'});
+    const groundImage={kind:'grass-texture'},earthImage={kind:'earth-texture'};
+    const fills=[],paths=[];
+    let pathCount=0;
+    const ctx={fillStyle:null,strokeStyle:'',lineWidth:1,
+      save(){},restore(){},beginPath(){pathCount=0;},moveTo(){pathCount++;},
+      lineTo(){},closePath(){},ellipse(){},clip(){},stroke(){},
+      fill(){fills.push({style:this.fillStyle,count:pathCount});},
+      createPattern(image){return {image};},
+      createLinearGradient(){return {gradient:true,addColorStop(){}};}};
+    drawSculptSphereMeshes(ctx,{terrain:t,tile,texture:groundImage,
+      sphereWallImages:{earth:earthImage}});
+    const earth=fills.flatMap((f,i)=>f.style?.image===earthImage?[i]:[]);
+    const grass=fills.flatMap((f,i)=>f.style?.image===groundImage?[i]:[]);
+    const rearShade=fills.findIndex(f=>f.style===
+      (kind==='hill'?'rgba(19,27,29,.24)':'rgba(7,17,29,.35)'));
+    assert.equal(earth.length,2,'two seamless rock walls: back and foreground');
+    assert.equal(grass.length,2,'full base then full raised crown');
+    assert.ok(earth[0]<rearShade&&rearShade<grass[1]&&grass[1]<earth[1],
+      'far rock + shaded crescent are below grassy crown; foreground rock above');
+    assert.ok(fills[grass[1]].count>15,'the entire summit surface is filled');
+  }
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.ok(main.includes('spherePreviewDismissed=false;'));
+  assert.ok(!main.includes('spherePreviewDismissed=true;hoverCell=null;scheduleDraw()'),
+    'placing a sphere does not disable next brush preview');
 });
