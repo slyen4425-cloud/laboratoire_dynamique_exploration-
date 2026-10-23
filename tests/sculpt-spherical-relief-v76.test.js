@@ -95,8 +95,10 @@ test('V76 R2 hill and basin project real 1/3/7-level vertical relief, not flat d
       const t=appendSculptSphere(base(),{kind,x,y,radius:r,height});
       const f=t.spheres[0],center=sculptSphereProjectedPoint(t,f,0,0,tile);
       const edge=sculptSphereProjectedPoint(t,f,1,0,tile);
-      assert.equal(Math.round((edge.y-center.y)/tile.rise),
-        kind==='hill'?height:-height,`kind ${kind} amplitude ${height}`);
+      const expected=kind==='hill'?height:
+        -height*Math.min(1,r*.68/(7*tile.rise));
+      assert.ok(Math.abs((edge.y-center.y)/tile.rise-expected)<1e-8,
+        `kind ${kind} amplitude ${height} remains perceptibly proportional`);
       assert.equal(edge.level,2);
       assert.equal(center.level,kind==='hill'?2+height:2-height);
     }
