@@ -9,7 +9,7 @@ import {stepMovement} from '../src/core/movement.js';
 import {isBlocked} from '../src/core/collision.js';
 import {drawSculptSphereMeshes,sculptSphereProjectedPoint,
   sculptSphereReliefLighting,sculptSphereVisualContact,
-  sculptSphereRadialRings} from '../src/render/sculpt-sphere-mesh.js';
+  sculptSphereRadialRings,sculptSphereFrustumContours} from '../src/render/sculpt-sphere-mesh.js';
 
 const tile={width:28,height:21,rise:18};
 const base=()=>createSculptTerrain({width:40,height:40});
@@ -213,8 +213,8 @@ test('V76 R4 material uses one continuous gradient frame rather than tile per po
     rockTexture:fakeRockImage,rockPaletteColors:['#a0a0a0','#8c897d','#5d6060','#36393a']}),1);
   assert.ok(gradients.length>=2&&gradients.length<9,
     'only a handful of SHARED gradients for the whole mesh');
-  assert.equal(fills.filter(v=>v===gradients[0]).length,2,
-    'R6: rear and near wall groups share the same world gradient, not tile fragments');
+  assert.equal(fills.filter(v=>v===gradients[0]).length,1,
+    'R10: one continuous front-facing frustum receives one world gradient, not tiled triangles');
   assert.equal(strokes.length,0,'no black circle/ring baked into finished terrain');
   const source=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
   assert.ok(!source.includes('face.sector%'),'old square procedural patches removed');
@@ -282,11 +282,19 @@ test('V76 R6 far wall dark crescent stays BEHIND continuous full grassy summit',
       :(f.style==='#35483f'?[i]:[]));
     const rearShade=fills.findIndex(f=>f.style===
       (kind==='hill'?'rgba(19,27,29,.24)':'rgba(7,17,29,.35)'));
-    assert.equal(earth.length,2,'two seamless rock walls: back and foreground');
-    assert.equal(crown.length,2,'base then crown/floor drawn as separate layers');
-    assert.ok(earth[0]<rearShade&&rearShade<crown[1]&&crown[1]<earth[1],
-      'far wall and shade are below the upper surface; near wall above');
-    assert.ok(fills[crown[1]].count>15,'the entire summit/floor surface is filled');
+    if(kind==='hill'){
+      assert.equal(earth.length,1,'R10: exactly ONE connected front-facing rock curtain');
+      assert.equal(crown.length,1,'R10: exactly ONE uninterrupted grass plateau');
+      assert.equal(rearShade,-1,'R10: hidden back wall cannot protrude as triangular spikes');
+      assert.ok(crown[0]<earth[0],'front-facing rock is painted after the whole grass cap');
+      assert.ok(fills[crown[0]].count<=2,'single cap polygon, never disjoint grass rings');
+      assert.ok(fills[earth[0]].count<=2,'single wall polygon, never disjoint projected faces');
+    }else{
+      assert.equal(earth.length,2,'basin remains unchanged: rear/front excavation');
+      assert.equal(crown.length,2,'basin base and floor still layered');
+      assert.ok(earth[0]<rearShade&&rearShade<crown[1]&&crown[1]<earth[1]);
+      assert.ok(fills[crown[1]].count>15);
+    }
   }
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.ok(main.includes('spherePreviewDismissed=false;'));
@@ -335,8 +343,15 @@ test('V76 R7 real material persists under vertical/lateral shade and soft outer 
       assert.ok(shadeStrings.includes('rgba(245,227,197,'),'standard cliff directional highlight');
       assert.ok(gradients.length<9,'gradients are shared at sphere level, not one per cell');
       assert.ok(fills.length<23,'compound path passes prevent 360+ repeated fills');
-      assert.ok(fills.includes(kind==='hill'?'rgba(19,27,29,.24)':'rgba(7,17,29,.35)'),
-        'the R6 far shadow remains behind the continuous crown');
+      if(kind==='hill'){
+        assert.ok(!fills.includes('rgba(19,27,29,.24)'),
+          'R10: no exposed rear hemisphere causing rock spikes through the cap');
+        assert.ok(fills.some(v=>v?.gradient),
+          'R10: back-rim and side shading now share continuous cap and wall paths');
+      }else{
+        assert.ok(fills.includes('rgba(7,17,29,.35)'),
+          'unmodified excavated basin preserves rear shadow');
+      }
     }
   }
   const renderer=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
@@ -393,9 +408,9 @@ test('V76 R8 compositor paints grass exactly to shared rock seam, never oversize
       sphereWallImages:{earth:imageEarth}});
     const grassPaints=paints.filter(p=>p.style?.image===imageGrass);
     const rockPaints=paints.filter(p=>p.style?.image===imageEarth);
-    assert.equal(grassPaints.length,2,'base surface + grass crown');
-    assert.equal(rockPaints.length,2,'back rock and front rock');
-    const cap=grassPaints[1];
+    assert.equal(grassPaints.length,1,'R10: one continuous grassy cap, not stacked annuli');
+    assert.equal(rockPaints.length,1,'R10: one textured curtain, not overlapping wall quads');
+    const cap=grassPaints[0];
     const maxCrownX=Math.max(...cap.coords.map(a=>a[0]));
     const edgeX=x+r*ratio;
     assert.ok(Math.abs(maxCrownX-edgeX)<1e-8,
@@ -463,4 +478,55 @@ test('V76 R9 collision authority blocks walking onto visually projected elevated
   }
   const flat=base();
   assert.equal(sculptSphereProjectionBlock(flat,x,y,{projectionRise:18,radius:5}),null);
+});
+
+test('V76 R10 small-summit front conical wall is ONE contiguous closed silhouette',()=>{
+  for(const ratio of [.05,.1,.2,.3,.5,.75,.95,1]){
+    const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,
+      height:5,summitRatio:ratio,wallMaterial:'rock'});
+    const shape=t.spheres[0],outline=sculptSphereFrustumContours(t,shape,tile);
+    assert.ok(outline,'R10 uses a continuous frustum profile for ratio '+ratio);
+    assert.equal(outline.cap.length,37);
+    assert.equal(outline.topFront.length,19);
+    assert.equal(outline.baseFront.length,19);
+    const seam=sculptSphereVisualContact(shape)*r;
+    assert.ok(Math.abs(outline.seamRadius-seam)<1e-7);
+    const capX=Math.max(...outline.cap.map(p=>p.x));
+    assert.ok(Math.abs(capX-(x+seam))<1e-7,'grass contour matches actual top rock diameter');
+    for(let i=0;i<19;i++){
+      assert.deepEqual(outline.topFront[i],outline.cap[i],
+        'wall originates from the SAME top ring, no gap/rock spikes');
+      assert.ok(outline.baseFront[i].worldY>=y-1e-7,
+        'ground foot follows only the SOUTH semicircle');
+      assert.ok(Math.abs(outline.baseFront[i].level-shape.baseLevel)<1e-8,
+        'rock foot at physical base, not a second sphere');
+    }
+    const recorded=[];let current=[];
+    const ctx={fillStyle:'',strokeStyle:'',lineWidth:1,
+      save(){},restore(){},beginPath(){current=[];},
+      moveTo(a,b){current.push([a,b]);},lineTo(a,b){current.push([a,b]);},
+      closePath(){},ellipse(){},clip(){},
+      fill(){recorded.push({style:this.fillStyle,pts:current.slice()});},
+      createPattern(image){return {image};},
+      createLinearGradient(){return {addColorStop(){}};}};
+    const grass={grass:true},rock={rock:true};
+    drawSculptSphereMeshes(ctx,{terrain:t,tile,texture:grass,sphereWallImages:{rock}});
+    const cap=recorded.filter(f=>f.style?.image===grass);
+    // No rock image injected in this test: rock falls back to a uniform
+    // palette color or gradient. Wall still must be a SINGLE closed polygon.
+    assert.equal(cap.length,1);
+    assert.equal(cap[0].pts.length,37);
+    const curtain=recorded.find(f=>f.pts.length===38);
+    assert.ok(curtain,'continuous front face has 19 top + 19 foot vertices');
+    assert.ok(Math.abs(curtain.pts[0][0]-outline.topFront[0].x)<1e-7);
+    assert.ok(Math.abs(curtain.pts[18][0]-outline.topFront[18].x)<1e-7);
+    assert.ok(Math.abs(curtain.pts[19][0]-outline.baseFront[18].x)<1e-7);
+    assert.ok(recorded.length<=9,'performance: fills are per continuous surface, not per face');
+  }
+  const domed=sphere();
+  assert.equal(sculptSphereFrustumContours(domed,domed.spheres[0],tile),null,
+    'pure circular dome retains its historical renderer');
+  const excavated=sphere('basin');
+  assert.equal(sculptSphereFrustumContours(excavated,excavated.spheres[0],tile),null,
+    'basin is untouched by capped-hill correction');
 });
