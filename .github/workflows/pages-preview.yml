@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-cap-guide-v76-r6-continuous-grass-brush-2026-10-23
+# preview-revision: sphere-lighting-v76-r7-cliff-depth-grass-rim-shading-2026-10-23
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: bfff4855395930bb134f7e48dec18ee15198479a
+          ref: db5cc35af3a8edb3d730ed9420f5c76b851fa0b2
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
