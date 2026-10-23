@@ -2555,7 +2555,8 @@ try{
       m.createSculptTerrain({width:40,height:40}),[]);
     document.querySelector('#import').click();
     document.querySelector('[data-mode="sphere-hill"]').click();
-    document.querySelector('#fullscreen-toggle').click();
+    const enteredImmersive=!document.body.classList.contains('sculpt-immersive');
+    if(enteredImmersive)document.querySelector('#fullscreen-toggle').click();
     const panel=document.querySelector('.sculpt-quickbar');
     const profile=document.querySelector('#sphere-profile-wrap');
     const ratio=document.querySelector('#sphere-summit-ratio');
@@ -2576,7 +2577,7 @@ try{
     const after=window.__sculptLabProbe();
     document.querySelector('#nudge-right').click();
     const reaim=window.__sculptLabProbe();
-    document.querySelector('#fullscreen-toggle').click();
+    if(enteredImmersive)document.querySelector('#fullscreen-toggle').click();
     return {before,closed,reopened,applied:after.sphereCount,
       afterGuide:after.sphereGuideVisible,newAimGuide:reaim.sphereGuideVisible,
       moved:reaim.precisionTarget?.x===x.x+1};
