@@ -2491,7 +2491,7 @@ try{
       active:document.querySelector('[data-mode="sphere-hill"]')?.textContent};
   })()`);
   if(volumePixels.results.length!==6||volumePixels.results.some(x=>x.count!==1||
-     x.distinct<35||x.dark<10)||
+     x.distinct<35||(x.kind==='basin'&&x.dark<10))||
      !(volumePixels.results.find(x=>x.kind==='hill'&&x.height===7).depth<
        volumePixels.results.find(x=>x.kind==='hill'&&x.height===1).depth)||
      !(volumePixels.results.find(x=>x.kind==='basin'&&x.height===7).depth>
@@ -2545,6 +2545,49 @@ try{
       JSON.stringify(r3Painted));
   console.log('V76 R3 real Chromium plateau + earth texture + temporary brush:',
     JSON.stringify(r3Painted));
+  // V76 R4 — the SAME physical sliders must be available in the real
+  // fullscreen floating quickbar, and precision aiming must show a guide
+  // BEFORE committing, never a black permanent rim AFTER committing.
+  const v76R4UI=await run(`(async()=>{
+    const m=await import('./src/world/sculpt-height-model.js');
+    const sc=await import('./src/world/sculpt-scene-preview.js');
+    document.querySelector('#json').value=sc.serializeSculptPreviewScene(
+      m.createSculptTerrain({width:40,height:40}),[]);
+    document.querySelector('#import').click();
+    document.querySelector('[data-mode="sphere-hill"]').click();
+    document.querySelector('#fullscreen-toggle').click();
+    const panel=document.querySelector('.sculpt-quickbar');
+    const profile=document.querySelector('#sphere-profile-wrap');
+    const ratio=document.querySelector('#sphere-summit-ratio');
+    const material=document.querySelector('#sphere-wall-material');
+    const precision=document.querySelector('#precision-mode');
+    precision.checked=true;precision.dispatchEvent(new Event('change',{bubbles:true}));
+    const aim=window.__sculptLabProbe();
+    const before={immersive:aim.immersiveMode,expanded:!aim.paletteCollapsed,
+      inside:panel.contains(profile)&&profile.contains(ratio)&&profile.contains(material),
+      profileVisible:!profile.hidden&&getComputedStyle(profile).display!=='none',
+      guide:aim.sphereGuideVisible,target:aim.precisionTarget};
+    document.querySelector('#palette-toggle').click();
+    const closed=getComputedStyle(panel).display==='none';
+    document.querySelector('#palette-toggle').click();
+    const reopened=getComputedStyle(panel).display!=='none';
+    const x=window.__sculptLabProbe().precisionTarget;
+    document.querySelector('#apply-precision').click();
+    const after=window.__sculptLabProbe();
+    document.querySelector('#nudge-right').click();
+    const reaim=window.__sculptLabProbe();
+    document.querySelector('#fullscreen-toggle').click();
+    return {before,closed,reopened,applied:after.sphereCount,
+      afterGuide:after.sphereGuideVisible,newAimGuide:reaim.sphereGuideVisible,
+      moved:reaim.precisionTarget?.x===x.x+1};
+  })()`);
+  if(!v76R4UI.before.immersive||!v76R4UI.before.expanded||!v76R4UI.before.inside||
+     !v76R4UI.before.profileVisible||!v76R4UI.before.guide||
+     !v76R4UI.before.target||!v76R4UI.closed||!v76R4UI.reopened||
+     v76R4UI.applied!==1||v76R4UI.afterGuide||
+     !v76R4UI.newAimGuide||!v76R4UI.moved)
+    throw Error('V76 R4 fullscreen / preview / no persistent guide contract: '+JSON.stringify(v76R4UI));
+  console.log('V76 R4 real Chromium fullscreen controls / aim before / guide removed after:',JSON.stringify(v76R4UI));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
