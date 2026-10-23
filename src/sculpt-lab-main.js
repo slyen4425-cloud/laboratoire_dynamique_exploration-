@@ -354,7 +354,9 @@ function draw(){
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
-  if(!navigationTesting&&!objectEditing&&!surfaceEditing&&displayCell&&(precisionOn||$('preview-cursor').checked)&&
+  // R4: display the candidate footprint even if the generic cursor is off.
+  const hasFootprint=precisionOn||$('preview-cursor').checked||selectedMode.startsWith('sphere-');
+  if(!navigationTesting&&!objectEditing&&!surfaceEditing&&displayCell&&hasFootprint&&
      (!selectedMode.startsWith('sphere-')||!spherePreviewDismissed)){
     const points=precisionOn?[{x:displayCell.x+.5,y:displayCell.y+.5}]
       :drawing&&strokePoints.length?strokePoints:[{x:displayCell.x+.5,y:displayCell.y+.5}];
@@ -364,7 +366,8 @@ function draw(){
     if(selectedMode.startsWith('sphere-')){
       drawSculptSphereCursor(ctx,{terrain:base,x:first.x*SCULPT_TILE.width,
         y:first.y*SCULPT_TILE.height,radius:Number($('radius').value)*SCULPT_TILE.width,
-        tile:SCULPT_TILE,kind:selectedMode==='sphere-basin'?'basin':'hill'});
+        tile:SCULPT_TILE,kind:selectedMode==='sphere-basin'?'basin':'hill',
+         summitRatio:Number($('sphere-summit-ratio').value)/100});
       previewSummary={cells:1,centerHeight:target};
     }else previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
@@ -548,6 +551,11 @@ function selectMode(mode){
   syncQuickToolbar();
   $('hill-radius-wrap').hidden=mode!=='cliff-round';
   $('sphere-profile-wrap').hidden=mode!=='sphere-hill'&&mode!=='sphere-basin';
+  // On mobile, make a prospective footprint visible before the first tap.
+  if(mode.startsWith('sphere-')&&$('precision-mode').checked&&!precisionCell){
+    precisionCell={x:Math.floor(terrain.width/2),y:Math.floor(terrain.height/2)};
+    updatePrecisionActions();
+  }
   $('height-label').textContent=mode==='sphere-basin'?'Profondeur':mode==='sphere-hill'?'Hauteur de colline':'Hauteur du plateau';
   $('target').min=mode==='sphere-hill'||mode==='sphere-basin'?'1':'0';
   if(mode==='sphere-hill'||mode==='sphere-basin'){
@@ -1644,6 +1652,9 @@ document.addEventListener('fullscreenchange',()=>{
 $('precision-mode').addEventListener('change',()=>{
   precisionCell=null;precisionDragging=false;
   $('preview-cursor').checked=true;
+  spherePreviewDismissed=false;
+  if($('precision-mode').checked&&selectedMode.startsWith('sphere-'))
+    precisionCell={x:Math.floor(terrain.width/2),y:Math.floor(terrain.height/2)};
   updatePrecisionActions();
   status($('precision-mode').checked?
    'Placement précis : vise, ajuste avec les flèches, puis Appliquer. Aucun geste ne modifie la carte avant confirmation.':
@@ -1656,6 +1667,7 @@ for(const [id,dx,dy] of [['nudge-left',-1,0],['nudge-up',0,-1],
     if(!precisionCell)return;
     precisionCell={x:Math.max(0,Math.min(terrain.width-1,precisionCell.x+dx)),
       y:Math.max(0,Math.min(terrain.height-1,precisionCell.y+dy))};
+    spherePreviewDismissed=false;
     updatePrecisionActions();
   });
 }
@@ -1800,7 +1812,8 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
-  sphereGuideVisible:!spherePreviewDismissed&&selectedMode.startsWith('sphere-'),
+  sphereGuideVisible:!spherePreviewDismissed&&selectedMode.startsWith('sphere-')&&
+    ($('precision-mode').checked?!!precisionCell:!!hoverCell),
   summitRatio:Number($('sphere-summit-ratio').value)/100,
   wallMaterial:$('sphere-wall-material').value,
   objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
