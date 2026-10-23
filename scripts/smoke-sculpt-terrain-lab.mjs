@@ -2616,6 +2616,31 @@ try{
      v76R5Stats.after-v76R5Stats.before>1)
     throw Error('V76 R5 assets/cache real Chromium regression: '+JSON.stringify(v76R5Stats));
   console.log('V76 R5 REAL Chromium canonical HD rock/grass/earth + cached pointer:',JSON.stringify(v76R5Stats));
+  // V76 R9 — genuinely exercise the 100% UI and the browser's shared
+  // canonical height + Collision World (not a mock Canvas-only test).
+  const r9Check=await run(`(async()=>{
+    const world=await import('./src/world/sculpt-height-model.js?rev=sphere-frustum-v76-r9');
+    const nav=await import('./src/core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2-sphere-v76-frustum-r9');
+    const slider=document.querySelector('#sphere-summit-ratio');
+    const max=Number(slider.max);slider.value='100';
+    slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const t=world.appendSculptSphere(world.createSculptTerrain({width:40,height:40}),
+      {kind:'hill',x:560,y:420,radius:112,height:7,summitRatio:1,wallMaterial:'grass'});
+    const serialized=world.serializeSculptTerrain(t);
+    const imported=world.importSculptTerrain(serialized);
+    const rendered=world.sculptSphereDisplacementAt(imported,560+111.8,420);
+    const out=world.sculptSphereDisplacementAt(imported,560+112,420);
+    const at=nav.sculptSphereProjectionBlock(imported,560,420-112-16,
+      {cellWidth:28,cellHeight:21,projectionRise:18,radius:5});
+    return {max,label:document.querySelector('#sphere-summit-ratio-value').textContent,
+      jsonRatio:imported.spheres[0].summitRatio,heightAtEdge:rendered,
+      heightOutside:out,collision:at?.kind};
+  })()`);
+  if(r9Check.max!==100||r9Check.label!=='100 %'||
+     r9Check.jsonRatio!==1||r9Check.heightAtEdge!==7||
+     r9Check.heightOutside!==0||r9Check.collision!=='sphere-projection')
+    throw Error('V76 R9 real Chromium 100% mesa/JSON/ground-occlusion regression: '+JSON.stringify(r9Check));
+  console.log('V76 R9 REAL Chromium 100% flat round plateau / canonical JSON / projected hill lock:',JSON.stringify(r9Check));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
