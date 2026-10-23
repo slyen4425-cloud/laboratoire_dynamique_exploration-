@@ -188,3 +188,41 @@ test('V76 R3 old spherical JSON remains readable and material options change fla
   assert.match(main,/spherePreviewDismissed=true;hoverCell=null;scheduleDraw/);
   assert.ok(main.includes("summitRatio:Number($(\'sphere-summit-ratio\').value)/100"));
 });
+
+
+test('V76 R4 material uses one continuous gradient frame rather than tile per polygon',()=>{
+  const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:5,
+    summitRatio:.75,wallMaterial:'rock'});
+  const fills=[],strokes=[],gradients=[];
+  const ctx={fillStyle:'',strokeStyle:'',lineWidth:1,save(){},restore(){},
+    beginPath(){},moveTo(){},lineTo(){},closePath(){},ellipse(){},clip(){},
+    stroke(){strokes.push(this.strokeStyle);},fill(){fills.push(this.fillStyle);},
+    createPattern(){throw Error('R4 must NOT stamp rock atlas across polygons');},
+    createLinearGradient(){const g={stops:[],addColorStop(t,c){this.stops.push([t,c]);}};
+      gradients.push(g);return g;}};
+  const fakeRockImage={width:256,height:256};
+  assert.equal(drawSculptSphereMeshes(ctx,{terrain:t,tile,
+    rockTexture:fakeRockImage,rockPaletteColors:['#a0a0a0','#8c897d','#5d6060','#36393a']}),1);
+  assert.ok(gradients.length>=2&&gradients.length<9,
+    'only a handful of SHARED gradients for the whole mesh');
+  assert.ok(fills.filter(v=>v===gradients[0]).length>100,
+    'same wall gradient shared by many different polygon faces');
+  assert.equal(strokes.length,0,'no black circle/ring baked into finished terrain');
+  const source=readFileSync(new URL('../src/render/sculpt-sphere-mesh.js',import.meta.url),'utf8');
+  assert.ok(!source.includes('face.sector%'),'old square procedural patches removed');
+  assert.ok(!source.includes('ctx.strokeStyle=sphere.kind'),'old circular rim removed');
+});
+
+test('V76 R4 fullscreen palette owns the unique material and summit controls',()=>{
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const start=html.indexOf('<section class="sculpt-quickbar"');
+  const end=html.indexOf('</section>',start);
+  const profile=html.indexOf('id="sphere-profile-wrap"');
+  assert.ok(start>=0&&profile>start&&profile<end);
+  assert.equal(html.split('id="sphere-profile-wrap"').length-1,1,
+    'never create a second owner for the same settings');
+  assert.match(html,/body\\.sculpt-immersive\\.palette-collapsed \\.sculpt-quickbar/);
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.match(main,/const hasFootprint=/);
+  assert.match(main,/spherePreviewDismissed=false;\\s*updatePrecisionActions/);
+});
