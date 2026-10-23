@@ -309,7 +309,7 @@ test('V76 R7 shading scales with altitude like standard cliffs without mutating 
   const a=sculptSphereReliefLighting(low.spheres[0]);
   const b=sculptSphereReliefLighting(high.spheres[0]);
   assert.ok(a.contactOpacity>0&&a.contactOpacity<b.contactOpacity);
-  assert.ok(a.rimOpacity<b.rimOpacity&&b.rimOpacity<=.52);
+  assert.ok(a.rimOpacity<b.rimOpacity&&b.rimOpacity<=.60);
   assert.ok(a.footOpacity<b.footOpacity&&b.footOpacity<=.42);
   assert.equal(a.lightOpacity,.12);
   assert.equal(a.sideOpacity,.19);
@@ -529,4 +529,69 @@ test('V76 R10 small-summit front conical wall is ONE contiguous closed silhouett
   const excavated=sphere('basin');
   assert.equal(sculptSphereFrustumContours(excavated,excavated.spheres[0],tile),null,
     'basin is untouched by capped-hill correction');
+});
+
+test('V76 R11 Collision World gives a small bounded projected summit margin, not new obstacles',()=>{
+  for(const ratio of [0,.2,.5,.75,1]){
+    for(const height of [2,4,7]){
+      const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height,summitRatio:ratio});
+      const cfg=config(t),actor={x,y:y-r-58,radius:5,locomotion:{modes:['ground']}};
+      const exposed=sculptSphereProjectionBlock(t,x,y-r-12,{
+        projectionRise:18,radius:actor.radius});
+      if(exposed){
+        assert.ok(exposed.clearance>=2&&exposed.clearance<=6,
+          'projection margin bounded to a few world pixels, independent of art');
+        assert.equal(exposed.id,t.spheres[0].id,
+          'collision comes from the original World Model sphere');
+        assert.equal(sculptNavigationBlockDetail(cfg,actor,x,y-r-12)?.kind,'sphere-projection');
+      }
+      const far=actor.y-70;
+      assert.equal(sculptSphereProjectionBlock(t,x,far,{projectionRise:18,radius:5}),null,
+        'walkers far north remain free');
+      const side=x+r+30;
+      assert.equal(sculptSphereProjectionBlock(t,side,y-r-12,{projectionRise:18,radius:5}),null,
+        'side of the hill stays free');
+      const flyer={...actor,locomotion:{modes:['fly']}};
+      assert.equal(sculptNavigationBlockDetail(cfg,flyer,x,y-r-12),null,
+        'flight remains exempt from the world projection guard');
+    }
+  }
+  const tall=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,
+    height:7,summitRatio:.65});
+  assert.equal(sculptSphereProjectionBlock(tall,x,y-r-16,
+    {projectionRise:18,radius:5})?.clearance,4);
+  assert.equal(sculptSphereProjectionBlock(base(),x,y-r-16,
+    {projectionRise:18,radius:5}),null);
+});
+test('V76 R11 grass brightens with hill height and shades its CIRCULAR outer border',()=>{
+  const low=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:1,summitRatio:.5});
+  const tall=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:7,summitRatio:.5});
+  const l=sculptSphereReliefLighting(low.spheres[0]),h=sculptSphereReliefLighting(tall.spheres[0]);
+  assert.ok(h.summitLightOpacity>l.summitLightOpacity);
+  assert.ok(h.summitLightOpacity<=.24);
+  assert.ok(h.rimOpacity>l.rimOpacity&&h.rimOpacity<=.60);
+  const draw=(terrain)=>{
+    const radial=[],fills=[];
+    const ctx={fillStyle:null,save(){},restore(){},beginPath(){},
+      moveTo(){},lineTo(){},closePath(){},ellipse(){},clip(){},
+      fill(){fills.push(this.fillStyle)},
+      createPattern(image){return {image}},
+      createLinearGradient(){return {addColorStop(){}}},
+      createRadialGradient(...params){
+        const g={params,stops:[],addColorStop(t,c){this.stops.push([t,c])}};
+        radial.push(g);return g;
+      }};
+    const soil={grass:'registered-grass-forest'};
+    drawSculptSphereMeshes(ctx,{terrain,tile,texture:soil});
+    return {radial,fills};
+  };
+  const a=draw(low),b=draw(tall);
+  assert.equal(a.radial.length,1,'one shared radial gradient per capped hill');
+  assert.equal(b.radial.length,1,'no individual triangles receive separate gradients');
+  assert.ok(b.radial[0].stops.find(([t])=>t===1)[1].includes('rgba(17,32,27,'));
+  assert.ok(b.fills.some(v=>v==='rgba(250,250,212,'+h.summitLightOpacity+')'),
+    'bright translucent overlay keeps the existing grass texture visible');
+  assert.ok(a.fills.length<=9&&b.fills.length<=9,'R5/R10 fill budget preserved');
+  const basin=appendSculptSphere(base(),{kind:'basin',x,y,radius:r,height:7});
+  assert.equal(sculptSphereReliefLighting(basin.spheres[0]).summitLightOpacity,0);
 });
