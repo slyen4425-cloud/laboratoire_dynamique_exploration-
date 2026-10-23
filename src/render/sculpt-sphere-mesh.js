@@ -4,6 +4,24 @@ import {sculptSphereDisplacementAt} from '../world/sculpt-height-model.js';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 const TAU=2*Math.PI, SECTORS=36, BANDS=10;
 const meshCache=new WeakMap();
+// One radius is shared by the LAST grass crown ring and the FIRST rock wall
+// ring. R7 split by a threshold half-way down the slope, leaving the crown
+// wider than the rocks below (the user's "disc on a smaller cone" bug).
+// At summitRatio > 0, this radius is EXACTLY the World Model's flat plateau.
+// For legacy round spheres (summitRatio = 0), retain a curved grass crown.
+export function sculptSphereVisualContact(sphere){
+  const flat=sphere?.summitRatio??0;
+  return flat>0?flat:(sphere?.kind==='basin'?.24:.45);
+}
+export function sculptSphereRadialRings(sphere){
+  const seam=sculptSphereVisualContact(sphere);
+  // Keep V76's light 10-band mesh; one extra ring enforces the exact seam
+  // even for a summit such as 75%, which sits BETWEEN .7 and .8.
+  const radii=Array.from({length:BANDS+1},(_,i)=>i/BANDS);
+  if(!radii.some(r=>Math.abs(r-seam)<1e-9))radii.push(seam);
+  radii.sort((a,b)=>a-b);
+  return Object.freeze(radii);
+}
 // The same visual cues used by sculpt-height-renderer.js for standard cliffs:
 // height-dependent terrain tint, contact shadows (max .37), a dark upper lip
 // (max .52), directional rock light (.12 / .19) and a darker cliff foot.
@@ -36,27 +54,31 @@ export function sculptSphereProjectedPoint(terrain,sphere,ratio,angle,tile){
 function projectedMesh(terrain,sphere,tile){
   const old=meshCache.get(sphere);
   if(old?.terrain===terrain&&old.rise===tile.rise)return old;
-  const nodes=[];
-  for(let band=0;band<=BANDS;band++){
-    const pts=[],radius=band/BANDS;
+  const nodes=[],radii=sculptSphereRadialRings(sphere);
+  const border=sculptSphereVisualContact(sphere);
+  for(let band=0;band<radii.length;band++){
+    const pts=[],radius=radii[band];
     for(let sector=0;sector<=SECTORS;sector++)
       pts.push(sculptSphereProjectedPoint(terrain,sphere,radius,
         sector*TAU/SECTORS,tile));
     nodes.push(pts);
   }
   const faces=[];
-  for(let band=0;band<BANDS;band++){
+  for(let band=0;band<radii.length-1;band++){
     for(let sector=0;sector<SECTORS;sector++){
       const q=[nodes[band][sector],nodes[band][sector+1],
         nodes[band+1][sector+1],nodes[band+1][sector]];
-      const radial=(band+.5)/BANDS,summit=sphere.summitRatio??0;
-      const flank=Math.max(0,(radial-summit)/(1-summit));
-      faces.push({q,wall:sphere.kind==='hill'?flank>=.45:flank>=.24,
-        radial,depth:q.reduce((v,p)=>v+p.worldY,0)/4});
+      const innerRadius=radii[band],outerRadius=radii[band+1];
+      const radial=(innerRadius+outerRadius)/2;
+      // The same vertices define both sides: zero grass overhang, zero
+      // unpainted gap and no approximate face threshold.
+      faces.push({q,wall:innerRadius>=border-1e-9,
+        innerRadius,outerRadius,radial,
+        depth:q.reduce((v,p)=>v+p.worldY,0)/4});
     }
   }
   faces.sort((a,b)=>a.depth-b.depth);
-  const mesh={terrain,rise:tile.rise,nodes,faces};
+  const mesh={terrain,rise:tile.rise,nodes,faces,radii,border};
   meshCache.set(sphere,mesh);
   return mesh;
 }
@@ -154,6 +176,10 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   // shadow band where its edge falls into the rock wall. No inked ring.
   const crownMax=crown.length?Math.max(...crown.map(f=>f.radial)):0;
   const crownLip=crown.filter(f=>f.radial>=crownMax-.105);
+  // The natural contact tint is INSIDE the plateau only: rock and grass
+  // meet at the same projected vertices, never a widened grass disc.
+  const grassShoulder=crown.filter(f=>
+    Math.abs(f.outerRadius-mesh.border)<1e-9);
   const rim=gradient(ctx,x-r,y-r,x+r,y+r,
     [
       'rgba(16,31,34,'+(lighting.rimOpacity*.74)+')',
@@ -174,6 +200,8 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   paintRearBand(ctx,sphere,mesh);
   fillLayer(ctx,crown,groundColor);
   if(lighting.topTone!==0)shadeLayer(ctx,crown,tone);
+  shadeLayer(ctx,grassShoulder,
+    sphere.kind==='hill'?'rgba(105,87,55,.11)':'rgba(68,73,50,.09)');
   shadeLayer(ctx,crownLip,rim);
   fillLayer(ctx,frontWalls,material.color);
   shadeLayer(ctx,frontWalls,vertical);
@@ -185,7 +213,8 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
 function paintRearBand(ctx,sphere,mesh){
   // A shaded CRESCENT on the far/rear half gives readable volume without a
   // permanent black circle. Both its boundaries use the analytic mesh.
-  const outer=mesh.nodes[BANDS],inner=mesh.nodes[Math.max(0,BANDS-2)];
+  const last=mesh.nodes.length-1;
+  const outer=mesh.nodes[last],inner=mesh.nodes[Math.max(0,last-2)];
   ctx.beginPath();
   for(let i=SECTORS/2;i<=SECTORS;i++){
     const p=outer[i];if(i===SECTORS/2)ctx.moveTo(p.x,p.y);
