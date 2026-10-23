@@ -1,3 +1,17 @@
+# Lot V76 R2 — 23/10/2026 — Volume réellement lisible des collines et cavités (NON GREEN Pixel)
+
+- **Retour créateur V76 :** « Ok j ai bien une sphère qui bloque le passage, Mais pas de hauteur / profondeur. » La V76 ne peut pas devenir GREEN avec une silhouette plate ; V77 et V78 restent gelés.
+- **Dernier GREEN créateur :** V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`. **Base V76 R2 :** prévalidation `25b6004c48643d0e82a5b8b5b8be9ba68bd43725`, incluant les 20 cascades V3 et 28 ponts. Rollback à V76 source puis V75 GREEN.
+- **Checkpoint START immuable :** `checkpoint/exploration-start-sphere-volume-v76-r2-2026-10-23`, sur le SHA de V76 ci-dessus. **Branche :** `work/exploration-sphere-volume-v76-r2-2026-10-23`. Périmètre unique du rendu et de l'ergonomie de hauteur/profondeur.
+- **Cause :** un maillage de hauteur analytique existe déjà, mais utilise une texture de surface similaire au sol avec seulement un faible voile ombré, sans différenciation de flanc ni évidement visuel net ; le créateur ne voit pas le volume pourtant calculé.
+- **Autorités :** `sculpt-height-model` conserve le seul volume géométrique persistant et `Collision World` la seule collision. `sculpt-sphere-mesh` ne fait que projeter et colorer ces échantillons, sans second collider ; `sculpt-lab-main` affiche le réglage d'amplitude de 1 à 7.
+- **Travaux :** flancs minéraux différenciés et lumière directionnelle pour les calottes ; ombre de contact au sol, courbes de niveau liées à la hauteur ; cavités peintes à l'intérieur du cercle avec fond assombri, parois et bord supérieur apparent ; retour de l'amplitude ± en unités/niveaux.
+- **Gel :** anciens plateaux et falaises V75, navigation, ponts sur/sous, cascades V3, eau, caméra, sauvegarde WorldDocument, Builder historique et Combat. Aucune ouverture de franchissement à pied sans pente V77.
+- **Gates :** nouveaux tests de relief rendu avec amplitude haut/bas visible, anti-disque plat et persistance des formules de hauteur ; tests existants Node + Chromium Sculpt/Builder/Combat, CI sur le SHA final avant Pages. **GREEN Pixel interdit** avant essais visuels des deux formes en hauteur 1, 3 et 7 et plusieurs angles.
+- **Après validation :** checkpoint GREEN V76 R2 puis seulement lot indépendant V77 pentes, enfin V78 escaliers.
+
+---
+
 # Lot V76 — 22/10/2026 — Relief sphérique analytique (1/1, NON GREEN utilisateur)
 
 - **Autorisation** : le créateur a validé V75 R2 (« Parfait, je valide. ») après la prévisualisation corrigée. Source GREEN figée `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`, checkpoint `checkpoint/exploration-cliff-lock-v75-north-r2-green-2026-10-22`.
