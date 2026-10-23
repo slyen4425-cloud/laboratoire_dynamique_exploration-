@@ -1,6 +1,6 @@
 // V76 R5: cached analytic projected geometry + one seamless material projection.
 // World Model still owns all geometry. This file neither stores nor edits collision.
-import {sculptSphereDisplacementAt} from '../world/sculpt-height-model.js';
+import {sculptSphereDisplacementAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 const TAU=2*Math.PI, SECTORS=36, BANDS=10;
 const meshCache=new WeakMap();
