@@ -535,7 +535,7 @@ function selectMode(mode){
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
   spherePreviewDismissed=false;
-  if(nextKind==='water'lastWaterMode=mode;else lastGroundMode=mode;
+  if(nextKind==='water')lastWaterMode=mode;else lastGroundMode=mode;
   // Quickbar can be used while Objects or Textures is active even when the
   // last terrain kind was already 'ground'. Always exit the overlay editor.
   if(editorKind!==nextKind||objectEditing||surfaceEditing)setEditorKind(nextKind);
