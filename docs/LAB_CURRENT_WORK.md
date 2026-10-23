@@ -1,3 +1,16 @@
+# Lot V76 R9 — 23/10/2026 — Colline conique + sommet rond 100 % + verrou visuel à pied (NON GREEN Pixel)
+
+- **Retour V76 R8** : joueur au niveau bas visible sur l'herbe du sommet ; la forme à plateau ressemble à deux cercles superposés au lieu d'une base demi-circulaire et des flancs tronconiques ; pourcentage sommet plafonné à 85 % au lieu de 100 %.
+- **Dernier GREEN** : V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`. Base R8 : `356bdfb83b19fa10ee4f06db3612fe0f036cbeab`.
+- **START immuable** : `checkpoint/exploration-start-sphere-frustum-v76-r9-2026-10-23`. **Branche unique** : `work/exploration-sphere-frustum-v76-r9-2026-10-23`.
+- **World Model seul propriétaire** : à 0 %, dôme hémisphérique existant ; à 5–95 %, sommet plat et flanc à pente linéaire (tronc de cône) ; à 100 %, plateau circulaire avec mur vertical. Import/export ancien JSON conservé. UI 0–100 %.
+- **Collision World** : adapter existant complété par un blocage de la partie haute visuellement projetée sur le sol nord (profil échantillonné dans le modèle canonique). Le joueur marche au sol mais ne peut pénétrer visuellement le sommet ; retrait vers l'extérieur et vol préservés ; spawn hors projection.
+- **Gel** : V77 pentes praticables et V78 escaliers, V75 falaises standards, R5 perf/cache, R6 guide/sommet, R7 ombres, R8 bord commun, assets/texture HD, ponts/cascades, caméra, Builder/Combat.
+- **Gates** : tests model+Collision World+vrai stepMovement, Chromium 100 %/JSON/projection + Sculpt/Builder/Combat, SHA CI finale, diff assets nul, Pages pin infrastructure uniquement. **NON GREEN avant test Pixel**.
+- Voir `docs/checkpoints/EXPLORATION_SPHERE_FRUSTUM_V76_R9_PREVALIDATION_2026-10-23.md`.
+
+---
+
 # Lot V76 R8 — 23/10/2026 — Rayon commun herbe / roche sans effet champignon (NON GREEN Pixel)
 
 - **Retour V76 R7** : disque d'herbe plus large que cône rocheux, plateau semble posé en surplomb. Cause : classification des faces par un seuil de pente .45/.24 au lieu de la frontière du sommet `summitRatio`.
