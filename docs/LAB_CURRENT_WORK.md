@@ -1,3 +1,15 @@
+# Lot V76 R5 — 23/10/2026 — Anti-lag, ombre arrière, textures canoniques (NON GREEN Pixel)
+
+- Retour R4 utilisateur : lag massif pendant l'édition de sphères, volumes trop lisses sans bande foncée arrière, textures existantes non raccordées. V76 R4 rejetée.
+- Source V76 R4 : `7236f81591b326f732acacf82d7dc6d97771a292`; dernier GREEN utilisateur V75 R2 : `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- Checkpoint START : `checkpoint/exploration-start-sphere-perf-v76-r5-2026-10-23`; une branche `work/exploration-sphere-perf-v76-r5-2026-10-23`.
+- Rendu : cache du fond réutilisé pendant l'édition, maillage sphérique mémorisé et diminué, projections composites de matériau réel provenant de l'adapter Cliff HD V49 et du registre herbe/terre ; croissant sombre arrière sans trait noir permanent.
+- Gel : World Model/Collision World, franchissement V77 et escaliers V78, V75, ponts, cascades, caméra, Builder, Combat, sauvegardes et données existantes. Aucun asset généré ni modifié.
+- Tests : Node, Chromium pixels/placement/24 survols, vrais 3 assets et nombre stable de caches, CI au SHA final, publication Pages infra isolée. **NON GREEN Pixel avant vérification réelle par le créateur**.
+- Voir `docs/checkpoints/EXPLORATION_SPHERE_PERF_V76_R5_PREVALIDATION_2026-10-23.md`.
+
+---
+
 # Lot V76 R4 — 23/10/2026 — Anti-mosaïque + panneaux immersifs + guide avant placement (NON GREEN Pixel)
 
 - **Retour créateur** : sur V76 R3, flancs constitués de petits carrés, commandes de sommet/matière absentes du panneau flottant plein écran ; cercle noir permanent après pose et aucun guide avant.
