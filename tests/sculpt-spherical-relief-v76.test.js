@@ -346,8 +346,8 @@ test('V76 R7 real material persists under vertical/lateral shade and soft outer 
       if(kind==='hill'){
         assert.ok(!fills.includes('rgba(19,27,29,.24)'),
           'R10: no exposed rear hemisphere causing rock spikes through the cap');
-        assert.ok(fills.some(v=>v?.gradient),
-          'R10: back-rim and side shading now share continuous cap and wall paths');
+        assert.ok(fills.some(v=>v&&typeof v==='object'&&Array.isArray(v.colors)),
+          'R10: back-rim and side shading use shared continuous cap/wall gradients');
       }else{
         assert.ok(fills.includes('rgba(7,17,29,.35)'),
           'unmodified excavated basin preserves rear shadow');
