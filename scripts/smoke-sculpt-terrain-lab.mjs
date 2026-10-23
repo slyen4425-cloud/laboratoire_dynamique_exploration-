@@ -2672,6 +2672,29 @@ try{
   if(r10Check.some(s=>!s.continuous||s.minAlpha<1))
     throw Error('V76 R10 actual Chromium conical wall contains unpainted triangles: '+JSON.stringify(r10Check));
   console.log('V76 R10 REAL Chromium 5%–100% continuous painted front rock (no missing triangles):',JSON.stringify(r10Check));
+  // V76 R11: a real browser canvas must visually distinguish high grass
+  // from low grass. Test the composited pixels, not merely the CSS/ramp.
+  const r11Light=await run(`(async()=>{
+    const model=await import('./src/world/sculpt-height-model.js?rev=sphere-frustum-v76-r9');
+    const render=await import('./src/render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11');
+    const tile={width:28,height:21,rise:18},samples=[];
+    for(const height of [1,3,7]){
+      const terrain=model.appendSculptSphere(model.createSculptTerrain({width:40,height:40}),
+        {kind:'hill',x:560,y:420,radius:112,height,summitRatio:.75,wallMaterial:'rock'});
+      const canvas=document.createElement('canvas');canvas.width=1120;canvas.height=840;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      render.drawSculptSphereMeshes(ctx,{terrain,tile,baseColor:'#6b8952'});
+      const yy=Math.round(420-(terrain.spheres[0].baseLevel+height)*tile.rise);
+      const pixel=Array.from(ctx.getImageData(560,yy,1,1).data);
+      samples.push({height,pixel});
+    }
+    return samples;
+  })()`);
+  const r11Lum=v=>v.pixel[0]+v.pixel[1]+v.pixel[2];
+  if(r11Light.some(x=>x.pixel[3]===0)||!(r11Lum(r11Light[0])<
+     r11Lum(r11Light[1])&&r11Lum(r11Light[1])<r11Lum(r11Light[2])))
+    throw Error('V76 R11 grass lighting fails real Chromium low/middle/high pixel comparison: '+JSON.stringify(r11Light));
+  console.log('V76 R11 REAL Chromium 1/3/7 level upper grass luminance:',JSON.stringify(r11Light));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
