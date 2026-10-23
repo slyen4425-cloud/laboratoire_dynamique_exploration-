@@ -45,7 +45,11 @@ export function sculptSphereReliefLighting(sphere){
 export function sculptSphereProjectedPoint(terrain,sphere,ratio,angle,tile){
   const x=sphere.x+Math.cos(angle)*sphere.radius*ratio;
   const worldY=sphere.y+Math.sin(angle)*sphere.radius*ratio;
-  const delta=sculptSphereDisplacementAt(terrain,x,worldY);
+  // The outer ring is the physical perimeter. sin/cos rounding can put
+  // a point a few ULPs INSIDE a 100% vertical wall; sampling that as +7
+  // levels produced the exact high skinny spikes seen on Pixel. Clamp only
+  // the VISUAL boundary ring to the canonical outside height (zero offset).
+  const delta=ratio>=1?0:sculptSphereDisplacementAt(terrain,x,worldY);
   const level=sphere.baseLevel+delta;
   const depthViewScale=sphere.kind==='basin'
     ?Math.min(1,sphere.radius*.68/(7*tile.rise)):1;
