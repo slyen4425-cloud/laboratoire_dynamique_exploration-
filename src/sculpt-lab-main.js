@@ -482,7 +482,9 @@ function precisionApply(){
   }else terrain=water?applySculptWaterStroke(previous,options):
     applySculptStroke(previous,{...options,rockRoundness:Number($('visual-smooth').value)});
   commitUndo(previous);
-  if(selectedMode.startsWith('sphere-'))spherePreviewDismissed=true;
+  // R6: keep the mint dashed brush active after placement so the next
+  // target can be adjusted immediately. It is ONLY a live editor overlay.
+  if(selectedMode.startsWith('sphere-'))spherePreviewDismissed=false;
   status(terrain!==previous?'Case ('+(cell.x+1)+','+(cell.y+1)+') appliquée · Annuler disponible':
     'Aucun changement à cet emplacement');
   scheduleDraw();
@@ -821,7 +823,11 @@ function stop(event){
     strokeUndo=null;
   }
   drawing=false;lastCell='';strokePoints=[];
-  if(selectedMode.startsWith('sphere-')){spherePreviewDismissed=true;hoverCell=null;scheduleDraw();}
+  if(selectedMode.startsWith('sphere-')){
+    spherePreviewDismissed=false;
+    // Retain the last target on touch devices; it is not persisted in the map.
+    scheduleDraw();
+  }
 }
 
 /* V17 isolated gameplay probe. Position and movement use the existing Exploration
@@ -1624,7 +1630,14 @@ canvas.addEventListener('pointerdown',begin);
 canvas.addEventListener('pointermove',stroke);
 canvas.addEventListener('pointerup',stop);
 canvas.addEventListener('pointercancel',stop);
-canvas.addEventListener('pointerleave',()=>{if(!drawing&&!precisionDragging){hoverCell=null;scheduleDraw();}});
+canvas.addEventListener('pointerleave',()=>{
+  if(!drawing&&!precisionDragging){
+    // A touch pointer often emits leave immediately on release; clearing the
+    // preview here made the sphere brush vanish after every placement.
+    if(!selectedMode.startsWith('sphere-'))hoverCell=null;
+    scheduleDraw();
+  }
+});
 canvas.addEventListener('lostpointercapture',stop);
 canvas.addEventListener('wheel',event=>{
   event.preventDefault();
