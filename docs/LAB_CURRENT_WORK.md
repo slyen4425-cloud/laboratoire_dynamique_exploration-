@@ -1,3 +1,15 @@
+# Lot V76 R8 — 23/10/2026 — Rayon commun herbe / roche sans effet champignon (NON GREEN Pixel)
+
+- **Retour V76 R7** : disque d'herbe plus large que cône rocheux, plateau semble posé en surplomb. Cause : classification des faces par un seuil de pente .45/.24 au lieu de la frontière du sommet `summitRatio`.
+- **Dernier GREEN** V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`. **Base V76 R7** `db5cc35af3a8edb3d730ed9420f5c76b851fa0b2`.
+- **Checkpoint START** `checkpoint/exploration-start-sphere-contact-v76-r8-2026-10-23`. **Branche unique** `work/exploration-sphere-contact-v76-r8-2026-10-23`.
+- **Correction renderer seulement** : insertion d'un anneau radial de géométrie exactement à la largeur du sommet (par ex. .75), partage de ses vertices par les deux matériaux, épaule terreuse sous le bord **à l'intérieur** du sommet. Aucun changement World Model/Collision World/JSON.
+- **Conserver** : assets et textures HD, cache/performances R5, ordre des couches et guide R6, ombrages R7, ponts V74 et cascades V3. V77/V78 gelés.
+- **Tests** : rayons 0–85 %, Canvas réel du sommet et des murs, sérialisation, CI Node+Chromium Sculpt/Builder/Combat et publication par pin infra. Checkpoint détaillé `docs/checkpoints/EXPLORATION_SPHERE_CONTACT_V76_R8_PREVALIDATION_2026-10-23.md`.
+- **Statut** : NON GREEN jusqu'au test visuel utilisateur.
+
+---
+
 # Lot V76 R7 — 23/10/2026 — Ombres des reliefs sphériques comme les hauteurs standards (NON GREEN Pixel)
 
 - **Retour utilisateur V76 R6** : mieux, mais ombrage roche/herbe insuffisant et contours externes plats. Demande volume lumineux équivalent aux reliefs standards.
