@@ -4,19 +4,29 @@ export const SCULPT_SCHEMA_VERSION=1;
 // V76: canonical continuous spherical relief; never inferred from painted pixels.
 export const SCULPT_SPHERE_LIMIT=24;
 const sphericalKinds=new Set(['hill','basin']);
+export const SCULPT_SPHERE_WALL_MATERIALS=Object.freeze(['rock','grass','earth']);
+const sphereWallMaterials=new Set(SCULPT_SPHERE_WALL_MATERIALS);
 const validSphere=(f,w,h)=>f&&typeof f.id==='string'&&/^sculpt-sphere-[1-9][0-9]*$/.test(f.id)&&
   sphericalKinds.has(f.kind)&&[f.x,f.y,f.radius].every(Number.isFinite)&&
   f.radius>=14&&f.radius<=448&&f.x-f.radius>=0&&f.y-f.radius>=0&&
   f.x+f.radius<=w*28&&f.y+f.radius<=h*21&&
   Number.isInteger(f.height)&&f.height>=1&&f.height<=7&&
-  Number.isInteger(f.baseLevel)&&f.baseLevel>=0&&f.baseLevel<=7;
+  Number.isInteger(f.baseLevel)&&f.baseLevel>=0&&f.baseLevel<=7&&
+  (f.summitRatio===undefined||(Number.isFinite(f.summitRatio)&&f.summitRatio>=0&&f.summitRatio<=.85))&&
+  (f.wallMaterial===undefined||sphereWallMaterials.has(f.wallMaterial));
 export function sculptSphereDisplacementAt(terrain,x,y){
   if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return 0;
   let offset=0;
   for(const f of terrain.spheres??[]){
     const dx=(x-f.x)/f.radius,dy=(y-f.y)/f.radius;
     const d2=dx*dx+dy*dy;
-    if(d2<1)offset+=(f.kind==='hill'?1:-1)*f.height*Math.sqrt(1-d2);
+    if(d2<1){
+      // R3: optional flat summit/floor. Legacy circles (summitRatio absent)
+      // preserve the exact V76 sphere formula and exported geometry.
+      const summit=f.summitRatio??0;
+      const slope=Math.max(0,(Math.sqrt(d2)-summit)/(1-summit));
+      offset+=(f.kind==='hill'?1:-1)*f.height*Math.sqrt(Math.max(0,1-slope*slope));
+    }
   }
   return offset;
 }
@@ -24,14 +34,16 @@ export function sculptSphereAt(terrain,x,y,padding=0){
   if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return null;
   return (terrain.spheres??[]).find(f=>Math.hypot(x-f.x,y-f.y)<f.radius+Math.max(0,padding))??null;
 }
-export function appendSculptSphere(terrain,{kind='hill',x,y,radius=112,height=3}={}){
+export function appendSculptSphere(terrain,{kind='hill',x,y,radius=112,height=3,
+  summitRatio=0,wallMaterial='rock'}={}){
   if(!terrain||!sphericalKinds.has(kind)||!Number.isFinite(x)||!Number.isFinite(y)||
      !Number.isFinite(radius)||!Number.isInteger(height)||height<1||height>7||
      (terrain.spheres?.length??0)>=SCULPT_SPHERE_LIMIT)return terrain;
   const baseLevel=sculptHeightAt(terrain,Math.floor(x/28),Math.floor(y/21));
   const ids=new Set((terrain.spheres??[]).map(f=>f.id));
   let index=1;while(ids.has('sculpt-sphere-'+index))index++;
-  const f=Object.freeze({id:'sculpt-sphere-'+index,kind,x,y,radius,height,baseLevel});
+  const f=Object.freeze({id:'sculpt-sphere-'+index,kind,x,y,radius,height,baseLevel,
+    summitRatio,wallMaterial});
   if(!validSphere(f,terrain.width,terrain.height))return terrain;
   // For V76, keep caps truly continuous: place only over a dry, flat patch
   // without overlapping another sphere or secretly modifying grid heights.
