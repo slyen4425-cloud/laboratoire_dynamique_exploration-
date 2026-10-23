@@ -1,3 +1,16 @@
+# Lot V76 R6 — 23/10/2026 — Plateau herbeux continu et guide toujours prêt (NON GREEN Pixel)
+
+- **Retour R5** : fluidité approuvée en test utilisateur ; guide de pose disparaît aussitôt ; sommet herbeux des colonnes partiellement masqué par les flancs arrière (capture).
+- **Base R5** : `195ff6a5975a1307ce26fbc5fd53520496a5bd2f`. **Dernier GREEN** : V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **Checkpoint START** : `checkpoint/exploration-start-sphere-cap-guide-v76-r6-2026-10-23`. **Branche unique** : `work/exploration-sphere-cap-guide-v76-r6-2026-10-23`.
+- **Rendu** : ordre correct des couches roche arrière + bande d'ombre / plateau en herbe / roche avant. Même maillage analytique et cache R5, mêmes matériaux enregistrés.
+- **Interaction** : guide pointillé restant prêt à l'emploi après pose en mode précis et direct, visée mobile retenue. Pas de trait peint définitivement ni nouveau contrôle.
+- **Gel** : World Model, Collision World, V75, ponts et cascades, V77 pentes, V78 escaliers, caméra, volumes, assets et performances R5.
+- **Gates** : Node, Chromium Sculpt/Builder/Combat sur SHA source final, comparaison aucun asset touché, checkpoint prévalidation, Pages par infrastructure seulement. **NON GREEN jusqu'à validation smartphone**.
+- **Référence** : `docs/checkpoints/EXPLORATION_SPHERE_CAP_GUIDE_V76_R6_PREVALIDATION_2026-10-23.md`.
+
+---
+
 # Lot V76 R5 — 23/10/2026 — Anti-lag, ombre arrière, textures canoniques (NON GREEN Pixel)
 
 - Retour R4 utilisateur : lag massif pendant l'édition de sphères, volumes trop lisses sans bande foncée arrière, textures existantes non raccordées. V76 R4 rejetée.
