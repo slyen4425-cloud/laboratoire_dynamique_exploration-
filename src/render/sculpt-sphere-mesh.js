@@ -20,11 +20,11 @@ function smoothGradient(ctx,x0,y0,x1,y1,colors,fallback){
     gradient.addColorStop(i/(colors.length-1),colors[i]);
   return gradient;
 }
-function sphereMaterials(ctx,sphere,rockPaletteColors){
+function sphereMaterials(ctx,sphere,tile,rockPaletteColors){
   // Gradients share one continuous world-space coordinate frame ACROSS every
   // triangle. Never use the former atlas tiles or per-polygon rock palette:
   // both produced the small square checkerboard seen on the user's Pixel.
-  const r=sphere.radius,x=sphere.x,y=sphere.y-sphere.baseLevel*18;
+  const r=sphere.radius,x=sphere.x,y=sphere.y-sphere.baseLevel*tile.rise;
   const rock=Array.isArray(rockPaletteColors)&&rockPaletteColors.length>=4
     ?rockPaletteColors:['#b1a597','#908a80','#686d6a','#3b444a'];
   const material=sphere.wallMaterial??'rock';
@@ -44,7 +44,7 @@ function sphereMaterials(ctx,sphere,rockPaletteColors){
 }
 function drawFaces(ctx,terrain,sphere,tile,pattern,baseColor,rockPaletteColors){
   const faces=[];
-  const materials=sphereMaterials(ctx,sphere,rockPaletteColors);
+  const materials=sphereMaterials(ctx,sphere,tile,rockPaletteColors);
   for(let ring=0;ring<BANDS;ring++){
     const inner=ring/BANDS,outer=(ring+1)/BANDS;
     for(let sector=0;sector<SECTORS;sector++){
