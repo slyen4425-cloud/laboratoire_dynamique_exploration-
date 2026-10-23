@@ -2539,9 +2539,9 @@ try{
       chosenSummit:p.summitRatio};
   })()`);
   if(r3Painted.count!==1||r3Painted.sphere?.summitRatio!==.75||
-     r3Painted.sphere?.wallMaterial!=='earth'||r3Painted.guideVisible||
+     r3Painted.sphere?.wallMaterial!=='earth'||!r3Painted.guideVisible||
      r3Painted.chosenSummit!==.75||r3Painted.chosenMaterial!=='earth')
-    throw Error('V76 R3 real pointer failed summit/material or left a brush outline: '+
+    throw Error('V76 R6 pointer failed summit/material or live brush visibility: '+
       JSON.stringify(r3Painted));
   console.log('V76 R3 real Chromium plateau + earth texture + temporary brush:',
     JSON.stringify(r3Painted));
@@ -2585,10 +2585,10 @@ try{
   if(!v76R4UI.before.immersive||!v76R4UI.before.expanded||!v76R4UI.before.inside||
      !v76R4UI.before.profileVisible||!v76R4UI.before.guide||
      !v76R4UI.before.target||!v76R4UI.closed||!v76R4UI.reopened||
-     v76R4UI.applied!==1||v76R4UI.afterGuide||
+     v76R4UI.applied!==1||!v76R4UI.afterGuide||
      !v76R4UI.newAimGuide||!v76R4UI.moved)
-    throw Error('V76 R4 fullscreen / preview / no persistent guide contract: '+JSON.stringify(v76R4UI));
-  console.log('V76 R4 real Chromium fullscreen controls / aim before / guide removed after:',JSON.stringify(v76R4UI));
+    throw Error('V76 R6 fullscreen / preview remains ready after placement: '+JSON.stringify(v76R4UI));
+  console.log('V76 R6 Chromium fullscreen controls / aim stays visible for next placement:',JSON.stringify(v76R4UI));
   // V76 R5: actual image assets (HD cliff, forest grass and forest earth)
   // must be loaded before validating that pointer hovering cannot re-bake
   // all 36x24 ground cells and spherical meshes on each event.
