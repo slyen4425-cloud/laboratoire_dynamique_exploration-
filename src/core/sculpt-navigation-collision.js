@@ -114,8 +114,13 @@ export function sculptSphereProjectionBlock(terrain,x,y,{
       }
     }
     const depth=projectedFoot-upper;
-    if(depth>=-bodyRadius&&projectedFoot<
-      northEdge-base+bodyRadius+1e-6)
+    // R11: the actor is wider on screen than a mathematical foot point.
+    // A small clearance around the raised silhouette prevents the remaining
+    // apparent overlap without growing its canonical physical circle.
+    // Bounded by 4 world pixels, so no large invisible obstacle is added.
+    const spriteClearance=Math.min(4,bodyRadius*.6);
+    if(depth>=-bodyRadius-spriteClearance&&projectedFoot<
+      northEdge-base+bodyRadius+spriteClearance+1e-6)
       return Object.freeze({kind:'sphere-projection',id:hill.id,
         variant:hill.kind,depth,centerX:hill.x,limit:0});
   }
