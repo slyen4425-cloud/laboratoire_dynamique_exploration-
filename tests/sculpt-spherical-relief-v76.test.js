@@ -8,7 +8,8 @@ import {sculptNavigationBlockDetail} from '../src/core/sculpt-navigation-collisi
 import {stepMovement} from '../src/core/movement.js';
 import {isBlocked} from '../src/core/collision.js';
 import {drawSculptSphereMeshes,sculptSphereProjectedPoint,
-  sculptSphereReliefLighting} from '../src/render/sculpt-sphere-mesh.js';
+  sculptSphereReliefLighting,sculptSphereVisualContact,
+  sculptSphereRadialRings} from '../src/render/sculpt-sphere-mesh.js';
 
 const tile={width:28,height:21,rise:18};
 const base=()=>createSculptTerrain({width:40,height:40});
@@ -339,4 +340,65 @@ test('V76 R7 real material persists under vertical/lateral shade and soft outer 
   assert.ok(renderer.includes('crownLip'));
   assert.ok(renderer.includes('footFront'));
   assert.ok(renderer.includes('fillLayer(ctx,crown,groundColor)'));
+});
+
+test('V76 R8 true visual seam aligns entire grass cap with FIRST ROCK at exact plateau radius',()=>{
+  for(const kind of ['hill','basin']){
+    for(const ratio of [0,.15,.45,.5,.75,.85]){
+      const t=appendSculptSphere(base(),{kind,x,y,radius:r,height:5,
+        summitRatio:ratio,wallMaterial:'earth'});
+      const f=t.spheres[0],border=sculptSphereVisualContact(f);
+      const rings=sculptSphereRadialRings(f);
+      assert.equal(border,ratio|| (kind==='hill'?.45:.24));
+      assert.equal(rings[0],0);
+      assert.equal(rings.at(-1),1);
+      assert.ok(rings.length<=12,'R5/R7 performance: at most one additional ring');
+      assert.equal(rings.filter(v=>Math.abs(v-border)<1e-9).length,1,
+        'exact summit radius is a shared node, never approximated by grid steps');
+      const join=rings.findIndex(v=>Math.abs(v-border)<1e-9);
+      assert.ok(join>0&&join<rings.length-1);
+      for(let i=0;i<rings.length-1;i++){
+        const a=rings[i],z=rings[i+1];
+        assert.ok(z>a,'no overlapping annuli');
+        assert.equal(a>=border-1e-9,i>=join,
+          'no wall may start INSIDE the grass or leave a bare edge');
+      }
+      for(const angle of [0,Math.PI/3,Math.PI,Math.PI*1.5]){
+        const grassEdge=sculptSphereProjectedPoint(t,f,rings[join],angle,tile);
+        const rockEdge=sculptSphereProjectedPoint(t,f,rings[join],angle,tile);
+        assert.deepEqual(grassEdge,rockEdge,
+          'grass and mineral wall use exactly the same projected vertices');
+      }
+      assert.deepEqual(importSculptTerrain(serializeSculptTerrain(t)).spheres,t.spheres);
+    }
+  }
+});
+test('V76 R8 compositor paints grass exactly to shared rock seam, never oversized',()=>{
+  for(const ratio of [.15,.45,.75,.85]){
+    const t=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,height:6,
+      summitRatio:ratio,wallMaterial:'earth'});
+    const imageGrass={grass:true},imageEarth={earth:true};
+    const paints=[];let coords=[];
+    const ctx={fillStyle:null,strokeStyle:'',lineWidth:1,
+      save(){},restore(){},beginPath(){coords=[];},
+      moveTo(x,y){coords.push([x,y]);},lineTo(x,y){coords.push([x,y]);},
+      closePath(){},ellipse(){},clip(){},stroke(){throw Error('no permanent dark border')},
+      fill(){paints.push({style:this.fillStyle,coords:coords.slice()});},
+      createPattern(image){return {image};},
+      createLinearGradient(){return {addColorStop(){}};}};
+    drawSculptSphereMeshes(ctx,{terrain:t,tile,texture:imageGrass,
+      sphereWallImages:{earth:imageEarth}});
+    const grassPaints=paints.filter(p=>p.style?.image===imageGrass);
+    const rockPaints=paints.filter(p=>p.style?.image===imageEarth);
+    assert.equal(grassPaints.length,2,'base surface + grass crown');
+    assert.equal(rockPaints.length,2,'back rock and front rock');
+    const cap=grassPaints[1];
+    const maxCrownX=Math.max(...cap.coords.map(a=>a[0]));
+    const edgeX=x+r*ratio;
+    assert.ok(Math.abs(maxCrownX-edgeX)<1e-8,
+      'top grass stops EXACTLY at the configured summit border '+ratio);
+    assert.ok(rockPaints.some(p=>p.coords.some(q=>Math.abs(q[0]-edgeX)<1e-8)),
+      'rock wall begins at precisely the same edge as grass '+ratio);
+    assert.ok(paints.length<26,'no per-face painting performance regression');
+  }
 });
