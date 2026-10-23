@@ -1825,6 +1825,9 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
+  sphereMaterialAssets:{rock:cliffHDLoaded,grass:!!sphereWallImages.grass,
+    earth:!!sphereWallImages.earth},
+  terrainRasterBuilds,cachedGround:!!navTerrainCache,
   sphereGuideVisible:!spherePreviewDismissed&&selectedMode.startsWith('sphere-')&&
     ($('precision-mode').checked?!!precisionCell:!!hoverCell),
   summitRatio:Number($('sphere-summit-ratio').value)/100,
