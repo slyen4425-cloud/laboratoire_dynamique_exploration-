@@ -10,7 +10,14 @@ export function sculptSphereProjectedPoint(terrain,sphere,ratio,angle,tile){
   const worldY=sphere.y+Math.sin(angle)*sphere.radius*ratio;
   const delta=sculptSphereDisplacementAt(terrain,x,worldY);
   const level=sphere.baseLevel+delta;
-  return Object.freeze({x,y:worldY-level*tile.rise,worldY,level,delta});
+  // A crater floor must remain visible *inside* its circular aperture.
+  // Perspective compresses ONLY the drawn vertical depth, never the stored
+  // analytic height, footprint or collision. Deeper authoring still produces
+  // a monotonically deeper floor through all 1..7 levels (no saturation).
+  const depthViewScale=sphere.kind==='basin'
+    ?Math.min(1,sphere.radius*.68/(7*tile.rise)):1;
+  const screenY=worldY-sphere.baseLevel*tile.rise-delta*tile.rise*depthViewScale;
+  return Object.freeze({x,y:screenY,worldY,level,delta});
 }
 function ringPath(ctx,terrain,sphere,ratio,tile){
   ctx.beginPath();
