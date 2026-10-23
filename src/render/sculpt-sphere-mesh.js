@@ -36,10 +36,12 @@ export function sculptSphereReliefLighting(sphere){
     topTone:Math.max(-.065,Math.min(.105,
       ((Number(sphere?.baseLevel)||0)+signed-2)*.029)),
     contactOpacity:Math.min(.37,.19+Math.min(levels,3)*.055),
-    rimOpacity:Math.min(.52,.28+levels*.034),
+    rimOpacity:Math.min(.60,.34+levels*.038),
     footOpacity:Math.min(.42,.20+levels*.032),
     lightOpacity:.12,
-    sideOpacity:.19
+    sideOpacity:.19,
+    // Readability of the elevated grassy cap; never alters ground material.
+    summitLightOpacity:sphere?.kind==='hill'?Math.min(.24,.08+levels*.023):0
   });
 }
 export function sculptSphereProjectedPoint(terrain,sphere,ratio,angle,tile){
@@ -187,12 +189,29 @@ function paintContinuousFrustum(ctx,terrain,sphere,tile,groundColor,material,
   circleContour(ctx,contour.cap);
   ctx.fillStyle=groundColor;ctx.fill();
   if(lighting.topTone!==0){ctx.fillStyle=tone;ctx.fill();}
+  // Lift the brightness of the elevated grass while leaving the actual
+  // grass.forest texture fully visible. Taller hills receive more light.
+  ctx.fillStyle='rgba(250,250,212,'+lighting.summitLightOpacity+')';ctx.fill();
   // An organic-looking shaded shoulder strictly inside the cap, never a
   // larger grass overhang or a hard black circumference.
-  const capShade=gradient(ctx,x,topY-contour.seamRadius,
-    x,topY+contour.seamRadius,
-    ['rgba(17,35,34,.18)','rgba(17,35,34,.015)','rgba(72,52,36,.13)'],
-    'rgba(17,35,34,.10)');
+  // The visible DARK BORDER must follow the actual circle, not a vertical
+  // wash. Radial shading darkens all outer sides and retains a bright core.
+  // The cheap linear fallback supports the Node canvas stubs and old GPUs.
+  let capShade;
+  if(typeof ctx.createRadialGradient==='function'){
+    capShade=ctx.createRadialGradient(x,topY,contour.seamRadius*.30,
+      x,topY,contour.seamRadius);
+    capShade.addColorStop(0,'rgba(16,37,32,0)');
+    capShade.addColorStop(.7,'rgba(16,37,32,.03)');
+    capShade.addColorStop(.88,'rgba(17,32,27,.18)');
+    capShade.addColorStop(1,'rgba(17,32,27,'+
+      Math.min(.44,lighting.rimOpacity*.7)+')');
+  }else{
+    capShade=gradient(ctx,x,topY-contour.seamRadius,
+      x,topY+contour.seamRadius,
+      ['rgba(17,35,34,.27)','rgba(17,35,34,.015)','rgba(72,52,36,.23)'],
+      'rgba(17,35,34,.19)');
+  }
   ctx.fillStyle=capShade;ctx.fill();
   // 2. The wall is a single contiguous SOUTH curtain between the same
   // summit ring and the outer foot. A conical wall thus has a coherent
@@ -275,6 +294,8 @@ function paintMesh(ctx,terrain,sphere,tile,texture,baseColor,opts){
   paintRearBand(ctx,sphere,mesh);
   fillLayer(ctx,crown,groundColor);
   if(lighting.topTone!==0)shadeLayer(ctx,crown,tone);
+  if(sphere.kind==='hill'&&lighting.summitLightOpacity>0)
+    shadeLayer(ctx,crown,'rgba(250,250,212,'+lighting.summitLightOpacity+')');
   shadeLayer(ctx,grassShoulder,
     sphere.kind==='hill'?'rgba(105,87,55,.11)':'rgba(68,73,50,.09)');
   shadeLayer(ctx,crownLip,rim);
