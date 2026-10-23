@@ -4,7 +4,7 @@ import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applyS
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
 import {sculptRoundedHillRegions,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
-import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76';
+import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
@@ -874,6 +874,6 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   }
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
-  const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor});
+  const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,rockPaletteColors:colors});
   return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,worldWidth:totalWidth,worldHeight:totalHeight};
 }
