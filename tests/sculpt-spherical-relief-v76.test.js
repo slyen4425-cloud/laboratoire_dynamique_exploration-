@@ -530,3 +530,61 @@ test('V76 R10 small-summit front conical wall is ONE contiguous closed silhouett
   assert.equal(sculptSphereFrustumContours(excavated,excavated.spheres[0],tile),null,
     'basin is untouched by capped-hill correction');
 });
+
+test('V76 R11 upper grass is brighter, outer rim uses radial shading and rock foot retains depth',()=>{
+  for(const height of [1,3,7]){
+    const terrain=appendSculptSphere(base(),{kind:'hill',x,y,radius:r,
+      height,summitRatio:.75,wallMaterial:'earth'});
+    const radial=[],fills=[],linear=[];let points=0;
+    const grass={grass:true},earth={earth:true};
+    const ctx={fillStyle:null,save(){},restore(){},beginPath(){points=0;},
+      moveTo(){points++;},lineTo(){points++;},closePath(){},
+      ellipse(){},clip(){},stroke(){throw Error('No hard permanent black circle')},
+      fill(){fills.push({style:this.fillStyle,points});},
+      createPattern(image){return {image};},
+      createLinearGradient(){const g={kind:'linear',addColorStop(){}};linear.push(g);return g;},
+      createRadialGradient(...args){
+        const g={kind:'radial',args,stops:[],addColorStop(t,c){this.stops.push([t,c])}};
+        radial.push(g);return g;
+      }};
+    assert.equal(drawSculptSphereMeshes(ctx,{terrain,tile,texture:grass,
+      sphereWallImages:{earth}}),1);
+    assert.equal(radial.length,1,'one shared radial gradient per raised grassy summit');
+    assert.ok(radial[0].stops[0][1].endsWith(',0)'),
+      'grass center is clear; only the perimeter receives shadow');
+    assert.ok(radial[0].stops.at(-1)[1].includes('rgba(9,33,24,'),
+      'soft dark rim wraps around the whole circular summit');
+    const light=fills.find(q=>typeof q.style==='string'&&
+      q.style.startsWith('rgba(239,255,202,'));
+    assert.ok(light,'grass receives an actual upper daylight tint');
+    const intensity=Number(light.style.split(',').at(-1).replace(')',''));
+    assert.ok(intensity>=.09&&intensity<=.23);
+    assert.ok(linear.length<10&&fills.length<=9,
+      'R5 composite painter remains bounded and fast');
+    if(height===7)assert.ok(intensity>.2,
+      'tall plateau should be noticeably lighter than the low terrain');
+  }
+});
+test('V76 R11 ground actor has small extra visual clearance, no wide invisible collision',()=>{
+  const start=base();
+  for(const ratio of [.5,.75,1]){
+    const terrain=appendSculptSphere(start,{kind:'hill',x,y,radius:r,
+      height:5,summitRatio:ratio});
+    const firstBlocked=(radius)=>{
+      for(let point=y-r-120;point<y-r-8;point+=.25)
+        if(sculptSphereProjectionBlock(terrain,x,point,
+          {projectionRise:18,radius})?.kind==='sphere-projection')return point;
+      return Infinity;
+    };
+    const foot=firstBlocked(0),avatar=firstBlocked(5);
+    assert.ok(Number.isFinite(foot)&&Number.isFinite(avatar),
+      'both ground contact and sprite-visual protection have boundaries');
+    assert.ok(avatar<foot-6&&avatar>foot-12,
+      'visual clearance is a few pixels, not an enormous collision barrier');
+    assert.equal(sculptSphereProjectionBlock(terrain,x+r+30,y-r-16,
+      {projectionRise:18,radius:5}),null,'ground beside hill remains free');
+    const source=entity(x,['fly']);source.y=y-r-65;
+    assert.equal(sculptNavigationBlockDetail(config(terrain),source,
+      x,y-r-16),null,'flight is still unrestricted');
+  }
+});
