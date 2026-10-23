@@ -135,6 +135,7 @@ function navigationBackground(){
   const smoothness=Number($('visual-smooth').value)/100;
   const signature=[rockPalette,materialId,smoothness,
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
+     sphereTexturesLoaded,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
     ribbonTextures.water?.material?.id,ribbonTextures.road?.material?.id].join('|');
   const same=navTerrainCache&&navTerrainCache.terrain===terrain&&
@@ -156,6 +157,7 @@ function navigationBackground(){
     rockPalette,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
     visualSmoothness:smoothness,overlays:ribbonTextures,
+     sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages});
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
@@ -185,6 +187,9 @@ const ribbonTextures={water:null,road:null};
 let exampleRoadEnabled=true;
 let framePending=false;
 let waterMaterialRevision=0,groundMaterialRevision=0;
+// V76 R5: source material artwork from the existing Material Registry.
+const sphereWallImages={grass:null,earth:null};
+let sphereTexturesLoaded=0;
 const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
   'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
@@ -202,6 +207,14 @@ function imageFor(materialId,kind='surface'){
     img.src=path;
   });
   images.set(id,promise);return promise;
+}
+async function loadSphereWallImages(){
+  // Already-authored forest surface assets; no duplicate material authority.
+  for(const [kind,id] of [['grass','grass.forest'],['earth','ground.forest_floor']]){
+    const texture=await imageFor(id);
+    if(texture){sphereWallImages[kind]=texture;sphereTexturesLoaded++;
+      navTerrainCache=null;scheduleDraw();}
+  }
 }
 async function setWaterMaterial(){
   const id=$('water-material').value;
@@ -284,7 +297,7 @@ function draw(){
   // Tester, project only the background texture, not standing actor sprites.
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   let result;
-  if(navigationTesting||objectEditing){
+  if(navigationTesting||objectEditing||!drawing){
     // Reuse the EXISTING terrain-only raster while editing object placements.
     // The ground doesn't change during a drag: mobile pointermove now paints
     // just a cached background plus live objects, never 36x24 tile effects.
@@ -300,7 +313,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       visualSmoothness:Number($('visual-smooth').value)/100,
-      overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
+      sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
   if(navigationTesting){
@@ -1850,4 +1863,4 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
   $('precision-mode').checked=true;
 }
 updatePrecisionActions();
-updateHistoryButtons();updateSurfaceCount();setTheme();setupRibbons();fit();
+updateHistoryButtons();updateSurfaceCount();setTheme();setupRibbons();loadSphereWallImages();fit();
