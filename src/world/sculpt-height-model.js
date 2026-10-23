@@ -12,7 +12,7 @@ const validSphere=(f,w,h)=>f&&typeof f.id==='string'&&/^sculpt-sphere-[1-9][0-9]
   f.x+f.radius<=w*28&&f.y+f.radius<=h*21&&
   Number.isInteger(f.height)&&f.height>=1&&f.height<=7&&
   Number.isInteger(f.baseLevel)&&f.baseLevel>=0&&f.baseLevel<=7&&
-  (f.summitRatio===undefined||(Number.isFinite(f.summitRatio)&&f.summitRatio>=0&&f.summitRatio<=.85))&&
+  (f.summitRatio===undefined||(Number.isFinite(f.summitRatio)&&f.summitRatio>=0&&f.summitRatio<=1))&&
   (f.wallMaterial===undefined||sphereWallMaterials.has(f.wallMaterial));
 export function sculptSphereDisplacementAt(terrain,x,y){
   if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return 0;
@@ -21,11 +21,14 @@ export function sculptSphereDisplacementAt(terrain,x,y){
     const dx=(x-f.x)/f.radius,dy=(y-f.y)/f.radius;
     const d2=dx*dx+dy*dy;
     if(d2<1){
-      // R3: optional flat summit/floor. Legacy circles (summitRatio absent)
-      // preserve the exact V76 sphere formula and exported geometry.
-      const summit=f.summitRatio??0;
-      const slope=Math.max(0,(Math.sqrt(d2)-summit)/(1-summit));
-      offset+=(f.kind==='hill'?1:-1)*f.height*Math.sqrt(Math.max(0,1-slope*slope));
+      // One canonical elevation profile for collision, gameplay and render.
+      // Legacy round domes stay spherical. A flat-topped hill uses the user's
+      // requested conical/frustum sides; 100% is a vertical-sided round plateau.
+      const summit=f.summitRatio??0,radial=Math.sqrt(d2);
+      const lift=summit>=1?1:summit>0?
+        Math.max(0,Math.min(1,(1-radial)/(1-summit))):
+        Math.sqrt(Math.max(0,1-d2));
+      offset+=(f.kind==='hill'?1:-1)*f.height*lift;
     }
   }
   return offset;
