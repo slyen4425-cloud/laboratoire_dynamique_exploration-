@@ -1,3 +1,16 @@
+# Lot V76 R11 — 23/10/2026 — Collision affinée / sommet plus clair / bordure plus sombre (NON GREEN Pixel)
+
+- **Retour Pixel sur R10** : rendu amélioré ; report explicite de la finition des petits sommets. Ajuster légèrement la collision et accentuer le volume par une bordure ombrée et un sommet d'herbe plus clair.
+- **Base publiée R10** : `0a568f9a6f1483069a21bbe8607d365c20f52958`. **Dernier GREEN créateur V75 R2** : `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **Checkpoint START** : `checkpoint/exploration-start-sphere-depth-collision-v76-r11-2026-10-23`. **Branche unique** : `work/exploration-sphere-depth-collision-v76-r11-2026-10-23`.
+- **Collision World** : marge contrôlée de 2–6 unités sur sa garde projetée existante, proportionnelle au rayon du personnage ; retrait latéral/nord, ponts et vol préservés. World Model/sauvegardes non modifiés.
+- **Renderer** : herbe du sommet éclaircie selon le niveau, ombre du bord renforcée avec un dégradé radial continu, sans bande noire peinte ni nouveaux matériaux ; caches R5 et silhouette R10 conservés.
+- **Gels** : petits diamètres reportés, pentes V77, escaliers V78, V75, ponts/cascades, modèles/acteurs/Combat/Builder.
+- **Gates** : tests Node + Chromium Sculpt/Builder/Combat, CI SHA final, checkpoint PREVALIDATION et Pages via PR infra isolée. **NON GREEN Pixel** avant validation visuelle.
+- Voir `docs/checkpoints/EXPLORATION_SPHERE_DEPTH_COLLISION_V76_R11_PREVALIDATION_2026-10-23.md`.
+
+---
+
 # Lot V76 R10 — 23/10/2026 — Paroi conique continue et texture sans pointes (NON GREEN Pixel)
 
 - **Retour sur V76 R9** : à largeur 50 % ou moindre, la roche affiche des pics triangulaires, surfaces creuses et raccord de texture non naturel ; le sommet petit diamètre n'est pas encore correctement porté par la pente.
