@@ -483,14 +483,19 @@ function syncQuickToolbar(){
     }));
   }
   select.value=wanted;
-  $('quick-level-label').textContent=group==='water'?'Eau':'Hauteur';
-  $('quick-level-value').textContent=group==='water'?
-    $('water-target').value:$('target').value;
+  const isBasin=selectedMode==='sphere-basin';
+  const isSphere=selectedMode==='sphere-hill'||isBasin;
+  $('quick-level-label').textContent=group==='water'?'Eau':
+    isBasin?'Profondeur':isSphere?'Hauteur de colline':'Hauteur';
+  $('quick-level-value').textContent=group==='water'?$('water-target').value:
+    isSphere?(isBasin?'−':'+')+$('target').value+' niv.':$('target').value;
 }
 function adjustQuickLevel(delta){
   const el=editorKind==='water' ? $('water-target') : $('target');
   const limit=editorKind==='water'?10:7;
-  el.value=String(Math.max(0,Math.min(limit,Number(el.value)+delta)));
+  const minimum=editorKind==='ground'&&
+    (selectedMode==='sphere-hill'||selectedMode==='sphere-basin')?1:0;
+  el.value=String(Math.max(minimum,Math.min(limit,Number(el.value)+delta)));
   el.dispatchEvent(new Event('input',{bubbles:true}));
 }
 // Fullscreen and the floating palette only reflow the EXISTING controls.
@@ -1740,9 +1745,12 @@ $('water-target').addEventListener('input',()=>{
   syncQuickToolbar();status('Surface d’eau absolue : niveau '+$('water-target').value);scheduleDraw();
 });
 function changeTarget(level){
- const value=Math.max(0,Math.min(7,Number(level)));
+ const value=Math.max(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?1:0,
+    Math.min(7,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
- syncQuickToolbar();status('Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
+ syncQuickToolbar();status(selectedMode==='sphere-basin'?'Profondeur sphérique : −'+value+' niveaux':
+    selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':
+      'Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
 $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
