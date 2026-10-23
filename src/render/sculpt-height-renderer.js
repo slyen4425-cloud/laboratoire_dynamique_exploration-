@@ -874,6 +874,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   }
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
-  const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,rockPaletteColors:colors});
+  const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,
+    rockPaletteColors:colors,rockTexture:cliffAtlas??cliffHD});
   return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,worldWidth:totalWidth,worldHeight:totalHeight};
 }
