@@ -14,9 +14,11 @@ import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigation
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r1';
-import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,createSculptInteriorArea,
- updateSculptInterior,serializeSculptInteriors,importSculptInteriors,
- sculptInteriorTransition} from './world/sculpt-interior-area-link.js?rev=interior-v79-r1';
+import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
+ SCULPT_INTERIOR_TEMPLATE_LIMIT,createSculptInteriorArea,updateSculptInterior,
+ serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,
+ normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
+ applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r2';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -53,6 +55,8 @@ let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 // V79: one active area at a time. Detached exterior snapshot is a temporary
 // editor view of the SAME scene while an interior is open, not a second terrain.
 let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=null;
+let sculptInteriorTemplates=Object.freeze([]);
+const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
@@ -142,7 +146,7 @@ function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigat
 /* Only the static sculpt raster is cached. Actor, objects, collision, input,
    camera and height data retain their existing owners and update separately. */
 function navigationBackground(){
-  const rockPalette=$('rock').value,materialId=$('material').value;
+  const rockPalette=$('rock').value,materialId=displayedBaseMaterialId();
   const signature=[rockPalette,materialId,
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
      sphereTexturesLoaded,
@@ -206,6 +210,10 @@ const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
 const images=new Map();
 const themes=sculptGroundMaterials;
+const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
+  meta.id.startsWith('floor.')).map(meta=>meta.id));
+const displayedBaseMaterialId=()=>activeInteriorId?
+  $('interior-floor-base').value:$('material').value;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
@@ -255,8 +263,8 @@ function toggleRibbon(kind){
   }
 }
 async function setTheme(){
-  const id=$('material').value;
-  if(!themes.includes(id))return;
+  const id=displayedBaseMaterialId();
+  if(!(activeInteriorId?interiorFloorMaterials:themes).includes(id))return;
   const revision=++groundMaterialRevision;
   const texture=await imageFor(id);
   if(revision!==groundMaterialRevision)return;
@@ -319,7 +327,7 @@ function draw(){
     if(navigationTesting)ctx.restore();
     result=snapshot.result;
   }else{
-    const material=registry.require($('material').value,'surface');
+    const material=registry.require(displayedBaseMaterialId(),'surface');
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
@@ -332,7 +340,8 @@ function draw(){
     // exact affine camera for walls as well, never an independent perspective.
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
-      tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
+      tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
+      doorway:sculptInteriors.find(e=>e.area.id===activeInteriorId)?.exitPortal.trigger});
     ctx.restore();
   }
   if(navigationTesting){
@@ -1368,7 +1377,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
       view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       texture:currentTexture,
-      baseColor:registry.require($('material').value,'surface')?.render?.baseColor??'#677955'
+      baseColor:registry.require(displayedBaseMaterialId(),'surface')?.render?.baseColor??'#677955'
     });
     return;
   }
@@ -2056,6 +2065,13 @@ function mountSculptArea(snapshot){
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   updateHistoryButtons();updateObjectCount();updateActorCount();
   updateSurfaceCount();loadSurfacePaintAssets();syncObjectSelectedControls();
+  if(activeInteriorId){
+    const base=interiorFloorMaterials.includes(surface.baseMaterialId)?
+      surface.baseMaterialId:'floor.wood.house';
+    $('interior-floor-base').value=base;
+    $('surface-material').value=base;
+  }else $('surface-material').value='road.dirt';
+  setTheme();
 }
 function updateSculptAreaControls(){
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
@@ -2064,6 +2080,10 @@ function updateSculptAreaControls(){
   $('interior-area-label').textContent=entry?
     '🏠 Intérieur · '+entry.buildingId:'🏞 Extérieur';
   $('new-map-toggle').disabled=!!entry;
+  for(const option of $('surface-material').options)
+    option.disabled=entry?!option.value.startsWith('floor.'):
+      option.value.startsWith('floor.');
+  $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
@@ -2102,7 +2122,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
     if(spawn&&navActor){navActor.x=spawn.x;navActor.y=spawn.y;
       navVisualLevel=navHeight();centerNavigationCamera();updateNavigationInfo(true);}
   }
-  status(activeInteriorId?'Intérieur 2,5D ouvert : sculpte le sol, ajoute des pentes et escaliers.':
+  status(activeInteriorId?'Intérieur ouvert : modifie le sol, choisis un modèle ou garde une pièce unique.':
     'Extérieur restauré · maison et relief conservés.');
 }
 function openSelectedSculptInterior(){
@@ -2134,6 +2154,66 @@ function updateSculptDoorAction(){
   button.hidden=!target;
   button.textContent=activeInteriorId?'🚪 Sortir de la maison':'🚪 Entrer dans la maison';
 }
+function refreshSculptTemplateSelector(){
+  const select=$('interior-template-select'),current=select.value;
+  select.replaceChildren(new Option('Édition libre (aucun modèle)',''),
+    ...sculptInteriorTemplates.map(item=>new Option(item.name,item.id)));
+  select.value=sculptInteriorTemplates.some(item=>item.id===current)?current:'';
+  $('interior-template-apply').disabled=!activeInteriorId||!select.value;
+}
+function persistSculptTemplates(){
+  try{localStorage.setItem(SCULPT_INTERIOR_TEMPLATE_STORAGE,
+    JSON.stringify(sculptInteriorTemplates));return true;}
+  catch{return false;}
+}
+function loadSculptTemplates(){
+  try{sculptInteriorTemplates=normalizeSculptInteriorTemplates(
+    JSON.parse(localStorage.getItem(SCULPT_INTERIOR_TEMPLATE_STORAGE)||'[]'));}
+  catch{sculptInteriorTemplates=Object.freeze([]);}
+  refreshSculptTemplateSelector();
+}
+$('interior-template-select').addEventListener('change',refreshSculptTemplateSelector);
+$('interior-floor-base').addEventListener('change',()=>{
+  if(!activeInteriorId)return;
+  const materialId=$('interior-floor-base').value;
+  if(!interiorFloorMaterials.includes(materialId))return;
+  surface={...surface,baseMaterialId:materialId};
+  loadSurfacePaintAssets();updateSurfaceCount();setTheme();
+  status('Sol intérieur choisi : '+materialId+' · conservé dans la scène JSON.');
+});
+$('interior-template-save').addEventListener('click',()=>{
+  const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  if(!entry)return;
+  const name=$('interior-template-name').value.trim();
+  if(!name){status('Nomme ton modèle avant de l’enregistrer.');return;}
+  if(sculptInteriorTemplates.length>=SCULPT_INTERIOR_TEMPLATE_LIMIT){
+    status('Bibliothèque pleine : maximum 32 modèles.');return;
+  }
+  const ids=new Set(sculptInteriorTemplates.map(t=>t.id));
+  let serial=1;while(ids.has('interior-template-'+serial))serial++;
+  try{
+    const item=createSculptInteriorTemplate(updateSculptInterior(entry,
+      captureSculptArea()),{id:'interior-template-'+serial,name});
+    sculptInteriorTemplates=normalizeSculptInteriorTemplates([...sculptInteriorTemplates,item]);
+    refreshSculptTemplateSelector();
+    $('interior-template-select').value=item.id;
+    refreshSculptTemplateSelector();
+    status(persistSculptTemplates()?'Modèle enregistré sur cet appareil et prêt pour les autres maisons.':
+      'Modèle conservé pour cette session : exporte la scène JSON pour le garder.');
+  }catch(e){status(e.message);}
+});
+$('interior-template-apply').addEventListener('click',()=>{
+  const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  const template=sculptInteriorTemplates.find(t=>t.id===$('interior-template-select').value);
+  if(!entry||!template)return;
+  if(navigationTesting)setNavigationTesting(false);
+  try{
+    const updated=applySculptInteriorTemplate(entry,template);
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?updated:e));
+    mountSculptArea(updated);updateSculptAreaControls();fit();
+    status('Modèle « '+template.name+' » appliqué à cette maison, modifiable librement.');
+  }catch(e){status(e.message);}
+});
 $('object-open-interior').addEventListener('click',openSelectedSculptInterior);
 $('interior-area-return').addEventListener('click',()=>
   changeSculptArea(SCULPT_EXTERIOR_AREA_ID));
@@ -2158,6 +2238,8 @@ $('scene-export').addEventListener('click',()=>{
   const scene=JSON.parse(serializeSculptPreviewScene(outdoors.terrain,
     outdoors.objects,outdoors.surface,outdoors.actors));
   if(entries.length)scene.interiors=serializeSculptInteriors(entries);
+  if(sculptInteriorTemplates.length)
+    scene.interiorTemplates=normalizeSculptInteriorTemplates(sculptInteriorTemplates);
   $('json').value=JSON.stringify(scene);
   $('json').hidden=false;
   status('Scène 2,5D exportée : extérieur + '+entries.length+' intérieur(s) + reliefs.');
@@ -2170,8 +2252,14 @@ $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value);
   const raw=JSON.parse($('json').value);
   const nextInteriors=importSculptInteriors(raw.interiors??[],imported.objects);
+  const incomingTemplates=normalizeSculptInteriorTemplates(raw.interiorTemplates??[]);
+  const importedIds=new Set(incomingTemplates.map(t=>t.id));
+  const nextTemplates=normalizeSculptInteriorTemplates([
+    ...sculptInteriorTemplates.filter(t=>!importedIds.has(t.id)),...incomingTemplates]);
   if(navigationTesting)setNavigationTesting(false);
   sculptInteriors=nextInteriors;outsideAreaSnapshot=null;activeInteriorId=null;
+  sculptInteriorTemplates=nextTemplates;refreshSculptTemplateSelector();
+  persistSculptTemplates();
   const old=terrain;terrain=imported.terrain;commitUndo(old);
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
@@ -2204,6 +2292,9 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   interiorCount:sculptInteriors.length,
   currentInteriorBuildingId:sculptInteriors.find(e=>e.area.id===activeInteriorId)?.buildingId??null,
   interiorAreaBarVisible:!$('interior-area-bar').hidden,
+  interiorTemplateCount:sculptInteriorTemplates.length,
+  interiorFloorId:$('interior-floor-base').value,
+  interiorTemplateSelected:$('interior-template-select').value,
   interiorAngle:Number($('interior-camera-angle').value),
   rampStart:!!rampStart,rampGestureActive:!!rampGesture,
   rampGuideVisible:!$('ramp-guide').hidden,
@@ -2218,7 +2309,7 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   wallMaterial:$('sphere-wall-material').value,
   objects:placedObjects.length,objectEditing,objectCategory:$('object-category').value,
   paintedRoutes:surface.routes.length,paintedZones:surface.zones.length,
-  width:terrain.width,height:terrain.height,materialId:$('material').value,
+  width:terrain.width,height:terrain.height,materialId:displayedBaseMaterialId(),
   cameraView:$('camera-view').value,
   cameraAngle:Number($('navigation-camera-angle').value),
   liveCameraPitch:cameraView().pitch,navigationTesting,
@@ -2250,4 +2341,4 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
   $('precision-mode').checked=true;
 }
 updatePrecisionActions();
-updateHistoryButtons();updateSurfaceCount();setTheme();setupRibbons();loadSphereWallImages();fit();
+updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();fit();
