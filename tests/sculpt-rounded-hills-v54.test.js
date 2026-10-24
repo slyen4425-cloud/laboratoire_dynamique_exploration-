@@ -44,12 +44,13 @@ test('V54 roundness 0/95 is original; water-contact cliffs are not reshaped',()=
   const visual=sculptHillTopProfile(wet,3,3);
   assert.equal(visual.corners[0],false);
 });
-test('V54 UI explains a real paint gesture and keeps canonical rendering',()=>{
+test('R14 retires legacy hill rounding tools from the live editor',()=>{
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
-  assert.match(html,/Arrondir (?:les collines \(herbe \+ roche\)|toute la colline)/);
-  assert.match(main,/\$\('hill-radius-wrap'\)\.hidden=mode!=='cliff-round'/);
-  assert.match(render,/sculptHillTopPath\(ctx,x,y,w,h,hill\);ctx\.clip\(\)/);
+  assert.doesNotMatch(html,/data-mode="(?:smooth|cliff-round)"/);
+  assert.doesNotMatch(html,/id="visual-smooth"/);
+  assert.doesNotMatch(main,/\$\('visual-smooth'\)/);
+  assert.doesNotMatch(render.slice(render.indexOf('export function drawSculptTerrain')),/sculptHillTopPath|sculptClipRoundedHill/);
   assert.doesNotMatch(render,/isBlocked\(/);
 });
