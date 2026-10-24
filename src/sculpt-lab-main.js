@@ -133,8 +133,7 @@ function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigat
    camera and height data retain their existing owners and update separately. */
 function navigationBackground(){
   const rockPalette=$('rock').value,materialId=$('material').value;
-  const smoothness=Number($('visual-smooth').value)/100;
-  const signature=[rockPalette,materialId,smoothness,
+  const signature=[rockPalette,materialId,
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
      sphereTexturesLoaded,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
@@ -313,7 +312,6 @@ function draw(){
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
-      visualSmoothness:Number($('visual-smooth').value)/100,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
@@ -386,7 +384,7 @@ function draw(){
     }else previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
       shape:$('brush-shape').value,edgeSoftness:Number($('edge').value)/100,mode:selectedMode,target,
-      rockRoundness:selectedMode==='cliff-round'?Number($('visual-smooth').value):null,zoom});
+      zoom});
   }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
@@ -481,7 +479,7 @@ function precisionApply(){
         summitRatio:Number($('sphere-summit-ratio').value)/100,
         wallMaterial:$('sphere-wall-material').value});
   }else terrain=water?applySculptWaterStroke(previous,options):
-    applySculptStroke(previous,{...options,rockRoundness:Number($('visual-smooth').value)});
+    applySculptStroke(previous,options);
   commitUndo(previous);
   // R6: keep the mint dashed brush active after placement so the next
   // target can be adjusted immediately. It is ONLY a live editor overlay.
@@ -565,7 +563,6 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   syncQuickToolbar();
-  $('hill-radius-wrap').hidden=mode!=='cliff-round';
   $('sphere-profile-wrap').hidden=mode!=='sphere-hill'&&mode!=='sphere-basin';
   // On mobile, make a prospective footprint visible before the first tap.
   if(mode.startsWith('sphere-')&&$('precision-mode').checked&&!precisionCell){
@@ -580,24 +577,8 @@ function selectMode(mode){
     if(Number($('radius').value)<2){$('radius').value='4';
       $('radius').dispatchEvent(new Event('input',{bubbles:true}));}
   }
-  if(mode==='cliff-round'){
-    // One tap selects one plateau, and the tool starts with a VISIBLE effect.
-    // The old 95 % persisted from prior controls and silently did nothing.
-    $('radius').value='.5';$('radius').dispatchEvent(new Event('input',{bubbles:true}));
-    // This tool promises one tap. The precision selector previously swallowed
-    // the tap and waited for a second hidden confirmation action.
-    if($('precision-mode').checked){
-      $('precision-mode').checked=false;
-      $('precision-mode').dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    if(Number($('visual-smooth').value)<=95){
-      $('visual-smooth').value='150';
-      $('visual-smooth').dispatchEvent(new Event('input',{bubbles:true}));
-    }
-  }
   status({dig:'Creuser : abaisse le terrain et crée la paroi',raise:'Surélever : pousse le plateau vers le haut',
-    flatten:'Aplanir : nivelle vers la première hauteur touchée',smooth:'Adoucir : lisse les différences de niveau',
-    'cliff-round':'Colline ronde : règle 150 % et TOUCHE UNE FOIS LE MILIEU du sommet vert. Le contour entier de ce plateau s’arrondit (pas seulement la case). 95 % = aspect initial. Altitudes et eau inchangées.',
+    flatten:'Aplanir : nivelle vers la première hauteur touchée',
     plateau:'Plateau : pose exactement le niveau sélectionné, sans empiler les passages',
     'sphere-hill':'V76 R9 : 0 % sphère ; de 5 à 95 % colline à flanc conique ; 100 % plateau rond vertical. Accès à pied sur les pentes : V77.',
     'sphere-basin':'V76 R9 : creux rond à fond plat et flancs coniques, ou bord vertical à 100 %. Accès par pente : V77.',
@@ -621,7 +602,7 @@ function updateHistoryButtons(){
 function undo(){
   if(!history.length){status('Aucune action à annuler');return;}
   redoHistory.push(terrain);terrain=history.pop();
-  updateHistoryButtons();scheduleDraw();status('Dernière action annulée (sol / eau / arrondi)');
+  updateHistoryButtons();scheduleDraw();status('Dernière action annulée (sol / eau)');
 }
 function redo(){
   if(!redoHistory.length){status('Aucune action à rétablir');return;}
@@ -779,7 +760,7 @@ function stroke(event){
     shape:$('brush-shape').value,strength:Number($('strength').value),mode:selectedMode,target,
     edgeSoftness:Number($('edge').value)/100};
   terrain=waterMode ?applySculptWaterStroke(strokeUndo,options):
-    applySculptStroke(strokeUndo,{...options,rockRoundness:Number($('visual-smooth').value)});
+    applySculptStroke(strokeUndo,options);
   scheduleDraw();
 }
 function stop(event){
@@ -1802,9 +1783,6 @@ $('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radiu
 $('brush-shape').addEventListener('change',()=>{scheduleDraw();status('Forme du pinceau : '+$('brush-shape').selectedOptions[0].textContent);});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;scheduleDraw();});
 $('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';scheduleDraw();});
-$('visual-smooth').addEventListener('input',()=>{$('visual-smooth-value').textContent=$('visual-smooth').value+' %';
-  status('Arrondi '+$('visual-smooth').value+' % : uniquement au prochain passage de pinceau');
-  scheduleDraw();});
 $('water-target').addEventListener('input',()=>{
   $('water-target-value').textContent=$('water-target').value;
   syncQuickToolbar();status('Surface d’eau absolue : niveau '+$('water-target').value);scheduleDraw();
@@ -1881,7 +1859,7 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   centerWaterDepth:sculptWaterAt(terrain,Math.floor(terrain.width/2),Math.floor(terrain.height/2)),
   centerRoundness:terrain.roundness[Math.floor(terrain.height/2)*terrain.width+Math.floor(terrain.width/2)],
   undoCount:history.length,redoCount:redoHistory.length,
-  highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value),visualSmooth:Number($('visual-smooth').value)});
+  highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value)});
 selectMode('dig');
 setEditorKind('ground');
 if(window.matchMedia?.('(pointer: coarse)').matches){
