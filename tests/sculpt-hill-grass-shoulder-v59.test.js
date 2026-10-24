@@ -36,15 +36,10 @@ test('V59 only painted dry cliffs have grass shoulders, not lake walls',()=>{
  assert.equal(sculptHillGrassShoulderWidth(t,3,5,SCULPT_TILE,'east'),0);
  assert.equal(sculptHillGrassShoulderWidth(t,4,4),0);
 });
-test('V59 stays wholly in renderer visual authority, with original grass materials',()=>{
- const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
- const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
- const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- assert.match(render,/drawSculptGrassShoulder\(ctx,\{x,y,band,width,pattern,baseColor/);
- assert.match(render,/ctx\.strokeStyle=pattern\?\?baseColor/);
- assert.match(render,/sculptHillGrassShoulderWidth\(terrain,c,row,tile\)/);
- assert.match(render,/sculptHillTopPath\(ctx,x,y,w,h,hill\)/);
- assert.match(main,/sculpt-(?:hill-shoulder-v59|whole-hill-v61)/);
- assert.match(html,/sculpt-(?:hill-shoulder-v59|bridge-crossing-v60|whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66|bridge-deck-anchor-v67)/);
- assert.doesNotMatch(render,/isBlocked\(/);
+test('R14 historical grass shoulder helpers stay read-only, never stamp square cliffs',()=>{
+  const render=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+  const live=render.slice(render.indexOf('export function drawSculptTerrain'));
+  assert.doesNotMatch(live,/drawSculptGrassShoulder|sculptHillGrassShoulderWidth/);
+  assert.doesNotMatch(live,/sculptHillTopPath|sculptRoundedHillRegions/);
+  assert.doesNotMatch(render,/isBlocked\(/);
 });
