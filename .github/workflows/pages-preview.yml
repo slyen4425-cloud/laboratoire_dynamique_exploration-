@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v76-r13-plus-10-stairs-2p5d-30-views-2026-10-24
+# preview-revision: v76-r14-square-sharp-green-corners-no-height-smooth-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 6dad922681faf964197da81ace42fe4e199e78ac
+          ref: 9f56549c07715e44c565ca905b83d8c5006ae792
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
