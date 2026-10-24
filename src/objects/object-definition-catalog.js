@@ -1007,6 +1007,166 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.stone_rustic_2p5d.01',
+    label: 'Escalier 2,5D · Pierre rustique',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.stone_rustic_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.stone_rustic_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.stone_rustic_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.stone_rustic_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.stone_temple_2p5d.01',
+    label: 'Escalier 2,5D · Pierre de temple',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.stone_temple_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.stone_temple_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.stone_temple_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.stone_temple_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.wood_rustic_2p5d.01',
+    label: 'Escalier 2,5D · Bois rustique',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.wood_rustic_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.wood_rustic_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.wood_rustic_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.wood_rustic_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.stone_ruins_moss_2p5d.01',
+    label: 'Escalier 2,5D · Ruines moussues',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.stone_ruins_moss_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.stone_ruins_moss_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.stone_ruins_moss_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.stone_ruins_moss_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.marble_palace_2p5d.01',
+    label: 'Escalier 2,5D · Marbre noble',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.marble_palace_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.marble_palace_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.marble_palace_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.marble_palace_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.timber_stone_village_2p5d.01',
+    label: 'Escalier 2,5D · Bois et pierre village',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.timber_stone_village_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.timber_stone_village_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.timber_stone_village_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.timber_stone_village_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.stone_fortress_dark_2p5d.01',
+    label: 'Escalier 2,5D · Forteresse sombre',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.stone_fortress_dark_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.stone_fortress_dark_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.stone_fortress_dark_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.stone_fortress_dark_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.earth_log_path_2p5d.01',
+    label: 'Escalier 2,5D · Terre et rondins',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.earth_log_path_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.earth_log_path_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.earth_log_path_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.earth_log_path_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.stone_cobble_town_2p5d.01',
+    label: 'Escalier 2,5D · Pavés de village',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.stone_cobble_town_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.stone_cobble_town_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.stone_cobble_town_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.stone_cobble_town_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.stairs.stone_cliff_moss_2p5d.01',
+    label: 'Escalier 2,5D · Falaise moussue',
+    kind: 'stairs',
+    visual: {
+      assetId: 'object.stairs.stone_cliff_moss_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.stairs.stone_cliff_moss_2p5d.front.01' },
+        { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.stone_cliff_moss_2p5d.oblique.01' },
+        { id: 'side', label: 'Côté', assetId: 'object.stairs.stone_cliff_moss_2p5d.side.01' }
+      ]
+    },
+    baseSize: { width: 210, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.stairs.stone.simple.01',
     label: 'Escalier pierre simple',
     kind: 'stairs',

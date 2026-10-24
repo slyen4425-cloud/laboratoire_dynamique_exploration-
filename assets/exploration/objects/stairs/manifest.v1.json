@@ -4,7 +4,7 @@
   "ownership": "exploration-world-objects",
   "generatedAt": "2026-10-05",
   "runtimeProfile": "mobile-webp-384x384-q82",
-  "purpose": "Three top-down Stairs WorldObject showcase visuals. V1 is visual placement only; traversal/portal ownership remains separate.",
+  "purpose": "Native Stairs WorldObject visuals: 3 original top-down assets preserved plus 10 2.5D staircase designs × 3 view variants (30 new WebP). Cosmetic only; traversal remains separate.",
   "sourceProfile": {
     "fileId": "file_00000000fe488210b836373b4c707222",
     "generationId": "db8bbced-80f7-4fb5-9f1a-258ae8080519",
@@ -51,6 +51,318 @@
       "view": "top-down",
       "sha256": "270b24424b20889b6b56b8233b2ee04b2ec628f9c6522d1c65e9f8d75d122681",
       "bytes": 40650
+    },
+    {
+      "assetId": "object.stairs.stone_rustic_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_rustic_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_rustic",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "e258b0fee226c1ca083fbe75c6e4153692d2d6cf82d2bb04ee2d79e8394a810f",
+      "bytes": 24662
+    },
+    {
+      "assetId": "object.stairs.stone_rustic_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_rustic_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_rustic",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "f26fafb32c9f9525bd57270cc158e914d02e3427a35e939285271f23a3980cc1",
+      "bytes": 25650
+    },
+    {
+      "assetId": "object.stairs.stone_rustic_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_rustic_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_rustic",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "8ec5076d96cbc6300b50038a10a227f699f16ba096df9509a3ee121c6e4ac593",
+      "bytes": 17554
+    },
+    {
+      "assetId": "object.stairs.stone_temple_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_temple_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_temple",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "dbb96f9126f68a7ed05b448f088d3e7e17dfe2f1486e086214a783f2a498d9cd",
+      "bytes": 21930
+    },
+    {
+      "assetId": "object.stairs.stone_temple_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_temple_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_temple",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "e147cb3e1e3997ce6981a0d0a7bdaa15ed26d31fe641fff33e0e4bbd57a78e77",
+      "bytes": 22880
+    },
+    {
+      "assetId": "object.stairs.stone_temple_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_temple_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_temple",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "33adeb891c87c788b86ffff17cc4950bec88058fb98619476e41e8206bf7c112",
+      "bytes": 16114
+    },
+    {
+      "assetId": "object.stairs.wood_rustic_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_wood_rustic_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "wood_rustic",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "e4e1678c112b9f237ea911750fe01b813d57e0535ca68e538d7d86ff4ba5667b",
+      "bytes": 20804
+    },
+    {
+      "assetId": "object.stairs.wood_rustic_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_wood_rustic_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "wood_rustic",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "08d320c441a4c5cc11cb9eef640ff0a30d7178fffd4aa9c96699b91db6140caf",
+      "bytes": 23878
+    },
+    {
+      "assetId": "object.stairs.wood_rustic_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_wood_rustic_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "wood_rustic",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "2760e37627d3ddbcc7807392455cdb5952650511a7c0bd5522e83cd6e1d9f61f",
+      "bytes": 18640
+    },
+    {
+      "assetId": "object.stairs.stone_ruins_moss_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_ruins_moss_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_ruins_moss",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "5172ea233bc84638f6c49418dc3691a7ce53cb0cf4cef166d5c1d7f45f941bad",
+      "bytes": 32264
+    },
+    {
+      "assetId": "object.stairs.stone_ruins_moss_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_ruins_moss_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_ruins_moss",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "a3677ed2956a38601963cb7519b9f88f78faf9d83614c231cee43fd71a3f24ce",
+      "bytes": 29900
+    },
+    {
+      "assetId": "object.stairs.stone_ruins_moss_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_ruins_moss_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_ruins_moss",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "89ed46c3e9ee688b5e393be747c37ba72c246c1a07d37ef9ee5f2fb584ef723b",
+      "bytes": 21634
+    },
+    {
+      "assetId": "object.stairs.marble_palace_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_marble_palace_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "marble_palace",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "3aa1fc9cd7ffe54a2e71178aa60a1968e6c762f634b9a18d81d4e447613d87a4",
+      "bytes": 20278
+    },
+    {
+      "assetId": "object.stairs.marble_palace_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_marble_palace_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "marble_palace",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "7c20be22df242eb7e04c4816a218250521af1ff665a13089234103990b757d0b",
+      "bytes": 24862
+    },
+    {
+      "assetId": "object.stairs.marble_palace_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_marble_palace_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "marble_palace",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "2e277026d777cdcb538c64551b6dd7c57f8f0e09c7f6701436b8784f9caa0f9f",
+      "bytes": 18142
+    },
+    {
+      "assetId": "object.stairs.timber_stone_village_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_timber_stone_village_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "timber_stone_village",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "d2c5a314af3a8c23c75d1db979ca81a65605403242c16e564a8b2bbb2cfa44da",
+      "bytes": 22056
+    },
+    {
+      "assetId": "object.stairs.timber_stone_village_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_timber_stone_village_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "timber_stone_village",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "31de805a69b4dd1a0d60e41075b8decb4aa8b4484ff84d71f8bc7144dc79f188",
+      "bytes": 26810
+    },
+    {
+      "assetId": "object.stairs.timber_stone_village_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_timber_stone_village_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "timber_stone_village",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "43400c790011694ea943bd1fa2161514c67ed3fb256b40bd532e11499dc8db5a",
+      "bytes": 23516
+    },
+    {
+      "assetId": "object.stairs.stone_fortress_dark_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_fortress_dark_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_fortress_dark",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "30fe0efd198b4776990efc26f52f1bae178cf6d76aff8c28f4ec79930f950477",
+      "bytes": 28074
+    },
+    {
+      "assetId": "object.stairs.stone_fortress_dark_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_fortress_dark_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_fortress_dark",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "40b9ee5c0195a79fcfbbe8741c8391473d912a1f191ec3d8a29782ae628ba8cd",
+      "bytes": 26852
+    },
+    {
+      "assetId": "object.stairs.stone_fortress_dark_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_fortress_dark_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_fortress_dark",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "9564e7fb710ec14fa73997243e1c470e6da41410f35c9aa8e976066a9268b48a",
+      "bytes": 17916
+    },
+    {
+      "assetId": "object.stairs.earth_log_path_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "earth_log_path",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "b5b367d6a51d14ba3c319f2c9d05bf0352ce8bec04d52c1412cb38ed4dcd9f26",
+      "bytes": 29318
+    },
+    {
+      "assetId": "object.stairs.earth_log_path_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "earth_log_path",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "cd59402c9302afa6c18982cdaa4465b2f8927c48635c8da886c60fe716898b21",
+      "bytes": 28788
+    },
+    {
+      "assetId": "object.stairs.earth_log_path_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "earth_log_path",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "65c473cc5e6082fc6664811b6fb19dc0554215c39a161c95d7ea5aa9630e4af4",
+      "bytes": 21374
+    },
+    {
+      "assetId": "object.stairs.stone_cobble_town_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_cobble_town_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_cobble_town",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "0c270bb755caa25fd350cf1bffbc46fa9b1c87a6d089dbba6d43f1804e4cc948",
+      "bytes": 26358
+    },
+    {
+      "assetId": "object.stairs.stone_cobble_town_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_cobble_town_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_cobble_town",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "eb465e2ce413b4948690d0a2e554d1fef5d28e74b6b0106dfcb687fa6c9853e7",
+      "bytes": 26698
+    },
+    {
+      "assetId": "object.stairs.stone_cobble_town_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_cobble_town_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_cobble_town",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "6e41f4ce1a9325e155f4cfad18dca193e681e34e43f11f19ac38abc7e22d5c9b",
+      "bytes": 20752
+    },
+    {
+      "assetId": "object.stairs.stone_cliff_moss_2p5d.front.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_cliff_moss_2p5d_front_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_cliff_moss",
+      "variant": "front",
+      "view": "front-2.5d",
+      "sha256": "eeffdd40842b624196f239b394afabf5ecac6cf2e052cf5d07f6b04c0b16088f",
+      "bytes": 23464
+    },
+    {
+      "assetId": "object.stairs.stone_cliff_moss_2p5d.oblique.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_cliff_moss_2p5d_oblique_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_cliff_moss",
+      "variant": "oblique",
+      "view": "three-quarter-2.5d",
+      "sha256": "357e14acf3412b829a72de329b121282c1cc72eebca08a06b885ad4428cf1744",
+      "bytes": 22442
+    },
+    {
+      "assetId": "object.stairs.stone_cliff_moss_2p5d.side.01",
+      "path": "assets/exploration/objects/stairs/stairs_stone_cliff_moss_2p5d_side_01.webp",
+      "role": "stairs-visual",
+      "family": "stone_cliff_moss",
+      "variant": "side",
+      "view": "side-2.5d",
+      "sha256": "6c3b86170985340dad3001494234a2f5b3c0bee408d69e29c91876cc97ef7af5",
+      "bytes": 17822
     }
-  ]
+  ],
+  "generatedAdditions2p5d": {
+    "date": "2026-10-24",
+    "styles": 10,
+    "views": [
+      "front",
+      "oblique",
+      "side"
+    ],
+    "files": 30,
+    "runtimeProfile": "mobile-webp-rgba-384x384-q84",
+    "source": "User-approved staircase sheets in ChatGPT, 10 files, background isolated"
+  }
 }
