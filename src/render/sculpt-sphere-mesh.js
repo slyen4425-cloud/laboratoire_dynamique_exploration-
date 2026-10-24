@@ -2,6 +2,7 @@
 // World Model still owns all geometry. This file neither stores nor edits collision.
 import {sculptSphereDisplacementAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
+import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js';
 const TAU=2*Math.PI, SECTORS=36, BANDS=10;
 const meshCache=new WeakMap();
 // One radius is shared by the LAST grass crown ring and the FIRST rock wall
@@ -189,7 +190,8 @@ function paintContinuousFrustum(ctx,terrain,sphere,tile,groundColor,material,
   // R11: upper grass must read as a higher, sunlit surface, not the same
   // texture brightness as the foot of the hill. One translucent pass is
   // cheaper than relighting every atlas tile and preserves the R5 raster.
-  const sunlitStrength=Math.min(.22,.065+sphere.height*.025);
+  const sunlitLevel=sculptAltitudeVisualState(sphere.baseLevel+sphere.height).steps;
+  const sunlitStrength=Math.min(.22,.06+Math.max(0,sunlitLevel)*.03);
   ctx.fillStyle='rgba(239,255,202,'+sunlitStrength+')';ctx.fill();
   // The shadow at the edge must follow the WHOLE circular contour.
   // A vertical gradient on the cap gave a dark semicircle and a flat edge.
