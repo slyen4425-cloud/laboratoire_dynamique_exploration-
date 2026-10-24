@@ -12,7 +12,7 @@ import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
-import {drawSculptRamp} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
+import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -46,7 +46,7 @@ const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
-let rampStart=null,rampEnd=null,rampPrecisionStart=null;
+let rampStart=null,rampEnd=null,rampGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let spherePreviewDismissed=false;
@@ -457,9 +457,42 @@ function screenToCell(event){
   return row>=0&&row<terrain.height?{x:col,y:row}:null;
 }
 function status(message){$('notice').textContent=message;}
+// R3 touch authoring. Terrain.ramps stays the only persisted source; a pending
+// foot or preview never writes to the map and never creates a WorldObject.
+const rampToolActive=()=>selectedMode==='terrain-ramp';
+const rampPointFromCell=cell=>({x:(cell.x+.5)*SCULPT_TILE.width,
+  y:(cell.y+.5)*SCULPT_TILE.height});
+const rampWidth=()=>Number($('radius').value)*SCULPT_TILE.width;
+function updateRampGuide(message=null){
+  const active=rampToolActive();
+  $('ramp-guide').hidden=!active;
+  document.body.classList.toggle('terrain-ramp-authoring',
+    active||selectedMode==='terrain-ramp-erase');
+  $('ramp-cancel').disabled=!rampStart;
+  if(!active)return;
+  $('ramp-step').textContent=message??(rampStart
+    ?'2. Touche le sommet PLUS HAUT · ou glisse pour ajuster. Largeur : '+$('radius').value+' cases.'
+    :'1. Touche le pied BAS, puis le sommet HAUT. Ou glisse en un geste.');
+}
+function commitTerrainRamp(from,to){
+  const strokeUndo=terrain;
+  const next=appendSculptTerrainRamp(strokeUndo,{
+    x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
+  if(next===strokeUndo){
+    rampStart=from;
+    status('Pente non raccordée : choisis un sommet sec et plus haut, ou allonge le passage.');
+    updateRampGuide('Pente non raccordée · change le sommet (ou le pied).');
+    return false;
+  }
+  terrain=next;rampStart=null;
+  commitUndo(strokeUndo);
+  status('Pente créée dans le terrain · Annuler disponible · Tester pour monter.');
+  updateRampGuide();return true;
+}
 
 function updatePrecisionActions(){
-  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&$('precision-mode').checked;
+  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&
+    !selectedMode.startsWith('terrain-ramp')&&$('precision-mode').checked;
   $('precision-actions').hidden=!enabled;
   const hasTarget=enabled&&!!precisionCell;
   $('apply-precision').disabled=!hasTarget;
@@ -492,30 +525,6 @@ function precisionApply(){
   if(!$('precision-mode').checked||!precisionCell)return;
   const cell=precisionCell,previous=terrain;
   const water=selectedMode.startsWith('water-');
-  if(selectedMode==='terrain-ramp'){
-    const point={x:(cell.x+.5)*SCULPT_TILE.width,
-      y:(cell.y+.5)*SCULPT_TILE.height};
-    if(!rampPrecisionStart){
-      rampPrecisionStart=point;
-      status('Pente : pied défini. Vise le plateau PLUS HAUT puis appuie de nouveau sur Appliquer.');scheduleDraw();
-      return;
-    }
-    terrain=appendSculptTerrainRamp(previous,{
-      x:rampPrecisionStart.x,y:rampPrecisionStart.y,
-      endX:point.x,endY:point.y,width:Number($('radius').value)*SCULPT_TILE.width});
-    rampPrecisionStart=null;
-    commitUndo(previous);scheduleDraw();
-    status(terrain===previous?'Pente impossible : vise deux plateaux secs, bas puis haut, assez espacés.':
-      'Pente créée dans le relief · même texture de sol · Tester pour gravir.');
-    return;
-  }
-  if(selectedMode==='terrain-ramp-erase'){
-    terrain=removeSculptTerrainRampAt(previous,(cell.x+.5)*SCULPT_TILE.width,
-      (cell.y+.5)*SCULPT_TILE.height);
-    commitUndo(previous);scheduleDraw();
-    status(terrain===previous?'Aucune pente à cet emplacement':'Pente du terrain effacée');
-    return;
-  }
   const options={points:[{x:cell.x+.5,y:cell.y+.5}],
     radius:Number($('radius').value),strength:Number($('strength').value),
     shape:$('brush-shape').value,mode:selectedMode,target:water?Number($('water-target').value):
@@ -602,7 +611,7 @@ function adjustBrushSize(delta){
 function selectMode(mode){
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
-  rampPrecisionStart=null;rampStart=null;rampEnd=null;
+  rampStart=null;rampEnd=null;rampGesture=null;
   spherePreviewDismissed=false;
   if(nextKind==='water')lastWaterMode=mode;else lastGroundMode=mode;
   // Quickbar can be used while Objects or Textures is active even when the
@@ -615,6 +624,8 @@ function selectMode(mode){
     button.setAttribute('aria-pressed',String(active));
   });
   syncQuickToolbar();
+  updateRampGuide();
+  updatePrecisionActions();
   $('sphere-profile-wrap').hidden=mode!=='sphere-hill'&&mode!=='sphere-basin';
   // On mobile, make a prospective footprint visible before the first tap.
   if(mode.startsWith('sphere-')&&$('precision-mode').checked&&!precisionCell){
@@ -635,7 +646,7 @@ function selectMode(mode){
     'sphere-hill':'V76 R9 : 0 % sphère ; de 5 à 95 % colline à flanc conique ; 100 % plateau rond vertical. Accès à pied sur les pentes : V77.',
     'sphere-basin':'V76 R9 : creux rond à fond plat et flancs coniques, ou bord vertical à 100 %. Accès par pente : V77.',
     'sphere-erase':'V76 : touche une colline/cavité sphérique pour la supprimer, sans modifier les cases.',
-    'terrain-ramp':'Pente du terrain : glisse du pied BAS vers le sommet HAUT. Taille du pinceau = largeur. En placement précis : applique le bas, puis le haut.',
+    'terrain-ramp':'Pente : touche le pied BAS, puis le sommet HAUT (ou glisse en un seul geste). La taille du pinceau règle la largeur.',
     'terrain-ramp-erase':'Effacer pente : touche le passage à supprimer dans Terre. Le terrain conserve ses plateaux.',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
@@ -702,6 +713,23 @@ function begin(event){
     surfaceDrawing=true;surfaceLastCell=cell.x+','+cell.y;surfaceStrokePoints=[point];
     return;
   }
+  // R3: slopes bypass the global mobile precision checkbox ONLY while
+  // creating/erasing a slope. Other terrain brushes preserve their mode.
+  if(selectedMode==='terrain-ramp-erase'){
+    const strokeUndo=terrain,point=rampPointFromCell(cell);
+    terrain=removeSculptTerrainRampAt(strokeUndo,point.x,point.y);
+    commitUndo(strokeUndo);
+    status(terrain===strokeUndo?'Aucune pente à cet emplacement.'
+      :'Pente du terrain effacée · Annuler disponible.');
+    scheduleDraw();return;
+  }
+  if(rampToolActive()){
+    const point=rampPointFromCell(cell);
+    rampGesture={pointerId:event.pointerId,origin:point,last:point,
+      previousStart:rampStart,moved:false};
+    rampEnd=point;
+    updateRampGuide();scheduleDraw();return;
+  }
   if($('precision-mode').checked){
     precisionDragging=true;precisionCell=cell;updatePrecisionActions();
     status('Visée ('+(cell.x+1)+','+(cell.y+1)+') : déplace ou ajuste avec les flèches, puis Appliquer');
@@ -761,6 +789,18 @@ function stroke(event){
       y:(cell.y+.5)*SCULPT_TILE.height});
     scheduleDraw();return;
   }
+  if(rampGesture){
+    if(event.pointerId!==rampGesture.pointerId)return;
+    const cell=screenToCell(event);
+    if(cell){
+      const point=rampPointFromCell(cell);
+      hoverCell=cell;rampGesture.last=point;rampEnd=point;
+      if(point.x!==rampGesture.origin.x||point.y!==rampGesture.origin.y)
+        rampGesture.moved=true;
+      scheduleDraw();
+    }
+    return;
+  }
   if(precisionDragging){
     const next=screenToCell(event);
     if(next){precisionCell=next;hoverCell=next;updatePrecisionActions();}
@@ -777,17 +817,6 @@ function stroke(event){
   hoverCell=cell;
   const key=cell.x+','+cell.y;
   if(key===lastCell)return;
-  if(selectedMode==='terrain-ramp'||selectedMode==='terrain-ramp-erase'){
-    const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
-    if(selectedMode==='terrain-ramp-erase'){
-      terrain=removeSculptTerrainRampAt(strokeUndo,x,y);
-      if(terrain===strokeUndo)status('Aucune pente du terrain sous le doigt.');
-    }else{
-      if(!rampStart)rampStart={x,y};
-      rampEnd={x,y};
-    }
-    lastCell=key;scheduleDraw();return;
-  }
   if(selectedMode.startsWith('sphere-')){
     // Exactly one authored radial shape per gesture, not a trail of circles.
     if(lastCell)return;
@@ -859,6 +888,20 @@ function stop(event){
     surfaceStrokePoints=[];
     surfaceCommit(changed);return;
   }
+  if(rampGesture){
+    const gesture=rampGesture;rampGesture=null;rampEnd=null;
+    const cancelled=event?.type==='pointercancel'||event?.type==='lostpointercapture';
+    if(!cancelled){
+      if(gesture.moved){
+        commitTerrainRamp(gesture.previousStart??gesture.origin,gesture.last);
+      }else if(!gesture.previousStart){
+        rampStart=gesture.origin;
+        status('Pied choisi. Touche maintenant le sommet PLUS HAUT.');
+        updateRampGuide();
+      }else commitTerrainRamp(gesture.previousStart,gesture.last);
+    }
+    updateRampGuide();scheduleDraw();return;
+  }
   if(precisionDragging){
     precisionDragging=false;
     spherePreviewDismissed=false;
@@ -866,18 +909,10 @@ function stop(event){
     return;
   }
   if(drawing&&strokeUndo){
-    if(selectedMode==='terrain-ramp'&&rampStart&&rampEnd){
-      terrain=appendSculptTerrainRamp(strokeUndo,{
-        x:rampStart.x,y:rampStart.y,endX:rampEnd.x,endY:rampEnd.y,
-        width:Number($('radius').value)*SCULPT_TILE.width});
-      status(terrain===strokeUndo
-        ?'Pente non créée : dessine du plateau BAS vers le plateau HAUT, assez long et sec.'
-        :'Pente sculptée dans la terre, avec la texture du sol. Teste la montée.');
-    }
     commitUndo(strokeUndo);
     strokeUndo=null;
   }
-  drawing=false;lastCell='';strokePoints=[];rampStart=null;rampEnd=null;
+  drawing=false;lastCell='';strokePoints=[];
   if(selectedMode.startsWith('sphere-')){
     spherePreviewDismissed=false;
     // Retain the last target on touch devices; it is not persisted in the map.
@@ -1950,7 +1985,7 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
   terrainRampCount:terrain.ramps?.length??0,ramps:(terrain.ramps??[]).map(f=>({...f})),
-  rampStart:!!(rampStart||rampPrecisionStart),
+  rampStart:!!rampStart,rampGestureActive:!!rampGesture,
   sphereMaterialAssets:{rock:cliffHDLoaded,grass:!!sphereWallImages.grass,
     earth:!!sphereWallImages.earth},
   terrainRasterBuilds,cachedGround:!!navTerrainCache,
