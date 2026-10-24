@@ -2670,6 +2670,36 @@ try{
   if(!(v79Angles.a<.60&&v79Angles.b>.99))
     throw Error('V79 browser interior camera inclination not connected: '+
       JSON.stringify(v79Angles));
+  const v79R2=await run(`(()=>{
+    const roomBar=document.querySelector('#interior-area-bar');
+    const quick=document.querySelector('.sculpt-quickbar');
+    const floor=document.querySelector('#interior-floor-base');
+    floor.value='floor.tile.light';floor.dispatchEvent(new Event('change',{bubbles:true}));
+    const original=window.__sculptLabProbe().interiorFloorId;
+    document.querySelector('#interior-template-name').value='Maison de village';
+    document.querySelector('#interior-template-save').click();
+    const itemId=document.querySelector('#interior-template-select').value;
+    floor.value='floor.wood.dark';floor.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#interior-template-apply').click();
+    const applied=window.__sculptLabProbe();
+    document.querySelector('#fullscreen-toggle').click();
+    const floating=document.body.classList.contains('sculpt-immersive')&&quick.contains(roomBar)&&
+      getComputedStyle(roomBar).position==='static';
+    document.querySelector('#fullscreen-toggle').click();
+    document.querySelector('#scene-export').click();
+    const exported=JSON.parse(document.querySelector('#json').value);
+    return {original,itemId,appliedFloor:applied.interiorFloorId,
+      templates:applied.interiorTemplateCount,exported:exported.interiorTemplates?.length,
+      savedFloor:exported.interiors?.[0]?.surface?.baseMaterialId,
+      floating};
+  })()`);
+  if(v79R2.original!=='floor.tile.light'||!v79R2.itemId||
+     v79R2.appliedFloor!=='floor.tile.light'||v79R2.templates!==1||
+     v79R2.exported!==1||v79R2.savedFloor!=='floor.tile.light'||
+     !v79R2.floating)
+    throw Error('V79 R2 real Chromium native floors / reusable templates / floating bar failed: '+
+      JSON.stringify(v79R2));
+  console.log('V79 R2 REAL Chromium native indoor floors, reusable room and floating return:',JSON.stringify(v79R2));
   const v79Back=await run(`(()=>{
     document.querySelector('#interior-area-return').click();
     return window.__sculptLabProbe();
