@@ -865,7 +865,7 @@ function navigationBlockMessage(reason){
   if(reason.kind==='height-up'||reason.kind==='height-down')
     return reason.limit===0
       ?'falaise infranchissable : '+reason.from+'→'+reason.to+
-        ' (accès par pente ou escalier à créer)'
+        ' (passage par pente ou escalier raccordé)'
       :(reason.kind==='height-up'?'montée':'descente')+' '+reason.from+'→'+reason.to+
         ' (écart '+reason.delta+', franchissement '+reason.limit+')';
   return 'obstacle';
@@ -1235,6 +1235,12 @@ function refreshObjectOptions(){
   $('object-bridge-length-wrap').firstChild.textContent=stairMode?'🪜 Longueur ':'🌉 Longueur ';
   $('object-bridge-width-wrap').firstChild.textContent=stairMode?'🪜 Largeur ':'🌉 Largeur ';
   $('object-scale').max=passageMode?'300':'120';
+  $('object-bridge-length').setAttribute('aria-label',stairMode
+    ?'Longueur de l’escalier, peut relier plusieurs hauteurs'
+    :'Longueur du pont sans élargir le passage');
+  $('object-bridge-width').setAttribute('aria-label',stairMode
+    ?'Largeur du passage dans l’escalier'
+    :'Largeur du pont sans allonger le passage');
   if(Number($('object-scale').value)>Number($('object-scale').max)){
     $('object-scale').value=$('object-scale').max;
     $('object-scale-value').textContent=$('object-scale').value+' %';
