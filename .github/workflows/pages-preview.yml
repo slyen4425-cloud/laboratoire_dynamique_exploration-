@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: sphere-depth-v76-r11-brighter-grass-radial-rim-small-collision-clearance-2026-10-23
+# preview-revision: altitude-v76-r12-corners-hd-sunlight-hero-scale-plateau-movement-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: ec5f4ed79e448693fbc434c7e06f1d04dac624e5
+          ref: 0956fe57718a30a4abf6f0f5ac5dca1b2475f367
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
