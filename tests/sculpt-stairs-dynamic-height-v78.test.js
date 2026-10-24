@@ -74,6 +74,26 @@ test('V78 side entry refused; dry endpoints required; rotation and scale are rea
   assert.equal(importSculptPreviewScene(serializeSculptPreviewScene(terrain,world.objects)).objects.length,1);
   assert.equal(serializeSculptTerrain(terrain),prior);
 });
+test('V78: two connected stairs each read their own foot and head levels',()=>{
+  const levels=Array.from({length:W*H},(_,i)=>{
+    const row=Math.floor(i/W);return row<8?6:row<14?4:2;
+  });
+  const terrain=createSculptTerrain({width:W,height:H,levels});
+  const world={width:W*CW,height:H*CH,objects:[],obstacles:[]};
+  stairs(world,{y:17.5*CH,scaleY:.7});
+  stairs(world,{y:11.5*CH,scaleY:.75});
+  const objects=resolveWorldObjectPlacements(world.objects);
+  assert.equal(objects.length,2);
+  assert.deepEqual(objects.map(s=>sculptStairCorridor(terrain,s)?.bottomLevel),[2,4]);
+  assert.deepEqual(objects.map(s=>sculptStairCorridor(terrain,s)?.topLevel),[4,6]);
+  const p=actor(8.5*CW,18*CH),ctx=context(terrain,objects);
+  drive(world,p,ctx,-1,150);
+  assert.ok(p.y<7.9*CH,'two stairs should reach the upper level: '+p.y);
+  drive(world,p,ctx,1,150);
+  assert.ok(p.y>17*CH,'both stairs descend to the base: '+p.y);
+  assert.equal(p.sculptStairId,null);
+});
+
 test('V78 navigation and length/width UI consume the single staircase corridor',()=>{
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(main,/sculptStairHeightAt\(terrain,/);
