@@ -1,3 +1,14 @@
+# Lot V77 R2 — 24/10/2026 — Véritables pentes sculptées dans Terre (EN COURS)
+
+- **RETOUR CRÉATEUR : V77 objet REFUSÉE.** Les « pentes » doivent appartenir à la construction des HAUTEURS DU TERRAIN, pas à Objets. Même matériau et texture herbe / terre du relief original ; éviter bandes peintes artificielles. Escaliers V78 R2 validés immuables.
+- **Base source** : V77 `72868224d6794f9c20d1dea227d54eda7fd504d9` publiée ; START figé `checkpoint/exploration-start-ground-sculpted-slopes-v77-r2-2026-10-24` ; branche de lot `work/exploration-ground-sculpted-slopes-v77-r2-2026-10-24`.
+- **Contrat terrain** : ajouter `terrain.ramps` (version 1 compatible) à la structure immutable `SculptTerrain`, sur le même principe que `terrain.spheres` ; chaque pente stocke les points bas/haut en unités monde, largeur, orientation. L'outil `Terre → Créer une pente` pose en deux points (glisser ou placement précis), `Terre → Effacer une pente` retire le volume analytique. Annuler/rétablir terrain et Exporter hauteurs JSON fonctionnent naturellement. Ne plus exposer « Pentes » dans Objets ; anciennes scènes d'objets ramp V77 doivent être lisibles/migrées.
+- **Source physique unique** : transformer le terrain.ramps en couloirs consommés par la route Collision World de V78, calcul de hauteur pied/tête depuis vrais plateaux ; réutilise `sculptStairCorridor` et `sculptNavigationRoute` (pas d'un deuxième collision/carry). Préserver l'exception strictement locale ; autres falaises bloquées.
+- **Source visuelle unique** : rendu de la pente dans `drawSculptTerrain` avec le `texture` / `material.render.baseColor` actuels et caméra native ; pas de sprite WorldObject et pas de bandes coloriées en dur. Pentes visibles même pendant la sculpture, sans affecter les plateaux carrés ou les sphères.
+- **Vérification** : rampes de 1-3 niveaux, montée/descente, refus eau/trop court / hors carte, rotation, largeur, série, texture uniforme, migration ancienne scène, Undo/Redo, Chromium Sculpt/Builder/Combat, CI GREEN puis Pages via PR. NON GREEN tant que validation visuelle Pixel.
+
+---
+
 # Lot V77 — 24/10/2026 — Pentes naturelles du terrain (EN COURS)
 
 - **Validation créateur** : le système d'escaliers V78 R2, montage et perspective, est VALIDÉ. Checkpoint immuable GREEN `checkpoint/exploration-stairs-v78-r2-green-pixel-2026-10-24` au SHA publié `134b608ef402392e78e02d72707ef8a6324b4bd2`.
