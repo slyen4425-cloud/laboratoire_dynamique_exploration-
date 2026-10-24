@@ -749,6 +749,186 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/doors/door_fantasy_tavern_golden_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.stairs.stone_rustic_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.stone_rustic_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_rustic_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_rustic_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.stone_rustic_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_rustic_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_rustic_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.stone_rustic_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_rustic_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_temple_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.stone_temple_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_temple_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_temple_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.stone_temple_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_temple_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_temple_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.stone_temple_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_temple_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.wood_rustic_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.wood_rustic_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_wood_rustic_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.wood_rustic_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.wood_rustic_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_wood_rustic_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.wood_rustic_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.wood_rustic_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_wood_rustic_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_ruins_moss_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.stone_ruins_moss_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_ruins_moss_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_ruins_moss_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.stone_ruins_moss_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_ruins_moss_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_ruins_moss_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.stone_ruins_moss_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_ruins_moss_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.marble_palace_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.marble_palace_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_marble_palace_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.marble_palace_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.marble_palace_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_marble_palace_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.marble_palace_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.marble_palace_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_marble_palace_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.timber_stone_village_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.timber_stone_village_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_timber_stone_village_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.timber_stone_village_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.timber_stone_village_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_timber_stone_village_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.timber_stone_village_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.timber_stone_village_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_timber_stone_village_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_fortress_dark_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.stone_fortress_dark_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_fortress_dark_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_fortress_dark_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.stone_fortress_dark_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_fortress_dark_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_fortress_dark_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.stone_fortress_dark_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_fortress_dark_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.earth_log_path_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.earth_log_path_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.earth_log_path_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.earth_log_path_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.earth_log_path_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.earth_log_path_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_cobble_town_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.stone_cobble_town_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_cobble_town_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_cobble_town_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.stone_cobble_town_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_cobble_town_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_cobble_town_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.stone_cobble_town_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_cobble_town_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_cliff_moss_2p5d.front.01': Object.freeze({
+    id: 'object.stairs.stone_cliff_moss_2p5d.front.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_cliff_moss_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_cliff_moss_2p5d.oblique.01': Object.freeze({
+    id: 'object.stairs.stone_cliff_moss_2p5d.oblique.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_cliff_moss_2p5d_oblique_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.stairs.stone_cliff_moss_2p5d.side.01': Object.freeze({
+    id: 'object.stairs.stone_cliff_moss_2p5d.side.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_stone_cliff_moss_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.stairs.stone.simple.01': Object.freeze({
     id: 'object.stairs.stone.simple.01',
     kind: 'stairs-visual',
