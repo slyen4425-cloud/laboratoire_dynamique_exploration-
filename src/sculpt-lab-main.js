@@ -9,8 +9,9 @@ import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
-import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76';
-import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2-sphere-v76-frustum-r9-depth-r11-altitude-r12';
+import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
+import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78';
+import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -30,7 +31,7 @@ import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3';
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
-import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76';
+import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
 import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
@@ -824,15 +825,18 @@ function navigationMaxStep(){
   // old 1-3 level HUD toggle bypassed the authored-height access design.
   return SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp;
 }
-let navBridgePlacements=null,navBridgeProjection=null;
+let navBridgePlacements=null,navBridgeProjection=null,navStairProjection=null;
 function resolvedSculptBridges(){
   if(navBridgePlacements!==placedObjects){
     navBridgePlacements=placedObjects;
     navBridgeProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
       .filter(o=>o.kind==='bridge');
+    navStairProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
+      .filter(o=>o.kind==='stairs');
   }
   return navBridgeProjection;
 }
+function resolvedSculptStairs(){resolvedSculptBridges();return navStairProjection;}
 function activeSculptBridge(){
   if(!navigationTesting||!navActor?.sculptBridgeId)return null;
   return resolvedSculptBridges().find(bridge=>bridge.id===navActor.sculptBridgeId&&
@@ -845,7 +849,7 @@ function navigationContext(){
     sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
       cellHeight:SCULPT_TILE.height,projectionRise:SCULPT_TILE.rise,
        maxStepUp:maxStep,maxStepDown:maxStep,
-      shoreEntryFraction:.14,bridges:resolvedSculptBridges()}};
+      shoreEntryFraction:.14,bridges:resolvedSculptBridges(),stairs:resolvedSculptStairs()}};
 }
 // Explain actual rejection from the SAME swept-height check used by Collision
 // World; never guess physics from rounded visual cliff pixels.
@@ -856,6 +860,7 @@ function navigationBlockMessage(reason){
   if(reason.kind==='sphere-wall'||reason.kind==='sphere-projection')
     return 'colline haute : flanc et sommet bloqués depuis le sol (pentes V77)';
   if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
+  if(reason.kind==='stair-edge')return 'escalier : accès uniquement par une extrémité praticable';
   if(reason.kind==='cliff-projection')return 'falaise nord : rebord bloqué avant le sommet visible';
   if(reason.kind==='height-up'||reason.kind==='height-down')
     return reason.limit===0
@@ -866,6 +871,10 @@ function navigationBlockMessage(reason){
   return 'obstacle';
 }
 function navHeight(){
+  const stairLevel=navActor?.sculptStairId?sculptStairHeightAt(terrain,
+    resolvedSculptStairs(),navActor.sculptStairId,navActor.x,navActor.y,
+    {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
+  if(stairLevel!==null)return stairLevel;
   const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const activeBridge=navActor?.sculptBridgeId?resolvedSculptBridges().find(bridge=>
@@ -956,6 +965,7 @@ function updateNavigationInfo(forced=false){
   const deck=activeSculptBridge();
   const value=info?'Case '+(info.col+1)+' / '+(info.row+1)+' · hauteur '+info.level+
     (deck?' · 🌉 SUR LE PONT':'')+
+    (navActor.sculptStairId?' · 🪜 ESCALIER '+navHeight().toFixed(1):'')+
     (info.waterDepth>0?' · eau '+info.waterDepth:'')+
     (navBlocked?' · bloqué : '+navigationBlockMessage(navBlockReason):''):'Hors zone';
   if(forced||value!==navLastState){$('navigation-status').textContent=value;navLastState=value;}
@@ -1138,6 +1148,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
+  stairId:navActor?.sculptStairId??null,stairHeight:navActor?navHeight():null,
   physicalBridgeLayer:navActor?.sculptBridgeId?'deck':'ground',
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
@@ -1214,13 +1225,16 @@ function refreshObjectOptions(){
     option.value=o.id;option.textContent=o.label;return option;
   }));
   if(definitions.some(o=>o.id===current))$('object-definition').value=current;
-  // Bridge dimensions use the same canonical transform; only the editor cap
-  // differs. Other objects keep their published 120 % range.
+  // Stairs and bridges share native axis controls; stairs ascend along Y.
   const bridgeMode=$('object-category').value==='bridge';
-  $('object-scale-wrap').hidden=bridgeMode;
-  $('object-bridge-length-wrap').hidden=!bridgeMode;
-  $('object-bridge-width-wrap').hidden=!bridgeMode;
-  $('object-scale').max=bridgeMode?'300':'120';
+  const stairMode=$('object-category').value==='stairs';
+  const passageMode=bridgeMode||stairMode;
+  $('object-scale-wrap').hidden=passageMode;
+  $('object-bridge-length-wrap').hidden=!passageMode;
+  $('object-bridge-width-wrap').hidden=!passageMode;
+  $('object-bridge-length-wrap').firstChild.textContent=stairMode?'🪜 Longueur ':'🌉 Longueur ';
+  $('object-bridge-width-wrap').firstChild.textContent=stairMode?'🪜 Largeur ':'🌉 Largeur ';
+  $('object-scale').max=passageMode?'300':'120';
   if(Number($('object-scale').value)>Number($('object-scale').max)){
     $('object-scale').value=$('object-scale').max;
     $('object-scale-value').textContent=$('object-scale').value+' %';
@@ -1251,8 +1265,8 @@ function syncObjectSelectedControls(){
   refreshObjectVariants(selected.overrides.visualVariantId);
   $('object-scale').value=String(Math.round(selected.transform.scaleX*100));
   $('object-scale-value').textContent=$('object-scale').value+' %';
-  $('object-bridge-length').value=String(Math.round(selected.transform.scaleX*100));
-  $('object-bridge-width').value=String(Math.round(selected.transform.scaleY*100));
+  $('object-bridge-length').value=String(Math.round((def.kind==='stairs'?selected.transform.scaleY:selected.transform.scaleX)*100));
+  $('object-bridge-width').value=String(Math.round((def.kind==='stairs'?selected.transform.scaleX:selected.transform.scaleY)*100));
   $('object-bridge-length-value').textContent=$('object-bridge-length').value+' %';
   $('object-bridge-width-value').textContent=$('object-bridge-width').value+' %';
   $('object-rotation').value=String(Math.round(selected.transform.rotationDeg));
@@ -1547,11 +1561,14 @@ function applyObjectAtCell(cell){
   if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y)){
     status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
   }
-  const bridgeMode=objectDefinitionCatalogV1.get(definitionId)?.kind==='bridge';
+  const kind=objectDefinitionCatalogV1.get(definitionId)?.kind;
+  const bridgeMode=kind==='bridge',stairMode=kind==='stairs';
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
     scale:Number($('object-scale').value)/100,
-    scaleX:bridgeMode?Number($('object-bridge-length').value)/100:undefined,
-    scaleY:bridgeMode?Number($('object-bridge-width').value)/100:undefined,
+    scaleX:bridgeMode?Number($('object-bridge-length').value)/100:
+      stairMode?Number($('object-bridge-width').value)/100:undefined,
+    scaleY:bridgeMode?Number($('object-bridge-width').value)/100:
+      stairMode?Number($('object-bridge-length').value)/100:undefined,
     rotationDeg:Number($('object-rotation').value),
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
@@ -1575,10 +1592,11 @@ for(const [control,output,unit] of [['object-scale','object-scale-value',' %'],
     control==='object-scale'?{scale:Number($(control).value)/100}:
     {rotationDeg:Number($(control).value)}));
 }
-for(const [id,axis] of [['object-bridge-length','scaleX'],['object-bridge-width','scaleY']]){
+for(const [id,bridgeAxis,stairAxis] of [['object-bridge-length','scaleX','scaleY'],['object-bridge-width','scaleY','scaleX']]){
   const control=$(id),output=$(id+'-value');
   control.addEventListener('input',()=>{output.textContent=control.value+' %';});
-  control.addEventListener('change',()=>editSelectedObject({[axis]:Number(control.value)/100}));
+  control.addEventListener('change',()=>editSelectedObject({
+    [$('object-category').value==='stairs'?stairAxis:bridgeAxis]:Number(control.value)/100}));
 }
 for(const [id,direction] of [['object-turn-left',-45],['object-turn-right',45]]){
   $(id).addEventListener('click',()=>{
