@@ -4,11 +4,6 @@ import {sculptHeightAt} from '../world/sculpt-height-model.js';
 import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptCameraProject} from './sculpt-camera-projection.js';
 
-const PALETTE={
-  grass:{bands:['#4d7541','#548048','#60894e'],edge:'#29432a',rim:'#9cae78'},
-  earth:{bands:['#997349','#a57b50','#ae8659'],edge:'#64472b',rim:'#d2b183'},
-  stone:{bands:['#858d89','#939b96','#a6ada7'],edge:'#59605e',rim:'#c4cbc7'}
-};
 export function sculptRampVisualMesh(terrain,object,{
   cellWidth=28,cellHeight=21,rise=18,view=null,segments=16
 }={}){
@@ -37,38 +32,35 @@ export function sculptRampVisualMesh(terrain,object,{
     footLevel:corridor?.bottomLevel??null,headLevel:corridor?.topLevel??null,
     samples:Object.freeze(samples)});
 }
+// The slope is now part of the terrain. Use the SAME pattern and baseColor
+// as drawSculptTerrain's grassy tops: no bands, fake WorldObject artwork,
+// or isolated color palette. Its mesh follows the canonical incline corridor.
 export function drawSculptRamp(ctx,object,terrain,{
-  view=null,tileWidth=28,tileHeight=21,rise=18,selected=false
+  view=null,tileWidth=28,tileHeight=21,rise=18,
+  texture=null,baseColor='#677955'
 }={}){
   const mesh=sculptRampVisualMesh(terrain,object,
-    {cellWidth:tileWidth,cellHeight:tileHeight,rise,view});
-  if(!mesh)return false;
-  const kind=object.objectDefinitionId?.split('.')[2];
-  const palette=PALETTE[kind]??PALETTE.grass;
-  const samples=mesh.samples,foot=samples[0],head=samples[samples.length-1];
+    {cellWidth:tileWidth,cellHeight:tileHeight,rise,view,segments:24});
+  if(!mesh?.valid)return false;
+  const rows=mesh.samples;
   ctx.save();
-  if(!mesh.valid){
-    // Visible dashed guide when either bank is not physically connected.
-    ctx.beginPath();ctx.moveTo(foot.left.x,foot.left.y);
-    ctx.lineTo(head.left.x,head.left.y);ctx.lineTo(head.right.x,head.right.y);
-    ctx.lineTo(foot.right.x,foot.right.y);ctx.closePath();
-    ctx.fillStyle='rgba(161,72,48,.12)';ctx.fill();
-    ctx.setLineDash([8,5]);ctx.lineWidth=2;ctx.strokeStyle='#ed9a79';
-    ctx.stroke();ctx.restore();return false;
+  const pattern=texture&&typeof ctx.createPattern==='function'
+    ?ctx.createPattern(texture,'repeat'):null;
+  if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
+    pattern.setTransform(new DOMMatrix().scale(.55));
+  ctx.fillStyle=pattern??baseColor;
+  // Slight overlap closes micro gaps created by device-pixel rasterization.
+  for(let i=1;i<rows.length;i++){
+    const a=rows[i-1],b=rows[i];
+    ctx.beginPath();ctx.moveTo(a.left.x,a.left.y);
+    ctx.lineTo(b.left.x,b.left.y);ctx.lineTo(b.right.x,b.right.y);
+    ctx.lineTo(a.right.x,a.right.y);ctx.closePath();ctx.fill();
   }
-  for(let i=1;i<samples.length;i++){
-    const low=samples[i-1],high=samples[i];
-    ctx.beginPath();ctx.moveTo(low.left.x,low.left.y);
-    ctx.lineTo(high.left.x,high.left.y);ctx.lineTo(high.right.x,high.right.y);
-    ctx.lineTo(low.right.x,low.right.y);ctx.closePath();
-    ctx.fillStyle=palette.bands[i%palette.bands.length];ctx.fill();
-  }
-  ctx.lineWidth=selected?2.5:1.5;ctx.strokeStyle=selected?'#bdffe4':palette.edge;
-  ctx.beginPath();ctx.moveTo(foot.left.x,foot.left.y);
-  ctx.lineTo(head.left.x,head.left.y);ctx.moveTo(foot.right.x,foot.right.y);
-  ctx.lineTo(head.right.x,head.right.y);ctx.stroke();
-  ctx.lineWidth=1;ctx.strokeStyle=palette.rim;
-  ctx.beginPath();ctx.moveTo(head.left.x,head.left.y);
-  ctx.lineTo(head.right.x,head.right.y);ctx.stroke();
+  // Very subtle world-space soil/grass seam, with no cartoon edge outline.
+  const first=rows[0],last=rows.at(-1);
+  ctx.beginPath();
+  ctx.moveTo(first.left.x,first.left.y);ctx.lineTo(last.left.x,last.left.y);
+  ctx.moveTo(first.right.x,first.right.y);ctx.lineTo(last.right.x,last.right.y);
+  ctx.strokeStyle='rgba(25,42,26,.15)';ctx.lineWidth=.7;ctx.stroke();
   ctx.restore();return true;
 }
