@@ -1,3 +1,15 @@
+# EN COURS — V79 R1 (24/10/2026) — Premier intérieur avec le NOUVEAU moteur 2,5D
+
+- **Commande créateur** : après validation GREEN V77 R3 / V78 R2, reprendre les intérieurs de bâtiments avec le nouveau moteur inclinable (pas l'ancien rendu 2D). Validation pour démarrer : « Ok va zy ».
+- **START immuable** : `checkpoint/exploration-start-2p5d-interior-area-v79-r1-2026-10-24` depuis le SHA GREEN `199461083cd64f69f8a981151093e654f220bca2`. Branche unique `work/exploration-2p5d-interior-area-v79-r1-2026-10-24`.
+- **Périmètre R1** : sélectionner maison → « Modifier l'intérieur 2,5D », carte SculptTerrain indépendante 18×14 avec les mêmes outils, retour extérieur, portails WorldArea/Portal canoniques, caméra 35–90°, aperçu de murs avant ouvert ; export/import scène étendu rétrocompatible.
+- **Gel** : pentes V77 R3, escaliers V78 R2, transitions ponts, eau, Collision World, mouvement, l'ancien Builder, Combat, principaux contrats WorldDocument. Pas de seconde physique ni de couche de gameplay.
+- **Contrôles** : test Node de liaisons Portal, sauvegarde, tests vrais navigateurs sélection maison / édition / retour / 35–90 / round-trip + CI complète ; **NON GREEN tant que créateur ne valide pas sur Pixel**.
+- **Rapport détaillé** : `docs/checkpoints/EXPLORATION_INTERIOR_2P5D_V79_R1_PREVALIDATION_2026-10-24.md`. R2 éventuel : murs/portes véritables, pièces polygonales, rattachement persistant au WorldDocument, après avis.
+- **Reste** : publication Pages seulement après dernière CI réussie.
+
+---
+
 # Lot V77 R3 — 24/10/2026 — Pinceau pentes utilisable au doigt, aperçu et validation (EN COURS)
 
 - **Retour créateur** : V77 R2 satisfait techniquement (« Ça fonctionne, c'est plutôt bien »), mais outil « pas pratique » ; améliorer l'usage téléphone, sans modifier la physique des pentes et des escaliers.
