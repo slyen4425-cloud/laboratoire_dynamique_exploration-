@@ -127,13 +127,14 @@ test('V11 visual rounding is separate from height data and preserves original 2D
  assert.deepEqual(createSculptTerrain(),createSculptTerrain());
  const source=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
  assert.match(source,/ctx\.quadraticCurveTo/);
- assert.match(source,/visualSmoothness/);
+ assert.doesNotMatch(source.slice(source.indexOf('export function drawSculptTerrain')),/visualSmoothness|roundedHill/);
  assert.doesNotMatch(source,/WorldDocument|collisionWorld|isBlocked/);
  const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  for(const marker of ['data-mode="plateau"','id="level-up"','id="level-down"',
-   'id="target"','id="edge"','id="visual-smooth"']){
+   'id="target"','id="edge"']){
    assert.ok(page.includes(marker),marker);
  }
+ assert.doesNotMatch(page,/data-mode="smooth"|data-mode="cliff-round"|id="visual-smooth"/);
 });
 
 test('V12 brush visual footprint shares precisely the same influence with real stroke',()=>{
