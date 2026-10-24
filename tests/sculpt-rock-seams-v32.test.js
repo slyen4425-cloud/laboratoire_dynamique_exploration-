@@ -10,7 +10,8 @@ test('V32 east-facing cliff seam remains inside source column at all elevations'
    assert.ok(p.width>0&&p.width<=3);
    assert.ok(p.x>=6*SCULPT_TILE.width);
    assert.ok(p.x+p.width<=(6+1)*SCULPT_TILE.width+1e-8);
-   assert.equal(p.height,SCULPT_TILE.rise+SCULPT_TILE.height-3);
+   assert.equal(p.height,SCULPT_TILE.rise);
+   assert.equal(p.y,5*SCULPT_TILE.height-level*SCULPT_TILE.rise+SCULPT_TILE.height);
  }
 });
 test('V32 aesthetic joins never weaken true Collision World steps',()=>{
