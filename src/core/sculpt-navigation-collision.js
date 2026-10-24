@@ -5,6 +5,7 @@ import {sculptHeightAt,sculptWaterAt,sculptSphereAt,
   sculptSphereDisplacementAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
+import {sculptStairCorridor,sculptStairLocal,sculptStairAt} from './sculpt-stair-traversal.js';
 
 // V75: a heightfield cell boundary is a sheer CLIFF unless a later explicit
 // world-owned ramp/stair authoring contract permits it. Never guess a walkable
@@ -217,16 +218,16 @@ export function sculptNavigationRoute({
   terrain,cellWidth=28,cellHeight=21,
   maxStepUp=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp,
   maxStepDown=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepDown,
-  shoreEntryFraction=0,bridges=[],projectionRise=0
+  shoreEntryFraction=0,bridges=[],stairs=[],projectionRise=0
 }={},entity,targetX,targetY){
-  if(!terrain||!entity)return Object.freeze({reason:null,bridgeId:entity?.sculptBridgeId??null});
+  if(!terrain||!entity)return Object.freeze({reason:null,bridgeId:entity?.sculptBridgeId??null,stairId:entity?.sculptStairId??null});
   const options={cellWidth,cellHeight};
   const radius=Math.max(0,Number(entity.radius)||0);
   const flying=entity.locomotion?.modes?.includes('fly')===true;
   const swimming=entity.locomotion?.modes?.includes('swim')===true;
   const origin=sculptNavigationSample(terrain,entity.x,entity.y,options);
   const target=sculptNavigationSample(terrain,targetX,targetY,options);
-  const reject=reason=>Object.freeze({reason,bridgeId:entity.sculptBridgeId??null});
+  const reject=reason=>Object.freeze({reason,bridgeId:entity.sculptBridgeId??null,stairId:entity.sculptStairId??null});
   if(!origin||!target)return reject(Object.freeze({kind:'bounds'}));
   const shorePermitted=(x,y,sample)=>{
     const fraction=Math.max(0,Math.min(.22,Number(shoreEntryFraction)||0));
@@ -242,6 +243,10 @@ export function sculptNavigationRoute({
   };
   let previous=origin,previousX=entity.x,previousY=entity.y;
   let previousCarrier=bridgeCarrierAt(bridges,previousX,previousY,radius);
+  // Authoring metadata and the canonical height grid define the only stair
+  // corridors; no collision or elevation is ever guessed from the image.
+  const stairCorridors=flying?[]:stairs.map(stair=>sculptStairCorridor(terrain,stair,options)).filter(Boolean);
+  let stairId=flying?null:(entity.sculptStairId??null);
   // A hero may start on an actual dry bridgehead already *inside* a wide
   // corridor (V60). Bootstrap ONLY from a supported endpoint at bank height.
   let bridgeId=null;
@@ -271,6 +276,40 @@ export function sculptNavigationRoute({
     if(!sample)return reject(Object.freeze({kind:'bounds'}));
     const candidate=bridgeCarrierAt(bridges,x,y,radius);
     const stepX=x-previousX,stepY=y-previousY;
+    let stairStep=false,stairExit=false;
+    if(!flying&&!bridgeId&&stairCorridors.length){
+      const inside=sculptStairAt(stairCorridors,x,y,radius);
+      const active=stairId?stairCorridors.find(stair=>stair.id===stairId):null;
+      if(active){
+        if(inside?.id===stairId){
+          stairStep=true;
+        }else{
+          const from=sculptStairLocal(active,previousX,previousY);
+          const to=sculptStairLocal(active,x,y);
+          const along=to.along-from.along;
+          const aligned=Math.abs(to.sideways)<=active.width/2-radius+1e-6;
+          const atHead=along>1e-7&&to.along>=active.length-radius-1e-6&&
+            sample.level===active.topLevel;
+          const atFoot=along< -1e-7&&to.along<=radius+1e-6&&
+            sample.level===active.bottomLevel;
+          if(!aligned||(!atHead&&!atFoot))
+            return reject(Object.freeze({kind:'stair-edge',id:stairId}));
+          stairId=null;stairExit=true;
+        }
+      }else if(inside){
+        const from=sculptStairLocal(inside,previousX,previousY);
+        const to=sculptStairLocal(inside,x,y);
+        const motion=to.along-from.along;
+        const fromFoot=motion>1e-7&&from.along>=-cellHeight*.65&&
+          from.along<=radius+cellHeight*.65&&previous.level===inside.bottomLevel;
+        const fromHead=motion< -1e-7&&from.along<=inside.length+cellHeight*.65&&
+          from.along>=inside.length-radius-cellHeight*.65&&
+          previous.level===inside.topLevel;
+        if(!fromFoot&&!fromHead)
+          return reject(Object.freeze({kind:'stair-edge',id:inside.id}));
+        stairId=inside.id;stairStep=true;
+      }
+    }
     if(!flying){
       let dismounting=false;
       if(bridgeId&&candidate?.bridge.id!==bridgeId){
@@ -303,7 +342,17 @@ export function sculptNavigationRoute({
           bridgeId=candidate.bridge.id;
       }
       const supportedBridgeStep=!!bridgeId&&candidate?.bridge.id===bridgeId;
-      if(supportedBridgeStep){
+      if((stairStep||stairExit)&&!supportedBridgeStep){
+        // Allow exactly this validated corridor to cross an abrupt height
+        // boundary. Adjacent cliffs, water and spherical walls stay solid.
+        if(sample.waterDepth>0&&!swimming)
+          return reject(Object.freeze({kind:'water',col:sample.col,row:sample.row,
+            waterDepth:sample.waterDepth}));
+        const blockedSphere=sculptSphereAt(terrain,x,y,radius);
+        if(blockedSphere)
+          return reject(Object.freeze({kind:'sphere-wall',id:blockedSphere.id,
+            variant:blockedSphere.kind,limit:0}));
+      }else if(supportedBridgeStep){
         const crossingDeck=candidate.corridor;
         const banks=sculptBridgeBankHeights(terrain,crossingDeck,options);
         // Peaks higher than the deck remain real solid cliffs (V60 spike).
@@ -366,10 +415,20 @@ export function sculptNavigationRoute({
     }
     previous=sample;previousX=x;previousY=y;previousCarrier=candidate;
   }
-  return Object.freeze({reason:null,bridgeId:flying?null:bridgeId});
+  return Object.freeze({reason:null,bridgeId:flying?null:bridgeId,stairId:flying?null:stairId});
 }
 export function sculptNavigationBlockDetail(config,entity,targetX,targetY){
   return sculptNavigationRoute(config,entity,targetX,targetY).reason;
+}
+export function sculptNavigationNextLayers(config,entity,targetX,targetY){
+  const route=sculptNavigationRoute(config,entity,targetX,targetY);
+  return Object.freeze({
+    bridgeId:route.reason?entity?.sculptBridgeId??null:route.bridgeId,
+    stairId:route.reason?entity?.sculptStairId??null:route.stairId
+  });
+}
+export function sculptNavigationNextStairId(config,entity,targetX,targetY){
+  return sculptNavigationNextLayers(config,entity,targetX,targetY).stairId;
 }
 export function sculptNavigationNextBridgeId(config,entity,targetX,targetY){
   const result=sculptNavigationRoute(config,entity,targetX,targetY);
