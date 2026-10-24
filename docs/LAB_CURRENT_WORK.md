@@ -1,5 +1,7 @@
 # Lot V76 R13 — 24/10/2026 — Herbe continue aux angles et perspective du héros (EN COURS)
 
+
+**Lot complémentaire assets 2,5D — 10 escaliers / 30 vues (NON GREEN Pixel)** : reprendre exclusivement les définitions, le catalogue, les WebP et les tests du lot `d92ee5c506fa3baaecebd2ab6760a63928f1e911`, CI #40071476987 SUCCESS, sur le nouveau socle V76 R13 `a73a95e5b6466a87d9c7e75d9a35f6102116c049`, sans écraser ses améliorations herbe / hauteur / héros. START `checkpoint/exploration-start-stairs-2p5d-v1-v76r13-2026-10-24` ; branche `work/exploration-stairs-2p5d-v1-v76r13-2026-10-24`. Contrats gelés : collision, World Model, gameplay de franchissement, rendu 3D et autres dépôts. Validation Pixel visuelle attendue.
 - **Retour Pixel** : collisions des plateaux sphériques R12 **validées** ; la texture d'herbe aux coins des collines carrées reste abîmée / disgracieuse ; l'agrandissement du héros du niveau 1 au niveau 7 existe mais manque de lisibilité.
 - **Base publiée R12** : `0956fe57718a30a4abf6f0f5ac5dca1b2475f367`, statut visuel partiel NON GREEN ; dernier GREEN global connu V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
 - **START immuable** : `checkpoint/exploration-start-grass-corners-hero-scale-v76-r13-2026-10-24` ; **branche unique** : `work/exploration-grass-corners-hero-scale-v76-r13-2026-10-24`.
