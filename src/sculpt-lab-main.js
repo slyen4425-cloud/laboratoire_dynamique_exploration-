@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt} from './world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
+import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sculpt-ramp-v77-r2';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -12,7 +12,6 @@ import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
-import {drawSculptRamp} from './render/sculpt-ramp-renderer.js?rev=natural-ramp-v77';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -46,6 +45,7 @@ const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
+let rampStart=null,rampEnd=null,rampPrecisionStart=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let spherePreviewDismissed=false;
@@ -856,7 +856,8 @@ function navigationContext(){
     sculptNavigation:{terrain,cellWidth:SCULPT_TILE.width,
       cellHeight:SCULPT_TILE.height,projectionRise:SCULPT_TILE.rise,
        maxStepUp:maxStep,maxStepDown:maxStep,
-      shoreEntryFraction:.14,bridges:resolvedSculptBridges(),stairs:resolvedSculptStairs()}};
+      shoreEntryFraction:.14,bridges:resolvedSculptBridges(),
+      stairs:[...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)]}};
 }
 // Explain actual rejection from the SAME swept-height check used by Collision
 // World; never guess physics from rounded visual cliff pixels.
@@ -879,7 +880,8 @@ function navigationBlockMessage(reason){
 }
 function navHeight(){
   const stairLevel=navActor?.sculptStairId?sculptStairHeightAt(terrain,
-    resolvedSculptStairs(),navActor.sculptStairId,navActor.x,navActor.y,
+    [...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)],
+    navActor.sculptStairId,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
   if(stairLevel!==null)return stairLevel;
   const info=navActor&&sculptNavigationSample(terrain,navActor.x,navActor.y,
