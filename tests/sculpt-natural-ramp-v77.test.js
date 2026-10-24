@@ -12,6 +12,7 @@ import {sculptCameraGameView} from '../src/render/sculpt-camera-projection.js';
 import {sculptNavigationBlockDetail} from '../src/core/sculpt-navigation-collision.js';
 import {stepMovement} from '../src/core/movement.js';
 import {isBlocked} from '../src/core/collision.js';
+import {sculptPreviewCollisionCatalog} from '../src/core/sculpt-preview-object-collisions.js';
 
 const W=18,H=22,CW=28,CH=21;
 const pt=(c,row)=>({x:(c+.5)*CW,y:(row+.5)*CH});
@@ -40,6 +41,8 @@ test('V77: the native palette exposes grass, earth and stone ramps without sprit
     assert.equal(def?.kind,'ramp');
     assert.ok(def?.baseSize.height>0);
     assert.equal(def?.visual,undefined);
+    assert.equal(sculptPreviewCollisionCatalog.get(id)?.kind,'ramp',
+      'the live Collision World authoring catalogue must resolve the ramp');
   }
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
