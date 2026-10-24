@@ -36,7 +36,7 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
-  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3';
+  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3-stairs-visible-r15';
 import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 
@@ -1512,7 +1512,7 @@ function setObjectEditing(active){
       $('mode-'+domain).setAttribute('aria-pressed','false');
     }
     $('active-tool-label').textContent='Objets · toucher pour placer ou supprimer';
-    status('Choisis Bâtiments, Arbres, Rochers ou Ponts, puis touche la carte.');
+    status('Choisis une catégorie, notamment Escaliers (10 modèles 2,5D), puis touche la carte.');
   }else{
     for(const domain of ['ground','water']){
       const active=editorKind===domain;
