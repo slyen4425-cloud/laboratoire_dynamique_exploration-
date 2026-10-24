@@ -71,14 +71,14 @@ test('V61 neutral 95 / sharp 0 remain opt-out and unchanged by whole-region mask
  assert.equal(sculptRoundedHillRegions(paint(old,5,5,95)).size,0);
  assert.equal(sculptRoundedHillRegions(paint(old,5,5,0)).size,0);
 });
-test('V61 controller makes one tap effective and renderer applies one coherent grass clipping path',()=>{
- const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
- const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
- assert.match(main,/TOUCHE UNE FOIS LE MILIEU/);
- assert.match(main,/\$\('radius'\)\.value='\.5'/);
- assert.match(renderer,/sculptRoundedHillRegions\(terrain\)/);
- assert.match(renderer,/sculptClipRoundedHill\(ctx,roundedHill,tile\)/);
- assert.match(html,/src\/sculpt-lab-main\.js\?rev=sculpt-(?:whole-hill-v61|bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66|bridge-deck-anchor-v67)/);
- assert.doesNotMatch(renderer,/levels\[idx\]=/);
+test('R14 previously authored rounded region data are preserved, not rendered on square tops',()=>{
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const live=renderer.slice(renderer.indexOf('export function drawSculptTerrain'));
+  assert.doesNotMatch(live,/sculptRoundedHillRegions\(terrain\)/);
+  assert.doesNotMatch(live,/sculptClipRoundedHill\(/);
+  assert.doesNotMatch(html,/data-mode="cliff-round"/);
+  assert.doesNotMatch(main,/TOUCHE UNE FOIS LE MILIEU/);
+  assert.doesNotMatch(renderer,/levels\[idx\]=/);
 });
