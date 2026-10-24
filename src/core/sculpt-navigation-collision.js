@@ -5,7 +5,7 @@ import {sculptHeightAt,sculptWaterAt,sculptSphereAt,
   sculptSphereDisplacementAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
-import {sculptStairCorridor,sculptStairLocal,sculptStairAt} from './sculpt-stair-traversal.js';
+import {sculptStairCorridor,sculptStairLocal,sculptStairAt} from './sculpt-stair-traversal.js?rev=natural-ramp-v77';
 
 // V75: a heightfield cell boundary is a sheer CLIFF unless a later explicit
 // world-owned ramp/stair authoring contract permits it. Never guess a walkable
