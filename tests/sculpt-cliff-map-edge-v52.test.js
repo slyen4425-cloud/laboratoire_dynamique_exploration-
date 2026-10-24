@@ -10,7 +10,7 @@ test('V52 south outer map boundary is painted using existing dry land elevations
   const original=createSculptTerrain({width:8,height:8});
   const before=JSON.stringify(original),faces=sculptFaces(original);
   assert.deepEqual(sculptOuterSouthCliffRuns(original),[
-    {start:0,end:8,level:2,smoothness:.95}]);
+    {start:0,end:8,level:2,smoothness:0}]);
   assert.equal(JSON.stringify(original),before,'visual edge never writes sculpt geometry');
   assert.deepEqual(sculptFaces(original),faces,'no canonical cliff face invented');
   const levels=[...original.levels],waterLevels=[...original.waterLevels],roundness=[...original.roundness];
@@ -20,10 +20,9 @@ test('V52 south outer map boundary is painted using existing dry land elevations
   waterLevels[last+2]=5;roundness[last+6]=0;roundness[last+7]=150;
   const terrain=createSculptTerrain({width:8,height:8,levels,waterLevels,roundness});
   assert.deepEqual(sculptOuterSouthCliffRuns(terrain),[
-    {start:1,end:2,level:2,smoothness:.95},
-    {start:3,end:6,level:3,smoothness:.95},
-    {start:6,end:7,level:2,smoothness:0},
-    {start:7,end:8,level:2,smoothness:1.5}
+    {start:1,end:2,level:2,smoothness:0},
+    {start:3,end:6,level:3,smoothness:0},
+    {start:6,end:8,level:2,smoothness:0}
   ]);
   assert.equal(JSON.stringify(terrain),JSON.stringify(createSculptTerrain({width:8,height:8,levels,waterLevels,roundness})));
 });
@@ -52,9 +51,9 @@ test('V52 cliff visual uses the published renderer, no extra runtime physics and
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
-  assert.match(html,/data-mode="cliff-round"/);
-  assert.match(html,/id="visual-smooth"/);
-  assert.match(main,/'cliff-round':/);
+  assert.doesNotMatch(html,/data-mode="cliff-round"/);
+  assert.doesNotMatch(html,/id="visual-smooth"/);
+  assert.doesNotMatch(main,/'cliff-round':/);
   assert.match(renderer,/rockFace\(ctx,\{x:run\.start\*w,y:totalHeight-run\.level\*rise/);
   assert.match(renderer,/sculptOuterSouthCliffRuns\(terrain\)/);
   assert.doesNotMatch(renderer,/isBlocked\(|CollisionWorld|location\.reload\(/);
