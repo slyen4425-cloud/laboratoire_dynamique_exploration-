@@ -109,7 +109,8 @@ test('V69 camera 35 to 90 degrees cannot change the authoritative bridge collisi
 test('V69 render layers and navigation altitude follow persisted engine bridge state',()=>{
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const engine=readFileSync(new URL('../src/core/movement.js',import.meta.url),'utf8');
- assert.match(engine,/entity\.sculptBridgeId=sculptNavigationNextBridgeId/);
+ assert.match(engine,/entity\.sculptBridgeId=next\.bridgeId/);
+ assert.match(engine,/sculptNavigationNextLayers\(collisionContext\.sculptNavigation,entity,x,y\)/);
  assert.match(main,/const activeBridge=navActor\?\.sculptBridgeId\?resolvedSculptBridges/);
  assert.match(main,/if\(underBridge\)drawPreviewObject\(underBridge\)/);
  assert.match(main,/physicalBridgeLayer:navActor\?\.sculptBridgeId\?'deck':'ground'/);
