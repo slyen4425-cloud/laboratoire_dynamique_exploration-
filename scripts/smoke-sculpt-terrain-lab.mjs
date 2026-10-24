@@ -2682,13 +2682,17 @@ try{
     floor.value='floor.wood.dark';floor.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('#interior-template-apply').click();
     const applied=window.__sculptLabProbe();
-    document.querySelector('#fullscreen-toggle').click();
+    // Previous gates may leave the editor immersive: enter explicitly,
+    // rather than accidentally toggling an existing fullscreen OFF.
+    if(!document.body.classList.contains('sculpt-immersive'))
+      document.querySelector('#fullscreen-toggle').click();
     const floatingInfo={immersive:document.body.classList.contains('sculpt-immersive'),
       insideQuickbar:quick.contains(roomBar),position:getComputedStyle(roomBar).position,
       panelVisible:!roomBar.hidden,quickDisplay:getComputedStyle(quick).display};
     const floating=floatingInfo.immersive&&floatingInfo.insideQuickbar&&
       floatingInfo.position==='static'&&floatingInfo.panelVisible;
-    document.querySelector('#fullscreen-toggle').click();
+    if(document.body.classList.contains('sculpt-immersive'))
+      document.querySelector('#fullscreen-toggle').click();
     document.querySelector('#scene-export').click();
     const exported=JSON.parse(document.querySelector('#json').value);
     return {original,itemId,appliedFloor:applied.interiorFloorId,
