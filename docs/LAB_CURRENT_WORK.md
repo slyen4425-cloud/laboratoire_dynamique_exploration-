@@ -1,3 +1,16 @@
+# Lot V76 R13 — 24/10/2026 — Herbe continue aux angles et perspective du héros (EN COURS)
+
+- **Retour Pixel** : collisions des plateaux sphériques R12 **validées** ; la texture d'herbe aux coins des collines carrées reste abîmée / disgracieuse ; l'agrandissement du héros du niveau 1 au niveau 7 existe mais manque de lisibilité.
+- **Base publiée R12** : `0956fe57718a30a4abf6f0f5ac5dca1b2475f367`, statut visuel partiel NON GREEN ; dernier GREEN global connu V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **START immuable** : `checkpoint/exploration-start-grass-corners-hero-scale-v76-r13-2026-10-24` ; **branche unique** : `work/exploration-grass-corners-hero-scale-v76-r13-2026-10-24`.
+- **Périmètre Renderer** : supprimer les coutures visuelles et les masques rectangulaires dans les coins arrondis d'une colline carrée ; peindre le minéral sous les coins avec le matériel rocheux HD natif ancré au monde, et lisser le bord herbeux avec le contour de région canonique déjà existant. Préserver les collines non retouchées, l'Atlas HD, les zones d'eau et les performances mobile.
+- **Périmètre Presentation** : augmenter légèrement la progression `heroScale` calculée par `sculptAltitudeVisualState`, unique source partagée (sprite et ombre) ; conserver taille de collision et coordonnées monde.
+- **Gel impératif** : Collision World sphères R12 **validée**, World Model/JSON/hauteurs, relief sphérique R9-R12, falaises V75, pentes/escaliers V77/V78, eau, ponts, combat, Builder, autres dépôts.
+- **Critères de test** : anciennes sentinelles V54/V61/R12 ; nouveaux cas coin de plateau 4×4 avec variations et comparaison d'asset HD, modèle/collision inchangés ; `npm test`, `npm run check`, Chromium Sculpt/Builder/Combat via CI ; vérification manuelle Pixel pour GREEN final.
+- **Risque** : joint herbe-roche trop visible, texture trop répétitive, surcharge des passes du renderer. Aucun checkpoint GREEN utilisateur déclaré avant retour visuel.
+
+---
+
 # Lot V76 R12 — 24/10/2026 — Hauteurs lisibles, coins HD et sommet praticable (NON GREEN Pixel)
 
 - **Retour utilisateur** : coins de carrés élevés cassés, éclaircir l'herbe niveau par niveau (1–7), assombrir à la descente, agrandir légèrement le héros à la montée et réduire à la descente ; impossibilité de marcher sur les plateaux sphériques déjà occupés.
