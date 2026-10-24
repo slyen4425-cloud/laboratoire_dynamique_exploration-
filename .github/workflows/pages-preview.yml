@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v79-r1-sculpt-interior-worldarea-portal-2026-10-24
+# preview-revision: v79-r2-native-floors-room-templates-inner-door-floating-controls-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 38016430e85b43701b26aeaa39c20252a0e702ec
+          ref: fbfe8daae804504f8d18bb865fde8d315eafc49c
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
