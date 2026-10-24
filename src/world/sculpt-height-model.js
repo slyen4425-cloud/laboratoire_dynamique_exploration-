@@ -3,6 +3,7 @@
 export const SCULPT_SCHEMA_VERSION=1;
 // V76: canonical continuous spherical relief; never inferred from painted pixels.
 export const SCULPT_SPHERE_LIMIT=24;
+export const SCULPT_TERRAIN_RAMP_LIMIT=64;
 const sphericalKinds=new Set(['hill','basin']);
 export const SCULPT_SPHERE_WALL_MATERIALS=Object.freeze(['rock','grass','earth']);
 const sphereWallMaterials=new Set(SCULPT_SPHERE_WALL_MATERIALS);
@@ -66,14 +67,64 @@ export function removeSculptSphereAt(terrain,x,y){
 
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const int=(v,f)=>Number.isInteger(v)?v:f;
-export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null}={}){
+export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null,ramps=null}={}){
   const w=clamp(int(width,36),8,80),h=clamp(int(height,24),8,64);
   const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,7));
   const water=Array.from({length:w*h},(_,i)=>clamp(int(waterLevels?.[i],-1),-1,10));
   const contours=Array.from({length:w*h},(_,i)=>clamp(int(roundness?.[i],95),0,150));
   return Object.freeze({schemaVersion:SCULPT_SCHEMA_VERSION,width:w,height:h,
     levels:Object.freeze(data),waterLevels:Object.freeze(water),roundness:Object.freeze(contours),
-    spheres:Object.freeze((Array.isArray(spheres)?spheres:[]).map(f=>Object.freeze({...f})))});
+    spheres:Object.freeze((Array.isArray(spheres)?spheres:[]).map(f=>Object.freeze({...f}))),
+    ramps:Object.freeze((Array.isArray(ramps)?ramps:[]).map(f=>Object.freeze({...f})))});
+}
+// Native terrain incline, not a placed WorldObject. Kept alongside spheres
+// in the sculpt height model, so Undo and Export heights share one authority.
+const validTerrainRamp=(r,w,h)=>r&&typeof r.id==='string'&&
+  /^sculpt-ramp-[1-9][0-9]*$/.test(r.id)&&
+  [r.x,r.y,r.length,r.width,r.rotationDeg].every(Number.isFinite)&&
+  r.length>=21&&r.length<=1400&&r.width>=12&&r.width<=448&&
+  r.x>=0&&r.y>=0&&r.x<w*28&&r.y<h*21;
+const rampFloor=(terrain,x,y)=>{
+  const c=Math.floor(x/28),row=Math.floor(y/21);
+  if(c<0||row<0||c>=terrain.width||row>=terrain.height||
+    sculptWaterAt(terrain,c,row)>0||sculptSphereAt(terrain,x,y,0))return null;
+  return sculptHeightAt(terrain,c,row);
+};
+export function sculptTerrainRampProjections(terrain){
+  return Object.freeze((terrain?.ramps??[]).map(r=>Object.freeze({
+    id:r.id,kind:'ramp',
+    // Reuse the EXACT incline corridor consumed by Collision World and stairs.
+    // Authoring owns only the terrain shape, not an object definition.
+    transform:Object.freeze({x:r.x,y:r.y,scaleX:1,scaleY:1,rotationDeg:r.rotationDeg}),
+    baseSize:Object.freeze({width:r.width/.68,height:r.length})
+  })));
+}
+export function appendSculptTerrainRamp(terrain,{x,y,endX,endY,width=84}={}){
+  if(!terrain||[x,y,endX,endY,width].some(n=>!Number.isFinite(n))||
+     (terrain.ramps?.length??0)>=SCULPT_TERRAIN_RAMP_LIMIT)return terrain;
+  const dx=endX-x,dy=endY-y,length=Math.hypot(dx,dy);
+  if(length<21||length>1400||width<12||width>448)return terrain;
+  const bottom=rampFloor(terrain,x,y),top=rampFloor(terrain,endX,endY);
+  if(bottom===null||top===null||top<=bottom||
+     top-bottom>Math.max(1,Math.floor(length/28)))return terrain;
+  const idSet=new Set((terrain.ramps??[]).map(r=>r.id));
+  let n=1;while(idSet.has('sculpt-ramp-'+n))n++;
+  const ramp=Object.freeze({id:'sculpt-ramp-'+n,x,y,length,width,
+    rotationDeg:Math.atan2(dx,-dy)*180/Math.PI});
+  return Object.freeze({...terrain,ramps:Object.freeze([...(terrain.ramps??[]),ramp])});
+}
+export function removeSculptTerrainRampAt(terrain,x,y){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return terrain;
+  let match=null,best=Infinity;
+  for(const ramp of terrain.ramps??[]){
+    const angle=ramp.rotationDeg*Math.PI/180,ux=Math.sin(angle),uy=-Math.cos(angle);
+    const dx=x-ramp.x,dy=y-ramp.y,along=dx*ux+dy*uy;
+    const across=Math.abs(dx*(-uy)+dy*ux);
+    if(along<-8||along>ramp.length+8||across>ramp.width*.5+8)continue;
+    const distance=across+Math.max(0,-along,along-ramp.length);
+    if(distance<best){best=distance;match=ramp;}
+  }
+  return match?Object.freeze({...terrain,ramps:Object.freeze(terrain.ramps.filter(r=>r!==match))}):terrain;
 }
 export function sculptHeightAt(terrain,x,y){
   if(!terrain||x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
@@ -270,7 +321,8 @@ export function sculptDemo(){
 export function serializeSculptTerrain(terrain){
   return JSON.stringify({schemaVersion:1,width:terrain.width,height:terrain.height,
     levels:[...terrain.levels],waterLevels:[...terrain.waterLevels],roundness:[...terrain.roundness],
-    spheres:(terrain.spheres??[]).map(f=>({...f}))});
+    spheres:(terrain.spheres??[]).map(f=>({...f})),
+    ramps:(terrain.ramps??[]).map(f=>({...f}))});
 }
 export function importSculptTerrain(serialized){
   const input=typeof serialized==='string'?JSON.parse(serialized):serialized;
@@ -288,7 +340,11 @@ export function importSculptTerrain(serialized){
      (input.spheres!==undefined&&(!Array.isArray(input.spheres)||
        input.spheres.length>SCULPT_SPHERE_LIMIT||
        !input.spheres.every(f=>validSphere(f,input.width,input.height))||
-       new Set(input.spheres.map(f=>f.id)).size!==input.spheres.length)))
+       new Set(input.spheres.map(f=>f.id)).size!==input.spheres.length))||
+     (input.ramps!==undefined&&(!Array.isArray(input.ramps)||
+       input.ramps.length>SCULPT_TERRAIN_RAMP_LIMIT||
+       !input.ramps.every(f=>validTerrainRamp(f,input.width,input.height))||
+       new Set(input.ramps.map(f=>f.id)).size!==input.ramps.length)))
     throw new Error('Carte sculptable invalide (schemaVersion 1)');
   return createSculptTerrain(input);
 }
