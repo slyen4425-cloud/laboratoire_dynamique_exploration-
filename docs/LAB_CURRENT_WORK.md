@@ -1,3 +1,15 @@
+# Lot V77 — 24/10/2026 — Pentes naturelles du terrain (EN COURS)
+
+- **Validation créateur** : le système d'escaliers V78 R2, montage et perspective, est VALIDÉ. Checkpoint immuable GREEN `checkpoint/exploration-stairs-v78-r2-green-pixel-2026-10-24` au SHA publié `134b608ef402392e78e02d72707ef8a6324b4bd2`.
+- **Demande** : créer des pentes (sans marches) pour relier des étages réels, à monter/descendre en marchant, visibilité 2,5D adaptée caméra.
+- **START** : `checkpoint/exploration-start-ramp-v77-2026-10-24` et branche `work/exploration-natural-ramp-v77-2026-10-24`, initialisés depuis GREEN ci-dessus avant changement.
+- **Architecture** : WorldObject natif `kind:ramp` avec trois styles de terrain (herbe/terre/roche) et pose via la palette d'objets `Pentes`. Même format `WorldObjectPlacement` et export de scène; longueur (scaleY) / largeur (scaleX) / rotation indépendantes; pas de nouveau World Model/JSON. Réutiliser exclusivement la géométrie réelle pied/tête `sculptStairCorridor` (renommage ultérieur possible), la route Collision World et l'état de portage `sculptStairId` pour les rampes, donc **pas de deuxième autorité de passage**.
+- **Présentation propriétaire Renderer** : dessiner une bande de terrain inclinée par maillage procédural sans sprite extérieur, épousant la hauteur réelle, et projetée au même angle que le sol. En marche le dessin actif est toujours derrière le héros; pente invalide visible comme contour repère mais jamais praticable. Éviter de modifier le fond géométrique natif : la rampe recouvre visuellement la falaise où l'utilisateur la pose.
+- **Gels** : hauteur et collision stair GREEN, ponts/rails, falaises sans rampe, sphères, eau, Camera, Combat, Builder, moteur principal et assets. Pas de modification du modèle hauteur ni de sa sauvegarde.
+- **Tests** : vrai franchissement physique bidirectionnel sur 1 à 3 niveaux, élargissement/allongement, rotation, deux rampes successives, refus côté/eau/échelle trop courte, persistance import/export, projection 35/55/90°, tests sentinelles stairs/bridges/sphere/Collision World et Chromium, publication CI verte puis Pixel prévalidation.
+
+---
+
 # Lot V78 R2 — 24/10/2026 — Escaliers visibles pendant la montée, échelle adaptée à la caméra (EN COURS)
 
 - **Retour utilisateur Pixel** : marche / montée d'étage V78 validées fonctionnellement ; visuel **NON GREEN** : le héros disparaît derrière le sprite des marches, et la taille verticale du sprite reste inchangée entre 90° et 35° alors que le terrain se raccourcit (perspective incohérente).
