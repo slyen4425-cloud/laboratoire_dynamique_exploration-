@@ -69,7 +69,7 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
     if(Number.isFinite(x))nextTransform.x=x;
     if(Number.isFinite(y))nextTransform.y=y;
     const definition=objectDefinitionCatalogV1.get(item.objectDefinitionId);
-    const maxScale=definition?.kind==='bridge'?3:1.2;
+    const maxScale=definition?.kind==='bridge'||definition?.kind==='stairs'?3:1.2;
     if(Number.isFinite(scale)&&scale>=.25&&scale<=maxScale){
       nextTransform.scaleX=scale;nextTransform.scaleY=scale;
     }
