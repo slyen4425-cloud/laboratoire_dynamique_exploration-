@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
 import {objectDefinitionCatalogV1} from '../src/objects/object-definition-catalog.js';
 import {resolveWorldObjectAsset} from '../src/assets/world-object-asset-adapter.js';
+import {resolveWorldObjectPlacement} from '../src/world/world-object-placement-model.js';
 import {listSculptPlaceableDefinitions,sculptObjectCanOccupyCell,
   sculptPreviewVariants,appendSculptPreviewObject,updateSculptPreviewObject,
   normalizeSculptPreviewObjects,serializeSculptPreviewScene,importSculptPreviewScene}
@@ -45,13 +46,13 @@ test('R15: stairs use native placement, variant, move and scene save/load',()=>{
   assert.equal(initial.length,1);
   assert.equal(initial[0].objectDefinitionId,id);
   assert.equal(initial[0].overrides.visualVariantId,'oblique');
-  assert.equal(initial[0].visual.assetId,
+  assert.equal(resolveWorldObjectPlacement(initial[0]).visual.assetId,
     'object.stairs.stone_rustic_2p5d.oblique.01');
   const changed=updateSculptPreviewObject(initial,initial[0].id,
     {x:119,y:90,variantId:'side',rotationDeg:45});
   assert.equal(changed[0].transform.x,119);
   assert.equal(changed[0].transform.y,90);
-  assert.equal(changed[0].visual.assetId,'object.stairs.stone_rustic_2p5d.side.01');
+  assert.equal(resolveWorldObjectPlacement(changed[0]).visual.assetId,'object.stairs.stone_rustic_2p5d.side.01');
   assert.equal(changed[0].transform.rotationDeg,45);
   assert.deepEqual(normalizeSculptPreviewObjects(changed),changed);
   const loaded=importSculptPreviewScene(serializeSculptPreviewScene(terrain,changed));
