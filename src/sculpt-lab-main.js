@@ -375,22 +375,58 @@ function draw(){
   // Preview the authored ground ramp from its real endpoints, not an
   // artificial object silhouette. The committed terrain is drawn in the
   // terrain-only raster with the same surface texture.
-  const rampA=rampStart??rampPrecisionStart;
-  const rampB=rampEnd??(rampA&&hoverCell?{
-    x:(hoverCell.x+.5)*SCULPT_TILE.width,
-    y:(hoverCell.y+.5)*SCULPT_TILE.height}:null);
-  if(!navigationTesting&&selectedMode==='terrain-ramp'&&rampA&&rampB){
-    const level=(p)=>sculptHeightAt(terrain,
-      Math.floor(p.x/SCULPT_TILE.width),Math.floor(p.y/SCULPT_TILE.height));
-    ctx.save();ctx.strokeStyle='#a8f2c2';ctx.lineWidth=2/Math.max(.5,zoom);
-    ctx.setLineDash([6,4]);ctx.beginPath();
-    ctx.moveTo(rampA.x,rampA.y-level(rampA)*SCULPT_TILE.rise);
-    ctx.lineTo(rampB.x,rampB.y-level(rampB)*SCULPT_TILE.rise);ctx.stroke();
+  const rampA=rampStart??rampGesture?.origin;
+  const rampB=rampEnd??(rampA&&hoverCell?rampPointFromCell(hoverCell):null);
+  let rampPreviewValid=null;
+  if(!navigationTesting&&rampToolActive()&&rampA&&rampB){
+    const candidate=appendSculptTerrainRamp(terrain,{
+      x:rampA.x,y:rampA.y,endX:rampB.x,endY:rampB.y,width:rampWidth()});
+    rampPreviewValid=candidate!==terrain;
+    const level=p=>sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
+      Math.floor(p.y/SCULPT_TILE.height));
+    const foot={x:rampA.x,y:rampA.y-level(rampA)*SCULPT_TILE.rise};
+    const head={x:rampB.x,y:rampB.y-level(rampB)*SCULPT_TILE.rise};
+    ctx.save();
+    if(rampPreviewValid){
+      const projected=sculptTerrainRampProjections(candidate).at(-1);
+      const mesh=sculptRampVisualMesh(candidate,projected,{
+        cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height,
+        rise:SCULPT_TILE.rise,view:null,segments:12});
+      if(mesh?.valid){
+        ctx.fillStyle='rgba(80,232,156,.30)';
+        ctx.strokeStyle='rgba(178,255,219,.8)';
+        for(let i=1;i<mesh.samples.length;i++){
+          const a=mesh.samples[i-1],b=mesh.samples[i];
+          ctx.beginPath();ctx.moveTo(a.left.x,a.left.y);
+          ctx.lineTo(b.left.x,b.left.y);ctx.lineTo(b.right.x,b.right.y);
+          ctx.lineTo(a.right.x,a.right.y);ctx.closePath();ctx.fill();
+        }
+        ctx.lineWidth=1.5;ctx.beginPath();
+        ctx.moveTo(mesh.samples[0].left.x,mesh.samples[0].left.y);
+        ctx.lineTo(mesh.samples.at(-1).left.x,mesh.samples.at(-1).left.y);
+        ctx.moveTo(mesh.samples[0].right.x,mesh.samples[0].right.y);
+        ctx.lineTo(mesh.samples.at(-1).right.x,mesh.samples.at(-1).right.y);ctx.stroke();
+      }
+    }else{
+      ctx.lineCap='round';ctx.strokeStyle='rgba(230,113,92,.23)';
+      ctx.lineWidth=Math.max(8,rampWidth());ctx.beginPath();
+      ctx.moveTo(foot.x,foot.y);ctx.lineTo(head.x,head.y);ctx.stroke();
+    }
+    ctx.lineWidth=2;ctx.strokeStyle=rampPreviewValid?'#b9ffe1':'#ffb3a3';
+    ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(foot.x,foot.y);
+    ctx.lineTo(head.x,head.y);ctx.stroke();ctx.setLineDash([]);
+    for(const [p,label] of [[foot,'1'],[head,'2']]){
+      ctx.fillStyle='#203b38';ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#e0fff0';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle='#f8fffd';ctx.font='bold 11px sans-serif';ctx.textAlign='center';
+      ctx.textBaseline='middle';ctx.fillText(label,p.x,p.y+.3);
+    }
     ctx.restore();
   }
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
-  const displayCell=precisionOn?precisionCell:hoverCell;
+  const displayCell=selectedMode.startsWith('terrain-ramp')?hoverCell:
+    precisionOn?precisionCell:hoverCell;
   // R4: display the candidate footprint even if the generic cursor is off.
   const hasFootprint=precisionOn||$('preview-cursor').checked||selectedMode.startsWith('sphere-');
   if(!navigationTesting&&!objectEditing&&!surfaceEditing&&displayCell&&hasFootprint&&
@@ -415,12 +451,20 @@ function draw(){
   }
   $('stats').textContent=terrain.width+' × '+terrain.height+' cases · '+result.faceCount+
     ' parois ('+result.faceRuns+' sections) · '+Math.round(zoom*100)+' %';
-  $('brush-info').textContent=displayCell ?
-    (precisionOn?'Visée ('+(displayCell.x+1)+','+(displayCell.y+1)+') · ':'Pinceau : ')+
-    (previewSummary?.cells??0)+' case(s) · '+selectedMode+
-    (selectedMode==='plateau'?' niveau '+$('target').value:selectedMode.startsWith('water-')?' eau '+$('water-target').value:'')+
-    (precisionOn?' · appuie sur Appliquer pour sculpter':' · bord '+$('edge').value+' %') :
-    precisionOn?'Placement précis : vise au doigt sans modifier le terrain, puis confirme':'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
+  $('brush-info').textContent=rampToolActive()
+    ?rampA?(rampPreviewValid?'Aperçu vert : pente raccordée · touche pour créer.':
+      'Aperçu orange : vise plus haut ou allonge la pente.')+
+      ' Largeur : '+$('radius').value+' cases.'
+      :'Pente : 1. pied bas · 2. sommet haut · ou glisser en un seul geste.'
+    :selectedMode==='terrain-ramp-erase'
+      ?'Effacer une pente : touche directement la zone de pente.'
+    :displayCell ?
+      (precisionOn?'Visée ('+(displayCell.x+1)+','+(displayCell.y+1)+') · ':'Pinceau : ')+
+      (previewSummary?.cells??0)+' case(s) · '+selectedMode+
+      (selectedMode==='plateau'?' niveau '+$('target').value:selectedMode.startsWith('water-')?' eau '+$('water-target').value:'')+
+      (precisionOn?' · appuie sur Appliquer pour sculpter':' · bord '+$('edge').value+' %') :
+      precisionOn?'Placement précis : vise au doigt sans modifier le terrain, puis confirme':
+        'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
   ensureWaterfallPump();
 }
 // One 12 FPS redraw pump only while animated decorations are placed.
@@ -1800,6 +1844,11 @@ canvas.addEventListener('wheel',event=>{
 },{passive:false});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode)));
 $('quick-tool').addEventListener('change',()=>selectMode($('quick-tool').value));
+$('ramp-cancel').addEventListener('click',()=>{
+  rampStart=null;rampEnd=null;rampGesture=null;
+  updateRampGuide();status('Pied annulé : touche un nouveau départ plus bas.');
+  scheduleDraw();
+});
 $('quick-level-minus').addEventListener('click',()=>adjustQuickLevel(-1));
 $('quick-level-plus').addEventListener('click',()=>adjustQuickLevel(1));
 $('radius-minus').addEventListener('click',()=>adjustBrushSize(-.5));
@@ -1938,7 +1987,11 @@ $('sphere-summit-ratio').addEventListener('input',()=>{
   spherePreviewDismissed=false;scheduleDraw();
 });
 $('sphere-wall-material').addEventListener('change',()=>{spherePreviewDismissed=false;scheduleDraw();});
-$('radius').addEventListener('input',()=>{$('radius-value').textContent=$('radius').value;scheduleDraw();});
+$('radius').addEventListener('input',()=>{
+  $('radius-value').textContent=$('radius').value;
+  if(rampToolActive())updateRampGuide();
+  scheduleDraw();
+});
 $('brush-shape').addEventListener('change',()=>{scheduleDraw();status('Forme du pinceau : '+$('brush-shape').selectedOptions[0].textContent);});
 $('strength').addEventListener('input',()=>{$('strength-value').textContent=$('strength').value;scheduleDraw();});
 $('edge').addEventListener('input',()=>{$('edge-value').textContent=$('edge').value+' %';scheduleDraw();});
@@ -1980,12 +2033,21 @@ $('import').addEventListener('click',()=>{
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
 window.addEventListener('resize',fit);
+function rampPreviewValidForProbe(){
+  const from=rampStart??rampGesture?.origin;
+  const to=rampEnd??(from&&hoverCell?rampPointFromCell(hoverCell):null);
+  return from&&to?appendSculptTerrainRamp(terrain,{
+    x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()})!==terrain:null;
+}
 window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
   terrainRampCount:terrain.ramps?.length??0,ramps:(terrain.ramps??[]).map(f=>({...f})),
   rampStart:!!rampStart,rampGestureActive:!!rampGesture,
+  rampGuideVisible:!$('ramp-guide').hidden,
+  rampGuideText:$('ramp-step').textContent,
+  rampPreviewValid:rampPreviewValidForProbe(),
   sphereMaterialAssets:{rock:cliffHDLoaded,grass:!!sphereWallImages.grass,
     earth:!!sphereWallImages.earth},
   terrainRasterBuilds,cachedGround:!!navTerrainCache,
