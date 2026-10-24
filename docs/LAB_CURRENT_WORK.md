@@ -1,3 +1,14 @@
+# Lot V77 R3 — 24/10/2026 — Pinceau pentes utilisable au doigt, aperçu et validation (EN COURS)
+
+- **Retour créateur** : V77 R2 satisfait techniquement (« Ça fonctionne, c'est plutôt bien »), mais outil « pas pratique » ; améliorer l'usage téléphone, sans modifier la physique des pentes et des escaliers.
+- **Source GREEN fonctionnel / pas encore GREEN ergonomie** : `eb0c18d67885b9ea5c865905a609babf53b5240a`; START immuable `checkpoint/exploration-start-slope-touch-ux-v77-r3-2026-10-24`; branche unique `work/exploration-slope-touch-ux-v77-r3-2026-10-24`.
+- **Expérience directe** : outil Terre « Créer une pente » dans la barre existante ; même avec « Placement précis » global coché par défaut sur smartphone, première touche sélectionne le PIED bas, seconde le SOMMET haut et commit la pente ; un glissement complet bas→haut continue de faire une pente d'un seul geste. Bouton « Changer le pied » annule seulement la première touche sans modification de carte. La taille du pinceau reste la largeur. Aucun nouvel objet ni popup.
+- **Aperçu** : pendant la visée, le tracé affiche 1 pied / 2 sommet et **la largeur effective du passage** ; vert si les deux plateformes sèches sont correctement raccordées, ambre sinon. Réutilise `appendSculptTerrainRamp` pour vérifier, `sculptRampVisualMesh` pour représenter le même profil; aucune mutation ni collision depuis l'aperçu. Après deuxième touche invalide, pied conservé pour rechoisir le sommet.
+- **Gels** : `SculptTerrain.ramps` V77 R2, séquences Collision World et escaliers V78 R2 validés, caméra, matériau/texture, JSON de sauvegarde et import V77, ponts/sphères/eau, Builder et Combat, et tous autres pinceaux en mode précision.
+- **Tests** : sentinelles Node `tests/sculpt-ramp-touch-ux-r3.test.js`, vrai Chromium `scripts/smoke-sculpt-terrain-lab.mjs` validant précision cochée + deux vrais clics dans la carte + aperçu + glissement + annuler/rétablir + changer pied, CI Node/check/Chromium, PR séparée Pages après GREEN technique. Validation tactile Pixel requise avant GREEN ergonomie.
+
+---
+
 # Lot V77 R2 — 24/10/2026 — Véritables pentes sculptées dans Terre (EN COURS)
 
 - **RETOUR CRÉATEUR : V77 objet REFUSÉE.** Les « pentes » doivent appartenir à la construction des HAUTEURS DU TERRAIN, pas à Objets. Même matériau et texture herbe / terre du relief original ; éviter bandes peintes artificielles. Escaliers V78 R2 validés immuables.
