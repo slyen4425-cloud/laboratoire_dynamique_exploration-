@@ -2683,15 +2683,18 @@ try{
     document.querySelector('#interior-template-apply').click();
     const applied=window.__sculptLabProbe();
     document.querySelector('#fullscreen-toggle').click();
-    const floating=document.body.classList.contains('sculpt-immersive')&&quick.contains(roomBar)&&
-      getComputedStyle(roomBar).position==='static';
+    const floatingInfo={immersive:document.body.classList.contains('sculpt-immersive'),
+      insideQuickbar:quick.contains(roomBar),position:getComputedStyle(roomBar).position,
+      panelVisible:!roomBar.hidden,quickDisplay:getComputedStyle(quick).display};
+    const floating=floatingInfo.immersive&&floatingInfo.insideQuickbar&&
+      floatingInfo.position==='static'&&floatingInfo.panelVisible;
     document.querySelector('#fullscreen-toggle').click();
     document.querySelector('#scene-export').click();
     const exported=JSON.parse(document.querySelector('#json').value);
     return {original,itemId,appliedFloor:applied.interiorFloorId,
       templates:applied.interiorTemplateCount,exported:exported.interiorTemplates?.length,
       savedFloor:exported.interiors?.[0]?.surface?.baseMaterialId,
-      floating};
+      floating,floatingInfo};
   })()`);
   if(v79R2.original!=='floor.tile.light'||!v79R2.itemId||
      v79R2.appliedFloor!=='floor.tile.light'||v79R2.templates!==1||
