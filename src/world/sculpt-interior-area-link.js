@@ -102,7 +102,8 @@ export function normalizeSculptInteriorTemplates(raw=[]){
     throw Error('Modèles d’intérieur : liste invalide');
   const ids=new Set();
   return frozen(raw.map(item=>{
-    if(item?.schemaVersion!==1||typeof item.id!=='string'||
+    if(item?.schemaVersion!==1||('area' in item)||('entryPortal' in item)||
+      ('exitPortal' in item)||('buildingId' in item)||typeof item.id!=='string'||
       !/^interior-template-[a-z0-9-]{1,48}$/.test(item.id)||
       ids.has(item.id)||typeof item.name!=='string'||
       !item.name.trim()||item.name.length>64)
