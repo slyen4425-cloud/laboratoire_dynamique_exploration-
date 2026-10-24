@@ -9,6 +9,8 @@ export function sculptAltitudeVisualState(level,{baseline=2}={}){
   const steps=Math.max(-7,Math.min(7,current-base));
   const tint=steps>=0?Math.min(.30,steps*.052):
     -Math.min(.30,Math.abs(steps)*.078);
-  const heroScale=Math.max(.82,Math.min(1.19,1+steps*.027));
+  // V76 R13: a more legible perspective step (3.8% rather than 2.7%).
+  // Presentation only: never feeds actor radius, collisions or navigation.
+  const heroScale=Math.max(.75,Math.min(1.24,1+steps*.038));
   return Object.freeze({steps,tint,heroScale});
 }
