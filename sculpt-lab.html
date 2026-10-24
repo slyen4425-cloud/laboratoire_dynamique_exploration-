@@ -407,7 +407,7 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
  <label>Catégorie
   <select id="object-category" aria-label="Catégorie d’objets">
    <option value="building">Bâtiments</option><option value="tree">Arbres</option>
-   <option value="rock">Rochers</option><option value="bridge">🌉 Ponts</option><option value="stairs">🪜 Escaliers</option><option value="ramp">⛰️ Pentes</option><option value="decor">💧 Cascades / décors</option>
+   <option value="rock">Rochers</option><option value="bridge">🌉 Ponts</option><option value="stairs">🪜 Escaliers</option><option value="decor">💧 Cascades / décors</option>
   </select>
  </label>
  <label>Visuel existant <select id="object-definition" aria-label="Objet à placer"></select></label>
@@ -536,6 +536,8 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button data-mode="sphere-hill">🟢 V76 · Colline sphérique réelle</button>
 <button data-mode="sphere-basin">🔵 V76 · Trou sphérique réel</button>
 <button data-mode="sphere-erase">⌫ Effacer relief sphérique</button>
+<button data-mode="terrain-ramp">🌿 Créer une pente dans le terrain</button>
+<button data-mode="terrain-ramp-erase">⌫ Effacer une pente</button>
 
 <button data-mode="plateau">Plateau · hauteur exacte</button>
 <div class="levels" aria-label="Hauteur exacte du plateau">
@@ -604,6 +606,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2"></script>
 </body>
 </html>
