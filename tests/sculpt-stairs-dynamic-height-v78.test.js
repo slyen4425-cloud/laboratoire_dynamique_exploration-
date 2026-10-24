@@ -97,7 +97,8 @@ test('V78: two connected stairs each read their own foot and head levels',()=>{
 test('V78 navigation and length/width UI consume the single staircase corridor',()=>{
   const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(main,/sculptStairHeightAt\(terrain,/);
-  assert.match(main,/stairs:resolvedSculptStairs\(\)/);
+  assert.match(main,/stairs:\[\.\.\.resolvedSculptStairs\(\),\.\.\.sculptTerrainRampProjections\(terrain\)\]/,
+    'les escaliers validés restent dans le même moteur que les pentes de terrain');
   assert.match(main,/stairMode\?Number\(\$\('object-bridge-length'\)/);
   const movement=readFileSync(new URL('../src/core/movement.js',import.meta.url),'utf8');
   assert.match(movement,/entity\.sculptStairId=next\.stairId/);
