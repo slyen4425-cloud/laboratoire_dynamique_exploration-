@@ -65,14 +65,13 @@ test('V76 R12 native actor renderer scales sprite and contact shadow at higher/l
   assert.ok(app.includes('sculptSphereDisplacementAt(terrain,navActor.x,navActor.y)'));
 });
 
-test('V76 R12 top corners reuse authoritative HD cliff material, do not leave naked squares',()=>{
+test('R14 square grass tops never expose brown underpainting, HD belongs to rock walls',()=>{
   const s=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
-  assert.ok(s.includes('if(roundedHill||hill.radius>0)'));
+  const runtime=s.slice(s.indexOf('export function drawSculptTerrain'));
+  assert.doesNotMatch(runtime,/sculptClipRoundedHill|sculptHillTopProfile|roundedHill/);
+  assert.match(runtime,/ctx\.fillStyle=pattern\?\?baseColor;ctx\.fillRect\(x,y,w\+\.6,h\+\.6\)/);
+  assert.match(runtime,/rockFace\(ctx,\{x,y,width,height,colors,seed:idx,sun:1,smoothness:0/);
   assert.ok(s.includes('drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,'));
-  assert.ok(s.includes('ctx.rect(x,y,w,h);ctx.clip();'));
-  assert.ok(s.includes('sculptClipRoundedHill(ctx,roundedHill,tile)'));
-  // The untouched ordinary square hill remains square: only deliberately
-  // sculpted rounded profiles use corner masks.
   const t=at(5);
   assert.equal(sculptHillTopProfile(t,10,12).radius,0);
 });
