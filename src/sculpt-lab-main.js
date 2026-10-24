@@ -12,6 +12,7 @@ import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js';
+import {drawSculptRamp} from './render/sculpt-ramp-renderer.js?rev=natural-ramp-v77';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -838,7 +839,7 @@ function resolvedSculptBridges(){
     navBridgeProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
       .filter(o=>o.kind==='bridge');
     navStairProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
-      .filter(o=>o.kind==='stairs');
+      .filter(o=>o.kind==='stairs'||o.kind==='ramp');
   }
   return navBridgeProjection;
 }
@@ -866,7 +867,7 @@ function navigationBlockMessage(reason){
   if(reason.kind==='sphere-wall'||reason.kind==='sphere-projection')
     return 'colline haute : flanc et sommet bloqués depuis le sol (pentes V77)';
   if(reason.kind==='bridge-edge')return 'rebord du pont : sortie par les extrémités uniquement';
-  if(reason.kind==='stair-edge')return 'escalier : accès uniquement par une extrémité praticable';
+  if(reason.kind==='stair-edge')return 'pente/escalier : accès uniquement par une extrémité praticable';
   if(reason.kind==='cliff-projection')return 'falaise nord : rebord bloqué avant le sommet visible';
   if(reason.kind==='height-up'||reason.kind==='height-down')
     return reason.limit===0
@@ -1155,6 +1156,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
   stairId:navActor?.sculptStairId??null,stairHeight:navActor?navHeight():null,
+  inclineKind:navActor?.sculptStairId?resolvedSculptStairs().find(o=>o.id===navActor.sculptStairId)?.kind??null:null,
   physicalBridgeLayer:navActor?.sculptBridgeId?'deck':'ground',
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
@@ -1184,6 +1186,16 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
       actors:renderActors,timeSeconds:navVisualTime});
 }
 function drawPreviewObject(object,{foregroundRailOnly=false}={}){
+  // V77: the ramp is terrain, not a bitmap billboard. Draw its quad in the
+  // shared world projection, including its genuine rise from foot to head.
+  if(object.kind==='ramp'){
+    drawSculptRamp(ctx,object,terrain,{
+      view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
+      tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
+      selected:objectEditing&&objectSelectedId===object.id
+    });
+    return;
+  }
   const art=objectImage(object.visual?.assetId);
   if(!art||(art instanceof Image&&!art.complete)||
      !(art.naturalWidth??art.width))return;
@@ -1243,18 +1255,21 @@ function refreshObjectOptions(){
   // Stairs and bridges share native axis controls; stairs ascend along Y.
   const bridgeMode=$('object-category').value==='bridge';
   const stairMode=$('object-category').value==='stairs';
-  const passageMode=bridgeMode||stairMode;
+  const rampMode=$('object-category').value==='ramp';
+  const passageMode=bridgeMode||stairMode||rampMode;
   $('object-scale-wrap').hidden=passageMode;
   $('object-bridge-length-wrap').hidden=!passageMode;
   $('object-bridge-width-wrap').hidden=!passageMode;
-  $('object-bridge-length-wrap').firstChild.textContent=stairMode?'🪜 Longueur ':'🌉 Longueur ';
-  $('object-bridge-width-wrap').firstChild.textContent=stairMode?'🪜 Largeur ':'🌉 Largeur ';
+  $('object-bridge-length-wrap').firstChild.textContent=stairMode?'🪜 Longueur ':rampMode?'⛰️ Longueur ':'🌉 Longueur ';
+  $('object-bridge-width-wrap').firstChild.textContent=stairMode?'🪜 Largeur ':rampMode?'⛰️ Largeur ':'🌉 Largeur ';
   $('object-scale').max=passageMode?'300':'120';
   $('object-bridge-length').setAttribute('aria-label',stairMode
     ?'Longueur de l’escalier, peut relier plusieurs hauteurs'
+    :rampMode?'Longueur de la pente naturelle, pour relier deux niveaux réels'
     :'Longueur du pont sans élargir le passage');
   $('object-bridge-width').setAttribute('aria-label',stairMode
     ?'Largeur du passage dans l’escalier'
+    :rampMode?'Largeur praticable de la pente naturelle'
     :'Largeur du pont sans allonger le passage');
   if(Number($('object-scale').value)>Number($('object-scale').max)){
     $('object-scale').value=$('object-scale').max;
@@ -1286,8 +1301,8 @@ function syncObjectSelectedControls(){
   refreshObjectVariants(selected.overrides.visualVariantId);
   $('object-scale').value=String(Math.round(selected.transform.scaleX*100));
   $('object-scale-value').textContent=$('object-scale').value+' %';
-  $('object-bridge-length').value=String(Math.round((def.kind==='stairs'?selected.transform.scaleY:selected.transform.scaleX)*100));
-  $('object-bridge-width').value=String(Math.round((def.kind==='stairs'?selected.transform.scaleX:selected.transform.scaleY)*100));
+  $('object-bridge-length').value=String(Math.round((['stairs','ramp'].includes(def.kind)?selected.transform.scaleY:selected.transform.scaleX)*100));
+  $('object-bridge-width').value=String(Math.round((['stairs','ramp'].includes(def.kind)?selected.transform.scaleX:selected.transform.scaleY)*100));
   $('object-bridge-length-value').textContent=$('object-bridge-length').value+' %';
   $('object-bridge-width-value').textContent=$('object-bridge-width').value+' %';
   $('object-rotation').value=String(Math.round(selected.transform.rotationDeg));
@@ -1547,7 +1562,7 @@ function setObjectEditing(active){
       $('mode-'+domain).setAttribute('aria-pressed','false');
     }
     $('active-tool-label').textContent='Objets · toucher pour placer ou supprimer';
-    status('Choisis une catégorie, notamment Escaliers (10 modèles 2,5D), puis touche la carte.');
+    status('Choisis une catégorie : Escaliers ou Pentes (herbe, terre, roche), puis touche la carte.');
   }else{
     for(const domain of ['ground','water']){
       const active=editorKind===domain;
@@ -1583,7 +1598,7 @@ function applyObjectAtCell(cell){
     status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
   }
   const kind=objectDefinitionCatalogV1.get(definitionId)?.kind;
-  const bridgeMode=kind==='bridge',stairMode=kind==='stairs';
+  const bridgeMode=kind==='bridge',stairMode=kind==='stairs'||kind==='ramp';
   const next=appendSculptPreviewObject(placedObjects,{definitionId,x,y,
     scale:Number($('object-scale').value)/100,
     scaleX:bridgeMode?Number($('object-bridge-length').value)/100:
@@ -1617,7 +1632,7 @@ for(const [id,bridgeAxis,stairAxis] of [['object-bridge-length','scaleX','scaleY
   const control=$(id),output=$(id+'-value');
   control.addEventListener('input',()=>{output.textContent=control.value+' %';});
   control.addEventListener('change',()=>editSelectedObject({
-    [$('object-category').value==='stairs'?stairAxis:bridgeAxis]:Number(control.value)/100}));
+    [[ 'stairs','ramp' ].includes($('object-category').value)?stairAxis:bridgeAxis]:Number(control.value)/100}));
 }
 for(const [id,direction] of [['object-turn-left',-45],['object-turn-right',45]]){
   $(id).addEventListener('click',()=>{
