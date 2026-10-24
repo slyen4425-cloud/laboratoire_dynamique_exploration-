@@ -4,7 +4,7 @@ import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applyS
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas,cliffAtlasTheme} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
-import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js';
+import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
 import {sculptRoundedHillRegions,sculptHillRegionOutline,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
 import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
