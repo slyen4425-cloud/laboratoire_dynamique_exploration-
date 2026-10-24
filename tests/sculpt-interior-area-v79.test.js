@@ -38,7 +38,7 @@ test('V79 creates exactly one independent heightfield inside canonical WorldArea
   assert.equal(entry.area.spawns[0].id,'entrance');
 });
 
-test('V79 entry/exit obey existing Portal controller and real door anchor',()=>{
+test('V79 entry/exit obey existing Portal controller and real door anchor',async()=>{
   const {objects,entry}=setup(),doc=sculptInteriorPortalDocument(objects,[entry]);
   const entrance=applyPortalTransition(doc,{currentAreaId:SCULPT_EXTERIOR_AREA_ID},entry.entryPortal);
   assert.equal(entrance.currentAreaId,entry.area.id);
