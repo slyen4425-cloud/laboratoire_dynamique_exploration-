@@ -625,21 +625,18 @@ export function sculptOuterSouthCliffRuns(terrain){
   if(!terrain||!Number.isInteger(terrain.width)||!Number.isInteger(terrain.height)||
      terrain.width<1||terrain.height<1)return Object.freeze([]);
   const row=terrain.height-1,runs=[];
-  const roundness=Array.isArray(terrain.roundness)?terrain.roundness:null;
   for(let col=0;col<terrain.width;){
     const index=row*terrain.width+col;
     const level=terrain.levels[index];
     if(level<=0||sculptWaterAt(terrain,col,row)>0){col++;continue;}
-    const profile=roundness?roundness[index]:95;
     let end=col+1;
     while(end<terrain.width){
       const next=row*terrain.width+end;
       if(terrain.levels[next]!==level||
-         (roundness?roundness[next]:95)!==profile||
          sculptWaterAt(terrain,end,row)>0)break;
       end++;
     }
-    runs.push(Object.freeze({start:col,end,level,smoothness:profile/100}));
+    runs.push(Object.freeze({start:col,end,level,smoothness:0}));
     col=end;
   }
   return Object.freeze(runs);
@@ -717,7 +714,7 @@ function sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,{capLeft=true,ca
   ctx.closePath();
 }
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
-  rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,visualSmoothness=.72,
+  rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
   if(!terrain||!ctx)return {faceCount:0};
@@ -734,95 +731,39 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   const south=new Map(),east=new Map();
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);
   let waterCells=0,roadCells=0,faceRuns=0;
-  const hasProfiles=Array.isArray(terrain.roundness);
-  const roundedHillRegions=sculptRoundedHillRegions(terrain);
-  const cornerRockPattern=roundedHillRegions.size
-    ?sculptRoundedHillRockPattern(ctx,cliffHD,rockPalette):null;
+  // R14: square height tops do not use legacy roundness visual profiles.
   const drawPaint=sculptPaintByCell(ctx,terrain,tile,paintSurface,paintImages);
   let paintedCells=0;
-  const deferredToes=[];
   for(let row=0;row<terrain.height;row++){
     // Draw all top surfaces of a row first, then contiguous wall runs.
     // A 6-cell cliff has one curved foot, not six square block bottoms.
     for(let col=0;col<terrain.width;col++){
       const idx=row*terrain.width+col,level=terrain.levels[idx];
       const x=col*w,y=row*h-level*rise;
-      const roundedHill=roundedHillRegions.get(idx);
-      const hill=roundedHill?{radius:0}:sculptHillTopProfile(terrain,col,row,tile);
-      if(roundedHill||hill.radius>0){
-        // R12: convex corner cuts must reveal REAL stone texture, not flat
-        // grey/brown square fragments. The cliff atlas already owns this
-        // mineral appearance; its footprint is clipped to THIS top tile.
-        if(roundedHill&&cornerRockPattern){
-          // One continuous atlas sampling origin for every region cell;
-          // the grass contour will uncover only its actual convex cutouts.
-          ctx.fillStyle=cornerRockPattern;ctx.fillRect(x,y,w+.6,h+.6);
-        }else{
-          // V54 single-cell corners and unloaded-HD fallback retain R12.
-          ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
-          if(cliffHD||cliffAtlas){
-            ctx.save();
-            ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
-            drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,
-              rockPalette,colors,x,y,width:w,height:h,seed:idx,moss:cliffMoss});
-            ctx.restore();
-          }
-        }
-        ctx.save();
-        if(roundedHill)sculptClipRoundedHill(ctx,roundedHill,tile);
-        else {sculptHillTopPath(ctx,x,y,w,h,hill);ctx.clip();}
-      }
+      // Fully opaque grass over every corner; no clipped brown underpainting.
       ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
-      if(!roundedHill){
-        // The old per-cell light flecks form visible square cuts in the
-        // curved grass rim: keep them only for unedited, square terrain.
-        ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
-          'rgba(0,0,0,.01)'],col,row,2);
-        ctx.fillRect(x,y,w,h);
-        if(level>0){
-          const variation=hash(col,row,91)%5;
-          ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
-          ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
-        }
+      ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
+        'rgba(0,0,0,.01)'],col,row,2);
+      ctx.fillRect(x,y,w,h);
+      if(level>0){
+        const variation=hash(col,row,91)%5;
+        ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
+        ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
       }
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       paintedCells+=drawPaint(col,row,level,x,y);
-      // The rounded plateau is one visual region. Tile-sized exposed-edge
-      // shadow boxes were chopping its grass corners into hard rectangles.
-      // Its continuous outline below owns the rim; only altitude tint is
-      // applied here, still from the same presentation-only altitude source.
-      if(roundedHill){
-        const tone=sculptAltitudeVisualState(level).tint;
-        if(tone!==0){
-          ctx.fillStyle=tone>0
-            ?'rgba(251,243,206,'+tone+')'
-            :'rgba(15,35,39,'+(-tone)+')';
-          ctx.fillRect(x,y,w+.6,h+.6);
-        }
-      }else drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
-      if(roundedHill)ctx.restore();
-      if(hill.radius>0){
-        // Thin earthy rim is painted along the curved lip, above the same
-        // V50 rock texture, without altering grass outside edited tiles.
-        ctx.strokeStyle='rgba(42,50,41,.30)';ctx.lineWidth=1.25;
-        sculptHillTopPath(ctx,x,y,w,h,hill);ctx.stroke();ctx.restore();
-      }
+      drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
       const side=east.get(idx);
       if(side){
         rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
-          colors,seed:idx+54,sun:0,smoothness:hasProfiles?terrain.roundness[idx]/100:visualSmoothness,
+          colors,seed:idx+54,sun:0,smoothness:0,
           rockPalette,cliffAtlas,cliffHD,cliffMoss});
-        const band=sculptHillGrassShoulderWidth(terrain,col,row,tile,'east');
-        if(band>0)drawSculptGrassShoulder(ctx,{x:x+w-1,y:y+1,width:h-2,
-          band,pattern,baseColor,vertical:true});
       }
     }
-    const blendedColumns=new Set(sculptRoundedSouthColumns(terrain,row));
     for(let col=0;col<terrain.width;){
       const idx=row*terrain.width+col,first=south.get(idx);
       if(!first){col++;continue;}
-      if(blendedColumns.has(col)){
-        let end=col+1;
+      let end=col+1;
         while(end<terrain.width&&blendedColumns.has(end)&&
           south.has(row*terrain.width+end))end++;
         const faces=Array.from({length:end-col},(_,i)=>south.get(row*terrain.width+col+i));
@@ -851,39 +792,14 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       let end=col+1;
       while(end<terrain.width){
         const adjacent=south.get(row*terrain.width+end);
-        if(!adjacent||blendedColumns.has(end)||
-          adjacent.upper!==first.upper||adjacent.lower!==first.lower||
-          (hasProfiles&&terrain.roundness[row*terrain.width+end]!==terrain.roundness[idx]))break;
+        if(!adjacent||adjacent.upper!==first.upper||adjacent.lower!==first.lower)break;
         end++;
       }
       const x=col*w,y=row*h-first.upper*rise+h;
       const width=(end-col)*w,height=(first.upper-first.lower)*rise;
-      const runSmoothness=hasProfiles?terrain.roundness[idx]/100:visualSmoothness;
-      // Cliff-wide base shade follows the long wall rather than square tiles.
-      if(runSmoothness>0){
-        ctx.save();ctx.fillStyle='rgba(35,36,45,.16)';
-        ctx.beginPath();ctx.ellipse(x+width*.5,y+height+3*runSmoothness,
-          width*.46,Math.max(1.5,5*runSmoothness),0,0,Math.PI*2);
-        ctx.fill();ctx.restore();
-      }
-      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:runSmoothness,
+      // One continuous HD rock wall beneath straight grass edges.
+      rockFace(ctx,{x,y,width,height,colors,seed:idx,sun:1,smoothness:0,
         rockPalette,cliffAtlas,cliffHD,cliffMoss});
-      for(let c=col;c<end;c++){
-        const band=sculptHillGrassShoulderWidth(terrain,c,row,tile);
-        if(band>0)drawSculptGrassShoulder(ctx,{
-          x:c*w,y,width:w,band,pattern,baseColor});
-      }
-      if(runSmoothness>0){
-        ctx.save();
-        ctx.strokeStyle='rgba(45,48,48,.18)';ctx.lineWidth=.9;
-        ctx.beginPath();ctx.moveTo(x+2,y+1);
-        ctx.quadraticCurveTo(x+width*.3,y+runSmoothness*2,
-          x+width*.59,y+1);
-        ctx.quadraticCurveTo(x+width*.84,y-runSmoothness*1.2,x+width-2,y+1);
-        ctx.stroke();ctx.restore();
-      }
-      deferredToes.push({x,width,bottom:y+height,seed:idx,smoothness:runSmoothness,
-         row,from:col,to:end});
       faceRuns++;col=end;
     }
     // Painter order: water belongs to its own absolute-height layer. Paint it
@@ -901,43 +817,6 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       colors,seed:terrain.width*terrain.height+run.start,
       sun:1,smoothness:run.smoothness,rockPalette,cliffAtlas,cliffHD,cliffMoss});
   }
-  // The NEXT ground row would otherwise paint over the rounded rock foot.
-  // Compositing a slender irregular rock toe AFTER all ground is drawn makes
-  // the curved base actually visible against lower dirt, road and water.
-  // No pixels are used to decide physics; these are decorative only.
-  for(const toe of deferredToes){
-    const soften=Math.max(0,Math.min(1.5,Number(toe.smoothness)||0));
-    if(soften<=0)continue;
-    for(const dry of sculptRockToeSegments(terrain,toe.row,toe.from,toe.to)){
-    const x=dry.from*w,width=(dry.to-dry.from)*w,bottom=toe.bottom,seed=toe.seed;
-    // Minimize detached-looking bumps over the LOWER dry ground.
-    const depth=Math.min(7*soften,Math.max(1.5,width*.05));
-    const phase=(hash(seed,27,2)%7-3)*.15;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(x+Math.min(4,width*.08),bottom-2);
-    ctx.bezierCurveTo(x+width*.19,bottom-3.2*soften,
-      x+width*.41,bottom+phase,x+width*.57,bottom-2.2*soften);
-    ctx.bezierCurveTo(x+width*.82,bottom-3.3*soften,
-      x+width-2,bottom-1.5*soften,x+width-1,bottom+.6*depth);
-    ctx.bezierCurveTo(x+width*.84,bottom+depth*.96,
-      x+width*.65,bottom+depth*.42,x+width*.49,bottom+depth);
-    ctx.bezierCurveTo(x+width*.31,bottom+depth*.52,
-      x+width*.12,bottom+depth*.94,x+1,bottom+depth*.52);
-    ctx.closePath();
-    const gradient=ctx.createLinearGradient(x,bottom-2,x,bottom+depth);
-    gradient.addColorStop(0,colors[2]);
-    gradient.addColorStop(.45,colors[3]);
-    gradient.addColorStop(1,'rgba(44,45,51,0)');
-    ctx.fillStyle=gradient;ctx.globalAlpha=.84;ctx.fill();
-    ctx.globalAlpha=.40;ctx.strokeStyle=colors[2];
-    ctx.lineWidth=.65;ctx.stroke();
-    ctx.restore();
-    }
-  }
-  // One quiet grass-to-rock contact edge per sculpted plateau, never one
-  // repeated rectangle per tile. This uses the existing cached V61 outline.
-  drawSculptRoundedHillGrassLip(ctx,roundedHillRegions,tile,pattern,baseColor);
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
   const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,
