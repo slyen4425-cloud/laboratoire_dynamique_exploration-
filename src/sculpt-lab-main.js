@@ -324,16 +324,22 @@ function draw(){
       sculptBridgeDeckAt([bridge],navActor.x,navActor.y,
         Math.max(0,Number(navActor.radius)||0))):null;
     const layeredBridge=deckBridge??underBridge;
-    drawPreviewObjects(navActor?.y??Infinity,-Infinity,layeredBridge?.id);
+    // V78 R2: a stair is anchored at its LOW foot (large Y), not at the
+    // player's changing standing height. Painting it by anchor Y alone
+    // would cover the climbing actor. Draw the ONE active stair behind them.
+    const activeStair=navActor?.sculptStairId?resolvedSculptStairs().find(
+      stair=>stair.id===navActor.sculptStairId):null;
+    drawPreviewObjects(navActor?.y??Infinity,-Infinity,layeredBridge?.id,activeStair?.id);
     drawPlacedActors(navActor?.y??Infinity);
     if(deckBridge)drawPreviewObject(deckBridge);
+    if(activeStair)drawPreviewObject(activeStair);
     drawNavigationActor();
     if(deckBridge)drawPreviewObject(deckBridge,{foregroundRailOnly:true});
     // Ground-level traffic is physically BELOW the entire bridge, not just
     // behind its low front rail. Do not promote it to the deck in the renderer.
     if(underBridge)drawPreviewObject(underBridge);
     if($('navigation-show-bridge-corridor')?.checked)drawNavigationBridgeCorridors();
-    drawPreviewObjects(Infinity,navActor?.y??Infinity,layeredBridge?.id);
+    drawPreviewObjects(Infinity,navActor?.y??Infinity,layeredBridge?.id,activeStair?.id);
     drawPlacedActors(Infinity,navActor?.y??Infinity);
   }else{
     drawPreviewObjects();
@@ -1186,7 +1192,15 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   const {width,height}=rect;
   const artShift=sculptBridgeDeckArtShift(rect,object);
   const point=navigationTesting?sculptCameraProject(cameraView(),rect.x,rect.y):rect;
-  ctx.save();ctx.translate(point.x,point.y);ctx.rotate(rect.angle);
+  ctx.save();ctx.translate(point.x,point.y);
+  // V78 R2: a stair is sloping GROUND, not an upright billboard.
+  // The preview terrain already uses this exact camera matrix; match it
+  // locally in Tester while leaving bridges, rails and buildings untouched.
+  if(navigationTesting&&object.kind==='stairs'){
+    const view=cameraView();
+    ctx.transform(1,view.shear,0,view.pitch,0,0);
+  }
+  ctx.rotate(rect.angle);
   if(foregroundRailOnly){
     if(object.kind!=='bridge'){ctx.restore();return;}
     const regions=sculptBridgeForegroundRegions(rect,artShift,object);
@@ -1211,9 +1225,10 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   }
   ctx.restore();
 }
-function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null){
+function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipStairId=null){
   const objects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
-    .filter(o=>o.transform.y<=maxY&&o.transform.y>minY&&o.id!==skipBridgeId)
+    .filter(o=>o.transform.y<=maxY&&o.transform.y>minY&&
+      o.id!==skipBridgeId&&o.id!==skipStairId)
     .sort((a,b)=>a.transform.y-b.transform.y);
   for(const object of objects)drawPreviewObject(object);
 }
