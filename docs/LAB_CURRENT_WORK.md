@@ -1,3 +1,15 @@
+# Lot V76 R15 — 24/10/2026 — Escaliers 2,5D visibles dans le Labo Sculpt (EN COURS)
+
+- **Retour Pixel** : V76 R14 validée par le créateur (« Ok c est bon »). Checkpoint GREEN R14 : `checkpoint/exploration-square-no-smoothing-v76-r14-green-2026-10-24` ; SHA source `9f56549c07715e44c565ca905b83d8c5006ae792`.
+- **Problème démontré** : les 10 définitions `kind:stairs` et 30 WebP (face / 3-4 / côté) sont présents au catalogue, mais le filtre `validKinds` de Sculpt exclut `stairs` et la palette HTML ne propose pas leur catégorie. Aucun asset manquant. Les anciens escaliers également invisibles.
+- **START immuable** : `checkpoint/exploration-start-stairs-visible-v76-r15-2026-10-24`, créé au SHA R14 avant écriture ; branche unique `work/exploration-stairs-visible-v76-r15-2026-10-24`.
+- **Périmètre propriétaire** : adaptateur d'édition Sculpt / UI (catégorie « Escaliers » dans Objets, placement/sélection/déplacement, choix des trois vues, export/import de la scène). Réutilise les définitions, assets, transformations, hauteurs et éditeur existants ; aucun second catalogue.
+- **Gel absolu** : Collision World, World Model, navigation, rendu terrain/sphères, R14, ponts, combat, Builder, héros, 33 WebP, manifestes, autres dépôts. Ce lot rend les escaliers **visibles et plaçables**, pas encore franchissables.
+- **Tests** : 10 styles x 3 variantes, asset resolver, placement sec et refus eau, sélection, export/import, UI option présente, ancien catalogue inchangé, `npm test` et `npm run check` et tests Chromium Sculpt/Builder/Combat via Actions. Statut NON GREEN jusqu'au retour visuel Pixel.
+- **Lots ultérieurs séparés (non démarrés)** : V77 pentes physiques et passage continu entre niveaux, puis V78 franchissement des escaliers orientés/ajustables raccordé exclusivement à Collision World. Ne pas débloquer toute paroi rocheuse ni attribuer une collision à la simple image.
+
+---
+
 # Lot V76 R14 — 24/10/2026 — Hauteurs carrées franches, suppression des outils de lissage (EN COURS)
 
 - **Retour créateur Pixel 24/10 11:36–11:55 UTC** : sur V76 R13, triangles bruns aux quatre coins des collines carrées, constatés sur capture. Demande explicite : retirer le lissage des hauteurs et supprimer le marron des angles. Validation précédente : collisions des sphères OK.
