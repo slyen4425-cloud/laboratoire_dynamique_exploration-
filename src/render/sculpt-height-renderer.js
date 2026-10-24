@@ -3,6 +3,7 @@
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
+import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js';
 import {sculptRoundedHillRegions,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
 import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
@@ -36,7 +37,7 @@ export function sculptGroundReliefLighting(terrain,col,row){
     return Object.freeze({tone:0,contactShadows:Object.freeze([]),exposedEdges:Object.freeze([])});
   const level=sculptHeightAt(terrain,col,row);
   // Shared elevation tint over entire plateaus (no outlines between equal cells).
-  const tone=Math.max(-.065,Math.min(.105,(level-2)*.029));
+  const tone=sculptAltitudeVisualState(level).tint;
   const contactShadows=[],exposedEdges=[];
   for(const [side,dx,dy] of [['north',0,-1],['east',1,0],['south',0,1],['west',-1,0]]){
     const x=col+dx,y=row+dy;
@@ -716,14 +717,21 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       const x=col*w,y=row*h-level*rise;
       const roundedHill=roundedHillRegions.get(idx);
       const hill=roundedHill?{radius:0}:sculptHillTopProfile(terrain,col,row,tile);
-      if(roundedHill){
+      if(roundedHill||hill.radius>0){
+        // R12: convex corner cuts must reveal REAL stone texture, not flat
+        // grey/brown square fragments. The cliff atlas already owns this
+        // mineral appearance; its footprint is clipped to THIS top tile.
         ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
-        ctx.save();sculptClipRoundedHill(ctx,roundedHill,tile);
-      }else if(hill.radius>0){
-        // When grass rounds back, expose the mineral shoulder below it,
-        // rather than a transparent black corner or a second level of land.
-        ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
-        ctx.save();sculptHillTopPath(ctx,x,y,w,h,hill);ctx.clip();
+        if(cliffHD||cliffAtlas){
+          ctx.save();
+          ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+          drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,
+            rockPalette,colors,x,y,width:w,height:h,seed:idx,moss:cliffMoss});
+          ctx.restore();
+        }
+        ctx.save();
+        if(roundedHill)sculptClipRoundedHill(ctx,roundedHill,tile);
+        else {sculptHillTopPath(ctx,x,y,w,h,hill);ctx.clip();}
       }
       ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
       ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
