@@ -127,6 +127,17 @@ export function sculptSphereProjectionBlock(terrain,x,y,{
   return null;
 }
 
+// V76 R12: a player already ON the safely flat inner summit can walk
+// across that plateau. Its access is still impossible from ground without an
+// authored ramp/bridge; round domes and sloping frustum sides remain blocked.
+export function sculptSphereSupportedSummit(terrain,x,y,radius=0){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const actorRadius=Math.max(0,Number(radius)||0);
+  return (terrain.spheres??[]).find(h=>
+    h.kind==='hill'&&(h.summitRatio??0)>0&&
+    Math.hypot(x-h.x,y-h.y)<=h.radius*h.summitRatio-actorRadius-1e-6)??null;
+}
+
 // Canonical Bridge corridor is the only authority for allowing walking above
 // authored sculpt water. It is supplied from resolved WorldObject definitions;
 // neither image alpha nor rounded hill pixels decide traversal.
@@ -301,7 +312,12 @@ export function sculptNavigationRoute({
         // stranded actor already inside may retreat radially OUT, never enter.
         const sphere=sculptSphereAt(terrain,x,y,radius);
         const priorSphere=sculptSphereAt(terrain,previousX,previousY,radius);
-        if(!dismounting&&sphere&&(!priorSphere||priorSphere.id!==sphere.id||
+        const supportedTop=sphere&&sculptSphereSupportedSummit(terrain,x,y,radius);
+        const previousTop=supportedTop&&sculptSphereSupportedSummit(
+          terrain,previousX,previousY,radius);
+        const walkingSameTop=!!supportedTop&&previousTop?.id===supportedTop.id;
+        if(!dismounting&&sphere&&!walkingSameTop&&
+          (!priorSphere||priorSphere.id!==sphere.id||
           Math.hypot(x-sphere.x,y-sphere.y)<
             Math.hypot(previousX-sphere.x,previousY-sphere.y)-1e-6))
           return reject(Object.freeze({kind:'sphere-wall',id:sphere.id,
