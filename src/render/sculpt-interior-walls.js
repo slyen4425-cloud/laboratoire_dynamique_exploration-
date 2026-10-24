@@ -3,7 +3,7 @@
 // Back and side walls are visible; the south/front wall is cut away so the
 // hero and interior stay readable at camera 35–90°. No bitmap collision masks.
 export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
-  rise=18,wallLevels=2}={}){
+  rise=18,wallLevels=2,doorway=null}={}){
   if(!terrain)return;
   const w=terrain.width*tileWidth,h=terrain.height*tileHeight;
   const lift=wallLevels*rise;
@@ -27,5 +27,22 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
   ctx.setLineDash([6,4]);ctx.strokeStyle='rgba(238,216,183,.45)';
   ctx.beginPath();ctx.moveTo(0,h);ctx.lineTo(w*.41,h);
   ctx.moveTo(w*.59,h);ctx.lineTo(w,h);ctx.stroke();
+  // Decorative doorway derives from the one canonical exit Portal.
+  // It NEVER creates independent geometry, collision or an extra trigger.
+  if(doorway?.kind==='point'&&Number.isFinite(doorway.x)&&
+     Number.isFinite(doorway.y)){
+    const x=Math.max(26,Math.min(w-26,doorway.x));
+    const y=h-2;
+    ctx.fillStyle='#432e22';ctx.fillRect(x-23,y-5,46,9);
+    ctx.fillStyle='#bc905e';ctx.fillRect(x-19,y-4,38,5);
+    ctx.strokeStyle='#d8b787';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(x-25,y-27);
+    ctx.lineTo(x-25,y+1);ctx.lineTo(x+25,y+1);
+    ctx.lineTo(x+25,y-27);ctx.stroke();
+    ctx.fillStyle='rgba(188,144,86,.28)';
+    ctx.beginPath();ctx.ellipse(x,doorway.y,20,8,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#f7dfb7';ctx.font='bold 12px sans-serif';
+    ctx.textAlign='center';ctx.fillText('🚪 Sortie',x,doorway.y-11);
+  }
   ctx.restore();
 }
