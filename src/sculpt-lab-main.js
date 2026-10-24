@@ -13,7 +13,7 @@ import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rai
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {drawSculptRamp} from './render/sculpt-ramp-renderer.js?rev=natural-ramp-v77';
-import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
+import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
 import {sculptAltitudeVisualState} from './render/sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
