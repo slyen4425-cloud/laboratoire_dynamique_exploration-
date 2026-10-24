@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v77-r3-ground-slope-touch-two-tap-drag-2026-10-24
+# preview-revision: v79-r1-sculpt-interior-worldarea-portal-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 199461083cd64f69f8a981151093e654f220bca2
+          ref: 38016430e85b43701b26aeaa39c20252a0e702ec
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
