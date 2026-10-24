@@ -17,7 +17,7 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
   // Left wall: a low, readable perimeter seen in oblique perspective.
   ctx.fillStyle='#7d6956';
   ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,h);
-  ctx.lineTo(0,h-lift);ctx.lineTo(0,-lift);ctx.closePath();ctx.fill();
+  ctx.lineTo(-14,h-lift);ctx.lineTo(-14,-lift);ctx.closePath();ctx.fill();
   ctx.strokeStyle='#d0b399';ctx.beginPath();
   ctx.moveTo(0,-lift);ctx.lineTo(0,h-lift);ctx.stroke();
   // Right outline and front threshold only; do not paint opaque foreground
