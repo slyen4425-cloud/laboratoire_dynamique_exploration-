@@ -371,6 +371,22 @@ function draw(){
       ctx.stroke();ctx.restore();
     }
   }
+  // Preview the authored ground ramp from its real endpoints, not an
+  // artificial object silhouette. The committed terrain is drawn in the
+  // terrain-only raster with the same surface texture.
+  const rampA=rampStart??rampPrecisionStart;
+  const rampB=rampEnd??(rampA&&hoverCell?{
+    x:(hoverCell.x+.5)*SCULPT_TILE.width,
+    y:(hoverCell.y+.5)*SCULPT_TILE.height}:null);
+  if(!navigationTesting&&selectedMode==='terrain-ramp'&&rampA&&rampB){
+    const level=(p)=>sculptHeightAt(terrain,
+      Math.floor(p.x/SCULPT_TILE.width),Math.floor(p.y/SCULPT_TILE.height));
+    ctx.save();ctx.strokeStyle='#a8f2c2';ctx.lineWidth=2/Math.max(.5,zoom);
+    ctx.setLineDash([6,4]);ctx.beginPath();
+    ctx.moveTo(rampA.x,rampA.y-level(rampA)*SCULPT_TILE.rise);
+    ctx.lineTo(rampB.x,rampB.y-level(rampB)*SCULPT_TILE.rise);ctx.stroke();
+    ctx.restore();
+  }
   previewSummary=null;
   const precisionOn=$('precision-mode').checked;
   const displayCell=precisionOn?precisionCell:hoverCell;
@@ -388,6 +404,8 @@ function draw(){
         y:first.y*SCULPT_TILE.height,radius:Number($('radius').value)*SCULPT_TILE.width,
         tile:SCULPT_TILE,kind:selectedMode==='sphere-basin'?'basin':'hill',
          summitRatio:Number($('sphere-summit-ratio').value)/100});
+      previewSummary={cells:1,centerHeight:target};
+    }else if(selectedMode.startsWith('terrain-ramp')){
       previewSummary={cells:1,centerHeight:target};
     }else previewSummary=drawSculptBrushPreview(ctx,{terrain:base,points,
       radius:Number($('radius').value),strength:Number($('strength').value),
@@ -473,6 +491,30 @@ function precisionApply(){
   if(!$('precision-mode').checked||!precisionCell)return;
   const cell=precisionCell,previous=terrain;
   const water=selectedMode.startsWith('water-');
+  if(selectedMode==='terrain-ramp'){
+    const point={x:(cell.x+.5)*SCULPT_TILE.width,
+      y:(cell.y+.5)*SCULPT_TILE.height};
+    if(!rampPrecisionStart){
+      rampPrecisionStart=point;
+      status('Pente : pied défini. Vise le plateau PLUS HAUT puis appuie de nouveau sur Appliquer.');scheduleDraw();
+      return;
+    }
+    terrain=appendSculptTerrainRamp(previous,{
+      x:rampPrecisionStart.x,y:rampPrecisionStart.y,
+      endX:point.x,endY:point.y,width:Number($('radius').value)*SCULPT_TILE.width});
+    rampPrecisionStart=null;
+    commitUndo(previous);scheduleDraw();
+    status(terrain===previous?'Pente impossible : vise deux plateaux secs, bas puis haut, assez espacés.':
+      'Pente créée dans le relief · même texture de sol · Tester pour gravir.');
+    return;
+  }
+  if(selectedMode==='terrain-ramp-erase'){
+    terrain=removeSculptTerrainRampAt(previous,(cell.x+.5)*SCULPT_TILE.width,
+      (cell.y+.5)*SCULPT_TILE.height);
+    commitUndo(previous);scheduleDraw();
+    status(terrain===previous?'Aucune pente à cet emplacement':'Pente du terrain effacée');
+    return;
+  }
   const options={points:[{x:cell.x+.5,y:cell.y+.5}],
     radius:Number($('radius').value),strength:Number($('strength').value),
     shape:$('brush-shape').value,mode:selectedMode,target:water?Number($('water-target').value):
@@ -559,6 +601,7 @@ function adjustBrushSize(delta){
 function selectMode(mode){
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
+  rampPrecisionStart=null;rampStart=null;rampEnd=null;
   spherePreviewDismissed=false;
   if(nextKind==='water')lastWaterMode=mode;else lastGroundMode=mode;
   // Quickbar can be used while Objects or Textures is active even when the
@@ -591,6 +634,8 @@ function selectMode(mode){
     'sphere-hill':'V76 R9 : 0 % sphère ; de 5 à 95 % colline à flanc conique ; 100 % plateau rond vertical. Accès à pied sur les pentes : V77.',
     'sphere-basin':'V76 R9 : creux rond à fond plat et flancs coniques, ou bord vertical à 100 %. Accès par pente : V77.',
     'sphere-erase':'V76 : touche une colline/cavité sphérique pour la supprimer, sans modifier les cases.',
+    'terrain-ramp':'Pente du terrain : glisse du pied BAS vers le sommet HAUT. Taille du pinceau = largeur. En placement précis : applique le bas, puis le haut.',
+    'terrain-ramp-erase':'Effacer pente : touche le passage à supprimer dans Terre. Le terrain conserve ses plateaux.',
     'water-fill':'Eau : niveau de surface absolu, volume calculé par rapport au terrain',
     'water-rise':'Eau : surélever sa surface, sans déplacer le sol',
     'water-lower':'Eau : abaisser sa surface','water-erase':'Eau : enlever le volume peint',
@@ -731,6 +776,17 @@ function stroke(event){
   hoverCell=cell;
   const key=cell.x+','+cell.y;
   if(key===lastCell)return;
+  if(selectedMode==='terrain-ramp'||selectedMode==='terrain-ramp-erase'){
+    const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+    if(selectedMode==='terrain-ramp-erase'){
+      terrain=removeSculptTerrainRampAt(strokeUndo,x,y);
+      if(terrain===strokeUndo)status('Aucune pente du terrain sous le doigt.');
+    }else{
+      if(!rampStart)rampStart={x,y};
+      rampEnd={x,y};
+    }
+    lastCell=key;scheduleDraw();return;
+  }
   if(selectedMode.startsWith('sphere-')){
     // Exactly one authored radial shape per gesture, not a trail of circles.
     if(lastCell)return;
@@ -809,10 +865,18 @@ function stop(event){
     return;
   }
   if(drawing&&strokeUndo){
+    if(selectedMode==='terrain-ramp'&&rampStart&&rampEnd){
+      terrain=appendSculptTerrainRamp(strokeUndo,{
+        x:rampStart.x,y:rampStart.y,endX:rampEnd.x,endY:rampEnd.y,
+        width:Number($('radius').value)*SCULPT_TILE.width});
+      status(terrain===strokeUndo
+        ?'Pente non créée : dessine du plateau BAS vers le plateau HAUT, assez long et sec.'
+        :'Pente sculptée dans la terre, avec la texture du sol. Teste la montée.');
+    }
     commitUndo(strokeUndo);
     strokeUndo=null;
   }
-  drawing=false;lastCell='';strokePoints=[];
+  drawing=false;lastCell='';strokePoints=[];rampStart=null;rampEnd=null;
   if(selectedMode.startsWith('sphere-')){
     spherePreviewDismissed=false;
     // Retain the last target on touch devices; it is not persisted in the map.
@@ -1881,6 +1945,8 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   probedCell:screenPoint?screenToCell({clientX:screenPoint.x,clientY:screenPoint.y}):null,
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
+  terrainRampCount:terrain.ramps?.length??0,ramps:(terrain.ramps??[]).map(f=>({...f})),
+  rampStart:!!(rampStart||rampPrecisionStart),
   sphereMaterialAssets:{rock:cliffHDLoaded,grass:!!sphereWallImages.grass,
     earth:!!sphereWallImages.earth},
   terrainRasterBuilds,cachedGround:!!navTerrainCache,
