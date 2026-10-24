@@ -7,6 +7,8 @@ import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
 import {sculptRoundedHillRegions,sculptHillRegionOutline,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
 import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
+import {sculptTerrainRampProjections} from '../world/sculpt-height-model.js';
+import {drawSculptRamp} from './sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
   warm:['#bea28c','#947c70','#6c6064','#4b4a56'],
@@ -797,5 +799,12 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
   const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,
     rockPaletteColors:colors,rockTexture:cliffHD,rockPalette,sphereWallImages});
-  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,worldWidth:totalWidth,worldHeight:totalHeight};
+  // Native ground relief: the same grassy surface material as the terrain,
+  // now follows a continuous elevation mesh from the two real bank levels.
+  // No object draw path, duplicated collision or billboard scale.
+  let terrainRampCount=0;
+  for(const ramp of sculptTerrainRampProjections(terrain))
+    if(drawSculptRamp(ctx,ramp,terrain,{
+      tileWidth:w,tileHeight:h,rise,texture,baseColor}))terrainRampCount++;
+  return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight};
 }
