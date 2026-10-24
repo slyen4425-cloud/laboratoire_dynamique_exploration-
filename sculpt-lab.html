@@ -309,6 +309,15 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 .brush-shape-control{white-space:nowrap;font-weight:650}
 .brush-shape-control select{min-height:35px;max-width:145px;padding:6px}
 @media(max-width:600px){.brush-shape-control{flex:1 1 110px}.brush-shape-control select{min-width:0;max-width:100%}}
+/* R3: slopes work on the actual map even with precision checked on mobile. */
+#ramp-guide[hidden]{display:none!important}
+#ramp-guide{display:flex;align-items:center;gap:7px;flex:1 1 100%;
+ padding:5px 7px;border:1px solid #4f877d;border-radius:8px;
+ background:#1b3c39;font-size:.78rem;line-height:1.3}
+#ramp-step{flex:1;min-width:0}
+#ramp-cancel{flex:0 0 auto;min-height:36px;padding:5px 9px}
+body.terrain-ramp-authoring .precision-toggle{display:none!important}
+body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
 </style>
 </head>
 <body>
@@ -354,6 +363,10 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
+<div id="ramp-guide" role="status" aria-live="polite" hidden>
+ <span id="ramp-step">1. Touche le pied de la pente, puis le sommet.</span>
+ <button id="ramp-cancel" type="button" disabled>Changer le pied</button>
+</div>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
@@ -606,6 +619,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3"></script>
 </body>
 </html>
