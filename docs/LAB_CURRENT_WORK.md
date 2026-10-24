@@ -1,3 +1,15 @@
+# EN COURS — V79 R2 (24/10/2026) — Intérieurs : porte visible, sols natifs et modèles réutilisables
+
+- **Retour créateur** : ajouter porte intérieure; choisir entre personnalisation libre et modèle de pièce réutilisable; raccorder les cinq textures de sols déjà présentes; replacer retour extérieur et actions dans le panneau flottant plein écran.
+- **Audit** : l'entrée et la sortie existent déjà via WorldArea/Portal V79 R1. Le Builder possède les cinq matériaux `floor.*` (Material Registry + manifest WebP). V79 R1 n'a qu'une enveloppe de murs en lecture seule, pas un éditeur de cloisons ou d'étages.
+- **START immuable** : `checkpoint/exploration-start-interior-door-floor-templates-v79-r2-2026-10-24`, SHA `38016430e85b43701b26aeaa39c20252a0e702ec`. Branche unique `work/exploration-interior-door-floor-templates-v79-r2-2026-10-24`. R1 reste NON GREEN Pixel ; ne pas déclarer R2 GREEN sans essai créateur.
+- **Périmètre homogène R2** : compléter la prévisualisation de l'intérieur actuel par un seuil visuel relié à l'exitPortal canonique, le choix des sols intérieurs natifs, le pinceau de ces sols, et des modèles exportables/importables de contenu de pièce sans copier leurs Portals et Spawns. Les actions de retour/modèles restent dans la palette flottante en plein écran.
+- **Gels** : V77 pentes, V78 escaliers, Collision World, mouvement, WorldDocument runtime, Builder historique, Combat, autres dépôts, ancienne scène JSON sans intérieurs. Les champs UI ne deviennent pas une seconde source canonique.
+- **Hors périmètre R2** : construction de cloisons porteuses/portes intérieures, étages reliés physiquement, polygones de pièces, raccord permanent WorldDocument. Ils nécessitent un **lot de géométrie intérieure dédié V79 R3** utilisant un propriétaire unique du modèle et les Portals/Collision World existants, après vérification produit R2.
+- **Tests prévus** : modèles copiables sans références croisées, rejet des doublons/orphelins, cinq matériaux du registre, porte visuelle positionnée sur le portail, export/import JSON, commandes de palette plein écran, sentinelles V79/V77/V78 et Chromium ; confirmation Pixel indispensable.
+
+---
+
 # EN COURS — V79 R1 (24/10/2026) — Premier intérieur avec le NOUVEAU moteur 2,5D
 
 - **Commande créateur** : après validation GREEN V77 R3 / V78 R2, reprendre les intérieurs de bâtiments avec le nouveau moteur inclinable (pas l'ancien rendu 2D). Validation pour démarrer : « Ok va zy ».
