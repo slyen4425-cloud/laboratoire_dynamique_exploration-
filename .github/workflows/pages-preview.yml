@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v77-natural-ramps-3-materials-2026-10-24
+# preview-revision: v77-r2-native-ground-sculpted-slopes-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 72868224d6794f9c20d1dea227d54eda7fd504d9
+          ref: eb0c18d67885b9ea5c865905a609babf53b5240a
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
