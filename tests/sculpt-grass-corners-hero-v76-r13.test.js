@@ -63,6 +63,7 @@ test('R13 stronger hero perspective is monotone, sprite-only and bounded',()=>{
   assert.match(source,/visualScale:sculptAltitudeVisualState\(navVisualLevel\?\?navHeight\(\)\)\.heroScale/);
   // Navigation and Collision World remain the already accepted R12 versions.
   const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
-  assert.match(renderer,/if\(!roundedHill\)/);
-  assert.match(renderer,/drawSculptRoundedHillGrassLip\(ctx,roundedHillRegions,tile,pattern,baseColor\)/);
+  const live=renderer.slice(renderer.indexOf('export function drawSculptTerrain'));
+  assert.doesNotMatch(live,/roundedHill|sculptHillTopProfile|sculptClipRoundedHill/);
+  assert.doesNotMatch(live,/drawSculptRoundedHillGrassLip/);
 });
