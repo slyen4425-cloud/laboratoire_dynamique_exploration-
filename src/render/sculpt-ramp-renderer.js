@@ -1,7 +1,7 @@
 // Procedural landscape ramp, visual-only. The canonical WorldObject
 // incline shared with stairs is the sole elevation and collision source.
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
-import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js';
+import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptCameraProject} from './sculpt-camera-projection.js';
 
 const PALETTE={
