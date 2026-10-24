@@ -1,3 +1,13 @@
+# REPRISE OFFICIELLE — GREEN V77 R3 pentes terrain / tactile (24/10/2026)
+
+- **VALIDÉ par le créateur** : « Parfait, je valide se système. 👍 ». Les pentes natives en mode Terre, placement à deux touches ou glissé, largeur et aperçu sont GREEN.
+- **SHA validé publié** : `199461083cd64f69f8a981151093e654f220bca2` ; branche GREEN immuable : `checkpoint/exploration-slope-touch-ux-v77-r3-green-pixel-2026-10-24`.
+- **Gates** : CI work run `40122253882` SUCCESS ; Pages run `40122378315` SUCCESS ; PR #237 publiée. Aucun changement produit demandé sur ce lot.
+- **Prochain chantier selon ordre de `LAB_ROADMAP.md`** : **fluidité éditeur + jeu sur cartes chargées 15–20 couches**, puis **fondu de transitions des routes**, puis **caméra de jeu configurable** ; backlog créatif LD01 puis LD02 à planifier séparément. Ne pas commencer sans nouveau checkpoint START.
+- **Note historique** : toutes les rubriques ci-dessous « EN COURS » sont des états datés antérieurs à la présente validation GREEN. Ne pas les reprendre comme des tâches actives.
+
+---
+
 # Lot V77 R3 — 24/10/2026 — Pinceau pentes utilisable au doigt, aperçu et validation (EN COURS)
 
 - **Retour créateur** : V77 R2 satisfait techniquement (« Ça fonctionne, c'est plutôt bien »), mais outil « pas pratique » ; améliorer l'usage téléphone, sans modifier la physique des pentes et des escaliers.
