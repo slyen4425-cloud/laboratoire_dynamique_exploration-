@@ -13,6 +13,10 @@ import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rai
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
+import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r1';
+import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,createSculptInteriorArea,
+ updateSculptInterior,serializeSculptInteriors,importSculptInteriors,
+ sculptInteriorTransition} from './world/sculpt-interior-area-link.js?rev=interior-v79-r1';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -46,6 +50,9 @@ const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
+// V79: one active area at a time. Detached exterior snapshot is a temporary
+// editor view of the SAME scene while an interior is open, not a second terrain.
+let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=null;
 let rampStart=null,rampEnd=null,rampGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
@@ -262,6 +269,7 @@ function dimensions(){
 }
 function cameraView(){return navigationTesting
   ?sculptCameraGameView(Number($('navigation-camera-angle').value))
+  :activeInteriorId?sculptCameraGameView(Number($('interior-camera-angle').value))
   :sculptCameraView($('camera-view').value);}
 function cameraBounds(){
   return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
@@ -318,6 +326,15 @@ function draw(){
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
+  if(activeInteriorId){
+    ctx.save();
+    // In Tester the ground is projected inside the cached layer; use its
+    // exact affine camera for walls as well, never an independent perspective.
+    if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+    drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
+      tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
+    ctx.restore();
+  }
   if(navigationTesting){
     // V57: the collision-owned deck identifies which bridge actually carries
     // the hero. One bridge sprite is split into backdrop and near-rail pass.
@@ -1103,7 +1120,9 @@ function drawNavigationActor(){
 function navigationSpawn(){
   // Start in an area known to be dry in the default demo; valid for a
   // user-imported terrain too, because the fallback searches dry cells.
-  const preferred=[[3,3],[2,2],[terrain.width-3,2],[2,terrain.height-3]];
+  const preferred=activeInteriorId
+    ?[[Math.floor(terrain.width/2),terrain.height-3],[3,3],[2,2]]
+    :[[3,3],[2,2],[terrain.width-3,2],[2,terrain.height-3]];
   for(let y=1;y<terrain.height-1;y++)for(let x=1;x<terrain.width-1;x++)preferred.push([x,y]);
   for(const [x,y] of preferred){
     const candidate={x:(x+.5)*SCULPT_TILE.width,y:(y+.5)*SCULPT_TILE.height,
@@ -1120,6 +1139,7 @@ function navigationSpawn(){
 }
 function updateNavigationInfo(forced=false){
   if(!navigationTesting||!navActor)return;
+  updateSculptDoorAction();
   const info=sculptNavigationSample(terrain,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const deck=activeSculptBridge();
@@ -1450,8 +1470,10 @@ function refreshObjectVariants(preferred=null){
 }
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
+  const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
+  $('object-open-interior').hidden=!selected||selectedDef?.kind!=='building'||!!activeInteriorId;
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
-  const def=objectDefinitionCatalogV1.get(selected.objectDefinitionId);
+  const def=selectedDef;
   $('object-category').value=def.kind;refreshObjectOptions();
   $('object-definition').value=def.id;
   refreshObjectVariants(selected.overrides.visualVariantId);
@@ -2016,10 +2038,129 @@ function changeTarget(level){
 $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
+
+// V79 isolated, reversible area authoring. No reload, no alternative camera or
+// gameplay collision engine; portal links use WorldArea/Portal v1 throughout.
+function captureSculptArea(){
+  return {terrain,objects:placedObjects,actors:placedActors,surface};
+}
+function mountSculptArea(snapshot){
+  terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
+  surface=snapshot.surface;
+  history=[];redoHistory=[];objectHistory=[];objectRedo=[];
+  actorHistory=[];actorRedo=[];surfaceHistory=[];surfaceRedo=[];
+  objectSelectedId=null;actorSelectedId=null;
+  rampStart=null;rampEnd=null;rampGesture=null;hoverCell=null;precisionCell=null;
+  navTerrainCache=null;navBridgePlacements=null;navStairProjection=null;
+  exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
+  if(ribbonTextures.road)ribbonTextures.road.visible=false;
+  updateHistoryButtons();updateObjectCount();updateActorCount();
+  updateSurfaceCount();loadSurfacePaintAssets();syncObjectSelectedControls();
+}
+function updateSculptAreaControls(){
+  const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  $('interior-area-bar').hidden=!entry;
+  document.body.classList.toggle('sculpt-interior-area',!!entry);
+  $('interior-area-label').textContent=entry?
+    '🏠 Intérieur · '+entry.buildingId:'🏞 Extérieur';
+  $('new-map-toggle').disabled=!!entry;
+  $('object-open-interior').hidden=!!entry||!objectSelectedId||
+    objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
+      ?.objectDefinitionId)?.kind!=='building';
+  updateSculptDoorAction();
+}
+function changeSculptArea(nextAreaId,{spawn=null}={}){
+  if(activeInteriorId===nextAreaId||(!activeInteriorId&&
+     nextAreaId===SCULPT_EXTERIOR_AREA_ID))return;
+  const wasTesting=navigationTesting;
+  if(wasTesting)setNavigationTesting(false);
+  if(objectEditing)setObjectEditing(false);
+  if(surfaceEditing)setSurfaceEditing(false);
+  if(activeInteriorId){
+    const snapshot=captureSculptArea();
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===activeInteriorId?
+      updateSculptInterior(e,snapshot):e));
+  }else{
+    outsideAreaSnapshot=captureSculptArea();
+  }
+  if(nextAreaId===SCULPT_EXTERIOR_AREA_ID){
+    if(!outsideAreaSnapshot)throw Error('Extérieur non chargé');
+    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot);
+    outsideAreaSnapshot=null;
+  }else{
+    const entry=sculptInteriors.find(e=>e.area.id===nextAreaId);
+    if(!entry)throw Error('Intérieur introuvable');
+    activeInteriorId=entry.area.id;
+    mountSculptArea(entry);
+  }
+  updateSculptAreaControls();fit();
+  if(wasTesting){
+    $('navigation-camera-angle').value=activeInteriorId?
+      $('interior-camera-angle').value:$('navigation-camera-angle').value;
+    $('navigation-camera-angle').dispatchEvent(new Event('input'));
+    setNavigationTesting(true);
+    if(spawn&&navActor){navActor.x=spawn.x;navActor.y=spawn.y;
+      navVisualLevel=navHeight();centerNavigationCamera();updateNavigationInfo(true);}
+  }
+  status(activeInteriorId?'Intérieur 2,5D ouvert : sculpte le sol, ajoute des pentes et escaliers.':
+    'Extérieur restauré · maison et relief conservés.');
+}
+function openSelectedSculptInterior(){
+  if(activeInteriorId)return;
+  const selected=placedObjects.find(o=>o.id===objectSelectedId);
+  const resolved=resolveWorldObjectPlacements(selected?[selected]:[],
+    objectDefinitionCatalogV1)[0];
+  if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
+  let entry=sculptInteriors.find(e=>e.buildingId===resolved.id);
+  if(!entry){
+    if(sculptInteriors.length>=SCULPT_INTERIOR_LIMIT){
+      status('Limite de 24 intérieurs pour cette scène pilote.');return;
+    }
+    entry=createSculptInteriorArea(resolved,placedObjects);
+    if(!entry){status('Bâtiment sans porte canonique : intérieur non créé.');return;}
+    sculptInteriors=Object.freeze([...sculptInteriors,entry]);
+  }
+  changeSculptArea(entry.area.id);
+}
+function updateSculptDoorAction(){
+  const button=$('navigation-area-door');
+  if(!navigationTesting||!navActor||!sculptInteriors.length){
+    button.hidden=true;return;
+  }
+  const entries=sculptInteriors;
+  const external=outsideAreaSnapshot?.objects??placedObjects;
+  const current=activeInteriorId??SCULPT_EXTERIOR_AREA_ID;
+  const target=sculptInteriorTransition(external,entries,current,navActor);
+  button.hidden=!target;
+  button.textContent=activeInteriorId?'🚪 Sortir de la maison':'🚪 Entrer dans la maison';
+}
+$('object-open-interior').addEventListener('click',openSelectedSculptInterior);
+$('interior-area-return').addEventListener('click',()=>
+  changeSculptArea(SCULPT_EXTERIOR_AREA_ID));
+$('interior-camera-angle').addEventListener('input',()=>{
+  $('interior-camera-value').textContent=$('interior-camera-angle').value+'°';
+  if(activeInteriorId){navTerrainCache=null;fit();}
+});
+$('navigation-area-door').addEventListener('click',()=>{
+  if(!navActor||!navigationTesting)return;
+  const outside=outsideAreaSnapshot?.objects??placedObjects;
+  const current=activeInteriorId??SCULPT_EXTERIOR_AREA_ID;
+  const transition=sculptInteriorTransition(outside,sculptInteriors,current,navActor);
+  if(!transition){updateSculptDoorAction();return;}
+  changeSculptArea(transition.currentAreaId,{spawn:transition});
+});
 $('scene-export').addEventListener('click',()=>{
-  $('json').value=serializeSculptPreviewScene(terrain,placedObjects,surface,placedActors);
+  const active=captureSculptArea();
+  const outdoors=outsideAreaSnapshot??active;
+  const entries=activeInteriorId
+    ?sculptInteriors.map(e=>e.area.id===activeInteriorId?
+      updateSculptInterior(e,active):e):sculptInteriors;
+  const scene=JSON.parse(serializeSculptPreviewScene(outdoors.terrain,
+    outdoors.objects,outdoors.surface,outdoors.actors));
+  if(entries.length)scene.interiors=serializeSculptInteriors(entries);
+  $('json').value=JSON.stringify(scene);
   $('json').hidden=false;
-  status('Scène complète exportée : relief et '+placedObjects.length+' objets, JSON à copier.');
+  status('Scène 2,5D exportée : extérieur + '+entries.length+' intérieur(s) + reliefs.');
 });
 $('export').addEventListener('click',()=>{
  $('json').value=serializeSculptTerrain(terrain);$('json').hidden=false;
@@ -2027,6 +2168,10 @@ $('export').addEventListener('click',()=>{
 });
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value);
+  const raw=JSON.parse($('json').value);
+  const nextInteriors=importSculptInteriors(raw.interiors??[],imported.objects);
+  if(navigationTesting)setNavigationTesting(false);
+  sculptInteriors=nextInteriors;outsideAreaSnapshot=null;activeInteriorId=null;
   const old=terrain;terrain=imported.terrain;commitUndo(old);
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
@@ -2035,7 +2180,10 @@ $('import').addEventListener('click',()=>{
   updateActorCount();syncActorSelectedControls();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   loadSurfacePaintAssets();updateSurfaceCount();
-  fit();status(imported.isScene?'Scène complète importée : objets et relief':'Relief ancien importé (sans objets)');}
+  updateSculptAreaControls();
+  fit();status(imported.isScene?
+    'Scène importée : '+nextInteriors.length+' intérieur(s), extérieur et relief.':
+    'Relief ancien importé (sans objets)');}
  catch(e){status(e.message);}
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
@@ -2051,6 +2199,11 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   surfaceEditing,precisionDragging,faceCount:sculptFaces(terrain).length,
   sphereCount:terrain.spheres?.length??0,spheres:(terrain.spheres??[]).map(f=>({...f})),
   terrainRampCount:terrain.ramps?.length??0,ramps:(terrain.ramps??[]).map(f=>({...f})),
+  activeAreaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,
+  interiorCount:sculptInteriors.length,
+  currentInteriorBuildingId:sculptInteriors.find(e=>e.area.id===activeInteriorId)?.buildingId??null,
+  interiorAreaBarVisible:!$('interior-area-bar').hidden,
+  interiorAngle:Number($('interior-camera-angle').value),
   rampStart:!!rampStart,rampGestureActive:!!rampGesture,
   rampGuideVisible:!$('ramp-guide').hidden,
   rampGuideText:$('ramp-step').textContent,
