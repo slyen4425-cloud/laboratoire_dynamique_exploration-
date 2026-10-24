@@ -94,8 +94,11 @@ test('V76 R12 already-held flat spherical summit is traversable, no free climbin
     assert.equal(sculptNavigationBlockDetail(options,outside,x,y+r*.8)?.kind,'sphere-wall',
       'ground actor still cannot climb the conical or cylindrical side');
     const nearEdge={x:x+safeR-.01,y,radius:5,locomotion:{modes:['ground']}};
-    assert.equal(sculptNavigationBlockDetail(options,nearEdge,x+safeR+10,y)?.kind,'sphere-wall',
-      'an existing top actor cannot step into the unvalidated V77 slope');
+    assert.equal(sculptNavigationBlockDetail(options,nearEdge,x+safeR+10,y),null,
+      'the pre-existing V76 emergency outward retreat is still permitted');
+    const slope={x:x+safeR+10,y,radius:5,locomotion:{modes:['ground']}};
+    assert.equal(sculptNavigationBlockDetail(options,slope,x+safeR-3,y)?.kind,'sphere-wall',
+      'a lower actor on the slope cannot climb back into the plateau');
     assert.ok(sculptSphereDisplacementAt(terrain,x,y)>0);
   }
   const dome=appendSculptSphere(plain(),{kind:'hill',x,y,radius:r,height:4});
