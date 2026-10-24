@@ -16,7 +16,7 @@ export function createBlankSculptPreviewScene({width=36,height=24}={}){
   const terrain=createSculptTerrain({width,height});
   return Object.freeze({terrain,objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:true});
 }
-const validKinds=new Set(['building','tree','rock','bridge','decor']);
+const validKinds=new Set(['building','tree','rock','bridge','stairs','decor']);
 export function listSculptPlaceableDefinitions(){
   return Object.freeze(objectDefinitionCatalogV1.list().filter(d=>
     validKinds.has(d.kind)&&!d.id.startsWith('objectdef.relief.')));
