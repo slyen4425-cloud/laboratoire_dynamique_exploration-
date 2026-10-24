@@ -133,8 +133,9 @@ export function sculptEastSeamBounds(tile,col,row,upper,lower){
   const {width:w,height:h,rise}=tile;
   const thickness=Math.min(3,w*.11);
   return Object.freeze({x:(col+1)*w-thickness,
-    y:row*h-upper*rise+3,
-    width:thickness,height:(upper-lower)*rise+h-3});
+    // Keep the entire grass top visible; an east cliff starts BELOW it.
+    y:row*h-upper*rise+h,
+    width:thickness,height:(upper-lower)*rise});
 }
 function rockFace(ctx,{x,y,width,height,colors,seed=0,sun=1,smoothness=.72,
   cliffAtlas=null,cliffHD=null,rockPalette='warm',cliffMoss=false}={}){
