@@ -1,5 +1,6 @@
-// One authored WorldObject stairs corridor. Collision World and presentation
-// read this SAME projection; art alpha never grants elevation or passage.
+// One authored incline corridor shared by stairs and ground ramps.
+// Collision World and presentation read the SAME WorldObject + real terrain;
+// art alpha and painted shapes never grant elevation or passage.
 import {sculptHeightAt,sculptWaterAt,sculptSphereAt} from '../world/sculpt-height-model.js';
 
 const readLevel=(terrain,x,y,w,h)=>{
@@ -10,7 +11,8 @@ const readLevel=(terrain,x,y,w,h)=>{
   return sculptHeightAt(terrain,col,row);
 };
 export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={}){
-  if(!terrain||stair?.kind!=='stairs'||!stair.transform||!stair.baseSize)return null;
+  if(!terrain||!['stairs','ramp'].includes(stair?.kind)||
+    !stair.transform||!stair.baseSize)return null;
   const t=stair.transform,w=Number(cellWidth)||28,h=Number(cellHeight)||21;
   const length=stair.baseSize.height*t.scaleY;
   const width=stair.baseSize.width*t.scaleX*.68;
@@ -25,10 +27,10 @@ export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={
   const bottomLevel=readLevel(terrain,foot.x-ux*endProbe,foot.y-uy*endProbe,w,h);
   const topLevel=readLevel(terrain,head.x+ux*endProbe,head.y+uy*endProbe,w,h);
   if(bottomLevel===null||topLevel===null||topLevel<=bottomLevel)return null;
-  // A short staircase cannot bridge a huge vertical cliff. Stretching it
+  // A short authored incline cannot bridge a huge vertical cliff. Stretching it
   // increases the maximum ascent, but the TWO REAL terrain heights decide it.
   if(topLevel-bottomLevel>Math.max(1,Math.floor(length/Math.max(w,h))))return null;
-  return Object.freeze({id:stair.id,foot:Object.freeze(foot),head:Object.freeze(head),
+  return Object.freeze({id:stair.id,kind:stair.kind,foot:Object.freeze(foot),head:Object.freeze(head),
     ux,uy,length,width,bottomLevel,topLevel});
 }
 export function sculptStairLocal(corridor,x,y){
