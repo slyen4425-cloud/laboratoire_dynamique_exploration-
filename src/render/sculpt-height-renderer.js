@@ -2,9 +2,10 @@
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
-import {drawSculptCliffAtlas} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
+import {drawSculptCliffAtlas,cliffAtlasTheme} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
+import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js';
-import {sculptRoundedHillRegions,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
+import {sculptRoundedHillRegions,sculptHillRegionOutline,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
 import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
@@ -588,6 +589,35 @@ function drawSculptGrassShoulder(ctx,{x,y,band,width,pattern,baseColor,vertical=
   else{ctx.moveTo(x+pad,y);ctx.lineTo(x+width-pad,y);}
   ctx.stroke();ctx.restore();
 }
+// V76 R13: one WORLD-anchored mineral pattern for ALL grass cutouts on a
+// sculpted plateau. Never slice or reseed the HD atlas for each 28x21 cell.
+// The original HD material adapter owns the source image and its theme.
+export function sculptRoundedHillRockPattern(ctx,cliffHD,rockPalette='warm'){
+  const layers=sculptCliffHDLayers(cliffHD);
+  const image=layers?.[cliffAtlasTheme(rockPalette)];
+  return image&&typeof ctx?.createPattern==='function'
+    ?ctx.createPattern(image,'repeat'):null;
+}
+// The whole-hill contour is the sole visual geometry for every convex arc.
+// Reusing it once per region gives smooth GRASS pixels at each curved corner,
+// with no rectangular shadow/tint boxes cutting across the clipped texture.
+export function drawSculptRoundedHillGrassLip(ctx,regions,tile,pattern,baseColor){
+  const unique=new Set(regions.values());
+  for(const region of unique){
+    ctx.save();
+    sculptClipRoundedHill(ctx,region,tile);
+    sculptHillRegionOutline(ctx,region,tile);
+    ctx.lineJoin='round';
+    ctx.lineWidth=3.2;
+    ctx.strokeStyle='rgba(16,37,28,.26)';
+    ctx.stroke();
+    ctx.lineWidth=1.8;
+    ctx.strokeStyle=pattern??baseColor;
+    ctx.stroke();
+    ctx.restore();
+  }
+  return unique.size;
+}
 // V52: visible outside SOUTH edge, derived only from the last canonical row.
 // Rock facing never participates in geometry, collision, water or traversal.
 // Adjacent equal elevations/profiles are one wall to avoid tiled box seams.
@@ -706,6 +736,8 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   let waterCells=0,roadCells=0,faceRuns=0;
   const hasProfiles=Array.isArray(terrain.roundness);
   const roundedHillRegions=sculptRoundedHillRegions(terrain);
+  const cornerRockPattern=roundedHillRegions.size
+    ?sculptRoundedHillRockPattern(ctx,cliffHD,rockPalette):null;
   const drawPaint=sculptPaintByCell(ctx,terrain,tile,paintSurface,paintImages);
   let paintedCells=0;
   const deferredToes=[];
@@ -721,31 +753,53 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
         // R12: convex corner cuts must reveal REAL stone texture, not flat
         // grey/brown square fragments. The cliff atlas already owns this
         // mineral appearance; its footprint is clipped to THIS top tile.
-        ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
-        if(cliffHD||cliffAtlas){
-          ctx.save();
-          ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
-          drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,
-            rockPalette,colors,x,y,width:w,height:h,seed:idx,moss:cliffMoss});
-          ctx.restore();
+        if(roundedHill&&cornerRockPattern){
+          // One continuous atlas sampling origin for every region cell;
+          // the grass contour will uncover only its actual convex cutouts.
+          ctx.fillStyle=cornerRockPattern;ctx.fillRect(x,y,w+.6,h+.6);
+        }else{
+          // V54 single-cell corners and unloaded-HD fallback retain R12.
+          ctx.fillStyle=colors[1];ctx.fillRect(x,y,w+.6,h+.6);
+          if(cliffHD||cliffAtlas){
+            ctx.save();
+            ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+            drawSculptCliffAtlas(ctx,{image:cliffAtlas,hdImage:cliffHD,
+              rockPalette,colors,x,y,width:w,height:h,seed:idx,moss:cliffMoss});
+            ctx.restore();
+          }
         }
         ctx.save();
         if(roundedHill)sculptClipRoundedHill(ctx,roundedHill,tile);
         else {sculptHillTopPath(ctx,x,y,w,h,hill);ctx.clip();}
       }
       ctx.fillStyle=pattern??baseColor;ctx.fillRect(x,y,w+.6,h+.6);
-      ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
-        'rgba(0,0,0,.01)'],col,row,2);
-      ctx.fillRect(x,y,w,h);
-      if(level>0){
-        const variation=hash(col,row,91)%5;
-        ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
-        ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
+      if(!roundedHill){
+        // The old per-cell light flecks form visible square cuts in the
+        // curved grass rim: keep them only for unedited, square terrain.
+        ctx.fillStyle=color(['rgba(255,255,255,.035)','rgba(0,0,0,.025)',
+          'rgba(0,0,0,.01)'],col,row,2);
+        ctx.fillRect(x,y,w,h);
+        if(level>0){
+          const variation=hash(col,row,91)%5;
+          ctx.fillStyle=variation===0?'rgba(255,245,216,.15)':'rgba(39,49,38,.08)';
+          ctx.fillRect(x+((hash(col,row,7)%15)+1),y+4,Math.max(2,w*.24),1.5);
+        }
       }
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       paintedCells+=drawPaint(col,row,level,x,y);
-      // Height-aware ambient contact shadow on existing land material only.
-      drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
+      // The rounded plateau is one visual region. Tile-sized exposed-edge
+      // shadow boxes were chopping its grass corners into hard rectangles.
+      // Its continuous outline below owns the rim; only altitude tint is
+      // applied here, still from the same presentation-only altitude source.
+      if(roundedHill){
+        const tone=sculptAltitudeVisualState(level).tint;
+        if(tone!==0){
+          ctx.fillStyle=tone>0
+            ?'rgba(251,243,206,'+tone+')'
+            :'rgba(15,35,39,'+(-tone)+')';
+          ctx.fillRect(x,y,w+.6,h+.6);
+        }
+      }else drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
       if(roundedHill)ctx.restore();
       if(hill.radius>0){
         // Thin earthy rim is painted along the curved lip, above the same
@@ -881,6 +935,9 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
     ctx.restore();
     }
   }
+  // One quiet grass-to-rock contact edge per sculpted plateau, never one
+  // repeated rectangle per tile. This uses the existing cached V61 outline.
+  drawSculptRoundedHillGrassLip(ctx,roundedHillRegions,tile,pattern,baseColor);
   // V76: render independent analytic relief after the legacy stepped land.
   // Geometry and collision both read terrain.spheres; no fake rounded tiles.
   const sphereCount=drawSculptSphereMeshes(ctx,{terrain,tile,texture,baseColor,
