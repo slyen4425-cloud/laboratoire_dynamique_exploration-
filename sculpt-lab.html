@@ -305,6 +305,20 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 #object-controls[hidden],#actor-controls[hidden]{display:none!important}
 #actor-controls #actor-source-status{color:#a6ebd6}
 #actor-controls button{min-height:34px}
+/* V79: small area breadcrumb, not a replacement of the existing editor. */
+.interior-area-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+ padding:6px 10px;border:1px solid #ab9070;border-radius:10px;
+ background:#352f29;color:#f4e5d3;font-size:.85rem}
+.interior-area-bar[hidden]{display:none!important}
+.interior-area-bar>label{display:flex;align-items:center;gap:8px;flex:1 1 180px}
+.interior-area-bar input{flex:1;min-width:70px;max-width:190px}
+.interior-area-bar button,#object-open-interior{min-height:40px;font-weight:750}
+#object-open-interior[hidden],#navigation-area-door[hidden]{display:none!important}
+body.sculpt-immersive .interior-area-bar{position:absolute;
+ top:calc(env(safe-area-inset-top,0px) + 6px);left:4px;right:4px;z-index:12;
+ padding:3px 6px;font-size:.69rem}
+body.sculpt-immersive .interior-area-bar button{min-height:30px}
+body.sculpt-immersive .interior-area-bar>label{flex:1 1 130px}
 /* Same floating quickbar, no second tool panel. */
 .brush-shape-control{white-space:nowrap;font-weight:650}
 .brush-shape-control select{min-height:35px;max-width:145px;padding:6px}
@@ -367,6 +381,13 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
  <span id="ramp-step">1. Touche le pied de la pente, puis le sommet.</span>
  <button id="ramp-cancel" type="button" disabled>Changer le pied</button>
 </div>
+</section>
+<section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
+ <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
+ <label>Inclinaison caméra <output id="interior-camera-value">55°</output>
+  <input type="range" id="interior-camera-angle" min="35" max="90" value="55" step="5"
+    aria-label="Inclinaison de la caméra intérieure en degrés"></label>
+ <button id="interior-area-return" type="button">← Retour extérieur</button>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
@@ -450,6 +471,7 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
   <button type="button" id="object-turn-right">↷ 45°</button>
  </div>
  <output id="object-selected">Aucun objet sélectionné</output>
+ <button id="object-open-interior" type="button" hidden>🏠 Modifier l'intérieur 2,5D</button>
  <div class="object-actions">
    <button type="button" id="object-undo" disabled>↶ Objet</button>
    <button type="button" id="object-redo" disabled>↷ Objet</button>
@@ -482,6 +504,7 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
  </section>
 </section>
 <section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
+ <button id="navigation-area-door" type="button" hidden>🚪 Entrer / sortir</button>
   <strong>🚶 Test de navigation</strong>
   <label>Locomotion simulée
     <select id="navigation-locomotion" aria-label="Mode de locomotion pour le test">
@@ -619,6 +642,6 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r1"></script>
 </body>
 </html>
