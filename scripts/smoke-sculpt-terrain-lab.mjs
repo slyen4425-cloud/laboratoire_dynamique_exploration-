@@ -2602,12 +2602,12 @@ try{
   if(r3Drag.terrainRampCount!==2||r3Drag.rampStart)
     throw Error('R3 single drag failed to add a terrain ramp: '+JSON.stringify(r3Drag));
   await r3Click(rampR3Setup.foot);
-  const pending=await run('window.__sculptLabProbe()');
+  const rampR3Pending=await run('window.__sculptLabProbe()');
   await run("document.querySelector('#ramp-cancel').click()");
-  const cancelled=await run('window.__sculptLabProbe()');
-  if(!pending.rampStart||cancelled.rampStart||cancelled.terrainRampCount!==2)
+  const rampR3Cancelled=await run('window.__sculptLabProbe()');
+  if(!rampR3Pending.rampStart||rampR3Cancelled.rampStart||rampR3Cancelled.terrainRampCount!==2)
     throw Error('R3 Change foot must clear only pending point: '+
-      JSON.stringify({pending,cancelled}));
+      JSON.stringify({pending:rampR3Pending,cancelled:rampR3Cancelled}));
   console.log('R3 GREEN real Chromium slope two-tap, drag, precision bypass, live preview, Undo/Redo, cancel');
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
