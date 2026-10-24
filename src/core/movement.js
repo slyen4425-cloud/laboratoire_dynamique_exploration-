@@ -1,8 +1,8 @@
 import {
   isBlocked,
   resolveBridgeGuidedPosition,
-  sculptNavigationNextBridgeId
-} from './collision.js?rev=collision-boundary-worldobject-obstacles-v1-r2-bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76';
+  sculptNavigationNextLayers
+} from './collision.js?rev=collision-boundary-worldobject-obstacles-v1-r2-bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
 import {
   defaultTraversalRuleRegistry,
   resolveSurfaceTraversal
@@ -43,8 +43,11 @@ export function stepMovement(
   // accepted coordinates commit the same resolved layer atomically.
   const commitPosition = (x,y) => {
     if(collisionContext?.sculptNavigation)
-      entity.sculptBridgeId=sculptNavigationNextBridgeId(
-        collisionContext.sculptNavigation,entity,x,y);
+      {
+        const next=sculptNavigationNextLayers(collisionContext.sculptNavigation,entity,x,y);
+        entity.sculptBridgeId=next.bridgeId;
+        entity.sculptStairId=next.stairId;
+      }
     entity.x=x;
     entity.y=y;
   };
