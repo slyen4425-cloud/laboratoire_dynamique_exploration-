@@ -2134,7 +2134,7 @@ function openSelectedSculptInterior(){
   let entry=sculptInteriors.find(e=>e.buildingId===resolved.id);
   if(!entry){
     if(sculptInteriors.length>=SCULPT_INTERIOR_LIMIT){
-      status('Limite de 24 intérieurs pour cette scène pilote.');return;
+      status('Limite de '+SCULPT_INTERIOR_LIMIT+' intérieurs pour cette scène pilote.');return;
     }
     entry=createSculptInteriorArea(resolved,placedObjects);
     if(!entry){status('Bâtiment sans porte canonique : intérieur non créé.');return;}
