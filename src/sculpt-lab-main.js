@@ -29,7 +29,7 @@ import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3';
-import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72';
+import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
 import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
