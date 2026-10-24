@@ -1,6 +1,6 @@
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
-import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt} from './sculpt-height-model.js';
+import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
@@ -18,10 +18,14 @@ export function createBlankSculptPreviewScene({width=36,height=24}={}){
 }
 const validKinds=new Set(['building','tree','rock','bridge','stairs','ramp','decor']);
 export function listSculptPlaceableDefinitions(){
+  // New slopes belong to the terrain sculpture tools, NOT Object placement.
   return Object.freeze(objectDefinitionCatalogV1.list().filter(d=>
-    validKinds.has(d.kind)&&!d.id.startsWith('objectdef.relief.')));
+    validKinds.has(d.kind)&&d.kind!=='ramp'&&!d.id.startsWith('objectdef.relief.')));
 }
-const allowable=new Set(listSculptPlaceableDefinitions().map(d=>d.id));
+// Read older V77 scenes to migrate ramps without data loss, but never offer
+// their historical pseudo-object definitions for new placements.
+const allowable=new Set([...listSculptPlaceableDefinitions().map(d=>d.id),
+  ...objectDefinitionCatalogV1.list().filter(d=>d.kind==='ramp').map(d=>d.id)]);
 // One Sculpt authoring policy for BOTH placing and dragging native objects.
 // The heightfield owns the wetness, the canonical ObjectDefinition owns kind.
 // No pixel, image alpha or collision shortcut can declare water passable.
@@ -196,13 +200,28 @@ export function importSculptPreviewScene(raw){
       source.objects.length>SCULPT_OBJECT_LIMIT||
       source.objects.some(o=>!allowable.has(o?.objectDefinitionId)))
     throw new Error('Scène sculptable invalide : format ou objets inconnus');
-  const terrain=importSculptTerrain(source.terrain);
+  let terrain=importSculptTerrain(source.terrain);
   const objects=normalizeSculptPreviewObjects(source.objects);
   if(objects.length!==source.objects.length)
     throw new Error('Scène sculptable invalide : placements incohérents');
   if(objects.some(o=>o.transform.x<0||o.transform.x>=terrain.width*28||
      o.transform.y<0||o.transform.y>=terrain.height*21))
     throw new Error('Scène sculptable invalide : objet hors terrain');
+  // Legacy V77 slopes saved as WorldObjects are migrated to native terrain.
+  // If an obsolete invalid placement cannot be migrated, retain it intact
+  // instead of silently deleting user data.
+  const migrated=[];
+  for(const object of objects){
+    const definition=objectDefinitionCatalogV1.get(object.objectDefinitionId);
+    if(definition?.kind!=='ramp'){migrated.push(object);continue;}
+    const t=object.transform,a=t.rotationDeg*Math.PI/180;
+    const length=definition.baseSize.height*t.scaleY;
+    const next=appendSculptTerrainRamp(terrain,{
+      x:t.x,y:t.y,endX:t.x+Math.sin(a)*length,
+      endY:t.y-Math.cos(a)*length,width:definition.baseSize.width*t.scaleX*.68});
+    if(next===terrain){migrated.push(object);continue;}
+    terrain=next;
+  }
   const actors=normalizeSculptPreviewActors(source.actors??[]);
   if(actors.some(a=>a.x<0||a.x>=terrain.width*28||a.y<0||a.y>=terrain.height*21))
     throw Error('Scène sculptable : acteur hors terrain');
@@ -211,5 +230,5 @@ export function importSculptPreviewScene(raw){
     if(feature.points.some(p=>p.x>=terrain.width*28||p.y>=terrain.height*21))
       throw Error('Peinture sculptable hors de la carte');
   }
-  return Object.freeze({terrain,objects,actors,surface,isScene:true});
+  return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,isScene:true});
 }
