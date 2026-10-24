@@ -1,3 +1,17 @@
+# Lot V76 R14 — 24/10/2026 — Hauteurs carrées franches, suppression des outils de lissage (EN COURS)
+
+- **Retour créateur Pixel 24/10 11:36–11:55 UTC** : sur V76 R13, triangles bruns aux quatre coins des collines carrées, constatés sur capture. Demande explicite : retirer le lissage des hauteurs et supprimer le marron des angles. Validation précédente : collisions des sphères OK.
+- **Source LIVE publiée avant lot** : `6dad922681faf964197da81ace42fe4e199e78ac` (R13 et 10 escaliers 2,5D, 30 vues). **Dernier GREEN utilisateur global connu** V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **START immuable** : `checkpoint/exploration-start-square-no-smoothing-v76-r14-2026-10-24`, créé au SHA source avant toute écriture. **Branche de lot** : `work/exploration-square-no-smoothing-v76-r14-2026-10-24`.
+- **Propriétaire** : Exploration Renderer (dessin des plateaux et flancs) + UI Sculpt (choix des outils). Même World Model canonique, sans nouvelle géométrie ni couche alternative.
+- **Diagnostic** : le profil historique `roundness` active une découpe courbe du gazon en laissant apparaître la roche marron sous le sommet ; un pinceau supplémentaire « Lisser les hauteurs » brouille l’édition. Corriger par retrait du chemin visuel de lissage des **hauteurs carrées** et des deux outils obsolètes « Lisser » / « Arrondir ». Conserver les anciens champs JSON pour l’ouverture des sauvegardes sans restauration de coins courbes.
+- **Périmètre** : sommet des cases surélevées intégralement herbeux et à angle droit ; parois de roche continues à flancs droits ; aucune découpe ni épaule herbeuse arrondie, aucun triangle brun au sommet. Supprimer les contrôles de lissage des hauteurs et le menu d'arrondi de colline, garder « Lisser l’eau » distinct.
+- **Gel impératif** : Collision World et déplacement sur les sphères R12 validés ; World Model, persistences JSON, reliefs sphériques R9–R12, héros échelle R13, textures HD V49, ponts, eau, escalier assets, combat, Builder, dépôt principal.
+- **Tests** : sentinelle navigateur/CANVAS pour colline carrée avec `roundness:150` héritée, vérification de l'absence d'outils UI et maintien des sphères et collision ; `npm test`, `npm run check`, suites Chromium Sculpt / Builder / Combat et CI sur SHA final ; publication seulement via PR d'infrastructure après CI verte.
+- **Statut** : NON GREEN tant que vérification des angles nets sur Pixel non confirmée. Aucun arrêt de production GenSrpG ni autre lot.
+
+---
+
 # Lot V76 R13 — 24/10/2026 — Herbe continue aux angles et perspective du héros (EN COURS)
 
 
