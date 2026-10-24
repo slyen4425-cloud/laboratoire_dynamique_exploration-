@@ -16,7 +16,7 @@ export function createBlankSculptPreviewScene({width=36,height=24}={}){
   const terrain=createSculptTerrain({width,height});
   return Object.freeze({terrain,objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:true});
 }
-const validKinds=new Set(['building','tree','rock','bridge','stairs','decor']);
+const validKinds=new Set(['building','tree','rock','bridge','stairs','ramp','decor']);
 export function listSculptPlaceableDefinitions(){
   return Object.freeze(objectDefinitionCatalogV1.list().filter(d=>
     validKinds.has(d.kind)&&!d.id.startsWith('objectdef.relief.')));
@@ -69,7 +69,7 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
     if(Number.isFinite(x))nextTransform.x=x;
     if(Number.isFinite(y))nextTransform.y=y;
     const definition=objectDefinitionCatalogV1.get(item.objectDefinitionId);
-    const maxScale=definition?.kind==='bridge'||definition?.kind==='stairs'?3:1.2;
+    const maxScale=['bridge','stairs','ramp'].includes(definition?.kind)?3:1.2;
     if(Number.isFinite(scale)&&scale>=.25&&scale<=maxScale){
       nextTransform.scaleX=scale;nextTransform.scaleY=scale;
     }
