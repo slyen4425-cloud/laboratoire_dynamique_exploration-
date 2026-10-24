@@ -35,7 +35,7 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
   // The stair picture must actually REACH the upper platform on screen.
   // Vertical world distance is the full footprint; rise adds only its
   // projected altitude, read from the same corridor as Collision World.
-  const stair=terrain&&object.kind==='stairs'
+  const stair=terrain&&(object.kind==='stairs'||object.kind==='ramp')
     ?sculptStairCorridor(terrain,object,{cellWidth:tileWidth,cellHeight:tileHeight}):null;
   const stairLift=stair?(stair.topLevel-stair.bottomLevel)*rise:0;
   return Object.freeze({
