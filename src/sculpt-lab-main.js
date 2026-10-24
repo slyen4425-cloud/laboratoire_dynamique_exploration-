@@ -2,15 +2,15 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt} from './world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
+import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt} from './world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
-import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11';
+import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76';
-import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2-sphere-v76-frustum-r9-depth-r11';
+import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-cliff-lock-v75-north-r2-sphere-v76-frustum-r9-depth-r11-altitude-r12';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -892,7 +892,10 @@ function navHeight(){
   const deck=activeBridge?sculptBridgeDeckHeight(terrain,resolvedSculptBridges()
     .filter(bridge=>bridge.id===activeBridge.id),
     navActor.x,navActor.y,{cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
-  return deck??info?.level??0;
+  // Read height only from World Model; an actor legitimately standing on a
+  // flat spherical summit uses that elevation for rendering and hero size.
+  return deck??((info?.level??0)+(navActor?
+    sculptSphereDisplacementAt(terrain,navActor.x,navActor.y):0));
 }
 function centerNavigationCamera(){
   if(!navigationTesting||!navActor)return;
