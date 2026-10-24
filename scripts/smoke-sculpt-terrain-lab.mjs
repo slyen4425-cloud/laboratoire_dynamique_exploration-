@@ -2531,7 +2531,7 @@ try{
   console.log('V76 R11 REAL Chromium 1/3/7 level upper grass luminance:',JSON.stringify(r11Light));
   // R3 real DOM/pointer gate: mobile default precision is ON, but a slope
   // must be authored by two taps or a single drag directly on the canvas.
-  const r3Setup=await run(`(async()=>{
+  const rampR3Setup=await run(`(async()=>{
     const model=await import('./src/world/sculpt-height-model.js?rev=terrain-sculpt-ramp-v77-r2');
     const width=18,height=22;
     const levels=Array.from({length:width*height},(_,i)=>Math.floor(i/width)<8?5:2);
@@ -2555,10 +2555,10 @@ try{
       atFoot:document.elementFromPoint(foot.x,foot.y)?.id,
       atHead:document.elementFromPoint(head.x,head.y)?.id};
   })()`);
-  if(!r3Setup.probe.precisionMode||!r3Setup.probe.rampGuideVisible||
-    r3Setup.probe.terrainRampCount!==0||
-    r3Setup.atFoot!=='sculpt-canvas'||r3Setup.atHead!=='sculpt-canvas')
-    throw Error('R3 precision/canvas ramp setup: '+JSON.stringify(r3Setup));
+  if(!rampR3Setup.probe.precisionMode||!rampR3Setup.probe.rampGuideVisible||
+    rampR3Setup.probe.terrainRampCount!==0||
+    rampR3Setup.atFoot!=='sculpt-canvas'||rampR3Setup.atHead!=='sculpt-canvas')
+    throw Error('R3 precision/canvas ramp setup: '+JSON.stringify(rampR3Setup));
   const r3Click=async p=>{
     await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:p.x,y:p.y});
     await send('Input.dispatchMouseEvent',{type:'mousePressed',x:p.x,y:p.y,
@@ -2566,19 +2566,19 @@ try{
     await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:p.x,y:p.y,
       button:'left',clickCount:1});
   };
-  await r3Click(r3Setup.foot);
+  await r3Click(rampR3Setup.foot);
   const r3AfterFoot=await run('window.__sculptLabProbe()');
   if(!r3AfterFoot.rampStart||r3AfterFoot.terrainRampCount!==0||
     !r3AfterFoot.rampGuideText.startsWith('2.'))
     throw Error('R3 first tap must set pending foot, never create ramp: '+
       JSON.stringify(r3AfterFoot));
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',
-    x:r3Setup.head.x,y:r3Setup.head.y});
+    x:rampR3Setup.head.x,y:rampR3Setup.head.y});
   await sleep(70);
   const r3Preview=await run('window.__sculptLabProbe()');
   if(r3Preview.rampPreviewValid!==true)
     throw Error('R3 slope live two-bank preview invalid: '+JSON.stringify(r3Preview));
-  await r3Click(r3Setup.head);
+  await r3Click(rampR3Setup.head);
   const r3AfterHead=await run('window.__sculptLabProbe()');
   if(r3AfterHead.terrainRampCount!==1||r3AfterHead.rampStart)
     throw Error('R3 second tap did not commit exactly one terrain ramp: '+
@@ -2591,17 +2591,17 @@ try{
     throw Error('R3 terrain Undo/Redo broken: '+
       JSON.stringify({r3Undo,r3Redo}));
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',
-    x:r3Setup.dragFoot.x,y:r3Setup.dragFoot.y});
+    x:rampR3Setup.dragFoot.x,y:rampR3Setup.dragFoot.y});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',
-    x:r3Setup.dragFoot.x,y:r3Setup.dragFoot.y,button:'left',clickCount:1});
+    x:rampR3Setup.dragFoot.x,y:rampR3Setup.dragFoot.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',
-    x:r3Setup.dragHead.x,y:r3Setup.dragHead.y,button:'left',buttons:1});
+    x:rampR3Setup.dragHead.x,y:rampR3Setup.dragHead.y,button:'left',buttons:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',
-    x:r3Setup.dragHead.x,y:r3Setup.dragHead.y,button:'left',clickCount:1});
+    x:rampR3Setup.dragHead.x,y:rampR3Setup.dragHead.y,button:'left',clickCount:1});
   const r3Drag=await run('window.__sculptLabProbe()');
   if(r3Drag.terrainRampCount!==2||r3Drag.rampStart)
     throw Error('R3 single drag failed to add a terrain ramp: '+JSON.stringify(r3Drag));
-  await r3Click(r3Setup.foot);
+  await r3Click(rampR3Setup.foot);
   const pending=await run('window.__sculptLabProbe()');
   await run("document.querySelector('#ramp-cancel').click()");
   const cancelled=await run('window.__sculptLabProbe()');
