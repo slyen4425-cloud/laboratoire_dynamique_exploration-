@@ -11,7 +11,7 @@ import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from './scul
 
 export const SCULPT_EXTERIOR_AREA_ID='sculpt-exterior';
 export const SCULPT_INTERIOR_SIZE=Object.freeze({width:18,height:14});
-export const SCULPT_INTERIOR_LIMIT=24;
+export const SCULPT_INTERIOR_LIMIT=64;
 export const SCULPT_INTERIOR_TEMPLATE_LIMIT=32;
 const frozen=items=>Object.freeze(items);
 
