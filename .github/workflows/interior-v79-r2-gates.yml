@@ -1,0 +1,24 @@
+name: Exploration interior V79 R2 gates
+on:
+  push:
+    branches:
+      - work/exploration-interior-door-floor-templates-v79-r2-2026-10-24
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original indoor materials and reusable room model
+        run: node --test tests/sculpt-interior-room-templates-v79-r2.test.js tests/sculpt-interior-area-v79.test.js tests/interior-floor-brush.test.js
+      - name: Full sentinels and syntax
+        run: npm test && npm run check
+      - name: Real SculptLab browser gate
+        run: node scripts/smoke-sculpt-terrain-lab.mjs
