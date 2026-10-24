@@ -66,7 +66,7 @@ test('V79 independent room sculpt retains heights across export/import, old exte
   assert.equal(imported.length,1);
   assert.equal(serializeSculptTerrain(imported[0].terrain),serializeSculptTerrain(terrain));
   assert.equal(imported[0].buildingId,objects[0].id);
-  assert.equal(entry.terrain.levels.every(n=>n===0),true);
+  assert.equal(serializeSculptTerrain(entry.terrain),before);
   assert.deepEqual(importSculptInteriors([],objects),[]);
 });
 
