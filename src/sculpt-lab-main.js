@@ -12,6 +12,7 @@ import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
+import {drawSculptRamp} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -1222,7 +1223,9 @@ window.__sculptNavProbe=()=>Object.freeze({
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
   stairId:navActor?.sculptStairId??null,stairHeight:navActor?navHeight():null,
-  inclineKind:navActor?.sculptStairId?resolvedSculptStairs().find(o=>o.id===navActor.sculptStairId)?.kind??null:null,
+  inclineKind:navActor?.sculptStairId
+    ?[...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)]
+      .find(o=>o.id===navActor.sculptStairId)?.kind??null:null,
   physicalBridgeLayer:navActor?.sculptBridgeId?'deck':'ground',
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
@@ -1258,7 +1261,8 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
     drawSculptRamp(ctx,object,terrain,{
       view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      selected:objectEditing&&objectSelectedId===object.id
+      texture:currentTexture,
+      baseColor:registry.require($('material').value,'surface')?.render?.baseColor??'#677955'
     });
     return;
   }
