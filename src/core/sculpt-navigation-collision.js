@@ -86,6 +86,10 @@ export function sculptSphereProjectionBlock(terrain,x,y,{
     if(hill.kind!=='hill'||hill.height<=0||ground.level!==hill.baseLevel)continue;
     const dx=x-hill.x,absX=Math.abs(dx);
     if(absX>hill.radius+bodyRadius)continue;
+    // R12: at the eastern/western hairline the sphere projects less than
+    // the actor's own radius; that is NOT an occluding northern face.
+    // Physical circular collision remains authoritative at that boundary.
+    if(absX>=hill.radius-Math.max(1,bodyRadius))continue;
     const insideX=hill.x+Math.sign(dx||1)*Math.min(absX,hill.radius-1e-5);
     const width=Math.sqrt(Math.max(0,hill.radius*hill.radius-
       (insideX-hill.x)*(insideX-hill.x)));
@@ -325,7 +329,9 @@ export function sculptNavigationRoute({
         const projectedSphere=projectionRise>0&&!candidate&&!previousCarrier&&
           sculptSphereProjectionBlock(terrain,x,y,
             {cellWidth,cellHeight,projectionRise,radius});
-        if(projectedSphere&&!dismounting){
+        // Existing actors already standing on the flat cap are above this
+        // projection; the north-facing visual blocker applies to LOW ground.
+        if(projectedSphere&&!dismounting&&!walkingSameTop){
           const priorProjection=sculptSphereProjectionBlock(terrain,
             previousX,previousY,{cellWidth,cellHeight,projectionRise,radius});
           // A stranded player may retreat NORTH or sideways OUT of the
