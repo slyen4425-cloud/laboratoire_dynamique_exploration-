@@ -1,3 +1,15 @@
+# Lot V78 — 24/10/2026 — Escaliers à hauteur dynamique (EN COURS)
+
+- **Demande utilisateur exacte** : pied de l'escalier = niveau réel du terrain de départ, tête = niveau réel du terrain à l'arrivée ; un escalier allongé peut atteindre plusieurs niveaux sans +1 imposé. Marches enchaînables et réversibles.
+- **Base déployée** : R15 `9b410c1a1c2428c9306456ba3f01dd15de31fc6f` (assets 10 × 3 visibles). Dernier GREEN utilisateur explicite : V76 R14 au SHA `9f56549c07715e44c565ca905b83d8c5006ae792`.
+- **START immuable** : `checkpoint/exploration-start-stairs-dynamic-height-v78-2026-10-24`; branche unique `work/exploration-stairs-dynamic-height-v78-2026-10-24` créée sur source R15.
+- **Propriétaires** : WorldObject natif pour le placement/longueur/largeur et sa définition ; Collision World pour le couloir praticable et la validation pied/tête ; Exploration movement pour valider et enregistrer l'identifiant d'escalier ; Renderer pour la hauteur du sprite héros ; UI Sculpt pour choisir les dimensions. Ne jamais inférer la collision des pixels de la texture.
+- **Portée** : corridor orienté construit depuis l'ancre au pied (bas de l'image), longueurs d'axe = baseSize.height × scaleY, largeur = baseSize.width × scaleX avec marge de sécurité ; niveau bas/haut échantillonné depuis le terrain existant sans modifier son JSON. Accès uniquement par les deux extrémités, sorties latérales bloquées, descente et montée progressives dans un même couloir. Ajustement séparé longueur et largeur dans l'éditeur.
+- **Gels** : collision des sphères R12, falaises V75 hors passages, ponts V74, eau, vol, World Model, JSON et assets, R14 angles, R15 catalogues, autres dépôts. Ne pas introduire une autorité de déplacement parallèle ; pentes naturelles V77 = lot séparé.
+- **Tests** : franchir 1/2/3 niveaux selon longueur et raccord réel, blocage escalier trop court ou sans plateforme, montée/descente, approche latérale, largeur, rotation, chaîne d'escaliers, absence d'escaliers, sphères, ponts, eau, sauvegarde et preview ; npm test/check Chromium et Pages par PR infra après CI verte. NON GREEN Pixel tant que validé sur le téléphone.
+
+---
+
 # Lot V76 R15 — 24/10/2026 — Escaliers 2,5D visibles dans le Labo Sculpt (EN COURS)
 
 - **Retour Pixel** : V76 R14 validée par le créateur (« Ok c est bon »). Checkpoint GREEN R14 : `checkpoint/exploration-square-no-smoothing-v76-r14-green-2026-10-24` ; SHA source `9f56549c07715e44c565ca905b83d8c5006ae792`.
