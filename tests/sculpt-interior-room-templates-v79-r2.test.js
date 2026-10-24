@@ -8,7 +8,7 @@ import {createMaterialRegistry} from '../src/materials/material-registry.js';
 import {materialPackV1} from '../src/materials/material-pack-v1.js';
 import {SCULPT_SURFACE_MATERIALS,normalizeSculptSurface} from '../src/world/sculpt-surface-paint.js';
 import {
- createSculptInteriorArea,updateSculptInterior,createSculptInteriorTemplate,
+ SCULPT_INTERIOR_LIMIT,createSculptInteriorArea,updateSculptInterior,createSculptInteriorTemplate,
  normalizeSculptInteriorTemplates,applySculptInteriorTemplate,
  sculptInteriorPortalDocument,serializeSculptInteriors,importSculptInteriors
 } from '../src/world/sculpt-interior-area-link.js';
@@ -26,6 +26,7 @@ const makeHouses=()=>{
 };
 
 test('V79 R2 uses five original Material Registry floors without a duplicate asset catalog',()=>{
+ assert.ok(SCULPT_INTERIOR_LIMIT>=50,'la bibliothèque doit permettre au moins 50 maisons');
  const actual=SCULPT_SURFACE_MATERIALS.filter(m=>m.id.startsWith('floor.')).map(m=>m.id);
  assert.deepEqual(actual,['floor.wood.house','floor.wood.dark','floor.tile.light',
    'floor.tile.sandstone','floor.concrete.gray']);
