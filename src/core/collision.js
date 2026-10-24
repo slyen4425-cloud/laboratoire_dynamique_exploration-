@@ -25,8 +25,8 @@ import {
   resolveSurfaceTraversal
 } from './surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
 
-import {isSculptNavigationBlocked,sculptNavigationNextBridgeId} from './sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76';
-export {sculptNavigationNextBridgeId};
+import {isSculptNavigationBlocked,sculptNavigationNextBridgeId,sculptNavigationNextLayers} from './sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78';
+export {sculptNavigationNextBridgeId,sculptNavigationNextLayers};
 
 const COLLISION_EPSILON = 1e-6;
 
