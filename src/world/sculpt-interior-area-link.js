@@ -12,6 +12,7 @@ import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from './scul
 export const SCULPT_EXTERIOR_AREA_ID='sculpt-exterior';
 export const SCULPT_INTERIOR_SIZE=Object.freeze({width:18,height:14});
 export const SCULPT_INTERIOR_LIMIT=24;
+export const SCULPT_INTERIOR_TEMPLATE_LIMIT=32;
 const frozen=items=>Object.freeze(items);
 
 export function createSculptInteriorArea(building,exteriorObjects=[]){
@@ -49,7 +50,7 @@ export function createSculptInteriorArea(building,exteriorObjects=[]){
   return Object.freeze({
     buildingId:building.id,area,entryPortal:entrance,exitPortal:exit,
     terrain:createSculptTerrain({width,height}),
-    objects:frozen([]),actors:frozen([]),surface:createSculptSurface()
+    objects:frozen([]),actors:frozen([]),surface:normalizeSculptSurface({baseMaterialId:'floor.wood.house'})
   });
 }
 export function updateSculptInterior(entry,{terrain=entry.terrain,
@@ -93,6 +94,51 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
     result.push(updateSculptInterior(reference,{terrain,objects,actors,surface}));
   }
   return frozen(result);
+}
+// Reusable content only: never copy building IDs, Area IDs, Portals or Spawns.
+// A template is explicitly applied to a new canonical building-linked interior.
+export function normalizeSculptInteriorTemplates(raw=[]){
+  if(!Array.isArray(raw)||raw.length>SCULPT_INTERIOR_TEMPLATE_LIMIT)
+    throw Error('Modèles d’intérieur : liste invalide');
+  const ids=new Set();
+  return frozen(raw.map(item=>{
+    if(item?.schemaVersion!==1||typeof item.id!=='string'||
+      !/^interior-template-[a-z0-9-]{1,48}$/.test(item.id)||
+      ids.has(item.id)||typeof item.name!=='string'||
+      !item.name.trim()||item.name.length>64)
+      throw Error('Modèles d’intérieur : identifiant, nom ou version invalide');
+    ids.add(item.id);
+    const terrain=importSculptTerrain(item.terrain);
+    if(terrain.width!==SCULPT_INTERIOR_SIZE.width||
+      terrain.height!==SCULPT_INTERIOR_SIZE.height)
+      throw Error('Modèles d’intérieur : dimensions incompatibles');
+    const objects=normalizeSculptPreviewObjects(item.objects??[]);
+    const actors=normalizeSculptPreviewActors(item.actors??[]);
+    if(objects.length!==(item.objects??[]).length||
+      actors.length!==(item.actors??[]).length||
+      objects.some(o=>o.transform.x<0||o.transform.y<0||
+        o.transform.x>=terrain.width*28||o.transform.y>=terrain.height*21))
+      throw Error('Modèles d’intérieur : contenu invalide');
+    return Object.freeze({schemaVersion:1,id:item.id,name:item.name.trim(),
+      terrain:JSON.parse(serializeSculptTerrain(terrain)),objects,actors,
+      surface:normalizeSculptSurface(item.surface)});
+  }));
+}
+export function createSculptInteriorTemplate(entry,{id,name}={}){
+  return normalizeSculptInteriorTemplates([{
+    schemaVersion:1,id,name,terrain:JSON.parse(serializeSculptTerrain(entry.terrain)),
+    objects:entry.objects,actors:entry.actors,surface:entry.surface
+  }])[0];
+}
+export function applySculptInteriorTemplate(entry,template){
+  if(!entry?.area||entry.area.kind!=='interior')
+    throw Error('Modèle : aucune pièce intérieure active');
+  const valid=normalizeSculptInteriorTemplates([template])[0];
+  // Import creates distinct data values; portal links stay attached to entry.
+  return updateSculptInterior(entry,{
+    terrain:importSculptTerrain(valid.terrain),objects:valid.objects,
+    actors:valid.actors,surface:valid.surface
+  });
 }
 export function sculptInteriorPortalDocument(outsideObjects,entries){
   const outdoor=normalizeWorldArea({
