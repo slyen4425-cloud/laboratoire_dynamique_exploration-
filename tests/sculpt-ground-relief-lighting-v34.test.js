@@ -37,8 +37,8 @@ test('V34 no fake shadow at water contacts, no trace on submerged cell',()=>{
 test('V34 wide terraces are consistently tinted, clipped and remain immutable',()=>{
   const terrain=world([[3,3,7],[4,3,7],[5,3,0]]);
   const high=sculptGroundReliefLighting(terrain,3,3);
-  assert.ok(high.tone>0&&high.tone<=.105);
+  assert.ok(high.tone>.20&&high.tone<=.30,'R12: tall terraces brighten clearly by level');
   assert.ok(!high.exposedEdges.includes('east'));
-  assert.equal(sculptGroundReliefLighting(terrain,5,3).tone,-.058);
+  assert.equal(sculptGroundReliefLighting(terrain,5,3).tone,-.156);
   assert.ok(Object.isFrozen(high)&&Object.isFrozen(high.contactShadows));
 });
