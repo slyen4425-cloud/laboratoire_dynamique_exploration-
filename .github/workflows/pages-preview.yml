@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v76-r15-stairs-2p5d-visible-placement-2026-10-24
+# preview-revision: v78-stairs-dynamic-foot-head-multilevel-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 9b410c1a1c2428c9306456ba3f01dd15de31fc6f
+          ref: 61d2c152983a231bd6808bb1ae9a5df3e7486450
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
