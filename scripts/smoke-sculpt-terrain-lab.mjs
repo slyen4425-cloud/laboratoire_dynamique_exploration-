@@ -158,146 +158,45 @@ try{
   if(feather.highestLevel!==6||feather.levelSpread<3)
     throw Error('V11 feathered brush not producing level 6 and intermediate heights: '+JSON.stringify(feather));
 
-  // Render smoothing toggles pixels only; the serialized heightfield stays byte identical.
-  const smoothResult=await run(`(async()=> {
-    const slider=document.querySelector('#visual-smooth');
-    const snap=()=>{document.querySelector('#export').click();return document.querySelector('#json').value;};
-    const heightBefore=snap();
-    const pixels=()=>new Uint8ClampedArray(document.querySelector('#sculpt-canvas')
-      .getContext('2d',{willReadFrequently:true}).getImageData(0,0,
-      document.querySelector('#sculpt-canvas').width,
-      document.querySelector('#sculpt-canvas').height).data);
-    const redraw=()=>new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
-    slider.value='0';slider.dispatchEvent(new Event('input',{bubbles:true}));await redraw();
-    const hard=pixels();
-    slider.value='100';slider.dispatchEvent(new Event('input',{bubbles:true}));await redraw();
-    const curved=pixels();
-    let changed=0;for(let i=0;i<hard.length;i+=4){
-      if(hard[i]!==curved[i]||hard[i+1]!==curved[i+1]||hard[i+2]!==curved[i+2])changed++;
-    }
-    return {changed,sameHeights:heightBefore===snap()};
-  })()`);
-  if(!smoothResult.sameHeights||smoothResult.changed>2)
-    throw Error('V13 changing next-stroke rounding retroactively altered terrain: '+JSON.stringify(smoothResult));
-
-  // Genuine CDP touch events (not a synthetic PointerEvent) after scrolling
-  // the expanded mobile-friendly toolbar out of the way.
-  await run("document.querySelector('#flat').click();document.querySelector('#target').value='3';document.querySelector('#target').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#edge').value='0';document.querySelector('#edge').dispatchEvent(new Event('input',{bubbles:true}));");
-  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
-  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:center.x,y:center.y}]});
-  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  await sleep(110);
-  const touch=await run("window.__sculptLabProbe()");
-  await send('Emulation.setTouchEmulationEnabled',{enabled:false});
-  if(touch.highestLevel!==3||touch.levelSpread<2)
-    throw Error('V11 actual CDP touchscreen gesture did not sculpt level 3: '+JSON.stringify(touch));
-  console.log('V11 exact plateau + smooth + mobile touch Chromium:',JSON.stringify({
-    exactLevel:exact.highestLevel,repeatLevel:repeat.highestLevel,
-    featheredLevel:feather.highestLevel,featheredSpread:feather.levelSpread,
-    pixelsChangedByVisualSmoothing:smoothResult.changed,touchLevel:touch.highestLevel
-  }));
-
-  // V52: real sculpt canvas interaction paints ONLY cosmetic cliff contours.
-  const v52Before=await run(`(()=>{
-    document.querySelector('#flat').click();
-    document.querySelector('[data-mode=cliff-round]').click();
-    const smooth=document.querySelector('#visual-smooth');
-    smooth.value='0';smooth.dispatchEvent(new Event('input',{bubbles:true}));
-    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center'});
-    document.querySelector('#export').click();
-    return JSON.parse(document.querySelector('#json').value);
-  })()`);
-  await sleep(130);
-  const v52Point=await run(`(()=>{
-    const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
-    return {x:r.x+r.width/2,y:r.y+r.height/2};
-  })()`);
-  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:v52Point.x,y:v52Point.y});
-  await send('Input.dispatchMouseEvent',{type:'mousePressed',
-    x:v52Point.x,y:v52Point.y,button:'left',clickCount:1});
-  await send('Input.dispatchMouseEvent',{type:'mouseReleased',
-    x:v52Point.x,y:v52Point.y,button:'left',clickCount:1});
-  await sleep(100);
-  const v52After=await run(`(()=>{
-    document.querySelector('#export').click();
-    return JSON.parse(document.querySelector('#json').value);
-  })()`);
-  if(JSON.stringify(v52After.levels)!==JSON.stringify(v52Before.levels)||
-     JSON.stringify(v52After.waterLevels)!==JSON.stringify(v52Before.waterLevels)||
-     JSON.stringify(v52After.roundness)===JSON.stringify(v52Before.roundness))
-    throw Error('V52 real cosmetic brush modified height/water or failed to paint contours');
-  await run("document.querySelector('#undo').click()");
-  const v52Undone=await run(`(()=>{
-    document.querySelector('#export').click();
-    return JSON.parse(document.querySelector('#json').value);
-  })()`);
-  if(JSON.stringify(v52Undone)!==JSON.stringify(v52Before))
-    throw Error('V52 cosmetic cliff brush undo failed');
-  const v52Edge=await run(`(async()=>{
+  // R14 real Chromium gate: legacy rounded height data may still load,
+  // but all four grass corners of the square hill render as square grass.
+  const squareGate=await run(`(async()=>{
     const mod=await import('./src/render/sculpt-height-renderer.js');
     const m=await import('./src/world/sculpt-height-model.js');
-    const terrain=m.createSculptTerrain({width:8,height:8});
-    const c=document.createElement('canvas');c.width=224;c.height=168;
-    const ctx=c.getContext('2d',{willReadFrequently:true});
-    const outcome=mod.drawSculptTerrain(ctx,{terrain,material:{render:{baseColor:'#677955'}},
-      rockPalette:'slate'});
-    const at=(x,y)=>Array.from(ctx.getImageData(x,y,1,1).data).slice(0,3);
-    return {runs:outcome.outerCliffRuns,rockPixel:at(82,156),
-      upperPixel:at(82,141)};
-  })()`);
-  if(v52Edge.runs!==1||
-     v52Edge.rockPixel.join(',')===v52Edge.upperPixel.join(',')||
-     v52Edge.rockPixel.join(',')==='103,121,85')
-    throw Error('V52 outer south boundary not textured in real Chromium: '+JSON.stringify(v52Edge));
-  console.log('V52 cosmetic contour brush/Undo + textured outer map rim Chromium:',
-    JSON.stringify({brushOnlyRoundness:true,undo:true,rock:v52Edge}));
-  // V53: truly continuous dry cliff ramp instead of saturated per-box corners.
-  // Compare real Canvas pixels with canonical heights held strictly equal.
-  const v53Curves=await run(`(async()=>{
-    const mod=await import('./src/render/sculpt-height-renderer.js');
-    const m=await import('./src/world/sculpt-height-model.js');
-    const w=9,h=9,levels=Array(w*h).fill(2);
-    for(const [c,v] of [[2,5],[3,4],[4,6],[5,5]])levels[4*w+c]=v;
-    const original=m.createSculptTerrain({width:w,height:h,levels});
-    const changed=m.applySculptStroke(original,{points:[{x:3.5,y:4.5}],
-      radius:.5,rockRoundness:150,mode:'cliff-round'});
-    const draw=t=>{
-      const c=document.createElement('canvas');
-      c.width=w*28;c.height=h*21+7*18;
-      const ctx=c.getContext('2d',{willReadFrequently:true});
-      mod.drawSculptTerrain(ctx,{terrain:t,rockPalette:'warm',
-        material:{render:{baseColor:'#528d42'}}});
-      return ctx;
+    const W=14,H=14,levels=Array(W*H).fill(2);
+    for(let y=6;y<=9;y++)for(let x=4;x<=7;x++)levels[y*W+x]=5;
+    const original=m.createSculptTerrain({width:W,height:H,levels});
+    const legacy=m.applySculptStroke(original,{mode:'cliff-round',rockRoundness:150,
+      radius:.5,points:[{x:5.5,y:7.5}]});
+    const paint=t=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=W*28;canvas.height=H*21+7*18;
+      const ctx=canvas.getContext('2d',{willReadFrequently:true});
+      const result=mod.drawSculptTerrain(ctx,{terrain:t,
+        material:{render:{baseColor:'#528d42'}},rockPalette:'warm'});
+      return {ctx,result,data:ctx.getImageData(0,0,canvas.width,canvas.height).data};
     };
-    const baseline=draw(original),rounded=draw(changed);
-    const before=baseline.getImageData(0,0,w*28,h*21).data;
-    const after=rounded.getImageData(0,0,w*28,h*21).data;
-    let cliffDiff=0,farDiff=0;
-    for(let y=0;y<h*21;y++)for(let x=0;x<w*28;x++){
-      const i=(y*w*28+x)*4;
-      const different=before[i]!==after[i]||before[i+1]!==after[i+1]||
-        before[i+2]!==after[i+2];
-      if(different){
-        if(x>=2*28&&x<5*28&&y<=100)cliffDiff++;
-        if(x<28&&y<110)farDiff++;
-      }
-    }
-    const preview=(name)=>document.querySelector(name)?.textContent??'';
-    return {cliffDiff,farDiff,edited:m.serializeSculptTerrain(changed)!==
-      m.serializeSculptTerrain(original),
-      unchangedHeights:JSON.stringify(changed.levels)===JSON.stringify(original.levels),
-      unchangedWater:JSON.stringify(changed.waterLevels)===JSON.stringify(original.waterLevels),
-      untouchedPath:mod.sculptRoundedSouthColumns(original,4).length,
-      joined:mod.sculptRoundedSouthColumns(changed,4),
-      nativePreviewControl:!!document.querySelector('[data-mode=cliff-round]'),
-      legacyFaceCount:m.sculptFaces(original).length===m.sculptFaces(changed).length};
+    const a=paint(original),b=paint(legacy);
+    let different=0;
+    for(let k=0;k<a.data.length;k+=4)
+      if(a.data[k]!==b.data[k]||a.data[k+1]!==b.data[k+1]||a.data[k+2]!==b.data[k+2])different++;
+    const greens=[[4,6,2,2],[7,6,26,2],[4,9,2,19],[7,9,26,19]].map(([x,y,dx,dy])=>{
+      const p=b.ctx.getImageData(x*28+dx,y*21-5*18+dy,1,1).data;
+      return p[1]>p[0]&&p[1]>p[2];
+    });
+    const modes=[...document.querySelectorAll('#ground-tools [data-mode]')].map(e=>e.dataset.mode);
+    return {different,greens,modes,unchangedHeight:JSON.stringify(legacy.levels)===JSON.stringify(original.levels),
+      legacySaved:legacy.roundness[7*W+5]===150,
+      runCountEqual:a.result.faceRuns===b.result.faceRuns,
+      sphereControl:modes.includes('sphere-hill'),waterSmooth:!!document.querySelector('[data-mode=water-smooth]')};
   })()`);
-  if(!v53Curves.edited||!v53Curves.unchangedHeights||!v53Curves.unchangedWater||
-      v53Curves.untouchedPath!==0||v53Curves.joined.join(',')!=='2,3,4'||
-      v53Curves.cliffDiff<45||v53Curves.farDiff!==0||
-      !v53Curves.nativePreviewControl||!v53Curves.legacyFaceCount)
-    throw Error('V53 continuous dry cliff contour pixels or guardrails failed: '+JSON.stringify(v53Curves));
-  console.log('V53 real Chromium joined cliff, stable far pixels/height/water:',JSON.stringify(v53Curves));
+  if(squareGate.different!==0||squareGate.greens.includes(false)||
+      squareGate.modes.includes('smooth')||squareGate.modes.includes('cliff-round')||
+      !squareGate.unchangedHeight||!squareGate.legacySaved||!squareGate.runCountEqual||
+      !squareGate.sphereControl||!squareGate.waterSmooth)
+    throw Error('R14 square grass corners/browser controls regression: '+JSON.stringify(squareGate));
+  console.log('R14 square corners and legacy JSON in real Chromium:',JSON.stringify(squareGate));
+
   // V13: a water brush must edit the water volume without touching land and
   // Undo/Redo must exactly restore BOTH data fields, never a visual-only rollback.
   const waterSetup=await run(`(async()=>{
@@ -2226,73 +2125,8 @@ try{
   console.log('V44 Chromium raised rotated sprite touch and cached mobile drag:',
     JSON.stringify({spriteHit:v44Picked.selectedId,groundBuilds:v44Moved.terrainRasterBuilds,
       dragged:v44Moved.objects[0],picks:v44Picked.count}));
-  // V61: REAL one-touch browser gesture on an interior hill cell. The old
-  // V59 tiny tile-corner brush had no visible effect there. Assert actual
-  // rendered pixels change across the connected plateau without height edits.
-  const v61Before=await run(`(async()=>{
-    document.querySelector('#mode-ground').click();
-    document.querySelector('#scene-export').click();
-    const scene=JSON.parse(document.querySelector('#json').value);
-    const w=scene.terrain.width,h=scene.terrain.height,n=w*h;
-    scene.objects=[];scene.actors=[];
-    scene.terrain.levels=Array(n).fill(2);
-    scene.terrain.waterLevels=Array(n).fill(-1);
-    scene.terrain.roundness=Array(n).fill(95);
-    for(let y=3;y<=6;y++)for(let x=4;x<=7;x++)scene.terrain.levels[y*w+x]=5;
-    document.querySelector('#json').value=JSON.stringify(scene);
-    document.querySelector('#import').click();
-    const quick=document.querySelector('#quick-tool');
-    quick.value='cliff-round';quick.dispatchEvent(new Event('change',{bubbles:true}));
-    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
-    const canvas=document.querySelector('#sculpt-canvas');
-    canvas.scrollIntoView({block:'center',behavior:'instant'});
-    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
-    const rect=canvas.getBoundingClientRect(),p=window.__sculptLabProbe();
-    const wx=5.5*28,wy=5.5*21-5*18;
-    const client={x:rect.left+p.cameraPan.x+wx*p.zoom,
-      y:rect.top+p.cameraPan.y+wy*p.zoom};
-    window.__v61PixelsBefore=Uint8Array.from(canvas.getContext('2d',
-      {willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height).data);
-    window.__v61TerrainBefore=JSON.stringify(scene.terrain.levels)+'|'+JSON.stringify(scene.terrain.waterLevels);
-    return {client,radius:document.querySelector('#radius').value,
-      intensity:document.querySelector('#visual-smooth').value,
-      mode:quick.value,view:p.cameraView,pan:p.cameraPan,zoom:p.zoom,
-      hit:document.elementFromPoint(client.x,client.y)?.id};
-  })()`);
-  if(v61Before.hit!=='sculpt-canvas'||Number(v61Before.radius)!==.5||v61Before.intensity!=='150'||v61Before.mode!=='cliff-round')
-    throw Error('V61 one-touch whole-hill control not usable on real canvas: '+JSON.stringify(v61Before));
-  await send('Input.dispatchMouseEvent',{type:'mouseMoved',...v61Before.client});
-  await send('Input.dispatchMouseEvent',{type:'mousePressed',...v61Before.client,button:'left',clickCount:1});
-  await send('Input.dispatchMouseEvent',{type:'mouseReleased',...v61Before.client,button:'left',clickCount:1});
-  await sleep(160);
-  const v61After=await run(`(async()=>{
-    const canvas=document.querySelector('#sculpt-canvas');
-    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
-    const pixels=canvas.getContext('2d',{willReadFrequently:true})
-      .getImageData(0,0,canvas.width,canvas.height).data;
-    let changed=0;
-    for(let i=0;i<pixels.length;i+=4){
-      if(pixels[i]!==window.__v61PixelsBefore[i]||
-         pixels[i+1]!==window.__v61PixelsBefore[i+1]||
-         pixels[i+2]!==window.__v61PixelsBefore[i+2])changed++;
-    }
-    document.querySelector('#scene-export').click();
-    const terrain=JSON.parse(document.querySelector('#json').value).terrain;
-    const regions=await import('./src/render/sculpt-hill-region-contour.js');
-    const r=regions.sculptRoundedHillRegions(terrain).get(5*terrain.width+5);
-    return {changed,edited:terrain.roundness[5*terrain.width+5],
-      editedCells:terrain.roundness.flatMap((v,i)=>v!==95?[{index:i,x:i%terrain.width,y:Math.floor(i/terrain.width),value:v}]:[]).slice(0,24),
-      notice:document.querySelector('#notice').textContent,
-      info:document.querySelector('#brush-info').textContent,
-      regionCells:r?.cells?.length,contourCorners:r?.loops?.[0]?.length,
-      unchangedHeightWater:window.__v61TerrainBefore===
-        JSON.stringify(terrain.levels)+'|'+JSON.stringify(terrain.waterLevels)};
-  })()`);
-  if(v61After.edited!==150||v61After.regionCells!==16||
-     v61After.contourCorners!==4||v61After.changed<30||!v61After.unchangedHeightWater)
-    throw Error('V61 real one-tap hill roundness/Canvas pixels/terrain isolation failed: '+
-      JSON.stringify({v61Before,v61After}));
-  console.log('V61 real Chromium one-touch whole-hill terrain silhouette:',JSON.stringify(v61After));
+  // R14 removes V61 rounded-height UI; equivalent native Canvas gate now
+  // checks import-compatible square grass and no brown corners above.
   // V66 REAL Chrome: the same UP key must move vertically on SCREEN at
   // either camera angle, at comparable *visible* speed. This deliberately
   // exercises a real key event -> nav loop -> stepMovement -> Collision World.
