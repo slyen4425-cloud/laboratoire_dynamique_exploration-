@@ -331,8 +331,8 @@ function draw(){
       stair=>stair.id===navActor.sculptStairId):null;
     drawPreviewObjects(navActor?.y??Infinity,-Infinity,layeredBridge?.id,activeStair?.id);
     drawPlacedActors(navActor?.y??Infinity);
-    if(deckBridge)drawPreviewObject(deckBridge);
     if(activeStair)drawPreviewObject(activeStair);
+    if(deckBridge)drawPreviewObject(deckBridge);
     drawNavigationActor();
     if(deckBridge)drawPreviewObject(deckBridge,{foregroundRailOnly:true});
     // Ground-level traffic is physically BELOW the entire bridge, not just
