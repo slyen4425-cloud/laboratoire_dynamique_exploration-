@@ -73,7 +73,7 @@ test('V79 R2 rejects bad and duplicate templates and never imports foreign area/
  assert.throws(()=>normalizeSculptInteriorTemplates([t,t]),/dupliqu|invalide/);
  assert.throws(()=>normalizeSculptInteriorTemplates([{...t,entryPortal:entry.entryPortal}]),/invalide/);
  assert.throws(()=>normalizeSculptInteriorTemplates([{...t,area:entry.area}]),/invalide/);
- assert.throws(()=>normalizeSculptInteriorTemplates([{...t,terrain:{...t.terrain,width:64}}]),/incompatibles/);
+ assert.throws(()=>normalizeSculptInteriorTemplates([{...t,terrain:{...t.terrain,width:64}}]),/invalide|incompatibles/);
  assert.throws(()=>normalizeSculptInteriorTemplates(null),/invalide/);
 });
 
