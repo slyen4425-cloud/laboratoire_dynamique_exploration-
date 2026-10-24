@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: altitude-v76-r12-corners-hd-sunlight-hero-scale-plateau-movement-2026-10-24
+# preview-revision: v76-r12-plus-10-stairs-2p5d-30-views-2026-10-24
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 0956fe57718a30a4abf6f0f5ac5dca1b2475f367
+          ref: d92ee5c506fa3baaecebd2ab6760a63928f1e911
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
