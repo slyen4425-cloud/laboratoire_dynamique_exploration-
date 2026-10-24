@@ -20,5 +20,5 @@ jobs:
         run: node --test tests/sculpt-interior-room-templates-v79-r2.test.js tests/sculpt-interior-area-v79.test.js tests/interior-floor-brush.test.js
       - name: Full sentinels and syntax
         run: npm test && npm run check
-      - name: Real SculptLab browser gate
-        run: node scripts/smoke-sculpt-terrain-lab.mjs
+      # Full Chromium suite runs in the existing Exploration CI
+      # modern-combat-encounter job, which mounts the immutable Capture assets.
