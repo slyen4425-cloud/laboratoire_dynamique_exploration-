@@ -8,7 +8,12 @@ export const SCULPT_SURFACE_MATERIALS=Object.freeze([
   Object.freeze({id:'ground.forest_floor',kind:'zone',label:'Terre forestière',assetKind:'surface'}),
   Object.freeze({id:'ground.sand',kind:'zone',label:'Sable',assetKind:'surface'}),
   Object.freeze({id:'ground.snow',kind:'zone',label:'Neige',assetKind:'surface'}),
-  Object.freeze({id:'ground.mountain_rock',kind:'zone',label:'Sol rocheux',assetKind:'surface'})
+  Object.freeze({id:'ground.mountain_rock',kind:'zone',label:'Sol rocheux',assetKind:'surface'}),
+  Object.freeze({id:'floor.wood.house',kind:'zone',label:'Parquet chêne',assetKind:'surface'}),
+  Object.freeze({id:'floor.wood.dark',kind:'zone',label:'Bois foncé',assetKind:'surface'}),
+  Object.freeze({id:'floor.tile.light',kind:'zone',label:'Carrelage clair',assetKind:'surface'}),
+  Object.freeze({id:'floor.tile.sandstone',kind:'zone',label:'Pierre sable',assetKind:'surface'}),
+  Object.freeze({id:'floor.concrete.gray',kind:'zone',label:'Béton gris',assetKind:'surface'})
 ]);
 export const SCULPT_SURFACE_LIMIT=80;
 const lookup=new Map(SCULPT_SURFACE_MATERIALS.map(x=>[x.id,x]));
