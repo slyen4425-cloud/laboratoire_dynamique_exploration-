@@ -2182,7 +2182,8 @@ $('import').addEventListener('click',()=>{
   loadSurfacePaintAssets();updateSurfaceCount();
   updateSculptAreaControls();
   fit();status(imported.isScene?
-    'Scène importée : '+nextInteriors.length+' intérieur(s), extérieur et relief.':
+    'Scène complète importée : objets et relief'+
+      (nextInteriors.length?' · '+nextInteriors.length+' intérieur(s) 2,5D':''):
     'Relief ancien importé (sans objets)');}
  catch(e){status(e.message);}
 });
