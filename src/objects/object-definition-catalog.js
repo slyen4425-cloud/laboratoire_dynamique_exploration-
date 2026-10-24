@@ -1191,6 +1191,33 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.ramp.grass.01',
+    label: 'Pente naturelle · Herbe',
+    kind: 'ramp',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    // Procedural landscape mesh; no external bitmap or second asset registry.
+    baseSize: { width: 120, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.ramp.earth.01',
+    label: 'Pente naturelle · Terre',
+    kind: 'ramp',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    // Procedural landscape mesh; no external bitmap or second asset registry.
+    baseSize: { width: 120, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.ramp.stone.01',
+    label: 'Pente naturelle · Roche',
+    kind: 'ramp',
+    library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
+    // Procedural landscape mesh; no external bitmap or second asset registry.
+    baseSize: { width: 120, height: 190 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.relief.cliff.grassy_edge.01',
     label: '2,5D · Falaise herbeuse longue',
     kind: 'rock',
