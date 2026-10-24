@@ -1,3 +1,15 @@
+# Lot visuel — 24/10/2026 — 10 escaliers 2,5D / 30 vues (PRÉVALIDATION)
+
+- **Demande créateur :** intégrer 10 escaliers en 3 vues réelles (face, trois-quarts, côté) dans la catégorie native Escaliers ; matériaux pierre, bois, ruines, marbre, terre, forteresse, etc. Images fournies dans le fil.
+- **Base source immuable :** `0956fe57718a30a4abf6f0f5ac5dca1b2475f367` (V76 R12 preview, NON GREEN Pixel) ; **dernier GREEN utilisateur documenté** V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **START :** `checkpoint/exploration-start-stairs-2p5d-v1-2026-10-24`. **Branche dédiée :** `work/exploration-stairs-2p5d-v1-2026-10-24`. Aucun développement sur main.
+- **Propriétaires :** assets WorldObject stairs dans `assets/exploration/objects/stairs/`, `world-object-asset-adapter.js` (résolution sémantique unique), `object-definition-catalog.js` (variantes natives) ; fichiers anciens préservés.
+- **Périmètre :** découpage 30 vues en WebP RGBA 384 × 384, manifest SHA256/octets/RIFF, test intégrité sur octets réellement commités, test catalogue natif et variantes, CI et preview contrôlées.
+- **Hors périmètre et gelés :** World Model, traversée/escaliers fonctionnels, Collision World, hauteur V76 R12, surface, moteur de rendu, anciens assets, ponts, eau, créatures, combat, GenSrpG production et autres lots en cours.
+- **Critère GREEN :** CI, test ciblé, résolution réelle, preview et contrôle visuel/tactile Pixel utilisateur ; aucune validation finale anticipée.
+
+---
+
 # Lot V76 R12 — 24/10/2026 — Hauteurs lisibles, coins HD et sommet praticable (NON GREEN Pixel)
 
 - **Retour utilisateur** : coins de carrés élevés cassés, éclaircir l'herbe niveau par niveau (1–7), assombrir à la descente, agrandir légèrement le héros à la montée et réduire à la descente ; impossibilité de marcher sur les plateaux sphériques déjà occupés.
