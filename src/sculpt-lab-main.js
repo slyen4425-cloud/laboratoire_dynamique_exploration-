@@ -850,6 +850,13 @@ function stroke(event){
     if(next){precisionCell=next;hoverCell=next;updatePrecisionActions();}
     return;
   }
+  // In mobile precision mode, slope preview still follows the fingertip
+  // and mouse hover, unlike the other brushes requiring Apply.
+  if(rampToolActive()&&!drawing){
+    const next=screenToCell(event);
+    if(next){hoverCell=next;scheduleDraw();}
+    return;
+  }
   if($('precision-mode').checked)return;
   if(!drawing){
     if(event.pointerType==='touch')return;
