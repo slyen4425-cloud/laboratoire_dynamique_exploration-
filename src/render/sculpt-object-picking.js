@@ -3,6 +3,7 @@
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
 import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=sculpt-bridge-dimensions-v63-deck-v70-rails-v71';
 import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
+import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js';
 import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js?rev=deck-v70-rails-v71';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=deck-v70-rails-v71';
 import {sculptBridgeDeckArtShift} from './sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67';
@@ -31,10 +32,16 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
     ?sculptBridgeDeckHeight(terrain,[object],t.x,t.y,
       {cellWidth:tileWidth,cellHeight:tileHeight}):null;
   const level=bridgeDeck??groundLevel;
+  // The stair picture must actually REACH the upper platform on screen.
+  // Vertical world distance is the full footprint; rise adds only its
+  // projected altitude, read from the same corridor as Collision World.
+  const stair=terrain&&object.kind==='stairs'
+    ?sculptStairCorridor(terrain,object,{cellWidth:tileWidth,cellHeight:tileHeight}):null;
+  const stairLift=stair?(stair.topLevel-stair.bottomLevel)*rise:0;
   return Object.freeze({
     x:t.x,y:t.y-level*rise,
     width:verticalBridgeArt?(base?.height??80)*t.scaleY:(base?.width??80)*t.scaleX,
-    height:verticalBridgeArt?(base?.width??80)*t.scaleX:(base?.height??80)*t.scaleY,
+    height:(verticalBridgeArt?(base?.width??80)*t.scaleX:(base?.height??80)*t.scaleY)+stairLift,
     angle:(t.rotationDeg??0)*Math.PI/180
   });
 }
