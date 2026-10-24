@@ -156,7 +156,7 @@ function navigationBackground(){
   const result=drawSculptTerrain(imageContext,{terrain,material,texture:currentTexture,
     rockPalette,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
-    visualSmoothness:smoothness,overlays:ribbonTextures,
+    overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages});
   terrainRasterBuilds++;
