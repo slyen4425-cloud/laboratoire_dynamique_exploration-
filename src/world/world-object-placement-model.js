@@ -1,6 +1,6 @@
 import {
   objectDefinitionCatalogV1
-} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1&bridge-axis-v55-deck-v70-rails-v71-waterfalls-v3';
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1&bridge-axis-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 
 export const WORLD_OBJECT_PLACEMENT_SCHEMA_VERSION = 1;
 
