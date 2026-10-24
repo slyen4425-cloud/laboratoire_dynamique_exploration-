@@ -1,3 +1,16 @@
+# Lot V76 R12 — 24/10/2026 — Hauteurs lisibles, coins HD et sommet praticable (NON GREEN Pixel)
+
+- **Retour utilisateur** : coins de carrés élevés cassés, éclaircir l'herbe niveau par niveau (1–7), assombrir à la descente, agrandir légèrement le héros à la montée et réduire à la descente ; impossibilité de marcher sur les plateaux sphériques déjà occupés.
+- **Source V76 R11** : `ec5f4ed79e448693fbc434c7e06f1d04dac624e5`. **Dernier GREEN** V75 R2 `9cb6610fbf5a42896811e7c02cc3c5d353b844ef`.
+- **START** : `checkpoint/exploration-start-altitude-depth-v76-r12-2026-10-24`; **une branche** `work/exploration-altitude-depth-v76-r12-2026-10-24`.
+- **Rendu** : fonction de luminosité pure commune carré/sphère/héros, coins rocheux texturés avec le HD Atlas historique, `visualScale` natif du héros (avec ombre), sans modification d'autorité de hauteur.
+- **Collision World** : déplacement autorisé d'un point intérieur à un autre sur un sommet sphérique **plat** ; escalade depuis le sol reste interdite ; fuite vers l'extérieur, vol et ponts préservés.
+- **Limite transparente** : World Model v1 à niveaux 0..7 avec sol initial 2 ; seulement 2 paliers réellement creusables sous le départ. Pas de simulation factice des 7 niveaux négatifs.
+- **Gels** : World Model/JSON, V75, V77, V78, R5 cache, R10 frustum, ponts, cascades, Combat, Builder. Tests et PR infra obligatoire avant publication.
+- **Statut : NON GREEN jusqu'au retour Pixel.** Détails : `docs/checkpoints/EXPLORATION_ALTITUDE_DEPTH_V76_R12_PREVALIDATION_2026-10-24.md`.
+
+---
+
 # Lot V76 R11 — 23/10/2026 — Ajustement collision + profondeur herbe/ombre (NON GREEN Pixel)
 
 - **Retour R10** : « Mieux » ; retouches légères de collision, ombre des bordures à renforcer, herbe en hauteur à éclaircir. **Peaufinage des très petits sommets reporté**, sans ouvrir un chantier supplémentaire.
