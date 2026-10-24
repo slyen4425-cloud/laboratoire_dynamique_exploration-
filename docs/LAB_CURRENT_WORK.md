@@ -1,3 +1,14 @@
+# Lot V78 R2 — 24/10/2026 — Escaliers visibles pendant la montée, échelle adaptée à la caméra (EN COURS)
+
+- **Retour utilisateur Pixel** : marche / montée d'étage V78 validées fonctionnellement ; visuel **NON GREEN** : le héros disparaît derrière le sprite des marches, et la taille verticale du sprite reste inchangée entre 90° et 35° alors que le terrain se raccourcit (perspective incohérente).
+- **START immuable** : `checkpoint/exploration-start-stairs-occlusion-perspective-v78-r2-2026-10-24` depuis la source V78 publiée `61d2c152983a231bd6808bb1ae9a5df3e7486450`. Branche unique : `work/exploration-stairs-occlusion-perspective-v78-r2-2026-10-24`.
+- **Cause** : tri graphique des objets selon l'ancre `transform.y` du PIED. Pendant la montée le héros est plus au nord que ce pied, le sprite escalier est donc peint APRES lui et le masque. En mode Tester la matrice caméra affine n'est appliquée qu'au terrain ; tous les sprites sont billboards. Contrairement à un pont, l'escalier est une surface inclinée et doit suivre la perspective du terrain.
+- **Correctif minimal de propriétaire Renderer** : quand le joueur porte le `sculptStairId` officiel, sortir cet escalier des deux passes d'objets et le peindre une fois **avant** le héros ; ne pas changer le premier/dernier plan des ponts. Dans `drawPreviewObject`, appliquer **exclusivement aux escaliers en mode Tester** la même matrice `(1,shear,0,pitch)` que le terrain, autour de leur pied projeté ; largeur, longueur, hauteur réelle, angle et position provenant du modèle V78 restent identiques.
+- **Gel** : Collision World, modèle et sauvegarde JSON, niveaux pied/tête, longueur/largeur, ponts et rails, sphères R12, eau, reliefs R14, assets et autres dépôts.
+- **Tests** : sentinelles Node pour ordre d'affichage escalier-acteur et projection à 35/55/90°, tests Node/Chromium Sculpt/Builder/Combat, publication Pages seulement si CI verte, validation Pixel requise pour GREEN visuel.
+
+---
+
 # Lot V78 — 24/10/2026 — Escaliers à hauteur dynamique (EN COURS)
 
 - **Demande utilisateur exacte** : pied de l'escalier = niveau réel du terrain de départ, tête = niveau réel du terrain à l'arrivée ; un escalier allongé peut atteindre plusieurs niveaux sans +1 imposé. Marches enchaînables et réversibles.
