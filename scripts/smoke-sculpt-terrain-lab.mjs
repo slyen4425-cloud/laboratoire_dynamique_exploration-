@@ -2609,6 +2609,88 @@ try{
     throw Error('R3 Change foot must clear only pending point: '+
       JSON.stringify({pending:rampR3Pending,cancelled:rampR3Cancelled}));
   console.log('R3 GREEN real Chromium slope two-tap, drag, precision bypass, live preview, Undo/Redo, cancel');
+  // V79 real Chromium: import a house, select its existing WorldObject,
+  // open an independent sculptable WorldArea, change camera, leave, export
+  // and import. This catches UI/boot contracts that unit tests cannot.
+  const v79House=await run(`(async()=>{
+    const s=await import('./src/world/sculpt-scene-preview.js');
+    const scene=s.createBlankSculptPreviewScene({width:36,height:24});
+    const x=18*28,y=12*21;
+    const objects=s.appendSculptPreviewObject([],{
+      definitionId:'objectdef.building.house.fantasy_wood_stone.01',
+      x,y,scale:.60
+    });
+    document.querySelector('#json').value=
+      s.serializeSculptPreviewScene(scene.terrain,objects,scene.surface,[]);
+    document.querySelector('#import').click();
+    document.querySelector('#camera-view').value='classic';
+    document.querySelector('#camera-view').dispatchEvent(new Event('change',{bubbles:true}));
+    if(!window.__sculptObjectsProbe().active)
+      document.querySelector('#mode-objects').click();
+    document.querySelector('#object-action').value='select';
+    document.querySelector('#object-action').dispatchEvent(new Event('change'));
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const probe=window.__sculptLabProbe();
+    const positions=[.22,.35,.5,.65,.78].map(f=>({
+      x:rect.x+probe.cameraPan.x+x*probe.zoom,
+      y:rect.y+probe.cameraPan.y+(y-180*f)*probe.zoom
+    }));
+    return {positions,initial:probe};
+  })()`);
+  let v79Picked=null;
+  for(const pt of v79House.positions){
+    await r3Click(pt);
+    v79Picked=await run('window.__sculptObjectsProbe()');
+    if(v79Picked.selectedId)break;
+  }
+  if(!v79Picked?.selectedId||v79Picked.objects.length!==1||
+    !v79House.initial.precisionMode)
+    throw Error('V79 real Chromium house selection failed: '+
+      JSON.stringify({v79House,v79Picked}));
+  const v79Opened=await run(`(()=>{
+    const button=document.querySelector('#object-open-interior');
+    const visible=!button.hidden;
+    button.click();
+    const probe=window.__sculptLabProbe();
+    return {visible,probe};
+  })()`);
+  if(!v79Opened.visible||!v79Opened.probe.activeAreaId.startsWith('sculpt-interior-')||
+    v79Opened.probe.width!==18||v79Opened.probe.height!==14||
+    !v79Opened.probe.interiorAreaBarVisible||v79Opened.probe.interiorCount!==1)
+    throw Error('V79 browser interior did not open: '+JSON.stringify(v79Opened));
+  const v79Angles=await run(`(()=>{
+    const angle=document.querySelector('#interior-camera-angle');
+    angle.value='35';angle.dispatchEvent(new Event('input',{bubbles:true}));
+    const a=window.__sculptLabProbe().liveCameraPitch;
+    angle.value='90';angle.dispatchEvent(new Event('input',{bubbles:true}));
+    return {a,b:window.__sculptLabProbe().liveCameraPitch};
+  })()`);
+  if(!(v79Angles.a<.60&&v79Angles.b>.99))
+    throw Error('V79 browser interior camera inclination not connected: '+
+      JSON.stringify(v79Angles));
+  const v79Back=await run(`(()=>{
+    document.querySelector('#interior-area-return').click();
+    return window.__sculptLabProbe();
+  })()`);
+  if(v79Back.activeAreaId!=='sculpt-exterior'||v79Back.objects!==1||
+    v79Back.interiorCount!==1||v79Back.interiorAreaBarVisible)
+    throw Error('V79 exterior view did not restore: '+JSON.stringify(v79Back));
+  const v79Saved=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const data=JSON.parse(document.querySelector('#json').value);
+    document.querySelector('#import').click();
+    return {interiors:data.interiors?.length,objects:data.objects?.length,
+      probe:window.__sculptLabProbe(),
+      exportRoomLevels:data.interiors?.[0]?.terrain?.levels?.length};
+  })()`);
+  if(v79Saved.interiors!==1||v79Saved.objects!==1||
+    v79Saved.exportRoomLevels!==18*14||v79Saved.probe.interiorCount!==1)
+    throw Error('V79 browser complete scene roundtrip failed: '+JSON.stringify(v79Saved));
+  console.log('V79 REAL Chromium house selection -> independent sculptable interior -> camera 35/90 -> exterior -> JSON roundtrip:',JSON.stringify({
+    picked:v79Picked.selectedId,angle:v79Angles,room:v79Opened.probe.activeAreaId,
+    interiorCount:v79Saved.interiors}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
