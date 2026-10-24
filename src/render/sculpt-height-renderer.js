@@ -764,32 +764,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       const idx=row*terrain.width+col,first=south.get(idx);
       if(!first){col++;continue;}
       let end=col+1;
-        while(end<terrain.width&&blendedColumns.has(end)&&
-          south.has(row*terrain.width+end))end++;
-        const faces=Array.from({length:end-col},(_,i)=>south.get(row*terrain.width+col+i));
-        const profiles=faces.map(face=>terrain.roundness[row*terrain.width+face.x]);
-        const leftNeighbour=col>0&&south.has(row*terrain.width+col-1);
-        const rightNeighbour=end<terrain.width&&south.has(row*terrain.width+end);
-        const minTop=Math.min(...faces.map(face=>row*h-face.upper*rise+h));
-        const maxBottom=Math.max(...faces.map(face=>row*h-face.lower*rise+h));
-        ctx.save();
-        sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,
-          {capLeft:!leftNeighbour,capRight:!rightNeighbour});
-        ctx.clip();
-        // Reuse the same HD atlas, palette, cracks and vertical depth shade.
-        // The mask is never stored as a second terrain or collision shape.
-        rockFace(ctx,{x:col*w,y:minTop,width:(end-col)*w,height:maxBottom-minTop,
-          colors,seed:idx,sun:1,smoothness:0,
-          rockPalette,cliffAtlas,cliffHD,cliffMoss});
-        ctx.restore();
-        for(const face of faces){
-          const band=sculptHillGrassShoulderWidth(terrain,face.x,row,tile);
-          if(band>0)drawSculptGrassShoulder(ctx,{
-            x:face.x*w,y:row*h-face.upper*rise+h,width:w,band,pattern,baseColor});
-        }
-        faceRuns++;col=end;continue;
-      }
-      let end=col+1;
+
       while(end<terrain.width){
         const adjacent=south.get(row*terrain.width+end);
         if(!adjacent||adjacent.upper!==first.upper||adjacent.lower!==first.lower)break;
