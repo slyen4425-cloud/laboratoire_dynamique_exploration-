@@ -332,6 +332,17 @@ body.sculpt-immersive .interior-area-bar>label{flex:1 1 130px}
 #ramp-cancel{flex:0 0 auto;min-height:36px;padding:5px 9px}
 body.terrain-ramp-authoring .precision-toggle{display:none!important}
 body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
+/* V79 R2: controls are inside the SAME floating quickbar. */
+.sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
+.sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
+.sculpt-quickbar .interior-area-bar input[type=text],
+.sculpt-quickbar .interior-area-bar select{max-width:100%;min-width:0}
+body.sculpt-immersive .sculpt-quickbar .interior-area-bar{
+  position:static;grid-column:1/-1;top:auto;left:auto;right:auto;
+  max-width:100%;padding:5px;gap:4px;font-size:.75rem
+}
+body.sculpt-immersive .sculpt-quickbar .interior-area-bar>button,
+body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 </style>
 </head>
 <body>
@@ -381,13 +392,26 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
  <span id="ramp-step">1. Touche le pied de la pente, puis le sommet.</span>
  <button id="ramp-cancel" type="button" disabled>Changer le pied</button>
 </div>
-</section>
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
+ <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <label>Sol intérieur <select id="interior-floor-base" aria-label="Sol de base de cette pièce">
+  <option value="floor.wood.house">Parquet chêne</option>
+  <option value="floor.wood.dark">Bois foncé</option>
+  <option value="floor.tile.light">Carrelage clair</option>
+  <option value="floor.tile.sandstone">Pierre sable</option>
+  <option value="floor.concrete.gray">Béton gris</option>
+ </select></label>
  <label>Inclinaison caméra <output id="interior-camera-value">55°</output>
   <input type="range" id="interior-camera-angle" min="35" max="90" value="55" step="5"
     aria-label="Inclinaison de la caméra intérieure en degrés"></label>
- <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <strong>Bibliothèque de pièces</strong>
+ <label>Nom du modèle <input id="interior-template-name" type="text" maxlength="64" placeholder="Ex. Maison de village" aria-label="Nom du modèle de pièce"></label>
+ <button id="interior-template-save" type="button">Enregistrer comme modèle</button>
+ <label>Réutiliser <select id="interior-template-select" aria-label="Modèle de pièce à réutiliser"><option value="">Édition libre (aucun modèle)</option></select></label>
+ <button id="interior-template-apply" type="button" disabled>Appliquer le modèle choisi</button>
+ <small>Tu peux toujours personnaliser la pièce sans modèle. Appliquer remplace son contenu, sans modifier sa porte extérieure.</small>
+</section>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
@@ -421,6 +445,11 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
   <option value="ground.sand">Sable</option>
   <option value="ground.snow">Neige</option>
   <option value="ground.mountain_rock">Sol rocheux</option>
+   <option value="floor.wood.house" data-indoor-floor disabled>Parquet chêne</option>
+   <option value="floor.wood.dark" data-indoor-floor disabled>Bois foncé</option>
+   <option value="floor.tile.light" data-indoor-floor disabled>Carrelage clair</option>
+   <option value="floor.tile.sandstone" data-indoor-floor disabled>Pierre sable</option>
+   <option value="floor.concrete.gray" data-indoor-floor disabled>Béton gris</option>
  </select></label>
  <label>Action <select id="surface-action">
   <option value="paint">Peindre une route / une zone</option>
@@ -642,6 +671,6 @@ body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2"></script>
 </body>
 </html>
