@@ -211,7 +211,7 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
   display:grid;gap:6px;padding:9px;background:rgba(19,43,52,.96);
   border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
 #object-palette[hidden]{display:none!important}
-#hill-radius-wrap[hidden],#sphere-profile-wrap[hidden]{display:none!important}
+#sphere-profile-wrap[hidden]{display:none!important}
 #sphere-profile-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
 #sphere-profile-wrap .control{display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
 #sphere-profile-wrap select,#sphere-profile-wrap input[type=range]{width:100%;min-width:0}
@@ -351,8 +351,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
     <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
   <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
 </div>
-<label id="hill-radius-wrap" class="control hill-radius-control" hidden>1. Touche le sommet · Arrondi <b id="visual-smooth-value">150 %</b>
-<input id="visual-smooth" type="range" min="0" max="150" value="150" step="5" aria-label="Arrondir un plateau entier : choisir 150 %, puis toucher une seule fois le milieu du sommet herbeux"></label>
 <label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
@@ -535,8 +533,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
-<button data-mode="smooth">Lisser les hauteurs</button>
-<button data-mode="cliff-round">🏔 Arrondir toute la colline (1 toucher)</button>
 <button data-mode="sphere-hill">🟢 V76 · Colline sphérique réelle</button>
 <button data-mode="sphere-basin">🔵 V76 · Trou sphérique réel</button>
 <button data-mode="sphere-erase">⌫ Effacer relief sphérique</button>
@@ -608,6 +604,6 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14"></script>
 </body>
 </html>
