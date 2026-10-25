@@ -386,7 +386,11 @@ body.interior-door-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
  .interior-floor-tools>label{display:grid;gap:3px;flex:1 1 140px}
  .interior-floor-tools select{min-height:38px}
  .interior-floor-tools button{flex:1 1 125px}
- /* V79 R2: controls are inside the SAME floating quickbar. */
+ body.interior-connector-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
+#interior-wall-material,#interior-door-asset,#interior-connector-link,#interior-connector-asset{min-width:130px}
+#interior-connector-hint{color:#d6e1df}
+body.interior-connector-authoring #interior-area-bar{max-height:66dvh;overflow-y:auto}
+/* V79 R2: controls are inside the SAME floating quickbar. */
 .sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
 .sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
 .sculpt-quickbar .interior-area-bar input[type=text],
@@ -453,6 +457,14 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
   <strong>🪜 Étages liés</strong>
   <label>Étage actif <select id="interior-level-select"><option value="0">Rez-de-chaussée</option></select></label>
   <button id="interior-level-add" type="button">+ Ajouter un étage</button>
+  <label>Passage <select id="interior-connector-link" aria-label="Niveau à relier"><option value="">Créer un étage d'abord</option></select></label>
+  <label>Escalier ou échelle <select id="interior-connector-asset">
+    <option value="stairs.wood">Escalier bois</option>
+    <option value="stairs.stone">Escalier pierre</option>
+    <option value="ladder.wood">Échelle bois</option>
+  </select></label>
+  <button id="interior-connector-place" type="button" aria-pressed="false">📍 Positionner le passage sur la carte</button>
+  <small id="interior-connector-hint">Choisis un étage relié et place le passage au doigt. Le vrai Portal se déplace avec lui.</small>
   <small>Chaque étage possède sa propre pièce ; dans le jeu, approche les escaliers et utilise Monter / Descendre.</small>
  </section>
  <section class="interior-layout-tools" aria-label="Taille et forme de la pièce">
@@ -466,10 +478,17 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
   <label>Largeur (cases) <input type="number" id="interior-width" min="8" max="80" step="1" value="18"></label>
   <label>Profondeur (cases) <input type="number" id="interior-height" min="8" max="64" step="1" value="14"></label>
   <button id="interior-layout-apply" type="button">Appliquer forme et taille</button>
-  <small>La forme limite réellement les déplacements. Les dimensions et la forme sont sauvegardées avec la pièce.</small>
+  <small id="interior-shape-hint">Choisir une forme l'applique directement. Le contour doré marque le sol autorisé. Pour la taille, utilise Appliquer.</small>
  </section>
  <section class="interior-wall-tools" aria-label="Construction des murs">
   <strong>🧱 Construire l'intérieur</strong>
+  <label>Texture des murs <select id="interior-wall-material">
+    <option value="plaster">Enduit clair</option>
+    <option value="stone">Pierre taillée</option>
+    <option value="brick">Brique rouge</option>
+    <option value="wood">Planches de bois</option>
+    <option value="dark-stone">Pierre de donjon</option>
+  </select></label>
   <button id="interior-wall-toggle" type="button" aria-pressed="false">Placer des murs</button>
   <button id="interior-wall-remove" type="button" aria-pressed="false">Supprimer un mur</button>
   <button id="interior-wall-cancel" type="button" disabled>Annuler le départ</button>
@@ -480,6 +499,12 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
  </section>
  <section class="interior-door-tools" aria-label="Régler la porte du bâtiment">
   <strong>🚪 Porte de la maison</strong>
+  <label>Visuel de porte <select id="interior-door-asset">
+    <option value="default">Porte en bois actuelle</option>
+    <option value="object.door.fantasy.wood.01">Fantasy bois</option>
+    <option value="object.door.fantasy.stone_redroof.01">Pierre et rouge</option>
+    <option value="object.door.fantasy.tavern_golden.01">Auberge dorée</option>
+  </select></label>
   <button id="interior-door-move" type="button" aria-pressed="false">Déplacer la porte</button>
   <label>Taille de porte <output id="interior-door-scale-value">58 %</output>
     <input type="range" id="interior-door-scale" min="35" max="125" step="5" value="60" aria-label="Taille de la porte"></label>
