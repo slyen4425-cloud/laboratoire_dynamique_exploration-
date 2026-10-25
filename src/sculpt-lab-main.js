@@ -2309,6 +2309,66 @@ $('interior-door-scale').addEventListener('input',()=>{
   commitInteriorDoor({}, {scale:Number($('interior-door-scale').value)/100});
 });
 
+// Each connector is a canonical Portal/Spawn pair, with editor-only selection.
+function interiorConnectorPortals(){
+  return sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
+    .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal');
+}
+function updateInteriorConnectorControls(){
+  const select=$('interior-connector-link'),previous=select.value;
+  const portals=interiorConnectorPortals();
+  select.replaceChildren(...(portals.length?portals.map(p=>
+    new Option(p.visual.label??p.id,p.id)):
+    [new Option('Ajoute d’abord un étage','')]));
+  select.value=portals.some(p=>p.id===previous)?previous:(portals[0]?.id??'');
+  const chosen=portals.find(p=>p.id===select.value);
+  $('interior-connector-place').disabled=!chosen;
+  $('interior-connector-asset').disabled=!chosen;
+  $('interior-connector-asset').value=chosen?.visual.assetId??'stairs.wood';
+  $('interior-connector-place').setAttribute('aria-pressed',String(interiorConnectorMode));
+  $('interior-connector-place').textContent=interiorConnectorMode?
+    '✓ Terminer le placement':'📍 Positionner le passage sur la carte';
+  $('interior-connector-hint').textContent=chosen?
+    'Choisis escalier ou échelle, puis place le passage au doigt.':
+    'Ajoute d’abord un étage pour placer un passage.';
+}
+function setInteriorConnectorMode(on){
+  if(on&&(!activeInteriorId||!interiorConnectorPortals().length))return;
+  if(on){
+    if(interiorWallMode)setInteriorWallMode(null);
+    if(interiorDoorMoving)setInteriorDoorMoving(false);
+    if(navigationTesting)setNavigationTesting(false);
+    if(objectEditing)setObjectEditing(false);
+    if(surfaceEditing)setSurfaceEditing(false);
+  }
+  interiorConnectorMode=!!on;interiorConnectorGesture=null;interiorConnectorPreview=null;
+  document.body.classList.toggle('interior-connector-authoring',interiorConnectorMode);
+  updateInteriorConnectorControls();scheduleDraw();
+}
+$('interior-connector-place').addEventListener('click',()=>{
+  setInteriorConnectorMode(!interiorConnectorMode);
+});
+$('interior-connector-link').addEventListener('change',()=>{
+  updateInteriorConnectorControls();scheduleDraw();
+});
+$('interior-connector-asset').addEventListener('change',()=>{
+  const portal=interiorConnectorPortals().find(p=>p.id===$('interior-connector-link').value);
+  if(!portal)return;
+  try{
+    sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+      sourceAreaId:activeInteriorId,portalId:portal.id,
+      x:portal.trigger.x,y:portal.trigger.y,assetId:$('interior-connector-asset').value});
+    updateInteriorConnectorControls();scheduleDraw();
+    status('Escalier ou échelle changé, le Portal reste lié au bon étage.');
+  }catch(error){status(error.message);}
+});
+$('interior-wall-material').addEventListener('change',()=>{
+  const entry=currentSculptInterior();if(!entry)return;
+  const area=normalizeWorldArea({...entry.area,wallMaterialId:$('interior-wall-material').value});
+  sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
+    updateSculptInterior(e,{area}):e));
+  scheduleDraw();status('Texture des murs enregistrée pour cet étage.');
+});
 // Wall authoring reads/writes ONLY the canonical WorldArea.walls.
 // There is no editor-owned persisted copy and no visual collision shortcut.
 function currentSculptInterior(){
