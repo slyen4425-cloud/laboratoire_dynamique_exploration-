@@ -91,5 +91,6 @@ test('V79 UI preserves exterior scene schema and offers explicit editing and 35â
   assert.match(main,/drawSculptInteriorWalls\(ctx,terrain/);
   assert.match(main,/scene\.interiors=serializeSculptInteriors\(entries\)/);
   assert.match(main,/importSculptInteriors\(raw\.interiors\?\?\[\],imported\.objects\)/);
-  assert.match(main,/sculptCameraGameView\(Number\(\$\('interior-camera-angle'\)\.value\)\)/);
+  assert.match(main,/sculptCameraInteriorView\\(Number\\(/);
+  assert.match(main,/navigationTesting\\?'navigation-camera-angle':'interior-camera-angle'/);
 });
