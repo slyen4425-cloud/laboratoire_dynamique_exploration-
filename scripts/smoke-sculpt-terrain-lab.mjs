@@ -2758,6 +2758,51 @@ try{
   console.log('V79 R3A REAL Chromium wall two-touch, Undo/Redo, Portal playfield action, JSON:',JSON.stringify({
     walls:v79WallJson,playfield:v79Playfield
   }));
+  // R3A2 real-pointer UX: one drag creates a snapped wall, with no
+  // accidental ghost or half-placed segment. Then resize/move the actual
+  // Portal-backed door, and verify persisted Spawn after scene export.
+  const v79WallDragStart=await run(`(()=>{
+    const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const at=(x,y)=>({x:r.x+p.cameraPan.x+x*p.zoom,
+      y:r.y+p.cameraPan.y+y*p.zoom});
+    return {a:at(145,178),b:at(310,178)};
+  })()`);
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',
+    x:v79WallDragStart.a.x,y:v79WallDragStart.a.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',
+    x:v79WallDragStart.a.x,y:v79WallDragStart.a.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',
+    x:v79WallDragStart.b.x,y:v79WallDragStart.b.y,button:'left'});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',
+    x:v79WallDragStart.b.x,y:v79WallDragStart.b.y,button:'left',clickCount:1});
+  const v79AfterDrag=await run('window.__sculptLabProbe()');
+  if(v79AfterDrag.interiorWallCount!==2||v79AfterDrag.interiorWallPending)
+    throw Error('V79 R3A2 glisser-relâcher n’a pas créé un mur complet: '+JSON.stringify(v79AfterDrag));
+  const doorSetup=await run(`(()=>{
+    document.querySelector('#interior-door-scale').value='45';
+    document.querySelector('#interior-door-scale').dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#interior-door-move').click();
+    const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {x:r.x+p.cameraPan.x+350*p.zoom,
+      y:r.y+p.cameraPan.y+200*p.zoom};
+  })()`);
+  await r3Click(doorSetup);
+  const doorCheck=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const e=JSON.parse(document.querySelector('#json').value).interiors?.[0];
+    return {x:e?.exitPortal?.trigger?.x,y:e?.exitPortal?.trigger?.y,
+      scale:e?.exitPortal?.visual?.scale,spawn:e?.area?.spawns?.find(s=>s.id==='entrance'),
+      actualWalls:e?.area?.walls?.length};
+  })()`);
+  if(!doorCheck||Math.abs(doorCheck.x-350)>2||
+     Math.abs(doorCheck.y-200)>2||doorCheck.scale!==.45||
+     doorCheck.spawn?.x!==doorCheck.x||
+     !(doorCheck.spawn.y<doorCheck.y)||doorCheck.actualWalls!==2)
+    throw Error('V79 R3A2 porte mobile/échelle/Portal/Spawn : '+JSON.stringify(doorCheck));
+  document.querySelector('#interior-door-move')?.click();
+  console.log('V79 R3A2 REAL Chromium mur glissé et porte Portal mobile/scale + Spawn:',
+    JSON.stringify({walls:doorCheck.actualWalls,door:doorCheck}));
+
   const v79Back=await run(`(()=>{
     document.querySelector('#interior-area-return').click();
     return window.__sculptLabProbe();
