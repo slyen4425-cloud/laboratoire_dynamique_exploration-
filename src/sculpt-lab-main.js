@@ -18,7 +18,7 @@ import {INTERIOR_DOOR_ASSETS,INTERIOR_CONNECTOR_ASSETS} from './world/interior-m
 import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
 import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js?rev=interior-r3c-shapes';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
-import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3d-connector-free-rotation';
+import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3e-no-stair-marker';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  SCULPT_INTERIOR_TEMPLATE_LIMIT,SCULPT_INTERIOR_FLOOR_LIMIT,createSculptInteriorArea,createSculptUpperFloor,updateSculptInterior,updateSculptInteriorDoor,updateSculptFloorConnector,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
