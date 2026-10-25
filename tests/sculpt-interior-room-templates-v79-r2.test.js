@@ -88,7 +88,7 @@ test('V79 R2 keeps full-screen exit, texture choice and templates inside the sol
  for(const id of ['interior-area-return','interior-floor-base','interior-template-name',
    'interior-template-save','interior-template-select','interior-template-apply'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(main,/doorway:interiorDoorPreview\\?\\?sculptInteriors.find/);
+ assert.ok(main.includes('doorway:interiorDoorPreview??sculptInteriors.find'));
  assert.match(main,/applySculptInteriorTemplate\(entry,template\)/);
  assert.match(main,/scene\.interiorTemplates=normalizeSculptInteriorTemplates/);
  assert.match(main,/localStorage\.setItem\(SCULPT_INTERIOR_TEMPLATE_STORAGE/);
