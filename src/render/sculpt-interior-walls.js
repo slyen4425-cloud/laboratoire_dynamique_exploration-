@@ -127,12 +127,10 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
       ctx.lineWidth=3;ctx.strokeStyle='#ebc48b';
       for(let yy=y-45;yy<=y;yy+=12){ctx.beginPath();ctx.moveTo(x-18,yy);ctx.lineTo(x+18,yy);ctx.stroke();}
     }
-    ctx.restore(); // keep the Monter/Descendre symbol upright on mobile
-    ctx.fillStyle='rgba(43,39,32,.82)';ctx.strokeStyle='#e5be76';
-    ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);
-    ctx.fill();ctx.stroke();
-    ctx.font='23px system-ui';ctx.fillStyle='#ffffff';
-    ctx.fillText(portal.visual?.label?.startsWith('Monter')?'↑':'↓',x,y+8);
+    ctx.restore(); // artwork only; the Portal remains usable in play mode
+    // No oversized ↑/↓ badges: they obscured the actual stairs and looked
+    // like a physical prop. The button in the game HUD already describes
+    // Monter / Descendre when the hero reaches this Portal.
     ctx.restore();
   }
   // Temporary asset-independent door, sized like an actual standing door.
