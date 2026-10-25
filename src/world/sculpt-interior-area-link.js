@@ -43,7 +43,7 @@ export function createSculptInteriorArea(building,exteriorObjects=[]){
     id:'sculpt-leave-'+building.id,sourceAreaId:id,
     trigger:{kind:'point',x:spawnX,y:(height-1.5)*21,radius:32},
     targetAreaId:exterior.id,targetSpawnId:'outside-'+building.id,
-    visual:{visible:true,marker:'exit',label:'Sortir'}
+    visual:{visible:true,marker:'exit',label:'Sortir',scale:.58}
   });
   if(!entrance||!exit||!portalReferencesAreValid([exterior,area],entrance)||
     !portalReferencesAreValid([exterior,area],exit))return null;
@@ -52,6 +52,29 @@ export function createSculptInteriorArea(building,exteriorObjects=[]){
     terrain:createSculptTerrain({width,height}),
     objects:frozen([]),actors:frozen([]),surface:normalizeSculptSurface({baseMaterialId:'floor.wood.house'})
   });
+}
+// The physical doorway position is exactly exitPortal.trigger; the interior
+// arrival Spawn is moved in the SAME WorldArea contract, offset into the room.
+// The external facade entrance is still building-door object-anchor (unchanged).
+export function updateSculptInteriorDoor(entry,{x,y,scale}={}){
+  if(!entry?.area||entry.area.kind!=='interior')throw Error('Porte : intérieur absent');
+  const previous=entry.exitPortal.trigger;
+  const width=entry.area.width,height=entry.area.height;
+  const bounded=(n,fallback,min,max)=>Number.isFinite(n)?
+    Math.max(min,Math.min(max,n)):fallback;
+  const atX=bounded(x,previous.x,26,width-26);
+  const atY=bounded(y,previous.y,30,height-17);
+  const size=bounded(scale,entry.exitPortal.visual.scale??.58,.35,1.5);
+  const exitPortal=normalizePortal({...entry.exitPortal,
+    trigger:{...previous,x:atX,y:atY},
+    visual:{...entry.exitPortal.visual,scale:size}});
+  // Never spawn directly inside the exit trigger: entrance should have room
+  // to walk, and the canonical source trigger remains the visible door.
+  const spawnY=Math.max(12,atY-(previous.radius??32)-18);
+  const area=normalizeWorldArea({...entry.area,
+    spawns:entry.area.spawns.map(spawn=>spawn.id==='entrance'?
+      {...spawn,x:atX,y:spawnY}:spawn)});
+  return Object.freeze({...entry,exitPortal,area});
 }
 export function updateSculptInterior(entry,{terrain=entry.terrain,
   objects=entry.objects,actors=entry.actors,surface=entry.surface,area=entry.area}={}){
@@ -91,8 +114,17 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
        o.transform.x>=terrain.width*28||o.transform.y>=terrain.height*21))
       throw Error('Intérieur 2,5D : objet hors pièce');
     const surface=normalizeSculptSurface(item.surface);
-    result.push(updateSculptInterior(reference,{terrain,objects,actors,surface,
-      area:normalizeWorldArea({...reference.area,walls:item.area?.walls??[]})}));
+    const door=item.exitPortal?.trigger;
+    if(door?.kind!=='point'||!Number.isFinite(door.x)||!Number.isFinite(door.y)||
+      door.x<26||door.x>reference.area.width-26||
+      door.y<30||door.y>reference.area.height-17)
+      throw Error('Intérieur 2,5D : position porte invalide');
+    const scaled=item.exitPortal.visual?.scale??.58;
+    if(!Number.isFinite(scaled)||scaled<.35||scaled>1.5)
+      throw Error('Intérieur 2,5D : échelle porte invalide');
+    const entry=updateSculptInteriorDoor(reference,{x:door.x,y:door.y,scale:scaled});
+    result.push(updateSculptInterior(entry,{terrain,objects,actors,surface,
+      area:normalizeWorldArea({...entry.area,walls:item.area?.walls??[]})}));
   }
   return frozen(result);
 }
