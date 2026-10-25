@@ -17,12 +17,12 @@ import {normalizeWorldArea} from './world/world-area-model.js';
 import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
 import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
-import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r1';
+import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3b-boundary-floors';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  SCULPT_INTERIOR_TEMPLATE_LIMIT,SCULPT_INTERIOR_FLOOR_LIMIT,createSculptInteriorArea,createSculptUpperFloor,updateSculptInterior,updateSculptInteriorDoor,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
- applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r2';
+ applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3b-house-links-floors';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
