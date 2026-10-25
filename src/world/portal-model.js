@@ -36,7 +36,12 @@ function normalizePortalVisual(raw) {
   return Object.freeze({
     visible: visual.visible === true,
     marker,
-    label: normalizedString(visual.label)
+    label: normalizedString(visual.label),
+    // Optional presentation parameter owned by Portal, never by the renderer.
+    // Absent on legacy Portals so existing worlds keep their original schema.
+    ...(Number.isFinite(visual.scale) ? {
+      scale:finiteNumber(visual.scale,1,{min:.35,max:1.5})
+    }: {})
   });
 }
 
