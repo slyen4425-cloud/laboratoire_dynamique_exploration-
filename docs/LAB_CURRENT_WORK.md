@@ -1,3 +1,16 @@
+# EN COURS — V79 R3B (25/10/2026) — Lien maison↔pièce, tailles et étages
+
+- **Validation créateur** : murs R3A2 et caméra à 35° VALIDÉS ; nouvel ordre : une maison doit pouvoir choisir une pièce précise, dimensions/formes petite maison ou donjon, système d'étages.
+- **Base V79 R3A2** : `fde0d536fdada43e499c54153992f571676af0e3`, CI `40179220011` success, Pages `40179324531` success ; validation produit partielle, caméra/murs figés.
+- **Checkpoint START** : `checkpoint/exploration-start-interior-layout-house-link-floors-v79-r3b-2026-10-25` et branche `work/exploration-interior-layout-house-link-floors-v79-r3b-2026-10-25`.
+- **Modèles** : sélection du modèle dans les options de la maison choisie ; copie privée dans sa WorldArea, Portal extérieur d'origine préservé. Dimension 8–80 × 8–64 cases et formes Rectangle/L/T/Croix en boundary WorldArea ; collision World et rendu lisent cette boundary. Sauvegarde/export modèles rétrocompatible.
+- **Étages** : jusqu'à quatre niveaux par bâtiment, chacun une WorldArea et sa propre surface/terrain/murs ; Portals montant/descendant et Spawns canoniques, navigation d'étages dans l'éditeur et interaction sur la scène en test. Marques ↑/↓ provisoires.
+- **Gates** : CI intégrale Node/Chromium, nouveau smoke réel forme L 24×18 + niveau + Portal + export. Test CI source `40188665756` SUCCESS. Publication Pages exclusivement par workflow épinglé au SHA validé et PR infra ; **GREEN final uniquement après essai Pixel créateur**.
+- **Gel** : caméra intérieure, murs tactiles R3A2, extérieurs V77/V78, Combat, GenSrpG main et WorldDocument runtime. Aucun deuxième système de collision.
+- **Détails** : `docs/checkpoints/EXPLORATION_INTERIOR_LAYOUT_HOUSE_LINK_FLOORS_V79_R3B_PREVALIDATION_2026-10-25.md`.
+
+---
+
 # EN COURS — V79 R3A2 prévalidation ergonomie — 25/10/2026 — Porte ajustable et murs tactiles
 
 - **Retour créateur sur préview R3A** : caméra intérieure 35° validée et GELÉE ; porte trop imposante ; possibilité nécessaire de positionner la porte et régler sa taille, le portail doit suivre ; tracé mural cahotique et peu maniable sur smartphone.
