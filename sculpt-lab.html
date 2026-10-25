@@ -332,6 +332,26 @@ body.sculpt-immersive .interior-area-bar>label{flex:1 1 130px}
 #ramp-cancel{flex:0 0 auto;min-height:36px;padding:5px 9px}
 body.terrain-ramp-authoring .precision-toggle{display:none!important}
 body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
+/* Door interaction belongs to the PLAYFIELD, not the editor's options HUD. */
+#navigation-area-door.in-game-door-action{position:absolute;z-index:19;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
+  right:calc(env(safe-area-inset-right,0px) + 16px);
+  min-height:54px;min-width:174px;padding:10px 16px;
+  border:2px solid #ecc58c;border-radius:14px;
+  background:rgba(52,34,22,.95);color:#fff5df;font-size:1rem;font-weight:850;
+  box-shadow:0 5px 22px #000a;touch-action:manipulation}
+#navigation-area-door[hidden]{display:none!important}
+body.sculpt-immersive #navigation-area-door{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+.interior-wall-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
+.interior-wall-tools strong{flex:1 1 100%}
+.interior-wall-tools button{flex:1 1 100px}
+.interior-wall-tools output{width:100%;font-size:.76rem;color:#f4d8aa}
+body.interior-wall-authoring .sculpt-quickbar>.quick-tool-label,
+body.interior-wall-authoring .sculpt-quickbar>.quick-size,
+body.interior-wall-authoring .sculpt-quickbar>.quick-level{display:none!important}
+body.sculpt-immersive .interior-wall-tools{grid-column:1/-1}
+@media(max-width:600px){#navigation-area-door.in-game-door-action{min-width:144px;min-height:50px;
+ right:8px;bottom:12px;padding:8px;font-size:.88rem}}
 /* V79 R2: controls are inside the SAME floating quickbar. */
 .sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
 .sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
@@ -395,6 +415,15 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
  <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <section class="interior-wall-tools" aria-label="Construction des murs">
+  <strong>🧱 Construire l'intérieur</strong>
+  <button id="interior-wall-toggle" type="button" aria-pressed="false">Placer des murs</button>
+  <button id="interior-wall-remove" type="button" aria-pressed="false">Supprimer un mur</button>
+  <button id="interior-wall-cancel" type="button" disabled>Annuler le départ</button>
+  <button id="interior-wall-undo" type="button" disabled>↶ Mur</button>
+  <button id="interior-wall-redo" type="button" disabled>↷ Mur</button>
+  <output id="interior-wall-info">Premier appui : début du mur. Deuxième : fin.</output>
+ </section>
  <label>Sol intérieur <select id="interior-floor-base" aria-label="Sol de base de cette pièce">
   <option value="floor.wood.house">Parquet chêne</option>
   <option value="floor.wood.dark">Bois foncé</option>
@@ -415,6 +444,7 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <section id="new-map-panel" role="dialog" aria-modal="true" aria-label="Créer une carte vierge" hidden>
  <form id="new-map-form" class="new-map-content">
   <strong>🗺 Nouvelle carte vierge</strong>
@@ -500,7 +530,8 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
   <button type="button" id="object-turn-right">↷ 45°</button>
  </div>
  <output id="object-selected">Aucun objet sélectionné</output>
- <button id="object-open-interior" type="button" hidden>🏠 Modifier l'intérieur 2,5D</button>
+ <button id="object-open-interior" type="button" hidden>🏠 Lier / modifier l'intérieur 2,5D</button>
+  <small id="interior-house-link-info" hidden>Cette maison possède son propre intérieur. Son entrée est liée à sa porte extérieure.</small>
  <div class="object-actions">
    <button type="button" id="object-undo" disabled>↶ Objet</button>
    <button type="button" id="object-redo" disabled>↷ Objet</button>
@@ -533,7 +564,6 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
  </section>
 </section>
 <section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
- <button id="navigation-area-door" type="button" hidden>🚪 Entrer / sortir</button>
   <strong>🚶 Test de navigation</strong>
   <label>Locomotion simulée
     <select id="navigation-locomotion" aria-label="Mode de locomotion pour le test">
@@ -671,6 +701,6 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=interior-r3a-entry-walls-camera-sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2"></script>
 </body>
 </html>
