@@ -2,11 +2,11 @@
 // NOT a second collision/portal engine and NOT a WorldDocument runtime save.
 // Each interior keeps exactly ONE canonical SculptTerrain, distinct from exterior.
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from './sculpt-height-model.js';
-import {normalizeWorldArea} from './world-area-model.js';
+import {normalizeWorldArea} from './world-area-model.js?rev=interior-r3c-wall-materials';
 import {pointInWorldAreaBoundary,circleFitsWorldAreaBoundary} from './world-area-geometry.js';
 import {validInteriorDoorAsset,validInteriorConnectorAsset} from './interior-material-catalog.js';
 import {normalizePortal,portalReferencesAreValid,applyPortalTransition,
-  findTriggeredPortal} from './portal-model.js';
+  findTriggeredPortal} from './portal-model.js?rev=interior-r3c-visual-asset';
 import {resolveWorldObjectPlacements} from './world-object-placement-model.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from './sculpt-scene-preview.js';
