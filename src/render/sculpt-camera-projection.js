@@ -21,6 +21,12 @@ export function sculptCameraGameView(angle=SCULPT_GAME_CAMERA_ANGLE.default){
   const shear=-.10*(90-degrees)/55;
   return Object.freeze({pitch,shear,angle:degrees,label:'Inclinaison Tester '+degrees+'°'});
 }
+// Interior uses the SAME affine projector/inverse, without oblique horizontal
+// shear that made perpendicular walls lean unnaturally at the 35° limit.
+export function sculptCameraInteriorView(angle=SCULPT_GAME_CAMERA_ANGLE.default){
+  const view=sculptCameraGameView(angle);
+  return Object.freeze({...view,shear:0,label:'Intérieur '+view.angle+'°'});
+}
 export function sculptCameraProject(view,x,y){
   return Object.freeze({x,y:view.pitch*y+view.shear*x});
 }
