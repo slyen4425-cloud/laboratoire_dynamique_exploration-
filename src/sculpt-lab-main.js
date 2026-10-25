@@ -779,27 +779,29 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(activeInteriorId&&interiorDoorMoving){
+    const point=interiorDoorPointFromEvent(event);
+    if(!point)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    interiorDoorGesture={pointerId:event.pointerId,point};
+    interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
+    scheduleDraw();return;
+  }
   if(activeInteriorId&&interiorWallMode){
-    const p=screenToWorldPoint(event);
-    if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
-    const point={x:Math.max(4,Math.min(terrain.width*SCULPT_TILE.width-4,p.x)),
-      y:Math.max(4,Math.min(terrain.height*SCULPT_TILE.height-4,p.y))};
+    const point=interiorWallPointFromEvent(event);
+    if(!point)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     if(interiorWallMode==='remove'){
       const entry=currentSculptInterior();
-      commitInteriorWalls(removeInteriorWallNear(entry.area.walls,point.x,point.y));
+      commitInteriorWalls(removeInteriorWallNear(entry.area.walls,point.x,point.y,24/zoom));
       return;
     }
-    if(!interiorWallStart){
-      interiorWallStart=point;interiorWallPreview=point;
-      updateInteriorWallControls();scheduleDraw();return;
-    }
-    const first=interiorWallStart;
-    interiorWallStart=null;interiorWallPreview=null;
-    try{commitInteriorWalls(appendInteriorWall(currentSculptInterior().area.walls,
-      {a:first,b:point}));}
-    catch(e){status(e.message);updateInteriorWallControls();scheduleDraw();}
-    return;
+    const previousStart=interiorWallStart;
+    const first=previousStart??point;
+    interiorWallGesture={pointerId:event.pointerId,origin:point,first,last:point,
+      previousStart,screen:{x:event.clientX,y:event.clientY},dragged:false};
+    interiorWallStart=first;interiorWallPreview=point;
+    updateInteriorWallControls();scheduleDraw();return;
   }
   if(objectEditing&&!actorSubmode&&$('object-action').value!=='place'){
     // Aim at what the finger SEES: elevated, rotated visible object artwork.
@@ -864,9 +866,27 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(interiorDoorMoving){
+    if(interiorDoorGesture&&event.pointerId===interiorDoorGesture.pointerId){
+      const point=interiorDoorPointFromEvent(event);
+      if(point){interiorDoorGesture.point=point;
+        interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
+        scheduleDraw();}
+    }
+    return;
+  }
   if(activeInteriorId&&interiorWallMode){
-    if(interiorWallMode==='place'&&interiorWallStart){
-      interiorWallPreview=screenToWorldPoint(event);scheduleDraw();
+    const gesture=interiorWallGesture;
+    if(gesture&&event.pointerId===gesture.pointerId){
+      const point=interiorWallPointFromEvent(event,gesture.first);
+      if(!point)return;
+      gesture.last=point;
+      if(Math.hypot(event.clientX-gesture.screen.x,event.clientY-gesture.screen.y)>=8)
+        gesture.dragged=true;
+      interiorWallPreview=point;scheduleDraw();
+    }else if(interiorWallStart&&event.pointerType==='mouse'){
+      const point=interiorWallPointFromEvent(event,interiorWallStart);
+      if(point){interiorWallPreview=point;scheduleDraw();}
     }
     return;
   }
@@ -995,6 +1015,28 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(interiorDoorGesture){
+    const gesture=interiorDoorGesture;
+    if(event.pointerId!==gesture.pointerId)return;
+    interiorDoorGesture=null;interiorDoorPreview=null;
+    if(event.type!=='pointercancel')commitInteriorDoor(gesture.point);
+    else scheduleDraw();
+    return;
+  }
+  if(interiorWallGesture){
+    const gesture=interiorWallGesture;
+    if(event.pointerId!==gesture.pointerId)return;
+    interiorWallGesture=null;
+    const canceled=event.type==='pointercancel';
+    if(canceled){interiorWallStart=gesture.previousStart;interiorWallPreview=null;}
+    else if(gesture.dragged||gesture.previousStart){
+      interiorWallStart=null;interiorWallPreview=null;
+      try{commitInteriorWalls(appendInteriorWall(currentSculptInterior().area.walls,
+        {a:gesture.first,b:gesture.last}));}
+      catch(error){status(error.message);}
+    }else{interiorWallStart=gesture.origin;interiorWallPreview=gesture.origin;}
+    updateInteriorWallControls();scheduleDraw();return;
+  }
   if(objectDrag){
     const drag=objectDrag;objectDrag=null;
     canvas.classList.remove('object-dragging');
