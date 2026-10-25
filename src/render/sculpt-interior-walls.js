@@ -117,7 +117,7 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
     // Turn only the standing artwork about the exact Portal trigger. The
     // Source Portal and target Spawn keep their canonical world X/Y positions.
     const rotation=(Number(portal.visual?.rotationDeg)||0)*Math.PI/180;
-    ctx.translate(x,y);ctx.rotate(rotation);ctx.translate(-x,-y);
+    ctx.save();ctx.translate(x,y);ctx.rotate(rotation);ctx.translate(-x,-y);
     const img=connectorImages?.get(portal.visual?.assetId);
     if(img?.complete&&img.naturalWidth){ctx.drawImage(img,x-31,y-65,62,71);}
     else if(portal.visual?.assetId==='ladder.wood'){
@@ -127,6 +127,7 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
       ctx.lineWidth=3;ctx.strokeStyle='#ebc48b';
       for(let yy=y-45;yy<=y;yy+=12){ctx.beginPath();ctx.moveTo(x-18,yy);ctx.lineTo(x+18,yy);ctx.stroke();}
     }
+    ctx.restore(); // keep the Monter/Descendre symbol upright on mobile
     ctx.fillStyle='rgba(43,39,32,.82)';ctx.strokeStyle='#e5be76';
     ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);
     ctx.fill();ctx.stroke();
