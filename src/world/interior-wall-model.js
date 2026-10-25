@@ -55,3 +55,35 @@ export function removeInteriorWallNear(raw,x,y,maxDistance=20){
   }
   return closest?Object.freeze(walls.filter(w=>w.id!==closest.id)):walls;
 }
+
+// Shared authoring geometry, not a second persistent wall representation.
+// Finger input snaps to a regular floor grid, nearby real wall endpoints, and
+// optionally locks new segments to horizontal/vertical axes.
+export function snapInteriorWallPoint(raw,walls=[],{
+  grid=14,snapRadius=17,from=null,orthogonal=true,
+  width=504,height=294
+}={}){
+  if(!Number.isFinite(raw?.x)||!Number.isFinite(raw?.y))
+    throw Error('Point de mur invalide');
+  const bound=(v,max)=>Math.max(7,Math.min(max-7,v));
+  let x=bound(raw.x,width),y=bound(raw.y,height);
+  const near=[];
+  for(const wall of walls)near.push(wall.a,wall.b);
+  if(from)near.push(from);
+  // World units: radius adjusted to editor zoom by the caller.
+  let best=null,d=snapRadius;
+  for(const endpoint of near){
+    const dist=Math.hypot(endpoint.x-x,endpoint.y-y);
+    if(dist<d){best=endpoint;d=dist;}
+  }
+  if(best){x=best.x;y=best.y;}
+  else {
+    x=bound(Math.round(x/grid)*grid,width);
+    y=bound(Math.round(y/grid)*grid,height);
+  }
+  if(from&&orthogonal){
+    if(Math.abs(x-from.x)>=Math.abs(y-from.y))y=from.y;
+    else x=from.x;
+  }
+  return Object.freeze({x,y});
+}
