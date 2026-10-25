@@ -2893,6 +2893,43 @@ try{
     throw Error('R3C REAL Chromium stair pointer, Portal or Spawn failed: '+
       JSON.stringify(v79R3CSave));
   await run("document.querySelector('#interior-connector-place').click()");
+  // R3D actual Chromium controls: rotation stays in Portal JSON and the
+  // actor MUST stay inside the phone canvas after pitch/zoom adjustments.
+  const r3dRotation=await run(`(()=>{
+    const input=document.querySelector('#interior-connector-rotation');
+    input.value='135';input.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#scene-export').click();
+    const raw=JSON.parse(document.querySelector('#json').value);
+    return {input:input.value,degree:raw.interiors.find(e=>e.floorIndex===1)
+      .entryPortal.visual.rotationDeg};
+  })()`);
+  if(r3dRotation.degree!==135||r3dRotation.input!=='135')
+    throw Error('R3D orientation escalier non persistée: '+JSON.stringify(r3dRotation));
+  const r3dCamera=await run(`(async()=>{
+    document.querySelector('#navigation-toggle').click();
+    const results=[];
+    for(const angle of ['35','55','90']){
+      const input=document.querySelector('#navigation-camera-angle');
+      input.value=angle;input.dispatchEvent(new Event('input',{bubbles:true}));
+      for(const zoom of ['100','175','240']){
+        const z=document.querySelector('#navigation-camera-zoom');
+        z.value=zoom;z.dispatchEvent(new Event('input',{bubbles:true}));
+        await new Promise(resolve=>requestAnimationFrame(resolve));
+        const hero=window.__sculptNavProbe().actorScreen;
+        const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+        results.push({angle:Number(angle),zoom:Number(zoom),
+          x:hero?.x,y:hero?.y,width:rect.width,height:rect.height});
+      }
+    }
+    document.querySelector('#navigation-toggle').click();
+    return results;
+  })()`);
+  if(r3dCamera.length!==9||r3dCamera.some(q=>!Number.isFinite(q.x)||
+    !Number.isFinite(q.y)||q.x<0||q.y<0||q.x>=q.width||q.y>=q.height))
+    throw Error('R3D actor lost after zoom/pitch in Chromium: '+JSON.stringify(r3dCamera));
+  console.log('R3D REAL Chromium portal rotation and actor following all pitch/zoom:',JSON.stringify({
+    rotation:r3dRotation,screenChecks:r3dCamera
+  }));
   console.log('V79 R3C REAL Chromium shape instant, wall textures, doors, placed ladder:',
     JSON.stringify({materials:v79R3CMaterials,stair:v79R3CSave}));
   const v79Back=await run(`(()=>{
