@@ -18,12 +18,12 @@ import {INTERIOR_DOOR_ASSETS,INTERIOR_CONNECTOR_ASSETS} from './world/interior-m
 import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
 import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js?rev=interior-r3c-shapes';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
-import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3c-wall-door-stairs-assets';
+import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3d-connector-free-rotation';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  SCULPT_INTERIOR_TEMPLATE_LIMIT,SCULPT_INTERIOR_FLOOR_LIMIT,createSculptInteriorArea,createSculptUpperFloor,updateSculptInterior,updateSculptInteriorDoor,updateSculptFloorConnector,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
- applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3c-stair-portal-materials';
+ applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3d-connector-rotation';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
