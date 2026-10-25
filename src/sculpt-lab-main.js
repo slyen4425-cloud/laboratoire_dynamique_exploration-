@@ -7,7 +7,7 @@ import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBB
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
-import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
+import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
@@ -1252,6 +1252,16 @@ function navHeight(){
 function centerNavigationCamera(){
   if(!navigationTesting||!navActor)return;
   const {width,height}=dimensions();
+  if(activeInteriorId){
+    // Runtime view follows the player itself rather than keeping the entire
+    // clipped L/T/cross room inside the camera. Empty sky around the room is
+    // preferable to losing the actor at high zoom or shallow pitch.
+    const follow=sculptCameraFollowActor(cameraView(),{
+      x:navActor.x,y:navActor.y,level:navVisualLevel??navHeight(),
+      rise:SCULPT_TILE.rise
+    },{width,height,zoom,anchorY:.54});
+    pan.x=follow.x;pan.y=follow.y;return;
+  }
   const bounds=cameraBounds(),point=sculptCameraProject(cameraView(),
     navActor.x,navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise);
   const worldWidth=bounds.width*zoom,worldHeight=bounds.height*zoom;
@@ -1305,8 +1315,15 @@ function drawNavigationActor(){
 function navigationSpawn(){
   // Start in an area known to be dry in the default demo; valid for a
   // user-imported terrain too, because the fallback searches dry cells.
+  // For cross/L/T polygons the TEST avatar begins in the central corridor,
+  // not at the far end of the southern arm where left/right movement is
+  // correctly blocked by the outline and can be mistaken for broken input.
+  const polygonal=!!activeInteriorId&&
+    sculptInteriors.some(e=>e.area.id===activeInteriorId&&e.area.boundary?.kind==='polygon');
   const preferred=activeInteriorId
-    ?[[Math.floor(terrain.width/2),terrain.height-3],[3,3],[2,2]]
+    ?(polygonal?[[Math.floor(terrain.width/2),Math.floor(terrain.height/2)],
+       [Math.floor(terrain.width/2),terrain.height-3],[3,3],[2,2]]:
+       [[Math.floor(terrain.width/2),terrain.height-3],[3,3],[2,2]])
     :[[3,3],[2,2],[terrain.width-3,2],[2,terrain.height-3]];
   for(let y=1;y<terrain.height-1;y++)for(let x=1;x<terrain.width-1;x++)preferred.push([x,y]);
   for(const [x,y] of preferred){
@@ -1524,6 +1541,11 @@ window.__sculptNavProbe=()=>Object.freeze({
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
   actorMotionTime:navVisualTime,actorVisualLevel:navVisualLevel,
+  actorScreen:navActor?(()=>{
+    const p=sculptCameraProject(cameraView(),navActor.x,
+      navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise);
+    return {x:pan.x+p.x*zoom,y:pan.y+p.y*zoom};
+  })():null,
   sameTerrainVersion:terrain.schemaVersion===1
 });
 
@@ -2074,6 +2096,7 @@ canvas.addEventListener('wheel',event=>{
   const mouseX=event.clientX-rect.left,mouseY=event.clientY-rect.top;
   pan.x=mouseX-(mouseX-pan.x)*zoom/previous;
   pan.y=mouseY-(mouseY-pan.y)*zoom/previous;
+  if(navigationTesting)centerNavigationCamera();
   $('zoom').value=String(Math.round(zoom*100));scheduleDraw();
 },{passive:false});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode)));
@@ -2214,7 +2237,9 @@ $('zoom').addEventListener('input',()=>{
  const old=zoom;zoom=Number($('zoom').value)/100;
  const {width,height}=dimensions();
  pan.x=width/2-(width/2-pan.x)*zoom/old;
- pan.y=height/2-(height/2-pan.y)*zoom/old;scheduleDraw();
+ pan.y=height/2-(height/2-pan.y)*zoom/old;
+ if(navigationTesting)centerNavigationCamera();
+ scheduleDraw();
 });
 $('sphere-summit-ratio').addEventListener('input',()=>{
   $('sphere-summit-ratio-value').textContent=$('sphere-summit-ratio').value+' %';
@@ -2325,6 +2350,12 @@ function updateInteriorConnectorControls(){
   $('interior-connector-place').disabled=!chosen;
   $('interior-connector-asset').disabled=!chosen;
   $('interior-connector-asset').value=chosen?.visual.assetId??'stairs.wood';
+  $('interior-connector-rotation').disabled=!chosen;
+  $('interior-connector-turn-left').disabled=!chosen;
+  $('interior-connector-turn-right').disabled=!chosen;
+  $('interior-connector-rotation').value=String(chosen?.visual.rotationDeg??0);
+  $('interior-connector-rotation-value').textContent=
+    String(chosen?.visual.rotationDeg??0)+'°';
   $('interior-connector-place').setAttribute('aria-pressed',String(interiorConnectorMode));
   $('interior-connector-place').textContent=interiorConnectorMode?
     '✓ Terminer le placement':'📍 Positionner le passage sur la carte';
@@ -2361,6 +2392,27 @@ $('interior-connector-asset').addEventListener('change',()=>{
     updateInteriorConnectorControls();scheduleDraw();
     status('Escalier ou échelle changé, le Portal reste lié au bon étage.');
   }catch(error){status(error.message);}
+});
+function setInteriorConnectorRotation(degrees){
+  const portal=interiorConnectorPortals().find(p=>p.id===$('interior-connector-link').value);
+  if(!portal)return;
+  try{
+    sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+      sourceAreaId:activeInteriorId,portalId:portal.id,
+      x:portal.trigger.x,y:portal.trigger.y,
+      assetId:portal.visual.assetId??'stairs.wood',rotationDeg:degrees
+    });
+    updateInteriorConnectorControls();scheduleDraw();
+  }catch(error){status(error.message);}
+}
+$('interior-connector-rotation').addEventListener('input',()=>{
+  setInteriorConnectorRotation(Number($('interior-connector-rotation').value));
+});
+$('interior-connector-turn-left').addEventListener('click',()=>{
+  setInteriorConnectorRotation((Number($('interior-connector-rotation').value)+315)%360);
+});
+$('interior-connector-turn-right').addEventListener('click',()=>{
+  setInteriorConnectorRotation((Number($('interior-connector-rotation').value)+45)%360);
 });
 $('interior-wall-material').addEventListener('change',()=>{
   const entry=currentSculptInterior();if(!entry)return;
@@ -2785,6 +2837,12 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   interiorFloorId:$('interior-floor-base').value,
   interiorWallMaterial:currentSculptInterior()?.area.wallMaterialId??null,
   interiorConnectorMode,interiorConnectorCount:interiorConnectorPortals().length,
+  interiorConnectorRotation:Number($('interior-connector-rotation').value),
+  heroScreen:navActor?(()=>{
+    const projected=sculptCameraProject(cameraView(),navActor.x,
+      navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise);
+    return {x:pan.x+projected.x*zoom,y:pan.y+projected.y*zoom};
+  })():null,
   interiorShape:currentSculptInterior()?.area.boundary?.kind??null,
   interiorTemplateSelected:$('interior-template-select').value,
   interiorAngle:Number($('interior-camera-angle').value),
