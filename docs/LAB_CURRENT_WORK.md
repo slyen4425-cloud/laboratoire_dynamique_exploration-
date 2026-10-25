@@ -1,3 +1,13 @@
+# EN COURS — V79 R3E (25/10/2026) — Caméra polygonale et flèche d'escalier
+
+- **Retour visuel Pixel** : deux captures au même X/Y personnage, seul l'angle passe 35° -> 80°, le héros se décale fortement à l'écran. La grosse flèche ↑/↓ sur l'escalier masque le sprite ; retrait demandé. Position/passage Portal, mur tactile, formes/croix, rotation d'escalier et caméra sans shear déjà validés ou en cours de validation : ne pas casser.
+- **Cause démontrée dans le code** : dans `draw()` lorsqu'un intérieur a `WorldArea.boundary.kind==='polygon'`, le dessin du masque appelle un `ctx.restore()` sans `ctx.save()` local dédié. Il dépile l'état extérieur de l'intérieur trop tôt, et le `ctx.transform(pitch)` suivant reste actif pour le dessin de l'acteur. L'acteur déjà projeté par `sculptCameraProject` reçoit alors un SECOND pitch lors du rendu Canvas. L'ancien diagnostic `actorScreen` ne voyait pas le problème car il recalculait théoriquement l'écran.
+- **Correction** : le masque polygonal possède maintenant une paire `ctx.save()/restore()` isolée, indépendamment du pitch. Le peintre d'avatar lit la matrice Canvas réelle dans un diagnostic en mémoire pour attester que `matrix.d/matrix.a===1` sous zoom/angle ; aucune nouvelle autorité de caméra. Le dessin `sculpt-interior-walls` conserve le sprite escalier/échelle orientable, mais retire le cercle noir et la flèche géante. Le bouton de gameplay `Monter/Descendre` existant reste visible près du Portal.
+- **Base et gouvernance** : SHA R3D `bc75f929efcfcc24645bbf75e23786dafa0f9f10`, Pages run `40212353120` succès, branche `work/exploration-camera-projection-stair-marker-v79-r3e-2026-10-25`, checkpoint START `checkpoint/exploration-start-camera-projection-stair-marker-v79-r3e-2026-10-25`. Aucune modification directe du moteur principal ou de `main`.
+- **Gates** : test Node de paires save/restore, suppression marqueur et maths suivi ; vrai Chromium vérifie matrice réelle du dessin de l'acteur pour angles 35/55/90 et zoom 100/175/240 dans un intérieur en L + interactions et export/import existants ; CI complète puis Pages infrastructure-only épinglé au SHA validé. GREEN final seulement après test Pixel créateur.
+
+---
+
 # EN COURS — V79 R3D (25/10/2026) — Croix accessible, caméra acteur et rotation d'escalier
 
 - **Retour créateur** : formes et escaliers validés mais bras latéraux de croix difficiles à atteindre, caméra perd le héros après zoom/inclinaison, besoin d'orienter les escaliers librement.
