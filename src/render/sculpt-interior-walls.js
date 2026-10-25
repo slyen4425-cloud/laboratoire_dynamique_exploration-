@@ -3,7 +3,8 @@
 // Back and side walls are visible; the south/front wall is cut away so the
 // hero and interior stay readable at camera 35–90°. No bitmap collision masks.
 export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
-  rise=18,wallLevels=2,doorway=null,doorScale=.58,walls=[],cameraPitch=1}={}){
+  rise=18,wallLevels=2,doorway=null,doorScale=.58,walls=[],cameraPitch=1,
+  stairPortals=[]}={}){
   if(!terrain)return;
   const w=terrain.width*tileWidth,h=terrain.height*tileHeight;
   const lift=wallLevels*rise/Math.max(.5,cameraPitch);
@@ -42,6 +43,19 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
     ctx.beginPath();ctx.moveTo(a.x,a.y-z);ctx.lineTo(b.x,b.y-z);ctx.stroke();
     ctx.strokeStyle='rgba(20,16,12,.36)';ctx.lineWidth=width;
     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  // Native Portal markers only: the transition and target Spawn are NOT
+  // derived from the artwork. No second collision or stair authority.
+  for(const portal of stairPortals){
+    if(portal.trigger?.kind!=='point')continue;
+    const {x,y}=portal.trigger;
+    ctx.save();ctx.setLineDash([]);ctx.textAlign='center';
+    ctx.fillStyle='rgba(43,39,32,.82)';ctx.strokeStyle='#e5be76';
+    ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,20,0,Math.PI*2);
+    ctx.fill();ctx.stroke();
+    ctx.font='23px system-ui';ctx.fillStyle='#ffffff';
+    ctx.fillText(portal.visual?.label?.startsWith('Monter')?'↑':'↓',x,y+8);
+    ctx.restore();
   }
   // Temporary asset-independent door, sized like an actual standing door.
   // This visible doorway is anchored to the SAME exitPortal.trigger.
