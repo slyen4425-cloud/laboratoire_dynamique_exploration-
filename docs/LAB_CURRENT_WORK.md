@@ -1,3 +1,15 @@
+# EN COURS — V79 R3A2 prévalidation ergonomie — 25/10/2026 — Porte ajustable et murs tactiles
+
+- **Retour créateur sur préview R3A** : caméra intérieure 35° validée et GELÉE ; porte trop imposante ; possibilité nécessaire de positionner la porte et régler sa taille, le portail doit suivre ; tracé mural cahotique et peu maniable sur smartphone.
+- **Base exacte** : R3A `f57a365a8d34fa3c0e69c5eb93823933fa1abf33`, CI `40153513287` SUCCESS, Pages `40177965144` SUCCESS, mais non GREEN produit. Checkpoint immuable `checkpoint/exploration-start-interior-door-wall-usability-v79-r3a2-2026-10-25`, travail `work/exploration-interior-door-wall-usability-v79-r3a2-2026-10-25`.
+- **Propriétaires** : position/rayon de porte = **seul Portal** `exitPortal.trigger`; taille visuelle = `exitPortal.visual.scale`; position d'arrivée à l'intérieur = **WorldArea Spawn** dérivé de la porte ; entrée depuis l'extérieur = **Portal bâtiment-door anchor INCHANGÉ**. Mur = **WorldArea.walls**, une collision **Collision World** ; grille et previews = UI sans sauvegarde.
+- **Portée** : taille visuelle par défaut 58 %, réglable, repositionnement tactile via bouton dédié et prévisualisation avec validation au relâchement ; l'arrivée de l'intérieur suit la porte ; murs au glisser-relâcher ou deux appuis, grille, accrochage aux extrémités, angles droits de base/diagonale au choix, palette compacte en placement ; compatibilité JSON existante.
+- **Invariants** : V77 pentes, V78 escaliers, caméra intérieur 35–90 validée, Combat, main GenSrpG, WorldDocument runtime, bâtiments externes et portes extérieures inchangés.
+- **Gates** : nouveaux tests modèle Portal/Spawn/JSON/accrochage ; anciens tests Node, Chromium vrai geste de murs et portail de jeu, CI SUCCESS ; Preview Pages infrastructure-only sur SHA vérifié uniquement ; produit Pixel encore requis pour GREEN final.
+- **Limites** : l'ouverture physique de cloisons reste prévue pour R3B ; pas de fusion du code de travail à main.
+
+---
+
 # EN COURS — V79 R3A prévalidation correctrice — 25/10/2026 — Murs réels, entrée jouable, porte et caméra
 
 - **Retour Pixel créateur sur R2** : « c'est mieux », MAIS action entrer/sortir invisible hors options de test, porte intérieure minuscule « Sorti », liaison de pièce peu explicite, aucun outil de mur, caméra 35° déformée. **V79 R2 n'a PAS été validé GREEN final.**
