@@ -2799,7 +2799,7 @@ try{
      doorCheck.spawn?.x!==doorCheck.x||
      !(doorCheck.spawn.y<doorCheck.y)||doorCheck.actualWalls!==2)
     throw Error('V79 R3A2 porte mobile/échelle/Portal/Spawn : '+JSON.stringify(doorCheck));
-  document.querySelector('#interior-door-move')?.click();
+  await run("document.querySelector('#interior-door-move').click()");
   console.log('V79 R3A2 REAL Chromium mur glissé et porte Portal mobile/scale + Spawn:',
     JSON.stringify({walls:doorCheck.actualWalls,door:doorCheck}));
 
