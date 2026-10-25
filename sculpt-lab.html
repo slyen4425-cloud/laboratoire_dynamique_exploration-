@@ -380,7 +380,13 @@ body.interior-door-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
 .interior-layout-tools input,.interior-layout-tools select{min-height:37px;width:100%}
 .interior-layout-tools button{flex:1 1 100%}
 .interior-layout-tools small{font-size:.74rem;color:#c1d0cb}
-/* V79 R2: controls are inside the SAME floating quickbar. */
+ .interior-floor-tools{display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #54766f;
+ padding-top:7px;width:100%;align-items:center}
+ .interior-floor-tools strong,.interior-floor-tools small{width:100%}
+ .interior-floor-tools>label{display:grid;gap:3px;flex:1 1 140px}
+ .interior-floor-tools select{min-height:38px}
+ .interior-floor-tools button{flex:1 1 125px}
+ /* V79 R2: controls are inside the SAME floating quickbar. */
 .sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
 .sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
 .sculpt-quickbar .interior-area-bar input[type=text],
@@ -443,6 +449,12 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
  <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <section class="interior-floor-tools" aria-label="Étages du bâtiment">
+  <strong>🪜 Étages liés</strong>
+  <label>Étage actif <select id="interior-level-select"><option value="0">Rez-de-chaussée</option></select></label>
+  <button id="interior-level-add" type="button">+ Ajouter un étage</button>
+  <small>Chaque étage possède sa propre pièce ; dans le jeu, approche les escaliers et utilise Monter / Descendre.</small>
+ </section>
  <section class="interior-layout-tools" aria-label="Taille et forme de la pièce">
   <strong>📐 Forme de la pièce</strong>
   <label>Forme <select id="interior-shape">
