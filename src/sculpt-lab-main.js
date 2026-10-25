@@ -711,6 +711,7 @@ function adjustBrushSize(delta){
 }
 function selectMode(mode){
   if(interiorWallMode)setInteriorWallMode(null);
+  if(interiorDoorMoving)setInteriorDoorMoving(false);
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
   rampStart=null;rampEnd=null;rampGesture=null;
@@ -1333,6 +1334,7 @@ function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on){
     if(interiorWallMode)setInteriorWallMode(null);
+    if(interiorDoorMoving)setInteriorDoorMoving(false);
     if(objectEditing)setObjectEditing(false); // keep object palette out of the walking HUD
     if(surfaceEditing)setSurfaceEditing(false);
     navActor=navigationSpawn();
@@ -1661,6 +1663,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&objectEditing)setObjectEditing(false);
   if(active&&navigationTesting)setNavigationTesting(false);
@@ -1850,6 +1853,7 @@ window.__sculptActorsProbe=()=>Object.freeze({
 });
 loadCaptureActorCatalog();
 function setObjectEditing(active){
+  if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
@@ -2165,6 +2169,65 @@ $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 
+// Point projection/inverse is already owned by Camera: snap only the
+// authoring input. The snapped endpoints are stored by the ONE WorldArea model.
+function interiorWallPointFromEvent(event,from=null){
+  const raw=screenToWorldPoint(event);
+  if(!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return null;
+  return snapInteriorWallPoint(raw,currentSculptInterior()?.area.walls??[],{
+    grid:14,snapRadius:Math.min(22,14/zoom),from,
+    orthogonal:!$('interior-wall-diagonal').checked,
+    width:terrain.width*SCULPT_TILE.width,
+    height:terrain.height*SCULPT_TILE.height
+  });
+}
+function interiorDoorPointFromEvent(event){
+  const raw=screenToWorldPoint(event);
+  if(!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return null;
+  return {x:Math.max(26,Math.min(terrain.width*SCULPT_TILE.width-26,raw.x)),
+    y:Math.max(30,Math.min(terrain.height*SCULPT_TILE.height-17,raw.y))};
+}
+function updateInteriorDoorControls(){
+  const entry=currentSculptInterior();
+  $('interior-door-move').disabled=!entry;
+  $('interior-door-scale').disabled=!entry;
+  $('interior-door-move').setAttribute('aria-pressed',String(interiorDoorMoving));
+  $('interior-door-move').classList.toggle('active',interiorDoorMoving);
+  const size=Math.round(100*(entry?.exitPortal.visual.scale??.58));
+  $('interior-door-scale').value=String(size);
+  $('interior-door-scale-value').textContent=size+' %';
+  $('interior-door-move').textContent=interiorDoorMoving?
+    '✓ Terminer le déplacement':'Déplacer la porte';
+}
+function setInteriorDoorMoving(on){
+  if(on&&!activeInteriorId)return;
+  if(on){
+    if(interiorWallMode)setInteriorWallMode(null);
+    if(navigationTesting)setNavigationTesting(false);
+    if(objectEditing)setObjectEditing(false);
+    if(surfaceEditing)setSurfaceEditing(false);
+  }
+  interiorDoorMoving=!!on;interiorDoorGesture=null;interiorDoorPreview=null;
+  document.body.classList.toggle('interior-door-authoring',interiorDoorMoving);
+  updateInteriorDoorControls();scheduleDraw();
+}
+function commitInteriorDoor(point,{scale=null}={}){
+  const entry=currentSculptInterior();if(!entry)return;
+  const updated=updateSculptInteriorDoor(entry,{...point,
+    ...(scale!==null?{scale}:{})});
+  sculptInteriors=Object.freeze(sculptInteriors.map(e=>
+    e.area.id===entry.area.id?updated:e));
+  updateInteriorDoorControls();scheduleDraw();
+  status('Porte déplacée/redimensionnée : le Portal et le point d’arrivée sont raccordés.');
+}
+$('interior-door-move').addEventListener('click',()=>{
+  setInteriorDoorMoving(!interiorDoorMoving);
+});
+$('interior-door-scale').addEventListener('input',()=>{
+  if(!currentSculptInterior())return;
+  commitInteriorDoor({}, {scale:Number($('interior-door-scale').value)/100});
+});
+
 // Wall authoring reads/writes ONLY the canonical WorldArea.walls.
 // There is no editor-owned persisted copy and no visual collision shortcut.
 function currentSculptInterior(){
@@ -2182,19 +2245,23 @@ function updateInteriorWallControls(){
     $(id).classList.toggle('active',interiorWallMode===mode);
   }
   $('interior-wall-info').textContent=interiorWallStart?
-    'Départ choisi · touche la fin du mur ou annule le départ':
-    count+' mur(s) · '+(interiorWallMode==='place'?'touche le début puis la fin':
-      interiorWallMode==='remove'?'touche un mur à supprimer':
-      'choisis Placer des murs pour construire');
+    'Départ choisi : glisse vers la fin ou touche le point suivant.':
+    count+' mur(s) · '+(interiorWallMode==='place'?
+      'glisse pour tracer · 2 appuis possibles · '+($('interior-wall-diagonal').checked?
+        'diagonales libres':'angles droits avec grille'):
+      interiorWallMode==='remove'?'touche un mur pour le supprimer':
+      'choisis Placer des murs');
 }
 function setInteriorWallMode(mode){
   if(mode&& !activeInteriorId)return;
   if(mode){
+    if(interiorDoorMoving)setInteriorDoorMoving(false);
     if(navigationTesting)setNavigationTesting(false);
     if(objectEditing)setObjectEditing(false);
     if(surfaceEditing)setSurfaceEditing(false);
   }
   interiorWallMode=mode;interiorWallStart=null;interiorWallPreview=null;
+  interiorWallGesture=null;
   document.body.classList.toggle('interior-wall-authoring',!!mode);
   updateInteriorWallControls();scheduleDraw();
 }
@@ -2214,6 +2281,9 @@ function commitInteriorWalls(walls,{history=true}={}){
   status('Murs sauvegardés avec cet intérieur · '+area.walls.length+' segment(s)');
   return true;
 }
+$('interior-wall-diagonal').addEventListener('change',()=>{
+  updateInteriorWallControls();scheduleDraw();
+});
 $('interior-wall-toggle').addEventListener('click',()=>{
   setInteriorWallMode(interiorWallMode==='place'?null:'place');
 });
@@ -2221,7 +2291,7 @@ $('interior-wall-remove').addEventListener('click',()=>{
   setInteriorWallMode(interiorWallMode==='remove'?null:'remove');
 });
 $('interior-wall-cancel').addEventListener('click',()=>{
-  interiorWallStart=null;interiorWallPreview=null;
+  interiorWallStart=null;interiorWallPreview=null;interiorWallGesture=null;
   updateInteriorWallControls();scheduleDraw();
 });
 $('interior-wall-undo').addEventListener('click',()=>{
@@ -2275,7 +2345,7 @@ function updateSculptAreaControls(){
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
-  updateInteriorWallControls();
+  updateInteriorWallControls();updateInteriorDoorControls();
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(activeInteriorId===nextAreaId||(!activeInteriorId&&
@@ -2284,7 +2354,8 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(wasTesting)setNavigationTesting(false);
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
-  setInteriorWallMode(null);interiorWallHistory=[];interiorWallRedo=[];
+  setInteriorWallMode(null);setInteriorDoorMoving(false);
+  interiorWallHistory=[];interiorWallRedo=[];
   if(activeInteriorId){
     const snapshot=captureSculptArea();
     sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===activeInteriorId?
