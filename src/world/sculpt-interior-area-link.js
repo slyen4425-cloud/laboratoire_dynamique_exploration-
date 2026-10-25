@@ -3,6 +3,8 @@
 // Each interior keeps exactly ONE canonical SculptTerrain, distinct from exterior.
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from './sculpt-height-model.js';
 import {normalizeWorldArea} from './world-area-model.js';
+import {pointInWorldAreaBoundary,circleFitsWorldAreaBoundary} from './world-area-geometry.js';
+import {validInteriorDoorAsset,validInteriorConnectorAsset} from './interior-material-catalog.js';
 import {normalizePortal,portalReferencesAreValid,applyPortalTransition,
   findTriggeredPortal} from './portal-model.js';
 import {resolveWorldObjectPlacements} from './world-object-placement-model.js';
@@ -45,7 +47,7 @@ export function createSculptInteriorArea(building,exteriorObjects=[],{width=18,h
     id:'sculpt-leave-'+building.id,sourceAreaId:id,
     trigger:{kind:'point',x:spawnX,y:(height-1.5)*21,radius:32},
     targetAreaId:exterior.id,targetSpawnId:'outside-'+building.id,
-    visual:{visible:true,marker:'exit',label:'Sortir',scale:.58}
+    visual:{visible:true,marker:'exit',label:'Sortir',scale:.58,assetId:'default'}
   });
   if(!entrance||!exit||!portalReferencesAreValid([exterior,area],entrance)||
     !portalReferencesAreValid([exterior,area],exit))return null;
@@ -81,13 +83,13 @@ export function createSculptUpperFloor(below){
     id:'sculpt-stairs-up-'+below.buildingId+'-'+floorIndex,
     sourceAreaId:below.area.id,trigger:upPoint,
     targetAreaId:areaId,targetSpawnId:'arrival-up',
-    visual:{visible:true,marker:'portal',label:'Monter à l’étage '+floorIndex}
+    visual:{visible:true,marker:'portal',label:'Monter à l’étage '+floorIndex,assetId:'stairs.wood'}
   });
   const exitPortal=normalizePortal({
     id:'sculpt-stairs-down-'+below.buildingId+'-'+floorIndex,
     sourceAreaId:areaId,trigger:downPoint,
     targetAreaId:below.area.id,targetSpawnId:'arrival-down',
-    visual:{visible:true,marker:'portal',label:'Descendre à l’étage '+(floorIndex-1)}
+    visual:{visible:true,marker:'portal',label:'Descendre à l’étage '+(floorIndex-1),assetId:'stairs.wood'}
   });
   if(!entryPortal||!exitPortal||
      !portalReferencesAreValid([updatedBelow.area,area],entryPortal)||
@@ -99,10 +101,55 @@ export function createSculptUpperFloor(below){
     surface:normalizeSculptSurface({baseMaterialId:below.surface.baseMaterialId})
   })});
 }
+// Placed stair or ladder: the source Portal owns the interaction position,
+// the target WorldArea Spawn owns the arrival position. No extra prop objects.
+export function updateSculptFloorConnector(entries,{sourceAreaId,x,y,assetId}={}){
+  if(!Array.isArray(entries)||!validInteriorConnectorAsset(assetId))
+    throw Error('Escalier/échelle : modèle invalide');
+  const source=entries.find(e=>e.area.id===sourceAreaId);
+  if(!source)throw Error('Escalier/échelle : étage absent');
+  // Find exactly one Portal sourced by this level and targeting an adjacent level.
+  const links=entries.flatMap(e=>[e.entryPortal,e.exitPortal]);
+  const portal=links.find(p=>p.sourceAreaId===sourceAreaId&&
+    p.visual.marker==='portal'&&
+    (p.targetAreaId!==p.sourceAreaId)&&
+    (entries.find(e=>e.area.id===p.targetAreaId)?.buildingId===source.buildingId)&&
+    // Prefer upward passage when there are two destinations.
+    (entries.find(e=>e.area.id===p.targetAreaId)?.floorIndex===source.floorIndex+1))??
+    links.find(p=>p.sourceAreaId===sourceAreaId&&p.visual.marker==='portal');
+  if(!portal)throw Error('Ajoute un étage pour placer un escalier');
+  if(!Number.isFinite(x)||!Number.isFinite(y)||
+    !circleFitsWorldAreaBoundary(source.area,x,y,12))
+    throw Error('Place l’escalier sur le sol réel de cet étage');
+  const target=entries.find(e=>e.area.id===portal.targetAreaId);
+  if(!target)throw Error('Étage cible absent');
+  const updatedPortal=normalizePortal({...portal,
+    trigger:{kind:'point',x,y,radius:27},
+    visual:{...portal.visual,assetId}});
+  // The arrival uses the existing Spawn ID. On different-sized or L-shaped
+  // floors, retain the target's valid existing spawn instead of teleporting
+  // beyond its boundary.
+  const arrival=target.area.spawns.find(p=>p.id===portal.targetSpawnId);
+  if(!arrival)throw Error('Point d’arrivée manquant');
+  let arrivals=target.area.spawns;
+  if(circleFitsWorldAreaBoundary(target.area,x,y,12)){
+    arrivals=target.area.spawns.map(p=>p.id===arrival.id?
+      {...p,x,y}:p);
+  }
+  return Object.freeze(entries.map(entry=>{
+    const area=entry.area.id===target.area.id?
+      normalizeWorldArea({...entry.area,spawns:arrivals}):entry.area;
+    const entryPortal=entry.entryPortal.id===portal.id?updatedPortal:entry.entryPortal;
+    const exitPortal=entry.exitPortal.id===portal.id?updatedPortal:entry.exitPortal;
+    return entry.area.id===target.area.id||
+      entryPortal!==entry.entryPortal||exitPortal!==entry.exitPortal?
+        Object.freeze({...entry,area,entryPortal,exitPortal}):entry;
+  }));
+}
 // The physical doorway position is exactly exitPortal.trigger; the interior
 // arrival Spawn is moved in the SAME WorldArea contract, offset into the room.
 // The external facade entrance is still building-door object-anchor (unchanged).
-export function updateSculptInteriorDoor(entry,{x,y,scale}={}){
+export function updateSculptInteriorDoor(entry,{x,y,scale,assetId}={}){
   if(!entry?.area||entry.area.kind!=='interior')throw Error('Porte : intérieur absent');
   const previous=entry.exitPortal.trigger;
   const width=entry.area.width,height=entry.area.height;
@@ -113,7 +160,8 @@ export function updateSculptInteriorDoor(entry,{x,y,scale}={}){
   const size=bounded(scale,entry.exitPortal.visual.scale??.58,.35,1.5);
   const exitPortal=normalizePortal({...entry.exitPortal,
     trigger:{...previous,x:atX,y:atY},
-    visual:{...entry.exitPortal.visual,scale:size}});
+    visual:{...entry.exitPortal.visual,scale:size,
+      assetId:validInteriorDoorAsset(assetId)?assetId:(entry.exitPortal.visual.assetId??'default')}});
   // Never spawn directly inside the exit trigger: entrance should have room
   // to walk, and the canonical source trigger remains the visible door.
   const spawnY=Math.max(12,atY-(previous.radius??32)-18);
@@ -154,7 +202,11 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
       const parent=result.find(e=>e.buildingId===building.id&&e.floorIndex===floorIndex-1);
       if(!parent)throw Error('Étage sans niveau précédent');
       const linked=createSculptUpperFloor(parent);
-      const index=result.indexOf(parent);result[index]=linked.below;
+      const index=result.indexOf(parent);
+      result[index]=Object.freeze({...linked.below,
+        area:normalizeWorldArea({...linked.below.area,
+          spawns:parent.area.spawns.some(x=>x.id==='arrival-down')?
+            parent.area.spawns:linked.below.area.spawns})});
       reference=linked.upper;
     }
     if(!reference||item.area?.id!==reference.area.id||
@@ -185,9 +237,16 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
       throw Error('Intérieur 2,5D : échelle porte invalide');
     const resized=normalizeWorldArea({...reference.area,width:terrain.width*28,
       height:terrain.height*21,boundary:item.area?.boundary??{kind:'rectangle'},
-      walls:item.area?.walls??[]});
-    const entry=updateSculptInteriorDoor({...reference,area:resized},
-      {x:door.x,y:door.y,scale:scaled});
+      walls:item.area?.walls??[],spawns:item.area?.spawns??reference.area.spawns,
+      wallMaterialId:item.area?.wallMaterialId});
+    const entry=floorIndex===0?
+      updateSculptInteriorDoor({...reference,area:resized},
+        {x:door.x,y:door.y,scale:scaled,assetId:item.exitPortal.visual?.assetId}):
+      Object.freeze({...reference,area:resized,
+        entryPortal:normalizePortal({...reference.entryPortal,
+          trigger:item.entryPortal.trigger,visual:item.entryPortal.visual}),
+        exitPortal:normalizePortal({...reference.exitPortal,
+          trigger:item.exitPortal.trigger,visual:item.exitPortal.visual})});
     result.push(updateSculptInterior(entry,{terrain,objects,actors,surface,
       area:entry.area}));
   }
