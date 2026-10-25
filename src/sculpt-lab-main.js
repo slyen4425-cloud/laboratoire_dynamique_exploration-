@@ -14,6 +14,8 @@ import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigation
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {normalizeWorldArea} from './world/world-area-model.js';
+import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
+import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
 import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r1';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
@@ -344,6 +346,21 @@ function draw(){
   lastRenderStats=result;
   if(activeInteriorId){
     ctx.save();
+    // Canonical WorldArea boundary owns the visible interior cut-out AND the
+    // Collision World limit; do not make a second editor-only silhouette.
+    // Floor raster already drawn: mask every part outside boundary.
+    const boundaryArea=sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area;
+    if(boundaryArea?.boundary?.kind==='polygon'){
+      if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+      const poly=worldAreaBoundaryPoints(boundaryArea);
+      ctx.save();ctx.fillStyle='#17232b';ctx.beginPath();
+      ctx.rect(-2000,-2000,terrain.width*28+4000,terrain.height*21+4000);
+      for(let i=0;i<poly.length;i++){
+        const p=poly[i];if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
+      }
+      ctx.closePath();ctx.fill('evenodd');ctx.restore();
+      if(navigationTesting)ctx.restore();
+    }
     // In Tester the ground is projected inside the cached layer; use its
     // exact affine camera for walls as well, never an independent perspective.
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
@@ -549,6 +566,8 @@ function screenToCell(event){
   const {x,y}=screenToWorldPoint(event);
   const col=Math.floor(x/SCULPT_TILE.width);
   if(col<0||col>=terrain.width)return null;
+  const area=sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area;
+  if(area&&!pointInWorldAreaBoundary(area,x,y))return null;
   // Pick the exposed top face, not a static projected pixel geometry.
   for(let row=terrain.height-1;row>=0;row--){
     const top=row*SCULPT_TILE.height-sculptHeightAt(terrain,col,row)*SCULPT_TILE.rise;
@@ -1107,6 +1126,7 @@ function navigationWorld(){
   const current=sculptInteriors.find(e=>e.area.id===activeInteriorId);
   return {width:terrain.width*SCULPT_TILE.width,
     height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[],
+    boundary:current?.area.boundary,
     walls:current?.area.walls??[]};
 }
 function navigationMaxStep(){
@@ -1589,6 +1609,7 @@ function syncObjectSelectedControls(){
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
   const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
   $('object-open-interior').hidden=!buildingSelected;
+  $('object-interior-link').hidden=!buildingSelected;
   $('interior-house-link-info').hidden=!buildingSelected;
   if(buildingSelected){
     const linked=sculptInteriors.some(e=>e.buildingId===selected.id);
@@ -2336,6 +2357,13 @@ function updateSculptAreaControls(){
   document.body.classList.toggle('sculpt-interior-area',!!entry);
   $('interior-area-label').textContent=entry?
     '🏠 Intérieur lié à la maison · '+entry.buildingId:'🏞 Extérieur';
+  if(entry){
+    $('interior-width').value=String(entry.terrain.width);
+    $('interior-height').value=String(entry.terrain.height);
+    const kind=sculptInteriorShapeId(entry.area);
+    $('interior-shape').value=kind==='custom'?'rectangle':kind;
+    $('interior-layout-apply').disabled=kind==='custom';
+  }
   $('new-map-toggle').disabled=!!entry;
   for(const option of $('surface-material').options)
     option.disabled=entry?!option.value.startsWith('floor.'):
@@ -2392,13 +2420,20 @@ function openSelectedSculptInterior(){
     objectDefinitionCatalogV1)[0];
   if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
   let entry=sculptInteriors.find(e=>e.buildingId===resolved.id);
+  const wanted=sculptInteriorTemplates.find(t=>t.id===$('object-interior-template').value);
   if(!entry){
     if(sculptInteriors.length>=SCULPT_INTERIOR_LIMIT){
       status('Limite de '+SCULPT_INTERIOR_LIMIT+' intérieurs pour cette scène pilote.');return;
     }
     entry=createSculptInteriorArea(resolved,placedObjects);
     if(!entry){status('Bâtiment sans porte canonique : intérieur non créé.');return;}
+    if(wanted)entry=applySculptInteriorTemplate(entry,wanted);
     sculptInteriors=Object.freeze([...sculptInteriors,entry]);
+  }else if(wanted){
+    // Deliberate model selection in house palette updates ONLY this house's
+    // WorldArea content; entryPortal still points to its own area + doorAnchor.
+    entry=applySculptInteriorTemplate(entry,wanted);
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?entry:e));
   }
   changeSculptArea(entry.area.id);
 }
@@ -2417,6 +2452,10 @@ function updateSculptDoorAction(){
 }
 function refreshSculptTemplateSelector(){
   const select=$('interior-template-select'),current=select.value;
+  const houseSelect=$('object-interior-template'),houseCurrent=houseSelect.value;
+  houseSelect.replaceChildren(new Option('Pièce libre (ou intérieur déjà lié)',''),
+    ...sculptInteriorTemplates.map(item=>new Option(item.name+' · '+item.terrain.width+'×'+item.terrain.height,item.id)));
+  houseSelect.value=sculptInteriorTemplates.some(item=>item.id===houseCurrent)?houseCurrent:'';
   select.replaceChildren(new Option('Édition libre (aucun modèle)',''),
     ...sculptInteriorTemplates.map(item=>new Option(item.name,item.id)));
   select.value=sculptInteriorTemplates.some(item=>item.id===current)?current:'';
@@ -2433,6 +2472,18 @@ function loadSculptTemplates(){
   catch{sculptInteriorTemplates=Object.freeze([]);}
   refreshSculptTemplateSelector();
 }
+$('interior-layout-apply').addEventListener('click',()=>{
+  const entry=currentSculptInterior();if(!entry)return;
+  try{
+    const old={...entry,...captureSculptArea()};
+    const next=resizeSculptInterior(old,{width:Number($('interior-width').value),
+      height:Number($('interior-height').value),shape:$('interior-shape').value});
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?next:e));
+    mountSculptArea(next);updateSculptAreaControls();fit();
+    status('Intérieur '+next.terrain.width+'×'+next.terrain.height+
+      ' · forme '+$('interior-shape').value+' · limites WorldArea actives.');
+  }catch(error){status(error.message);}
+});
 $('interior-template-select').addEventListener('change',refreshSculptTemplateSelector);
 $('interior-floor-base').addEventListener('change',()=>{
   if(!activeInteriorId)return;
