@@ -360,6 +360,10 @@ function draw(){
     // Floor raster already drawn: mask every part outside boundary.
     const boundaryArea=sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area;
     if(boundaryArea?.boundary?.kind==='polygon'){
+      // Isolate the boundary's projection. Previously, a conditional
+      // ctx.restore() popped the OUTER interior save instead; subsequent
+      // wall transform leaked into the hero and doubled camera pitch.
+      ctx.save();
       if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
       const poly=worldAreaBoundaryPoints(boundaryArea);
       ctx.save();ctx.fillStyle='#17232b';ctx.beginPath();
@@ -368,7 +372,9 @@ function draw(){
         const p=poly[i];if(i===0)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);
       }
       ctx.closePath();ctx.fill('evenodd');ctx.restore();
-      if(navigationTesting)ctx.restore();
+      // Always balance the local save: polygonal and rectangular interiors
+      // must reach drawNavigationActor with the same canvas transform.
+      ctx.restore();
     }
     // In Tester the ground is projected inside the cached layer; use its
     // exact affine camera for walls as well, never an independent perspective.
