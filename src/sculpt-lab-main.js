@@ -2491,17 +2491,14 @@ function updateSculptAreaControls(){
       entry.floorIndex!==floors[floors.length-1].floorIndex;
     // Resizing a lower floor would detach staircase Portals placed on it.
     // Keep all linked portals correct; define its size before creating above.
-    $('interior-layout-apply').disabled=floors.length>1&&
-      entry.floorIndex!==floors[floors.length-1].floorIndex;
+    $('interior-layout-apply').disabled=false;
   }
   if(entry){
     $('interior-width').value=String(entry.terrain.width);
     $('interior-height').value=String(entry.terrain.height);
     const kind=sculptInteriorShapeId(entry.area);
     $('interior-shape').value=kind==='custom'?'rectangle':kind;
-    $('interior-layout-apply').disabled=kind==='custom'||(
-      sculptInteriors.some(e=>e.buildingId===entry.buildingId&&
-        e.floorIndex>entry.floorIndex));
+    $('interior-layout-apply').disabled=kind==='custom';
   }
   $('new-map-toggle').disabled=!!entry;
   for(const option of $('surface-material').options)
@@ -2513,6 +2510,7 @@ function updateSculptAreaControls(){
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
   updateInteriorWallControls();updateInteriorDoorControls();updateInteriorConnectorControls();
+  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';updateInteriorConnectorControls();
   if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
@@ -2639,10 +2637,15 @@ $('interior-level-add').addEventListener('click',()=>{
       ' Modifie ses murs, son sol et sa taille indépendamment.');
   }catch(error){status(error.message);}
 });
+$('interior-shape').addEventListener('change',()=>{
+  if(currentSculptInterior())$('interior-layout-apply').click();
+});
 $('interior-layout-apply').addEventListener('click',()=>{
   const entry=currentSculptInterior();if(!entry)return;
-  if(sculptInteriors.some(e=>e.buildingId===entry.buildingId&&e.floorIndex>entry.floorIndex)){
-    status('Modifie la forme de cet étage avant de construire au-dessus.');return;
+  if(sculptInteriors.some(e=>e.buildingId===entry.buildingId&&e.floorIndex>entry.floorIndex)&&
+    (entry.terrain.width!==Number($('interior-width').value)||
+     entry.terrain.height!==Number($('interior-height').value))){
+    status('Redimensionnement impossible avec des étages au-dessus. La forme seule reste modifiable.');return;
   }
   try{
     const old={...entry,...captureSculptArea()};
@@ -2780,6 +2783,9 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   interiorAreaBarVisible:!$('interior-area-bar').hidden,
   interiorTemplateCount:sculptInteriorTemplates.length,
   interiorFloorId:$('interior-floor-base').value,
+  interiorWallMaterial:currentSculptInterior()?.area.wallMaterialId??null,
+  interiorConnectorMode,interiorConnectorCount:interiorConnectorPortals().length,
+  interiorShape:currentSculptInterior()?.area.boundary?.kind??null,
   interiorTemplateSelected:$('interior-template-select').value,
   interiorAngle:Number($('interior-camera-angle').value),
   rampStart:!!rampStart,rampGestureActive:!!rampGesture,
