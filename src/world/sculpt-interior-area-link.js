@@ -275,6 +275,7 @@ export function normalizeSculptInteriorTemplates(raw=[]){
       terrain:JSON.parse(serializeSculptTerrain(terrain)),objects,actors,
       walls:normalizeWorldArea({kind:'interior',walls:item.walls??[]}).walls,
       boundary:normalizeWorldArea({kind:'interior',boundary:item.boundary}).boundary,
+      wallMaterialId:normalizeWorldArea({kind:'interior',wallMaterialId:item.wallMaterialId}).wallMaterialId,
       surface:normalizeSculptSurface(item.surface)});
   }));
 }
@@ -282,7 +283,8 @@ export function createSculptInteriorTemplate(entry,{id,name}={}){
   return normalizeSculptInteriorTemplates([{
     schemaVersion:1,id,name,terrain:JSON.parse(serializeSculptTerrain(entry.terrain)),
     objects:entry.objects,actors:entry.actors,surface:entry.surface,
-    walls:entry.area.walls,boundary:entry.area.boundary
+    walls:entry.area.walls,boundary:entry.area.boundary,
+    wallMaterialId:entry.area.wallMaterialId
   }])[0];
 }
 export function applySculptInteriorTemplate(entry,template){
@@ -292,7 +294,8 @@ export function applySculptInteriorTemplate(entry,template){
   // Import creates distinct data values; portal links stay attached to entry.
   const source=importSculptTerrain(valid.terrain);
   const area=normalizeWorldArea({...entry.area,width:source.width*28,
-    height:source.height*21,walls:valid.walls,boundary:valid.boundary});
+    height:source.height*21,walls:valid.walls,boundary:valid.boundary,
+    wallMaterialId:valid.wallMaterialId});
   const transformed=updateSculptInteriorDoor({...entry,area,terrain:source},
     {x:source.width*14,y:source.height*21-32});
   return updateSculptInterior(transformed,{
