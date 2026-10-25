@@ -14,12 +14,13 @@ import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigation
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {normalizeWorldArea} from './world/world-area-model.js';
+import {INTERIOR_DOOR_ASSETS,INTERIOR_CONNECTOR_ASSETS} from './world/interior-material-catalog.js';
 import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
 import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
 import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3b-boundary-floors';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
- SCULPT_INTERIOR_TEMPLATE_LIMIT,SCULPT_INTERIOR_FLOOR_LIMIT,createSculptInteriorArea,createSculptUpperFloor,updateSculptInterior,updateSculptInteriorDoor,
+ SCULPT_INTERIOR_TEMPLATE_LIMIT,SCULPT_INTERIOR_FLOOR_LIMIT,createSculptInteriorArea,createSculptUpperFloor,updateSculptInterior,updateSculptInteriorDoor,updateSculptFloorConnector,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
  applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3b-house-links-floors';
@@ -63,6 +64,7 @@ let sculptInteriorTemplates=Object.freeze([]);
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
 let interiorWallGesture=null,interiorDoorMoving=false,interiorDoorGesture=null,interiorDoorPreview=null;
 let interiorWallHistory=[],interiorWallRedo=[];
+let interiorConnectorMode=false,interiorConnectorGesture=null,interiorConnectorPreview=null;
 const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
@@ -80,6 +82,13 @@ let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
+const interiorVisualImages=new Map();
+for(const visual of [...INTERIOR_DOOR_ASSETS,...INTERIOR_CONNECTOR_ASSETS]){
+  if(!visual.path)continue;
+  const pic=new Image();pic.onload=()=>scheduleDraw();
+  pic.onerror=()=>scheduleDraw();pic.src=visual.path;
+  interiorVisualImages.set(visual.id,pic);
+}
 function objectImage(assetId){
   if(objectImages.has(assetId))return objectImages.get(assetId);
   const resolved=resolveWorldObjectAsset(assetId);
@@ -369,8 +378,13 @@ function draw(){
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger,
       stairPortals:sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
-        .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal'),
+        .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal')
+        .map(p=>interiorConnectorPreview?.id===p.id?
+          {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),
       doorScale:interior?.exitPortal.visual.scale??.58,
+      doorImage:interiorVisualImages.get(interior?.exitPortal.visual.assetId)??null,
+      connectorImages:interiorVisualImages,
+      wallMaterialId:interior?.area.wallMaterialId??'plaster',
       walls:interior?.area.walls??[],
       boundaryPoints:interior?.area.boundary?.kind==='polygon'?
         worldAreaBoundaryPoints(interior.area):null,
@@ -803,6 +817,14 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(activeInteriorId&&interiorConnectorMode){
+    const point=screenToWorldPoint(event);
+    if(!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    interiorConnectorGesture={pointerId:event.pointerId,point};
+    interiorConnectorPreview={id:$('interior-connector-link').value,...point};
+    scheduleDraw();return;
+  }
   if(activeInteriorId&&interiorDoorMoving){
     const point=interiorDoorPointFromEvent(event);
     if(!point)return;
@@ -890,6 +912,16 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(interiorConnectorMode){
+    if(interiorConnectorGesture?.pointerId===event.pointerId){
+      const point=screenToWorldPoint(event);
+      if(Number.isFinite(point.x)&&Number.isFinite(point.y)){
+        interiorConnectorGesture.point=point;
+        interiorConnectorPreview={id:$('interior-connector-link').value,...point};scheduleDraw();
+      }
+    }
+    return;
+  }
   if(interiorDoorMoving){
     if(interiorDoorGesture&&event.pointerId===interiorDoorGesture.pointerId){
       const point=interiorDoorPointFromEvent(event);
@@ -1039,6 +1071,21 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(interiorConnectorGesture){
+    const gesture=interiorConnectorGesture;
+    if(event.pointerId!==gesture.pointerId)return;
+    interiorConnectorGesture=null;interiorConnectorPreview=null;
+    if(event.type!=='pointercancel'){
+      try{
+        sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+          sourceAreaId:activeInteriorId,portalId:$('interior-connector-link').value,
+          x:gesture.point.x,y:gesture.point.y,assetId:$('interior-connector-asset').value});
+        updateInteriorConnectorControls();
+        status('Escalier / échelle placé : vrai Portal et arrivée liée au niveau cible.');
+      }catch(error){status(error.message);}
+    }
+    scheduleDraw();return;
+  }
   if(interiorDoorGesture){
     const gesture=interiorDoorGesture;
     if(event.pointerId!==gesture.pointerId)return;
@@ -1357,6 +1404,7 @@ function navigationTick(time){
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on){
+    if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
     if(interiorDoorMoving)setInteriorDoorMoving(false);
     if(objectEditing)setObjectEditing(false); // keep object palette out of the walking HUD
@@ -1688,6 +1736,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&objectEditing)setObjectEditing(false);
@@ -1878,6 +1927,7 @@ window.__sculptActorsProbe=()=>Object.freeze({
 });
 loadCaptureActorCatalog();
 function setObjectEditing(active){
+  if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&surfaceEditing)setSurfaceEditing(false);
@@ -2215,6 +2265,8 @@ function interiorDoorPointFromEvent(event){
 function updateInteriorDoorControls(){
   const entry=currentSculptInterior();
   $('interior-door-move').disabled=!entry||entry.floorIndex!==0;
+  $('interior-door-asset').disabled=!entry||entry.floorIndex!==0;
+  $('interior-door-asset').value=entry?.exitPortal.visual.assetId??'default';
   $('interior-door-scale').disabled=!entry||entry.floorIndex!==0;
   $('interior-door-move').setAttribute('aria-pressed',String(interiorDoorMoving));
   $('interior-door-move').classList.toggle('active',interiorDoorMoving);
@@ -2225,6 +2277,7 @@ function updateInteriorDoorControls(){
     '✓ Terminer le déplacement':'Déplacer la porte';
 }
 function setInteriorDoorMoving(on){
+  if(on&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(on&&(!activeInteriorId||currentSculptInterior()?.floorIndex!==0))return;
   if(on){
     if(interiorWallMode)setInteriorWallMode(null);
@@ -2236,15 +2289,18 @@ function setInteriorDoorMoving(on){
   document.body.classList.toggle('interior-door-authoring',interiorDoorMoving);
   updateInteriorDoorControls();scheduleDraw();
 }
-function commitInteriorDoor(point,{scale=null}={}){
+function commitInteriorDoor(point,{scale=null,assetId=null}={}){
   const entry=currentSculptInterior();if(!entry||entry.floorIndex!==0)return;
   const updated=updateSculptInteriorDoor(entry,{...point,
-    ...(scale!==null?{scale}:{})});
+    ...(scale!==null?{scale}:{}),...(assetId!==null?{assetId}:{})});
   sculptInteriors=Object.freeze(sculptInteriors.map(e=>
     e.area.id===entry.area.id?updated:e));
   updateInteriorDoorControls();scheduleDraw();
   status('Porte déplacée/redimensionnée : le Portal et le point d’arrivée sont raccordés.');
 }
+$('interior-door-asset').addEventListener('change',()=>{
+  commitInteriorDoor({},{assetId:$('interior-door-asset').value});
+});
 $('interior-door-move').addEventListener('click',()=>{
   setInteriorDoorMoving(!interiorDoorMoving);
 });
@@ -2278,6 +2334,7 @@ function updateInteriorWallControls(){
       'choisis Placer des murs');
 }
 function setInteriorWallMode(mode){
+  if(mode&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(mode&& !activeInteriorId)return;
   if(mode){
     if(interiorDoorMoving)setInteriorDoorMoving(false);
@@ -2395,7 +2452,8 @@ function updateSculptAreaControls(){
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
-  updateInteriorWallControls();updateInteriorDoorControls();
+  updateInteriorWallControls();updateInteriorDoorControls();updateInteriorConnectorControls();
+  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(activeInteriorId===nextAreaId||(!activeInteriorId&&
@@ -2404,7 +2462,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(wasTesting)setNavigationTesting(false);
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
-  setInteriorWallMode(null);setInteriorDoorMoving(false);
+  setInteriorWallMode(null);setInteriorDoorMoving(false);setInteriorConnectorMode(false);
   interiorWallHistory=[];interiorWallRedo=[];
   if(activeInteriorId){
     const snapshot=captureSculptArea();
