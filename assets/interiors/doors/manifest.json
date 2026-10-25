@@ -1,0 +1,145 @@
+{
+  "schema": "gensrpg-doors-v1",
+  "items": [
+    {
+      "model": "bois_renforce",
+      "view": "face",
+      "file": "assets/interiors/doors/01_bois_renforce_face.png",
+      "width": 210,
+      "height": 206
+    },
+    {
+      "model": "bois_renforce",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/01_bois_renforce_trois_quarts.png",
+      "width": 220,
+      "height": 304
+    },
+    {
+      "model": "bois_arche_pierre",
+      "view": "face",
+      "file": "assets/interiors/doors/02_bois_arche_pierre_face.png",
+      "width": 217,
+      "height": 207
+    },
+    {
+      "model": "bois_arche_pierre",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/02_bois_arche_pierre_trois_quarts.png",
+      "width": 227,
+      "height": 304
+    },
+    {
+      "model": "bois_double",
+      "view": "face",
+      "file": "assets/interiors/doors/03_bois_double_face.png",
+      "width": 218,
+      "height": 206
+    },
+    {
+      "model": "bois_double",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/03_bois_double_trois_quarts.png",
+      "width": 232,
+      "height": 304
+    },
+    {
+      "model": "fer_ornement",
+      "view": "face",
+      "file": "assets/interiors/doors/04_fer_ornement_face.png",
+      "width": 220,
+      "height": 207
+    },
+    {
+      "model": "fer_ornement",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/04_fer_ornement_trois_quarts.png",
+      "width": 223,
+      "height": 307
+    },
+    {
+      "model": "bois_coulissant",
+      "view": "face",
+      "file": "assets/interiors/doors/05_bois_coulissant_face.png",
+      "width": 235,
+      "height": 206
+    },
+    {
+      "model": "bois_coulissant",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/05_bois_coulissant_trois_quarts.png",
+      "width": 263,
+      "height": 310
+    },
+    {
+      "model": "bois_dore",
+      "view": "face",
+      "file": "assets/interiors/doors/06_bois_dore_face.png",
+      "width": 211,
+      "height": 212
+    },
+    {
+      "model": "bois_dore",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/06_bois_dore_trois_quarts.png",
+      "width": 234,
+      "height": 286
+    },
+    {
+      "model": "fer_donjon",
+      "view": "face",
+      "file": "assets/interiors/doors/07_fer_donjon_face.png",
+      "width": 203,
+      "height": 210
+    },
+    {
+      "model": "fer_donjon",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/07_fer_donjon_trois_quarts.png",
+      "width": 227,
+      "height": 290
+    },
+    {
+      "model": "bois_lierre",
+      "view": "face",
+      "file": "assets/interiors/doors/08_bois_lierre_face.png",
+      "width": 217,
+      "height": 212
+    },
+    {
+      "model": "bois_lierre",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/08_bois_lierre_trois_quarts.png",
+      "width": 227,
+      "height": 290
+    },
+    {
+      "model": "grille_fer",
+      "view": "face",
+      "file": "assets/interiors/doors/09_grille_fer_face.png",
+      "width": 209,
+      "height": 212
+    },
+    {
+      "model": "grille_fer",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/09_grille_fer_trois_quarts.png",
+      "width": 238,
+      "height": 282
+    },
+    {
+      "model": "porte_noble",
+      "view": "face",
+      "file": "assets/interiors/doors/10_porte_noble_face.png",
+      "width": 205,
+      "height": 212
+    },
+    {
+      "model": "porte_noble",
+      "view": "trois_quarts",
+      "file": "assets/interiors/doors/10_porte_noble_trois_quarts.png",
+      "width": 237,
+      "height": 285
+    }
+  ]
+}
