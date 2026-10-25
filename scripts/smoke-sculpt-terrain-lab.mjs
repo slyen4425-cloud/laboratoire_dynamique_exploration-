@@ -2712,6 +2712,7 @@ try{
   // WorldArea wall, Undo/Redo, and the Portal action ON THE PLAYFIELD.
   const v79WallSetup=await run(`(async()=>{
     document.querySelector('#interior-wall-toggle').click();
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
     await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
     const p=window.__sculptLabProbe();
     const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
