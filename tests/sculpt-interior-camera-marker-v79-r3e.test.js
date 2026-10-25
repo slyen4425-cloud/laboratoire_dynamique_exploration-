@@ -20,7 +20,8 @@ test('R3E : polygon masking owns a scoped Canvas state, hero rendered after bala
   const js=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const first=js.indexOf("if(boundaryArea?.boundary?.kind==='polygon')");
   const second=js.indexOf('// In Tester the ground is projected',first);
-  const section=js.slice(first,second);
+  const section=js.slice(first,second)
+    .split('\n').map(line=>line.replace(/\/\/.*$/,'')).join('\n');
   assert.ok(first>=0&&second>first);
   // One save for polygon transform + one for painting, BOTH restored.
   assert.equal((section.match(/ctx\.save\(\)/g)??[]).length,2);
