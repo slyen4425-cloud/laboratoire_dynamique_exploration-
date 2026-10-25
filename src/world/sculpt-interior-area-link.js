@@ -146,7 +146,7 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
     const key=item?.buildingId+':'+floorIndex;
     if(!building||!Number.isInteger(floorIndex)||floorIndex<0||
        floorIndex>=SCULPT_INTERIOR_FLOOR_LIMIT||seen.has(key))
-      throw Error('Intérieur 2,5D : bâtiment ou étage absent/dupliqué');
+      throw Error('Intérieur 2,5D : bâtiment absent ou dupliqué, étage absent ou dupliqué');
     seen.add(key);
     let reference;
     if(floorIndex===0)reference=createSculptInteriorArea(building,outsideObjects);
