@@ -695,6 +695,7 @@ function adjustBrushSize(delta){
   input.dispatchEvent(new Event('input',{bubbles:true}));
 }
 function selectMode(mode){
+  if(interiorWallMode)setInteriorWallMode(null);
   const nextKind=mode.startsWith('water-')?'water':'ground';
   selectedMode=mode;
   rampStart=null;rampEnd=null;rampGesture=null;
@@ -763,6 +764,28 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(activeInteriorId&&interiorWallMode){
+    const p=screenToWorldPoint(event);
+    if(!Number.isFinite(p.x)||!Number.isFinite(p.y))return;
+    const point={x:Math.max(4,Math.min(terrain.width*SCULPT_TILE.width-4,p.x)),
+      y:Math.max(4,Math.min(terrain.height*SCULPT_TILE.height-4,p.y))};
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    if(interiorWallMode==='remove'){
+      const entry=currentSculptInterior();
+      commitInteriorWalls(removeInteriorWallNear(entry.area.walls,point.x,point.y));
+      return;
+    }
+    if(!interiorWallStart){
+      interiorWallStart=point;interiorWallPreview=point;
+      updateInteriorWallControls();scheduleDraw();return;
+    }
+    const first=interiorWallStart;
+    interiorWallStart=null;interiorWallPreview=null;
+    try{commitInteriorWalls(appendInteriorWall(currentSculptInterior().area.walls,
+      {a:first,b:point}));}
+    catch(e){status(e.message);updateInteriorWallControls();scheduleDraw();}
+    return;
+  }
   if(objectEditing&&!actorSubmode&&$('object-action').value!=='place'){
     // Aim at what the finger SEES: elevated, rotated visible object artwork.
     // A touch never needs to hit the invisible ground cell/center.
@@ -826,6 +849,12 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(activeInteriorId&&interiorWallMode){
+    if(interiorWallMode==='place'&&interiorWallStart){
+      interiorWallPreview=screenToWorldPoint(event);scheduleDraw();
+    }
+    return;
+  }
   if(objectEditing){
     if(!objectDrag||objectDrag.pointerId!==event.pointerId)return;
     if(event.pointerType==='mouse'&&event.buttons===0)return;
@@ -1246,6 +1275,7 @@ function navigationTick(time){
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on){
+    if(interiorWallMode)setInteriorWallMode(null);
     if(objectEditing)setObjectEditing(false); // keep object palette out of the walking HUD
     if(surfaceEditing)setSurfaceEditing(false);
     navActor=navigationSpawn();
@@ -1574,6 +1604,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&objectEditing)setObjectEditing(false);
   if(active&&navigationTesting)setNavigationTesting(false);
   surfaceEditing=!!active;
@@ -1762,6 +1793,7 @@ window.__sculptActorsProbe=()=>Object.freeze({
 });
 loadCaptureActorCatalog();
 function setObjectEditing(active){
+  if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
   if(!objectEditing){
@@ -2116,6 +2148,7 @@ function updateSculptAreaControls(){
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
+  updateInteriorWallControls();
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(activeInteriorId===nextAreaId||(!activeInteriorId&&
@@ -2124,6 +2157,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(wasTesting)setNavigationTesting(false);
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
+  setInteriorWallMode(null);interiorWallHistory=[];interiorWallRedo=[];
   if(activeInteriorId){
     const snapshot=captureSculptArea();
     sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===activeInteriorId?
@@ -2150,7 +2184,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
     if(spawn&&navActor){navActor.x=spawn.x;navActor.y=spawn.y;
       navVisualLevel=navHeight();centerNavigationCamera();updateNavigationInfo(true);}
   }
-  status(activeInteriorId?'Intérieur ouvert : modifie le sol, choisis un modèle ou garde une pièce unique.':
+  status(activeInteriorId?'Intérieur lié à cette maison : porte, sol, murs et modèles indépendants.':
     'Extérieur restauré · maison et relief conservés.');
 }
 function openSelectedSculptInterior(){
