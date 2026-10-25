@@ -2914,11 +2914,17 @@ try{
       for(const zoom of ['100','175','240']){
         const z=document.querySelector('#navigation-camera-zoom');
         z.value=zoom;z.dispatchEvent(new Event('input',{bubbles:true}));
-        await new Promise(resolve=>requestAnimationFrame(resolve));
-        const hero=window.__sculptNavProbe().actorScreen;
+        // Wait for the actual canvas paint. ActorScreen alone can look
+        // centered while a leaked canvas pitch scales its DRAWN position.
+        await new Promise(resolve=>requestAnimationFrame(()=>
+          requestAnimationFrame(resolve)));
+        const probe=window.__sculptNavProbe(),hero=probe.actorScreen;
+        const matrix=probe.actorRenderTransform;
         const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
         results.push({angle:Number(angle),zoom:Number(zoom),
-          x:hero?.x,y:hero?.y,width:rect.width,height:rect.height});
+          x:hero?.x,y:hero?.y,width:rect.width,height:rect.height,
+          matrixA:matrix?.a,matrixD:matrix?.d,
+          matrixB:matrix?.b,matrixC:matrix?.c});
       }
     }
     document.querySelector('#navigation-toggle').click();
@@ -2927,6 +2933,14 @@ try{
   if(r3dCamera.length!==9||r3dCamera.some(q=>!Number.isFinite(q.x)||
     !Number.isFinite(q.y)||q.x<0||q.y<0||q.x>=q.width||q.y>=q.height))
     throw Error('R3D actor lost after zoom/pitch in Chromium: '+JSON.stringify(r3dCamera));
+  // R3E: assert ACTUAL sprite Canvas transform across 35°/55°/90° and zooms.
+  // The old bug passed the actorScreen check because that metric was
+  // theoretical, while the polygon mask prematurely popped ctx.save().
+  if(r3dCamera.some(q=>!Number.isFinite(q.matrixA)||
+    !Number.isFinite(q.matrixD)||Math.abs(q.matrixA-q.matrixD)>.0001||
+    Math.abs(q.matrixB)>.0001||Math.abs(q.matrixC)>.0001))
+    throw Error('R3E double projection polygonal actor, 35-90°: '+
+      JSON.stringify(r3dCamera));
   console.log('R3D REAL Chromium portal rotation and actor following all pitch/zoom:',JSON.stringify({
     rotation:r3dRotation,screenChecks:r3dCamera
   }));
