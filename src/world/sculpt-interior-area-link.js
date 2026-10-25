@@ -103,20 +103,15 @@ export function createSculptUpperFloor(below){
 }
 // Placed stair or ladder: the source Portal owns the interaction position,
 // the target WorldArea Spawn owns the arrival position. No extra prop objects.
-export function updateSculptFloorConnector(entries,{sourceAreaId,x,y,assetId}={}){
+export function updateSculptFloorConnector(entries,{sourceAreaId,portalId,x,y,assetId}={}){
   if(!Array.isArray(entries)||!validInteriorConnectorAsset(assetId))
     throw Error('Escalier/échelle : modèle invalide');
   const source=entries.find(e=>e.area.id===sourceAreaId);
   if(!source)throw Error('Escalier/échelle : étage absent');
   // Find exactly one Portal sourced by this level and targeting an adjacent level.
   const links=entries.flatMap(e=>[e.entryPortal,e.exitPortal]);
-  const portal=links.find(p=>p.sourceAreaId===sourceAreaId&&
-    p.visual.marker==='portal'&&
-    (p.targetAreaId!==p.sourceAreaId)&&
-    (entries.find(e=>e.area.id===p.targetAreaId)?.buildingId===source.buildingId)&&
-    // Prefer upward passage when there are two destinations.
-    (entries.find(e=>e.area.id===p.targetAreaId)?.floorIndex===source.floorIndex+1))??
-    links.find(p=>p.sourceAreaId===sourceAreaId&&p.visual.marker==='portal');
+  const portal=links.find(p=>p.id===portalId&&p.sourceAreaId===sourceAreaId&&
+    p.visual.marker==='portal');
   if(!portal)throw Error('Ajoute un étage pour placer un escalier');
   if(!Number.isFinite(x)||!Number.isFinite(y)||
     !circleFitsWorldAreaBoundary(source.area,x,y,12))
