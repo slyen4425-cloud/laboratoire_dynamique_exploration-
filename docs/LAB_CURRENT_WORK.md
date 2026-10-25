@@ -1,3 +1,16 @@
+# EN COURS — V79 R3C (25/10/2026) — Formes visibles, finitions des portes/murs, escalier et échelle positionnables
+
+- **Retour Pixel R3B** : porte validée ; changer la forme du bâtiment semblait n'avoir aucun effet ; demandes de textures de portes, murs et possibilité de placer un escalier ou une échelle pour chaque étage. Murs tactiles R3A2 et caméra 35° restent validés et gelés.
+- **START** : SHA R3B publié et CI `16b89aaab63674e150bc35869e3a4a7ccc7ed2ba` ; checkpoint `checkpoint/exploration-start-interior-shapes-materials-stair-placement-v79-r3c-2026-10-25` ; branche `work/exploration-interior-shapes-materials-stair-placement-v79-r3c-2026-10-25`. Aucun nouveau GREEN présumé.
+- **Géométrie** : sélection Rectangle/L/T/Croix immédiatement appliquée via l'action existante, sans redoubler WorldArea.boundary ; contour 2,5D doré et découpe sol, mêmes limites lues par Collision World. Le redimensionnement séparé reste explicite et protégé contre déconnexion d'étages.
+- **Finitions** : 5 revêtements muraux (enduit, pierre, brique, bois, pierre sombre) en petits motifs Canvas et `WorldArea.wallMaterialId` ; 3 WebP de porte du catalogue Exploration et la porte dessinée par défaut dans `Portal.visual.assetId`. Le matériau des murs suit les modèles de pièces et l'export/import.
+- **Étages** : source Portal montée/descente choisie dans le panneau, style escalier en bois/pierre (assets WebP existants) ou échelle bois dessinée ; placer/glisser sur la carte change l'existant `Portal.trigger` et le `WorldArea.spawn` cible, sans second système de collision/coordonnées. Sauvegarde des positions et styles dans `interiors[]`.
+- **Gel** : forme autoritaire WorldArea ; caméra 35–90 validée, murs R3A2, pentes V77, escaliers extérieurs V78, Combat, GenS RPG main et runtime WorldDocument intacts.
+- **Gates** : nouveaux tests Node, Node legacy, vrai Chromium pour changements de formes, porte/murs, placement échelle/Portal/Spawn et roundtrip, CI exacte ; Publication Pages uniquement via PR d'infrastructure sur SHA CI vérifié. GREEN final après verdict Pixel.
+- **Limites** : ces motifs sont des textures Canvas provisoires, pas encore un pack de murs WebP peint à la main ; l'échelle est dessinée au Canvas en attendant l'asset final ; cloisons percées/escaliers animés et raccord final WorldDocument restent hors périmètre.
+
+---
+
 # EN COURS — V79 R3B (25/10/2026) — Lien maison↔pièce, tailles et étages
 
 - **Validation créateur** : murs R3A2 et caméra à 35° VALIDÉS ; nouvel ordre : une maison doit pouvoir choisir une pièce précise, dimensions/formes petite maison ou donjon, système d'étages.
