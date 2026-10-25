@@ -372,6 +372,14 @@ body.interior-wall-authoring #interior-area-bar,
 body.interior-door-authoring #interior-area-bar{max-height:62dvh;overflow-y:auto}
 body.interior-wall-authoring #sculpt-canvas,
 body.interior-door-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
+#object-interior-link[hidden]{display:none!important}
+#object-interior-link{display:grid;gap:7px;border:1px solid #5f7b79;border-radius:8px;padding:8px}
+.interior-layout-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;border-top:1px solid #4c615a;padding-top:7px}
+.interior-layout-tools>strong,.interior-layout-tools>small{width:100%}
+.interior-layout-tools>label{display:grid;gap:3px;flex:1 1 115px;min-width:0}
+.interior-layout-tools input,.interior-layout-tools select{min-height:37px;width:100%}
+.interior-layout-tools button{flex:1 1 100%}
+.interior-layout-tools small{font-size:.74rem;color:#c1d0cb}
 /* V79 R2: controls are inside the SAME floating quickbar. */
 .sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
 .sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
@@ -435,6 +443,19 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
  <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <section class="interior-layout-tools" aria-label="Taille et forme de la pièce">
+  <strong>📐 Forme de la pièce</strong>
+  <label>Forme <select id="interior-shape">
+    <option value="rectangle">Rectangle / petite maison</option>
+    <option value="l">Forme en L</option>
+    <option value="t">Forme en T</option>
+    <option value="cross">Croix / donjon</option>
+  </select></label>
+  <label>Largeur (cases) <input type="number" id="interior-width" min="8" max="80" step="1" value="18"></label>
+  <label>Profondeur (cases) <input type="number" id="interior-height" min="8" max="64" step="1" value="14"></label>
+  <button id="interior-layout-apply" type="button">Appliquer forme et taille</button>
+  <small>La forme limite réellement les déplacements. Les dimensions et la forme sont sauvegardées avec la pièce.</small>
+ </section>
  <section class="interior-wall-tools" aria-label="Construction des murs">
   <strong>🧱 Construire l'intérieur</strong>
   <button id="interior-wall-toggle" type="button" aria-pressed="false">Placer des murs</button>
@@ -558,7 +579,14 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
   <button type="button" id="object-turn-right">↷ 45°</button>
  </div>
  <output id="object-selected">Aucun objet sélectionné</output>
- <button id="object-open-interior" type="button" hidden>🏠 Lier / modifier l'intérieur 2,5D</button>
+ <section id="object-interior-link" hidden>
+  <strong>🏠 Associer une pièce à la maison choisie</strong>
+  <label>Intérieur à utiliser <select id="object-interior-template">
+    <option value="">Pièce libre (ou intérieur déjà lié)</option>
+  </select></label>
+  <button id="object-open-interior" type="button" hidden>🏠 Lier / modifier l'intérieur 2,5D</button>
+  <small>Chaque maison reçoit sa propre pièce. Choisir un modèle existant puis ouvrir l'associe à cette maison sans partager son Portal.</small>
+ </section>
   <small id="interior-house-link-info" hidden>Cette maison possède son propre intérieur. Son entrée est liée à sa porte extérieure.</small>
  <div class="object-actions">
    <button type="button" id="object-undo" disabled>↶ Objet</button>
