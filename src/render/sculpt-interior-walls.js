@@ -3,10 +3,10 @@
 // Back and side walls are visible; the south/front wall is cut away so the
 // hero and interior stay readable at camera 35–90°. No bitmap collision masks.
 export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
-  rise=18,wallLevels=2,doorway=null}={}){
+  rise=18,wallLevels=2,doorway=null,walls=[],cameraPitch=1}={}){
   if(!terrain)return;
   const w=terrain.width*tileWidth,h=terrain.height*tileHeight;
-  const lift=wallLevels*rise;
+  const lift=wallLevels*rise/Math.max(.5,cameraPitch);
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
   // Back wall — beyond the north edge, not covering the player.
   ctx.fillStyle='#92795e';
@@ -27,22 +27,51 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
   ctx.setLineDash([6,4]);ctx.strokeStyle='rgba(238,216,183,.45)';
   ctx.beginPath();ctx.moveTo(0,h);ctx.lineTo(w*.41,h);
   ctx.moveTo(w*.59,h);ctx.lineTo(w,h);ctx.stroke();
-  // Decorative doorway derives from the one canonical exit Portal.
-  // It NEVER creates independent geometry, collision or an extra trigger.
+  // The same WorldArea wall segments are rendered here as read-only geometry;
+  // Collision World tests their original coordinates, not these polygons.
+  for(const wall of [...walls].sort((a,b)=>
+    (a.a.y+a.b.y)-(b.a.y+b.b.y))){
+    const z=wall.height/Math.max(.5,cameraPitch);
+    const a=wall.a,b=wall.b;
+    const width=wall.thickness;
+    ctx.fillStyle='#746252';
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+    ctx.lineTo(b.x,b.y-z);ctx.lineTo(a.x,a.y-z);
+    ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#dbc3a3';ctx.lineWidth=Math.max(2,width*.35);
+    ctx.beginPath();ctx.moveTo(a.x,a.y-z);ctx.lineTo(b.x,b.y-z);ctx.stroke();
+    ctx.strokeStyle='rgba(20,16,12,.36)';ctx.lineWidth=width;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  // Temporary asset-independent door, sized like an actual standing door.
+  // This visible doorway is anchored to the SAME exitPortal.trigger.
   if(doorway?.kind==='point'&&Number.isFinite(doorway.x)&&
      Number.isFinite(doorway.y)){
-    const x=Math.max(26,Math.min(w-26,doorway.x));
-    const y=h-2;
-    ctx.fillStyle='#432e22';ctx.fillRect(x-23,y-5,46,9);
-    ctx.fillStyle='#bc905e';ctx.fillRect(x-19,y-4,38,5);
-    ctx.strokeStyle='#d8b787';ctx.lineWidth=4;
-    ctx.beginPath();ctx.moveTo(x-25,y-27);
-    ctx.lineTo(x-25,y+1);ctx.lineTo(x+25,y+1);
-    ctx.lineTo(x+25,y-27);ctx.stroke();
-    ctx.fillStyle='rgba(188,144,86,.28)';
-    ctx.beginPath();ctx.ellipse(x,doorway.y,20,8,0,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle='#f7dfb7';ctx.font='bold 12px sans-serif';
-    ctx.textAlign='center';ctx.fillText('🚪 Sortie',x,doorway.y-11);
+    const x=Math.max(46,Math.min(w-46,doorway.x));
+    const baseY=doorway.y+9;
+    const doorWidth=66,doorHeight=91/Math.max(.5,cameraPitch);
+    const top=baseY-doorHeight;
+    ctx.save();ctx.setLineDash([]);
+    ctx.fillStyle='rgba(0,0,0,.25)';
+    ctx.beginPath();ctx.ellipse(x,baseY,42,12,0,0,Math.PI*2);ctx.fill();
+    // Stone doorway, a wood panel and an arch with a clear top silhouette.
+    ctx.fillStyle='#65513f';ctx.fillRect(x-37,top-9,74,doorHeight+12);
+    ctx.fillStyle='#ae906d';ctx.fillRect(x-35,top-7,70,doorHeight+9);
+    ctx.fillStyle='#2b1b15';ctx.fillRect(x-30,top,60,doorHeight);
+    ctx.fillStyle='#704329';ctx.fillRect(x-27,top+4,54,doorHeight-8);
+    ctx.fillStyle='#93613c';ctx.fillRect(x-20,top+11,40,doorHeight*.36);
+    ctx.fillRect(x-20,top+doorHeight*.57,40,doorHeight*.32);
+    ctx.strokeStyle='#3d2419';ctx.lineWidth=3;
+    ctx.strokeRect(x-20,top+11,40,doorHeight*.36);
+    ctx.strokeRect(x-20,top+doorHeight*.57,40,doorHeight*.32);
+    ctx.fillStyle='#e4c177';ctx.beginPath();
+    ctx.arc(x+18,top+doorHeight*.61,4.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#c0a17a';ctx.beginPath();
+    ctx.arc(x,top-7,37,Math.PI,2*Math.PI);ctx.lineTo(x+37,top-6);
+    ctx.lineTo(x-37,top-6);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#edcf9b';ctx.lineWidth=3;
+    ctx.strokeRect(x-35,top-5,70,doorHeight+8);
+    ctx.restore();
   }
   ctx.restore();
 }
