@@ -3,7 +3,7 @@
 // Back and side walls are visible; the south/front wall is cut away so the
 // hero and interior stay readable at camera 35–90°. No bitmap collision masks.
 export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
-  rise=18,wallLevels=2,doorway=null,walls=[],cameraPitch=1}={}){
+  rise=18,wallLevels=2,doorway=null,doorScale=.58,walls=[],cameraPitch=1}={}){
   if(!terrain)return;
   const w=terrain.width*tileWidth,h=terrain.height*tileHeight;
   const lift=wallLevels*rise/Math.max(.5,cameraPitch);
@@ -49,9 +49,13 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
      Number.isFinite(doorway.y)){
     const x=Math.max(46,Math.min(w-46,doorway.x));
     const baseY=doorway.y+9;
-    const doorWidth=66,doorHeight=91/Math.max(.5,cameraPitch);
+    const doorHeight=91/Math.max(.5,cameraPitch);
     const top=baseY-doorHeight;
     ctx.save();ctx.setLineDash([]);
+    // Scale around the floor anchor. Door dimensions and gameplay Portal
+    // collision are independent; the visible foot matches the true trigger.
+    const size=Math.max(.35,Math.min(1.5,Number(doorScale)||.58));
+    ctx.translate(x,baseY);ctx.scale(size,size);ctx.translate(-x,-baseY);
     ctx.fillStyle='rgba(0,0,0,.25)';
     ctx.beginPath();ctx.ellipse(x,baseY,42,12,0,0,Math.PI*2);ctx.fill();
     // Stone doorway, a wood panel and an arch with a clear top silhouette.
