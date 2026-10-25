@@ -463,6 +463,13 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
     <option value="stairs.stone">Escalier pierre</option>
     <option value="ladder.wood">Échelle bois</option>
   </select></label>
+  <label>Orientation <output id="interior-connector-rotation-value">0°</output>
+    <input id="interior-connector-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Orientation de l’escalier ou de l’échelle en degrés">
+  </label>
+  <div class="object-actions">
+    <button id="interior-connector-turn-left" type="button">↶ 45°</button>
+    <button id="interior-connector-turn-right" type="button">↷ 45°</button>
+  </div>
   <button id="interior-connector-place" type="button" aria-pressed="false">📍 Positionner le passage sur la carte</button>
   <small id="interior-connector-hint">Choisis un étage relié et place le passage au doigt. Le vrai Portal se déplace avec lui.</small>
   <small>Chaque étage possède sa propre pièce ; dans le jeu, approche les escaliers et utilise Monter / Descendre.</small>
