@@ -372,6 +372,8 @@ function draw(){
         .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal'),
       doorScale:interior?.exitPortal.visual.scale??.58,
       walls:interior?.area.walls??[],
+      boundaryPoints:interior?.area.boundary?.kind==='polygon'?
+        worldAreaBoundaryPoints(interior.area):null,
       cameraPitch:view.pitch});
     if(interiorWallMode==='place'&&interiorWallStart){
       const next=interiorWallPreview??interiorWallStart;
