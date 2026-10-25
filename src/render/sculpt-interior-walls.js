@@ -4,11 +4,31 @@
 // hero and interior stay readable at camera 35–90°. No bitmap collision masks.
 export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
   rise=18,wallLevels=2,doorway=null,doorScale=.58,walls=[],cameraPitch=1,
-  stairPortals=[]}={}){
+  stairPortals=[],boundaryPoints=null}={}){
   if(!terrain)return;
   const w=terrain.width*tileWidth,h=terrain.height*tileHeight;
   const lift=wallLevels*rise/Math.max(.5,cameraPitch);
   ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
+  // For shaped rooms draw the canonical polygon perimeter. 2.5D wall
+  // faces remain presentation only: Collision World reads WorldArea.boundary.
+  if(Array.isArray(boundaryPoints)&&boundaryPoints.length>4){
+    for(let i=0;i<boundaryPoints.length;i++){
+      const a=boundaryPoints[i],b=boundaryPoints[(i+1)%boundaryPoints.length];
+      const front=(a.y+b.y)*.5>h*.78;
+      if(!front){
+        ctx.fillStyle='#8c755d';ctx.beginPath();
+        ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+        ctx.lineTo(b.x,b.y-lift);ctx.lineTo(a.x,a.y-lift);
+        ctx.closePath();ctx.fill();
+        ctx.strokeStyle='#d0b399';ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.moveTo(a.x,a.y-lift);
+        ctx.lineTo(b.x,b.y-lift);ctx.stroke();
+      }else{
+        ctx.strokeStyle='rgba(237,208,173,.62)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      }
+    }
+  }else{
   // Back wall — beyond the north edge, not covering the player.
   ctx.fillStyle='#92795e';
   ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(w,0);
@@ -28,6 +48,7 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
   ctx.setLineDash([6,4]);ctx.strokeStyle='rgba(238,216,183,.45)';
   ctx.beginPath();ctx.moveTo(0,h);ctx.lineTo(w*.41,h);
   ctx.moveTo(w*.59,h);ctx.lineTo(w,h);ctx.stroke();
+  }
   // The same WorldArea wall segments are rendered here as read-only geometry;
   // Collision World tests their original coordinates, not these polygons.
   for(const wall of [...walls].sort((a,b)=>
