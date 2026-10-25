@@ -1,4 +1,5 @@
 import {normalizeInteriorWalls} from './interior-wall-model.js';
+import {interiorWallMaterialId} from './interior-material-catalog.js';
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {
   normalizeWorldAreaBoundary
@@ -142,6 +143,7 @@ export function normalizeWorldArea(raw, index = 0) {
     actors: normalizeWorldActorPlacements(raw.actors),
     obstacles: Object.freeze(obstacles),
     walls:kind==='interior'?normalizeInteriorWalls(raw.walls??[]):Object.freeze([]),
+    ...(kind==='interior'?{wallMaterialId:interiorWallMaterialId(raw.wallMaterialId)}:{}),
     spawns: Object.freeze(uniqueSpawns)
   });
 }
