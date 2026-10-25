@@ -111,6 +111,7 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+let navHeroRenderTransform=null; // diagnostic only: actual Canvas matrix at sprite draw
 // Display-only altitude, separate from native Collision World coordinates.
 let navVisualLevel=null;
 const navKeys=new Set();
@@ -1307,6 +1308,12 @@ function drawNavigationActor(){
   const footY=navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise+3;
   const projected=sculptCameraProjectBridgeFoot(cameraView(),navActor.x,footY,
     sculptBridgeVisualFootLift(visualRect,deckBridge));
+  // Capture the ACTUAL sprite rendering transform (not inferred coordinates).
+  // All interiors, including polygonal ones, must give the sprite an
+  // unpitched matrix: otherwise 35° and 80° paint different hero positions.
+  const matrix=ctx.getTransform();
+  navHeroRenderTransform={a:matrix.a,b:matrix.b,c:matrix.c,d:matrix.d,
+    e:matrix.e,f:matrix.f};
   // The native Exploration actor renderer owns idle/walk motion, shadow,
   // visual anchor and direction; gameplay state is read-only.
   if(navigationActorPreparer.get(navigationActorVisual.assetId))
@@ -1547,6 +1554,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
   actorPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
   actorMotionTime:navVisualTime,actorVisualLevel:navVisualLevel,
+  actorRenderTransform:navHeroRenderTransform,
   actorScreen:navActor?(()=>{
     const p=sculptCameraProject(cameraView(),navActor.x,
       navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise);
