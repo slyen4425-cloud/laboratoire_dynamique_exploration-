@@ -367,8 +367,7 @@ function draw(){
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interior?.floorIndex===0?
-        (interiorDoorPreview??interior?.exitPortal.trigger):null,
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger,
       stairPortals:sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
         .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal'),
       doorScale:interior?.exitPortal.visual.scale??.58,
