@@ -352,6 +352,26 @@ body.interior-wall-authoring .sculpt-quickbar>.quick-level{display:none!importan
 body.sculpt-immersive .interior-wall-tools{grid-column:1/-1}
 @media(max-width:600px){#navigation-area-door.in-game-door-action{min-width:144px;min-height:50px;
  right:8px;bottom:12px;padding:8px;font-size:.88rem}}
+/* V79 R3A2: interior construction tools stay compact and finger-friendly. */
+.interior-door-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%}
+.interior-door-tools strong{width:100%;font-size:.82rem}
+.interior-door-tools>button{flex:1 1 100px}
+.interior-door-tools>label{flex:1 1 135px;display:grid;gap:2px}
+.interior-door-tools input[type=range]{width:100%;accent-color:#f6cb93}
+.interior-door-tools small{line-height:1.28;color:#c5d5d7}
+.wall-diagonal-option{flex:1 1 100%;display:flex!important;gap:6px;align-items:center}
+body.interior-wall-authoring .interior-area-bar > label,
+body.interior-wall-authoring .interior-area-bar > small,
+body.interior-wall-authoring .interior-area-bar > strong:not(#interior-area-label),
+body.interior-wall-authoring .interior-area-bar > button:not(#interior-area-return),
+body.interior-door-authoring .interior-area-bar > label,
+body.interior-door-authoring .interior-area-bar > small,
+body.interior-door-authoring .interior-area-bar > strong:not(#interior-area-label),
+body.interior-door-authoring .interior-area-bar > button:not(#interior-area-return){display:none!important}
+body.interior-wall-authoring #interior-area-bar,
+body.interior-door-authoring #interior-area-bar{max-height:62dvh;overflow-y:auto}
+body.interior-wall-authoring #sculpt-canvas,
+body.interior-door-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
 /* V79 R2: controls are inside the SAME floating quickbar. */
 .sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
 .sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
@@ -422,7 +442,15 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
   <button id="interior-wall-cancel" type="button" disabled>Annuler le départ</button>
   <button id="interior-wall-undo" type="button" disabled>↶ Mur</button>
   <button id="interior-wall-redo" type="button" disabled>↷ Mur</button>
-  <output id="interior-wall-info">Premier appui : début du mur. Deuxième : fin.</output>
+  <label class="wall-diagonal-option"><input id="interior-wall-diagonal" type="checkbox"> Mur en diagonale</label>
+  <output id="interior-wall-info">Glisse du début à la fin pour tracer un mur. Deux appuis fonctionnent aussi. Grille et angles droits actifs.</output>
+ </section>
+ <section class="interior-door-tools" aria-label="Régler la porte du bâtiment">
+  <strong>🚪 Porte de la maison</strong>
+  <button id="interior-door-move" type="button" aria-pressed="false">Déplacer la porte</button>
+  <label>Taille de porte <output id="interior-door-scale-value">58 %</output>
+    <input type="range" id="interior-door-scale" min="35" max="125" step="5" value="60" aria-label="Taille de la porte"></label>
+  <small>Déplacer : touche ou fais glisser sur le sol. La porte sert aussi de point de sortie et déplace l’arrivée à l’intérieur.</small>
  </section>
  <label>Sol intérieur <select id="interior-floor-base" aria-label="Sol de base de cette pièce">
   <option value="floor.wood.house">Parquet chêne</option>
@@ -701,6 +729,6 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3a-entry-walls-camera"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3a2-door-scale-wall-gestures"></script>
 </body>
 </html>
