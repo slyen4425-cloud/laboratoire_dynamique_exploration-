@@ -260,6 +260,10 @@ export function sculptInteriorPortalDocument(outsideObjects,entries){
   // Explicit same authority as the existing Builder/WorldDocument.
   return Object.freeze({areas:frozen(areas),portals:frozen(portals)});
 }
+export function sculptInteriorAvailablePortal(outsideObjects,entries,currentAreaId,point){
+  const document=sculptInteriorPortalDocument(outsideObjects,entries);
+  return findTriggeredPortal(document,currentAreaId,point);
+}
 export function sculptInteriorTransition(outsideObjects,entries,currentAreaId,point){
   const document=sculptInteriorPortalDocument(outsideObjects,entries);
   const portal=findTriggeredPortal(document,currentAreaId,point);
