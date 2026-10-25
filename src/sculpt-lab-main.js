@@ -349,7 +349,8 @@ function draw(){
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interior?.exitPortal.trigger,walls:interior?.area.walls??[],
+      doorway:sculptInteriors.find(e=>e.area.id===activeInteriorId)?.exitPortal.trigger,
+      walls:interior?.area.walls??[],
       cameraPitch:view.pitch});
     if(interiorWallMode==='place'&&interiorWallStart){
       const next=interiorWallPreview??interiorWallStart;
