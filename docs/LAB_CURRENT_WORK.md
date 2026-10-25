@@ -1,3 +1,14 @@
+# EN COURS — V79 R3A prévalidation correctrice — 25/10/2026 — Murs réels, entrée jouable, porte et caméra
+
+- **Retour Pixel créateur sur R2** : « c'est mieux », MAIS action entrer/sortir invisible hors options de test, porte intérieure minuscule « Sorti », liaison de pièce peu explicite, aucun outil de mur, caméra 35° déformée. **V79 R2 n'a PAS été validé GREEN final.**
+- **START** : source V79 R2 `fbfe8daae804504f8d18bb865fde8d315eafc49c`; checkpoint immuable `checkpoint/exploration-start-interior-ux-walls-v79-r3a-2026-10-25`; unique branche `work/exploration-interior-ux-walls-v79-r3a-2026-10-25`. R3A est strictement une prévalidation correctrice, sans promouvoir R2 GREEN.
+- **Actions** : interaction Portal existante déplacée des options de test vers un bouton flottant **sur le terrain de jeu** lorsqu'on approche le véritable anchor de porte ; porte 2,5D temporaire plus grande sans label collé ; libellé de liaison explicite maison choisie ↔ son intérieur/porte ; caméra intérieure 35–90 via le même projection adapter, mais sans cisaillement horizontal ; **segments de murs dans `WorldArea.walls`**, collision unique dans `Collision World`, rendu du même segment dans Sculpt Renderer, interface tactile deux touches / suppression / undo/redo. JSON et modèles neutres de pièces conservent les murs sans recopier Portals/IDs de maisons.
+- **Gels** : pentes V77, escaliers V78, autres objets et collision monde extérieure, fondations du Builder, Combat, GenSrpg main, vraie intégration runtime WorldDocument, Portals canonique non modifié. **Pas de rustine ni double autorité.**
+- **Limites** : la prévisualisation SculptLab n'est pas encore le runtime de jeu final ; entrée/sortie définitive du jeu doit réutiliser Portal dans la future intégration. Les portes intérieures découpant les murs et les étages multiples (R3B–R3D) restent hors de ce lot. Les murs sont solides sur toute leur longueur et ne proposent pas encore d'ouverture.
+- **Gates** : test modèle/collision/JSON/templating, caméra 35/55/90, UI jeu, anciens tests Node et navigateur Chromium réel avec gestes de murs/undo/redo/bouton de porte ; **NON GREEN** tant que CI exacte et retour tactile Pixel satisfaisant. Aucun merge de code métier sur main ; déploiement Pages uniquement par SHA vérifié en PR infrastructure.
+
+---
+
 # EN COURS — V79 R2 (24/10/2026) — Intérieurs : porte visible, sols natifs et modèles réutilisables
 
 - **Retour créateur** : ajouter porte intérieure; choisir entre personnalisation libre et modèle de pièce réutilisable; raccorder les cinq textures de sols déjà présentes; replacer retour extérieur et actions dans le panneau flottant plein écran.
