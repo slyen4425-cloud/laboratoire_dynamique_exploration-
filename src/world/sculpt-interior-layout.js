@@ -1,6 +1,7 @@
 // One interior shape = WorldArea.boundary. UI presets are never serialized.
 import {createSculptTerrain} from './sculpt-height-model.js';
 import {normalizeWorldArea} from './world-area-model.js';
+import {pointInWorldAreaBoundary} from './world-area-geometry.js';
 import {updateSculptInteriorDoor} from './sculpt-interior-area-link.js';
 export const SCULPT_INTERIOR_SHAPES=Object.freeze(['rectangle','l','t','cross']);
 const P=([x,y])=>Object.freeze({x,y});
@@ -67,7 +68,16 @@ export function resizeSculptInterior(entry,{width=entry.terrain.width,
     spheres:old.spheres,ramps:old.ramps
   });
   const area=normalizeWorldArea({...entry.area,width:w*28,height:h*21,
-    boundary:sculptInteriorBoundary(shape),walls});
+    boundary:sculptInteriorBoundary(shape),walls,
+    spawns:entry.area.spawns.map(p=>Number.isFinite(p.x)&&Number.isFinite(p.y)?
+      {...p,...translate(p)}:p)});
+  // No hidden furniture/wall after removing a corner with L/T/Cross.
+  // Keep the original room untouched rather than silently losing content.
+  const valid=p=>pointInWorldAreaBoundary(area,p.x,p.y);
+  if(walls.some(w=>!valid(w.a)||!valid(w.b)||!valid({
+    x:(w.a.x+w.b.x)/2,y:(w.a.y+w.b.y)/2
+  }))||objects.some(o=>!valid(o.transform))||actors.some(a=>!valid(a)))
+    throw Error('Forme incompatible : déplace les murs ou objets hors du coin supprimé.');
   // Initial door moves proportionally. Spawn follows through the SAME Portal.
   const d=entry.exitPortal?.trigger;
   let updated={...entry,area,terrain,objects,actors};
