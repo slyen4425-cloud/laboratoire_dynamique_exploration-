@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v79-r3c-door-wall-stair-ladder-assets-placeable-2026-10-25
+# preview-revision: v79-r3d-cross-player-follow-free-stair-rotation-2026-10-25
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 567698b716cf641b33bb80913caa847ddbfffcb8
+          ref: bc75f929efcfcc24645bbf75e23786dafa0f9f10
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
