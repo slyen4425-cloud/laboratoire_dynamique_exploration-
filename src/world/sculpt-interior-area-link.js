@@ -103,7 +103,7 @@ export function createSculptUpperFloor(below){
 }
 // Placed stair or ladder: the source Portal owns the interaction position,
 // the target WorldArea Spawn owns the arrival position. No extra prop objects.
-export function updateSculptFloorConnector(entries,{sourceAreaId,portalId,x,y,assetId}={}){
+export function updateSculptFloorConnector(entries,{sourceAreaId,portalId,x,y,assetId,rotationDeg}={}){
   if(!Array.isArray(entries)||!validInteriorConnectorAsset(assetId))
     throw Error('Escalier/échelle : modèle invalide');
   const source=entries.find(e=>e.area.id===sourceAreaId);
@@ -120,7 +120,8 @@ export function updateSculptFloorConnector(entries,{sourceAreaId,portalId,x,y,as
   if(!target)throw Error('Étage cible absent');
   const updatedPortal=normalizePortal({...portal,
     trigger:{kind:'point',x,y,radius:27},
-    visual:{...portal.visual,assetId}});
+    visual:{...portal.visual,assetId,
+      ...(Number.isFinite(rotationDeg)?{rotationDeg}: {})}});
   // The arrival uses the existing Spawn ID. On different-sized or L-shaped
   // floors, retain the target's valid existing spawn instead of teleporting
   // beyond its boundary.
