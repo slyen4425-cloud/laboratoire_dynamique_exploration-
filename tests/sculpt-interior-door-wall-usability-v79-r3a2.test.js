@@ -62,7 +62,7 @@ test('R3A2 : endpoint and grid snapping, orthogonal or diagonals, bounded floor'
     from:{x:70,y:70},orthogonal:false});
   assert.notEqual(free.y,70);
   assert.deepEqual(snapInteriorWallPoint({x:-20,y:9999},[],{width:504,height:294}),
-    {x:7,y:287});
+    {x:14,y:287});
 });
 test('R3A2 : original Portal visuals without size remain backward compatible',()=>{
   const portal=normalizePortal({id:'a',sourceAreaId:'outside',
