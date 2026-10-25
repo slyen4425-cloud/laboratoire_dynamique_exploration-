@@ -2108,6 +2108,76 @@ $('target').addEventListener('input',()=>changeTarget($('target').value));
 $('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
 $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 
+// Wall authoring reads/writes ONLY the canonical WorldArea.walls.
+// There is no editor-owned persisted copy and no visual collision shortcut.
+function currentSculptInterior(){
+  return sculptInteriors.find(e=>e.area.id===activeInteriorId)??null;
+}
+function updateInteriorWallControls(){
+  const entry=currentSculptInterior(),count=entry?.area.walls.length??0;
+  $('interior-wall-toggle').disabled=!entry;
+  $('interior-wall-remove').disabled=!entry||count===0;
+  $('interior-wall-cancel').disabled=!interiorWallStart;
+  $('interior-wall-undo').disabled=!entry||!interiorWallHistory.length;
+  $('interior-wall-redo').disabled=!entry||!interiorWallRedo.length;
+  for(const [id,mode] of [['interior-wall-toggle','place'],['interior-wall-remove','remove']]){
+    $(id).setAttribute('aria-pressed',String(interiorWallMode===mode));
+    $(id).classList.toggle('active',interiorWallMode===mode);
+  }
+  $('interior-wall-info').textContent=interiorWallStart?
+    'Départ choisi · touche la fin du mur ou annule le départ':
+    count+' mur(s) · '+(interiorWallMode==='place'?'touche le début puis la fin':
+      interiorWallMode==='remove'?'touche un mur à supprimer':
+      'choisis Placer des murs pour construire');
+}
+function setInteriorWallMode(mode){
+  if(mode&& !activeInteriorId)return;
+  if(mode){
+    if(navigationTesting)setNavigationTesting(false);
+    if(objectEditing)setObjectEditing(false);
+    if(surfaceEditing)setSurfaceEditing(false);
+  }
+  interiorWallMode=mode;interiorWallStart=null;interiorWallPreview=null;
+  document.body.classList.toggle('interior-wall-authoring',!!mode);
+  updateInteriorWallControls();scheduleDraw();
+}
+function commitInteriorWalls(walls,{history=true}={}){
+  const entry=currentSculptInterior();
+  if(!entry||walls===entry.area.walls||
+    JSON.stringify(walls)===JSON.stringify(entry.area.walls))return false;
+  if(history){
+    interiorWallHistory.push(entry.area.walls);
+    if(interiorWallHistory.length>40)interiorWallHistory.shift();
+    interiorWallRedo=[];
+  }
+  const area=normalizeWorldArea({...entry.area,walls});
+  sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
+    updateSculptInterior(e,{area}):e));
+  updateInteriorWallControls();scheduleDraw();
+  status('Murs sauvegardés avec cet intérieur · '+area.walls.length+' segment(s)');
+  return true;
+}
+$('interior-wall-toggle').addEventListener('click',()=>{
+  setInteriorWallMode(interiorWallMode==='place'?null:'place');
+});
+$('interior-wall-remove').addEventListener('click',()=>{
+  setInteriorWallMode(interiorWallMode==='remove'?null:'remove');
+});
+$('interior-wall-cancel').addEventListener('click',()=>{
+  interiorWallStart=null;interiorWallPreview=null;
+  updateInteriorWallControls();scheduleDraw();
+});
+$('interior-wall-undo').addEventListener('click',()=>{
+  const entry=currentSculptInterior();if(!entry||!interiorWallHistory.length)return;
+  const before=interiorWallHistory.pop();interiorWallRedo.push(entry.area.walls);
+  commitInteriorWalls(before,{history:false});
+});
+$('interior-wall-redo').addEventListener('click',()=>{
+  const entry=currentSculptInterior();if(!entry||!interiorWallRedo.length)return;
+  const next=interiorWallRedo.pop();interiorWallHistory.push(entry.area.walls);
+  commitInteriorWalls(next,{history:false});
+});
+
 // V79 isolated, reversible area authoring. No reload, no alternative camera or
 // gameplay collision engine; portal links use WorldArea/Portal v1 throughout.
 function captureSculptArea(){
