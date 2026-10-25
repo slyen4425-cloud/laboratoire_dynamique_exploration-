@@ -2707,6 +2707,56 @@ try{
     throw Error('V79 R2 real Chromium native floors / reusable templates / floating bar failed: '+
       JSON.stringify(v79R2));
   console.log('V79 R2 REAL Chromium native indoor floors, reusable room and floating return:',JSON.stringify(v79R2));
+
+  // R3A mobile-equivalent Chromium: real pointer input to create a physical
+  // WorldArea wall, Undo/Redo, and the Portal action ON THE PLAYFIELD.
+  const v79WallSetup=await run(`(async()=>{
+    document.querySelector('#interior-wall-toggle').click();
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const p=window.__sculptLabProbe();
+    const rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const at=(x,y)=>({x:rect.x+p.cameraPan.x+x*p.zoom,
+      y:rect.y+p.cameraPan.y+y*p.zoom});
+    return {from:at(100,82),to:at(235,82),mode:p.interiorWallMode};
+  })()`);
+  if(v79WallSetup.mode!=='place')
+    throw Error('V79 R3A wall palette unavailable: '+JSON.stringify(v79WallSetup));
+  await r3Click(v79WallSetup.from);
+  const v79WallPending=await run('window.__sculptLabProbe()');
+  await r3Click(v79WallSetup.to);
+  const v79WallPlaced=await run('window.__sculptLabProbe()');
+  if(!v79WallPending.interiorWallPending||v79WallPlaced.interiorWallCount!==1||
+     v79WallPlaced.interiorWallPending)
+    throw Error('V79 R3A two-touch wall failed: '+
+      JSON.stringify({pending:v79WallPending,placed:v79WallPlaced}));
+  await run("document.querySelector('#interior-wall-undo').click()");
+  const v79WallUndone=await run('window.__sculptLabProbe()');
+  await run("document.querySelector('#interior-wall-redo').click()");
+  const v79WallRedone=await run('window.__sculptLabProbe()');
+  if(v79WallUndone.interiorWallCount!==0||v79WallRedone.interiorWallCount!==1)
+    throw Error('V79 R3A wall Undo/Redo failed: '+
+      JSON.stringify({undo:v79WallUndone,redo:v79WallRedone}));
+  const v79Playfield=await run(`(()=>{
+    document.querySelector('#navigation-toggle').click();
+    const p=window.__sculptLabProbe();
+    const button=document.querySelector('#navigation-area-door');
+    const rect=button.getBoundingClientRect();
+    document.querySelector('#navigation-toggle').click();
+    return {inPlayfield:p.gameDoorInPlayfield,visible:p.gameDoorVisible,
+      width:rect.width,height:rect.height,mode:p.navigationTesting};
+  })()`);
+  if(!v79Playfield.inPlayfield||!v79Playfield.visible||
+     !v79Playfield.mode||v79Playfield.width<100||v79Playfield.height<40)
+    throw Error('V79 R3A game door action is not visible on the playfield: '+
+      JSON.stringify(v79Playfield));
+  const v79WallJson=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    return JSON.parse(document.querySelector('#json').value).interiors?.[0]?.area?.walls?.length;
+  })()`);
+  if(v79WallJson!==1)throw Error('V79 R3A walls missing from JSON: '+v79WallJson);
+  console.log('V79 R3A REAL Chromium wall two-touch, Undo/Redo, Portal playfield action, JSON:',JSON.stringify({
+    walls:v79WallJson,playfield:v79Playfield
+  }));
   const v79Back=await run(`(()=>{
     document.querySelector('#interior-area-return').click();
     return window.__sculptLabProbe();
