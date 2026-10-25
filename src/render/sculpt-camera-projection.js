@@ -83,6 +83,18 @@ export function sculptCameraBounds(view,width,height,maxElevation){
   const maxY=Math.max(...corners.map(p=>p.y));
   return Object.freeze({minX:0,maxX:width,minY,maxY,width,height:maxY-minY});
 }
+// Interior runtime camera: keep the ACTOR on screen, not the entire map.
+// A tiny/concave WorldArea must be allowed to show empty backdrop outside
+// its edges; otherwise clamping pan to world bounds loses the player when
+// pitch, zoom, or sprite elevation changes. Collision remains WorldArea-owned.
+export function sculptCameraFollowActor(view,{x,y,level=0,rise=18}={},
+  {width,height,zoom,anchorX=.5,anchorY=.54}={}){
+  if(![x,y,level,rise,width,height,zoom].every(Number.isFinite)||
+    width<=0||height<=0||zoom<=0)throw Error('Caméra joueur : coordonnées invalides');
+  const projected=sculptCameraProject(view,x,y-level*rise);
+  return Object.freeze({x:width*anchorX-projected.x*zoom,
+    y:height*anchorY-projected.y*zoom});
+}
 export function sculptCameraScreenToWorld(view,{screenX,screenY,pan,zoom}){
   const x=(screenX-pan.x)/zoom, y=(screenY-pan.y)/zoom;
   return sculptCameraUnproject(view,x,y);
