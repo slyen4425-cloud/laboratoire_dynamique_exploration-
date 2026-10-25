@@ -2762,6 +2762,9 @@ try{
   // accidental ghost or half-placed segment. Then resize/move the actual
   // Portal-backed door, and verify persisted Spawn after scene export.
   const v79WallDragStart=await run(`(()=>{
+    // A gameplay test turns authoring off; reselect Wall mode for the drag.
+    if(window.__sculptLabProbe().interiorWallMode!=='place')
+      document.querySelector('#interior-wall-toggle').click();
     const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
     const at=(x,y)=>({x:r.x+p.cameraPan.x+x*p.zoom,
       y:r.y+p.cameraPan.y+y*p.zoom});
