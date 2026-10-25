@@ -1,3 +1,4 @@
+import {interiorWallBlocksCircle} from '../world/interior-wall-model.js';
 import {
   bridgeTraversalRect,
   worldObjectObstacleRect
@@ -72,6 +73,10 @@ export function isBlocked(
   // This leaves all existing 2D movement/collision paths unchanged.
   if (collisionContext?.sculptNavigation &&
       isSculptNavigationBlocked(collisionContext.sculptNavigation,entity,x,y))return true;
+
+  // WorldArea wall segments are solid through this ONE Collision World path.
+  // Renderer and editor cannot create independent hitboxes.
+  if(interiorWallBlocksCircle(world?.walls,x,y,entity.radius))return true;
 
   for (const obstacle of Array.isArray(world.obstacles) ? world.obstacles : []) {
     if (circleIntersectsRect(x, y, entity.radius, obstacle)) {
