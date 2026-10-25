@@ -2838,6 +2838,63 @@ try{
     throw Error('V79 R3B real Chromium shape resize/floor Portal failed: '+
       JSON.stringify(v79R3B));
   console.log('V79 R3B REAL Chromium custom WorldArea shape and two floors:',JSON.stringify(v79R3B));
+  // R3C genuine browser path: shape switches instantly without hidden Apply,
+  // finishes are saved, and placing a ladder moves the real source Portal.
+  const v79R3CMaterials=await run(`(()=>{
+    const shape=document.querySelector('#interior-shape');
+    shape.value='rectangle';shape.dispatchEvent(new Event('change',{bubbles:true}));
+    const rect=window.__sculptLabProbe().interiorShape;
+    shape.value='l';shape.dispatchEvent(new Event('change',{bubbles:true}));
+    const polygon=window.__sculptLabProbe().interiorShape;
+    const wall=document.querySelector('#interior-wall-material');
+    wall.value='brick';wall.dispatchEvent(new Event('change',{bubbles:true}));
+    const door=document.querySelector('#interior-door-asset');
+    door.value='object.door.fantasy.wood.01';
+    door.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#scene-export').click();
+    const entry=JSON.parse(document.querySelector('#json').value).interiors[0];
+    return {rect,polygon,material:entry.area.wallMaterialId,door:entry.exitPortal.visual.assetId,
+      shapeFeedback:document.querySelector('#interior-shape-hint').textContent};
+  })()`);
+  if(v79R3CMaterials.rect!=='rectangle'||v79R3CMaterials.polygon!=='polygon'||
+     v79R3CMaterials.material!=='brick'||
+     v79R3CMaterials.door!=='object.door.fantasy.wood.01')
+    throw Error('V79 R3C browser shape immediate or texture selectors failed: '+
+      JSON.stringify(v79R3CMaterials));
+  const v79R3CPoint=await run(`(async()=>{
+    const link=document.querySelector('#interior-connector-link');
+    const asset=document.querySelector('#interior-connector-asset');
+    const id=link.value;
+    asset.value='ladder.wood';asset.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#interior-connector-place').click();
+    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    return {id,enabled:p.interiorConnectorMode,
+      x:r.x+p.cameraPan.x+240*p.zoom,y:r.y+p.cameraPan.y+238*p.zoom};
+  })()`);
+  if(!v79R3CPoint.enabled||!v79R3CPoint.id)
+    throw Error('R3C indoor stair-placement mode unavailable: '+JSON.stringify(v79R3CPoint));
+  await r3Click(v79R3CPoint);
+  const v79R3CSave=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const json=JSON.parse(document.querySelector('#json').value);
+    const upper=json.interiors.find(e=>e.floorIndex===1);
+    const lower=json.interiors.find(e=>e.floorIndex===0);
+    const stairs=upper.entryPortal;
+    return {asset:stairs.visual.assetId,x:stairs.trigger.x,y:stairs.trigger.y,
+      arrival:upper.area.spawns.find(x=>x.id===stairs.targetSpawnId),
+      exits:json.interiors.length,wall:lower.area.wallMaterialId,
+      door:lower.exitPortal.visual.assetId};
+  })()`);
+  if(v79R3CSave.asset!=='ladder.wood'||Math.abs(v79R3CSave.x-240)>4||
+    Math.abs(v79R3CSave.y-238)>4||v79R3CSave.arrival?.x!==v79R3CSave.x||
+    v79R3CSave.wall!=='brick')
+    throw Error('R3C REAL Chromium stair pointer, Portal or Spawn failed: '+
+      JSON.stringify(v79R3CSave));
+  await run("document.querySelector('#interior-connector-place').click()");
+  console.log('V79 R3C REAL Chromium shape instant, wall textures, doors, placed ladder:',
+    JSON.stringify({materials:v79R3CMaterials,stair:v79R3CSave}));
   const v79Back=await run(`(()=>{
     document.querySelector('#interior-area-return').click();
     return window.__sculptLabProbe();
