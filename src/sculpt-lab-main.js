@@ -14,10 +14,10 @@ import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigation
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {normalizeWorldArea} from './world/world-area-model.js';
-import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT} from './world/interior-wall-model.js';
+import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
 import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r1';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
- SCULPT_INTERIOR_TEMPLATE_LIMIT,createSculptInteriorArea,updateSculptInterior,
+ SCULPT_INTERIOR_TEMPLATE_LIMIT,createSculptInteriorArea,updateSculptInterior,updateSculptInteriorDoor,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
  applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r2';
@@ -59,6 +59,7 @@ let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=null;
 let sculptInteriorTemplates=Object.freeze([]);
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
+let interiorWallGesture=null,interiorDoorMoving=false,interiorDoorGesture=null,interiorDoorPreview=null;
 let interiorWallHistory=[],interiorWallRedo=[];
 const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
@@ -349,7 +350,8 @@ function draw(){
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:sculptInteriors.find(e=>e.area.id===activeInteriorId)?.exitPortal.trigger,
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId)?.exitPortal.trigger,
+      doorScale:interior?.exitPortal.visual.scale??.58,
       walls:interior?.area.walls??[],
       cameraPitch:view.pitch});
     if(interiorWallMode==='place'&&interiorWallStart){
@@ -357,7 +359,19 @@ function draw(){
       ctx.save();ctx.setLineDash([8,5]);ctx.lineWidth=6;
       ctx.strokeStyle='#80f5d7';ctx.beginPath();
       ctx.moveTo(interiorWallStart.x,interiorWallStart.y);
-      ctx.lineTo(next.x,next.y);ctx.stroke();ctx.restore();
+      ctx.lineTo(next.x,next.y);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle='#d1ffe8';
+      for(const p of [interiorWallStart,next]){
+        ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();
+      }
+      ctx.restore();
+    }
+    if(interiorDoorMoving){
+      const p=interiorDoorPreview??interior?.exitPortal.trigger;
+      if(p?.kind==='point'){
+        ctx.save();ctx.setLineDash([4,4]);ctx.strokeStyle='#ffe89e';ctx.lineWidth=2;
+        ctx.beginPath();ctx.arc(p.x,p.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
+      }
     }
     ctx.restore();
   }
