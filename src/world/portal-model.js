@@ -1,3 +1,4 @@
+import {validInteriorDoorAsset,validInteriorConnectorAsset} from './interior-material-catalog.js';
 import {
   findWorldArea,
   findWorldAreaSpawn,
@@ -39,6 +40,8 @@ function normalizePortalVisual(raw) {
     label: normalizedString(visual.label),
     // Optional presentation parameter owned by Portal, never by the renderer.
     // Absent on legacy Portals so existing worlds keep their original schema.
+    ...(validInteriorDoorAsset(visual.assetId)||validInteriorConnectorAsset(visual.assetId)
+      ?{assetId:visual.assetId}:{}),
     ...(Number.isFinite(visual.scale) ? {
       scale:finiteNumber(visual.scale,1,{min:.35,max:1.5})
     }: {})
