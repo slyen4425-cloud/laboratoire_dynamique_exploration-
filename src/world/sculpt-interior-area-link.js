@@ -54,8 +54,8 @@ export function createSculptInteriorArea(building,exteriorObjects=[]){
   });
 }
 export function updateSculptInterior(entry,{terrain=entry.terrain,
-  objects=entry.objects,actors=entry.actors,surface=entry.surface}={}){
-  return Object.freeze({...entry,terrain,objects,actors,surface});
+  objects=entry.objects,actors=entry.actors,surface=entry.surface,area=entry.area}={}){
+  return Object.freeze({...entry,terrain,objects,actors,surface,area});
 }
 export function serializeSculptInteriors(entries=[]){
   return frozen(entries.map(e=>Object.freeze({
@@ -91,7 +91,8 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
        o.transform.x>=terrain.width*28||o.transform.y>=terrain.height*21))
       throw Error('Intérieur 2,5D : objet hors pièce');
     const surface=normalizeSculptSurface(item.surface);
-    result.push(updateSculptInterior(reference,{terrain,objects,actors,surface}));
+    result.push(updateSculptInterior(reference,{terrain,objects,actors,surface,
+      area:normalizeWorldArea({...reference.area,walls:item.area?.walls??[]})}));
   }
   return frozen(result);
 }
@@ -122,13 +123,15 @@ export function normalizeSculptInteriorTemplates(raw=[]){
       throw Error('Modèles d’intérieur : contenu invalide');
     return Object.freeze({schemaVersion:1,id:item.id,name:item.name.trim(),
       terrain:JSON.parse(serializeSculptTerrain(terrain)),objects,actors,
+      walls:normalizeWorldArea({kind:'interior',walls:item.walls??[]}).walls,
       surface:normalizeSculptSurface(item.surface)});
   }));
 }
 export function createSculptInteriorTemplate(entry,{id,name}={}){
   return normalizeSculptInteriorTemplates([{
     schemaVersion:1,id,name,terrain:JSON.parse(serializeSculptTerrain(entry.terrain)),
-    objects:entry.objects,actors:entry.actors,surface:entry.surface
+    objects:entry.objects,actors:entry.actors,surface:entry.surface,
+    walls:entry.area.walls
   }])[0];
 }
 export function applySculptInteriorTemplate(entry,template){
@@ -138,7 +141,8 @@ export function applySculptInteriorTemplate(entry,template){
   // Import creates distinct data values; portal links stay attached to entry.
   return updateSculptInterior(entry,{
     terrain:importSculptTerrain(valid.terrain),objects:valid.objects,
-    actors:valid.actors,surface:valid.surface
+    actors:valid.actors,surface:valid.surface,
+    area:normalizeWorldArea({...entry.area,walls:valid.walls})
   });
 }
 export function sculptInteriorPortalDocument(outsideObjects,entries){
