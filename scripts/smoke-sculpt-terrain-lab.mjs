@@ -2854,7 +2854,7 @@ try{
       exportRoomLevels:data.interiors?.[0]?.terrain?.levels?.length};
   })()`);
   if(v79Saved.interiors!==2||v79Saved.objects!==1||
-    v79Saved.exportRoomLevels!==18*14||v79Saved.probe.interiorCount!==2)
+    v79Saved.exportRoomLevels!==24*18||v79Saved.probe.interiorCount!==2)
     throw Error('V79 browser complete scene roundtrip failed: '+JSON.stringify(v79Saved));
   console.log('V79 REAL Chromium house selection -> independent sculptable interior -> camera 35/90 -> exterior -> JSON roundtrip:',JSON.stringify({
     picked:v79Picked.selectedId,angle:v79Angles,room:v79Opened.probe.activeAreaId,
