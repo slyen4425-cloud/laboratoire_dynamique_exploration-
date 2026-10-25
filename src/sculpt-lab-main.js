@@ -13,17 +13,17 @@ import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rai
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
-import {normalizeWorldArea} from './world/world-area-model.js';
+import {normalizeWorldArea} from './world/world-area-model.js?rev=interior-r3c-wall-materials';
 import {INTERIOR_DOOR_ASSETS,INTERIOR_CONNECTOR_ASSETS} from './world/interior-material-catalog.js';
 import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
-import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js';
+import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js?rev=interior-r3c-shapes';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
-import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3b-boundary-floors';
+import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3c-wall-door-stairs-assets';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  SCULPT_INTERIOR_TEMPLATE_LIMIT,SCULPT_INTERIOR_FLOOR_LIMIT,createSculptInteriorArea,createSculptUpperFloor,updateSculptInterior,updateSculptInteriorDoor,updateSculptFloorConnector,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
- applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3b-house-links-floors';
+ applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3c-stair-portal-materials';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
