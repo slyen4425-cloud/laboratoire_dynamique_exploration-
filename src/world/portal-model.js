@@ -42,6 +42,11 @@ function normalizePortalVisual(raw) {
     // Absent on legacy Portals so existing worlds keep their original schema.
     ...(validInteriorDoorAsset(visual.assetId)||validInteriorConnectorAsset(visual.assetId)
       ?{assetId:visual.assetId}:{}),
+    // Visual orientation belongs to the Portal; its canonical trigger/Spawn
+    // and collision are never rotated or copied into a second geometry.
+    ...(Number.isFinite(visual.rotationDeg)?{
+      rotationDeg:((visual.rotationDeg%360)+360)%360
+    }:{}),
     ...(Number.isFinite(visual.scale) ? {
       scale:finiteNumber(visual.scale,1,{min:.35,max:1.5})
     }: {})
