@@ -1,3 +1,16 @@
+# EN COURS — V79 R3D (25/10/2026) — Croix accessible, caméra acteur et rotation d'escalier
+
+- **Retour créateur** : formes et escaliers validés mais bras latéraux de croix difficiles à atteindre, caméra perd le héros après zoom/inclinaison, besoin d'orienter les escaliers librement.
+- **Base R3C** : `033018028bbeadc0a5f5f1f16fc056d187f0a706` ; checkpoint immuable `checkpoint/exploration-start-cross-camera-stairs-rotation-v79-r3d-2026-10-25` ; branche `work/exploration-cross-camera-stairs-rotation-v79-r3d-2026-10-25`.
+- **WorldArea.boundary** reste unique propriétaire de la croix ; Collision World maintient les zones découpées bloquées. Spawn de test sélectionné au croisement central pour explorer les bras latéraux sans rencontrer immédiatement l'épaulement inférieur.
+- **Caméra intérieure** : correction de suivi projeté au centre du canvas, sans clamp aux limites de petites maps, recentrage pendant zoom et inclinaison. Réglage d'inclinaison validé 35°–90° et camera extérieure non modifiés.
+- **Escaliers** : Portal.visual.rotationDeg facultatif 0–359° ; rotation du sprite/dessin autour du trigger canonique. Curseur tactile et boutons 45° ; aucun changement au Portal.trigger ou WorldArea Spawn. Export/import conservés.
+- **Gates** : Node navigation réelle croix, caméra × 125 configurations, Portals et sauvegarde + vrai Chromium neuf combinaisons vue/zoom et orientation ; CI exacte avant publication Pages infra seule, puis essai créateur Pixel pour GREEN.
+- **Détails** : `docs/checkpoints/EXPLORATION_CROSS_CAMERA_STAIRS_ROTATION_V79_R3D_PREVALIDATION_2026-10-25.md`.
+- **Gel** : moteur principal GenS RPG, Combat, V77/V78, murs intérieurs validés et rendu caméra sans shear intacts.
+
+---
+
 # EN COURS — V79 R3C (25/10/2026) — Formes visibles, finitions des portes/murs, escalier et échelle positionnables
 
 - **Retour Pixel R3B** : porte validée ; changer la forme du bâtiment semblait n'avoir aucun effet ; demandes de textures de portes, murs et possibilité de placer un escalier ou une échelle pour chaque étage. Murs tactiles R3A2 et caméra 35° restent validés et gelés.
