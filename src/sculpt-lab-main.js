@@ -7,12 +7,14 @@ import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBB
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
-import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
+import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView} from './render/sculpt-camera-projection.js?rev=bridge-input-v66';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
+import {normalizeWorldArea} from './world/world-area-model.js';
+import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT} from './world/interior-wall-model.js';
 import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r1';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  SCULPT_INTERIOR_TEMPLATE_LIMIT,createSculptInteriorArea,updateSculptInterior,
@@ -56,6 +58,8 @@ let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 // editor view of the SAME scene while an interior is open, not a second terrain.
 let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=null;
 let sculptInteriorTemplates=Object.freeze([]);
+let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
+let interiorWallHistory=[],interiorWallRedo=[];
 const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
@@ -275,10 +279,13 @@ function dimensions(){
   const bounds=canvas.getBoundingClientRect();
   return {width:Math.max(1,bounds.width),height:Math.max(1,bounds.height)};
 }
-function cameraView(){return navigationTesting
-  ?sculptCameraGameView(Number($('navigation-camera-angle').value))
-  :activeInteriorId?sculptCameraGameView(Number($('interior-camera-angle').value))
-  :sculptCameraView($('camera-view').value);}
+function cameraView(){
+  if(activeInteriorId)return sculptCameraInteriorView(Number($(
+    navigationTesting?'navigation-camera-angle':'interior-camera-angle').value));
+  return navigationTesting
+    ?sculptCameraGameView(Number($('navigation-camera-angle').value))
+    :sculptCameraView($('camera-view').value);
+}
 function cameraBounds(){
   return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
     terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
@@ -339,9 +346,18 @@ function draw(){
     // In Tester the ground is projected inside the cached layer; use its
     // exact affine camera for walls as well, never an independent perspective.
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+    const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:sculptInteriors.find(e=>e.area.id===activeInteriorId)?.exitPortal.trigger});
+      doorway:interior?.exitPortal.trigger,walls:interior?.area.walls??[],
+      cameraPitch:view.pitch});
+    if(interiorWallMode==='place'&&interiorWallStart){
+      const next=interiorWallPreview??interiorWallStart;
+      ctx.save();ctx.setLineDash([8,5]);ctx.lineWidth=6;
+      ctx.strokeStyle='#80f5d7';ctx.beginPath();
+      ctx.moveTo(interiorWallStart.x,interiorWallStart.y);
+      ctx.lineTo(next.x,next.y);ctx.stroke();ctx.restore();
+    }
     ctx.restore();
   }
   if(navigationTesting){
@@ -1001,8 +1017,10 @@ function stop(event){
    stepMovement. Collision World alone decides whether the sculpt terrain blocks
    that movement. The editor never persists player navigation in map JSON. */
 function navigationWorld(){
+  const current=sculptInteriors.find(e=>e.area.id===activeInteriorId);
   return {width:terrain.width*SCULPT_TILE.width,
-    height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[]};
+    height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[],
+    walls:current?.area.walls??[]};
 }
 function navigationMaxStep(){
   // V75: an abrupt sculpt cell boundary is NEVER a free walking step. The
@@ -1480,7 +1498,17 @@ function refreshObjectVariants(preferred=null){
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
-  $('object-open-interior').hidden=!selected||selectedDef?.kind!=='building'||!!activeInteriorId;
+  const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
+  $('object-open-interior').hidden=!buildingSelected;
+  $('interior-house-link-info').hidden=!buildingSelected;
+  if(buildingSelected){
+    const linked=sculptInteriors.some(e=>e.buildingId===selected.id);
+    $('object-open-interior').textContent=linked?'🏠 Modifier son intérieur lié':
+      '🏠 Créer et lier un intérieur à cette maison';
+    $('interior-house-link-info').textContent=linked?
+      'Intérieur lié à cette maison et à sa porte extérieure.':
+      'Aucun intérieur : la liaison à la porte de cette maison sera créée automatiquement.';
+  }
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
   const def=selectedDef;
   $('object-category').value=def.kind;refreshObjectOptions();
@@ -2078,7 +2106,7 @@ function updateSculptAreaControls(){
   $('interior-area-bar').hidden=!entry;
   document.body.classList.toggle('sculpt-interior-area',!!entry);
   $('interior-area-label').textContent=entry?
-    '🏠 Intérieur · '+entry.buildingId:'🏞 Extérieur';
+    '🏠 Intérieur lié à la maison · '+entry.buildingId:'🏞 Extérieur';
   $('new-map-toggle').disabled=!!entry;
   for(const option of $('surface-material').options)
     option.disabled=entry?!option.value.startsWith('floor.'):
@@ -2152,7 +2180,8 @@ function updateSculptDoorAction(){
   const current=activeInteriorId??SCULPT_EXTERIOR_AREA_ID;
   const target=sculptInteriorTransition(external,entries,current,navActor);
   button.hidden=!target;
-  button.textContent=activeInteriorId?'🚪 Sortir de la maison':'🚪 Entrer dans la maison';
+  button.textContent=activeInteriorId?'🚪 Sortir':'🚪 Entrer';
+  button.setAttribute('aria-label',button.textContent);
 }
 function refreshSculptTemplateSelector(){
   const select=$('interior-template-select'),current=select.value;
