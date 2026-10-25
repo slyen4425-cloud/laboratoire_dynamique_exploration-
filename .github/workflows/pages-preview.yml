@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v79-r3a-real-interior-walls-playfield-door-camera-fix-2026-10-25
+# preview-revision: v79-r3a2-door-scale-move-wall-drag-grid-2026-10-25
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: f57a365a8d34fa3c0e69c5eb93823933fa1abf33
+          ref: fde0d536fdada43e499c54153992f571676af0e3
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
