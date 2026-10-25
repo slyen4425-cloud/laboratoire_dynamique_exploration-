@@ -114,6 +114,10 @@ export function drawSculptInteriorWalls(ctx,terrain,{tileWidth=28,tileHeight=21,
     if(portal.trigger?.kind!=='point')continue;
     const {x,y}=portal.trigger;
     ctx.save();ctx.setLineDash([]);ctx.textAlign='center';
+    // Turn only the standing artwork about the exact Portal trigger. The
+    // Source Portal and target Spawn keep their canonical world X/Y positions.
+    const rotation=(Number(portal.visual?.rotationDeg)||0)*Math.PI/180;
+    ctx.translate(x,y);ctx.rotate(rotation);ctx.translate(-x,-y);
     const img=connectorImages?.get(portal.visual?.assetId);
     if(img?.complete&&img.naturalWidth){ctx.drawImage(img,x-31,y-65,62,71);}
     else if(portal.visual?.assetId==='ladder.wood'){
