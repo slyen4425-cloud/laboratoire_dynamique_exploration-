@@ -13,6 +13,7 @@ export const SCULPT_EXTERIOR_AREA_ID='sculpt-exterior';
 export const SCULPT_INTERIOR_SIZE=Object.freeze({width:18,height:14});
 export const SCULPT_INTERIOR_LIMIT=64;
 export const SCULPT_INTERIOR_TEMPLATE_LIMIT=32;
+export const SCULPT_INTERIOR_FLOOR_LIMIT=4;
 const frozen=items=>Object.freeze(items);
 
 export function createSculptInteriorArea(building,exteriorObjects=[],{width=18,height=14}={}){
@@ -49,10 +50,54 @@ export function createSculptInteriorArea(building,exteriorObjects=[],{width=18,h
   if(!entrance||!exit||!portalReferencesAreValid([exterior,area],entrance)||
     !portalReferencesAreValid([exterior,area],exit))return null;
   return Object.freeze({
-    buildingId:building.id,area,entryPortal:entrance,exitPortal:exit,
+    buildingId:building.id,floorIndex:0,area,entryPortal:entrance,exitPortal:exit,
     terrain:createSculptTerrain({width,height}),
     objects:frozen([]),actors:frozen([]),surface:normalizeSculptSurface({baseMaterialId:'floor.wood.house'})
   });
+}
+// Upper levels are independent WorldAreas, not relief cells or additional
+// player coordinates in the same Area. All transitions remain canonical Portals.
+export function createSculptUpperFloor(below){
+  if(!below?.area||below.area.kind!=='interior'||
+      !Number.isInteger(below.floorIndex)||below.floorIndex<0||
+      below.floorIndex>=SCULPT_INTERIOR_FLOOR_LIMIT-1)
+    throw Error('Étage : nombre maximal atteint');
+  const floorIndex=below.floorIndex+1;
+  const width=below.terrain.width,height=below.terrain.height;
+  const w=width*28,h=height*21;
+  const upPoint={kind:'point',x:w*.5,y:h*.52,radius:27};
+  const downPoint={kind:'point',x:w*.5,y:h*.52,radius:27};
+  const areaId='sculpt-interior-'+below.buildingId+'-floor-'+floorIndex;
+  const belowSpawn={id:'arrival-down',x:Math.max(16,w*.5-44),
+    y:Math.min(h-16,h*.52+45)};
+  const updatedBelow=Object.freeze({...below,area:normalizeWorldArea({...below.area,
+    spawns:[...below.area.spawns.filter(spawn=>spawn.id!=='arrival-down'),belowSpawn]})});
+  const upSpawn={id:'arrival-up',x:Math.max(16,w*.5-44),
+    y:Math.min(h-16,h*.52+45)};
+  const area=normalizeWorldArea({id:areaId,kind:'interior',width:w,height:h,
+    boundary:below.area.boundary,spawns:[upSpawn],
+    encounters:{randomEnabled:false}});
+  const entryPortal=normalizePortal({
+    id:'sculpt-stairs-up-'+below.buildingId+'-'+floorIndex,
+    sourceAreaId:below.area.id,trigger:upPoint,
+    targetAreaId:areaId,targetSpawnId:'arrival-up',
+    visual:{visible:true,marker:'portal',label:'Monter à l’étage '+floorIndex}
+  });
+  const exitPortal=normalizePortal({
+    id:'sculpt-stairs-down-'+below.buildingId+'-'+floorIndex,
+    sourceAreaId:areaId,trigger:downPoint,
+    targetAreaId:below.area.id,targetSpawnId:'arrival-down',
+    visual:{visible:true,marker:'portal',label:'Descendre à l’étage '+(floorIndex-1)}
+  });
+  if(!entryPortal||!exitPortal||
+     !portalReferencesAreValid([updatedBelow.area,area],entryPortal)||
+     !portalReferencesAreValid([updatedBelow.area,area],exitPortal))
+    throw Error('Étage : liaison WorldArea/Portal invalide');
+  return Object.freeze({below:updatedBelow,upper:Object.freeze({
+    buildingId:below.buildingId,floorIndex,area,entryPortal,exitPortal,
+    terrain:createSculptTerrain({width,height}),objects:frozen([]),actors:frozen([]),
+    surface:normalizeSculptSurface({baseMaterialId:below.surface.baseMaterialId})
+  })});
 }
 // The physical doorway position is exactly exitPortal.trigger; the interior
 // arrival Spawn is moved in the SAME WorldArea contract, offset into the room.
@@ -83,7 +128,8 @@ export function updateSculptInterior(entry,{terrain=entry.terrain,
 }
 export function serializeSculptInteriors(entries=[]){
   return frozen(entries.map(e=>Object.freeze({
-    buildingId:e.buildingId,area:e.area,entryPortal:e.entryPortal,exitPortal:e.exitPortal,
+    buildingId:e.buildingId,floorIndex:e.floorIndex??0,
+    area:e.area,entryPortal:e.entryPortal,exitPortal:e.exitPortal,
     terrain:JSON.parse(serializeSculptTerrain(e.terrain)),
     objects:e.objects,actors:e.actors,surface:e.surface
   })));
@@ -94,15 +140,29 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
   const seen=new Set();
   const buildings=resolveWorldObjectPlacements(outsideObjects);
   const result=[];
-  for(const item of raw){
+  for(const item of [...raw].sort((a,b)=>(a?.floorIndex??0)-(b?.floorIndex??0))){
     const building=buildings.find(o=>o.kind==='building'&&o.id===item?.buildingId);
-    if(!building||seen.has(building.id))
-      throw Error('Intérieur 2,5D : bâtiment absent ou dupliqué');
-    seen.add(building.id);
-    const reference=createSculptInteriorArea(building,outsideObjects);
+    const floorIndex=item.floorIndex??0;
+    const key=item?.buildingId+':'+floorIndex;
+    if(!building||!Number.isInteger(floorIndex)||floorIndex<0||
+       floorIndex>=SCULPT_INTERIOR_FLOOR_LIMIT||seen.has(key))
+      throw Error('Intérieur 2,5D : bâtiment ou étage absent/dupliqué');
+    seen.add(key);
+    let reference;
+    if(floorIndex===0)reference=createSculptInteriorArea(building,outsideObjects);
+    else{
+      const parent=result.find(e=>e.buildingId===building.id&&e.floorIndex===floorIndex-1);
+      if(!parent)throw Error('Étage sans niveau précédent');
+      const linked=createSculptUpperFloor(parent);
+      const index=result.indexOf(parent);result[index]=linked.below;
+      reference=linked.upper;
+    }
     if(!reference||item.area?.id!==reference.area.id||
       item.entryPortal?.id!==reference.entryPortal.id||
-      item.exitPortal?.id!==reference.exitPortal.id)
+      item.exitPortal?.id!==reference.exitPortal.id||
+      item.entryPortal?.sourceAreaId!==reference.entryPortal.sourceAreaId||
+      item.entryPortal?.targetAreaId!==reference.entryPortal.targetAreaId||
+      item.exitPortal?.targetAreaId!==reference.exitPortal.targetAreaId)
       throw Error('Intérieur 2,5D : raccord Portal/Area invalide');
     const terrain=importSculptTerrain(item.terrain);
     if(terrain.width*28!==item.area?.width||terrain.height*21!==item.area?.height)
@@ -190,7 +250,7 @@ export function sculptInteriorPortalDocument(outsideObjects,entries){
   const outdoor=normalizeWorldArea({
     id:SCULPT_EXTERIOR_AREA_ID,kind:'exterior',width:20000,height:20000,
     objects:outsideObjects,
-    spawns:entries.map(e=>({id:'outside-'+e.buildingId,
+    spawns:entries.filter(e=>(e.floorIndex??0)===0).map(e=>({id:'outside-'+e.buildingId,
       anchor:{kind:'building-door',objectId:e.buildingId,
         anchorId:e.entryPortal.trigger.anchorId,offset:56}}))
   });
