@@ -2806,12 +2806,44 @@ try{
   console.log('V79 R3A2 REAL Chromium mur glissé et porte Portal mobile/scale + Spawn:',
     JSON.stringify({walls:doorCheck.actualWalls,door:doorCheck}));
 
+  // V79 R3B real Chromium: house-linked room is resizable and polygonal,
+  // upper floor is a different WorldArea, both real Portals survive JSON.
+  const v79R3B=await run(`(async()=>{
+    const width=document.querySelector('#interior-width');
+    const height=document.querySelector('#interior-height');
+    const shape=document.querySelector('#interior-shape');
+    width.value='24';height.value='18';shape.value='l';
+    document.querySelector('#interior-layout-apply').click();
+    const layout=window.__sculptLabProbe();
+    document.querySelector('#interior-level-add').click();
+    const upper=window.__sculptLabProbe();
+    document.querySelector('#scene-export').click();
+    const raw=JSON.parse(document.querySelector('#json').value);
+    const lib=await import('./src/world/sculpt-interior-area-link.js');
+    const entries=lib.importSculptInteriors(raw.interiors,raw.objects);
+    const doc=lib.sculptInteriorPortalDocument(raw.objects,entries);
+    const valid=doc.portals.length===4&&
+      doc.areas.some(a=>a.boundary.kind==='polygon')&&
+      entries.length===2&&
+      entries[1].entryPortal.sourceAreaId===entries[0].area.id;
+    const selector=document.querySelector('#interior-level-select');
+    selector.value='0';selector.dispatchEvent(new Event('change',{bubbles:true}));
+    return {layout:{w:layout.width,h:layout.height},
+      above:upper.activeAreaId,back:window.__sculptLabProbe().activeAreaId,
+      floors:entries.length,portals:doc.portals.length,valid};
+  })()`);
+  if(v79R3B.layout.w!==24||v79R3B.layout.h!==18||
+     !v79R3B.above.endsWith('-floor-1')||v79R3B.floors!==2||
+     !v79R3B.valid||v79R3B.back===v79R3B.above)
+    throw Error('V79 R3B real Chromium shape resize/floor Portal failed: '+
+      JSON.stringify(v79R3B));
+  console.log('V79 R3B REAL Chromium custom WorldArea shape and two floors:',JSON.stringify(v79R3B));
   const v79Back=await run(`(()=>{
     document.querySelector('#interior-area-return').click();
     return window.__sculptLabProbe();
   })()`);
   if(v79Back.activeAreaId!=='sculpt-exterior'||v79Back.objects!==1||
-    v79Back.interiorCount!==1||v79Back.interiorAreaBarVisible)
+    v79Back.interiorCount!==2||v79Back.interiorAreaBarVisible)
     throw Error('V79 exterior view did not restore: '+JSON.stringify(v79Back));
   const v79Saved=await run(`(()=>{
     document.querySelector('#scene-export').click();
@@ -2821,8 +2853,8 @@ try{
       probe:window.__sculptLabProbe(),
       exportRoomLevels:data.interiors?.[0]?.terrain?.levels?.length};
   })()`);
-  if(v79Saved.interiors!==1||v79Saved.objects!==1||
-    v79Saved.exportRoomLevels!==18*14||v79Saved.probe.interiorCount!==1)
+  if(v79Saved.interiors!==2||v79Saved.objects!==1||
+    v79Saved.exportRoomLevels!==18*14||v79Saved.probe.interiorCount!==2)
     throw Error('V79 browser complete scene roundtrip failed: '+JSON.stringify(v79Saved));
   console.log('V79 REAL Chromium house selection -> independent sculptable interior -> camera 35/90 -> exterior -> JSON roundtrip:',JSON.stringify({
     picked:v79Picked.selectedId,angle:v79Angles,room:v79Opened.probe.activeAreaId,
