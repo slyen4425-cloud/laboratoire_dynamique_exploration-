@@ -15,10 +15,11 @@ export const SCULPT_INTERIOR_LIMIT=64;
 export const SCULPT_INTERIOR_TEMPLATE_LIMIT=32;
 const frozen=items=>Object.freeze(items);
 
-export function createSculptInteriorArea(building,exteriorObjects=[]){
+export function createSculptInteriorArea(building,exteriorObjects=[],{width=18,height=14}={}){
   if(!building?.id||building.kind!=='building'||!building.doorAnchors?.length)return null;
   const id='sculpt-interior-'+building.id;
-  const width=SCULPT_INTERIOR_SIZE.width,height=SCULPT_INTERIOR_SIZE.height;
+  if(!Number.isInteger(width)||width<8||width>80||!Number.isInteger(height)||height<8||height>64)
+    throw Error('Dimensions d’intérieur invalides');
   const spawnX=(width*.5)*28,spawnY=(height-3)*21;
   const area=normalizeWorldArea({
     id,kind:'interior',width:width*28,height:height*21,
@@ -104,7 +105,7 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
       item.exitPortal?.id!==reference.exitPortal.id)
       throw Error('Intérieur 2,5D : raccord Portal/Area invalide');
     const terrain=importSculptTerrain(item.terrain);
-    if(terrain.width!==reference.terrain.width||terrain.height!==reference.terrain.height)
+    if(terrain.width*28!==item.area?.width||terrain.height*21!==item.area?.height)
       throw Error('Intérieur 2,5D : dimensions du sol incohérentes');
     // Reconstruct canonical links FROM the current building anchor, never
     // trust stale saved door positions after building rotation or movement.
@@ -116,15 +117,19 @@ export function importSculptInteriors(raw=[],outsideObjects=[]){
     const surface=normalizeSculptSurface(item.surface);
     const door=item.exitPortal?.trigger;
     if(door?.kind!=='point'||!Number.isFinite(door.x)||!Number.isFinite(door.y)||
-      door.x<26||door.x>reference.area.width-26||
-      door.y<30||door.y>reference.area.height-17)
+      door.x<26||door.x>terrain.width*28-26||
+      door.y<30||door.y>terrain.height*21-17)
       throw Error('Intérieur 2,5D : position porte invalide');
     const scaled=item.exitPortal.visual?.scale??.58;
     if(!Number.isFinite(scaled)||scaled<.35||scaled>1.5)
       throw Error('Intérieur 2,5D : échelle porte invalide');
-    const entry=updateSculptInteriorDoor(reference,{x:door.x,y:door.y,scale:scaled});
+    const resized=normalizeWorldArea({...reference.area,width:terrain.width*28,
+      height:terrain.height*21,boundary:item.area?.boundary??{kind:'rectangle'},
+      walls:item.area?.walls??[]});
+    const entry=updateSculptInteriorDoor({...reference,area:resized},
+      {x:door.x,y:door.y,scale:scaled});
     result.push(updateSculptInterior(entry,{terrain,objects,actors,surface,
-      area:normalizeWorldArea({...entry.area,walls:item.area?.walls??[]})}));
+      area:entry.area}));
   }
   return frozen(result);
 }
@@ -143,8 +148,7 @@ export function normalizeSculptInteriorTemplates(raw=[]){
       throw Error('Modèles d’intérieur : identifiant, nom ou version invalide');
     ids.add(item.id);
     const terrain=importSculptTerrain(item.terrain);
-    if(terrain.width!==SCULPT_INTERIOR_SIZE.width||
-      terrain.height!==SCULPT_INTERIOR_SIZE.height)
+    if(terrain.width<8||terrain.width>80||terrain.height<8||terrain.height>64)
       throw Error('Modèles d’intérieur : dimensions incompatibles');
     const objects=normalizeSculptPreviewObjects(item.objects??[]);
     const actors=normalizeSculptPreviewActors(item.actors??[]);
@@ -156,6 +160,7 @@ export function normalizeSculptInteriorTemplates(raw=[]){
     return Object.freeze({schemaVersion:1,id:item.id,name:item.name.trim(),
       terrain:JSON.parse(serializeSculptTerrain(terrain)),objects,actors,
       walls:normalizeWorldArea({kind:'interior',walls:item.walls??[]}).walls,
+      boundary:normalizeWorldArea({kind:'interior',boundary:item.boundary}).boundary,
       surface:normalizeSculptSurface(item.surface)});
   }));
 }
@@ -163,7 +168,7 @@ export function createSculptInteriorTemplate(entry,{id,name}={}){
   return normalizeSculptInteriorTemplates([{
     schemaVersion:1,id,name,terrain:JSON.parse(serializeSculptTerrain(entry.terrain)),
     objects:entry.objects,actors:entry.actors,surface:entry.surface,
-    walls:entry.area.walls
+    walls:entry.area.walls,boundary:entry.area.boundary
   }])[0];
 }
 export function applySculptInteriorTemplate(entry,template){
@@ -171,10 +176,14 @@ export function applySculptInteriorTemplate(entry,template){
     throw Error('Modèle : aucune pièce intérieure active');
   const valid=normalizeSculptInteriorTemplates([template])[0];
   // Import creates distinct data values; portal links stay attached to entry.
-  return updateSculptInterior(entry,{
-    terrain:importSculptTerrain(valid.terrain),objects:valid.objects,
-    actors:valid.actors,surface:valid.surface,
-    area:normalizeWorldArea({...entry.area,walls:valid.walls})
+  const source=importSculptTerrain(valid.terrain);
+  const area=normalizeWorldArea({...entry.area,width:source.width*28,
+    height:source.height*21,walls:valid.walls,boundary:valid.boundary});
+  const transformed=updateSculptInteriorDoor({...entry,area,terrain:source},
+    {x:source.width*14,y:source.height*21-32});
+  return updateSculptInterior(transformed,{
+    terrain:source,objects:valid.objects,
+    actors:valid.actors,surface:valid.surface,area:transformed.area
   });
 }
 export function sculptInteriorPortalDocument(outsideObjects,entries){
