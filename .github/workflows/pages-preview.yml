@@ -1,5 +1,5 @@
 name: Exploration Preview
-# preview-revision: v79-r3e-polygon-canvas-camera-stair-badge-removal-2026-10-25
+# preview-revision: v80-doors-2026-10-26
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
         uses: actions/checkout@v4
         with:
-          ref: 3bd48a50a99953bac74025aa815b9c223953f568
+          ref: work/exploration-door-assets-v80-2026-10-26
 
       - name: Configure Node for immutable integration checks
         uses: actions/setup-node@v4
