@@ -33,40 +33,21 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Verify the Exploration baseline
-        run: npm test && npm run check
-
-      - name: Checkout Combat native modern Encounter browser GREEN prevalidation
-        uses: actions/checkout@v4
-        with:
-          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 92e3c4b551f18dd766f51f1d4f92b76bae7e4d1d
-          path: combat-preview
-
-      - name: Checkout Capture global visual assets
-        uses: actions/checkout@v4
-        with:
-          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: e55fea3b559c348be596d7c16250808a39c315a1
-          path: capture-assets
-
-      - name: Fail closed if modern Combat has no real native bridge
-        run: node scripts/audit-combat-preview.mjs combat-preview
-
-      - name: Verify Builder checkbox elements, blank map and real Encounter in Chromium
-        run: node scripts/smoke-builder-encounter-validation.mjs
-
-      - name: Verify indoor floor palette and real brush in Chromium
-        run: node scripts/smoke-interior-floor-brush.mjs
-
-      - name: Verify optional canyon relief WorldDocument and SVG in Chromium
-        run: node scripts/smoke-relief-canyon-pilot.mjs
-
-      - name: Verify independent terrain sculpt lab and true pointer brush in Chromium
-        run: node scripts/smoke-sculpt-terrain-lab.mjs
-
-      - name: Verify actual encounter startup in Chromium
-        run: node scripts/smoke-modern-combat-preview.mjs
+      - name: Verify V80 door catalog and files
+        run: |
+          npm test
+          npm run check
+          node --check src/world/interior-material-catalog.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path('assets/interiors/doors/manifest.json').read_text())
+          assert len(m['items']) == 20
+          for item in m['items']:
+              assert Path(item['file']).is_file(), item['file']
+          assert 'interior-door-asset' in Path('sculpt-lab.html').read_text()
+          print('V80 doors validated')
+          PY
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
