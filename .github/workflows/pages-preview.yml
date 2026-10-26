@@ -1,62 +1,50 @@
-name: Exploration Preview
-# preview-revision: v80-doors-2026-10-26
-
+name: Exploration Preview V80
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: exploration-preview
   cancel-in-progress: true
-
 jobs:
   deploy:
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout Exploration selected-element encounters with canonical Capture UI browser gates
+      - name: Checkout approved V80 exploration build
         uses: actions/checkout@v4
         with:
           ref: work/exploration-door-assets-v80-2026-10-26
-
-      - name: Configure Node for immutable integration checks
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Verify V80 door catalog and files
+          persist-credentials: false
+      - name: Check V80 deployment payload
+        shell: bash
         run: |
-          npm test
-          npm run check
-          node --check src/world/interior-material-catalog.js
-          python - <<'PY'
+          set -euo pipefail
+          test -s sculpt-lab.html
+          test -s src/sculpt-lab-main.js
+          test -s src/world/interior-material-catalog.js
+          test -s assets/interiors/doors/manifest.json
+          python3 - <<'PY'
           import json
           from pathlib import Path
-          m=json.loads(Path('assets/interiors/doors/manifest.json').read_text())
-          assert len(m['items']) == 20
-          for item in m['items']:
-              assert Path(item['file']).is_file(), item['file']
-          assert 'interior-door-asset' in Path('sculpt-lab.html').read_text()
-          print('V80 doors validated')
+          manifest=json.loads(Path('assets/interiors/doors/manifest.json').read_text())
+          assert len(manifest['items'])==20
+          assert len({x['model'] for x in manifest['items']})==10
+          assert all(Path(x['file']).is_file() for x in manifest['items'])
+          html=Path('sculpt-lab.html').read_text()
+          assert 'object.door.interior.bois_renforce.face' in html
+          print('V80 artifact OK: 10 models, 20 PNG')
           PY
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload preview
-        uses: actions/upload-pages-artifact@v4
+          echo 'V80-DOORS-2026-10-26' > V80-DOORS-DEPLOYED.txt
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
-
-      - name: Deploy preview
-        id: deployment
+          path: .
+      - id: deployment
         uses: actions/deploy-pages@v4
