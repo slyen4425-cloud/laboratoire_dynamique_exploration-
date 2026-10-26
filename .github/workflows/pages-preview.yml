@@ -20,13 +20,14 @@ jobs:
       - name: Checkout approved V80 exploration build
         uses: actions/checkout@v4
         with:
-          ref: work/exploration-door-assets-v80-2026-10-26
+          ref: work/exploration-v80-door-html-cachefix-20261026
           persist-credentials: false
       - name: Check V80 deployment payload
         shell: bash
         run: |
           set -euo pipefail
           test -s sculpt-lab.html
+          test -s sculpt-lab-v80.html
           test -s src/sculpt-lab-main.js
           test -s src/world/interior-material-catalog.js
           test -s assets/interiors/doors/manifest.json
@@ -39,6 +40,7 @@ jobs:
           assert all(Path(x['file']).is_file() for x in manifest['items'])
           html=Path('sculpt-lab.html').read_text()
           assert 'object.door.interior.bois_renforce.face' in html
+          assert 'object.door.interior.bois_renforce.face' in Path('sculpt-lab-v80.html').read_text()
           print('V80 artifact OK: 10 models, 20 PNG')
           PY
           echo 'V80-DOORS-2026-10-26' > V80-DOORS-DEPLOYED.txt
