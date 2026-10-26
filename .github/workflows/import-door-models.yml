@@ -20,13 +20,18 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install Pillow
-      - name: Retrieve the uploaded archive from main\n        run: |\n          git fetch origin main\n          git show origin/main:gensrpg_portes_20_vues_png.zip > gensrpg_portes_20_vues_png.zip\n          test -s gensrpg_portes_20_vues_png.zip\n      - run: python scripts/import-door-models.py
+      - name: Retrieve canonical 20-door assets from dedicated lot branch
+        run: |
+          git fetch --depth=1 origin lot/portes-interieures-20-assets-20261026
+          git restore --source=FETCH_HEAD -- assets/interiors/doors/
+          test -s assets/interiors/doors/manifest.json
+      - run: python scripts/import-door-models.py
       - name: Validate catalog and PNGs
         run: |
           node --check src/world/interior-material-catalog.js
           python - <<'PY'
           from pathlib import Path
-          files=list(Path('assets/exploration/objects/doors/imported').glob('*.png'))
+          files=list(Path('assets/interiors/doors').glob('*.png'))
           assert len(files)==20, len(files)
           from PIL import Image
           for file in files:
@@ -38,5 +43,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/world/interior-material-catalog.js assets/exploration/objects/doors/imported
+          git add src/world/interior-material-catalog.js assets/interiors/doors
           git diff --cached --quiet || (git commit -m "feat(exploration): import 20 door views into Builder catalog" && git push)
