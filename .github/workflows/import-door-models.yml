@@ -1,0 +1,42 @@
+name: Import exploration door models
+on:
+  push:
+    branches:
+      - work/exploration-door-assets-v80-2026-10-26
+    paths:
+      - .github/workflows/import-door-models.yml
+      - scripts/import-door-models.py
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/exploration-door-assets-v80-2026-10-26
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install Pillow
+      - run: python scripts/import-door-models.py
+      - name: Validate catalog and PNGs
+        run: |
+          node --check src/world/interior-material-catalog.js
+          python - <<'PY'
+          from pathlib import Path
+          files=list(Path('assets/exploration/objects/doors/imported').glob('*.png'))
+          assert len(files)==20, len(files)
+          from PIL import Image
+          for file in files:
+              with Image.open(file) as im:
+                  im.verify()
+          print('20 PNG views verified')
+          PY
+      - name: Commit isolated door integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/world/interior-material-catalog.js assets/exploration/objects/doors/imported
+          git diff --cached --quiet || (git commit -m "feat(exploration): import 20 door views into Builder catalog" && git push)
