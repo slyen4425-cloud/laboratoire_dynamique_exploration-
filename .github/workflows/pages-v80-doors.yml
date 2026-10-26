@@ -1,0 +1,51 @@
+name: Exploration V80 doors preview
+on:
+  push:
+    branches:
+      - work/exploration-door-assets-v80-2026-10-26
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: exploration-preview
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/exploration-door-assets-v80-2026-10-26
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify source and door assets
+        run: |
+          npm test
+          npm run check
+          node --check src/world/interior-material-catalog.js
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          m=json.loads(Path('assets/interiors/doors/manifest.json').read_text())
+          assert len(m['items'])==20
+          assert len(set(i['model'] for i in m['items']))==10
+          for i in m['items']:
+              p=Path(i['file'])
+              assert p.is_file(),p
+              assert p.read_bytes().startswith(bytes.fromhex('89504e470d0a1a0a')),p
+          s=Path('src/world/interior-material-catalog.js').read_text()
+          assert s.count('object.door.interior.')==20
+          print('V80: 10 doors / 20 views OK')
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4
