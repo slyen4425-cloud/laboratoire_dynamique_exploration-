@@ -49,3 +49,5 @@ jobs:
           path: '.'
       - id: deployment
         uses: actions/deploy-pages@v4
+
+# V80 verification trigger: 2026-10-26
