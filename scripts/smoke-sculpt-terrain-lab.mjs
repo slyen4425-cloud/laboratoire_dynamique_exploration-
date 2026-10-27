@@ -2978,6 +2978,37 @@ try{
   console.log('V79 REAL Chromium house selection -> independent sculptable interior -> camera 35/90 -> exterior -> JSON roundtrip:',JSON.stringify({
     picked:v79Picked.selectedId,angle:v79Angles,room:v79Opened.probe.activeAreaId,
     interiorCount:v79Saved.interiors}));
+  // Shared JavaScript must continue to boot the FROZEN V80 HTML, which
+  // intentionally does not contain the new terrain-family palette controls.
+  const legacyNavigate=await send('Page.navigate',{
+    url:new URL('/sculpt-lab-v80.html',url).toString()
+  });
+  if(legacyNavigate.error)throw Error('V80 navigation failed: '+JSON.stringify(legacyNavigate.error));
+  await sleep(400);
+  let legacyBoot=null;
+  for(let i=0;i<100;i++){
+    try{
+      legacyBoot=await run("typeof window.__sculptLabProbe==='function' && document.querySelector('#sculpt-canvas')?.width>0 ? window.__sculptLabProbe():null");
+    }catch{/* navigation can briefly replace the JavaScript execution context */}
+    if(legacyBoot)break;
+    await sleep(140);
+  }
+  if(!legacyBoot||legacyBoot.width!==36||legacyBoot.height!==24)
+    throw Error('Frozen V80 page no longer boots shared sculpt engine: '+JSON.stringify(legacyBoot));
+  const legacyPaint=await run(`(()=>{
+    if(document.querySelector('#surface-base-family')||
+       document.querySelector('#surface-family'))
+      throw Error('Frozen V80 markup unexpectedly rewritten');
+    document.querySelector('#mode-surface').click();
+    return window.__sculptSurfaceProbe();
+  })()`);
+  if(!legacyPaint.active||legacyPaint.baseTerrainFamilyId!=='forest')
+    throw Error('Frozen V80 legacy palette incompatible with canonical painter: '+
+      JSON.stringify(legacyPaint));
+  console.log('V80 immutable HTML real Chromium compatibility:',JSON.stringify({
+    faces:legacyBoot.faceCount,palette:legacyPaint.active,
+    semanticBaseFamily:legacyPaint.baseTerrainFamilyId
+  }));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
