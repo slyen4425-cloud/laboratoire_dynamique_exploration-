@@ -3,8 +3,59 @@
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
+import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-family-encounter-config.js';
+import {TERRAIN_FAMILY_IDS} from './terrain-family-registry.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js?rev=waterfalls-v3-ramp-v77';
+
+
+/*
+ * Scene metadata stores the same WorldDocument EncounterConfig v1 and
+ * WorldArea.encounters.randomEnabled fields that the 2D Builder owns. This
+ * file validates optional transport fields; it never implements encounter
+ * selection, rarity, area traversal, or alternative gameplay rules.
+ */
+function sculptEncounterSceneSettings(source = {}) {
+  let config=null;
+  if(Object.hasOwn(source,'encounterConfig')){
+    const raw=source.encounterConfig;
+    const known=new Set(TERRAIN_FAMILY_IDS);
+    if(!raw||raw.version!==1||!Array.isArray(raw.families)||
+       raw.families.length!==known.size)
+      throw Error('Scène sculptable : configuration des rencontres invalide');
+    const used=new Set();
+    for(const profile of raw.families){
+      if(!known.has(profile?.terrainFamilyId)||used.has(profile.terrainFamilyId)||
+         typeof profile.encounterChancePercent!=='number'||
+         !Number.isFinite(profile.encounterChancePercent)||
+         profile.encounterChancePercent<0||profile.encounterChancePercent>100||
+         !Array.isArray(profile.elementChances))
+        throw Error('Scène sculptable : famille de rencontre invalide');
+      used.add(profile.terrainFamilyId);
+      const elements=new Set();
+      for(const item of profile.elementChances){
+        if(typeof item?.elementId!=='string'||!item.elementId.trim()||
+           elements.has(item.elementId)||typeof item.chancePercent!=='number'||
+           !Number.isFinite(item.chancePercent)||
+           item.chancePercent<=0||item.chancePercent>100)
+          throw Error('Scène sculptable : élément de rencontre invalide');
+        elements.add(item.elementId);
+      }
+      if(profile.encounterChancePercent>0&&profile.elementChances.length===0)
+        throw Error('Scène sculptable : sélectionne au moins un élément pour les rencontres');
+    }
+    config=normalizeTerrainFamilyEncounterConfig(raw);
+  }
+  const rawArea=source.exteriorEncounters;
+  if(rawArea!==undefined &&
+     (!rawArea||typeof rawArea!=='object'||
+       typeof rawArea.randomEnabled!=='boolean'))
+    throw Error('Scène sculptable : rencontres de l\'Area extérieure invalides');
+  return Object.freeze({
+    encounterConfig:config,
+    exteriorEncounters:Object.freeze({randomEnabled:rawArea?.randomEnabled??true})
+  });
+}
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
 export const SCULPT_SCENE_PREVIEW_KIND='sculpt-preview-scene';
@@ -178,8 +229,9 @@ export function removeSculptPreviewActorAt(raw,x,y,threshold=24){
   const found=findSculptPreviewActorNear(actors,x,y,threshold);
   return found?Object.freeze(actors.filter(a=>a.id!==found.id)):actors;
 }
-export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[]){
+export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null){
   const paint=normalizeSculptSurface(surface);
+  const settings=encounterSettings===null?null:sculptEncounterSceneSettings(encounterSettings);
   return JSON.stringify({kind:SCULPT_SCENE_PREVIEW_KIND,
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
@@ -188,14 +240,17 @@ export function serializeSculptPreviewScene(terrain,objects=[],surface=createScu
       paint.baseTerrainFamilyId!==createSculptSurface().baseTerrainFamilyId||
       paint.baseMaterialId!==createSculptSurface().baseMaterialId
       ?{surface:paint}:{}),
-    ...(actors.length?{actors:normalizeSculptPreviewActors(actors)}:{})});
+    ...(actors.length?{actors:normalizeSculptPreviewActors(actors)}:{}),
+    ...(settings?.encounterConfig?{encounterConfig:settings.encounterConfig}:{}),
+    ...(settings?{exteriorEncounters:settings.exteriorEncounters}:{})});
 }
 export function importSculptPreviewScene(raw){
   const source=typeof raw==='string'?JSON.parse(raw):raw;
   if(source?.schemaVersion===1&&Array.isArray(source.levels)){
     // Exact compatibility with earlier "export heights" users.
     return Object.freeze({terrain:importSculptTerrain(source),
-      objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:false});
+      objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),
+      encounterConfig:null,exteriorEncounters:Object.freeze({randomEnabled:true}),isScene:false});
   }
   if(source?.kind!==SCULPT_SCENE_PREVIEW_KIND||
       source?.sceneVersion!==SCULPT_SCENE_PREVIEW_VERSION||
@@ -233,5 +288,7 @@ export function importSculptPreviewScene(raw){
     if(feature.points.some(p=>p.x>=terrain.width*28||p.y>=terrain.height*21))
       throw Error('Peinture sculptable hors de la carte');
   }
-  return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,isScene:true});
+  const settings=sculptEncounterSceneSettings(source);
+  return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,
+    ...settings,isScene:true});
 }
