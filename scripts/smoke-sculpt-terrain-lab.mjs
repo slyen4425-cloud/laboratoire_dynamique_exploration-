@@ -3160,6 +3160,110 @@ try{
     JSON.stringify({first:encountered.creatureId,second:second.creatureId,
       stoppedAt:pausedX,previewReleased:true,combatPackaged:true,
       realCombatSkills:combatReady.skills}));
+
+  // World Builder v1: a separate Dungeon-like UI backed by the SAME
+  // WorldDocument v3, WorldArea and Portal Model, not a map/graph duplicate.
+  const assemblerEntry=await run("!!document.querySelector('a[href=\"./world-assembler.html\"]')");
+  if(!assemblerEntry)throw Error('Exploration lacks the separate World Builder entry');
+  await send('Emulation.setDeviceMetricsOverride',{
+    width:960,height:540,deviceScaleFactor:1,mobile:true,
+    screenWidth:960,screenHeight:540
+  });
+  const assemblerUrl=new URL('/world-assembler.html',url).href;
+  const assemblyNavigation=await send('Page.navigate',{url:assemblerUrl});
+  if(assemblyNavigation.error)throw Error('World Builder page navigation failed');
+  let assemblerBoot=null;
+  for(let i=0;i<100;i++){
+    try{assemblerBoot=await run("typeof window.__worldAssemblerProbe==='function' ? window.__worldAssemblerProbe():null");}
+    catch{/* previous frame execution context can be replaced while navigating */}
+    if(assemblerBoot)break;
+    await sleep(120);
+  }
+  if(assemblerBoot?.source!=='WorldDocument'||assemblerBoot.areaIds.length!==1)
+    throw Error('World Builder booted without canonical blank WorldDocument: '+
+      JSON.stringify(assemblerBoot));
+  const newWorldGraph=await run(`(()=>{
+    const add=(name,kind)=>{
+      document.querySelector('#area-name').value=name;
+      document.querySelector('#area-kind').value=kind;
+      document.querySelector('#area-add-form').requestSubmit();
+    };
+    add('Forêt du nord','exterior');
+    add('Château secret','interior');
+    const before=window.__worldAssemblerProbe();
+    const source=before.initialAreaId;
+    const instance=before.areaIds[2];
+    document.querySelector('#link-from').value=source;
+    document.querySelector('#link-to').value=instance;
+    document.querySelector('#link-back').checked=true;
+    document.querySelector('#connect-form').requestSubmit();
+    const linked=window.__worldAssemblerProbe();
+    document.querySelector('#start-area').click();
+    const started=window.__worldAssemblerProbe();
+    const panel=document.querySelector('.inspector').getBoundingClientRect();
+    const header=document.querySelector('.app-header').getBoundingClientRect();
+    const node=document.querySelector('.world-node.selected').getBoundingClientRect();
+    return {before,linked,started,
+      panelInLandscape:panel.right<=innerWidth&&panel.width>120,
+      headerInLandscape:header.top>=0&&header.bottom<100,
+      selectedGraphNodeVisible:node.width>150&&node.height>70,
+      portalRows:document.querySelectorAll('.portal-row').length};
+  })()`);
+  if(newWorldGraph.before.areaIds.length!==3||
+     newWorldGraph.linked.portalCount!==2||
+     newWorldGraph.linked.graphEdgeCount!==2||
+     newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
+     newWorldGraph.portalRows<2||!newWorldGraph.panelInLandscape||
+     !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
+    throw Error('World Builder visual assembly or canonical links failed: '+
+      JSON.stringify(newWorldGraph));
+  await run("document.querySelector('#edit-area').click();true");
+  let detailed=null;
+  for(let i=0;i<90;i++){
+    await sleep(120);
+    try{detailed=await run(`(()=>{
+      const back=document.querySelector('#world-assembler-back');
+      const area=document.querySelector('#area-select');
+      return back&&area?.options.length===3 ? {
+        backVisible:!back.hidden,selectedAreaId:area.value,
+        width:document.querySelector('#area-width')?.value
+      }:null;
+    })()`);}catch{}
+    if(detailed)break;
+  }
+  if(!detailed?.backVisible||detailed.selectedAreaId!==newWorldGraph.started.selectedAreaId)
+    throw Error('Existing detailed Builder did not load target WorldArea: '+JSON.stringify(detailed));
+  await run(`(()=>{
+    const input=document.querySelector('#area-width');
+    input.value='850';input.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#world-assembler-back').click();
+    return true;
+  })()`);
+  let returned=null;
+  for(let i=0;i<90;i++){
+    await sleep(120);
+    try{returned=await run("typeof window.__worldAssemblerProbe==='function' ? window.__worldAssemblerProbe():null");}
+    catch{}
+    if(returned)break;
+  }
+  if(returned?.selectedWidth!==850||returned.areaIds.length!==3||
+     returned.portalCount!==2||!returned.saved)
+    throw Error('Detailed Builder failed to return canonical edited WorldDocument: '+
+      JSON.stringify(returned));
+  await send('Page.reload',{ignoreCache:true});
+  let recovered=null;
+  for(let i=0;i<90;i++){
+    await sleep(120);
+    try{recovered=await run("typeof window.__worldAssemblerProbe==='function' ? window.__worldAssemblerProbe():null");}
+    catch{}
+    if(recovered)break;
+  }
+  if(recovered?.selectedWidth!==850||recovered.portalCount!==2)
+    throw Error('World Builder lost canonical local save after reload: '+JSON.stringify(recovered));
+  console.log('World Builder graph -> detailed Builder -> graph + reload Chromium:',
+    JSON.stringify({initial:assemblerBoot.areaIds.length,final:recovered.areaIds.length,
+      portals:recovered.portalCount,editedArea:recovered.selectedAreaId,
+      width:recovered.selectedWidth,mobileLandscape:true}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
