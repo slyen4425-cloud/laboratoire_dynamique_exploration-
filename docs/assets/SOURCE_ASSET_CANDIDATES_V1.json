@@ -1,0 +1,309 @@
+{
+  "version": 1,
+  "auditedAt": "2026-10-01",
+  "sourceRepository": "slyen4425-cloud/Zombicide-40k",
+  "sourceRef": "work/gensrpg-phase8-tactical-consolidation-preaudit-2026-10-01",
+  "sourceCommit": "9fd5a789180e26204833e9d6b330079352272ec6",
+  "policy": {
+    "runtimeHotlink": false,
+    "directDungeonResolverDependency": false,
+    "binaryCopyInThisAudit": false,
+    "futureOwnershipDecisionRequired": true
+  },
+  "candidates": [
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_cave_01.png",
+      "blobSha": "5dffa3bccf064a76fd6f78bfdcc675605660ffd5",
+      "bytes": 285447,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.cave"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_cave_02.png",
+      "blobSha": "b20e675effcbe73055ca8a2dd1b59ff9fe90a30d",
+      "bytes": 271854,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.cave"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_cave_03.png",
+      "blobSha": "f4246a99b0822cc593709b2a41499d46d73cc53c",
+      "bytes": 283630,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.cave"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_cave_04.png",
+      "blobSha": "ad6da6d481b4fbaf0bc9631c418eee65ca11cf50",
+      "bytes": 290606,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.cave"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_cave_05.png",
+      "blobSha": "9d15fc269f445ee50d78aa3b328d10e3c53a5b90",
+      "bytes": 294877,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.cave"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_cave_06.png",
+      "blobSha": "edd204d19708e8840d3ff9314b03937b781a48ed",
+      "bytes": 284751,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.cave"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_forest_01.png",
+      "blobSha": "b5c71de7baca66472976ba31e0993c928b8bff77",
+      "bytes": 309393,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.forest"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_forest_02.png",
+      "blobSha": "89800f9e26985aec97cbb23e77892c2cdedf5798",
+      "bytes": 317920,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.forest"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_forest_03.png",
+      "blobSha": "47535bbb06640aca89152144a31d0731fcc83724",
+      "bytes": 294821,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.forest"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_forest_04.png",
+      "blobSha": "d9af16e588df6a6602aa7147888bcc279947e375",
+      "bytes": 292978,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.forest"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_forest_05.png",
+      "blobSha": "58c94842c685a46527329dbb5aa8e963acd60d71",
+      "bytes": 302724,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.forest"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_forest_06.png",
+      "blobSha": "ae88618e1d8631ad84af8dd24a819fae25c0e313",
+      "bytes": 309973,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.forest"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_ice_01.png",
+      "blobSha": "132ce32e64c99b5c589846298b06a582b14b4c1c",
+      "bytes": 276328,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.ice"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_ice_02.png",
+      "blobSha": "457e6ff0bedfdf122526c68c1c4cd145ec098f6a",
+      "bytes": 278122,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.ice"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_ice_03.png",
+      "blobSha": "9d80c1061a492e37498ce26951e813e00d70049b",
+      "bytes": 288894,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.ice"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_ice_04.png",
+      "blobSha": "bb5dafa074930958072eff599ac398783033e90f",
+      "bytes": 277076,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.ice"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_ice_05.png",
+      "blobSha": "ff0b7c76412a17120587084069d4599a1db2be78",
+      "bytes": 268209,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.ice"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_ice_06.png",
+      "blobSha": "09b8f37bd9b20e3d6830a269d265f5d74e1f7273",
+      "bytes": 273489,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.ice"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_lava_01.png",
+      "blobSha": "8e128c3f2f2f289c598dce71b4f3d25ba40fee67",
+      "bytes": 242321,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.lava"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_lava_02.png",
+      "blobSha": "babba5a8cb34262cb660331ce7db95bfbd989807",
+      "bytes": 250669,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.lava"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_lava_03.png",
+      "blobSha": "26d521f3a8d7b2a99c0e398de7f4ebdea97e730a",
+      "bytes": 251870,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.lava"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_lava_04.png",
+      "blobSha": "f56d87a544d81cefdf0486be91e6a7736b9e9d88",
+      "bytes": 265499,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.lava"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_lava_05.png",
+      "blobSha": "81e30eb28f25255e2e0f3d28736d7847b03d836a",
+      "bytes": 263694,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.lava"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_lava_06.png",
+      "blobSha": "a66ce3f9dd28cfe038d11d0c13aaa75d65b6b25a",
+      "bytes": 252153,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.lava"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_stone_01.png",
+      "blobSha": "bff91003d0243fe03edd82a663e096bfc75d55c7",
+      "bytes": 277149,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.stone"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_stone_02.png",
+      "blobSha": "069616e6e84753e2cd5d836be211d5d1a6662898",
+      "bytes": 273334,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.stone"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_stone_03.png",
+      "blobSha": "6f7a7d6fe02d383ceaac54453421130ee4a124ec",
+      "bytes": 288849,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.stone"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_stone_04.png",
+      "blobSha": "ad8119f4e3dcda9475fee18f225b99ab2545725c",
+      "bytes": 297140,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.stone"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_stone_05.png",
+      "blobSha": "3dd99cfd7d4fe7145ab646f2444761dcb7ac4277",
+      "bytes": 303670,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.stone"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_stone_06.png",
+      "blobSha": "0205a4a0ba0026a71520d4148db1ed00e5ca83bf",
+      "bytes": 306936,
+      "classification": "generic-biome-candidate",
+      "proposedRole": "biome.floor.stone"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_water_01.png",
+      "blobSha": "1c7a516a91af49f151d66c5141fd4b2eb0ef3db0",
+      "bytes": 288445,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.water"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_water_02.png",
+      "blobSha": "2cb9dc1489c9fef501a844d1c1fd1f818f5b5b1d",
+      "bytes": 289633,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.water"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_water_03.png",
+      "blobSha": "cb4cf48afa7fc3241c35ef367aec52ccf0aaee8a",
+      "bytes": 282479,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.water"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_water_04.png",
+      "blobSha": "c29c0fae561999cd794ca06fb12ea77e52bc825f",
+      "bytes": 288351,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.water"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_water_05.png",
+      "blobSha": "9f865fa37c67df6376878b94bf99f40b21f215cf",
+      "bytes": 291654,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.water"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_floor_water_06.png",
+      "blobSha": "01de4eb0a0d5ec90ba1fee4876c0254325aac062",
+      "bytes": 283485,
+      "classification": "generic-visual-candidate",
+      "proposedRole": "biome.floor.water"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dng_wall_block.jpg",
+      "blobSha": "d21b657a8ffd84deab55633e2663a0a81ab9a6f2",
+      "bytes": 7516,
+      "classification": "dungeon-owned-review-before-reuse",
+      "proposedRole": "structure.wall.reference"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dungeon_floor_cracked.png",
+      "blobSha": "d60f093473478c3b6087ee7736f9aaa75c09a8de",
+      "bytes": 37676,
+      "classification": "legacy-dungeon-reference",
+      "proposedRole": "legacy.reference"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dungeon_floor_lava.png",
+      "blobSha": "550af5087c9001d87206d3dac9343f450c67e5ab",
+      "bytes": 39475,
+      "classification": "legacy-dungeon-reference",
+      "proposedRole": "legacy.reference"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dungeon_floor_stone.png",
+      "blobSha": "f600aef979fd8124eb2cead2a2526cef476d1281",
+      "bytes": 38914,
+      "classification": "legacy-dungeon-reference",
+      "proposedRole": "legacy.reference"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dungeon_floor_water.png",
+      "blobSha": "1d815e77b808e3be2c8f42e589319c4c516adf50",
+      "bytes": 41188,
+      "classification": "legacy-dungeon-reference",
+      "proposedRole": "legacy.reference"
+    },
+    {
+      "sourcePath": "assets/dungeon/creatures/dungeon_wall.png",
+      "blobSha": "b9f23d3a5bf36fe87ce2b089967a1f5e78dd5c2b",
+      "bytes": 38715,
+      "classification": "dungeon-owned-review-before-reuse",
+      "proposedRole": "structure.wall.reference"
+    }
+  ]
+}

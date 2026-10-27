@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<!-- Canyon V3: seamless all edges. No full-tile gradients or bright rectangles. -->
+<defs>
+  <radialGradient id="glow"><stop stop-color="#b5fff0" stop-opacity=".29"/><stop offset=".53" stop-color="#72dddb" stop-opacity=".10"/><stop offset="1" stop-color="#72dddb" stop-opacity="0"/></radialGradient>
+  <radialGradient id="deep"><stop stop-color="#0c668e" stop-opacity=".24"/><stop offset="1" stop-color="#0c668e" stop-opacity="0"/></radialGradient>
+  <pattern id="currents" width="128" height="128" patternUnits="userSpaceOnUse">
+    <path d="M15 24Q35 13 56 23T102 22M27 40Q52 32 78 37T113 34" fill="none" stroke="#c6f8ec" opacity=".16" stroke-width="2.3" stroke-linecap="round"/>
+    <path d="M12 76Q34 69 58 77T107 72M22 91Q46 83 73 89T117 87" fill="none" stroke="#0a6b94" opacity=".13" stroke-width="4.4" stroke-linecap="round"/>
+    <path d="M38 61q11-5 23-1M86 105q14-7 24-2M15 112q13-5 23-1" stroke="#e1fff5" stroke-width="2" fill="none" opacity=".23" stroke-linecap="round"/>
+    <path d="M80 16q9-3 16-2M11 49l11-3M56 116l9-2" stroke="#2a7795" stroke-width="2" fill="none" opacity=".28" stroke-linecap="round"/>
+  </pattern>
+</defs>
+<rect width="256" height="256" fill="#279fb2"/>
+<ellipse cx="66" cy="81" rx="59" ry="37" fill="url(#glow)"/>
+<ellipse cx="185" cy="195" rx="64" ry="39" fill="url(#glow)"/>
+<ellipse cx="193" cy="66" rx="42" ry="48" fill="url(#deep)"/>
+<ellipse cx="63" cy="194" rx="48" ry="38" fill="url(#deep)"/>
+<rect width="256" height="256" fill="url(#currents)"/>
+</svg>

@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GenSrpG · Labo terrain sculptable V80 portes</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#101a21;color:#e9f1f2}
+*{box-sizing:border-box}body{margin:0}a{color:#94dcf1}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#182631;border-bottom:1px solid #354955}
+h1{font-size:1.08rem;margin:0;font-weight:700}header p{margin:2px 0 0;color:#adc5ca;font-size:.77rem}
+main{max-width:1360px;margin:0 auto;padding:10px;display:grid;gap:10px}
+.controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+button,select{background:#233745;border:1px solid #546979;color:#eef8f7;border-radius:9px;padding:10px 12px;cursor:pointer;font:inherit;font-size:.88rem}
+#level-up,#level-down{font-size:1.2rem;min-width:48px;min-height:44px;font-weight:800}
+.levels{display:flex;gap:5px;align-items:center;background:#16313b;border-radius:9px;padding:4px 6px}
+.levels output{font-size:1.3rem;min-width:1.5rem;text-align:center;font-weight:800;color:#a6f1d6}
+button.active{background:#376e70;border-color:#8ad7c8;color:white}
+button:focus-visible,select:focus-visible{outline:3px solid #8de2ec}
+button:hover{border-color:#c4e4e4}
+.control.checkbox-control{border:1px solid #476e76;gap:8px}
+.checkbox-control input{width:19px;height:19px;accent-color:#70c7ae}
+#brush-info{font-size:.8rem;color:#baf9e3;min-height:1.2em;font-weight:650}
+.canvas-tag{max-width:65%;line-height:1.5}
+#sculpt-canvas{overscroll-behavior:contain}
+
+.control{display:flex;align-items:center;gap:7px;font-size:.82rem;background:#182935;padding:6px 9px;border-radius:8px}
+input[type=range]{accent-color:#79c8b3;width:98px}
+#sculpt-canvas{width:100%;height:min(65vh,630px);min-height:260px;display:block;border-radius:12px;touch-action:none;
+border:1px solid #48616d;box-shadow:0 8px 24px #0006;cursor:crosshair}
+.canvas-wrap{position:relative}.canvas-tag{position:absolute;left:12px;top:10px;padding:5px 9px;background:#101b27bb;border-radius:6px;font-size:.75rem;pointer-events:none}
+footer{font-size:.82rem;color:#c0d2d5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+#notice{min-height:1.2em;color:#91e3ce}
+#stats{color:#dbe5e6}textarea{width:100%;height:80px;background:#182a35;color:#e9ecef;border:1px solid #526876;border-radius:8px;padding:8px}
+small{color:#a1b5ba}@media(max-width:600px){header{padding:8px}main{padding:6px;gap:6px}
+button,select{padding:9px;font-size:.8rem}.control{padding:4px 7px}
+#sculpt-canvas{height:51vh;min-height:230px}h1{font-size:.95rem}}
+.water-authoring{padding:6px 9px;background:#123544;border:1px solid #2d778e;border-radius:10px}
+.water-authoring strong{color:#91e7f6;font-size:.82rem}
+#undo,#redo{min-width:118px;font-weight:700}
+button:disabled{opacity:.43;cursor:not-allowed}
+@media(max-width:600px){.water-authoring{gap:5px}.water-authoring strong{width:100%}.water-authoring button{flex:1 1 28%}}
+
+.editor-switch{display:flex;align-items:center;gap:9px;background:#172c36;border:1px solid #3e6971;border-radius:12px;padding:7px}
+.editor-switch button{flex:1;min-height:46px;font-weight:800;font-size:1.05rem}
+.editor-switch button.active{background:#28646b;border-color:#9be9db}
+#active-tool-label{color:#b8d8dc;font-size:.81rem;min-width:9rem}
+[hidden]{display:none!important}
+.tool-panel{background:#13242b;border-radius:10px;padding:6px}
+.precision-toggle{border:1px solid #68a9a1;font-weight:750}
+.precision-toggle input{width:20px;height:20px;accent-color:#62d8c0}
+.precision-actions{position:sticky;top:4px;z-index:9;background:#162f35;border:1px solid #4b777c;padding:6px;border-radius:10px;box-shadow:0 5px 12px #0008}
+.precision-actions button{min-height:43px;min-width:43px}
+#apply-precision{background:#2e796c;border-color:#b1efd8;font-weight:850}
+.precision-tip{font-size:.8rem;color:#c1e3df;flex:1}
+[data-panel]{display:flex;align-items:center}
+@media(max-width:600px){.editor-switch{flex-wrap:wrap}.editor-switch button{flex:1;min-height:44px}
+#active-tool-label{width:100%;min-width:0}
+.precision-tip{width:100%;flex:1 1 100%}
+#apply-precision{flex:1}
+}
+
+/* V15 MOBILE FIRST: real viewport belongs to the sculptable canvas, not controls. */
+.sculpt-quickbar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:6px;
+ background:#172d35;border:1px solid #3f666d;border-radius:10px}
+.sculpt-quickbar button{padding:5px 9px;min-height:38px;font-weight:750}
+.quick-tool-label{display:flex;align-items:center;gap:6px;flex:1 1 170px;min-width:120px;font-size:.81rem}
+.quick-tool-label select{flex:1;min-width:0;max-width:100%;min-height:38px}
+.quick-level{display:flex;gap:5px;align-items:center;background:#143b40;padding:4px 6px;border-radius:8px}
+.quick-level output{min-width:20px;text-align:center;color:#93f0d4;font-weight:800;font-size:1.17rem}
+.quick-size{display:flex;align-items:center;flex:1 1 205px;gap:5px;min-width:0}
+.quick-size>.control{flex:1;min-width:0}
+.quick-size input[type=range]{flex:1;min-width:45px;width:100%}
+.quick-size label{white-space:nowrap}
+#radius-minus,#radius-plus{font-size:1.2rem;min-width:35px}
+.sculpt-quickbar .precision-toggle{min-height:38px;padding:5px 7px}
+.sculpt-quickbar #undo,.sculpt-quickbar #redo{min-width:42px;flex:0 0 auto}
+#sculpt-settings{border:1px solid #375b62;border-radius:10px;background:#182b33}
+#sculpt-settings>summary{list-style:revert;cursor:pointer;padding:11px;font-weight:700}
+#sculpt-settings .settings-interior{padding:8px;display:grid;gap:8px}
+.canvas-wrap{position:relative;min-height:0}
+.canvas-wrap .precision-actions{position:absolute;left:8px;right:8px;bottom:8px;
+ top:auto;z-index:6;display:flex;align-items:center;flex-wrap:nowrap;gap:4px;padding:5px;
+ background:rgba(17,44,51,.94);border:1px solid #68aeb2;border-radius:10px}
+.canvas-wrap .precision-actions[hidden]{display:none}
+.canvas-wrap .precision-actions button{min-width:35px;min-height:40px;flex:0 0 auto;padding:6px}
+.canvas-wrap .precision-actions #apply-precision{flex:1;min-width:80px;min-height:40px}
+.canvas-wrap .precision-tip{display:none}
+@media(max-width:600px){
+ header{padding:6px 9px} header h1{font-size:.91rem} header p{display:none} header a{font-size:.77rem}
+ main{padding:5px;gap:6px}
+ .editor-switch{padding:4px;gap:5px;flex-wrap:nowrap}
+ .editor-switch button{font-size:.84rem;min-height:37px;padding:5px 7px}
+ #active-tool-label{display:none}
+ .sculpt-quickbar{padding:5px;gap:4px}
+ .quick-tool-label{flex:1 1 55%}
+ .quick-level{flex:0 0 auto;font-size:.77rem}
+ .quick-level button{min-width:28px;padding:4px}
+ .quick-size{flex:1 1 55%;order:1}
+ .quick-size>.control{padding:4px}
+ .sculpt-quickbar .precision-toggle{order:2;flex:1 1 32%;font-size:.72rem}
+ .sculpt-quickbar #undo{order:3;flex:1 1 24%;font-size:.72rem;min-height:36px}
+ .sculpt-quickbar #redo{order:4;flex:1 1 24%;font-size:.72rem;min-height:36px}
+ #sculpt-canvas{height:clamp(280px,53dvh,660px);min-height:280px}
+ .canvas-tag{max-width:85%;font-size:.65rem}
+ .canvas-wrap .precision-actions button{min-width:34px}
+ .canvas-wrap .precision-actions #apply-precision{font-size:.78rem}
+}
+
+
+@media(max-width:600px){
+  .sculpt-quickbar #undo,.sculpt-quickbar #redo{font-size:0;padding:3px;min-width:35px;}
+  .sculpt-quickbar #undo::before{content:"↶";font-size:1.22rem;}
+  .sculpt-quickbar #redo::before{content:"↷";font-size:1.22rem;}
+  #brush-info{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .canvas-wrap .canvas-tag{padding:4px;max-width:76%;line-height:1.15;}
+}
+
+/* V16: one real canvas, one set of toolbar controls; immersive layout only.
+   Works as a 100dvh fallback even if mobile Fullscreen API is unavailable. */
+.editor-switch #fullscreen-toggle{flex:0 0 auto;font-size:.83rem;min-height:37px}
+.editor-switch #palette-toggle{flex:0 0 auto;min-height:37px}
+body.sculpt-immersive{overflow:hidden}
+body.sculpt-immersive header,
+body.sculpt-immersive #brush-info,
+body.sculpt-immersive #sculpt-settings,
+body.sculpt-immersive footer,
+body.sculpt-immersive main>section.controls,
+body.sculpt-immersive main>textarea,
+body.sculpt-immersive .canvas-tag{display:none!important}
+body.sculpt-immersive main{position:fixed;inset:0;z-index:100;display:block;
+  width:100%;max-width:none;margin:0;padding:0;overflow:hidden;background:#101a21}
+body.sculpt-immersive .canvas-wrap{position:absolute;inset:0;min-height:0}
+body.sculpt-immersive #sculpt-canvas{width:100%;height:100%;min-height:0;
+  border:0;border-radius:0;box-shadow:none}
+body.sculpt-immersive .editor-switch{position:absolute;
+  top:calc(env(safe-area-inset-top,0px) + 6px);
+  left:calc(env(safe-area-inset-left,0px) + 6px);
+  z-index:15;width:min(280px,calc(100vw - 12px));margin:0;padding:4px;gap:4px;
+  flex-wrap:nowrap;box-shadow:0 4px 18px #0009;background:#132c35ef}
+body.sculpt-immersive .editor-switch button{flex:1 1 auto;min-width:0;
+  min-height:34px;font-size:.77rem;padding:4px 5px}
+body.sculpt-immersive .editor-switch #fullscreen-toggle{flex:0 0 36px;font-size:0}
+body.sculpt-immersive .editor-switch #fullscreen-toggle::before{content:"⤢";font-size:1.2rem}
+body.sculpt-immersive .editor-switch #palette-toggle{flex:0 0 30px;font-size:1.1rem}
+body.sculpt-immersive #active-tool-label{display:none}
+body.sculpt-immersive .sculpt-quickbar{position:absolute;
+  top:calc(env(safe-area-inset-top,0px) + 51px);
+  left:calc(env(safe-area-inset-left,0px) + 6px);
+  z-index:14;width:min(280px,calc(100vw - 12px));max-height:min(61dvh,430px);
+  margin:0;padding:5px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;
+  gap:4px;box-shadow:0 6px 22px #000a;background:#142b35ed;align-items:center}
+body.sculpt-immersive .quick-tool-label,
+body.sculpt-immersive .quick-level,
+body.sculpt-immersive .quick-size{grid-column:1/-1;flex:auto;min-width:0;order:initial}
+body.sculpt-immersive .quick-size>.control{min-width:0}
+body.sculpt-immersive .sculpt-quickbar .precision-toggle{grid-column:1/-1;
+  flex:auto;order:initial;min-height:32px;font-size:.74rem}
+body.sculpt-immersive .sculpt-quickbar #undo,
+body.sculpt-immersive .sculpt-quickbar #redo{order:initial;flex:auto;min-width:0;
+  min-height:32px;font-size:.75rem}
+body.sculpt-immersive .sculpt-quickbar button{min-height:32px;padding:3px 7px}
+body.sculpt-immersive.palette-collapsed .sculpt-quickbar{display:none}
+body.sculpt-immersive .canvas-wrap .precision-actions{
+  left:50%;right:auto;transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom,0px) + 8px);
+  width:min(490px,calc(100vw - 16px));max-width:calc(100vw - 16px)}
+@media(max-width:600px){
+  .editor-switch #fullscreen-toggle{font-size:.74rem;padding:4px 6px}
+  body.sculpt-immersive .sculpt-quickbar #undo,
+  body.sculpt-immersive .sculpt-quickbar #redo{font-size:0}
+  body.sculpt-immersive .sculpt-quickbar #undo::before,
+  body.sculpt-immersive .sculpt-quickbar #redo::before{font-size:1.15rem}
+}
+
+/* V17: an opt-in navigation probe, never a second editor or world. */
+.editor-switch #navigation-toggle{flex:0 0 auto;min-height:37px;font-size:.85rem}
+#navigation-hud{position:absolute;z-index:11;top:56px;right:9px;
+  width:min(205px,calc(100% - 18px));padding:9px;display:grid;gap:6px;
+  background:#142934f0;border:1px solid #6ba8a1;border-radius:12px;
+  box-shadow:0 5px 18px #0008;font-size:.78rem;max-height:min(66dvh,560px);overflow-y:auto;overscroll-behavior:contain}
+#navigation-hud select{width:100%;padding:7px}
+#navigation-hud input[type=range]{width:100%;accent-color:#83ddc4}
+#navigation-speed-value,#navigation-camera-zoom-value,#navigation-camera-angle-value,#navigation-max-step-value{font-weight:800;color:#aff4df}
+#navigation-metrics{font-size:.72rem;color:#b9d4dc;font-variant-numeric:tabular-nums}
+#navigation-status{font-size:.75rem;color:#b4f0e4;line-height:1.35}
+#navigation-stick{position:absolute;z-index:13;bottom:13px;left:13px;
+  width:112px;height:112px;border-radius:50%;border:2px solid #88cbcf;
+  background:rgba(20,49,65,.43);touch-action:none;user-select:none}
+#navigation-knob{position:absolute;width:48px;height:48px;top:30px;left:30px;
+  border-radius:50%;background:rgba(115,207,207,.74);
+  border:2px solid #e2ffff;pointer-events:none}
+#navigation-stick[hidden],#navigation-hud[hidden]{display:none!important}
+body.navigation-testing #sculpt-canvas{cursor:default}
+body.navigation-testing .canvas-wrap .precision-actions{display:none!important}
+body.sculpt-immersive.navigation-testing .sculpt-quickbar{display:none}
+body.navigation-testing .sculpt-quickbar{opacity:.45;pointer-events:none}
+body.sculpt-immersive #navigation-hud{top:calc(env(safe-area-inset-top,0px) + 54px);
+  right:calc(env(safe-area-inset-right,0px) + 7px)}
+body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
+@media(max-width:600px){
+  .editor-switch #navigation-toggle{font-size:.72rem;padding:5px;min-width:36px}
+  body.sculpt-immersive .editor-switch{width:min(350px,calc(100vw - 12px))}
+  #navigation-hud{width:150px;padding:7px;right:5px;top:52px}
+  #navigation-stick{left:12px;bottom:12px;width:108px;height:108px}
+  #navigation-knob{top:28px;left:28px}
+}
+
+/* V20 object palette: visual catalog lives in the existing native object registry. */
+#object-palette{position:absolute;z-index:12;right:8px;top:8px;
+  width:min(235px,calc(100vw - 16px));max-height:70%;overflow:auto;
+  display:grid;gap:6px;padding:9px;background:rgba(19,43,52,.96);
+  border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
+#object-palette[hidden]{display:none!important}
+#sphere-profile-wrap[hidden]{display:none!important}
+#sphere-profile-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
+#sphere-profile-wrap .control{display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
+#sphere-profile-wrap select,#sphere-profile-wrap input[type=range]{width:100%;min-width:0}
+.sculpt-quickbar #sphere-profile-wrap{grid-column:1/-1;min-width:0}
+#sphere-profile-wrap small{color:#adcac1;font-size:.69rem;line-height:1.3}
+body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset 0 0 0 1px #477d76}
+#object-palette label{display:grid;gap:2px}
+#object-variant-wrap[hidden],#object-scale-wrap[hidden],#object-bridge-length-wrap[hidden],#object-bridge-width-wrap[hidden]{display:none!important}
+#object-palette select,#object-palette input[type=range]{width:100%}
+#object-palette select{padding:7px;min-height:36px}
+#object-palette input[type=range]{accent-color:#7ee0c5}
+#object-count{color:#a7f3db}
+.object-actions{display:flex;gap:5px}
+.object-actions button{flex:1;min-width:0;padding:6px}
+body.sculpt-immersive #object-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
+ right:calc(env(safe-area-inset-right,0px) + 6px);max-height:65dvh}
+body.object-editing .sculpt-quickbar{opacity:.45;pointer-events:none}
+body.sculpt-immersive.object-editing .sculpt-quickbar{display:none}
+body.object-editing .canvas-wrap .precision-actions{display:none!important}
+@media(max-width:600px){
+  #object-palette{width:min(180px,48vw);padding:5px;top:6px;right:5px}
+  body.sculpt-immersive #object-palette{max-height:63dvh}
+  .editor-switch #mode-objects{font-size:.77rem;padding:4px;min-width:0}
+  body.sculpt-immersive .editor-switch{width:min(365px,calc(100vw - 12px))}
+}
+/* V24: explicit protected new-map action; never compete with immersive canvas. */
+.editor-switch #new-map-toggle{flex:0 0 auto;font-size:.82rem;min-height:37px;padding:6px 8px}
+#new-map-panel{position:absolute;inset:0;z-index:24;display:grid;place-items:center;
+ background:rgba(8,19,27,.79);padding:12px;overflow-y:auto;overscroll-behavior:contain}
+#new-map-panel[hidden]{display:none!important}
+.new-map-content{display:grid;gap:13px;width:min(420px,100%);max-height:100%;
+ overflow-y:auto;background:#1c303b;border:1px solid #86c6be;border-radius:13px;
+ box-shadow:0 12px 28px #000b;padding:16px}
+.new-map-content strong{font-size:1.09rem}
+.new-map-dimensions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.new-map-dimensions label{display:grid;gap:6px;font-size:.82rem}
+.new-map-dimensions input{width:100%;min-width:0;padding:10px;font:inherit;
+ background:#122630;color:#e9f1f2;border:1px solid #65918e;border-radius:8px}
+.new-map-confirm{display:flex;align-items:flex-start;gap:9px;font-size:.81rem;line-height:1.45}
+.new-map-confirm input{flex:0 0 auto;width:20px;height:20px;accent-color:#73d3bd}
+#new-map-create{background:#276f65;border-color:#8bd2bd;font-weight:800}
+@media(max-width:600px){
+ .editor-switch{width:100%;min-width:0;max-width:100%;overflow:hidden}
+ .editor-switch button{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+ .editor-switch #new-map-toggle{flex:0 0 78px;max-width:78px;min-width:0;font-size:.72rem;padding:5px 3px}
+ .new-map-content{padding:12px;gap:10px}
+}
+/* V43 — free space in landscape belongs to the top action bar.
+   Keep a single responsive toolbar; narrow portrait scrolls, never crushes
+   the categories or overlaps the object editing drawer below. */
+body.sculpt-immersive .editor-switch{
+  width:min(900px,calc(100vw - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px) - 12px));
+  max-width:calc(100vw - 12px);overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;overscroll-behavior-x:contain;
+  gap:6px;padding:6px;
+}
+body.sculpt-immersive .editor-switch button{
+  flex:1 0 auto;white-space:nowrap;min-width:max-content;
+  padding:6px 10px;font-size:clamp(.77rem,.9vw + .52rem,.94rem);
+}
+body.sculpt-immersive .editor-switch #new-map-toggle{flex:0 0 auto}
+body.sculpt-immersive .editor-switch #palette-toggle{flex:0 0 34px;min-width:34px}
+body.sculpt-immersive .editor-switch #fullscreen-toggle{flex:0 0 40px;min-width:40px}
+@media(max-width:600px){
+  body.sculpt-immersive .editor-switch{width:calc(100vw - 12px);max-width:calc(100vw - 12px)}
+  body.sculpt-immersive .editor-switch button{flex:0 0 auto;font-size:.79rem;padding:5px 8px}
+  body.sculpt-immersive .editor-switch #new-map-toggle{
+    flex:0 0 auto;min-width:max-content;max-width:none;padding:5px 8px;font-size:.79rem}
+}
+body.object-editing #sculpt-canvas.object-dragging{cursor:grabbing}
+
+/* Canonical WorldSurface routes/zones, exposed as an isolated sculpt paint mode. */
+#surface-palette{position:absolute;z-index:12;right:8px;top:8px;
+ width:min(225px,calc(100vw - 16px));max-height:73%;overflow:auto;
+ display:grid;gap:7px;padding:9px;background:rgba(19,43,52,.97);
+ border:1px solid #6ba9bb;border-radius:11px;box-shadow:0 6px 20px #000a;font-size:.78rem}
+#surface-palette[hidden]{display:none!important}
+#surface-palette label{display:grid;gap:3px}
+#surface-palette select,#surface-palette input[type=range]{width:100%}
+#surface-palette #surface-count{color:#a6ebd6}
+body.surface-editing .sculpt-quickbar{opacity:.45;pointer-events:none}
+body.sculpt-immersive.surface-editing .sculpt-quickbar{display:none}
+body.surface-editing .canvas-wrap .precision-actions{display:none!important}
+body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
+ right:calc(env(safe-area-inset-right,0px) + 6px);max-height:64dvh}
+@media(max-width:600px){
+ #surface-palette{width:min(184px,49vw);padding:6px;top:6px}
+ .editor-switch #mode-surface{font-size:.73rem;padding:5px 4px}
+}
+#object-controls,#actor-controls{display:grid;gap:7px}
+#object-controls[hidden],#actor-controls[hidden]{display:none!important}
+#actor-controls #actor-source-status{color:#a6ebd6}
+#actor-controls button{min-height:34px}
+/* V79: small area breadcrumb, not a replacement of the existing editor. */
+.interior-area-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
+ padding:6px 10px;border:1px solid #ab9070;border-radius:10px;
+ background:#352f29;color:#f4e5d3;font-size:.85rem}
+.interior-area-bar[hidden]{display:none!important}
+.interior-area-bar>label{display:flex;align-items:center;gap:8px;flex:1 1 180px}
+.interior-area-bar input{flex:1;min-width:70px;max-width:190px}
+.interior-area-bar button,#object-open-interior{min-height:40px;font-weight:750}
+#object-open-interior[hidden],#navigation-area-door[hidden]{display:none!important}
+body.sculpt-immersive .interior-area-bar{position:absolute;
+ top:calc(env(safe-area-inset-top,0px) + 6px);left:4px;right:4px;z-index:12;
+ padding:3px 6px;font-size:.69rem}
+body.sculpt-immersive .interior-area-bar button{min-height:30px}
+body.sculpt-immersive .interior-area-bar>label{flex:1 1 130px}
+/* Same floating quickbar, no second tool panel. */
+.brush-shape-control{white-space:nowrap;font-weight:650}
+.brush-shape-control select{min-height:35px;max-width:145px;padding:6px}
+@media(max-width:600px){.brush-shape-control{flex:1 1 110px}.brush-shape-control select{min-width:0;max-width:100%}}
+/* R3: slopes work on the actual map even with precision checked on mobile. */
+#ramp-guide[hidden]{display:none!important}
+#ramp-guide{display:flex;align-items:center;gap:7px;flex:1 1 100%;
+ padding:5px 7px;border:1px solid #4f877d;border-radius:8px;
+ background:#1b3c39;font-size:.78rem;line-height:1.3}
+#ramp-step{flex:1;min-width:0}
+#ramp-cancel{flex:0 0 auto;min-height:36px;padding:5px 9px}
+body.terrain-ramp-authoring .precision-toggle{display:none!important}
+body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
+/* Door interaction belongs to the PLAYFIELD, not the editor's options HUD. */
+#navigation-area-door.in-game-door-action{position:absolute;z-index:19;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
+  right:calc(env(safe-area-inset-right,0px) + 16px);
+  min-height:54px;min-width:174px;padding:10px 16px;
+  border:2px solid #ecc58c;border-radius:14px;
+  background:rgba(52,34,22,.95);color:#fff5df;font-size:1rem;font-weight:850;
+  box-shadow:0 5px 22px #000a;touch-action:manipulation}
+#navigation-area-door[hidden]{display:none!important}
+body.sculpt-immersive #navigation-area-door{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+.interior-wall-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
+.interior-wall-tools strong{flex:1 1 100%}
+.interior-wall-tools button{flex:1 1 100px}
+.interior-wall-tools output{width:100%;font-size:.76rem;color:#f4d8aa}
+body.interior-wall-authoring .sculpt-quickbar>.quick-tool-label,
+body.interior-wall-authoring .sculpt-quickbar>.quick-size,
+body.interior-wall-authoring .sculpt-quickbar>.quick-level{display:none!important}
+body.sculpt-immersive .interior-wall-tools{grid-column:1/-1}
+@media(max-width:600px){#navigation-area-door.in-game-door-action{min-width:144px;min-height:50px;
+ right:8px;bottom:12px;padding:8px;font-size:.88rem}}
+/* V79 R3A2: interior construction tools stay compact and finger-friendly. */
+.interior-door-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%}
+.interior-door-tools strong{width:100%;font-size:.82rem}
+.interior-door-tools>button{flex:1 1 100px}
+.interior-door-tools>label{flex:1 1 135px;display:grid;gap:2px}
+.interior-door-tools input[type=range]{width:100%;accent-color:#f6cb93}
+.interior-door-tools small{line-height:1.28;color:#c5d5d7}
+.wall-diagonal-option{flex:1 1 100%;display:flex!important;gap:6px;align-items:center}
+body.interior-wall-authoring .interior-area-bar > label,
+body.interior-wall-authoring .interior-area-bar > small,
+body.interior-wall-authoring .interior-area-bar > strong:not(#interior-area-label),
+body.interior-wall-authoring .interior-area-bar > button:not(#interior-area-return),
+body.interior-door-authoring .interior-area-bar > label,
+body.interior-door-authoring .interior-area-bar > small,
+body.interior-door-authoring .interior-area-bar > strong:not(#interior-area-label),
+body.interior-door-authoring .interior-area-bar > button:not(#interior-area-return){display:none!important}
+body.interior-wall-authoring #interior-area-bar,
+body.interior-door-authoring #interior-area-bar{max-height:62dvh;overflow-y:auto}
+body.interior-wall-authoring #sculpt-canvas,
+body.interior-door-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
+#object-interior-link[hidden]{display:none!important}
+#object-interior-link{display:grid;gap:7px;border:1px solid #5f7b79;border-radius:8px;padding:8px}
+.interior-layout-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%;border-top:1px solid #4c615a;padding-top:7px}
+.interior-layout-tools>strong,.interior-layout-tools>small{width:100%}
+.interior-layout-tools>label{display:grid;gap:3px;flex:1 1 115px;min-width:0}
+.interior-layout-tools input,.interior-layout-tools select{min-height:37px;width:100%}
+.interior-layout-tools button{flex:1 1 100%}
+.interior-layout-tools small{font-size:.74rem;color:#c1d0cb}
+ .interior-floor-tools{display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid #54766f;
+ padding-top:7px;width:100%;align-items:center}
+ .interior-floor-tools strong,.interior-floor-tools small{width:100%}
+ .interior-floor-tools>label{display:grid;gap:3px;flex:1 1 140px}
+ .interior-floor-tools select{min-height:38px}
+ .interior-floor-tools button{flex:1 1 125px}
+ body.interior-connector-authoring #sculpt-canvas{cursor:crosshair;touch-action:none}
+#interior-wall-material,#interior-door-asset,#interior-connector-link,#interior-connector-asset{min-width:130px}
+#interior-connector-hint{color:#d6e1df}
+body.interior-connector-authoring #interior-area-bar{max-height:66dvh;overflow-y:auto}
+/* V79 R2: controls are inside the SAME floating quickbar. */
+.sculpt-quickbar .interior-area-bar{flex:1 1 100%;width:100%;min-width:0;box-sizing:border-box}
+.sculpt-quickbar .interior-area-bar label{flex:1 1 145px}
+.sculpt-quickbar .interior-area-bar input[type=text],
+.sculpt-quickbar .interior-area-bar select{max-width:100%;min-width:0}
+body.sculpt-immersive .sculpt-quickbar .interior-area-bar{
+  position:static;grid-column:1/-1;top:auto;left:auto;right:auto;
+  max-width:100%;padding:5px;gap:4px;font-size:.75rem
+}
+body.sculpt-immersive .sculpt-quickbar .interior-area-bar>button,
+body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
+/* V81: one existing settings panel, reachable above the canvas in immersive mode. */
+body.sculpt-immersive #sculpt-settings{display:block!important;position:absolute;z-index:30;top:calc(env(safe-area-inset-top,0px) + 54px);right:calc(env(safe-area-inset-right,0px) + 8px);left:auto;width:min(390px,calc(100vw - 16px));max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 64px);overflow-y:auto;overscroll-behavior:contain;background:#182b33f5;box-shadow:0 10px 28px #000a}
+body.sculpt-immersive #sculpt-settings:not([open]){width:auto;max-width:min(210px,45vw)}
+body.sculpt-immersive #sculpt-settings>summary{font-size:.86rem;padding:9px 12px;min-height:40px;box-sizing:border-box}
+body.sculpt-immersive #sculpt-settings:not([open])>summary{font-size:0}
+body.sculpt-immersive #sculpt-settings:not([open])>summary::after{content:"⚙ Réglages";font-size:.86rem}
+body.sculpt-immersive #sculpt-settings .settings-interior{padding:10px;gap:10px}
+body.sculpt-immersive #sculpt-settings button,body.sculpt-immersive #sculpt-settings select,body.sculpt-immersive #sculpt-settings input{min-height:40px}
+@media(max-width:650px){body.sculpt-immersive #sculpt-settings[open]{top:calc(env(safe-area-inset-top,0px) + 55px);left:8px;right:8px;width:auto;max-height:calc(100dvh - 70px)}}
+</style>
+</head>
+<body>
+<header><div><h1>Terrain sculptable · Prototype expérimental</h1>
+<p>Terrain visible en priorité · outils avancés sous la carte.</p></div>
+<a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
+<main>
+<nav class="editor-switch" aria-label="Choisir la matière à sculpter">
+<button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
+<button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
+<button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
+<button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
+<button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
+<button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
+<span id="active-tool-label" role="status">Terre · Creuser</span>
+<button type="button" id="palette-toggle" aria-label="Réduire la palette d'outils" aria-expanded="true" hidden>▴</button>
+<button type="button" id="fullscreen-toggle" aria-label="Passer en plein écran" aria-pressed="false">⛶ Plein écran</button>
+</nav>
+<section class="sculpt-quickbar" aria-label="Commandes principales de sculpture">
+<label class="quick-tool-label">Outil <select id="quick-tool" aria-label="Outil actif"></select></label>
+<div class="quick-level" role="group" aria-label="Hauteur cible">
+<span id="quick-level-label">Hauteur</span>
+<button type="button" id="quick-level-minus" aria-label="Réduire la hauteur cible">−</button>
+<output id="quick-level-value" aria-live="polite">3</output>
+<button type="button" id="quick-level-plus" aria-label="Augmenter la hauteur cible">+</button></div>
+<div class="quick-size" role="group" aria-label="Taille du pinceau, de 0,5 à 16 cases">
+<button type="button" id="radius-minus" aria-label="Réduire la taille du pinceau">−</button>
+<span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="16" value="3" step="0.5"></span>
+<button type="button" id="radius-plus" aria-label="Agrandir le pinceau">+</button></div>
+<label class="control brush-shape-control" for="brush-shape">Forme
+<select id="brush-shape" aria-label="Forme du pinceau terre et eau">
+<option value="circle">◯ Rond</option>
+<option value="square">▦ Carré plein</option>
+<option value="cross">✚ Croix</option>
+</select></label>
+<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
+  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
+    <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
+  <label class="control" for="sphere-wall-material">Flancs
+    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
+  <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
+</div>
+<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
+<button id="undo" type="button" disabled>↶ Annuler</button>
+<button id="redo" type="button" disabled>↷ Rétablir</button>
+<div id="ramp-guide" role="status" aria-live="polite" hidden>
+ <span id="ramp-step">1. Touche le pied de la pente, puis le sommet.</span>
+ <button id="ramp-cancel" type="button" disabled>Changer le pied</button>
+</div>
+<section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
+ <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
+ <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <section class="interior-floor-tools" aria-label="Étages du bâtiment">
+  <strong>🪜 Étages liés</strong>
+  <label>Étage actif <select id="interior-level-select"><option value="0">Rez-de-chaussée</option></select></label>
+  <button id="interior-level-add" type="button">+ Ajouter un étage</button>
+  <label>Passage <select id="interior-connector-link" aria-label="Niveau à relier"><option value="">Créer un étage d'abord</option></select></label>
+  <label>Escalier ou échelle <select id="interior-connector-asset">
+    <option value="stairs.wood">Escalier bois</option>
+    <option value="stairs.stone">Escalier pierre</option>
+    <option value="ladder.wood">Échelle bois</option>
+  </select></label>
+  <label>Orientation <output id="interior-connector-rotation-value">0°</output>
+    <input id="interior-connector-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Orientation de l’escalier ou de l’échelle en degrés">
+  </label>
+  <div class="object-actions">
+    <button id="interior-connector-turn-left" type="button">↶ 45°</button>
+    <button id="interior-connector-turn-right" type="button">↷ 45°</button>
+  </div>
+  <button id="interior-connector-place" type="button" aria-pressed="false">📍 Positionner le passage sur la carte</button>
+  <small id="interior-connector-hint">Choisis un étage relié et place le passage au doigt. Le vrai Portal se déplace avec lui.</small>
+  <small>Chaque étage possède sa propre pièce ; dans le jeu, approche les escaliers et utilise Monter / Descendre.</small>
+ </section>
+ <section class="interior-layout-tools" aria-label="Taille et forme de la pièce">
+  <strong>📐 Forme de la pièce</strong>
+  <label>Forme <select id="interior-shape">
+    <option value="rectangle">Rectangle / petite maison</option>
+    <option value="l">Forme en L</option>
+    <option value="t">Forme en T</option>
+    <option value="cross">Croix / donjon</option>
+  </select></label>
+  <label>Largeur (cases) <input type="number" id="interior-width" min="8" max="80" step="1" value="18"></label>
+  <label>Profondeur (cases) <input type="number" id="interior-height" min="8" max="64" step="1" value="14"></label>
+  <button id="interior-layout-apply" type="button">Appliquer forme et taille</button>
+  <small id="interior-shape-hint">Choisir une forme l'applique directement. Le contour doré marque le sol autorisé. Pour la taille, utilise Appliquer.</small>
+ </section>
+ <section class="interior-wall-tools" aria-label="Construction des murs">
+  <strong>🧱 Construire l'intérieur</strong>
+  <label>Texture des murs <select id="interior-wall-material">
+    <option value="plaster">Enduit clair</option>
+    <option value="stone">Pierre taillée</option>
+    <option value="brick">Brique rouge</option>
+    <option value="wood">Planches de bois</option>
+    <option value="dark-stone">Pierre de donjon</option>
+  </select></label>
+  <button id="interior-wall-toggle" type="button" aria-pressed="false">Placer des murs</button>
+  <button id="interior-wall-remove" type="button" aria-pressed="false">Supprimer un mur</button>
+  <button id="interior-wall-cancel" type="button" disabled>Annuler le départ</button>
+  <button id="interior-wall-undo" type="button" disabled>↶ Mur</button>
+  <button id="interior-wall-redo" type="button" disabled>↷ Mur</button>
+  <label class="wall-diagonal-option"><input id="interior-wall-diagonal" type="checkbox"> Mur en diagonale</label>
+  <output id="interior-wall-info">Glisse du début à la fin pour tracer un mur. Deux appuis fonctionnent aussi. Grille et angles droits actifs.</output>
+ </section>
+ <section class="interior-door-tools" aria-label="Régler la porte du bâtiment">
+  <strong>🚪 Porte de la maison</strong>
+  <label>Visuel de porte <select id="interior-door-asset">
+    <option value="default">Porte en bois actuelle</option>
+    <option value="object.door.fantasy.wood.01">Fantasy bois</option>
+    <option value="object.door.fantasy.stone_redroof.01">Pierre et rouge</option>
+    <option value="object.door.fantasy.tavern_golden.01">Auberge dorée</option>
+    <option value="object.door.interior.bois_renforce.face">Bois renforcé — face</option>
+    <option value="object.door.interior.bois_renforce.trois_quarts">Bois renforcé — 3/4</option>
+    <option value="object.door.interior.bois_arche_pierre.face">Bois et arche de pierre — face</option>
+    <option value="object.door.interior.bois_arche_pierre.trois_quarts">Bois et arche de pierre — 3/4</option>
+    <option value="object.door.interior.bois_double.face">Double porte en bois — face</option>
+    <option value="object.door.interior.bois_double.trois_quarts">Double porte en bois — 3/4</option>
+    <option value="object.door.interior.fer_ornement.face">Fer ornementé — face</option>
+    <option value="object.door.interior.fer_ornement.trois_quarts">Fer ornementé — 3/4</option>
+    <option value="object.door.interior.bois_coulissant.face">Bois coulissant — face</option>
+    <option value="object.door.interior.bois_coulissant.trois_quarts">Bois coulissant — 3/4</option>
+    <option value="object.door.interior.bois_dore.face">Bois doré — face</option>
+    <option value="object.door.interior.bois_dore.trois_quarts">Bois doré — 3/4</option>
+    <option value="object.door.interior.fer_donjon.face">Fer de donjon — face</option>
+    <option value="object.door.interior.fer_donjon.trois_quarts">Fer de donjon — 3/4</option>
+    <option value="object.door.interior.bois_lierre.face">Bois et lierre — face</option>
+    <option value="object.door.interior.bois_lierre.trois_quarts">Bois et lierre — 3/4</option>
+    <option value="object.door.interior.grille_fer.face">Grille en fer — face</option>
+    <option value="object.door.interior.grille_fer.trois_quarts">Grille en fer — 3/4</option>
+    <option value="object.door.interior.porte_noble.face">Porte noble — face</option>
+    <option value="object.door.interior.porte_noble.trois_quarts">Porte noble — 3/4</option>
+  </select></label>
+  <button id="interior-door-move" type="button" aria-pressed="false">Déplacer la porte</button>
+  <label>Taille de porte <output id="interior-door-scale-value">58 %</output>
+    <input type="range" id="interior-door-scale" min="35" max="125" step="5" value="60" aria-label="Taille de la porte"></label>
+  <small>Déplacer : touche ou fais glisser sur le sol. La porte sert aussi de point de sortie et déplace l’arrivée à l’intérieur.</small>
+ </section>
+ <label>Sol intérieur <select id="interior-floor-base" aria-label="Sol de base de cette pièce">
+  <option value="floor.wood.house">Parquet chêne</option>
+  <option value="floor.wood.dark">Bois foncé</option>
+  <option value="floor.tile.light">Carrelage clair</option>
+  <option value="floor.tile.sandstone">Pierre sable</option>
+  <option value="floor.concrete.gray">Béton gris</option>
+ </select></label>
+ <label>Inclinaison caméra <output id="interior-camera-value">55°</output>
+  <input type="range" id="interior-camera-angle" min="35" max="90" value="55" step="5"
+    aria-label="Inclinaison de la caméra intérieure en degrés"></label>
+ <strong>Bibliothèque de pièces</strong>
+ <label>Nom du modèle <input id="interior-template-name" type="text" maxlength="64" placeholder="Ex. Maison de village" aria-label="Nom du modèle de pièce"></label>
+ <button id="interior-template-save" type="button">Enregistrer comme modèle</button>
+ <label>Réutiliser <select id="interior-template-select" aria-label="Modèle de pièce à réutiliser"><option value="">Édition libre (aucun modèle)</option></select></label>
+ <button id="interior-template-apply" type="button" disabled>Appliquer le modèle choisi</button>
+ <small>Tu peux toujours personnaliser la pièce sans modèle. Appliquer remplace son contenu, sans modifier sa porte extérieure.</small>
+</section>
+</section>
+<div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
+<div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
+<section id="new-map-panel" role="dialog" aria-modal="true" aria-label="Créer une carte vierge" hidden>
+ <form id="new-map-form" class="new-map-content">
+  <strong>🗺 Nouvelle carte vierge</strong>
+  <small>Sol plat, sans eau ni objet. La carte actuelle et ses annulations seront effacées.</small>
+  <div class="new-map-dimensions">
+   <label for="new-map-width">Largeur (cases)
+    <input type="number" id="new-map-width" min="8" max="80" step="1" value="36" required>
+   </label>
+   <label for="new-map-height">Hauteur (cases)
+    <input type="number" id="new-map-height" min="8" max="64" step="1" value="24" required>
+   </label>
+  </div>
+  <label class="new-map-confirm"><input id="new-map-confirm" type="checkbox" required>
+   Je confirme la suppression de la carte actuelle, de son eau et de ses objets.
+  </label>
+  <div class="object-actions">
+   <button type="button" id="new-map-cancel">Annuler</button>
+   <button type="submit" id="new-map-create" disabled>Créer la carte vierge</button>
+  </div>
+ </form>
+</section>
+<section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
+ <strong>🎨 Pinceau de textures</strong>
+ <label>Famille de terrain <select id="surface-family"></select></label>
+ <label>Texture <select id="surface-material">
+  <option value="road.dirt">Route de terre</option>
+  <option value="grass.forest">Herbe</option>
+  <option value="ground.forest_floor">Terre forestière</option>
+  <option value="ground.sand">Sable</option>
+  <option value="ground.snow">Neige</option>
+  <option value="ground.mountain_rock">Sol rocheux</option>
+   <option value="floor.wood.house" data-indoor-floor disabled>Parquet chêne</option>
+   <option value="floor.wood.dark" data-indoor-floor disabled>Bois foncé</option>
+   <option value="floor.tile.light" data-indoor-floor disabled>Carrelage clair</option>
+   <option value="floor.tile.sandstone" data-indoor-floor disabled>Pierre sable</option>
+   <option value="floor.concrete.gray" data-indoor-floor disabled>Béton gris</option>
+ </select></label>
+ <label>Action <select id="surface-action">
+  <option value="paint">Peindre une route / une zone</option>
+  <option value="erase">Effacer une route / une zone au toucher</option>
+ </select></label>
+ <label>Largeur <output id="surface-width-value">3 cases</output>
+  <input type="range" id="surface-width" min="1" max="12" step="0.5" value="3">
+ </label>
+ <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
+  <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
+ <output id="surface-count">Aucune zone peinte</output>
+ <small>Trace une route ou recouvre l'herbe d'une autre texture. Les zones sont sauvegardées avec « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
+</section>
+<section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
+ <div id="object-controls">
+ <strong>🌳 Placer un objet sur le relief</strong>
+ <button type="button" id="actor-open">👥 Acteurs de map</button>
+ <label>Catégorie
+  <select id="object-category" aria-label="Catégorie d’objets">
+   <option value="building">Bâtiments</option><option value="tree">Arbres</option>
+   <option value="rock">Rochers</option><option value="bridge">🌉 Ponts</option><option value="stairs">🪜 Escaliers</option><option value="decor">💧 Cascades / décors</option>
+  </select>
+ </label>
+ <label>Visuel existant <select id="object-definition" aria-label="Objet à placer"></select></label>
+ <label id="object-variant-wrap" hidden>Vue / orientation de l’objet
+  <select id="object-variant" aria-label="Vue de la maison, avant côté ou arrière"></select>
+ </label>
+ <label>Mode <select id="object-action" aria-label="Action sur les objets">
+   <option value="place">Placer au toucher</option><option value="select">Sélectionner / modifier</option>
+   <option value="remove">Supprimer au toucher</option>
+ </select></label>
+ <label id="object-scale-wrap">Taille uniforme <output id="object-scale-value">40 %</output>
+   <input id="object-scale" type="range" min="25" max="120" step="5" value="40">
+ </label>
+ <label id="object-bridge-length-wrap" hidden>🌉 Longueur <output id="object-bridge-length-value">40 %</output>
+   <input id="object-bridge-length" type="range" min="25" max="300" step="5" value="40"
+     aria-label="Longueur du pont sans élargir le passage">
+ </label>
+ <label id="object-bridge-width-wrap" hidden>🌉 Largeur <output id="object-bridge-width-value">40 %</output>
+   <input id="object-bridge-width" type="range" min="25" max="300" step="5" value="40"
+     aria-label="Largeur du pont sans modifier sa longueur">
+ </label>
+ <label>Rotation au sol <output id="object-rotation-value">0°</output>
+  <input id="object-rotation" type="range" min="0" max="359" step="1" value="0">
+ </label>
+ <div class="object-actions">
+  <button type="button" id="object-turn-left">↶ 45°</button>
+  <button type="button" id="object-turn-right">↷ 45°</button>
+ </div>
+ <output id="object-selected">Aucun objet sélectionné</output>
+ <section id="object-interior-link" hidden>
+  <strong>🏠 Associer une pièce à la maison choisie</strong>
+  <label>Intérieur à utiliser <select id="object-interior-template">
+    <option value="">Pièce libre (ou intérieur déjà lié)</option>
+  </select></label>
+  <button id="object-open-interior" type="button" hidden>🏠 Lier / modifier l'intérieur 2,5D</button>
+  <small>Chaque maison reçoit sa propre pièce. Choisir un modèle existant puis ouvrir l'associe à cette maison sans partager son Portal.</small>
+ </section>
+  <small id="interior-house-link-info" hidden>Cette maison possède son propre intérieur. Son entrée est liée à sa porte extérieure.</small>
+ <div class="object-actions">
+   <button type="button" id="object-undo" disabled>↶ Objet</button>
+   <button type="button" id="object-redo" disabled>↷ Objet</button>
+ </div>
+ <output id="object-count">Aucun objet placé</output>
+ <small>« Sélectionner / modifier » : touche un objet et garde le doigt appuyé pour le glisser à sa nouvelle place. Longueur et largeur du pont, des escaliers et des pentes sont indépendantes ; rotation et vue restent conservées. ↶ Objet annule le déplacement ; Exporter scène le sauvegarde.</small>
+ </div>
+ <section id="actor-controls" hidden>
+  <strong>👥 Acteurs de map</strong>
+  <button type="button" id="actor-back">← Revenir aux objets</button>
+  <label>Définition Capture
+   <select id="actor-definition" aria-label="Définition d’acteur Capture" disabled></select>
+  </label>
+  <label>Action <select id="actor-action"><option value="place">Placer sur la map</option><option value="select">Sélectionner / modifier</option><option value="remove">Supprimer au toucher</option></select></label>
+  <label>Vue du personnage
+    <select id="actor-view" aria-label="Vue Capture réelle de l'acteur"><option value="front">Face</option><option value="back">Dos</option></select>
+  </label>
+  <label>Direction <select id="actor-facing"><option value="1">Droite →</option><option value="-1">Gauche ←</option></select></label>
+  <label>Taille acteur <output id="actor-scale-value">100 %</output>
+    <input id="actor-scale" type="range" min="25" max="200" step="5" value="100" aria-label="Taille visuelle de l'acteur en pourcentage">
+  </label>
+  <output id="actor-selected">Aucun acteur sélectionné</output>
+  <div class="object-actions">
+   <button type="button" id="actor-undo" disabled>↶ Acteur</button>
+   <button type="button" id="actor-redo" disabled>↷ Acteur</button>
+  </div>
+  <output id="actor-count">Aucun acteur placé</output>
+  <small id="actor-source-status">Chargement du catalogue Capture…</small>
+  <small>Les vues Face/Dos utilisent les vrais visuels Capture quand ils existent. Pour modifier la taille et la direction après placement, choisis « Sélectionner / modifier », puis touche l'acteur. Aucune modification des collisions.</small>
+ </section>
+</section>
+<section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
+  <strong>🚶 Test de navigation</strong>
+  <label>Locomotion simulée
+    <select id="navigation-locomotion" aria-label="Mode de locomotion pour le test">
+      <option value="ground">Marche</option>
+      <option value="swim">Marche + nage</option>
+      <option value="fly">Vol</option>
+    </select>
+  </label>
+  <label for="navigation-sky-time">Ambiance du ciel
+    <select id="navigation-sky-time" aria-label="Moment de la journée en mode Tester">
+      <option value="morning">Matin</option>
+      <option value="midday" selected>Midi</option>
+      <option value="evening">Soir</option>
+      <option value="night">Nuit</option>
+    </select>
+  </label>
+  <label><input id="navigation-sky-clouds" type="checkbox" checked> Nuages</label>
+  <label><input id="navigation-sky-mist" type="checkbox" checked> Brume lointaine</label>
+  <label><input id="navigation-sky-stars" type="checkbox" checked> Étoiles (nuit seulement)</label>
+  <label for="navigation-camera-zoom">Distance de caméra
+    <output id="navigation-camera-zoom-value" for="navigation-camera-zoom">175 %</output>
+    <input id="navigation-camera-zoom" type="range" min="100" max="240" step="5" value="175"
+      aria-label="Rapprocher ou éloigner la caméra pendant la navigation">
+  </label>
+  <label class="control checkbox-control"><input type="checkbox" id="navigation-show-bridge-corridor"> Afficher le passage réel des ponts (diagnostic)</label>
+  <label for="navigation-camera-angle">Inclinaison caméra (mode Tester)
+    <output id="navigation-camera-angle-value" for="navigation-camera-angle">55°</output>
+    <input id="navigation-camera-angle" type="range" min="35" max="90" step="5" value="55"
+      aria-label="Changer l'inclinaison de la caméra du jeu : 35 degrés vue oblique, 90 degrés vue du dessus">
+    <small>35° : oblique · 90° : dessus</small>
+  </label>
+  <label for="navigation-max-step">Falaises : franchissement libre interdit
+    <output id="navigation-max-step-value" for="navigation-max-step">0</output>
+    <input id="navigation-max-step" type="range" min="0" max="0" step="1" value="0" disabled
+      aria-label="Franchissement vertical interdit hors des passages conçus">
+    <small>Une bordure abrupte bloque depuis tous les côtés, même pour 1 niveau. Escaliers placés : entrée par le pied ou la tête, pentes naturelles à venir.</small>
+  </label>
+  <label for="navigation-speed">Vitesse de déplacement
+    <output id="navigation-speed-value" for="navigation-speed">220</output>
+    <input id="navigation-speed" type="range" min="90" max="360" step="10" value="220"
+      aria-label="Vitesse du personnage pour le test">
+  </label>
+  <output id="navigation-metrics" aria-label="Fluidité du test">Mesure de fluidité en cours…</output>
+  <output id="navigation-status" aria-live="polite">Maintenir le joystick ou ZQSD / WASD / flèches. Une falaise trop haute bloque la marche.</output>
+  <button type="button" id="navigation-reset">Replacer le personnage</button>
+  <small>Test isolé : les capacités du jeu ne sont pas modifiées.</small>
+</section>
+<div id="navigation-stick" role="group" aria-label="Joystick tactile de navigation" hidden>
+  <div id="navigation-knob" aria-hidden="true"></div>
+</div>
+<div class="canvas-tag">Le pinceau Terre respecte l’eau existante · eau et route = laboratoire visuel, sans collisions</div><section id="precision-actions" class="controls precision-actions" aria-label="Vise et applique précisément" hidden>
+<span class="precision-tip">1. Vise au doigt · 2. Ajuste · 3. Applique</span>
+<button type="button" id="nudge-left" aria-label="Déplacer le pinceau d'une case à gauche">←</button>
+<button type="button" id="nudge-up" aria-label="Déplacer le pinceau d'une case en haut">↑</button>
+<button type="button" id="nudge-down" aria-label="Déplacer le pinceau d'une case en bas">↓</button>
+<button type="button" id="nudge-right" aria-label="Déplacer le pinceau d'une case à droite">→</button>
+<button type="button" id="apply-precision" disabled>✓ Appliquer ici</button>
+</section>
+</div>
+<details id="sculpt-settings"><summary>⚙ Outils détaillés, force, bord, matériaux et réglages</summary>
+<div class="settings-interior"><details id="encounter-settings" class="controls"><summary>🐾 Rencontres par famille</summary><label>Famille <select id="encounter-family"></select></label><label>Chance <input id="encounter-chance" type="range" min="0" max="100" step="1"><output id="encounter-chance-value">0 %</output></label><fieldset><legend>Éléments autorisés</legend><div id="encounter-elements"></div></fieldset><p id="encounter-summary" role="status"></p></details><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
+<button data-mode="dig" aria-pressed="true">Creuser −</button>
+<button data-mode="raise">Surélever +</button>
+<button data-mode="flatten">Aplanir</button>
+<button data-mode="sphere-hill">🟢 V76 · Colline sphérique réelle</button>
+<button data-mode="sphere-basin">🔵 V76 · Trou sphérique réel</button>
+<button data-mode="sphere-erase">⌫ Effacer relief sphérique</button>
+<button data-mode="terrain-ramp">🌿 Créer une pente dans le terrain</button>
+<button data-mode="terrain-ramp-erase">⌫ Effacer une pente</button>
+
+<button data-mode="plateau">Plateau · hauteur exacte</button>
+<div class="levels" aria-label="Hauteur exacte du plateau">
+<label id="height-label" for="target">Hauteur du plateau</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
+<output id="target-value" for="target">3</output>
+<input id="target" type="range" min="0" max="7" value="3" step="1" aria-label="Niveau exact 0 à 7">
+<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
+</div>
+</section>
+<section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
+<strong>💧 Sculpter l’eau</strong>
+<button data-mode="water-fill">Remplir au niveau</button>
+<button data-mode="water-rise">Monter l’eau +</button>
+<button data-mode="water-lower">Baisser l’eau −</button>
+<button data-mode="water-erase">Effacer l’eau</button>
+<button data-mode="water-smooth">Lisser l’eau</button>
+<label class="control">Niveau d’eau <b id="water-target-value">3</b>
+<input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
+</section>
+<section class="controls" aria-label="Paramètres communs des pinceaux">
+
+<span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
+<label class="control">Bord doux <b id="edge-value">0 %</b>
+<input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
+
+
+<button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button>
+</section>
+<section class="controls">
+<span data-panel="ground"><label class="control">Sol réel
+<select id="material"><option value="grass.forest">Herbe</option>
+<option value="ground.forest_floor">Sol de forêt</option>
+<option value="ground.mountain_rock">Roche de montagne</option>
+<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
+<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
+<span data-panel="ground"><label class="control">Roche
+<select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
+<option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option>
+<option value="granite">Granite gris</option><option value="ochre">Roche dorée</option></select></label></span>
+<span data-panel="ground"><label class="control" for="rock-moss"><input type="checkbox" id="rock-moss"> Mousse sur les falaises (test)</label></span>
+<label class="control">Angle de vue
+<select id="camera-view" aria-label="Angle de la caméra du Labo Sculpture">
+<option value="classic" selected>Vue classique (édition simple)</option>
+<option value="threeQuarter">Vue trois-quarts (comparaison)</option>
+</select></label>
+<label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
+
+<button id="fit">Ajuster la vue</button>
+<label class="control">Aspect de l’eau
+<select id="water-material" aria-label="Matériau visuel de l’eau">
+<option value="water.clear_blue">Bleue claire</option>
+<option value="water.turquoise">Turquoise</option>
+<option value="water.forest_stream">Rivière forestière</option>
+<option value="water.swamp">Eau sombre / marais</option>
+</select></label>
+<label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
+<label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route exemple (visuel seul)</label>
+<label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
+</section>
+</div></details>
+
+
+<footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
+<section class="controls"><button id="scene-export">Exporter scène (terrain + objets)</button>
+<button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
+<button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
+<textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
+</main>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-v80-doors-20-assets-20261026"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 384">
+<!-- Canyon V3 second cliff segment, same visual & collision footprint as grassy_edge. -->
+<defs>
+ <linearGradient id="stone" x1="0" y1="0" x2=".65" y2="1"><stop stop-color="#c49b7f"/><stop offset=".5" stop-color="#88737a"/><stop offset="1" stop-color="#4e4d64"/></linearGradient>
+ <linearGradient id="grass" x1="0" y1="0" x2=".2" y2="1"><stop stop-color="#a7c76a"/><stop offset=".62" stop-color="#83ac5b"/><stop offset="1" stop-color="#497643"/></linearGradient>
+</defs>
+<path d="M14 115 68 74 127 73 183 54 240 65 307 50 364 65 420 52 486 65 536 55 603 73 677 66 738 102 748 131 741 283 692 304 649 302 596 326 541 316 474 334 420 309 366 342 310 316 245 337 183 316 125 328 75 294 30 280Z" fill="url(#stone)" stroke="#595563" stroke-width="5" stroke-linejoin="round"/>
+<path d="M20 121 87 130 113 199 88 277 72 292 29 279Z" fill="#675d71" opacity=".72"/>
+<path d="M91 138 159 143 186 200 163 278 127 329 79 292 89 274 114 197Z" fill="#b99880" opacity=".72"/>
+<path d="M170 147 228 128 260 189 250 283 244 335 186 314 164 280 185 202Z" fill="#736576" opacity=".72"/>
+<path d="M251 130 314 135 344 204 324 272 312 314 245 335 252 277Z" fill="#c29e80" opacity=".78"/>
+<path d="M323 134 386 153 408 207 389 284 368 339 311 316 326 275 348 203Z" fill="#69606e" opacity=".72"/>
+<path d="M398 137 476 145 493 213 471 307 418 309 363 339 388 282 409 201Z" fill="#b7957d" opacity=".76"/>
+<path d="M480 142 548 140 569 204 550 303 541 317 474 333 472 306 496 214Z" fill="#6b5e6d" opacity=".78"/>
+<path d="M559 140 626 132 654 190 638 273 594 326 538 315 548 302 569 204Z" fill="#b28f77" opacity=".72"/>
+<path d="M633 130 716 112 748 134 741 282 696 303 647 301 640 269 655 189Z" fill="#645b71" opacity=".64"/>
+<path d="M66 248q27 12 43-4M156 249q24 11 35 0M269 235q20 12 38 0M381 234q26 13 45 0M500 249q21 8 42-5M656 237q27 13 46-5" fill="none" stroke="#e4b998" stroke-width="3" stroke-linecap="round" opacity=".45"/>
+<path d="M115 160q10 36-6 58M239 157q-12 23-7 48M381 181q-9 28-18 44M561 167q15 41 0 60M661 153q-9 42 3 69" fill="none" stroke="#454454" stroke-width="4" stroke-linecap="round" opacity=".39"/>
+<path d="M14 115 66 80 129 72 184 51 242 63 306 49 363 63 420 49 488 65 537 53 604 70 679 65 738 102 748 131 690 142 639 128 583 150 519 139 456 155 409 138 356 148 297 136 235 151 183 130 131 144 79 124Z" fill="url(#grass)" stroke="#557f42" stroke-width="5" stroke-linejoin="round"/>
+<!-- broken sections of exposed warm rock interrupt the green edge -->
+<path d="M138 133Q168 132 188 130L207 136 219 150 182 157 160 146Z" fill="#b6a18a" opacity=".82"/>
+<path d="M517 140Q548 128 568 141L585 145 572 156 540 152Z" fill="#cbb299" opacity=".88"/>
+<path d="M18 115Q80 134 135 139T251 146T365 146T479 147T596 145T744 128" stroke="#c4a584" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>
+<path d="M34 103Q99 117 163 124T300 127T451 131T594 131" stroke="#e3efba" stroke-width="4" fill="none" opacity=".52"/>
+<g stroke="#49783f" stroke-width="5" fill="none" stroke-linecap="round"><path d="m66 108-9-18 13 11 7-20 7 22M272 118l-7-17 12 7 7-22 7 25M421 118l-11-17 16 8 7-18 8 26M699 112l-9-15 13 8 7-20 9 25"/></g>
+<g fill="#96bd71" opacity=".63"><ellipse cx="111" cy="99" rx="25" ry="8"/><ellipse cx="352" cy="100" rx="34" ry="9"/><ellipse cx="617" cy="104" rx="29" ry="7"/></g>
+<g fill="#d4c0a8" opacity=".43"><circle cx="141" cy="218" r="3"/><circle cx="324" cy="268" r="3"/><circle cx="458" cy="243" r="3"/><circle cx="690" cy="213" r="3"/></g>
+</svg>

@@ -1,0 +1,35 @@
+name: Exploration Current Combat Integration Gate
+on:
+  push:
+    branches:
+      - work/exploration-native-combat-view-2026-10-15
+  workflow_dispatch:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Exploration working source
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Exploration source checks
+        run: npm test && npm run check
+      - name: Checkout pinned current Combat bridge
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: 85f5bc607266bfefdad233dcac50ff94797dfa18
+          path: combat-preview
+      - name: Checkout pinned Capture global assets
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: e55fea3b559c348be596d7c16250808a39c315a1
+          path: capture-assets
+      - name: Verify the actual modern Combat interop interface
+        run: node scripts/audit-combat-preview.mjs combat-preview
+      - name: Real Chromium Builder encounter gate
+        run: node scripts/smoke-builder-encounter-validation.mjs
+      - name: Real Chromium Encounter combat HUD
+        run: node scripts/smoke-modern-combat-preview.mjs
