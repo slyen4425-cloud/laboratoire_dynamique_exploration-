@@ -79,10 +79,18 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
-for(const selector of [$('surface-base-family'),$('surface-family')])
-  selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
-$('surface-base-family').value=surface.baseTerrainFamilyId;
-$('surface-family').value=surface.baseTerrainFamilyId;
+// The frozen V80 HTML lacks the newer semantic palette. The shared module
+// supports its existing WorldSurface authoring without a second control path.
+const surfaceBaseFamilySelect=$('surface-base-family');
+const surfacePaintFamilySelect=$('surface-family');
+if(Boolean(surfaceBaseFamilySelect)!==Boolean(surfacePaintFamilySelect))
+  throw Error('Incomplete terrain family palette in sculpt editor HTML');
+if(surfaceBaseFamilySelect){
+  for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect])
+    selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
+  surfaceBaseFamilySelect.value=surface.baseTerrainFamilyId;
+  surfacePaintFamilySelect.value=surface.baseTerrainFamilyId;
+}
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
@@ -1145,7 +1153,7 @@ function stop(event){
     surfaceDrawing=false;surfaceLastCell='';
     const changed=appendSculptSurfaceStroke(surface,{
       materialId:$('surface-material').value,
-      terrainFamilyId:$('surface-family').value,points:surfaceStrokePoints,
+      terrainFamilyId:surfacePaintFamilySelect?.value,points:surfaceStrokePoints,
       width:Number($('surface-width').value)*SCULPT_TILE.width
     });
     surfaceStrokePoints=[];
@@ -1763,7 +1771,7 @@ function loadSurfacePaintAssets(){
 }
 function updateSurfaceCount(){
   // UI reads the same WorldSurface as the painter, undo and scene import.
-  $('surface-base-family').value=surface.baseTerrainFamilyId;
+  if(surfaceBaseFamilySelect)surfaceBaseFamilySelect.value=surface.baseTerrainFamilyId;
   const count=surface.routes.length+surface.zones.length;
   $('surface-count').textContent=count+' route(s) / zone(s) peintes';
   $('surface-undo').disabled=!surfaceHistory.length;
@@ -1801,9 +1809,9 @@ function setSurfaceEditing(active){
   }else $('active-tool-label').textContent=editorKind+' · '+selectedMode;
   updatePrecisionActions();scheduleDraw();
 }
-$('surface-base-family').addEventListener('change',()=>{
+surfaceBaseFamilySelect?.addEventListener('change',()=>{
   surfaceCommit(normalizeSculptSurface({...surface,
-    baseTerrainFamilyId:$('surface-base-family').value}));
+    baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
 });
 $('surface-width').addEventListener('input',()=>{
   $('surface-width-value').textContent=$('surface-width').value+' cases';
