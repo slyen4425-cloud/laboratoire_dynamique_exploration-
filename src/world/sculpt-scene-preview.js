@@ -184,7 +184,10 @@ export function serializeSculptPreviewScene(terrain,objects=[],surface=createScu
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
     objects:normalizeSculptPreviewObjects(objects),
-    ...(paint.routes.length||paint.zones.length?{surface:paint}:{}),
+    ...(paint.routes.length||paint.zones.length||
+      paint.baseTerrainFamilyId!==createSculptSurface().baseTerrainFamilyId||
+      paint.baseMaterialId!==createSculptSurface().baseMaterialId
+      ?{surface:paint}:{}),
     ...(actors.length?{actors:normalizeSculptPreviewActors(actors)}:{})});
 }
 export function importSculptPreviewScene(raw){
