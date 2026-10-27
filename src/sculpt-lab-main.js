@@ -1,3 +1,4 @@
+import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
 // Self-contained optional heightfield experiment. Never changes the live 2D Builder.
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
@@ -77,6 +78,7 @@ let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectR
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
+let encounterConfig=normalizeTerrainFamilyEncounterConfig();
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
@@ -2787,7 +2789,7 @@ $('scene-export').addEventListener('click',()=>{
     ?sculptInteriors.map(e=>e.area.id===activeInteriorId?
       updateSculptInterior(e,active):e):sculptInteriors;
   const scene=JSON.parse(serializeSculptPreviewScene(outdoors.terrain,
-    outdoors.objects,outdoors.surface,outdoors.actors));
+    outdoors.objects,outdoors.surface,outdoors.actors,encounterConfig));
   if(entries.length)scene.interiors=serializeSculptInteriors(entries);
   if(sculptInteriorTemplates.length)
     scene.interiorTemplates=normalizeSculptInteriorTemplates(sculptInteriorTemplates);
@@ -2817,6 +2819,7 @@ $('import').addEventListener('click',()=>{
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
   placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
   updateActorCount();syncActorSelectedControls();
+  encounterConfig=imported.encounterConfig;
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   loadSurfacePaintAssets();updateSurfaceCount();
   updateSculptAreaControls();
