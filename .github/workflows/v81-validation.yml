@@ -5,6 +5,8 @@ on:
       - work/exploration-v81-mobile-settings-20261027
   pull_request:
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -27,3 +29,22 @@ jobs:
             src/
             assets/
           if-no-files-found: error
+
+  publish-preview:
+    needs: tests
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: exploration-v81-preview
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish isolated V81 preview branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B preview/v81
+          git push --force origin preview/v81
