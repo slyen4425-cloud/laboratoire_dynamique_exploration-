@@ -581,6 +581,9 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Pinceau de textures</strong>
+ <label>Famille de terrain du sol de base
+  <select id="surface-base-family" aria-label="Famille de terrain du sol de base"></select>
+ </label>
  <label>Texture <select id="surface-material">
   <option value="road.dirt">Route de terre</option>
   <option value="grass.forest">Herbe</option>
@@ -594,6 +597,9 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
    <option value="floor.tile.sandstone" data-indoor-floor disabled>Pierre sable</option>
    <option value="floor.concrete.gray" data-indoor-floor disabled>Béton gris</option>
  </select></label>
+ <label>Famille de terrain peinte (rencontres)
+  <select id="surface-family" aria-label="Famille de terrain peinte"></select>
+ </label>
  <label>Action <select id="surface-action">
   <option value="paint">Peindre une route / une zone</option>
   <option value="erase">Effacer une route / une zone au toucher</option>
@@ -604,7 +610,7 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
  <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
   <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
  <output id="surface-count">Aucune zone peinte</output>
- <small>Trace une route ou recouvre l'herbe d'une autre texture. Les zones sont sauvegardées avec « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
+ <small>Trace une route ou recouvre l'herbe d'une autre texture. La famille pilote les rencontres, la texture reste visuelle. Les familles et les textures sont enregistrées dans « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
 </section>
 <section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
  <div id="object-controls">
