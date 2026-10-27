@@ -401,6 +401,22 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar{
 }
 body.sculpt-immersive .sculpt-quickbar .interior-area-bar>button,
 body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
+
+/* Same contract as the existing Exploration -> Capture immersive host. */
+.sculpt-encounter-preview{position:absolute;z-index:40;inset:0;display:flex;
+  justify-content:center;align-items:center;padding:12px;background:rgba(5,17,24,.77)}
+.sculpt-encounter-preview[hidden]{display:none!important}
+.sculpt-encounter-preview__panel{background:#142934;border:1px solid #84c5bc;
+  border-radius:14px;padding:16px;display:grid;gap:12px;
+  width:min(390px,calc(100vw - 28px));max-height:85dvh;overflow:auto;box-shadow:0 12px 34px #0008}
+.sculpt-encounter-preview__panel strong{font-size:1.06rem}
+.sculpt-encounter-preview__panel output{color:#d7f2ed;line-height:1.45}
+.sculpt-encounter-preview__actions{display:flex;gap:8px;flex-wrap:wrap}
+.sculpt-encounter-preview__actions button{flex:1;min-height:44px}
+.combat-overlay{position:fixed;inset:0;z-index:2000;width:100%;height:100dvh;
+  overflow:hidden;background:#071016;overscroll-behavior:none;touch-action:none}
+.combat-overlay__frame{display:block;width:100%;height:100%;border:0;
+  background:#071016;touch-action:manipulation}
 </style>
 </head>
 <body>
@@ -736,6 +752,18 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
   <output id="navigation-status" aria-live="polite">Maintenir le joystick ou ZQSD / WASD / flèches. Une falaise trop haute bloque la marche.</output>
   <button type="button" id="navigation-reset">Replacer le personnage</button>
   <small>Test isolé : les capacités du jeu ne sont pas modifiées.</small>
+</section>
+<section id="sculpt-encounter-preview" class="sculpt-encounter-preview" role="dialog"
+  aria-label="Rencontre de créature sauvage" aria-modal="true" hidden>
+  <div class="sculpt-encounter-preview__panel">
+    <strong>Rencontre sauvage !</strong>
+    <output id="sculpt-encounter-summary" aria-live="polite"></output>
+    <div class="sculpt-encounter-preview__actions">
+      <button id="sculpt-encounter-combat" type="button">Lancer le combat</button>
+      <button id="sculpt-encounter-continue" type="button">Continuer l'exploration</button>
+    </div>
+    <small>Terrain et rareté issus des données Capture. Le déplacement est interrompu jusqu'à votre choix.</small>
+  </div>
 </section>
 <div id="navigation-stick" role="group" aria-label="Joystick tactile de navigation" hidden>
   <div id="navigation-knob" aria-hidden="true"></div>
