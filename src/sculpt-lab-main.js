@@ -1,3 +1,10 @@
+import {createSculptEncounterPacer} from './encounters/sculpt-encounter-pacer.js';
+import {evaluateSculptEncounterAfterMovement} from './encounters/sculpt-encounter-movement-adapter.js';
+import {editSculptEncounterChance,editSculptEncounterElement} from './world/sculpt-encounter-authoring-adapter.js';
+import {DEFAULT_TERRAIN_FAMILY_DEFINITIONS} from './world/terrain-family-registry.js';
+import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
+import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from './capture/capture-creature-catalog-preview-v1.js';
+import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
 // Self-contained optional heightfield experiment. Never changes the live 2D Builder.
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
@@ -77,6 +84,7 @@ let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectR
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
+let encounterConfig=normalizeTerrainFamilyEncounterConfig();
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
@@ -111,6 +119,8 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+const encounterPacer=createSculptEncounterPacer();
+let pendingSculptEncounter=null;
 let navHeroRenderTransform=null; // diagnostic only: actual Canvas matrix at sprite draw
 // Display-only altitude, separate from native Collision World coordinates.
 let navVisualLevel=null;
@@ -1139,7 +1149,7 @@ function stop(event){
   if(surfaceDrawing){
     surfaceDrawing=false;surfaceLastCell='';
     const changed=appendSculptSurfaceStroke(surface,{
-      materialId:$('surface-material').value,points:surfaceStrokePoints,
+      materialId:$('surface-material').value,terrainFamilyId:surfaceFamilySelect?.value??surface.baseTerrainFamilyId,points:surfaceStrokePoints,
       width:Number($('surface-width').value)*SCULPT_TILE.width
     });
     surfaceStrokePoints=[];
@@ -1395,6 +1405,10 @@ function navigationTick(time){
           {maxSpeed:navSpeed()*intent.speedMultiplier},undefined,context);
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navMetricDistance+=moved;
+      if(!pendingSculptEncounter&&encounterPacer.advance(moved)){
+        const result=evaluateSculptEncounterAfterMovement({surface,position:navActor,distanceMoved:moved,config:encounterConfig,captureCatalog:encounterCatalog});
+        if(result.triggered){pendingSculptEncounter=result;status('🐾 Rencontre : '+(encounterCatalog.resolveCreature(result.creatureId)?.name??'Créature')+' · Combat non raccordé');}
+      }
       navBlocked=moved<.001;
       navBlockReason=null;
       if(navBlocked){
@@ -1442,6 +1456,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    encounterPacer.reset();pendingSculptEncounter=null;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
     $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
@@ -2780,6 +2795,44 @@ $('navigation-area-door').addEventListener('click',()=>{
   if(!transition){updateSculptDoorAction();return;}
   changeSculptArea(transition.currentAreaId,{spawn:transition});
 });
+const surfaceFamilySelect=$('surface-family');
+if(surfaceFamilySelect){
+  surfaceFamilySelect.replaceChildren(...DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.label;return o;}));
+  surfaceFamilySelect.value=surface.baseTerrainFamilyId;
+}
+const encounterCatalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
+let selectedEncounterFamilyId='plain';
+function refreshEncounterSettings(){
+  const familySelect=$('encounter-family');
+  if(!familySelect)return;
+  familySelect.replaceChildren(...DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(f=>{
+    const option=document.createElement('option');option.value=f.id;option.textContent=f.label;return option;
+  }));
+  familySelect.value=selectedEncounterFamilyId;
+  const profile=encounterConfig.families.find(f=>f.terrainFamilyId===selectedEncounterFamilyId);
+  $('encounter-chance').value=profile?.encounterChancePercent??0;
+  $('encounter-chance-value').textContent=(profile?.encounterChancePercent??0)+' %';
+  const container=$('encounter-elements');
+  container.replaceChildren(...encounterCatalog.listElements().map(element=>{
+    const label=document.createElement('label');
+    const checkbox=document.createElement('input');checkbox.type='checkbox';
+    checkbox.checked=!!profile?.elementChances.some(e=>e.elementId===element.id);
+    checkbox.addEventListener('change',()=>{
+      encounterConfig=editSculptEncounterElement(encounterConfig,selectedEncounterFamilyId,element.id,checkbox.checked);
+      refreshEncounterSettings();
+    });
+    label.append(checkbox,document.createTextNode(' '+element.label+' · '+encounterCatalog.findByElement(element.id).length+' créatures'));
+    return label;
+  }));
+  $('encounter-summary').textContent='Catalogue Capture (aperçu en lecture seule) · '+encounterCatalog.listCreatures().length+' créatures';
+}
+$('encounter-family')?.addEventListener('change',()=>{selectedEncounterFamilyId=$('encounter-family').value;refreshEncounterSettings();});
+$('encounter-chance')?.addEventListener('input',()=>{
+  encounterConfig=editSculptEncounterChance(encounterConfig,selectedEncounterFamilyId,Number($('encounter-chance').value));
+  $('encounter-chance-value').textContent=$('encounter-chance').value+' %';
+});
+refreshEncounterSettings();
+
 $('scene-export').addEventListener('click',()=>{
   const active=captureSculptArea();
   const outdoors=outsideAreaSnapshot??active;
@@ -2787,7 +2840,7 @@ $('scene-export').addEventListener('click',()=>{
     ?sculptInteriors.map(e=>e.area.id===activeInteriorId?
       updateSculptInterior(e,active):e):sculptInteriors;
   const scene=JSON.parse(serializeSculptPreviewScene(outdoors.terrain,
-    outdoors.objects,outdoors.surface,outdoors.actors));
+    outdoors.objects,outdoors.surface,outdoors.actors,encounterConfig));
   if(entries.length)scene.interiors=serializeSculptInteriors(entries);
   if(sculptInteriorTemplates.length)
     scene.interiorTemplates=normalizeSculptInteriorTemplates(sculptInteriorTemplates);
@@ -2817,7 +2870,10 @@ $('import').addEventListener('click',()=>{
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
   placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
   updateActorCount();syncActorSelectedControls();
+  encounterConfig=imported.encounterConfig;refreshEncounterSettings();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
+  encounterPacer.reset();pendingSculptEncounter=null;
+  if(surfaceFamilySelect)surfaceFamilySelect.value=surface.baseTerrainFamilyId;
   loadSurfacePaintAssets();updateSurfaceCount();
   updateSculptAreaControls();
   fit();status(imported.isScene?
