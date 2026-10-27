@@ -13,5 +13,5 @@ test('V81 navigation uses distance gate after collision movement and resets on i
  const gate=js.indexOf('encounterPacer.advance(moved)');
  assert.ok(move>=0&&gate>move);
  assert.match(js,/surface=imported\.surface;[^\n]*\n\s*encounterPacer\.reset\(\)/);
- assert.match(js,/terrainFamilyId:\$\('surface-family'\)\.value/);
+ assert.match(js,/terrainFamilyId:surfaceFamilySelect\?\.value\?\?surface\.baseTerrainFamilyId/);
 });
