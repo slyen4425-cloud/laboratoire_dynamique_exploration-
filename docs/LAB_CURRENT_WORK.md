@@ -27,5 +27,5 @@ Contrôleur confirmé : src/builder/world-builder-main.js, avec updateTerrainFam
 Le nouvel éditeur src/sculpt-lab-main.js exporte une scène sculptée, pas encore le WorldDocument canonique avec encounterConfig. Le raccord exige un adapter de sérialisation explicite et des tests de round-trip, sans copier les états du Builder.
 
 ## État
-Panneau mobile codé en branche. Raccordement rencontres encore à implémenter.
+Panneau mobile et réglages rencontres câblés dans sculpt-lab-v80.html sur branche V81 ; source des créatures = projection Capture en lecture seule ; édition déléguée au Builder canonique. Export/import encounterConfig raccordé. Restent : terrainFamilyId effectif des surfaces sculptées, Encounter Controller durant navigation, retour combat, tests exécutés, preview publiée.
 NON GREEN, aucune URL de test annoncée.
