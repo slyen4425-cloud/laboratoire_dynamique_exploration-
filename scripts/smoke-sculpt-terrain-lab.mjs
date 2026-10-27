@@ -3009,6 +3009,81 @@ try{
     faces:legacyBoot.faceCount,palette:legacyPaint.active,
     semanticBaseFamily:legacyPaint.baseTerrainFamilyId
   }));
+
+  // REAL 2.5D keyboard movement -> canonical WorldSurface -> existing
+  // Encounter Controller -> CaptureEncounterSnapshot -> packaged Combat iframe.
+  const encounterUrl=new URL('/sculpt-lab.html?encounterTest=1',url).href;
+  const encounterNavigation=await send('Page.navigate',{url:encounterUrl});
+  if(encounterNavigation.error)throw Error('Encounter scene navigation failed');
+  await sleep(300);
+  let encounterBoot=null;
+  for(let i=0;i<110;i++){
+    try{
+      encounterBoot=await run("typeof window.__sculptEncounterProbe==='function' && window.__sculptEncounterProbe().supported && typeof window.__sculptNavProbe==='function'");
+    }catch{/* transient navigation context */}
+    if(encounterBoot)break;
+    await sleep(110);
+  }
+  if(!encounterBoot)throw Error('Encounter scene did not boot');
+  const startEncounter=await run(`(()=>{
+    document.querySelector('#new-map-toggle').click();
+    const confirm=document.querySelector('#new-map-confirm');
+    confirm.checked=true;confirm.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#new-map-create').click();
+    document.querySelector('#navigation-toggle').click();
+    return {encounter:window.__sculptEncounterProbe(),nav:window.__sculptNavProbe()};
+  })()`);
+  if(!startEncounter.nav.enabled||startEncounter.encounter.pending)
+    throw Error('Encounter navigation tester not initialized: '+JSON.stringify(startEncounter));
+  const moveKey=async(type)=>await send('Input.dispatchKeyEvent',{
+    type,key:'d',code:'KeyD',windowsVirtualKeyCode:68,nativeVirtualKeyCode:68
+  });
+  await moveKey('keyDown');
+  let encountered=null;
+  for(let i=0;i<40;i++){
+    await sleep(120);
+    encountered=await run('window.__sculptEncounterProbe()');
+    if(encountered.pending)break;
+  }
+  await moveKey('keyUp');
+  if(!encountered.pending||!encountered.creatureId||
+     encountered.terrainFamilyId!=='forest'||!encountered.overlayVisible)
+    throw Error('Real 2.5D movement did not launch Capture encounter: '+JSON.stringify(encountered));
+  const pausedX=await run('window.__sculptNavProbe().player.x');
+  await sleep(320);
+  const stillX=await run('window.__sculptNavProbe().player.x');
+  if(Math.abs(pausedX-stillX)>0.01)
+    throw Error('Actor continues moving during encounter dialog: '+JSON.stringify({pausedX,stillX}));
+  const continued=await run(`(()=>{
+    document.querySelector('#sculpt-encounter-continue').click();
+    return window.__sculptEncounterProbe();
+  })()`);
+  if(continued.pending||continued.overlayVisible)
+    throw Error('Encounter controller did not release on continue: '+JSON.stringify(continued));
+  await run("document.querySelector('#navigation-reset').click()");
+  await moveKey('keyDown');
+  let second=null;
+  for(let i=0;i<40;i++){
+    await sleep(120);
+    second=await run('window.__sculptEncounterProbe()');
+    if(second.pending)break;
+  }
+  await moveKey('keyUp');
+  if(!second.pending||second.encounterId===encountered.encounterId)
+    throw Error('2.5D encounter did not re-arm after continue/reset: '+JSON.stringify(second));
+  const combatLaunch=await run(`(()=>{
+    document.querySelector('#sculpt-encounter-combat').click();
+    const iframe=document.querySelector('.combat-overlay__frame');
+    return {state:window.__sculptEncounterProbe(),iframeSrc:iframe?.src??null,
+      packaged:!!iframe,storage:!!sessionStorage.getItem('gensrpg.capture.combat-handoff.v1')};
+  })()`);
+  if(!combatLaunch.packaged||!combatLaunch.storage||!combatLaunch.state.combatActive||
+     !combatLaunch.state.pending||
+     !combatLaunch.iframeSrc.includes('/combat-preview/examples/dom-demo/exploration-encounter.html'))
+    throw Error('2.5D bridge did not open real same-origin Combat host: '+JSON.stringify(combatLaunch));
+  console.log('2.5D real movement -> single Encounter Controller -> Combat iframe Chromium:',
+    JSON.stringify({first:encountered.creatureId,second:second.creatureId,
+      stoppedAt:pausedX,previewReleased:true,combatPackaged:true}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
