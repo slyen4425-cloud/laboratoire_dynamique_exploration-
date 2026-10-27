@@ -42,7 +42,7 @@ export function resolveTerrainFamilyAtPoint(
     return result(
       'base',
       'surface-base',
-      'forest'
+      null
     );
   }
 
@@ -51,7 +51,7 @@ export function resolveTerrainFamilyAtPoint(
       return result(
         'route',
         route.id,
-        route.terrainFamilyId ?? 'road'
+        route.terrainFamilyId ?? null
       );
     }
   }
@@ -61,7 +61,7 @@ export function resolveTerrainFamilyAtPoint(
       return result(
         'river',
         river.id,
-        river.terrainFamilyId ?? 'sea'
+        river.terrainFamilyId ?? null
       );
     }
   }
@@ -78,7 +78,7 @@ export function resolveTerrainFamilyAtPoint(
         zone.id,
         zone.terrainFamilyId ??
           surface.baseTerrainFamilyId ??
-          'forest'
+          null
       );
     }
   }
@@ -86,6 +86,6 @@ export function resolveTerrainFamilyAtPoint(
   return result(
     'base',
     'surface-base',
-    surface.baseTerrainFamilyId ?? 'forest'
+    surface.baseTerrainFamilyId ?? null
   );
 }

@@ -25,8 +25,23 @@ test('R3C : five wall finishes belong to WorldArea, door choices to Portal visua
   assert.equal(normalizeWorldArea({...area,wallMaterialId:'unknown'}).wallMaterialId,'plaster');
   const door=updateSculptInteriorDoor({...room,area},{assetId:'object.door.fantasy.wood.01'});
   assert.equal(door.exitPortal.visual.assetId,'object.door.fantasy.wood.01');
-  assert.ok(INTERIOR_DOOR_ASSETS.every(x=>!x.path||x.path.endsWith('.webp')));
-  assert.equal(INTERIOR_DOOR_ASSETS.length,4);
+  // V80 extended the legacy four choices with 20 real PNG viewpoints.
+  // Validate the physical files, not just their listed extensions.
+  const legacy = INTERIOR_DOOR_ASSETS.filter(x => !x.id.startsWith('object.door.interior.'));
+  const interiors = INTERIOR_DOOR_ASSETS.filter(x => x.id.startsWith('object.door.interior.'));
+  assert.equal(legacy.length, 4);
+  assert.ok(legacy.every(x => !x.path || x.path.endsWith('.webp')));
+  assert.equal(interiors.length, 20);
+  const manifest = JSON.parse(readFileSync(new URL('../assets/interiors/doors/manifest.json', import.meta.url), 'utf8'));
+  assert.equal(manifest.items.length, 20);
+  const canonicalFiles = new Set(manifest.items.map(item => item.file));
+  for (const doorAsset of interiors) {
+    assert.ok(doorAsset.path.startsWith('./assets/interiors/doors/') && doorAsset.path.endsWith('.png'));
+    const filename = doorAsset.path.slice(2);
+    assert.ok(canonicalFiles.has(filename), filename);
+    const png = readFileSync(new URL('../' + filename, import.meta.url));
+    assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  }
   assert.equal(INTERIOR_CONNECTOR_ASSETS.length,3);
   const exported=JSON.parse(JSON.stringify(serializeSculptInteriors([door])));
   const restored=importSculptInteriors(exported,fixture().objects);

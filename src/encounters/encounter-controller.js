@@ -45,7 +45,7 @@ export function createEncounterController({
     rulesetId,
     random = Math.random
   } = {}) {
-    if (!validPosition(player) || !area?.surface) {
+    if (!validPosition(player) || !area?.surface || area.id !== player.currentAreaId) {
       return null;
     }
 
@@ -101,6 +101,13 @@ export function createEncounterController({
       current.y
     );
 
+    // An invalid WorldSurface has no semantic encounter authority.
+    // Do not guess a terrain family from its visual material.
+    if (!family.terrainFamilyId) {
+      travelledSinceCheck = 0;
+      return null;
+    }
+
     const resolved = resolveTerrainFamilyEncounter({
       terrainFamilyId: family.terrainFamilyId,
       config: encounterConfig,
@@ -147,9 +154,20 @@ export function createEncounterController({
     return true;
   }
 
+  // Discontinuous navigation (spawn, edit mode, teleport) is not distance
+  // travelled. Only Encounter Controller may reset its own cadence anchor.
+  function resetAnchor() {
+    if (activeEncounterId) return false;
+    lastPosition = null;
+    travelledSinceCheck = 0;
+    resetAnchorOnNextStep = false;
+    return true;
+  }
+
   return Object.freeze({
     step,
     release,
+    resetAnchor,
     get activeEncounterId() {
       return activeEncounterId;
     },

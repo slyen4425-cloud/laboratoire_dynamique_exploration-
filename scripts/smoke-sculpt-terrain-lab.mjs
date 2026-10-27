@@ -1062,6 +1062,9 @@ try{
       y:r.top+panY+((row+.5)*21-2*18)*p.zoom});
     const material=document.querySelector('#surface-material');
     material.value='road.dirt';material.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#surface-family').value='road';
+    const base=document.querySelector('#surface-base-family');
+    base.value='mountain';base.dispatchEvent(new Event('change',{bubbles:true}));
     return {active:window.__sculptSurfaceProbe().active,
       start:cell(3,4),end:cell(9,4),zone:cell(8,8)};
   })()`);
@@ -1075,7 +1078,8 @@ try{
   }
   await paintSurface(v27Ready.start,v27Ready.end);
   const v27Road=await run('window.__sculptSurfaceProbe()');
-  if(v27Road.routes!==1||v27Road.zones!==0||v27Road.features[0].materialId!=='road.dirt')
+  if(v27Road.routes!==1||v27Road.zones!==0||v27Road.features[0].materialId!=='road.dirt'||
+     v27Road.features[0].terrainFamilyId!=='road'||v27Road.baseTerrainFamilyId!=='mountain')
     throw Error('V27 real mouse stroke did not author WorldSurface road: '+JSON.stringify(v27Road));
   await run("document.querySelector('#surface-undo').click()");
   if((await run('window.__sculptSurfaceProbe().routes'))!==0)
@@ -1085,11 +1089,13 @@ try{
     throw Error('V27 redo did not restore surface route');
   await run(`(()=>{
     document.querySelector('#surface-material').value='ground.sand';
+    document.querySelector('#surface-family').value='snow';
     return true;
   })()`);
   await paintSurface(v27Ready.zone,v27Ready.zone);
   const v27Zone=await run('window.__sculptSurfaceProbe()');
-  if(v27Zone.zones!==1||v27Zone.features[1].materialId!=='ground.sand')
+  if(v27Zone.zones!==1||v27Zone.features[1].materialId!=='ground.sand'||
+     v27Zone.features[1].terrainFamilyId!=='snow')
     throw Error('V27 zoned sand material failed: '+JSON.stringify(v27Zone));
   await sleep(440);
   const v27Visual=await run(`(()=>{
@@ -1100,6 +1106,8 @@ try{
       painted:window.__sculptLabProbe().paintedCells};
   })()`);
   if(v27Visual.scene.surface.version!==3||
+      v27Visual.scene.surface.baseTerrainFamilyId!=='mountain'||
+      v27Visual.scene.surface.zones[0].terrainFamilyId!=='snow'||
       v27Visual.scene.surface.routes.length!==1||v27Visual.scene.surface.zones.length!==1||
       !v27Visual.probe.texturesLoaded.includes('road.dirt')||
       !v27Visual.probe.texturesLoaded.includes('ground.sand')||
@@ -1110,7 +1118,9 @@ try{
     document.querySelector('#import').click();
     return window.__sculptSurfaceProbe();
   })()`);
-  if(v27Reload.routes!==1||v27Reload.zones!==1)
+  if(v27Reload.routes!==1||v27Reload.zones!==1||
+     v27Reload.baseTerrainFamilyId!=='mountain'||
+     v27Reload.features[1].terrainFamilyId!=='snow')
     throw Error('V27 imported WorldSurface routes/zones lost: '+JSON.stringify(v27Reload));
   const v27Clean=await run(`(()=>{
     document.querySelector('#new-map-toggle').click();
@@ -1120,6 +1130,7 @@ try{
     return {paint:window.__sculptSurfaceProbe(),lab:window.__sculptLabProbe()};
   })()`);
   if(v27Clean.paint.routes||v27Clean.paint.zones||
+     v27Clean.paint.baseTerrainFamilyId!=='forest'||
       v27Clean.lab.paintedRoutes||v27Clean.lab.paintedZones)
     throw Error('V27 New Map retains stale painted features: '+JSON.stringify(v27Clean));
   console.log('V27 real WorldSurface road/zone painting and cleanup Chromium:',
@@ -2967,6 +2978,129 @@ try{
   console.log('V79 REAL Chromium house selection -> independent sculptable interior -> camera 35/90 -> exterior -> JSON roundtrip:',JSON.stringify({
     picked:v79Picked.selectedId,angle:v79Angles,room:v79Opened.probe.activeAreaId,
     interiorCount:v79Saved.interiors}));
+  // Shared JavaScript must continue to boot the FROZEN V80 HTML, which
+  // intentionally does not contain the new terrain-family palette controls.
+  const legacyNavigate=await send('Page.navigate',{
+    url:new URL('/sculpt-lab-v80.html',url).toString()
+  });
+  if(legacyNavigate.error)throw Error('V80 navigation failed: '+JSON.stringify(legacyNavigate.error));
+  await sleep(400);
+  let legacyBoot=null;
+  for(let i=0;i<100;i++){
+    try{
+      legacyBoot=await run("typeof window.__sculptLabProbe==='function' && document.querySelector('#sculpt-canvas')?.width>0 ? window.__sculptLabProbe():null");
+    }catch{/* navigation can briefly replace the JavaScript execution context */}
+    if(legacyBoot)break;
+    await sleep(140);
+  }
+  if(!legacyBoot||legacyBoot.width!==36||legacyBoot.height!==24)
+    throw Error('Frozen V80 page no longer boots shared sculpt engine: '+JSON.stringify(legacyBoot));
+  const legacyPaint=await run(`(()=>{
+    if(document.querySelector('#surface-base-family')||
+       document.querySelector('#surface-family'))
+      throw Error('Frozen V80 markup unexpectedly rewritten');
+    document.querySelector('#mode-surface').click();
+    return window.__sculptSurfaceProbe();
+  })()`);
+  if(!legacyPaint.active||legacyPaint.baseTerrainFamilyId!=='forest')
+    throw Error('Frozen V80 legacy palette incompatible with canonical painter: '+
+      JSON.stringify(legacyPaint));
+  console.log('V80 immutable HTML real Chromium compatibility:',JSON.stringify({
+    faces:legacyBoot.faceCount,palette:legacyPaint.active,
+    semanticBaseFamily:legacyPaint.baseTerrainFamilyId
+  }));
+
+  // REAL 2.5D keyboard movement -> canonical WorldSurface -> existing
+  // Encounter Controller -> CaptureEncounterSnapshot -> packaged Combat iframe.
+  const encounterUrl=new URL('/sculpt-lab.html?encounterTest=1',url).href;
+  const encounterNavigation=await send('Page.navigate',{url:encounterUrl});
+  if(encounterNavigation.error)throw Error('Encounter scene navigation failed');
+  await sleep(300);
+  let encounterBoot=null;
+  for(let i=0;i<110;i++){
+    try{
+      encounterBoot=await run("typeof window.__sculptEncounterProbe==='function' && window.__sculptEncounterProbe().supported && typeof window.__sculptNavProbe==='function'");
+    }catch{/* transient navigation context */}
+    if(encounterBoot)break;
+    await sleep(110);
+  }
+  if(!encounterBoot)throw Error('Encounter scene did not boot');
+  const startEncounter=await run(`(()=>{
+    document.querySelector('#new-map-toggle').click();
+    const confirm=document.querySelector('#new-map-confirm');
+    confirm.checked=true;confirm.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#new-map-create').click();
+    document.querySelector('#navigation-toggle').click();
+    return {encounter:window.__sculptEncounterProbe(),nav:window.__sculptNavProbe()};
+  })()`);
+  if(!startEncounter.nav.enabled||startEncounter.encounter.pending)
+    throw Error('Encounter navigation tester not initialized: '+JSON.stringify(startEncounter));
+  const moveKey=async(type)=>await send('Input.dispatchKeyEvent',{
+    type,key:'d',code:'KeyD',windowsVirtualKeyCode:68,nativeVirtualKeyCode:68
+  });
+  await moveKey('keyDown');
+  let encountered=null;
+  for(let i=0;i<40;i++){
+    await sleep(120);
+    encountered=await run('window.__sculptEncounterProbe()');
+    if(encountered.pending)break;
+  }
+  await moveKey('keyUp');
+  if(!encountered.pending||!encountered.creatureId||
+     encountered.terrainFamilyId!=='forest'||!encountered.overlayVisible)
+    throw Error('Real 2.5D movement did not launch Capture encounter: '+JSON.stringify(encountered));
+  const pausedX=await run('window.__sculptNavProbe().player.x');
+  await sleep(320);
+  const stillX=await run('window.__sculptNavProbe().player.x');
+  if(Math.abs(pausedX-stillX)>0.01)
+    throw Error('Actor continues moving during encounter dialog: '+JSON.stringify({pausedX,stillX}));
+  const continued=await run(`(()=>{
+    document.querySelector('#sculpt-encounter-continue').click();
+    return window.__sculptEncounterProbe();
+  })()`);
+  if(continued.pending||continued.overlayVisible)
+    throw Error('Encounter controller did not release on continue: '+JSON.stringify(continued));
+  await run("document.querySelector('#navigation-reset').click()");
+  await moveKey('keyDown');
+  let second=null;
+  for(let i=0;i<40;i++){
+    await sleep(120);
+    second=await run('window.__sculptEncounterProbe()');
+    if(second.pending)break;
+  }
+  await moveKey('keyUp');
+  if(!second.pending||second.encounterId===encountered.encounterId)
+    throw Error('2.5D encounter did not re-arm after continue/reset: '+JSON.stringify(second));
+  const combatLaunch=await run(`(()=>{
+    document.querySelector('#sculpt-encounter-combat').click();
+    const iframe=document.querySelector('.combat-overlay__frame');
+    return {state:window.__sculptEncounterProbe(),iframeSrc:iframe?.src??null,
+      packaged:!!iframe,storage:!!sessionStorage.getItem('gensrpg.capture.combat-handoff.v1')};
+  })()`);
+  if(!combatLaunch.packaged||!combatLaunch.storage||!combatLaunch.state.combatActive||
+     !combatLaunch.state.pending||
+     !combatLaunch.iframeSrc.includes('/combat-preview/examples/dom-demo/exploration-encounter.html'))
+    throw Error('2.5D bridge did not open real same-origin Combat host: '+JSON.stringify(combatLaunch));
+  let combatReady=null;
+  for(let i=0;i<70;i++){
+    await sleep(130);
+    combatReady=await run(`(()=>{
+      const doc=document.querySelector('.combat-overlay__frame')?.contentDocument;
+      return doc ? {status:doc.querySelector('[data-bridge-status]')?.textContent??'',
+        skills:doc.querySelectorAll('[data-combat-skill]').length,
+        enemyHud:!!doc.querySelector('[data-combat-hp-value="enemy-1"]'),
+        bootError:doc.documentElement.dataset.encounterBootstrapError??null}:null;
+    })()`);
+    if(combatReady?.status.includes('Combat réel') && combatReady.skills>0 &&
+       combatReady.enemyHud)break;
+  }
+  if(!combatReady?.status.includes('Combat réel')||!combatReady.enemyHud||
+     combatReady.skills<1||combatReady.bootError)
+    throw Error('2.5D iframe has no real playable Capture combat: '+JSON.stringify(combatReady));
+  console.log('2.5D real movement -> single Encounter Controller -> Combat iframe Chromium:',
+    JSON.stringify({first:encountered.creatureId,second:second.creatureId,
+      stoppedAt:pausedX,previewReleased:true,combatPackaged:true,
+      realCombatSkills:combatReady.skills}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
