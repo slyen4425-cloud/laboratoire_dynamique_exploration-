@@ -34,14 +34,28 @@ jobs:
 
   publish-preview:
     needs: tests
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify V81 preview entrypoint
-        run: test -s sculpt-lab-v81.html
-      - name: Preserve validated preview branch
+        with:
+          path: source
+      - uses: actions/checkout@v4
+        with:
+          ref: work/exploration-v80-door-html-cachefix-20261026
+          path: published
+          persist-credentials: true
+      - name: Add isolated V81 preview to existing V80 publishing branch
         run: |
+          set -euo pipefail
+          mkdir -p published/v81
+          cp -a source/sculpt-lab-v81.html source/src source/assets published/v81/
+          test -s published/sculpt-lab-v80.html
+          test -s published/v81/sculpt-lab-v81.html
+          cd published
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B preview/v81
-          git push --force origin preview/v81
+          git add v81
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "publish(preview): isolated V81 under /v81, preserve V80 root"
+          git push origin HEAD:work/exploration-v80-door-html-cachefix-20261026
