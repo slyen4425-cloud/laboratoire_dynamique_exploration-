@@ -1,21 +1,25 @@
-# LAB_CURRENT_WORK — V80 portes intérieures
+# LAB_CURRENT_WORK — Raccordement rencontres terrain depuis V80
 
-Date : 2026-10-26
-Branche : `work/exploration-door-assets-v80-2026-10-26`
-Base : V79 R3E `3bd48a50a99953bac74025aa815b9c223953f568`
+Date : 2026-10-27
+Base : work/exploration-restart-from-v80-20261027
+Branche : work/exploration-v80-encounters-terrain-owner-20261027
+Checkpoint de base : checkpoint/exploration-start-v80-encounters-2026-10-27
+Note de traçabilité : ce checkpoint a été créé après les premiers commits, mais pointe sur la base V80 non modifiée. Il ne doit pas être présenté comme antérieur au début du travail.
 
 ## Périmètre
-Intégrer 10 portes d'intérieur (20 PNG face/3/4) depuis `lot/portes-interieures-20-assets-20261026`, `assets/interiors/doors/manifest.json`, dans le sélecteur de porte du Builder 2.5D, sans modifier la logique canonique des portails.
+Corriger le vrai chemin de rencontre existant. Le contrôleur unique est src/encounters/encounter-controller.js. La surface canonique détermine terrainFamilyId ; materialId reste exclusivement visuel. Les créatures et leur rareté sont fournies par le catalogue Capture existant.
 
-## Vérifications requises
-- 20 PNG valides et chemins présents ;
-- 20 entrées au catalogue et 20 options dans `sculpt-lab.html` ;
-- `npm test` et `npm run check` ;
-- test navigateur : choix, affichage, sauvegarde/rechargement, passage de porte ;
-- publication vérifiée avant annonce de lien V80.
+## Propriétaires
+World Surface : géométrie et famille ; Encounter Controller : cadence et verrou de rencontre ; Terrain Family Encounter Resolver : choix dans le catalogue Capture ; Encounter Bridge : contrat de passage au combat ; Renderer : lecture seule des matériaux.
 
-## Statut
-En attente de validation des tests navigateur et de publication. NON GREEN.
+## Invariants
+Ne pas dupliquer moteur de rencontres, position, rareté ou géométrie. Ne pas modifier les collisions, l'édition sculpt, ni la publication de V80. Les anciennes fonctions de navigation et portes sont gelées.
 
-## Interdictions
-Aucune fusion dans `main` ou modification du labo Combat / production sans accord utilisateur.
+## Vérifications
+Sentinelles du nouveau lot : textures indépendantes du gameplay, route sûre, aucune famille inventée, Area cohérente avec la position, test du vrai runtime. Exécuter npm test et npm run check. CI et tests navigateur/mobile requis pour GREEN.
+
+## État
+NON GREEN : tests ajoutés, contrôleur existant corrigé, CI et validation du vrai parcours en cours. Aucune publication de ce lot.
+
+## Suite
+Analyser les résultats CI, corriger toute régression, vérifier l'accès au runtime V80, finaliser la frontière avec Encounter Bridge puis valider la preview avant checkpoint GREEN.
