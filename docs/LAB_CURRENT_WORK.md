@@ -1,31 +1,34 @@
-# LAB_CURRENT_WORK — Rencontres par famille de terrain (reprise V80)
+# LAB_CURRENT_WORK — Rencontres terrain dans l'exploration 2,5D (reprise V80)
 
 Date : 2026-10-27
 Branche : `work/exploration-v80-encounters-terrain-owner-20261027`
-Base : `work/exploration-restart-from-v80-20261027`
-Checkpoint : `checkpoint/exploration-start-v80-encounters-2026-10-27`.
-Ce checkpoint a été créé après les premiers commits de travail mais référence bien la base V80 intacte. Il n'est pas présenté comme ayant précédé les modifications.
-Dernier GREEN reconnu : V80 fonctionnelle par retour utilisateur ; CI du chantier en cours, pas de nouveau GREEN déclaré.
+Base V80 : `work/exploration-restart-from-v80-20261027`
+Checkpoint de départ : `checkpoint/exploration-start-v80-encounters-2026-10-27`, ancré sur la base V80 intacte ; créé tardivement après les premiers commits (mention conservée pour traçabilité).
+PR de travail : #256 — DRAFT — ne pas fusionner ni publier sans validations requises.
 
-## Objectif et périmètre
-Raccorder les rencontres de créatures aux familles de terrain canoniques, indépendamment des textures. Respecter la chaîne existante du moteur 2D et corriger le pinceau de la scène sculptée 2,5D sans créer de contrôleur bis. Les rencontres du laboratoire 2,5D ne sont pas encore branchées au déplacement réel : ce volet reste à réaliser via le contrat officiel, sans simuler un deuxième moteur.
+## Propriétaires uniques
+- Exploration `stepMovement` + Collision World : position et mouvement du héros, déjà validés sur smartphone.
+- `WorldSurface` v3 : géométrie et `terrainFamilyId` canoniques ; la texture `materialId` reste visuelle. La scène sculptée n'infère plus jamais la famille depuis la texture.
+- `Encounter Controller` officiel : cadence de marche, déclenchement, verrou, `resetAnchor` sur téléportation/mode édition.
+- `Terrain Family Encounter Resolver` officiel : sélection depuis la configuration existante (ici le `demoWorldDocument.encounterConfig` en lecture seule pour la preview) et le catalogue Capture (même snapshot read-only que le runtime 2D).
+- `Encounter Bridge`, `CaptureEncounterSnapshot v1`, `Combat Handoff Store`, `Immersive Encounter Host v1` et `resolveExplorationCombatReturn` : combat réel et retour de position. Pas de combat factice.
 
-## Responsabilités et autorité
-- `WorldSurface` possède la famille `terrainFamilyId` ainsi que les tracés. `materialId` ne commande jamais les rencontres.
-- `Encounter Controller` existant possède la cadence, l'état de rencontre et le verrou. Le `Terrain Family Encounter Resolver` lit le catalogue Capture et sa `spawnChance` : aucun clone.
-- `Encounter Bridge` possède le contrat avec Combat Capture.
-- `sculpt-surface-paint` et son UI éditent directement `WorldSurface` ; ils ne possèdent aucune règle indépendante. `sculpt-scene-preview` exporte/importe ces mêmes données.
-- Le moteur de mouvement et Collision World restent propriétaires des positions et obstacles. Aucun renderer ne peut lancer une rencontre.
+## Travail réalisé
+1. Suppression du nouveau sélecteur en doublon ; conservation du contrôleur historique.
+2. Correction de l'absence de famille canonique / Area discordante ; aucun fallback visuel inventé.
+3. Séparation de la famille de terrain et de la texture du pinceau 2,5D ; export/import de la famille de base sans trait peint.
+4. Projection **sans stockage concurrent** du WorldSurface sculpté en entrée WorldArea du contrôleur officiel.
+5. Le mode « Tester » appelle le contrôleur **après** mouvement/collision, sur la vraie position du héros. Il affiche la rencontre, bloque le déplacement, propose Continuer ou Lance le combat ; la fenêtre Combat provient des mêmes modules que le runtime 2D. Le retour Combat remet la position canonique du héros et libère le verrou.
+6. Réinitialisation de l'ancre de distance sur nouvelle session, repositionnement et transition Portal, sans compter la téléportation comme déplacement.
+7. Le HTML V80 gelé (sans nouvelle palette) conserve un boot Chromium vérifié ; aucune mutation de la version publiée.
 
-## Mesures réalisées
-Suppression du sélecteur doublon créé au début de ce lot. Rejet des rencontres sur Area périmée et famille manquante. Séparation famille/texture du pinceau 2,5D. Correction de sauvegarde pour la famille du sol de base même sans tracés. Tests RED puis correctifs de cause racine. Correction de la sentinelle V80 des 20 véritables portes PNG (ancien test V79 n'en reconnaissait que 4 WebP).
+## TDD, preuve CI et frontières
+- Les tests RED précédents ont reproduit les erreurs de fallback de famille, Area discordante, couplage texture/famille et ancien test des quatre portes WebP.
+- Nouveau test ciblé : `tests/sculpt-encounter-movement-bridge.test.js` (projection, vraie cadence, snapshot, verrou, intérieur sûr, repositionnement).
+- CI `40577424075` sur SHA `bbf39aafb4d0aaa2559d3687df1f6af1ea16d431` : `npm test` 837/837 PASS, `npm run check` PASS, Chromium de la scène réelle PASS ; vraie marche, pause, reprise et ouverture de l'iframe Combat vérifiées.
+- Sentinelle navigateur renforcée sur SHA `f98d88b6285f84dfdab680c5357caa97f88cc1e0` : exige que l'iframe affiche une arène Capture jouable avec ses capacités et PV, pas uniquement le bon URL. CI en attente au moment de cette mise à jour.
+- Tests de frontière : pas de déclenchement par pixels, pas de moteur concurrent, intérieur sans rencontre par défaut, retour Combat par contrat seulement, HTML V80 conservé.
 
-## Tests requis et état
-- `npm test` et `npm run check` sur la tête exacte.
-- CI Chromium : Builder, scène sculptée, vrai geste de peinture, export/import et retour moteur de rencontre.
-- Prévisualisation smartphone paysage et parcours de combat validés avant GREEN.
-- CI réussie sur `c9ae53b1f59597839e0084fea492191116a2f5a0` : Actions `40568804022`, 832 tests Node PASS, `npm run check` PASS, tous les contrôles Chromium PASS, dont scène 2,5D, sérialisation, compatibilité HTML V80 et parcours Combat existant.
-- État actuel : CI technique GREEN sur le SHA ci-dessus, mais chantier **NON GREEN** jusqu'à la vérification utilisateur sur smartphone et au raccordement explicite du moteur 2,5D au contrat de rencontres. PR #256 brouillon, aucun merge ni publication.
-
-## Risques et suite
-Vérifier que les pages V80 gelées chargent encore le script partagé. Ne pas changer la V80 publiée. Diagnostiquer toutes les erreurs CI de la tête, puis raccorder le contrat de déplacement 2,5D vers Encounter Controller seulement une fois la source de configuration de rencontres identifiée, sans double autorité.
+## État / prochains gates
+NON GREEN tant que la CI du dernier SHA n'est pas vérifiée et la preview sur smartphone paysage validée. Aucun checkpoint final GREEN, aucune fusion, aucun déploiement de production.
+La configuration des probabilités employée par cette preview est **celle du monde de démonstration Exploration déjà utilisé en 2D**, pas une nouvelle configuration enregistrée par le labo sculptable. Le raccord futur à un WorldDocument de l'utilisateur devra injecter sa configuration officielle, sans introduire une deuxième autorité.
