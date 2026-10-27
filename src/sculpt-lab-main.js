@@ -409,6 +409,7 @@ window.__sculptEncounterProbe=()=>Object.freeze({
   pending:!!sculptPendingEncounter,
   encounterId:sculptPendingEncounter?.encounterId??null,
   creatureId:sculptPendingEncounter?.opponents[0]?.creatureId??null,
+  elementId:sculptPendingEncounter?.context.elementId??null,
   overlayVisible:sculptEncounterDialog?!sculptEncounterDialog.hidden:false,
   combatActive:sculptEncounterHost?.active??false
 });
