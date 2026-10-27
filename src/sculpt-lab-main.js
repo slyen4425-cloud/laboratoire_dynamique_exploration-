@@ -53,6 +53,16 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
+import {demoWorldDocument} from './world/demo-world.js';
+import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
+import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from './capture/capture-creature-catalog-preview-v1.js';
+import {createEncounterController} from './encounters/encounter-controller.js';
+import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
+import {createSculptEncounterArea} from './encounters/sculpt-encounter-area-adapter.js';
+import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
+import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
+import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
+import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -124,6 +134,119 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+
+const sculptEncounterDialog=$('sculpt-encounter-preview');
+// The frozen V80 page intentionally exposes no encounter UI; the editor's
+// new 2.5D Tester reuses exactly the same runtime Encounter Controller class,
+// catalog and bridge as the 2D Exploration game.
+const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
+const sculptEncounterController=sculptEncounterDialog?createEncounterController({
+  checkDistance:sculptEncounterTest?80:160
+}):null;
+const sculptEncounterCatalog=sculptEncounterController
+  ?createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1):null;
+const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
+let sculptPendingEncounter=null;
+let sculptEncounterAreaCache=null;
+function navigationEncounterArea(){
+  const areaId=activeInteriorId??SCULPT_EXTERIOR_AREA_ID;
+  const interior=activeInteriorId?sculptInteriors.find(e=>e.area.id===activeInteriorId):null;
+  if(activeInteriorId&&!interior)throw Error('WorldArea intérieure introuvable pour rencontre');
+  if(sculptEncounterAreaCache?.areaId===areaId&&
+     sculptEncounterAreaCache.surface===surface&&
+     sculptEncounterAreaCache.terrain===terrain&&
+     sculptEncounterAreaCache.existingArea===interior?.area)
+    return sculptEncounterAreaCache.projected;
+  const projected=createSculptEncounterArea({
+    areaId,existingArea:interior?.area??null,surface,
+    width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height
+  });
+  sculptEncounterAreaCache={areaId,surface,terrain,existingArea:interior?.area,projected};
+  return projected;
+}
+function sculptEncounterStep(){
+  if(!sculptEncounterController||!navigationTesting||!navActor||sculptPendingEncounter)
+    return null;
+  const area=navigationEncounterArea();
+  const intent=sculptEncounterController.step({
+    area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
+    encounterConfig:demoWorldDocument.encounterConfig,
+    captureCatalog:sculptEncounterCatalog,
+    playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',
+    random:sculptEncounterRandom
+  });
+  if(!intent)return null;
+  sculptPendingEncounter=snapshotFromEncounterIntent(intent);
+  navActor.moving=false;
+  navKeys.clear();navStick?.reset();
+  const creatureId=sculptPendingEncounter.opponents[0].creatureId;
+  const creature=sculptEncounterCatalog.resolveCreature(creatureId);
+  $('sculpt-encounter-summary').textContent=
+    (creature?.name??creatureId)+' · '+sculptPendingEncounter.context.terrainFamilyId+
+    ' · élément '+sculptPendingEncounter.context.elementId;
+  sculptEncounterDialog.hidden=false;
+  scheduleDraw();
+  return sculptPendingEncounter;
+}
+function releaseSculptEncounter(){
+  if(!sculptPendingEncounter)return false;
+  if(!sculptEncounterController.release(sculptPendingEncounter.encounterId))return false;
+  sculptPendingEncounter=null;
+  sculptEncounterDialog.hidden=true;
+  $('sculpt-encounter-summary').textContent='';
+  navKeys.clear();navStick?.reset();
+  return true;
+}
+const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHostV1({
+  windowRef:window,documentRef:document,storage:window.sessionStorage,
+  onCompleted(envelope){
+    if(!sculptPendingEncounter||
+       envelope.snapshot.encounterId!==sculptPendingEncounter.encounterId||
+       envelope.snapshot.returnToken!==sculptPendingEncounter.returnToken)return false;
+    const area=navigationEncounterArea();
+    const restored=resolveExplorationCombatReturn({
+      envelope,worldDocument:{areas:[area]}
+    });
+    if(!releaseSculptEncounter())return false;
+    // Only the existing Exploration actor position owns x/y. Combat sends a
+    // validated result, never a replacement WorldDocument or position.
+    navActor.x=restored.x;navActor.y=restored.y;navActor.moving=false;
+    navVisualLevel=navHeight();
+    centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+    status('Combat terminé : '+restored.outcome+' · exploration reprise');
+    return true;
+  }
+}):null;
+if(sculptEncounterDialog){
+  $('sculpt-encounter-combat').addEventListener('click',()=>{
+    if(!sculptPendingEncounter||sculptEncounterHost.active)return;
+    const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
+    try{
+      launchCombatHandoffNavigation({
+        snapshot:sculptPendingEncounter,player,
+        storage:window.sessionStorage,documentUrl:document.URL,
+        navigate(url){sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});}
+      });
+    }catch(error){status('Combat indisponible : '+error.message);}
+  });
+  $('sculpt-encounter-continue').addEventListener('click',releaseSculptEncounter);
+}
+window.__sculptEncounterProbe=()=>Object.freeze({
+  supported:!!sculptEncounterController,
+  testing:navigationTesting,
+  areaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,
+  terrainFamilyId:navActor?(
+    navigationEncounterArea().surface&&
+    // Diagnostic reads the original Encounter resolver, not renderer pixels.
+    resolveTerrainFamilyAtPoint(navigationEncounterArea().surface,navActor.x,navActor.y).terrainFamilyId
+  ):null,
+  pending:!!sculptPendingEncounter,
+  encounterId:sculptPendingEncounter?.encounterId??null,
+  creatureId:sculptPendingEncounter?.opponents[0]?.creatureId??null,
+  overlayVisible:sculptEncounterDialog?!sculptEncounterDialog.hidden:false,
+  combatActive:sculptEncounterHost?.active??false
+});
+
 let navHeroRenderTransform=null; // diagnostic only: actual Canvas matrix at sprite draw
 // Display-only altitude, separate from native Collision World coordinates.
 let navVisualLevel=null;
@@ -1391,6 +1514,12 @@ function navigationInput(){
 }
 function navigationTick(time){
   if(!navigationTesting)return;
+  if(sculptPendingEncounter){
+    navPreviousTime=time;
+    navActor.moving=false;
+    navFrame=requestAnimationFrame(navigationTick);
+    return;
+  }
   if(navPreviousTime!==null){
     const elapsed=Math.max(0,time-navPreviousTime);
     const rawIntent=navigationInput();
@@ -1419,6 +1548,9 @@ function navigationTick(time){
       }
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
+      // Trigger only from canonical post-collision hero coordinates.
+      // No dice roll from materials, pixels, or pre-collision input.
+      sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
     }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
@@ -1475,9 +1607,14 @@ function setNavigationTesting(on){
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
+    sculptEncounterController?.resetAnchor();
+    sculptEncounterStep(); // seed the cadence anchor at the actual spawn
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
     status('Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
+    if(sculptEncounterHost?.active)return; // Combat owns the overlay until completion
+    releaseSculptEncounter();
+    sculptEncounterController?.resetAnchor();
     navigationTesting=false;
     cancelAnimationFrame(navFrame);navFrame=0;navPreviousTime=null;
     navStick?.dispose();navStick=null;navKeys.clear();
@@ -1530,12 +1667,14 @@ $('navigation-toggle').addEventListener('click',()=>{
   setNavigationTesting(!navigationTesting);
 });
 $('navigation-reset').addEventListener('click',()=>{
-  if(!navigationTesting)return;
+  if(!navigationTesting||sculptPendingEncounter)return;
   navActor=navigationSpawn();
   navVisualLevel=navHeight();
   const mode=$('navigation-locomotion').value;
   navActor.locomotion={modes:mode==='fly'?['fly']:mode==='swim'?['ground','swim']:['ground']};
-  navBlocked=false;centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+  navBlocked=false;
+  sculptEncounterController?.resetAnchor();sculptEncounterStep();
+  centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
 });
 $('navigation-locomotion').addEventListener('change',()=>{
   if(!navigationTesting)return;
@@ -1552,6 +1691,7 @@ window.addEventListener('keydown',event=>{
 });
 window.addEventListener('keyup',event=>navKeys.delete(event.key.toLowerCase()));
 window.addEventListener('blur',()=>{navKeys.clear();navStick?.reset();});
+window.addEventListener('pagehide',()=>sculptEncounterHost?.dispose(),{once:true});
 window.__sculptNavProbe=()=>Object.freeze({
   enabled:navigationTesting,player:navActor?{x:navActor.x,y:navActor.y,
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
@@ -2632,6 +2772,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
     $('navigation-camera-angle').dispatchEvent(new Event('input'));
     setNavigationTesting(true);
     if(spawn&&navActor){navActor.x=spawn.x;navActor.y=spawn.y;
+      sculptEncounterController?.resetAnchor();sculptEncounterStep();
       navVisualLevel=navHeight();centerNavigationCamera();updateNavigationInfo(true);}
   }
   status(activeInteriorId?'Intérieur lié à cette maison : porte, sol, murs et modèles indépendants.':
