@@ -38,3 +38,6 @@ NON GREEN, aucune URL de test annoncée.
 
 ## Dépendance inter-labos — consigne utilisateur 2026-10-27
 Labo Combat publie son artefact officiel depuis main validée, avec manifest de version, SHA, schéma et contrat public. Exploration et GenS RPG sont consommateurs ; ils ne recopient ni moteur ni données propriétaires Combat. La synchronisation doit détecter une nouvelle publication, contrôler les contrats/CI, puis activer atomiquement la version compatible ; échec = conservation de la dernière version compatible, diagnostic visible. Aucun basculement silencieux vers une version non validée. Le catalogue Capture et le contrat Encounter Bridge sont injectés par leurs propriétaires. L'intégration et les workflows inter-dépôts sont un chantier coordonné distinct, non déclarés opérationnels par cette note.
+
+## Reprise — déclenchement post-déplacement
+Adaptateur src/encounters/sculpt-encounter-movement-adapter.js ajouté, avec tests. Il réutilise terrainFamilyAtWorldPosition et resolveTerrainFamilyEncounter. NON raccordé à navigationTick : une politique explicite de cadence/distance et un bridge Combat injecté sont requis avant activation pour éviter un tirage à chaque frame. Tests non exécutés, CI non attestée. Publication V81 toujours bloquée.
