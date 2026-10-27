@@ -24,8 +24,8 @@ Suppression du sélecteur doublon créé au début de ce lot. Rejet des rencontr
 - `npm test` et `npm run check` sur la tête exacte.
 - CI Chromium : Builder, scène sculptée, vrai geste de peinture, export/import et retour moteur de rencontre.
 - Prévisualisation smartphone paysage et parcours de combat validés avant GREEN.
-- Une CI antérieure `bb612163` a réussi mais elle précède le raccord du pinceau ; elle ne vaut pas validation finale.
-- État actuel : NON GREEN, PR #256 brouillon, aucun merge ni publication.
+- CI réussie sur `c9ae53b1f59597839e0084fea492191116a2f5a0` : Actions `40568804022`, 832 tests Node PASS, `npm run check` PASS, tous les contrôles Chromium PASS, dont scène 2,5D, sérialisation, compatibilité HTML V80 et parcours Combat existant.
+- État actuel : CI technique GREEN sur le SHA ci-dessus, mais chantier **NON GREEN** jusqu'à la vérification utilisateur sur smartphone et au raccordement explicite du moteur 2,5D au contrat de rencontres. PR #256 brouillon, aucun merge ni publication.
 
 ## Risques et suite
 Vérifier que les pages V80 gelées chargent encore le script partagé. Ne pas changer la V80 publiée. Diagnostiquer toutes les erreurs CI de la tête, puis raccorder le contrat de déplacement 2,5D vers Encounter Controller seulement une fois la source de configuration de rencontres identifiée, sans double autorité.
