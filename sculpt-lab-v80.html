@@ -753,7 +753,7 @@ body.sculpt-immersive #sculpt-settings button,body.sculpt-immersive #sculpt-sett
 </section>
 </div>
 <details id="sculpt-settings"><summary>⚙ Outils détaillés, force, bord, matériaux et réglages</summary>
-<div class="settings-interior"><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
+<div class="settings-interior"><details id="encounter-settings" class="controls"><summary>🐾 Rencontres par famille</summary><label>Famille <select id="encounter-family"></select></label><label>Chance <input id="encounter-chance" type="range" min="0" max="100" step="1"><output id="encounter-chance-value">0 %</output></label><fieldset><legend>Éléments autorisés</legend><div id="encounter-elements"></div></fieldset><p id="encounter-summary" role="status"></p></details><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
