@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/main.js && node --check src/builder/world-builder-main.js && node --check src/sculpt-lab-main.js && node --check src/world/sculpt-height-model.js && node --check src/render/sculpt-height-renderer.js && node --check scripts/smoke-sculpt-terrain-lab.mjs"
+    "check": "node --check src/main.js && node --check src/builder/world-builder-main.js && node --check src/builder/world-assembler-main.js && node --check src/sculpt-lab-main.js && node --check src/world/sculpt-height-model.js && node --check src/render/sculpt-height-renderer.js && node --check scripts/smoke-sculpt-terrain-lab.mjs"
   }
 }
