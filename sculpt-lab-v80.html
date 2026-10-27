@@ -401,6 +401,15 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar{
 }
 body.sculpt-immersive .sculpt-quickbar .interior-area-bar>button,
 body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
+/* V81: one existing settings panel, reachable above the canvas in immersive mode. */
+body.sculpt-immersive #sculpt-settings{display:block!important;position:absolute;z-index:30;top:calc(env(safe-area-inset-top,0px) + 54px);right:calc(env(safe-area-inset-right,0px) + 8px);left:auto;width:min(390px,calc(100vw - 16px));max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 64px);overflow-y:auto;overscroll-behavior:contain;background:#182b33f5;box-shadow:0 10px 28px #000a}
+body.sculpt-immersive #sculpt-settings:not([open]){width:auto;max-width:min(210px,45vw)}
+body.sculpt-immersive #sculpt-settings>summary{font-size:.86rem;padding:9px 12px;min-height:40px;box-sizing:border-box}
+body.sculpt-immersive #sculpt-settings:not([open])>summary{font-size:0}
+body.sculpt-immersive #sculpt-settings:not([open])>summary::after{content:"⚙ Réglages";font-size:.86rem}
+body.sculpt-immersive #sculpt-settings .settings-interior{padding:10px;gap:10px}
+body.sculpt-immersive #sculpt-settings button,body.sculpt-immersive #sculpt-settings select,body.sculpt-immersive #sculpt-settings input{min-height:40px}
+@media(max-width:650px){body.sculpt-immersive #sculpt-settings[open]{top:calc(env(safe-area-inset-top,0px) + 55px);left:8px;right:8px;width:auto;max-height:calc(100dvh - 70px)}}
 </style>
 </head>
 <body>
@@ -581,6 +590,7 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Pinceau de textures</strong>
+ <label>Famille de terrain <select id="surface-family"></select></label>
  <label>Texture <select id="surface-material">
   <option value="road.dirt">Route de terre</option>
   <option value="grass.forest">Herbe</option>
@@ -744,7 +754,7 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 </section>
 </div>
 <details id="sculpt-settings"><summary>⚙ Outils détaillés, force, bord, matériaux et réglages</summary>
-<div class="settings-interior"><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
+<div class="settings-interior"><details id="encounter-settings" class="controls"><summary>🐾 Rencontres par famille</summary><label>Famille <select id="encounter-family"></select></label><label>Chance <input id="encounter-chance" type="range" min="0" max="100" step="1"><output id="encounter-chance-value">0 %</output></label><fieldset><legend>Éléments autorisés</legend><div id="encounter-elements"></div></fieldset><p id="encounter-summary" role="status"></p></details><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>

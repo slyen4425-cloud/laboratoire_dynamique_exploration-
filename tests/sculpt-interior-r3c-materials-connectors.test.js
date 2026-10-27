@@ -25,8 +25,9 @@ test('R3C : five wall finishes belong to WorldArea, door choices to Portal visua
   assert.equal(normalizeWorldArea({...area,wallMaterialId:'unknown'}).wallMaterialId,'plaster');
   const door=updateSculptInteriorDoor({...room,area},{assetId:'object.door.fantasy.wood.01'});
   assert.equal(door.exitPortal.visual.assetId,'object.door.fantasy.wood.01');
-  assert.ok(INTERIOR_DOOR_ASSETS.every(x=>!x.path||x.path.endsWith('.webp')));
-  assert.equal(INTERIOR_DOOR_ASSETS.length,4);
+  assert.ok(INTERIOR_DOOR_ASSETS.every(x=>!x.path||/\.(?:webp|png)$/.test(x.path)));
+  assert.equal(INTERIOR_DOOR_ASSETS.filter(x=>x.path?.startsWith('./assets/interiors/doors/')).length,20);
+  assert.equal(INTERIOR_DOOR_ASSETS.length,24);
   assert.equal(INTERIOR_CONNECTOR_ASSETS.length,3);
   const exported=JSON.parse(JSON.stringify(serializeSculptInteriors([door])));
   const restored=importSculptInteriors(exported,fixture().objects);
