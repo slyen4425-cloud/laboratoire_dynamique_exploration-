@@ -2163,10 +2163,12 @@ try{
       document.activeElement?.blur?.();
       return window.__sculptNavProbe().player;
     })()`);
+    const inputTimeBefore=await run('window.__sculptNavProbe().inputElapsedMs');
     await run(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));true`);
     await sleep(135);
     await run(`window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));true`);
     const current=await run(`window.__sculptNavProbe().player`);
+    const inputTimeAfter=await run('window.__sculptNavProbe().inputElapsedMs');
     const projection=await run(`(async()=>{
       const p=await import('./src/render/sculpt-camera-projection.js');
       const view=p.sculptCameraGameView(${angle});
@@ -2174,12 +2176,21 @@ try{
       const b=p.sculptCameraProject(view,${current.x},${current.y});
       return {dx:b.x-a.x,dy:b.y-a.y};
     })()`);
-    const v={angle,initial,current,screenDelta:projection};v66Results.push(v);
-    if(projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
-      throw Error('V66 actual key travel not screen-aligned: '+JSON.stringify(v));
+    const consumedMs=inputTimeAfter-inputTimeBefore;
+    const v={angle,initial,current,screenDelta:projection,
+      consumedMovementMs:consumedMs,
+      projectedSpeed:consumedMs>0?-projection.dy*1000/consumedMs:0};
+    v66Results.push(v);
+    if(consumedMs<30||projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
+      throw Error('V66 actual key travel not screen-aligned or RAF input absent: '+JSON.stringify(v));
   }
-  if(Math.abs(v66Results[0].screenDelta.dy/v66Results[1].screenDelta.dy-1)>.50)
-    throw Error('V66 camera pitch still alters visible walking speed: '+JSON.stringify(v66Results));
+  // Compare pixel speeds per *actual movement RAF time*. Wall-clock sleep is
+  // not a simulation clock: on busy GitHub runners the browser can process
+  // 2 frames for one camera and 8 for the next during the same 135ms sleep.
+  // This keeps the original real keyboard->Collision World gate intact,
+  // without relaxing the speed regression tolerance to conceal a failure.
+  if(Math.abs(v66Results[0].projectedSpeed/v66Results[1].projectedSpeed-1)>.25)
+    throw Error('V66 camera pitch changes actual visible movement speed: '+JSON.stringify(v66Results));
   await run(`document.querySelector('#navigation-toggle').click();true`);
   console.log('V66 real keydown->Movement->Collision World camera view 35°/90°:',JSON.stringify(v66Results));
   // V67 real bridge crossing, unlike the earlier synthetic corridor tests:
