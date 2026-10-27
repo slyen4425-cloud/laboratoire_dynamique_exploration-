@@ -30,6 +30,8 @@ export function normalizeSculptSurface(raw={}){
   if(routes.length+zones.length>SCULPT_SURFACE_LIMIT)
     throw Error('Trop de routes et zones pour ce laboratoire');
   for(const item of [...routes,...zones]){
+    if(!TERRAIN_FAMILY_IDS.includes(item?.terrainFamilyId??(routes.includes(item)?'road':source.baseTerrainFamilyId??'forest')))
+      throw new RangeError('Famille de terrain inconnue dans la scène');
     const meta=lookup.get(item?.materialId);
     if(!meta || (routes.includes(item)?meta.kind!=='route':meta.kind!=='zone') ||
       !Number.isFinite(item.width)||item.width<6||item.width>480 ||
