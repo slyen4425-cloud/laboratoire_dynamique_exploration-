@@ -35,3 +35,6 @@ Le nouvel éditeur src/sculpt-lab-main.js exporte une scène sculptée, pas enco
 ## État
 Panneau mobile et réglages rencontres câblés dans sculpt-lab-v80.html sur branche V81 ; source des créatures = projection Capture en lecture seule ; édition déléguée au Builder canonique. Export/import encounterConfig raccordé. Restent : terrainFamilyId effectif des surfaces sculptées, Encounter Controller durant navigation, retour combat, tests exécutés, preview publiée.
 NON GREEN, aucune URL de test annoncée.
+
+## Dépendance inter-labos — consigne utilisateur 2026-10-27
+Labo Combat publie son artefact officiel depuis main validée, avec manifest de version, SHA, schéma et contrat public. Exploration et GenS RPG sont consommateurs ; ils ne recopient ni moteur ni données propriétaires Combat. La synchronisation doit détecter une nouvelle publication, contrôler les contrats/CI, puis activer atomiquement la version compatible ; échec = conservation de la dernière version compatible, diagnostic visible. Aucun basculement silencieux vers une version non validée. Le catalogue Capture et le contrat Encounter Bridge sont injectés par leurs propriétaires. L'intégration et les workflows inter-dépôts sont un chantier coordonné distinct, non déclarés opérationnels par cette note.
