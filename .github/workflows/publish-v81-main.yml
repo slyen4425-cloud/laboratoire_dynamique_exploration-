@@ -17,11 +17,8 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  verify-and-deploy:
+  verify-and-assemble:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout immutable V80 production source
         uses: actions/checkout@v4
@@ -95,12 +92,19 @@ jobs:
             node scripts/smoke-sculpt-terrain-lab.mjs
           )
           rm "$preview/scripts"
-      - uses: actions/configure-pages@v5
-        if: github.event_name != 'pull_request'
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: site
+
+  deploy:
+    needs: verify-and-assemble
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
       - id: deployment
         uses: actions/deploy-pages@v4
-        if: github.event_name != 'pull_request'
