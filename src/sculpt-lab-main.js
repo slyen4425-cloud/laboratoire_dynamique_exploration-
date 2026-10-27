@@ -58,6 +58,9 @@ import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-c
 import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from './capture/capture-creature-catalog-preview-v1.js';
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
+import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
+import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
+  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
@@ -148,6 +151,164 @@ const sculptEncounterCatalog=sculptEncounterController
 const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
 let sculptPendingEncounter=null;
 let sculptEncounterAreaCache=null;
+
+/* The Builder is the ONE authoring owner of EncounterConfig v1 and Area
+ * encounters.randomEnabled. This panel invokes its existing commands and
+ * edits the same objects that Scene export serializes and Tester consumes.
+ * No separate spawn map, material table or Capture rarity authority. */
+let sculptEncounterConfig=sculptPreviewEncounterConfig;
+let sculptExteriorEncounters=Object.freeze({randomEnabled:true});
+const sculptEncounterEditor=$('sculpt-encounter-editor');
+let selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
+function sculptEncounterProfile(){
+  return sculptEncounterConfig.families.find(
+    f=>f.terrainFamilyId===selectedSculptEncounterFamilyId)??null;
+}
+function sculptEncounterAreaEnabled(){
+  return activeInteriorId
+    ?sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area.encounters.randomEnabled===true
+    :sculptExteriorEncounters.randomEnabled;
+}
+function refreshSculptEncounterAuthoringStatus(){
+  if(!sculptEncounterEditor)return;
+  const profile=sculptEncounterProfile();
+  const elementCount=profile?.elementChances.filter(x=>x.chancePercent>0).length??0;
+  const invalid=!!profile&&profile.encounterChancePercent>0&&elementCount===0;
+  const statusOutput=$('sculpt-encounter-authoring-status');
+  statusOutput.dataset.invalid=String(invalid);
+  statusOutput.textContent=invalid
+    ?'Choisis au moins un élément, sinon cette famille ne pourra pas générer de créature.'
+    :profile?.encounterChancePercent===0
+      ?'0 % : aucune rencontre aléatoire pour cette famille.'
+      :elementCount+' élément(s) sélectionné(s). La rareté des créatures reste celle de Capture.';
+}
+function refreshSculptEncounterEditor(){
+  if(!sculptEncounterEditor)return;
+  const families=terrainFamilyRegistry.list();
+  const ids=new Set(families.map(x=>x.id));
+  if(!ids.has(selectedSculptEncounterFamilyId))
+    selectedSculptEncounterFamilyId=ids.has(surface.baseTerrainFamilyId)
+      ?surface.baseTerrainFamilyId:families[0]?.id??'';
+  const select=$('sculpt-encounter-family');
+  if(select.options.length!==families.length)
+    select.replaceChildren(...families.map(x=>new Option(x.label,x.id)));
+  select.value=selectedSculptEncounterFamilyId;
+  const enabled=sculptEncounterAreaEnabled();
+  $('sculpt-encounter-area-enabled').checked=enabled;
+  $('sculpt-encounter-area-status').textContent=
+    (activeInteriorId?'Pièce / étage actuel':'Extérieur')+' · '+(enabled
+      ?'rencontres autorisées':'rencontres désactivées')+
+    ' (règle de cette WorldArea, pas de la texture)';
+  const familyName=families.find(x=>x.id===selectedSculptEncounterFamilyId)?.label??'';
+  const baseName=families.find(x=>x.id===surface.baseTerrainFamilyId)?.label??'';
+  $('sculpt-encounter-family-hint').textContent=
+    surface.baseTerrainFamilyId===selectedSculptEncounterFamilyId
+      ?'Cette famille est le sol de base : aucune peinture nécessaire.'
+      :'Sol de base : '+baseName+'. '+familyName+' s’applique sur les zones et routes de cette famille.';
+  const profile=sculptEncounterProfile();
+  $('sculpt-encounter-chance').value=String(profile?.encounterChancePercent??0);
+  $('sculpt-encounter-chance-value').textContent=
+    String(Math.round(profile?.encounterChancePercent??0))+' %';
+  const container=$('sculpt-encounter-elements');
+  container.replaceChildren();
+  const checked=new Set((profile?.elementChances??[])
+    .filter(x=>x.chancePercent>0).map(x=>x.elementId));
+  for(const element of sculptEncounterCatalog.listElements()){
+    const line=document.createElement('label'),input=document.createElement('input');
+    input.type='checkbox';input.checked=checked.has(element.id);
+    input.dataset.elementId=element.id;
+    input.setAttribute('aria-label','Autoriser '+element.label);
+    const count=sculptEncounterCatalog.findByElement(element.id)
+      .filter(x=>x.spawnChance>0).length;
+    const name=document.createElement('span');
+    name.textContent=element.label+' · '+count+' créature(s)';
+    input.addEventListener('change',()=>{
+      const updated=setTerrainFamilyEncounterElementEnabled(
+        {encounterConfig:sculptEncounterConfig},
+        selectedSculptEncounterFamilyId,element.id,input.checked
+      );
+      sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig);
+      refreshSculptEncounterAuthoringStatus();
+    });
+    line.append(input,name);container.append(line);
+  }
+  $('sculpt-encounter-catalog-summary').textContent=
+    'Capture · '+sculptEncounterCatalog.listCreatures().length+
+    ' créatures · '+sculptEncounterCatalog.listElements().length+
+    ' éléments · rareté individuelle conservée';
+  refreshSculptEncounterAuthoringStatus();
+}
+function setSculptEncounterEditorOpen(on){
+  if(!sculptEncounterEditor)return;
+  if(on&&sculptPendingEncounter)return;
+  if(on){
+    if(navigationTesting)setNavigationTesting(false);
+    if(surfaceEditing)setSurfaceEditing(false);
+    if(objectEditing)setObjectEditing(false);
+  }
+  sculptEncounterEditor.hidden=!on;
+  document.body.classList.toggle('sculpt-encounter-editing',on);
+  $('mode-encounters').classList.toggle('active',on);
+  $('mode-encounters').setAttribute('aria-pressed',String(on));
+  if(on)refreshSculptEncounterEditor();
+}
+if(sculptEncounterEditor){
+  $('mode-encounters').addEventListener('click',
+    ()=>setSculptEncounterEditorOpen(sculptEncounterEditor.hidden));
+  $('sculpt-encounter-close').addEventListener('click',
+    ()=>setSculptEncounterEditorOpen(false));
+  for(const id of ['mode-ground','mode-water','mode-objects','mode-surface']){
+    $(id).addEventListener('click',()=>setSculptEncounterEditorOpen(false));
+  }
+  $('sculpt-encounter-family').addEventListener('change',()=>{
+    selectedSculptEncounterFamilyId=$('sculpt-encounter-family').value;
+    refreshSculptEncounterEditor();
+  });
+  $('sculpt-encounter-chance').addEventListener('input',()=>{
+    const chance=Number($('sculpt-encounter-chance').value);
+    const updated=updateTerrainFamilyEncounterProfile(
+      {encounterConfig:sculptEncounterConfig},selectedSculptEncounterFamilyId,
+      {encounterChancePercent:chance}
+    );
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig);
+    $('sculpt-encounter-chance-value').textContent=Math.round(chance)+' %';
+    refreshSculptEncounterAuthoringStatus();
+  });
+  $('sculpt-encounter-area-enabled').addEventListener('change',()=>{
+    const area=navigationEncounterArea();
+    const changed=setAreaEncounterRandomEnabled(
+      {areas:[area]},area.id,$('sculpt-encounter-area-enabled').checked
+    );
+    const encounters=Object.freeze({...changed.areas[0].encounters});
+    if(activeInteriorId){
+      const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+      if(!entry)throw Error('WorldArea intérieure absente');
+      const nextArea=normalizeWorldArea({...entry.area,encounters});
+      sculptInteriors=Object.freeze(sculptInteriors.map(e=>
+        e.area.id===entry.area.id?updateSculptInterior(e,{area:nextArea}):e
+      ));
+    }else{
+      sculptExteriorEncounters=encounters;
+    }
+    sculptEncounterAreaCache=null;
+    refreshSculptEncounterEditor();
+  });
+  window.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!sculptEncounterEditor.hidden)
+      setSculptEncounterEditorOpen(false);
+  });
+}
+window.__sculptEncounterEditorProbe=()=>Object.freeze({
+  available:!!sculptEncounterEditor,open:!!sculptEncounterEditor&&!sculptEncounterEditor.hidden,
+  familyId:selectedSculptEncounterFamilyId,
+  chance:sculptEncounterProfile()?.encounterChancePercent??null,
+  enabledElementIds:(sculptEncounterProfile()?.elementChances??[])
+    .filter(x=>x.chancePercent>0).map(x=>x.elementId),
+  allowedInArea:sculptEncounterAreaEnabled(),
+  areaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,
+  configFamilyCount:sculptEncounterConfig.families.length
+});
+
 function navigationEncounterArea(){
   const areaId=activeInteriorId??SCULPT_EXTERIOR_AREA_ID;
   const interior=activeInteriorId?sculptInteriors.find(e=>e.area.id===activeInteriorId):null;
@@ -155,13 +316,18 @@ function navigationEncounterArea(){
   if(sculptEncounterAreaCache?.areaId===areaId&&
      sculptEncounterAreaCache.surface===surface&&
      sculptEncounterAreaCache.terrain===terrain&&
-     sculptEncounterAreaCache.existingArea===interior?.area)
+     sculptEncounterAreaCache.existingArea===interior?.area&&
+     sculptEncounterAreaCache.exteriorEncounters===sculptExteriorEncounters)
     return sculptEncounterAreaCache.projected;
   const projected=createSculptEncounterArea({
     areaId,existingArea:interior?.area??null,surface,
+    exteriorEncounters:sculptExteriorEncounters,
     width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height
   });
-  sculptEncounterAreaCache={areaId,surface,terrain,existingArea:interior?.area,projected};
+  sculptEncounterAreaCache={
+    areaId,surface,terrain,existingArea:interior?.area,
+    exteriorEncounters:sculptExteriorEncounters,projected
+  };
   return projected;
 }
 function sculptEncounterStep(){
@@ -170,7 +336,7 @@ function sculptEncounterStep(){
   const area=navigationEncounterArea();
   const intent=sculptEncounterController.step({
     area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
-    encounterConfig:sculptPreviewEncounterConfig,
+    encounterConfig:sculptEncounterConfig,
     captureCatalog:sculptEncounterCatalog,
     playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',
     random:sculptEncounterRandom
@@ -243,6 +409,7 @@ window.__sculptEncounterProbe=()=>Object.freeze({
   pending:!!sculptPendingEncounter,
   encounterId:sculptPendingEncounter?.encounterId??null,
   creatureId:sculptPendingEncounter?.opponents[0]?.creatureId??null,
+  elementId:sculptPendingEncounter?.context.elementId??null,
   overlayVisible:sculptEncounterDialog?!sculptEncounterDialog.hidden:false,
   combatActive:sculptEncounterHost?.active??false
 });
@@ -255,6 +422,9 @@ const navKeys=new Set();
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
+// Passive real-RAF diagnostic: how much simulation time truly processed input.
+// Does not influence movement, encounter cadence, collisions or camera.
+let navInputElapsedMs=0;
 let navTerrainCache=null,navSkyCache=null,terrainRasterBuilds=0;
 let cliffAtlasImage=null,cliffAtlasReady=false,cliffAtlasError=false;
 const cliffAtlasLoader=new Image();
@@ -1529,6 +1699,7 @@ function navigationTick(time){
     navMetricFrames++;
     navVisualTime+=Math.min(250,elapsed)/1000;
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
+      navInputElapsedMs+=elapsed;
       const previousX=navActor.x,previousY=navActor.y;
       const world=navigationWorld(),context=navigationContext();
       // Critical V21: retain elapsed time during dropped frames, but apply
@@ -1579,6 +1750,7 @@ function navigationTick(time){
 }
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
+  if(on)setSculptEncounterEditorOpen(false);
   if(on){
     if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
@@ -1604,6 +1776,7 @@ function setNavigationTesting(on){
     navVisualLevel=navHeight();
     navVisualTime=0;navLastVisualPaint=-Infinity;
     navMetricLast=0;navMetricFrames=0;navMetricDistance=0;
+    navInputElapsedMs=0;
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
@@ -1697,6 +1870,7 @@ window.__sculptNavProbe=()=>Object.freeze({
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
   blocked:navBlocked,blockReason:navBlockReason,maxStep:navigationMaxStep(),
   speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
+  inputElapsedMs:navInputElapsedMs,
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
@@ -2362,13 +2536,16 @@ $('new-map-form').addEventListener('submit',event=>{
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
   const blank=createBlankSculptPreviewScene({width,height});
+  sculptEncounterConfig=sculptPreviewEncounterConfig;
+  sculptExteriorEncounters=Object.freeze({randomEnabled:true});
+  sculptEncounterAreaCache=null;
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
   placedActors=blank.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
   updateActorCount();syncActorSelectedControls();
   surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
-  updateSurfaceCount();
+  updateSurfaceCount();refreshSculptEncounterEditor();
   objectHistory=[];objectRedo=[];history=[];redoHistory=[];
   drawing=false;strokeUndo=null;strokePoints=[];lastCell='';
   hoverCell=null;precisionCell=null;precisionDragging=false;
@@ -2765,7 +2942,7 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
     activeInteriorId=entry.area.id;
     mountSculptArea(entry);
   }
-  updateSculptAreaControls();fit();
+  updateSculptAreaControls();refreshSculptEncounterEditor();fit();
   if(wasTesting){
     $('navigation-camera-angle').value=activeInteriorId?
       $('interior-camera-angle').value:$('navigation-camera-angle').value;
@@ -2947,8 +3124,17 @@ $('scene-export').addEventListener('click',()=>{
   const entries=activeInteriorId
     ?sculptInteriors.map(e=>e.area.id===activeInteriorId?
       updateSculptInterior(e,active):e):sculptInteriors;
-  const scene=JSON.parse(serializeSculptPreviewScene(outdoors.terrain,
-    outdoors.objects,outdoors.surface,outdoors.actors));
+  let scene;
+  try{
+    scene=JSON.parse(serializeSculptPreviewScene(outdoors.terrain,
+      outdoors.objects,outdoors.surface,outdoors.actors,{
+        encounterConfig:sculptEncounterConfig,
+        exteriorEncounters:sculptExteriorEncounters
+      }));
+  }catch(error){
+    status('Export bloqué : '+error.message);
+    return;
+  }
   if(entries.length)scene.interiors=serializeSculptInteriors(entries);
   if(sculptInteriorTemplates.length)
     scene.interiorTemplates=normalizeSculptInteriorTemplates(sculptInteriorTemplates);
@@ -2979,7 +3165,10 @@ $('import').addEventListener('click',()=>{
   placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
   updateActorCount();syncActorSelectedControls();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
-  loadSurfacePaintAssets();updateSurfaceCount();
+  sculptEncounterConfig=imported.encounterConfig??sculptPreviewEncounterConfig;
+  sculptExteriorEncounters=imported.exteriorEncounters;
+  sculptEncounterAreaCache=null;
+  loadSurfacePaintAssets();updateSurfaceCount();refreshSculptEncounterEditor();
   updateSculptAreaControls();
   fit();status(imported.isScene?
     'Scène complète importée : objets et relief'+

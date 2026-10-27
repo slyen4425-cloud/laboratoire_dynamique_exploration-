@@ -10,7 +10,8 @@ export const sculptPreviewEncounterConfig = demoWorldDocument.encounterConfig;
 // Encounter Controller's WorldArea input contract. Never stores a second
 // world, movement position, encounter configuration or creature roster.
 export function createSculptEncounterArea({
-  areaId, existingArea = null, surface, width, height
+  areaId, existingArea = null, surface, width, height,
+  exteriorEncounters = Object.freeze({randomEnabled:true})
 } = {}) {
   if (typeof areaId !== 'string' || !areaId.trim() ||
       !surface || !Number.isFinite(width) || !Number.isFinite(height) ||
@@ -27,7 +28,8 @@ export function createSculptEncounterArea({
     id: SCULPT_EXTERIOR_AREA_ID,
     kind: 'exterior',
     width, height,
-    surface
+    surface,
+    encounters:exteriorEncounters
   });
   // Surface identity stays canonical: geometry/materials are neither copied
   // nor recalculated by the encounter adapter.

@@ -402,6 +402,39 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar{
 body.sculpt-immersive .sculpt-quickbar .interior-area-bar>button,
 body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 
+/* Editable EncounterConfig v1 — a single WorldDocument-compatible data owner. */
+#sculpt-encounter-editor{position:absolute;z-index:17;right:8px;top:8px;
+ width:min(315px,calc(100vw - 16px));max-height:min(80dvh,90%);
+ overflow-y:auto;overscroll-behavior:contain;display:grid;gap:10px;padding:12px;
+ background:rgba(18,42,52,.98);border:1px solid #8dbdb1;border-radius:13px;
+ box-shadow:0 8px 23px #000b;font-size:.81rem}
+#sculpt-encounter-editor[hidden]{display:none!important}
+.sculpt-encounter-editor__header{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.sculpt-encounter-editor__header button{min-height:40px;min-width:42px;padding:5px}
+#sculpt-encounter-editor>label{display:grid;gap:5px}
+#sculpt-encounter-editor select{width:100%;min-width:0}
+.sculpt-encounter-editor__toggle{display:flex!important;align-items:center;gap:9px}
+#sculpt-encounter-area-enabled{width:21px;height:21px;flex:0 0 21px;accent-color:#8cdbc4}
+.sculpt-encounter-editor__chance{display:flex;align-items:center;gap:9px}
+#sculpt-encounter-chance{flex:1;min-width:0}
+#sculpt-encounter-chance-value{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.sculpt-encounter-editor__elements{min-width:0;padding:8px;border:1px solid #4d8282;
+ border-radius:9px;max-height:30dvh;overflow:auto}
+#sculpt-encounter-elements{display:grid;gap:5px}
+#sculpt-encounter-elements label{display:flex;align-items:center;gap:9px;min-height:32px}
+#sculpt-encounter-elements input{width:19px;height:19px;flex:0 0 19px;accent-color:#80d5bd}
+#sculpt-encounter-area-status,#sculpt-encounter-family-hint,
+#sculpt-encounter-authoring-status{font-size:.74rem;line-height:1.35;color:#c7e8e3}
+#sculpt-encounter-authoring-status[data-invalid="true"]{color:#ffcc9b}
+#sculpt-encounter-editor small{line-height:1.35}
+.editor-switch #mode-encounters{font-size:.83rem;min-width:0}
+.editor-switch #mode-encounters.active{background:#28646b;border-color:#9be9db}
+@media(max-width:600px){
+ #sculpt-encounter-editor{width:min(245px,58vw);max-height:70dvh;padding:8px;gap:7px}
+ .editor-switch #mode-encounters{font-size:.71rem;padding:5px 3px}
+}
+body.sculpt-immersive #sculpt-encounter-editor{
+ top:calc(env(safe-area-inset-top,0px) + 52px);max-height:69dvh}
 /* Same contract as the existing Exploration -> Capture immersive host. */
 .sculpt-encounter-preview{position:absolute;z-index:40;inset:0;display:flex;
   justify-content:center;align-items:center;padding:12px;background:rgba(5,17,24,.77)}
@@ -429,6 +462,7 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
 <button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
+<button type="button" id="mode-encounters" aria-pressed="false" aria-controls="sculpt-encounter-editor">🐾 Rencontres</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
 <button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
@@ -594,6 +628,34 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
    <button type="submit" id="new-map-create" disabled>Créer la carte vierge</button>
   </div>
  </form>
+</section>
+<section id="sculpt-encounter-editor" aria-label="Régler les rencontres de créatures" hidden>
+ <div class="sculpt-encounter-editor__header">
+  <strong>🐾 Rencontres par famille</strong>
+  <button type="button" id="sculpt-encounter-close" aria-label="Fermer les réglages de rencontres">✕</button>
+ </div>
+ <label class="sculpt-encounter-editor__toggle">
+  <input id="sculpt-encounter-area-enabled" type="checkbox" checked>
+  Rencontres aléatoires autorisées dans cette zone
+ </label>
+ <output id="sculpt-encounter-area-status" aria-live="polite"></output>
+ <label>Famille de terrain à configurer
+  <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
+ </label>
+ <output id="sculpt-encounter-family-hint" aria-live="polite"></output>
+ <label>Chance de rencontre
+  <span class="sculpt-encounter-editor__chance">
+   <input id="sculpt-encounter-chance" type="range" min="0" max="100" step="1" value="0">
+   <output id="sculpt-encounter-chance-value" for="sculpt-encounter-chance">0 %</output>
+  </span>
+ </label>
+ <fieldset class="sculpt-encounter-editor__elements">
+  <legend>Éléments possibles</legend>
+  <div id="sculpt-encounter-elements"></div>
+ </fieldset>
+ <output id="sculpt-encounter-authoring-status" aria-live="polite"></output>
+ <small id="sculpt-encounter-catalog-summary"></small>
+ <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. Les rencontres se vérifient après déplacement, environ tous les 160 points (80 en mode test rapide). La texture ne modifie jamais ces règles. « Exporter scène » conserve tous les réglages.</small>
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Pinceau de textures</strong>
@@ -855,6 +917,6 @@ body.sculpt-immersive .sculpt-quickbar .interior-area-bar>label{flex:1 1 100%}
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1"></script>
 </body>
 </html>

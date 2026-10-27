@@ -1,34 +1,36 @@
-# LAB_CURRENT_WORK — Rencontres terrain dans l'exploration 2,5D (reprise V80)
+# LAB_CURRENT_WORK — Rencontres 2,5D : réintégrer l’édition du Builder
 
 Date : 2026-10-27
-Branche : `work/exploration-v80-encounters-terrain-owner-20261027`
-Base V80 : `work/exploration-restart-from-v80-20261027`
-Checkpoint de départ : `checkpoint/exploration-start-v80-encounters-2026-10-27`, ancré sur la base V80 intacte ; créé tardivement après les premiers commits (mention conservée pour traçabilité).
-PR de travail : #256 — DRAFT — ne pas fusionner ni publier sans validations requises.
+Branche : `work/exploration-v80-encounters-editor-20261027`
+Base exacte : `04ebe4a237d5cd52f85367a751e0bde6be9fbade` — intégration 2,5D + Combat CI vérifiée, puis validation fonctionnelle par l’utilisateur sur smartphone le 27/10.
+Checkpoint de départ : `checkpoint/exploration-start-encounters-editor-v80-2026-10-27` (créé avant modification du présent lot).
+PR #260 (brouillon) cible la branche précédente `work/exploration-v80-encounters-terrain-owner-20261027`.
+Production V80 sur GitHub Pages inchangée, preview des rencontres isolée sous `/preview/encounters-v80/`.
 
-## Propriétaires uniques
-- Exploration `stepMovement` + Collision World : position et mouvement du héros, déjà validés sur smartphone.
-- `WorldSurface` v3 : géométrie et `terrainFamilyId` canoniques ; la texture `materialId` reste visuelle. La scène sculptée n'infère plus jamais la famille depuis la texture.
-- `Encounter Controller` officiel : cadence de marche, déclenchement, verrou, `resetAnchor` sur téléportation/mode édition.
-- `Terrain Family Encounter Resolver` officiel : sélection depuis la configuration existante (ici le `demoWorldDocument.encounterConfig` en lecture seule pour la preview) et le catalogue Capture (même snapshot read-only que le runtime 2D).
-- `Encounter Bridge`, `CaptureEncounterSnapshot v1`, `Combat Handoff Store`, `Immersive Encounter Host v1` et `resolveExplorationCombatReturn` : combat réel et retour de position. Pas de combat factice.
+## Demande utilisateur
+Le gameplay des rencontres fonctionne et a été validé en jeu. Il manque la **partie éditable du Builder 2D** (autoriser les rencontres par WorldArea, choisir famille, régler chance %, activer les éléments de Capture) dans le laboratoire 2,5D. Les mêmes données doivent suivre Exporter scène / Importer scène et alimenter immédiatement le mode Tester, pas une simulation parallèle.
+
+## Autorités et frontières
+- `WorldSurface.terrainFamilyId` commande la famille réelle (pas la texture).
+- `EncounterConfig v1` (format officiel `WorldDocument.encounterConfig`) est la seule configuration des chances/éléments : le panneau 2,5D invoque **les commandes du Builder historique** `updateTerrainFamilyEncounterProfile` et `setTerrainFamilyEncounterElementEnabled`. Aucune deuxième table de probabilité.
+- `WorldArea.encounters.randomEnabled` reste le flag de zone : commande officielle `setAreaEncounterRandomEnabled` ; intérieur = `entry.area.encounters`, extérieur = champ de transport `exteriorEncounters` de la scène, projeté en WorldArea.
+- Le catalogue Capture possède seul les créatures/éléments/raretés. L’éditeur ne peut que cocher les éléments ; la rareté n’est jamais copiée/éditée dans Exploration.
+- Le contrôleur des rencontres, Collision World, Combat Bridge et ImmersiveHost existants restent les propriétaires du gameplay.
+- `sculpt-scene-preview` conserve le format scène expérimental v1 ; nouveaux champs optionnels `encounterConfig` et `exteriorEncounters` rétrocompatibles. Anciennes scènes sans champs : configuration démo officielle initiale en mémoire, pas un second système.
+- Ne modifier ni `sculpt-lab-v80.html` ni la racine stable V80.
 
 ## Travail réalisé
-1. Suppression du nouveau sélecteur en doublon ; conservation du contrôleur historique.
-2. Correction de l'absence de famille canonique / Area discordante ; aucun fallback visuel inventé.
-3. Séparation de la famille de terrain et de la texture du pinceau 2,5D ; export/import de la famille de base sans trait peint.
-4. Projection **sans stockage concurrent** du WorldSurface sculpté en entrée WorldArea du contrôleur officiel.
-5. Le mode « Tester » appelle le contrôleur **après** mouvement/collision, sur la vraie position du héros. Il affiche la rencontre, bloque le déplacement, propose Continuer ou Lance le combat ; la fenêtre Combat provient des mêmes modules que le runtime 2D. Le retour Combat remet la position canonique du héros et libère le verrou.
-6. Réinitialisation de l'ancre de distance sur nouvelle session, repositionnement et transition Portal, sans compter la téléportation comme déplacement.
-7. Le HTML V80 gelé (sans nouvelle palette) conserve un boot Chromium vérifié ; aucune mutation de la version publiée.
+- Panneau `🐾 Rencontres` séparé des textures, accessible sur téléphone paysage : Area autorisée, famille, chance de 0 à 100, cases Éléments Capture, comptage du catalogue, messages explicites. Affiche seulement les données réellement éditables du Builder.
+- Commandes officielles du Builder appelées depuis le panneau ; les valeurs modifient directement la config consommée au prochain pas du vrai héros en Tester.
+- Sauvegarde/rechargement des chances, éléments et flag de la WorldArea extérieure dans Exporter scène / Importer scène, avec rejet explicite des métadonnées mal formées. Les flags des WorldAreas intérieures suivent la sérialisation déjà officielle des intérieurs.
+- Après changement de zone, réinitialisation, nouvelle carte ou import, les contrôles relisent les données canoniques sans perdre l’édition du monde. Compatibilité de l’ancienne HTML V80 protégée.
 
-## TDD, preuve CI et frontières
-- Les tests RED précédents ont reproduit les erreurs de fallback de famille, Area discordante, couplage texture/famille et ancien test des quatre portes WebP.
-- Nouveau test ciblé : `tests/sculpt-encounter-movement-bridge.test.js` (projection, vraie cadence, snapshot, verrou, intérieur sûr, repositionnement).
-- CI `40577424075` sur SHA `bbf39aafb4d0aaa2559d3687df1f6af1ea16d431` : `npm test` 837/837 PASS, `npm run check` PASS, Chromium de la scène réelle PASS ; vraie marche, pause, reprise et ouverture de l'iframe Combat vérifiées.
-- Sentinelle navigateur renforcée sur SHA `f98d88b6285f84dfdab680c5357caa97f88cc1e0` : exige que l'iframe affiche une arène Capture jouable avec ses capacités et PV, pas uniquement le bon URL. CI en attente au moment de cette mise à jour.
-- Tests de frontière : pas de déclenchement par pixels, pas de moteur concurrent, intérieur sans rencontre par défaut, retour Combat par contrat seulement, HTML V80 conservé.
+## TDD / preuves et gates
+- RED enregistré dans GitHub Actions `40584533459` avant correctif.
+- CI `40585303396` : 842 tests Node PASS, `npm run check` PASS, smoke Chromium PASS.
+- CI `40585699262` sur `0ffdf1f33ac5251586662fe3599e5f06a0f0d80c` : **SUCCESS**, y compris navigateur réel réglant Forêt 100 %, seulement Feu, désactivant Area, exportant/importation, réactivant Area, puis provoquant réellement Braiseau en se déplaçant et ouvrant le combat Capture (5 compétences).
+- Preview dédiée avec la nouvelle version de l’éditeur à republier puis validation utilisateur ciblée avant **GREEN final**.
+- Le vieux World Builder et la production V80 restent immuables. Après test manuel utilisateur : checkpoint `checkpoint/exploration-encounters-editor-green-2026-10-27` sur SHA exact validé.
 
-## État / prochains gates
-NON GREEN tant que la CI du dernier SHA n'est pas vérifiée et la preview sur smartphone paysage validée. Aucun checkpoint final GREEN, aucune fusion, aucun déploiement de production.
-La configuration des probabilités employée par cette preview est **celle du monde de démonstration Exploration déjà utilisé en 2D**, pas une nouvelle configuration enregistrée par le labo sculptable. Le raccord futur à un WorldDocument de l'utilisateur devra injecter sa configuration officielle, sans introduire une deuxième autorité.
+## Prochaine action
+Valider dernier SHA (documentation comprise), épingler l’artefact fonctionnel dans le **seul** workflow Pages de `main`, exécuter prévalidation et vérification HTTPS, fournir lien et recueillir validation mobile. Ne pas fusionner les historiques divergents des branches de jeu dans `main`.

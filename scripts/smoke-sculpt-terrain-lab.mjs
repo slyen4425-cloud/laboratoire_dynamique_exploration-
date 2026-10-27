@@ -2163,10 +2163,12 @@ try{
       document.activeElement?.blur?.();
       return window.__sculptNavProbe().player;
     })()`);
+    const inputTimeBefore=await run('window.__sculptNavProbe().inputElapsedMs');
     await run(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));true`);
     await sleep(135);
     await run(`window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));true`);
     const current=await run(`window.__sculptNavProbe().player`);
+    const inputTimeAfter=await run('window.__sculptNavProbe().inputElapsedMs');
     const projection=await run(`(async()=>{
       const p=await import('./src/render/sculpt-camera-projection.js');
       const view=p.sculptCameraGameView(${angle});
@@ -2174,12 +2176,21 @@ try{
       const b=p.sculptCameraProject(view,${current.x},${current.y});
       return {dx:b.x-a.x,dy:b.y-a.y};
     })()`);
-    const v={angle,initial,current,screenDelta:projection};v66Results.push(v);
-    if(projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
-      throw Error('V66 actual key travel not screen-aligned: '+JSON.stringify(v));
+    const consumedMs=inputTimeAfter-inputTimeBefore;
+    const v={angle,initial,current,screenDelta:projection,
+      consumedMovementMs:consumedMs,
+      projectedSpeed:consumedMs>0?-projection.dy*1000/consumedMs:0};
+    v66Results.push(v);
+    if(consumedMs<30||projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
+      throw Error('V66 actual key travel not screen-aligned or RAF input absent: '+JSON.stringify(v));
   }
-  if(Math.abs(v66Results[0].screenDelta.dy/v66Results[1].screenDelta.dy-1)>.50)
-    throw Error('V66 camera pitch still alters visible walking speed: '+JSON.stringify(v66Results));
+  // Compare pixel speeds per *actual movement RAF time*. Wall-clock sleep is
+  // not a simulation clock: on busy GitHub runners the browser can process
+  // 2 frames for one camera and 8 for the next during the same 135ms sleep.
+  // This keeps the original real keyboard->Collision World gate intact,
+  // without relaxing the speed regression tolerance to conceal a failure.
+  if(Math.abs(v66Results[0].projectedSpeed/v66Results[1].projectedSpeed-1)>.25)
+    throw Error('V66 camera pitch changes actual visible movement speed: '+JSON.stringify(v66Results));
   await run(`document.querySelector('#navigation-toggle').click();true`);
   console.log('V66 real keydown->Movement->Collision World camera view 35°/90°:',JSON.stringify(v66Results));
   // V67 real bridge crossing, unlike the earlier synthetic corridor tests:
@@ -3025,11 +3036,58 @@ try{
     await sleep(110);
   }
   if(!encounterBoot)throw Error('Encounter scene did not boot');
-  const startEncounter=await run(`(()=>{
+  // Old Builder editing semantics in the real 2.5D palette: one WorldArea
+  // enable flag, one normalized EncounterConfig v1 and Capture element picks.
+  const editedEncounter=await run(`(()=>{
     document.querySelector('#new-map-toggle').click();
     const confirm=document.querySelector('#new-map-confirm');
     confirm.checked=true;confirm.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('#new-map-create').click();
+    document.querySelector('#mode-encounters').click();
+    const chance=document.querySelector('#sculpt-encounter-chance');
+    const family=document.querySelector('#sculpt-encounter-family');
+    family.value='forest';family.dispatchEvent(new Event('change',{bubbles:true}));
+    chance.value='100';chance.dispatchEvent(new Event('input',{bubbles:true}));
+    const elements=[...document.querySelectorAll('#sculpt-encounter-elements input')];
+    for(const input of elements){
+      const desired=input.dataset.elementId==='fire';
+      if(input.checked!==desired){
+        input.checked=desired;input.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+    const enabled=document.querySelector('#sculpt-encounter-area-enabled');
+    enabled.checked=false;enabled.dispatchEvent(new Event('change',{bubbles:true}));
+    const before=window.__sculptEncounterEditorProbe();
+    document.querySelector('#scene-export').click();
+    const exported=JSON.parse(document.querySelector('#json').value);
+    document.querySelector('#import').click();
+    const restored=window.__sculptEncounterEditorProbe();
+    const button=document.querySelector('#mode-encounters').getBoundingClientRect();
+    const panel=document.querySelector('#sculpt-encounter-editor').getBoundingClientRect();
+    const exportConfig=exported.encounterConfig?.families.find(x=>x.terrainFamilyId==='forest');
+    enabled.checked=true;enabled.dispatchEvent(new Event('change',{bubbles:true}));
+    const active=window.__sculptEncounterEditorProbe();
+    return {before,restored,active,
+      familyChance:exportConfig?.encounterChancePercent??null,
+      selected:exportConfig?.elementChances.map(x=>x.elementId)??null,
+      savedAreaAllowed:exported.exteriorEncounters?.randomEnabled,
+      buttonVisible:button.right<=innerWidth&&button.left>=0,
+      panelVisible:panel.right<=innerWidth&&panel.left>=0&&panel.height>0};
+  })()`);
+  const authored=editedEncounter;
+  if(!authored.before.available||!authored.before.open||
+     authored.before.chance!==100||authored.before.allowedInArea!==false||
+     authored.restored.chance!==100||authored.restored.allowedInArea!==false||
+     authored.active.allowedInArea!==true||
+     authored.familyChance!==100||authored.savedAreaAllowed!==false||
+     JSON.stringify(authored.selected)!==JSON.stringify(['fire'])||
+     JSON.stringify(authored.active.enabledElementIds)!==JSON.stringify(['fire'])||
+     !authored.buttonVisible||!authored.panelVisible)
+    throw Error('Builder Encounter editor did not persist one canonical authored config: '+
+      JSON.stringify(authored));
+  console.log('2.5D Encounter Builder authoring browser roundtrip:',JSON.stringify(authored));
+
+  const startEncounter=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {encounter:window.__sculptEncounterProbe(),nav:window.__sculptNavProbe()};
   })()`);
@@ -3047,7 +3105,8 @@ try{
   }
   await moveKey('keyUp');
   if(!encountered.pending||!encountered.creatureId||
-     encountered.terrainFamilyId!=='forest'||!encountered.overlayVisible)
+     encountered.terrainFamilyId!=='forest'||encountered.elementId!=='fire'||
+     !encountered.overlayVisible)
     throw Error('Real 2.5D movement did not launch Capture encounter: '+JSON.stringify(encountered));
   const pausedX=await run('window.__sculptNavProbe().player.x');
   await sleep(320);
