@@ -2870,6 +2870,7 @@ $('import').addEventListener('click',()=>{
   updateActorCount();syncActorSelectedControls();
   encounterConfig=imported.encounterConfig;refreshEncounterSettings();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
+  $('surface-family').value=surface.baseTerrainFamilyId;
   loadSurfacePaintAssets();updateSurfaceCount();
   updateSculptAreaControls();
   fit();status(imported.isScene?
