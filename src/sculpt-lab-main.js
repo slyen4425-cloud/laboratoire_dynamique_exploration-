@@ -1,3 +1,5 @@
+import {createSculptEncounterPacer} from './encounters/sculpt-encounter-pacer.js';
+import {evaluateSculptEncounterAfterMovement} from './encounters/sculpt-encounter-movement-adapter.js';
 import {editSculptEncounterChance,editSculptEncounterElement} from './world/sculpt-encounter-authoring-adapter.js';
 import {DEFAULT_TERRAIN_FAMILY_DEFINITIONS} from './world/terrain-family-registry.js';
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
