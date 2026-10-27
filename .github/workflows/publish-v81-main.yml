@@ -1,9 +1,13 @@
-name: Publish V81 on main to GitHub Pages
+# Historic filename retained to update the single existing Pages publisher
+# atomically. No competing deployment workflow or moving feature-branch checkouts.
+name: Publish pinned V80 + isolated Encounter preview
 on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/publish-v81-main.yml']
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/publish-v81-main.yml'
+    paths: ['.github/workflows/publish-v81-main.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,30 +17,90 @@ concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  deploy:
+  verify-and-deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout immutable V80 production source
+        uses: actions/checkout@v4
         with:
-          ref: work/exploration-v80-door-html-cachefix-20261026
+          ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: site
-      - uses: actions/checkout@v4
+      - name: Checkout CI-verified Encounter feature source
+        uses: actions/checkout@v4
         with:
-          ref: work/exploration-v81-mobile-settings-20261027
-          path: v81-source
-      - name: Assemble V80 root and V81 isolated path
+          ref: 04ebe4a237d5cd52f85367a751e0bde6be9fbade
+          path: encounter-source
+      - name: Checkout immutable Capture Combat runtime
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: 11a9f70b5f6cf6850fc4bedfd876d799635c33db
+          path: encounter-source/combat-preview
+      - name: Checkout immutable Capture visual catalog
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: e55fea3b559c348be596d7c16250808a39c315a1
+          path: encounter-source/capture-assets
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify immutable sources and full Encounter CI gates
+        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/v81
-          cp -a v81-source/sculpt-lab-v81.html v81-source/src v81-source/assets site/v81/
+          test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
+          test "$(git -C encounter-source rev-parse HEAD)" = 04ebe4a237d5cd52f85367a751e0bde6be9fbade
+          test "$(git -C encounter-source/combat-preview rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
+          test "$(git -C encounter-source/capture-assets rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
-          test -s site/v81/sculpt-lab-v81.html
+          test -s encounter-source/sculpt-lab.html
+          test -s encounter-source/combat-preview/examples/dom-demo/exploration-encounter.html
+          (
+            cd encounter-source
+            npm test
+            npm run check
+            node scripts/audit-combat-preview.mjs combat-preview
+          )
+      - name: Assemble an isolated directory; never overlay production V80
+        shell: bash
+        run: |
+          set -euo pipefail
+          preview="$GITHUB_WORKSPACE/site/preview/encounters-v80"
+          mkdir -p "$preview"
+          cp encounter-source/sculpt-lab.html encounter-source/sculpt-lab-v80.html "$preview/"
+          for folder in src assets combat-preview capture-assets; do
+            mkdir -p "$preview/$folder"
+            rsync -a --exclude='.git' "encounter-source/$folder/" "$preview/$folder/"
+          done
+          test -s "$preview/src/sculpt-lab-main.js"
+          test -s "$preview/assets/interiors/doors/manifest.json"
+          test -s "$preview/combat-preview/examples/dom-demo/exploration-encounter.html"
+          test -s "$preview/capture-assets/data/assets/catalog/global-visual-assets.v1.json"
+          test -s site/sculpt-lab-v80.html
+          # Sentinel: serving preview must not change the V80 release document.
+          cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
+          printf 'V80 locked; Encounter preview separately staged at /preview/encounters-v80/\n'
+      - name: Real Chromium test of the assembled preview, not a mock page
+        shell: bash
+        run: |
+          set -euo pipefail
+          preview="$GITHUB_WORKSPACE/site/preview/encounters-v80"
+          ln -s "$GITHUB_WORKSPACE/encounter-source/scripts" "$preview/scripts"
+          (
+            cd "$preview"
+            node scripts/smoke-sculpt-terrain-lab.mjs
+          )
+          rm "$preview/scripts"
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: site
       - id: deployment
         uses: actions/deploy-pages@v4
+        if: github.event_name != 'pull_request'
