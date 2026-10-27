@@ -53,12 +53,12 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
-import {demoWorldDocument} from './world/demo-world.js';
+
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
 import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from './capture/capture-creature-catalog-preview-v1.js';
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
-import {createSculptEncounterArea} from './encounters/sculpt-encounter-area-adapter.js';
+import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
@@ -170,7 +170,7 @@ function sculptEncounterStep(){
   const area=navigationEncounterArea();
   const intent=sculptEncounterController.step({
     area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
-    encounterConfig:demoWorldDocument.encounterConfig,
+    encounterConfig:sculptPreviewEncounterConfig,
     captureCatalog:sculptEncounterCatalog,
     playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',
     random:sculptEncounterRandom
@@ -209,7 +209,7 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     });
     if(!releaseSculptEncounter())return false;
     // Only the existing Exploration actor position owns x/y. Combat sends a
-    // validated result, never a replacement WorldDocument or position.
+    // validated result, never a replacement scene or actor position.
     navActor.x=restored.x;navActor.y=restored.y;navActor.moving=false;
     navVisualLevel=navHeight();
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
