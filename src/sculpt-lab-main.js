@@ -50,8 +50,9 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
   findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3-stairs-visible-r15-ramp-v77';
-import {createSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
+import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
+import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -78,6 +79,10 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
+for(const selector of [$('surface-base-family'),$('surface-family')])
+  selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
+$('surface-base-family').value=surface.baseTerrainFamilyId;
+$('surface-family').value=surface.baseTerrainFamilyId;
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
@@ -1139,7 +1144,8 @@ function stop(event){
   if(surfaceDrawing){
     surfaceDrawing=false;surfaceLastCell='';
     const changed=appendSculptSurfaceStroke(surface,{
-      materialId:$('surface-material').value,points:surfaceStrokePoints,
+      materialId:$('surface-material').value,
+      terrainFamilyId:$('surface-family').value,points:surfaceStrokePoints,
       width:Number($('surface-width').value)*SCULPT_TILE.width
     });
     surfaceStrokePoints=[];
@@ -1756,6 +1762,8 @@ function loadSurfacePaintAssets(){
   }
 }
 function updateSurfaceCount(){
+  // UI reads the same WorldSurface as the painter, undo and scene import.
+  $('surface-base-family').value=surface.baseTerrainFamilyId;
   const count=surface.routes.length+surface.zones.length;
   $('surface-count').textContent=count+' route(s) / zone(s) peintes';
   $('surface-undo').disabled=!surfaceHistory.length;
@@ -1763,8 +1771,7 @@ function updateSurfaceCount(){
   navTerrainCache=null;scheduleDraw();
 }
 function surfaceCommit(next){
-  if(JSON.stringify(next.routes)===JSON.stringify(surface.routes)&&
-     JSON.stringify(next.zones)===JSON.stringify(surface.zones))return false;
+  if(JSON.stringify(next)===JSON.stringify(surface))return false;
   surfaceHistory.push(surface);if(surfaceHistory.length>40)surfaceHistory.shift();
   surfaceRedo=[];surface=next;
   loadSurfacePaintAssets();updateSurfaceCount();
@@ -1794,6 +1801,10 @@ function setSurfaceEditing(active){
   }else $('active-tool-label').textContent=editorKind+' · '+selectedMode;
   updatePrecisionActions();scheduleDraw();
 }
+$('surface-base-family').addEventListener('change',()=>{
+  surfaceCommit(normalizeSculptSurface({...surface,
+    baseTerrainFamilyId:$('surface-base-family').value}));
+});
 $('surface-width').addEventListener('input',()=>{
   $('surface-width-value').textContent=$('surface-width').value+' cases';
 });
@@ -1810,8 +1821,9 @@ $('surface-redo').addEventListener('click',()=>{
 window.__sculptSurfaceProbe=()=>Object.freeze({
   active:surfaceEditing,
   routes:surface.routes.length,zones:surface.zones.length,
+  baseTerrainFamilyId:surface.baseTerrainFamilyId,
   features:[...surface.routes,...surface.zones].map(f=>({
-    id:f.id,materialId:f.materialId,width:f.width,points:f.points.length
+    id:f.id,materialId:f.materialId,terrainFamilyId:f.terrainFamilyId,width:f.width,points:f.points.length
   })),
   texturesLoaded:[...surfacePaintImages.keys()],
   undoCount:surfaceHistory.length
