@@ -36,7 +36,7 @@ test('R3C : five wall finishes belong to WorldArea, door choices to Portal visua
   assert.equal(manifest.items.length, 20);
   const canonicalFiles = new Set(manifest.items.map(item => item.file));
   for (const doorAsset of interiors) {
-    assert.match(doorAsset.path, /^\\.\\/assets\\/interiors\\/doors\\/.+\\.png$/);
+    assert.ok(doorAsset.path.startsWith('./assets/interiors/doors/') && doorAsset.path.endsWith('.png'));
     const filename = doorAsset.path.slice(2);
     assert.ok(canonicalFiles.has(filename), filename);
     const png = readFileSync(new URL('../' + filename, import.meta.url));
