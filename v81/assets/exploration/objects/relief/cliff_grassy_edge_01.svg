@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 384">
+<!-- Cliff kit V3: painted faces and a broken turf overhang, same visual footprint as V2. -->
+<defs>
+ <linearGradient id="stone" x1="0" y1="0" x2=".4" y2="1">
+  <stop stop-color="#bd967b"/><stop offset=".37" stop-color="#8d7776"/><stop offset=".7" stop-color="#716574"/><stop offset="1" stop-color="#494c60"/>
+ </linearGradient>
+ <linearGradient id="slab" x1="0" y1="0" x2="1" y2="1">
+  <stop stop-color="#d9ae88"/><stop offset=".52" stop-color="#a88b7c"/><stop offset="1" stop-color="#726677"/>
+ </linearGradient>
+ <linearGradient id="turf" x1="0" y1="0" x2=".2" y2="1">
+  <stop stop-color="#a5c768"/><stop offset=".68" stop-color="#739b50"/><stop offset="1" stop-color="#426f41"/>
+ </linearGradient>
+ <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+  <stop stop-color="#e2c8a1"/><stop offset=".55" stop-color="#c09e7b"/><stop offset="1" stop-color="#977c69"/>
+ </linearGradient>
+</defs>
+<!-- rough silhouette deliberately non-rectangular and free of transparent checker panels -->
+<path d="M17 108 55 76 112 77 165 53 218 67 274 50 351 57 405 48 487 70 550 55 626 70 701 80 749 119 744 274 713 298 670 292 605 314 540 305 477 326 423 313 372 337 302 317 249 337 182 316 122 329 71 294 26 287Z"
+ fill="url(#stone)" stroke="#565664" stroke-width="5" stroke-linejoin="round"/>
+<!-- deep cracks form recessed stone bays rather than tessellated triangles -->
+<path d="M53 135Q93 142 113 166L97 259 75 289 26 287 17 111Z" fill="#83717b" opacity=".86"/>
+<path d="M124 144 188 139 210 187 183 274 130 321 95 279 107 191Z" fill="url(#slab)" opacity=".83"/>
+<path d="M205 144 268 131 290 189 261 267 250 331 184 313 185 262Z" fill="#6c6170" opacity=".68"/>
+<path d="M280 138 352 142 370 201 343 281 302 316 248 333 265 263Z" fill="#bb987e" opacity=".83"/>
+<path d="M370 135 429 147 452 192 427 282 422 312 369 336 346 283Z" fill="#625d70" opacity=".67"/>
+<path d="M449 140 511 145 536 197 515 286 476 325 422 313 430 278Z" fill="url(#slab)" opacity=".84"/>
+<path d="M540 141 616 139 644 199 613 288 606 311 539 304 519 288Z" fill="#685e6e" opacity=".79"/>
+<path d="M627 139 719 119 745 125 742 274 713 298 669 290 614 312 614 287 643 200Z" fill="#a48675" opacity=".82"/>
+<!-- long strata: fine veins follow the mass, never artificial tall straight edges -->
+<g stroke="#e9c5a0" stroke-width="3" stroke-linecap="round" fill="none" opacity=".40">
+ <path d="M42 172q42 9 68-3M136 190q36 10 57-4M278 205q43 9 64-13M451 206q39 9 63-5M638 213q41-8 69 5"/>
+ <path d="M116 284q20 11 39 1M290 281q30 9 47-5M449 287q31 9 48-7M650 273q24 9 47-6"/>
+</g>
+<g stroke="#413e56" stroke-width="4.6" stroke-linecap="round" fill="none" opacity=".43">
+ <path d="M89 164q20 44 9 70l-18 42M216 155q25 37 7 66M368 167q10 39-3 65l-9 27M535 173q26 41 10 70M643 172q-3 42 15 63"/>
+</g>
+<!-- top grass: readable irregular ledge, using the same warm/cool palette as floor -->
+<path d="M17 108 54 79 114 85 166 50 219 67 276 48 348 58 407 48 490 69 551 54 625 70 701 78 749 119
+ 688 132 629 127 586 146 530 135 469 151 422 136 361 152 301 134 244 146 178 130 118 135 71 120Z"
+ fill="url(#turf)" stroke="#557e44" stroke-width="5" stroke-linejoin="round"/>
+<path d="M21 107Q69 133 120 134T225 140T340 144T460 143T570 138T682 133T744 120"
+ fill="none" stroke="url(#rim)" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M23 102Q63 119 115 120T238 130T371 128T504 134T632 122T741 113"
+ fill="none" stroke="#dce6a1" stroke-width="5" opacity=".58"/>
+<!-- tufts and moss at silhouette, all cheap vectors in one external asset -->
+<g fill="none" stroke="#426d3e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".84">
+ <path d="m54 102-9-17 15 10 7-25 7 26M155 116l-9-15 13 8 5-19 11 24M290 120l-10-13 14 5 6-22 7 24"/>
+ <path d="m415 120-7-15 12 8 6-19 10 22M571 119l-8-14 11 7 7-23 7 22M682 110l-9-15 14 9 5-18 10 22"/>
+</g>
+<g fill="#91b56c" opacity=".65"><ellipse cx="112" cy="95" rx="28" ry="8"/><ellipse cx="371" cy="95" rx="32" ry="7"/><ellipse cx="566" cy="90" rx="23" ry="9"/></g>
+<g fill="#d9c3b0" opacity=".38"><circle cx="82" cy="208" r="3"/><circle cx="177" cy="236" r="3"/><circle cx="339" cy="240" r="2.7"/><circle cx="493" cy="241" r="3"/><circle cx="680" cy="237" r="3.2"/></g>
+<g fill="#f7dbdf" opacity=".84"><circle cx="236" cy="100" r="4"/><circle cx="248" cy="98" r="2.5"/><circle cx="514" cy="103" r="3.5"/></g>
+</svg>

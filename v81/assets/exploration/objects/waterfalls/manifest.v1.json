@@ -1,0 +1,469 @@
+{
+  "schemaVersion": 1,
+  "packId": "exploration-waterfall-flow-v3",
+  "ownership": "exploration-world-objects",
+  "runtimeProfile": "mobile-animated-spritesheet-webp-4x4-256-fps12",
+  "source": "V3 animation prototype approved 2026-10-22; frames only downscaled, no new generation",
+  "files": [
+    {
+      "assetId": "object.waterfall.front_wide.forest_stream.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_front_wide_forest_stream_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.forest_stream",
+      "view": "front_wide",
+      "sha256": "96839c8f17af68507ca7bd1f19b950af83e82b7c7c778e18e175c0e350ca3c39",
+      "bytes": 207880,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_front_wide_forest_stream_flow_2p5d_01_sheet.webp",
+        "originalSha256": "9f038e6b59635ce009ae3f62bfe4f33be3e6a4461515bdc054cc6c88064157e0"
+      }
+    },
+    {
+      "assetId": "object.waterfall.front_wide.clear_blue.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_front_wide_clear_blue_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.clear_blue",
+      "view": "front_wide",
+      "sha256": "39330ff31148ab76ce0abf566ea83b6b12cb5d6ce99ffffb3593031b295df4e6",
+      "bytes": 205874,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_front_wide_clear_blue_flow_2p5d_01_sheet.webp",
+        "originalSha256": "1813e80cd7f58c488a82cff1fcfdef01c158f016abf6437182da7938a789a8d6"
+      }
+    },
+    {
+      "assetId": "object.waterfall.front_wide.turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_front_wide_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.turquoise",
+      "view": "front_wide",
+      "sha256": "8a9fd61193234c099a7a3be113719cb8f24a544fcd7f70c494ce4d0c1e2539aa",
+      "bytes": 201206,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_front_wide_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "d0950220b9884bc3792c5545bf52fc88ff4ca44e560fb6a02cb85430f40773f6"
+      }
+    },
+    {
+      "assetId": "object.waterfall.front_wide.canyon_turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_front_wide_canyon_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.canyon_turquoise",
+      "view": "front_wide",
+      "sha256": "d9d425e70a7a03b340ff59f3a501be2ec5348880f1e859dd3651f7cd79da6f32",
+      "bytes": 212828,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_front_wide_canyon_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "2f6399ec245bf8bb7b9061da16fdab13b81f305b3c3ee3fb1db7efa1bf5ee4e3"
+      }
+    },
+    {
+      "assetId": "object.waterfall.front_wide.swamp.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_front_wide_swamp_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.swamp",
+      "view": "front_wide",
+      "sha256": "3c09791fcedc0831790a5c85b95b51db33fdb9fc595fdddb88fdca9ec917121f",
+      "bytes": 212470,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_front_wide_swamp_flow_2p5d_01_sheet.webp",
+        "originalSha256": "54d61236aa7353072a433fdbf36aa33c64bbdf8aca580047545ccc1541a13fc1"
+      }
+    },
+    {
+      "assetId": "object.waterfall.side_narrow.forest_stream.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_side_narrow_forest_stream_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.forest_stream",
+      "view": "side_narrow",
+      "sha256": "191694017f1e4e6aa285b9a09704600774ae1b8654c0a4fd0fc5e5b23b7ae34e",
+      "bytes": 149374,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_side_narrow_forest_stream_flow_2p5d_01_sheet.webp",
+        "originalSha256": "68b3e8a63aadb039175d7823d7ae5d560341554794bc41710819d276c7c24809"
+      }
+    },
+    {
+      "assetId": "object.waterfall.side_narrow.clear_blue.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_side_narrow_clear_blue_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.clear_blue",
+      "view": "side_narrow",
+      "sha256": "563b5f803523451dd0f117210cc067ae1cba0c24501a307f53dbf5ba89ab9ccb",
+      "bytes": 151166,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_side_narrow_clear_blue_flow_2p5d_01_sheet.webp",
+        "originalSha256": "91f9552bf40d8e051bceb3da1b01566acdd81102441d0c4855c6d8a9ea8d0709"
+      }
+    },
+    {
+      "assetId": "object.waterfall.side_narrow.turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_side_narrow_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.turquoise",
+      "view": "side_narrow",
+      "sha256": "457494091d4a4938f7af52743346ce1abb3726cbdab59e3db75bf53d6f23e908",
+      "bytes": 147956,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_side_narrow_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "db6f955d6676d832202c343959db4d87adebf184bcb9fb3b0c415628b35fdbec"
+      }
+    },
+    {
+      "assetId": "object.waterfall.side_narrow.canyon_turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_side_narrow_canyon_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.canyon_turquoise",
+      "view": "side_narrow",
+      "sha256": "6a027072f26b11f88aad371131959d54efcc54e5e90dac3e21838770ffcab849",
+      "bytes": 153934,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_side_narrow_canyon_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "79b274ad8124091c812edc7501d0876ff8d089c26ea6134ff56c68451cd6f542"
+      }
+    },
+    {
+      "assetId": "object.waterfall.side_narrow.swamp.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_side_narrow_swamp_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.swamp",
+      "view": "side_narrow",
+      "sha256": "59b940eeb3334becbe74dbee3759406f96873d69f1ff0d7081b9ed237a38d8db",
+      "bytes": 150664,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_side_narrow_swamp_flow_2p5d_01_sheet.webp",
+        "originalSha256": "0dc764fe7c3a431729ff8601b908ed8cc3e87cfa2c1d7bad9b24565caa30b717"
+      }
+    },
+    {
+      "assetId": "object.waterfall.three_quarter.forest_stream.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_three_quarter_forest_stream_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.forest_stream",
+      "view": "three_quarter",
+      "sha256": "475ae0e9dea6a1281b21fb2ea3b2c2d55febf35bd511bbc475e4ba1d6b140f2b",
+      "bytes": 215732,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_three_quarter_forest_stream_flow_2p5d_01_sheet.webp",
+        "originalSha256": "6d388dff755f2442c22e42c9b8ebf2f22c07fde353752b8e2dd615c4523a6cd5"
+      }
+    },
+    {
+      "assetId": "object.waterfall.three_quarter.clear_blue.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_three_quarter_clear_blue_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.clear_blue",
+      "view": "three_quarter",
+      "sha256": "ea5de0f7511a9af83292c8f954c05e0fbe91d736fd4dd9c840ec0af9ebd7a385",
+      "bytes": 216318,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_three_quarter_clear_blue_flow_2p5d_01_sheet.webp",
+        "originalSha256": "abbff9d6e277c2a6b9c1956aede34da2536277cda6491034cf80b8916345c6e2"
+      }
+    },
+    {
+      "assetId": "object.waterfall.three_quarter.turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_three_quarter_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.turquoise",
+      "view": "three_quarter",
+      "sha256": "edbec918e4be4e2784123d1cb943b3ac9e9cbac1c9cf8e21bd9ca1da3016ceb8",
+      "bytes": 212530,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_three_quarter_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "8f3bd5f4bee98decf9dfa893bc4fe96097f677282a545104ddb255101ddb12bb"
+      }
+    },
+    {
+      "assetId": "object.waterfall.three_quarter.canyon_turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_three_quarter_canyon_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.canyon_turquoise",
+      "view": "three_quarter",
+      "sha256": "79b9a929cd2d53723d8368a85fbf614d17d94fb90d5b6b4307f9f62723769978",
+      "bytes": 224072,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_three_quarter_canyon_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "f58cbd68049e9fea3d9ce569bc2505a09dcf25c719ed3af30552ef47c1e4dda7"
+      }
+    },
+    {
+      "assetId": "object.waterfall.three_quarter.swamp.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_three_quarter_swamp_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.swamp",
+      "view": "three_quarter",
+      "sha256": "89c5612cea17beb559402a34b91363ce24d23897a36df10497721e12d30c0a99",
+      "bytes": 219932,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_three_quarter_swamp_flow_2p5d_01_sheet.webp",
+        "originalSha256": "ec04e5f416a28a28154de8be92ee4b13bd1c2bc8e552f845986321e8ebde0467"
+      }
+    },
+    {
+      "assetId": "object.waterfall.tiered.forest_stream.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_tiered_forest_stream_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.forest_stream",
+      "view": "tiered",
+      "sha256": "887f5b8e6ae6916b2c0a7bd37881ea2e8bba150fe072cf732a65da250fa54af4",
+      "bytes": 214084,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_tiered_forest_stream_flow_2p5d_01_sheet.webp",
+        "originalSha256": "176874393e2c2e659047cc38bfbf05698f68f8086ce0d2f011f312dbad0997ed"
+      }
+    },
+    {
+      "assetId": "object.waterfall.tiered.clear_blue.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_tiered_clear_blue_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.clear_blue",
+      "view": "tiered",
+      "sha256": "4b99ed0a17df0c389734bc274f5badcb3cf4f2bc5176fd1c51d16c3322ca553f",
+      "bytes": 212318,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_tiered_clear_blue_flow_2p5d_01_sheet.webp",
+        "originalSha256": "c98c02ae8e2b2e026fcb2bbd030816107cf07f0a36d0949f6ea4bc52fa9550d4"
+      }
+    },
+    {
+      "assetId": "object.waterfall.tiered.turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_tiered_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.turquoise",
+      "view": "tiered",
+      "sha256": "605446e7374cc966f141f0f885ac0c2a73e62c9b0201a85602c9ad49068bcdc5",
+      "bytes": 206428,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_tiered_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "276120e6a40fcc1c5ab1e0ea8e90d9d5a7f188c7bb95302733ec9b399ac5c3f8"
+      }
+    },
+    {
+      "assetId": "object.waterfall.tiered.canyon_turquoise.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_tiered_canyon_turquoise_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.canyon_turquoise",
+      "view": "tiered",
+      "sha256": "c8f94cafc303f990fbc13ef572a5b9340e8014cc8888f012323125dfc509ce5c",
+      "bytes": 220426,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_tiered_canyon_turquoise_flow_2p5d_01_sheet.webp",
+        "originalSha256": "0aed1699c99cc62592e265056c83cbe52901424e16ec9bd9c2028d42a73be417"
+      }
+    },
+    {
+      "assetId": "object.waterfall.tiered.swamp.flow.01",
+      "path": "assets/exploration/objects/waterfalls/waterfall_tiered_swamp_flow_2p5d_01_sheet.webp",
+      "role": "animated-decor-visual",
+      "waterMaterialId": "water.swamp",
+      "view": "tiered",
+      "sha256": "e274a8c0f0b2740130cab3c050a47c93fce86b0279ed08c23e6b5b8a75e3930b",
+      "bytes": 220214,
+      "animation": {
+        "columns": 4,
+        "rows": 4,
+        "frames": 16,
+        "fps": 12,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "loop": true
+      },
+      "source": {
+        "prototypePack": "exploration-waterfalls-vertical-flow-v3",
+        "filename": "waterfall_tiered_swamp_flow_2p5d_01_sheet.webp",
+        "originalSha256": "6b0fd46f2410973d8b656029bedd48a73d87ed70f88435f95af1a098fe3791b1"
+      }
+    }
+  ]
+}
