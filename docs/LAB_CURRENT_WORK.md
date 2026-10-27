@@ -21,6 +21,11 @@ CI et URL publique réellement vérifiées avant annonce GREEN.
 Ne pas fusionner les historiques divergents de main et V80.
 La branche V82 séparée reste une préparation documentaire non intégrée, abandonnée au profit de ce lot unique.
 
+## Audit du code historique (2026-10-27)
+Ancien panneau confirmé : builder.html section .terrain-encounter-panel.
+Contrôleur confirmé : src/builder/world-builder-main.js, avec updateTerrainFamilyEncounterProfile, setTerrainFamilyEncounterElementEnabled et setAreaEncounterRandomEnabled depuis world-builder-draft.js ; catalogue depuis capture-creature-catalog-provider.js.
+Le nouvel éditeur src/sculpt-lab-main.js exporte une scène sculptée, pas encore le WorldDocument canonique avec encounterConfig. Le raccord exige un adapter de sérialisation explicite et des tests de round-trip, sans copier les états du Builder.
+
 ## État
 Panneau mobile codé en branche. Raccordement rencontres encore à implémenter.
 NON GREEN, aucune URL de test annoncée.
