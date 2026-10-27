@@ -16,14 +16,14 @@ jobs:
       - run: npm run check
       - run: npm test
       - name: Confirm preview entrypoint
-        run: test -s sculpt-lab-v80.html
+        run: test -s sculpt-lab-v81.html
       - name: Package V81 preview for inspection
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: exploration-v81-preview
           path: |
-            sculpt-lab-v80.html
+            sculpt-lab-v81.html
             src/
             assets/
           if-no-files-found: error
