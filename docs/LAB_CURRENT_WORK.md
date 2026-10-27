@@ -1,36 +1,26 @@
-# LAB_CURRENT_WORK — Rencontres 2,5D : réintégrer l’édition du Builder
+# LAB_CURRENT_WORK — World Builder : assemblage visuel des mondes
 
-Date : 2026-10-27
-Branche : `work/exploration-v80-encounters-editor-20261027`
-Base exacte : `04ebe4a237d5cd52f85367a751e0bde6be9fbade` — intégration 2,5D + Combat CI vérifiée, puis validation fonctionnelle par l’utilisateur sur smartphone le 27/10.
-Checkpoint de départ : `checkpoint/exploration-start-encounters-editor-v80-2026-10-27` (créé avant modification du présent lot).
-PR #260 (brouillon) cible la branche précédente `work/exploration-v80-encounters-terrain-owner-20261027`.
-Production V80 sur GitHub Pages inchangée, preview des rencontres isolée sous `/preview/encounters-v80/`.
+Date : 2026-10-28
+Branche : `work/exploration-world-assembler-2026-10-28`
+Dernier code technique GREEN de référence : `ed2d7bc3a4fe31879a8cf0426c461b908015661d` (842 tests Node / Chromium, éditeur de rencontres et combat, preview V80 validée).
+Checkpoint de départ créé **avant** modification : `checkpoint/exploration-start-world-assembler-2026-10-28` sur le SHA ci-dessus.
+V80 stable : fichier et éditeur historiquement publiés laissés inchangés.
 
-## Demande utilisateur
-Le gameplay des rencontres fonctionne et a été validé en jeu. Il manque la **partie éditable du Builder 2D** (autoriser les rencontres par WorldArea, choisir famille, régler chance %, activer les éléments de Capture) dans le laboratoire 2,5D. Les mêmes données doivent suivre Exporter scène / Importer scène et alimenter immédiatement le mode Tester, pas une simulation parallèle.
+## Demande
+Créer depuis Exploration un nouvel écran « World Builder », inspiré de la vue d'assemblage des salles du constructeur de donjon RPG : zones/instances reliées par passages, choix du point de départ, édition de chaque zone et export/import complet.
 
-## Autorités et frontières
-- `WorldSurface.terrainFamilyId` commande la famille réelle (pas la texture).
-- `EncounterConfig v1` (format officiel `WorldDocument.encounterConfig`) est la seule configuration des chances/éléments : le panneau 2,5D invoque **les commandes du Builder historique** `updateTerrainFamilyEncounterProfile` et `setTerrainFamilyEncounterElementEnabled`. Aucune deuxième table de probabilité.
-- `WorldArea.encounters.randomEnabled` reste le flag de zone : commande officielle `setAreaEncounterRandomEnabled` ; intérieur = `entry.area.encounters`, extérieur = champ de transport `exteriorEncounters` de la scène, projeté en WorldArea.
-- Le catalogue Capture possède seul les créatures/éléments/raretés. L’éditeur ne peut que cocher les éléments ; la rareté n’est jamais copiée/éditée dans Exploration.
-- Le contrôleur des rencontres, Collision World, Combat Bridge et ImmersiveHost existants restent les propriétaires du gameplay.
-- `sculpt-scene-preview` conserve le format scène expérimental v1 ; nouveaux champs optionnels `encounterConfig` et `exteriorEncounters` rétrocompatibles. Anciennes scènes sans champs : configuration démo officielle initiale en mémoire, pas un second système.
-- Ne modifier ni `sculpt-lab-v80.html` ni la racine stable V80.
+## Frontières et propriétaires
+- Modèle canonique `WorldDocument v3` : zones `WorldArea`, spawns et `Portal`, événements et familles existantes. AUCUN format `WorldGraph` persistant ni deuxième topologie.
+- Commands d'édition : `src/builder/world-builder-draft.js`, prolongé avec création/suppression protégée de WorldArea et liens via `addPortal`.
+- Vue graphe : projection **purement visuelle** dérivée du même WorldDocument, aucun doublon de coordonnées de gameplay.
+- Éditeur détaillé : `builder.html` via un handoff `WorldDocument` validé, à consommation unique, puis retour avec les changements. Pas de nouvelle logique de terrain, collisions ou de scènes.
+- Sauvegarde locale : une seule copie exportable du document canonique via adapter dédié, jamais de format parallèle ; import/export JSON vérifiés.
+- L'atelier sculpt 2,5D conserve son format expérimental indépendant : le raccord inter-éditeurs 2,5D sera une étape contractuelle distincte plutôt qu'une conversion cachée.
+- Compétences, Creature Capture, Dungeon, PvP, V80 production restent inchangés.
 
-## Travail réalisé
-- Panneau `🐾 Rencontres` séparé des textures, accessible sur téléphone paysage : Area autorisée, famille, chance de 0 à 100, cases Éléments Capture, comptage du catalogue, messages explicites. Affiche seulement les données réellement éditables du Builder.
-- Commandes officielles du Builder appelées depuis le panneau ; les valeurs modifient directement la config consommée au prochain pas du vrai héros en Tester.
-- Sauvegarde/rechargement des chances, éléments et flag de la WorldArea extérieure dans Exporter scène / Importer scène, avec rejet explicite des métadonnées mal formées. Les flags des WorldAreas intérieures suivent la sérialisation déjà officielle des intérieurs.
-- Après changement de zone, réinitialisation, nouvelle carte ou import, les contrôles relisent les données canoniques sans perdre l’édition du monde. Compatibilité de l’ancienne HTML V80 protégée.
-
-## TDD / preuves et gates
-- RED enregistré dans GitHub Actions `40584533459` avant correctif.
-- CI `40585303396` : 842 tests Node PASS, `npm run check` PASS, smoke Chromium PASS.
-- CI `40585699262` sur `0ffdf1f33ac5251586662fe3599e5f06a0f0d80c` : **SUCCESS**, y compris navigateur réel réglant Forêt 100 %, seulement Feu, désactivant Area, exportant/importation, réactivant Area, puis provoquant réellement Braiseau en se déplaçant et ouvrant le combat Capture (5 compétences).
-- Preview dédiée avec la nouvelle version de l’éditeur à republier puis validation utilisateur ciblée avant **GREEN final**.
-- Le vieux World Builder et la production V80 restent immuables. Après test manuel utilisateur : checkpoint `checkpoint/exploration-encounters-editor-green-2026-10-27` sur SHA exact validé.
-
-## Prochaine action
-Valider dernier SHA (documentation comprise), épingler l’artefact fonctionnel dans le **seul** workflow Pages de `main`, exécuter prévalidation et vérification HTTPS, fournir lien et recueillir validation mobile. Ne pas fusionner les historiques divergents des branches de jeu dans `main`.
+## Travail prévu et critères de sortie
+1. TDD RED : créer régions/instances, vrai Portal validé, retours, protection suppression/point initial, export/import identique, handoff détaillé.
+2. Interface séparée mobile paysage : graphe de WorldAreas, liaisons, panneau d'édition de liaisons, bouton d'ouverture de l'éditeur détaillé, export/import, remise à zéro explicite.
+3. E2E Chromium entrée depuis l'exploration, création, raccord, édition retour, rechargement et export.
+4. CI `npm test` + `npm run check`, vérifications sans régressions Combat/Exploration, et site preview isolé. GREEN final seulement après test utilisateur mobile.
+Prochain geste : implémenter les commandes canoniques puis construire l'UI dédiée et le contrat de transfert.
