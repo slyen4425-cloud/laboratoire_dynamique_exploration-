@@ -41,7 +41,7 @@ export function normalizeSculptSurface(raw={}){
     baseTraversalRuleId:source.baseTraversalRuleId,routes,zones,rivers:[]});
 }
 export function appendSculptSurfaceStroke(raw,{
-  materialId,points=[],width=50
+  materialId,terrainFamilyId=null,points=[],width=50
 }={}){
   const surface=normalizeSculptSurface(raw);
   const meta=lookup.get(materialId);
@@ -55,8 +55,12 @@ export function appendSculptSurfaceStroke(raw,{
   const feature={
     id:'sculpt-surface-'+serial,points:pts,
     materialId,width:Math.max(6,Math.min(480,Number(width)||50)),
-    terrainFamilyId:meta.kind==='route'?'road':
-      materialId==='ground.snow'?'snow':materialId==='ground.sand'?'desert':'forest'
+    // The terrain family is authored gameplay data, never derived from an image.
+    // When omitted by an older caller, inherit the WorldSurface's semantic
+    // base for zones or the canonical route family for route geometry.
+    terrainFamilyId:typeof terrainFamilyId==='string'&&terrainFamilyId.trim()
+      ?terrainFamilyId.trim()
+      :(meta.kind==='route'?'road':surface.baseTerrainFamilyId)
   };
   if(meta.kind==='route')feature.traversalRuleId='terrain.road';
   return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]});
