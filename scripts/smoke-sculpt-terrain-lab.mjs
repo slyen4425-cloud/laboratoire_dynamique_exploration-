@@ -3081,9 +3081,26 @@ try{
      !combatLaunch.state.pending||
      !combatLaunch.iframeSrc.includes('/combat-preview/examples/dom-demo/exploration-encounter.html'))
     throw Error('2.5D bridge did not open real same-origin Combat host: '+JSON.stringify(combatLaunch));
+  let combatReady=null;
+  for(let i=0;i<70;i++){
+    await sleep(130);
+    combatReady=await run(`(()=>{
+      const doc=document.querySelector('.combat-overlay__frame')?.contentDocument;
+      return doc ? {status:doc.querySelector('[data-bridge-status]')?.textContent??'',
+        skills:doc.querySelectorAll('[data-combat-skill]').length,
+        enemyHud:!!doc.querySelector('[data-combat-hp-value="enemy-1"]'),
+        bootError:doc.documentElement.dataset.encounterBootstrapError??null}:null;
+    })()`);
+    if(combatReady?.status.includes('Combat réel') && combatReady.skills>0 &&
+       combatReady.enemyHud)break;
+  }
+  if(!combatReady?.status.includes('Combat réel')||!combatReady.enemyHud||
+     combatReady.skills<1||combatReady.bootError)
+    throw Error('2.5D iframe has no real playable Capture combat: '+JSON.stringify(combatReady));
   console.log('2.5D real movement -> single Encounter Controller -> Combat iframe Chromium:',
     JSON.stringify({first:encountered.creatureId,second:second.creatureId,
-      stoppedAt:pausedX,previewReleased:true,combatPackaged:true}));
+      stoppedAt:pausedX,previewReleased:true,combatPackaged:true,
+      realCombatSkills:combatReady.skills}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
