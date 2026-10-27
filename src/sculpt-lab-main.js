@@ -422,6 +422,9 @@ const navKeys=new Set();
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
+// Passive real-RAF diagnostic: how much simulation time truly processed input.
+// Does not influence movement, encounter cadence, collisions or camera.
+let navInputElapsedMs=0;
 let navTerrainCache=null,navSkyCache=null,terrainRasterBuilds=0;
 let cliffAtlasImage=null,cliffAtlasReady=false,cliffAtlasError=false;
 const cliffAtlasLoader=new Image();
@@ -1696,6 +1699,7 @@ function navigationTick(time){
     navMetricFrames++;
     navVisualTime+=Math.min(250,elapsed)/1000;
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
+      navInputElapsedMs+=elapsed;
       const previousX=navActor.x,previousY=navActor.y;
       const world=navigationWorld(),context=navigationContext();
       // Critical V21: retain elapsed time during dropped frames, but apply
@@ -1772,6 +1776,7 @@ function setNavigationTesting(on){
     navVisualLevel=navHeight();
     navVisualTime=0;navLastVisualPaint=-Infinity;
     navMetricLast=0;navMetricFrames=0;navMetricDistance=0;
+    navInputElapsedMs=0;
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
@@ -1865,6 +1870,7 @@ window.__sculptNavProbe=()=>Object.freeze({
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
   blocked:navBlocked,blockReason:navBlockReason,maxStep:navigationMaxStep(),
   speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
+  inputElapsedMs:navInputElapsedMs,
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
   deckBridgeId:activeSculptBridge()?.id??null,
