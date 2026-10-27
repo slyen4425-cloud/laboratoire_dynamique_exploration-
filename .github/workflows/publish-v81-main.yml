@@ -35,13 +35,13 @@ jobs:
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: 11a9f70b5f6cf6850fc4bedfd876d799635c33db
-          path: encounter-source/combat-preview
+          path: combat-source
       - name: Checkout immutable Capture visual catalog
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: e55fea3b559c348be596d7c16250808a39c315a1
-          path: encounter-source/capture-assets
+          path: capture-source
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -51,16 +51,16 @@ jobs:
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
           test "$(git -C encounter-source rev-parse HEAD)" = 04ebe4a237d5cd52f85367a751e0bde6be9fbade
-          test "$(git -C encounter-source/combat-preview rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
-          test "$(git -C encounter-source/capture-assets rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
+          test "$(git -C combat-source rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
+          test "$(git -C capture-source rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
           test -s encounter-source/sculpt-lab.html
-          test -s encounter-source/combat-preview/examples/dom-demo/exploration-encounter.html
+          test -s combat-source/examples/dom-demo/exploration-encounter.html
           (
             cd encounter-source
             npm test
             npm run check
-            node scripts/audit-combat-preview.mjs combat-preview
+            node scripts/audit-combat-preview.mjs ../combat-source
           )
       - name: Assemble an isolated directory; never overlay production V80
         shell: bash
@@ -69,10 +69,16 @@ jobs:
           preview="$GITHUB_WORKSPACE/site/preview/encounters-v80"
           mkdir -p "$preview"
           cp encounter-source/sculpt-lab.html encounter-source/sculpt-lab-v80.html "$preview/"
-          for folder in src assets combat-preview capture-assets; do
+          # Verify the Exploration tests against their original repository
+          # tree; Combat is a separate owner and has separate tests. Never
+          # put two nested Git repositories under npm test's discovery root.
+          for folder in src assets; do
             mkdir -p "$preview/$folder"
             rsync -a --exclude='.git' "encounter-source/$folder/" "$preview/$folder/"
           done
+          mkdir -p "$preview/combat-preview" "$preview/capture-assets"
+          rsync -a --exclude='.git' combat-source/ "$preview/combat-preview/"
+          rsync -a --exclude='.git' capture-source/ "$preview/capture-assets/"
           test -s "$preview/src/sculpt-lab-main.js"
           test -s "$preview/assets/interiors/doors/manifest.json"
           test -s "$preview/combat-preview/examples/dom-demo/exploration-encounter.html"
