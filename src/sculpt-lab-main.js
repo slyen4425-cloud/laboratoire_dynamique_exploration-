@@ -1149,7 +1149,7 @@ function stop(event){
   if(surfaceDrawing){
     surfaceDrawing=false;surfaceLastCell='';
     const changed=appendSculptSurfaceStroke(surface,{
-      materialId:$('surface-material').value,terrainFamilyId:$('surface-family').value,points:surfaceStrokePoints,
+      materialId:$('surface-material').value,terrainFamilyId:surfaceFamilySelect?.value??surface.baseTerrainFamilyId,points:surfaceStrokePoints,
       width:Number($('surface-width').value)*SCULPT_TILE.width
     });
     surfaceStrokePoints=[];
@@ -2796,8 +2796,10 @@ $('navigation-area-door').addEventListener('click',()=>{
   changeSculptArea(transition.currentAreaId,{spawn:transition});
 });
 const surfaceFamilySelect=$('surface-family');
-surfaceFamilySelect.replaceChildren(...DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.label;return o;}));
-surfaceFamilySelect.value=surface.baseTerrainFamilyId;
+if(surfaceFamilySelect){
+  surfaceFamilySelect.replaceChildren(...DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.label;return o;}));
+  surfaceFamilySelect.value=surface.baseTerrainFamilyId;
+}
 const encounterCatalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
 let selectedEncounterFamilyId='plain';
 function refreshEncounterSettings(){
