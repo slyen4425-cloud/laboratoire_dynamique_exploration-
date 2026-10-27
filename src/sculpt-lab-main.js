@@ -2826,8 +2826,8 @@ function refreshEncounterSettings(){
   }));
   $('encounter-summary').textContent='Catalogue Capture (aperçu en lecture seule) · '+encounterCatalog.listCreatures().length+' créatures';
 }
-$('encounter-family').addEventListener('change',()=>{selectedEncounterFamilyId=$('encounter-family').value;refreshEncounterSettings();});
-$('encounter-chance').addEventListener('input',()=>{
+$('encounter-family')?.addEventListener('change',()=>{selectedEncounterFamilyId=$('encounter-family').value;refreshEncounterSettings();});
+$('encounter-chance')?.addEventListener('input',()=>{
   encounterConfig=editSculptEncounterChance(encounterConfig,selectedEncounterFamilyId,Number($('encounter-chance').value));
   $('encounter-chance-value').textContent=$('encounter-chance').value+' %';
 });
@@ -2873,7 +2873,7 @@ $('import').addEventListener('click',()=>{
   encounterConfig=imported.encounterConfig;refreshEncounterSettings();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
   encounterPacer.reset();pendingSculptEncounter=null;
-  $('surface-family').value=surface.baseTerrainFamilyId;
+  if(surfaceFamilySelect)surfaceFamilySelect.value=surface.baseTerrainFamilyId;
   loadSurfacePaintAssets();updateSurfaceCount();
   updateSculptAreaControls();
   fit();status(imported.isScene?
