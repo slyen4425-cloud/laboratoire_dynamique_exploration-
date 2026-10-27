@@ -35,33 +35,13 @@ jobs:
   publish-preview:
     needs: tests
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}v81/sculpt-lab-v81.html
-    concurrency:
-      group: exploration-v81-pages
-      cancel-in-progress: false
     steps:
-      - name: Checkout validated V80 root
-        uses: actions/checkout@v4
-        with:
-          ref: work/exploration-v80-door-html-cachefix-20261026
-          path: site
-      - name: Checkout V81 isolated preview
-        uses: actions/checkout@v4
-        with:
-          path: v81-source
-      - name: Assemble independent V81 folder without altering V80
+      - uses: actions/checkout@v4
+      - name: Verify V81 preview entrypoint
+        run: test -s sculpt-lab-v81.html
+      - name: Preserve validated preview branch
         run: |
-          mkdir -p site/v81
-          cp -a v81-source/sculpt-lab-v81.html v81-source/src v81-source/assets site/v81/
-          if [ -d v81-source/capture-assets ]; then cp -a v81-source/capture-assets site/v81/; fi
-          if [ -d v81-source/combat-preview ]; then cp -a v81-source/combat-preview site/v81/; fi
-          test -s site/sculpt-lab-v80.html
-          test -s site/v81/sculpt-lab-v81.html
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B preview/v81
+          git push --force origin preview/v81
