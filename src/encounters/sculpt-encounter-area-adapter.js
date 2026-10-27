@@ -1,5 +1,10 @@
 import { normalizeWorldArea } from '../world/world-area-model.js';
 import { SCULPT_EXTERIOR_AREA_ID } from '../world/sculpt-interior-area-link.js';
+import { demoWorldDocument } from '../world/demo-world.js';
+
+// The sculpt preview borrows the existing normalized Explorer demo policy.
+// This is a read-only projection, not a second configuration authority.
+export const sculptPreviewEncounterConfig = demoWorldDocument.encounterConfig;
 
 // Read-only projection of the ONE edited WorldSurface into the existing
 // Encounter Controller's WorldArea input contract. Never stores a second
