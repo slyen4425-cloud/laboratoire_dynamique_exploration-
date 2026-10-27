@@ -119,6 +119,8 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+const encounterPacer=createSculptEncounterPacer();
+let pendingSculptEncounter=null;
 let navHeroRenderTransform=null; // diagnostic only: actual Canvas matrix at sprite draw
 // Display-only altitude, separate from native Collision World coordinates.
 let navVisualLevel=null;
