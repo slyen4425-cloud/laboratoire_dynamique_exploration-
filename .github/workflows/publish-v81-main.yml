@@ -28,9 +28,8 @@ jobs:
         run: |
           set -euo pipefail
           test -s sculpt-lab-v81.html
-          test -d src
-          test -d assets
-          test -s index.html
+          test -s src/sculpt-lab-main.js
+          test -s builder.html
           grep -q '<html' sculpt-lab-v81.html
           echo "Validated source SHA: ${GITHUB_SHA}"
       - uses: actions/configure-pages@v5
