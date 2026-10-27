@@ -1,6 +1,7 @@
 // The sculpt preview stores standard WorldSurface v3 routes/zones directly.
 // This editor adapter does not create a second route model or WorldDocument.
 import {normalizeWorldSurface} from './surface-model.js';
+import {TERRAIN_FAMILY_IDS} from './terrain-family-registry.js';
 
 export const SCULPT_SURFACE_MATERIALS=Object.freeze([
   Object.freeze({id:'road.dirt',kind:'route',label:'Route de terre',assetKind:'path'}),
@@ -46,6 +47,8 @@ export function appendSculptSurfaceStroke(raw,{
   const surface=normalizeSculptSurface(raw);
   const meta=lookup.get(materialId);
   const pts=cleanPoints(points);
+  const family=terrainFamilyId??(meta?.kind==='route'?'road':surface.baseTerrainFamilyId);
+  if(!TERRAIN_FAMILY_IDS.includes(family))throw new RangeError('Famille de terrain inconnue');
   if(!meta||pts.length===0||
       surface.routes.length+surface.zones.length>=SCULPT_SURFACE_LIMIT)return surface;
   if(pts.length===1)pts.push({x:pts[0].x+.001,y:pts[0].y+.001});
@@ -55,7 +58,7 @@ export function appendSculptSurfaceStroke(raw,{
   const feature={
     id:'sculpt-surface-'+serial,points:pts,
     materialId,width:Math.max(6,Math.min(480,Number(width)||50)),
-    terrainFamilyId:terrainFamilyId??(meta.kind==='route'?'road':surface.baseTerrainFamilyId)
+    terrainFamilyId:family
   };
   if(meta.kind==='route')feature.traversalRuleId='terrain.road';
   return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]});
