@@ -1452,6 +1452,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    encounterPacer.reset();pendingSculptEncounter=null;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
     $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
