@@ -1,8 +1,11 @@
-name: Publish V81 on main to GitHub Pages
+name: Publish Exploration to GitHub Pages
 on:
   push:
     branches: [main]
     paths:
+      - 'sculpt-lab-v*.html'
+      - 'src/**'
+      - 'assets/**'
       - '.github/workflows/publish-v81-main.yml'
   workflow_dispatch:
 permissions:
@@ -10,7 +13,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: pages
+  group: github-pages
   cancel-in-progress: false
 jobs:
   deploy:
@@ -20,23 +23,19 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: work/exploration-v80-door-html-cachefix-20261026
-          path: site
-      - uses: actions/checkout@v4
-        with:
-          ref: work/exploration-v81-mobile-settings-20261027
-          path: v81-source
-      - name: Assemble V80 root and V81 isolated path
+      - name: Validate release inputs
+        shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/v81
-          cp -a v81-source/sculpt-lab-v81.html v81-source/src v81-source/assets site/v81/
-          test -s site/sculpt-lab-v80.html
-          test -s site/v81/sculpt-lab-v81.html
+          test -s sculpt-lab-v81.html
+          test -d src
+          test -d assets
+          test -s index.html
+          grep -q '<html' sculpt-lab-v81.html
+          echo "Validated source SHA: ${GITHUB_SHA}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: .
       - id: deployment
         uses: actions/deploy-pages@v4
