@@ -154,9 +154,20 @@ export function createEncounterController({
     return true;
   }
 
+  // Discontinuous navigation (spawn, edit mode, teleport) is not distance
+  // travelled. Only Encounter Controller may reset its own cadence anchor.
+  function resetAnchor() {
+    if (activeEncounterId) return false;
+    lastPosition = null;
+    travelledSinceCheck = 0;
+    resetAnchorOnNextStep = false;
+    return true;
+  }
+
   return Object.freeze({
     step,
     release,
+    resetAnchor,
     get activeEncounterId() {
       return activeEncounterId;
     },
