@@ -16,7 +16,7 @@ export function terrainFamilyAtWorldPosition(rawSurface,point){
   if(!Number.isFinite(point?.x)||!Number.isFinite(point?.y))throw new TypeError('finite world position required');
   const surface=normalizeWorldSurface(rawSurface);
   // The last painted stroke wins within its layer; roads override ground zones.
-  for(const layer of [surface.routes,surface.zones,surface.rivers]){
+  for(const layer of [surface.routes,surface.zones]){
     for(let i=layer.length-1;i>=0;i--){
       const stroke=layer[i];
       if(distanceToStroke(point,stroke)<=stroke.width/2)return stroke.terrainFamilyId;
