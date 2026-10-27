@@ -1,13 +1,19 @@
 # Historic filename retained to update the single existing Pages publisher
-# atomically. No competing deployment workflow or moving feature-branch checkouts.
+# atomically. This is the ONLY remaining Pages deployment authority.
+# The old pages-preview.yml publisher is retired to prevent a later V80-only
+# deployment from removing the isolated Encounter preview path.
 name: Publish pinned V80 + isolated Encounter preview
 on:
   pull_request:
     branches: [main]
-    paths: ['.github/workflows/publish-v81-main.yml']
+    paths:
+      - '.github/workflows/publish-v81-main.yml'
+      - '.github/workflows/pages-preview.yml'
   push:
     branches: [main]
-    paths: ['.github/workflows/publish-v81-main.yml']
+    paths:
+      - '.github/workflows/publish-v81-main.yml'
+      - '.github/workflows/pages-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
