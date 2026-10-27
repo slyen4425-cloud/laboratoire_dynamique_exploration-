@@ -86,7 +86,11 @@ function lineForPortal(portal,positions){
 
 function installWorldAssembler(){
   const toast=byId('status-toast');
-  const on=(el,event,callback,options)=>el.addEventListener(event,callback,options);
+  const listenerCleanups=[];
+  const on=(el,event,callback,options)=>{
+    el.addEventListener(event,callback,options);
+    listenerCleanups.push(()=>el.removeEventListener(event,callback,options));
+  };
   const transfer=new URLSearchParams(window.location.search).get('return')==='1'
     ?readWorldAssemblerHandoff(window.sessionStorage):null;
   let draft=transfer?.document??readWorldAssemblerDraft(window.localStorage)
@@ -302,6 +306,7 @@ function installWorldAssembler(){
     saved:autosaveAvailable,source:'WorldDocument'
   });
   return {dispose(){
+    for(const cleanup of listenerCleanups)cleanup();
     delete window.__worldAssemblerProbe;
   }};
 }
