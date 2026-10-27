@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="theme-color" content="#0b1822">
+ <title>GenSrpG — Constructeur de mondes</title>
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-v1">
+</head>
+<body>
+ <div class="app-shell">
+  <header class="app-header">
+   <div class="app-brand">
+    <a href="./sculpt-lab.html" class="go-back" aria-label="Retour au laboratoire Exploration">‹</a>
+    <div><span class="eyebrow">GenSrpG · Monster Capture · Exploration</span>
+     <h1>Constructeur de mondes</h1>
+    </div>
+   </div>
+   <div class="header-actions">
+    <span id="save-state" class="save-state" role="status">Monde local</span>
+    <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
+    <label class="import-btn" for="import-world">↑ Importer JSON
+     <input type="file" id="import-world" accept=".json,.world.json,application/json">
+    </label>
+   </div>
+  </header>
+  <div class="workspace">
+   <aside class="left-rail" aria-label="Bibliothèque de zones">
+    <div class="panel-heading"><span>STRUCTURE</span><strong id="world-area-count">1 zone</strong></div>
+    <label class="field">Nom du monde
+      <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
+    </label>
+    <div class="section-head"><h2>Zones et instances</h2></div>
+    <div id="area-list" class="area-list" aria-label="Sélectionner une zone"></div>
+    <form id="area-add-form" class="add-panel">
+     <strong>Nouvelle destination</strong>
+     <label class="field">Nom de la zone
+      <input id="area-name" name="areaName" maxlength="64" required placeholder="Ex. Forêt ancienne">
+     </label>
+     <label class="field">Type d'espace
+      <select id="area-kind">
+       <option value="exterior">🌲 Région extérieure</option>
+       <option value="interior">🏰 Instance / intérieur</option>
+      </select>
+     </label>
+     <button class="accent block" type="submit">+ Ajouter au monde</button>
+    </form>
+    <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
+   </aside>
+   <main class="center-panel" aria-label="Graphe de navigation du monde">
+    <div class="canvas-header">
+     <div><span class="eyebrow">PLAN DU MONDE</span>
+      <h2>Carte des destinations</h2>
+      <p>Sélectionne une zone. Les flèches représentent les passages réellement sauvegardés.</p>
+     </div>
+     <div class="canvas-actions">
+      <button id="center-world" type="button">⌖ Recentrer</button>
+      <button id="reset-world" type="button">+ Nouveau monde</button>
+     </div>
+    </div>
+    <div id="graph-scroll" class="graph-scroll" tabindex="0" aria-label="Faire défiler la carte des zones">
+     <div id="graph-stage" class="graph-stage">
+      <svg id="graph-links" class="graph-links" aria-label="Liaisons de passages" role="img"></svg>
+      <div id="graph-nodes" class="graph-nodes"></div>
+     </div>
+    </div>
+    <div class="canvas-footer">
+     <span><i class="legend-dot start"></i> Point de départ</span>
+     <span><i class="legend-dot region"></i> Région</span>
+     <span><i class="legend-dot instance"></i> Instance</span>
+     <span id="world-portal-count" class="footer-count">0 passage</span>
+    </div>
+   </main>
+   <aside class="inspector" aria-label="Détails de la zone sélectionnée">
+    <div class="panel-heading"><span>INSPECTEUR</span><span id="area-kind-badge">ZONE</span></div>
+    <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
+    <h2 id="selected-name">Zone principale</h2>
+    <p id="selected-id" class="technical-id"></p>
+    <div class="stat-row">
+     <div><small>Dimensions</small><strong id="selected-size">—</strong></div>
+     <div><small>Passages</small><strong id="selected-links">0</strong></div>
+    </div>
+    <button id="edit-area" class="accent block" type="button">✎ Éditer cette zone</button>
+    <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
+    <div class="section-head"><h3>Relier des zones</h3></div>
+    <form id="connect-form" class="link-form">
+     <label class="field">Depuis
+      <select id="link-from"></select>
+     </label>
+     <label class="field">Vers
+      <select id="link-to"></select>
+     </label>
+     <label class="checkbox-row"><input id="link-back" type="checkbox" checked>
+      Créer aussi le passage retour</label>
+     <button class="accent block" id="connect-areas" type="submit">↗ Relier les zones</button>
+    </form>
+    <div class="section-head"><h3>Passages de cette zone</h3></div>
+    <div id="selected-portals" class="portals-list"></div>
+    <div class="inspector-bottom">
+     <button id="remove-area" class="danger block" type="button">Supprimer cette zone</button>
+     <p class="help-note">Un départ, une zone liée ou une zone référencée par un événement ne peut pas être supprimé.</p>
+    </div>
+   </aside>
+  </div>
+  <div class="app-toast" id="status-toast" role="status" aria-live="polite">Prêt pour l’assemblage.</div>
+ </div>
+ <dialog id="reset-dialog" class="dialog">
+  <form method="dialog">
+   <h2>Créer un nouveau monde ?</h2>
+   <p>Le monde actuel restera disponible uniquement si tu l'as exporté. La copie locale sera remplacée.</p>
+   <div class="dialog-actions">
+    <button value="cancel" type="submit">Annuler</button>
+    <button value="confirm" class="danger" type="submit">Créer le monde vierge</button>
+   </div>
+  </form>
+ </dialog>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-v1"></script>
+</body>
+</html>

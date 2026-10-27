@@ -47,6 +47,10 @@ import {
   saveWorldBuilderTestHandoff
 } from './world-builder-test-handoff.js?rev=surface-traversal-replay-v1';
 import {
+  readWorldAssemblerHandoff,
+  saveWorldAssemblerHandoff
+} from './world-assembler-handoff.js';
+import {
   clampBuilderZoom,
   computeBuilderView,
   canvasPointToWorld,
@@ -535,6 +539,12 @@ function updateWorldObjectOverrides(
 }
 
 const builderParams = new URLSearchParams(window.location.search);
+const worldAssemblerMode = builderParams.get('worldAssembler') === '1';
+const assemblerSession = worldAssemblerMode
+  ? readWorldAssemblerHandoff(window.sessionStorage)
+  : null;
+if(worldAssemblerMode&&!assemblerSession)
+  throw Error('World Builder : transfert du monde introuvable ou expiré');
 const isReliefCanyonPilot = builderParams.get('demo') === 'relief-canyon-v1';
 const defaultBuilderDocument = isReliefCanyonPilot
   ? reliefCanyonPilotDocument
@@ -560,9 +570,10 @@ if (resumeBuilderTest && !resumedTestDocument) {
 }
 
 let draft = createWorldBuilderDraft(
-  resumedTestDocument ?? defaultBuilderDocument
+  assemblerSession?.document ?? resumedTestDocument ?? defaultBuilderDocument
 );
 let selectedAreaId =
+  assemblerSession?.areaId ??
   draft.initialAreaId ??
   draft.areas[0]?.id ??
   null;
@@ -7489,7 +7500,25 @@ addEventListener(
   { once: true }
 );
 
+$('world-assembler-back').hidden=!worldAssemblerMode;
+$('world-assembler-open').hidden=worldAssemblerMode;
+if(worldAssemblerMode){
+  $('world-assembler-back').addEventListener('click',()=>{
+    try{
+      // The existing detailed Builder validates its authoritative draft first;
+      // handoff is a transient canonical WorldDocument, not a second save.
+      const document=importWorldBuilderDocument(serializeWorldBuilderDraft(draft));
+      saveWorldAssemblerHandoff(window.sessionStorage,document,selectedAreaId);
+      window.location.assign('./world-assembler.html?return=1');
+    }catch(error){
+      setStatus('Retour au monde bloqué : '+error.message,true);
+    }
+  });
+}
 refreshControls();
+if (worldAssemblerMode) {
+  setStatus('Édition de '+selectedAreaId+' · Retour au monde pour conserver les changements');
+}
 if (resumeBuilderTest) {
   setStatus(
     'Session de test restaurée dans le World Builder'

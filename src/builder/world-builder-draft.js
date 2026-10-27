@@ -267,6 +267,103 @@ export function createBlankWorldBuilderDraft({
   });
 }
 
+/*
+ * World Assembler commands. Nodes/links are WorldArea and Portal data in the
+ * SAME WorldDocument draft as the existing detailed Builder. The graph UI is
+ * a read-only projection and never owns a second topology.
+ */
+function slugWorldAreaName(name) {
+  return String(name??'').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-|-$/g,'').slice(0,58)||'zone';
+}
+function nextWorldAreaId(areas, name) {
+  const base=slugWorldAreaName(name),used=new Set(areas.map(x=>x.id));
+  if(!used.has(base))return base;
+  let i=2;
+  while(used.has(base+'-'+i))i++;
+  return base+'-'+i;
+}
+
+export function addWorldArea(draft,{
+  name='Nouvelle zone',kind='exterior',width,height
+}={}) {
+  if(!draft || !Array.isArray(draft.areas))throw Error('WorldDocument requis');
+  if(draft.areas.length>=64)throw Error('Limite de 64 zones pour cet assemblage');
+  const next=clone(draft);
+  const isInterior=kind==='interior';
+  if(kind!=='interior'&&kind!=='exterior')throw Error('Type de WorldArea inconnu');
+  const id=nextWorldAreaId(next.areas,name);
+  const w=Math.max(128,Math.min(20000,finite(width,isInterior?720:1800)));
+  const h=Math.max(128,Math.min(20000,finite(height,isInterior?480:1200)));
+  const family=next.terrainFamilies?.some(x=>x.id==='plain')
+    ?'plain':next.terrainFamilies?.[0]?.id;
+  if(!family)throw Error('Aucune famille de terrain dans ce WorldDocument');
+  next.areas.push({
+    id,kind,width:w,height:h,
+    encounters:{randomEnabled:!isInterior},
+    surface:{baseTerrainFamilyId:family,
+      baseMaterialId:isInterior?'floor.wood.house':'ground.dirt',
+      baseTraversalRuleId:'terrain.ground',zones:[],routes:[],rivers:[]},
+    objects:[],actors:[],obstacles:[],walls:[],
+    spawns:[{id:'arrivee',x:w/2,y:h/2}]
+  });
+  return createWorldBuilderDraft(next);
+}
+
+export function removeWorldArea(draft,areaId) {
+  const area=draft?.areas?.find(x=>x.id===areaId);
+  if(!area)throw Error('WorldArea introuvable');
+  if(draft.areas.length<2)throw Error('La dernière WorldArea doit rester');
+  if(draft.initialAreaId===areaId)
+    throw Error('Impossible de supprimer la zone de départ initiale');
+  if(draft.portals?.some(p=>p.sourceAreaId===areaId||p.targetAreaId===areaId))
+    throw Error('WorldArea liée à un passage Portal : supprime les passages avant');
+  if(draft.events?.some(e=>e.sourceAreaId===areaId||
+      e.areaId===areaId||e.targetAreaId===areaId))
+    throw Error('WorldArea liée à un événement : retire son événement avant');
+  const next=clone(draft);
+  next.areas=next.areas.filter(x=>x.id!==areaId);
+  return createWorldBuilderDraft(next);
+}
+
+export function setWorldInitialArea(draft,areaId) {
+  const area=draft?.areas?.find(x=>x.id===areaId);
+  if(!area||!area.spawns?.length)throw Error('Zone de départ sans Spawn');
+  const next=clone(draft);
+  next.initialAreaId=area.id;
+  next.initialSpawnId=area.spawns[0].id;
+  return createWorldBuilderDraft(next);
+}
+
+export function connectWorldAreas(draft,{
+  sourceAreaId,targetAreaId,returnPortal=false
+}={}) {
+  const source=draft?.areas?.find(x=>x.id===sourceAreaId);
+  const target=draft?.areas?.find(x=>x.id===targetAreaId);
+  if(!source||!target||source.id===target.id)
+    throw Error('Choisir deux WorldAreas distinctes');
+  if(!target.spawns?.length|| (returnPortal&&!source.spawns?.length))
+    throw Error('Un Spawn de destination est requis');
+  // Existing Portal constructor and normalizer are the only link owners.
+  function connectOne(input,from,to){
+    if(input.portals?.some(p=>p.sourceAreaId===from.id&&p.targetAreaId===to.id))
+      return input;
+    const n=input.portals?.filter(p=>p.sourceAreaId===from.id).length??0;
+    const y=Math.max(35,Math.min(from.height-35,from.height*(.27+((n%4)*.15))));
+    const trigger={kind:'point',x:Math.max(32,from.width-46),y,radius:20};
+    return addPortal(input,{
+      sourceAreaId:from.id,targetAreaId:to.id,
+      targetSpawnId:to.spawns[0].id,trigger,
+      enabled:true,visual:{visible:true,marker:'exit',label:to.id}
+    });
+  }
+  let next=connectOne(draft,source,target);
+  if(returnPortal)next=connectOne(next,target,source);
+  return createWorldBuilderDraft(next);
+}
+
 export function validateWorldBuilderDraft(
   draft,
   {
