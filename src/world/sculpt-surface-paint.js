@@ -41,7 +41,7 @@ export function normalizeSculptSurface(raw={}){
     baseTraversalRuleId:source.baseTraversalRuleId,routes,zones,rivers:[]});
 }
 export function appendSculptSurfaceStroke(raw,{
-  materialId,points=[],width=50
+  materialId,points=[],width=50,terrainFamilyId
 }={}){
   const surface=normalizeSculptSurface(raw);
   const meta=lookup.get(materialId);
@@ -55,8 +55,7 @@ export function appendSculptSurfaceStroke(raw,{
   const feature={
     id:'sculpt-surface-'+serial,points:pts,
     materialId,width:Math.max(6,Math.min(480,Number(width)||50)),
-    terrainFamilyId:meta.kind==='route'?'road':
-      materialId==='ground.snow'?'snow':materialId==='ground.sand'?'desert':'forest'
+    terrainFamilyId:terrainFamilyId??(meta.kind==='route'?'road':surface.baseTerrainFamilyId)
   };
   if(meta.kind==='route')feature.traversalRuleId='terrain.road';
   return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]});
