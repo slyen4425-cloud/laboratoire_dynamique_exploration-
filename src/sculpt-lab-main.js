@@ -1405,6 +1405,10 @@ function navigationTick(time){
           {maxSpeed:navSpeed()*intent.speedMultiplier},undefined,context);
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navMetricDistance+=moved;
+      if(!pendingSculptEncounter&&encounterPacer.advance(moved)){
+        const result=evaluateSculptEncounterAfterMovement({surface,position:navActor,distanceMoved:moved,config:encounterConfig,captureCatalog:encounterCatalog});
+        if(result.triggered){pendingSculptEncounter=result;status('🐾 Rencontre : '+(encounterCatalog.resolveCreature(result.creatureId)?.name??'Créature')+' · Combat non raccordé');}
+      }
       navBlocked=moved<.001;
       navBlockReason=null;
       if(navBlocked){
