@@ -3025,11 +3025,58 @@ try{
     await sleep(110);
   }
   if(!encounterBoot)throw Error('Encounter scene did not boot');
-  const startEncounter=await run(`(()=>{
+  // Old Builder editing semantics in the real 2.5D palette: one WorldArea
+  // enable flag, one normalized EncounterConfig v1 and Capture element picks.
+  const editedEncounter=await run(`(()=>{
     document.querySelector('#new-map-toggle').click();
     const confirm=document.querySelector('#new-map-confirm');
     confirm.checked=true;confirm.dispatchEvent(new Event('change',{bubbles:true}));
     document.querySelector('#new-map-create').click();
+    document.querySelector('#mode-encounters').click();
+    const chance=document.querySelector('#sculpt-encounter-chance');
+    const family=document.querySelector('#sculpt-encounter-family');
+    family.value='forest';family.dispatchEvent(new Event('change',{bubbles:true}));
+    chance.value='100';chance.dispatchEvent(new Event('input',{bubbles:true}));
+    const elements=[...document.querySelectorAll('#sculpt-encounter-elements input')];
+    for(const input of elements){
+      const desired=input.dataset.elementId==='fire';
+      if(input.checked!==desired){
+        input.checked=desired;input.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+    }
+    const enabled=document.querySelector('#sculpt-encounter-area-enabled');
+    enabled.checked=false;enabled.dispatchEvent(new Event('change',{bubbles:true}));
+    const before=window.__sculptEncounterEditorProbe();
+    document.querySelector('#scene-export').click();
+    const exported=JSON.parse(document.querySelector('#json').value);
+    document.querySelector('#import').click();
+    const restored=window.__sculptEncounterEditorProbe();
+    const button=document.querySelector('#mode-encounters').getBoundingClientRect();
+    const panel=document.querySelector('#sculpt-encounter-editor').getBoundingClientRect();
+    const exportConfig=exported.encounterConfig?.families.find(x=>x.terrainFamilyId==='forest');
+    enabled.checked=true;enabled.dispatchEvent(new Event('change',{bubbles:true}));
+    const active=window.__sculptEncounterEditorProbe();
+    return {before,restored,active,
+      familyChance:exportConfig?.encounterChancePercent??null,
+      selected:exportConfig?.elementChances.map(x=>x.elementId)??null,
+      savedAreaAllowed:exported.exteriorEncounters?.randomEnabled,
+      buttonVisible:button.right<=innerWidth&&button.left>=0,
+      panelVisible:panel.right<=innerWidth&&panel.left>=0&&panel.height>0};
+  })()`);
+  const authored=editedEncounter;
+  if(!authored.before.available||!authored.before.open||
+     authored.before.chance!==100||authored.before.allowedInArea!==false||
+     authored.restored.chance!==100||authored.restored.allowedInArea!==false||
+     authored.active.allowedInArea!==true||
+     authored.familyChance!==100||authored.savedAreaAllowed!==false||
+     JSON.stringify(authored.selected)!==JSON.stringify(['fire'])||
+     JSON.stringify(authored.active.enabledElementIds)!==JSON.stringify(['fire'])||
+     !authored.buttonVisible||!authored.panelVisible)
+    throw Error('Builder Encounter editor did not persist one canonical authored config: '+
+      JSON.stringify(authored));
+  console.log('2.5D Encounter Builder authoring browser roundtrip:',JSON.stringify(authored));
+
+  const startEncounter=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {encounter:window.__sculptEncounterProbe(),nav:window.__sculptNavProbe()};
   })()`);
@@ -3047,7 +3094,8 @@ try{
   }
   await moveKey('keyUp');
   if(!encountered.pending||!encountered.creatureId||
-     encountered.terrainFamilyId!=='forest'||!encountered.overlayVisible)
+     encountered.terrainFamilyId!=='forest'||encountered.elementId!=='fire'||
+     !encountered.overlayVisible)
     throw Error('Real 2.5D movement did not launch Capture encounter: '+JSON.stringify(encountered));
   const pausedX=await run('window.__sculptNavProbe().player.x');
   await sleep(320);
