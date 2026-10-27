@@ -15,3 +15,13 @@ jobs:
           node-version: '22'
       - run: npm run check
       - run: npm test
+      - name: Package V81 preview for inspection
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exploration-v81-preview
+          path: |
+            sculpt-lab-v80.html
+            src/
+            assets/
+          if-no-files-found: error
