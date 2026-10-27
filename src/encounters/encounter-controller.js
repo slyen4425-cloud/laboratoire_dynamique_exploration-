@@ -45,7 +45,7 @@ export function createEncounterController({
     rulesetId,
     random = Math.random
   } = {}) {
-    if (!validPosition(player) || !area?.surface) {
+    if (!validPosition(player) || !area?.surface || area.id !== player.currentAreaId) {
       return null;
     }
 
@@ -100,6 +100,13 @@ export function createEncounterController({
       current.x,
       current.y
     );
+
+    // An invalid WorldSurface has no semantic encounter authority.
+    // Do not guess a terrain family from its visual material.
+    if (!family.terrainFamilyId) {
+      travelledSinceCheck = 0;
+      return null;
+    }
 
     const resolved = resolveTerrainFamilyEncounter({
       terrainFamilyId: family.terrainFamilyId,
