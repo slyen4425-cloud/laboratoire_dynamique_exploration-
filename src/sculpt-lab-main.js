@@ -2797,7 +2797,7 @@ $('navigation-area-door').addEventListener('click',()=>{
 });
 const surfaceFamilySelect=$('surface-family');
 surfaceFamilySelect.replaceChildren(...DEFAULT_TERRAIN_FAMILY_DEFINITIONS.map(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.label;return o;}));
-surfaceFamilySelect.value='forest';
+surfaceFamilySelect.value=surface.baseTerrainFamilyId;
 const encounterCatalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
 let selectedEncounterFamilyId='plain';
 function refreshEncounterSettings(){
