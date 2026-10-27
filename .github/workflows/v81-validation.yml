@@ -32,7 +32,6 @@ jobs:
 
   publish-preview:
     needs: tests
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     concurrency:
       group: exploration-v81-preview
