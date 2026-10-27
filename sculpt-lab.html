@@ -450,12 +450,13 @@ body.sculpt-immersive #sculpt-encounter-editor{
   overflow:hidden;background:#071016;overscroll-behavior:none;touch-action:none}
 .combat-overlay__frame{display:block;width:100%;height:100%;border:0;
   background:#071016;touch-action:manipulation}
+.world-entry-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.world-entry-links a{padding:8px 11px;border:1px solid #528f90;border-radius:9px;background:#16313b;color:#def5eb;font-size:.77rem;text-decoration:none;white-space:nowrap}@media(max-width:600px){.world-entry-links{gap:4px}.world-entry-links a{padding:6px;font-size:.67rem}}
 </style>
 </head>
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
 <p>Terrain visible en priorité · outils avancés sous la carte.</p></div>
-<a href="./builder.html" aria-label="Retour au World Builder 2D sûr">← Builder 2D sûr</a></header>
+<div class="world-entry-links"><a href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 World Builder</a> <a href="./builder.html" aria-label="Ouvrir le Builder 2D détaillé">Éditeur 2D</a></div></header>
 <main>
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
