@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {builtinSculptMapPresets} from '../src/builder/sculpt-builtin-map-presets.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
