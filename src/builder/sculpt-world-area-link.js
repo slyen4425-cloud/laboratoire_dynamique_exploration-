@@ -35,10 +35,14 @@ export function sculptWorldAreaScene(area){
     :createSculptTerrain(grid);
   if(terrain.width!==grid.width||terrain.height!==grid.height)
     throw Error('Dimensions 2,5D de la WorldArea incohérentes');
+  const objects=normalizeSculptPreviewObjects(area.objects??[]);
+  const actors=normalizeSculptPreviewActors(area.actors??[]);
+  if(objects.length!==(area.objects??[]).length||
+     actors.length!==(area.actors??[]).length)
+    throw Error('Objets/acteurs incompatibles avec le laboratoire 2,5D : '+
+      'ouverture refusée sans effacer les données du WorldDocument');
   return Object.freeze({
-    terrain,objects:normalizeSculptPreviewObjects(area.objects??[]),
-    actors:normalizeSculptPreviewActors(area.actors??[]),
-    surface:normalizeSculptSurface(area.surface)
+    terrain,objects,actors,surface:normalizeSculptSurface(area.surface)
   });
 }
 export function saveSculptWorldArea(draft,areaId,scene){
