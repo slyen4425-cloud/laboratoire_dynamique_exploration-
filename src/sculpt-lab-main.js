@@ -677,7 +677,7 @@ function draw(){
   }
   lastRenderStats=result;
   if(activeInteriorId||sculptWorldCurrentInterior()){
-    // Render WorldDocument rooms with existing canonical wall renderer.
+    // Draw rooms with the same single wall and doorway renderer.
     ctx.save();
     // Canonical WorldArea boundary owns the visible interior cut-out AND the
     // Collision World limit; do not make a second editor-only silhouette.
@@ -710,7 +710,7 @@ function draw(){
       worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point'):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interiorDoorPreview??interior?.exitPortal?.trigger??worldExit?.trigger,
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??worldExit?.trigger,
       stairPortals:sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
         .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal')
         .map(p=>interiorConnectorPreview?.id===p.id?
