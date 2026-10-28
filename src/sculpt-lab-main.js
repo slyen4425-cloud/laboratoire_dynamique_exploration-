@@ -1801,7 +1801,7 @@ function navigationTick(time){
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on)setSculptEncounterEditorOpen(false);
-  // Old WorldDocuments predate encounter profiles. The user must explicitly
+  // Old world saves predate encounter profiles. The user must explicitly
   // approve initializing them; intentional 0% gameplay is never overwritten.
   if(on&&sculptWorldDraft&&!sculptEncounterSetupOffered&&
       encounterConfigNeedsExplicitInitialization(sculptEncounterConfig)){
