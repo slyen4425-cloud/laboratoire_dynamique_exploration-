@@ -72,7 +72,8 @@ import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
-import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff} from './builder/world-assembler-handoff.js';
+import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
+import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js';
 import {createWorldBuilderDraft} from './builder/world-builder-draft.js';
 
 const $=id=>document.getElementById(id);
@@ -3555,7 +3556,16 @@ function installSculptWorldAreaEditing(){
   document.body.classList.add('world-area-editing');
   $('world-workspace-tabs').hidden=false;
   $('world-area-portal-panel').open=false;
-  const transfer=readWorldAssemblerHandoff(window.sessionStorage);
+  const requestedAreaId=new URLSearchParams(window.location.search).get('areaId');
+  // The handoff is intentionally consumed once. On a page refresh we
+  // restore from the SAME canonical WorldDocument saved by World Builder,
+  // never from an independent Sculpt scene or parallel WorldGraph.
+  const transfer=readWorldAssemblerHandoff(window.sessionStorage)??(()=>{
+    const document=readWorldAssemblerDraft(window.localStorage);
+    return document&&requestedAreaId&&
+      document.areas.some(a=>a.id===requestedAreaId)
+      ?{document,areaId:requestedAreaId}:null;
+  })();
   if(!transfer){
     sculptWorldStatus('Session World Builder absente. Retourne au constructeur de mondes.',true);
     $('world-area-portal-panel').hidden=false;
@@ -3566,17 +3576,28 @@ function installSculptWorldAreaEditing(){
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
+  function persistCurrentWorldSculpt(){
+    commitCurrentSculptWorldArea();
+    // The single WorldDocument is written into its canonical storage key.
+    // No independent map/scene key or duplicate portal owner is introduced.
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+    return sculptWorldDraft;
+  }
   function saveAndReturnWorldArea({newArea=false}={}){
     try{
-      commitCurrentSculptWorldArea();
+      persistCurrentWorldSculpt();
       saveWorldAssemblerHandoff(
         window.sessionStorage,sculptWorldDraft,sculptWorldAreaId);
       window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
         (newArea?'&createArea=1':''));
-    }catch(error){sculptWorldStatus('Enregistrement bloqué : '+error.message,true);}
+    }catch(error){
+      sculptWorldStatus('Enregistrement bloqué : '+error.message,true);
+      window.alert('Retour impossible sans enregistrer la carte : '+error.message);
+    }
   }
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
+  $('world-workspace-return-float').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-create-another').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
   // The header World Builder link must never silently discard pending edits.
   document.querySelector('.world-entry-links a[href="./world-assembler.html"]')
@@ -3621,6 +3642,12 @@ function installSculptWorldAreaEditing(){
     });}catch(error){sculptWorldStatus(error.message,true);}
   });
   $('world-portal-traverse').addEventListener('click',traverseSculptWorldPortal);
+  // Persist on refresh/navigation as well; the landing screen can recover
+  // the selected area using areaId and this exact WorldDocument.
+  window.addEventListener('pagehide',()=>{
+    try{persistCurrentWorldSculpt();}
+    catch(error){console.warn('WorldArea non sauvegardée au changement de page :',error);}
+  },{once:true});
   try{
     mountWorldSculptArea(transfer.areaId);
     sculptWorldStatus('WorldArea '+sculptWorldArea().label+
@@ -3660,7 +3687,7 @@ function installSculptMapPresetPalette(){
   };
   function refresh(selectedId){
     try{
-      const library=readSculptMapPresets(window.localStorage);
+      const library=listAvailableSculptMapPresets(window.localStorage);
       const previous=selectedId??select.value;
       select.replaceChildren(new Option('Choisir une carte enregistrée',''),
         ...library.map(p=>new Option(p.name+' · '+p.scene.terrain.width+
@@ -3672,11 +3699,13 @@ function installSculptMapPresetPalette(){
       return library;
     }catch(error){presetStatus(error.message,true);return [];}
   }
-  const selected=()=>readSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
+  const selected=()=>listAvailableSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
   select.addEventListener('change',()=>refresh(select.value));
   $('sculpt-map-preset-save').addEventListener('click',()=>{
     try{
       const name=$('sculpt-map-preset-name').value.trim();
+      if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))
+        throw Error('Ce nom appartient à un modèle fourni : choisis un nouveau nom pour ta copie.');
       const existing=readSculptMapPresets(window.localStorage)
         .find(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
       if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
@@ -3725,6 +3754,8 @@ function installSculptMapPresetPalette(){
       const existing=readSculptMapPresets(window.localStorage).find(p=>
         p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr'));
       if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
+      if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr')))
+        throw Error('Le nom de ce préset est réservé à une carte fournie : renomme le préset avant import.');
       const saved=addImportedSculptMapPreset(window.localStorage,imported);
       refresh(saved.id);presetStatus('Préset « '+saved.name+' » importé.');
     }catch(error){presetStatus('Import refusé : '+error.message,true);}
