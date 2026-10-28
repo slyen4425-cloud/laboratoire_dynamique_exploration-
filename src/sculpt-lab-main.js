@@ -1804,6 +1804,7 @@ function setNavigationTesting(on){
     if(sculptWorldDraft)$('world-area-portal-panel').open=false;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
+    $('navigation-hud').open=false; // unobstructed playfield by default
     $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
     $('navigation-toggle').textContent='✎ Éditer';
     $('navigation-toggle').setAttribute('aria-pressed','true');
