@@ -544,7 +544,8 @@ const images=new Map();
 const themes=sculptGroundMaterials;
 const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
   meta.id.startsWith('floor.')).map(meta=>meta.id));
-const displayedBaseMaterialId=()=>activeInteriorId?
+const sculptWorldCurrentInterior=()=>sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)?.kind==='interior';
+const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
   $('interior-floor-base').value:$('material').value;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
@@ -596,7 +597,8 @@ function toggleRibbon(kind){
 }
 async function setTheme(){
   const id=displayedBaseMaterialId();
-  if(!(activeInteriorId?interiorFloorMaterials:themes).includes(id))return;
+  if(!((activeInteriorId||sculptWorldCurrentInterior())
+    ?interiorFloorMaterials:themes).includes(id))return;
   const revision=++groundMaterialRevision;
   const texture=await imageFor(id);
   if(revision!==groundMaterialRevision)return;
@@ -608,7 +610,7 @@ function dimensions(){
   return {width:Math.max(1,bounds.width),height:Math.max(1,bounds.height)};
 }
 function cameraView(){
-  if(activeInteriorId)return sculptCameraInteriorView(Number($(
+  if(activeInteriorId||sculptWorldCurrentInterior())return sculptCameraInteriorView(Number($(
     navigationTesting?'navigation-camera-angle':'interior-camera-angle').value));
   return navigationTesting
     ?sculptCameraGameView(Number($('navigation-camera-angle').value))
@@ -1504,11 +1506,12 @@ function stop(event){
    stepMovement. Collision World alone decides whether the sculpt terrain blocks
    that movement. The editor never persists player navigation in map JSON. */
 function navigationWorld(){
-  const current=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  const current=sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area
+    ??sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId);
   return {width:terrain.width*SCULPT_TILE.width,
     height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[],
-    boundary:current?.area.boundary,
-    walls:current?.area.walls??[]};
+    boundary:current?.boundary,
+    walls:current?.walls??[]};
 }
 function navigationMaxStep(){
   // V75: an abrupt sculpt cell boundary is NEVER a free walking step. The
@@ -2899,7 +2902,7 @@ function mountSculptArea(snapshot){
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   updateHistoryButtons();updateObjectCount();updateActorCount();
   updateSurfaceCount();loadSurfacePaintAssets();syncObjectSelectedControls();
-  if(activeInteriorId){
+  if(activeInteriorId||sculptWorldCurrentInterior()){
     const base=interiorFloorMaterials.includes(surface.baseMaterialId)?
       surface.baseMaterialId:'floor.wood.house';
     $('interior-floor-base').value=base;
