@@ -10,6 +10,7 @@ import {
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=edge-gates-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=edge-gates-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
+import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -338,6 +339,18 @@ function installWorldAssembler(){
   });
   function openAreaEditor(url){
     try{
+      // The 2.5D pane must never open an unrelated demo scene when a legacy
+      // WorldArea exceeds the native SculptTerrain grid. Keep the original
+      // WorldDocument unchanged and offer the real Area creation form.
+      if(url.startsWith('./sculpt-lab.html?')){
+        try{sculptWorldAreaScene(getSelected());}
+        catch(error){
+          status('Zone non éditable en 2,5D : '+error.message+
+            ' · crée une nouvelle carte aux dimensions compatibles dans le panneau Monde. La zone d’origine est conservée.',true);
+          byId('area-name').focus();
+          return;
+        }
+      }
       saveWorldAssemblerHandoff(window.sessionStorage,draft,selectedId);
       persist();
       const next=url.startsWith('./sculpt-lab.html?')
