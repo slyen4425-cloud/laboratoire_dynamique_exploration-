@@ -125,6 +125,28 @@ try{
     pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
     socket.send(JSON.stringify({id,method,params}));
   });
+  // In an old WorldDocument all encounter probabilities may still be 0 %.
+  // The real Tester asks for explicit consent before initializing its
+  // canonical EncounterConfig. Without handling that native confirmation,
+  // awaited Runtime.evaluate remains blocked and the browser gate hangs.
+  // Only this exact legacy-encounter consent is accepted automatically by
+  // this TEST; other confirmations remain under their own explicit gates.
+  let legacyEncounterConsentCount=0;
+  let legacyEncounterConsentError=null;
+  socket.addEventListener('message',event=>{
+    const packet=JSON.parse(event.data);
+    if(packet.method!=='Page.javascriptDialogOpening'||
+       packet.params?.type!=='confirm'||
+       !packet.params?.message?.startsWith('Ce monde ne peut déclencher aucune rencontre (0 % sur tous les terrains).'))
+      return;
+    legacyEncounterConsentCount++;
+    void send('Page.handleJavaScriptDialog',{accept:true})
+      .then(reply=>{
+        if(reply.error)legacyEncounterConsentError='CDP refused legacy encounter consent: '+JSON.stringify(reply.error);
+      })
+      .catch(error=>{legacyEncounterConsentError='CDP legacy encounter consent: '+error.message;});
+  });
+  await send('Page.enable',{});
   await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
   await sleep(70);
@@ -3805,6 +3827,8 @@ try{
       portals:returned2p5d.portalCount,
       dungeonGrid:returned2p5d.dungeon.sculptTerrain.width+'x'+
         returned2p5d.dungeon.sculptTerrain.height,returned:true}));
+  if(legacyEncounterConsentError)throw Error(legacyEncounterConsentError);
+  console.log('Legacy encounter setup: explicitly accepted native Chromium confirmations:',legacyEncounterConsentCount);
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
