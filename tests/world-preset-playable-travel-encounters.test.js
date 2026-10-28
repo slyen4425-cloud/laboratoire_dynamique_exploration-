@@ -16,15 +16,16 @@ const playable=p=>p.kind==='exterior'&&p.width<=80*28&&p.height<=64*21;
 test('new World Builder worlds give native prefab terrain a nonzero configured Capture encounter profile',()=>{
  const d=createBlankWorldBuilderDraft({id:'fresh',width:2400,height:1600});
  for(const preset of [presets[0],presets[3],presets[5],presets[7]]){
-  const area=createWorldAreaFromSculptMapPreset(d,preset,{name:preset.name}).areas[1];
+  const world=createWorldAreaFromSculptMapPreset(d,preset,{name:preset.name});
+  const area=world.areas[1];
   const family=area.surface.baseTerrainFamilyId;
-  const rule=d.encounterConfig.families.find(f=>f.terrainFamilyId===family);
+  const rule=world.encounterConfig.families.find(f=>f.terrainFamilyId===family);
   assert.ok(rule?.encounterChancePercent>0,'Missing actual encounter chance: '+family);
   const controller=createEncounterController({checkDistance:160});
   const y=area.surface.routes[0].points[0].y;
   const player=x=>({currentAreaId:area.id,x,y});
-  controller.step({area,player:player(76),encounterConfig:d.encounterConfig,captureCatalog:catalog,random:()=>0});
-  const intent=controller.step({area,player:player(270),encounterConfig:d.encounterConfig,captureCatalog:catalog,random:()=>0});
+  controller.step({area,player:player(76),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
+  const intent=controller.step({area,player:player(270),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
   assert.ok(intent?.opponentCreatureId,'No real Capture intent despite walking: '+family);
  }
 });
