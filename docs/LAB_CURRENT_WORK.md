@@ -4,6 +4,7 @@ Date : 2026-10-28
 Base GREEN : `13f6254e8825b33edda59e6ed6b5edc4c021e419`
 Branche : `work/exploration-playable-zone-routes-2026-10-28`
 Checkpoint START : `checkpoint/exploration-start-playable-zone-routes-2026-10-28`
+Dernier checkpoint GREEN : `checkpoint/exploration-playable-zone-routes-green-2026-10-28` (source exact `e013cb861436cfa32f1f55b9f4968d207e7724bc`, 885 tests Node, Chromium et Combat GREEN).
 
 ## Reproduction et correction
 Sur mobile, le joueur voit `SORTIE → area-principale` et `Passage impossible en 2,5D`. Son portail vise une WorldArea historique 2400×1600, non éditable dans la grille Sculpt 28×21 (max 80×64). Le précédent garde-fou empêche la panne mais ne fournit pas de route alternative.
@@ -16,4 +17,4 @@ Lorsqu'on crée un préset depuis une zone hôte incompatible, demander explicit
 Labo 2,5D utilise le même `createEncounterController`, `WorldArea.encounters.randomEnabled`, `WorldDocument.encounterConfig`, `CaptureCreatureCatalogPreviewV1`, `createImmersiveEncounterHostV1` que le système validé. Les zones extérieures des présets héritent de `randomEnabled=true`, les intérieurs restent désactivés par défaut. Le panneau Rencontres sélectionne la famille de terrain de la nouvelle zone au passage (aucune deuxième configuration).
 
 ## Validation / garde-fous
-1 WorldDocument, WorldArea, Portal et Spawn comme autorités ; TDD Node, Chromium 960×540 parcours de réparation réel avec dialogue accepté, CI Core+Combat, Pages isolées V80 immuable. Déploiement après GREEN et test manuel sur Pixel ensuite. Aucun changement sur le monde historique sans clic explicite.
+1 WorldDocument, WorldArea, Portal et Spawn comme autorités ; TDD Node, Chromium 960×540 parcours de réparation réel avec dialogue accepté, CI Core+Combat, Pages isolées V80 immuable. Publication isolée par Pages PR #284 après son propre gate GREEN, puis validation manuelle du Pixel ; gameplay PR #283 reste draft. Aucune modification des anciens mondes en dehors de la commande explicitement confirmée. Aucun changement sur le monde historique sans clic explicite.
