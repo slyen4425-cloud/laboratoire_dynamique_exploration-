@@ -471,7 +471,7 @@ body.world-area-editing .world-area-portal-panel{
 .world-area-portal-panel summary::-webkit-details-marker{display:none}
 .world-area-portal-panel summary::before{content:"▸";color:#9fe7d3;font-size:.9rem}
 .world-area-portal-panel[open] summary::before{content:"▾"}
-.world-area-portal-panel:not([open]){
+body.world-area-editing .world-area-portal-panel:not([open]){
  width:max-content;min-width:142px;max-width:min(185px,calc(100% - 16px));
  max-height:44px;overflow:hidden;padding:0;
 }
