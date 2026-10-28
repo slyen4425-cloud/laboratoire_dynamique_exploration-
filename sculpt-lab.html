@@ -453,7 +453,7 @@ body.sculpt-immersive #sculpt-encounter-editor{
 .world-entry-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.world-entry-links a{padding:8px 11px;border:1px solid #528f90;border-radius:9px;background:#16313b;color:#def5eb;font-size:.77rem;text-decoration:none;white-space:nowrap}@media(max-width:600px){.world-entry-links{gap:4px}.world-entry-links a{padding:6px;font-size:.67rem}}
 /* World Builder 2,5D: the map, not the Portal tool panel, owns the screen.
    Portal/Spawn gameplay still belongs exclusively to WorldDocument. */
-.world-area-portal-panel{
+body.world-area-editing .world-area-portal-panel{
  position:absolute;z-index:21;right:8px;top:8px;
  width:min(250px,calc(100% - 16px));
  max-height:min(53dvh,calc(100% - 16px));
