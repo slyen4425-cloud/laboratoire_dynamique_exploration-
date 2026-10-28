@@ -10,7 +10,7 @@ import {
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=house-interiors-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=house-interiors-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
-import {makePlayableZoneRoute} from './sculpt-playable-zone-route.js';
+import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 
 const byId=id=>document.getElementById(id);
@@ -376,22 +376,37 @@ function installWorldAssembler(){
   });
   function openAreaEditor(url){
     try{
-      // The 2.5D pane must never open an unrelated demo scene when a legacy
-      // WorldArea exceeds the native SculptTerrain grid. Keep the original
-      // WorldDocument unchanged and offer the real Area creation form.
+      let areaToOpen=selectedId;
       if(url.startsWith('./sculpt-lab.html?')){
-        try{sculptWorldAreaScene(getSelected());}
-        catch(error){
-          status('Zone non éditable en 2,5D : '+error.message+
-            ' · crée une nouvelle carte aux dimensions compatibles dans le panneau Monde. La zone d’origine est conservée.',true);
+        // The map panel never opens the unrelated demo and never shrinks a
+        // legacy WorldArea. Offer one of this SAME document's valid Areas.
+        const resolution=resolveSculptAreaForEditor(draft,selectedId);
+        if(!resolution){
+          status('La zone sélectionnée ne peut pas être éditée en 2,5D et aucune autre carte compatible n’existe. '+
+            'Ajoute une zone 8–80 × 8–64 cases dans Monde ou crée-la depuis un préset. '+
+            'La zone historique reste intacte.',true);
           byId('area-name').focus();
           return;
         }
+        if(resolution.redirected){
+          const from=getSelected();
+          const to=draft.areas.find(a=>a.id===resolution.areaId);
+          if(!window.confirm('La zone «'+areaLabel(from)+'» ('+Math.round(from.width)+' × '+
+              Math.round(from.height)+' unités monde) n’est pas éditable en 2,5D. '+
+              'Ouvrir plutôt la carte existante «'+areaLabel(to)+'» ? '+
+              'Le monde, son départ et tous ses passages resteront inchangés.')){
+            status('Navigation annulée. Sélectionne une carte 2,5D existante ou crée une nouvelle zone.',true);
+            return;
+          }
+          areaToOpen=to.id;
+        }
       }
-      saveWorldAssemblerHandoff(window.sessionStorage,draft,selectedId);
+      saveWorldAssemblerHandoff(window.sessionStorage,draft,areaToOpen);
       persist();
+      // Selection is an ephemeral UI choice, never a second WorldDocument.
+      if(areaToOpen!==selectedId){selectedId=areaToOpen;render();}
       const next=url.startsWith('./sculpt-lab.html?')
-        ?url+'&areaId='+encodeURIComponent(selectedId):url;
+        ?url+'&areaId='+encodeURIComponent(areaToOpen):url;
       window.location.assign(next);
     }catch(error){status(error.message,true);}
   }
