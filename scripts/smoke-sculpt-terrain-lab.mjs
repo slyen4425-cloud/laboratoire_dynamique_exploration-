@@ -3663,6 +3663,51 @@ try{
     throw Error('Legacy WorldArea lost or resized during tactile Map -> World return: '+
       JSON.stringify(legacyReturn));
   console.log('GREEN legacy 2400x1600 : World guard, no demo write and tactile return');
+  // V82: test native prefab building interiors through the REAL World Builder
+  // and its real Map panel in landscape Chromium, not just serialized data.
+  const prefabHouse=await run(`(()=>{
+    const select=document.querySelector('#world-map-preset-select');
+    select.value='map-preset-101';select.dispatchEvent(new Event('change'));
+    document.querySelector('#world-map-preset-create').click();
+    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const outside=doc?.areas.find(a=>a.label==='Forêt du village · chemin, maison et mare');
+    const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
+      p.trigger?.kind==='object-anchor');
+    const room=doc?.areas.find(a=>a.id===door?.targetAreaId);
+    if(!outside||!door||!room)return {error:'house interior or link absent',areas:doc?.areas.length};
+    document.querySelector('#graph-nodes [data-area-id="'+room.id+'"]').click();
+    document.querySelector('#world-workspace-map').click();
+    return {outsideId:outside.id,roomId:room.id,
+      areas:doc.areas.length,roomWalls:room.walls.length,
+      roomTiles:[room.width/28,room.height/21],
+      outsideDoor:door.trigger.kind};
+  })()`);
+  if(prefabHouse.error||prefabHouse.roomWalls<2||
+     prefabHouse.roomTiles.join('x')!=='18x14'||prefabHouse.outsideDoor!=='object-anchor')
+    throw Error('Prefab House / WorldArea authoring invalid: '+JSON.stringify(prefabHouse));
+  let prefabRoom=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{prefabRoom=await run("window.__sculptWorldProbe?.()??null");}catch{}
+    if(prefabRoom?.areaId)break;
+  }
+  if(prefabRoom?.areaId!==prefabHouse.roomId||
+     prefabRoom?.terrainWidth!==18||prefabRoom?.terrainHeight!==14||
+     prefabRoom?.areaKind!=='interior')
+    throw Error('Prefab interior did not open in REAL Sculpt 2.5D editor: '+
+      JSON.stringify({prefabHouse,prefabRoom}));
+  const prefabWalk=await run(`(()=>{
+    document.querySelector('#navigation-toggle').click();
+    return {nav:window.__sculptNavProbe?.(),
+      walls:!!document.querySelector('#sculpt-canvas')};
+  })()`);
+  if(!prefabWalk.nav?.enabled||!prefabWalk.nav?.player||
+     !prefabWalk.walls)
+    throw Error('Prefab house interior not walkable in actual Tester: '+
+      JSON.stringify(prefabWalk));
+  console.log('Native prefab house interior REAL Chromium GREEN:',
+    JSON.stringify({roomId:prefabRoom.areaId,roomTiles:'18x14',
+      walls:prefabHouse.roomWalls,walkable:true,realPortals:true}));
   console.log('Unified World/Map panels Chromium GREEN:',
     JSON.stringify({size:'40x31',areaId:unifiedBack.selectedAreaId,
       saved:unifiedBack.saved,oneWorldDocument:true}));
