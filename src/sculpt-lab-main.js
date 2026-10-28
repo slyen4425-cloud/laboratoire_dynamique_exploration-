@@ -68,7 +68,7 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js';
+  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=edge-gates-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
