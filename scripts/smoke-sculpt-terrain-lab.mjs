@@ -3428,6 +3428,28 @@ try{
      !placedWorldPortal.sculpt.traverseVisible)
     throw Error('Host 2.5D portal not reachable in actual gameplay: '+
       JSON.stringify(placedWorldPortal));
+  // Real mobile CSS layout: previously the button was in normal document
+  // flow, so the code saw it but the user never saw/could touch it.
+  const visibleTraverse=await run(`(()=>{
+    const button=document.querySelector('#world-portal-traverse');
+    const canvas=document.querySelector('.canvas-wrap');
+    const rect=button.getBoundingClientRect(),bounds=canvas.getBoundingClientRect();
+    return {position:getComputedStyle(button).position,
+      display:getComputedStyle(button).display,disabled:button.disabled,
+      label:button.textContent,
+      rect:{x:rect.x,y:rect.y,w:rect.width,h:rect.height},
+      canvas:{x:bounds.x,y:bounds.y,w:bounds.width,h:bounds.height}};
+  })()`);
+  if(visibleTraverse.position!=='absolute'||visibleTraverse.display==='none'||
+     visibleTraverse.disabled||visibleTraverse.rect.w<80||
+     visibleTraverse.rect.x<visibleTraverse.canvas.x||
+     visibleTraverse.rect.y<visibleTraverse.canvas.y||
+     visibleTraverse.rect.x+visibleTraverse.rect.w>
+       visibleTraverse.canvas.x+visibleTraverse.canvas.w+2||
+     visibleTraverse.rect.y+visibleTraverse.rect.h>
+       visibleTraverse.canvas.y+visibleTraverse.canvas.h+2)
+    throw Error('Mobile Portal action not physically visible within canvas: '+
+      JSON.stringify(visibleTraverse));
   const enteredDungeon=await run(`(()=>{
     document.querySelector('#world-portal-traverse').click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};

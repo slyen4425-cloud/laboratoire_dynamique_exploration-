@@ -46,7 +46,9 @@ test('V24: visible control, explicit confirmation, no direct code path erases 2D
     assert.equal((html.match(new RegExp('id="'+id+'"','g'))??[]).length,1);
   }
   assert.match(main,/createBlankSculptPreviewScene/);
-  assert.match(main,/objectHistory=\[\];objectRedo=\[\];history=\[\];redoHistory=\[\]/);
+  assert.match(main,/mountSculptArea\(blank\)/);
+  // All editing undo stacks are reset by the single scene mount command.
+  assert.match(main,/history=\[\];redoHistory=\[\];objectHistory=\[\];objectRedo=\[\]/);
   assert.match(main,/\$\('new-map-confirm'\)\.checked/);
   assert.match(html,/id="new-map-width" min="8" max="80"/);
   assert.match(html,/id="new-map-height" min="8" max="64"/);

@@ -47,6 +47,24 @@
      <p id="dungeon-host-info" class="help-note" hidden>Le donjon sera placé dans la zone actuellement sélectionnée. Un Portal aller/retour sera créé automatiquement ; sa position se règle dans l'éditeur 2,5D.</p>
      <button class="accent block" type="submit">+ Ajouter au monde</button>
     </form>
+    <section class="add-panel" id="world-map-preset-library" aria-label="Bibliothèque de cartes présets">
+     <strong>🗺 Mes cartes présets</strong>
+     <label class="field">Carte enregistrée
+      <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
+     </label>
+     <label class="field">Nom de la nouvelle zone
+      <input id="world-map-preset-name" type="text" maxlength="64" placeholder="Ex. Clairière du village">
+     </label>
+     <label class="field">Type de la nouvelle zone
+      <select id="world-map-preset-kind">
+       <option value="exterior">🌲 Région extérieure</option>
+       <option value="interior">🏠 Instance / intérieur</option>
+       <option value="dungeon">🗝 Donjon dans la zone sélectionnée</option>
+      </select>
+     </label>
+     <button id="world-map-preset-create" class="accent block" type="button" disabled>+ Créer une zone depuis ce préset</button>
+     <p id="world-map-preset-info" class="help-note">Dans l'éditeur Exploration 2,5D, ouvre « Mes cartes présets » et enregistre une carte. Elle pourra ensuite être placée plusieurs fois dans ce monde.</p>
+    </section>
     <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
    </aside>
    <main class="center-panel" aria-label="Graphe de navigation du monde">
@@ -118,6 +136,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3"></script>
 </body>
 </html>

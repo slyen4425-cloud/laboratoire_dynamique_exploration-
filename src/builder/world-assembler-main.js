@@ -7,6 +7,7 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
+import {readSculptMapPresets,createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -224,11 +225,57 @@ function installWorldAssembler(){
       row.append(text,remove);container.append(row);
     }
   }
+  function refreshMapPresets(){
+    const select=byId('world-map-preset-select'),previous=select.value;
+    try{
+      const presets=readSculptMapPresets(window.localStorage);
+      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
+        ...presets.map(p=>new Option(p.name+' · '+p.scene.terrain.width+' × '+
+          p.scene.terrain.height,p.id)));
+      if(presets.some(p=>p.id===previous))select.value=previous;
+      byId('world-map-preset-create').disabled=!select.value;
+      byId('world-map-preset-info').textContent=presets.length
+        ?'Chaque préset crée une WorldArea indépendante. Un donjon sera relié à la zone sélectionnée.'
+        :'Enregistre une carte dans Exploration 2,5D → « Mes cartes présets » pour pouvoir la placer ici.';
+    }catch(error){
+      byId('world-map-preset-create').disabled=true;
+      byId('world-map-preset-info').textContent='Bibliothèque indisponible : '+error.message;
+    }
+  }
   function render(){
     if(!draft.areas.some(a=>a.id===selectedId))selectedId=draft.initialAreaId;
     if(document.activeElement!==byId('world-name'))byId('world-name').value=draft.id;
-    renderAreaList();renderGraph();renderInspector();
+    renderAreaList();renderGraph();renderInspector();refreshMapPresets();
   }
+  on(byId('world-map-preset-select'),'change',()=>{
+    byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
+    try{
+      const preset=readSculptMapPresets(window.localStorage)
+        .find(p=>p.id===byId('world-map-preset-select').value);
+      if(preset&&!byId('world-map-preset-name').value.trim())
+        byId('world-map-preset-name').value=preset.name;
+    }catch(error){status(error.message,true);}
+  });
+  on(byId('world-map-preset-create'),'click',()=>{
+    try{
+      const preset=readSculptMapPresets(window.localStorage)
+        .find(p=>p.id===byId('world-map-preset-select').value);
+      if(!preset){status('Choisis d’abord un préset de carte.',true);return;}
+      const before=new Set(draft.areas.map(a=>a.id));
+      const name=byId('world-map-preset-name').value.trim()||preset.name;
+      const kind=byId('world-map-preset-kind').value;
+      const hostAreaId=selectedId;
+      const ok=apply(()=>createWorldAreaFromSculptMapPreset(draft,preset,{
+        name,kind,hostAreaId
+      }),kind==='dungeon'
+        ?'Donjon créé depuis le préset avec passages aller-retour.'
+        :'Zone créée depuis le préset · terrain, textures et objets chargés.');
+      if(ok){
+        selectedId=draft.areas.find(a=>!before.has(a.id))?.id??selectedId;
+        render();
+      }
+    }catch(error){status(error.message,true);}
+  });
   on(byId('area-add-form'),'submit',event=>{
     event.preventDefault();
     const name=byId('area-name').value.trim();
@@ -283,7 +330,7 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);}
   }
   on(byId('edit-sculpt-area'),'click',
-    ()=>openAreaEditor('./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2'));
+    ()=>openAreaEditor('./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3'));
   on(byId('edit-area'),'click',()=>{
     openAreaEditor('./builder.html?worldAssembler=1');
   });

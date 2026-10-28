@@ -66,7 +66,9 @@ import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
-import {findTriggeredPortal,applyPortalTransition} from './world/portal-model.js';
+import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
+import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
+  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
@@ -1841,7 +1843,7 @@ function setNavigationTesting(on){
     navActor=null;navViewport=null;navBlocked=false;navBlockReason=null;navTerrainCache=null;
     navVisualLevel=null;
     navLastVisualPaint=-Infinity;
-    updatePrecisionActions();scheduleDraw();
+    updatePrecisionActions();updateSculptWorldPortalAction();scheduleDraw();
     status('Édition réactivée : le test de marche n’a modifié aucune donnée.');
   }
   scheduleDraw();
@@ -2557,6 +2559,12 @@ function setNewMapPanel(open){
   if(value){
     $('new-map-width').value=String(terrain.width);
     $('new-map-height').value=String(terrain.height);
+    // A WorldArea owns its dimensions. Reset ONLY its authored scene.
+    $('new-map-width').disabled=!!sculptWorldDraft;
+    $('new-map-height').disabled=!!sculptWorldDraft;
+    $('new-map-warning').textContent=sculptWorldDraft
+      ?'Effacer le contenu de cette zone, sans changer ses dimensions ni supprimer ses passages et points d’arrivée.'
+      :'Sol plat, sans eau ni objet. La carte actuelle et ses annulations seront effacées.';
     $('new-map-confirm').checked=false;
     $('new-map-create').disabled=true;
     $('new-map-width').focus();
@@ -2577,24 +2585,22 @@ $('new-map-form').addEventListener('submit',event=>{
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
   const blank=createBlankSculptPreviewScene({width,height});
-  sculptEncounterConfig=sculptPreviewEncounterConfig;
-  sculptExteriorEncounters=Object.freeze({randomEnabled:true});
+  // The World Builder's document de monde keeps Portal/Spawn and Encounter config.
+  // Standalone Sculpt is allowed to start a fresh Encounter scene.
+  if(!sculptWorldDraft){
+    sculptEncounterConfig=sculptPreviewEncounterConfig;
+    sculptExteriorEncounters=Object.freeze({randomEnabled:true});
+  }
   sculptEncounterAreaCache=null;
-  exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
-  if(ribbonTextures.road)ribbonTextures.road.visible=false;
-  terrain=blank.terrain;placedObjects=blank.objects;objectSelectedId=null;
-  placedActors=blank.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
-  updateActorCount();syncActorSelectedControls();
-  surface=blank.surface;surfaceHistory=[];surfaceRedo=[];surfaceStrokePoints=[];surfaceDrawing=false;
-  updateSurfaceCount();refreshSculptEncounterEditor();
-  objectHistory=[];objectRedo=[];history=[];redoHistory=[];
+  mountSculptArea(blank);
+  refreshSculptEncounterEditor();
   drawing=false;strokeUndo=null;strokePoints=[];lastCell='';
-  hoverCell=null;precisionCell=null;precisionDragging=false;
-  navTerrainCache=null;navLastState='';
+  surfaceStrokePoints=[];surfaceDrawing=false;navLastState='';
   $('json').value='';$('json').hidden=true;
-  updateHistoryButtons();updateObjectCount();syncObjectSelectedControls();
   updatePrecisionActions();setNewMapPanel(false);fit();
-  status('Carte vierge créée : '+width+' × '+height+' cases · aucun objet · aucune eau. Prête à sculpter.');
+  if(sculptWorldDraft)refreshSculptWorldPanel();
+  status('Carte vierge créée : '+width+' × '+height+
+    ' cases · passages et arrivées du World Builder conservés.');
 });
 window.addEventListener('keydown',event=>{
   if(event.key==='Escape'&&!$('new-map-panel').hidden){event.preventDefault();setNewMapPanel(false);}
@@ -2944,7 +2950,7 @@ function updateSculptAreaControls(){
     $('interior-shape').value=kind==='custom'?'rectangle':kind;
     $('interior-layout-apply').disabled=kind==='custom';
   }
-  $('new-map-toggle').disabled=!!entry||!!sculptWorldDraft;
+  $('new-map-toggle').disabled=!!entry;
   for(const option of $('surface-material').options)
     option.disabled=entry?!option.value.startsWith('floor.'):
       option.value.startsWith('floor.');
@@ -3414,11 +3420,27 @@ function sculptWorldPortalAtHero(){
 function updateSculptWorldPortalAction(){
   const button=$('world-portal-traverse');
   if(!button)return;
+  const exits=worldOutboundPortals().filter(p=>p.enabled===true);
+  button.hidden=!navigationTesting||!sculptWorldDraft||!exits.length||
+    !!sculptPendingEncounter;
+  if(button.hidden)return;
+  // The SAME Portal resolver owns the actual hitbox. The disabled action
+  // always stays in view to explain why it cannot yet be used.
   const portal=sculptWorldPortalAtHero();
-  button.hidden=!portal||!!sculptPendingEncounter;
+  button.disabled=!portal;
   if(portal){
     const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
     button.textContent='🚪 Entrer : '+(target?.label??target?.id??'autre zone');
+    button.title='Passage à portée : toucher pour charger la zone suivante';
+  }else{
+    const nearest=exits.map(p=>{
+      const point=resolvePortalTriggerPoint(sculptWorldDraft.areas,p);
+      return point?{p,distance:Math.max(0,Math.hypot(
+        navActor.x-point.x,navActor.y-point.y)-point.radius)}:null;
+    }).filter(Boolean).sort((a,b)=>a.distance-b.distance)[0];
+    button.textContent=nearest?'🚪 Sortie · encore '+Math.ceil(nearest.distance)+' unités'
+      :'🚪 Passage indisponible';
+    button.title='Rejoins le cercle jaune SORTIE avec le héros';
   }
 }
 function drawSculptWorldPortalMarkers(){
@@ -3537,17 +3559,24 @@ function installSculptWorldAreaEditing(){
   }
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
   $('world-area-portal-panel').hidden=false;
-  $('new-map-toggle').disabled=true; // never alter Area dimensions implicitly
+  $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
-  $('new-map-toggle').title='Les dimensions de cette WorldArea sont celles du World Builder';
-  $('world-area-return').addEventListener('click',()=>{
+  $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
+  function saveAndReturnWorldArea(){
     try{
       commitCurrentSculptWorldArea();
       saveWorldAssemblerHandoff(
         window.sessionStorage,sculptWorldDraft,sculptWorldAreaId);
-      window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2');
+      window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3');
     }catch(error){sculptWorldStatus('Enregistrement bloqué : '+error.message,true);}
-  });
+  }
+  $('world-area-return').addEventListener('click',saveAndReturnWorldArea);
+  // The header World Builder link must never silently discard pending edits.
+  document.querySelector('.world-entry-links a[href="./world-assembler.html"]')
+    ?.addEventListener('click',event=>{
+      event.preventDefault();
+      saveAndReturnWorldArea();
+    });
   $('world-area-portal-select').addEventListener('change',refreshSculptWorldPanel);
   $('world-area-spawn-select').addEventListener('change',refreshSculptWorldPanel);
   for(const [id,mode] of [
@@ -3613,6 +3642,90 @@ function installSculptWorldAreaEditing(){
   });
 }
 
+// Local templates are versioned snapshots of the existing Sculpt scene, not
+// an alternative document de monde. Reusing them always enters the regular editor.
+function installSculptMapPresetPalette(){
+  const select=$('sculpt-map-preset-select');
+  const presetStatus=(message,error=false)=>{
+    const label=$('sculpt-map-preset-status');
+    label.textContent=message;label.style.color=error?'#ffccbb':'#b7f2d6';
+    status(message);
+  };
+  function refresh(selectedId){
+    try{
+      const library=readSculptMapPresets(window.localStorage);
+      const previous=selectedId??select.value;
+      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
+        ...library.map(p=>new Option(p.name+' · '+p.scene.terrain.width+
+          ' × '+p.scene.terrain.height,p.id)));
+      if(library.some(p=>p.id===previous))select.value=previous;
+      const available=!!select.value;
+      $('sculpt-map-preset-apply').disabled=!available;
+      $('sculpt-map-preset-export').disabled=!available;
+      return library;
+    }catch(error){presetStatus(error.message,true);return [];}
+  }
+  const selected=()=>readSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
+  select.addEventListener('change',()=>refresh(select.value));
+  $('sculpt-map-preset-save').addEventListener('click',()=>{
+    try{
+      const name=$('sculpt-map-preset-name').value.trim();
+      const existing=readSculptMapPresets(window.localStorage)
+        .find(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
+      if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
+      const preset=saveSculptMapPreset(window.localStorage,captureSculptArea(),name);
+      refresh(preset.id);
+      presetStatus('Carte « '+preset.name+' » enregistrée. Réutilisable dans le World Builder.');
+    }catch(error){presetStatus(error.message,true);}
+  });
+  $('sculpt-map-preset-apply').addEventListener('click',()=>{
+    try{
+      const preset=selected();
+      if(!preset)throw Error('Choisis une carte enregistrée');
+      const scene=importSculptPreviewScene(preset.scene);
+      if(sculptWorldDraft&&(scene.terrain.width!==terrain.width||
+          scene.terrain.height!==terrain.height))
+        throw Error('Préset de taille différente : crée plutôt une nouvelle zone depuis ce préset dans le World Builder.');
+      if(!window.confirm('Remplacer le relief, les textures et les assets de cette carte par le préset « '+preset.name+' » ?'))return;
+      if(navigationTesting)setNavigationTesting(false);
+      if(objectEditing)setObjectEditing(false);
+      if(surfaceEditing)setSurfaceEditing(false);
+      mountSculptArea(scene);
+      if(!sculptWorldDraft){
+        // A map template does not carry gameplay Encounter settings.
+        sculptEncounterConfig=sculptPreviewEncounterConfig;
+        sculptExteriorEncounters=Object.freeze({randomEnabled:true});
+      }
+      sculptEncounterAreaCache=null;refreshSculptEncounterEditor();
+      fit();
+      presetStatus('Préset « '+preset.name+' » appliqué · passages et arrivées inchangés.');
+    }catch(error){presetStatus(error.message,true);}
+  });
+  $('sculpt-map-preset-export').addEventListener('click',()=>{
+    try{
+      const preset=selected();if(!preset)throw Error('Choisis un préset à exporter');
+      const blob=new Blob([JSON.stringify(preset,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download=preset.name.replace(/[^a-z0-9-_]+/gi,'-')+'.map-preset.json';
+      document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
+      presetStatus('Préset JSON exporté.');
+    }catch(error){presetStatus(error.message,true);}
+  });
+  $('sculpt-map-preset-import').addEventListener('change',async event=>{
+    const input=event.currentTarget,file=input.files?.[0];if(!file)return;
+    try{
+      const imported=importSculptMapPreset(await file.text());
+      const existing=readSculptMapPresets(window.localStorage).find(p=>
+        p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr'));
+      if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
+      const saved=addImportedSculptMapPreset(window.localStorage,imported);
+      refresh(saved.id);presetStatus('Préset « '+saved.name+' » importé.');
+    }catch(error){presetStatus('Import refusé : '+error.message,true);}
+    finally{input.value='';}
+  });
+  refresh();
+}
+
 selectMode('dig');
 setEditorKind('ground');
 if(window.matchMedia?.('(pointer: coarse)').matches){
@@ -3621,3 +3734,4 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
 updatePrecisionActions();
 updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();fit();
 installSculptWorldAreaEditing();
+installSculptMapPresetPalette();
