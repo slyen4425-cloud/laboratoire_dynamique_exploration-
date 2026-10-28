@@ -512,6 +512,12 @@ body.navigation-testing #sculpt-map-preset-panel{display:none!important}
  box-shadow:0 8px 24px #000a;
 }
 #sculpt-map-preset-panel:not([open]){width:max-content;max-width:min(185px,55vw)}
+/* Immersive mode puts .canvas-wrap beneath the sticky top toolbar.
+   Keep the preset chip below the ORIGINAL fullscreen action hitbox. */
+body.sculpt-immersive #sculpt-map-preset-panel{
+ top:calc(env(safe-area-inset-top,0px) + 57px);
+ max-height:min(53dvh,calc(100% - 65px));
+}
 #sculpt-map-preset-panel summary{padding:8px 10px;min-height:38px;
  font-size:.76rem;font-weight:800;cursor:pointer;touch-action:manipulation}
 #sculpt-map-preset-panel .preset-controls{display:grid;gap:6px;padding:8px;
