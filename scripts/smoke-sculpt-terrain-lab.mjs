@@ -3608,17 +3608,55 @@ try{
     if(legacyWorldLoaded)break;
   }
   if(!legacyWorldLoaded)throw Error('World Builder failed to reload legacy fixture');
-  const guard=await run(`(()=>{
+  // The selected 2400x1600 Area cannot be edited, but a real 2.5D Area
+  // exists in this very WorldDocument. Test the actual map-tab click with a
+  // native Chromium confirmation; never open the unrelated demo scene.
+  await send('Page.enable',{});
+  let compatibleDialogSeen=false;
+  const observeMapDialog=event=>{
+    const packet=JSON.parse(event.data);
+    if(packet.method==='Page.javascriptDialogOpening'&&packet.params?.type==='confirm')
+      compatibleDialogSeen=true;
+  };
+  socket.addEventListener('message',observeMapDialog);
+  const openCompatible=run(`(()=>{
     const area=document.querySelector('#graph-nodes .world-node[data-area-id="${legacyId}"]');
-    if(!area)return {error:'legacy Area missing',areas:window.__worldAssemblerProbe()?.areaIds};
+    if(!area)throw Error('Legacy Area missing from graph');
     area.click();
     document.querySelector('#world-workspace-map').click();
-    return {path:location.pathname,status:document.querySelector('#status-toast').textContent,
-      selected:window.__worldAssemblerProbe()?.selectedAreaId};
+    return true;
   })()`);
-  if(guard.error||!guard.path.endsWith('world-assembler.html')||
-     !guard.status.includes('Zone non éditable en 2,5D')||guard.selected!==legacyId)
-    throw Error('World Builder opened invalid 2.5D editor for historical Area: '+JSON.stringify(guard));
+  for(let i=0;i<50&&!compatibleDialogSeen;i++)await sleep(30);
+  if(!compatibleDialogSeen)
+    throw Error('Legacy World/Map button did not offer a real compatible Area');
+  const acceptedMap=await send('Page.handleJavaScriptDialog',{accept:true});
+  if(acceptedMap.error)throw Error('Cannot accept compatible Map confirmation');
+  try{await openCompatible;}catch{}
+  socket.removeEventListener('message',observeMapDialog);
+  let compatibleMap=null;
+  for(let i=0;i<100;i++){
+    await sleep(100);
+    try{compatibleMap=await run(`(()=>{
+      const probe=window.__sculptWorldProbe?.();
+      if(!probe)return null;
+      const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const legacy=world.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+      return {probe,legacyWidth:legacy?.width,legacyHeight:legacy?.height,
+        initialAreaId:world.initialAreaId,path:location.pathname};
+    })()`);}catch{}
+    if(compatibleMap?.probe?.areaId)break;
+  }
+  if(!compatibleMap?.probe?.editable||
+     compatibleMap.probe.areaId===legacyId||
+     compatibleMap.legacyWidth!==2400||
+     compatibleMap.legacyHeight!==1600||
+     !compatibleMap.path.endsWith('/sculpt-lab.html'))
+    throw Error('World tab failed to open existing compatible Area without changing legacy: '+
+      JSON.stringify(compatibleMap));
+  console.log('GREEN legacy Map tab: real confirmation, playable handoff, untouched 2400x1600',
+    JSON.stringify(compatibleMap));
+  // Direct historical links still need to show their recovery overlay and
+  // tactile return rather than silently opening some other Area.
   const legacyUrl=new URL('/sculpt-lab.html?worldAssembler=1&areaId='+
     encodeURIComponent(legacyId),url).href;
   await send('Page.navigate',{url:legacyUrl});
