@@ -8,7 +8,24 @@ button:disabled{opacity:.44;cursor:not-allowed}.accent{color:#062522;background:
 .secondary{background:#182d3a}.danger{background:#472b36;border-color:#925b6a;color:#ffd9db}.danger:hover{background:#603342}.block{width:100%}
 a{color:#bce7df;text-decoration:none}.app-shell{display:flex;flex-direction:column;height:100dvh;min-height:430px}
 .app-header{height:74px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:11px 18px;background:#10232f;border-bottom:1px solid #365060}
-.app-brand{display:flex;align-items:center;gap:12px;min-width:0}.go-back{font-size:36px;display:grid;place-items:center;line-height:1;border:1px solid #385e6a;border-radius:10px;width:44px;height:44px;flex:0 0 44px}
+.app-brand{display:flex;align-items:center;gap:12px;min-width:0}
+.world-workspace-tabs{display:flex;align-items:center;gap:5px;padding:4px;
+ background:#091923;border:1px solid #426878;border-radius:11px}
+.world-workspace-tabs button{min-height:37px;padding:7px 10px;white-space:nowrap;
+ font-size:12px;font-weight:800;border:1px solid transparent;background:transparent}
+.world-workspace-tabs button.selected{background:#235f61;border-color:#8dd6c3}
+.world-workspace-tabs button:not(.selected){background:#173341}
+.world-area-size-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.world-area-size-fields .field{min-width:0}
+@media(max-width:950px){
+ .world-workspace-tabs button{padding:7px 6px;font-size:11px}
+ .app-header{gap:7px}
+}
+@media(max-width:670px){
+ .world-workspace-tabs{padding:2px}
+ .world-workspace-tabs button{min-height:36px;padding:5px;font-size:10px}
+}
+.go-back{font-size:36px;display:grid;place-items:center;line-height:1;border:1px solid #385e6a;border-radius:10px;width:44px;height:44px;flex:0 0 44px}
 .eyebrow{letter-spacing:.14em;font-size:10px;font-weight:800;color:#83bdb9;display:block}
 h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing:-.025em}h2{font-size:17px;line-height:1.22;margin:5px 0}h3{font-size:14px;margin:0}
 .header-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}.header-actions button,.import-btn{min-height:38px;font-size:12px;padding:9px 12px}
