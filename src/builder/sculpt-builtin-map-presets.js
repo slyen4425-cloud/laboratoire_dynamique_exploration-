@@ -9,7 +9,7 @@ import {applySculptWaterStroke,applySculptStroke,sculptWaterAt}
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke}
   from '../world/sculpt-surface-paint.js';
 import {createSculptMapPreset,readSculptMapPresets}
-  from './sculpt-map-preset-library.js?rev=house-interiors-v1';
+  from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
 
 const TREE=Object.freeze({
   forest:['objectdef.tree.forest.oak.01','objectdef.tree.forest.broadleaf.01',

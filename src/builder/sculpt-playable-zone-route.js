@@ -1,10 +1,10 @@
 // Explicit World Builder repair command. It only modifies the SAME canonical
 // WorldDocument; it never rescales or replaces unsupported 2400×1600 areas.
 import {createWorldBuilderDraft,connectWorldAreas,setWorldInitialArea,updatePortal,initializeWorldPresetEncounters}
-  from './world-builder-draft.js';
+  from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene,placeSculptWorldPortal} from './sculpt-world-area-link.js';
-import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js';
-import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js';
+import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 
 export function playableSculptArea(area){
   if(!area)return false;

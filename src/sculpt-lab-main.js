@@ -60,7 +60,7 @@ import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
 import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
-  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js';
+  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
@@ -68,14 +68,14 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=house-interiors-v1';
+  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
-import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=house-interiors-v1';
-import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js';
-import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js';
+import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);

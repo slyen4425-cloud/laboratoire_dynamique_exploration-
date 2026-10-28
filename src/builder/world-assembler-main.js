@@ -2,15 +2,15 @@ import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
   serializeWorldBuilderDraft,importWorldBuilderDocument
-} from './world-builder-draft.js';
+} from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=house-interiors-v1';
-import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=house-interiors-v1';
+import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
-import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js';
+import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 
 const byId=id=>document.getElementById(id);
