@@ -3585,6 +3585,84 @@ try{
     unifiedBack.created?.height!==31*21||!unifiedBack.saved)
     throw Error('World/Map panel switch lost the canonical WorldArea: '+
       JSON.stringify(unifiedBack));
+  // User-reported Android regression: a historical 2400x1600 WorldArea was
+  // incompatible with SculptTerrain and the Map page then TRAPPED the user.
+  // Keep a real legacy document byte-compatible, reject accidental editing,
+  // then enter the old URL to verify the tactile return after refresh.
+  const legacyId=unifiedBack.selectedAreaId;
+  const legacySaved=await run(`(()=>{
+    const key='gensrpg.world-assembler.document.v1';
+    const draft=JSON.parse(localStorage.getItem(key));
+    const target=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+    target.width=2400;target.height=1600;delete target.sculptTerrain;
+    localStorage.setItem(key,JSON.stringify(draft));
+    return {id:target.id,width:target.width,height:target.height};
+  })()`);
+  if(legacySaved.width!==2400||legacySaved.height!==1600)
+    throw Error('Cannot create the exact saved 2400x1600 user regression fixture');
+  await send('Page.reload',{ignoreCache:true});
+  let legacyWorldLoaded=null;
+  for(let i=0;i<80;i++){
+    await sleep(100);
+    try{legacyWorldLoaded=await run('window.__worldAssemblerProbe?.()??null');}catch{}
+    if(legacyWorldLoaded)break;
+  }
+  if(!legacyWorldLoaded)throw Error('World Builder failed to reload legacy fixture');
+  const guard=await run(`(()=>{
+    const area=document.querySelector('#area-list button[data-area-id="${legacyId}"]');
+    if(!area)return {error:'legacy Area missing'};
+    area.click();
+    document.querySelector('#world-workspace-map').click();
+    return {path:location.pathname,status:document.querySelector('#status-toast').textContent,
+      selected:window.__worldAssemblerProbe()?.selectedAreaId};
+  })()`);
+  if(guard.error||!guard.path.endsWith('world-assembler.html')||
+     !guard.status.includes('Zone non éditable en 2,5D')||guard.selected!==legacyId)
+    throw Error('World Builder opened invalid 2.5D editor for historical Area: '+JSON.stringify(guard));
+  const legacyUrl=new URL('/sculpt-lab.html?worldAssembler=1&areaId='+
+    encodeURIComponent(legacyId),url).href;
+  await send('Page.navigate',{url:legacyUrl});
+  let legacyMap=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{legacyMap=await run(`(()=>{
+      const probe=window.__sculptWorldProbe?.();if(!probe)return null;
+      const overlay=document.querySelector('#world-area-unavailable');
+      const button=document.querySelector('#world-area-unavailable-return');
+      const rect=button.getBoundingClientRect();
+      const hit=document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2);
+      return {probe,hidden:overlay.hidden,
+        visible:getComputedStyle(overlay).display!=='none',
+        touchable:hit===button||button.contains(hit),
+        x:rect.x+rect.width/2,y:rect.y+rect.height/2};
+    })()`);}catch{}
+    if(legacyMap)break;
+  }
+  if(!legacyMap||legacyMap.probe.editable||legacyMap.hidden||
+      !legacyMap.visible||!legacyMap.touchable)
+    throw Error('Legacy Area must show real clickable return, not a demo scene: '+
+      JSON.stringify(legacyMap));
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:legacyMap.x,y:legacyMap.y,id:78,radiusX:7,radiusY:7,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  let legacyReturn=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{legacyReturn=await run(`(()=>{
+      const p=window.__worldAssemblerProbe?.();if(!p)return null;
+      const draft=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const area=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+      return {selected:p.selectedAreaId,area,portalCount:p.portalCount};
+    })()`);}catch{}
+    if(legacyReturn)break;
+  }
+  if(legacyReturn?.selected!==legacyId||
+    legacyReturn.area?.width!==2400||legacyReturn.area?.height!==1600||
+    legacyReturn.area?.sculptTerrain)
+    throw Error('Legacy WorldArea lost or resized during tactile Map -> World return: '+
+      JSON.stringify(legacyReturn));
+  console.log('GREEN legacy 2400x1600 : World guard, no demo write and tactile return');
   console.log('Unified World/Map panels Chromium GREEN:',
     JSON.stringify({size:'40x31',areaId:unifiedBack.selectedAreaId,
       saved:unifiedBack.saved,oneWorldDocument:true}));
