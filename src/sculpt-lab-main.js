@@ -3441,6 +3441,16 @@ function updateSculptWorldPortalAction(){
   button.disabled=!portal;
   if(portal){
     const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+    // The button must reflect actual Sculpt capacity BEFORE click. A legacy
+    // 2400×1600 target cannot be mounted; do not advertise a fake transition.
+    try{sculptWorldAreaScene(target);}
+    catch(error){
+      button.disabled=true;
+      button.textContent='🚪 Passage impossible en 2,5D';
+      button.title='Zone cible non compatible : '+error.message+
+        ' · ouvre le panneau Monde pour choisir une zone compatible.';
+      return;
+    }
     button.textContent='🚪 Entrer : '+(target?.label??target?.id??'autre zone');
     button.title='Passage à portée : toucher pour charger la zone suivante';
   }else{
@@ -3542,6 +3552,8 @@ function traverseSculptWorldPortal(){
   const portal=sculptWorldPortalAtHero();
   if(!portal)return;
   try{
+    const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+    sculptWorldAreaScene(target); // validate before mutating navigation/scene
     // The SAME runtime Portal resolver used by the 2D world document.
     const document=commitCurrentSculptWorldArea();
     const transition=applyPortalTransition(document,{
