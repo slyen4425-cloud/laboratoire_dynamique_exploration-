@@ -24,5 +24,15 @@ Sur téléphone, la boîte « Passage entre les zones » occupe beaucoup trop de
 3. Preview **isolée** publiée via un seul publisher GitHub Pages, V80 identique au byte près.
 4. Validation smartphone par utilisateur avant checkpoint GREEN final ou promotion gameplay.
 
+## Implémentation et validation technique (2026-10-28)
+
+- Première régression RED explicite : commit `756469c48c50423f886267486e015469c2c75e2a` ; CI `40639802054`, 854 PASS / 3 FAIL portant sur les trois contrôles du panneau.
+- Correctif au niveau du propriétaire UI dans `sculpt-lab.html` + `src/sculpt-lab-main.js` : `<details>` fermé par défaut, onglet « 🚪 Passages », panneau de 250px max avec scroll, fermeture pendant placement, masqué en Tester ; bouton `#fullscreen-toggle` original déplacé en tête de la barre déroulante, aucun deuxième plein écran.
+- Après diagnostic Chromium d'une règle CSS trop spécifique (padding de la zone ouverte), correction de cette cause : panneau fermé de 40px sans masquer la vue.
+- CI `40640191285` sur le SHA `5107985bf9efe147c5cf7f5138eb8a6cc317be0b` : **857/857 tests Node PASS**, syntaxe et Chromium Exploration/Combat PASS.
+- Test Chromium *tactile réel* en 960×540 : panneau fermé 40px, panneau ouvert 286px avec scroll interne, fullscreen touch fonctionne et canvas couvre 540px de hauteur ; réduction au pointer place, retour au mode classique et navigation WorldArea → donjon → région hôte (4 Areas, 4 Portals) PASS.
+- Modèle, règles de combat, relief et sauvegardes inchangés ; production V80 préservée. Nouveau lien preview isolée à vérifier une fois la publication en ligne.
+- **Validation smartphone utilisateur non encore obtenue : aucun checkpoint GREEN final.**
+
 ## Reprise
 Travail sur branche dédiée, pas de fusion dans la source de production et pas de modèle concurrent. Les variantes 2,5D continuent d'être épinglées à leur SHA validé dans la publication.
