@@ -2563,8 +2563,9 @@ function setNewMapPanel(open){
     $('new-map-width').disabled=!!sculptWorldDraft;
     $('new-map-height').disabled=!!sculptWorldDraft;
     $('new-map-warning').textContent=sculptWorldDraft
-      ?'Effacer le contenu de cette zone, sans changer ses dimensions ni supprimer ses passages et points d’arrivée.'
+      ?'Vider cette carte sans changer sa taille ni supprimer ses passages. Pour une autre taille, crée une zone dans le panneau Monde.'
       :'Sol plat, sans eau ni objet. La carte actuelle et ses annulations seront effacées.';
+    $('world-area-new-map-hint').hidden=!sculptWorldDraft;
     $('new-map-confirm').checked=false;
     $('new-map-create').disabled=true;
     $('new-map-width').focus();
@@ -3505,6 +3506,8 @@ function commitCurrentSculptWorldArea(){
 function mountWorldSculptArea(areaId){
   const area=sculptWorldDraft?.areas.find(a=>a.id===areaId);
   if(!area)throw Error('WorldArea cible absente');
+  document.querySelector('header h1').textContent='World Builder · '+(area.label??'Carte');
+  document.querySelector('header p').textContent='Un seul monde · deux panneaux · '+area.width/28+' × '+area.height/21+' cases';
   const scene=sculptWorldAreaScene(area);
   sculptWorldAreaId=areaId;
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
@@ -3550,6 +3553,7 @@ function traverseSculptWorldPortal(){
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
+  $('world-workspace-tabs').hidden=false;
   $('world-area-portal-panel').open=false;
   const transfer=readWorldAssemblerHandoff(window.sessionStorage);
   if(!transfer){
@@ -3562,15 +3566,18 @@ function installSculptWorldAreaEditing(){
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
-  function saveAndReturnWorldArea(){
+  function saveAndReturnWorldArea({newArea=false}={}){
     try{
       commitCurrentSculptWorldArea();
       saveWorldAssemblerHandoff(
         window.sessionStorage,sculptWorldDraft,sculptWorldAreaId);
-      window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3');
+      window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
+        (newArea?'&createArea=1':''));
     }catch(error){sculptWorldStatus('Enregistrement bloqué : '+error.message,true);}
   }
-  $('world-area-return').addEventListener('click',saveAndReturnWorldArea);
+  $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
+  $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
+  $('world-area-create-another').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
   // The header World Builder link must never silently discard pending edits.
   document.querySelector('.world-entry-links a[href="./world-assembler.html"]')
     ?.addEventListener('click',event=>{
