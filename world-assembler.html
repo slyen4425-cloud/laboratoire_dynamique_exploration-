@@ -40,9 +40,11 @@
      <label class="field">Type d'espace
       <select id="area-kind">
        <option value="exterior">🌲 Région extérieure</option>
-       <option value="interior">🏰 Instance / intérieur</option>
+       <option value="interior">🏠 Instance / intérieur</option>
+       <option value="dungeon">🗝 Donjon situé dans la zone sélectionnée</option>
       </select>
      </label>
+     <p id="dungeon-host-info" class="help-note" hidden>Le donjon sera placé dans la zone actuellement sélectionnée. Un Portal aller/retour sera créé automatiquement ; sa position se règle dans l'éditeur 2,5D.</p>
      <button class="accent block" type="submit">+ Ajouter au monde</button>
     </form>
     <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
@@ -76,11 +78,13 @@
     <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
     <h2 id="selected-name">Zone principale</h2>
     <p id="selected-id" class="technical-id"></p>
+    <p id="selected-host" class="help-note"></p>
     <div class="stat-row">
      <div><small>Dimensions</small><strong id="selected-size">—</strong></div>
      <div><small>Passages</small><strong id="selected-links">0</strong></div>
     </div>
-    <button id="edit-area" class="accent block" type="button">✎ Éditer cette zone</button>
+    <button id="edit-sculpt-area" class="accent block" type="button">⛰ Éditer en Exploration 2,5D</button>
+    <button id="edit-area" class="block secondary" type="button">✎ Éditeur détaillé 2D</button>
     <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
     <div class="section-head"><h3>Relier des zones</h3></div>
     <form id="connect-form" class="link-form">
