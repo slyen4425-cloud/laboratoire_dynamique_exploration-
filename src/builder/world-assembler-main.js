@@ -8,6 +8,7 @@ import {
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
 import {readSculptMapPresets,createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
+import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -276,6 +277,11 @@ function installWorldAssembler(){
       }
     }catch(error){status(error.message,true);}
   });
+  // The normal World Builder is the owner of Area dimensions. Sculpt 2.5D
+  // receives exactly the selected WorldArea; no independent map size.
+  let areaSizeTouched=false;
+  for(const id of ['area-width','area-height'])
+    on(byId(id),'input',()=>{areaSizeTouched=true;});
   on(byId('area-add-form'),'submit',event=>{
     event.preventDefault();
     const name=byId('area-name').value.trim();
@@ -284,7 +290,9 @@ function installWorldAssembler(){
     const kind=byId('area-kind').value;
     const hostId=selectedId;
     const ok=apply(()=>{
-      let next=addWorldArea(draft,{name,kind});
+      let next=addWorldArea(draft,{name,kind,
+        ...worldAreaSizeFromTiles({width:byId('area-width').value,
+          height:byId('area-height').value})});
       const added=next.areas.find(a=>!before.has(a.id));
       if(kind==='dungeon'&&added){
         next=connectWorldAreas(next,{
@@ -296,10 +304,15 @@ function installWorldAssembler(){
         ?'Donjon créé dans cette Area · Portal aller/retour ajouté.'
         :'Nouvelle WorldArea ajoutée au monde.');
     if(ok){selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
-      byId('area-add-form').reset();render();}
+      byId('area-add-form').reset();areaSizeTouched=false;render();}
   });
   on(byId('area-kind'),'change',()=>{
-    byId('dungeon-host-info').hidden=byId('area-kind').value!=='dungeon';
+    const kind=byId('area-kind').value;
+    byId('dungeon-host-info').hidden=kind!=='dungeon';
+    if(!areaSizeTouched){
+      byId('area-width').value=kind==='exterior'?'36':'18';
+      byId('area-height').value=kind==='exterior'?'24':'14';
+    }
   });
   on(byId('connect-form'),'submit',event=>{
     event.preventDefault();
@@ -329,8 +342,9 @@ function installWorldAssembler(){
       window.location.assign(url);
     }catch(error){status(error.message,true);}
   }
-  on(byId('edit-sculpt-area'),'click',
-    ()=>openAreaEditor('./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3'));
+  const mapPanelUrl='./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3&panels=world1';
+  on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
+  on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('edit-area'),'click',()=>{
     openAreaEditor('./builder.html?worldAssembler=1');
   });
@@ -368,9 +382,15 @@ function installWorldAssembler(){
     selectedId=draft.initialAreaId;render();
   });
   if(transfer){
-    persist();status('Monde modifié dans l’éditeur détaillé puis restauré.');
-  }else status('Sélectionne une zone ou crée une nouvelle destination.');
+    persist();status('Carte modifiée : même monde, même WorldArea et mêmes passages.');
+  }else status('Choisis une WorldArea puis utilise le panneau Carte pour la modifier.');
   render();
+  // Coming from the map panel with "Nouvelle carte de taille libre" only
+  // focuses the native Area form: it never starts a standalone map.
+  if(new URLSearchParams(window.location.search).get('createArea')==='1'){
+    byId('area-name').focus();
+    status('Nouvelle carte : choisis un nom, la largeur et la hauteur, puis ajoute-la au monde.');
+  }
   // Read-only test probe. UI selection/layout is never another WorldDocument.
   window.__worldAssemblerProbe=()=>Object.freeze({
     worldId:draft.id,areaIds:draft.areas.map(a=>a.id),

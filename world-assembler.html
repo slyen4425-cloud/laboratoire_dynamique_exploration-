@@ -11,11 +11,15 @@
  <div class="app-shell">
   <header class="app-header">
    <div class="app-brand">
-    <a href="./sculpt-lab.html" class="go-back" aria-label="Retour au laboratoire Exploration">‹</a>
+    
     <div><span class="eyebrow">GenSrpG · Monster Capture · Exploration</span>
      <h1>Constructeur de mondes</h1>
     </div>
    </div>
+   <nav class="world-workspace-tabs" aria-label="Panneaux du même éditeur de monde">
+    <button id="world-workspace-world-active" type="button" class="selected" aria-current="page">🌍 Monde</button>
+    <button id="world-workspace-map" type="button" title="Éditer la carte de la zone sélectionnée">🗺 Carte 2,5D</button>
+   </nav>
    <div class="header-actions">
     <span id="save-state" class="save-state" role="status">Monde local</span>
     <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
@@ -44,6 +48,14 @@
        <option value="dungeon">🗝 Donjon situé dans la zone sélectionnée</option>
       </select>
      </label>
+     <div class="world-area-size-fields">
+      <label class="field">Largeur (cases)
+       <input id="area-width" type="number" min="8" max="80" step="1" value="36" required>
+      </label>
+      <label class="field">Hauteur (cases)
+       <input id="area-height" type="number" min="8" max="64" step="1" value="24" required>
+      </label>
+     </div>
      <p id="dungeon-host-info" class="help-note" hidden>Le donjon sera placé dans la zone actuellement sélectionnée. Un Portal aller/retour sera créé automatiquement ; sa position se règle dans l'éditeur 2,5D.</p>
      <button class="accent block" type="submit">+ Ajouter au monde</button>
     </form>
@@ -63,7 +75,7 @@
       </select>
      </label>
      <button id="world-map-preset-create" class="accent block" type="button" disabled>+ Créer une zone depuis ce préset</button>
-     <p id="world-map-preset-info" class="help-note">Dans l'éditeur Exploration 2,5D, ouvre « Mes cartes présets » et enregistre une carte. Elle pourra ensuite être placée plusieurs fois dans ce monde.</p>
+     <p id="world-map-preset-info" class="help-note">Dans le panneau Carte 2,5D, ouvre « Mes cartes présets » et enregistre ta carte : elle pourra être placée plusieurs fois dans ce même monde.</p>
     </section>
     <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
    </aside>
@@ -101,7 +113,7 @@
      <div><small>Dimensions</small><strong id="selected-size">—</strong></div>
      <div><small>Passages</small><strong id="selected-links">0</strong></div>
     </div>
-    <button id="edit-sculpt-area" class="accent block" type="button">⛰ Éditer en Exploration 2,5D</button>
+    <button id="edit-sculpt-area" class="accent block" type="button">🗺 Modifier cette carte (panneau 2,5D)</button>
     <button id="edit-area" class="block secondary" type="button">✎ Éditeur détaillé 2D</button>
     <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
     <div class="section-head"><h3>Relier des zones</h3></div>
