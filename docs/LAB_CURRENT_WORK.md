@@ -1,19 +1,25 @@
-# LAB_CURRENT_WORK — Parcours jouable entre zones 2,5D et rencontres Capture
+# LAB_CURRENT_WORK — Navigation Monde → Carte 2,5D sur WorldArea historique
 
 Date : 2026-10-28
-Base GREEN : `13f6254e8825b33edda59e6ed6b5edc4c021e419`
-Branche : `work/exploration-playable-zone-routes-2026-10-28`
-Checkpoint START : `checkpoint/exploration-start-playable-zone-routes-2026-10-28`
+Domaine : World Builder / adaptation de navigation (aucune mutation du gameplay).
+Base GREEN : `e013cb861436cfa32f1f55b9f4968d207e7724bc` (885 tests Node et CI confirmée).
+Branche : `work/exploration-world-map-legacy-compatible-navigation-2026-10-28`
+Checkpoint START : `checkpoint/exploration-start-world-map-legacy-compatible-navigation-2026-10-28`
+Checkpoint GREEN précédent : `checkpoint/exploration-playable-zone-routes-green-2026-10-28`.
 
-## Reproduction et correction
-Sur mobile, le joueur voit `SORTIE → area-principale` et `Passage impossible en 2,5D`. Son portail vise une WorldArea historique 2400×1600, non éditable dans la grille Sculpt 28×21 (max 80×64). Le précédent garde-fou empêche la panne mais ne fournit pas de route alternative.
+## Constat utilisateur et RED
+Un WorldDocument conservé depuis l'ancien Builder a une zone de départ `Area Principale` 2400×1600 unités monde (terrain Sculpt autorisé jusqu'à 80×64 cellules). Sur le panneau Monde, `Carte 2,5D` bloque l'utilisateur sur cette ancienne zone, même lorsqu'une zone compatible `Ile` ou `Forêt profonde` est déjà présente. L'erreur propose seulement de créer une nouvelle carte et focalise le formulaire ; elle ignore les cartes jouables.
 
-Commande explicite « 🔗 Relier zones jouables » dans le World Builder : utilise une autre WorldArea extérieure compatible, ou crée les scènes nécessaires depuis les présets officiels ; recible un Portal point vers une zone réellement incompatible, établit le trajet réciproque avec `connectWorldAreas`, et définit un départ jouable si l'ancien départ ne l'est pas. Confirmation préalable ; **aucune zone historique supprimée ni réduite**. Un Portal vers une zone intérieure valide ne doit PAS être reciblé.
+## Périmètre
+- **Owner** : adapter de navigation du World Builder ; la validité de carte est déterminée par le même `sculptWorldAreaScene`.
+- Lorsque le panneau Carte est demandé depuis une zone incompatible, rechercher une WorldArea déjà éditable ; proposer explicitement son ouverture, sans aucune modification de `WorldDocument`.
+- Conserver le nom de zone dans le dialogue et la sélection canonique transmise par `saveWorldAssemblerHandoff`. Si refus, rester sur le panneau Monde ; si aucune carte compatible, garder le guide de création sans créer de carte automatiquement.
+- Le clic sur un éditeur 2D historique reste inchangé.
+- Aucun terrain 2400×1600 reformaté, aucune édition hors limites, aucune création automatique, aucun Portal/Spawn/Encounter changé.
 
-Lorsqu'on crée un préset depuis une zone hôte incompatible, demander explicitement si cette nouvelle carte doit être créée comme zone de départ indépendante et conserver l'ancienne WorldArea ; ne plus créer un lien condamné à échouer. Les présets ont déjà des maisons/intérieurs raccordés.
+## Tests / gates
+TDD RED puis GREEN : tests ciblés résolveur (zone compatible, historique avec deux alternatives, aucune alternative, contenu inchangé), test sentinelle UI du vrai handoff, `npm test`, `npm run check`, CI, contrôle preview Chromium tactile et résultat mobile réel avant clôture. CI rouge interdit publication.
+Hors périmètre : augmenter les dimensions Sculpt (>80×64), remplacer le modèle WorldArea, toucher main / V80 ou le dépôt GenSrpg.
 
-## Rencontres
-Labo 2,5D utilise le même `createEncounterController`, `WorldArea.encounters.randomEnabled`, `WorldDocument.encounterConfig`, `CaptureCreatureCatalogPreviewV1`, `createImmersiveEncounterHostV1` que le système validé. Les zones extérieures des présets héritent de `randomEnabled=true`, les intérieurs restent désactivés par défaut. Le panneau Rencontres sélectionne la famille de terrain de la nouvelle zone au passage (aucune deuxième configuration).
-
-## Validation / garde-fous
-1 WorldDocument, WorldArea, Portal et Spawn comme autorités ; TDD Node, Chromium 960×540 parcours de réparation réel avec dialogue accepté, CI Core+Combat, Pages isolées V80 immuable. Déploiement après GREEN et test manuel sur Pixel ensuite. Aucun changement sur le monde historique sans clic explicite.
+## Reprise préalable
+Le chantier précédent `work/exploration-playable-zone-routes-2026-10-28` a créé `🔗 Relier zones jouables` et corrigé les Portals vers les anciens mondes. Sa publication isolée PR #284 est fusionnée ; PR gameplay #283 reste brouillon. Le présent lot ne change ni le comportement de raccordement ni les scènes.
