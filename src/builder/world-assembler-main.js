@@ -10,6 +10,7 @@ import {
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=house-interiors-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=house-interiors-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
+import {makePlayableZoneRoute} from './sculpt-playable-zone-route.js';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 
 const byId=id=>document.getElementById(id);
@@ -267,17 +268,53 @@ function installWorldAssembler(){
       const before=new Set(draft.areas.map(a=>a.id));
       const name=byId('world-map-preset-name').value.trim()||preset.name;
       const kind=byId('world-map-preset-kind').value;
-      const hostAreaId=selectedId;
-      const ok=apply(()=>createWorldAreaFromSculptMapPreset(draft,preset,{
-        name,kind,hostAreaId
-      }),kind==='dungeon'
+      let hostAreaId=selectedId;
+      let asNewStart=false;
+      // Never silently connect a fresh playable map to a historical Area
+      // which the current 2.5D runtime cannot load.
+      try{sculptWorldAreaScene(getSelected());}
+      catch{
+        if(!window.confirm('La zone sélectionnée ne peut pas se charger en 2,5D. '+
+          'Créer ce préset comme nouveau départ jouable, sans modifier ni supprimer l’ancienne zone ?'))return;
+        if(kind==='dungeon'){status('Choisis une zone extérieure compatible comme hôte du donjon.',true);return;}
+        hostAreaId=null;
+        asNewStart=true;
+      }
+      const ok=apply(()=>{
+        let next=createWorldAreaFromSculptMapPreset(draft,preset,{
+          name,kind,hostAreaId
+        });
+        const created=next.areas.find(a=>!before.has(a.id));
+        if(asNewStart&&created)next=setWorldInitialArea(next,created.id);
+        return next;
+      },asNewStart?'Préset créé comme départ 2,5D · ancienne zone préservée.'
+        :kind==='dungeon'
         ?'Donjon créé depuis le préset avec passages aller-retour.'
         :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.');
       if(ok){
-        selectedId=draft.areas.find(a=>!before.has(a.id))?.id??selectedId;
+        selectedId=draft.areas.find(a=>!before.has(a.id)&&a.kind!=='interior')?.id??selectedId;
         render();
       }
     }catch(error){status(error.message,true);}
+  });
+  on(byId('world-playable-route'),'click',()=>{
+    if(!window.confirm('Raccorder des régions 2,5D pour pouvoir voyager entre elles ? '+
+       'Si une ancienne sortie pointe vers une zone incompatible, elle sera réorientée vers la destination jouable. '+
+       'Une carte pourra être créée si nécessaire et le départ du monde pourra changer. '+
+       'Aucune ancienne zone ni son contenu ne sera supprimé.'))return;
+    let result;
+    const ok=apply(()=>{
+      result=makePlayableZoneRoute(draft,{selectedAreaId:selectedId});
+      return result.document;
+    },'Parcours jouable créé : deux zones compatibles et Portals aller-retour.');
+    if(ok&&result){
+      selectedId=result.sourceAreaId;
+      render();
+      status('✓ Parcours actif entre '+pretty(result.sourceAreaId)+' et '+
+        pretty(result.targetAreaId)+'. Zone de départ sélectionnée. '+
+        (result.retargetedPortalId?'Ancienne sortie réparée. ':'')+
+        'Ouvre Carte 2,5D puis Tester.');
+    }
   });
   // The normal World Builder is the owner of Area dimensions. Sculpt 2.5D
   // receives exactly the selected WorldArea; no independent map size.

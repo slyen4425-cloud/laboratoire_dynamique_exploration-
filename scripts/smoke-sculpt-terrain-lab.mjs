@@ -3663,6 +3663,44 @@ try{
     throw Error('Legacy WorldArea lost or resized during tactile Map -> World return: '+
       JSON.stringify(legacyReturn));
   console.log('GREEN legacy 2400x1600 : World guard, no demo write and tactile return');
+  // Explicit mobile repair: this is the precise user-visible route action.
+  // Confirm through the real CDP javascriptDialogOpening event. Headless
+  // Chrome dismisses native dialogs automatically unless Page is enabled.
+  await send('Page.enable',{});
+  let repairDialogSeen=false;
+  const observeRepairDialog=event=>{
+    const packet=JSON.parse(event.data);
+    if(packet.method==='Page.javascriptDialogOpening'&&packet.params?.type==='confirm')
+      repairDialogSeen=true;
+  };
+  socket.addEventListener('message',observeRepairDialog);
+  const repairClick=run("document.querySelector('#world-playable-route').click();true");
+  for(let i=0;i<40&&!repairDialogSeen;i++)await sleep(30);
+  if(!repairDialogSeen)throw Error('Real mobile route action did not request confirmation');
+  const accepted=await send('Page.handleJavaScriptDialog',{accept:true});
+  if(accepted.error)throw Error('Playable route confirmation could not be accepted: '+
+    JSON.stringify(accepted));
+  await repairClick;
+  socket.removeEventListener('message',observeRepairDialog);
+  const repairedRoute=await run(`(()=>{
+    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+    const first=doc.areas.find(a=>a.id===doc.initialAreaId);
+    const outgoing=doc.portals.filter(p=>p.sourceAreaId===doc.initialAreaId);
+    const other=outgoing.map(p=>doc.areas.find(a=>a.id===p.targetAreaId))
+      .find(a=>a?.kind==='exterior'&&a.width<=80*28&&a.height<=64*21);
+    const back=other&&doc.portals.find(p=>p.sourceAreaId===other.id&&
+      p.targetAreaId===doc.initialAreaId);
+    return {selected:window.__worldAssemblerProbe?.().selectedAreaId,
+      start:doc.initialAreaId,sourceWidth:first?.width,other:other?.id,
+      reciprocal:!!back,legacyWidth:legacy?.width,legacyHeight:legacy?.height};
+  })()`);
+  if(repairedRoute.legacyWidth!==2400||repairedRoute.legacyHeight!==1600||
+     repairedRoute.sourceWidth>80*28||!repairedRoute.other||
+     !repairedRoute.reciprocal)
+    throw Error('Mobile playable WorldArea repair failed: '+JSON.stringify(repairedRoute));
+  console.log('Legacy world playable destination repair REAL Chromium GREEN:',
+    JSON.stringify(repairedRoute));
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{
