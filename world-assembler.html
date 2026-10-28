@@ -75,7 +75,7 @@
       </select>
      </label>
      <button id="world-map-preset-create" class="accent block" type="button" disabled>+ Créer une zone depuis ce préset</button>
-     <p id="world-map-preset-info" class="help-note">Choisis une carte native ou personnelle : elle sera ajoutée avec entrée à gauche, sortie à droite et passages aller-retour vers la zone sélectionnée.</p>
+     <p id="world-map-preset-info" class="help-note">Les nouvelles cartes seront reliées à la zone sélectionnée si elle est compatible avec le mode 2,5D. Sinon, tu pourras choisir cette carte comme nouveau départ sans modifier l’ancienne zone.</p>
     </section>
     <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
    </aside>
@@ -87,6 +87,7 @@
      </div>
      <div class="canvas-actions">
       <button id="center-world" type="button">⌖ Recentrer</button>
+      <button id="world-playable-route" type="button" title="Relier deux régions 2,5D sans modifier les anciennes zones">🔗 Relier zones jouables</button>
       <button id="reset-world" type="button">+ Nouveau monde</button>
      </div>
     </div>
