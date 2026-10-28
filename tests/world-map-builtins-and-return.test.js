@@ -34,7 +34,8 @@ test('eight native editable presets with real water, routes, assets and safe ini
    trees+=scene.objects.filter(o=>o.objectDefinitionId.includes('.tree.')).length;
    const base=createBlankWorldBuilderDraft({id:'test-'+preset.id,width:36*28,height:24*21});
    const result=createWorldAreaFromSculptMapPreset(base,preset,{name:preset.name,kind:'exterior'});
-   assert.equal(result.areas.length,2);
+   const houses=scene.objects.filter(o=>o.objectDefinitionId.includes('.building.')).length;
+   assert.equal(result.areas.length,2+houses,'each house instantiates an independent WorldArea');
    assert.equal(result.areas[1].sculptTerrain.width,scene.terrain.width);
    assert.ok(serializeWorldBuilderDraft(result).length>1000);
  }

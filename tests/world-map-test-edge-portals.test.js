@@ -13,8 +13,9 @@ test('each native map links to its host using distinct edge entry and exit with 
   const host=createBlankWorldBuilderDraft({id:'essai',width:36*28,height:24*21});
   const document=createWorldAreaFromSculptMapPreset(host,preset,{
     name:preset.name,kind:'exterior',hostAreaId:host.initialAreaId});
-  assert.equal(document.areas.length,2,preset.name);
-  assert.equal(document.portals.length,2,'both directions must be real Portals: '+preset.name);
+  const houses=document.areas[1].objects.filter(o=>o.objectDefinitionId.includes('.building.')).length;
+  assert.equal(document.areas.length,2+houses,preset.name+' and its interior rooms');
+  assert.equal(document.portals.length,2+2*houses,'each house and map route requires reciprocal real Portals: '+preset.name);
   const area=document.areas[1];
   const spawn=area.spawns[0];
   assert.ok(spawn.x<area.width*.2,preset.name+' entry should be near left boundary');

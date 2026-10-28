@@ -68,12 +68,12 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=edge-gates-v1';
+  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=house-interiors-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
-import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js';
+import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=house-interiors-v1';
 import {createWorldBuilderDraft} from './builder/world-builder-draft.js';
 
 const $=id=>document.getElementById(id);
@@ -676,12 +676,15 @@ function draw(){
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
-  if(activeInteriorId){
+  if(activeInteriorId||sculptWorldCurrentInterior()){
+    // Draw rooms with the same single wall and doorway renderer.
     ctx.save();
     // Canonical WorldArea boundary owns the visible interior cut-out AND the
     // Collision World limit; do not make a second editor-only silhouette.
     // Floor raster already drawn: mask every part outside boundary.
-    const boundaryArea=sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area;
+    const boundaryArea=activeInteriorId
+      ?sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area
+      :sculptWorldArea();
     if(boundaryArea?.boundary?.kind==='polygon'){
       // Isolate the boundary's projection. Previously, a conditional
       // ctx.restore() popped the OUTER interior save instead; subsequent
@@ -703,20 +706,22 @@ function draw(){
     // exact affine camera for walls as well, never an independent perspective.
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+    const worldExit=sculptWorldCurrentInterior()?
+      worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point'):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger,
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??worldExit?.trigger,
       stairPortals:sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
         .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal')
         .map(p=>interiorConnectorPreview?.id===p.id?
           {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),
-      doorScale:interior?.exitPortal.visual.scale??.58,
-      doorImage:interiorVisualImages.get(interior?.exitPortal.visual.assetId)??null,
+      doorScale:interior?.exitPortal?.visual?.scale??worldExit?.visual?.scale??.58,
+      doorImage:interiorVisualImages.get(interior?.exitPortal?.visual?.assetId??worldExit?.visual?.assetId)??null,
       connectorImages:interiorVisualImages,
-      wallMaterialId:interior?.area.wallMaterialId??'plaster',
-      walls:interior?.area.walls??[],
-      boundaryPoints:interior?.area.boundary?.kind==='polygon'?
-        worldAreaBoundaryPoints(interior.area):null,
+      wallMaterialId:(interior?.area??boundaryArea)?.wallMaterialId??'plaster',
+      walls:(interior?.area??boundaryArea)?.walls??[],
+      boundaryPoints:(interior?.area??boundaryArea)?.boundary?.kind==='polygon'?
+        worldAreaBoundaryPoints(interior?.area??boundaryArea):null,
       cameraPitch:view.pitch});
     if(interiorWallMode==='place'&&interiorWallStart){
       const next=interiorWallPreview??interiorWallStart;
@@ -3436,6 +3441,16 @@ function updateSculptWorldPortalAction(){
   button.disabled=!portal;
   if(portal){
     const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+    // The button must reflect actual Sculpt capacity BEFORE click. A legacy
+    // 2400×1600 target cannot be mounted; do not advertise a fake transition.
+    try{sculptWorldAreaScene(target);}
+    catch(error){
+      button.disabled=true;
+      button.textContent='🚪 Passage impossible en 2,5D';
+      button.title='Zone cible non compatible : '+error.message+
+        ' · ouvre le panneau Monde pour choisir une zone compatible.';
+      return;
+    }
     button.textContent='🚪 Entrer : '+(target?.label??target?.id??'autre zone');
     button.title='Passage à portée : toucher pour charger la zone suivante';
   }else{
@@ -3537,6 +3552,8 @@ function traverseSculptWorldPortal(){
   const portal=sculptWorldPortalAtHero();
   if(!portal)return;
   try{
+    const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+    sculptWorldAreaScene(target); // validate before mutating navigation/scene
     // The SAME runtime Portal resolver used by the 2D world document.
     const document=commitCurrentSculptWorldArea();
     const transition=applyPortalTransition(document,{
