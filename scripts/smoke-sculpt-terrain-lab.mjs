@@ -3501,6 +3501,62 @@ try{
      !returned2p5d.exterior?.surface||!returned2p5d.saved)
     throw Error('Saved dungeon sculpt terrain or real portals lost on return: '+
       JSON.stringify(returned2p5d));
+  // The SAME WorldDocument is edited from two user-facing panels.
+  // Choose a non-default size in the world panel, open that WorldArea in
+  // 2.5D using the top navigation, then switch back without losing anything.
+  const unifiedSize=await run(`(()=>{
+    const w=document.querySelector('#area-width'),h=document.querySelector('#area-height');
+    w.value='40';h.value='31';
+    w.dispatchEvent(new Event('input'));h.dispatchEvent(new Event('input'));
+    document.querySelector('#area-name').value='Grande clairière';
+    document.querySelector('#area-kind').value='exterior';
+    document.querySelector('#area-add-form').requestSubmit();
+    const last=window.__worldAssemblerProbe();
+    const map=document.querySelector('#world-workspace-map');
+    const rect=map.getBoundingClientRect();
+    const point=document.elementFromPoint(rect.x+rect.width/2,rect.y+rect.height/2);
+    return {...last,tabVisible:rect.width>40&&rect.height>30,
+      tabTouchable:point===map||map.contains(point)};
+  })()`);
+  if(unifiedSize.selectedWidth!==40*28||
+     !unifiedSize.tabVisible||!unifiedSize.tabTouchable)
+    throw Error('A new WorldArea size/panel tab is not functional on mobile: '+
+      JSON.stringify(unifiedSize));
+  await run("document.querySelector('#world-workspace-map').click();true");
+  let unifiedMap=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{unifiedMap=await run(`(()=>{
+      const p=window.__sculptWorldProbe?.();
+      return p?{...p,hasWorldTab:!!document.querySelector('#world-workspace-world'),
+        hasNewMapTab:!!document.querySelector('#world-area-create-another'),
+        worldHeader:document.querySelector('header h1')?.textContent}:null;
+    })`);}catch{}
+    if(unifiedMap)break;
+  }
+  if(unifiedMap?.terrainWidth!==40||unifiedMap.terrainHeight!==31||
+    !unifiedMap.hasWorldTab||!unifiedMap.hasNewMapTab||
+    !unifiedMap.worldHeader?.includes('World Builder'))
+    throw Error('Sculpt Map panel is not the same selected WorldArea: '+
+      JSON.stringify(unifiedMap));
+  await run("document.querySelector('#world-workspace-world').click();true");
+  let unifiedBack=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{unifiedBack=await run(`(()=>{
+      const probe=window.__worldAssemblerProbe?.();if(!probe)return null;
+      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      return {...probe,created:doc.areas.find(a=>a.label==='Grande clairière')};
+    })`);}catch{}
+    if(unifiedBack)break;
+  }
+  if(unifiedBack?.selectedWidth!==40*28||
+    unifiedBack.created?.height!==31*21||!unifiedBack.saved)
+    throw Error('World/Map panel switch lost the canonical WorldArea: '+
+      JSON.stringify(unifiedBack));
+  console.log('Unified World/Map panels Chromium GREEN:',
+    JSON.stringify({size:'40x31',areaId:unifiedBack.selectedAreaId,
+      saved:unifiedBack.saved,oneWorldDocument:true}));
   console.log('World Builder -> physical 2.5D Portal -> dungeon -> host + save Chromium:',
     JSON.stringify({areas:returned2p5d.areaIds.length,
       portals:returned2p5d.portalCount,
