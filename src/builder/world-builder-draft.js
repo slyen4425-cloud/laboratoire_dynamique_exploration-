@@ -2,6 +2,9 @@ import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
+  presetEncounterDefaults,encounterConfigNeedsExplicitInitialization
+} from './preset-encounter-defaults.js';
+import {
   defaultTerrainFamilyTraversalModes,
   normalizeTerrainFamilyTraversalModes
 } from '../world/terrain-family-registry.js?rev=terrain-family-speed-editor-v1';
@@ -225,8 +228,21 @@ export function createWorldBuilderDraft(sourceDocument) {
 }
 
 /**
+ * Explicit, opt-in initialization for historical documents whose normalized
+ * EncounterConfig contains no enabled probabilities or elements.
+ * Any configured document is preserved byte-for-byte in its gameplay fields.
+ */
+export function initializeWorldPresetEncounters(draft) {
+  if (!encounterConfigNeedsExplicitInitialization(draft?.encounterConfig))
+    return createWorldBuilderDraft(draft);
+  const ids=(draft.terrainFamilies??[]).map(f=>f.id);
+  return createWorldBuilderDraft({...draft,
+    encounterConfig:presetEncounterDefaults(ids,draft.encounterConfig)});
+}
+
+/**
  * Starting preset for an empty editable WorldDocument. The spawn is intentionally
- * retained so "Tester en jeu" works; nothing from the demonstration is copied.
+ * retained so "Tester en jeu" works; terrain/objects never copy the demo world.
  * All dimensions, terrain, textures and encounters remain ordinary draft data.
  */
 export function createBlankWorldBuilderDraft({
@@ -243,6 +259,8 @@ export function createBlankWorldBuilderDraft({
     id,
     initialAreaId: 'area-principale',
     initialSpawnId: 'depart',
+    // Initial gameplay data, copied into THIS WorldDocument once; editable.
+    encounterConfig: presetEncounterDefaults(),
     areas: [{
       id: 'area-principale',
       kind: 'exterior',
