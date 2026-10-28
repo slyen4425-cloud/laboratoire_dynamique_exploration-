@@ -2585,7 +2585,7 @@ $('new-map-form').addEventListener('submit',event=>{
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
   const blank=createBlankSculptPreviewScene({width,height});
-  // The World Builder's WorldDocument keeps Portal/Spawn and Encounter config.
+  // The World Builder's document de monde keeps Portal/Spawn and Encounter config.
   // Standalone Sculpt is allowed to start a fresh Encounter scene.
   if(!sculptWorldDraft){
     sculptEncounterConfig=sculptPreviewEncounterConfig;
@@ -3643,7 +3643,7 @@ function installSculptWorldAreaEditing(){
 }
 
 // Local templates are versioned snapshots of the existing Sculpt scene, not
-// an alternative WorldDocument. Reusing them always enters the regular editor.
+// an alternative document de monde. Reusing them always enters the regular editor.
 function installSculptMapPresetPalette(){
   const select=$('sculpt-map-preset-select');
   const presetStatus=(message,error=false)=>{
