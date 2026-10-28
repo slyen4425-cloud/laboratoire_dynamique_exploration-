@@ -3601,7 +3601,7 @@ function installSculptWorldAreaEditing(){
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
   function persistCurrentWorldSculpt(){
     // A legacy WorldArea which could not be mounted is read-only. Its canonical
-    // WorldDocument is persisted intact; the independent demo canvas is NEVER
+    // original world data is persisted intact; the independent demo canvas is NEVER
     // serialized into the user's zone.
     if(sculptWorldAreaMounted)commitCurrentSculptWorldArea();
     // The single world document is written into its canonical storage key.
