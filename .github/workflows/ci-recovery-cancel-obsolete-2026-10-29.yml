@@ -1,0 +1,55 @@
+name: Exploration CI recovery - cancel diagnosed obsolete Chromium runs
+on:
+  push:
+    branches:
+      - work/exploration-ci-unblock-stale-chromium-2026-10-29
+permissions:
+  actions: write
+  contents: read
+jobs:
+  cancel-obsolete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Cancel ONLY previously identified obsolete Exploration runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$EXPECTED_REPO" = 'slyen4425-cloud/laboratoire_dynamique_exploration-'
+          # Fixed allowlist from the incident audit. Never cancel unrelated
+          # work, other repositories, or the PR #287 final validation.
+          ids=(40754824476 40754880363 40754986704 40755181007 40765555335 40765693737 40765700328 40765720414 40765809394 40769800625 40769807066 40769813914 40769820524 40769900647 40770061069 40770067286 40770619050 40770931419 40771061978 40773821439 40774020636)
+          cancelled=0
+          already_done=0
+          errors=0
+          for id in "${ids[@]}"; do
+            data="$(gh api "repos/$EXPECTED_REPO/actions/runs/$id" --jq '[.status,.head_branch,.name,.head_sha]|@tsv')"
+            IFS=$'\t' read -r status head_branch name sha <<< "$data"
+            if [[ "$head_branch" != 'work/exploration-preset-playable-travel-encounters-2026-10-28' || "$name" != 'Exploration CI' ]]; then
+              echo "::error::Refusing unexpected run $id ($status / $head_branch / $name)"
+              errors=$((errors+1))
+              continue
+            fi
+            if [[ "$status" == 'completed' ]]; then
+              echo "Already finished: $id"
+              already_done=$((already_done+1))
+              continue
+            fi
+            if [[ "$status" != 'queued' && "$status" != 'pending' && "$status" != 'in_progress' && "$status" != 'waiting' ]]; then
+              echo "::error::Unexpected status for run $id: $status"
+              errors=$((errors+1))
+              continue
+            fi
+            if gh api -X POST "repos/$EXPECTED_REPO/actions/runs/$id/cancel" >/dev/null; then
+              echo "Cancellation requested: $id"
+              cancelled=$((cancelled+1))
+            else
+              echo "::error::Cancellation request failed: $id"
+              errors=$((errors+1))
+            fi
+          done
+          echo "Requested cancellations: $cancelled; already completed: $already_done; errors: $errors"
+          test "$errors" -eq 0
