@@ -66,6 +66,11 @@ import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
+import {findTriggeredPortal,applyPortalTransition} from './world/portal-model.js';
+import {sculptWorldAreaScene,saveSculptWorldArea,
+  placeSculptWorldPortal,placeSculptWorldSpawn} from './builder/sculpt-world-area-link.js';
+import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff} from './builder/world-assembler-handoff.js';
+import {createWorldBuilderDraft} from './builder/world-builder-draft.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -74,6 +79,9 @@ let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 // V79: one active area at a time. Detached exterior snapshot is a temporary
 // editor view of the SAME scene while an interior is open, not a second terrain.
 let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=null;
+// World-linked authoring uses exactly one WorldDocument. Active terrain is
+// transient editor state until committed back to its own WorldArea.
+let sculptWorldDraft=null,sculptWorldAreaId=null,sculptWorldPortalPlacement=null;
 let sculptInteriorTemplates=Object.freeze([]);
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
 let interiorWallGesture=null,interiorDoorMoving=false,interiorDoorGesture=null,interiorDoorPreview=null;
@@ -305,27 +313,28 @@ window.__sculptEncounterEditorProbe=()=>Object.freeze({
   enabledElementIds:(sculptEncounterProfile()?.elementChances??[])
     .filter(x=>x.chancePercent>0).map(x=>x.elementId),
   allowedInArea:sculptEncounterAreaEnabled(),
-  areaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,
+  areaId:activeInteriorId??sculptWorldAreaId??SCULPT_EXTERIOR_AREA_ID,
   configFamilyCount:sculptEncounterConfig.families.length
 });
 
 function navigationEncounterArea(){
-  const areaId=activeInteriorId??SCULPT_EXTERIOR_AREA_ID;
+  const areaId=activeInteriorId??sculptWorldAreaId??SCULPT_EXTERIOR_AREA_ID;
   const interior=activeInteriorId?sculptInteriors.find(e=>e.area.id===activeInteriorId):null;
+  const worldArea=sculptWorldDraft?.areas.find(e=>e.id===sculptWorldAreaId)??null;
   if(activeInteriorId&&!interior)throw Error('WorldArea intérieure introuvable pour rencontre');
   if(sculptEncounterAreaCache?.areaId===areaId&&
      sculptEncounterAreaCache.surface===surface&&
      sculptEncounterAreaCache.terrain===terrain&&
-     sculptEncounterAreaCache.existingArea===interior?.area&&
+     sculptEncounterAreaCache.existingArea===(interior?.area??worldArea)&&
      sculptEncounterAreaCache.exteriorEncounters===sculptExteriorEncounters)
     return sculptEncounterAreaCache.projected;
   const projected=createSculptEncounterArea({
-    areaId,existingArea:interior?.area??null,surface,
+    areaId,existingArea:interior?.area??worldArea??null,surface,
     exteriorEncounters:sculptExteriorEncounters,
     width:terrain.width*SCULPT_TILE.width,height:terrain.height*SCULPT_TILE.height
   });
   sculptEncounterAreaCache={
-    areaId,surface,terrain,existingArea:interior?.area,
+    areaId,surface,terrain,existingArea:interior?.area??worldArea,
     exteriorEncounters:sculptExteriorEncounters,projected
   };
   return projected;
@@ -777,6 +786,7 @@ function draw(){
       ctx.stroke();ctx.restore();
     }
   }
+  drawSculptWorldPortalMarkers();
   // Preview the authored ground ramp from its real endpoints, not an
   // artificial object silhouette. The committed terrain is drawn in the
   // terrain-only raster with the same surface texture.
@@ -1130,6 +1140,12 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(sculptWorldPortalPlacement){
+    event.preventDefault();
+    const point=screenToWorldPoint(event);
+    applySculptWorldPointerPlacement(point);
+    return;
+  }
   if(activeInteriorId&&interiorConnectorMode){
     const point=screenToWorldPoint(event);
     if(!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
@@ -1633,6 +1649,21 @@ function drawNavigationActor(){
     });
 }
 function navigationSpawn(){
+  // WorldBuilder's Spawn, not a prototype test position, owns the entrance
+  // of a region/instance. Still validate it through native Collision World.
+  const worldArea=sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId);
+  const worldSpawn=worldArea?.spawns.find(s=>s.id===
+    (sculptWorldDraft.initialAreaId===sculptWorldAreaId
+      ?sculptWorldDraft.initialSpawnId:worldArea.spawns[0]?.id));
+  if(worldSpawn&&Number.isFinite(worldSpawn.x)&&Number.isFinite(worldSpawn.y)){
+    const candidate={x:worldSpawn.x,y:worldSpawn.y,radius:5,
+      locomotion:{modes:['ground']},facingX:1,moving:false};
+    const level=sculptNavigationSample(terrain,candidate.x,candidate.y,
+      {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
+    if(level?.waterDepth===0&&
+       !isBlocked(navigationWorld(),candidate,candidate.x,candidate.y,
+         undefined,navigationContext()))return candidate;
+  }
   // Start in an area known to be dry in the default demo; valid for a
   // user-imported terrain too, because the fallback searches dry cells.
   // For cross/L/T polygons the TEST avatar begins in the central corridor,
@@ -1662,6 +1693,7 @@ function navigationSpawn(){
 function updateNavigationInfo(forced=false){
   if(!navigationTesting||!navActor)return;
   updateSculptDoorAction();
+  updateSculptWorldPortalAction();
   const info=sculptNavigationSample(terrain,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
   const deck=activeSculptBridge();
@@ -2903,7 +2935,7 @@ function updateSculptAreaControls(){
     $('interior-shape').value=kind==='custom'?'rectangle':kind;
     $('interior-layout-apply').disabled=kind==='custom';
   }
-  $('new-map-toggle').disabled=!!entry;
+  $('new-map-toggle').disabled=!!entry||!!sculptWorldDraft;
   for(const option of $('surface-material').options)
     option.disabled=entry?!option.value.startsWith('floor.'):
       option.value.startsWith('floor.');
