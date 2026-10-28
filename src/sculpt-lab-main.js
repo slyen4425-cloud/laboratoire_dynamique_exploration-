@@ -68,7 +68,8 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {findTriggeredPortal,applyPortalTransition} from './world/portal-model.js';
 import {sculptWorldAreaScene,saveSculptWorldArea,
-  placeSculptWorldPortal,placeSculptWorldSpawn} from './builder/sculpt-world-area-link.js';
+  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
+import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff} from './builder/world-assembler-handoff.js';
 import {createWorldBuilderDraft} from './builder/world-builder-draft.js';
 
@@ -1821,7 +1822,9 @@ function setNavigationTesting(on){
     sculptEncounterController?.resetAnchor();
     sculptEncounterStep(); // seed the cadence anchor at the actual spawn
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
-    status('Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
+    status(sculptWorldDraft
+      ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
+      :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
     if(sculptEncounterHost?.active)return; // Combat owns the overlay until completion
     releaseSculptEncounter();
@@ -3330,12 +3333,14 @@ function refreshSculptWorldPanel(){
   if(choices.some(p=>p.id===previous))portalSelect.value=previous;
   const portal=currentWorldPortal(),hasPortal=!!portal;
   for(const id of ['world-area-portal-place','world-area-portal-save',
+    'world-area-portal-label','world-area-portal-label-save',
     'world-area-portal-x','world-area-portal-y'])
     $(id).disabled=!hasPortal;
   $('world-area-portal-x').value=portal?.trigger.kind==='point'?
     String(Math.round(portal.trigger.x)):'';
   $('world-area-portal-y').value=portal?.trigger.kind==='point'?
     String(Math.round(portal.trigger.y)):'';
+  $('world-area-portal-label').value=portal?.visual?.label??'';
   const spawns=area.spawns.filter(s=>Number.isFinite(s.x)&&Number.isFinite(s.y));
   const selector=$('world-area-spawn-select'),selected=selector.value;
   selector.replaceChildren(...spawns.map(s=>new Option(
@@ -3379,7 +3384,8 @@ function commitSculptWorldPortal(point){
   const position=validSculptWorldAuthoringPoint(point);
   sculptWorldDraft=placeSculptWorldPortal(sculptWorldDraft,portal.id,position);
   refreshSculptWorldPanel();
-  sculptWorldStatus('Entrée du Portal enregistrée à X '+position.x+', Y '+position.y);
+  sculptWorldStatus('Entrée du Portal enregistrée à X '+position.x+', Y '+position.y+
+    ' · repère SORTIE visible sur la carte.');
 }
 function commitSculptWorldSpawn(point){
   const spawn=selectedWorldSpawn();
@@ -3388,7 +3394,8 @@ function commitSculptWorldSpawn(point){
   sculptWorldDraft=placeSculptWorldSpawn(
     sculptWorldDraft,sculptWorldAreaId,spawn.id,position);
   refreshSculptWorldPanel();
-  sculptWorldStatus('Point d’arrivée enregistré à X '+position.x+', Y '+position.y);
+  sculptWorldStatus('Point d’arrivée enregistré à X '+position.x+', Y '+position.y+
+    ' · repère ARRIVÉE visible sur la carte.');
 }
 function applySculptWorldPointerPlacement(point){
   if(!sculptWorldPortalPlacement)return;
@@ -3416,26 +3423,49 @@ function updateSculptWorldPortalAction(){
 }
 function drawSculptWorldPortalMarkers(){
   if(!sculptWorldDraft)return;
-  const portals=worldOutboundPortals().filter(p=>p.trigger?.kind==='point'&&p.enabled);
-  if(!portals.length)return;
+  // Markers are a read-only projection of the same Portal.trigger / Spawn
+  // coordinates used by findTriggeredPortal and applyPortalTransition.
+  const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{
+    testing:navigationTesting,selectedPortalId:currentWorldPortal()?.id
+  });
+  if(!markers.length)return;
   ctx.save();
   if(navigationTesting){
     const view=cameraView();
     ctx.transform(1,view.shear,0,view.pitch,0,0);
   }
-  for(const portal of portals){
-    const {x,y,radius}=portal.trigger;
+  for(const marker of markers){
+    const {x,y,radius}=marker;
     const level=sculptHeightAt(terrain,Math.floor(x/SCULPT_TILE.width),
       Math.floor(y/SCULPT_TILE.height));
-    // Projection only: collision radius and trigger coordinates remain Portal-owned.
     const viewY=y-level*SCULPT_TILE.rise;
-    const active=portal.id===currentWorldPortal()?.id;
+    const exit=marker.kind==='exit',arrival=marker.kind==='arrival';
+    const color=exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
+    const title=exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
+    const name=(marker.label??'').slice(0,35);
+    const caption=title+name;
+    // This ring is EXACTLY the real Portal trigger radius, not an enlarged
+    // fake interaction zone. A separate fixed-screen-size label stays legible.
     ctx.beginPath();ctx.arc(x,viewY,radius,0,Math.PI*2);
-    ctx.fillStyle=active?'rgba(93,225,188,.27)':'rgba(255,225,139,.16)';
-    ctx.strokeStyle=active?'#87f5d2':'#ffdd99';
-    ctx.lineWidth=3;ctx.fill();ctx.stroke();
-    ctx.fillStyle='#e7fff4';ctx.font='bold 18px sans-serif';
-    ctx.textAlign='center';ctx.fillText('↪',x,viewY+6);
+    ctx.fillStyle=exit?'rgba(255,215,122,.20)':arrival
+      ?'rgba(113,212,255,.20)':'rgba(219,167,255,.20)';
+    ctx.strokeStyle=color;ctx.lineWidth=(marker.selected?3.6:2.6)/Math.max(zoom,.3);
+    ctx.fill();ctx.stroke();
+    if(marker.selected){
+      ctx.beginPath();ctx.arc(x,viewY,radius+4/Math.max(zoom,.3),0,Math.PI*2);
+      ctx.strokeStyle='#f1fff7';ctx.lineWidth=1.3/Math.max(zoom,.3);ctx.stroke();
+    }
+    const size=12/Math.max(zoom,.3);
+    const pad=5/Math.max(zoom,.3),height=20/Math.max(zoom,.3);
+    ctx.font='bold '+size+'px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    const width=ctx.measureText(caption).width+2*pad;
+    const centerY=viewY-radius-height/2-8/Math.max(zoom,.3);
+    ctx.fillStyle='rgba(9,30,41,.92)';
+    ctx.fillRect(x-width/2,centerY-height/2,width,height);
+    ctx.strokeStyle=color;ctx.lineWidth=1/Math.max(zoom,.3);
+    ctx.strokeRect(x-width/2,centerY-height/2,width,height);
+    ctx.fillStyle='#f8fbff';ctx.fillText(caption,x,centerY);
   }
   ctx.restore();
 }
@@ -3532,6 +3562,16 @@ function installSculptWorldAreaEditing(){
         :'Placement annulé.');
     });
   }
+  $('world-area-portal-label-save').addEventListener('click',()=>{
+    const portal=currentWorldPortal();
+    if(!portal){sculptWorldStatus('Aucun passage à nommer dans cette zone',true);return;}
+    try{
+      sculptWorldDraft=setSculptWorldPortalLabel(sculptWorldDraft,portal.id,
+        $('world-area-portal-label').value);
+      refreshSculptWorldPanel();
+      sculptWorldStatus('Nom du repère SORTIE enregistré sur le Portal.');
+    }catch(error){sculptWorldStatus(error.message,true);}
+  });
   $('world-area-portal-save').addEventListener('click',()=>{
     try{commitSculptWorldPortal({
       x:Number($('world-area-portal-x').value),
