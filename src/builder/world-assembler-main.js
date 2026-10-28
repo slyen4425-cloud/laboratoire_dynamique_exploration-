@@ -10,8 +10,9 @@ import {
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
-const kindIcon=area=>area.kind==='interior'?'🏰':'🌲';
-const kindName=area=>area.kind==='interior'?'Instance / intérieur':'Région extérieure';
+const kindIcon=area=>area.siteKind==='dungeon'?'🗝':area.kind==='interior'?'🏠':'🌲';
+const kindName=area=>area.siteKind==='dungeon'?'Donjon / instance':area.kind==='interior'?'Instance / intérieur':'Région extérieure';
+const areaLabel=area=>area.label||pretty(area.id);
 const svgNS='http://www.w3.org/2000/svg';
 
 function graphLayout(doc){
@@ -61,7 +62,7 @@ function nodeButton(area,position,doc,selectedId,onClick){
     const star=document.createElement('span');star.className='start-pill';
     star.textContent='★ Départ';top.append(star);
   }
-  const label=document.createElement('strong');label.textContent=pretty(area.id);
+  const label=document.createElement('strong');label.textContent=areaLabel(area);
   const type=document.createElement('small');type.textContent=kindName(area);
   const count=document.createElement('span');count.className='node-count';
   const n=doc.portals.filter(p=>p.sourceAreaId===area.id).length;
@@ -94,7 +95,7 @@ function installWorldAssembler(){
   const transfer=new URLSearchParams(window.location.search).get('return')==='1'
     ?readWorldAssemblerHandoff(window.sessionStorage):null;
   let draft=transfer?.document??readWorldAssemblerDraft(window.localStorage)
-    ??createBlankWorldBuilderDraft({id:'nouveau-monde'});
+    ??createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21});
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
   function status(message,isError=false){
@@ -130,7 +131,7 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);return false;}
   }
   function fillSelect(select,areas,current){
-    select.replaceChildren(...areas.map(a=>new Option(pretty(a.id),a.id)));
+    select.replaceChildren(...areas.map(a=>new Option(areaLabel(a),a.id)));
     if(areas.some(a=>a.id===current))select.value=current;
   }
   function renderAreaList(){
@@ -141,7 +142,7 @@ function installWorldAssembler(){
       if(area.id===selectedId)button.classList.add('active');
       const icon=document.createElement('span');icon.className='mini-icon';icon.textContent=kindIcon(area);
       const copy=document.createElement('span');copy.className='mini-copy';
-      const title=document.createElement('strong');title.textContent=pretty(area.id);
+      const title=document.createElement('strong');title.textContent=areaLabel(area);
       const note=document.createElement('small');note.textContent=
         (area.id===draft.initialAreaId?'★ Départ · ':'')+kindName(area);
       copy.append(title,note);button.append(icon,copy);
@@ -177,7 +178,15 @@ function installWorldAssembler(){
   }
   function renderInspector(){
     const area=getSelected();if(!area)return;
-    byId('selected-name').textContent=pretty(area.id);
+    byId('selected-name').textContent=areaLabel(area);
+    const host=area.kind==='interior'?draft.portals.find(p=>
+      p.targetAreaId===area.id&&draft.areas.some(parent=>
+        parent.id===p.sourceAreaId&&parent.kind==='exterior')):null;
+    const hostArea=host?draft.areas.find(a=>a.id===host.sourceAreaId):null;
+    byId('selected-host').textContent=hostArea
+      ?'📍 Situé dans : '+areaLabel(hostArea)+' · entrée via Portal'
+      :area.kind==='interior'?'Instance indépendante · relie-la à une autre zone pour y entrer.':
+        'Cette région peut contenir des donjons, maisons et autres instances.';
     byId('selected-id').textContent='WorldArea · '+area.id;
     byId('selected-icon').textContent=kindIcon(area);
     byId('area-kind-badge').textContent=area.kind==='interior'?'INSTANCE':'RÉGION';
@@ -225,10 +234,25 @@ function installWorldAssembler(){
     const name=byId('area-name').value.trim();
     if(!name){status('Entre un nom pour la nouvelle zone.',true);return;}
     const before=new Set(draft.areas.map(a=>a.id));
-    const ok=apply(()=>addWorldArea(draft,{name,kind:byId('area-kind').value}),
-      'Nouvelle WorldArea ajoutée au monde.');
+    const kind=byId('area-kind').value;
+    const hostId=selectedId;
+    const ok=apply(()=>{
+      let next=addWorldArea(draft,{name,kind});
+      const added=next.areas.find(a=>!before.has(a.id));
+      if(kind==='dungeon'&&added){
+        next=connectWorldAreas(next,{
+          sourceAreaId:hostId,targetAreaId:added.id,returnPortal:true
+        });
+      }
+      return next;
+    },kind==='dungeon'
+        ?'Donjon créé dans cette Area · Portal aller/retour ajouté.'
+        :'Nouvelle WorldArea ajoutée au monde.');
     if(ok){selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
       byId('area-add-form').reset();render();}
+  });
+  on(byId('area-kind'),'change',()=>{
+    byId('dungeon-host-info').hidden=byId('area-kind').value!=='dungeon';
   });
   on(byId('connect-form'),'submit',event=>{
     event.preventDefault();
@@ -251,12 +275,17 @@ function installWorldAssembler(){
     if(!name){byId('world-name').value=draft.id;return;}
     apply(()=>createWorldBuilderDraft({...draft,id:name}),'Nom du monde enregistré.');
   });
-  on(byId('edit-area'),'click',()=>{
+  function openAreaEditor(url){
     try{
       saveWorldAssemblerHandoff(window.sessionStorage,draft,selectedId);
       persist();
-      window.location.assign('./builder.html?worldAssembler=1');
+      window.location.assign(url);
     }catch(error){status(error.message,true);}
+  }
+  on(byId('edit-sculpt-area'),'click',
+    ()=>openAreaEditor('./sculpt-lab.html?worldAssembler=1'));
+  on(byId('edit-area'),'click',()=>{
+    openAreaEditor('./builder.html?worldAssembler=1');
   });
   on(byId('export-world'),'click',()=>{
     try{
@@ -287,7 +316,7 @@ function installWorldAssembler(){
   on(byId('reset-world'),'click',()=>dialog.showModal());
   on(dialog,'close',()=>{
     if(dialog.returnValue!=='confirm')return;
-    apply(()=>createBlankWorldBuilderDraft({id:'nouveau-monde'}),
+    apply(()=>createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}),
       'Nouveau monde vierge prêt à assembler.');
     selectedId=draft.initialAreaId;render();
   });
