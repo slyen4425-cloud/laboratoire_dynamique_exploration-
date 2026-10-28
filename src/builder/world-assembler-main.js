@@ -298,7 +298,7 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);}
   });
   on(byId('world-playable-route'),'click',()=>{
-    if(!window.confirm('Raccorder toutes les sorties de régions 2,5D vers des cartes jouables ? '+
+    if(!window.confirm('Raccorder des régions 2,5D, réparer leurs sorties et relier les cartes jouables ? '+
        'Les passages historiques incompatibles seront réparés, sans modifier leurs cartes. '+
        'Si les rencontres de ce monde sont toutes à 0 %, initialiser aussi les profils des présets. '+
        'Les réglages déjà personnalisés seront conservés.'))return;
