@@ -704,6 +704,10 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
   </div>
   <button id="world-area-portal-place" type="button">📍 Pointer l'entrée sur le terrain</button>
   <button id="world-area-portal-save" type="button">✓ Enregistrer cette entrée</button>
+  <label>Nom du repère de sortie (facultatif)
+   <input id="world-area-portal-label" type="text" maxlength="80" placeholder="Ex. Porte de la crypte">
+  </label>
+  <button id="world-area-portal-label-save" type="button">🏷 Enregistrer le nom du repère</button>
   <label>Point d'arrivée dans cette zone
    <select id="world-area-spawn-select" aria-label="Choisir le point d'arrivée"></select>
   </label>
@@ -713,6 +717,8 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
   </div>
   <button id="world-area-spawn-place" type="button">📍 Pointer l'arrivée sur le terrain</button>
   <button id="world-area-spawn-save" type="button">✓ Enregistrer l'arrivée</button>
+  <small>🟡 SORTIE : passage vers la zone reliée. 🔵 ARRIVÉE : position d'apparition dans cette zone. Les deux repères restent déplaçables.</small>
+  <small>En mode Tester, approche du cercle SORTIE et appuie sur « 🚪 Entrer » pour charger la zone suivante.</small>
   <small id="world-area-portal-status" role="status" aria-live="polite">Place l'entrée sur ta carte ; le héros passera à la zone reliée en jeu.</small>
  </div>
 </details>
