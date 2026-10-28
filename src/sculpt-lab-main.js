@@ -79,7 +79,7 @@ let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
 // V79: one active area at a time. Detached exterior snapshot is a temporary
 // editor view of the SAME scene while an interior is open, not a second terrain.
 let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=null;
-// World-linked authoring uses exactly one WorldDocument. Active terrain is
+// World-linked authoring uses exactly one world document. Active terrain is
 // transient editor state until committed back to its own WorldArea.
 let sculptWorldDraft=null,sculptWorldAreaId=null,sculptWorldPortalPlacement=null;
 let sculptInteriorTemplates=Object.freeze([]);
@@ -1506,12 +1506,14 @@ function stop(event){
    stepMovement. Collision World alone decides whether the sculpt terrain blocks
    that movement. The editor never persists player navigation in map JSON. */
 function navigationWorld(){
-  const current=sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area
-    ??sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId);
-  return {width:terrain.width*SCULPT_TILE.width,
+  const current=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  const base={width:terrain.width*SCULPT_TILE.width,
     height:terrain.height*SCULPT_TILE.height,objects:placedObjects,obstacles:[],
-    boundary:current?.boundary,
-    walls:current?.walls??[]};
+    boundary:current?.area.boundary,
+    walls:current?.area.walls??[]};
+  const worldArea=sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId);
+  return worldArea?{...base,boundary:worldArea.boundary,
+    walls:worldArea.walls}:base;
 }
 function navigationMaxStep(){
   // V75: an abrupt sculpt cell boundary is NEVER a free walking step. The
@@ -3285,7 +3287,7 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
   undoCount:history.length,redoCount:redoHistory.length,
   highestLevel:Math.max(...terrain.levels),lowestLevel:Math.min(...terrain.levels),target:Number($('target').value),edge:Number($('edge').value)});
 
-/* World Builder 2.5D: same WorldDocument v3 owns every WorldArea, Portal,
+/* World Builder 2.5D: same world document v3 owns every WorldArea, Portal,
  * Spawn, paint, placement and relief. This pane edits only the selected Area.
  * The existing renderer and Collision World remain the ONLY movement owners.
  */
@@ -3471,7 +3473,7 @@ function traverseSculptWorldPortal(){
   const portal=sculptWorldPortalAtHero();
   if(!portal)return;
   try{
-    // The SAME runtime Portal resolver used by the 2D WorldDocument.
+    // The SAME runtime Portal resolver used by the 2D world document.
     const document=commitCurrentSculptWorldArea();
     const transition=applyPortalTransition(document,{
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
@@ -3503,7 +3505,7 @@ function installSculptWorldAreaEditing(){
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
   $('world-area-portal-panel').hidden=false;
   $('new-map-toggle').disabled=true; // never alter Area dimensions implicitly
-  $('import').disabled=true; // standalone Sculpt scene cannot replace a WorldDocument
+  $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
   $('new-map-toggle').title='Les dimensions de cette WorldArea sont celles du World Builder';
   $('world-area-return').addEventListener('click',()=>{
     try{
