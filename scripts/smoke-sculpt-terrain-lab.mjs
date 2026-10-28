@@ -3539,7 +3539,38 @@ try{
     !unifiedMap.worldHeader?.includes('World Builder'))
     throw Error('Sculpt Map panel is not the same selected WorldArea: '+
       JSON.stringify(unifiedMap));
-  await run("document.querySelector('#world-workspace-world').click();true");
+  // The reporter's real failure: the header disappears in immersive mode,
+  // so the ordinary Monde tab is not reachable. Reload first to prove that
+  // handoff consumption does not strand the selected WorldArea either.
+  await send('Page.reload',{ignoreCache:true});
+  let reloadedMap=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{reloadedMap=await run("window.__sculptWorldProbe?.()??null");}catch{}
+    if(reloadedMap?.areaId)break;
+  }
+  if(reloadedMap?.areaId!==unifiedMap.areaId||reloadedMap.terrainWidth!==40)
+    throw Error('Sculpt WorldArea lost after refresh; session handoff is one-shot: '+
+      JSON.stringify(reloadedMap));
+  const returnHit=await run(`(()=>{
+    document.querySelector('#fullscreen-toggle').click();
+    const button=document.querySelector('#world-workspace-return-float');
+    const r=button.getBoundingClientRect();
+    const element=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+    return {display:getComputedStyle(button).display,fullscreen:
+      document.body.classList.contains('sculpt-immersive'),
+      x:r.x+r.width/2,y:r.y+r.height/2,
+      width:r.width,height:r.height,
+      touchable:element===button||button.contains(element)};
+  })()`);
+  if(!returnHit.fullscreen||returnHit.display==='none'||
+     returnHit.width<90||returnHit.height<40||!returnHit.touchable)
+    throw Error('World return action hidden or covered in fullscreen: '+
+      JSON.stringify(returnHit));
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:returnHit.x,y:returnHit.y,id:70,radiusX:6,radiusY:6,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   let unifiedBack=null;
   for(let i=0;i<90;i++){
     await sleep(110);
