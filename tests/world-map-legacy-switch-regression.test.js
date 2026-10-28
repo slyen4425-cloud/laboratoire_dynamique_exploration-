@@ -14,11 +14,13 @@ test('legacy WorldArea 2400 x 1600 is never silently resized or overwritten by a
  assert.equal(restored.initialAreaId,doc.initialAreaId);
 });
 
-test('World Builder refuses unsupported 2.5D transitions before navigation, without changing selected WorldDocument',()=>{
+test('World Builder offers a compatible 2.5D Area, refuses false demo handoff when none exists',()=>{
  const main=read('src/builder/world-assembler-main.js');
- assert.match(main,/sculptWorldAreaScene\(getSelected\(\)\)/);
- assert.match(main,/Zone non éditable en 2,5D/);
+ assert.match(main,/resolveSculptAreaForEditor\(draft,selectedId\)/);
+ assert.match(main,/if\(!resolution\)\{/);
  assert.match(main,/area-name'\)\.focus\(\)/);
+ assert.match(main,/window\.confirm\('La zone/);
+ assert.doesNotMatch(main,/createBlankWorldBuilderDraft\(\{id:'nouveau-monde'.*\}\).*openAreaEditor/s);
 });
 
 test('legacy map handoff always allows return without committing the unrelated demo canvas',()=>{
