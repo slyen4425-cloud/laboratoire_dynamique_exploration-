@@ -20,3 +20,8 @@ Statut : diagnostic utilisateur répété, lot fonctionnel non déclaré GREEN.
 
 ## Gates exigés
 TDD RED (nouveau monde non nul + véritable rencontre + deux passages réciproques non déplacés à la main + anciens 2400×1600 + refus), suite Node complète, CI Exploration/Combat, Chromium paysage smartphone sur la preview réellement assemblée, vérification HTTPS; checkpoint GREEN avant publication isolée. Validation manuelle Pixel requise avant fusion du gameplay.
+
+## Fiabilité de la gate CI (dans ce même lot)
+- Des runs Chromium anciens, toujours actifs malgré un `core-tests` terminé, ont saturé les runners et empêché la dernière validation navigateur. Le script Chromium de ce lot possède désormais un watchdog CDP de 60 secondes qui **échoue explicitement** en cas de blocage ; aucun succès n’est simulé.
+- Le workflow utilise une concurrence par branche et annule uniquement les validations dépassées du même chantier ; la gate Chromium a une limite d’exécution explicite de 15 minutes. Une expiration est un **échec rouge**, jamais une autorisation de publier.
+- Ne pas fusionner ni publier sur cette seule base : obtenir les sorties Core + Combat + Chromium réelles du SHA final et compléter la validation Pixel.
