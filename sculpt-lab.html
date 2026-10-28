@@ -607,6 +607,28 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
  .world-area-portal-panel summary{font-size:.71rem}
 }
 
+/* Old WorldAreas may exceed the 2.5D grid. Show a read-only,
+   human-readable return path, never a false editable demo scene. */
+#world-area-unavailable[hidden]{display:none!important}
+#world-area-unavailable{
+ position:absolute;inset:0;z-index:36;
+ display:grid;place-items:center;padding:12px;
+ background:#0b1920ee;
+}
+#world-area-unavailable .unavailable-card{
+ width:min(450px,100%);max-height:100%;overflow:auto;
+ display:grid;gap:11px;padding:17px;border-radius:14px;
+ background:#18313c;border:1px solid #82b7b7;box-shadow:0 12px 26px #0008;
+}
+#world-area-unavailable .unavailable-card strong{font-size:1.03rem;color:#e9faf2}
+#world-area-unavailable-message{line-height:1.5;overflow-wrap:anywhere;color:#c5e4e7;font-size:.85rem}
+#world-area-unavailable .unavailable-actions{display:flex;flex-wrap:wrap;gap:7px}
+#world-area-unavailable .unavailable-actions button{flex:1;min-height:44px;font-weight:750}
+body.world-area-unavailable .editor-switch,
+body.world-area-unavailable .sculpt-quickbar,
+body.world-area-unavailable #sculpt-map-preset-panel,
+body.world-area-unavailable #world-area-portal-panel{display:none!important}
+
 </style>
 </head>
 <body>
@@ -769,6 +791,16 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
+ <div class="unavailable-card">
+  <strong>🗺 Carte non disponible en 2,5D</strong>
+  <p id="world-area-unavailable-message">Cette zone reste enregistrée dans le World Builder, mais n'est pas compatible avec l'éditeur 2,5D actuel.</p>
+  <div class="unavailable-actions">
+   <button id="world-area-unavailable-return" type="button">🌍 Retour au Monde</button>
+   <button id="world-area-unavailable-create" type="button">＋ Nouvelle carte compatible</button>
+  </div>
+ </div>
+</section>
 <button id="world-workspace-return-float" type="button" aria-label="Enregistrer et revenir au panneau Monde">🌍 Monde · retour</button>
 <button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
