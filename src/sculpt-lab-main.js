@@ -3617,7 +3617,7 @@ function traverseSculptWorldPortal(){
       target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
       sculptWorldAreaScene(target);
     }
-    // The SAME runtime Portal resolver used by the 2D WorldDocument.
+    // The SAME runtime Portal resolver used by the 2D world document.
     const document=commitCurrentSculptWorldArea();
     const transition=applyPortalTransition(document,{
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
