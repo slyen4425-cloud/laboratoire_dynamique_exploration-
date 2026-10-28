@@ -20,7 +20,10 @@ export function markersForSculptWorldArea(document,areaId,{
       markers.push({
         kind:'exit',portalId:portal.id,x:portal.trigger.x,y:portal.trigger.y,
         radius:portal.trigger.radius,
-        label:customized||nameFor(destination),
+        // Existing links store the destination ID as a legacy visual label.
+        // Present its human name until an actually custom label is supplied.
+        label:customized&&customized!==portal.targetAreaId
+          ?customized:nameFor(destination),
         selected:portal.id===selectedPortalId
       });
     }
