@@ -31,7 +31,7 @@ test('markers expose exact exit Portal trigger AND incoming destination Spawn wi
   assert.deepEqual({x:arrival.x,y:arrival.y},
     {x:host.spawns[0].x,y:host.spawns[0].y});
   assert.equal(markers.filter(m=>m.kind==='arrival').length,1);
-  assert.ok(markers.some(m=>m.kind==='start'),'initial Spawn remains identifiable');
+  assert.equal(arrival.isInitial,true,'initial Spawn is marked without duplicating the same location');
   const testing=markersForSculptWorldArea(world,host.id,{testing:true});
   assert.equal(testing.some(m=>m.kind==='arrival'||m.kind==='start'),false);
   assert.equal(testing.filter(m=>m.kind==='exit').length,1);
