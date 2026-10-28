@@ -507,6 +507,9 @@ body.world-area-editing .world-area-portal-panel:not([open]){
  touch-action:manipulation;box-shadow:0 5px 20px #000a;
 }
 #world-portal-traverse[hidden]{display:none!important}
+#world-portal-feedback{position:absolute;z-index:24;right:9px;bottom:calc(env(safe-area-inset-bottom,0px) + 192px);max-width:min(240px,54vw);padding:7px 10px;border-radius:9px;background:#173f3cee;color:#e2fff4;border:1px solid #7cd1bb;font-size:.73rem;box-shadow:0 4px 12px #0008;pointer-events:none}
+#world-portal-feedback[data-error=true]{background:#522e32;color:#ffe5dd;border-color:#e29b98}
+#world-portal-feedback[hidden]{display:none!important}
 #world-portal-traverse:disabled{opacity:.85;border-color:#7e999c;background:#24434b;color:#e2f7f8}
 body.navigation-testing #sculpt-map-preset-panel{display:none!important}
 #sculpt-map-preset-panel{
@@ -769,6 +772,7 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 <button id="world-workspace-return-float" type="button" aria-label="Enregistrer et revenir au panneau Monde">🌍 Monde · retour</button>
 <button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
+<output id="world-portal-feedback" role="status" aria-live="polite" hidden></output>
 <details id="world-area-portal-panel" class="world-area-portal-panel" hidden>
  <summary aria-label="Afficher ou masquer les entrées et sorties">🚪 Passages</summary>
  <div class="world-area-panel-content">
