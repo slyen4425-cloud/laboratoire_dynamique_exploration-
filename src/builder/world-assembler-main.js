@@ -271,7 +271,7 @@ function installWorldAssembler(){
         name,kind,hostAreaId
       }),kind==='dungeon'
         ?'Donjon créé depuis le préset avec passages aller-retour.'
-        :'Zone créée depuis le préset · terrain, textures et objets chargés.');
+        :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.');
       if(ok){
         selectedId=draft.areas.find(a=>!before.has(a.id))?.id??selectedId;
         render();
