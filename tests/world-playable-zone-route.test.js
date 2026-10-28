@@ -57,3 +57,27 @@ test('an imported existing playable map can become the real host for new prefabs
  assert.ok(next.portals.find(p=>p.sourceAreaId===forest.id&&p.targetAreaId===snow.id));
  assert.ok(next.portals.find(p=>p.sourceAreaId===snow.id&&p.targetAreaId===forest.id));
 });
+
+test('new prefabs keep the canonical terrain-family encounter configuration for Monster Capture',()=>{
+ const start=createBlankWorldBuilderDraft({id:'encounters',width:36*28,height:24*21});
+ const doc=createWorldAreaFromSculptMapPreset(start,presets[3],{
+    name:'Forêt de neige',kind:'exterior',hostAreaId:start.initialAreaId});
+ const snow=doc.areas.find(a=>a.label==='Forêt de neige');
+ assert.ok(snow);
+ assert.equal(snow.encounters.randomEnabled,true);
+ assert.equal(snow.surface.baseTerrainFamilyId,'snow');
+ assert.ok(doc.encounterConfig.families.some(x=>x.terrainFamilyId==='snow'));
+ const config=doc.encounterConfig.families.find(x=>x.terrainFamilyId==='snow');
+ assert.equal(typeof config.encounterChancePercent,'number');
+ assert.ok(Array.isArray(config.elementChances));
+});
+
+test('World Builder has explicit one-tap repair and warns instead of auto-connecting a prefab to legacy',()=>{
+ const html=readFileSync(new URL('../world-assembler.html',import.meta.url),'utf8');
+ const js=readFileSync(new URL('../src/builder/world-assembler-main.js',import.meta.url),'utf8');
+ assert.match(html,/id="world-playable-route"/);
+ assert.match(js,/makePlayableZoneRoute\(draft/);
+ assert.match(js,/asNewStart=true/);
+ assert.match(js,/setWorldInitialArea\(next,created.id\)/);
+ assert.match(js,/window.confirm\('Raccorder des régions/);
+});
