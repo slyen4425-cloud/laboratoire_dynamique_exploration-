@@ -67,7 +67,7 @@ test('an old blank encounter document can be explicitly equipped, while saved cu
  const enabled=makePlayableZoneRoute(empty,{selectedAreaId:empty.initialAreaId,initializeEncounters:true}).document;
  assert.ok(enabled.encounterConfig.families.some(f=>f.encounterChancePercent>0));
  const custom=createWorldBuilderDraft({...initial,encounterConfig:{
-  version:1,families:initial.encounterConfig.families.map(f=>({...f,encounterChancePercent:f.terrainFamilyId==='forest'?37:0}))
+  version:1,families:initial.encounterConfig.families.map(f=>({...f,encounterChancePercent:f.terrainFamilyId==='forest'?37:0,elementChances:f.terrainFamilyId==='forest'?[{elementId:'nature',chancePercent:100}]:[]}))
  }});
  const retained=makePlayableZoneRoute(custom,{selectedAreaId:custom.initialAreaId,initializeEncounters:true}).document;
  assert.equal(retained.encounterConfig.families.find(f=>f.terrainFamilyId==='forest').encounterChancePercent,37);
