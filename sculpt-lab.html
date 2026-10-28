@@ -531,6 +531,22 @@ body.sculpt-immersive #sculpt-map-preset-panel{
  #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
  #sculpt-map-preset-panel{width:min(205px,calc(100% - 16px))}
 }
+/* Same workshop, two navigational panels, never a second scene authority. */
+.world-workspace-tabs{display:none;gap:5px;align-items:center;background:#122d38;
+ border:1px solid #427681;border-radius:10px;padding:4px;max-width:100%;overflow-x:auto}
+.world-workspace-tabs button{white-space:nowrap;min-height:37px;padding:5px 8px;
+ font-size:.76rem;font-weight:800;border:1px solid #446d7a;background:#1b3e4b}
+.world-workspace-tabs button.selected{background:#286d61;border-color:#87d7c5}
+body.world-area-editing .world-workspace-tabs{display:flex}
+body.world-area-editing .world-entry-links{display:none}
+body.world-area-editing header h1{font-size:.88rem}
+body.world-area-editing header p{font-size:.68rem}
+@media(max-width:720px){
+ body.world-area-editing header{padding:4px 7px;gap:4px}
+ body.world-area-editing .world-workspace-tabs{gap:3px}
+ body.world-area-editing .world-workspace-tabs button{padding:5px;font-size:.68rem;min-height:35px}
+ body.world-area-editing header h1{font-size:.76rem}
+}
 /* The ORIGINAL fullscreen button remains pinned at the start of the
    scrollable toolbar, so it cannot disappear offscreen on mobile landscape. */
 body.world-area-editing .editor-switch{
@@ -574,6 +590,11 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 <body>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
 <p>Terrain visible en priorité · outils avancés sous la carte.</p></div>
+<nav class="world-workspace-tabs" id="world-workspace-tabs" aria-label="Panneaux du même éditeur de monde" hidden>
+ <button id="world-workspace-world" type="button">🌍 Monde</button>
+ <button id="world-workspace-map-active" type="button" class="selected" aria-current="page">🗺 Carte 2,5D</button>
+ <button id="world-area-create-another" type="button">＋ Nouvelle carte</button>
+</nav>
 <div class="world-entry-links"><a href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 World Builder</a> <a href="./builder.html" aria-label="Ouvrir le Builder 2D détaillé">Éditeur 2D</a></div></header>
 <main>
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
@@ -784,6 +805,7 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
  <form id="new-map-form" class="new-map-content">
   <strong>🗺 Nouvelle carte vierge</strong>
   <small id="new-map-warning">Sol plat, sans eau ni objet. La carte actuelle et ses annulations seront effacées.</small>
+  <small id="world-area-new-map-hint" hidden>Pour créer une autre carte avec des dimensions différentes, utilise « ＋ Nouvelle carte » dans les onglets du même World Builder.</small>
   <div class="new-map-dimensions">
    <label for="new-map-width">Largeur (cases)
     <input type="number" id="new-map-width" min="8" max="80" step="1" value="36" required>
