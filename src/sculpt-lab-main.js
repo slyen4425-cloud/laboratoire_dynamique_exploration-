@@ -3545,7 +3545,7 @@ function installSculptWorldAreaEditing(){
       commitCurrentSculptWorldArea();
       saveWorldAssemblerHandoff(
         window.sessionStorage,sculptWorldDraft,sculptWorldAreaId);
-      window.location.assign('./world-assembler.html?return=1&portalUi=compact1');
+      window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2');
     }catch(error){sculptWorldStatus('Enregistrement bloqué : '+error.message,true);}
   });
   $('world-area-portal-select').addEventListener('change',refreshSculptWorldPanel);
