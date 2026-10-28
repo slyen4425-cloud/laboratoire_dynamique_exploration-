@@ -531,6 +531,21 @@ body.sculpt-immersive #sculpt-map-preset-panel{
  #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
  #sculpt-map-preset-panel{width:min(205px,calc(100% - 16px))}
 }
+/* The header intentionally disappears in immersive test. This independently
+   reachable physical action always exits to the SAME WorldDocument editor. */
+#world-workspace-return-float{display:none!important}
+body.world-area-editing.sculpt-immersive #world-workspace-return-float{
+ display:block!important;position:absolute;z-index:26;
+ right:calc(env(safe-area-inset-right,0px) + 9px);
+ bottom:calc(env(safe-area-inset-bottom,0px) + 137px);
+ min-height:46px;min-width:116px;max-width:45vw;
+ padding:8px 12px;border:2px solid #8cdec6;border-radius:12px;
+ background:#143a3bee;color:#e7fff3;font-size:.82rem;font-weight:850;
+ box-shadow:0 5px 19px #0009;touch-action:manipulation;
+}
+body.world-area-editing.sculpt-immersive.navigation-testing #world-workspace-return-float{
+ display:block!important;
+}
 /* Same workshop, two navigational panels, never a second scene authority. */
 .world-workspace-tabs{display:none;gap:5px;align-items:center;background:#122d38;
  border:1px solid #427681;border-radius:10px;padding:4px;max-width:100%;overflow-x:auto}
@@ -747,6 +762,7 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<button id="world-workspace-return-float" type="button" aria-label="Enregistrer et revenir au panneau Monde">🌍 Monde · retour</button>
 <button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
 <details id="world-area-portal-panel" class="world-area-portal-panel" hidden>
