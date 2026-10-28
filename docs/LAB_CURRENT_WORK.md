@@ -1,25 +1,22 @@
-# LAB_CURRENT_WORK — Navigation Monde → Carte 2,5D sur WorldArea historique
+# LAB_CURRENT_WORK — Parcours présets : traverser + déclencher un combat
 
 Date : 2026-10-28
-Domaine : World Builder / adaptation de navigation (aucune mutation du gameplay).
-Base GREEN : `e013cb861436cfa32f1f55b9f4968d207e7724bc` (885 tests Node et CI confirmée).
-Branche : `work/exploration-world-map-legacy-compatible-navigation-2026-10-28`
-Checkpoint START : `checkpoint/exploration-start-world-map-legacy-compatible-navigation-2026-10-28`
-Checkpoint GREEN précédent : `checkpoint/exploration-playable-zone-routes-green-2026-10-28`.
+Base CI GREEN : `32e38b07227a7e85426fa64fc15fdb1a81416ad0`
+Branche : `work/exploration-preset-playable-travel-encounters-2026-10-28`
+Checkpoint START : `checkpoint/exploration-start-preset-playable-travel-encounters-2026-10-28`
+Dernier checkpoint : `checkpoint/exploration-world-map-legacy-compatible-navigation-ci-green-2026-10-28`
+Statut : diagnostic utilisateur répété, lot fonctionnel non déclaré GREEN.
 
-## Constat utilisateur et RED
-Un WorldDocument conservé depuis l'ancien Builder a une zone de départ `Area Principale` 2400×1600 unités monde (terrain Sculpt autorisé jusqu'à 80×64 cellules). Sur le panneau Monde, `Carte 2,5D` bloque l'utilisateur sur cette ancienne zone, même lorsqu'une zone compatible `Ile` ou `Forêt profonde` est déjà présente. L'erreur propose seulement de créer une nouvelle carte et focalise le formulaire ; elle ignore les cartes jouables.
+## Reproduction et causes racines
+1. Les tests Chromium précédents déplaçaient manuellement les Portals près du Spawn avant de vérifier les changements de carte. Ces tests ne garantissent pas les destinations telles que créées par un préset. La réparation n'examine qu'un seul Portal historique et le test en jeu désactive « Entrer » vers une zone héritée incompatible (2400×1600).
+2. `createBlankWorldBuilderDraft` ne fournit pas `encounterConfig` ; la normalisation du WorldDocument initialise des chances à 0%. Les nouveaux présets ont `randomEnabled=true` mais ne peuvent pas provoquer de rencontres si le profil n'a jamais été configuré. Le test « typeof chance === number » laissait passer 0%.
 
-## Périmètre
-- **Owner** : adapter de navigation du World Builder ; la validité de carte est déterminée par le même `sculptWorldAreaScene`.
-- Lorsque le panneau Carte est demandé depuis une zone incompatible, rechercher une WorldArea déjà éditable ; proposer explicitement son ouverture, sans aucune modification de `WorldDocument`.
-- Conserver le nom de zone dans le dialogue et la sélection canonique transmise par `saveWorldAssemblerHandoff`. Si refus, rester sur le panneau Monde ; si aucune carte compatible, garder le guide de création sans créer de carte automatiquement.
-- Le clic sur un éditeur 2D historique reste inchangé.
-- Aucun terrain 2400×1600 reformaté, aucune édition hors limites, aucune création automatique, aucun Portal/Spawn/Encounter changé.
+## Owner / invariants
+- **Données** : WorldDocument/WorldArea/Portal/Spawn et EncounterConfig sont seules autorités. Les préréglages sont des données d'initialisation, pas un deuxième runtime.
+- **Monde existant** : préserver toutes les tailles, scènes et configurations manuelles. Aucun réglage à 0% choisi par le créateur n'est changé sans confirmation explicite.
+- **Runtime** : `findTriggeredPortal`, `applyPortalTransition`, `createEncounterController` et `resolveTerrainFamilyEncounter` restent autoritaires. Pas de téléportation de l'UI, pas de reset/retry global.
+- **Périmètre** : initialisation des probabilités des nouveaux WorldDocuments, commande de remise en état explicite pour anciens mondes vierges, Portals bidirectionnels placés sur le chemin des présets, réparation des passages historiques au point d'usage.
+- **Hors périmètre** : augmenter 80×64, toucher main/V80 ou combat dynamique.
 
-## Tests / gates
-TDD RED puis GREEN : tests ciblés résolveur (zone compatible, historique avec deux alternatives, aucune alternative, contenu inchangé), test sentinelle UI du vrai handoff, `npm test`, `npm run check`, CI, contrôle preview Chromium tactile et résultat mobile réel avant clôture. CI rouge interdit publication.
-Hors périmètre : augmenter les dimensions Sculpt (>80×64), remplacer le modèle WorldArea, toucher main / V80 ou le dépôt GenSrpg.
-
-## Reprise préalable
-Le chantier précédent `work/exploration-playable-zone-routes-2026-10-28` a créé `🔗 Relier zones jouables` et corrigé les Portals vers les anciens mondes. Sa publication isolée PR #284 est fusionnée ; PR gameplay #283 reste brouillon. Le présent lot ne change ni le comportement de raccordement ni les scènes.
+## Gates exigés
+TDD RED (nouveau monde non nul + véritable rencontre + deux passages réciproques non déplacés à la main + anciens 2400×1600 + refus), suite Node complète, CI Exploration/Combat, Chromium paysage smartphone sur la preview réellement assemblée, vérification HTTPS; checkpoint GREEN avant publication isolée. Validation manuelle Pixel requise avant fusion du gameplay.
