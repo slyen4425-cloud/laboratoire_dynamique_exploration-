@@ -259,8 +259,6 @@ export function createBlankWorldBuilderDraft({
     id,
     initialAreaId: 'area-principale',
     initialSpawnId: 'depart',
-    // Initial gameplay data, copied into THIS WorldDocument once; editable.
-    encounterConfig: presetEncounterDefaults(),
     areas: [{
       id: 'area-principale',
       kind: 'exterior',
