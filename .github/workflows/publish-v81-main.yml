@@ -35,7 +35,7 @@ jobs:
       - name: Checkout CI-verified Encounter feature source
         uses: actions/checkout@v4
         with:
-          ref: e013cb861436cfa32f1f55b9f4968d207e7724bc
+          ref: 32e38b07227a7e85426fa64fc15fdb1a81416ad0
           path: encounter-source
       - name: Checkout immutable Capture Combat runtime
         uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = e013cb861436cfa32f1f55b9f4968d207e7724bc
+          test "$(git -C encounter-source rev-parse HEAD)" = 32e38b07227a7e85426fa64fc15fdb1a81416ad0
           test "$(git -C combat-source rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
           test "$(git -C capture-source rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
@@ -97,6 +97,9 @@ jobs:
           grep -Fq 'id="world-area-unavailable-create"' encounter-source/sculpt-lab.html
           grep -Fq 'sculptWorldAreaMounted' encounter-source/src/sculpt-lab-main.js
           grep -Fq 'Zone non éditable en 2,5D' encounter-source/src/builder/world-assembler-main.js
+          grep -Fq 'resolveSculptAreaForEditor(draft,selectedId)' encounter-source/src/builder/world-assembler-main.js
+          grep -Fq 'GREEN legacy Map tab' encounter-source/scripts/smoke-sculpt-terrain-lab.mjs
+          test -s encounter-source/tests/world-map-legacy-compatible-navigation.test.js
           test -s encounter-source/tests/world-map-legacy-switch-regression.test.js
           test -s encounter-source/tests/world-preset-house-interiors.test.js
           grep -Fq 'createBuildingInteriorLink' encounter-source/src/builder/sculpt-map-preset-library.js
