@@ -1,18 +1,19 @@
-# LAB_CURRENT_WORK — Présets avec véritables maisons visitables et Portals compatibles
+# LAB_CURRENT_WORK — Parcours jouable entre zones 2,5D et rencontres Capture
 
-Date : 2026-10-28.
-Base GREEN : `84eb2274b21eb1757bc241ce6b93a5136d6e47d7`.
-Branche : `work/exploration-preset-house-interiors-traverse-2026-10-28`.
-Checkpoint START : `checkpoint/exploration-start-preset-house-interiors-traverse-2026-10-28`.
+Date : 2026-10-28
+Base GREEN : `13f6254e8825b33edda59e6ed6b5edc4c021e419`
+Branche : `work/exploration-playable-zone-routes-2026-10-28`
+Checkpoint START : `checkpoint/exploration-start-playable-zone-routes-2026-10-28`
 
-## Problème
-Les cartes préconstruites instancient des maisons sans intérieur alors que le lien `createBuildingInteriorLink` existe. Il crée historiquement des pièces 720×560 non compatibles avec la grille Sculpt 2,5D. En mode Tester, les boutons d'un Portal vers une ancienne zone 2400×1600 s'activent puis échouent, même si l'aller vers le nouveau préset fonctionne.
+## Reproduction et correction
+Sur mobile, le joueur voit `SORTIE → area-principale` et `Passage impossible en 2,5D`. Son portail vise une WorldArea historique 2400×1600, non éditable dans la grille Sculpt 28×21 (max 80×64). Le précédent garde-fou empêche la panne mais ne fournit pas de route alternative.
 
-## Correction
-- Chaque Building instancié depuis un préset devient une véritable WorldArea de pièce 18×14, avec sol décoré, deux murs de séparation, Portal d'entrée à ancre porte et Portal de sortie vers le même extérieur.
-- Le moteur de rendu 2,5D réutilise `drawSculptInteriorWalls` pour les intérieurs issus du WorldDocument ; les murs sont les véritables `WorldArea.walls` du Collision World.
-- Le Helper existant conserve ses dimensions historiques par défaut ; seuls les nouveaux liens de présets reçoivent explicitement 18×14.
-- Le bouton de traversée vérifie la capacité de la destination avant activation. Les anciens mondes sont conservés, sans réduction ni migration cachée. Retour via panneau Monde.
+Commande explicite « 🔗 Relier zones jouables » dans le World Builder : utilise une autre WorldArea extérieure compatible, ou crée les scènes nécessaires depuis les présets officiels ; recible un Portal point vers une zone réellement incompatible, établit le trajet réciproque avec `connectWorldAreas`, et définit un départ jouable si l'ancien départ ne l'est pas. Confirmation préalable ; **aucune zone historique supprimée ni réduite**. Un Portal vers une zone intérieure valide ne doit PAS être reciblé.
 
-## Autorité / tests
-Un seul WorldDocument (WorldArea/Portal/Spawn), ObjectDefinition pour l'ancre de porte, WorldSurface pour textures, Collision World pour les murs. TDD et test réel Node/Chromium requis. V80 production et version historique immuables. Validation utilisateur smartphone à demander après CI GREEN.
+Lorsqu'on crée un préset depuis une zone hôte incompatible, demander explicitement si cette nouvelle carte doit être créée comme zone de départ indépendante et conserver l'ancienne WorldArea ; ne plus créer un lien condamné à échouer. Les présets ont déjà des maisons/intérieurs raccordés.
+
+## Rencontres
+Labo 2,5D utilise le même `createEncounterController`, `WorldArea.encounters.randomEnabled`, `WorldDocument.encounterConfig`, `CaptureCreatureCatalogPreviewV1`, `createImmersiveEncounterHostV1` que le système validé. Les zones extérieures des présets héritent de `randomEnabled=true`, les intérieurs restent désactivés par défaut. Le panneau Rencontres sélectionne la famille de terrain de la nouvelle zone au passage (aucune deuxième configuration).
+
+## Validation / garde-fous
+1 WorldDocument, WorldArea, Portal et Spawn comme autorités ; TDD Node, Chromium 960×540 parcours de réparation réel avec dialogue accepté, CI Core+Combat, Pages isolées V80 immuable. Déploiement après GREEN et test manuel sur Pixel ensuite. Aucun changement sur le monde historique sans clic explicite.
