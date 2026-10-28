@@ -50,8 +50,15 @@ try{
   let seq=0;const pending=new Map();
   socket.addEventListener('message',event=>{const packet=JSON.parse(event.data);const cb=pending.get(packet.id);
     if(cb){pending.delete(packet.id);cb(packet);}});
-  const evaluate=(expression)=>new Promise(done=>{
-    const id=++seq;pending.set(id,done);
+  // A stuck CDP response must fail this real-browser gate with its precise
+  // expression, never occupy an Actions runner indefinitely or fake GREEN.
+  const evaluate=(expression)=>new Promise((done,fail)=>{
+    const id=++seq;
+    const watchdog=setTimeout(()=>{
+      pending.delete(id);
+      fail(Error('Chromium Runtime.evaluate did not return within 60s: '+String(expression).slice(0,180)));
+    },60000);
+    pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
     socket.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression,returnByValue:true,awaitPromise:true}}));
   });
   const run=async js=>{const data=await evaluate(js);
@@ -109,8 +116,14 @@ try{
     return {x,y,inside:document.elementFromPoint(x,y)?.id,
       viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
   if(center.inside!=='sculpt-canvas')throw Error('Canvas center is not clickable in Chromium: '+JSON.stringify(center));
-  const send=(method,params)=>new Promise(done=>{
-    const id=++seq;pending.set(id,done);socket.send(JSON.stringify({id,method,params}));
+  const send=(method,params)=>new Promise((done,fail)=>{
+    const id=++seq;
+    const watchdog=setTimeout(()=>{
+      pending.delete(id);
+      fail(Error('Chromium CDP '+method+' did not return within 60s'));
+    },60000);
+    pending.set(id,packet=>{clearTimeout(watchdog);done(packet);});
+    socket.send(JSON.stringify({id,method,params}));
   });
   await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
