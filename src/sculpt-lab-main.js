@@ -74,7 +74,9 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=house-interiors-v1';
-import {createWorldBuilderDraft} from './builder/world-builder-draft.js';
+import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js';
+import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js';
+import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
@@ -163,6 +165,7 @@ const sculptEncounterCatalog=sculptEncounterController
   ?createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1):null;
 const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
 let sculptPendingEncounter=null;
+let sculptEncounterSetupOffered=false;
 let sculptEncounterAreaCache=null;
 
 /* The Builder is the ONE authoring owner of EncounterConfig v1 and Area
@@ -1798,6 +1801,18 @@ function navigationTick(time){
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
   if(on)setSculptEncounterEditorOpen(false);
+  // Old WorldDocuments predate encounter profiles. The user must explicitly
+  // approve initializing them; intentional 0% gameplay is never overwritten.
+  if(on&&sculptWorldDraft&&!sculptEncounterSetupOffered&&
+      encounterConfigNeedsExplicitInitialization(sculptEncounterConfig)){
+    sculptEncounterSetupOffered=true;
+    if(window.confirm('Ce monde ne peut déclencher aucune rencontre (0 % sur tous les terrains). '+
+        'Activer les réglages de rencontres des présets ? Tu pourras les modifier dans Rencontres.')){
+      sculptWorldDraft=initializeWorldPresetEncounters(sculptWorldDraft);
+      sculptEncounterConfig=sculptWorldDraft.encounterConfig;
+      refreshSculptEncounterEditor();
+    }
+  }
   if(on){
     if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
@@ -3432,11 +3447,18 @@ function updateSculptWorldPortalAction(){
   const button=$('world-portal-traverse');
   if(!button)return;
   const exits=worldOutboundPortals().filter(p=>p.enabled===true);
-  button.hidden=!navigationTesting||!sculptWorldDraft||!exits.length||
-    !!sculptPendingEncounter;
+  const canConnect=!exits.length&&playableExteriorArea(sculptWorldArea());
+  button.hidden=!navigationTesting||!sculptWorldDraft||
+    (!exits.length&&!canConnect)||!!sculptPendingEncounter;
   if(button.hidden)return;
-  // The SAME Portal resolver owns the actual hitbox. The disabled action
-  // always stays in view to explain why it cannot yet be used.
+  // This action never teleports: it can explicitly create missing canonical
+  // Portals, then the player must physically walk into their true hitboxes.
+  if(canConnect){
+    button.disabled=false;
+    button.textContent='🔗 Créer un passage vers une autre zone';
+    button.title='Créer un vrai Portal aller-retour sans déplacer les cartes';
+    return;
+  }
   const portal=sculptWorldPortalAtHero();
   button.disabled=!portal;
   if(portal){
@@ -3445,10 +3467,15 @@ function updateSculptWorldPortalAction(){
     // 2400×1600 target cannot be mounted; do not advertise a fake transition.
     try{sculptWorldAreaScene(target);}
     catch(error){
-      button.disabled=true;
-      button.textContent='🚪 Passage impossible en 2,5D';
-      button.title='Zone cible non compatible : '+error.message+
-        ' · ouvre le panneau Monde pour choisir une zone compatible.';
+      if(portal.trigger?.kind==='point'&&playableExteriorArea(sculptWorldArea())){
+        button.disabled=false;
+        button.textContent='🔗 Réparer ce passage';
+        button.title='Destination ancienne/incompatible : réparation confirmée au toucher';
+      }else{
+        button.disabled=true;
+        button.textContent='🚪 Passage impossible en 2,5D';
+        button.title='Zone cible non compatible : '+error.message;
+      }
       return;
     }
     button.textContent='🚪 Entrer : '+(target?.label??target?.id??'autre zone');
@@ -3552,12 +3579,45 @@ function mountWorldSculptArea(areaId){
   setTheme();fit();
 }
 function traverseSculptWorldPortal(){
-  const portal=sculptWorldPortalAtHero();
-  if(!portal)return;
+  let portal=sculptWorldPortalAtHero();
+  if(!portal){
+    if(worldOutboundPortals().some(p=>p.enabled===true)||
+       !playableExteriorArea(sculptWorldArea())||!navigationTesting)return;
+    if(!window.confirm('Cette carte n’a pas de sortie. Créer des Portals aller-retour vers une autre région jouable ? '+ 
+        'Le héros devra rejoindre le cercle SORTIE pour traverser. Les anciennes zones seront conservées.'))return;
+    try{
+      const document=commitCurrentSculptWorldArea();
+      const repaired=makePlayableZoneRoute(document,{
+        selectedAreaId:sculptWorldAreaId,initializeEncounters:true
+      });
+      sculptWorldDraft=repaired.document;
+      sculptEncounterConfig=sculptWorldDraft.encounterConfig;
+      refreshSculptEncounterEditor();
+      refreshSculptWorldPanel();
+      sculptWorldStatus('✓ Sortie créée sur le chemin. Rejoins le cercle SORTIE pour changer de zone.');
+    }catch(error){sculptWorldStatus('Raccord refusé : '+error.message,true);}
+    return;
+  }
   try{
-    const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-    sculptWorldAreaScene(target); // validate before mutating navigation/scene
-    // The SAME runtime Portal resolver used by the 2D world document.
+    let target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+    try{sculptWorldAreaScene(target);}
+    catch(error){
+      if(portal.trigger?.kind!=='point'||!playableExteriorArea(sculptWorldArea()))throw error;
+      if(!window.confirm('Cette sortie mène à une ancienne zone non jouable en 2,5D. '+ 
+          'Réparer les passages vers les cartes compatibles et activer les rencontres non configurées ? '+ 
+          'La zone historique, ses dimensions et ses objets resteront intacts.'))return;
+      const current=commitCurrentSculptWorldArea();
+      const repaired=makePlayableZoneRoute(current,{
+        selectedAreaId:sculptWorldAreaId,initializeEncounters:true
+      });
+      sculptWorldDraft=repaired.document;
+      sculptEncounterConfig=sculptWorldDraft.encounterConfig;
+      portal=sculptWorldDraft.portals.find(p=>p.id===portal.id);
+      if(!portal)throw Error('Portal réparé introuvable');
+      target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+      sculptWorldAreaScene(target);
+    }
+    // The SAME runtime Portal resolver used by the 2D WorldDocument.
     const document=commitCurrentSculptWorldArea();
     const transition=applyPortalTransition(document,{
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
