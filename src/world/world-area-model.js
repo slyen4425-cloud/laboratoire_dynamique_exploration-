@@ -1,4 +1,5 @@
 import {normalizeInteriorWalls} from './interior-wall-model.js';
+import {importSculptTerrain} from './sculpt-height-model.js';
 import {interiorWallMaterialId} from './interior-material-catalog.js';
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {
@@ -105,6 +106,16 @@ export function normalizeWorldArea(raw, index = 0) {
 
   const id = normalizeId(raw.id, `area-${index + 1}`);
   const kind = raw.kind === 'interior' ? 'interior' : 'exterior';
+  const worldAreaWidth=finiteNumber(raw.width,1200,{min:128,max:20000});
+  const worldAreaHeight=finiteNumber(raw.height,800,{min:128,max:20000});
+  // The Sculpt heightfield is owned by the same WorldArea as surface,
+  // objects, actors, Portals and Spawns. It is optional for legacy 2D worlds.
+  // A mismatch is invalid, never repaired by clamping or silently deleted.
+  const sculptTerrain=raw.sculptTerrain===undefined?null:importSculptTerrain(raw.sculptTerrain);
+  if(sculptTerrain&&
+     (sculptTerrain.width*28!==worldAreaWidth||
+      sculptTerrain.height*21!==worldAreaHeight))
+    throw Error('WorldArea sculpt 2,5D : dimensions du terrain incompatibles');
 
   const spawns = Array.isArray(raw.spawns)
     ? raw.spawns
@@ -131,8 +142,13 @@ export function normalizeWorldArea(raw, index = 0) {
     schemaVersion: WORLD_AREA_SCHEMA_VERSION,
     id,
     kind,
-    width: finiteNumber(raw.width, 1200, { min: 128, max: 20000 }),
-    height: finiteNumber(raw.height, 800, { min: 128, max: 20000 }),
+    ...(typeof raw.label==='string'&&raw.label.trim()
+      ?{label:raw.label.trim().slice(0,80)}:{}),
+    ...(kind==='interior'&&['dungeon','building','arena','instance'].includes(raw.siteKind)
+      ?{siteKind:raw.siteKind}:{}),
+    width: worldAreaWidth,
+    height: worldAreaHeight,
+    ...(sculptTerrain?{sculptTerrain}:{}),
     boundary: normalizeWorldAreaBoundary(raw.boundary),
     encounters: normalizeWorldAreaEncounters(
       raw.encounters,
