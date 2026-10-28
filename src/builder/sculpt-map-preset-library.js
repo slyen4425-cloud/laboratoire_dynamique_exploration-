@@ -2,7 +2,7 @@
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
 import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
-import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink} from './world-builder-draft.js';
+import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js';
 import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
 import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js';
 import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
@@ -86,7 +86,7 @@ export function mapEdgePoint(scene,side){
     y:Math.max(48,Math.min(height-48,endpoint?.y??height/2))};
 }
 export function createWorldAreaFromSculptMapPreset(draft,preset,{
-  name,kind='exterior',hostAreaId=null
+  name,kind='exterior',hostAreaId=null,initializeEncounters=true
 }={}){
   const saved=importSculptMapPreset(preset);
   const source=importSculptPreviewScene(saved.scene);
@@ -95,6 +95,9 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
     width:source.terrain.width*28,height:source.terrain.height*21});
   const area=next.areas.find(entry=>!before.has(entry.id));
   if(!area)throw Error('WorldArea de préset non créée');
+  // A PRESET instantiation explicitly offers populated Capture encounters;
+  // a blank world stays blank. Existing customized profiles are untouched.
+  if(initializeEncounters&&kind==='exterior')next=initializeWorldPresetEncounters(next);
   next=saveSculptWorldArea(next,area.id,source);
   // Position the REAL Spawn on the starting edge, even if the template
   // is used as a standalone map. Never add Spawn/Portal data to the preset.
