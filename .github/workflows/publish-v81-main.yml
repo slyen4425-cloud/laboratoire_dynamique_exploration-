@@ -192,7 +192,7 @@ jobs:
           grep -Fq 'traverseSculptWorldPortal' /tmp/published-encounter-main.js
           grep -Fq 'markersForSculptWorldArea' /tmp/published-encounter-main.js
           curl -fsSL "$probe/src/builder/sculpt-world-portal-markers.js?build=$GITHUB_SHA" -o /tmp/published-portal-markers.js
-          grep -Fq 'kind:\x27arrival\x27' /tmp/published-portal-markers.js
+          grep -Fq "kind:'arrival'" /tmp/published-portal-markers.js
           curl -fsSL "$probe/src/builder/sculpt-world-area-link.js?build=$GITHUB_SHA" -o /tmp/published-sculpt-world-adapter.js
           grep -Fq 'saveSculptWorldArea' /tmp/published-sculpt-world-adapter.js
           curl -fsSL "$probe/combat-preview/examples/dom-demo/exploration-encounter.html?build=$GITHUB_SHA" -o /tmp/published-combat.html
