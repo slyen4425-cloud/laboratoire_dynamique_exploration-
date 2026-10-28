@@ -607,6 +607,28 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
  .world-area-portal-panel summary{font-size:.71rem}
 }
 
+/* Old WorldAreas may exceed the 2.5D grid. Show a read-only,
+   human-readable return path, never a false editable demo scene. */
+#world-area-unavailable[hidden]{display:none!important}
+#world-area-unavailable{
+ position:fixed;inset:0;z-index:1200;
+ display:grid;place-items:center;padding:12px;
+ background:#0b1920ee;
+}
+#world-area-unavailable .unavailable-card{
+ width:min(450px,100%);max-height:100%;overflow:auto;
+ display:grid;gap:11px;padding:17px;border-radius:14px;
+ background:#18313c;border:1px solid #82b7b7;box-shadow:0 12px 26px #0008;
+}
+#world-area-unavailable .unavailable-card strong{font-size:1.03rem;color:#e9faf2}
+#world-area-unavailable-message{line-height:1.5;overflow-wrap:anywhere;color:#c5e4e7;font-size:.85rem}
+#world-area-unavailable .unavailable-actions{display:flex;flex-wrap:wrap;gap:7px}
+#world-area-unavailable .unavailable-actions button{flex:1;min-height:44px;font-weight:750}
+body.world-area-unavailable .editor-switch,
+body.world-area-unavailable .sculpt-quickbar,
+body.world-area-unavailable #sculpt-map-preset-panel,
+body.world-area-unavailable #world-area-portal-panel{display:none!important}
+
 </style>
 </head>
 <body>
@@ -769,6 +791,16 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
+ <div class="unavailable-card">
+  <strong>🗺 Carte non disponible en 2,5D</strong>
+  <p id="world-area-unavailable-message">Cette zone reste enregistrée dans le World Builder, mais n'est pas compatible avec l'éditeur 2,5D actuel.</p>
+  <div class="unavailable-actions">
+   <button id="world-area-unavailable-return" type="button">🌍 Retour au Monde</button>
+   <button id="world-area-unavailable-create" type="button">＋ Nouvelle carte compatible</button>
+  </div>
+ </div>
+</section>
 <button id="world-workspace-return-float" type="button" aria-label="Enregistrer et revenir au panneau Monde">🌍 Monde · retour</button>
 <button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
@@ -1138,6 +1170,6 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-test-hud-edge-gates-v1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-test-hud-edge-gates-v1-legacy-return-v1"></script>
 </body>
 </html>

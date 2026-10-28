@@ -86,6 +86,7 @@ let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=
 // World-linked authoring uses exactly one world document. Active terrain is
 // transient editor state until committed back to its own WorldArea.
 let sculptWorldDraft=null,sculptWorldAreaId=null,sculptWorldPortalPlacement=null;
+let sculptWorldAreaMounted=false; // derived from a successful canonical 2.5D WorldArea mount
 let sculptInteriorTemplates=Object.freeze([]);
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
 let interiorWallGesture=null,interiorDoorMoving=false,interiorDoorGesture=null,interiorDoorPreview=null;
@@ -3498,6 +3499,7 @@ function drawSculptWorldPortalMarkers(){
 }
 function commitCurrentSculptWorldArea(){
   if(!sculptWorldDraft||!sculptWorldAreaId)return null;
+  if(!sculptWorldAreaMounted)throw Error('Zone 2,5D non chargée : aucune scène démo ne doit remplacer la WorldArea');
   const updated=saveSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,captureSculptArea());
   const areas=updated.areas.map(a=>a.id===sculptWorldAreaId
     ?{...a,encounters:sculptExteriorEncounters}:a);
@@ -3508,6 +3510,7 @@ function commitCurrentSculptWorldArea(){
   return sculptWorldDraft;
 }
 function mountWorldSculptArea(areaId){
+  sculptWorldAreaMounted=false;
   const area=sculptWorldDraft?.areas.find(a=>a.id===areaId);
   if(!area)throw Error('WorldArea cible absente');
   document.querySelector('header h1').textContent='World Builder · '+(area.label??'Carte');
@@ -3517,6 +3520,7 @@ function mountWorldSculptArea(areaId){
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
   mountSculptArea(scene);
+  sculptWorldAreaMounted=true;
   sculptExteriorEncounters=area.encounters;
   sculptEncounterConfig=sculptWorldDraft.encounterConfig;
   sculptEncounterAreaCache=null;
@@ -3578,8 +3582,16 @@ function installSculptWorldAreaEditing(){
       ?{document,areaId:requestedAreaId}:null;
   })();
   if(!transfer){
+    const unavailable=$('world-area-unavailable');
+    unavailable.hidden=false;
+    $('world-area-unavailable-message').textContent=
+      'Le contexte World Builder est absent. Reviens au panneau Monde pour sélectionner une carte.';
+    $('world-area-unavailable-return').addEventListener('click',()=>
+      window.location.assign('./world-assembler.html'));
+    $('world-area-unavailable-create').addEventListener('click',()=>
+      window.location.assign('./world-assembler.html?createArea=1'));
+    document.body.classList.add('world-area-unavailable');
     sculptWorldStatus('Session World Builder absente. Retourne au constructeur de mondes.',true);
-    $('world-area-portal-panel').hidden=false;
     return;
   }
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
@@ -3588,7 +3600,10 @@ function installSculptWorldAreaEditing(){
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
   function persistCurrentWorldSculpt(){
-    commitCurrentSculptWorldArea();
+    // A legacy WorldArea which could not be mounted is read-only. Its canonical
+    // original world data is persisted intact; the independent demo canvas is NEVER
+    // serialized into the user's zone.
+    if(sculptWorldAreaMounted)commitCurrentSculptWorldArea();
     // The single world document is written into its canonical storage key.
     // No independent map/scene key or duplicate portal owner is introduced.
     saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
@@ -3603,9 +3618,13 @@ function installSculptWorldAreaEditing(){
         (newArea?'&createArea=1':''));
     }catch(error){
       sculptWorldStatus('Enregistrement bloqué : '+error.message,true);
-      window.alert('Retour impossible sans enregistrer la carte : '+error.message);
+      const feedback=$('world-portal-feedback');
+      feedback.textContent='Enregistrement bloqué : '+error.message;
+      feedback.dataset.error='true';feedback.hidden=false;
     }
   }
+  $('world-area-unavailable-return').addEventListener('click',()=>saveAndReturnWorldArea());
+  $('world-area-unavailable-create').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-return-float').addEventListener('click',()=>saveAndReturnWorldArea());
@@ -3664,9 +3683,18 @@ function installSculptWorldAreaEditing(){
     sculptWorldStatus('WorldArea '+sculptWorldArea().label+
       ' chargée : place ses passages, teste-les, puis enregistre le monde.');
   }catch(error){
+    // A legacy/oversized Area must not display the separate demo terrain as if
+    // it were the user's editable map; navigation remains possible.
+    document.body.classList.add('world-area-unavailable');
+    $('world-area-portal-panel').hidden=true;
+    $('new-map-toggle').disabled=true;
+    $('world-area-unavailable').hidden=false;
+    $('world-area-unavailable-message').textContent=
+      'Cette ancienne zone ('+sculptWorldArea().width+' × '+sculptWorldArea().height+
+      ' unités) ne peut pas encore s’ouvrir en 2,5D. '+error.message+
+      ' Son contenu n’a pas été modifié. Reviens au Monde, ou crée une nouvelle carte de taille compatible.';
     sculptWorldStatus('Zone non ouvrable en 2,5D : '+error.message+
-      ' · sa taille reste conservée dans le monde. Retour possible sans conversion.',true);
-    refreshSculptWorldPanel();
+      ' · carte et liens conservés, retour au Monde disponible.',true);
   }
   window.__sculptWorldProbe=()=>Object.freeze({
     inspectorOpen:$('world-area-portal-panel').open,
@@ -3681,7 +3709,7 @@ function installSculptWorldAreaEditing(){
       trigger:p.trigger})),
     spawns:sculptWorldArea()?.spawns??[],
     terrainWidth:terrain.width,terrainHeight:terrain.height,
-    editable:!$('world-area-return').disabled,
+    editable:sculptWorldAreaMounted,
     traverseVisible:!$('world-portal-traverse').hidden,
     placementMode:sculptWorldPortalPlacement
   });
