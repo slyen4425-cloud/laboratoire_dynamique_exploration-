@@ -292,16 +292,24 @@ export function addWorldArea(draft,{
   if(!draft || !Array.isArray(draft.areas))throw Error('WorldDocument requis');
   if(draft.areas.length>=64)throw Error('Limite de 64 zones pour cet assemblage');
   const next=clone(draft);
-  const isInterior=kind==='interior';
-  if(kind!=='interior'&&kind!=='exterior')throw Error('Type de WorldArea inconnu');
+  // Dungeon is a *kind of location*, not a new WorldArea kind or a parallel
+  // coordinate system. Its parent is the sourceAreaId of the inbound Portal.
+  const isDungeon=kind==='dungeon';
+  const isInterior=kind==='interior'||isDungeon;
+  if(!isInterior&&kind!=='exterior')throw Error('Type de WorldArea inconnu');
   const id=nextWorldAreaId(next.areas,name);
-  const w=Math.max(128,Math.min(20000,finite(width,isInterior?720:1800)));
-  const h=Math.max(128,Math.min(20000,finite(height,isInterior?480:1200)));
+  // Native Sculpt tiles are 28×21 world units. New Areas fit the existing
+  // 2.5D editor; WorldDocument itself can still model larger worlds.
+  const w=Math.max(128,Math.min(20000,finite(width,isInterior?18*28:36*28)));
+  const h=Math.max(128,Math.min(20000,finite(height,isInterior?14*21:24*21)));
   const family=next.terrainFamilies?.some(x=>x.id==='plain')
     ?'plain':next.terrainFamilies?.[0]?.id;
   if(!family)throw Error('Aucune famille de terrain dans ce WorldDocument');
   next.areas.push({
-    id,kind,width:w,height:h,
+    id,label:String(name).trim().slice(0,80)||id,
+    kind:isInterior?'interior':'exterior',
+    ...(isDungeon?{siteKind:'dungeon'}:{}),
+    width:w,height:h,
     encounters:{randomEnabled:!isInterior},
     surface:{baseTerrainFamilyId:family,
       baseMaterialId:isInterior?'floor.wood.house':'ground.dirt',
