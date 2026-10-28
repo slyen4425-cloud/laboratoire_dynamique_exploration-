@@ -36,7 +36,7 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
   if(!source){
     const before=new Set(next.areas.map(a=>a.id));
     next=createWorldAreaFromSculptMapPreset(next,builtinSculptMapPresets()[0],{
-      name:'Forêt de départ · 2,5D',kind:'exterior',hostAreaId:null
+      name:'Forêt de départ · 2,5D',kind:'exterior',hostAreaId:null,initializeEncounters
     });
     source=nextArea(next,before);
     if(!source)throw Error('Carte de départ 2,5D non créée');
@@ -45,7 +45,7 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
   if(!target){
     const before=new Set(next.areas.map(a=>a.id));
     next=createWorldAreaFromSculptMapPreset(next,preset,{
-      name:'Destination · '+preset.name,kind:'exterior',hostAreaId:null
+      name:'Destination · '+preset.name,kind:'exterior',hostAreaId:null,initializeEncounters
     });
     target=nextArea(next,before);
     if(!target)throw Error('Destination 2,5D non créée');
