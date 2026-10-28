@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
+import {createBlankWorldBuilderDraft,addWorldArea} from '../src/builder/world-builder-draft.js';
+import {makePlayableZoneRoute} from '../src/builder/sculpt-playable-zone-route.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
 import {builtinSculptMapPresets} from '../src/builder/sculpt-builtin-map-presets.js';
 import {sculptWorldAreaScene} from '../src/builder/sculpt-world-area-link.js';
@@ -76,4 +77,52 @@ test('the actual preset forest->snow and snow->forest roads can be walked from S
  assert.equal(arrival.x,snow.spawns[0].x);
  const back=walkPrefabArea(doc,snow,true);
  assert.equal(back.currentAreaId,forest.id);
+});
+
+
+test('the reported 3-zone legacy world (2400x1600, Ile blank, Foret preset) truly walks Foret -> Ile -> Foret after explicit repair',()=>{
+ const legacy=createBlankWorldBuilderDraft({id:'old-3-zone-world',width:2400,height:1600});
+ const islandDoc=addWorldArea(legacy,{name:'Ile',kind:'exterior',width:36*28,height:24*21});
+ const forestDoc=createWorldAreaFromSculptMapPreset(islandDoc,builtinSculptMapPresets()[1],{
+   name:'Forêt profonde · sentier des anciens',hostAreaId:legacy.initialAreaId
+ });
+ const forest=forestDoc.areas.find(a=>a.label==='Forêt profonde · sentier des anciens');
+ const island=forestDoc.areas.find(a=>a.label==='Ile');
+ assert.ok(forest&&island);
+ const fixed=makePlayableZoneRoute(forestDoc,{
+   selectedAreaId:forest.id,initializeEncounters:true
+ }).document;
+ assert.equal(fixed.areas.find(a=>a.id===legacy.initialAreaId).width,2400);
+ assert.equal(fixed.initialAreaId,forest.id);
+ const first=walkPrefabArea(fixed,fixed.areas.find(a=>a.id===forest.id),true);
+ assert.equal(first.currentAreaId,island.id);
+ const flat=fixed.areas.find(a=>a.id===island.id);
+ const scene=sculptWorldAreaScene(flat);
+ const gate=fixed.portals.find(p=>p.sourceAreaId===island.id&&p.targetAreaId===forest.id);
+ assert.ok(gate,'Blank Island must have a real reciprocal exit to Forest');
+ const world={width:flat.width,height:flat.height,objects:scene.objects,
+   obstacles:[],boundary:flat.boundary,walls:flat.walls??[]};
+ const context={objectCatalog:sculptPreviewCollisionCatalog,sculptNavigation:{
+   terrain:scene.terrain,cellWidth:28,cellHeight:21,projectionRise:18,
+   maxStepUp:0,maxStepDown:0,shoreEntryFraction:.14,bridges:[],stairs:[]}};
+ const actor={x:flat.spawns[0].x,y:flat.spawns[0].y,radius:5,
+   locomotion:{modes:['ground']},facingX:1,moving:false};
+ let reached=false;
+ for(let n=0;n<400;n++){
+   const dx=gate.trigger.x-actor.x,dy=gate.trigger.y-actor.y;
+   const distance=Math.hypot(dx,dy);
+   if(distance<=12){reached=true;break;}
+   const prior={x:actor.x,y:actor.y};
+   stepMovement(world,actor,{x:dx/distance,y:dy/distance},Math.min(.035,distance/210),
+     {maxSpeed:210},undefined,context);
+   assert.ok(Math.hypot(actor.x-prior.x,actor.y-prior.y)>.01,
+     'Blank Island has a blocked route back to Forest');
+ }
+ assert.ok(reached,'Island reciprocal exit is not reachable from the actual Spawn');
+ const actual=findTriggeredPortal(fixed,island.id,actor);
+ assert.equal(actual?.id,gate.id);
+ const back=applyPortalTransition(fixed,{
+   currentAreaId:island.id,x:actor.x,y:actor.y
+ },actual);
+ assert.equal(back?.currentAreaId,forest.id);
 });
