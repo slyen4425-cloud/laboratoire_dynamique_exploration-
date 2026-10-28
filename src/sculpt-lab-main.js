@@ -3558,7 +3558,7 @@ function installSculptWorldAreaEditing(){
   $('world-area-portal-panel').open=false;
   const requestedAreaId=new URLSearchParams(window.location.search).get('areaId');
   // The handoff is intentionally consumed once. On a page refresh we
-  // restore from the SAME canonical WorldDocument saved by World Builder,
+  // restore from the SAME canonical world document saved by World Builder,
   // never from an independent Sculpt scene or parallel WorldGraph.
   const transfer=readWorldAssemblerHandoff(window.sessionStorage)??(()=>{
     const document=readWorldAssemblerDraft(window.localStorage);
@@ -3578,7 +3578,7 @@ function installSculptWorldAreaEditing(){
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
   function persistCurrentWorldSculpt(){
     commitCurrentSculptWorldArea();
-    // The single WorldDocument is written into its canonical storage key.
+    // The single world document is written into its canonical storage key.
     // No independent map/scene key or duplicate portal owner is introduced.
     saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
     return sculptWorldDraft;
@@ -3643,7 +3643,7 @@ function installSculptWorldAreaEditing(){
   });
   $('world-portal-traverse').addEventListener('click',traverseSculptWorldPortal);
   // Persist on refresh/navigation as well; the landing screen can recover
-  // the selected area using areaId and this exact WorldDocument.
+  // the selected area using areaId and this exact world document.
   window.addEventListener('pagehide',()=>{
     try{persistCurrentWorldSculpt();}
     catch(error){console.warn('WorldArea non sauvegardée au changement de page :',error);}
