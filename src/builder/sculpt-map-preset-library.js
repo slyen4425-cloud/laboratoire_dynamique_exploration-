@@ -2,8 +2,11 @@
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
 import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
-import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft} from './world-builder-draft.js';
+import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink} from './world-builder-draft.js';
 import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
+import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js';
+import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
+import {appendInteriorWall} from '../world/interior-wall-model.js';
 
 export const SCULPT_MAP_PRESET_KEY='gensrpg.exploration.map-presets.v1';
 export const SCULPT_MAP_PRESET_KIND='gensrpg-sculpt-map-preset';
@@ -129,6 +132,36 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
       y:Math.max(48,Math.min(host.height-48,hostY))});
     const last=next.areas.find(a=>a.id===hostAreaId).spawns.at(-1);
     next=updatePortal(next,outbound.id,p=>{p.targetSpawnId=last.id;});
+  }
+  // A native map preset only contains decor. Once instanced as a WorldArea,
+  // link each real house to an *independent* editable interior, using the
+  // existing Building door anchor, WorldArea, Portal and Spawn model.
+  // Imported user presets use the very same contract, if they have houses.
+  const buildings=next.areas.find(a=>a.id===area.id).objects
+    .filter(obj=>obj.objectDefinitionId.startsWith('objectdef.building.'));
+  for(const [index,building] of buildings.entries()){
+    const prior=new Set(next.areas.map(a=>a.id));
+    next=createBuildingInteriorLink(next,{
+      sourceAreaId:area.id,buildingId:building.id,
+      anchorId:'main-door',interiorSize:{width:18*28,height:14*21}
+    });
+    const room=next.areas.find(a=>!prior.has(a.id));
+    if(!room)throw Error('Impossible de raccorder la maison au modèle de pièce');
+    const blank=createBlankSculptPreviewScene({width:18,height:14});
+    // Floors are actual WorldSurface strokes; partitions are canonical
+    // WorldArea.walls and participate in the shared collision model.
+    const surface=appendSculptSurfaceStroke(
+      normalizeSculptSurface({...blank.surface,
+        baseMaterialId:'floor.wood.house',
+        baseTerrainFamilyId:source.surface.baseTerrainFamilyId}),
+      {materialId:index%2===0?'floor.tile.light':'floor.tile.sandstone',
+        points:[{x:64,y:78},{x:18*28-64,y:78}],width:86});
+    next=saveSculptWorldArea(next,room.id,{...blank,surface});
+    let walls=appendInteriorWall([],{a:{x:52,y:115},b:{x:200,y:115}});
+    walls=appendInteriorWall(walls,{a:{x:304,y:115},b:{x:452,y:115}});
+    next=createWorldBuilderDraft({...next,areas:next.areas.map(a=>
+      a.id===room.id?{...a,label:'Intérieur · '+(building.objectDefinitionId.includes('inn.')?'Auberge':'Maison')+
+        ' '+(index+1),walls,wallMaterialId:'wood'}:a)});
   }
   // Canonical validation of reciprocal links, size and Spawn refs.
   return createWorldBuilderDraft(next);
