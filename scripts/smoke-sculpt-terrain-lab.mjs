@@ -3264,6 +3264,118 @@ try{
     JSON.stringify({initial:assemblerBoot.areaIds.length,final:recovered.areaIds.length,
       portals:recovered.portalCount,editedArea:recovered.selectedAreaId,
       width:recovered.selectedWidth,mobileLandscape:true}));
+
+  // 2.5D World Builder contract: an actual dungeon placed IN a host Area,
+  // its entry placed on SculptTerrain, then real Portal -> WorldArea ->
+  // Spawn traversal while Tester is running. Restore unchanged whole world.
+  const authoredDungeon=await run(`(()=>{
+    document.querySelector('.world-node[data-area-id="area-principale"]').click();
+    document.querySelector('#area-name').value='Grotte du nord';
+    document.querySelector('#area-kind').value='dungeon';
+    document.querySelector('#area-kind').dispatchEvent(new Event('change'));
+    document.querySelector('#area-add-form').requestSubmit();
+    const result=window.__worldAssemblerProbe();
+    const dungeonId=result.areaIds.at(-1);
+    const saved=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const dungeon=saved.areas.find(a=>a.id===dungeonId);
+    return {...result,dungeonId,siteKind:dungeon?.siteKind,
+      host: saved.portals.find(p=>p.targetAreaId===dungeonId)?.sourceAreaId,
+      terrainWidth:dungeon.width/28,terrainHeight:dungeon.height/21};
+  })()`);
+  if(authoredDungeon.areaIds.length!==4||authoredDungeon.portalCount!==4||
+     authoredDungeon.siteKind!=='dungeon'||authoredDungeon.host!=='area-principale'||
+     authoredDungeon.terrainWidth!==18||authoredDungeon.terrainHeight!==14)
+    throw Error('Dungeon not physically contained by host WorldArea Portal: '+
+      JSON.stringify(authoredDungeon));
+  await run(`(()=>{
+    document.querySelector('.world-node[data-area-id="area-principale"]').click();
+    document.querySelector('#edit-sculpt-area').click();
+    return true;
+  })()`);
+  let worldSculpt=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{worldSculpt=await run("typeof window.__sculptWorldProbe==='function' ? window.__sculptWorldProbe():null");}
+    catch{}
+    if(worldSculpt)break;
+  }
+  if(worldSculpt?.areaId!=='area-principale'||worldSculpt.areaCount!==4||
+     worldSculpt.portalCount!==4||worldSculpt.terrainWidth!==36)
+    throw Error('Sculpt editor did not load canonical host Area: '+JSON.stringify(worldSculpt));
+  const placedWorldPortal=await run(`(()=>{
+    const gate=window.__sculptWorldProbe().outgoing.find(p=>
+      p.targetAreaId==='grotte-du-nord');
+    if(!gate) return {error:'no dungeon entry'};
+    const list=document.querySelector('#world-area-portal-select');
+    list.value=gate.id;list.dispatchEvent(new Event('change'));
+    const spawn=window.__sculptWorldProbe().spawns[0];
+    document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
+    document.querySelector('#world-area-portal-y').value=String(spawn.y);
+    document.querySelector('#world-area-portal-save').click();
+    document.querySelector('#navigation-toggle').click();
+    return {gate,spawn,sculpt:window.__sculptWorldProbe(),
+      nav:window.__sculptNavProbe()};
+  })()`);
+  if(placedWorldPortal.error||!placedWorldPortal.nav.enabled||
+     !placedWorldPortal.sculpt.traverseVisible)
+    throw Error('Host 2.5D portal not reachable in actual gameplay: '+
+      JSON.stringify(placedWorldPortal));
+  const enteredDungeon=await run(`(()=>{
+    document.querySelector('#world-portal-traverse').click();
+    return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
+  })()`);
+  if(enteredDungeon.sculpt.areaId!=='grotte-du-nord'||
+     enteredDungeon.sculpt.siteKind!=='dungeon'||
+     enteredDungeon.sculpt.terrainWidth!==18||
+     enteredDungeon.nav.player===null)
+    throw Error('Canonical Portal did not load live 2.5D dungeon Area: '+
+      JSON.stringify(enteredDungeon));
+  const placedDungeonReturn=await run(`(()=>{
+    document.querySelector('#navigation-toggle').click();
+    const current=window.__sculptWorldProbe();
+    const back=current.outgoing.find(p=>p.targetAreaId==='area-principale');
+    if(!back)return {error:'no return portal'};
+    const list=document.querySelector('#world-area-portal-select');
+    list.value=back.id;list.dispatchEvent(new Event('change'));
+    const spawn=window.__sculptWorldProbe().spawns[0];
+    document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
+    document.querySelector('#world-area-portal-y').value=String(spawn.y);
+    document.querySelector('#world-area-portal-save').click();
+    document.querySelector('#navigation-toggle').click();
+    return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
+  })()`);
+  if(placedDungeonReturn.error||!placedDungeonReturn.sculpt.traverseVisible)
+    throw Error('Dungeon return Portal not reachable: '+JSON.stringify(placedDungeonReturn));
+  const backOutside=await run(`(()=>{
+    document.querySelector('#world-portal-traverse').click();
+    return window.__sculptWorldProbe();
+  })()`);
+  if(backOutside.areaId!=='area-principale')
+    throw Error('Dungeon -> host Portal transition failed: '+JSON.stringify(backOutside));
+  await run("document.querySelector('#world-area-return').click();true");
+  let returned2p5d=null;
+  for(let i=0;i<90;i++){
+    await sleep(110);
+    try{returned2p5d=await run(`(()=>{
+      const probe=window.__worldAssemblerProbe?.();
+      if(!probe)return null;
+      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      return {...probe,dungeon:doc.areas.find(a=>a.id==='grotte-du-nord'),
+        exterior:doc.areas.find(a=>a.id==='area-principale')};
+    })()`);}catch{}
+    if(returned2p5d)break;
+  }
+  if(returned2p5d?.areaIds.length!==4||returned2p5d.portalCount!==4||
+     returned2p5d.dungeon?.sculptTerrain?.width!==18||
+     returned2p5d.exterior?.sculptTerrain?.width!==36||
+     !returned2p5d.exterior?.surface||!returned2p5d.saved)
+    throw Error('Saved dungeon sculpt terrain or real portals lost on return: '+
+      JSON.stringify(returned2p5d));
+  console.log('World Builder -> physical 2.5D Portal -> dungeon -> host + save Chromium:',
+    JSON.stringify({areas:returned2p5d.areaIds.length,
+      portals:returned2p5d.portalCount,
+      dungeonGrid:returned2p5d.dungeon.sculptTerrain.width+'x'+
+        returned2p5d.dungeon.sculptTerrain.height,returned:true}));
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
