@@ -35,7 +35,7 @@ jobs:
       - name: Checkout CI-verified Encounter feature source
         uses: actions/checkout@v4
         with:
-          ref: 4f0b97ccb6d12c2046540e543561d25ef8751e34
+          ref: 4dba6c72ed33ff1d996b2a53100f8db795175fb9
           path: encounter-source
       - name: Checkout immutable Capture Combat runtime
         uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = 4f0b97ccb6d12c2046540e543561d25ef8751e34
+          test "$(git -C encounter-source rev-parse HEAD)" = 4dba6c72ed33ff1d996b2a53100f8db795175fb9
           test "$(git -C combat-source rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
           test "$(git -C capture-source rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
@@ -70,6 +70,9 @@ jobs:
           grep -Fq 'id="graph-nodes"' encounter-source/world-assembler.html
           grep -Fq 'id="edit-sculpt-area"' encounter-source/world-assembler.html
           grep -Fq 'id="world-area-portal-panel"' encounter-source/sculpt-lab.html
+          grep -Fq 'class="world-area-portal-panel" hidden>' encounter-source/sculpt-lab.html
+          grep -Fq 'world-portal-v1-compact-ux-v1' encounter-source/sculpt-lab.html
+          grep -Fq 'portalUi=compact1' encounter-source/src/builder/world-assembler-main.js
           grep -Fq 'id="world-portal-traverse"' encounter-source/sculpt-lab.html
           grep -Fq 'id="world-assembler-back"' encounter-source/builder.html
           grep -Fq 'id="mode-encounters"' encounter-source/sculpt-lab.html
@@ -106,6 +109,8 @@ jobs:
           grep -Fq 'id="graph-nodes"' "$preview/world-assembler.html"
           grep -Fq 'id="edit-sculpt-area"' "$preview/world-assembler.html"
           grep -Fq 'id="world-area-portal-panel"' "$preview/sculpt-lab.html"
+          grep -Fq 'class="world-area-portal-panel" hidden>' "$preview/sculpt-lab.html"
+          grep -Fq 'world-portal-v1-compact-ux-v1' "$preview/sculpt-lab.html"
           grep -Fq 'id="world-assembler-back"' "$preview/builder.html"
           grep -Fq 'id="mode-encounters"' "$preview/sculpt-lab.html"
           test -s "$preview/assets/interiors/doors/manifest.json"
@@ -160,6 +165,8 @@ jobs:
           grep -Fq 'id="mode-encounters"' /tmp/published-encounter.html
           grep -Fq 'id="sculpt-encounter-family"' /tmp/published-encounter.html
           grep -Fq 'id="world-area-portal-panel"' /tmp/published-encounter.html
+          grep -Fq 'class="world-area-portal-panel" hidden>' /tmp/published-encounter.html
+          grep -Fq 'world-portal-v1-compact-ux-v1' /tmp/published-encounter.html
           grep -Fq 'id="world-portal-traverse"' /tmp/published-encounter.html
           grep -Fq 'href="./world-assembler.html"' /tmp/published-encounter.html
           curl -fsSL "$probe/world-assembler.html?build=$GITHUB_SHA" -o /tmp/published-world-assembler.html
@@ -169,6 +176,7 @@ jobs:
           grep -Fq 'id="world-assembler-back"' /tmp/published-area-editor.html
           curl -fsSL "$probe/src/builder/world-assembler-main.js?build=$GITHUB_SHA" -o /tmp/published-world-assembler.js
           grep -Fq 'connectWorldAreas' /tmp/published-world-assembler.js
+          grep -Fq 'portalUi=compact1' /tmp/published-world-assembler.js
           curl -fsSL "$probe/src/builder/world-assembler.css?build=$GITHUB_SHA" -o /tmp/published-world-assembler.css
           test -s /tmp/published-world-assembler.css
           curl -fsSL "$probe/src/sculpt-lab-main.js?build=$GITHUB_SHA" -o /tmp/published-encounter-main.js
@@ -181,7 +189,7 @@ jobs:
           test -s /tmp/published-combat.html
           curl -fsSL "$probe/capture-assets/data/assets/catalog/global-visual-assets.v1.json?build=$GITHUB_SHA" -o /tmp/published-capture.json
           test -s /tmp/published-capture.json
-          printf 'LIVE OK: V80 identical; World Builder 2.5D dungeon/Portals, Encounter, Combat and Capture HTTP 200\n'
+          printf 'LIVE OK: V80 identical; compact touch Portal UI, fullscreen and dungeon/Combat/Capture HTTP 200\n'
       - name: Record verified live URL on the published commit
         shell: bash
         env:
@@ -191,9 +199,9 @@ jobs:
           cat > /tmp/pages-preview-status.json <<'JSON'
           {
             "state": "success",
-            "context": "pages/world-2p5d-live",
-            "description": "V80 unchanged; real 2.5D dungeon Portal, source Area and Spawn verified",
-            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/world-assembler.html?v=2p5d"
+            "context": "pages/world-portal-compact-live",
+            "description": "V80 unchanged; compact Portal panel and mobile fullscreen/touch Chromium verified",
+            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/world-assembler.html?v=portal-ux-1"
           }
           JSON
           curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors \
