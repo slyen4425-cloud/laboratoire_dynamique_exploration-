@@ -82,6 +82,20 @@ export function placeSculptWorldPortal(draft,portalId,{x,y}={}){
   if(!checked.valid)throw Error('Position de Portal invalide : '+checked.errors.join(', '));
   return createWorldBuilderDraft(checked.document);
 }
+// The user-facing marker name is the existing Portal.visual.label field.
+// No duplicate marker catalog or separate visual position is introduced.
+export function setSculptWorldPortalLabel(draft,portalId,label){
+  if(typeof label!=='string'||label.length>80)
+    throw Error('Libellé de passage invalide (80 caractères maximum)');
+  const portal=draft?.portals?.find(p=>p.id===portalId);
+  if(!portal)throw Error('Passage inconnu');
+  const next=updatePortal(draft,portalId,p=>{
+    p.visual={...p.visual,label:label.trim()||null};
+  });
+  const checked=validateWorldBuilderDraft(next);
+  if(!checked.valid)throw Error('Repère de passage invalide : '+checked.errors.join(', '));
+  return createWorldBuilderDraft(checked.document);
+}
 export function placeSculptWorldSpawn(draft,areaId,spawnId,{x,y}={}){
   const area=areaById(draft,areaId),spawn=area.spawns?.find(s=>s.id===spawnId);
   if(!spawn||spawn.anchor)throw Error('Spawn inconnu ou ancré à une porte');
