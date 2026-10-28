@@ -330,7 +330,7 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);}
   }
   on(byId('edit-sculpt-area'),'click',
-    ()=>openAreaEditor('./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2'));
+    ()=>openAreaEditor('./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3'));
   on(byId('edit-area'),'click',()=>{
     openAreaEditor('./builder.html?worldAssembler=1');
   });
