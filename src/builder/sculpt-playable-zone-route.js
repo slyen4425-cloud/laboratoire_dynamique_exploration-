@@ -6,11 +6,12 @@ import {sculptWorldAreaScene,placeSculptWorldPortal} from './sculpt-world-area-l
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js';
 
-export function playableExteriorArea(area){
-  if(!area||area.kind!=='exterior')return false;
+export function playableSculptArea(area){
+  if(!area)return false;
   try{sculptWorldAreaScene(area);return true;}
   catch{return false;}
 }
+export const playableExteriorArea=area=>area?.kind==='exterior'&&playableSculptArea(area);
 const nextArea=(after,before)=>after.areas.find(a=>!before.has(a.id));
 
 export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[3]}={}){
@@ -40,7 +41,7 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
   // Object-anchored building doors are NEVER touched.
   const blocked=next.portals.find(p=>p.sourceAreaId===source.id&&
     p.enabled!==false&&p.trigger?.kind==='point'&&
-    !playableExteriorArea(next.areas.find(a=>a.id===p.targetAreaId)));
+    !playableSculptArea(next.areas.find(a=>a.id===p.targetAreaId)));
   if(blocked){
     next=updatePortal(next,blocked.id,p=>{
       p.targetAreaId=target.id;
