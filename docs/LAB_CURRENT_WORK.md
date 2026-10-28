@@ -6,6 +6,7 @@ Base GREEN : `e013cb861436cfa32f1f55b9f4968d207e7724bc` (885 tests Node et CI co
 Branche : `work/exploration-world-map-legacy-compatible-navigation-2026-10-28`
 Checkpoint START : `checkpoint/exploration-start-world-map-legacy-compatible-navigation-2026-10-28`
 Checkpoint GREEN précédent : `checkpoint/exploration-playable-zone-routes-green-2026-10-28`.
+CI GREEN actuel : `checkpoint/exploration-world-map-legacy-compatible-navigation-ci-green-2026-10-28` (source immuable `32e38b07227a7e85426fa64fc15fdb1a81416ad0`, Actions #40765978145, Core + Combat + Chromium GREEN). Publication preview isolée et retour manuel Pixel à obtenir.
 
 ## Constat utilisateur et RED
 Un WorldDocument conservé depuis l'ancien Builder a une zone de départ `Area Principale` 2400×1600 unités monde (terrain Sculpt autorisé jusqu'à 80×64 cellules). Sur le panneau Monde, `Carte 2,5D` bloque l'utilisateur sur cette ancienne zone, même lorsqu'une zone compatible `Ile` ou `Forêt profonde` est déjà présente. L'erreur propose seulement de créer une nouvelle carte et focalise le formulaire ; elle ignore les cartes jouables.
