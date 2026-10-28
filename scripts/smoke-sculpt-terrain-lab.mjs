@@ -3664,13 +3664,24 @@ try{
       JSON.stringify(legacyReturn));
   console.log('GREEN legacy 2400x1600 : World guard, no demo write and tactile return');
   // Explicit mobile repair: this is the precise user-visible route action.
-  // Accept its native confirmation through CDP, not a fake click or a UI stub.
+  // Confirm through the real CDP javascriptDialogOpening event. Headless
+  // Chrome dismisses native dialogs automatically unless Page is enabled.
+  await send('Page.enable',{});
+  let repairDialogSeen=false;
+  const observeRepairDialog=event=>{
+    const packet=JSON.parse(event.data);
+    if(packet.method==='Page.javascriptDialogOpening'&&packet.params?.type==='confirm')
+      repairDialogSeen=true;
+  };
+  socket.addEventListener('message',observeRepairDialog);
   const repairClick=run("document.querySelector('#world-playable-route').click();true");
-  await sleep(100);
+  for(let i=0;i<40&&!repairDialogSeen;i++)await sleep(30);
+  if(!repairDialogSeen)throw Error('Real mobile route action did not request confirmation');
   const accepted=await send('Page.handleJavaScriptDialog',{accept:true});
   if(accepted.error)throw Error('Playable route confirmation could not be accepted: '+
     JSON.stringify(accepted));
   await repairClick;
+  socket.removeEventListener('message',observeRepairDialog);
   const repairedRoute=await run(`(()=>{
     const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
     const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
