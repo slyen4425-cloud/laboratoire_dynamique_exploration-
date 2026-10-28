@@ -298,13 +298,13 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);}
   });
   on(byId('world-playable-route'),'click',()=>{
-    if(!window.confirm('Raccorder des régions 2,5D pour pouvoir voyager entre elles ? '+
-       'Si une ancienne sortie pointe vers une zone incompatible, elle sera réorientée vers la destination jouable. '+
-       'Une carte pourra être créée si nécessaire et le départ du monde pourra changer. '+
-       'Aucune ancienne zone ni son contenu ne sera supprimé.'))return;
+    if(!window.confirm('Raccorder toutes les sorties de régions 2,5D vers des cartes jouables ? '+
+       'Les passages historiques incompatibles seront réparés, sans modifier leurs cartes. '+
+       'Si les rencontres de ce monde sont toutes à 0 %, initialiser aussi les profils des présets. '+
+       'Les réglages déjà personnalisés seront conservés.'))return;
     let result;
     const ok=apply(()=>{
-      result=makePlayableZoneRoute(draft,{selectedAreaId:selectedId});
+      result=makePlayableZoneRoute(draft,{selectedAreaId:selectedId,initializeEncounters:true});
       return result.document;
     },'Parcours jouable créé : deux zones compatibles et Portals aller-retour.');
     if(ok&&result){
