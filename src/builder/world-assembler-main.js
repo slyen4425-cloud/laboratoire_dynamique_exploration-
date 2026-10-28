@@ -382,7 +382,7 @@ function installWorldAssembler(){
         // legacy WorldArea. Offer one of this SAME document's valid Areas.
         const resolution=resolveSculptAreaForEditor(draft,selectedId);
         if(!resolution){
-          status('La zone sélectionnée ne peut pas être éditée en 2,5D et aucune autre carte compatible n’existe. '+
+          status('Zone non éditable en 2,5D : aucune autre carte compatible n’existe. '+
             'Ajoute une zone 8–80 × 8–64 cases dans Monde ou crée-la depuis un préset. '+
             'La zone historique reste intacte.',true);
           byId('area-name').focus();
