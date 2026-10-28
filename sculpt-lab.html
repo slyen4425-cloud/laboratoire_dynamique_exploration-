@@ -451,28 +451,85 @@ body.sculpt-immersive #sculpt-encounter-editor{
 .combat-overlay__frame{display:block;width:100%;height:100%;border:0;
   background:#071016;touch-action:manipulation}
 .world-entry-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.world-entry-links a{padding:8px 11px;border:1px solid #528f90;border-radius:9px;background:#16313b;color:#def5eb;font-size:.77rem;text-decoration:none;white-space:nowrap}@media(max-width:600px){.world-entry-links{gap:4px}.world-entry-links a{padding:6px;font-size:.67rem}}
-/* World Builder 2,5D only: portals are canonical WorldDocument triggers. */
-.world-area-portal-panel{position:fixed;z-index:21;right:9px;top:calc(env(safe-area-inset-top,0px) + 66px);
- width:min(275px,40vw);max-height:70dvh;overflow:auto;overscroll-behavior:contain;
- background:#122d39f5;border:1px solid #78b7ab;border-radius:12px;padding:8px;
- box-shadow:0 9px 28px #000b}
+/* World Builder 2,5D: the map, not the Portal tool panel, owns the screen.
+   Portal/Spawn gameplay still belongs exclusively to WorldDocument. */
+.world-area-portal-panel{
+ position:absolute;z-index:21;right:8px;top:8px;
+ width:min(250px,calc(100% - 16px));
+ max-height:min(53dvh,calc(100% - 16px));
+ overflow-y:auto;overscroll-behavior:contain;
+ background:#122d39f5;border:1px solid #78b7ab;border-radius:11px;
+ padding:7px;box-shadow:0 8px 20px #000b;
+}
 .world-area-portal-panel[hidden]{display:none!important}
-.world-area-portal-panel summary{font-size:.77rem;font-weight:850;cursor:pointer;list-style:revert}
-.world-area-panel-content{display:grid;gap:7px;padding-top:7px}
-.world-area-panel-content>strong{font-size:.85rem}
-.world-area-panel-content label{display:grid;gap:3px;font-size:.73rem}
-.world-area-panel-content select,.world-area-panel-content input{min-width:0;width:100%;padding:5px 6px;min-height:35px}
-.world-area-panel-content button{padding:6px 7px;font-size:.71rem;min-height:35px}
+.world-area-portal-panel summary{
+ display:flex;align-items:center;gap:7px;cursor:pointer;
+ min-height:38px;padding:5px 8px;list-style:none;
+ font-size:.76rem;font-weight:850;white-space:nowrap;
+ touch-action:manipulation;
+}
+.world-area-portal-panel summary::-webkit-details-marker{display:none}
+.world-area-portal-panel summary::before{content:"▸";color:#9fe7d3;font-size:.9rem}
+.world-area-portal-panel[open] summary::before{content:"▾"}
+.world-area-portal-panel:not([open]){
+ width:max-content;min-width:142px;max-width:min(185px,calc(100% - 16px));
+ max-height:44px;overflow:hidden;padding:0;
+}
+.world-area-portal-panel[open]{box-shadow:0 10px 26px #000d}
+.world-area-panel-content{
+ display:grid;gap:6px;padding:8px 4px 4px;
+ border-top:1px solid #426a72;
+}
+.world-area-panel-content>strong{font-size:.81rem}
+.world-area-panel-content label{display:grid;gap:3px;font-size:.71rem}
+.world-area-panel-content select,.world-area-panel-content input{
+ min-width:0;width:100%;padding:5px 6px;min-height:34px;
+}
+.world-area-panel-content button{padding:5px 7px;font-size:.72rem;min-height:35px}
 .world-area-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 #world-area-portal-status{color:#b2ece2;line-height:1.4;font-size:.7rem}
-#world-portal-traverse{z-index:22;right:7px;left:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 77px);width:auto;max-width:220px}
-@media(max-width:720px){
- .world-area-portal-panel{top:calc(env(safe-area-inset-top,0px) + 52px);
- width:min(223px,42vw);max-height:64dvh;padding:6px}
- .world-area-panel-content{gap:4px}
- .world-area-panel-content label{font-size:.65rem}
- .world-area-panel-content button{min-height:31px;font-size:.67rem}
+#world-portal-traverse{
+ z-index:22;right:7px;left:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 77px);
+ width:auto;max-width:220px;
 }
+/* The ORIGINAL fullscreen button remains pinned at the start of the
+   scrollable toolbar, so it cannot disappear offscreen on mobile landscape. */
+body.world-area-editing .editor-switch{
+ overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+}
+body.world-area-editing .editor-switch #fullscreen-toggle{
+ order:-10;position:sticky;left:0;z-index:16;
+ flex:0 0 43px;min-width:43px;max-width:43px;
+ min-height:38px;padding:4px;
+ font-size:0!important;background:#285462;border-color:#95d8d1;
+}
+body.world-area-editing .editor-switch #fullscreen-toggle::before{
+ content:"⛶";font-size:1.25rem;
+}
+body.world-area-editing.sculpt-immersive .editor-switch #fullscreen-toggle::before{
+ content:"⤢";
+}
+/* Fullscreen is already handled by the existing immersive controller;
+   only the small inspector moves below the toolbar. */
+body.world-area-editing.sculpt-immersive .world-area-portal-panel{
+ top:calc(env(safe-area-inset-top,0px) + 57px);
+ right:calc(env(safe-area-inset-right,0px) + 8px);
+ max-height:min(53dvh,calc(100% - 65px));
+}
+body.world-area-editing.sculpt-immersive .world-area-portal-panel:not([open]){
+ max-height:44px;
+}
+body.world-area-editing.navigation-testing .world-area-portal-panel{
+ display:none!important;
+}
+@media(max-width:720px){
+ .world-area-portal-panel{width:min(220px,calc(100% - 14px));padding:5px}
+ .world-area-panel-content{gap:4px}
+ .world-area-panel-content label{font-size:.66rem}
+ .world-area-panel-content button{min-height:32px;font-size:.67rem}
+ .world-area-portal-panel summary{font-size:.71rem}
+}
+
 </style>
 </head>
 <body>
@@ -632,8 +689,8 @@ body.sculpt-immersive #sculpt-encounter-editor{
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
-<details id="world-area-portal-panel" class="world-area-portal-panel" hidden open>
- <summary>🌍 Passage entre les zones</summary>
+<details id="world-area-portal-panel" class="world-area-portal-panel" hidden>
+ <summary aria-label="Afficher ou masquer les entrées et sorties">🚪 Passages</summary>
  <div class="world-area-panel-content">
   <strong id="world-area-current-name">Zone</strong>
   <small id="world-area-current-kind">WorldArea 2,5D</small>
