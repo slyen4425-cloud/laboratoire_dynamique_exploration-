@@ -1,21 +1,9 @@
-# LAB_CURRENT_WORK — Un seul atelier Monde / Carte 2,5D
+# LAB_CURRENT_WORK — Atelier unifié, retour stable et bibliothèque de cartes natives
 
-Date : 2026-10-28.
-Base GREEN `6f15b02ac0eea0b5cb6adea18dae34cafef8e679` (867/867 Node tests, Chromium réel, Pages isolées V80).
-Branche : `work/exploration-unified-world-map-workspace-2026-10-28`.
-START : `checkpoint/exploration-start-unified-world-map-workspace-2026-10-28`.
+Branche : work/exploration-world-return-and-builtins-2026-10-28
+Base GREEN : 0314dd0deda247569ddc1a576f0d0b63ede2098c
+Checkpoint START : checkpoint/exploration-start-world-return-and-builtins-2026-10-28
 
-## Problème produit
-La navigation historique envoie parfois vers `sculpt-lab.html` sans le contexte WorldDocument, donc une scène prototype séparée au lieu de la WorldArea sélectionnée. Le bouton Retour du World Builder pointe directement sur le prototype autonome. Les commandes de création de WorldArea ne permettent pas de choisir les dimensions alors que la nouvelle carte du prototype le permet. Ce sont des différences artificielles entre vues d'un même éditeur.
-
-## Décision et autorité
-Un seul atelier fonctionnel : World Builder (liste des WorldAreas et Portals) ⇄ Carte 2,5D (édition de la WorldArea sélectionnée) avec boutons d'onglet identiques. **Un seul WorldDocument** dans `world-assembler-handoff` et `world-assembler-document`, même draft propriétaire, zéro copie persistante parallèle. Le prototype historique autonome reste disponible uniquement comme outil de compatibilité/laboratoire, non comme porte d'entrée dans l'atelier unifié.
-
-Périmètre :
-- rendre la navigation entre onglets évidente sans passer de l'atelier au prototype par inadvertance ;
-- autoriser le choix de la taille (8–80 × 8–64 cases) pendant l'ajout d'une zone ou d'un donjon depuis le World Builder ;
-- reprendre mêmes réglages par défaut au changement de type, sans changer les tailles choisies manuellement ;
-- préserver la scène et les liens lors des retours de l'édition Carte 2,5D ;
-- tests TDD + Browser smartphone réel ; produit V80 toujours isolé.
-
-Hors périmètre du premier lot : migration destructrice/automatique des anciennes scènes isolées vers un WorldDocument ; redimensionnement silencieux d'une WorldArea complexe déjà construite ; fusion des moteurs graphiques 2D/2,5D ou duplication d'un état.
+Correctif cause racine : le header disparaît en immersive, rendant Monde inaccessible, tandis que le panneau de Portals est caché en Tester. Le handoff session est consommable une seule fois et perd le contexte après refresh. Rendre le retour réellement visible sur le terrain en immersive et lier la restauration à l'unique document monde sauvegardé.
+Présets natifs : 8 cartes cohérentes réutilisables, à partir du catalogue d'objets réel (végétation, maison, rochers, etc.), relief, mares réelles et routes canoniques. Un seul format de Scène validé ; la copie dans une WorldArea passe par saveSculptWorldArea. Présets utilisateurs restent modifiables et exportables.
+Tests TDD/Node/Chromium mobile et publication preview V80 protégée.

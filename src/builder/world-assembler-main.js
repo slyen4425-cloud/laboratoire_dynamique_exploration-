@@ -7,7 +7,8 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {readSculptMapPresets,createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
+import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
+import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 
 const byId=id=>document.getElementById(id);
@@ -229,7 +230,7 @@ function installWorldAssembler(){
   function refreshMapPresets(){
     const select=byId('world-map-preset-select'),previous=select.value;
     try{
-      const presets=readSculptMapPresets(window.localStorage);
+      const presets=listAvailableSculptMapPresets(window.localStorage);
       select.replaceChildren(new Option('Choisir une carte enregistrée',''),
         ...presets.map(p=>new Option(p.name+' · '+p.scene.terrain.width+' × '+
           p.scene.terrain.height,p.id)));
@@ -251,7 +252,7 @@ function installWorldAssembler(){
   on(byId('world-map-preset-select'),'change',()=>{
     byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
     try{
-      const preset=readSculptMapPresets(window.localStorage)
+      const preset=listAvailableSculptMapPresets(window.localStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
       if(preset&&!byId('world-map-preset-name').value.trim())
         byId('world-map-preset-name').value=preset.name;
@@ -259,7 +260,7 @@ function installWorldAssembler(){
   });
   on(byId('world-map-preset-create'),'click',()=>{
     try{
-      const preset=readSculptMapPresets(window.localStorage)
+      const preset=listAvailableSculptMapPresets(window.localStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
       if(!preset){status('Choisis d’abord un préset de carte.',true);return;}
       const before=new Set(draft.areas.map(a=>a.id));
@@ -339,7 +340,9 @@ function installWorldAssembler(){
     try{
       saveWorldAssemblerHandoff(window.sessionStorage,draft,selectedId);
       persist();
-      window.location.assign(url);
+      const next=url.startsWith('./sculpt-lab.html?')
+        ?url+'&areaId='+encodeURIComponent(selectedId):url;
+      window.location.assign(next);
     }catch(error){status(error.message,true);}
   }
   const mapPanelUrl='./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3&panels=world1';
