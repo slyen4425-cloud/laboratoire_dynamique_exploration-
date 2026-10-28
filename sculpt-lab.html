@@ -175,9 +175,13 @@ body.sculpt-immersive .canvas-wrap .precision-actions{
 /* V17: an opt-in navigation probe, never a second editor or world. */
 .editor-switch #navigation-toggle{flex:0 0 auto;min-height:37px;font-size:.85rem}
 #navigation-hud{position:absolute;z-index:11;top:56px;right:9px;
-  width:min(205px,calc(100% - 18px));padding:9px;display:grid;gap:6px;
+  width:min(205px,calc(100% - 18px));padding:4px;display:block;
   background:#142934f0;border:1px solid #6ba8a1;border-radius:12px;
   box-shadow:0 5px 18px #0008;font-size:.78rem;max-height:min(66dvh,560px);overflow-y:auto;overscroll-behavior:contain}
+#navigation-hud summary{cursor:pointer;min-height:39px;display:flex;align-items:center;
+  font-size:.8rem;font-weight:800;padding:8px;touch-action:manipulation;white-space:nowrap}
+#navigation-hud:not([open]){width:max-content;min-width:115px;max-height:47px;overflow:hidden}
+#navigation-hud .navigation-options-content{display:grid;gap:6px;padding:6px 5px 5px}
 #navigation-hud select{width:100%;padding:7px}
 #navigation-hud input[type=range]{width:100%;accent-color:#83ddc4}
 #navigation-speed-value,#navigation-camera-zoom-value,#navigation-camera-angle-value,#navigation-max-step-value{font-weight:800;color:#aff4df}
@@ -977,7 +981,9 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
   <small>Les vues Face/Dos utilisent les vrais visuels Capture quand ils existent. Pour modifier la taille et la direction après placement, choisis « Sélectionner / modifier », puis touche l'acteur. Aucune modification des collisions.</small>
  </section>
 </section>
-<section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
+<details id="navigation-hud" aria-label="Options de navigation du test" hidden>
+  <summary>⚙ Options du test</summary>
+  <div class="navigation-options-content">
   <strong>🚶 Test de navigation</strong>
   <label>Locomotion simulée
     <select id="navigation-locomotion" aria-label="Mode de locomotion pour le test">
@@ -1024,7 +1030,8 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
   <output id="navigation-status" aria-live="polite">Maintenir le joystick ou ZQSD / WASD / flèches. Une falaise trop haute bloque la marche.</output>
   <button type="button" id="navigation-reset">Replacer le personnage</button>
   <small>Test isolé : les capacités du jeu ne sont pas modifiées.</small>
-</section>
+  </div>
+</details>
 <section id="sculpt-encounter-preview" class="sculpt-encounter-preview" role="dialog"
   aria-label="Rencontre de créature sauvage" aria-modal="true" hidden>
   <div class="sculpt-encounter-preview__panel">
