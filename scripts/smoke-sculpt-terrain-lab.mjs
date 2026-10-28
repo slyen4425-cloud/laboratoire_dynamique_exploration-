@@ -3531,7 +3531,7 @@ try{
       return p?{...p,hasWorldTab:!!document.querySelector('#world-workspace-world'),
         hasNewMapTab:!!document.querySelector('#world-area-create-another'),
         worldHeader:document.querySelector('header h1')?.textContent}:null;
-    })`);}catch{}
+    })()`);}catch{}
     if(unifiedMap)break;
   }
   if(unifiedMap?.terrainWidth!==40||unifiedMap.terrainHeight!==31||
@@ -3547,7 +3547,7 @@ try{
       const probe=window.__worldAssemblerProbe?.();if(!probe)return null;
       const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
       return {...probe,created:doc.areas.find(a=>a.label==='Grande clairière')};
-    })`);}catch{}
+    })()`);}catch{}
     if(unifiedBack)break;
   }
   if(unifiedBack?.selectedWidth!==40*28||
