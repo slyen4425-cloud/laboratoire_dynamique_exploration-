@@ -12,6 +12,20 @@ export function playableSculptArea(area){
   catch{return false;}
 }
 export const playableExteriorArea=area=>area?.kind==='exterior'&&playableSculptArea(area);
+
+// Resolve a map-tab request by inspecting the SAME WorldDocument. Navigation
+// can offer another existing editable Area; it never changes a Portal, Spawn,
+// zone size or the WorldDocument start position.
+export function resolveSculptAreaForEditor(draft,selectedAreaId){
+  const selected=draft?.areas?.find(area=>area.id===selectedAreaId);
+  if(!selected)return null;
+  if(playableSculptArea(selected))
+    return Object.freeze({areaId:selected.id,redirected:false});
+  // Prefer an exterior for a legacy exterior, then any editable instance.
+  const next=draft.areas.find(area=>area.id!==selected.id&&playableExteriorArea(area))
+    ??draft.areas.find(area=>area.id!==selected.id&&playableSculptArea(area));
+  return next?Object.freeze({areaId:next.id,redirected:true}):null;
+}
 const nextArea=(after,before)=>after.areas.find(a=>!before.has(a.id));
 
 export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[3]}={}){
