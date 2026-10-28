@@ -35,7 +35,7 @@ jobs:
       - name: Checkout CI-verified Encounter feature source
         uses: actions/checkout@v4
         with:
-          ref: 6f15b02ac0eea0b5cb6adea18dae34cafef8e679
+          ref: c851b90d2f0aef0c94a471e47b3ccabae3200251
           path: encounter-source
       - name: Checkout immutable Capture Combat runtime
         uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = 6f15b02ac0eea0b5cb6adea18dae34cafef8e679
+          test "$(git -C encounter-source rev-parse HEAD)" = c851b90d2f0aef0c94a471e47b3ccabae3200251
           test "$(git -C combat-source rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
           test "$(git -C capture-source rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
@@ -78,6 +78,12 @@ jobs:
           grep -Fq 'id="world-area-portal-label-save"' encounter-source/sculpt-lab.html
           grep -Fq 'id="sculpt-map-preset-save"' encounter-source/sculpt-lab.html
           grep -Fq 'id="sculpt-map-preset-apply"' encounter-source/sculpt-lab.html
+          grep -Fq 'id="world-workspace-map"' encounter-source/world-assembler.html
+          grep -Fq 'id="area-width"' encounter-source/world-assembler.html
+          grep -Fq 'id="area-height"' encounter-source/world-assembler.html
+          grep -Fq 'id="world-workspace-world"' encounter-source/sculpt-lab.html
+          grep -Fq 'id="world-area-create-another"' encounter-source/sculpt-lab.html
+          test -s encounter-source/src/builder/world-area-size-command.js
           grep -Fq 'id="world-map-preset-select"' encounter-source/world-assembler.html
           test -s encounter-source/src/builder/sculpt-map-preset-library.js
           grep -Fq 'createWorldAreaFromSculptMapPreset' encounter-source/src/builder/world-assembler-main.js
@@ -118,6 +124,9 @@ jobs:
           test -s "$preview/src/builder/world-assembler.css"
           grep -Fq 'id="graph-nodes"' "$preview/world-assembler.html"
           grep -Fq 'id="edit-sculpt-area"' "$preview/world-assembler.html"
+          grep -Fq 'id="world-workspace-map"' "$preview/world-assembler.html"
+          grep -Fq 'id="world-workspace-world"' "$preview/sculpt-lab.html"
+          test -s "$preview/src/builder/world-area-size-command.js"
           grep -Fq 'id="world-area-portal-panel"' "$preview/sculpt-lab.html"
           grep -Fq 'class="world-area-portal-panel" hidden>' "$preview/sculpt-lab.html"
           grep -Fq 'world-portal-v1-compact-ux-v1' "$preview/sculpt-lab.html"
@@ -186,6 +195,11 @@ jobs:
           curl -fsSL "$probe/world-assembler.html?build=$GITHUB_SHA" -o /tmp/published-world-assembler.html
           grep -Fq 'id="graph-nodes"' /tmp/published-world-assembler.html
           grep -Fq 'id="edit-sculpt-area"' /tmp/published-world-assembler.html
+          grep -Fq 'id="world-workspace-map"' /tmp/published-world-assembler.html
+          grep -Fq 'id="area-width"' /tmp/published-world-assembler.html
+          grep -Fq 'id="area-height"' /tmp/published-world-assembler.html
+          grep -Fq 'id="world-workspace-world"' /tmp/published-encounter.html
+          grep -Fq 'id="world-area-create-another"' /tmp/published-encounter.html
           grep -Fq 'id="world-map-preset-select"' /tmp/published-world-assembler.html
           grep -Fq 'id="world-map-preset-create"' /tmp/published-world-assembler.html
           curl -fsSL "$probe/builder.html?build=$GITHUB_SHA" -o /tmp/published-area-editor.html
@@ -202,6 +216,8 @@ jobs:
           grep -Fq 'markersForSculptWorldArea' /tmp/published-encounter-main.js
           grep -Fq 'installSculptMapPresetPalette' /tmp/published-encounter-main.js
           grep -Fq 'updateSculptWorldPortalAction' /tmp/published-encounter-main.js
+          curl -fsSL "$probe/src/builder/world-area-size-command.js?build=$GITHUB_SHA" -o /tmp/published-area-size.js
+          grep -Fq 'worldAreaSizeFromTiles' /tmp/published-area-size.js
           curl -fsSL "$probe/src/builder/sculpt-map-preset-library.js?build=$GITHUB_SHA" -o /tmp/published-map-presets.js
           grep -Fq 'createWorldAreaFromSculptMapPreset' /tmp/published-map-presets.js
           curl -fsSL "$probe/src/builder/sculpt-world-portal-markers.js?build=$GITHUB_SHA" -o /tmp/published-portal-markers.js
@@ -212,7 +228,7 @@ jobs:
           test -s /tmp/published-combat.html
           curl -fsSL "$probe/capture-assets/data/assets/catalog/global-visual-assets.v1.json?build=$GITHUB_SHA" -o /tmp/published-capture.json
           test -s /tmp/published-capture.json
-          printf 'LIVE OK: V80 identical; Portal exit/arrival markers, editable label and dungeon/Combat/Capture HTTP 200\n'
+          printf 'LIVE OK: V80 identical; unified World/Map panels, custom WorldArea size, dungeon/Combat/Capture HTTP 200\n'
       - name: Record verified live URL on the published commit
         shell: bash
         env:
@@ -222,9 +238,9 @@ jobs:
           cat > /tmp/pages-preview-status.json <<'JSON'
           {
             "state": "success",
-            "context": "pages/world-map-presets-live",
-            "description": "V80 unchanged; visible Portal action, blank WorldArea and reusable presets tested",
-            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/world-assembler.html?v=world-map-presets-3"
+            "context": "pages/world-map-workspace-live",
+            "description": "V80 unchanged; one World/Map workspace, custom Area sizes, mobile browser GREEN",
+            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/world-assembler.html?v=world-map-workspace-4"
           }
           JSON
           curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors \
