@@ -175,9 +175,13 @@ body.sculpt-immersive .canvas-wrap .precision-actions{
 /* V17: an opt-in navigation probe, never a second editor or world. */
 .editor-switch #navigation-toggle{flex:0 0 auto;min-height:37px;font-size:.85rem}
 #navigation-hud{position:absolute;z-index:11;top:56px;right:9px;
-  width:min(205px,calc(100% - 18px));padding:9px;display:grid;gap:6px;
+  width:min(205px,calc(100% - 18px));padding:4px;display:block;
   background:#142934f0;border:1px solid #6ba8a1;border-radius:12px;
   box-shadow:0 5px 18px #0008;font-size:.78rem;max-height:min(66dvh,560px);overflow-y:auto;overscroll-behavior:contain}
+#navigation-hud summary{cursor:pointer;min-height:39px;display:flex;align-items:center;
+  font-size:.8rem;font-weight:800;padding:8px;touch-action:manipulation;white-space:nowrap}
+#navigation-hud:not([open]){width:max-content;min-width:115px;max-height:47px;overflow:hidden}
+#navigation-hud .navigation-options-content{display:grid;gap:6px;padding:6px 5px 5px}
 #navigation-hud select{width:100%;padding:7px}
 #navigation-hud input[type=range]{width:100%;accent-color:#83ddc4}
 #navigation-speed-value,#navigation-camera-zoom-value,#navigation-camera-angle-value,#navigation-max-step-value{font-weight:800;color:#aff4df}
@@ -503,6 +507,9 @@ body.world-area-editing .world-area-portal-panel:not([open]){
  touch-action:manipulation;box-shadow:0 5px 20px #000a;
 }
 #world-portal-traverse[hidden]{display:none!important}
+#world-portal-feedback{position:absolute;z-index:24;right:9px;bottom:calc(env(safe-area-inset-bottom,0px) + 192px);max-width:min(240px,54vw);padding:7px 10px;border-radius:9px;background:#173f3cee;color:#e2fff4;border:1px solid #7cd1bb;font-size:.73rem;box-shadow:0 4px 12px #0008;pointer-events:none}
+#world-portal-feedback[data-error=true]{background:#522e32;color:#ffe5dd;border-color:#e29b98}
+#world-portal-feedback[hidden]{display:none!important}
 #world-portal-traverse:disabled{opacity:.85;border-color:#7e999c;background:#24434b;color:#e2f7f8}
 body.navigation-testing #sculpt-map-preset-panel{display:none!important}
 #sculpt-map-preset-panel{
@@ -765,6 +772,7 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 <button id="world-workspace-return-float" type="button" aria-label="Enregistrer et revenir au panneau Monde">🌍 Monde · retour</button>
 <button id="navigation-area-door" class="in-game-door-action" type="button" hidden>🚪 Entrer / sortir</button>
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
+<output id="world-portal-feedback" role="status" aria-live="polite" hidden></output>
 <details id="world-area-portal-panel" class="world-area-portal-panel" hidden>
  <summary aria-label="Afficher ou masquer les entrées et sorties">🚪 Passages</summary>
  <div class="world-area-panel-content">
@@ -977,7 +985,9 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
   <small>Les vues Face/Dos utilisent les vrais visuels Capture quand ils existent. Pour modifier la taille et la direction après placement, choisis « Sélectionner / modifier », puis touche l'acteur. Aucune modification des collisions.</small>
  </section>
 </section>
-<section id="navigation-hud" aria-label="Navigation expérimentale" hidden>
+<details id="navigation-hud" aria-label="Options de navigation du test" hidden>
+  <summary>⚙ Options du test</summary>
+  <div class="navigation-options-content">
   <strong>🚶 Test de navigation</strong>
   <label>Locomotion simulée
     <select id="navigation-locomotion" aria-label="Mode de locomotion pour le test">
@@ -1024,7 +1034,8 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
   <output id="navigation-status" aria-live="polite">Maintenir le joystick ou ZQSD / WASD / flèches. Une falaise trop haute bloque la marche.</output>
   <button type="button" id="navigation-reset">Replacer le personnage</button>
   <small>Test isolé : les capacités du jeu ne sont pas modifiées.</small>
-</section>
+  </div>
+</details>
 <section id="sculpt-encounter-preview" class="sculpt-encounter-preview" role="dialog"
   aria-label="Rencontre de créature sauvage" aria-modal="true" hidden>
   <div class="sculpt-encounter-preview__panel">
@@ -1127,6 +1138,6 @@ body.world-area-editing.navigation-testing .world-area-portal-panel{
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-test-hud-edge-gates-v1"></script>
 </body>
 </html>

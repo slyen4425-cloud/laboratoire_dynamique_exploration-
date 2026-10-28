@@ -68,7 +68,7 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js';
+  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=edge-gates-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
@@ -1804,6 +1804,8 @@ function setNavigationTesting(on){
     if(sculptWorldDraft)$('world-area-portal-panel').open=false;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
+    $('world-portal-feedback').hidden=true;
+    $('navigation-hud').open=false; // unobstructed playfield by default
     $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
     $('navigation-toggle').textContent='✎ Éditer';
     $('navigation-toggle').setAttribute('aria-pressed','true');
@@ -1837,6 +1839,7 @@ function setNavigationTesting(on){
     navStick?.dispose();navStick=null;navKeys.clear();
     document.body.classList.remove('navigation-testing');
     $('navigation-hud').hidden=true;$('navigation-stick').hidden=true;
+    $('world-portal-feedback').hidden=true;
     $('navigation-toggle').textContent='🚶 Tester';
     $('navigation-toggle').setAttribute('aria-pressed','false');
     if(navViewport){zoom=navViewport.zoom;pan=navViewport.pan;}
@@ -3549,7 +3552,15 @@ function traverseSculptWorldPortal(){
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     sculptWorldStatus('Passage franchi : '+sculptWorldArea().label+
       ' · arrivée par Spawn '+portal.targetSpawnId);
-  }catch(error){sculptWorldStatus('Passage indisponible : '+error.message,true);}
+    const feedback=$('world-portal-feedback');
+    feedback.textContent='✓ Arrivée : '+(sculptWorldArea().label??sculptWorldAreaId);
+    feedback.dataset.error='false';feedback.hidden=false;
+  }catch(error){
+    sculptWorldStatus('Passage indisponible : '+error.message,true);
+    const feedback=$('world-portal-feedback');
+    feedback.textContent='Passage bloqué : '+error.message;
+    feedback.dataset.error='true';feedback.hidden=false;
+  }
 }
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;

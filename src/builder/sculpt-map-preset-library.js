@@ -2,8 +2,8 @@
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
 import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
-import {addWorldArea,connectWorldAreas} from './world-builder-draft.js';
-import {saveSculptWorldArea} from './sculpt-world-area-link.js';
+import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft} from './world-builder-draft.js';
+import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
 
 export const SCULPT_MAP_PRESET_KEY='gensrpg.exploration.map-presets.v1';
 export const SCULPT_MAP_PRESET_KIND='gensrpg-sculpt-map-preset';
@@ -73,6 +73,15 @@ export function addImportedSculptMapPreset(storage,raw){
   const scene=importSculptPreviewScene(preset.scene);
   return saveSculptMapPreset(storage,scene,preset.name);
 }
+// Gate placement is a projection of the existing Sculpt route, not a new
+// persisted Portal geometry or template topology. The WorldDocument is owner.
+function mapEdgePoint(scene,side){
+  const width=scene.terrain.width*28,height=scene.terrain.height*21;
+  const firstRoute=scene.surface.routes[0]?.points??[];
+  const endpoint=side==='entry'?firstRoute[0]:firstRoute.at(-1);
+  return {x:side==='entry'?64:width-64,
+    y:Math.max(48,Math.min(height-48,endpoint?.y??height/2))};
+}
 export function createWorldAreaFromSculptMapPreset(draft,preset,{
   name,kind='exterior',hostAreaId=null
 }={}){
@@ -84,12 +93,43 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
   const area=next.areas.find(entry=>!before.has(entry.id));
   if(!area)throw Error('WorldArea de préset non créée');
   next=saveSculptWorldArea(next,area.id,source);
-  if(kind==='dungeon'){
-    if(!hostAreaId||hostAreaId===area.id||
-       !next.areas.some(entry=>entry.id===hostAreaId))
-      throw Error('Sélectionne une zone hôte pour ce donjon');
-    next=connectWorldAreas(next,{sourceAreaId:hostAreaId,
-      targetAreaId:area.id,returnPortal:true});
+  // Position the REAL Spawn on the starting edge, even if the template
+  // is used as a standalone map. Never add Spawn/Portal data to the preset.
+  const entry=mapEdgePoint(source,'entry');
+  next=updateSpawn(next,area.id,area.spawns[0].id,entry);
+  if(kind==='dungeon'&&(!hostAreaId||hostAreaId===area.id||
+     !next.areas.some(other=>other.id===hostAreaId)))
+    throw Error('Sélectionne une zone hôte pour ce donjon');
+  // All maps created *inside an existing world* are connected by reciprocal
+  // canonical Portals, not just dungeons. An unrelated imported template
+  // without hostAreaId remains deliberately standalone.
+  if(hostAreaId){
+    const host=next.areas.find(other=>other.id===hostAreaId);
+    if(!host||host.id===area.id)throw Error('Zone hôte introuvable');
+    next=connectWorldAreas(next,{
+      sourceAreaId:hostAreaId,targetAreaId:area.id,returnPortal:true
+    });
+    const hostOutbound=next.portals.find(p=>p.sourceAreaId===hostAreaId&&
+      p.targetAreaId===area.id);
+    if(hostOutbound&&host.sculptTerrain&&host.surface?.routes?.[0]?.points?.length){
+      const route=host.surface.routes[0].points;
+      next=placeSculptWorldPortal(next,hostOutbound.id,{
+        x:host.width-64,y:Math.max(48,Math.min(host.height-48,route.at(-1).y))});
+    }
+    const outbound=next.portals.find(p=>p.sourceAreaId===area.id&&
+      p.targetAreaId===hostAreaId);
+    if(!outbound)throw Error('Passage retour non créé');
+    // Exit on the opposite edge, aligned with the last path segment.
+    next=placeSculptWorldPortal(next,outbound.id,mapEdgePoint(source,'exit'));
+    // A dedicated host arrival is placed at its own entry edge. The existing
+    // initial Spawn is NEVER moved, nor are any existing Portal destinations.
+    const hostSurface=host.surface?.routes?.[0]?.points??[];
+    const hostY=hostSurface[0]?.y??host.height/2;
+    next=addSpawn(next,hostAreaId,{x:Math.min(64,host.width/2),
+      y:Math.max(48,Math.min(host.height-48,hostY))});
+    const last=next.areas.find(a=>a.id===hostAreaId).spawns.at(-1);
+    next=updatePortal(next,outbound.id,p=>{p.targetSpawnId=last.id;});
   }
-  return next;
+  // Canonical validation of reciprocal links, size and Spawn refs.
+  return createWorldBuilderDraft(next);
 }

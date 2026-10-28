@@ -7,8 +7,8 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
-import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js';
+import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=edge-gates-v1';
+import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=edge-gates-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 
 const byId=id=>document.getElementById(id);
@@ -271,7 +271,7 @@ function installWorldAssembler(){
         name,kind,hostAreaId
       }),kind==='dungeon'
         ?'Donjon créé depuis le préset avec passages aller-retour.'
-        :'Zone créée depuis le préset · terrain, textures et objets chargés.');
+        :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.');
       if(ok){
         selectedId=draft.areas.find(a=>!before.has(a.id))?.id??selectedId;
         render();
