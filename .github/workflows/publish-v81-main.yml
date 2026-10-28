@@ -35,7 +35,7 @@ jobs:
       - name: Checkout CI-verified Encounter feature source
         uses: actions/checkout@v4
         with:
-          ref: 13f6254e8825b33edda59e6ed6b5edc4c021e419
+          ref: e013cb861436cfa32f1f55b9f4968d207e7724bc
           path: encounter-source
       - name: Checkout immutable Capture Combat runtime
         uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = 13f6254e8825b33edda59e6ed6b5edc4c021e419
+          test "$(git -C encounter-source rev-parse HEAD)" = e013cb861436cfa32f1f55b9f4968d207e7724bc
           test "$(git -C combat-source rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
           test "$(git -C capture-source rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
@@ -87,6 +87,8 @@ jobs:
           grep -Fq 'id="world-map-preset-select"' encounter-source/world-assembler.html
           test -s encounter-source/src/builder/sculpt-map-preset-library.js
           test -s encounter-source/src/builder/sculpt-builtin-map-presets.js
+          test -s encounter-source/src/builder/sculpt-playable-zone-route.js
+          grep -Fq 'id="world-playable-route"' encounter-source/world-assembler.html
           grep -Fq '<details id="navigation-hud"' encounter-source/sculpt-lab.html
           grep -Fq 'id="world-portal-feedback"' encounter-source/sculpt-lab.html
           grep -Fq 'function mapEdgePoint' encounter-source/src/builder/sculpt-map-preset-library.js
@@ -144,6 +146,8 @@ jobs:
           grep -Fq 'id="world-workspace-world"' "$preview/sculpt-lab.html"
           test -s "$preview/src/builder/world-area-size-command.js"
           test -s "$preview/src/builder/sculpt-builtin-map-presets.js"
+          test -s "$preview/src/builder/sculpt-playable-zone-route.js"
+          grep -Fq 'id="world-playable-route"' "$preview/world-assembler.html"
           grep -Fq 'id="world-workspace-return-float"' "$preview/sculpt-lab.html"
           grep -Fq 'id="world-area-portal-panel"' "$preview/sculpt-lab.html"
           grep -Fq 'class="world-area-portal-panel" hidden>' "$preview/sculpt-lab.html"
@@ -220,6 +224,7 @@ jobs:
           grep -Fq 'id="world-area-create-another"' /tmp/published-encounter.html
           grep -Fq 'id="world-map-preset-select"' /tmp/published-world-assembler.html
           grep -Fq 'id="world-map-preset-create"' /tmp/published-world-assembler.html
+          grep -Fq 'id="world-playable-route"' /tmp/published-world-assembler.html
           grep -Fq '<details id="navigation-hud"' /tmp/published-encounter.html
           grep -Fq 'id="world-portal-feedback"' /tmp/published-encounter.html
           grep -Fq 'id="world-workspace-return-float"' /tmp/published-encounter.html
@@ -246,6 +251,8 @@ jobs:
           grep -Fq 'worldAreaSizeFromTiles' /tmp/published-area-size.js
           curl -fsSL "$probe/src/builder/sculpt-builtin-map-presets.js?build=$GITHUB_SHA" -o /tmp/published-builtin-maps.js
           grep -Fq 'builtinSculptMapPresets' /tmp/published-builtin-maps.js
+          curl -fsSL "$probe/src/builder/sculpt-playable-zone-route.js?build=$GITHUB_SHA" -o /tmp/published-playable-route.js
+          grep -Fq 'makePlayableZoneRoute' /tmp/published-playable-route.js
           grep -Fq "Forêt du village" /tmp/published-builtin-maps.js
           curl -fsSL "$probe/src/builder/sculpt-map-preset-library.js?build=$GITHUB_SHA" -o /tmp/published-map-presets.js
           grep -Fq 'createWorldAreaFromSculptMapPreset' /tmp/published-map-presets.js
@@ -268,9 +275,9 @@ jobs:
           cat > /tmp/pages-preview-status.json <<'JSON'
           {
             "state": "success",
-            "context": "pages/prefab-houses-live",
+            "context": "pages/playable-zone-routes-live",
             "description": "V80 intacte; anciennes zones protegees, retour Monde tactile, Chromium mobile GREEN",
-            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/world-assembler.html?v=world-prefab-homes-8"
+            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/world-assembler.html?v=world-playable-routes-9"
           }
           JSON
           curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors \
