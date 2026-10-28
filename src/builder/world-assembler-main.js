@@ -7,8 +7,8 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
-import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js';
+import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=edge-gates-v1';
+import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=edge-gates-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 
 const byId=id=>document.getElementById(id);
