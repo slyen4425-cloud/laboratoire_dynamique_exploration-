@@ -78,7 +78,7 @@ export function addImportedSculptMapPreset(storage,raw){
 }
 // Gate placement is a projection of the existing Sculpt route, not a new
 // persisted Portal geometry or template topology. The WorldDocument is owner.
-function mapEdgePoint(scene,side){
+export function mapEdgePoint(scene,side){
   const width=scene.terrain.width*28,height=scene.terrain.height*21;
   const firstRoute=scene.surface.routes[0]?.points??[];
   const endpoint=side==='entry'?firstRoute[0]:firstRoute.at(-1);
