@@ -25,7 +25,7 @@ test('new World Builder worlds give native prefab terrain a nonzero configured C
   const player=x=>({currentAreaId:area.id,x,y});
   controller.step({area,player:player(76),encounterConfig:d.encounterConfig,captureCatalog:catalog,random:()=>0});
   const intent=controller.step({area,player:player(270),encounterConfig:d.encounterConfig,captureCatalog:catalog,random:()=>0});
-  assert.ok(intent?.opponents?.length,'No real Capture intent despite walking: '+family);
+  assert.ok(intent?.opponentCreatureId,'No real Capture intent despite walking: '+family);
  }
 });
 
