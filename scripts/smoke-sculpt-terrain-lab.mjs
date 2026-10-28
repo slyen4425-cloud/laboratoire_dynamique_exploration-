@@ -3609,8 +3609,8 @@ try{
   }
   if(!legacyWorldLoaded)throw Error('World Builder failed to reload legacy fixture');
   const guard=await run(`(()=>{
-    const area=document.querySelector('#area-list button[data-area-id="${legacyId}"]');
-    if(!area)return {error:'legacy Area missing'};
+    const area=document.querySelector('#graph-nodes .world-node[data-area-id="${legacyId}"]');
+    if(!area)return {error:'legacy Area missing',areas:window.__worldAssemblerProbe()?.areaIds};
     area.click();
     document.querySelector('#world-workspace-map').click();
     return {path:location.pathname,status:document.querySelector('#status-toast').textContent,
