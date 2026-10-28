@@ -3535,6 +3535,9 @@ function mountWorldSculptArea(areaId){
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
   mountSculptArea(scene);
+  // The Encounter editor follows the selected WorldArea's terrain family.
+  // It continues to edit the one WorldDocument EncounterConfig, not a copy.
+  selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
   sculptWorldAreaMounted=true;
   sculptExteriorEncounters=area.encounters;
   sculptEncounterConfig=sculptWorldDraft.encounterConfig;
