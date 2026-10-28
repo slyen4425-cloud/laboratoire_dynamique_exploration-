@@ -1728,7 +1728,8 @@ export function createBuildingInteriorLink(
     sourceAreaId,
     buildingId,
     anchorId = 'main-door',
-    targetAreaId = null
+    targetAreaId = null,
+    interiorSize = null
   } = {},
   objectCatalog =
     objectDefinitionCatalogV1
@@ -1814,11 +1815,19 @@ export function createBuildingInteriorLink(
       next.terrainFamilies?.[0]?.id ??
       'plain';
 
+    // Optional dimensions are explicit for Sculpt 2.5D consumers. The
+    // legacy 720×560 default remains unchanged for historical Builder users.
+    const interiorWidth = interiorSize?.width ?? 720;
+    const interiorHeight = interiorSize?.height ?? 560;
+    if (!Number.isInteger(interiorWidth) || !Number.isInteger(interiorHeight) ||
+        interiorWidth < 128 || interiorHeight < 128 ||
+        interiorWidth > 20000 || interiorHeight > 20000)
+      throw Error('Dimensions de pièce invalides');
     targetArea = {
       id: areaId,
       kind: 'interior',
-      width: 720,
-      height: 560,
+      width: interiorWidth,
+      height: interiorHeight,
       surface: {
         baseTerrainFamilyId:
           familyId,
