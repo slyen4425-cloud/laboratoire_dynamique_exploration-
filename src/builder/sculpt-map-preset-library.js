@@ -109,6 +109,13 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
     next=connectWorldAreas(next,{
       sourceAreaId:hostAreaId,targetAreaId:area.id,returnPortal:true
     });
+    const hostOutbound=next.portals.find(p=>p.sourceAreaId===hostAreaId&&
+      p.targetAreaId===area.id);
+    if(hostOutbound&&host.sculptTerrain&&host.surface?.routes?.[0]?.points?.length){
+      const route=host.surface.routes[0].points;
+      next=placeSculptWorldPortal(next,hostOutbound.id,{
+        x:host.width-64,y:Math.max(48,Math.min(host.height-48,route.at(-1).y))});
+    }
     const outbound=next.portals.find(p=>p.sourceAreaId===area.id&&
       p.targetAreaId===hostAreaId);
     if(!outbound)throw Error('Passage retour non créé');
