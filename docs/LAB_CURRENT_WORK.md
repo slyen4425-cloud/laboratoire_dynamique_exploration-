@@ -1,20 +1,21 @@
-# LAB_CURRENT_WORK — Options de test et entrées/sorties des cartes préconstruites
+# LAB_CURRENT_WORK — Navigation Monde / Carte 2,5D sur anciennes zones
 
-Date : 2026-10-28.
-Base GREEN : `81304cc6d4bc3151f24673c218c70e2196621e86` — 8 présets natifs, retour monde.
-Branche : `work/exploration-map-test-options-edge-portals-2026-10-28`.
-START : `checkpoint/exploration-start-map-test-options-edge-portals-2026-10-28`.
+Date : 2026-10-28
+Base GREEN : `f2f424fb4c6390e276b04f375d27f7def8680749` (875/875 Node + Chromium mobile).
+Branche source : `work/exploration-world-map-legacy-switch-2026-10-28`.
+START : `checkpoint/exploration-start-world-map-legacy-switch-2026-10-28`.
 
-## Cause racine
-Le mode Tester superposait un panneau fixe de réglages ouvert sur le terrain. Une WorldArea issue d'un préset avait un Spawn centré, tandis que les présets extérieurs créés dans World Builder n'avaient aucun Portal vers la zone sélectionnée. Une action de traversée sans Portal activé ou hors du cercle ne peut pas fonctionner.
+## Reproduction sur smartphone
+L'ancienne zone `2400 × 1600` est conservée par le modèle WorldDocument mais n'est pas représentable dans SculptTerrain (grille en cases 28×21, max 80×64). Le clic Carte ouvrait alors le prototype Sculpt indépendant. Le clic Monde tentait `saveSculptWorldArea` sur cette scène et levait l'exception de dimensions, bloquant la navigation. Aucun ajustement silencieux de géométrie n'est autorisé.
 
-## Propriétaire et corrections
-- HUD Tester : contrôle natif repliable « ⚙ Options du test », fermé par défaut, réglages conservés.
-- Création d'une WorldArea depuis un préset : Spawn réel à l'entrée côté gauche du chemin, Portal de sortie réel côté droit du chemin ; lien aller-retour créé avec la zone hôte sélectionnée (extérieurs et donjons) via `connectWorldAreas`.
-- Le retour vers la zone hôte utilise un Spawn dédié sur son bord d'entrée. Le Spawn initial du monde et les anciens Portals ne sont pas déplacés.
-- Un préset reste un snapshot SculptTerrain/Surface/Objects sans Portals ni Spawns ; WorldDocument est l'unique autorité.
+## Contrat corrigé
+- Avant d'ouvrir Carte 2,5D depuis Monde, `sculptWorldAreaScene` vérifie la zone sélectionnée via le même adapter canonique ; si refusée, rester dans Monde et diriger vers le formulaire de création d'une carte compatible, ancienne zone intacte.
+- Si une URL ancienne ou un rafraîchissement ouvre malgré tout une WorldArea incompatible, l'éditeur présente un écran explicatif tactile, sans confondre la scène démo avec la carte utilisateur. Deux actions explicites : retour au Monde / nouvelle carte compatible.
+- Une zone n'est enregistrée depuis Sculpt que si sa vraie scène a été montée. Sinon, seul le `WorldDocument` reçu est sauvegardé et transmis, sans redimensionnement ni copie ni masquage.
+- Le retour ne dépend plus d'un dialogue d'alerte bloquant pour cette anomalie.
 
-## Invariants / validations
-V80 production immuable ; ni format parallèle ni migration des mondes existants ; création nouvelle seule.
-Tests : `tests/world-map-test-edge-portals.test.js`, suite Node, CI et smoke Chromium mobile réel préexistant (traversée Portal réelle et retour d'Area). Corriger toute régression avant publication.
-Validation manuelle smartphone paysage de l'ergonomie et du parcours restant demandée.
+## Propriétaires / invariants
+WorldDocument unique propriétaire ; `sculptWorldAreaScene` seul validateur de capacité de la grille ; stockage et handoff existants ; pas de nouvelle autorité ; anciennes sauvegardes et Portals inchangés ; V80 production immuable.
+
+## Validation et suite
+`tests/world-map-legacy-switch-regression.test.js` + tests historiques + CI + `scripts/smoke-sculpt-terrain-lab.mjs` en Chromium mobile 960×540 (sélection 2400×1600, garde du switch, ouverture URL historique, vrai clic tactile de retour, document intact). Tests/redéploiement à consolider avant validation finale sur l'appareil de l'utilisateur.
