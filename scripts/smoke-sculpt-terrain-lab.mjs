@@ -3663,6 +3663,33 @@ try{
     throw Error('Legacy WorldArea lost or resized during tactile Map -> World return: '+
       JSON.stringify(legacyReturn));
   console.log('GREEN legacy 2400x1600 : World guard, no demo write and tactile return');
+  // Explicit mobile repair: this is the precise user-visible route action.
+  // Accept its native confirmation through CDP, not a fake click or a UI stub.
+  const repairClick=run("document.querySelector('#world-playable-route').click();true");
+  await sleep(100);
+  const accepted=await send('Page.handleJavaScriptDialog',{accept:true});
+  if(accepted.error)throw Error('Playable route confirmation could not be accepted: '+
+    JSON.stringify(accepted));
+  await repairClick;
+  const repairedRoute=await run(`(()=>{
+    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
+    const first=doc.areas.find(a=>a.id===doc.initialAreaId);
+    const outgoing=doc.portals.filter(p=>p.sourceAreaId===doc.initialAreaId);
+    const other=outgoing.map(p=>doc.areas.find(a=>a.id===p.targetAreaId))
+      .find(a=>a?.kind==='exterior'&&a.width<=80*28&&a.height<=64*21);
+    const back=other&&doc.portals.find(p=>p.sourceAreaId===other.id&&
+      p.targetAreaId===doc.initialAreaId);
+    return {selected:window.__worldAssemblerProbe?.().selectedAreaId,
+      start:doc.initialAreaId,sourceWidth:first?.width,other:other?.id,
+      reciprocal:!!back,legacyWidth:legacy?.width,legacyHeight:legacy?.height};
+  })()`);
+  if(repairedRoute.legacyWidth!==2400||repairedRoute.legacyHeight!==1600||
+     repairedRoute.sourceWidth>80*28||!repairedRoute.other||
+     !repairedRoute.reciprocal)
+    throw Error('Mobile playable WorldArea repair failed: '+JSON.stringify(repairedRoute));
+  console.log('Legacy world playable destination repair REAL Chromium GREEN:',
+    JSON.stringify(repairedRoute));
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{
