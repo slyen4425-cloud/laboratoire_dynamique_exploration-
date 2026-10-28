@@ -3302,6 +3302,112 @@ try{
   if(worldSculpt?.areaId!=='area-principale'||worldSculpt.areaCount!==4||
      worldSculpt.portalCount!==4||worldSculpt.terrainWidth!==36)
     throw Error('Sculpt editor did not load canonical host Area: '+JSON.stringify(worldSculpt));
+
+  // Real mobile viewport, not merely a CSS/text assertion: the collapsed
+  // Portal palette must leave the playfield visible and fullscreen reachable.
+  await send('Emulation.setDeviceMetricsOverride',{
+    width:960,height:540,deviceScaleFactor:1,mobile:true,
+    screenWidth:960,screenHeight:540
+  });
+  const uxInitial=await run(`(()=>{
+    const panel=document.querySelector('#world-area-portal-panel');
+    const full=document.querySelector('#fullscreen-toggle');
+    const r=full.getBoundingClientRect(),p=panel.getBoundingClientRect();
+    const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    return {worldMode:document.body.classList.contains('world-area-editing'),
+      open:panel.open,panelHeight:p.height,panelWidth:p.width,
+      fullscreenRect:{x:r.left+r.width/2,y:r.top+r.height/2},
+      fullscreenHit:hit===full||full.contains(hit),
+      fullscreenVisible:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,
+      viewport:[innerWidth,innerHeight]};
+  })()`);
+  if(!uxInitial.worldMode||uxInitial.open||uxInitial.panelHeight>47||
+     !uxInitial.fullscreenVisible||!uxInitial.fullscreenHit)
+    throw Error('WorldArea Portal inspector blocks fullscreen or starts huge: '+
+      JSON.stringify(uxInitial));
+  const fullPoint=uxInitial.fullscreenRect;
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:fullPoint.x,y:fullPoint.y,id:31,radiusX:6,radiusY:6,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(180);
+  const uxFullscreen=await run(`(()=>{
+    const canvas=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const panel=document.querySelector('#world-area-portal-panel');
+    return {immersive:document.body.classList.contains('sculpt-immersive'),
+      fullscreenPressed:document.querySelector('#fullscreen-toggle').getAttribute('aria-pressed'),
+      canvasWidth:canvas.width,canvasHeight:canvas.height,
+      viewportWidth:innerWidth,viewportHeight:innerHeight,
+      paletteHeight:panel.getBoundingClientRect().height};
+  })()`);
+  if(!uxFullscreen.immersive||uxFullscreen.fullscreenPressed!=='true'||
+     uxFullscreen.canvasHeight<uxFullscreen.viewportHeight*.90||
+     uxFullscreen.canvasWidth<uxFullscreen.viewportWidth*.90||
+     uxFullscreen.paletteHeight>47)
+    throw Error('WorldArea fullscreen cannot reveal whole 2.5D map: '+
+      JSON.stringify(uxFullscreen));
+  const detailsPoint=await run(`(()=>{
+    const summary=document.querySelector('#world-area-portal-panel summary');
+    const r=summary.getBoundingClientRect();
+    const x=r.left+r.width/2,y=r.top+r.height/2;
+    const hit=document.elementFromPoint(x,y);
+    return {x,y,hittable:hit===summary||summary.contains(hit)};
+  })()`);
+  if(!detailsPoint.hittable)
+    throw Error('Collapsed Portal badge is not touchable in fullscreen: '+
+      JSON.stringify(detailsPoint));
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:detailsPoint.x,y:detailsPoint.y,id:32,radiusX:5,radiusY:5,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  const uxOpened=await run(`(()=>{
+    const panel=document.querySelector('#world-area-portal-panel');
+    const rect=panel.getBoundingClientRect();
+    const full=document.querySelector('#fullscreen-toggle');
+    const f=full.getBoundingClientRect();
+    const hit=document.elementFromPoint(f.left+f.width/2,f.top+f.height/2);
+    return {open:panel.open,width:rect.width,height:rect.height,
+      viewportWidth:innerWidth,viewportHeight:innerHeight,
+      scrollable:panel.scrollHeight>panel.clientHeight,
+      fullscreenStillHit:hit===full||full.contains(hit)};
+  })()`);
+  if(!uxOpened.open||uxOpened.width>258||
+     uxOpened.height>uxOpened.viewportHeight*.56||
+     !uxOpened.scrollable||!uxOpened.fullscreenStillHit)
+    throw Error('Expanded Portal inspector too large or obstructs fullscreen: '+
+      JSON.stringify(uxOpened));
+  const uxPlacement=await run(`(()=>{
+    document.querySelector('#world-area-portal-place').click();
+    return window.__sculptWorldProbe();
+  })()`);
+  if(uxPlacement.inspectorOpen||uxPlacement.placementMode!=='portal')
+    throw Error('Portal pointer placement must immediately expose terrain: '+
+      JSON.stringify(uxPlacement));
+  await run(`(()=>{
+    const panel=document.querySelector('#world-area-portal-panel');
+    panel.open=true;
+    document.querySelector('#world-area-portal-place').click();
+    return true;
+  })()`);
+  const uxCanceled=await run("window.__sculptWorldProbe()");
+  if(uxCanceled.placementMode!==null)
+    throw Error('Portal authoring mode not cancellable from compact panel');
+  const closingPoint=await run(`(()=>{
+    const full=document.querySelector('#fullscreen-toggle'),r=full.getBoundingClientRect();
+    return {x:r.left+r.width/2,y:r.top+r.height/2};
+  })()`);
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:closingPoint.x,y:closingPoint.y,id:33,radiusX:6,radiusY:6,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(150);
+  if((await run("document.body.classList.contains('sculpt-immersive')"))!==false)
+    throw Error('Original fullscreen action cannot return to normal WorldArea editing');
+  console.log('WorldArea Portal compact/touch/fullscreen mobile Chromium:',
+    JSON.stringify({collapsed:uxInitial.panelHeight,
+      expanded:uxOpened.height,fullCanvas:uxFullscreen.canvasHeight,
+      touchFullscreen:true,scrollable:uxOpened.scrollable}));
+
   const placedWorldPortal=await run(`(()=>{
     const gate=window.__sculptWorldProbe().outgoing.find(p=>
       p.targetAreaId==='grotte-du-nord');
@@ -3314,8 +3420,10 @@ try{
     document.querySelector('#world-area-portal-save').click();
     document.querySelector('#navigation-toggle').click();
     return {gate,spawn,sculpt:window.__sculptWorldProbe(),
+      inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none',
       nav:window.__sculptNavProbe()};
   })()`);
+  if(!placedWorldPortal.inspectorHidden)throw Error('Portal inspector overlaps the playable hero during testing');
   if(placedWorldPortal.error||!placedWorldPortal.nav.enabled||
      !placedWorldPortal.sculpt.traverseVisible)
     throw Error('Host 2.5D portal not reachable in actual gameplay: '+

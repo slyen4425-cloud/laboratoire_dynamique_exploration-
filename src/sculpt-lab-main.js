@@ -1797,6 +1797,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    if(sculptWorldDraft)$('world-area-portal-panel').open=false;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
     $('navigation-hud').hidden=false;$('navigation-stick').hidden=false;
@@ -3496,6 +3497,8 @@ function traverseSculptWorldPortal(){
 }
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
+  document.body.classList.add('world-area-editing');
+  $('world-area-portal-panel').open=false;
   const transfer=readWorldAssemblerHandoff(window.sessionStorage);
   if(!transfer){
     sculptWorldStatus('Session World Builder absente. Retourne au constructeur de mondes.',true);
@@ -3512,7 +3515,7 @@ function installSculptWorldAreaEditing(){
       commitCurrentSculptWorldArea();
       saveWorldAssemblerHandoff(
         window.sessionStorage,sculptWorldDraft,sculptWorldAreaId);
-      window.location.assign('./world-assembler.html?return=1');
+      window.location.assign('./world-assembler.html?return=1&portalUi=compact1');
     }catch(error){sculptWorldStatus('Enregistrement bloqué : '+error.message,true);}
   });
   $('world-area-portal-select').addEventListener('change',refreshSculptWorldPanel);
@@ -3522,6 +3525,7 @@ function installSculptWorldAreaEditing(){
     $(id).addEventListener('click',()=>{
       if(navigationTesting){sculptWorldStatus('Quitte le mode Tester avant de poser le point.',true);return;}
       sculptWorldPortalPlacement=sculptWorldPortalPlacement===mode?null:mode;
+      if(sculptWorldPortalPlacement)$('world-area-portal-panel').open=false;
       refreshSculptWorldPanel();
       sculptWorldStatus(sculptWorldPortalPlacement
         ?'Touche directement l’emplacement voulu sur le terrain 2,5D.'
@@ -3551,6 +3555,9 @@ function installSculptWorldAreaEditing(){
     refreshSculptWorldPanel();
   }
   window.__sculptWorldProbe=()=>Object.freeze({
+    inspectorOpen:$('world-area-portal-panel').open,
+    fullscreenActive:document.body.classList.contains('sculpt-immersive'),
+    fullscreenActionVisible:!$('fullscreen-toggle').hidden,
     enabled:!!sculptWorldDraft,areaId:sculptWorldAreaId,
     areaKind:sculptWorldArea()?.kind??null,
     siteKind:sculptWorldArea()?.siteKind??null,
