@@ -27,3 +27,12 @@ test('the Portal inspector is a compact canvas overlay with scroll, not a fixed 
   assert.match(main,/sculptWorldPortalPlacement=sculptWorldPortalPlacement===mode\?null:mode;/);
   assert.match(main,/if\(sculptWorldPortalPlacement\)\s*\$\('world-area-portal-panel'\)\.open=false;/);
 });
+
+test('World Builder navigation cache-busts the revised mobile Portal UI across pages',()=>{
+  const assemblerHtml=readFileSync(new URL('../world-assembler.html',import.meta.url),'utf8');
+  const assembler=readFileSync(new URL('../src/builder/world-assembler-main.js',import.meta.url),'utf8');
+  assert.match(assemblerHtml,/world-assembler-2p5d-portal-compact-ux-v1/);
+  assert.match(assembler,/sculpt-lab\.html\?worldAssembler=1&portalUi=compact1/);
+  assert.match(html,/world-portal-v1-compact-ux-v1/);
+  assert.match(main,/world-assembler\.html\?return=1&portalUi=compact1/);
+});
