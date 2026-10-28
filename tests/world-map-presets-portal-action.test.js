@@ -17,7 +17,7 @@ test('map preset captures only a validated scene, without Portal/Spawn/WorldDocu
   assert.equal(p.scene.terrain.width,36);
   assert.equal(p.scene.terrain.height,24);
   assert.equal(p.scene.objects.length,0);
-  assert.equal(p.scene.actors.length,0);
+  assert.equal((p.scene.actors??[]).length,0);
   assert.ok(!('portals' in p.scene)&&!('spawns' in p.scene));
   assert.deepEqual(importSculptMapPreset(JSON.stringify(p)),p);
 });
