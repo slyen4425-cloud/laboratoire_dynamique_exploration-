@@ -1,9 +1,9 @@
 // Explicit World Builder repair command. It only modifies the SAME canonical
 // WorldDocument; it never rescales or replaces unsupported 2400×1600 areas.
-import {createWorldBuilderDraft,connectWorldAreas,setWorldInitialArea,updatePortal}
+import {createWorldBuilderDraft,connectWorldAreas,setWorldInitialArea,updatePortal,initializeWorldPresetEncounters}
   from './world-builder-draft.js';
 import {sculptWorldAreaScene,placeSculptWorldPortal} from './sculpt-world-area-link.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js';
+import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js';
 
 export function playableSculptArea(area){
@@ -28,7 +28,7 @@ export function resolveSculptAreaForEditor(draft,selectedAreaId){
 }
 const nextArea=(after,before)=>after.areas.find(a=>!before.has(a.id));
 
-export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[3]}={}){
+export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[3],initializeEncounters=false}={}){
   let next=createWorldBuilderDraft(draft);
   const previousIds=new Set(next.areas.map(a=>a.id));
   let source=next.areas.find(a=>a.id===selectedAreaId&&playableExteriorArea(a))
@@ -53,29 +53,31 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
   // This action is explicit and confirmed in the UI. Existing invalid
   // outbound links are redirected, not deleted or silently resized.
   // Object-anchored building doors are NEVER touched.
-  const blocked=next.portals.find(p=>p.sourceAreaId===source.id&&
-    p.enabled!==false&&p.trigger?.kind==='point'&&
+  // Recover EVERY historical point Portal from an already playable region,
+  // not just the first broken link. Object-anchored doors remain untouched.
+  const blocked=next.portals.filter(p=>p.enabled!==false&&
+    p.trigger?.kind==='point'&&
+    playableExteriorArea(next.areas.find(a=>a.id===p.sourceAreaId))&&
     !playableSculptArea(next.areas.find(a=>a.id===p.targetAreaId)));
-  if(blocked){
-    next=updatePortal(next,blocked.id,p=>{
-      p.targetAreaId=target.id;
-      p.targetSpawnId=target.spawns[0].id;
-      p.visual={...p.visual,label:target.label??target.id};
+  for(const old of blocked){
+    const destination=old.sourceAreaId===source.id?target:source;
+    next=updatePortal(next,old.id,p=>{
+      p.targetAreaId=destination.id;
+      p.targetSpawnId=destination.spawns[0].id;
+      p.visual={...p.visual,label:destination.label??destination.id};
     });
   }
+  const knownPortals=new Set(next.portals.map(p=>p.id));
   next=connectWorldAreas(next,{
     sourceAreaId:source.id,targetAreaId:target.id,returnPortal:true
   });
-  // A newly built link follows the same actual Sculpt road endpoints as
-  // template links; do not move any previously authored portal trigger.
-  const newExit=next.portals.find(p=>p.sourceAreaId===source.id&&
-    p.targetAreaId===target.id&&p.id!==blocked?.id);
-  if(newExit){
-    const path=source.surface?.routes?.[0]?.points??[];
-    if(path.length){
-      const y=Math.max(48,Math.min(source.height-48,path.at(-1).y));
-      next=placeSculptWorldPortal(next,newExit.id,{x:source.width-64,y});
-    }
+  // Fresh reciprocal Portals are aligned with the prefab's WALKABLE road,
+  // including the return journey. Existing authored triggers are never moved.
+  for(const portal of next.portals.filter(p=>!knownPortals.has(p.id)&&
+    p.trigger?.kind==='point')){
+    const from=next.areas.find(a=>a.id===portal.sourceAreaId);
+    next=placeSculptWorldPortal(next,portal.id,
+      mapEdgePoint(sculptWorldAreaScene(from),'exit'));
   }
   // The destination returns using its own canonical Portal, not a UI teleport.
   const reverse=next.portals.find(p=>p.sourceAreaId===target.id&&
@@ -83,8 +85,10 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
   if(!reverse)throw Error('Retour réciproque absent');
   if(!playableExteriorArea(next.areas.find(a=>a.id===next.initialAreaId)))
     next=setWorldInitialArea(next,source.id);
+  if(initializeEncounters)next=initializeWorldPresetEncounters(next);
   next=createWorldBuilderDraft(next);
   return Object.freeze({document:next,sourceAreaId:source.id,targetAreaId:target.id,
-    previousAreaIds:Object.freeze([...previousIds]),retargetedPortalId:blocked?.id??null,
+    previousAreaIds:Object.freeze([...previousIds]),retargetedPortalId:blocked[0]?.id??null,
+    retargetedPortalIds:Object.freeze(blocked.map(p=>p.id)),
     createdAreaIds:Object.freeze(next.areas.filter(a=>!previousIds.has(a.id)).map(a=>a.id))});
 }
