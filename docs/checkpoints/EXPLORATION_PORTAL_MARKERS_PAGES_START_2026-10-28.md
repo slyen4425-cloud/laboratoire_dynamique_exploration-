@@ -2,7 +2,7 @@
 - Date : 2026-10-28
 - Source publisher base main : `ddc1dbe70021dbaeb9bee880c635b97bdb9a331b` (Pages unique).
 - Checkpoint : `checkpoint/exploration-start-portal-markers-pages-2026-10-28`.
-- Source gameplay visée : `d5131d59999427a642cb347e8eed2384364212c8` (PR #269, après gates).
+- Source gameplay visée : `361eac2473cb5b7bf655ee10cd980f5f18d52ef3` (PR #269, après gates).
 - Objectif : publier le correctif SORTIE/ARRIVÉE/repère nommé via /preview/encounters-v80/ ; garder la production V80 épinglée au SHA 933c852 et inchangée.
 - Autorité : workflow unique `.github/workflows/publish-v81-main.yml`; aucune modification des dossiers gameplay de main.
 - Gates : source npm test/check, Chromium mobile réels, vérifications HTTPS du JS et des deux contrôles de repères, comparaison octet par octet de V80 ; aucune fusion si échec.
