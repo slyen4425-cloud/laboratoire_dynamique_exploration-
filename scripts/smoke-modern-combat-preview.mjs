@@ -56,13 +56,9 @@ const server = createServer(async(req,res)=>{
                 getComputedStyle(fullscreenButton).display !== 'none' && !fullscreenButton.disabled
                   ? 'OK' : 'button-not-visible';
             }
-            const audioButton = document.querySelector('[data-encounter-audio]');
-            if (audioButton && !document.documentElement.dataset.encounterAudioProof &&
-                getComputedStyle(audioButton).display !== 'none') {
-              document.documentElement.dataset.encounterAudioProof =
-                audioButton.textContent.includes('Activer le son')
-                  ? 'OK' : 'audio-button-label-invalid';
-            }
+            document.documentElement.dataset.encounterAudioProof =
+              document.querySelector('[data-encounter-audio]') === null
+                ? 'OK' : 'redundant-audio-button-present';
             const skills = [...document.querySelectorAll('[data-combat-skill]')];
             const ready = skills.find(button => !button.disabled);
             if (ready) {
@@ -181,7 +177,7 @@ try {
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
   if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
   if(fullscreenProof!=='OK')throw Error('Encounter has no usable Android fullscreen control: '+fullscreenProof);
-  if(audioProof!=='OK')throw Error('Encounter has no Android audio activation control: '+audioProof);
+  if(audioProof!=='OK')throw Error('Unexpected audio activation button: '+audioProof);
   console.log('GREEN real Chromium Encounter boot, skill click and canonical HUD: '+opponentName);
   }
 }finally{
