@@ -74,7 +74,7 @@ const server = createServer(async(req,res)=>{
                 'no-native-skill-ready:buttons=' + skills.length;
               clearInterval(timer);
             }
-          }, 350);
+          }, 150);
         }, {once: true});
       </script>`;
       const layoutProbe = `<script>
@@ -109,7 +109,7 @@ const server = createServer(async(req,res)=>{
                 Math.round(h.height), Math.round(c.width),
                 arena.dataset.combatActiveCount
               ].join(':');
-          }, 14000);
+          }, 3500);
         }, {once: true});
       </script>`;
       content=Buffer.from(content.toString('utf8').replace('</head>',probe+playableProbe+layoutProbe+'</head>'));
@@ -135,7 +135,7 @@ async function dumpDom(url) {
     '--headless=new','--no-sandbox','--disable-gpu',
     '--window-size=1600,900',
     '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
-    '--virtual-time-budget=30000','--dump-dom',url
+    '--virtual-time-budget=6500','--dump-dom',url
   ],{stdio:['ignore','pipe','pipe']});
   const chunks=[],errors=[];
   command.stdout.on('data',chunk=>chunks.push(chunk));
@@ -166,7 +166,7 @@ try {
   const orbs=[...dom.matchAll(/class="energy-orb\b/g)].length;
   console.log(JSON.stringify({opponentId,status,jsError,skillCount,orbs,layoutProof,skillProof,fullscreenProof}));
   if(jsError)throw Error('Encounter JavaScript error: '+jsError);
-  if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status);
+  if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status+'; rendered=' + dom.slice(0,1250));
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
   if(!dom.includes('data-combat-hp-value="opponent-1"'))throw Error('Encounter enemy HUD absent');
   if(!dom.includes(opponentName))throw Error('Encounter does not show real selected creature '+opponentName);
