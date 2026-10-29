@@ -135,3 +135,22 @@ test('warmup includes icons only for the currently equipped canonical skill tran
     bundle,assetCatalog:assets,party:{activeCreatureId:'hero'},opponentId:'enemy'
   }),['capture/hero-back.webp','capture/enemy-front.webp','capture/chosen-icon.webp']);
 });
+
+test('the first-paint barrier excludes giant animated strips but retains model and icons',()=>{
+  const visual=(id,view)=>({draft:{id,presentation:{visual:{
+    [view]:{assetId:id+'-model'},icon:{assetId:id+'-icon'},
+    [view==='front'?'movement':'movementBack']:{assetId:id+'-move'},
+    [view==='front'?'rangedAttack':'rangedAttackBack']:{assetId:id+'-attack'}
+  }}}});
+  const bundle={creatureTransfers:[visual('moss','back'),visual('grain','front')]};
+  const assets={assets:['moss','grain'].flatMap(id=>['model','icon','move','attack']
+    .map(type=>({id:id+'-'+type,resource:{file:'capture/'+id+'-'+type+'.webp'}})))};
+  const first=captureEncounterVisualFilesV1({
+    bundle,assetCatalog:assets,party:{activeCreatureId:'moss'},opponentId:'grain',firstPaintOnly:true
+  });
+  assert.deepEqual(first,['capture/moss-model.webp','capture/moss-icon.webp',
+    'capture/grain-model.webp','capture/grain-icon.webp']);
+  assert.equal(captureEncounterVisualFilesV1({
+    bundle,assetCatalog:assets,party:{activeCreatureId:'moss'},opponentId:'grain'
+  }).length,8);
+});
