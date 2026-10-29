@@ -27,6 +27,7 @@ for(const id of byId.keys()){
 }
 for(const [opponentId,name] of [
   ['crea_nat_1','Grainou'],
+  ['crea_mossback','Moussados'],
   ['crea_tox_2','Venombre'],
   ['crea_ombre_2','Noctigriffe'],
   ['kitsune_lunaire','Kitsune Lunaire'],
@@ -64,6 +65,25 @@ for(const [opponentId,name] of [
   assert.ok(before.fighters['opponent-1'].hp>0);
   const enemySkills=source.skillIdsByActor['opponent-1'];
   assert.ok(enemySkills.length>0,'Native Combat must have author abilities');
+  if(opponentId==='crea_mossback'){
+    assert.ok(configuredSlots.includes('lib_earth_guard'),
+      'Moussados must have its actual defensive skill equipped');
+    const authored=skillTransfers.find(s=>s.draft.id==='lib_earth_guard');
+    assert.equal(authored.draft.definition.category,'defensive');
+    assert.equal(authored.draft.definition.effects[0].status.durationMs,25000);
+    assert.equal(authored.draft.presentation.statusVisuals['lib_earth_guard:0'].sprite.assetId,
+      'pack:capture:sprite-stone-carapace-aura-01');
+    const currentAssets=JSON.parse(readFileSync(new URL('../capture-assets/data/assets/catalog/global-visual-assets.v1.json',import.meta.url),'utf8'));
+    assert.ok(currentAssets.assets.some(a=>a.id==='pack:capture:sprite-stone-carapace-aura-01'),
+      'Official published defence animation asset missing');
+    assert.ok(currentAssets.assets.some(a=>a.id==='pack:capture:icon-skill-earth-carapace-01'),
+      'Official published defence skill icon missing');
+    assert.ok(source.skills.lib_earth_guard,
+      'Moussados defensive skill missing from the real Combat engine');
+    assert.equal(source.skillPresentations.lib_earth_guard.statusVisuals['lib_earth_guard:0'].sprite.assetId,
+      'pack:capture:sprite-stone-carapace-aura-01',
+      'Authored defence status visual must survive native Combat export');
+  }
   if(opponentId==='crea_nat_1'){
     for(const id of ['coupe_feuille','graine_sansue_cap','Spore_soporifique'])
       assert.ok(configuredSlots.includes(id),'Current Grainou author loadout absent: '+id);
