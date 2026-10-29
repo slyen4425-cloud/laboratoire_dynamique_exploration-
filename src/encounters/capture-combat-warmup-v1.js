@@ -13,10 +13,21 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
   if(!Array.isArray(bundle?.creatureTransfers)||!Array.isArray(assetCatalog?.assets))return [];
   const creatures=new Map(bundle.creatureTransfers.map(x=>[x.draft?.id,x]));
   const assets=new Map(assetCatalog.assets.map(x=>[x.id,x]));
+  // Decode actual art for the current pair, including the animation strips
+  // that otherwise first appear only after entering the Battle document.
+  // All asset IDs still originate from the author Showcase, not a local list.
+  function idsFor(creatureId,view) {
+    const visual=creatures.get(creatureId)?.draft?.presentation?.visual;
+    return [
+      visual?.[view]?.assetId,visual?.icon?.assetId,
+      visual?.[view==='back'?'movementBack':'movement']?.assetId,
+      visual?.[view==='back'?'rangedAttackBack':'rangedAttack']?.assetId
+    ].filter(Boolean);
+  }
   const ids=[
-    creatures.get(party?.activeCreatureId)?.draft?.presentation?.visual?.back?.assetId,
-    creatures.get(opponentId)?.draft?.presentation?.visual?.front?.assetId
-  ].filter(Boolean);
+    ...idsFor(party?.activeCreatureId,'back'),
+    ...idsFor(opponentId,'front')
+  ];
   return [...new Set(ids.map(id=>assets.get(id)?.resource?.file).filter(file=>
     typeof file==='string'&&file.startsWith('capture/')&&
     !file.includes('..')&&['webp','png','jpg'].some(ext=>file.toLowerCase().endsWith('.'+ext))))];
@@ -24,7 +35,15 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
 export function createCaptureCombatWarmupV1({
   documentUrl,fetchImpl=globalThis.fetch,
   schedule=callback=>globalThis.setTimeout(callback,0),
-  saveData=false
+  saveData=false,
+  decodeImage=typeof globalThis.Image==='function'
+    ? url=>{
+      const image=new globalThis.Image();
+      image.decoding='async';
+      image.src=url.href;
+      return image.decode();
+    }
+    : null
 }={}) {
   if(!documentUrl||typeof fetchImpl!=='function'||typeof schedule!=='function')
     throw new TypeError('Combat warmup needs URL, fetch and scheduler');
@@ -61,11 +80,16 @@ export function createCaptureCombatWarmupV1({
           json('combat-preview/examples/dom-demo/party.preview.v1.json')
         ]);
         const files=captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponentId});
-        for(const file of files){
+        await Promise.allSettled(files.map(file=>{
           const url=new URL('capture-assets/assets/library/'+file,root);
-          try{Promise.resolve(fetchImpl(url,{cache:'force-cache',priority:'low'})).catch(()=>{});}
-          catch{/* official Battle owner still validates assets */}
-        }
+          // Decode into the browser's image cache when supported. HTTP-only
+          // fetch prewarm does not prepare WebP decoding for first paint.
+          try {
+            return Promise.resolve(typeof decodeImage==='function'
+              ? decodeImage(url)
+              : fetchImpl(url,{cache:'force-cache',priority:'low'}));
+          } catch(error) {return Promise.reject(error);}
+        }));
         return files;
       }catch{return [];}
     },
