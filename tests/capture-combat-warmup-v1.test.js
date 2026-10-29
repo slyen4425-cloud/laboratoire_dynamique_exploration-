@@ -57,3 +57,34 @@ test('only the actual Showcase player/back and enemy/front art is prefetched',as
   assert.deepEqual(await warm.warmCreature('crea_nat_1'),[]);
   assert.equal(requests.filter(x=>x.endsWith('.webp')).length,2);
 });
+
+
+test('pre-decode approved portraits, icons and animations for the actual combatants only',async()=>{
+  const visual=(id,view)=>({draft:{id,presentation:{visual:{
+    [view]:{assetId:id+'-model'}, icon:{assetId:id+'-icon'},
+    [view==='front'?'movement':'movementBack']:{assetId:id+'-move'},
+    [view==='front'?'rangedAttack':'rangedAttackBack']:{assetId:id+'-attack'}
+  }}}});
+  const bundle={creatureTransfers:[visual('crea_mossback','back'),visual('crea_nat_1','front')]};
+  const all=['crea_mossback','crea_nat_1'].flatMap(id=>['model','icon','move','attack'].map(type=>id+'-'+type));
+  const assetCatalog={assets:all.map(id=>({id,resource:{file:'capture/combat/'+id+'.webp'}}))};
+  const decoded=[];
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/preview/encounters-v80/sculpt-lab.html',
+    schedule:fn=>fn(),
+    decodeImage:async url=>{decoded.push(url.href);},
+    fetchImpl:async url=>{
+      const path=url.pathname;
+      if(path.endsWith('encounter-bundle.v1.json'))return {ok:true,json:async()=>bundle};
+      if(path.endsWith('global-visual-assets.v1.json'))return {ok:true,json:async()=>assetCatalog};
+      if(path.endsWith('party.preview.v1.json'))return {ok:true,json:async()=>({activeCreatureId:'crea_mossback'})};
+      throw Error('Unexpected fetch: '+path);
+    }
+  });
+  const files=await warm.warmCreature('crea_nat_1');
+  assert.equal(files.length,8);
+  assert.deepEqual(decoded.sort(),files.map(file=>
+    'https://example.org/preview/encounters-v80/capture-assets/assets/library/'+file).sort());
+  assert.deepEqual(await warm.warmCreature('crea_nat_1'),[]);
+  assert.equal(decoded.length,8);
+});
