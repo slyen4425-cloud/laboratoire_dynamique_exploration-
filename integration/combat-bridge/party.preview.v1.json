@@ -1,0 +1,6 @@
+{
+  "schema": "exploration-preview-party-v1",
+  "id": "capture-party-player-v1",
+  "activeCreatureId": "crea_braiseau",
+  "note": "Explicit isolated-preview party; replace via GenSrpg Capture party provider before production."
+}
