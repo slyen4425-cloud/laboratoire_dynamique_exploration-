@@ -18,7 +18,7 @@ const snapshot = {
   schema:'capture-encounter-snapshot-v1', version:1,
   encounterId:'smoke-encounter-1', source:'terrain-random',
   player:{partyRef:'capture-party-player-v1'},
-  opponents:[{creatureId:'crea_nat_3'}],
+  opponents:[{creatureId:'crea_nat_1'}],
   rules:{rulesetId:'capture.standard.1v1'},
   context:{areaId:'forest-exterior',terrainFamilyId:'forest',elementId:'nature'},
   returnToken:'return-smoke-1'
@@ -153,8 +153,8 @@ async function dumpDom(url) {
 try {
   const baseUrl='http://127.0.0.1:'+server.address().port+route;
   // Keep the original encounter sentinel and add the creator's second-battle
-  // case: Ombrelot has no authored model and must remain playable by fallback.
-  for (const [opponentId,opponentName] of [['crea_nat_3','Ancêtronc'],['crea_ombre_1','Ombrelot']]) {
+  // case: Noctigriffe has no authored model and must remain playable by fallback.
+  for (const [opponentId,opponentName] of [['crea_nat_1','Grainou'],['crea_ombre_2','Noctigriffe']]) {
   const url=baseUrl+'?opponent='+opponentId;
   const dom=await dumpDom(url);
   const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
