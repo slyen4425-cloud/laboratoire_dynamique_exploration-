@@ -3165,6 +3165,17 @@ try{
   await moveKey('keyUp');
   if(!second.pending||second.encounterId===encountered.encounterId)
     throw Error('2.5D encounter did not re-arm after continue/reset: '+JSON.stringify(second));
+  // Regression: Android fullscreen may emit resize while Combat opens/closes.
+  // Navigation's 240% remains the sole zoom authority, never editor fit().
+  const cameraBeforeCombat=await run(`(()=>{
+    const slider=document.querySelector('#navigation-camera-zoom');
+    slider.value='240';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    window.dispatchEvent(new Event('resize'));
+    return {configured:Number(slider.value),live:window.__sculptNavProbe().zoom,
+      angle:window.__sculptNavProbe().cameraAngle};
+  })()`);
+  if(cameraBeforeCombat.configured!==240||Math.abs(cameraBeforeCombat.live-2.4)>1e-8)
+    throw Error('Navigation zoom lost during responsive resize: '+JSON.stringify(cameraBeforeCombat));
   const combatLaunch=await run(`(()=>{
     document.querySelector('#sculpt-encounter-combat').click();
     const iframe=document.querySelector('.combat-overlay__frame');
@@ -3191,6 +3202,11 @@ try{
   if(!combatReady?.status.includes('Combat réel')||!combatReady.enemyHud||
      combatReady.skills<1||combatReady.bootError)
     throw Error('2.5D iframe has no real playable Capture combat: '+JSON.stringify(combatReady));
+  const zoomDuringCombat=await run(`(()=>({zoom:window.__sculptNavProbe().zoom,
+    setting:Number(document.querySelector('#navigation-camera-zoom').value),
+    visible:Number(document.querySelector('#zoom').value)}))()`);
+  if(Math.abs(zoomDuringCombat.zoom-2.4)>1e-8||zoomDuringCombat.setting!==240||zoomDuringCombat.visible!==240)
+    throw Error('Combat fullscreen resized Navigation zoom unexpectedly: '+JSON.stringify(zoomDuringCombat));
   console.log('2.5D real movement -> single Encounter Controller -> Combat iframe Chromium:',
     JSON.stringify({first:encountered.creatureId,second:second.creatureId,
       stoppedAt:pausedX,previewReleased:true,combatPackaged:true,

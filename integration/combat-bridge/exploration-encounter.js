@@ -6,12 +6,12 @@ import { createCapturePreviewDisplayModeV1 } from '../../src/ui/capture-preview-
 import { adaptCaptureExportToNativeVisualSourceV1 } from '../../src/adapters/input/capture/capture-export-to-native-visual-source-v1.js';
 import { createGlobalPresentationAssetResolverV1 } from '../../src/assets/global-presentation-asset-resolver-v1.js';
 import { createCaptureSkillPresentationAssetsV2 } from '../../src/adapters/renderer/capture-skill-presentation-assets-v2.js';
-import { CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1 } from '../../src/catalogs/capture-showcase-creature-presets-v1.js';
-import { CAPTURE_SHOWCASE_SKILL_PRESET_FILES_V1 } from '../../src/catalogs/capture-showcase-skill-presets-v1.js';
+import {normalizeCaptureAuthorEncounterBundleV1} from '../../../src/capture/capture-showcase-encounter-source-v1.js';
 import { demoPresentationAssets } from './demo-assets.js';
 import { buildExplorationNativeCombatSourceV1 } from './exploration-native-source-v1.js';
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
+import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
 
 const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');
@@ -48,10 +48,6 @@ function message(text, error = false) {
 const assetCatalogUrl = new URL('../../../capture-assets/data/assets/catalog/global-visual-assets.v1.json',import.meta.url);
 const assetBase = new URL('../../../capture-assets/assets/library/',import.meta.url);
 const assetUrlForFile = file => new URL(file,assetBase).href;
-async function fetchAuthorTransfers(files) {
-  if(!Array.isArray(files)||!files.length)throw new RangeError('Official Capture Showcase manifest empty');
-  return Promise.all(files.map(path=>readJson(resource(path))));
-}
 function presentationAssetsForSource(source, assetCatalog) {
   const resolveAsset=createGlobalPresentationAssetResolverV1({
     assetCatalog,assetUrlForFile
@@ -72,8 +68,8 @@ function presentationAssetsForSource(source, assetCatalog) {
     audioAsset: id=>native.audioAsset(id)??demoPresentationAssets.audioAsset(id)
   });
 }
-function showOfficialCombatTemplate(source) {
-  return fetch('./capture-editor-v2.html', {cache:'no-cache'}).then(async response => {
+function showOfficialCombatTemplate(source, templateResponse) {
+  return Promise.resolve(templateResponse).then(async response => {
     if (!response.ok) throw new Error('Template du Labo Combat indisponible');
     const page = new DOMParser().parseFromString(await response.text(), 'text/html');
     const template = page.querySelector('[data-capture-preview-template]');
@@ -117,6 +113,15 @@ function observeNativeBattleResult(combat, onResult) {
   }
   watchId = requestAnimationFrame(frame);
 }
+// Combat already owns the authoritative KO; the result presentation is a
+// time-only hold, not another battle engine or a fabricated reward screen.
+const outcomeHold=createCombatOutcomeHoldV1({onRelease:completeBattle});
+function showNativeCombatOutcome(outcome) {
+  if(!outcomeHold.start(outcome))return;
+  status.dataset.ending='true';
+  message(outcome==='victory'?'Victoire ! · fin du combat':
+    outcome==='defeat'?'Défaite · fin du combat':'Fuite · retour en exploration');
+}
 function completeBattle(outcome) {
   if (completed) return;
   const handoff = readCombatHandoff(sessionStorage);
@@ -152,8 +157,12 @@ function completeBattle(outcome) {
 async function launch() {
   const handoff=readCombatHandoff(sessionStorage);
   if(!handoff||handoff.result)throw new Error('EncounterSnapshot v1 absent ou déjà terminé');
+  // Start downloading the official HUD immediately; independent source data
+  // resolves concurrently. Only one build-produced bundle supplies every
+  // approved creature/skill, never 70+ independent cold-start requests.
+  const templateResponse=fetch('./capture-editor-v2.html',{cache:'force-cache'});
   const [party,nativeSkillCatalog,statRegistry,progressionRules,baseFighterRules,
-    assetCatalog,...profilesAndTransfers] = await Promise.all([
+    assetCatalog,...profilesAndBundle] = await Promise.all([
     readJson('./party.preview.v1.json'),
     readJson(resource('data/combat/skills/catalog.v1.json')),
     readJson(resource('data/capture/monster-capture-stat-registry.v1.json')),
@@ -162,12 +171,12 @@ async function launch() {
     readJson(assetCatalogUrl),
     ...['biped','flying','massive','quadruped','serpentine'].map(id=>
       readJson(resource('data/profiles/'+id+'.profile.json'))),
-    ...CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1.map(path=>readJson(resource(path))),
-    ...CAPTURE_SHOWCASE_SKILL_PRESET_FILES_V1.map(path=>readJson(resource(path)))
+    readJson(resource('data/capture/showcase/encounter-bundle.v1.json'))
   ]);
-  const profiles=profilesAndTransfers.slice(0,5);
-  const creatureTransfers=profilesAndTransfers.slice(5,5+CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1.length);
-  const skillTransfers=profilesAndTransfers.slice(5+CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1.length);
+  const profiles=profilesAndBundle.slice(0,5);
+  const authorBundle=normalizeCaptureAuthorEncounterBundleV1(profilesAndBundle[5]);
+  const creatureTransfers=authorBundle.creatureTransfers;
+  const skillTransfers=authorBundle.skillTransfers;
   const terrain=handoff.snapshot.context.terrainFamilyId;
   const arenaId=({forest:'forest',snow:'snow',volcano:'lava',mountain:'cave'})[terrain]??'forest';
   const nativeCombatSource=buildExplorationNativeCombatSourceV1({
@@ -178,16 +187,17 @@ async function launch() {
   const nativeVisualSource=adaptCaptureExportToNativeVisualSourceV1({
     exported:nativeCombatSource.exported,assetCatalog,profiles,assetUrlForFile
   });
-  const root=await showOfficialCombatTemplate(nativeCombatSource);
+  const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse);
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
-  observeNativeBattleResult(mountedCombat,completeBattle);
+  observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
   message('Combat réel · créatures, capacités et animations Showcase officielles');
 }
 function dispose() {
+  outcomeHold.dispose();
   if (watchId !== null) { cancelAnimationFrame(watchId); watchId = null; }
   mountedCombat?.dispose(); mountedCombat = null;
   mountedVisuals?.dispose(); mountedVisuals = null;

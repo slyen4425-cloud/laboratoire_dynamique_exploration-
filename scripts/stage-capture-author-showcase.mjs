@@ -29,6 +29,7 @@ function copyAuthorFile(source,target,relative){
 export async function stageCaptureAuthorShowcaseV1({authorRoot,combatRoot}) {
   const source=resolve(authorRoot),target=resolve(combatRoot);
   const report={};
+  const authored={creatureTransfers:[],skillTransfers:[]};
   for(const {path,name} of CAPTURE_AUTHOR_MANIFESTS_V1){
     const mod=await import(pathToFileURL(resolve(source,path)).href);
     const files=mod[name];
@@ -37,6 +38,12 @@ export async function stageCaptureAuthorShowcaseV1({authorRoot,combatRoot}) {
     for(const file of files){
       safePath(source,file);
       copyAuthorFile(source,target,file);
+      const transfer=JSON.parse(readFileSync(safePath(source,file),'utf8'));
+      const expectedKind=name==='CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1'?'creature':'skill';
+      if(transfer.schema!=='capture-'+expectedKind+'-transfer-v1'||transfer.version!==1||
+         typeof transfer.draft?.id!=='string'||!transfer.draft.id)
+        throw new RangeError('Invalid official Showcase transfer: '+file);
+      authored[expectedKind+'Transfers'].push(transfer);
     }
     copyAuthorFile(source,target,path);
     report[name]=files.length;
@@ -48,6 +55,14 @@ export async function stageCaptureAuthorShowcaseV1({authorRoot,combatRoot}) {
     author:{branch:'gh-pages',commit:authorSha},
     engine:{branch:'main',commit:engineSha},
     ...report};
+  // Read-only derived load artifact: exact author entries are still copied
+  // unchanged above. One HTTP response replaces dozens of first-battle roundtrips.
+  // This bundle must NEVER be edited independently of author transfers.
+  const bundle={schema:'capture-author-encounter-bundle-v1',version:1,
+    authorSha,engineSha, ...authored};
+  const bundlePath=join(target,'data/capture/showcase/encounter-bundle.v1.json');
+  writeFileSync(bundlePath,JSON.stringify(bundle)+'\n');
+  report.encounterBundleBytes=Buffer.byteLength(JSON.stringify(bundle));
   writeFileSync(join(target,'examples/dom-demo/exploration-author-provenance.v1.json'),
     JSON.stringify(provenance,null,2)+'\n');
   return Object.freeze(provenance);

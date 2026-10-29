@@ -35,23 +35,26 @@ export function projectCaptureShowcaseEncounterSourceV1(transfers) {
     creatures:Object.freeze(creatures)
   });
 }
-export async function loadCaptureShowcaseEncounterSourceV1({
-  importManifest=()=>import(new URL('../../combat-preview/src/catalogs/capture-showcase-creature-presets-v1.js',import.meta.url).href),
-  fetchImpl=globalThis.fetch
-}={}) {
-  const root=new URL('../../combat-preview/',import.meta.url);
-  const manifest=await importManifest();
-  const paths=manifest.CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1;
-  if(!Array.isArray(paths)||!paths.length)
-    throw new RangeError('Official Combat Showcase manifest is missing');
+// Validate one build-produced transfer projection. A bad/missing bundle fails
+// closed: no September catalogue or hidden alternative creature authority.
+export function normalizeCaptureAuthorEncounterBundleV1(raw) {
+  if(raw?.schema!=='capture-author-encounter-bundle-v1'||raw.version!==1||
+     !Array.isArray(raw.creatureTransfers)||!raw.creatureTransfers.length||
+     !Array.isArray(raw.skillTransfers)||!raw.skillTransfers.length)
+    throw new RangeError('Official Combat encounter bundle invalid or missing');
+  if(new Set(raw.creatureTransfers.map(x=>x.draft?.id)).size!==raw.creatureTransfers.length||
+     new Set(raw.skillTransfers.map(x=>x.draft?.id)).size!==raw.skillTransfers.length)
+    throw new RangeError('Official Combat encounter bundle contains duplicate IDs');
+  return raw;
+}
+export async function loadCaptureAuthorEncounterBundleV1({fetchImpl=globalThis.fetch}={}) {
   if(typeof fetchImpl!=='function')throw new TypeError('fetchImpl required');
-  const transfers=await Promise.all(paths.map(async path=>{
-    if(typeof path!=='string'||!/^data\/capture\/showcase\/[\w.-]+\.capture-creature-transfer-v1\.json$/.test(path))
-      throw new RangeError('Invalid Combat Showcase manifest path');
-    const url=new URL(path,root);
-    const response=await fetchImpl(url,{cache:'no-store'});
-    if(!response.ok)throw new Error('Capture Showcase missing: '+path+' HTTP '+response.status);
-    return response.json();
-  }));
-  return projectCaptureShowcaseEncounterSourceV1(transfers);
+  const url=new URL('../../combat-preview/data/capture/showcase/encounter-bundle.v1.json',import.meta.url);
+  const response=await fetchImpl(url,{cache:'force-cache'});
+  if(!response.ok)throw new Error('Official Combat encounter bundle unavailable: HTTP '+response.status);
+  return normalizeCaptureAuthorEncounterBundleV1(await response.json());
+}
+export async function loadCaptureShowcaseEncounterSourceV1(options={}) {
+  const bundle=await loadCaptureAuthorEncounterBundleV1(options);
+  return projectCaptureShowcaseEncounterSourceV1(bundle.creatureTransfers);
 }

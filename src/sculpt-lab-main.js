@@ -66,6 +66,7 @@ import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
+import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
@@ -157,6 +158,14 @@ const sculptEncounterDialog=$('sculpt-encounter-preview');
 // The frozen V80 page intentionally exposes no encounter UI; the editor's
 // new 2.5D Tester reuses exactly the same runtime Encounter Controller class,
 // catalog and bridge as the 2D Exploration game.
+const sculptCombatWarmup=createCaptureCombatWarmupV1({
+  documentUrl:document.URL,
+  fetchImpl:(url,opts)=>window.fetch(url,opts),
+  schedule:callback=>typeof window.requestIdleCallback==='function'
+    ?window.requestIdleCallback(callback,{timeout:3000})
+    :window.setTimeout(callback,300),
+  saveData:window.navigator?.connection?.saveData===true
+});
 const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
   checkDistance:sculptEncounterTest?80:160
@@ -363,6 +372,9 @@ function sculptEncounterStep(){
   navActor.moving=false;
   navKeys.clear();navStick?.reset();
   const creatureId=sculptPendingEncounter.opponents[0].creatureId;
+  // Prewarm only the two real author-selected creature portraits while the
+  // player reads the encounter dialog. No gameplay change or visual fallback.
+  void sculptCombatWarmup.warmCreature(creatureId);
   const creature=sculptEncounterCatalog.resolveCreature(creatureId);
   $('sculpt-encounter-summary').textContent=
     (creature?.name??creatureId)+' · '+sculptPendingEncounter.context.terrainFamilyId+
@@ -395,6 +407,10 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     // validated result, never a replacement scene or actor position.
     navActor.x=restored.x;navActor.y=restored.y;navActor.moving=false;
     navVisualLevel=navHeight();
+    // Return uses the same Navigation camera slider as before the fight.
+    // The fullscreen resize handler above enforces it again after overlay removal.
+    zoom=navigationCameraZoom();
+    $('zoom').value=String(Math.round(zoom*100));
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     status('Combat terminé : '+restored.outcome+' · exploration reprise');
     return true;
@@ -629,13 +645,19 @@ function cameraBounds(){
     terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
 }
 function fit(){
+  // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
+  // window.resize and the editor's Fit action all pass through here.
+  // Editor fit-to-map must NEVER overwrite the Navigation camera's 100–240%.
+  if(navigationTesting){
+    zoom=navigationCameraZoom();
+    $('zoom').value=String(Math.round(zoom*100));
+    centerNavigationCamera();scheduleDraw();return;
+  }
   const {width,height}=dimensions();
   const bounds=cameraBounds();
   zoom=Math.max(.32,Math.min(1.6,Math.min((width-30)/bounds.width,(height-20)/bounds.height)));
   $('zoom').value=String(Math.round(zoom*100));
-  if(navigationTesting)centerNavigationCamera();
-  else center();
-  scheduleDraw();
+  center();scheduleDraw();
 }
 function center(){
   const {width,height}=dimensions(),bounds=cameraBounds();
@@ -1823,6 +1845,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    if(sculptEncounterController)sculptCombatWarmup.start();
     if(sculptWorldDraft)$('world-area-portal-panel').open=false;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
@@ -3251,6 +3274,7 @@ $('import').addEventListener('click',()=>{
  catch(e){status(e.message);}
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
+// Both viewport resize and fullscreen callbacks reuse the single fit owner.
 window.addEventListener('resize',fit);
 function rampPreviewValidForProbe(){
   const from=rampStart??rampGesture?.origin;
