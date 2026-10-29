@@ -67,7 +67,7 @@ import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigat
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
-import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js';
+import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
@@ -83,9 +83,22 @@ import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encou
 const $=id=>document.getElementById(id);
 const explorationSoundtrack=createExplorationSoundtrackV1();
 window.__sculptExplorationSoundProbe=()=>Object.freeze({
-  state:explorationSoundtrack.state,track:explorationSoundtrack.currentTrackId
+  state:explorationSoundtrack.state,track:explorationSoundtrack.currentTrackId,
+  lastError:explorationSoundtrack.lastError,
+  mediaReadyState:explorationSoundtrack.mediaReadyState,
+  mediaCurrentTime:explorationSoundtrack.mediaCurrentTime
 });
 window.addEventListener('pagehide',()=>explorationSoundtrack.dispose(),{once:true});
+// If Chrome Android rejects the first attempt (for instance after a native
+// confirmation dialog), the next actual movement or keyboard gesture resumes
+// the SAME player. No fake clicks, timers, or extra audio button.
+function retryExplorationAudioFromGesture(event) {
+  if(event.isTrusted===false||!navigationTesting||
+      (explorationSoundtrack.state!=='blocked'&&explorationSoundtrack.state!=='error'))return;
+  explorationSoundtrack.start();
+}
+document.addEventListener('pointerdown',retryExplorationAudioFromGesture,{capture:true});
+document.addEventListener('keydown',retryExplorationAudioFromGesture,{capture:true});
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
@@ -1946,7 +1959,11 @@ $('navigation-speed').addEventListener('input',()=>{
   updateNavigationInfo(true);
 });
 $('navigation-toggle').addEventListener('click',()=>{
+  // This click is the trusted user activation. Start playback BEFORE any
+  // optional legacy-encounter confirm() can consume it on Android.
+  if(!navigationTesting)explorationSoundtrack.start();
   setNavigationTesting(!navigationTesting);
+  if(!navigationTesting)explorationSoundtrack.stop(); // No spawn / edit mode.
 });
 $('navigation-reset').addEventListener('click',()=>{
   if(!navigationTesting||sculptPendingEncounter)return;
