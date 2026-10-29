@@ -1,3 +1,13 @@
+# 2026-10-29 — Reprise Exploration : audio officiel + chargement visuel
+- Base de prévisualisation isolée `e3fc8d28bfb1bb7a0f7467616a2d4fb7280b63bb` ; START `checkpoint/exploration-encounter-audio-texture-start-2026-10-29` ; lot `work/exploration-encounter-audio-texture-2026-10-29`.
+- Défauts remontés : aucun son dans Combat Exploration, premier décodage d'images lent, Défense de Moussados absente. La donnée Moussados est corrigée sur un lot autorité Combat distinct ; Exploration ne duplique aucun transfert.
+- Propriétaires : Combat `DomCombatAudio` pour SFX, `SoundtrackSessionV1` pour musique, `privateAudioRuntimeAssetV1` / `soundtrackRuntimeAssetV1` pour URL autorisées. Le bouton audio exige une interaction dans la frame sur Android. Exploration ne conserve pas de playlist séparée.
+- Préchargement : auteur Showcase fournit portraits, icônes et strips de mouvement/attaque des deux acteurs ; décodage asynchrone navigateur pendant la boîte de rencontre, sans toucher aux règles.
+- Autorisés : `integration/combat-bridge/exploration-encounter.{html,js}`, `src/encounters/{capture-combat-warmup-v1,immersive-encounter-host-v1}.js`, leurs tests/smokes, documentation et publication isolée après GREEN.
+- Gates : Node, vrais imports Combat et tests Chromium, contrôle HTTPS des SFX et six morceaux, test tactile Android manuel ; V80 prod octet-identique. Interdit : second moteur audio, ancienne source Septembre, modifications directes de main.
+
+---
+
 # LAB_CURRENT_WORK — Parcours présets : traverser + déclencher un combat
 
 Date : 2026-10-28
