@@ -56,7 +56,7 @@ jobs:
             -o "$published"; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="9d43282ad3e8738404f69f0d2ee83f348634c8aa"' "$published" >/dev/null; then
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="d6d969be0594d7a20c4131144dbccc0086431584"' "$published" >/dev/null; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout CI-verified native Combat Encounter source
         uses: actions/checkout@v4
         with:
-          ref: 9d43282ad3e8738404f69f0d2ee83f348634c8aa
+          ref: d6d969be0594d7a20c4131144dbccc0086431584
           path: encounter-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
@@ -117,7 +117,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = 9d43282ad3e8738404f69f0d2ee83f348634c8aa
+          test "$(git -C encounter-source rev-parse HEAD)" = d6d969be0594d7a20c4131144dbccc0086431584
           printf 'Official Combat main tested at: %s\\n' "$(git -C combat-source rev-parse HEAD)"
           test -n "$(git -C capture-source rev-parse HEAD)"
           test -n "$(git -C combat-author rev-parse HEAD)"
@@ -128,6 +128,15 @@ jobs:
           # both Moussados' independent Defense reaction and its original skill.
           jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .draft.combat.reaction.type=="defense" and .loadout.slots[1].skillId=="lib_earth_guard")] | length)==1'             combat-source/data/capture/showcase/encounter-bundle.v1.json >/dev/null
           test -s site/sculpt-lab-v80.html
+          # Four real, user-authorized runtime MP3s; no private source URLs.
+          (
+            cd encounter-source/assets/runtime/audio/exploration-v1
+            printf '%s\n' \
+              'c3a0cfffa5f022c4f1c23b8eaa7673a61781669f400c7a38bbeb9572c64a3657  exploration-01.mp3' \
+              '5a10067b885ab5c1fa99ec9b8337679903bd294679b636991d9a1fd4e98868d7  exploration-02.mp3' \
+              'ec94c86e82861899dd1f6771794acfa6c0645a4e8d6f545338f3875f06ee8ad8  exploration-03.mp3' \
+              '2b9374c98e41a2343fe01027101f48e3443b87ee0043d107f585be7ffe657ce6  exploration-04.mp3' | sha256sum -c -
+          )
           test -s encounter-source/sculpt-lab.html
           test -s encounter-source/world-assembler.html
           test -s encounter-source/src/builder/sculpt-world-area-link.js
@@ -219,6 +228,9 @@ jobs:
           mkdir -p "$preview/combat-preview" "$preview/capture-assets"
           rsync -a --exclude='.git' combat-source/ "$preview/combat-preview/"
           rsync -a --exclude='.git' capture-source/ "$preview/capture-assets/"
+          for i in 01 02 03 04; do
+            test -s "$preview/assets/runtime/audio/exploration-v1/exploration-$i.mp3"
+          done
           test -s "$preview/src/sculpt-lab-main.js"
           test -s "$preview/src/builder/world-assembler-main.js"
           test -s "$preview/src/builder/world-assembler.css"
@@ -318,6 +330,17 @@ jobs:
           grep -Fq 'id="sculpt-map-preset-save"' /tmp/published-encounter.html
           grep -Fq 'id="sculpt-map-preset-apply"' /tmp/published-encounter.html
           grep -Fq 'href="./world-assembler.html"' /tmp/published-encounter.html
+          # Public HTTPS must serve ALL four exact listening copies.
+          while read -r name digest; do
+            curl -fsSL --retry 8 --retry-all-errors --retry-delay 3 \
+              "$probe/assets/runtime/audio/exploration-v1/$name?build=$GITHUB_SHA" -o "/tmp/$name"
+            printf '%s  %s\n' "$digest" "/tmp/$name" | sha256sum -c -
+          done <<'EXPLORATION_AUDIO'
+          exploration-01.mp3 c3a0cfffa5f022c4f1c23b8eaa7673a61781669f400c7a38bbeb9572c64a3657
+          exploration-02.mp3 5a10067b885ab5c1fa99ec9b8337679903bd294679b636991d9a1fd4e98868d7
+          exploration-03.mp3 ec94c86e82861899dd1f6771794acfa6c0645a4e8d6f545338f3875f06ee8ad8
+          exploration-04.mp3 2b9374c98e41a2343fe01027101f48e3443b87ee0043d107f585be7ffe657ce6
+          EXPLORATION_AUDIO
           curl -fsSL "$probe/world-assembler.html?build=$GITHUB_SHA" -o /tmp/published-world-assembler.html
           grep -Fq 'id="graph-nodes"' /tmp/published-world-assembler.html
           grep -Fq 'id="edit-sculpt-area"' /tmp/published-world-assembler.html
@@ -378,7 +401,7 @@ jobs:
           jq -e --arg main "${{ needs.verify-and-assemble.outputs.combat_main }}" \
             --arg author "${{ needs.verify-and-assemble.outputs.author_showcase }}" \
             --arg assets "${{ needs.verify-and-assemble.outputs.visual_assets }}" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="9d43282ad3e8738404f69f0d2ee83f348634c8aa"' \
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="d6d969be0594d7a20c4131144dbccc0086431584"' \
             /tmp/published-provenance.json >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/crea_nat_1.capture-creature-transfer-v1.json?build=$GITHUB_SHA" -o /tmp/published-grainou.json
           jq -e '.draft.id=="crea_nat_1" and ((.loadout.slots|map(.skillId)|index("Spore_soporifique"))!=null)' /tmp/published-grainou.json >/dev/null
@@ -425,4 +448,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -X POST --data-binary @/tmp/pages-preview-status.json \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/9d43282ad3e8738404f69f0d2ee83f348634c8aa" >/dev/null
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/d6d969be0594d7a20c4131144dbccc0086431584" >/dev/null
