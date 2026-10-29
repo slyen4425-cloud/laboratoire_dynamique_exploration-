@@ -9,7 +9,7 @@ export const CAPTURE_COMBAT_WARMUP_PATHS_V1=Object.freeze([
 ]);
 // A warmed image is never a substitute for the official visual asset owner.
 // Only an existing author-approved front/back reference may be requested.
-export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponentId}) {
+export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponentId,firstPaintOnly=false}) {
   if(!Array.isArray(bundle?.creatureTransfers)||!Array.isArray(assetCatalog?.assets))return [];
   const creatures=new Map(bundle.creatureTransfers.map(x=>[x.draft?.id,x]));
   const assets=new Map(assetCatalog.assets.map(x=>[x.id,x]));
@@ -20,8 +20,10 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
     const visual=creatures.get(creatureId)?.draft?.presentation?.visual;
     return [
       visual?.[view]?.assetId,visual?.icon?.assetId,
-      visual?.[view==='back'?'movementBack':'movement']?.assetId,
-      visual?.[view==='back'?'rangedAttackBack':'rangedAttack']?.assetId
+      ...(firstPaintOnly?[]:[
+        visual?.[view==='back'?'movementBack':'movement']?.assetId,
+        visual?.[view==='back'?'rangedAttackBack':'rangedAttack']?.assetId
+      ])
     ].filter(Boolean);
   }
   const selected=[party?.activeCreatureId,opponentId].map(id=>creatures.get(id)).filter(Boolean);
