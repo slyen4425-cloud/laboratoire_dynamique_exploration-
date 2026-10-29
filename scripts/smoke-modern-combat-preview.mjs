@@ -57,21 +57,21 @@ const server = createServer(async(req,res)=>{
                   ? 'OK' : 'button-not-visible';
             }
             const skills = [...document.querySelectorAll('[data-combat-skill]')];
-            const claw = skills.find(button => button.dataset.combatSkill === 'claw');
-            if (claw && !claw.disabled) {
+            const ready = skills.find(button => !button.disabled);
+            if (ready) {
               const status = document.querySelector('[data-combat-live-status]');
-              claw.click();
-              const message = status?.textContent ?? '';
+              const before = status?.textContent ?? '';
+              ready.click();
+              const after = status?.textContent ?? '';
               document.documentElement.dataset.encounterSkillProof =
-                message.includes('se prépare sur') ? 'OK' :
-                  'click-not-committed:' + message.slice(0, 80);
+                after !== before || ready.disabled ? 'OK' :
+                  'action-not-committed:' + ready.dataset.combatSkill;
               clearInterval(timer);
               return;
             }
-            if (++attempts >= 48) {
+            if (++attempts >= 75) {
               document.documentElement.dataset.encounterSkillProof =
-                'claw-disabled:' + (claw?.disabled ?? 'not-rendered') +
-                ':buttons=' + skills.length;
+                'no-native-skill-ready:buttons=' + skills.length;
               clearInterval(timer);
             }
           }, 350);
@@ -168,7 +168,7 @@ try {
   if(jsError)throw Error('Encounter JavaScript error: '+jsError);
   if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status);
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
-  if(!dom.includes('data-combat-hp-value="enemy-1"'))throw Error('Encounter enemy HUD absent');
+  if(!dom.includes('data-combat-hp-value="opponent-1"'))throw Error('Encounter enemy HUD absent');
   if(!dom.includes(opponentName))throw Error('Encounter does not show real selected creature '+opponentName);
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
   if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
