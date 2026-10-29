@@ -54,7 +54,7 @@ test('only the actual Showcase player/back and enemy/front art is prefetched',as
   });
   assert.deepEqual(await warm.warmCreature('crea_nat_1'),files);
   assert.equal(requests.filter(x=>x.endsWith('.webp')).length,2);
-  assert.deepEqual(await warm.warmCreature('crea_nat_1'),[]);
+  assert.deepEqual(await warm.warmCreature('crea_nat_1'),files);
   assert.equal(requests.filter(x=>x.endsWith('.webp')).length,2);
 });
 
@@ -85,6 +85,53 @@ test('pre-decode approved portraits, icons and animations for the actual combata
   assert.equal(files.length,8);
   assert.deepEqual(decoded.sort(),files.map(file=>
     'https://example.org/preview/encounters-v80/capture-assets/assets/library/'+file).sort());
-  assert.deepEqual(await warm.warmCreature('crea_nat_1'),[]);
+  assert.deepEqual(await warm.warmCreature('crea_nat_1'),files);
   assert.equal(decoded.length,8);
+});
+
+test('a rapid second request shares the in-flight decode, without a second download',async()=>{
+  const bundle={creatureTransfers:[
+    {draft:{id:'crea_mossback',presentation:{visual:{back:{assetId:'moss-back'}}}}},
+    {draft:{id:'crea_nat_1',presentation:{visual:{front:{assetId:'grain-front'}}}}}
+  ]};
+  const catalog={assets:[
+    {id:'moss-back',resource:{file:'capture/moss.webp'}},
+    {id:'grain-front',resource:{file:'capture/grain.webp'}}
+  ]};
+  let release;const blocked=new Promise(resolve=>{release=resolve;});
+  let decodes=0;
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/preview/encounters-v80/sculpt-lab.html',
+    decodeImage:()=>{decodes++;return blocked;},
+    fetchImpl:async url=>({
+      ok:true,json:async()=>url.pathname.endsWith('encounter-bundle.v1.json')?bundle:
+        url.pathname.endsWith('global-visual-assets.v1.json')?catalog:{activeCreatureId:'crea_mossback'}
+    })
+  });
+  const first=warm.warmCreature('crea_nat_1');
+  const second=warm.warmCreature('crea_nat_1');
+  assert.equal(first,second,'the caller must wait for the SAME decode');
+  for(let i=0;i<5;i++)await Promise.resolve();
+  release();
+  assert.deepEqual(await first,['capture/moss.webp','capture/grain.webp']);
+  assert.equal(decodes,2);
+});
+test('warmup includes icons only for the currently equipped canonical skill transfers',()=>{
+  const bundle={
+    creatureTransfers:[
+      {draft:{id:'hero',presentation:{visual:{back:{assetId:'hero-back'}}}},
+        loadout:{slots:[{skillId:'selected'}]}},
+      {draft:{id:'enemy',presentation:{visual:{front:{assetId:'enemy-front'}}}},
+        loadout:{slots:[]}}
+    ],
+    skillTransfers:[
+      {draft:{id:'selected',presentation:{visual:{icon:{assetId:'chosen-icon'}}}}},
+      {draft:{id:'unselected',presentation:{visual:{icon:{assetId:'unselected-icon'}}}}}
+    ]
+  };
+  const assets={assets:['hero-back','enemy-front','chosen-icon','unselected-icon']
+    .map(id=>({id,resource:{file:'capture/'+id+'.webp'}}))};
+  assert.deepEqual(captureEncounterVisualFilesV1({
+    bundle,assetCatalog:assets,party:{activeCreatureId:'hero'},opponentId:'enemy'
+  }),['capture/hero-back.webp','capture/enemy-front.webp','capture/chosen-icon.webp']);
 });
