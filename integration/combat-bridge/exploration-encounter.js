@@ -11,6 +11,7 @@ import { demoPresentationAssets } from './demo-assets.js';
 import { buildExplorationNativeCombatSourceV1 } from './exploration-native-source-v1.js';
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
+import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
 
 const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');
@@ -112,6 +113,15 @@ function observeNativeBattleResult(combat, onResult) {
   }
   watchId = requestAnimationFrame(frame);
 }
+// Combat already owns the authoritative KO; the result presentation is a
+// time-only hold, not another battle engine or a fabricated reward screen.
+const outcomeHold=createCombatOutcomeHoldV1({onRelease:completeBattle});
+function showNativeCombatOutcome(outcome) {
+  if(!outcomeHold.start(outcome))return;
+  status.dataset.ending='true';
+  message(outcome==='victory'?'Victoire ! · fin du combat':
+    outcome==='defeat'?'Défaite · fin du combat':'Fuite · retour en exploration');
+}
 function completeBattle(outcome) {
   if (completed) return;
   const handoff = readCombatHandoff(sessionStorage);
@@ -183,10 +193,11 @@ async function launch() {
     root,visuals:mountedVisuals,nativeCombatSource,
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
-  observeNativeBattleResult(mountedCombat,completeBattle);
+  observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
   message('Combat réel · créatures, capacités et animations Showcase officielles');
 }
 function dispose() {
+  outcomeHold.dispose();
   if (watchId !== null) { cancelAnimationFrame(watchId); watchId = null; }
   mountedCombat?.dispose(); mountedCombat = null;
   mountedVisuals?.dispose(); mountedVisuals = null;
