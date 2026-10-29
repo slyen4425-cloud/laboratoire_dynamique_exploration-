@@ -645,13 +645,19 @@ function cameraBounds(){
     terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
 }
 function fit(){
+  // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
+  // window.resize and the editor's Fit action all pass through here.
+  // Editor fit-to-map must NEVER overwrite the Navigation camera's 100–240%.
+  if(navigationTesting){
+    zoom=navigationCameraZoom();
+    $('zoom').value=String(Math.round(zoom*100));
+    centerNavigationCamera();scheduleDraw();return;
+  }
   const {width,height}=dimensions();
   const bounds=cameraBounds();
   zoom=Math.max(.32,Math.min(1.6,Math.min((width-30)/bounds.width,(height-20)/bounds.height)));
   $('zoom').value=String(Math.round(zoom*100));
-  if(navigationTesting)centerNavigationCamera();
-  else center();
-  scheduleDraw();
+  center();scheduleDraw();
 }
 function center(){
   const {width,height}=dimensions(),bounds=cameraBounds();
@@ -3268,14 +3274,8 @@ $('import').addEventListener('click',()=>{
  catch(e){status(e.message);}
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
-// Fullscreen and iframe teardown resize the parent viewport. Editor fit()
-// MUST NOT replace a player's configured 100–240% in-game camera zoom.
-window.addEventListener('resize',()=>{
-  if(!navigationTesting){fit();return;}
-  zoom=navigationCameraZoom();
-  $('zoom').value=String(Math.round(zoom*100));
-  centerNavigationCamera();scheduleDraw();
-});
+// Both viewport resize and fullscreen callbacks reuse the single fit owner.
+window.addEventListener('resize',fit);
 function rampPreviewValidForProbe(){
   const from=rampStart??rampGesture?.origin;
   const to=rampEnd??(from&&hoverCell?rampPointFromCell(hoverCell):null);
