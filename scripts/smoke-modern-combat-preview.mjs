@@ -56,6 +56,13 @@ const server = createServer(async(req,res)=>{
                 getComputedStyle(fullscreenButton).display !== 'none' && !fullscreenButton.disabled
                   ? 'OK' : 'button-not-visible';
             }
+            const audioButton = document.querySelector('[data-encounter-audio]');
+            if (audioButton && !document.documentElement.dataset.encounterAudioProof) {
+              document.documentElement.dataset.encounterAudioProof =
+                getComputedStyle(audioButton).display !== 'none' &&
+                audioButton.textContent.includes('Activer le son')
+                  ? 'OK' : 'audio-button-not-available';
+            }
             const skills = [...document.querySelectorAll('[data-combat-skill]')];
             const ready = skills.find(button => !button.disabled);
             if (ready) {
@@ -162,9 +169,10 @@ try {
   const layoutProof=dom.match(/data-native-layout-proof="([^"]+)"/)?.[1]??'missing';
   const skillProof=dom.match(/data-encounter-skill-proof="([^"]+)"/)?.[1]??'missing';
   const fullscreenProof=dom.match(/data-encounter-fullscreen-proof="([^"]+)"/)?.[1]??'missing';
+  const audioProof=dom.match(/data-encounter-audio-proof="([^"]+)"/)?.[1]??'missing';
   const skillCount=[...dom.matchAll(/data-combat-skill="/g)].length;
   const orbs=[...dom.matchAll(/class="energy-orb\b/g)].length;
-  console.log(JSON.stringify({opponentId,status,jsError,skillCount,orbs,layoutProof,skillProof,fullscreenProof}));
+  console.log(JSON.stringify({opponentId,status,jsError,skillCount,orbs,layoutProof,skillProof,fullscreenProof,audioProof}));
   if(jsError)throw Error('Encounter JavaScript error: '+jsError);
   if(!status.includes('Combat réel'))throw Error('Encounter not ready: '+status+'; rendered=' + dom.slice(0,1250));
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
@@ -173,6 +181,7 @@ try {
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
   if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
   if(fullscreenProof!=='OK')throw Error('Encounter has no usable Android fullscreen control: '+fullscreenProof);
+  if(audioProof!=='OK')throw Error('Encounter has no Android audio activation control: '+audioProof);
   console.log('GREEN real Chromium Encounter boot, skill click and canonical HUD: '+opponentName);
   }
 }finally{
