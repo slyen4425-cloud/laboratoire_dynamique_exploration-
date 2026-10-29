@@ -114,7 +114,20 @@ try {
   console.log('GREEN real MP3 audible timeline after trusted Tester click',JSON.stringify({state,stopped}));
 } finally {
   try{socket?.close();}catch{}
-  try{chrome?.kill('SIGTERM');}catch{}
+  // Chrome is still writing profile files after ChildProcess.kill() returns.
+  // Wait for its actual exit before removing those files, or this smoke test
+  // incorrectly reports RED after successfully playing a real MP3.
+  if(chrome){
+    const exited=new Promise(resolve=>{
+      if(chrome.exitCode!==null||chrome.signalCode!==null)resolve();
+      else chrome.once('exit',resolve);
+    });
+    try{chrome.kill('SIGTERM');}catch{}
+    if(await Promise.race([exited.then(()=>true),sleep(3500).then(()=>false)])===false){
+      try{chrome.kill('SIGKILL');}catch{}
+      await exited;
+    }
+  }
   await new Promise(ok=>server.close(ok));
-  await rm(profile,{recursive:true,force:true});
+  await rm(profile,{recursive:true,force:true,maxRetries:12,retryDelay:200});
 }
