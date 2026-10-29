@@ -1,12 +1,13 @@
-# LAB_CURRENT_WORK — Lot mobile Exploration / Combat (29 octobre 2026)
+# LAB_CURRENT_WORK — Quatre musiques Exploration (2026-10-29)
 
-- Base exacte : `fdc225e147a1593905e1cc98caa29a828408c03f`
-- Checkpoint START : `checkpoint/exploration-mobile-audio-texture-start-2026-10-29`
-- Branche unique : `work/exploration-mobile-audio-texture-2026-10-29`
-- Objectif : faire démarrer la musique sur un geste gameplay existant (sans bouton audio), préparer les visuels réels avant présentation du combat et préparer les quatre musiques Exploration avec un contrat de livraison vérifiable.
-- Autorité : exploration détient son ambiance; les SFX et musiques Combat restent ceux du propriétaire Combat, sans second moteur de bataille.
-- Ressources autorisées : `integration/combat-bridge/exploration-encounter.{js,html}`, `src/encounters/capture-combat-warmup-v1.js`, `src/sculpt-lab-main.js`, `src/audio/*`, sentinelles sous `tests/`, ce journal.
-- Hors périmètre : modifier V80, GenSrpg central, le moteur Combat officiel, les transferts auteur, les sources audio privées sans voie autorisée de publication.
-- TDD RED → GREEN attendu : contrôle du décodage avant affichage, démarrage audio à la première interaction native, absence de bouton secondaire, nettoyage des voix au retour, tests du contrat 4 pistes, aucun fallback masquant une ressource absente.
-- Risques : restrictions autoplay sur Android (aucun navigateur ne peut garantir le son sans interaction), dépôt privé audio inaccessible aux navigateurs; validation réelle requise sur Pixel.
-- Livraison : source testée et CI verte avant checkpoint GREEN; publication via unique pipeline existant uniquement ensuite.
+- Lot : `work/exploration-music-4-2026-10-29`, un seul propriétaire audio Exploration.
+- START : `checkpoint/exploration-music-4-start-2026-10-29`.
+- Source initiale CI-GREEN : `9d43282ad3e8738404f69f0d2ee83f348634c8aa`.
+- Sources maîtres : `GenSrpG_audio_prive/main/audio/musiques/exploration/Exploration_1..4.mp3`, conservés intacts dans le dépôt privé.
+- Transport : workflow privé de préparation; copies d'écoute 96 kbps injectées en blobs dans les assets publics du laboratoire Exploration, avec vérification taille + SHA256.
+- Fonction : la commande existante `🚶 Tester` amorce une session; quatre pistes en lecture aléatoire sans répétition immédiate; arrêt en quittant Tester; pause lors du vrai Combat, reprise après retour validé.
+- Autorité : le soundtrack d'Exploration n'utilise ni un moteur Combat dupliqué ni le dépôt privé à l'exécution; le Battle appartient au module Combat.
+- TDD / navigateur : tests unitaires de playlist, binaires MP3 exacts, test Chromium de `Tester` et réponse HTTP. Tests `npm test`, `npm run check`, et CI intégration Combat existante requis.
+- Hors périmètre : GenSrpg central, V80 gelée, sons de compétences Combat, musique personnalisée par Area.
+- Livraison : attendre GREEN sur le SHA de source et publication par l'unique Pages workflow, vérification HTTPS des quatre MP3 et comparaison V80.
+- Limite Android : démarrage sur geste Tester; autoplay silencieux sans geste reste interdit au navigateur.
