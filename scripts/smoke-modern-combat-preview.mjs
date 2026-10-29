@@ -72,7 +72,7 @@ const server = createServer(async(req,res)=>{
               clearInterval(timer);
               return;
             }
-            if (++attempts >= 75) {
+            if (++attempts >= 240) {
               document.documentElement.dataset.encounterSkillProof =
                 'no-native-skill-ready:buttons=' + skills.length;
               clearInterval(timer);
@@ -82,14 +82,20 @@ const server = createServer(async(req,res)=>{
       </script>`;
       const layoutProbe = `<script>
         window.addEventListener('load', () => {
-          setTimeout(() => {
+          let attempts = 0;
+          const timer = setInterval(() => {
             const stage = document.querySelector('[data-capture-preview-shell]');
             const arena = document.querySelector('[data-combat-arena]');
             const banner = document.querySelector('[data-bridge-status]');
             const local = document.querySelector('.squad-card--local-full');
             const controls = document.querySelector('.coop-command-stack');
+            // The image-decoding barrier is intentional. Test the finished
+            // native Combat layout rather than a fixed delay after page load.
             if (!stage || !arena || !banner || !local || !controls) {
-              document.documentElement.dataset.nativeLayoutProof = 'missing-canonical-view';
+              if (++attempts >= 240) {
+                document.documentElement.dataset.nativeLayoutProof = 'missing-canonical-view';
+                clearInterval(timer);
+              }
               return;
             }
             const r = arena.getBoundingClientRect();
@@ -112,7 +118,8 @@ const server = createServer(async(req,res)=>{
                 Math.round(h.height), Math.round(c.width),
                 arena.dataset.combatActiveCount
               ].join(':');
-          }, 3500);
+            clearInterval(timer);
+          }, 150);
         }, {once: true});
       </script>`;
       content=Buffer.from(content.toString('utf8').replace('</head>',probe+playableProbe+layoutProbe+'</head>'));
@@ -138,12 +145,12 @@ async function dumpDom(url) {
     '--headless=new','--no-sandbox','--disable-gpu',
     '--window-size=1600,900',
     '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
-    '--virtual-time-budget=6500','--dump-dom',url
+    '--virtual-time-budget=42000','--dump-dom',url
   ],{stdio:['ignore','pipe','pipe']});
   const chunks=[],errors=[];
   command.stdout.on('data',chunk=>chunks.push(chunk));
   command.stderr.on('data',chunk=>errors.push(chunk));
-  const timeout=setTimeout(()=>command.kill('SIGKILL'),75000);
+  const timeout=setTimeout(()=>command.kill('SIGKILL'),110000);
   try {
     const [code]=await once(command,'close');
     if(code!==0)throw Error('Chromium exit='+code+' '+Buffer.concat(errors).toString().slice(-1000));
