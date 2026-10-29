@@ -395,6 +395,10 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     // validated result, never a replacement scene or actor position.
     navActor.x=restored.x;navActor.y=restored.y;navActor.moving=false;
     navVisualLevel=navHeight();
+    // Return uses the same Navigation camera slider as before the fight.
+    // The fullscreen resize handler above enforces it again after overlay removal.
+    zoom=navigationCameraZoom();
+    $('zoom').value=String(Math.round(zoom*100));
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     status('Combat terminé : '+restored.outcome+' · exploration reprise');
     return true;
@@ -3251,7 +3255,14 @@ $('import').addEventListener('click',()=>{
  catch(e){status(e.message);}
 });
 $('json-toggle').addEventListener('click',()=>{$('json').hidden=!$('json').hidden;});
-window.addEventListener('resize',fit);
+// Fullscreen and iframe teardown resize the parent viewport. Editor fit()
+// MUST NOT replace a player's configured 100–240% in-game camera zoom.
+window.addEventListener('resize',()=>{
+  if(!navigationTesting){fit();return;}
+  zoom=navigationCameraZoom();
+  $('zoom').value=String(Math.round(zoom*100));
+  centerNavigationCamera();scheduleDraw();
+});
 function rampPreviewValidForProbe(){
   const from=rampStart??rampGesture?.origin;
   const to=rampEnd??(from&&hoverCell?rampPointFromCell(hoverCell):null);
