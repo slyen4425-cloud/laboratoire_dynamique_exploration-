@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: main
+          ref: work/lab-author-showcase-main-reconcile-2026-10-29
           path: combat-preview
       - name: Assemble isolated Exploration bridge over official Combat
         run: |
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: e55fea3b559c348be596d7c16250808a39c315a1
+          ref: global-assets
           path: capture-assets
       - uses: actions/setup-node@v4
         with:
