@@ -64,3 +64,48 @@ test('music resume only follows battle; no additional sound activation button',(
   assert.match(code,/if\(navigationTesting\)explorationSoundtrack\.resume\(\)/);
   assert.match(code,/window\.addEventListener\('pagehide',\(\)=>explorationSoundtrack\.dispose\(\)/);
 });
+
+test('Android media rejection remains observable and retries with the next trusted gesture',async()=>{
+  let player,playCount=0;
+  const errors=[];
+  class PolicyAudio {
+    constructor(){player=this;this.events=new Map();this.currentTime=0;}
+    addEventListener(name,callback){this.events.set(name,callback);}
+    removeEventListener(name){this.events.delete(name);}
+    play(){
+      playCount++;
+      if(playCount===1)return Promise.reject(Object.assign(new Error('gesture required'),{name:'NotAllowedError'}));
+      return Promise.resolve();
+    }
+    pause(){}
+    removeAttribute(){}
+  }
+  const session=createExplorationSoundtrackV1({
+    AudioCtor:PolicyAudio,assetUrl:file=>'https://example.org/'+file,onError:e=>errors.push(e.name)
+  });
+  assert.equal(session.start(),true);
+  await Promise.resolve();await Promise.resolve();
+  assert.equal(session.state,'blocked','a rejected play must not be reported as audible');
+  assert.equal(session.lastError,'NotAllowedError');
+  assert.deepEqual(errors,['NotAllowedError']);
+  const song=session.currentTrackId;
+  assert.equal(session.start(),true,'the next real gesture may re-attempt this exact song');
+  await Promise.resolve();await Promise.resolve();
+  assert.equal(session.state,'playing');
+  assert.equal(session.currentTrackId,song);
+  assert.equal(playCount,2);
+  session.dispose();
+  assert.equal(player.events.has('error'),false);
+});
+
+test('Tester starts audio before native confirmation and first-paint module URLs are versioned',()=>{
+  const code=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  const entry=code.slice(code.indexOf("document.getElementById('navigation-toggle')"));
+  // The real handler is wired through the project's canonical $ helper.
+  const handler=code.slice(code.indexOf(" $('navigation-toggle').addEventListener('click'"));
+  assert.ok(handler.indexOf('explorationSoundtrack.start()') < handler.indexOf('setNavigationTesting(!navigationTesting)'), 'music activation must precede consent dialog');
+  assert.match(code,/retryExplorationAudioFromGesture/);
+  assert.match(code,/document.addEventListener\('pointerdown',retryExplorationAudioFromGesture/);
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  assert.match(html,/exploration-mobile-real-play-r2/);
+});
