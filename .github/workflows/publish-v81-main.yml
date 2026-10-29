@@ -56,7 +56,7 @@ jobs:
             -o "$published"; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="15051ee636f31c9c069cf8ffc0bced2a2520a283"' "$published" >/dev/null; then
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="e3fc8d28bfb1bb7a0f7467616a2d4fb7280b63bb"' "$published" >/dev/null; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout CI-verified native Combat Encounter source
         uses: actions/checkout@v4
         with:
-          ref: 15051ee636f31c9c069cf8ffc0bced2a2520a283
+          ref: e3fc8d28bfb1bb7a0f7467616a2d4fb7280b63bb
           path: encounter-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
@@ -109,12 +109,13 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = 15051ee636f31c9c069cf8ffc0bced2a2520a283
+          test "$(git -C encounter-source rev-parse HEAD)" = e3fc8d28bfb1bb7a0f7467616a2d4fb7280b63bb
           printf 'Official Combat main tested at: %s\\n' "$(git -C combat-source rev-parse HEAD)"
           test -n "$(git -C capture-source rev-parse HEAD)"
           test -n "$(git -C combat-author rev-parse HEAD)"
           test -s combat-source/examples/dom-demo/exploration-author-provenance.v1.json
           test -s combat-source/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json
+          test -s combat-source/data/capture/showcase/encounter-bundle.v1.json
           test -s site/sculpt-lab-v80.html
           test -s encounter-source/sculpt-lab.html
           test -s encounter-source/world-assembler.html
@@ -232,6 +233,9 @@ jobs:
           test -s "$preview/combat-preview/examples/dom-demo/exploration-encounter.js"
           test -s "$preview/capture-assets/data/assets/catalog/global-visual-assets.v1.json"
           test -s "$preview/combat-preview/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json"
+          test -s "$preview/combat-preview/data/capture/showcase/encounter-bundle.v1.json"
+          test -s "$preview/src/encounters/combat-outcome-hold-v1.js"
+          test -s "$preview/src/encounters/capture-combat-warmup-v1.js"
           test -s "$preview/combat-preview/examples/dom-demo/exploration-author-provenance.v1.json"
           test -s site/sculpt-lab-v80.html
           # Sentinel: serving preview must not change the V80 release document.
@@ -360,12 +364,22 @@ jobs:
           jq -e --arg main "${{ needs.verify-and-assemble.outputs.combat_main }}" \
             --arg author "${{ needs.verify-and-assemble.outputs.author_showcase }}" \
             --arg assets "${{ needs.verify-and-assemble.outputs.visual_assets }}" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="15051ee636f31c9c069cf8ffc0bced2a2520a283"' \
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="e3fc8d28bfb1bb7a0f7467616a2d4fb7280b63bb"' \
             /tmp/published-provenance.json >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/crea_nat_1.capture-creature-transfer-v1.json?build=$GITHUB_SHA" -o /tmp/published-grainou.json
           jq -e '.draft.id=="crea_nat_1" and ((.loadout.slots|map(.skillId)|index("Spore_soporifique"))!=null)' /tmp/published-grainou.json >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json?build=$GITHUB_SHA" -o /tmp/published-spore.json
           jq -e '.draft.id=="Spore_soporifique"' /tmp/published-spore.json >/dev/null
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/encounter-bundle.v1.json?build=$GITHUB_SHA" -o /tmp/published-author-bundle.json
+          jq -e '.schema=="capture-author-encounter-bundle-v1" and .version==1 and
+            ([.creatureTransfers[].draft.id]|index("crea_mossback")!=null) and
+            ([.skillTransfers[].draft.id]|index("lib_earth_guard")!=null)' /tmp/published-author-bundle.json >/dev/null
+          curl -fsSL "$probe/src/encounters/combat-outcome-hold-v1.js?build=$GITHUB_SHA" -o /tmp/published-outcome-hold.js
+          grep -Fq 'CAPTURE_COMBAT_OUTCOME_HOLD_MS_V1 = 3000' /tmp/published-outcome-hold.js
+          curl -fsSL "$probe/src/encounters/capture-combat-warmup-v1.js?build=$GITHUB_SHA" -o /tmp/published-combat-warmup.js
+          grep -Fq 'encounter-bundle.v1.json' /tmp/published-combat-warmup.js
+          curl -fsSL "$probe/src/sculpt-lab-main.js?zoom-check=$GITHUB_SHA" -o /tmp/published-camera.js
+          grep -Fq "zoom=navigationCameraZoom()" /tmp/published-camera.js
           curl -fsSL "$probe/capture-assets/data/assets/catalog/global-visual-assets.v1.json?build=$GITHUB_SHA" -o /tmp/published-capture.json
           test -s /tmp/published-capture.json
           # New feature is served from the pinned GREEN SHA, not the older live preview.
@@ -396,4 +410,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -X POST --data-binary @/tmp/pages-preview-status.json \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/15051ee636f31c9c069cf8ffc0bced2a2520a283" >/dev/null
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/e3fc8d28bfb1bb7a0f7467616a2d4fb7280b63bb" >/dev/null
