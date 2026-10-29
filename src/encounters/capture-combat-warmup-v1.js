@@ -19,8 +19,9 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
   function idsFor(creatureId,view) {
     const visual=creatures.get(creatureId)?.draft?.presentation?.visual;
     return [
-      visual?.[view]?.assetId,visual?.icon?.assetId,
+      visual?.[view]?.assetId,
       ...(firstPaintOnly?[]:[
+        visual?.icon?.assetId,
         visual?.[view==='back'?'movementBack':'movement']?.assetId,
         visual?.[view==='back'?'rangedAttackBack':'rangedAttack']?.assetId
       ])
@@ -28,7 +29,10 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
   }
   const selected=[party?.activeCreatureId,opponentId].map(id=>creatures.get(id)).filter(Boolean);
   const skillById=new Map((bundle.skillTransfers??[]).map(transfer=>[transfer.draft?.id,transfer]));
-  const equippedIcons=selected.flatMap(transfer=>(transfer.loadout?.slots??[])
+  // Only the two standing models gate the first paint. Decode icons and
+  // animation strips speculatively during the encounter dialog: large strips
+  // must not block the entire battle on mobile or in Chromium.
+  const equippedIcons=firstPaintOnly?[]:selected.flatMap(transfer=>(transfer.loadout?.slots??[])
     .map(slot=>skillById.get(slot.skillId)?.draft?.presentation?.visual?.icon?.assetId)
     .filter(Boolean));
   const ids=[
