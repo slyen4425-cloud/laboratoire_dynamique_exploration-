@@ -55,7 +55,7 @@ import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,rem
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
 
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
-import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from './capture/capture-creature-catalog-preview-v1.js';
+import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
@@ -162,7 +162,7 @@ const sculptEncounterController=sculptEncounterDialog?createEncounterController(
   checkDistance:sculptEncounterTest?80:160
 }):null;
 const sculptEncounterCatalog=sculptEncounterController
-  ?createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1):null;
+  ?createCaptureCreatureCatalogProvider(await loadCaptureShowcaseEncounterSourceV1()):null;
 const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
 let sculptPendingEncounter=null;
 let sculptEncounterSetupOffered=false;
