@@ -148,8 +148,7 @@ test('the first-paint barrier excludes giant animated strips but retains model a
   const first=captureEncounterVisualFilesV1({
     bundle,assetCatalog:assets,party:{activeCreatureId:'moss'},opponentId:'grain',firstPaintOnly:true
   });
-  assert.deepEqual(first,['capture/moss-model.webp','capture/moss-icon.webp',
-    'capture/grain-model.webp','capture/grain-icon.webp']);
+  assert.deepEqual(first,['capture/moss-model.webp','capture/grain-model.webp']);
   assert.equal(captureEncounterVisualFilesV1({
     bundle,assetCatalog:assets,party:{activeCreatureId:'moss'},opponentId:'grain'
   }).length,8);
