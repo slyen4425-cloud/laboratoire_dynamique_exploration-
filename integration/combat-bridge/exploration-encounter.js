@@ -70,7 +70,15 @@ function startSoundtrackOnGesture() {
       project:SOUNDTRACK_STARTER_CAPTURE_PROJECT_V1,
       catalog:SOUNDTRACK_STARTER_CATALOG_V1,
       resolveAudioAsset:resolveOfficialAudioAsset,
-      onAudioError:error=>console.warn('Musique Combat non disponible',error)
+      onAudioError:error=>{
+        console.warn('Musique Combat non disponible',error);
+        // Autoplay may fail in a newly loaded iframe. Retry only on the
+        // next actual gameplay gesture, never with a timer or fake click.
+        if(error?.name==='NotAllowedError'){
+          soundtrack?.dispose();
+          soundtrack=null;
+        }
+      }
     });
     const result=bridge.transitionTo('capture:combat:normal');
     if(result.status!=='playing') {
@@ -256,7 +264,10 @@ async function launch() {
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
   observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
-  message('Combat réel · textures prêtes, toucher une commande pour la musique');
+  message('Combat réel · textures et capacités prêtes');
+  // Chrome/PWA may allow play after the parent "Tester" gesture. Try once,
+  // and fall back to the first battle gesture if autoplay is rejected.
+  startSoundtrackOnGesture();
 }
 function dispose() {
   document.removeEventListener('pointerdown',startMusicWhenTouched,{capture:true});
