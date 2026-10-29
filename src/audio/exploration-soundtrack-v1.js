@@ -23,7 +23,7 @@ export function createExplorationSoundtrackV1({
   audio.volume=volume;
   audio.preload='metadata';
   audio.loop=false;
-  let state='stopped',current=-1,bag=[],disposed=false,sequence=0;
+  let state='stopped',current=-1,bag=[],disposed=false,sequence=0,lastError=null;
   function draw() {
     if(!bag.length) {
       bag=tracks.map((_,i)=>i);
@@ -36,46 +36,56 @@ export function createExplorationSoundtrackV1({
     }
     return bag.shift();
   }
+  function failed(error,version) {
+    if(disposed||sequence!==version||state!=='starting')return;
+    lastError=error?.name??'MediaError';
+    state=lastError==='NotAllowedError'?'blocked':'error';
+    onError(error);
+  }
   function play() {
     const version=++sequence;
-    state='playing';
+    state='starting';lastError=null;
     try {
-      const promise=audio.play();
-      Promise.resolve(promise).catch(error=>{
-        if(disposed||sequence!==version||state!=='playing')return;
-        state='blocked';
-        onError(error);
-      });
-    }catch(error){
-      if(sequence===version){state='blocked';onError(error);}
-    }
+      // A fulfilled play() Promise, not an attempted call, proves playback.
+      // Android can reject this after a legacy encounter confirmation dialog.
+      Promise.resolve(audio.play()).then(()=>{
+        if(!disposed&&sequence===version&&state==='starting')state='playing';
+      },error=>failed(error,version));
+    }catch(error){failed(error,version);}
   }
   function next() {
     current=draw();
     audio.src=assetUrl(tracks[current].file);
-    audio.load?.();
+    // Assigning src and play() is sufficient; load() would restart the
+    // resource and can interrupt a pending mobile media play request.
     play();
   }
   function ended() {
-    if(!disposed&&state==='playing')next();
+    if(!disposed&&(state==='playing'||state==='starting'))next();
+  }
+  function mediaError() {
+    const error=new Error('Exploration MP3 non decodable ou indisponible : '+audio.src);
+    error.name='MediaError';
+    failed(error,sequence);
   }
   audio.addEventListener('ended',ended);
+  audio.addEventListener('error',mediaError);
   return Object.freeze({
     start() {
-      if(disposed||state==='playing')return false;
+      if(disposed||state==='playing'||state==='starting')return false;
       if(current<0) next();
       else play();
       return true;
     },
     pause() {
-      if(disposed||state==='stopped'||state==='paused')return false;
+      if(disposed||state==='stopped'||state==='paused'||state==='blocked'||state==='error')return false;
       ++sequence;
       audio.pause();
       state='paused';
       return true;
     },
     resume() {
-      if(disposed||state==='playing'||state==='stopped')return false;
+      if(disposed||state==='playing'||state==='starting'||state==='stopped')return false;
       play();
       return true;
     },
@@ -87,6 +97,7 @@ export function createExplorationSoundtrackV1({
       state='stopped';
       current=-1;
       bag=[];
+      lastError=null;
       return true;
     },
     dispose() {
@@ -94,6 +105,7 @@ export function createExplorationSoundtrackV1({
       ++sequence;
       audio.pause();
       audio.removeEventListener('ended',ended);
+      audio.removeEventListener('error',mediaError);
       audio.removeAttribute?.('src');
       audio.load?.();
       current=-1;
@@ -101,6 +113,9 @@ export function createExplorationSoundtrackV1({
       disposed=true;
     },
     get state(){return state;},
+    get lastError(){return lastError;},
+    get mediaReadyState(){return audio.readyState??null;},
+    get mediaCurrentTime(){return audio.currentTime??null;},
     get currentTrackId(){return current<0?null:tracks[current].id;}
   });
 }
