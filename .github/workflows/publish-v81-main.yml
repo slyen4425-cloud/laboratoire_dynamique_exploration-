@@ -368,8 +368,8 @@ jobs:
           curl -fsSL "$probe/combat-preview/examples/dom-demo/exploration-encounter.html?build=$GITHUB_SHA" -o /tmp/published-combat.html
           test -s /tmp/published-combat.html
           ! grep -Fq 'data-encounter-audio' /tmp/published-combat.html
-          grep -Fq 'startSoundtrackOnGesture' /tmp/published-combat-bridge.js
           curl -fsSL "$probe/combat-preview/examples/dom-demo/exploration-encounter.js?build=$GITHUB_SHA" -o /tmp/published-combat-bridge.js
+          grep -Fq 'startSoundtrackOnGesture' /tmp/published-combat-bridge.js
           grep -Fq 'privateAudioRuntimeAssetV1' /tmp/published-combat-bridge.js
           grep -Fq 'createCombatSoundtrackPreviewBridgeV1' /tmp/published-combat-bridge.js
           curl -fsSL -I "$probe/combat-preview/assets/runtime/audio/music-v1/battle-01-cb4ed87d.mp3?build=$GITHUB_SHA" >/dev/null
