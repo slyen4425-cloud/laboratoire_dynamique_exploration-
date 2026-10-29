@@ -249,14 +249,20 @@ async function launch() {
   if(imageFiles.length){
     message('Chargement des textures du combat (0 / '+imageFiles.length+')…');
     let ready=0;
-    await Promise.all(imageFiles.map(async file=>{
+    await Promise.all(imageFiles.map(file=>new Promise((resolve,reject)=>{
+      // onload is the native readiness signal for the rendered <img>.
+      // Image.decode() may stall on some animated WebP/browser combinations;
+      // the parent already schedules speculative decoding separately.
       const img=new Image();
       img.decoding='async';
+      img.onload=()=>{
+        ready++;
+        message('Chargement des textures du combat ('+ready+' / '+imageFiles.length+')…');
+        resolve();
+      };
+      img.onerror=()=>reject(new Error('Image officielle indisponible : '+file));
       img.src=assetUrlForFile(file);
-      await img.decode();
-      ready++;
-      message('Chargement des textures du combat ('+ready+' / '+imageFiles.length+')…');
-    }));
+    })));
   }
   const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse);
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
