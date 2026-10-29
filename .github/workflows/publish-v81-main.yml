@@ -4,11 +4,16 @@
 # deployment from removing the isolated Encounter preview path.
 name: Publish pinned V80 + isolated Encounter preview
 on:
-  push:
-    branches:
-      - release/exploration-preset-playable-travel-encounters-preview-2026-10-29
+  pull_request:
+    branches: [main]
     paths:
       - '.github/workflows/publish-v81-main.yml'
+      - '.github/workflows/pages-preview.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v81-main.yml'
+      - '.github/workflows/pages-preview.yml'
   workflow_dispatch:
 permissions:
   contents: read
