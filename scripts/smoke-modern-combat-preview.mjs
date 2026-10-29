@@ -57,11 +57,11 @@ const server = createServer(async(req,res)=>{
                   ? 'OK' : 'button-not-visible';
             }
             const audioButton = document.querySelector('[data-encounter-audio]');
-            if (audioButton && !document.documentElement.dataset.encounterAudioProof) {
+            if (audioButton && !document.documentElement.dataset.encounterAudioProof &&
+                getComputedStyle(audioButton).display !== 'none') {
               document.documentElement.dataset.encounterAudioProof =
-                getComputedStyle(audioButton).display !== 'none' &&
                 audioButton.textContent.includes('Activer le son')
-                  ? 'OK' : 'audio-button-not-available';
+                  ? 'OK' : 'audio-button-label-invalid';
             }
             const skills = [...document.querySelectorAll('[data-combat-skill]')];
             const ready = skills.find(button => !button.disabled);
