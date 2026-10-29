@@ -502,18 +502,14 @@ try{
     throw Error('V19 default comfortable movement/viewport missing: '+JSON.stringify(navStart.before));
   // This is the real 2.5D page: Tester must select an authorized Explorer
   // media file in Chromium, not an invented audio activation button.
-  // An HTMLMediaElement.play() Promise is initially pending while the MP3
-  // loads. "starting" is not proof of audio, nor a failure. Wait for the
-  // browser's settled state instead of reading synchronously after click().
-  let explorationMusic;
-  for(let attempt=0;attempt<48;attempt++){
-    explorationMusic=await run('window.__sculptExplorationSoundProbe()');
-    if(['playing','blocked','error'].includes(explorationMusic.state))break;
-    await sleep(125);
-  }
+  // This legacy full-scene smoke invokes button.click() from JS. Synthetic
+  // clicks are NOT trusted user activation, so Chromium can hold play() in
+  // "starting". Assert playlist wiring only here. The separate native-CDP
+  // gate dispatches a real pointer click and checks currentTime advancement.
+  const explorationMusic=await run('window.__sculptExplorationSoundProbe()');
   if(!/^exploration-[1-4]$/.test(explorationMusic.track)||
-     !['playing','blocked'].includes(explorationMusic.state))
-    throw Error('Tester did not settle an approved music track: '+JSON.stringify(explorationMusic));
+     !['starting','playing','blocked'].includes(explorationMusic.state))
+    throw Error('Tester did not select an approved music track: '+JSON.stringify(explorationMusic));
   const musicMedia=await run(`(async()=>{
     const response=await fetch(new URL('./assets/runtime/audio/exploration-v1/exploration-01.mp3',location.href));
     return {ok:response.ok,contentType:response.headers.get('content-type'),length:(await response.arrayBuffer()).byteLength};
