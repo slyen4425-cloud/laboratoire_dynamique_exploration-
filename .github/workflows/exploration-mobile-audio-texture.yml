@@ -1,0 +1,56 @@
+name: Mobile Combat Audio + Decoded Art Gate
+on:
+  push:
+    branches:
+      - work/exploration-mobile-audio-texture-2026-10-29
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-mobile-combat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated Exploration working branch
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Exploration source tests and syntax
+        run: |
+          npm test
+          npm run check
+          node --check integration/combat-bridge/exploration-encounter.js
+          node --check src/encounters/capture-combat-warmup-v1.js
+      - name: Checkout official Combat engine main
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: main
+          path: combat-source
+      - name: Checkout published author-managed Capture definitions
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: gh-pages
+          path: combat-author
+      - name: Checkout official Capture visual library
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: global-assets
+          path: capture-assets
+      - name: Assemble exact authoritative Combat route
+        run: |
+          node scripts/stage-capture-author-showcase.mjs combat-author combat-source
+          mkdir -p combat-source/examples/dom-demo
+          cp integration/combat-bridge/exploration-encounter.html combat-source/examples/dom-demo/exploration-encounter.html
+          cp integration/combat-bridge/exploration-encounter.js combat-source/examples/dom-demo/exploration-encounter.js
+          cp integration/combat-bridge/exploration-native-source-v1.js combat-source/examples/dom-demo/exploration-native-source-v1.js
+          cp integration/combat-bridge/party.preview.v1.json combat-source/examples/dom-demo/party.preview.v1.json
+          mv combat-source combat-preview
+      - name: Test official adapted Combat session and real Chromium HUD
+        run: |
+          node scripts/audit-combat-preview.mjs combat-preview
+          node scripts/combat-native-bridge-smoke.mjs
+          node scripts/smoke-modern-combat-preview.mjs
