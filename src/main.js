@@ -88,8 +88,8 @@ import {
   createCaptureCreatureCatalogProvider
 } from './capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
 import {
-  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
-} from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
+  loadCaptureShowcaseEncounterSourceV1
+} from './capture/capture-showcase-encounter-source-v1.js';
 import {
   createEncounterController
 } from './encounters/encounter-controller.js?rev=encounter-selected-elements-v1';
@@ -251,7 +251,7 @@ const traversalRegistry = createWorldTraversalRuleRegistry(
 
 const captureCreatureCatalog =
   createCaptureCreatureCatalogProvider(
-    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+    await loadCaptureShowcaseEncounterSourceV1()
   );
 
 const captureActorDefinitionProvider =
