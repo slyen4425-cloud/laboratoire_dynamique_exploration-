@@ -19,13 +19,13 @@ import { buildExplorationNativeCombatSourceV1 } from './exploration-native-sourc
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
 import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
+import {captureEncounterVisualFilesV1} from '../../../src/encounters/capture-combat-warmup-v1.js';
 
 const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');
 const status = $('[data-bridge-status]');
 let mountedVisuals = null, mountedCombat = null, watchId = null, completed = false;
 let soundtrack = null;
-const audioButton = $('[data-encounter-audio]');
 const fullButton = $('[data-encounter-fullscreen]');
 const displayMode = createCapturePreviewDisplayModeV1({
   documentRef: document, screenRef: globalThis.screen,
@@ -60,11 +60,11 @@ function resolveOfficialAudioAsset(assetId) {
     soundtrackRuntimeAssetV1(assetId) ??
     demoPresentationAssets.audioAsset(assetId);
 }
-// Mobile browsers cannot autoplay from an asynchronously mounted iframe.
-// The button runs the existing soundtrack bridge directly in its own trusted
-// user click; subsequent skill SFX keep the official DomCombatAudio owner.
-audioButton.addEventListener('click', () => {
-  if (soundtrack) return;
+// The first real battle touch/keyboard action authorizes music on Android.
+// No second "Activer le son" button: the official Combat SoundtrackSession
+// owns music, while DomCombatAudio continues to own each SFX.
+function startSoundtrackOnGesture() {
+  if(soundtrack)return;
   try {
     const bridge=createCombatSoundtrackPreviewBridgeV1({
       project:SOUNDTRACK_STARTER_CAPTURE_PROJECT_V1,
@@ -75,16 +75,18 @@ audioButton.addEventListener('click', () => {
     const result=bridge.transitionTo('capture:combat:normal');
     if(result.status!=='playing') {
       bridge.dispose();
-      audioButton.textContent='Son indisponible · réessayer';
       return;
     }
     soundtrack=bridge;
-    audioButton.hidden=true;
-  } catch(error) {
-    console.warn('Activation audio Combat impossible',error);
-    audioButton.textContent='Son indisponible · réessayer';
-  }
-});
+  }catch(error){console.warn('Lecture musique impossible',error);}
+}
+function startMusicWhenTouched(event){
+  if(event.isTrusted===false)return;
+  startSoundtrackOnGesture();
+}
+document.addEventListener('pointerdown',startMusicWhenTouched,{capture:true});
+document.addEventListener('keydown',startMusicWhenTouched,{capture:true});
+
 // The same canonical transfer manifests and asset resolver as Combat Editor.
 const assetCatalogUrl = new URL('../../../capture-assets/data/assets/catalog/global-visual-assets.v1.json',import.meta.url);
 const assetBase = new URL('../../../capture-assets/assets/library/',import.meta.url);
@@ -228,6 +230,25 @@ async function launch() {
   const nativeVisualSource=adaptCaptureExportToNativeVisualSourceV1({
     exported:nativeCombatSource.exported,assetCatalog,profiles,assetUrlForFile
   });
+  // Real decoded image readiness, not an arbitrary delay or a fake sprite.
+  // No battle HUD appears while its own creatures and equipped ability icons
+  // are still downloading/decoding. Uses the exact authored catalog and IDs.
+  const imageFiles=captureEncounterVisualFilesV1({
+    bundle:authorBundle,assetCatalog,party,
+    opponentId:handoff.snapshot.opponents[0].creatureId
+  });
+  if(imageFiles.length){
+    message('Chargement des textures du combat (0 / '+imageFiles.length+')…');
+    let ready=0;
+    await Promise.all(imageFiles.map(async file=>{
+      const img=new Image();
+      img.decoding='async';
+      img.src=assetUrlForFile(file);
+      await img.decode();
+      ready++;
+      message('Chargement des textures du combat ('+ready+' / '+imageFiles.length+')…');
+    }));
+  }
   const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse);
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
@@ -235,10 +256,11 @@ async function launch() {
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
   observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
-  audioButton.hidden=false;
-  message('Combat réel · créatures, capacités et animations Showcase officielles');
+  message('Combat réel · textures prêtes, toucher une commande pour la musique');
 }
 function dispose() {
+  document.removeEventListener('pointerdown',startMusicWhenTouched,{capture:true});
+  document.removeEventListener('keydown',startMusicWhenTouched,{capture:true});
   soundtrack?.dispose(); soundtrack=null;
   outcomeHold.dispose();
   if (watchId !== null) { cancelAnimationFrame(watchId); watchId = null; }
