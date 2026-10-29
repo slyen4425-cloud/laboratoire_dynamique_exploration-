@@ -500,6 +500,19 @@ try{
     throw Error('V17 navigation activation failed: '+JSON.stringify(navStart));
   if(navStart.before.speed!==220||navStart.before.zoom<1.7)
     throw Error('V19 default comfortable movement/viewport missing: '+JSON.stringify(navStart.before));
+  // This is the real 2.5D page: Tester must select an authorized Explorer
+  // media file in Chromium, not an invented audio activation button.
+  const explorationMusic=await run('window.__sculptExplorationSoundProbe()');
+  if(!/^exploration-[1-4]$/.test(explorationMusic.track)||
+     !['playing','blocked'].includes(explorationMusic.state))
+    throw Error('Tester did not start its own four-track music: '+JSON.stringify(explorationMusic));
+  const musicMedia=await run(`(async()=>{
+    const response=await fetch(new URL('./assets/runtime/audio/exploration-v1/exploration-01.mp3',location.href));
+    return {ok:response.ok,contentType:response.headers.get('content-type'),length:(await response.arrayBuffer()).byteLength};
+  })()`);
+  if(!musicMedia.ok||musicMedia.length!==2601992)
+    throw Error('A real Exploration MP3 must be served to the browser: '+JSON.stringify(musicMedia));
+  console.log('Exploration music wired to Tester with HTTP MP3:',JSON.stringify({explorationMusic,musicMedia}));
   const camera=await run(`(()=>{
     const slider=document.querySelector('#navigation-camera-zoom');
     slider.value='215';slider.dispatchEvent(new Event('input',{bubbles:true}));
