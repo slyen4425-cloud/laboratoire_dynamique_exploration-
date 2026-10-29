@@ -56,7 +56,7 @@ jobs:
             -o "$published"; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
           elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="d2ac89cceabe6637b6ceb53249f1e2173be1cb13"' "$published" >/dev/null; then
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="3a0a6ec4bad257f28577d54cd3e23e557e05d9b4"' "$published" >/dev/null; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -79,7 +79,7 @@ jobs:
       - name: Checkout CI-verified native Combat Encounter source
         uses: actions/checkout@v4
         with:
-          ref: d2ac89cceabe6637b6ceb53249f1e2173be1cb13
+          ref: 3a0a6ec4bad257f28577d54cd3e23e557e05d9b4
           path: encounter-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
@@ -117,7 +117,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = d2ac89cceabe6637b6ceb53249f1e2173be1cb13
+          test "$(git -C encounter-source rev-parse HEAD)" = 3a0a6ec4bad257f28577d54cd3e23e557e05d9b4
           printf 'Official Combat main tested at: %s\\n' "$(git -C combat-source rev-parse HEAD)"
           test -n "$(git -C capture-source rev-parse HEAD)"
           test -n "$(git -C combat-author rev-parse HEAD)"
@@ -407,7 +407,7 @@ jobs:
           jq -e --arg main "${{ needs.verify-and-assemble.outputs.combat_main }}" \
             --arg author "${{ needs.verify-and-assemble.outputs.author_showcase }}" \
             --arg assets "${{ needs.verify-and-assemble.outputs.visual_assets }}" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="d2ac89cceabe6637b6ceb53249f1e2173be1cb13"' \
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="3a0a6ec4bad257f28577d54cd3e23e557e05d9b4"' \
             /tmp/published-provenance.json >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/crea_nat_1.capture-creature-transfer-v1.json?build=$GITHUB_SHA" -o /tmp/published-grainou.json
           jq -e '.draft.id=="crea_nat_1" and ((.loadout.slots|map(.skillId)|index("Spore_soporifique"))!=null)' /tmp/published-grainou.json >/dev/null
@@ -454,4 +454,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -X POST --data-binary @/tmp/pages-preview-status.json \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/d2ac89cceabe6637b6ceb53249f1e2173be1cb13" >/dev/null
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/3a0a6ec4bad257f28577d54cd3e23e557e05d9b4" >/dev/null
