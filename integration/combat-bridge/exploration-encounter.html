@@ -10,6 +10,8 @@
     body { margin:0; background:#071016; }
     .encounter-fullscreen {position:fixed;z-index:160;top:max(.5rem, env(safe-area-inset-top));left:max(.5rem, env(safe-area-inset-left));padding:.45rem .7rem;border-radius:.6rem;background:#133340;color:white;border:1px solid #aee6f1;font:600 12px system-ui}
     .encounter-fullscreen[hidden]{display:none}
+    .encounter-audio{position:fixed;z-index:165;right:max(.5rem,env(safe-area-inset-right));top:max(.5rem,env(safe-area-inset-top));padding:.55rem .75rem;border-radius:.6rem;background:#14524b;color:#fff;border:1px solid #b9eeda;font:600 13px system-ui;touch-action:manipulation}
+    .encounter-audio[hidden]{display:none}
     .bridge-status {position:fixed;z-index:150;top:env(safe-area-inset-top);left:50%;
       transform:translateX(-50%);max-width:90vw;padding:.45rem .8rem;
       background:#09202b;color:white;border-radius:.5rem;font:600 13px system-ui;text-align:center}
@@ -29,6 +31,7 @@
     </div>
     <div class="capture-preview-host" data-capture-preview-host></div>
     <button type="button" class="encounter-fullscreen" data-encounter-fullscreen>⛶ Plein écran</button>
+    <button type="button" class="encounter-audio" data-encounter-audio hidden>♪ Activer le son</button>
     <p class="bridge-status" data-bridge-status role="status">Chargement du moteur Combat officiel…</p>
   </section>
   <script type="module" src="./exploration-encounter.js"></script>
