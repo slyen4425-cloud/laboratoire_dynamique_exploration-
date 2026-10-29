@@ -1,7 +1,8 @@
 // Exploration owns only the Encounter and return address. Every attack,
 // resource, effect, AI decision and fighter state belongs to current Combat main.
 import { mountCombatDemo } from '../../src/ui/demo-app.js';
-import { mountCoop2v2Test } from '../../src/ui/combat-2v2-test-ui.js';\nimport { createCapturePreviewDisplayModeV1 } from '../../src/ui/capture-preview-display-mode-v1.js';
+import { mountCoop2v2Test } from '../../src/ui/combat-2v2-test-ui.js';
+import { createCapturePreviewDisplayModeV1 } from '../../src/ui/capture-preview-display-mode-v1.js';
 import { captureCreatureVisualBindingForIdV1 } from '../../src/catalogs/capture-creature-visual-bindings-v1.js';
 import { globalVisualAssetUrl } from '../../src/assets/global-visual-library.js';
 import { demoPresentationAssets } from './demo-assets.js';
@@ -12,7 +13,22 @@ import { createCaptureCombatResult } from '../../../src/encounters/capture-comba
 const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');
 const status = $('[data-bridge-status]');
-let mountedVisuals = null, mountedCombat = null, watchId = null, completed = false;\nconst fullButton = $('[data-encounter-fullscreen]');\nconst displayMode = createCapturePreviewDisplayModeV1({\n  documentRef: document, screenRef: globalThis.screen,\n  fullscreenHost: document.documentElement, previewShell: $('[data-capture-preview-shell]')\n});\nfunction syncFullscreenButton() {\n  let embedded = false;\n  try {embedded = window.parent !== window && window.parent.location.origin === window.location.origin;} catch {}\n  fullButton.hidden = embedded || Boolean(document.fullscreenElement);\n}\nfullButton.addEventListener('click', async () => {\n  fullButton.disabled = true;\n  try {await displayMode.enter({enabled:true});} catch(error) {message('Plein écran indisponible : ' + error.message,true);}\n  finally {fullButton.disabled = false; syncFullscreenButton();}\n});\ndocument.addEventListener('fullscreenchange',syncFullscreenButton);\nsyncFullscreenButton();
+let mountedVisuals = null, mountedCombat = null, watchId = null, completed = false;
+const fullButton = $('[data-encounter-fullscreen]');
+const displayMode = createCapturePreviewDisplayModeV1({
+  documentRef: document, screenRef: globalThis.screen,
+  fullscreenHost: document.documentElement, previewShell: $('[data-capture-preview-shell]')
+});
+function syncFullscreenButton() {
+  fullButton.hidden = window.self !== window.top || Boolean(document.fullscreenElement);
+}
+fullButton.addEventListener('click', async () => {
+  fullButton.disabled = true;
+  try {await displayMode.enter({enabled:true});} catch(error) {message('Plein écran indisponible : ' + error.message,true);}
+  finally {fullButton.disabled = false; syncFullscreenButton();}
+});
+document.addEventListener('fullscreenchange',syncFullscreenButton);
+syncFullscreenButton();
 const rootPath = new URL('../../', import.meta.url);
 const resource = path => new URL(path, rootPath);
 async function readJson(url) {
