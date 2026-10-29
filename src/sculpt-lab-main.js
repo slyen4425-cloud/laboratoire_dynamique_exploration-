@@ -66,6 +66,7 @@ import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
+import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
@@ -157,6 +158,14 @@ const sculptEncounterDialog=$('sculpt-encounter-preview');
 // The frozen V80 page intentionally exposes no encounter UI; the editor's
 // new 2.5D Tester reuses exactly the same runtime Encounter Controller class,
 // catalog and bridge as the 2D Exploration game.
+const sculptCombatWarmup=createCaptureCombatWarmupV1({
+  documentUrl:document.URL,
+  fetchImpl:(url,opts)=>window.fetch(url,opts),
+  schedule:callback=>typeof window.requestIdleCallback==='function'
+    ?window.requestIdleCallback(callback,{timeout:3000})
+    :window.setTimeout(callback,300),
+  saveData:window.navigator?.connection?.saveData===true
+});
 const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
   checkDistance:sculptEncounterTest?80:160
@@ -1827,6 +1836,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    if(sculptEncounterController)sculptCombatWarmup.start();
     if(sculptWorldDraft)$('world-area-portal-panel').open=false;
     navViewport={zoom,pan:{...pan}};
     navKeys.clear();navBlocked=false;navBlockReason=null;navLastState='';
