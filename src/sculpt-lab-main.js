@@ -1600,10 +1600,11 @@ function navHeight(){
 function centerNavigationCamera(){
   if(!navigationTesting||!navActor)return;
   const {width,height}=dimensions();
-  if(activeInteriorId){
-    // Runtime view follows the player itself rather than keeping the entire
-    // clipped L/T/cross room inside the camera. Empty sky around the room is
-    // preferable to losing the actor at high zoom or shallow pitch.
+  if(activeInteriorId || sculptWorldAreaMounted){
+    // Runtime follows the actor on every canonical WorldArea, including
+    // immediately after a Portal transition. Bounds are for editor framing,
+    // not an alternate camera authority that can displace the hero.
+    // Empty backdrop is preferable to losing the actor at shallow pitch.
     const follow=sculptCameraFollowActor(cameraView(),{
       x:navActor.x,y:navActor.y,level:navVisualLevel??navHeight(),
       rise:SCULPT_TILE.rise
