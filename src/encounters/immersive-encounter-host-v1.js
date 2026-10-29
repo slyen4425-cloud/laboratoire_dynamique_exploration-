@@ -103,7 +103,7 @@ export function createImmersiveEncounterHostV1({
       const frame = documentRef.createElement('iframe');
       frame.className = 'combat-overlay__frame';
       frame.title = 'Combat Monster Capture';
-      frame.setAttribute('allow', 'fullscreen');
+      frame.setAttribute('allow', 'fullscreen; autoplay');
       overlay.append(frame);
       documentRef.body.append(overlay);
       active = { overlay, frame, snapshot };

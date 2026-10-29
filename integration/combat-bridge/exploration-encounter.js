@@ -8,6 +8,13 @@ import { createGlobalPresentationAssetResolverV1 } from '../../src/assets/global
 import { createCaptureSkillPresentationAssetsV2 } from '../../src/adapters/renderer/capture-skill-presentation-assets-v2.js';
 import {normalizeCaptureAuthorEncounterBundleV1} from '../../../src/capture/capture-showcase-encounter-source-v1.js';
 import { demoPresentationAssets } from './demo-assets.js';
+import { privateAudioRuntimeAssetV1 } from '../../src/assets/private-audio-runtime-library-v1.js';
+import { soundtrackRuntimeAssetV1 } from '../../src/assets/soundtrack-runtime-library-v1.js';
+import {
+  SOUNDTRACK_STARTER_CATALOG_V1,
+  SOUNDTRACK_STARTER_CAPTURE_PROJECT_V1
+} from '../../src/assets/soundtrack-starter-catalog-v1.js';
+import { createCombatSoundtrackPreviewBridgeV1 } from '../../src/adapters/audio/combat-soundtrack-preview-bridge-v1.js';
 import { buildExplorationNativeCombatSourceV1 } from './exploration-native-source-v1.js';
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
@@ -17,6 +24,8 @@ const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');
 const status = $('[data-bridge-status]');
 let mountedVisuals = null, mountedCombat = null, watchId = null, completed = false;
+let soundtrack = null;
+const audioButton = $('[data-encounter-audio]');
 const fullButton = $('[data-encounter-fullscreen]');
 const displayMode = createCapturePreviewDisplayModeV1({
   documentRef: document, screenRef: globalThis.screen,
@@ -44,6 +53,38 @@ function message(text, error = false) {
   status.dataset.error = String(error);
   status.dataset.ready = String(!error && text.startsWith('Combat réel'));
 }
+// The exact resolver chain used by the official Capture editor. Encounter
+// never owns its own audio library or copies music into world documents.
+function resolveOfficialAudioAsset(assetId) {
+  return privateAudioRuntimeAssetV1(assetId) ??
+    soundtrackRuntimeAssetV1(assetId) ??
+    demoPresentationAssets.audioAsset(assetId);
+}
+// Mobile browsers cannot autoplay from an asynchronously mounted iframe.
+// The button runs the existing soundtrack bridge directly in its own trusted
+// user click; subsequent skill SFX keep the official DomCombatAudio owner.
+audioButton.addEventListener('click', () => {
+  if (soundtrack) return;
+  try {
+    const bridge=createCombatSoundtrackPreviewBridgeV1({
+      project:SOUNDTRACK_STARTER_CAPTURE_PROJECT_V1,
+      catalog:SOUNDTRACK_STARTER_CATALOG_V1,
+      resolveAudioAsset:resolveOfficialAudioAsset,
+      onAudioError:error=>console.warn('Musique Combat non disponible',error)
+    });
+    const result=bridge.transitionTo('capture:combat:normal');
+    if(result.status!=='playing') {
+      bridge.dispose();
+      audioButton.textContent='Son indisponible · réessayer';
+      return;
+    }
+    soundtrack=bridge;
+    audioButton.hidden=true;
+  } catch(error) {
+    console.warn('Activation audio Combat impossible',error);
+    audioButton.textContent='Son indisponible · réessayer';
+  }
+});
 // The same canonical transfer manifests and asset resolver as Combat Editor.
 const assetCatalogUrl = new URL('../../../capture-assets/data/assets/catalog/global-visual-assets.v1.json',import.meta.url);
 const assetBase = new URL('../../../capture-assets/assets/library/',import.meta.url);
@@ -55,7 +96,7 @@ function presentationAssetsForSource(source, assetCatalog) {
   const native=createCaptureSkillPresentationAssetsV2({
     skillPresentations:source.skillPresentations??{},
     assetForId:resolveAsset,
-    audioAssetForId: id=>demoPresentationAssets.audioAsset(id)
+    audioAssetForId: resolveOfficialAudioAsset
   });
   return Object.freeze({
     asset:resolveAsset,
@@ -65,7 +106,7 @@ function presentationAssetsForSource(source, assetCatalog) {
         demoPresentationAssets.presentationForSkill(id,context);
     },
     statusPresentationFor: (id,context={})=>native.statusPresentationFor(id,context),
-    audioAsset: id=>native.audioAsset(id)??demoPresentationAssets.audioAsset(id)
+    audioAsset: id=>native.audioAsset(id)??resolveOfficialAudioAsset(id)
   });
 }
 function showOfficialCombatTemplate(source, templateResponse) {
@@ -194,9 +235,11 @@ async function launch() {
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
   observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
+  audioButton.hidden=false;
   message('Combat réel · créatures, capacités et animations Showcase officielles');
 }
 function dispose() {
+  soundtrack?.dispose(); soundtrack=null;
   outcomeHold.dispose();
   if (watchId !== null) { cancelAnimationFrame(watchId); watchId = null; }
   mountedCombat?.dispose(); mountedCombat = null;
