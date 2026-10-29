@@ -67,6 +67,7 @@ import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigat
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
+import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
@@ -80,6 +81,11 @@ import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playa
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);
+const explorationSoundtrack=createExplorationSoundtrackV1();
+window.__sculptExplorationSoundProbe=()=>Object.freeze({
+  state:explorationSoundtrack.state,track:explorationSoundtrack.currentTrackId
+});
+window.addEventListener('pagehide',()=>explorationSoundtrack.dispose(),{once:true});
 const canvas=$('sculpt-canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const registry=createMaterialRegistry(materialPackV1);
 let terrain=sculptDemo(),selectedMode='dig',drawing=false,strokeUndo=null;
@@ -412,6 +418,9 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     zoom=navigationCameraZoom();
     $('zoom').value=String(Math.round(zoom*100));
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+    // Combat owns its audio until the validated iframe closes. Resume in
+    // a microtask after the host has destroyed the iframe, without overlap.
+    queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.resume();});
     status('Combat terminé : '+restored.outcome+' · exploration reprise');
     return true;
   }
@@ -419,6 +428,7 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
 if(sculptEncounterDialog){
   $('sculpt-encounter-combat').addEventListener('click',()=>{
     if(!sculptPendingEncounter||sculptEncounterHost.active)return;
+    explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
     const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
     try{
       launchCombatHandoffNavigation({
@@ -426,7 +436,10 @@ if(sculptEncounterDialog){
         storage:window.sessionStorage,documentUrl:document.URL,
         navigate(url){sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});}
       });
-    }catch(error){status('Combat indisponible : '+error.message);}
+    }catch(error){
+      explorationSoundtrack.resume();
+      status('Combat indisponible : '+error.message);
+    }
   });
   $('sculpt-encounter-continue').addEventListener('click',releaseSculptEncounter);
 }
@@ -1845,6 +1858,9 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    // The existing Tester tap is the trusted Android user gesture. The
+    // browser may not start audio on page load, so do not add an audio button.
+    explorationSoundtrack.start();
     if(sculptEncounterController)sculptCombatWarmup.start();
     if(sculptWorldDraft)$('world-area-portal-panel').open=false;
     navViewport={zoom,pan:{...pan}};
@@ -1880,6 +1896,7 @@ function setNavigationTesting(on){
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
     navigationTesting=false;
+    explorationSoundtrack.stop();
     cancelAnimationFrame(navFrame);navFrame=0;navPreviousTime=null;
     navStick?.dispose();navStick=null;navKeys.clear();
     document.body.classList.remove('navigation-testing');
