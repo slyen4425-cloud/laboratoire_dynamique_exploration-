@@ -100,9 +100,9 @@ test('Android media rejection remains observable and retries with the next trust
 
 test('Tester starts audio before native confirmation and first-paint module URLs are versioned',()=>{
   const code=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
-  const entry=code.slice(code.indexOf("document.getElementById('navigation-toggle')"));
+  
   // The real handler is wired through the project's canonical $ helper.
-  const handler=code.slice(code.indexOf(" $('navigation-toggle').addEventListener('click'"));
+  const handler=code.slice(code.indexOf("$('navigation-toggle').addEventListener('click'"));
   assert.ok(handler.indexOf('explorationSoundtrack.start()') < handler.indexOf('setNavigationTesting(!navigationTesting)'), 'music activation must precede consent dialog');
   assert.match(code,/retryExplorationAudioFromGesture/);
   assert.match(code,/document.addEventListener\('pointerdown',retryExplorationAudioFromGesture/);
