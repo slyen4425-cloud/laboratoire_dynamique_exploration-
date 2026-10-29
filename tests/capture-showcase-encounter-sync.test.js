@@ -44,7 +44,7 @@ test('one derived source bundle supplies authored creatures and skills with a si
   const projection=await loadCaptureShowcaseEncounterSourceV1({fetchImpl});
   assert.equal(projection.creatures.length,1);
   assert.equal(requests.length,1,'never fetch an N+1 list of creature skill transfers');
-  assert.match(requests[0],/combat-preview\\/data\\/capture\\/showcase\\/encounter-bundle.v1.json/);
+  assert.ok(requests[0].includes('/combat-preview/data/capture/showcase/encounter-bundle.v1.json'));
   const bundle=await loadCaptureAuthorEncounterBundleV1({fetchImpl});
   assert.equal(bundle.skillTransfers[0].draft.id,'Spore_soporifique');
   assert.equal(requests.length,2);
