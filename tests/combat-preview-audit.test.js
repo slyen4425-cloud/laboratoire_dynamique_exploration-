@@ -20,7 +20,7 @@ function fixture(t) {
   add('examples/dom-demo/exploration-encounter.js',
     'mountCoop2v2Test(); combat.session.snapshot(); saveCombatHandoff(); createCaptureCombatResult();');
   add('examples/dom-demo/exploration-native-source-v1.js',
-    'importMonsterCaptureCreatureRecordV1 adaptCaptureCreatureToFighterConfig adaptCaptureSkillToSkillDefinition');
+    'importCaptureTransferJsonV1 buildCaptureEditorCombatTestV1 adaptCaptureCombatExportStackV1');
   return {root, add};
 }
 
