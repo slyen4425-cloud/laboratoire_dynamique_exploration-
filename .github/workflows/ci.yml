@@ -54,7 +54,7 @@ jobs:
       - name: Verify runtime ownership and native adapter contracts
         run: |
           node scripts/audit-combat-preview.mjs combat-preview
-          node --test tests/combat-native-bridge-integration.test.js
+          node scripts/combat-native-bridge-smoke.mjs
       - name: Real Chromium Builder invalid-encounter navigation smoke
         run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Real Chromium interior floor material and brush smoke
