@@ -102,6 +102,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # Historical Combat main fixtures assert old author-export bytes exactly.
+      # Verify those unchanged on the original engine before overlaying the
+      # newer, separately validated Showcase. The real assembled Showcase is
+      # tested below by native Combat/Chromium ownership gates.
+      - name: Verify official pristine Combat main foundation
+        run: |
+          cd combat-source
+          npm run ci
       - name: Stage current author transfers and marker data over Combat main
         run: node encounter-source/scripts/stage-capture-author-showcase.mjs combat-author combat-source
       - name: Verify pinned Exploration GREEN and interoperable current Combat contracts
@@ -177,10 +185,6 @@ jobs:
           cp encounter-source/integration/combat-bridge/exploration-native-source-v1.js combat-source/examples/dom-demo/exploration-native-source-v1.js
           cp encounter-source/integration/combat-bridge/party.preview.v1.json combat-source/examples/dom-demo/party.preview.v1.json
           test -s combat-source/examples/dom-demo/exploration-encounter.html
-          (
-            cd combat-source
-            npm run ci
-          )
           (
             cd encounter-source
             npm test
