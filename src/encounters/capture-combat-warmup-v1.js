@@ -19,7 +19,7 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
   ].filter(Boolean);
   return [...new Set(ids.map(id=>assets.get(id)?.resource?.file).filter(file=>
     typeof file==='string'&&file.startsWith('capture/')&&
-    !file.includes('..')&&/\\.(webp|png|jpg)$/i.test(file)))];
+    !file.includes('..')&&['webp','png','jpg'].some(ext=>file.toLowerCase().endsWith('.'+ext))))];
 }
 export function createCaptureCombatWarmupV1({
   documentUrl,fetchImpl=globalThis.fetch,
