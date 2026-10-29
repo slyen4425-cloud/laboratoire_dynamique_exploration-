@@ -3182,7 +3182,7 @@ try{
       const doc=document.querySelector('.combat-overlay__frame')?.contentDocument;
       return doc ? {status:doc.querySelector('[data-bridge-status]')?.textContent??'',
         skills:doc.querySelectorAll('[data-combat-skill]').length,
-        enemyHud:!!doc.querySelector('[data-combat-hp-value="enemy-1"]'),
+        enemyHud:!!doc.querySelector('[data-combat-hp-value="opponent-1"]'),
         bootError:doc.documentElement.dataset.encounterBootstrapError??null}:null;
     })()`);
     if(combatReady?.status.includes('Combat réel') && combatReady.skills>0 &&
