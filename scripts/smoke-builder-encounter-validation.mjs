@@ -374,7 +374,7 @@ try {
     // Drive actual native Combat buttons until the official Combat Session
     // resolves a KO. Do not inject a CombatResult or forge a postMessage.
     let fought;
-    for (let attempt = 0; attempt < 80; attempt++) {
+    for (let attempt = 0; attempt < 240; attempt++) {
       const res = await evaluate(`(() => {
         const overlay=document.querySelector('.combat-overlay__frame');
         if(!overlay)return {finished:true, pressed:0, actions:[]};
@@ -387,6 +387,8 @@ try {
           actions:usable.slice(0,3).map(button=>button.dataset.combatSkill),
           skillStates:all.map(b=>({id:b.dataset.combatSkill,disabled:b.disabled,title:b.title})),
           energy:doc?.querySelector('[data-combat-energy-value="local-1"]')?.textContent??'',
+          localHp:doc?.querySelector('[data-combat-hp-value="local-1"]')?.textContent??'',
+          opponentHp:doc?.querySelector('[data-combat-hp-value="opponent-1"]')?.textContent??'',
           status:doc?.querySelector('[data-combat-live-status]')?.textContent??'',
           loading:doc?.querySelector('[data-bridge-status]')?.textContent??'',
           error:doc?.documentElement.dataset.encounterBootstrapError??''
