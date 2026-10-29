@@ -48,9 +48,9 @@ export function auditCombatPreviewDirectory(root) {
       !bridge.includes('createCaptureCombatResult'))
     issues.push('native_combat_result_bridge_incomplete');
   const adapter = read('examples/dom-demo/exploration-native-source-v1.js');
-  if (!adapter.includes('importMonsterCaptureCreatureRecordV1') ||
-      !adapter.includes('adaptCaptureCreatureToFighterConfig') ||
-      !adapter.includes('adaptCaptureSkillToSkillDefinition'))
+  if (!adapter.includes('importCaptureTransferJsonV1') ||
+      !adapter.includes('buildCaptureEditorCombatTestV1') ||
+      !adapter.includes('adaptCaptureCombatExportStackV1'))
     issues.push('official_capture_adapters_not_used');
   return Object.freeze({ok:issues.length===0,issues:Object.freeze(issues)});
 }
