@@ -124,6 +124,9 @@ jobs:
           test -s combat-source/examples/dom-demo/exploration-author-provenance.v1.json
           test -s combat-source/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json
           test -s combat-source/data/capture/showcase/encounter-bundle.v1.json
+          # Assert the current editor (not the historical main fixture) owns
+          # both Moussados' independent Defense reaction and its original skill.
+          jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .draft.combat.reaction.type=="defense" and .loadout.slots[1].skillId=="lib_earth_guard")] | length)==1'             combat-source/data/capture/showcase/encounter-bundle.v1.json >/dev/null
           test -s site/sculpt-lab-v80.html
           test -s encounter-source/sculpt-lab.html
           test -s encounter-source/world-assembler.html
@@ -381,6 +384,7 @@ jobs:
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json?build=$GITHUB_SHA" -o /tmp/published-spore.json
           jq -e '.draft.id=="Spore_soporifique"' /tmp/published-spore.json >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/encounter-bundle.v1.json?build=$GITHUB_SHA" -o /tmp/published-author-bundle.json
+          jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .draft.combat.reaction.type=="defense")] | length)==1' /tmp/published-author-bundle.json >/dev/null
           jq -e '.schema=="capture-author-encounter-bundle-v1" and .version==1 and
             ([.creatureTransfers[].draft.id]|index("crea_mossback")!=null) and
             ([.skillTransfers[].draft.id]|index("lib_earth_guard")!=null)' /tmp/published-author-bundle.json >/dev/null
