@@ -1,89 +1,102 @@
-// Versioned Encounter adapter. Imports the Combat Lab's OWN adapters and
-// catalogs at build time: no combat formula, skill semantics or runtime fork.
-import { importMonsterCaptureCreatureRecordV1 } from '../../src/adapters/input/capture/monster-capture-creature-import-v1.js';
-import { applyCaptureCombatRulesToCreatureDraftV1 } from '../../src/adapters/input/capture/capture-combat-rules-overlay-v1.js';
-import { adaptCaptureCreatureToFighterConfig } from '../../src/adapters/input/capture/capture-creature-to-fighter-config.js';
-import { adaptCaptureSkillToSkillDefinition } from '../../src/adapters/input/capture/capture-skill-to-skill-definition.js';
+// Adapt Encounter v1 to the SAME Capture authoring/export pipeline as Combat Editor.
+// Official Combat owns statistics, skill definitions, loadouts, tactical rules and
+// roster semantics. This file does not read the September historical catalog.
+import { importCaptureTransferJsonV1 } from '../../src/adapters/input/capture/capture-entity-transfer-v1.js';
+import { buildCaptureEditorCombatTestV1 } from '../../src/ui/capture-editor-combat-test-v1.js';
+import { adaptCaptureCombatExportStackV1 } from '../../src/adapters/input/capture/capture-export-adapter-stack-v1.js';
+import { normalizeCaptureSkillEditorDraftV1 } from '../../src/contracts/capture-skill-editor-draft-v1.js';
+import { normalizeSkillDefinition } from '../../src/contracts/skill-definition.js';
 import { capturePortableNativeSkillDraftsV1 } from '../../src/catalogs/capture-portable-native-skill-catalog-v1.js';
 import { captureComplexNativeSkillDraftsV1 } from '../../src/catalogs/capture-complex-native-skill-catalog-v1.js';
+import { CAPTURE_SHOWCASE_RETIRED_NATIVE_SKILL_IDS_V1 } from '../../src/catalogs/capture-showcase-skill-presets-v1.js';
 
 export const EXPLORATION_NATIVE_COMBAT_BRIDGE_VERSION = 1;
 
 function required(value, field) {
-  if (typeof value !== 'string' || !value.trim()) throw new TypeError(field + ' missing');
+  if(typeof value!=='string'||!value.trim())throw new TypeError(field+' missing');
   return value;
 }
 
-// The v1 partyRef is an explicit test fixture until the Capture party provider
-// is wired into GenSrpg. Never choose a random creature behind the user's back.
 export function buildExplorationNativeCombatSourceV1({
-  snapshot, creatureRecords, party, nativeSkillCatalog, baseFighterRules
+  snapshot, party, showcaseCreatureTransfers, showcaseSkillTransfers,
+  nativeSkillCatalog, statRegistry, progressionRules, baseFighterRules,
+  previewLevel = 20, arenaId = 'forest'
 }) {
-  if (snapshot?.schema !== 'capture-encounter-snapshot-v1' ||
-      snapshot.version !== 1 || !Array.isArray(snapshot.opponents) ||
-      snapshot.opponents.length !== 1) {
+  if(snapshot?.schema!=='capture-encounter-snapshot-v1'||snapshot.version!==1||
+     !Array.isArray(snapshot.opponents)||snapshot.opponents.length!==1)
     throw new RangeError('Unsupported CaptureEncounterSnapshot contract');
-  }
-  if (required(party?.id, 'party.id') !== snapshot.player?.partyRef)
+  if(required(party?.id,'party.id')!==snapshot.player?.partyRef)
     throw new RangeError('Capture player partyRef not resolved');
-  const playerId = required(party.activeCreatureId, 'party.activeCreatureId');
-  const enemyId = required(snapshot.opponents[0]?.creatureId, 'opponent.creatureId');
-  if (!Array.isArray(creatureRecords)) throw new TypeError('Combat creature catalog missing');
-  const records = new Map(creatureRecords.map(record => [record.id, record]));
-  for (const id of [playerId, enemyId]) {
-    if (!records.has(id)) throw new RangeError('Creature absent from official Capture catalog: ' + id);
-  }
-  if (!Array.isArray(nativeSkillCatalog?.entries))
+  const playerId=required(party.activeCreatureId,'party.activeCreatureId');
+  const enemyId=required(snapshot.opponents[0]?.creatureId,'opponent.creatureId');
+  if(!Array.isArray(showcaseCreatureTransfers)||!showcaseCreatureTransfers.length)
+    throw new TypeError('Official Capture author creature transfers required');
+  if(!Array.isArray(showcaseSkillTransfers)||!showcaseSkillTransfers.length)
+    throw new TypeError('Official Capture author skill transfers required');
+  if(!Array.isArray(nativeSkillCatalog?.entries))
     throw new TypeError('Official Combat skill catalog missing');
-  const skills = new Map();
-  for (const entry of nativeSkillCatalog.entries) {
-    if (entry?.definition?.id) skills.set(entry.definition.id, entry.definition);
+
+  const configuredCreatures=new Map();
+  for(const raw of showcaseCreatureTransfers){
+    const result=importCaptureTransferJsonV1(JSON.stringify(raw),{statRegistry});
+    if(result.kind!=='creature')throw new TypeError('Unexpected creature transfer');
+    const record=result.value;
+    if(configuredCreatures.has(record.draft.id))throw new RangeError('Duplicate Capture creature '+record.draft.id);
+    configuredCreatures.set(record.draft.id,record);
   }
-  for (const draft of [...capturePortableNativeSkillDraftsV1(), ...captureComplexNativeSkillDraftsV1()]) {
-    skills.set(draft.id, adaptCaptureSkillToSkillDefinition(draft));
+  for(const id of [playerId,enemyId]){
+    if(!configuredCreatures.has(id))
+      throw new RangeError('Encounter creature not present in current official Showcase: '+id);
   }
-  const combatRules = {
-    schema: 'capture-combat-rules-editor-draft-v1',
-    maxEnergy: Number(baseFighterRules?.maxEnergy),
-    initialEnergy: Number(baseFighterRules?.initialEnergy),
-    energyChargeAmount: Number(baseFighterRules?.energyChargeAmount),
-    energyChargeIntervalMs: Number(baseFighterRules?.energyChargeIntervalMs),
-    movementEnergyPerStep: Number(baseFighterRules?.movementEnergyPerStep),
-    chargeTimeModifierPct: Number(baseFighterRules?.chargeTimeModifierPct)
-  };
-  function buildFighter(creatureId, actorId) {
-    const record = records.get(creatureId);
-    const imported = importMonsterCaptureCreatureRecordV1(record);
-    const configured = applyCaptureCombatRulesToCreatureDraftV1({
-      creatureDraft: imported.draft, combatRules
+
+  const configuredSkills=new Map();
+  const retired=new Set(CAPTURE_SHOWCASE_RETIRED_NATIVE_SKILL_IDS_V1);
+  for(const entry of nativeSkillCatalog.entries){
+    if(retired.has(entry.definition.id))continue;
+    const definition=normalizeSkillDefinition(entry.definition);
+    const draft=normalizeCaptureSkillEditorDraftV1({
+      schema:'capture-skill-editor-draft-v1',id:definition.id,description:'Native Capture',
+      requiredLevel:1,usageScopes:['capture','combat'],definition,presentation:null
     });
-    const skillIds = [...new Set(record.abilityIds ?? [])].filter(id => skills.has(id)).slice(0, 5);
-    if (skillIds.length === 0)
-      throw new RangeError('No supported official Combat skills for ' + creatureId);
-    return {
-      creatureId, name: configured.displayName, skillIds,
-      fighter: adaptCaptureCreatureToFighterConfig(configured, { fighterId: actorId })
-    };
+    configuredSkills.set(draft.id,draft);
   }
-  const player = buildFighter(playerId, 'local-1');
-  const enemy = buildFighter(enemyId, 'opponent-1');
-  const activeSkills = [...new Set([...player.skillIds, ...enemy.skillIds])];
+  for(const draft of [...capturePortableNativeSkillDraftsV1(),...captureComplexNativeSkillDraftsV1()]){
+    if(!retired.has(draft.id)&&!configuredSkills.has(draft.id))configuredSkills.set(draft.id,draft);
+  }
+  for(const raw of showcaseSkillTransfers){
+    const result=importCaptureTransferJsonV1(JSON.stringify(raw));
+    if(result.kind!=='skill')throw new TypeError('Unexpected skill transfer');
+    configuredSkills.set(result.value.draft.id,result.value.draft);
+  }
+
+  // Validate complete author loadouts, rather than silently truncating an
+  // unknown skill or replacing it with a historical ability.
+  for(const creatureId of [playerId,enemyId]){
+    const record=configuredCreatures.get(creatureId);
+    const ids=record.loadout.slots.map(slot=>slot.skillId).filter(Boolean);
+    if(!ids.length)throw new RangeError('Creature has no authored abilities: '+creatureId);
+    for(const id of ids)if(!configuredSkills.has(id))
+      throw new RangeError('Authored Capture skill absent: '+creatureId+' / '+id);
+  }
+  const combatRules={
+    schema:'capture-combat-rules-editor-draft-v1',
+    maxEnergy:Number(baseFighterRules?.maxEnergy),
+    initialEnergy:Number(baseFighterRules?.initialEnergy),
+    energyChargeAmount:Number(baseFighterRules?.energyChargeAmount),
+    energyChargeIntervalMs:Number(baseFighterRules?.energyChargeIntervalMs),
+    movementEnergyPerStep:Number(baseFighterRules?.movementEnergyPerStep),
+    chargeTimeModifierPct:Number(baseFighterRules?.chargeTimeModifierPct)
+  };
+  const exported=buildCaptureEditorCombatTestV1({
+    configuredCreatures,configuredSkills,
+    localCreatureIds:[playerId],opponentCreatureIds:[enemyId],
+    activePerTeam:1,arenaId,combatRules,
+    statRegistry,progressionRules,previewLevel,
+    skillSpeedMultiplier:0.5
+  });
   return Object.freeze({
-    battleFormat: {
-      id: 'exploration-' + required(snapshot.encounterId, 'encounterId'),
-      localActorId: 'local-1',
-      teams: { 'local-team': ['local-1'], 'opponent-team': ['opponent-1'] },
-      actors: [
-        { actorId: 'local-1', teamId: 'local-team', creatureId: player.creatureId,
-          displayName: player.name, fighterConfigId: player.creatureId, controllerId: 'human-local' },
-        { actorId: 'opponent-1', teamId: 'opponent-team', creatureId: enemy.creatureId,
-          displayName: enemy.name, fighterConfigId: enemy.creatureId, controllerId: 'ai-enemy' }
-      ]
-    },
-    fighters: [player.fighter, enemy.fighter],
-    skills: Object.fromEntries(activeSkills.map(id => [id, skills.get(id)])),
-    skillIdsByActor: { 'local-1': player.skillIds, 'opponent-1': enemy.skillIds },
-    skillSpeedMultiplier: 0.5,
-    sourceCreatureIds: { player: playerId, opponent: enemyId }
+    ...adaptCaptureCombatExportStackV1(exported),
+    exported,
+    sourceCreatureIds:Object.freeze({player:playerId,opponent:enemyId})
   });
 }
