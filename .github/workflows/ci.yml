@@ -35,6 +35,12 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: work/lab-author-showcase-main-reconcile-2026-10-29
           path: combat-preview
+      - name: Checkout current author-approved Capture Showcase
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: gh-pages
+          path: combat-author
       - name: Assemble isolated Exploration bridge over official Combat
         run: |
           cp integration/combat-bridge/exploration-encounter.html combat-preview/examples/dom-demo/exploration-encounter.html
@@ -42,7 +48,9 @@ jobs:
           cp integration/combat-bridge/exploration-native-source-v1.js combat-preview/examples/dom-demo/exploration-native-source-v1.js
           cp integration/combat-bridge/party.preview.v1.json combat-preview/examples/dom-demo/party.preview.v1.json
           git -C combat-preview rev-parse HEAD > combat-preview/.exploration-combat-source-sha
-      - name: Checkout immutable Capture visual asset authority for Builder boot
+      - name: Stage current author Showcase, skills and markers from canonical editor
+        run: node scripts/stage-capture-author-showcase.mjs combat-author combat-preview
+      - name: Checkout current Capture visual asset authority for Builder boot
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
