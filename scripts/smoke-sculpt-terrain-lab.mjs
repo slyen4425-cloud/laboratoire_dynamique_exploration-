@@ -502,10 +502,18 @@ try{
     throw Error('V19 default comfortable movement/viewport missing: '+JSON.stringify(navStart.before));
   // This is the real 2.5D page: Tester must select an authorized Explorer
   // media file in Chromium, not an invented audio activation button.
-  const explorationMusic=await run('window.__sculptExplorationSoundProbe()');
+  // An HTMLMediaElement.play() Promise is initially pending while the MP3
+  // loads. "starting" is not proof of audio, nor a failure. Wait for the
+  // browser's settled state instead of reading synchronously after click().
+  let explorationMusic;
+  for(let attempt=0;attempt<48;attempt++){
+    explorationMusic=await run('window.__sculptExplorationSoundProbe()');
+    if(['playing','blocked','error'].includes(explorationMusic.state))break;
+    await sleep(125);
+  }
   if(!/^exploration-[1-4]$/.test(explorationMusic.track)||
      !['playing','blocked'].includes(explorationMusic.state))
-    throw Error('Tester did not start its own four-track music: '+JSON.stringify(explorationMusic));
+    throw Error('Tester did not settle an approved music track: '+JSON.stringify(explorationMusic));
   const musicMedia=await run(`(async()=>{
     const response=await fetch(new URL('./assets/runtime/audio/exploration-v1/exploration-01.mp3',location.href));
     return {ok:response.ok,contentType:response.headers.get('content-type'),length:(await response.arrayBuffer()).byteLength};
