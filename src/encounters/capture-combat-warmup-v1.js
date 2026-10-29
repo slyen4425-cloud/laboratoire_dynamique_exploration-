@@ -24,9 +24,15 @@ export function captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponen
       visual?.[view==='back'?'rangedAttackBack':'rangedAttack']?.assetId
     ].filter(Boolean);
   }
+  const selected=[party?.activeCreatureId,opponentId].map(id=>creatures.get(id)).filter(Boolean);
+  const skillById=new Map((bundle.skillTransfers??[]).map(transfer=>[transfer.draft?.id,transfer]));
+  const equippedIcons=selected.flatMap(transfer=>(transfer.loadout?.slots??[])
+    .map(slot=>skillById.get(slot.skillId)?.draft?.presentation?.visual?.icon?.assetId)
+    .filter(Boolean));
   const ids=[
     ...idsFor(party?.activeCreatureId,'back'),
-    ...idsFor(opponentId,'front')
+    ...idsFor(opponentId,'front'),
+    ...equippedIcons
   ];
   return [...new Set(ids.map(id=>assets.get(id)?.resource?.file).filter(file=>
     typeof file==='string'&&file.startsWith('capture/')&&
@@ -49,7 +55,7 @@ export function createCaptureCombatWarmupV1({
     throw new TypeError('Combat warmup needs URL, fetch and scheduler');
   const root=new URL('./',documentUrl);
   let started=false;
-  const primedCreatures=new Set();
+  const primedCreatures=new Map();
   return Object.freeze({
     start() {
       if(started||saveData)return false;
@@ -65,9 +71,12 @@ export function createCaptureCombatWarmupV1({
       });
       return true;
     },
-    async warmCreature(opponentId) {
-      if(saveData||typeof opponentId!=='string'||!opponentId||primedCreatures.has(opponentId))return [];
-      primedCreatures.add(opponentId);
+    warmCreature(opponentId) {
+      if(saveData||typeof opponentId!=='string'||!opponentId)return Promise.resolve([]);
+      // Return the pending decode to every caller, including a rapid Battle tap.
+      // Do not mistake an in-flight warmup for a completed one.
+      if(primedCreatures.has(opponentId))return primedCreatures.get(opponentId);
+      const pending=(async()=>{
       try {
         const json=async path=>{
           const response=await fetchImpl(new URL(path,root),{cache:'force-cache',priority:'low'});
@@ -92,6 +101,9 @@ export function createCaptureCombatWarmupV1({
         }));
         return files;
       }catch{return [];}
+      })();
+      primedCreatures.set(opponentId,pending);
+      return pending;
     },
     get started(){return started;}
   });
