@@ -243,7 +243,8 @@ async function launch() {
   // are still downloading/decoding. Uses the exact authored catalog and IDs.
   const imageFiles=captureEncounterVisualFilesV1({
     bundle:authorBundle,assetCatalog,party,
-    opponentId:handoff.snapshot.opponents[0].creatureId
+    opponentId:handoff.snapshot.opponents[0].creatureId,
+    firstPaintOnly:true
   });
   if(imageFiles.length){
     message('Chargement des textures du combat (0 / '+imageFiles.length+')…');
