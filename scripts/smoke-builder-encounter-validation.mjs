@@ -371,25 +371,30 @@ try {
       throw Error('Real Combat failed to open full-viewport in the same Explorer page: '+JSON.stringify(active));
     }
 
-    // Transport-only probe: create the contract-valid result through Combat's
-    // existing owner, and send from the ACTUAL child window realm. Calling
-    // parent.postMessage from the parent's JS realm would fake event.source.
-    const completion = await evaluate(`(async()=>{
-      const frame=document.querySelector('.combat-overlay__frame');
-      const module=await import('/combat-preview/src/ui/exploration-encounter-handoff-v1.js');
-      const stored=module.completeExplorationCombatHandoffV1({storage:sessionStorage,outcome:'victory'});
-      const payload={
-        type:'gensrpg.capture.combat-complete.v1',
-        encounterId:stored.result.encounterId,
-        returnToken:stored.result.returnToken
-      };
-      frame.contentWindow.eval('window.parent.postMessage('+JSON.stringify(payload)+',window.location.origin)');
-      return {notified:true,encounterId:stored.result.encounterId};
-    })()`);
-    if (completion.error || completion.result?.exceptionDetails ||
-        !completion.result?.result?.value?.notified)
-      throw Error('Native Combat completed handoff failed: '+JSON.stringify(completion));
-
+    // Drive actual native Combat buttons until the official Combat Session
+    // resolves a KO. Do not inject a CombatResult or forge a postMessage.
+    let fought;
+    for (let attempt = 0; attempt < 150; attempt++) {
+      const res = await evaluate(`(() => {
+        const overlay=document.querySelector('.combat-overlay__frame');
+        if(!overlay)return {finished:true, pressed:0, actions:[]};
+        const doc=overlay.contentDocument;
+        const usable=[...(doc?.querySelectorAll('[data-combat-skill]')??[])]
+          .filter(button=>!button.disabled && !button.hidden);
+        if(usable[0])usable[0].click();
+        return {
+          finished:false, pressed:usable.length>0?1:0,
+          actions:usable.slice(0,3).map(button=>button.dataset.combatSkill)
+        };
+      })()`);
+      if (res.error || res.result?.exceptionDetails)
+        throw Error('Native Combat gameplay action failed: '+JSON.stringify(res));
+      fought=res.result?.result?.value;
+      if (fought?.finished) break;
+      await sleep(450);
+    }
+    if (!fought?.finished)
+      throw Error('Real Combat Session never resolved KO/return: '+JSON.stringify(fought));
     let restored;
     for (let tries=0; tries<80; tries++) {
       const res = await evaluate(`(()=>({
@@ -400,13 +405,13 @@ try {
         stillStored:!!sessionStorage.getItem('gensrpg.capture.combat-handoff.v1')
       }))()`);
       restored=res.result?.result?.value;
-      if (restored?.overlayAbsent && restored?.previewHidden && restored.info.includes('combat: victory')) break;
+      if (restored?.overlayAbsent && restored?.previewHidden && /combat: (victory|defeat)/.test(restored.info)) break;
       await sleep(100);
     }
     console.log('Immersive Encounter return ' + round + ': '+JSON.stringify(restored));
     if (restored?.parentPath !== '/index.html' || !restored.overlayAbsent ||
         !restored.previewHidden || restored.stillStored ||
-        !restored.info.includes('combat: victory'))
+        !/combat: (victory|defeat)/.test(restored.info))
       throw Error('Combat return did not restore original Explorer document: '+JSON.stringify(restored));
 
     if (round === 1) {
