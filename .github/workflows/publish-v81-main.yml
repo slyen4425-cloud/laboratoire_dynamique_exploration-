@@ -27,21 +27,21 @@ jobs:
   verify-and-assemble:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout immutable V80 production source
+      - name: Checkout byte-frozen V80 production source
         uses: actions/checkout@v4
         with:
           ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: site
-      - name: Checkout CI-verified Encounter feature source
+      - name: Checkout CI-verified native Combat Encounter source
         uses: actions/checkout@v4
         with:
-          ref: a44e9812a7a41b9d8a7c30dc73372f62d8569bd0
+          ref: 5e7762e6ede98e8cc4bf107e15f03cc952b10dc3
           path: encounter-source
-      - name: Checkout immutable Capture Combat runtime
+      - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 11a9f70b5f6cf6850fc4bedfd876d799635c33db
+          ref: main
           path: combat-source
       - name: Checkout immutable Capture visual catalog
         uses: actions/checkout@v4
@@ -52,13 +52,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify immutable sources and full Encounter CI gates
+      - name: Verify pinned Exploration GREEN and interoperable current Combat contracts
         shell: bash
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = a44e9812a7a41b9d8a7c30dc73372f62d8569bd0
-          test "$(git -C combat-source rev-parse HEAD)" = 11a9f70b5f6cf6850fc4bedfd876d799635c33db
+          test "$(git -C encounter-source rev-parse HEAD)" = 5e7762e6ede98e8cc4bf107e15f03cc952b10dc3
+          printf 'Official Combat main tested at: %s\\n' "$(git -C combat-source rev-parse HEAD)"
           test "$(git -C capture-source rev-parse HEAD)" = e55fea3b559c348be596d7c16250808a39c315a1
           test -s site/sculpt-lab-v80.html
           test -s encounter-source/sculpt-lab.html
@@ -114,12 +114,21 @@ jobs:
           grep -Fq 'id="world-assembler-back"' encounter-source/builder.html
           grep -Fq 'id="mode-encounters"' encounter-source/sculpt-lab.html
           grep -Fq 'sculptEncounterConfig' encounter-source/src/sculpt-lab-main.js
+          # Assemble only the versioned Exploration entry files OVER Combat main.
+          # No forked combat engine or hard-coded equality to an older Combat SHA.
+          cp encounter-source/integration/combat-bridge/exploration-encounter.html combat-source/examples/dom-demo/exploration-encounter.html
+          cp encounter-source/integration/combat-bridge/exploration-encounter.js combat-source/examples/dom-demo/exploration-encounter.js
+          cp encounter-source/integration/combat-bridge/exploration-native-source-v1.js combat-source/examples/dom-demo/exploration-native-source-v1.js
+          cp encounter-source/integration/combat-bridge/party.preview.v1.json combat-source/examples/dom-demo/party.preview.v1.json
           test -s combat-source/examples/dom-demo/exploration-encounter.html
           (
             cd encounter-source
             npm test
             npm run check
             node scripts/audit-combat-preview.mjs ../combat-source
+            ln -s "$GITHUB_WORKSPACE/combat-source" combat-preview
+            node scripts/combat-native-bridge-smoke.mjs
+            rm combat-preview
           )
       - name: Assemble an isolated directory; never overlay production V80
         shell: bash
@@ -158,7 +167,7 @@ jobs:
           grep -Fq 'id="world-assembler-back"' "$preview/builder.html"
           grep -Fq 'id="mode-encounters"' "$preview/sculpt-lab.html"
           test -s "$preview/assets/interiors/doors/manifest.json"
-          test -s "$preview/combat-preview/examples/dom-demo/exploration-encounter.html"
+          test -s "$preview/combat-preview/examples/dom-demo/exploration-encounter.js"
           test -s "$preview/capture-assets/data/assets/catalog/global-visual-assets.v1.json"
           test -s site/sculpt-lab-v80.html
           # Sentinel: serving preview must not change the V80 release document.
@@ -296,4 +305,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -X POST --data-binary @/tmp/pages-preview-status.json \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/a44e9812a7a41b9d8a7c30dc73372f62d8569bd0" >/dev/null
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/5e7762e6ede98e8cc4bf107e15f03cc952b10dc3" >/dev/null
