@@ -372,6 +372,9 @@ function sculptEncounterStep(){
   navActor.moving=false;
   navKeys.clear();navStick?.reset();
   const creatureId=sculptPendingEncounter.opponents[0].creatureId;
+  // Prewarm only the two real author-selected creature portraits while the
+  // player reads the encounter dialog. No gameplay change or visual fallback.
+  void sculptCombatWarmup.warmCreature(creatureId);
   const creature=sculptEncounterCatalog.resolveCreature(creatureId);
   $('sculpt-encounter-summary').textContent=
     (creature?.name??creatureId)+' · '+sculptPendingEncounter.context.terrainFamilyId+
