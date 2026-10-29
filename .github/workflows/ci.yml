@@ -29,12 +29,19 @@ jobs:
     steps:
       - name: Checkout isolated Exploration integration
         uses: actions/checkout@v4
-      - name: Checkout immutable tested Combat bridge
+      - name: Checkout live official Combat engine
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 11a9f70b5f6cf6850fc4bedfd876d799635c33db
+          ref: main
           path: combat-preview
+      - name: Assemble isolated Exploration bridge over official Combat
+        run: |
+          cp integration/combat-bridge/exploration-encounter.html combat-preview/examples/dom-demo/exploration-encounter.html
+          cp integration/combat-bridge/exploration-encounter.js combat-preview/examples/dom-demo/exploration-encounter.js
+          cp integration/combat-bridge/exploration-native-source-v1.js combat-preview/examples/dom-demo/exploration-native-source-v1.js
+          cp integration/combat-bridge/party.preview.v1.json combat-preview/examples/dom-demo/party.preview.v1.json
+          git -C combat-preview rev-parse HEAD > combat-preview/.exploration-combat-source-sha
       - name: Checkout immutable Capture visual asset authority for Builder boot
         uses: actions/checkout@v4
         with:
@@ -44,8 +51,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify packaged owner contracts before the browser
-        run: node scripts/audit-combat-preview.mjs combat-preview
+      - name: Verify runtime ownership and native adapter contracts
+        run: |
+          node scripts/audit-combat-preview.mjs combat-preview
+          node --test tests/combat-native-bridge-integration.test.js
       - name: Real Chromium Builder invalid-encounter navigation smoke
         run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Real Chromium interior floor material and brush smoke
