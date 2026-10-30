@@ -66,7 +66,7 @@ test('the eight villages and wilderness presets contain an actual varied 2.5D la
  assert.equal(interiors,houses);
 });
 
-test('every enriched main road remains physically walkable from the genuine Spawn to the actual Portal',()=>{
+test('every enriched main road stays physically walkable from its far exit back to the actual entry Portal',()=>{
  for(const preset of builtinSculptMapPresets()){
    const host=createBlankWorldBuilderDraft({id:'path-'+preset.id,width:1008,height:504});
    const doc=createWorldAreaFromSculptMapPreset(host,preset,{
@@ -82,12 +82,14 @@ test('every enriched main road remains physically walkable from the genuine Spaw
      sculptNavigation:{terrain:scene.terrain,cellWidth:28,cellHeight:21,
        projectionRise:18,maxStepUp:0,maxStepDown:0,shoreEntryFraction:.14,
        bridges:bridgeObjects,stairs:sculptTerrainRampProjections(scene.terrain)}};
-   const actor={x:area.spawns[0].x,y:area.spawns[0].y,radius:5,
-     locomotion:{modes:['ground']},facingX:1,moving:false};
+   const road=scene.surface.routes[0].points;
+   const actor={x:area.width-72,y:road.at(-1).y,radius:5,
+     locomotion:{modes:['ground']},facingX:-1,moving:false};
    const exit=doc.portals.find(p=>p.sourceAreaId===area.id&&
      p.trigger?.kind==='point'&&p.targetAreaId===host.initialAreaId);
    assert.ok(exit,preset.name+' outbound Portal exists');
-   const targets=[...scene.surface.routes[0].points.slice(1,-1),exit.trigger];
+   assert.equal(exit.trigger.x,64,'Return Portal must be at the entry side');
+   const targets=[...road.slice(1,-1).reverse(),exit.trigger];
    for(const target of targets){
      let reached=false;
      for(let n=0;n<550;n++){
