@@ -77,7 +77,7 @@ const RICH=Object.freeze([
  {homes:[[0,145,137],[2,500,130],[3,847,135],[1,145,430]],
   ponds:[{x:27,y:17,r:2.5}],
   bridge:{x:756,y:357,style:'old_wood'}},
- {homes:[[3,145,135],[2,335,130],[4,510,132],[0,855,130],[1,145,430]],
+ {homes:[[3,145,135],[2,335,130],[4,510,132],[0,855,430],[1,145,430]],
   ponds:[{x:27,y:17,r:2.5},{x:9,y:18,r:2.5}],
   bridge:{x:756,y:357,style:'stone_arch'},
   waterfall:{x:252,y:378,style:'side_narrow',variant:'clear_blue'}},
@@ -137,6 +137,42 @@ function createScene(config,index){
     baseMaterialId:base});
  const points=ROUTES[config.road];
  surface=appendSculptSurfaceStroke(surface,{materialId:'road.dirt',points,width:53});
+ // Project to the *existing* main route, never fabricate a new path authority.
+ const nearestRoadPoint=(x,y)=>{
+   let best=null,bestD=Infinity;
+   for(let i=1;i<points.length;i++){
+     const a=points[i-1],b=points[i],dx=b.x-a.x,dy=b.y-a.y;
+     const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1)));
+     const p={x:a.x+dx*t,y:a.y+dy*t},d=Math.hypot(x-p.x,y-p.y);
+     if(d<bestD){best=p;bestD=d;}
+   }
+   return best;
+ };
+ const dryLink=(a,b)=>{
+   for(let n=0;n<=12;n++){
+     const t=n/12,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t;
+     if(sculptWaterAt(terrain,Math.min(35,Math.floor(x/28)),
+       Math.min(23,Math.floor(y/21)))>0)return false;
+   }
+   return true;
+ };
+ for(const [,x,y] of rich.homes){
+   const from={x,y:y+24},to=nearestRoadPoint(x,y+24);
+   if(to&&dryLink(from,to))
+     surface=appendSculptSurfaceStroke(surface,{materialId:'road.dirt',
+       points:[from,to],width:23});
+ }
+ if(rich.bridge){
+   const b=rich.bridge,from=nearestRoadPoint(b.x,b.y-113);
+   const bank={x:b.x,y:b.y-112};
+   if(from&&dryLink(from,bank))
+     surface=appendSculptSurfaceStroke(surface,{materialId:'road.dirt',
+       points:[from,bank],width:29});
+   const south={x:b.x,y:b.y+113},outer={x:Math.min(WORLD_W-40,b.x+90),y:south.y};
+   if(dryLink(south,outer))
+     surface=appendSculptSurfaceStroke(surface,{materialId:'road.dirt',
+       points:[south,outer],width:26});
+ }
  // Additional textured clearing by the home, still the canonical surface.
  // Dedicated forecourts and pedestrian spur paths join the native main road.
  // Surface data remains editable and never creates a second navigation model.
