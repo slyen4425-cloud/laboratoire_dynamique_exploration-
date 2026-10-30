@@ -1,3 +1,13 @@
+# Lot — Fondus Exploration ↔ Combat (30 octobre 2026)
+
+- **Branche :** `work/exploration-audio-fades-2026-10-30`, issue du lot de présets riches PR #301 à `a7a100f545ef1f7930c7c1185a0767a207b85435`.
+- **Signal utilisateur :** retour terrain sur l'essai Android du World Builder et des passages/sons.
+- **Réalisation :** Fondu de volume sur le lecteur Exploration propriétaire lors du lancement Combat, pause après ~600 ms ; reprise progressive 900 ms du même morceau au retour Combat validé, annulation explicite des timers sur stop/dispose, aucun moteur/Combat audio secondaire. TDD temporisation déterministe et sentinelle Android; emplacements jingle entrée/victoire/défaite déclarés null sans créer de sons non fournis. Vérification réelle Chromium/Pixel requise.
+- **Invariants :** main et V80 protégés ; aucun double propriétaire ; Combat et données auteur depuis Combat main ; pas de publication sans preuves du SHA exact.
+- **État :** branche isolée ; GREEN technique et expérience mobile à confirmer par CI + test utilisateur avant promotion dans la PR de prévisualisation.
+
+---
+
 # Lot — Présets 2,5D riches, villages et paysages (30 octobre 2026)
 
 - **Branche isolée :** `work/exploration-rich-village-landscapes-2026-10-30`.
