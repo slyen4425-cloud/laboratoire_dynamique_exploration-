@@ -355,7 +355,9 @@ jobs:
       (github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'))
     runs-on: ubuntu-latest
     environment:
-      name: github-pages
+      # PR301 has a dedicated deployment gate: canonical github-pages retains
+      # its main-only environment protection and remains the only publisher.
+      name: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 301 && 'github-pages-pr301' || 'github-pages' }}
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/configure-pages@v5
