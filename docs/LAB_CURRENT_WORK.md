@@ -1,3 +1,13 @@
+# Lot — Liaisons directionnelles 2/3 zones (30 octobre 2026)
+
+- **Branche :** `work/exploration-zone-entry-reciprocity-2026-10-30`, issue du lot de présets riches PR #301 à `a7a100f545ef1f7930c7c1185a0767a207b85435`.
+- **Signal utilisateur :** retour terrain sur l'essai Android du World Builder et des passages/sons.
+- **Réalisation :** A sortie est → B entrée ouest ; B entrée ouest → A sortie est. B sortie est peut mener vers C, jamais retour implicite vers A. Le moteur et les données Portals/Spawns WorldDocument restent uniques. Création de présets, réparation explicite d'anciens mondes et connexion manuelle utilisent les mêmes commandes de liaison ; Spawns d’arrivée sur la route sans bounce. Tests TDD physiques 2/3 zones, routes inverses, intérieurs et sauvegardes. Pas de migration silencieuse des Portals placés par l’utilisateur.
+- **Invariants :** main et V80 protégés ; aucun double propriétaire ; Combat et données auteur depuis Combat main ; pas de publication sans preuves du SHA exact.
+- **État :** branche isolée ; GREEN technique et expérience mobile à confirmer par CI + test utilisateur avant promotion dans la PR de prévisualisation.
+
+---
+
 # Lot — Présets 2,5D riches, villages et paysages (30 octobre 2026)
 
 - **Branche isolée :** `work/exploration-rich-village-landscapes-2026-10-30`.
