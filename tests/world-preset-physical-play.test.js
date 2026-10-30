@@ -76,7 +76,9 @@ test('the actual preset forest->snow and snow->forest roads can be walked from S
  const snow=doc.areas.find(a=>a.label==='Neige et sapins');
  const arrival=walkPrefabArea(doc,forest,true);
  assert.equal(arrival.currentAreaId,snow.id);
- assert.equal(arrival.x,snow.spawns[0].x);
+ const snowReturn=doc.portals.find(p=>p.sourceAreaId===snow.id&&p.targetAreaId===forest.id);
+ assert.ok(arrival.x>snowReturn.trigger.x+snowReturn.trigger.radius+3,
+   'snow entry Spawn must not immediately send player back to forest');
  const back=walkPrefabArea(doc,snow,true);
  assert.equal(back.currentAreaId,forest.id);
 });
