@@ -73,6 +73,9 @@ export function createExplorationSoundtrackV1({
     lastError=error?.name??'MediaError';
     state=lastError==='NotAllowedError'?'blocked':'error';
     clearFade();
+    // Chrome can deny an automatic resume after Combat. The next trusted
+    // pointer/keyboard retry must restore audible volume, not stay at zero.
+    audio.volume=volume;
     onError(error);
   }
   function play() {
