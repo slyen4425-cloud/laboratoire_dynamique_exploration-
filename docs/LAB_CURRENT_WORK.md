@@ -1,3 +1,18 @@
+# Lot — Présets 2,5D riches, villages et paysages (30 octobre 2026)
+
+- **Branche isolée :** \`work/exploration-rich-village-landscapes-2026-10-30\`.
+- **Départ :** \`main@474aa42674c9bd976a8a5a8af684d65cbe848b61\` ; checkpoint \`checkpoint/exploration-rich-village-landscapes-start-2026-10-30\`.
+- **Signal utilisateur :** huit présets existants trop vides, trop peu de maisons, aucune cascade ni pont ; attentes : villages et paysages 2,5D plus riches, entrées de maisons avec véritables intérieurs.
+- **Propriétaire :** couche d'assemblage des présets natifs \`src/builder/sculpt-builtin-map-presets.js\` ; pas de nouvelle autorité WorldArea, WorldDocument, collisions, rendu, musique ou Combat.
+- **Invariants gelés :** 8 identifiants de présets inchangés, chemins bord-à-bord, Spawn/Portal WorldDocument, présets utilisateur et V80 inchangés ; catalogue de visuels existant exclusivement ; chaque habitation raccordée à sa propre Area intérieure par le mécanisme déjà éprouvé.
+- **Implémentation :** plans de hameaux et villages plus habités ; vrais coups de pinceau eau/sol/chemins, ponts 2,5D au-dessus de l'eau, cascades animées et points d'eau dans différents biomes ; routes d'accès aux maisons et aux berges contrôlées contre l'eau.
+- **Tests :** TDD nouveaux tests de richesse et raccord d'intérieurs, \`npm test\`, \`npm run check\`, sentinelles de parcours physiques forêt ↔ neige, tests navigateur via CI Exploration ; ne pas annoncer GREEN avant les preuves et validation visuelle mobile.
+- **Hors périmètre :** nouvelles images/animations, refonte du moteur de relief, changement des règles de rencontre, publication \`main\` non sollicitée.
+- **Risques :** performance/quantité de maisons et d'intérieurs sur téléphone, collision des accès, pont et relief visuel ; la CI ne remplace pas le test tactile/visuel réel.
+- **État :** lot de travail, pas encore GREEN ; \`main\` et Pages stables.
+
+---
+
 # Lot correctif — source Combat main exclusivement (30 octobre 2026)
 
 - Branche `work/exploration-combat-main-only-2026-10-30`, départ `main@200025735bb49145f4a60258ba6d63a7a4aea774`.
