@@ -45,10 +45,9 @@ jobs:
           fi
           remote="https://github.com/slyen4425-cloud/GenSrpg_labo_combat_dynamique.git"
           main_sha="$(git ls-remote "$remote" refs/heads/main | cut -f1)"
-          # The user-approved, Combat-main-compatible authored version.
-          # An upstream gh-pages edit with a newer effect cannot silently
-          # bypass the validated Combat contract during a production release.
-          author_sha="4fd0821545eaa41ce1d3115e56f3574db6273426"
+          # Only the official Combat main commit may supply engine AND authored data.
+          # Never import gh-pages/development effects before explicit main promotion.
+          author_sha="$main_sha"
           assets_sha="$(git ls-remote "$remote" refs/heads/global-assets | cut -f1)"
           test -n "$main_sha" && test -n "$author_sha" && test -n "$assets_sha"
           published="$(mktemp)"
@@ -88,11 +87,11 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: main
           path: combat-source
-      - name: Checkout exact user-validated Capture Showcase snapshot
+      - name: Checkout official Combat main author data only
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: 4fd0821545eaa41ce1d3115e56f3574db6273426
+          ref: main
           path: combat-author
       - name: Checkout current Capture visual catalog
         uses: actions/checkout@v4
@@ -103,15 +102,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      # Historical Combat main fixtures assert old author-export bytes exactly.
-      # Verify those unchanged on the original engine before overlaying the
-      # newer, separately validated Showcase. The real assembled Showcase is
-      # tested below by native Combat/Chromium ownership gates.
+      # Verify Combat main before staging its own canonical author data. No
+      # gh-pages transfers or alternate author snapshot are permitted.
       - name: Verify official pristine Combat main foundation
         run: |
           cd combat-source
           npm run ci
-      - name: Stage current author transfers and marker data over Combat main
+      - name: Stage Combat main author transfers and marker data from the same SHA
         run: node encounter-source/scripts/stage-capture-author-showcase.mjs combat-author combat-source
       - name: Verify pinned Exploration GREEN and interoperable current Combat contracts
         shell: bash
@@ -119,7 +116,7 @@ jobs:
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
           test "$(git -C encounter-source rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
-          test "$(git -C combat-author rev-parse HEAD)" = 4fd0821545eaa41ce1d3115e56f3574db6273426
+          test "$(git -C combat-author rev-parse HEAD)" = "$(git -C combat-source rev-parse HEAD)"
           test -s encounter-source/src/audio/exploration-soundtrack-v1.js
           printf 'Official Combat main tested at: %s\\n' "$(git -C combat-source rev-parse HEAD)"
           test -n "$(git -C capture-source rev-parse HEAD)"
@@ -127,9 +124,9 @@ jobs:
           test -s combat-source/examples/dom-demo/exploration-author-provenance.v1.json
           test -s combat-source/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json
           test -s combat-source/data/capture/showcase/encounter-bundle.v1.json
-          # Assert the current editor (not the historical main fixture) owns
-          # both Moussados' independent Defense reaction and its original skill.
-          jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .draft.combat.reaction.type=="defense" and .loadout.slots[1].skillId=="lib_earth_guard")] | length)==1'             combat-source/data/capture/showcase/encounter-bundle.v1.json >/dev/null
+          # Assert the main-authored Moussados loadout, without injecting a
+          # reaction present only in an unpromoted development branch.
+          jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .loadout.slots[1].skillId=="lib_earth_guard")] | length)==1' combat-source/data/capture/showcase/encounter-bundle.v1.json >/dev/null
           test -s site/sculpt-lab-v80.html
           # Four real, user-authorized runtime MP3s; no private source URLs.
           (
