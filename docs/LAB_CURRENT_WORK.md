@@ -1,3 +1,13 @@
+# Lot — World Builder paysage tactile et plein graphe (30 octobre 2026)
+
+- **Branche :** `work/exploration-worldbuilder-mobile-2026-10-30`, issue du lot de présets riches PR #301 à `a7a100f545ef1f7930c7c1185a0767a207b85435`.
+- **Signal utilisateur :** retour terrain sur l'essai Android du World Builder et des passages/sons.
+- **Réalisation :** Les trois colonnes permanentes de la capture Pixel rendent le graphe inutilisable. Deux boutons Zones/Détails ouvrent alternativement les panneaux CANONIQUES, en mode paysage <=1250px ; le graphe utilise toute la largeur. Aucune copie de panneau ni de WorldDocument. aria-expanded, Escape, panneau sur sélection, responsive portrait inchangé. Test TDD DOM/CSS, Chromium et validation Pixel requise.
+- **Invariants :** main et V80 protégés ; aucun double propriétaire ; Combat et données auteur depuis Combat main ; pas de publication sans preuves du SHA exact.
+- **État :** branche isolée ; GREEN technique et expérience mobile à confirmer par CI + test utilisateur avant promotion dans la PR de prévisualisation.
+
+---
+
 # Lot — Présets 2,5D riches, villages et paysages (30 octobre 2026)
 
 - **Branche isolée :** `work/exploration-rich-village-landscapes-2026-10-30`.
