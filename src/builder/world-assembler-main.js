@@ -12,6 +12,7 @@ import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
+import {alignSculptReciprocalGatePair} from './sculpt-reciprocal-gates.js';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -358,9 +359,18 @@ function installWorldAssembler(){
     const source=byId('link-from').value,target=byId('link-to').value;
     if(source===target){status('Choisis deux zones différentes.',true);return;}
     const duplicate=draft.portals.some(p=>p.sourceAreaId===source&&p.targetAreaId===target);
-    apply(()=>connectWorldAreas(draft,{sourceAreaId:source,targetAreaId:target,
-      returnPortal:byId('link-back').checked}),
-      duplicate?'Passage existant conservé.':'Passage ajouté dans WorldDocument.');
+    const reciprocal=byId('link-back').checked;
+    const from=draft.areas.find(a=>a.id===source),to=draft.areas.find(a=>a.id===target);
+    const nativeRoadPair=!duplicate&&reciprocal&&from?.kind==='exterior'&&
+      to?.kind==='exterior'&&from.surface?.routes?.[0]?.points?.length>=2&&
+      to.surface?.routes?.[0]?.points?.length>=2;
+    apply(()=>nativeRoadPair
+      ?alignSculptReciprocalGatePair(draft,{sourceAreaId:source,targetAreaId:target})
+      :connectWorldAreas(draft,{sourceAreaId:source,targetAreaId:target,
+        returnPortal:reciprocal}),
+      duplicate?'Passage existant conservé.':nativeRoadPair
+        ?'Zones reliées : sortie A → entrée B et entrée B → retour A.'
+        :'Passage ajouté dans WorldDocument.');
   });
   on(byId('start-area'),'click',()=>{
     apply(()=>setWorldInitialArea(draft,selectedId),'Nouveau point de départ enregistré.');
