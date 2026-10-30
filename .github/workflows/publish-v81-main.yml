@@ -2,24 +2,22 @@
 # atomically. This is the ONLY remaining Pages deployment authority.
 # The old pages-preview.yml publisher is retired to prevent a later V80-only
 # deployment from removing the isolated Encounter preview path.
-name: Publish pinned V80 + isolated Encounter preview
+name: Publish canonical main Exploration + frozen V80 preview
 on:
   pull_request:
     branches: [main]
-    paths:
-      - '.github/workflows/publish-v81-main.yml'
-      - '.github/workflows/pages-preview.yml'
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/publish-v81-main.yml'
-      - '.github/workflows/pages-preview.yml'
   # GitHub Actions cannot subscribe directly to another repository's push
   # with the default GITHUB_TOKEN. This cheap source-diff gate checks every
   # 30 minutes; the expensive Chromium/build/deploy jobs run only on change.
   schedule:
     - cron: '17,47 * * * *'
   workflow_dispatch:
+# One authoritative Exploration source: the current main release commit,
+# or the exact PR HEAD during review; not a detached work branch.
+env:
+  EXPLORATION_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 permissions:
   contents: read
   pages: write
@@ -47,7 +45,10 @@ jobs:
           fi
           remote="https://github.com/slyen4425-cloud/GenSrpg_labo_combat_dynamique.git"
           main_sha="$(git ls-remote "$remote" refs/heads/main | cut -f1)"
-          author_sha="$(git ls-remote "$remote" refs/heads/gh-pages | cut -f1)"
+          # The user-approved, Combat-main-compatible authored version.
+          # An upstream gh-pages edit with a newer effect cannot silently
+          # bypass the validated Combat contract during a production release.
+          author_sha="4fd0821545eaa41ce1d3115e56f3574db6273426"
           assets_sha="$(git ls-remote "$remote" refs/heads/global-assets | cut -f1)"
           test -n "$main_sha" && test -n "$author_sha" && test -n "$assets_sha"
           published="$(mktemp)"
@@ -55,8 +56,8 @@ jobs:
             "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/release-provenance.v1.json?v=$(date +%s)" \
             -o "$published"; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
-          elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" \
-            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration=="3a0a6ec4bad257f28577d54cd3e23e557e05d9b4"' "$published" >/dev/null; then
+          elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" --arg exploration "$EXPLORATION_SOURCE_SHA" \
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration==$exploration' "$published" >/dev/null; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
@@ -76,10 +77,10 @@ jobs:
         with:
           ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: site
-      - name: Checkout CI-verified native Combat Encounter source
+      - name: Checkout the authoritative main Exploration source commit
         uses: actions/checkout@v4
         with:
-          ref: 3a0a6ec4bad257f28577d54cd3e23e557e05d9b4
+          ref: ${{ env.EXPLORATION_SOURCE_SHA }}
           path: encounter-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
@@ -87,11 +88,11 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: main
           path: combat-source
-      - name: Checkout author-approved Capture Showcase from published editor
+      - name: Checkout exact user-validated Capture Showcase snapshot
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: gh-pages
+          ref: 4fd0821545eaa41ce1d3115e56f3574db6273426
           path: combat-author
       - name: Checkout current Capture visual catalog
         uses: actions/checkout@v4
@@ -117,7 +118,9 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
-          test "$(git -C encounter-source rev-parse HEAD)" = 3a0a6ec4bad257f28577d54cd3e23e557e05d9b4
+          test "$(git -C encounter-source rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
+          test "$(git -C combat-author rev-parse HEAD)" = 4fd0821545eaa41ce1d3115e56f3574db6273426
+          test -s encounter-source/src/audio/exploration-soundtrack-v1.js
           printf 'Official Combat main tested at: %s\\n' "$(git -C combat-source rev-parse HEAD)"
           test -n "$(git -C capture-source rev-parse HEAD)"
           test -n "$(git -C combat-author rev-parse HEAD)"
