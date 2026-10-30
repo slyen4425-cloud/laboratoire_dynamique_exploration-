@@ -6,6 +6,9 @@ import {sculptWaterAt} from '../src/world/sculpt-height-model.js';
 import {resolveWorldObjectPlacements} from '../src/world/world-object-placement-model.js';
 import {bridgeTraversalRect} from '../src/world/world-object-model.js';
 import {sculptBridgeBankHeights} from '../src/core/sculpt-navigation-collision.js';
+import {stepMovement} from '../src/core/movement.js';
+import {sculptPreviewCollisionCatalog} from '../src/core/sculpt-preview-object-collisions.js';
+import {sculptTerrainRampProjections} from '../src/world/sculpt-height-model.js';
 import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
 
@@ -60,4 +63,42 @@ test('the eight villages and wilderness presets contain an actual varied 2.5D la
  assert.ok(falls>=4,'waterfalls must exist in actual scene objects');
  assert.ok(wet>=6,'lakes, ponds and streams in multiple biomes');
  assert.equal(interiors,houses);
+});
+
+test('every enriched main road remains physically walkable from the genuine Spawn to the actual Portal',()=>{
+ for(const preset of builtinSculptMapPresets()){
+   const host=createBlankWorldBuilderDraft({id:'path-'+preset.id,width:1008,height:504});
+   const doc=createWorldAreaFromSculptMapPreset(host,preset,{
+     hostAreaId:host.initialAreaId});
+   const area=doc.areas[1];
+   const scene=importSculptPreviewScene(preset.scene);
+   const bridgeObjects=resolveWorldObjectPlacements(scene.objects).filter(x=>
+     x.definition?.kind==='bridge'||x.objectDefinition?.kind==='bridge'||
+     x.objectDefinitionId?.startsWith('objectdef.bridge.'));
+   const world={width:area.width,height:area.height,objects:scene.objects,
+     obstacles:[],boundary:area.boundary,walls:area.walls??[]};
+   const context={objectCatalog:sculptPreviewCollisionCatalog,
+     sculptNavigation:{terrain:scene.terrain,cellWidth:28,cellHeight:21,
+       projectionRise:18,maxStepUp:0,maxStepDown:0,shoreEntryFraction:.14,
+       bridges:bridgeObjects,stairs:sculptTerrainRampProjections(scene.terrain)}};
+   const actor={x:area.spawns[0].x,y:area.spawns[0].y,radius:5,
+     locomotion:{modes:['ground']},facingX:1,moving:false};
+   const exit=doc.portals.find(p=>p.sourceAreaId===area.id&&
+     p.trigger?.kind==='point'&&p.targetAreaId===host.initialAreaId);
+   assert.ok(exit,preset.name+' outbound Portal exists');
+   const targets=[...scene.surface.routes[0].points.slice(1,-1),exit.trigger];
+   for(const target of targets){
+     let reached=false;
+     for(let n=0;n<550;n++){
+       const dx=target.x-actor.x,dy=target.y-actor.y,d=Math.hypot(dx,dy);
+       if(d<=12){reached=true;break;}
+       const previous={x:actor.x,y:actor.y};
+       stepMovement(world,actor,{x:dx/d,y:dy/d},Math.min(.035,d/210),
+         {maxSpeed:210},undefined,context);
+       assert.ok(Math.hypot(actor.x-previous.x,actor.y-previous.y)>.01,
+         preset.name+' blocked by a new landscape object or wet ground at '+JSON.stringify(previous));
+     }
+     assert.ok(reached,preset.name+' cannot reach a canonical route waypoint');
+   }
+ }
 });
