@@ -35,11 +35,13 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: main
           path: combat-preview
-      - name: Checkout current author-approved Capture Showcase
+      - name: Checkout user-tested Capture Showcase snapshot (official author authority)
         uses: actions/checkout@v4
         with:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
-          ref: gh-pages
+          # CI-GREEN 40961441833, author source at 4fd08215. New author
+          # abilities must pass the Combat main contract before promotion.
+          ref: 4fd0821545eaa41ce1d3115e56f3574db6273426
           path: combat-author
       - name: Assemble isolated Exploration bridge over official Combat
         run: |
