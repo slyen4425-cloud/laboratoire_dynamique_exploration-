@@ -65,3 +65,37 @@ test('Combat jingles remain reserved slots, not arbitrary unapproved audio asset
  assert.match(source,/explorationSoundtrack\.fadeOut\(/);
  assert.match(source,/explorationSoundtrack\.fadeIn\(/);
 });
+
+test('Android playback denial after a fade-in restores audible volume for a trusted retry',async()=>{
+ let audio,playCount=0;
+ class GestureAudio{
+  constructor(){audio=this;this.volume=.45;this.currentTime=0;this.listeners=new Map();}
+  addEventListener(kind,fn){this.listeners.set(kind,fn);}
+  removeEventListener(kind){this.listeners.delete(kind);}
+  play(){playCount++;return playCount===2
+    ?Promise.reject(Object.assign(new Error('trusted gesture required'),{name:'NotAllowedError'}))
+    :Promise.resolve();}
+  pause(){}
+  removeAttribute(){}
+  load(){}
+ }
+ const tasks=new Map();let seq=0;
+ const session=createExplorationSoundtrackV1({AudioCtor:GestureAudio,
+   schedule:fn=>{const id=++seq;tasks.set(id,fn);return id;},
+   cancel:id=>tasks.delete(id),
+   assetUrl:file=>'test://'+file
+ });
+ session.start();await Promise.resolve();
+ session.fadeOut({durationMs:400});
+ for(let i=0;i<30&&tasks.size;i++){const [id,fn]=tasks.entries().next().value;tasks.delete(id);fn();}
+ assert.equal(session.state,'paused');
+ session.fadeIn({durationMs:500});
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(session.state,'blocked');
+ assert.equal(audio.volume,.45,'a blocked return cannot leave retry at silent volume');
+ assert.equal(session.start(),true);
+ await Promise.resolve();await Promise.resolve();
+ assert.equal(session.state,'playing');
+ assert.equal(audio.volume,.45);
+ session.dispose();
+});
