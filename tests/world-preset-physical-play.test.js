@@ -22,10 +22,13 @@ function walkPrefabArea(doc,area,expectEncounter){
    terrain,cellWidth:28,cellHeight:21,projectionRise:18,maxStepUp:0,maxStepDown:0,
    shoreEntryFraction:.14,bridges:[],stairs:sculptTerrainRampProjections(terrain)
  }};
- const actor={x:area.spawns[0].x,y:area.spawns[0].y,radius:5,
-   locomotion:{modes:['ground']},facingX:1,moving:false};
  const exit=doc.portals.find(p=>p.sourceAreaId===area.id&&p.trigger?.kind==='point'&&
     doc.areas.some(t=>t.id===p.targetAreaId&&t.kind==='exterior'));
+ const road=area.surface.routes[0].points;
+ const reverse=exit?.trigger?.x<area.width/2;
+ const actor={x:reverse?area.width-72:area.spawns[0].x,
+   y:reverse?road.at(-1).y:area.spawns[0].y,radius:5,
+   locomotion:{modes:['ground']},facingX:reverse?-1:1,moving:false};
  assert.ok(exit,'prefab must have an outside exit');
  const catalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
  const encounters=createEncounterController({checkDistance:160});
@@ -35,8 +38,7 @@ function walkPrefabArea(doc,area,expectEncounter){
    playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',random:()=>0
  });
  encounters.step(inputs());let encounter=null;
- const road=area.surface.routes[0].points;
- const targets=[...road.slice(1,-1),exit.trigger];
+ const targets=[...(reverse?road.slice(1,-1).reverse():road.slice(1,-1)),exit.trigger];
  for(const target of targets){
    for(let n=0;n<550;n++){
      const dx=target.x-actor.x,dy=target.y-actor.y;
