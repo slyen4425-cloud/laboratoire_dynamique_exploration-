@@ -20,6 +20,10 @@
     <button id="world-workspace-world-active" type="button" class="selected" aria-current="page">🌍 Monde</button>
     <button id="world-workspace-map" type="button" title="Éditer la carte de la zone sélectionnée">🗺 Carte 2,5D</button>
    </nav>
+   <div class="mobile-workspace-tools" aria-label="Panneaux du constructeur">
+    <button id="world-panel-zones" type="button" aria-controls="world-structure-panel" aria-expanded="false">☰ Zones</button>
+    <button id="world-panel-details" type="button" aria-controls="world-inspector-panel" aria-expanded="false">⚙ Détails</button>
+   </div>
    <div class="header-actions">
     <span id="save-state" class="save-state" role="status">Monde local</span>
     <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
@@ -28,8 +32,8 @@
     </label>
    </div>
   </header>
-  <div class="workspace">
-   <aside class="left-rail" aria-label="Bibliothèque de zones">
+  <div class="workspace" id="world-workspace-layout" data-panel="none">
+   <aside class="left-rail" id="world-structure-panel" aria-label="Bibliothèque de zones">
     <div class="panel-heading"><span>STRUCTURE</span><strong id="world-area-count">1 zone</strong></div>
     <label class="field">Nom du monde
       <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
@@ -104,7 +108,7 @@
      <span id="world-portal-count" class="footer-count">0 passage</span>
     </div>
    </main>
-   <aside class="inspector" aria-label="Détails de la zone sélectionnée">
+   <aside class="inspector" id="world-inspector-panel" aria-label="Détails de la zone sélectionnée">
     <div class="panel-heading"><span>INSPECTEUR</span><span id="area-kind-badge">ZONE</span></div>
     <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
     <h2 id="selected-name">Zone principale</h2>
