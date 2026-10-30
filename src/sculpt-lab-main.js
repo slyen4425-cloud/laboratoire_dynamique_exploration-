@@ -433,7 +433,7 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     // Combat owns its audio until the validated iframe closes. Resume in
     // a microtask after the host has destroyed the iframe, without overlap.
-    queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.resume();});
+    queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.fadeIn({durationMs:900});});
     status('Combat terminé : '+restored.outcome+' · exploration reprise');
     return true;
   }
@@ -441,7 +441,7 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
 if(sculptEncounterDialog){
   $('sculpt-encounter-combat').addEventListener('click',()=>{
     if(!sculptPendingEncounter||sculptEncounterHost.active)return;
-    explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
+    explorationSoundtrack.fadeOut({durationMs:600}); // Transition vers la musique native Combat, sans coupure brusque.
     const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
     try{
       launchCombatHandoffNavigation({
@@ -450,7 +450,7 @@ if(sculptEncounterDialog){
         navigate(url){sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});}
       });
     }catch(error){
-      explorationSoundtrack.resume();
+      explorationSoundtrack.fadeIn({durationMs:650});
       status('Combat indisponible : '+error.message);
     }
   });
