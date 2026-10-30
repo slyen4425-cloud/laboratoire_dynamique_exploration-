@@ -1,5 +1,5 @@
-// Build-time sync: Combat main owns engine, Combat gh-pages owns the live
-// author-published Showcase. One staged owner per data class, never a runtime
+// Build-time sync: Combat main owns BOTH engine and author-published
+// data. A development-branch author snapshot is never an allowed source. One staged owner per data class, never a runtime
 // request to a foreign repo or an alternate fallback catalogue.
 import {readFileSync,existsSync,mkdirSync,copyFileSync,writeFileSync} from 'node:fs';
 import {resolve,dirname,join} from 'node:path';
@@ -51,8 +51,9 @@ export async function stageCaptureAuthorShowcaseV1({authorRoot,combatRoot}) {
   copyAuthorFile(source,target,'data/capture/showcase/markers.capture-markers-v1.json');
   const authorSha=execFileSync('git',['rev-parse','HEAD'],{cwd:source,encoding:'utf8'}).trim();
   const engineSha=execFileSync('git',['rev-parse','HEAD'],{cwd:target,encoding:'utf8'}).trim();
+  if(authorSha!==engineSha)throw new Error('Combat author and engine must come from the same approved main commit');
   const provenance={schema:'capture-exploration-author-stage-v1',
-    author:{branch:'gh-pages',commit:authorSha},
+    author:{branch:'main',commit:authorSha},
     engine:{branch:'main',commit:engineSha},
     ...report};
   // Read-only derived load artifact: exact author entries are still copied
