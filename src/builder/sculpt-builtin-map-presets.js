@@ -67,7 +67,7 @@ const RICH=Object.freeze([
   ponds:[{x:27,y:17,r:2.7}],
   bridge:{x:252,y:357,style:'wood_rustic'},
   waterfall:{x:756,y:357,style:'front_wide',variant:'forest_stream'}},
- {homes:[[3,350,395],[2,858,395]],
+ {homes:[[3,350,395],[2,915,395]],
   ponds:[{x:28,y:18,r:2.7}],
   waterfall:{x:784,y:378,style:'tiered',variant:'forest_stream'}},
  {homes:[[2,150,136],[0,332,130],[3,510,130],[1,690,134],[4,145,395]],
