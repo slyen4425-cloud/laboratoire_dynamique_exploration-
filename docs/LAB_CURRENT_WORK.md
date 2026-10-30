@@ -1,15 +1,17 @@
 # Lot — Présets 2,5D riches, villages et paysages (30 octobre 2026)
 
-- **Branche isolée :** \`work/exploration-rich-village-landscapes-2026-10-30\`.
-- **Départ :** \`main@474aa42674c9bd976a8a5a8af684d65cbe848b61\` ; checkpoint \`checkpoint/exploration-rich-village-landscapes-start-2026-10-30\`.
+- **Branche isolée :** `work/exploration-rich-village-landscapes-2026-10-30`.
+- **Départ :** `main@474aa42674c9bd976a8a5a8af684d65cbe848b61` ; checkpoint START `checkpoint/exploration-rich-village-landscapes-start-2026-10-30`.
 - **Signal utilisateur :** huit présets existants trop vides, trop peu de maisons, aucune cascade ni pont ; attentes : villages et paysages 2,5D plus riches, entrées de maisons avec véritables intérieurs.
-- **Propriétaire :** couche d'assemblage des présets natifs \`src/builder/sculpt-builtin-map-presets.js\` ; pas de nouvelle autorité WorldArea, WorldDocument, collisions, rendu, musique ou Combat.
-- **Invariants gelés :** 8 identifiants de présets inchangés, chemins bord-à-bord, Spawn/Portal WorldDocument, présets utilisateur et V80 inchangés ; catalogue de visuels existant exclusivement ; chaque habitation raccordée à sa propre Area intérieure par le mécanisme déjà éprouvé.
-- **Implémentation :** plans de hameaux et villages plus habités ; vrais coups de pinceau eau/sol/chemins, ponts 2,5D au-dessus de l'eau, cascades animées et points d'eau dans différents biomes ; routes d'accès aux maisons et aux berges contrôlées contre l'eau.
-- **Tests :** TDD nouveaux tests de richesse et raccord d'intérieurs, \`npm test\`, \`npm run check\`, sentinelles de parcours physiques forêt ↔ neige, tests navigateur via CI Exploration ; ne pas annoncer GREEN avant les preuves et validation visuelle mobile.
-- **Hors périmètre :** nouvelles images/animations, refonte du moteur de relief, changement des règles de rencontre, publication \`main\` non sollicitée.
-- **Risques :** performance/quantité de maisons et d'intérieurs sur téléphone, collision des accès, pont et relief visuel ; la CI ne remplace pas le test tactile/visuel réel.
-- **État :** lot de travail, pas encore GREEN ; \`main\` et Pages stables.
+- **Autorité :** présets natifs `src/builder/sculpt-builtin-map-presets.js`, aucun moteur secondaire de WorldArea, WorldDocument, collision, rendu, Portals, rencontres ou Combat.
+- **Périmètre réalisé :** huit présets et IDs préservés ; 38 bâtiments dont auberges, étangs et plans d'eau sur les huit biomes, 7 ponts 2,5D et 7 cascades animées provenant des assets existants. Accès maisons/berges par les outils WorldSurface officiels ; instanciation par WorldArea et intérieurs liés indépendants via `createBuildingInteriorLink`.
+- **Invariants protégés :** Spawn et Portal du WorldDocument, routes de bord à bord et collisions conservés, catalogues et bibliothèque personnalisée inchangés, V80 gelée, moteur Combat exclusivement depuis son main.
+- **TDD RED puis correctifs cause racine :** `41103645764` : absence de densité sur les anciennes cartes ; `41104910246` : chemin de la clairière coupé par un étang ; `41105455220` : collision d'un pont avec l'accès principal. Corrigés par le placement des éléments et l'orientation des ponts, **sans** toucher au propriétaire des collisions.
+- **Contrôles CI du commit `6028678ac19bb851e1be0054157b6a01ad27e2a8` :** `Exploration CI #41105841823` **SUCCESS** (`core-tests` : 921 tests, 0 échec ; `modern-combat-encounter` : vrais Chromium GREEN), `publish-v81-main.yml #41105841826` **SUCCESS** (`detect-upstream` + `verify-and-assemble` verts). Le job `deploy` est **skipped** sur PR, sans modification de la production.
+- **Reste à valider :** rendu esthétique réel de chaque préset et confort/performance sur Pixel paysage, entrées/sorties des maisons, ponts/cascades, import/export et absence de blocage tactile. La CI n'est pas une validation manuelle. PR #301 reste **draft**, pas de checkpoint final GREEN et pas de fusion `main` avant validation de ce jalon.
+- **Hors périmètre :** nouvelles images, nouvelles règles de rencontre, refonte relief, second publisher ou modification de GenSrpg/Combat.
+- **Prochaine étape autorisée :** fournir une prévisualisation isolée réellement testable sans déroger à l'autorité Pages unique, puis recueillir la validation mobile. Si la preview nécessite une promotion, demander explicitement son feu vert au lieu de contourner le workflow.
+
 
 ---
 
