@@ -11,6 +11,7 @@ import {sculptPreviewCollisionCatalog} from '../src/core/sculpt-preview-object-c
 import {sculptTerrainRampProjections} from '../src/world/sculpt-height-model.js';
 import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
+import {resolvePortalTriggerPoint,findTriggeredPortal} from '../src/world/portal-model.js';
 
 test('the eight villages and wilderness presets contain an actual varied 2.5D landscape, not isolated props',()=>{
  const presets=builtinSculptMapPresets();
@@ -101,4 +102,51 @@ test('every enriched main road remains physically walkable from the genuine Spaw
      assert.ok(reached,preset.name+' cannot reach a canonical route waypoint');
    }
  }
+});
+
+
+test('all 38 independent house doors remain reachable from a real dry outdoor approach',()=>{
+ let doors=0;
+ for(const [index,preset] of builtinSculptMapPresets().entries()){
+   const base=createBlankWorldBuilderDraft({id:'doors-'+index,width:1008,height:504});
+   const doc=createWorldAreaFromSculptMapPreset(base,preset,{
+     hostAreaId:base.initialAreaId});
+   const area=doc.areas[1],scene=importSculptPreviewScene(preset.scene);
+   const world={width:area.width,height:area.height,objects:scene.objects,
+     obstacles:[],boundary:area.boundary,walls:area.walls??[]};
+   const context={objectCatalog:sculptPreviewCollisionCatalog,
+     sculptNavigation:{terrain:scene.terrain,cellWidth:28,cellHeight:21,
+       projectionRise:18,maxStepUp:0,maxStepDown:0,shoreEntryFraction:.14,
+       bridges:[],stairs:sculptTerrainRampProjections(scene.terrain)}};
+   for(const portal of doc.portals.filter(p=>p.sourceAreaId===area.id&&
+     p.trigger?.kind==='object-anchor')){
+     doors++;
+     const p=resolvePortalTriggerPoint(doc.areas,portal);
+     assert.ok(p,preset.name+' has a valid front door');
+     assert.ok(p.x>=45&&p.y>=45&&p.x<=area.width-45&&p.y<=area.height-45,
+       preset.name+' door must not touch an inaccessible map edge: '+JSON.stringify(p));
+     const offsets=[[0,65],[0,-65],[65,0],[-65,0],[45,45],[-45,45]];
+     let entered=false;
+     for(const [ox,oy] of offsets){
+       const start={x:p.x+ox,y:p.y+oy};
+       if(start.x<20||start.y<20||start.x>area.width-20||start.y>area.height-20)continue;
+       if(sculptWaterAt(scene.terrain,Math.floor(start.x/28),
+         Math.floor(start.y/21))>0)continue;
+       const actor={...start,radius:5,locomotion:{modes:['ground']},
+         facingX:1,moving:false};
+       for(let n=0;n<110;n++){
+         if(findTriggeredPortal(doc,area.id,actor)?.id===portal.id){entered=true;break;}
+         const dx=p.x-actor.x,dy=p.y-actor.y,d=Math.hypot(dx,dy);
+         if(d<1)break;
+         const prev={x:actor.x,y:actor.y};
+         stepMovement(world,actor,{x:dx/d,y:dy/d},Math.min(.035,d/210),
+           {maxSpeed:210},undefined,context);
+         if(Math.hypot(actor.x-prev.x,actor.y-prev.y)<.01)break;
+       }
+       if(entered)break;
+     }
+     assert.ok(entered,preset.name+' has an unusable real door at '+JSON.stringify(p));
+   }
+ }
+ assert.equal(doors,38);
 });
