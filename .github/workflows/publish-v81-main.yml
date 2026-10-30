@@ -24,8 +24,10 @@ permissions:
   id-token: write
   statuses: write
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  # Deployments remain serialized on pages. PR-only validation never deploys,
+  # so obsolete PR runs must not block the current validated source indefinitely.
+  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.head_ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   detect-upstream:
     runs-on: ubuntu-latest
