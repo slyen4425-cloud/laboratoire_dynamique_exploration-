@@ -126,9 +126,13 @@ jobs:
           test -s combat-source/examples/dom-demo/exploration-author-provenance.v1.json
           test -s combat-source/data/capture/showcase/Spore_soporifique.capture-skill-transfer-v1.json
           test -s combat-source/data/capture/showcase/encounter-bundle.v1.json
-          # Assert the main-authored Moussados loadout, without injecting a
-          # reaction present only in an unpromoted development branch.
-          jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .loadout.slots[1].skillId=="lib_earth_guard")] | length)==1' combat-source/data/capture/showcase/encounter-bundle.v1.json >/dev/null
+          # The previously accepted Moussados Defense is an explicit release invariant.
+          # Fail closed if Combat main has not promoted it; NEVER backfill it
+          # from gh-pages or silently remove it from the released game.
+          if ! jq -e '([.creatureTransfers[] | select(.draft.id=="crea_mossback" and .draft.combat.reaction.type=="defense" and .loadout.slots[1].skillId=="lib_earth_guard")] | length)==1' combat-source/data/capture/showcase/encounter-bundle.v1.json >/dev/null; then
+            echo "::error::Combat main does not contain the approved Moussados Defense; main-only release blocked without development fallback"
+            exit 1
+          fi
           test -s site/sculpt-lab-v80.html
           # Four real, user-authorized runtime MP3s; no private source URLs.
           (
