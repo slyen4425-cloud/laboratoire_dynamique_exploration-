@@ -97,6 +97,27 @@ function installWorldAssembler(){
     el.addEventListener(event,callback,options);
     listenerCleanups.push(()=>el.removeEventListener(event,callback,options));
   };
+  // Mobile presentation only: retain the one WorldDocument and the same
+  // two existing World Builder panels; never clone the map or inspector.
+  const workspace=byId('world-workspace-layout');
+  const zonesButton=byId('world-panel-zones');
+  const detailsButton=byId('world-panel-details');
+  const isLandscapeCompact=()=>window.matchMedia?.(
+    '(orientation: landscape) and (max-width: 1250px)')?.matches===true;
+  function setWorkspacePanel(panel){
+    const next=isLandscapeCompact()&&['zones','details'].includes(panel)?panel:'none';
+    workspace.dataset.panel=next;
+    zonesButton.setAttribute('aria-expanded',String(next==='zones'));
+    detailsButton.setAttribute('aria-expanded',String(next==='details'));
+  }
+  on(zonesButton,'click',()=>setWorkspacePanel(
+    workspace.dataset.panel==='zones'?'none':'zones'));
+  on(detailsButton,'click',()=>setWorkspacePanel(
+    workspace.dataset.panel==='details'?'none':'details'));
+  on(document,'keydown',event=>{
+    if(event.key==='Escape')setWorkspacePanel('none');
+  });
+  on(window,'resize',()=>{if(!isLandscapeCompact())setWorkspacePanel('none');});
   const transfer=new URLSearchParams(window.location.search).get('return')==='1'
     ?readWorldAssemblerHandoff(window.sessionStorage):null;
   let draft=transfer?.document??readWorldAssemblerDraft(window.localStorage)
@@ -123,6 +144,7 @@ function installWorldAssembler(){
   function select(id){
     if(!draft.areas.some(a=>a.id===id))return;
     selectedId=id;render();
+    if(isLandscapeCompact())setWorkspacePanel('details');
   }
   function apply(command,success){
     try{
