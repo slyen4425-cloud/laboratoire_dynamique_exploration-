@@ -26,8 +26,8 @@ permissions:
 concurrency:
   # Deployments remain serialized on pages. PR-only validation never deploys,
   # so obsolete PR runs must not block the current validated source indefinitely.
-  group: ${{ github.event_name == 'pull_request' && format('pages-pr-{0}', github.head_ref) || 'pages' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.event_name == 'pull_request' && github.event.pull_request.number != 301 && format('pages-pr-{0}', github.head_ref) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.pull_request.number != 301 }}
 jobs:
   detect-upstream:
     runs-on: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
             "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/release-provenance.v1.json?v=$(date +%s)" \
             -o "$published"; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
-          elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" --arg exploration "$EXPLORATION_SOURCE_SHA" \
+          elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" --arg exploration "$stable_release_sha" \
             '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration==$exploration' "$published" >/dev/null; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
@@ -300,14 +300,59 @@ jobs:
             node scripts/smoke-exploration-music-playback.mjs
           )
           rm "$preview/scripts"
+      - name: Checkout stable main for the PR301 isolated trial
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'
+        uses: actions/checkout@v4
+        with:
+          ref: 474aa42674c9bd976a8a5a8af684d65cbe848b61
+          path: stable-source
+      - name: Stage separate rich PR301 preview without changing canonical main
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'
+        shell: bash
+        run: |
+          set -euo pipefail
+          stable_sha="474aa42674c9bd976a8a5a8af684d65cbe848b61"
+          test "$(git -C stable-source rev-parse HEAD)" = "$stable_sha"
+          test "$(git -C encounter-source rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
+          cmp stable-source/sculpt-lab-v80.html site/sculpt-lab-v80.html
+          mv site/preview/encounters-v80 site/preview/rich-presets-pr301
+          rich="$GITHUB_WORKSPACE/site/preview/rich-presets-pr301"
+          stable="$GITHUB_WORKSPACE/site/preview/encounters-v80"
+          mkdir -p "$stable"
+          cp stable-source/sculpt-lab.html stable-source/sculpt-lab-v80.html "$stable/"
+          cp stable-source/world-assembler.html stable-source/builder.html stable-source/index.html "$stable/"
+          cp stable-source/manifest.webmanifest "$stable/"
+          for folder in src assets; do
+            mkdir -p "$stable/$folder"
+            rsync -a --exclude='.git' "stable-source/$folder/" "$stable/$folder/"
+          done
+          mkdir -p "$stable/combat-preview" "$stable/capture-assets"
+          rsync -a --exclude='.git' combat-source/ "$stable/combat-preview/"
+          rsync -a --exclude='.git' capture-source/ "$stable/capture-assets/"
+          jq -n --arg main "$(git -C combat-source rev-parse HEAD)" \
+            --arg author "$(git -C combat-author rev-parse HEAD)" \
+            --arg assets "$(git -C capture-source rev-parse HEAD)" \
+            --arg exploration "$stable_sha" \
+            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$author,visualAssets:$assets,exploration:$exploration}' \
+            > "$stable/release-provenance.v1.json"
+          cmp stable-source/src/builder/sculpt-builtin-map-presets.js "$stable/src/builder/sculpt-builtin-map-presets.js"
+          cmp encounter-source/src/builder/sculpt-builtin-map-presets.js "$rich/src/builder/sculpt-builtin-map-presets.js"
+          ! grep -Fq 'const RICH=Object.freeze' "$stable/src/builder/sculpt-builtin-map-presets.js"
+          grep -Fq 'const RICH=Object.freeze' "$rich/src/builder/sculpt-builtin-map-presets.js"
+          jq -e --arg sha "$stable_sha" '.exploration==$sha' "$stable/release-provenance.v1.json" >/dev/null
+          jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha' "$rich/release-provenance.v1.json" >/dev/null
+          echo 'SAFE: canonical main and pinned V80 preserved, rich PR301 independently staged'
       - uses: actions/upload-pages-artifact@v3
-        if: github.event_name != 'pull_request'
+        if: >-
+          github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30')
         with:
           path: site
 
   deploy:
     needs: [detect-upstream, verify-and-assemble]
-    if: github.event_name != 'pull_request' && needs.detect-upstream.outputs.publish == 'true'
+    if: >-
+      needs.detect-upstream.outputs.publish == 'true' &&
+      (github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'))
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -321,6 +366,18 @@ jobs:
         with:
           ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: release-check
+      - name: Checkout exact PR301 source for post-deploy verification
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPLORATION_SOURCE_SHA }}
+          path: rich-check
+      - name: Checkout canonical main for post-deploy verification
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'
+        uses: actions/checkout@v4
+        with:
+          ref: 474aa42674c9bd976a8a5a8af684d65cbe848b61
+          path: stable-check
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |
@@ -410,6 +467,10 @@ jobs:
           curl -fsSL -I "$probe/combat-preview/assets/runtime/audio/music-v1/battle-01-cb4ed87d.mp3?build=$GITHUB_SHA" >/dev/null
           curl -fsSL -I "$probe/combat-preview/assets/runtime/audio/private-v1/genrpg-pack2-f75d0d8f.mp3?build=$GITHUB_SHA" >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/release-provenance.v1.json?build=$GITHUB_SHA" -o /tmp/published-provenance.json
+          stable_release_sha="$EXPLORATION_SOURCE_SHA"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            stable_release_sha="474aa42674c9bd976a8a5a8af684d65cbe848b61"
+          fi
           jq -e --arg main "${{ needs.verify-and-assemble.outputs.combat_main }}" \
             --arg author "${{ needs.verify-and-assemble.outputs.author_showcase }}" \
             --arg assets "${{ needs.verify-and-assemble.outputs.visual_assets }}" \
@@ -440,9 +501,24 @@ jobs:
           grep -Fq 'initializeWorldPresetEncounters' /tmp/published-world-builder-draft.js
           grep -Fq 'retargetedPortalIds' /tmp/published-playable-route.js
           grep -Fq 'initializeEncounters' /tmp/published-playable-route.js
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            rich="$base/preview/rich-presets-pr301"
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$rich/world-assembler.html?rev=$EXPLORATION_SOURCE_SHA" -o /tmp/rich301-assembler.html
+            cmp rich-check/world-assembler.html /tmp/rich301-assembler.html
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$rich/sculpt-lab.html?rev=$EXPLORATION_SOURCE_SHA" -o /tmp/rich301-sculpt.html
+            cmp rich-check/sculpt-lab.html /tmp/rich301-sculpt.html
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$rich/src/builder/sculpt-builtin-map-presets.js?rev=$EXPLORATION_SOURCE_SHA" -o /tmp/rich301-presets.js
+            cmp rich-check/src/builder/sculpt-builtin-map-presets.js /tmp/rich301-presets.js
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/src/builder/sculpt-builtin-map-presets.js?rev=$EXPLORATION_SOURCE_SHA" -o /tmp/stable-presets.js
+            cmp stable-check/src/builder/sculpt-builtin-map-presets.js /tmp/stable-presets.js
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$rich/release-provenance.v1.json?rev=$EXPLORATION_SOURCE_SHA" -o /tmp/rich301-release.json
+            jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha' /tmp/rich301-release.json >/dev/null
+            echo 'PR301 deployed separately; exact HTTPS sources verified and canonical main preserved'
+          fi
           printf 'LIVE OK: pinned V80 identical; two-way playable preset routes, configured encounters, Capture combat and required assets HTTP 200\\n'
 
       - name: Record verified live URL on the published commit
+        if: github.event_name != 'pull_request'
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -461,4 +537,26 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -X POST --data-binary @/tmp/pages-preview-status.json \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$EXPLORATION_SOURCE_SHA" >/dev/null
+
+      - name: Record verified PR301 preview link
+        if: github.event_name == 'pull_request' && github.event.pull_request.number == 301 && github.head_ref == 'work/exploration-rich-village-landscapes-2026-10-30'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/pr301-status.json <<'JSON'
+          {
+            "state": "success",
+            "context": "pages/rich-presets-pr301-live",
+            "description": "PR301 isolée; main + V80 inchangés; preuves HTTPS",
+            "target_url": "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/rich-presets-pr301/world-assembler.html?richPresets=pr301"
+          }
+          JSON
+          curl -fsSL --retry 3 --retry-delay 2 --retry-all-errors \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -X POST --data-binary @/tmp/pr301-status.json \
             "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$EXPLORATION_SOURCE_SHA" >/dev/null
