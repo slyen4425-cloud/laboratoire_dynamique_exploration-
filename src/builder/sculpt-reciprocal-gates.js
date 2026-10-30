@@ -11,6 +11,20 @@ export function sculptRouteGatePoint(area,edge){
  return Object.freeze({x:edge==='entry'?64:area.width-64,
    y:Math.max(48,Math.min(area.height-48,endpoint.y))});
 }
+// The arrival offset belongs on the true Surface route, not at the
+// trigger's Y coordinate. Slanted roads otherwise land next to house doors.
+function safeRoadArrival(area,gate,edge){
+ const route=area?.surface?.routes?.[0]?.points??[];
+ const endpoint=edge==='entry'?route[0]:route.at(-1);
+ const neighbor=edge==='entry'?route[1]:route.at(-2);
+ const x=Math.max(32,Math.min(area.width-32,
+   gate.x+(edge==='entry'?120:-120)));
+ if(!endpoint||!neighbor||Math.abs(neighbor.x-endpoint.x)<1)
+   return {x,y:gate.y};
+ const t=Math.max(0,Math.min(1,(x-endpoint.x)/(neighbor.x-endpoint.x)));
+ return {x,y:Math.max(35,Math.min(area.height-35,
+   endpoint.y+(neighbor.y-endpoint.y)*t))};
+}
 function ensureArrival(next,portalId,arrivalAreaId,point){
  const portal=next.portals.find(p=>p.id===portalId);
  const area=next.areas.find(a=>a.id===arrivalAreaId);
@@ -35,19 +49,19 @@ export function alignSculptReciprocalGatePair(draft,{
  if(!forward||!backward)throw Error('Portals réciproques de voyage introuvables');
  const sourceExit=sculptRouteGatePoint(source,'exit');
  const targetEntry=sculptRouteGatePoint(target,'entry');
- if(sourceExit){
-   next=placeSculptWorldPortal(next,forward.id,sourceExit);
-   next=ensureArrival(next,backward.id,sourceAreaId,{
-     x:Math.max(32,sourceExit.x-74),y:sourceExit.y
-   });
- }
+ if(sourceExit)next=placeSculptWorldPortal(next,forward.id,sourceExit);
+ // For an old unsculptable host, preserve its authored gate and return
+ // nearby rather than teleporting into the middle of an unrelated Area.
+ const actualSourceGate=sourceExit??forward.trigger;
+ if(actualSourceGate?.kind==='point'||sourceExit)
+   next=ensureArrival(next,backward.id,sourceAreaId,
+     safeRoadArrival(source,actualSourceGate,'exit'));
  if(targetEntry){
    // Returning to A from B must happen at B's entrance (west edge),
    // never at B's next exit (east edge).
    next=placeSculptWorldPortal(next,backward.id,targetEntry);
-   next=ensureArrival(next,forward.id,targetAreaId,{
-     x:Math.min(target.width-32,targetEntry.x+74),y:targetEntry.y
-   });
+   next=ensureArrival(next,forward.id,targetAreaId,
+     safeRoadArrival(target,targetEntry,'entry'));
  }
  return createWorldBuilderDraft(next);
 }
