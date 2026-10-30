@@ -58,10 +58,10 @@ test('shuffle plays all four without an immediate repeat; pause and resume prese
 test('music resume only follows battle; no additional sound activation button',()=>{
   const code=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(code,/explorationSoundtrack\.start\(\)/);
-  assert.match(code,/explorationSoundtrack\.pause\(\)/);
-  assert.match(code,/explorationSoundtrack\.resume\(\)/);
+  assert.match(code,/explorationSoundtrack\.fadeOut\(/);
+  assert.match(code,/explorationSoundtrack\.fadeIn\(/);
   assert.match(code,/explorationSoundtrack\.stop\(\)/);
-  assert.match(code,/if\(navigationTesting\)explorationSoundtrack\.resume\(\)/);
+  assert.match(code,/if\(navigationTesting\)explorationSoundtrack\.fadeIn\(\{durationMs:900\}\)/);
   assert.match(code,/window\.addEventListener\('pagehide',\(\)=>explorationSoundtrack\.dispose\(\)/);
 });
 

@@ -5,7 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
  <meta name="theme-color" content="#0b1822">
  <title>GenSrpG — Constructeur de mondes</title>
- <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-v1">
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-mobile-drawers-r1">
 </head>
 <body>
  <div class="app-shell">
@@ -20,6 +20,10 @@
     <button id="world-workspace-world-active" type="button" class="selected" aria-current="page">🌍 Monde</button>
     <button id="world-workspace-map" type="button" title="Éditer la carte de la zone sélectionnée">🗺 Carte 2,5D</button>
    </nav>
+   <div class="mobile-workspace-tools" aria-label="Panneaux du constructeur">
+    <button id="world-panel-zones" type="button" aria-controls="world-structure-panel" aria-expanded="false">☰ Zones</button>
+    <button id="world-panel-details" type="button" aria-controls="world-inspector-panel" aria-expanded="false">⚙ Détails</button>
+   </div>
    <div class="header-actions">
     <span id="save-state" class="save-state" role="status">Monde local</span>
     <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
@@ -28,8 +32,8 @@
     </label>
    </div>
   </header>
-  <div class="workspace">
-   <aside class="left-rail" aria-label="Bibliothèque de zones">
+  <div class="workspace" id="world-workspace-layout" data-panel="none">
+   <aside class="left-rail" id="world-structure-panel" aria-label="Bibliothèque de zones">
     <div class="panel-heading"><span>STRUCTURE</span><strong id="world-area-count">1 zone</strong></div>
     <label class="field">Nom du monde
       <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
@@ -104,7 +108,7 @@
      <span id="world-portal-count" class="footer-count">0 passage</span>
     </div>
    </main>
-   <aside class="inspector" aria-label="Détails de la zone sélectionnée">
+   <aside class="inspector" id="world-inspector-panel" aria-label="Détails de la zone sélectionnée">
     <div class="panel-heading"><span>INSPECTEUR</span><span id="area-kind-badge">ZONE</span></div>
     <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
     <h2 id="selected-name">Zone principale</h2>
@@ -149,6 +153,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-mobile-drawers-r1"></script>
 </body>
 </html>

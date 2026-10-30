@@ -1,3 +1,16 @@
+# QA intégrée — World Builder mobile, liaisons A/B et audio (30 octobre 2026)
+
+- **Branche QA :** `work/exploration-three-fixes-qa-2026-10-30` issue de PR #301 `a7a100f545ef1f7930c7c1185a0767a207b85435`. Les lots distincts #302, #303 et #304 sont copiés dans un état de test combiné, jamais dans main.
+- **Propriétaires inchangés :** WorldDocument/Portal/Spawn unique, musique Exploration unique, Combat et sons Combat depuis son main.
+- **Zones :** A sortie → B entrée, B entrée → A sortie, B sortie → C entrée ; Spawn d'arrivée sur la vraie route, sans rebond.
+- **Mobile :** graphe central pleine largeur, panneaux Zones/Détails officiels repliables en mode paysage.
+- **Audio :** fondu Exploration 600 ms vers Combat, reprise douce 900 ms après le résultat, même MP3 ; jingles futurs non fournis, trois emplacements vides.
+- **Gates :** Core + Chromium au SHA combiné, assemblage et HTTPS, test tactile Pixel. Ne pas annoncer GREEN final ni promouvoir main avant validation.
+- **Provenance :** #302 `0bac823af3025467e04be61aef19148e436b9b07`, #303 `9b1944d910fc6a52b80c0331bb46753766e62c41`, #304 `35a843466fb5a0b333bf9c33bbdcf3791e381700`.
+- **Gel :** main/V80/Combat main inchangés ; sauvegardes et intérieurs conservés.
+
+---
+
 # Lot — Présets 2,5D riches, villages et paysages (30 octobre 2026)
 
 - **Branche isolée :** `work/exploration-rich-village-landscapes-2026-10-30`.

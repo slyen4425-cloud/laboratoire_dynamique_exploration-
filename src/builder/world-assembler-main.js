@@ -7,11 +7,12 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
-import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
+import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2-zone-gates-r1';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
+import {alignSculptReciprocalGatePair} from './sculpt-reciprocal-gates.js';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -97,6 +98,27 @@ function installWorldAssembler(){
     el.addEventListener(event,callback,options);
     listenerCleanups.push(()=>el.removeEventListener(event,callback,options));
   };
+  // Mobile presentation only: retain the one WorldDocument and the same
+  // two existing World Builder panels; never clone the map or inspector.
+  const workspace=byId('world-workspace-layout');
+  const zonesButton=byId('world-panel-zones');
+  const detailsButton=byId('world-panel-details');
+  const isLandscapeCompact=()=>window.matchMedia?.(
+    '(orientation: landscape) and (max-width: 1250px)')?.matches===true;
+  function setWorkspacePanel(panel){
+    const next=isLandscapeCompact()&&['zones','details'].includes(panel)?panel:'none';
+    workspace.dataset.panel=next;
+    zonesButton.setAttribute('aria-expanded',String(next==='zones'));
+    detailsButton.setAttribute('aria-expanded',String(next==='details'));
+  }
+  on(zonesButton,'click',()=>setWorkspacePanel(
+    workspace.dataset.panel==='zones'?'none':'zones'));
+  on(detailsButton,'click',()=>setWorkspacePanel(
+    workspace.dataset.panel==='details'?'none':'details'));
+  on(document,'keydown',event=>{
+    if(event.key==='Escape')setWorkspacePanel('none');
+  });
+  on(window,'resize',()=>{if(!isLandscapeCompact())setWorkspacePanel('none');});
   const transfer=new URLSearchParams(window.location.search).get('return')==='1'
     ?readWorldAssemblerHandoff(window.sessionStorage):null;
   let draft=transfer?.document??readWorldAssemblerDraft(window.localStorage)
@@ -123,6 +145,7 @@ function installWorldAssembler(){
   function select(id){
     if(!draft.areas.some(a=>a.id===id))return;
     selectedId=id;render();
+    if(isLandscapeCompact())setWorkspacePanel('details');
   }
   function apply(command,success){
     try{
@@ -358,9 +381,18 @@ function installWorldAssembler(){
     const source=byId('link-from').value,target=byId('link-to').value;
     if(source===target){status('Choisis deux zones différentes.',true);return;}
     const duplicate=draft.portals.some(p=>p.sourceAreaId===source&&p.targetAreaId===target);
-    apply(()=>connectWorldAreas(draft,{sourceAreaId:source,targetAreaId:target,
-      returnPortal:byId('link-back').checked}),
-      duplicate?'Passage existant conservé.':'Passage ajouté dans WorldDocument.');
+    const reciprocal=byId('link-back').checked;
+    const from=draft.areas.find(a=>a.id===source),to=draft.areas.find(a=>a.id===target);
+    const nativeRoadPair=!duplicate&&reciprocal&&from?.kind==='exterior'&&
+      to?.kind==='exterior'&&from.surface?.routes?.[0]?.points?.length>=2&&
+      to.surface?.routes?.[0]?.points?.length>=2;
+    apply(()=>nativeRoadPair
+      ?alignSculptReciprocalGatePair(draft,{sourceAreaId:source,targetAreaId:target})
+      :connectWorldAreas(draft,{sourceAreaId:source,targetAreaId:target,
+        returnPortal:reciprocal}),
+      duplicate?'Passage existant conservé.':nativeRoadPair
+        ?'Zones reliées : sortie A → entrée B et entrée B → retour A.'
+        :'Passage ajouté dans WorldDocument.');
   });
   on(byId('start-area'),'click',()=>{
     apply(()=>setWorldInitialArea(draft,selectedId),'Nouveau point de départ enregistré.');
