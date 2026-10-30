@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "packId": "tree-generation-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-20",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "sourceProfile": {
+    "format": "PNG RGBA",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.tree.forest.pine_dense.01",
+      "path": "assets/exploration/objects/trees/tree_forest_pine_dense_01.webp",
+      "role": "tree-visual",
+      "family": "forest",
+      "variant": "pine-dense",
+      "view": "three-quarter-2.5d",
+      "sha256": "4cc9c27e4b6c7ab34289ad0a287477013353cc237982ef87620ec7c486c6bd62",
+      "bytes": 19616
+    },
+    {
+      "assetId": "object.tree.forest.spruce_tall.01",
+      "path": "assets/exploration/objects/trees/tree_forest_spruce_tall_01.webp",
+      "role": "tree-visual",
+      "family": "forest",
+      "variant": "spruce-tall",
+      "view": "three-quarter-2.5d",
+      "sha256": "77f96f3d810fa2d0344a03d70fdcd58bc19630bcc9daa0cdda4150b5dd90e27c",
+      "bytes": 17088
+    },
+    {
+      "assetId": "object.tree.forest.broadleaf.01",
+      "path": "assets/exploration/objects/trees/tree_forest_broadleaf_01.webp",
+      "role": "tree-visual",
+      "family": "forest",
+      "variant": "broadleaf",
+      "view": "three-quarter-2.5d",
+      "sha256": "7865ae83292eafa9438c18d572f4288f5263cc6ff3cbe5c251b91ab36e9ae83b",
+      "bytes": 35074
+    },
+    {
+      "assetId": "object.tree.fantasy.blossom.01",
+      "path": "assets/exploration/objects/trees/tree_fantasy_blossom_01.webp",
+      "role": "tree-visual",
+      "family": "fantasy",
+      "variant": "blossom",
+      "view": "three-quarter-2.5d",
+      "sha256": "bbe2feed44ce61812939b8b474dbe812a456d7ecb33588fc8c3c460d32d9a0e8",
+      "bytes": 44720
+    },
+    {
+      "assetId": "object.tree.fantasy.ancient_twist.01",
+      "path": "assets/exploration/objects/trees/tree_fantasy_ancient_twist_01.webp",
+      "role": "tree-visual",
+      "family": "fantasy",
+      "variant": "ancient-twist",
+      "view": "three-quarter-2.5d",
+      "sha256": "b405da2f02542806f34d88611e00407698eb23ebeea4975261f877ac2645e2b2",
+      "bytes": 39940
+    }
+  ]
+}

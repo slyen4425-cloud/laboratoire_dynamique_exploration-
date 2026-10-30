@@ -1,0 +1,7497 @@
+import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=encounter-selected-elements-v1';
+import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+import { reliefCanyonPilotDocument } from '../world/relief-canyon-pilot-world.js?rev=relief-canyon-pilot-v1';
+import {
+  addActorPlacement,
+  addPortal,
+  addSpawn,
+  addWorldEvent,
+  addSurfacePath,
+  addTerrainFamilyDefinition,
+  addWorldObject as addWorldObjectDraft,
+  appendSurfacePathPoint,
+  createBuildingInteriorLink,
+  createBlankWorldBuilderDraft,
+  createWorldBuilderDraft,
+  deleteActorPlacement,
+  deletePortal,
+  deleteSpawn,
+  deleteWorldEvent,
+  deleteSurfacePath,
+  deleteTerrainFamilyDefinition,
+  deleteWorldObject,
+  importWorldBuilderDocument as importWorldBuilderDocumentRaw,
+  serializeWorldBuilderDraft as serializeWorldBuilderDraftRaw,
+  updateActorPlacement,
+  updateAreaBoundary,
+  updateAreaProperties,
+  setAreaEncounterRandomEnabled,
+  updateTerrainFamilyDefinition,
+  updateTerrainFamilyEncounterProfile,
+  setTerrainFamilyEncounterElementEnabled,
+  updatePortal,
+  updateSpawn,
+  updateWorldEvent,
+  updateSurfacePath,
+  updateWorldObjectTransform,
+  updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
+  validateWorldBuilderDraft as validateWorldBuilderDraftRaw
+} from './world-builder-draft.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1';
+import {
+  copyWorldObjectAsStamp,
+  worldObjectStampInput
+} from './world-object-stamp-preset.js?rev=builder-object-copy-stamp-v1';
+import {
+  readWorldBuilderTestHandoff,
+  readWorldBuilderTestSession,
+  saveWorldBuilderTestHandoff
+} from './world-builder-test-handoff.js?rev=surface-traversal-replay-v1';
+import {
+  clampBuilderZoom,
+  computeBuilderView,
+  canvasPointToWorld,
+  panBuilderCenter,
+  pointInRotatedRect,
+  zoomBuilderAtCanvasPoint
+} from './world-builder-viewport.js?rev=mobile-landscape-area-navigation-ux-v1-r5';
+import { createPreviewFrameScheduler } from './world-builder-preview-scheduler.js?rev=builder-mobile-performance-v1';
+import { createSurfaceRenderer } from '../render/surface-renderer.js?rev=builder-terrain-compositor-v1&water=canyon-continuous-river-v4';
+import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefRiverBankFoam, drawReliefWaterfallGlints } from '../render/relief-water-overlay.js?rev=relief-water-fx-v1&art=canyon-water-art-v2&shimmer=organic-reflections-v6';
+import { createBuilderTerrainCompositor } from './builder-terrain-compositor.js?rev=builder-terrain-compositor-v1';
+import { surfaceMaterialsForFamily, preferredSurfaceMaterial } from '../materials/terrain-family-materials.js?rev=terrain-family-palette-editable-v2';
+import {
+  clipWorldArea
+} from '../render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
+import { createWorldObjectRenderer } from '../render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2-waterfalls-v3';
+import { createPortalRenderer } from '../render/portal-renderer.js';
+import { createMapActorRenderer } from '../render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
+import {
+  createPlacedMapActorView
+} from '../actors/placed-map-actor-view.js';
+import {
+  createMapActorAssetResolver
+} from '../assets/map-actor-asset-adapter.js';
+import {
+  createMapActorVisualPreparer
+} from '../assets/map-actor-visual-preparer.js';
+import {
+  createCaptureActorPreviewProviderV1
+} from '../capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
+import {
+  WORLD_OBJECT_LIMITS,
+  buildingDoorAnchorWorld,
+  worldObjectBaseDimensions,
+  worldObjectVisualRect
+} from '../world/world-object-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  resolveWorldObjectPlacement as resolveWorldObjectPlacementRaw,
+  resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
+} from '../world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2-waterfalls-v3';
+import {
+  createComposedObjectDefinitionCatalog,
+  objectDefinitionCatalogV1
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1&waterfalls-v3';
+import {
+  categoryIdFromFolderId,
+  createCustomObjectLibraryFolder,
+  listObjectLibraryCategories,
+  listObjectLibraryFolders,
+  resolveObjectLibraryFolder
+} from '../objects/object-library-taxonomy.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  USER_WORLD_OBJECT_MAX_BYTES,
+  countObjectDefinitionReferences,
+  createUserWorldObjectRecord,
+  decodeUserWorldObjectFileDimensions,
+  objectDefinitionFromUserRecord
+} from '../objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  resolvePortalTriggerPoint
+} from '../world/portal-model.js?rev=builder-dynamic-return-v1';
+import {
+  resolveExteriorReturnNavigation,
+  resolveLinkedInteriorNavigation
+} from './world-builder-area-navigation.js?rev=mobile-landscape-area-navigation-ux-v1';
+import {
+  boundaryForInteriorShapePreset,
+  interiorShapePresetIdForBoundary,
+  listInteriorShapePresets
+} from './world-area-shape-presets.js?rev=interior-geometry-authoring-v1-r2';
+import {
+  resolveWorldTriggerPoint
+} from '../world/world-trigger-geometry.js?rev=world-event-contract-v1';
+import {
+  resolveWorldAreaSpawnPoint
+} from '../world/world-area-model.js?rev=interior-geometry-authoring-v1-r2';
+import {
+  worldAreaBoundaryPoints,
+  pointInWorldAreaBoundary
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
+import {
+  materialPackV1
+} from '../materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&water=canyon-continuous-river-v4&no-repeat=canyon-v5';
+import {
+  USER_TEXTURE_MAX_BYTES,
+  composeMaterialPackWithUserMaterials,
+  countMaterialReferences,
+  createUserMaterialRecord,
+  decodeUserTextureFileDimensions
+} from '../materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
+import {
+  createTerrainFamilyRegistry,
+  terrainFamiliesForPaintKind,
+  defaultTerrainFamilyTraversalModes
+} from '../world/terrain-family-registry.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+import {
+  createCaptureCreatureCatalogProvider
+} from '../capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
+import {
+  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+} from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
+import {
+  createMaterialRegistry
+} from '../materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
+import {
+  createMaterialAssetResolver
+} from '../assets/material-asset-adapter.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
+import {
+  createUserMaterialAssetResolver
+} from '../assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
+import {
+  createUserMaterialStore
+} from '../storage/user-material-store.js?rev=user-texture-import-v1';
+import {
+  createUserWorldObjectStore
+} from '../storage/user-world-object-store.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createWorldObjectAssetResolver,
+  listWorldObjectAssets,
+  resolveWorldObjectAsset
+} from '../assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2-waterfalls-v3';
+import {
+  createUserWorldObjectAssetResolver
+} from '../assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createImageAssetLoader
+} from '../assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
+import {
+  collectMaterialAssetIds,
+  createMaterialTextureLoader
+} from '../render/material-texture-loader.js';
+
+const $ = (id) => document.getElementById(id);
+
+const canvas = $('builder-preview');
+const ctx = canvas.getContext('2d');
+const statusEl = $('builder-status');
+const validationEl = $('validation-summary');
+const jsonPreview = $('json-preview');
+const previewPanel =
+  document.querySelector('.preview-panel');
+
+const userMaterialStore =
+  createUserMaterialStore();
+let userMaterialRecords = [];
+let userMaterialStorageError = null;
+
+if (userMaterialStore.available) {
+  try {
+    userMaterialRecords =
+      await userMaterialStore.list();
+  } catch (error) {
+    userMaterialStorageError = error;
+  }
+} else {
+  userMaterialStorageError =
+    new Error('IndexedDB unavailable');
+}
+
+const userWorldObjectStore =
+  createUserWorldObjectStore();
+let userWorldObjectRecords = [];
+let userWorldObjectStorageError = null;
+
+if (userWorldObjectStore.available) {
+  try {
+    userWorldObjectRecords =
+      await userWorldObjectStore.list();
+  } catch (error) {
+    userWorldObjectStorageError = error;
+  }
+} else {
+  userWorldObjectStorageError =
+    new Error('IndexedDB unavailable');
+}
+
+let userMaterialAssetResolver = null;
+let materialRegistry = null;
+let surfaceMaterials = [];
+let pathMaterials = [];
+let waterMaterials = [];
+let textureLoader = null;
+let surfaceRenderer = null;
+
+async function rebuildMaterialPipeline() {
+  textureLoader?.dispose?.();
+  userMaterialAssetResolver?.dispose?.();
+
+  const composedPack =
+    composeMaterialPackWithUserMaterials(
+      materialPackV1,
+      userMaterialRecords
+    );
+
+  materialRegistry =
+    createMaterialRegistry(composedPack);
+
+  surfaceMaterials = materialRegistry
+    .list()
+    .filter((material) =>
+      material.kind === 'surface'
+    );
+  pathMaterials = materialRegistry
+    .list()
+    .filter((material) =>
+      material.kind === 'path'
+    );
+  waterMaterials = materialRegistry
+    .list()
+    .filter((material) =>
+      material.kind === 'water'
+    );
+
+  userMaterialAssetResolver =
+    createUserMaterialAssetResolver(
+      userMaterialRecords
+    );
+
+  const resolveMaterialAsset =
+    createMaterialAssetResolver({
+      resolveUserAsset:
+        userMaterialAssetResolver.resolve
+    });
+
+  textureLoader =
+    createMaterialTextureLoader({
+      resolveAsset: resolveMaterialAsset,
+      cacheRevision: 'canyon-art-v3'
+    });
+
+  const loadStatus =
+    await textureLoader.load(
+      collectMaterialAssetIds(
+        materialRegistry.list()
+      )
+    );
+
+  if (
+    loadStatus.missing > 0 ||
+    loadStatus.errors > 0
+  ) {
+    throw new Error(
+      `Material textures unavailable: ${JSON.stringify(loadStatus)}`
+    );
+  }
+
+  surfaceRenderer =
+    createSurfaceRenderer({
+      materialRegistry,
+      textureLoader
+    });
+
+  return loadStatus;
+}
+
+await rebuildMaterialPipeline();
+const terrainCompositor = createBuilderTerrainCompositor();
+
+const captureCreatureCatalog =
+  createCaptureCreatureCatalogProvider(
+    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
+
+let objectDefinitionCatalog =
+  objectDefinitionCatalogV1;
+let objectDefinitions =
+  objectDefinitionCatalog.list();
+let userWorldObjectAssetResolver = null;
+let resolveWorldObjectAssetComposed =
+  resolveWorldObjectAsset;
+let objectImageLoader = null;
+let objectRenderer = null;
+
+async function rebuildWorldObjectPipeline() {
+  objectImageLoader?.dispose?.();
+  userWorldObjectAssetResolver?.dispose?.();
+
+  const userDefinitions =
+    userWorldObjectRecords.map(
+      objectDefinitionFromUserRecord
+    );
+
+  objectDefinitionCatalog =
+    createComposedObjectDefinitionCatalog(
+      userDefinitions
+    );
+  objectDefinitions =
+    objectDefinitionCatalog.list();
+
+  userWorldObjectAssetResolver =
+    createUserWorldObjectAssetResolver(
+      userWorldObjectRecords
+    );
+
+  resolveWorldObjectAssetComposed =
+    createWorldObjectAssetResolver({
+      resolveUserAsset:
+        userWorldObjectAssetResolver.resolve
+    });
+
+  objectImageLoader =
+    createImageAssetLoader({
+      resolveAsset:
+        resolveWorldObjectAssetComposed,
+      cacheRevision:
+        'building-interiors-passages-ux-r1-canyon-art-v3'
+    });
+
+  const assetIds = [
+    ...listWorldObjectAssets().map(
+      (asset) => asset.id
+    ),
+    ...userWorldObjectAssetResolver
+      .list()
+      .map((asset) => asset.id)
+  ];
+
+  const loadStatus =
+    await objectImageLoader.load(
+      [...new Set(assetIds)]
+    );
+
+  if (
+    loadStatus.missing > 0 ||
+    loadStatus.errors > 0
+  ) {
+    throw new Error(
+      `WorldObject assets unavailable: ${JSON.stringify(loadStatus)}`
+    );
+  }
+
+  objectRenderer =
+    createWorldObjectRenderer({
+      imageLoader: objectImageLoader,
+      resolveVisualAsset:
+        resolveWorldObjectAssetComposed,
+      objectCatalog:
+        objectDefinitionCatalog
+    });
+
+  return loadStatus;
+}
+
+await rebuildWorldObjectPipeline();
+const portalRenderer = createPortalRenderer();
+
+const captureActorDefinitionProvider =
+  await createCaptureActorPreviewProviderV1();
+const actorDefinitions =
+  captureActorDefinitionProvider.listDefinitions();
+
+let mapActorImageLoader = null;
+let mapActorVisualPreparer = null;
+let mapActorRenderer = null;
+
+async function rebuildMapActorPipeline() {
+  mapActorVisualPreparer?.dispose?.();
+  mapActorImageLoader?.dispose?.();
+
+  const assets =
+    captureActorDefinitionProvider.listAssets();
+  const resolveActorAsset =
+    createMapActorAssetResolver(assets);
+
+  mapActorImageLoader =
+    createImageAssetLoader({
+      resolveAsset: resolveActorAsset
+    });
+
+  const assetIds =
+    assets.map((asset) => asset.id);
+  const loadStatus =
+    await mapActorImageLoader.load(
+      assetIds
+    );
+
+  if (
+    loadStatus.ready !==
+      assetIds.length ||
+    loadStatus.missing > 0 ||
+    loadStatus.errors > 0
+  ) {
+    throw new Error(
+      `Actor Catalog assets unavailable: ${JSON.stringify(loadStatus)}`
+    );
+  }
+
+  mapActorVisualPreparer =
+    createMapActorVisualPreparer({
+      imageLoader:
+        mapActorImageLoader
+    });
+
+  const prepareStatus =
+    mapActorVisualPreparer.prepare(
+      assetIds
+    );
+
+  if (
+    prepareStatus.ready !==
+      assetIds.length ||
+    prepareStatus.errors > 0
+  ) {
+    throw new Error(
+      `Actor Catalog preparation failed: ${JSON.stringify(prepareStatus)}`
+    );
+  }
+
+  mapActorRenderer =
+    createMapActorRenderer({
+      preparedVisuals:
+        mapActorVisualPreparer
+    });
+}
+
+function resolveWorldObjectPlacement(placement) {
+  return resolveWorldObjectPlacementRaw(
+    placement,
+    objectDefinitionCatalog
+  );
+}
+
+function resolveWorldObjectPlacements(placements) {
+  return resolveWorldObjectPlacementsRaw(
+    placements,
+    objectDefinitionCatalog
+  );
+}
+
+function validateWorldBuilderDraft(draftValue) {
+  return validateWorldBuilderDraftRaw(
+    draftValue,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+}
+
+function serializeWorldBuilderDraft(draftValue) {
+  return serializeWorldBuilderDraftRaw(
+    draftValue,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+}
+
+function importWorldBuilderDocument(jsonText) {
+  return importWorldBuilderDocumentRaw(
+    jsonText,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+}
+
+function addWorldObject(
+  draftValue,
+  areaId,
+  input
+) {
+  return addWorldObjectDraft(
+    draftValue,
+    areaId,
+    input,
+    objectDefinitionCatalog
+  );
+}
+
+function updateWorldObjectOverrides(
+  draftValue,
+  areaId,
+  objectId,
+  input
+) {
+  return updateWorldObjectOverridesDraft(
+    draftValue,
+    areaId,
+    objectId,
+    input,
+    objectDefinitionCatalog
+  );
+}
+
+const builderParams = new URLSearchParams(window.location.search);
+const isReliefCanyonPilot = builderParams.get('demo') === 'relief-canyon-v1';
+const defaultBuilderDocument = isReliefCanyonPilot
+  ? reliefCanyonPilotDocument
+  : demoWorldDocument;
+$('relief-pilot-notice').hidden = !isReliefCanyonPilot;
+const resumeBuilderTest =
+  builderParams.get('resumeBuilderTest') === '1';
+const resumedTestSession = resumeBuilderTest
+  ? readWorldBuilderTestSession(window.sessionStorage)
+  : null;
+const resumedTestDocument =
+  resumedTestSession?.document ??
+  (
+    resumeBuilderTest
+      ? readWorldBuilderTestHandoff(window.sessionStorage)
+      : null
+  );
+
+if (resumeBuilderTest && !resumedTestDocument) {
+  throw new Error(
+    'Session de test World Builder introuvable ou invalide'
+  );
+}
+
+let draft = createWorldBuilderDraft(
+  resumedTestDocument ?? defaultBuilderDocument
+);
+let selectedAreaId =
+  draft.initialAreaId ??
+  draft.areas[0]?.id ??
+  null;
+let selectedSpawnId = null;
+let selectedObjectId = null;
+let selectedStampDefinitionId = objectDefinitions[0]?.id ?? null;
+let selectedStampPreset = null;
+let selectedPortalId =
+  draft.portals[0]?.id ?? null;
+let selectedEventId =
+  draft.events?.[0]?.id ?? null;
+let selectedSurfaceKind = null;
+let selectedSurfacePathId = null;
+let selectedUserMaterialId =
+  userMaterialRecords[0]?.id ?? null;
+let selectedUserWorldObjectId =
+  userWorldObjectRecords[0]?.id ?? null;
+let selectedObjectLibraryCategoryId =
+  objectDefinitions[0]?.library?.categoryId ??
+  listObjectLibraryCategories()[0]?.id ??
+  null;
+let selectedObjectLibraryFolderId =
+  objectDefinitions.find(
+    (definition) =>
+      definition.library?.categoryId ===
+        selectedObjectLibraryCategoryId
+  )?.library?.folderId ??
+  null;
+let selectedTerrainFamilyDefinitionId =
+  draft.terrainFamilies?.[0]?.id ?? null;
+let selectedEncounterFamilyId =
+  draft.terrainFamilies?.some(
+    (family) => family.id === 'forest'
+  )
+    ? 'forest'
+    : draft.terrainFamilies?.[0]?.id ?? null;
+let zoom = 0.35;
+let center = { x: 0, y: 0 };
+let fitRequested = true;
+let lastView = null;
+let mapTool = 'select';
+let pointerSession = null;
+let pinchState = null;
+let hoverWorldPoint = null;
+let mapFocusActive = false;
+let nativeMapFullscreenActive = false;
+const activePointers = new Map();
+const PAINT_KINDS = Object.freeze([
+  'terrain',
+  'route',
+  'river'
+]);
+const drawUndoStack = [];
+const MAX_DRAW_UNDO = 30;
+
+function isInteriorArea() {
+  return currentAreaRaw()?.kind === 'interior';
+}
+
+function interiorFloorMaterials() {
+  return surfaceMaterials.filter((item) => item.id.startsWith('floor.'));
+}
+const BUILDER_PAN_MARGIN_PX = 96;
+const coarsePointerMedia =
+  window.matchMedia?.('(pointer: coarse)') ?? null;
+
+const initialActorArea =
+  draft.areas.find(
+    (area) =>
+      area.id === selectedAreaId
+  ) ??
+  draft.areas[0] ??
+  null;
+let selectedActorPlacementId =
+  initialActorArea?.actors?.[0]?.id ??
+  null;
+
+await rebuildMapActorPipeline();
+
+canvas.dataset.tool = mapTool;
+
+let cachedValidationDraft = null;
+let cachedValidationResult = null;
+// Signature is recomputed only when a committed WorldDocument change occurs.
+// Cursor motion and object animations do not reserialize the finished terrain.
+let lastTerrainKeyDraft = null;
+let lastTerrainKeyArea = null;
+let lastTerrainKey = '';
+function terrainSurfaceKey() {
+  if (lastTerrainKeyDraft !== draft || lastTerrainKeyArea !== selectedAreaId) {
+    lastTerrainKeyDraft = draft;
+    lastTerrainKeyArea = selectedAreaId;
+    lastTerrainKey = JSON.stringify(currentAreaRaw()?.surface ?? null);
+  }
+  return lastTerrainKey;
+}
+
+function currentValidation() {
+  if (
+    cachedValidationDraft === draft &&
+    cachedValidationResult
+  ) {
+    return cachedValidationResult;
+  }
+
+  cachedValidationDraft = draft;
+  cachedValidationResult =
+    validateWorldBuilderDraft(draft);
+
+  return cachedValidationResult;
+}
+
+let pendingObjectMove = null;
+function flushPendingObjectMove() {
+  if (!pendingObjectMove) return;
+  const move = pendingObjectMove;
+  pendingObjectMove = null;
+  draft = updateWorldObjectTransform(draft, move.areaId, move.objectId,
+    { x: move.x, y: move.y });
+}
+let pendingPaintPoint = null;
+function flushPendingPaintPoint() {
+  if (!pendingPaintPoint) return;
+  const { kind, pathId, point } = pendingPaintPoint;
+  pendingPaintPoint = null;
+  appendDrawPoint(kind, pathId, point);
+}
+
+const previewFrameScheduler =
+  createPreviewFrameScheduler({
+    requestFrame:
+      window.requestAnimationFrame.bind(window),
+    render(timeMs) {
+      flushPendingPaintPoint();
+      flushPendingObjectMove();
+      renderPreview(timeMs / 1000);
+    }
+  });
+
+function schedulePreviewRender() {
+  return previewFrameScheduler.request();
+}
+
+function normalizedDocument() {
+  return currentValidation().document;
+}
+
+function currentAreaRaw() {
+  return draft.areas.find((area) => area.id === selectedAreaId) ?? null;
+}
+
+function currentAreaNormalized() {
+  return normalizedDocument()?.areas.find(
+    (area) => area.id === selectedAreaId
+  ) ?? null;
+}
+
+function currentObjectRaw() {
+  return currentAreaRaw()?.objects?.find(
+    (object) => object.id === selectedObjectId
+  ) ?? null;
+}
+
+function resolvedObjects(
+  area = currentAreaRaw()
+) {
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  );
+}
+
+function currentObjectResolved() {
+  return resolveWorldObjectPlacement(
+    currentObjectRaw()
+  );
+}
+
+function currentSpawnRaw() {
+  return currentAreaRaw()?.spawns?.find(
+    (spawn) => spawn.id === selectedSpawnId
+  ) ?? null;
+}
+
+function currentPortalRaw() {
+  return draft.portals?.find(
+    (portal) => portal.id === selectedPortalId
+  ) ?? null;
+}
+
+function currentWorldEventRaw() {
+  return draft.events?.find(
+    (event) => event.id === selectedEventId
+  ) ?? null;
+}
+
+function currentSurfacePathRaw() {
+  const area = currentAreaRaw();
+  if (!area || !selectedSurfaceKind || !selectedSurfacePathId) {
+    return null;
+  }
+
+  const items =
+    selectedSurfaceKind === 'river'
+      ? area.surface?.rivers
+      : selectedSurfaceKind === 'terrain'
+        ? area.surface?.zones
+        : area.surface?.routes;
+
+  return items?.find(
+    (item) => item.id === selectedSurfacePathId
+  ) ?? null;
+}
+
+function surfacePathItems(area = currentAreaRaw()) {
+  if (!area) return [];
+
+  return [
+    ...(area.surface?.zones ?? []).map((item) => ({
+      ...item,
+      kind: 'terrain',
+      key: `terrain:${item.id}`
+    })),
+    ...(area.surface?.routes ?? []).map((item) => ({
+      ...item,
+      kind: 'route',
+      key: `route:${item.id}`
+    })),
+    ...(area.surface?.rivers ?? []).map((item) => ({
+      ...item,
+      kind: 'river',
+      key: `river:${item.id}`
+    }))
+  ];
+}
+
+function setStatus(message, invalid = false) {
+  statusEl.textContent = message;
+  validationEl.textContent = message;
+  validationEl.classList.toggle('invalid', invalid);
+}
+
+function setOptions(select, items, value, {
+  valueKey = 'id',
+  label = (item) => item.id
+} = {}) {
+  const previous = value ?? select.value;
+  select.replaceChildren();
+
+  for (const item of items) {
+    const option = document.createElement('option');
+    option.value = item[valueKey];
+    option.textContent = label(item);
+    select.append(option);
+  }
+
+  if (items.some((item) => item[valueKey] === previous)) {
+    select.value = previous;
+  }
+}
+
+function userMaterialKindLabel(kind) {
+  if (kind === 'path') return 'Route';
+  if (kind === 'water') return 'Rivière / mer';
+  return 'Sol / surface';
+}
+
+function refreshUserTextureControls() {
+  const familySelect = $('user-texture-family');
+  const families = terrainFamiliesForPaintKind(terrainFamilies(), 'terrain');
+  setOptions(familySelect, families,
+    familySelect.value || $('terrain-family').value || 'plain',
+    { label: (family) => family.label });
+  familySelect.disabled = $('user-texture-kind').value !== 'surface';
+  const select = $('user-texture-library');
+  const importButton = $('user-texture-import');
+  const deleteButton = $('user-texture-delete');
+  const fileInput = $('user-texture-file');
+  const status = $('user-texture-status');
+
+  if (userMaterialStorageError) {
+    select.replaceChildren();
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Stockage local indisponible';
+    select.append(option);
+    select.disabled = true;
+    importButton.disabled = true;
+    deleteButton.disabled = true;
+    fileInput.disabled = true;
+    status.textContent =
+      `Stockage local indisponible : ${userMaterialStorageError.message}`;
+    return;
+  }
+
+  select.disabled = false;
+  importButton.disabled = false;
+  fileInput.disabled = false;
+
+  if (
+    !userMaterialRecords.some(
+      (record) =>
+        record.id === selectedUserMaterialId
+    )
+  ) {
+    selectedUserMaterialId =
+      userMaterialRecords[0]?.id ?? null;
+  }
+
+  select.replaceChildren();
+
+  if (userMaterialRecords.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Aucune texture personnelle';
+    select.append(option);
+    deleteButton.disabled = true;
+    status.textContent =
+      'Ajoute une image PNG, JPEG ou WebP (8 Mio max, 4096 px max par côté).';
+    return;
+  }
+
+  for (const record of userMaterialRecords) {
+    const option = document.createElement('option');
+    option.value = record.id;
+    option.textContent =
+      `${record.label} · ${userMaterialKindLabel(record.kind)}`;
+    select.append(option);
+  }
+
+  select.value =
+    selectedUserMaterialId ??
+    userMaterialRecords[0].id;
+  selectedUserMaterialId = select.value;
+
+  const record = userMaterialRecords.find(
+    (item) => item.id === selectedUserMaterialId
+  );
+  const references = record
+    ? countMaterialReferences(
+        draft,
+        record.id
+      )
+    : 0;
+
+  deleteButton.disabled =
+    !record || references > 0;
+
+  if (!record) {
+    status.textContent =
+      'Aucune texture personnelle sélectionnée.';
+    return;
+  }
+
+  status.textContent =
+    references > 0
+      ? `${record.width}×${record.height} · ${userMaterialKindLabel(record.kind)} · utilisée ${references} fois : suppression protégée.`
+      : `${record.width}×${record.height} · ${userMaterialKindLabel(record.kind)} · stockée localement sur cet appareil.`;
+}
+
+function userTexturePaintKind(kind) {
+  if (kind === 'path') return 'route';
+  if (kind === 'water') return 'river';
+  return 'terrain';
+}
+
+function userTextureMaterialSelect(kind) {
+  if (kind === 'path') {
+    return $('terrain-route-material');
+  }
+  if (kind === 'water') {
+    return $('terrain-river-material');
+  }
+  return $('terrain-paint-material');
+}
+
+let userTextureTokenSequence = 0;
+
+function createUserTextureToken() {
+  const uuid =
+    globalThis.crypto?.randomUUID?.();
+
+  if (uuid) {
+    return uuid.toLowerCase();
+  }
+
+  userTextureTokenSequence += 1;
+  return `${Date.now().toString(36)}-${userTextureTokenSequence.toString(36)}`;
+}
+
+function defaultUserTextureLabel(fileName) {
+  const name =
+    typeof fileName === 'string'
+      ? fileName.trim()
+      : '';
+
+  return (
+    name.replace(/\.[^.]+$/, '').trim() ||
+    'Texture personnelle'
+  );
+}
+
+async function importUserTextureFromControls() {
+  if (userMaterialStorageError) {
+    throw userMaterialStorageError;
+  }
+
+  const file =
+    $('user-texture-file').files?.[0];
+
+  if (!file) {
+    throw new Error(
+      'Choisis une image à importer.'
+    );
+  }
+
+  if (
+    !['image/png', 'image/jpeg', 'image/webp'].includes(
+      file.type
+    )
+  ) {
+    throw new Error(
+      'Format non supporté : utilise PNG, JPEG ou WebP.'
+    );
+  }
+
+  if (
+    !Number.isFinite(file.size) ||
+    file.size <= 0 ||
+    file.size > USER_TEXTURE_MAX_BYTES
+  ) {
+    throw new Error(
+      'Fichier trop volumineux : 8 Mio maximum.'
+    );
+  }
+
+  const dimensions =
+    await decodeUserTextureFileDimensions(
+      file
+    );
+
+  let token = createUserTextureToken();
+  while (
+    userMaterialRecords.some(
+      (record) =>
+        record.id.endsWith(
+          `.${token}`
+        )
+    )
+  ) {
+    token = createUserTextureToken();
+  }
+
+  const label =
+    $('user-texture-name').value.trim() ||
+    defaultUserTextureLabel(file.name);
+  const kind =
+    $('user-texture-kind').value;
+
+  const record = createUserMaterialRecord({
+    idToken: token,
+    kind,
+    label,
+    terrainFamilyId: kind === 'surface' ? $('user-texture-family').value : null,
+    mimeType: file.type,
+    width: dimensions.width,
+    height: dimensions.height,
+    bytes: file.size,
+    sourceName: file.name,
+    blob: file,
+    createdAt: new Date().toISOString()
+  });
+
+  await userMaterialStore.put(record);
+  userMaterialRecords =
+    await userMaterialStore.list();
+  selectedUserMaterialId = record.id;
+
+  // Explicit per-world palette overrides must also accept newly imported assets.
+  if (record.kind === 'surface') {
+    const family = terrainFamilies().find((entry) => entry.id === record.terrainFamilyId);
+    if (Array.isArray(family?.surfaceMaterialIds)) {
+      draft = updateTerrainFamilyDefinition(draft, family.id,
+        { surfaceMaterialIds: [...family.surfaceMaterialIds, record.id] });
+    }
+  }
+  await rebuildMaterialPipeline();
+  if (record.kind === 'surface') {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+    $('terrain-family').value = record.terrainFamilyId;
+  }
+  refreshControls();
+
+  const paintKind =
+    userTexturePaintKind(record.kind);
+  $('terrain-draw-kind').value =
+    paintKind;
+  setMapTool(paintKind);
+
+  const materialSelect =
+    userTextureMaterialSelect(record.kind);
+  materialSelect.value =
+    record.id;
+
+  $('user-texture-name').value = '';
+  $('user-texture-file').value = '';
+
+  refreshUserTextureControls();
+  renderPreview();
+
+  return record;
+}
+
+async function deleteSelectedUserTexture() {
+  if (userMaterialStorageError) {
+    throw userMaterialStorageError;
+  }
+
+  const record = userMaterialRecords.find(
+    (item) =>
+      item.id === selectedUserMaterialId
+  );
+
+  if (!record) return false;
+
+  const references =
+    countMaterialReferences(
+      draft,
+      record.id
+    );
+
+  if (references > 0) {
+    throw new Error(
+      `Texture utilisée ${references} fois : remplace-la dans le monde avant suppression.`
+    );
+  }
+
+  await userMaterialStore.delete(
+    record.id
+  );
+
+  userMaterialRecords =
+    await userMaterialStore.list();
+  selectedUserMaterialId =
+    userMaterialRecords[0]?.id ?? null;
+
+  await rebuildMaterialPipeline();
+  refreshControls();
+  refreshUserTextureControls();
+
+  return true;
+}
+
+function objectLibraryFolderItems() {
+  const byId = new Map(
+    listObjectLibraryFolders().map(
+      (folder) => [
+        folder.id,
+        folder
+      ]
+    )
+  );
+
+  for (const definition of objectDefinitions) {
+    const library =
+      definition.library;
+    if (
+      !library?.folderId ||
+      byId.has(library.folderId)
+    ) {
+      continue;
+    }
+
+    byId.set(
+      library.folderId,
+      Object.freeze({
+        id: library.folderId,
+        categoryId:
+          library.categoryId,
+        label:
+          library.folderLabel ??
+          library.folderId,
+        defaultKind:
+          definition.kind
+      })
+    );
+  }
+
+  return Object.freeze(
+    [...byId.values()]
+  );
+}
+
+function objectLibraryFoldersForCategory(
+  categoryId
+) {
+  return objectLibraryFolderItems()
+    .filter(
+      (folder) =>
+        folder.categoryId === categoryId
+    );
+}
+
+function objectDefinitionsForFolder(
+  folderId
+) {
+  return objectDefinitions.filter(
+    (definition) =>
+      definition.library?.folderId ===
+        folderId
+  );
+}
+
+function defaultUserObjectCollisionRole(
+  kind
+) {
+  return (
+    kind === 'rock' ||
+    kind === 'tree' ||
+    kind === 'building'
+  )
+    ? 'obstacle'
+    : 'passable';
+}
+
+function syncUserObjectCollisionRole(
+  kind =
+    $('user-object-kind')?.value
+) {
+  const select =
+    $('user-object-collision');
+  if (!select) return;
+
+  select.value =
+    defaultUserObjectCollisionRole(kind);
+}
+
+
+function refreshUserWorldObjectControls() {
+  const select =
+    $('user-object-library');
+  const importButton =
+    $('user-object-import');
+  const deleteButton =
+    $('user-object-delete');
+  const fileInput =
+    $('user-object-file');
+  const folderSelect =
+    $('user-object-folder');
+  const status =
+    $('user-object-status');
+
+  const folderItems =
+    objectLibraryFolderItems();
+  setOptions(
+    folderSelect,
+    folderItems,
+    folderSelect.value ||
+      selectedObjectLibraryFolderId ||
+      folderItems[0]?.id ||
+      '',
+    {
+      label: (folder) =>
+        `${folder.label} · ${folder.categoryId}`
+    }
+  );
+
+  if (userWorldObjectStorageError) {
+    select.replaceChildren();
+    const option =
+      document.createElement('option');
+    option.value = '';
+    option.textContent =
+      'Stockage local indisponible';
+    select.append(option);
+    select.disabled = true;
+    importButton.disabled = true;
+    deleteButton.disabled = true;
+    fileInput.disabled = true;
+    status.textContent =
+      `Stockage local indisponible : ${userWorldObjectStorageError.message}`;
+    return;
+  }
+
+  select.disabled = false;
+  importButton.disabled = false;
+  fileInput.disabled = false;
+
+  if (
+    !userWorldObjectRecords.some(
+      (record) =>
+        record.id ===
+          selectedUserWorldObjectId
+    )
+  ) {
+    selectedUserWorldObjectId =
+      userWorldObjectRecords[0]?.id ??
+      null;
+  }
+
+  select.replaceChildren();
+
+  if (
+    userWorldObjectRecords.length === 0
+  ) {
+    const option =
+      document.createElement('option');
+    option.value = '';
+    option.textContent =
+      'Aucun objet personnel';
+    select.append(option);
+    deleteButton.disabled = true;
+    status.textContent =
+      'Ajoute un PNG, JPEG ou WebP puis choisis son dossier.';
+    return;
+  }
+
+  for (
+    const record of
+      userWorldObjectRecords
+  ) {
+    const option =
+      document.createElement('option');
+    option.value = record.id;
+    option.textContent =
+      `${record.label} · ${record.folderLabel}`;
+    select.append(option);
+  }
+
+  select.value =
+    selectedUserWorldObjectId ??
+    userWorldObjectRecords[0].id;
+  selectedUserWorldObjectId =
+    select.value;
+
+  const record =
+    userWorldObjectRecords.find(
+      (item) =>
+        item.id ===
+          selectedUserWorldObjectId
+    );
+  const references = record
+    ? countObjectDefinitionReferences(
+        draft,
+        record.definitionId
+      )
+    : 0;
+
+  deleteButton.disabled =
+    !record ||
+    references > 0;
+
+  status.textContent =
+    !record
+      ? 'Aucun objet personnel sélectionné.'
+      : references > 0
+        ? `${record.width}×${record.height} · ${record.folderLabel} · utilisé ${references} fois : suppression protégée.`
+        : `${record.width}×${record.height} · ${record.folderLabel} · stocké localement sur cet appareil.`;
+}
+
+let userWorldObjectTokenSequence = 0;
+
+function createUserWorldObjectToken() {
+  const uuid =
+    globalThis.crypto?.randomUUID?.();
+
+  if (uuid) {
+    return uuid.toLowerCase();
+  }
+
+  userWorldObjectTokenSequence += 1;
+  return `${Date.now().toString(36)}-${userWorldObjectTokenSequence.toString(36)}`;
+}
+
+function defaultUserWorldObjectLabel(
+  fileName
+) {
+  const name =
+    typeof fileName === 'string'
+      ? fileName.trim()
+      : '';
+
+  return (
+    name
+      .replace(/\.[^.]+$/, '')
+      .trim() ||
+    'Objet personnel'
+  );
+}
+
+async function importUserWorldObjectFromControls() {
+  if (userWorldObjectStorageError) {
+    throw userWorldObjectStorageError;
+  }
+
+  const file =
+    $('user-object-file').files?.[0];
+
+  if (!file) {
+    throw new Error(
+      'Choisis une image à importer.'
+    );
+  }
+
+  if (
+    ![
+      'image/png',
+      'image/jpeg',
+      'image/webp'
+    ].includes(file.type)
+  ) {
+    throw new Error(
+      'Format non supporté : utilise PNG, JPEG ou WebP.'
+    );
+  }
+
+  if (
+    !Number.isFinite(file.size) ||
+    file.size <= 0 ||
+    file.size >
+      USER_WORLD_OBJECT_MAX_BYTES
+  ) {
+    throw new Error(
+      'Fichier trop volumineux : 8 Mio maximum.'
+    );
+  }
+
+  const dimensions =
+    await decodeUserWorldObjectFileDimensions(
+      file
+    );
+
+  let token =
+    createUserWorldObjectToken();
+  while (
+    userWorldObjectRecords.some(
+      (record) =>
+        record.definitionId.endsWith(
+          `.${token}`
+        )
+    )
+  ) {
+    token =
+      createUserWorldObjectToken();
+  }
+
+  const baseFolderId =
+    $('user-object-folder').value;
+  const baseFolder =
+    resolveObjectLibraryFolder(
+      baseFolderId
+    ) ??
+    objectLibraryFolderItems().find(
+      (folder) =>
+        folder.id === baseFolderId
+    );
+
+  if (!baseFolder) {
+    throw new Error(
+      'Choisis un sous-dossier valide.'
+    );
+  }
+
+  const customLabel =
+    $('user-object-custom-folder')
+      .value
+      .trim();
+  const folder =
+    customLabel
+      ? createCustomObjectLibraryFolder({
+          categoryId:
+            baseFolder.categoryId,
+          parentFolderId:
+            baseFolder.id,
+          label:
+            customLabel,
+          idToken:
+            customLabel
+        })
+      : baseFolder;
+
+  const label =
+    $('user-object-name')
+      .value
+      .trim() ||
+    defaultUserWorldObjectLabel(
+      file.name
+    );
+  const kind =
+    $('user-object-kind').value;
+
+  const record =
+    createUserWorldObjectRecord({
+      idToken: token,
+      kind,
+      label,
+      collisionRole:
+        $('user-object-collision').value,
+      categoryId:
+        folder.categoryId,
+      folderId:
+        folder.id,
+      folderLabel:
+        folder.label,
+      mimeType:
+        file.type,
+      width:
+        dimensions.width,
+      height:
+        dimensions.height,
+      bytes:
+        file.size,
+      sourceName:
+        file.name,
+      blob:
+        file,
+      createdAt:
+        new Date().toISOString()
+    });
+
+  await userWorldObjectStore.put(
+    record
+  );
+  userWorldObjectRecords =
+    await userWorldObjectStore.list();
+  selectedUserWorldObjectId =
+    record.id;
+
+  await rebuildWorldObjectPipeline();
+
+  selectedObjectLibraryCategoryId =
+    record.categoryId;
+  selectedObjectLibraryFolderId =
+    record.folderId;
+
+  $('user-object-name').value = '';
+  $('user-object-custom-folder').value =
+    '';
+  $('user-object-file').value = '';
+
+  refreshControls();
+  $('object-definition').value =
+    record.definitionId;
+  refreshUserWorldObjectControls();
+  renderPreview();
+
+  return record;
+}
+
+async function deleteSelectedUserWorldObject() {
+  if (userWorldObjectStorageError) {
+    throw userWorldObjectStorageError;
+  }
+
+  const record =
+    userWorldObjectRecords.find(
+      (item) =>
+        item.id ===
+          selectedUserWorldObjectId
+    );
+
+  if (!record) return false;
+
+  const references =
+    countObjectDefinitionReferences(
+      draft,
+      record.definitionId
+    );
+
+  if (references > 0) {
+    throw new Error(
+      `Objet utilisé ${references} fois : supprime ou remplace ses placements avant de retirer l’import.`
+    );
+  }
+
+  await userWorldObjectStore.delete(
+    record.id
+  );
+  userWorldObjectRecords =
+    await userWorldObjectStore.list();
+  selectedUserWorldObjectId =
+    userWorldObjectRecords[0]?.id ??
+    null;
+
+  await rebuildWorldObjectPipeline();
+  refreshControls();
+  refreshUserWorldObjectControls();
+
+  return true;
+}
+
+function selectAreaForEditing(
+  targetAreaId,
+  {
+    portalId = null,
+    activateAreaTab = false,
+    refresh = true,
+    resetTool = true
+  } = {}
+) {
+  const targetArea =
+    draft.areas.find(
+      (area) => area.id === targetAreaId
+    ) ?? null;
+
+  if (!targetArea) {
+    return false;
+  }
+
+  selectedAreaId = targetArea.id;
+  selectedSpawnId =
+    targetArea.spawns?.[0]?.id ?? null;
+  selectedObjectId =
+    targetArea.objects?.[0]?.id ?? null;
+  selectedActorPlacementId =
+    targetArea.actors?.[0]?.id ?? null;
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+
+  const requestedPortal =
+    portalId
+      ? draft.portals?.find(
+          (portal) =>
+            portal.id === portalId &&
+            portal.sourceAreaId === targetArea.id
+        )
+      : null;
+  const localPortal =
+    requestedPortal ??
+    draft.portals?.find(
+      (portal) =>
+        portal.sourceAreaId === targetArea.id
+    ) ??
+    null;
+
+  if (localPortal) {
+    selectedPortalId = localPortal.id;
+  }
+
+  fitRequested = true;
+
+  if (resetTool) {
+    setMapTool('select');
+  }
+
+  if (activateAreaTab) {
+    activateTab('area');
+  }
+
+  if (refresh) {
+    refreshControls();
+  }
+
+  return true;
+}
+
+function ensureSelections() {
+  let area = currentAreaRaw();
+
+  if (!area && draft.areas[0]) {
+    selectAreaForEditing(
+      draft.areas[0].id,
+      {
+        refresh: false,
+        resetTool: false
+      }
+    );
+    area = currentAreaRaw();
+  }
+
+  if (!area) {
+    selectedSpawnId = null;
+    selectedObjectId = null;
+    return;
+  }
+
+  if (!area.spawns?.some((spawn) => spawn.id === selectedSpawnId)) {
+    selectedSpawnId = area.spawns?.[0]?.id ?? null;
+  }
+
+  if (!area.objects?.some((object) => object.id === selectedObjectId)) {
+    selectedObjectId = area.objects?.[0]?.id ?? null;
+  }
+
+  if (!area.actors?.some((actor) => actor.id === selectedActorPlacementId)) {
+    selectedActorPlacementId = area.actors?.[0]?.id ?? null;
+  }
+
+  if (!draft.portals?.some((portal) => portal.id === selectedPortalId)) {
+    selectedPortalId = draft.portals?.[0]?.id ?? null;
+  }
+
+  if (!draft.events?.some((event) => event.id === selectedEventId)) {
+    selectedEventId = draft.events?.[0]?.id ?? null;
+  }
+
+  const families = terrainFamilies();
+
+  if (
+    !families.some(
+      (family) =>
+        family.id ===
+        selectedTerrainFamilyDefinitionId
+    )
+  ) {
+    selectedTerrainFamilyDefinitionId =
+      families[0]?.id ?? null;
+  }
+
+  if (
+    !families.some(
+      (family) =>
+        family.id ===
+        selectedEncounterFamilyId
+    )
+  ) {
+    selectedEncounterFamilyId =
+      families.some(
+        (family) => family.id === 'forest'
+      )
+        ? 'forest'
+        : families[0]?.id ?? null;
+  }
+
+  if (
+    selectedSurfacePathId &&
+    !surfacePathItems(area).some(
+      (item) =>
+        item.id === selectedSurfacePathId &&
+        item.kind === selectedSurfaceKind
+    )
+  ) {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
+}
+
+function numberValue(input, fallback = 0) {
+  const value = Number(input.value);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function terrainFamilyRegistryForDraft() {
+  return createTerrainFamilyRegistry(
+    draft.terrainFamilies
+  );
+}
+
+function terrainFamilies() {
+  return terrainFamilyRegistryForDraft().list();
+}
+
+function familyLabel(familyId) {
+  return terrainFamilyRegistryForDraft()
+    .get(familyId)?.label ?? familyId;
+}
+
+function terrainFamilyUsedInDraft(
+  terrainFamilyId
+) {
+  return draft.areas.some((area) => {
+    const surface = area.surface ?? {};
+
+    return (
+      surface.baseTerrainFamilyId ===
+        terrainFamilyId ||
+      [
+        ...(surface.zones ?? []),
+        ...(surface.routes ?? []),
+        ...(surface.rivers ?? [])
+      ].some(
+        (item) =>
+          item.terrainFamilyId ===
+          terrainFamilyId
+      )
+    );
+  });
+}
+
+function encounterProfile(familyId = selectedEncounterFamilyId) {
+  return draft.encounterConfig?.families?.find(
+    (profile) => profile.terrainFamilyId === familyId
+  ) ?? null;
+}
+
+function refreshAreaControls() {
+  ensureSelections();
+  setOptions($('area-select'), draft.areas, selectedAreaId);
+  $('area-select').value = selectedAreaId ?? '';
+
+  const area = currentAreaRaw();
+  if (!area) return;
+
+  $('area-width').value = area.width;
+  $('area-height').value = area.height;
+
+  const shapeFields =
+    $('area-shape-fields');
+  const shapeSelect =
+    $('area-shape');
+
+  shapeFields.hidden =
+    area.kind !== 'interior';
+
+  if (area.kind === 'interior') {
+    const presetId =
+      interiorShapePresetIdForBoundary(
+        area.boundary
+      );
+    const options = [
+      ...listInteriorShapePresets()
+    ];
+
+    if (!presetId) {
+      options.push({
+        id: 'custom',
+        label: 'Personnalisée'
+      });
+    }
+
+    setOptions(
+      shapeSelect,
+      options,
+      presetId ?? 'custom',
+      {
+        label: (item) =>
+          item.label
+      }
+    );
+    shapeSelect.value =
+      presetId ?? 'custom';
+    shapeSelect.disabled = false;
+  } else {
+    shapeSelect.replaceChildren();
+    shapeSelect.disabled = true;
+  }
+
+  const families = terrainFamilies();
+  const familyRegistry =
+    terrainFamilyRegistryForDraft();
+  const familyId =
+    familyRegistry.get(
+      area.surface?.baseTerrainFamilyId
+    )
+      ? area.surface.baseTerrainFamilyId
+      : families[0]?.id ?? '';
+
+  setOptions(
+    $('area-family'),
+    families,
+    familyId,
+    { label: (family) => family.label }
+  );
+  $('area-family').value = familyId;
+
+  // Interior materials first; keep all legacy/custom surface choices available.
+  const areaMaterialOptions = area.kind === 'interior'
+    ? [
+        ...surfaceMaterials.filter((material) => material.id.startsWith('floor.')),
+        ...surfaceMaterials.filter((material) => !material.id.startsWith('floor.'))
+      ]
+    : surfaceMaterialsForFamily(surfaceMaterials, familyId, families);
+  setOptions(
+    $('area-material'),
+    areaMaterialOptions,
+    preferredSurfaceMaterial(areaMaterialOptions, familyId,
+      area.surface?.baseMaterialId, families) ?? area.surface?.baseMaterialId,
+    { label: (material) => material.label }
+  );
+  if (!areaMaterialOptions.some((material) => material.id === $('area-material').value)) {
+    $('area-material').value = areaMaterialOptions[0]?.id ?? '';
+  }
+  $('area-interior-floor-shortcut').hidden = area.kind !== 'interior';
+
+  setOptions(
+    $('spawn-select'),
+    area.spawns ?? [],
+    selectedSpawnId
+  );
+  if (selectedSpawnId) $('spawn-select').value = selectedSpawnId;
+
+  const spawn = currentSpawnRaw();
+  const normalizedArea = currentAreaNormalized();
+  const spawnPoint = spawn && normalizedArea
+    ? resolveWorldAreaSpawnPoint(normalizedArea, spawn.id)
+    : null;
+  const anchored = Boolean(spawn?.anchor);
+
+  $('spawn-x').value = spawnPoint?.x ?? '';
+  $('spawn-y').value = spawnPoint?.y ?? '';
+  $('spawn-x').disabled = !spawn || anchored;
+  $('spawn-y').disabled = !spawn || anchored;
+  $('spawn-delete').disabled = !spawn;
+  refreshMapAreaNavigation();
+}
+function isPaintKind(kind) {
+  return PAINT_KINDS.includes(kind);
+}
+
+function paintBrushControl(kind = mapTool) {
+  if (kind === 'terrain' && isInteriorArea()) {
+    return {
+      input: $('interior-floor-brush-size'),
+      output: $('interior-floor-brush-size-value'),
+      fallback: 72
+    };
+  }
+  if (kind === 'river') {
+    return {
+      input: $('terrain-river-width'),
+      output: $('terrain-river-width-value'),
+      fallback: 72
+    };
+  }
+  if (kind === 'route') {
+    return {
+      input: $('terrain-route-width'),
+      output: $('terrain-route-width-value'),
+      fallback: 82
+    };
+  }
+  return {
+    input: $('terrain-brush-size'),
+    output: $('terrain-brush-size-value'),
+    fallback: 180
+  };
+}
+
+function surfacePathReferenceExists(reference) {
+  const area = draft.areas.find(
+    (item) => item.id === reference.areaId
+  );
+  if (!area) return false;
+
+  const collection =
+    reference.kind === 'river'
+      ? area.surface?.rivers
+      : reference.kind === 'route'
+        ? area.surface?.routes
+        : area.surface?.zones;
+
+  return Boolean(
+    collection?.some(
+      (item) => item.id === reference.pathId
+    )
+  );
+}
+
+function pruneDrawUndoStack() {
+  while (
+    drawUndoStack.length > 0 &&
+    !surfacePathReferenceExists(
+      drawUndoStack[drawUndoStack.length - 1]
+    )
+  ) {
+    drawUndoStack.pop();
+  }
+}
+
+function syncPaintModeUi() {
+  const interior = isInteriorArea();
+  const selectedKind = interior ? 'terrain' :
+    isPaintKind(mapTool)
+      ? mapTool
+      : (
+          isPaintKind($('terrain-draw-kind').value)
+            ? $('terrain-draw-kind').value
+            : 'terrain'
+        );
+
+  $('terrain-draw-kind').value = selectedKind;
+
+  const paintLabels = {
+    terrain: 'Sol',
+    route: 'Route',
+    river: 'Rivière / mer'
+  };
+  $('map-tool-paint').textContent = interior
+    ? 'Peindre · Sol intérieur'
+    : `Peindre · ${paintLabels[selectedKind] ?? 'Sol'}`;
+
+  for (
+    const panel of
+      document.querySelectorAll(
+        '[data-terrain-kind-panel]'
+      )
+  ) {
+    panel.hidden =
+      panel.dataset.terrainKindPanel !== selectedKind;
+  }
+
+  const active = isPaintKind(mapTool);
+  $('paint-floating-tools').hidden = !active;
+  $('terrain-paint-toggle').textContent = active
+    ? '✓ Pinceau actif · arrêter'
+    : '🖌 Activer le pinceau';
+  $('terrain-paint-toggle').setAttribute('aria-pressed', String(active && !interior));
+  $('interior-floor-paint-toggle').textContent = active && interior
+    ? '✓ Pinceau intérieur actif · arrêter'
+    : '🖌 Activer le pinceau intérieur';
+  $('interior-floor-paint-toggle').setAttribute('aria-pressed', String(active && interior));
+  $('interior-floor-paint-guide').textContent = active && interior
+    ? 'Peins au doigt ou à la souris dans cette pièce. Deux doigts : déplacer et zoomer.'
+    : '1. Choisis une texture. 2. Active le pinceau. 3. Touche ou glisse dans la pièce.';
+  $('terrain-paint-guide').textContent = active
+    ? 'Pinceau actif : touche puis glisse sur la carte. Un simple appui peint un point. Deux doigts : déplacer et zoomer.'
+    : '1. Choisis Sol, Route ou Rivière. 2. Choisis famille et texture. 3. Active le pinceau.';
+
+  const control = paintBrushControl(selectedKind);
+  const size = numberValue(
+    control.input,
+    control.fallback
+  );
+  $('paint-brush-value').value = String(
+    Math.round(size)
+  );
+
+  pruneDrawUndoStack();
+  $('paint-undo').disabled =
+    drawUndoStack.length === 0;
+}
+
+function pushDrawUndoReference(reference) {
+  if (
+    !reference?.areaId ||
+    !isPaintKind(reference.kind) ||
+    !reference.pathId
+  ) {
+    return false;
+  }
+
+  drawUndoStack.push({
+    areaId: reference.areaId,
+    kind: reference.kind,
+    pathId: reference.pathId
+  });
+
+  if (drawUndoStack.length > MAX_DRAW_UNDO) {
+    drawUndoStack.splice(
+      0,
+      drawUndoStack.length - MAX_DRAW_UNDO
+    );
+  }
+
+  syncPaintModeUi();
+  if (isInteriorArea() && reference.kind === 'terrain') refreshInteriorFloorControls();
+  return true;
+}
+
+function undoLastDraw() {
+  pruneDrawUndoStack();
+  const reference = drawUndoStack.pop();
+  if (!reference) {
+    syncPaintModeUi();
+    return false;
+  }
+
+  draft = deleteSurfacePath(
+    draft,
+    reference.areaId,
+    reference.kind,
+    reference.pathId
+  );
+
+  if (
+    selectedAreaId === reference.areaId &&
+    selectedSurfaceKind === reference.kind &&
+    selectedSurfacePathId === reference.pathId
+  ) {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
+
+  setStatus('Dernier tracé annulé');
+  refreshControls();
+  return true;
+}
+
+function adjustPaintBrush(direction) {
+  const kind =
+    isPaintKind(mapTool)
+      ? mapTool
+      : $('terrain-draw-kind').value;
+  const control = paintBrushControl(kind);
+  const current = numberValue(
+    control.input,
+    control.fallback
+  );
+  const step =
+    Math.max(
+      1,
+      Number(control.input.step) || 1
+    ) * 5;
+  const min = Number(control.input.min);
+  const max = Number(control.input.max);
+  const next = Math.max(
+    Number.isFinite(min) ? min : 1,
+    Math.min(
+      Number.isFinite(max) ? max : current + step,
+      current + Math.sign(direction) * step
+    )
+  );
+
+  control.input.value = String(next);
+  control.output.value = String(next);
+  $('paint-brush-value').value = String(
+    Math.round(next)
+  );
+  renderPreview();
+  return next;
+}
+
+function refreshInteriorFloorControls() {
+  const area = currentAreaRaw();
+  const interior = area?.kind === 'interior';
+  $('area-interior-floor-shortcut').hidden = !interior;
+  document.querySelector('[data-tab="interior-floor"]').hidden = !interior;
+  document.querySelector('[data-tab="terrain"]').hidden = interior;
+  if (!interior) {
+    if (document.querySelector('[data-tab="interior-floor"]').classList.contains('active')) activateTab('area');
+    return;
+  }
+
+  const options = interiorFloorMaterials();
+  const baseId = area.surface?.baseMaterialId;
+  setOptions($('interior-floor-base'), options, baseId, { label: (item) => item.label });
+  if (options.some((item) => item.id === baseId)) $('interior-floor-base').value = baseId;
+
+  const previous = $('interior-floor-material').value;
+  const brushId = options.some((item) => item.id === previous)
+    ? previous : options.some((item) => item.id === baseId) ? baseId : options[0]?.id;
+  setOptions($('interior-floor-material'), options, brushId, { label: (item) => item.label });
+  $('interior-floor-material').value = brushId ?? '';
+  $('interior-floor-brush-size-value').value = $('interior-floor-brush-size').value;
+
+  const zoneSelect = $('interior-floor-zone-select');
+  const selected = zoneSelect.value;
+  zoneSelect.replaceChildren();
+  for (const [index, zone] of (area.surface?.zones ?? []).entries()) {
+    const option = document.createElement('option');
+    option.value = zone.id;
+    option.textContent = `${index + 1} · ${materialRegistry.resolve(zone.materialId)?.label ?? zone.materialId}`;
+    zoneSelect.append(option);
+  }
+  if ([...zoneSelect.options].some((option) => option.value === selected)) zoneSelect.value = selected;
+  $('interior-floor-zone-delete').disabled = zoneSelect.options.length === 0;
+  $('interior-floor-undo').disabled = !drawUndoStack.some((entry) =>
+    entry.areaId === selectedAreaId && entry.kind === 'terrain' && surfacePathReferenceExists(entry));
+}
+
+function refreshTerrainControls() {
+  syncPaintModeUi();
+  const area = currentAreaRaw();
+  const selected = currentSurfacePathRaw();
+  const families = terrainFamilies();
+  const registry =
+    terrainFamilyRegistryForDraft();
+  const fallbackFamily =
+    registry.get(
+      area?.surface?.baseTerrainFamilyId
+    )
+      ? area.surface.baseTerrainFamilyId
+      : families[0]?.id ?? '';
+
+  const currentTerrainFamily =
+    selected &&
+    selectedSurfaceKind === 'terrain'
+      ? selected.terrainFamilyId
+      : (
+          registry.get(
+            $('terrain-family').value
+          )
+            ? $('terrain-family').value
+            : fallbackFamily
+        );
+
+  const paintableTerrainFamilies = terrainFamiliesForPaintKind(families, 'terrain');
+  // Legacy zone is still editable, but non-surface families cannot be chosen for new strokes.
+  const terrainChoices = paintableTerrainFamilies.some((f) => f.id === currentTerrainFamily)
+    ? paintableTerrainFamilies
+    : selected && selectedSurfaceKind === 'terrain' && registry.get(currentTerrainFamily)
+      ? [...paintableTerrainFamilies, registry.get(currentTerrainFamily)]
+      : paintableTerrainFamilies;
+  const activeTerrainFamily = terrainChoices.some((f) => f.id === currentTerrainFamily)
+    ? currentTerrainFamily : paintableTerrainFamilies[0]?.id ?? '';
+  setOptions(
+    $('terrain-family'),
+    terrainChoices,
+    activeTerrainFamily,
+    { label: (family) => family.label }
+  );
+  $('terrain-family').value = activeTerrainFamily;
+
+  const requestedTerrainMaterial =
+    selected &&
+    selectedSurfaceKind === 'terrain'
+      ? selected.materialId
+      : $('terrain-paint-material').value;
+
+  const terrainMaterialOptions = surfaceMaterialsForFamily(
+    surfaceMaterials, activeTerrainFamily, families);
+  const terrainMaterialId = preferredSurfaceMaterial(
+    surfaceMaterials, activeTerrainFamily, requestedTerrainMaterial, families);
+  setOptions(
+    $('terrain-paint-material'),
+    terrainMaterialOptions,
+    terrainMaterialId,
+    { label: (material) => material.label }
+  );
+  $('terrain-paint-material').value = terrainMaterialId ?? '';
+
+  $('terrain-brush-size-value').value =
+    String(
+      numberValue(
+        $('terrain-brush-size'),
+        180
+      )
+    );
+  $('terrain-route-width-value').value =
+    String(
+      numberValue(
+        $('terrain-route-width'),
+        82
+      )
+    );
+  $('terrain-river-width-value').value =
+    String(
+      numberValue(
+        $('terrain-river-width'),
+        72
+      )
+    );
+
+  const routeFamily =
+    selected &&
+    selectedSurfaceKind === 'route'
+      ? selected.terrainFamilyId
+      : (
+          registry.get(
+            $('terrain-route-family').value
+          )
+            ? $('terrain-route-family').value
+            : (
+                registry.get('road')
+                  ? 'road'
+                  : fallbackFamily
+              )
+        );
+
+  setOptions(
+    $('terrain-route-family'),
+    terrainFamiliesForPaintKind(families, 'route').concat(
+      registry.get(routeFamily) && !terrainFamiliesForPaintKind(families, 'route').some((f) => f.id === routeFamily)
+        ? [registry.get(routeFamily)] : []
+    ),
+    routeFamily,
+    { label: (family) => family.label }
+  );
+  $('terrain-route-family').value =
+    routeFamily;
+
+  const requestedRouteMaterial =
+    selected &&
+    selectedSurfaceKind === 'route'
+      ? selected.materialId
+      : $('terrain-route-material').value;
+
+  setOptions(
+    $('terrain-route-material'),
+    pathMaterials,
+    requestedRouteMaterial,
+    { label: (material) => material.label }
+  );
+  if (
+    pathMaterials.some(
+      (material) =>
+        material.id ===
+        requestedRouteMaterial
+    )
+  ) {
+    $('terrain-route-material').value =
+      requestedRouteMaterial;
+  } else if (pathMaterials[0]) {
+    $('terrain-route-material').value =
+      pathMaterials[0].id;
+  }
+
+  const riverFamily =
+    selected &&
+    selectedSurfaceKind === 'river'
+      ? selected.terrainFamilyId
+      : (
+          registry.get(
+            $('terrain-river-family').value
+          )
+            ? $('terrain-river-family').value
+            : (
+                registry.get('sea')
+                  ? 'sea'
+                  : fallbackFamily
+              )
+        );
+
+  setOptions(
+    $('terrain-river-family'),
+    terrainFamiliesForPaintKind(families, 'river').concat(
+      registry.get(riverFamily) && !terrainFamiliesForPaintKind(families, 'river').some((f) => f.id === riverFamily)
+        ? [registry.get(riverFamily)] : []
+    ),
+    riverFamily,
+    { label: (family) => family.label }
+  );
+  $('terrain-river-family').value =
+    riverFamily;
+
+  const requestedRiverMaterial =
+    selected &&
+    selectedSurfaceKind === 'river'
+      ? selected.materialId
+      : $('terrain-river-material').value;
+
+  setOptions(
+    $('terrain-river-material'),
+    waterMaterials,
+    requestedRiverMaterial,
+    { label: (material) => material.label }
+  );
+  if (
+    waterMaterials.some(
+      (material) =>
+        material.id ===
+        requestedRiverMaterial
+    )
+  ) {
+    $('terrain-river-material').value =
+      requestedRiverMaterial;
+  } else if (waterMaterials[0]) {
+    $('terrain-river-material').value =
+      waterMaterials[0].id;
+  }
+
+  const select = $('terrain-path-select');
+  const selectedKey =
+    selectedSurfaceKind &&
+    selectedSurfacePathId
+      ? `${selectedSurfaceKind}:${selectedSurfacePathId}`
+      : '';
+
+  select.replaceChildren();
+
+  const empty =
+    document.createElement('option');
+  empty.value = '';
+  empty.textContent =
+    'Aucun tracé sélectionné';
+  select.append(empty);
+
+  for (
+    const item of surfacePathItems(area)
+  ) {
+    const option =
+      document.createElement('option');
+    option.value = item.key;
+    const kindLabel =
+      item.kind === 'river'
+        ? 'Rivière'
+        : item.kind === 'route'
+          ? 'Route'
+          : 'Terrain';
+    option.textContent =
+      `${kindLabel} · ${familyLabel(item.terrainFamilyId)} · ${item.id}`;
+    select.append(option);
+  }
+
+  select.value = selectedKey;
+  $('terrain-path-delete').disabled =
+    !selected;
+
+  if (
+    selected &&
+    selectedSurfaceKind === 'terrain'
+  ) {
+    $('terrain-family').value =
+      selected.terrainFamilyId;
+  }
+
+  if (
+    selected &&
+    selectedSurfaceKind === 'route'
+  ) {
+    $('terrain-route-family').value =
+      selected.terrainFamilyId;
+    $('terrain-route-material').value =
+      selected.materialId;
+  }
+
+  if (
+    selected &&
+    selectedSurfaceKind === 'river'
+  ) {
+    $('terrain-river-family').value =
+      selected.terrainFamilyId;
+    $('terrain-river-material').value =
+      selected.materialId;
+  }
+}
+
+function refreshTerrainFamilyDefinitionControls() {
+  const families = terrainFamilies();
+
+  if (
+    !families.some(
+      (family) =>
+        family.id ===
+        selectedTerrainFamilyDefinitionId
+    )
+  ) {
+    selectedTerrainFamilyDefinitionId =
+      families[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('terrain-family-definition-select'),
+    families,
+    selectedTerrainFamilyDefinitionId,
+    { label: (family) => family.label }
+  );
+
+  const family =
+    families.find(
+      (entry) =>
+        entry.id ===
+        selectedTerrainFamilyDefinitionId
+    ) ?? null;
+
+  $('terrain-family-id').value =
+    family?.id ?? '';
+  $('terrain-family-label').value =
+    family?.label ?? '';
+  $('terrain-family-label').disabled = !family;
+  $('terrain-family-paint-kind').value = family?.paintKind || 'terrain';
+  $('terrain-family-paint-kind').disabled = !family;
+  for (const mode of ['ground', 'swim', 'fly']) {
+    const input = $('terrain-family-speed-' + mode);
+    const defaults = defaultTerrainFamilyTraversalModes(family?.id, family?.paintKind);
+    input.value = Math.round((family?.traversalModes?.[mode] ?? defaults[mode]) * 100);
+    input.disabled = !family;
+  }
+  const assignmentPanel = $('terrain-family-materials-panel');
+  assignmentPanel.hidden = !family || (family.paintKind || 'terrain') !== 'terrain';
+  const assignmentList = $('terrain-family-materials');
+  assignmentList.replaceChildren();
+  const assignedIds = new Set(family
+    ? surfaceMaterialsForFamily(surfaceMaterials, family.id, families).map((material) => material.id)
+    : []);
+  if (family && !assignmentPanel.hidden) {
+    for (const material of surfaceMaterials) {
+      const row = document.createElement('label');
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = material.id;
+      box.checked = assignedIds.has(material.id);
+      row.append(box, document.createTextNode(material.label));
+      assignmentList.append(row);
+    }
+  }
+  $('terrain-family-materials-save').disabled = !family;
+
+  const used =
+    family
+      ? terrainFamilyUsedInDraft(
+          family.id
+        )
+      : false;
+
+  $('terrain-family-delete').disabled =
+    !family ||
+    families.length <= 1 ||
+    used;
+
+  $('terrain-family-delete-status').textContent =
+    !family
+      ? 'Aucune famille sélectionnée.'
+      : used
+        ? 'Famille utilisée dans le monde : suppression protégée.'
+        : families.length <= 1
+          ? 'Le monde doit conserver au moins une famille.'
+          : 'Famille non utilisée : suppression autorisée.';
+}
+
+function refreshFamilyEncounterControls() {
+  const area = currentAreaRaw();
+  const enabled = area?.encounters?.randomEnabled !== false;
+  $('area-random-encounters-enabled').checked = enabled;
+  $('area-random-encounters-status').textContent = enabled
+    ? `Rencontres autorisées dans l'Area « ${area?.id ?? 'inconnue'} ». Chaque tirage dépend de la famille sous le héros et de sa chance.`
+    : `Rencontres DÉSACTIVÉES dans l'Area « ${area?.id ?? 'inconnue'} » : aucun combat aléatoire ne peut apparaître, même si la chance de rencontre est à 100 %. Active la case ci-dessus pour cette Area.`;
+  const families = terrainFamilies();
+  const registry =
+    terrainFamilyRegistryForDraft();
+
+  if (
+    !registry.get(
+      selectedEncounterFamilyId
+    )
+  ) {
+    selectedEncounterFamilyId =
+      registry.get('forest')
+        ? 'forest'
+        : families[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('family-encounter-family'),
+    families,
+    selectedEncounterFamilyId,
+    { label: (family) => family.label }
+  );
+
+  $('family-encounter-family').value =
+    selectedEncounterFamilyId ?? '';
+
+  const baseFamilyId = area?.surface?.baseTerrainFamilyId;
+  const baseFamilyName = families.find((item) => item.id === baseFamilyId)?.label ?? baseFamilyId ?? 'inconnue';
+  const selectedFamilyName = families.find((item) => item.id === selectedEncounterFamilyId)?.label ?? selectedEncounterFamilyId ?? 'inconnue';
+  $('family-encounter-surface-info').textContent =
+    baseFamilyId === selectedEncounterFamilyId
+      ? `La famille « ${selectedFamilyName} » est le sol de base de l'Area : aucune peinture nécessaire pour rencontrer ses créatures.`
+      : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
+
+  const profile = encounterProfile();
+  if (!profile) return;
+
+  $('family-encounter-chance').value =
+    profile.encounterChancePercent;
+  $('family-encounter-chance-value').value =
+    `${Math.round(profile.encounterChancePercent)} %`;
+
+  $('family-encounter-catalog-summary').textContent =
+    `Catalogue Capture · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} éléments · rareté propre conservée`;
+
+  const container = $('family-encounter-elements');
+  container.replaceChildren();
+  const checked = new Set(
+    (profile.elementChances ?? [])
+      .filter((entry) => entry.chancePercent > 0)
+      .map((entry) => entry.elementId)
+  );
+  for (const element of captureCreatureCatalog.listElements()) {
+    const row = document.createElement('label');
+    row.className = 'family-element-row';
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = checked.has(element.id);
+    input.dataset.elementId = element.id;
+    input.setAttribute('aria-label', `Autoriser ${element.label}`);
+
+    const name = document.createElement('span');
+    const eligible = captureCreatureCatalog.findByElement(element.id)
+      .filter((creature) => creature.spawnChance > 0).length;
+    name.textContent = `${element.label} · ${eligible} créature(s)`;
+
+    input.addEventListener('change', () => {
+      draft = setTerrainFamilyEncounterElementEnabled(
+        draft, selectedEncounterFamilyId, element.id, input.checked
+      );
+      refreshJson();
+    });
+    row.append(input, name);
+    container.append(row);
+  }
+}
+function objectDefinitionLabel(
+  definition
+) {
+  const kindLabels = Object.freeze({
+    building: 'Bâtiment',
+    bridge: 'Pont',
+    tree: 'Arbre',
+    rock: 'Rocher',
+    door: 'Entrée / porte',
+    stairs: 'Escalier'
+  });
+  const kind =
+    kindLabels[definition.kind] ??
+    'Objet';
+
+  return `${definition.label} · ${kind}`;
+}
+
+function objectPlacementLabel(
+  placement
+) {
+  const definition =
+    objectDefinitionCatalog.get(
+      placement.objectDefinitionId
+    );
+
+  return definition
+    ? `${definition.label} · ${placement.id}`
+    : `${placement.objectDefinitionId} · ${placement.id}`;
+}
+
+function syncObjectLibraryToSelectedPlacement() {
+  const placement =
+    currentObjectRaw();
+  const definition =
+    placement
+      ? objectDefinitionCatalog.get(
+          placement.objectDefinitionId
+        )
+      : null;
+
+  if (!definition?.library) {
+    return;
+  }
+
+  selectedObjectLibraryCategoryId =
+    definition.library.categoryId;
+  selectedObjectLibraryFolderId =
+    definition.library.folderId;
+}
+
+function currentBuildingInteriorLink() {
+  const object =
+    currentObjectResolved();
+
+  if (
+    !object ||
+    object.kind !== 'building'
+  ) {
+    return Object.freeze({
+      status: 'not-building',
+      anchor: null,
+      outgoingPortal: null,
+      returnPortal: null,
+      targetArea: null
+    });
+  }
+
+  const anchor =
+    object.doorAnchors?.[0] ??
+    null;
+
+  if (!anchor) {
+    return Object.freeze({
+      status: 'no-anchor',
+      anchor: null,
+      outgoingPortal: null,
+      returnPortal: null,
+      targetArea: null
+    });
+  }
+
+  const outgoingPortal =
+    (draft.portals ?? []).find(
+      (portal) =>
+        portal.sourceAreaId ===
+          selectedAreaId &&
+        portal.trigger?.kind ===
+          'object-anchor' &&
+        portal.trigger.objectId ===
+          object.id &&
+        portal.trigger.anchorId ===
+          anchor.id
+    ) ?? null;
+
+  if (!outgoingPortal) {
+    return Object.freeze({
+      status: 'unlinked',
+      anchor,
+      outgoingPortal: null,
+      returnPortal: null,
+      targetArea: null
+    });
+  }
+
+  const targetArea =
+    draft.areas.find(
+      (area) =>
+        area.id ===
+        outgoingPortal.targetAreaId
+    ) ?? null;
+  const sourceArea =
+    currentAreaRaw();
+
+  const returnPortal =
+    targetArea && sourceArea
+      ? (
+          (draft.portals ?? []).find(
+            (portal) => {
+              if (
+                portal.sourceAreaId !==
+                  targetArea.id ||
+                portal.targetAreaId !==
+                  sourceArea.id
+              ) {
+                return false;
+              }
+
+              const spawn =
+                sourceArea.spawns?.find(
+                  (item) =>
+                    item.id ===
+                    portal.targetSpawnId
+                );
+
+              return (
+                spawn?.anchor?.kind ===
+                  'building-door' &&
+                spawn.anchor.objectId ===
+                  object.id &&
+                spawn.anchor.anchorId ===
+                  anchor.id
+              );
+            }
+          ) ?? null
+        )
+      : null;
+
+  const targetSpawn =
+    targetArea?.spawns?.find(
+      (spawn) =>
+        spawn.id ===
+        outgoingPortal.targetSpawnId
+    ) ?? null;
+
+  const status =
+    targetArea &&
+    targetArea.kind === 'interior' &&
+    targetSpawn &&
+    returnPortal
+      ? 'linked'
+      : 'invalid';
+
+  return Object.freeze({
+    status,
+    anchor,
+    outgoingPortal,
+    returnPortal,
+    targetArea
+  });
+}
+
+function currentMapAreaNavigation() {
+  const document = normalizedDocument();
+  const area = currentAreaNormalized();
+  const object = currentObjectResolved();
+
+  if (!document || !area) {
+    return Object.freeze({
+      enter: null,
+      back: null
+    });
+  }
+
+  let enter = null;
+
+  if (
+    area.kind === 'exterior' &&
+    object?.kind === 'building' &&
+    currentBuildingInteriorLink().status === 'linked'
+  ) {
+    enter =
+      resolveLinkedInteriorNavigation(
+        document,
+        {
+          sourceAreaId: area.id,
+          buildingId: object.id
+        }
+      );
+  }
+
+  const back =
+    area.kind === 'interior'
+      ? resolveExteriorReturnNavigation(
+          document,
+          area.id
+        )
+      : null;
+
+  return Object.freeze({
+    enter,
+    back
+  });
+}
+
+function refreshMapAreaNavigation() {
+  const area = currentAreaNormalized();
+  const navigation =
+    currentMapAreaNavigation();
+
+  $('map-area-label').textContent =
+    area?.kind === 'interior'
+      ? 'Intérieur'
+      : 'Extérieur';
+
+  $('map-area-context').dataset.areaKind =
+    area?.kind ?? 'unknown';
+  $('map-area-enter').hidden =
+    !navigation.enter;
+  $('map-area-back').hidden =
+    !navigation.back;
+}
+
+function refreshBuildingInteriorControls() {
+  const fields =
+    $('building-interior-fields');
+  const status =
+    $('building-interior-status');
+  const target =
+    $('building-interior-target-area');
+  const createButton =
+    $('building-interior-create');
+  const linkButton =
+    $('building-interior-link');
+  const openButton =
+    $('building-interior-open');
+
+  const object =
+    currentObjectResolved();
+  const isBuilding =
+    object?.kind === 'building';
+
+  fields.hidden = !isBuilding;
+
+  if (!isBuilding) {
+    target.replaceChildren();
+    createButton.disabled = true;
+    linkButton.disabled = true;
+    openButton.disabled = true;
+    status.textContent =
+      'Sélectionner un bâtiment.';
+    return;
+  }
+
+  const link =
+    currentBuildingInteriorLink();
+  const interiorAreas =
+    draft.areas.filter(
+      (area) =>
+        area.kind === 'interior' &&
+        area.id !== selectedAreaId
+    );
+
+  setOptions(
+    target,
+    interiorAreas,
+    link.targetArea?.id ??
+      target.value ??
+      interiorAreas[0]?.id ??
+      '',
+    {
+      label: (area) =>
+        area.id
+    }
+  );
+
+  const canCreate =
+    link.status === 'unlinked';
+  const canLink =
+    canCreate &&
+    Boolean(target.value);
+
+  createButton.disabled =
+    !canCreate;
+  linkButton.disabled =
+    !canLink;
+  openButton.disabled =
+    link.status !== 'linked';
+
+  if (link.status === 'no-anchor') {
+    status.textContent =
+      'Bâtiment sans doorAnchor : aucune entrée gameplay disponible.';
+  } else if (link.status === 'unlinked') {
+    status.textContent =
+      `Entrée ${link.anchor.id} non reliée.`;
+  } else if (link.status === 'linked') {
+    status.textContent =
+      `Entrée ${link.anchor.id} reliée → ${link.targetArea.id} · aller/retour actifs.`;
+  } else {
+    status.textContent =
+      'Liaison intérieure invalide : vérifier les Portals et Spawns.';
+  }
+}
+
+function refreshObjectControls() {
+  setOptions($('map-object-definition'), objectDefinitions,
+    selectedStampDefinitionId, { label: objectDefinitionLabel });
+  if (!objectDefinitions.some((item) => item.id === selectedStampDefinitionId)) {
+    selectedStampDefinitionId = objectDefinitions[0]?.id ?? null;
+  }
+  $('map-object-definition').value = selectedStampDefinitionId ?? '';
+  $('map-object-copy-status').textContent = selectedStampPreset
+    ? `Copié : taille X ×${selectedStampPreset.scaleX}, Y ×${selectedStampPreset.scaleY} · rotation ${selectedStampPreset.rotationDeg}°`
+    : 'Modèle standard · taille ×1, rotation 0°';
+  const area = currentAreaRaw();
+  const placements =
+    area?.objects ?? [];
+
+  const categories =
+    listObjectLibraryCategories()
+      .filter(
+        (category) =>
+          objectDefinitions.some(
+            (definition) =>
+              definition.library
+                ?.categoryId ===
+              category.id
+          )
+      );
+
+  if (
+    !categories.some(
+      (category) =>
+        category.id ===
+          selectedObjectLibraryCategoryId
+    )
+  ) {
+    selectedObjectLibraryCategoryId =
+      categories[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('object-library-category'),
+    categories,
+    selectedObjectLibraryCategoryId,
+    {
+      label: (category) =>
+        category.label
+    }
+  );
+  selectedObjectLibraryCategoryId =
+    $('object-library-category').value ||
+    selectedObjectLibraryCategoryId;
+
+  const folders =
+    objectLibraryFoldersForCategory(
+      selectedObjectLibraryCategoryId
+    );
+
+  if (
+    !folders.some(
+      (folder) =>
+        folder.id ===
+          selectedObjectLibraryFolderId
+    )
+  ) {
+    selectedObjectLibraryFolderId =
+      folders[0]?.id ?? null;
+  }
+
+  setOptions(
+    $('object-library-folder'),
+    folders,
+    selectedObjectLibraryFolderId,
+    {
+      label: (folder) =>
+        folder.label
+    }
+  );
+  selectedObjectLibraryFolderId =
+    $('object-library-folder').value ||
+    selectedObjectLibraryFolderId;
+
+  const visibleDefinitions =
+    objectDefinitionsForFolder(
+      selectedObjectLibraryFolderId
+    );
+
+  setOptions(
+    $('object-definition'),
+    visibleDefinitions,
+    $('object-definition').value ||
+      visibleDefinitions[0]?.id ||
+      '',
+    {
+      label: objectDefinitionLabel
+    }
+  );
+
+  setOptions(
+    $('object-select'),
+    placements,
+    selectedObjectId,
+    {
+      label: objectPlacementLabel
+    }
+  );
+
+  if (selectedObjectId) {
+    $('object-select').value =
+      selectedObjectId;
+  }
+
+  const placement =
+    currentObjectRaw();
+  const object =
+    currentObjectResolved();
+  const definition =
+    placement
+      ? objectDefinitionCatalog.get(
+          placement.objectDefinitionId
+        )
+      : null;
+  const disabled =
+    !placement || !object;
+
+  for (const id of [
+    'object-duplicate',
+    'object-delete',
+    'object-x',
+    'object-y',
+    'object-rotation',
+    'object-scale-x',
+    'object-scale-y'
+  ]) {
+    $(id).disabled = disabled;
+  }
+
+  $('bridge-fields').hidden =
+    object?.kind !== 'bridge';
+
+  const isBuilding =
+    object?.kind === 'building';
+  const variantDefinition =
+    definition?.visual ?? null;
+  const variants =
+    Array.isArray(
+      variantDefinition?.variants
+    )
+      ? variantDefinition.variants
+      : [];
+  const buildingAuthoringFields =
+    $('building-authoring-fields');
+  const variantFields =
+    $('object-visual-variant-fields');
+  const variantSelect =
+    $('object-visual-variant');
+
+  buildingAuthoringFields.hidden =
+    !isBuilding;
+  variantFields.hidden = !isBuilding;
+
+  if (isBuilding && variants.length > 0) {
+    const selectedVariantId =
+      placement?.overrides
+        ?.visualVariantId ??
+      variantDefinition
+        ?.defaultVariantId ??
+      variants[0]?.id ??
+      '';
+
+    setOptions(
+      variantSelect,
+      variants,
+      selectedVariantId,
+      {
+        label: (variant) =>
+          variant.label ?? variant.id
+      }
+    );
+    variantSelect.value =
+      selectedVariantId;
+    variantSelect.disabled =
+      variants.length < 2;
+  } else if (isBuilding) {
+    variantSelect.replaceChildren();
+    const option =
+      document.createElement('option');
+    option.value = '';
+    option.textContent = 'Vue unique';
+    variantSelect.append(option);
+    variantSelect.disabled = true;
+  } else {
+    variantSelect.replaceChildren();
+    variantSelect.disabled = true;
+  }
+
+  refreshBuildingInteriorControls();
+  refreshMapAreaNavigation();
+
+  if (!placement || !object) {
+    $('object-x').value = '';
+    $('object-y').value = '';
+    $('object-rotation').value = '';
+    $('object-scale-x').value = '';
+    $('object-scale-y').value = '';
+    $('bridge-obstacles').value = '';
+    $('object-source-status').textContent =
+      'Sélectionner une définition puis placer l’objet.';
+    refreshUserWorldObjectControls();
+    return;
+  }
+
+  $('object-x').value =
+    placement.transform?.x ?? 0;
+  $('object-y').value =
+    placement.transform?.y ?? 0;
+  $('object-rotation').value =
+    placement.transform?.rotationDeg ?? 0;
+  $('object-scale-x').value =
+    placement.transform?.scaleX ?? 1;
+  $('object-scale-y').value =
+    placement.transform?.scaleY ?? 1;
+
+  if (object.kind === 'bridge') {
+    $('bridge-obstacles').value =
+      placement.overrides
+        ?.traversalSurfaceFeatureIds
+        ?.join(', ') ?? '';
+  }
+
+  $('object-source-status').textContent =
+    definition
+      ? `Définition : ${definition.label} · ${definition.library?.folderLabel ?? definition.library?.folderId ?? 'bibliothèque'} · visuel ${object.visual?.assetId ?? 'aucun'}`
+      : `Définition introuvable : ${placement.objectDefinitionId}`;
+
+  refreshUserWorldObjectControls();
+}
+
+function currentActorPlacements() {
+  return (
+    currentAreaRaw()?.actors ??
+    []
+  );
+}
+
+function currentActorPlacement() {
+  return (
+    currentActorPlacements().find(
+      (actor) =>
+        actor.id ===
+        selectedActorPlacementId
+    ) ?? null
+  );
+}
+
+function currentPlacedMapActors(
+  area = currentAreaNormalized()
+) {
+  if (!area) {
+    return [];
+  }
+
+  return area.actors
+    .map((placement) =>
+      createPlacedMapActorView(
+        placement,
+        captureActorDefinitionProvider
+          .resolveDefinition
+      )
+    )
+    .filter(Boolean);
+}
+
+function actorDefinitionLabel(
+  definition
+) {
+  const roleLabel =
+    definition.role === 'hero'
+      ? 'Héros'
+      : definition.role === 'npc'
+        ? 'PNJ'
+        : 'Créature';
+
+  return (
+    `${definition.displayName} · ${roleLabel}`
+  );
+}
+
+function actorPlacementLabel(
+  placement
+) {
+  const definition =
+    captureActorDefinitionProvider
+      .resolveDefinition(
+        placement.actorDefinitionId
+      );
+
+  return definition
+    ? `${definition.displayName} · ${placement.id}`
+    : `${placement.actorDefinitionId} · ${placement.id}`;
+}
+
+function refreshActorControls() {
+  const placements =
+    currentActorPlacements();
+
+  if (
+    selectedActorPlacementId &&
+    !placements.some(
+      (actor) =>
+        actor.id ===
+        selectedActorPlacementId
+    )
+  ) {
+    selectedActorPlacementId =
+      placements[0]?.id ?? null;
+  }
+
+  if (
+    !selectedActorPlacementId &&
+    placements.length > 0
+  ) {
+    selectedActorPlacementId =
+      placements[0].id;
+  }
+
+  setOptions(
+    $('actor-definition'),
+    actorDefinitions,
+    $('actor-definition').value ||
+      actorDefinitions[0]?.id ||
+      '',
+    {
+      label:
+        actorDefinitionLabel
+    }
+  );
+
+  setOptions(
+    $('actor-placement-select'),
+    placements,
+    selectedActorPlacementId,
+    {
+      label:
+        actorPlacementLabel
+    }
+  );
+
+  if (selectedActorPlacementId) {
+    $('actor-placement-select').value =
+      selectedActorPlacementId;
+  }
+
+  const placement =
+    currentActorPlacement();
+  const disabled =
+    !placement;
+
+  for (const id of [
+    'actor-x',
+    'actor-y',
+    'actor-facing',
+    'actor-delete'
+  ]) {
+    $(id).disabled = disabled;
+  }
+
+  if (!placement) {
+    $('actor-x').value = '';
+    $('actor-y').value = '';
+    $('actor-facing').value = '1';
+    $('actor-source-status').textContent =
+      actorDefinitions.length > 0
+        ? 'Sélectionner une définition puis placer sur la map.'
+        : 'Aucune définition acteur disponible.';
+    return;
+  }
+
+  $('actor-x').value =
+    placement.x;
+  $('actor-y').value =
+    placement.y;
+  $('actor-facing').value =
+    placement.facingX === -1
+      ? '-1'
+      : '1';
+
+  const definition =
+    captureActorDefinitionProvider
+      .resolveDefinition(
+        placement.actorDefinitionId
+      );
+
+  $('actor-source-status').textContent =
+    definition
+      ? `Visuel résolu depuis la définition ${definition.displayName} · ${definition.mapVisual.assetId}`
+      : `Définition introuvable : ${placement.actorDefinitionId}`;
+}
+
+function sourceBuildings(portal) {
+  const area = draft.areas.find(
+    (item) =>
+      item.id === portal?.sourceAreaId
+  );
+
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  ).filter(
+    (object) =>
+      object.kind === 'building'
+  );
+}
+
+function refreshPortalControls() {
+  const portals = draft.portals ?? [];
+  setOptions($('portal-select'), portals, selectedPortalId);
+  if (selectedPortalId) $('portal-select').value = selectedPortalId;
+
+  const portal = currentPortalRaw();
+  const disabled = !portal;
+  const summary = $('portal-summary');
+
+  if (!portal) {
+    summary.textContent =
+      'Aucun passage sélectionné.';
+  } else {
+    const triggerLabel =
+      portal.trigger?.kind === 'object-anchor'
+        ? `Entrée bâtiment · ${portal.trigger.objectId ?? 'objet'}`
+        : 'Zone libre';
+    summary.textContent =
+      `${triggerLabel} · ${portal.sourceAreaId} → ${portal.targetAreaId}`;
+  }
+
+  for (const id of [
+    'portal-delete',
+    'portal-source-area',
+    'portal-trigger-kind',
+    'portal-point-x',
+    'portal-point-y',
+    'portal-radius',
+    'portal-building',
+    'portal-anchor',
+    'portal-target-area',
+    'portal-target-spawn',
+    'portal-visible',
+    'portal-marker',
+    'portal-label'
+  ]) {
+    $(id).disabled = disabled;
+  }
+
+  if (!portal) return;
+
+  setOptions($('portal-source-area'), draft.areas, portal.sourceAreaId);
+  $('portal-source-area').value = portal.sourceAreaId;
+  $('portal-trigger-kind').value = portal.trigger?.kind ?? 'point';
+
+  const isPoint = portal.trigger?.kind === 'point';
+  $('portal-point-fields').hidden = !isPoint;
+  $('portal-building-fields').hidden = isPoint;
+
+  $('portal-point-x').value = isPoint ? portal.trigger.x : '';
+  $('portal-point-y').value = isPoint ? portal.trigger.y : '';
+  $('portal-radius').value = portal.trigger?.radius ?? 28;
+
+  const buildings = sourceBuildings(portal);
+  setOptions(
+    $('portal-building'),
+    buildings,
+    portal.trigger?.objectId,
+    { label: (building) => building.id }
+  );
+
+  const building = buildings.find(
+    (item) => item.id === $('portal-building').value
+  );
+  setOptions(
+    $('portal-anchor'),
+    building?.doorAnchors ?? [],
+    portal.trigger?.anchorId
+  );
+
+  setOptions($('portal-target-area'), draft.areas, portal.targetAreaId);
+  $('portal-target-area').value = portal.targetAreaId;
+
+  const targetArea = draft.areas.find(
+    (area) => area.id === portal.targetAreaId
+  );
+  setOptions(
+    $('portal-target-spawn'),
+    targetArea?.spawns ?? [],
+    portal.targetSpawnId,
+    {
+      label: (spawn) =>
+        spawn.anchor
+          ? `${spawn.id} · lié à la porte`
+          : spawn.id
+    }
+  );
+  $('portal-target-spawn').value = portal.targetSpawnId;
+
+  $('portal-visible').checked = portal.visual?.visible === true;
+  $('portal-marker').value = portal.visual?.marker ?? 'portal';
+  $('portal-label').value = portal.visual?.label ?? '';
+}
+
+
+function eventSourceObjects(event) {
+  const area = draft.areas.find(
+    (item) =>
+      item.id === event?.sourceAreaId
+  );
+
+  return resolveWorldObjectPlacements(
+    area?.objects ?? []
+  ).filter(
+    (object) =>
+      Array.isArray(object.doorAnchors) &&
+      object.doorAnchors.length > 0
+  );
+}
+
+function eventPortalOptions() {
+  return (draft.portals ?? [])
+    .map((portal) => {
+      const area = draft.areas.find(
+        (item) =>
+          item.id === portal.sourceAreaId
+      );
+      const objectId =
+        portal.trigger?.kind ===
+          'object-anchor'
+          ? portal.trigger.objectId
+          : null;
+      const object =
+        objectId
+          ? resolveWorldObjectPlacements(
+              area?.objects ?? []
+            ).find(
+              (item) =>
+                item.id === objectId
+            )
+          : null;
+
+      const definition =
+        object
+          ? objectDefinitionCatalog.get(
+              object.objectDefinitionId
+            )
+          : null;
+
+      return {
+        id: portal.id,
+        label:
+          object
+            ? `${definition?.label ?? 'Bâtiment'} · ${object.id}`
+            : `Lieu · ${portal.targetAreaId}`
+      };
+    });
+}
+
+function refreshWorldEventControls() {
+  const events = draft.events ?? [];
+
+  setOptions(
+    $('event-select'),
+    events,
+    selectedEventId,
+    {
+      label: (event) => {
+        const label =
+          event.activation ===
+            'on-portal-enter'
+            ? 'Entrée lieu'
+            : event.activation ===
+                'on-interact'
+              ? 'Interaction'
+              : 'Zone';
+
+        return `${event.id} · ${label}`;
+      }
+    }
+  );
+
+  if (selectedEventId) {
+    $('event-select').value =
+      selectedEventId;
+  }
+
+  const event =
+    currentWorldEventRaw();
+  const disabled = !event;
+
+  for (const id of [
+    'event-delete',
+    'event-enabled',
+    'event-source-area',
+    'event-activation',
+    'event-trigger-kind',
+    'event-point-x',
+    'event-point-y',
+    'event-radius',
+    'event-object',
+    'event-anchor',
+    'event-portal',
+    'event-action-kind',
+    'event-message',
+    'event-repeat-policy'
+  ]) {
+    $(id).disabled = disabled;
+  }
+
+  if (!event) {
+    $('event-point-fields').hidden = false;
+    $('event-object-fields').hidden = true;
+    $('event-portal-fields').hidden = true;
+    $('event-trigger-kind-field').hidden = false;
+    $('event-position-details').hidden = false;
+    $('event-drag-hint').hidden = false;
+    $('event-action-kind').value = 'message';
+    $('event-message').value = '';
+    return;
+  }
+
+  setOptions(
+    $('event-source-area'),
+    draft.areas,
+    event.sourceAreaId
+  );
+  $('event-source-area').value =
+    event.sourceAreaId;
+  $('event-enabled').checked =
+    event.enabled !== false;
+  $('event-activation').value =
+    event.activation ?? 'on-enter';
+  $('event-repeat-policy').value =
+    event.repeatPolicy ?? 'once';
+  $('event-action-kind').value =
+    event.action?.kind ?? 'message';
+  $('event-message').value =
+    event.action?.text ?? '';
+
+  const isPortalEntry =
+    event.activation ===
+      'on-portal-enter';
+
+  $('event-portal-fields').hidden =
+    !isPortalEntry;
+  $('event-trigger-kind-field').hidden =
+    isPortalEntry;
+  $('event-position-details').hidden =
+    isPortalEntry;
+  $('event-drag-hint').hidden =
+    isPortalEntry;
+
+  const portalOptions =
+    eventPortalOptions();
+
+  setOptions(
+    $('event-portal'),
+    portalOptions,
+    event.portalId,
+    {
+      label: (portal) =>
+        portal.label
+    }
+  );
+
+  if (event.portalId) {
+    $('event-portal').value =
+      event.portalId;
+  }
+
+  if (isPortalEntry) {
+    $('event-point-fields').hidden = true;
+    $('event-object-fields').hidden = true;
+    return;
+  }
+
+  const triggerKind =
+    event.trigger?.kind === 'object-anchor'
+      ? 'object-anchor'
+      : 'point';
+
+  $('event-trigger-kind').value =
+    triggerKind;
+
+  const isPoint =
+    triggerKind === 'point';
+
+  $('event-point-fields').hidden =
+    !isPoint;
+  $('event-object-fields').hidden =
+    isPoint;
+  $('event-drag-hint').hidden =
+    !isPoint;
+
+  $('event-point-x').value =
+    isPoint
+      ? event.trigger?.x ?? ''
+      : '';
+  $('event-point-y').value =
+    isPoint
+      ? event.trigger?.y ?? ''
+      : '';
+  $('event-radius').value =
+    event.trigger?.radius ?? 28;
+
+  const objects =
+    eventSourceObjects(event);
+
+  setOptions(
+    $('event-object'),
+    objects,
+    event.trigger?.objectId,
+    {
+      label: (object) => object.id
+    }
+  );
+
+  const object = objects.find(
+    (item) =>
+      item.id ===
+      $('event-object').value
+  );
+
+  setOptions(
+    $('event-anchor'),
+    object?.doorAnchors ?? [],
+    event.trigger?.anchorId
+  );
+}
+
+function switchWorldEventActivation(
+  activation
+) {
+  const event =
+    currentWorldEventRaw();
+
+  if (!event) return;
+
+  draft = updateWorldEvent(
+    draft,
+    event.id,
+    (nextEvent) => {
+      nextEvent.activation =
+        activation;
+
+      if (
+        activation ===
+          'on-portal-enter'
+      ) {
+        const portal =
+          draft.portals?.find(
+            (item) =>
+              item.id ===
+                nextEvent.portalId
+          ) ??
+          draft.portals?.[0];
+
+        delete nextEvent.trigger;
+
+        if (portal) {
+          nextEvent.portalId =
+            portal.id;
+          nextEvent.sourceAreaId =
+            portal.targetAreaId;
+        }
+        return;
+      }
+
+      delete nextEvent.portalId;
+
+      const area =
+        draft.areas.find(
+          (item) =>
+            item.id ===
+              nextEvent.sourceAreaId
+        ) ??
+        currentAreaRaw();
+
+      if (!nextEvent.trigger) {
+        nextEvent.sourceAreaId =
+          area?.id ??
+          nextEvent.sourceAreaId;
+        nextEvent.trigger = {
+          kind: 'point',
+          x: area?.width / 2 ?? 0,
+          y: area?.height / 2 ?? 0,
+          radius: 48
+        };
+      }
+    }
+  );
+
+  refreshWorldEventControls();
+  refreshUserTextureControls();
+  refreshJson();
+  renderPreview();
+}
+
+function switchWorldEventTrigger(kind) {
+  const event =
+    currentWorldEventRaw();
+
+  if (
+    !event ||
+    event.activation ===
+      'on-portal-enter'
+  ) {
+    return;
+  }
+
+  draft = updateWorldEvent(
+    draft,
+    event.id,
+    (nextEvent) => {
+      const area = draft.areas.find(
+        (item) =>
+          item.id === nextEvent.sourceAreaId
+      );
+
+      if (kind === 'object-anchor') {
+        const object =
+          eventSourceObjects(
+            nextEvent
+          )[0];
+        const anchor =
+          object?.doorAnchors?.[0];
+
+        if (!object || !anchor) {
+          return;
+        }
+
+        nextEvent.trigger = {
+          kind: 'object-anchor',
+          objectId: object.id,
+          anchorId: anchor.id,
+          radius:
+            nextEvent.trigger?.radius ??
+            32
+        };
+        return;
+      }
+
+      nextEvent.trigger = {
+        kind: 'point',
+        x: area?.width / 2 ?? 0,
+        y: area?.height / 2 ?? 0,
+        radius:
+          nextEvent.trigger?.radius ??
+          48
+      };
+    }
+  );
+
+  refreshWorldEventControls();
+  refreshJson();
+  renderPreview();
+}
+
+function applyWorldEventInputs() {
+  const event =
+    currentWorldEventRaw();
+
+  if (!event) return;
+
+  draft = updateWorldEvent(
+    draft,
+    event.id,
+    (nextEvent) => {
+      nextEvent.enabled =
+        $('event-enabled').checked;
+      nextEvent.activation =
+        $('event-activation').value;
+      nextEvent.repeatPolicy =
+        $('event-repeat-policy').value;
+      nextEvent.action = {
+        kind:
+          $('event-action-kind').value,
+        text:
+          $('event-message')
+            .value
+            .trim()
+      };
+
+      if (
+        nextEvent.activation ===
+          'on-portal-enter'
+      ) {
+        const portal =
+          draft.portals?.find(
+            (item) =>
+              item.id ===
+                $('event-portal').value
+          );
+
+        delete nextEvent.trigger;
+
+        if (portal) {
+          nextEvent.portalId =
+            portal.id;
+          nextEvent.sourceAreaId =
+            portal.targetAreaId;
+        }
+
+        return;
+      }
+
+      delete nextEvent.portalId;
+      nextEvent.sourceAreaId =
+        $('event-source-area').value;
+
+      const radius =
+        numberValue(
+          $('event-radius'),
+          48
+        );
+
+      if (
+        $('event-trigger-kind').value ===
+        'object-anchor'
+      ) {
+        nextEvent.trigger = {
+          kind: 'object-anchor',
+          objectId:
+            $('event-object').value,
+          anchorId:
+            $('event-anchor').value,
+          radius
+        };
+      } else {
+        nextEvent.trigger = {
+          kind: 'point',
+          x: numberValue(
+            $('event-point-x'),
+            0
+          ),
+          y: numberValue(
+            $('event-point-y'),
+            0
+          ),
+          radius
+        };
+      }
+    }
+  );
+
+  refreshJson();
+  renderPreview();
+}
+
+function refreshJson() {
+  const result = currentValidation();
+
+  if (result.valid) {
+    const json = serializeWorldBuilderDraft(draft);
+    jsonPreview.value = json;
+    setStatus('WorldDocument valide');
+  } else {
+    jsonPreview.value = JSON.stringify(draft, null, 2);
+    setStatus(
+      `Document invalide : ${describeWorldBuilderValidation(result.errors, result.document).message}`,
+      true
+    );
+  }
+}
+
+function refreshControls() {
+  ensureSelections();
+  refreshAreaControls();
+  refreshInteriorFloorControls();
+  refreshTerrainFamilyDefinitionControls();
+  refreshTerrainControls();
+  refreshUserTextureControls();
+  refreshFamilyEncounterControls();
+  refreshObjectControls();
+  refreshActorControls();
+  refreshPortalControls();
+  refreshWorldEventControls();
+  refreshJson();
+  renderPreview();
+}
+
+function selectedWorldPoint(document, area) {
+  const selectedEvent =
+    document?.events?.find(
+      (item) =>
+        item.id === selectedEventId &&
+        item.sourceAreaId === area?.id &&
+        item.trigger?.kind === 'point'
+    );
+
+  if (selectedEvent) {
+    const point =
+      resolveWorldTriggerPoint(
+        area,
+        selectedEvent.trigger
+      );
+
+    if (point) {
+      return {
+        x: point.x,
+        y: point.y
+      };
+    }
+  }
+
+  if (mapTool === 'actor-placement') {
+    const actor = area?.actors?.find(
+      (item) =>
+        item.id ===
+        selectedActorPlacementId
+    );
+
+    if (actor) {
+      return {
+        x: actor.x,
+        y: actor.y
+      };
+    }
+  }
+
+  const object = area?.objects?.find(
+    (item) => item.id === selectedObjectId
+  );
+  if (object?.transform) {
+    return {
+      x: object.transform.x,
+      y: object.transform.y
+    };
+  }
+
+  const spawn = area?.spawns?.find(
+    (item) => item.id === selectedSpawnId
+  );
+  if (spawn) {
+    const point = resolveWorldAreaSpawnPoint(area, spawn.id);
+    if (point) return { x: point.x, y: point.y };
+  }
+
+  const portal = document?.portals?.find(
+    (item) =>
+      item.id === selectedPortalId &&
+      item.sourceAreaId === area?.id
+  );
+  if (portal) {
+    const point = resolvePortalTriggerPoint(document.areas, portal);
+    if (point) return point;
+  }
+
+  return {
+    x: area?.width / 2 || 0,
+    y: area?.height / 2 || 0
+  };
+}
+
+function fitArea() {
+  const area = currentAreaNormalized();
+  if (!area) return;
+
+  const width = Math.max(canvas.clientWidth, 1);
+  const height = Math.max(canvas.clientHeight, 1);
+  zoom = clampBuilderZoom(Math.min(
+    (width - 24) / area.width,
+    (height - 24) / area.height
+  ));
+  center = {
+    x: area.width / 2,
+    y: area.height / 2
+  };
+  fitRequested = false;
+}
+
+function focusSelection() {
+  const document = normalizedDocument();
+  const area = currentAreaNormalized();
+  if (!document || !area) return;
+
+  center = selectedWorldPoint(document, area);
+  zoom = clampBuilderZoom(Math.max(0.35, Math.min(1.4, zoom)));
+  fitRequested = false;
+  renderPreview();
+}
+
+function drawObstacle(obstacle, camera) {
+  if (obstacle.kind === 'river') return;
+
+  if (obstacle.kind === 'rock') {
+    ctx.fillStyle = '#666b62';
+  } else if (obstacle.kind === 'furniture') {
+    ctx.fillStyle = '#6f4d32';
+  } else {
+    ctx.fillStyle = '#244d2a';
+  }
+
+  ctx.fillRect(
+    obstacle.x - camera.x,
+    obstacle.y - camera.y,
+    obstacle.w,
+    obstacle.h
+  );
+}
+
+function drawBuildingEntranceAuthoringOverlay(
+  object,
+  document,
+  camera
+) {
+  if (
+    !object ||
+    object.kind !== 'building'
+  ) {
+    return;
+  }
+
+  const anchor =
+    object.doorAnchors?.[0] ??
+    null;
+
+  if (!anchor) {
+    return;
+  }
+
+  const link =
+    currentBuildingInteriorLink();
+  let point =
+    link.outgoingPortal
+      ? resolvePortalTriggerPoint(
+          document.areas,
+          link.outgoingPortal
+        )
+      : null;
+  const linked =
+    Boolean(point);
+
+  if (!point) {
+    const anchorPoint =
+      buildingDoorAnchorWorld(
+        object,
+        anchor.id
+      );
+
+    if (!anchorPoint) {
+      return;
+    }
+
+    point = {
+      x: anchorPoint.x,
+      y: anchorPoint.y,
+      radius: 32
+    };
+  }
+
+  const x =
+    point.x - camera.x;
+  const y =
+    point.y - camera.y;
+  const radius =
+    Math.max(
+      12,
+      Number(point.radius) || 32
+    );
+
+  ctx.beginPath();
+  ctx.arc(
+    x,
+    y,
+    radius,
+    0,
+    Math.PI * 2
+  );
+  ctx.fillStyle =
+    linked
+      ? 'rgba(111, 226, 166, 0.13)'
+      : 'rgba(255, 214, 105, 0.10)';
+  ctx.fill();
+  ctx.strokeStyle =
+    linked
+      ? 'rgba(111, 226, 166, 0.98)'
+      : 'rgba(255, 214, 105, 0.98)';
+  ctx.lineWidth = 3 / zoom;
+  ctx.setLineDash(
+    linked
+      ? []
+      : [8 / zoom, 6 / zoom]
+  );
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.beginPath();
+  ctx.arc(
+    x,
+    y,
+    6 / zoom,
+    0,
+    Math.PI * 2
+  );
+  ctx.fillStyle =
+    linked
+      ? 'rgba(111, 226, 166, 1)'
+      : 'rgba(255, 214, 105, 1)';
+  ctx.fill();
+
+  ctx.font =
+    `${Math.max(11, 13 / zoom)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle =
+    'rgba(255, 248, 220, 0.98)';
+  ctx.fillText(
+    linked
+      ? 'Entrée reliée'
+      : 'Entrée à relier',
+    x,
+    y - radius - 6 / zoom
+  );
+}
+
+function drawBuilderOverlays(area, document, camera) {
+  ctx.save();
+
+  ctx.strokeStyle =
+    mapTool === 'area-size'
+      ? 'rgba(133,225,255,0.98)'
+      : 'rgba(160,205,175,0.58)';
+  ctx.lineWidth = (mapTool === 'area-size' ? 4 : 2) / zoom;
+  ctx.setLineDash(mapTool === 'area-size' ? [] : [8 / zoom, 6 / zoom]);
+
+  const boundaryPoints =
+    worldAreaBoundaryPoints(area);
+
+  if (boundaryPoints.length > 0) {
+    ctx.beginPath();
+    ctx.moveTo(
+      boundaryPoints[0].x - camera.x,
+      boundaryPoints[0].y - camera.y
+    );
+
+    for (
+      let index = 1;
+      index < boundaryPoints.length;
+      index += 1
+    ) {
+      ctx.lineTo(
+        boundaryPoints[index].x - camera.x,
+        boundaryPoints[index].y - camera.y
+      );
+    }
+
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  ctx.setLineDash([]);
+
+  const handleSize = (mapTool === 'area-size' ? 28 : 18) / zoom;
+  ctx.fillStyle =
+    mapTool === 'area-size'
+      ? 'rgba(133,225,255,0.98)'
+      : 'rgba(133,225,255,0.7)';
+  ctx.fillRect(
+    area.width - camera.x - handleSize / 2,
+    area.height - camera.y - handleSize / 2,
+    handleSize,
+    handleSize
+  );
+
+  const selectedPath = currentSurfacePathRaw();
+  if (selectedPath?.points?.length >= 2) {
+    ctx.beginPath();
+    selectedPath.points.forEach((point, index) => {
+      const x = point.x - camera.x;
+      const y = point.y - camera.y;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = 'rgba(255,236,130,0.98)';
+    ctx.lineWidth = 4 / zoom;
+    ctx.setLineDash([10 / zoom, 6 / zoom]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  for (const spawn of area.spawns) {
+    const point = resolveWorldAreaSpawnPoint(area, spawn.id);
+    if (!point) continue;
+
+    const selected = spawn.id === selectedSpawnId;
+
+    ctx.beginPath();
+    ctx.arc(
+      point.x - camera.x,
+      point.y - camera.y,
+      selected ? 11 : 7,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = selected
+      ? 'rgba(255,245,180,0.95)'
+      : 'rgba(190,230,255,0.8)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(20,30,24,0.9)';
+    ctx.stroke();
+  }
+
+  const object =
+    resolveWorldObjectPlacements(
+      area.objects ?? []
+    ).find(
+      (item) =>
+        item.id === selectedObjectId
+    );
+
+  if (object && mapTool === 'select') {
+    const rect =
+      worldObjectVisualRect(object);
+
+    if (rect) {
+      const width = rect.width;
+      const height = rect.height;
+      const handleSize = 18 / zoom;
+      const handleHalf = handleSize / 2;
+      const rotateOffset = 42 / zoom;
+      const rotateRadius = 10 / zoom;
+
+      ctx.save();
+      ctx.translate(rect.x - camera.x, rect.y - camera.y);
+      ctx.rotate(rect.rotation);
+
+      ctx.strokeStyle = 'rgba(255,236,130,0.98)';
+      ctx.lineWidth = 3 / zoom;
+      ctx.setLineDash([10 / zoom, 6 / zoom]);
+      ctx.strokeRect(
+        -width / 2,
+        -height / 2,
+        width,
+        height
+      );
+      ctx.setLineDash([]);
+
+      if ($('map-object-transform-enabled').checked) {
+      ctx.fillStyle = 'rgba(255,236,130,0.98)';
+      for (const [x, y] of [
+        [-width / 2, -height / 2],
+        [width / 2, -height / 2],
+        [width / 2, height / 2],
+        [-width / 2, height / 2]
+      ]) {
+        ctx.fillRect(
+          x - handleHalf,
+          y - handleHalf,
+          handleSize,
+          handleSize
+        );
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(0, -height / 2);
+      ctx.lineTo(0, -height / 2 - rotateOffset);
+      ctx.strokeStyle = 'rgba(255,189,98,0.98)';
+      ctx.lineWidth = 3 / zoom;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(
+        0,
+        -height / 2 - rotateOffset,
+        rotateRadius,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle = 'rgba(255,189,98,0.98)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(58,38,18,0.95)';
+      ctx.lineWidth = 2 / zoom;
+      ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+  }
+
+  if (object?.kind === 'building') {
+    drawBuildingEntranceAuthoringOverlay(
+      object,
+      document,
+      camera
+    );
+  }
+
+  if (
+    (
+      mapTool === 'terrain' ||
+      mapTool === 'route' ||
+      mapTool === 'river'
+    ) &&
+    hoverWorldPoint
+  ) {
+    const brushSize =
+      mapTool === 'river'
+        ? numberValue($('terrain-river-width'), 72)
+        : mapTool === 'route'
+          ? numberValue($('terrain-route-width'), 82)
+          : numberValue($('terrain-brush-size'), 180);
+
+    ctx.beginPath();
+    ctx.arc(
+      hoverWorldPoint.x - camera.x,
+      hoverWorldPoint.y - camera.y,
+      brushSize / 2,
+      0,
+      Math.PI * 2
+    );
+    ctx.fillStyle = 'rgba(133,225,255,0.12)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(133,225,255,0.96)';
+    ctx.lineWidth = 3 / zoom;
+    ctx.setLineDash([8 / zoom, 6 / zoom]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  const portal = document.portals.find(
+    (item) =>
+      item.id === selectedPortalId &&
+      item.sourceAreaId === area.id
+  );
+  if (portal) {
+    const point = resolvePortalTriggerPoint(document.areas, portal);
+    if (point) {
+      ctx.beginPath();
+      ctx.arc(
+        point.x - camera.x,
+        point.y - camera.y,
+        point.radius + 5,
+        0,
+        Math.PI * 2
+      );
+      ctx.lineWidth = 3 / zoom;
+      ctx.strokeStyle = 'rgba(255,146,232,0.95)';
+      ctx.stroke();
+    }
+  }
+
+  const worldEvent =
+    document.events?.find(
+      (item) =>
+        item.id === selectedEventId &&
+        item.sourceAreaId === area.id
+    );
+
+  if (worldEvent) {
+    const point =
+      resolveWorldTriggerPoint(
+        area,
+        worldEvent.trigger
+      );
+
+    if (point) {
+      ctx.beginPath();
+      ctx.arc(
+        point.x - camera.x,
+        point.y - camera.y,
+        point.radius,
+        0,
+        Math.PI * 2
+      );
+      ctx.fillStyle =
+        'rgba(255,214,105,0.10)';
+      ctx.fill();
+      ctx.lineWidth = 3 / zoom;
+      ctx.strokeStyle =
+        'rgba(255,214,105,0.98)';
+      ctx.setLineDash([
+        8 / zoom,
+        6 / zoom
+      ]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (
+        worldEvent.trigger?.kind ===
+          'point'
+      ) {
+        ctx.beginPath();
+        ctx.arc(
+          point.x - camera.x,
+          point.y - camera.y,
+          9 / zoom,
+          0,
+          Math.PI * 2
+        );
+        ctx.fillStyle =
+          'rgba(255,214,105,0.98)';
+        ctx.fill();
+        ctx.strokeStyle =
+          'rgba(66,49,12,0.95)';
+        ctx.lineWidth = 2 / zoom;
+        ctx.stroke();
+      }
+    }
+  }
+
+  ctx.restore();
+}
+
+function previewPixelRatio() {
+  const nativeRatio =
+    Math.min(devicePixelRatio || 1, 2);
+  // Stable DPR avoids allocating a new fullscreen framebuffer on each gesture.
+  if (mapFocusActive && coarsePointerMedia?.matches) {
+    return Math.min(nativeRatio, 1);
+  }
+
+  return nativeRatio;
+}
+
+let waterfallPreviewTimer=0;
+function renderPreview(timeSeconds = performance.now() / 1000) {
+  const result = currentValidation();
+  if (!result.document) return;
+
+  const document = result.document;
+  const area = document.areas.find(
+    (item) => item.id === selectedAreaId
+  );
+  if (!area) return;
+
+  const cssWidth = Math.max(canvas.clientWidth, 1);
+  const cssHeight = Math.max(canvas.clientHeight, 1);
+  const dpr = previewPixelRatio();
+
+  if (
+    canvas.width !== Math.floor(cssWidth * dpr) ||
+    canvas.height !== Math.floor(cssHeight * dpr)
+  ) {
+    canvas.width = Math.floor(cssWidth * dpr);
+    canvas.height = Math.floor(cssHeight * dpr);
+  }
+
+  if (fitRequested) fitArea();
+
+  lastView = computeBuilderView({
+    area,
+    center,
+    zoom,
+    canvasWidth: cssWidth,
+    canvasHeight: cssHeight,
+    panMarginPx: BUILDER_PAN_MARGIN_PX
+  });
+  zoom = lastView.zoom;
+  center = { ...lastView.center };
+  const viewport = lastView.viewport;
+  const camera = lastView.camera;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
+
+  try {
+    ctx.save();
+
+    try {
+      clipWorldArea(
+        ctx,
+        area,
+        camera
+      );
+
+      const activeStroke = pointerSession?.mode === 'draw-path' &&
+        pointerSession.areaId === selectedAreaId
+        ? { kind: pointerSession.kind, id: pointerSession.pathId }
+        : null;
+      terrainCompositor.draw({
+        ctx, renderer: surfaceRenderer, camera, viewport,
+        surface: area.surface, active: activeStroke,
+        surfaceKey: activeStroke ? null : terrainSurfaceKey(),
+        areaKey: JSON.stringify([
+          area.id, area.width, area.height, area.boundary
+        ]),
+        canvasWidth: cssWidth, canvasHeight: cssHeight,
+        dpr, zoom,
+        areaClip(layerCtx, layerCamera) {
+          clipWorldArea(layerCtx, area, layerCamera);
+        }
+      });
+
+      if (shouldRenderReliefWater(document.id, area)) {
+        drawReliefRiverGlints(ctx, { area, camera, viewport, timeSeconds: 0 });
+        drawReliefRiverBankFoam(ctx, { area, camera, viewport, timeSeconds: 0 });
+      }
+
+      area.obstacles.forEach((obstacle) =>
+        drawObstacle(obstacle, camera)
+      );
+
+      objectRenderer.draw(ctx, {
+        camera,
+        viewport,
+        objects: area.objects,
+        timeSeconds
+      });
+
+      if (shouldRenderReliefWater(document.id, area)) {
+        drawReliefWaterfallGlints(ctx, { area, camera, viewport, timeSeconds: 0 });
+      }
+
+      portalRenderer.draw(ctx, {
+        camera,
+        worldDocument: document,
+        currentAreaId: area.id
+      });
+
+      if (mapActorRenderer) {
+        mapActorRenderer.draw(ctx, {
+          camera,
+          actors:
+            currentPlacedMapActors(area),
+          timeSeconds
+        });
+      }
+    } finally {
+      ctx.restore();
+    }
+
+    drawBuilderOverlays(area, document, camera);
+  } catch (error) {
+    setStatus(
+      `Preview impossible : ${error.message}`,
+      true
+    );
+  }
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // Mobile-friendly 12 Hz animation only while a waterfall is on this map.
+  const hasWaterfall = resolveWorldObjectPlacements(area.objects ?? []).some(o =>
+    Boolean(resolveWorldObjectAsset(o.visual?.assetId)?.animation));
+  if (hasWaterfall && !waterfallPreviewTimer && window.document.visibilityState !== 'hidden') {
+    waterfallPreviewTimer = window.setTimeout(() => {
+      waterfallPreviewTimer = 0;
+      schedulePreviewRender();
+    }, 83);
+  }
+}
+
+function applyTransformInputs() {
+  if (!selectedObjectId) return;
+
+  draft = updateWorldObjectTransform(
+    draft,
+    selectedAreaId,
+    selectedObjectId,
+    {
+      x: numberValue($('object-x')),
+      y: numberValue($('object-y')),
+      rotationDeg: numberValue($('object-rotation')),
+      scaleX: numberValue($('object-scale-x'), 1),
+      scaleY: numberValue($('object-scale-y'), 1)
+    }
+  );
+  refreshJson();
+  renderPreview();
+}
+
+function applyBridgeInputs() {
+  const object =
+    currentObjectResolved();
+
+  if (
+    !object ||
+    object.kind !== 'bridge'
+  ) {
+    return;
+  }
+
+  draft =
+    updateWorldObjectOverrides(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      {
+        traversalSurfaceFeatureIds:
+          $('bridge-obstacles')
+            .value
+            .split(',')
+            .map(
+              (value) =>
+                value.trim()
+            )
+            .filter(Boolean)
+      }
+    );
+
+  refreshJson();
+  renderPreview();
+}
+
+function switchPortalTrigger(kind) {
+  const portal = currentPortalRaw();
+  if (!portal) return;
+
+  draft = updatePortal(
+    draft,
+    portal.id,
+    (nextPortal) => {
+      if (kind === 'object-anchor') {
+        const area = draft.areas.find(
+          (item) => item.id === nextPortal.sourceAreaId
+        );
+        const building =
+          resolveWorldObjectPlacements(
+            area?.objects ?? []
+          ).find(
+            (object) =>
+              object.kind === 'building'
+          );
+        const anchor =
+          building?.doorAnchors?.[0];
+
+        if (building && anchor) {
+          nextPortal.trigger = {
+            kind: 'object-anchor',
+            objectId: building.id,
+            anchorId: anchor.id,
+            radius: nextPortal.trigger?.radius ?? 32
+          };
+        }
+      } else {
+        const area = draft.areas.find(
+          (item) => item.id === nextPortal.sourceAreaId
+        );
+        nextPortal.trigger = {
+          kind: 'point',
+          x: area?.width / 2 ?? 0,
+          y: area?.height / 2 ?? 0,
+          radius: nextPortal.trigger?.radius ?? 28
+        };
+      }
+    }
+  );
+
+  refreshPortalControls();
+  refreshJson();
+  renderPreview();
+}
+
+function applyPortalInputs() {
+  const portal = currentPortalRaw();
+  if (!portal) return;
+
+  draft = updatePortal(
+    draft,
+    portal.id,
+    (nextPortal) => {
+      nextPortal.sourceAreaId = $('portal-source-area').value;
+      nextPortal.targetAreaId = $('portal-target-area').value;
+      nextPortal.targetSpawnId = $('portal-target-spawn').value;
+
+      const kind = $('portal-trigger-kind').value;
+      const radius = numberValue($('portal-radius'), 28);
+
+      if (kind === 'point') {
+        nextPortal.trigger = {
+          kind: 'point',
+          x: numberValue($('portal-point-x'), 0),
+          y: numberValue($('portal-point-y'), 0),
+          radius
+        };
+      } else {
+        nextPortal.trigger = {
+          kind: 'object-anchor',
+          objectId: $('portal-building').value,
+          anchorId: $('portal-anchor').value,
+          radius
+        };
+      }
+
+      nextPortal.visual ??= {};
+      nextPortal.visual.visible = $('portal-visible').checked;
+      nextPortal.visual.marker = $('portal-marker').value;
+      nextPortal.visual.label =
+        $('portal-label').value.trim() || null;
+    }
+  );
+
+  refreshJson();
+  renderPreview();
+}
+
+
+function activateTab(tabName) {
+  for (const other of document.querySelectorAll('[data-tab]')) {
+    other.classList.toggle(
+      'active',
+      other.dataset.tab === tabName
+    );
+  }
+
+  for (const panel of document.querySelectorAll('[data-panel]')) {
+    panel.classList.toggle(
+      'active',
+      panel.dataset.panel === tabName
+    );
+  }
+}
+
+function setMapTool(tool) {
+  const interior = isInteriorArea();
+  const requested = interior && (tool === 'paint' || isPaintKind(tool))
+    ? 'terrain'
+    : tool === 'paint'
+      ? (
+          isPaintKind($('terrain-draw-kind').value)
+            ? $('terrain-draw-kind').value
+            : 'terrain'
+        )
+      : tool;
+
+  mapTool = [
+    'select',
+    'object-stamp',
+    'actor-placement',
+    'area-size',
+    ...PAINT_KINDS
+  ].includes(requested)
+    ? requested
+    : 'select';
+  canvas.dataset.tool = mapTool;
+
+  for (const button of document.querySelectorAll('[data-map-tool]')) {
+    const active =
+      button.dataset.mapTool === 'paint'
+        ? isPaintKind(mapTool)
+        : button.dataset.mapTool === mapTool;
+    button.classList.toggle(
+      'active',
+      active
+    );
+  }
+
+  $('map-object-tools').hidden = mapTool !== 'select' && mapTool !== 'object-stamp';
+  if (isPaintKind(mapTool)) {
+    activateTab(interior ? 'interior-floor' : 'terrain');
+  } else if (mapTool === 'object-stamp') {
+    activateTab('objects');
+  } else if (mapTool === 'actor-placement') {
+    activateTab('actors');
+  } else if (mapTool === 'area-size') {
+    activateTab('area');
+    fitRequested = true;
+  }
+
+  syncPaintModeUi();
+  renderPreview();
+}
+
+function canvasCoordinates(event) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+}
+
+function viewForInput() {
+  const area = currentAreaNormalized();
+  if (!area) return null;
+
+  return computeBuilderView({
+    area,
+    center,
+    zoom,
+    canvasWidth: Math.max(canvas.clientWidth, 1),
+    canvasHeight: Math.max(canvas.clientHeight, 1),
+    panMarginPx: BUILDER_PAN_MARGIN_PX
+  });
+}
+
+function eventWorldPoint(event) {
+  const view = viewForInput();
+  if (!view) return null;
+  const point = canvasCoordinates(event);
+
+  return canvasPointToWorld({
+    canvasX: point.x,
+    canvasY: point.y,
+    camera: view.camera,
+    zoom: view.zoom
+  });
+}
+
+function worldObjectRectForHit(object) {
+  return worldObjectVisualRect(object);
+}
+
+function pointToObjectLocal(point, rect) {
+  const dx = point.x - rect.x;
+  const dy = point.y - rect.y;
+  const cos = Math.cos(-rect.rotation);
+  const sin = Math.sin(-rect.rotation);
+
+  return {
+    x: dx * cos - dy * sin,
+    y: dx * sin + dy * cos
+  };
+}
+
+function hitSelectedObjectGizmo(area, point) {
+  if (!$('map-object-transform-enabled').checked || mapTool !== 'select') return null;
+  const object =
+    resolveWorldObjectPlacements(
+      area?.objects ?? []
+    ).find(
+      (item) =>
+        item.id === selectedObjectId
+    );
+  if (!object) return null;
+
+  const rect = worldObjectRectForHit(object);
+  if (!rect) return null;
+
+  const local = pointToObjectLocal(point, rect);
+  const hitRadius = 26 / Math.max(zoom, 0.05);
+  const halfWidth = rect.width / 2;
+  const halfHeight = rect.height / 2;
+  const rotateOffset = 42 / Math.max(zoom, 0.05);
+
+  const rotationHandle = {
+    x: 0,
+    y: -halfHeight - rotateOffset
+  };
+
+  if (
+    Math.hypot(
+      local.x - rotationHandle.x,
+      local.y - rotationHandle.y
+    ) <= hitRadius
+  ) {
+    return {
+      kind: 'rotate',
+      object,
+      rect
+    };
+  }
+
+  const corners = [
+    { x: -halfWidth, y: -halfHeight },
+    { x: halfWidth, y: -halfHeight },
+    { x: halfWidth, y: halfHeight },
+    { x: -halfWidth, y: halfHeight }
+  ];
+
+  if (
+    corners.some(
+      (corner) =>
+        Math.hypot(
+          local.x - corner.x,
+          local.y - corner.y
+        ) <= hitRadius
+    )
+  ) {
+    return {
+      kind: 'scale',
+      object,
+      rect
+    };
+  }
+
+  return null;
+}
+
+function hitAreaResizeHandle(area, point) {
+  if (!area || !point) return false;
+
+  const hitRadius = 30 / Math.max(zoom, 0.05);
+  return (
+    Math.hypot(
+      point.x - area.width,
+      point.y - area.height
+    ) <= hitRadius
+  );
+}
+
+function eventsTabActive() {
+  return Boolean(
+    document.querySelector(
+      '[data-tab="events"].active'
+    )
+  );
+}
+
+function hitSelectedEventTrigger(
+  area,
+  point
+) {
+  if (
+    !eventsTabActive() ||
+    !area ||
+    !point
+  ) {
+    return null;
+  }
+
+  const event =
+    currentWorldEventRaw();
+  const isPointTrigger =
+    event?.trigger?.kind === 'point';
+
+  if (
+    !event ||
+    event.sourceAreaId !== area.id ||
+    !isPointTrigger
+  ) {
+    return null;
+  }
+
+  const hitPadding =
+    12 / Math.max(zoom, 0.05);
+  const radius =
+    Math.max(
+      4,
+      Number(event.trigger.radius) || 0
+    );
+
+  return (
+    Math.hypot(
+      point.x - event.trigger.x,
+      point.y - event.trigger.y
+    ) <=
+    radius + hitPadding
+  )
+    ? event
+    : null;
+}
+
+function objectBaseDimensions(object) {
+  return worldObjectBaseDimensions(object);
+}
+
+function stampSelectedWorldObject(point) {
+  const area = currentAreaRaw();
+  const objectDefinitionId = selectedStampDefinitionId;
+  if (!area || !objectDefinitionCatalog.get(objectDefinitionId)) {
+    setStatus('Choisis un objet avant de le placer.', true);
+    return false;
+  }
+  const input = worldObjectStampInput({
+    definitionId: objectDefinitionId,
+    preset: selectedStampPreset,
+    point, area
+  });
+  if (!input) return false;
+  draft = addWorldObject(draft, selectedAreaId, input);
+  selectedObjectId = null;
+  schedulePreviewRender();
+  setStatus('Objet placé. Touche un autre endroit pour continuer.');
+  return true;
+}
+
+function hitWorldObject(area, point) {
+  const objects = [
+    ...resolveWorldObjectPlacements(
+      area?.objects ?? []
+    )
+  ].reverse();
+
+  return objects.find((object) => {
+    const rect = worldObjectRectForHit(object);
+    return rect && pointInRotatedRect(point, rect);
+  }) ?? null;
+}
+
+function hitSpawn(area, point) {
+  const radius = 18 / Math.max(zoom, 0.05);
+  const radiusSq = radius * radius;
+
+  for (const spawn of area?.spawns ?? []) {
+    const resolved = resolveWorldAreaSpawnPoint(area, spawn.id);
+    if (!resolved) continue;
+
+    const dx = point.x - resolved.x;
+    const dy = point.y - resolved.y;
+
+    if (dx * dx + dy * dy <= radiusSq) {
+      return Object.freeze({
+        ...spawn,
+        x: resolved.x,
+        y: resolved.y
+      });
+    }
+  }
+
+  return null;
+}
+
+function applyZoomAtCanvasPoint(nextZoom, canvasPoint) {
+  const area = currentAreaNormalized();
+  if (!area) return;
+
+  const view = zoomBuilderAtCanvasPoint({
+    area,
+    center,
+    oldZoom: zoom,
+    newZoom: nextZoom,
+    canvasWidth: Math.max(canvas.clientWidth, 1),
+    canvasHeight: Math.max(canvas.clientHeight, 1),
+    canvasX: canvasPoint.x,
+    canvasY: canvasPoint.y,
+    panMarginPx: BUILDER_PAN_MARGIN_PX
+  });
+
+  zoom = view.zoom;
+  center = { ...view.center };
+  fitRequested = false;
+  schedulePreviewRender();
+}
+
+function beginSurfacePath(kind, point) {
+  const area = currentAreaRaw();
+  if (!area) return null;
+  const interior = area.kind === 'interior';
+  if (interior && (kind !== 'terrain' || !pointInWorldAreaBoundary(currentAreaNormalized(), point.x, point.y))) return null;
+  // Each fresh stroke starts a distinct retained-layer transaction, even if
+  // undo/repaint recycles the same canonical WorldSurface path ID.
+  terrainCompositor.clear();
+
+  const before = surfacePathItems(area)
+    .filter((item) => item.kind === kind)
+    .map((item) => item.id);
+
+  const width =
+    kind === 'river'
+      ? numberValue($('terrain-river-width'), 72)
+      : kind === 'terrain'
+        ? (interior ? numberValue($('interior-floor-brush-size'), 72) : numberValue($('terrain-brush-size'), 180))
+        : numberValue($('terrain-route-width'), 82);
+  const materialId =
+    kind === 'river'
+      ? $('terrain-river-material').value
+      : kind === 'terrain'
+        ? (interior
+          ? $('interior-floor-material').value
+          : (preferredSurfaceMaterial(surfaceMaterials, $('terrain-family').value,
+            $('terrain-paint-material').value, terrainFamilies()) ?? ''))
+        : $('terrain-route-material').value;
+  if (!materialId) {
+    setStatus('Importe une texture pour cette famille avant de peindre.', true);
+    return null;
+  }
+  const terrainFamilyId =
+    kind === 'river'
+      ? $('terrain-river-family').value
+      : kind === 'route'
+        ? $('terrain-route-family').value
+        : (interior ? area.surface?.baseTerrainFamilyId : $('terrain-family').value);
+
+  draft = addSurfacePath(
+    draft,
+    selectedAreaId,
+    kind,
+    {
+      width,
+      terrainFamilyId,
+      materialId,
+      points: [point, point]
+    }
+  );
+
+  const created = surfacePathItems(currentAreaRaw())
+    .find((item) => item.kind === kind && !before.includes(item.id));
+
+  if (!created) return null;
+
+  selectedSurfaceKind = kind;
+  selectedSurfacePathId = created.id;
+  return created.id;
+}
+
+function appendDrawPoint(kind, pathId, point, force = false) {
+  if (isInteriorArea() && kind === 'terrain' &&
+      !pointInWorldAreaBoundary(currentAreaNormalized(), point.x, point.y)) return;
+  const path = surfacePathItems(currentAreaRaw())
+    .find((item) => item.kind === kind && item.id === pathId);
+  const last = path?.points?.at(-1);
+  if (!last) return;
+
+  const distance = Math.hypot(point.x - last.x, point.y - last.y);
+  const threshold = Math.max(5, 14 / Math.max(zoom, 0.05));
+
+  if (!force && distance < threshold) return;
+
+  draft = appendSurfacePathPoint(
+    draft,
+    selectedAreaId,
+    kind,
+    pathId,
+    point
+  );
+}
+
+function beginPinch() {
+  if (activePointers.size !== 2) return;
+
+  const points = [...activePointers.values()];
+  const mid = {
+    x: (points[0].x + points[1].x) / 2,
+    y: (points[0].y + points[1].y) / 2
+  };
+  const distance = Math.hypot(
+    points[1].x - points[0].x,
+    points[1].y - points[0].y
+  );
+  const view = viewForInput();
+  if (!view || distance <= 0) return;
+
+  pinchState = {
+    startDistance: distance,
+    startZoom: zoom,
+    worldMid: canvasPointToWorld({
+      canvasX: mid.x,
+      canvasY: mid.y,
+      camera: view.camera,
+      zoom: view.zoom
+    })
+  };
+
+  pointerSession = null;
+}
+
+function updatePinch() {
+  if (!pinchState || activePointers.size !== 2) return;
+
+  const area = currentAreaNormalized();
+  if (!area) return;
+
+  const points = [...activePointers.values()];
+  const mid = {
+    x: (points[0].x + points[1].x) / 2,
+    y: (points[0].y + points[1].y) / 2
+  };
+  const distance = Math.hypot(
+    points[1].x - points[0].x,
+    points[1].y - points[0].y
+  );
+
+  const nextZoom = clampBuilderZoom(
+    pinchState.startZoom *
+    (distance / Math.max(1, pinchState.startDistance))
+  );
+  const viewportWidth = Math.max(canvas.clientWidth, 1) / nextZoom;
+  const viewportHeight = Math.max(canvas.clientHeight, 1) / nextZoom;
+
+  const desiredCenter = {
+    x:
+      pinchState.worldMid.x -
+      mid.x / nextZoom +
+      viewportWidth / 2,
+    y:
+      pinchState.worldMid.y -
+      mid.y / nextZoom +
+      viewportHeight / 2
+  };
+
+  const view = computeBuilderView({
+    area,
+    center: desiredCenter,
+    zoom: nextZoom,
+    canvasWidth: Math.max(canvas.clientWidth, 1),
+    canvasHeight: Math.max(canvas.clientHeight, 1),
+    panMarginPx: BUILDER_PAN_MARGIN_PX
+  });
+
+  zoom = view.zoom;
+  center = { ...view.center };
+  fitRequested = false;
+  schedulePreviewRender();
+}
+
+function finishPointerEditing() {
+  canvas.dataset.dragging = 'false';
+  refreshAreaControls();
+  refreshInteriorFloorControls();
+  refreshTerrainControls();
+  refreshObjectControls();
+  refreshJson();
+  renderPreview();
+}
+
+function applyMapFocusState(active) {
+  mapFocusActive = Boolean(active);
+  previewPanel.classList.toggle(
+    'is-map-focus',
+    mapFocusActive
+  );
+  document.body.classList.toggle(
+    'builder-map-focus',
+    mapFocusActive
+  );
+  $('preview-fullscreen').hidden =
+    mapFocusActive;
+  $('preview-fullscreen-exit').hidden =
+    !mapFocusActive;
+  fitRequested = true;
+
+  requestAnimationFrame(() => {
+    renderPreview();
+  });
+}
+
+function prefersMapFocusOnPointer() {
+  return Boolean(
+    coarsePointerMedia?.matches
+  );
+}
+
+async function enterMapFocus() {
+  if (mapFocusActive) return;
+
+  applyMapFocusState(true);
+
+  if (
+    previewPanel.requestFullscreen &&
+    document.fullscreenElement !== previewPanel
+  ) {
+    try {
+      await previewPanel.requestFullscreen({
+        navigationUI: 'hide'
+      });
+      nativeMapFullscreenActive =
+        document.fullscreenElement === previewPanel;
+    } catch {
+      nativeMapFullscreenActive = false;
+    }
+  }
+
+  try {
+    await screen.orientation?.lock?.(
+      'landscape'
+    );
+  } catch {
+    // CSS focus remains authoritative for presentation fallback.
+  }
+}
+
+async function exitMapFocus() {
+  nativeMapFullscreenActive = false;
+
+  if (
+    document.fullscreenElement === previewPanel &&
+    document.exitFullscreen
+  ) {
+    try {
+      await document.exitFullscreen();
+    } catch {
+      // CSS focus can still be closed explicitly.
+    }
+  }
+
+  try {
+    screen.orientation?.unlock?.();
+  } catch {
+    // Orientation unlock is best-effort only.
+  }
+
+  applyMapFocusState(false);
+}
+
+document.addEventListener(
+  'fullscreenchange',
+  () => {
+    if (
+      document.fullscreenElement === previewPanel
+    ) {
+      nativeMapFullscreenActive = true;
+      applyMapFocusState(true);
+      return;
+    }
+
+    if (nativeMapFullscreenActive) {
+      nativeMapFullscreenActive = false;
+
+      try {
+        screen.orientation?.unlock?.();
+      } catch {
+        // Browser may not expose Screen Orientation unlock.
+      }
+
+      applyMapFocusState(false);
+    }
+  }
+);
+
+for (const button of document.querySelectorAll('[data-tab]')) {
+  button.addEventListener('click', () => {
+    activateTab(button.dataset.tab);
+  });
+}
+
+$('area-select').addEventListener('change', () => {
+  selectAreaForEditing(
+    $('area-select').value,
+    {
+      activateAreaTab: true
+    }
+  );
+});
+
+for (const id of ['area-width', 'area-height']) {
+  $(id).addEventListener('change', () => {
+    draft = updateAreaProperties(
+      draft,
+      selectedAreaId,
+      {
+        width: numberValue($('area-width')),
+        height: numberValue($('area-height'))
+      }
+    );
+    fitRequested = true;
+    refreshControls();
+  });
+}
+
+$('area-shape').addEventListener(
+  'change',
+  () => {
+    const area =
+      currentAreaRaw();
+
+    if (
+      area?.kind !== 'interior'
+    ) {
+      return;
+    }
+
+    const boundary =
+      boundaryForInteriorShapePreset(
+        $('area-shape').value
+      );
+
+    if (!boundary) {
+      return;
+    }
+
+    draft =
+      updateAreaBoundary(
+        draft,
+        selectedAreaId,
+        boundary
+      );
+
+    fitRequested = true;
+    refreshControls();
+  }
+);
+
+$('area-family').addEventListener('change', () => {
+  const familyId = $('area-family').value;
+  const baseMaterialId = preferredSurfaceMaterial(
+    surfaceMaterials, familyId, currentAreaRaw()?.surface?.baseMaterialId, terrainFamilies());
+  draft = updateAreaProperties(
+    draft,
+    selectedAreaId,
+    { baseTerrainFamilyId: familyId, ...(baseMaterialId ? { baseMaterialId } : {}) }
+  );
+  refreshControls();
+});
+
+$('area-material').addEventListener('change', () => {
+  draft = updateAreaProperties(
+    draft,
+    selectedAreaId,
+    {
+      baseMaterialId: $('area-material').value
+    }
+  );
+  refreshJson();
+  renderPreview();
+});
+
+
+$('terrain-family').addEventListener('change', () => {
+  const familyId = $('terrain-family').value;
+  const materialId = preferredSurfaceMaterial(surfaceMaterials, familyId, null, terrainFamilies());
+  if (selectedSurfaceKind === 'terrain' && selectedSurfacePathId) {
+    draft = updateSurfacePath(draft, selectedAreaId, 'terrain',
+      selectedSurfacePathId, { terrainFamilyId: familyId,
+        ...(materialId ? { materialId } : {}) });
+    refreshJson();
+  }
+  refreshTerrainControls();
+  renderPreview();
+});
+
+$('terrain-family-definition-select').addEventListener(
+  'change',
+  () => {
+    selectedTerrainFamilyDefinitionId =
+      $('terrain-family-definition-select').value;
+    refreshTerrainFamilyDefinitionControls();
+  }
+);
+
+$('terrain-family-add').addEventListener(
+  'click',
+  () => {
+    const before = new Set(
+      terrainFamilies().map(
+        (family) => family.id
+      )
+    );
+
+    draft = addTerrainFamilyDefinition(
+      draft
+    );
+
+    const created =
+      terrainFamilies().find(
+        (family) =>
+          !before.has(family.id)
+      );
+
+    selectedTerrainFamilyDefinitionId =
+      created?.id ??
+      selectedTerrainFamilyDefinitionId;
+    selectedEncounterFamilyId =
+      created?.id ??
+      selectedEncounterFamilyId;
+
+    refreshControls();
+  }
+);
+
+$('terrain-family-label').addEventListener(
+  'change',
+  () => {
+    if (
+      !selectedTerrainFamilyDefinitionId
+    ) {
+      return;
+    }
+
+    draft = updateTerrainFamilyDefinition(
+      draft,
+      selectedTerrainFamilyDefinitionId,
+      {
+        label:
+          $('terrain-family-label').value
+      }
+    );
+
+    refreshControls();
+  }
+);
+
+$('terrain-family-paint-kind').addEventListener('change', () => {
+  if (!selectedTerrainFamilyDefinitionId) return;
+  draft = updateTerrainFamilyDefinition(draft, selectedTerrainFamilyDefinitionId,
+    { paintKind: $('terrain-family-paint-kind').value });
+  refreshControls();
+});
+
+// Authoring only: commit numeric data to the Terrain Family Definition.
+ // All runtime speed calculations remain in Surface Traversal + Movement.
+for (const mode of ['ground', 'swim', 'fly']) {
+  $('terrain-family-speed-' + mode).addEventListener('change', () => {
+    if (!selectedTerrainFamilyDefinitionId) return;
+    const percent = Number($('terrain-family-speed-' + mode).value);
+    if (!Number.isFinite(percent) || percent < 0 || percent > 1000) {
+      refreshTerrainFamilyDefinitionControls();
+      return;
+    }
+    draft = updateTerrainFamilyDefinition(
+      draft,
+      selectedTerrainFamilyDefinitionId,
+      { traversalModes: { [mode]: percent / 100 } }
+    );
+    refreshControls();
+  });
+}
+
+$('terrain-family-materials-save').addEventListener('click', () => {
+  if (!selectedTerrainFamilyDefinitionId) return;
+  const chosen = [...$('terrain-family-materials').querySelectorAll('input:checked')]
+    .map((input) => input.value);
+  draft = updateTerrainFamilyDefinition(draft, selectedTerrainFamilyDefinitionId,
+    { surfaceMaterialIds: chosen });
+  refreshControls();
+});
+
+$('terrain-family-delete').addEventListener(
+  'click',
+  () => {
+    if (
+      !selectedTerrainFamilyDefinitionId
+    ) {
+      return;
+    }
+
+    const before =
+      terrainFamilies().length;
+    draft =
+      deleteTerrainFamilyDefinition(
+        draft,
+        selectedTerrainFamilyDefinitionId
+      );
+
+    if (
+      terrainFamilies().length === before
+    ) {
+      setStatus(
+        'Famille protégée : encore utilisée dans le monde',
+        true
+      );
+      refreshTerrainFamilyDefinitionControls();
+      return;
+    }
+
+    selectedTerrainFamilyDefinitionId =
+      terrainFamilies()[0]?.id ?? null;
+    refreshControls();
+  }
+);
+
+for (const [kind, selectId] of [
+  ['route', 'terrain-route-family'],
+  ['river', 'terrain-river-family']
+]) {
+  $(selectId).addEventListener(
+    'change',
+    () => {
+      if (
+        selectedSurfaceKind !== kind ||
+        !selectedSurfacePathId
+      ) {
+        return;
+      }
+
+      draft = updateSurfacePath(
+        draft,
+        selectedAreaId,
+        kind,
+        selectedSurfacePathId,
+        {
+          terrainFamilyId:
+            $(selectId).value
+        }
+      );
+      refreshJson();
+      renderPreview();
+    }
+  );
+}
+
+$('family-encounter-family').addEventListener(
+  'change',
+  () => {
+    selectedEncounterFamilyId =
+      $('family-encounter-family').value;
+    refreshFamilyEncounterControls();
+  }
+);
+
+$('area-random-encounters-enabled').addEventListener('change', () => {
+  draft = setAreaEncounterRandomEnabled(
+    draft, selectedAreaId, $('area-random-encounters-enabled').checked
+  );
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
+
+$('family-encounter-chance').addEventListener(
+  'input',
+  () => {
+    draft = updateTerrainFamilyEncounterProfile(
+      draft,
+      selectedEncounterFamilyId,
+      {
+        encounterChancePercent: numberValue(
+          $('family-encounter-chance'),
+          0
+        )
+      }
+    );
+
+    $('family-encounter-chance-value').value =
+      `${Math.round(
+        numberValue($('family-encounter-chance'), 0)
+      )} %`;
+
+    refreshJson();
+  }
+);
+
+$('terrain-path-select').addEventListener('change', () => {
+  const value = $('terrain-path-select').value;
+
+  if (!value) {
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  } else {
+    const separator = value.indexOf(':');
+    selectedSurfaceKind = value.slice(0, separator);
+    selectedSurfacePathId = value.slice(separator + 1);
+  }
+
+  refreshTerrainControls();
+  renderPreview();
+});
+
+$('terrain-path-delete').addEventListener('click', () => {
+  if (!selectedSurfaceKind || !selectedSurfacePathId) return;
+
+  draft = deleteSurfacePath(
+    draft,
+    selectedAreaId,
+    selectedSurfaceKind,
+    selectedSurfacePathId
+  );
+
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  refreshControls();
+});
+
+for (const [kind, widthId, valueId, materialId, fallbackWidth] of [
+  ['terrain', 'terrain-brush-size', 'terrain-brush-size-value', 'terrain-paint-material', 180],
+  ['route', 'terrain-route-width', 'terrain-route-width-value', 'terrain-route-material', 82],
+  ['river', 'terrain-river-width', 'terrain-river-width-value', 'terrain-river-material', 72]
+]) {
+  $(widthId).addEventListener('input', () => {
+    const width = numberValue($(widthId), fallbackWidth);
+    $(valueId).value = String(width);
+
+    if (mapTool === kind) {
+      $('paint-brush-value').value =
+        String(Math.round(width));
+      renderPreview();
+    }
+  });
+
+  $(materialId).addEventListener('change', () => {
+    if (
+      selectedSurfaceKind !== kind ||
+      !selectedSurfacePathId
+    ) {
+      return;
+    }
+
+    draft = updateSurfacePath(
+      draft,
+      selectedAreaId,
+      kind,
+      selectedSurfacePathId,
+      { materialId: $(materialId).value }
+    );
+    refreshJson();
+    renderPreview();
+  });
+}
+
+$('spawn-select').addEventListener('change', () => {
+  selectedSpawnId = $('spawn-select').value;
+  refreshAreaControls();
+  renderPreview();
+});
+
+for (const id of ['spawn-x', 'spawn-y']) {
+  $(id).addEventListener('change', () => {
+    if (!selectedSpawnId) return;
+    draft = updateSpawn(
+      draft,
+      selectedAreaId,
+      selectedSpawnId,
+      {
+        x: numberValue($('spawn-x')),
+        y: numberValue($('spawn-y'))
+      }
+    );
+    refreshJson();
+    renderPreview();
+  });
+}
+
+$('spawn-add').addEventListener('click', () => {
+  const before = currentAreaRaw()?.spawns?.map((spawn) => spawn.id) ?? [];
+  draft = addSpawn(draft, selectedAreaId);
+  const area = currentAreaRaw();
+  selectedSpawnId = area?.spawns?.find(
+    (spawn) => !before.includes(spawn.id)
+  )?.id ?? selectedSpawnId;
+  refreshControls();
+});
+
+$('spawn-delete').addEventListener('click', () => {
+  if (!selectedSpawnId) return;
+  const before = currentAreaRaw()?.spawns?.length ?? 0;
+  draft = deleteSpawn(draft, selectedAreaId, selectedSpawnId);
+  const after = currentAreaRaw()?.spawns?.length ?? 0;
+
+  if (before === after) {
+    setStatus(
+      'Spawn protégé : initial ou cible d’un Portal',
+      true
+    );
+  }
+
+  selectedSpawnId = null;
+  refreshControls();
+});
+
+$('actor-placement-select').addEventListener(
+  'change',
+  () => {
+    selectedActorPlacementId =
+      $('actor-placement-select').value ||
+      null;
+    refreshActorControls();
+    renderPreview();
+  }
+);
+
+$('actor-add').addEventListener(
+  'click',
+  () => {
+    const area =
+      currentAreaRaw();
+    const actorDefinitionId =
+      $('actor-definition').value;
+
+    if (
+      !area ||
+      !actorDefinitionId
+    ) {
+      return;
+    }
+
+    const before =
+      new Set(
+        area.actors?.map(
+          (actor) => actor.id
+        ) ?? []
+      );
+
+    draft = addActorPlacement(
+      draft,
+      selectedAreaId,
+      {
+        actorDefinitionId,
+        x: area.width / 2,
+        y: area.height / 2,
+        facingX: 1
+      }
+    );
+
+    selectedActorPlacementId =
+      currentAreaRaw()
+        ?.actors?.find(
+          (actor) =>
+            !before.has(actor.id)
+        )?.id ??
+      selectedActorPlacementId;
+
+    setMapTool(
+      'actor-placement'
+    );
+    refreshControls();
+  }
+);
+
+$('actor-delete').addEventListener(
+  'click',
+  () => {
+    if (
+      !selectedActorPlacementId
+    ) {
+      return;
+    }
+
+    draft =
+      deleteActorPlacement(
+        draft,
+        selectedAreaId,
+        selectedActorPlacementId
+      );
+    selectedActorPlacementId =
+      currentAreaRaw()
+        ?.actors?.[0]?.id ??
+      null;
+    refreshControls();
+  }
+);
+
+for (const id of [
+  'actor-x',
+  'actor-y',
+  'actor-facing'
+]) {
+  $(id).addEventListener(
+    'change',
+    () => {
+      if (
+        !selectedActorPlacementId
+      ) {
+        return;
+      }
+
+      draft =
+        updateActorPlacement(
+          draft,
+          selectedAreaId,
+          selectedActorPlacementId,
+          {
+            x: numberValue(
+              $('actor-x')
+            ),
+            y: numberValue(
+              $('actor-y')
+            ),
+            facingX:
+              Number(
+                $('actor-facing')
+                  .value
+              ) < 0
+                ? -1
+                : 1
+          }
+        );
+
+      refreshActorControls();
+      refreshJson();
+      renderPreview();
+    }
+  );
+}
+
+$('object-library-category').addEventListener(
+  'change',
+  () => {
+    selectedObjectLibraryCategoryId =
+      $('object-library-category').value ||
+      null;
+    selectedObjectLibraryFolderId =
+      objectLibraryFoldersForCategory(
+        selectedObjectLibraryCategoryId
+      )[0]?.id ?? null;
+    refreshObjectControls();
+  }
+);
+
+$('map-object-definition').addEventListener('change', () => {
+  selectedStampDefinitionId = $('map-object-definition').value;
+  selectedStampPreset = null;
+  const selected = objectDefinitionCatalog.get(selectedStampDefinitionId);
+  if (selected?.library) {
+    selectedObjectLibraryCategoryId = selected.library.categoryId;
+    selectedObjectLibraryFolderId = selected.library.folderId;
+    refreshObjectControls();
+    $('object-definition').value = selectedStampDefinitionId;
+  }
+});
+
+$('object-definition').addEventListener('change', () => {
+  selectedStampDefinitionId = $('object-definition').value;
+  selectedStampPreset = null;
+  $('map-object-copy-status').textContent = 'Modèle standard · taille ×1, rotation 0°';
+  $('map-object-definition').value = selectedStampDefinitionId;
+});
+
+$('map-object-transform-enabled').addEventListener('change', schedulePreviewRender);
+
+$('object-library-folder').addEventListener(
+  'change',
+  () => {
+    selectedObjectLibraryFolderId =
+      $('object-library-folder').value ||
+      null;
+    refreshObjectControls();
+  }
+);
+
+$('object-select').addEventListener(
+  'change',
+  () => {
+    selectedObjectId =
+      $('object-select').value;
+
+    syncObjectLibraryToSelectedPlacement();
+    refreshObjectControls();
+    renderPreview();
+  }
+);
+
+$('object-visual-variant').addEventListener(
+  'change',
+  () => {
+    if (!selectedObjectId) return;
+
+    draft = updateWorldObjectOverrides(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      {
+        visualVariantId:
+          $('object-visual-variant').value
+      }
+    );
+
+    refreshJson();
+    refreshObjectControls();
+    renderPreview();
+  }
+);
+
+for (const id of [
+  'object-x',
+  'object-y',
+  'object-rotation',
+  'object-scale-x',
+  'object-scale-y'
+]) {
+  $(id).addEventListener(
+    'change',
+    applyTransformInputs
+  );
+}
+
+$('bridge-obstacles').addEventListener(
+  'change',
+  applyBridgeInputs
+);
+
+$('object-add').addEventListener('click', () => {
+  selectedStampDefinitionId = $('object-definition').value || selectedStampDefinitionId;
+  selectedStampPreset = null;
+  $('map-object-copy-status').textContent = 'Modèle standard · taille ×1, rotation 0°';
+  $('map-object-definition').value = selectedStampDefinitionId ?? '';
+  setMapTool('object-stamp');
+  setStatus('Placement actif : touche plusieurs endroits pour poser des objets.');
+});
+
+$('object-duplicate').addEventListener('click', () => {
+  // Copy a snapshot of reusable settings: do not create or move any placement.
+  flushPendingObjectMove();
+  const preset = copyWorldObjectAsStamp(currentObjectRaw());
+  if (!preset) {
+    setStatus('Sélectionne un objet déjà placé pour copier ses réglages.', true);
+    return;
+  }
+  selectedStampPreset = preset;
+  selectedStampDefinitionId = preset.objectDefinitionId;
+  syncObjectLibraryToSelectedPlacement();
+  refreshObjectControls();
+  $('object-definition').value = preset.objectDefinitionId;
+  setMapTool('object-stamp');
+  setStatus('Réglages copiés : touche la carte pour placer des exemplaires identiques.');
+});
+
+$('object-delete').addEventListener('click', () => {
+  if (!selectedObjectId) return;
+  const before = currentAreaRaw()?.objects?.length ?? 0;
+  draft = deleteWorldObject(
+    draft,
+    selectedAreaId,
+    selectedObjectId
+  );
+  const after = currentAreaRaw()?.objects?.length ?? 0;
+
+  if (before === after) {
+    setStatus(
+      'Objet protégé : référencé par un Portal',
+      true
+    );
+  }
+
+  selectedObjectId = null;
+  refreshControls();
+});
+
+$('building-interior-create').addEventListener(
+  'click',
+  () => {
+    const object =
+      currentObjectResolved();
+    const anchor =
+      object?.doorAnchors?.[0];
+
+    if (
+      !object ||
+      object.kind !== 'building' ||
+      !anchor
+    ) {
+      setStatus(
+        'Impossible de créer un intérieur sans bâtiment et doorAnchor.',
+        true
+      );
+      return;
+    }
+
+    draft =
+      createBuildingInteriorLink(
+        draft,
+        {
+          sourceAreaId:
+            selectedAreaId,
+          buildingId:
+            object.id,
+          anchorId:
+            anchor.id
+        },
+        objectDefinitionCatalog
+      );
+
+    const link =
+      currentBuildingInteriorLink();
+
+    if (link.status !== 'linked') {
+      setStatus(
+        'La liaison intérieure n’a pas pu être créée.',
+        true
+      );
+    } else {
+      selectedPortalId =
+        link.outgoingPortal.id;
+    }
+
+    refreshControls();
+  }
+);
+
+$('building-interior-link').addEventListener(
+  'click',
+  () => {
+    const object =
+      currentObjectResolved();
+    const anchor =
+      object?.doorAnchors?.[0];
+    const targetAreaId =
+      $('building-interior-target-area')
+        .value;
+
+    if (
+      !object ||
+      object.kind !== 'building' ||
+      !anchor ||
+      !targetAreaId
+    ) {
+      setStatus(
+        'Sélectionner un bâtiment et une WorldArea intérieure.',
+        true
+      );
+      return;
+    }
+
+    draft =
+      createBuildingInteriorLink(
+        draft,
+        {
+          sourceAreaId:
+            selectedAreaId,
+          buildingId:
+            object.id,
+          anchorId:
+            anchor.id,
+          targetAreaId
+        },
+        objectDefinitionCatalog
+      );
+
+    const link =
+      currentBuildingInteriorLink();
+
+    if (link.status !== 'linked') {
+      setStatus(
+        'La WorldArea sélectionnée n’a pas pu être reliée.',
+        true
+      );
+    } else {
+      selectedPortalId =
+        link.outgoingPortal.id;
+    }
+
+    refreshControls();
+  }
+);
+
+$('building-interior-open').addEventListener(
+  'click',
+  () => {
+    const link =
+      currentBuildingInteriorLink();
+
+    if (
+      link.status !== 'linked' ||
+      !link.targetArea
+    ) {
+      return;
+    }
+
+    selectAreaForEditing(
+      link.targetArea.id,
+      {
+        portalId:
+          link.returnPortal?.id ?? null,
+        activateAreaTab: true
+      }
+    );
+  }
+);
+
+$('portal-select').addEventListener('change', () => {
+  selectedPortalId = $('portal-select').value;
+  refreshPortalControls();
+  renderPreview();
+});
+
+$('portal-add').addEventListener('click', () => {
+  const sourceArea = currentAreaRaw();
+  const targetArea =
+    draft.areas.find((area) => area.id !== selectedAreaId) ??
+    sourceArea;
+  const targetSpawn = targetArea?.spawns?.[0];
+
+  if (!sourceArea || !targetArea || !targetSpawn) {
+    setStatus('Impossible de créer un Portal sans Spawn cible', true);
+    return;
+  }
+
+  const before = draft.portals.map((portal) => portal.id);
+
+  draft = addPortal(
+    draft,
+    {
+      sourceAreaId: sourceArea.id,
+      trigger: {
+        kind: 'point',
+        x: sourceArea.width / 2,
+        y: sourceArea.height / 2,
+        radius: 28
+      },
+      targetAreaId: targetArea.id,
+      targetSpawnId: targetSpawn.id,
+      visual: {
+        visible: true,
+        marker: 'portal',
+        label: 'Portal'
+      }
+    }
+  );
+
+  selectedPortalId = draft.portals.find(
+    (portal) => !before.includes(portal.id)
+  )?.id ?? selectedPortalId;
+  refreshControls();
+});
+
+$('portal-delete').addEventListener('click', () => {
+  if (!selectedPortalId) return;
+  draft = deletePortal(draft, selectedPortalId);
+  selectedPortalId = draft.portals?.[0]?.id ?? null;
+  refreshControls();
+});
+
+$('portal-trigger-kind').addEventListener('change', () => {
+  switchPortalTrigger($('portal-trigger-kind').value);
+});
+
+$('portal-source-area').addEventListener('change', () => {
+  const portal = currentPortalRaw();
+  if (!portal) return;
+
+  draft = updatePortal(
+    draft,
+    portal.id,
+    (nextPortal) => {
+      nextPortal.sourceAreaId = $('portal-source-area').value;
+    }
+  );
+
+  switchPortalTrigger($('portal-trigger-kind').value);
+});
+
+$('portal-target-area').addEventListener('change', () => {
+  const portal = currentPortalRaw();
+  if (!portal) return;
+
+  const targetAreaId = $('portal-target-area').value;
+  const targetArea = draft.areas.find(
+    (area) => area.id === targetAreaId
+  );
+
+  draft = updatePortal(
+    draft,
+    portal.id,
+    (nextPortal) => {
+      nextPortal.targetAreaId = targetAreaId;
+      nextPortal.targetSpawnId = targetArea?.spawns?.[0]?.id ?? '';
+    }
+  );
+
+  refreshPortalControls();
+  refreshJson();
+  renderPreview();
+});
+
+$('portal-building').addEventListener('change', () => {
+  const portal = currentPortalRaw();
+  if (!portal) return;
+
+  const area = draft.areas.find(
+    (item) => item.id === portal.sourceAreaId
+  );
+  const building =
+    resolveWorldObjectPlacements(
+      area?.objects ?? []
+    ).find(
+      (object) =>
+        object.id ===
+        $('portal-building').value
+    );
+  const anchor =
+    building?.doorAnchors?.[0];
+
+  draft = updatePortal(
+    draft,
+    portal.id,
+    (nextPortal) => {
+      if (nextPortal.trigger?.kind !== 'object-anchor') return;
+      nextPortal.trigger.objectId = building?.id ?? '';
+      nextPortal.trigger.anchorId = anchor?.id ?? '';
+    }
+  );
+
+  refreshPortalControls();
+  refreshJson();
+  renderPreview();
+});
+
+for (const id of [
+  'portal-point-x',
+  'portal-point-y',
+  'portal-radius',
+  'portal-anchor',
+  'portal-target-spawn',
+  'portal-visible',
+  'portal-marker',
+  'portal-label'
+]) {
+  $(id).addEventListener('change', applyPortalInputs);
+}
+
+
+$('event-select').addEventListener('change', () => {
+  selectedEventId =
+    $('event-select').value || null;
+
+  const event =
+    currentWorldEventRaw();
+
+  if (event?.sourceAreaId) {
+    selectAreaForEditing(
+      event.sourceAreaId,
+      {
+        refresh: false,
+        resetTool: false
+      }
+    );
+  }
+
+  refreshControls();
+});
+
+$('event-add').addEventListener('click', () => {
+  const area =
+    currentAreaRaw();
+
+  if (!area) return;
+
+  const before =
+    new Set(
+      (draft.events ?? [])
+        .map((event) => event.id)
+    );
+
+  draft = addWorldEvent(
+    draft,
+    {
+      sourceAreaId: area.id,
+      enabled: true,
+      activation: 'on-enter',
+      trigger: {
+        kind: 'point',
+        x: area.width / 2,
+        y: area.height / 2,
+        radius: 48
+      },
+      action: {
+        kind: 'message',
+        text: 'Nouveau message'
+      },
+      repeatPolicy: 'once'
+    }
+  );
+
+  selectedEventId =
+    draft.events?.find(
+      (event) =>
+        !before.has(event.id)
+    )?.id ??
+    selectedEventId;
+
+  refreshControls();
+});
+
+$('event-delete').addEventListener('click', () => {
+  if (!selectedEventId) return;
+
+  draft =
+    deleteWorldEvent(
+      draft,
+      selectedEventId
+    );
+
+  selectedEventId =
+    draft.events?.[0]?.id ??
+    null;
+
+  refreshControls();
+});
+
+$('event-activation').addEventListener(
+  'change',
+  () => {
+    switchWorldEventActivation(
+      $('event-activation').value
+    );
+  }
+);
+
+$('event-trigger-kind').addEventListener(
+  'change',
+  () => {
+    switchWorldEventTrigger(
+      $('event-trigger-kind').value
+    );
+  }
+);
+
+$('event-portal').addEventListener(
+  'change',
+  () => {
+    applyWorldEventInputs();
+
+    const event =
+      currentWorldEventRaw();
+
+    if (event?.sourceAreaId) {
+      selectAreaForEditing(
+        event.sourceAreaId,
+        {
+          refresh: false,
+          resetTool: false
+        }
+      );
+    }
+
+    refreshControls();
+  }
+);
+
+$('event-source-area').addEventListener(
+  'change',
+  () => {
+    const event =
+      currentWorldEventRaw();
+
+    if (!event) return;
+
+    draft = updateWorldEvent(
+      draft,
+      event.id,
+      (nextEvent) => {
+        nextEvent.sourceAreaId =
+          $('event-source-area').value;
+      }
+    );
+
+    switchWorldEventTrigger(
+      $('event-trigger-kind').value
+    );
+  }
+);
+
+$('event-object').addEventListener(
+  'change',
+  () => {
+    const event =
+      currentWorldEventRaw();
+
+    if (!event) return;
+
+    const object =
+      eventSourceObjects(event)
+        .find(
+          (item) =>
+            item.id ===
+            $('event-object').value
+        );
+    const anchor =
+      object?.doorAnchors?.[0];
+
+    draft = updateWorldEvent(
+      draft,
+      event.id,
+      (nextEvent) => {
+        if (
+          nextEvent.trigger?.kind !==
+          'object-anchor'
+        ) {
+          return;
+        }
+
+        nextEvent.trigger.objectId =
+          object?.id ?? '';
+        nextEvent.trigger.anchorId =
+          anchor?.id ?? '';
+      }
+    );
+
+    refreshWorldEventControls();
+    refreshJson();
+    renderPreview();
+  }
+);
+
+for (const id of [
+  'event-enabled',
+  'event-point-x',
+  'event-point-y',
+  'event-radius',
+  'event-anchor',
+  'event-action-kind',
+  'event-message',
+  'event-repeat-policy'
+]) {
+  $(id).addEventListener(
+    'change',
+    applyWorldEventInputs
+  );
+}
+
+$('event-message').addEventListener(
+  'input',
+  applyWorldEventInputs
+);
+
+$('map-area-enter').addEventListener(
+  'click',
+  () => {
+    const link =
+      currentBuildingInteriorLink();
+
+    if (
+      link.status !== 'linked' ||
+      !link.targetArea
+    ) {
+      return;
+    }
+
+    selectAreaForEditing(
+      link.targetArea.id,
+      {
+        portalId:
+          link.returnPortal?.id ?? null,
+        activateAreaTab: true
+      }
+    );
+  }
+);
+
+$('map-area-back').addEventListener(
+  'click',
+  () => {
+    const navigation =
+      currentMapAreaNavigation().back;
+
+    if (!navigation) return;
+
+    selectAreaForEditing(
+      navigation.targetAreaId,
+      {
+        portalId: navigation.portalId,
+        activateAreaTab: true
+      }
+    );
+  }
+);
+
+$('preview-fullscreen').addEventListener(
+  'click',
+  () => {
+    void enterMapFocus();
+  }
+);
+
+$('preview-fullscreen-exit').addEventListener(
+  'click',
+  () => {
+    void exitMapFocus();
+  }
+);
+
+$('preview-fit').addEventListener('click', () => {
+  fitRequested = true;
+  renderPreview();
+});
+
+$('preview-focus').addEventListener('click', focusSelection);
+
+$('user-texture-kind').addEventListener('change', () => {
+  $('user-texture-family').disabled = $('user-texture-kind').value !== 'surface';
+});
+
+$('area-open-interior-floors').addEventListener('click', () => {
+  if (isInteriorArea()) {
+    setMapTool('select');
+    activateTab('interior-floor');
+  }
+});
+
+$('interior-floor-base').addEventListener('change', () => {
+  if (!isInteriorArea()) return;
+  draft = updateAreaProperties(draft, selectedAreaId,
+    { baseMaterialId: $('interior-floor-base').value });
+  refreshAreaControls();
+  refreshJson();
+  renderPreview();
+});
+
+$('interior-floor-paint-toggle').addEventListener('click', () => {
+  if (!isInteriorArea()) return;
+  setMapTool(mapTool === 'terrain' ? 'select' : 'terrain');
+  if (mapTool === 'select') activateTab('interior-floor');
+});
+
+$('interior-floor-brush-size').addEventListener('input', () => {
+  $('interior-floor-brush-size-value').value = $('interior-floor-brush-size').value;
+  if (isInteriorArea() && mapTool === 'terrain') {
+    $('paint-brush-value').value = $('interior-floor-brush-size').value;
+    renderPreview();
+  }
+});
+
+$('interior-floor-undo').addEventListener('click', () => {
+  if (!isInteriorArea()) return;
+  const index = drawUndoStack.findLastIndex((ref) =>
+    ref.areaId === selectedAreaId && ref.kind === 'terrain' && surfacePathReferenceExists(ref));
+  if (index < 0) return;
+  const [ref] = drawUndoStack.splice(index, 1);
+  draft = deleteSurfacePath(draft, selectedAreaId, 'terrain', ref.pathId);
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  terrainCompositor.clear();
+  refreshControls();
+});
+
+$('interior-floor-zone-delete').addEventListener('click', () => {
+  if (!isInteriorArea()) return;
+  const id = $('interior-floor-zone-select').value;
+  if (!(currentAreaRaw()?.surface?.zones ?? []).some((zone) => zone.id === id)) return;
+  draft = deleteSurfacePath(draft, selectedAreaId, 'terrain', id);
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  terrainCompositor.clear();
+  refreshControls();
+});
+
+$('terrain-paint-toggle').addEventListener('click', () => {
+  setMapTool(isPaintKind(mapTool) ? 'select' : $('terrain-draw-kind').value);
+});
+
+$('terrain-draw-kind').addEventListener(
+  'change',
+  () => {
+    const drawKind =
+      $('terrain-draw-kind').value;
+    $('user-texture-kind').value =
+      drawKind === 'route'
+        ? 'path'
+        : drawKind === 'river'
+          ? 'water'
+          : 'surface';
+    setMapTool(drawKind);
+  }
+);
+
+$('user-texture-library').addEventListener(
+  'change',
+  () => {
+    selectedUserMaterialId =
+      $('user-texture-library').value || null;
+    refreshUserTextureControls();
+  }
+);
+
+$('user-texture-import').addEventListener(
+  'click',
+  async () => {
+    try {
+      const record =
+        await importUserTextureFromControls();
+      setStatus(
+        `Texture « ${record.label} » ajoutée à ${userMaterialKindLabel(record.kind)}.`
+      );
+    } catch (error) {
+      $('user-texture-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('user-texture-delete').addEventListener(
+  'click',
+  async () => {
+    try {
+      const deleted =
+        await deleteSelectedUserTexture();
+      if (deleted) {
+        setStatus(
+          'Texture personnelle supprimée.'
+        );
+      }
+    } catch (error) {
+      $('user-texture-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('user-object-folder').addEventListener(
+  'change',
+  () => {
+    const folder =
+      objectLibraryFolderItems().find(
+        (item) =>
+          item.id ===
+            $('user-object-folder').value
+      );
+
+    if (folder?.defaultKind) {
+      $('user-object-kind').value =
+        folder.defaultKind === 'bridge'
+          ? 'decor'
+          : folder.defaultKind;
+      syncUserObjectCollisionRole(
+        $('user-object-kind').value
+      );
+    }
+  }
+);
+
+$('user-object-kind').addEventListener(
+  'change',
+  () => {
+    syncUserObjectCollisionRole();
+  }
+);
+
+$('user-object-library').addEventListener(
+  'change',
+  () => {
+    selectedUserWorldObjectId =
+      $('user-object-library').value ||
+      null;
+    refreshUserWorldObjectControls();
+  }
+);
+
+$('user-object-import').addEventListener(
+  'click',
+  async () => {
+    try {
+      const record =
+        await importUserWorldObjectFromControls();
+      setStatus(
+        `Objet « ${record.label} » ajouté dans ${record.folderLabel}.`
+      );
+    } catch (error) {
+      $('user-object-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('user-object-delete').addEventListener(
+  'click',
+  async () => {
+    try {
+      const deleted =
+        await deleteSelectedUserWorldObject();
+      if (deleted) {
+        setStatus(
+          'Objet personnel supprimé.'
+        );
+      }
+    } catch (error) {
+      $('user-object-status').textContent =
+        error.message;
+      setStatus(error.message, true);
+    }
+  }
+);
+
+$('paint-brush-minus').addEventListener(
+  'click',
+  () => adjustPaintBrush(-1)
+);
+$('paint-brush-plus').addEventListener(
+  'click',
+  () => adjustPaintBrush(1)
+);
+$('paint-undo').addEventListener(
+  'click',
+  undoLastDraw
+);
+
+for (const button of document.querySelectorAll('[data-map-tool]')) {
+  button.addEventListener('click', () => {
+    setMapTool(button.dataset.mapTool);
+  });
+}
+
+canvas.addEventListener(
+  'wheel',
+  (event) => {
+    event.preventDefault();
+    const point = canvasCoordinates(event);
+    const factor = Math.exp(-event.deltaY * 0.0015);
+    applyZoomAtCanvasPoint(zoom * factor, point);
+  },
+  { passive: false }
+);
+
+canvas.addEventListener('pointerdown', (event) => {
+  if (
+    !mapFocusActive &&
+    prefersMapFocusOnPointer() &&
+    !isPaintKind(mapTool) && mapTool !== 'object-stamp'
+  ) {
+    event.preventDefault();
+    void enterMapFocus();
+    return;
+  }
+
+  const point = canvasCoordinates(event);
+  activePointers.set(event.pointerId, point);
+
+  try {
+    canvas.setPointerCapture(event.pointerId);
+  } catch {
+    // Pointer capture is optional; interaction remains local to the canvas.
+  }
+
+  if (activePointers.size === 2) {
+    beginPinch();
+    canvas.dataset.dragging = 'true';
+    return;
+  }
+
+  if (activePointers.size > 1) return;
+
+  const world = eventWorldPoint(event);
+  const area = currentAreaNormalized();
+  if (!world || !area) return;
+
+  hoverWorldPoint = world;
+  canvas.dataset.dragging = 'true';
+
+  if (mapTool === 'object-stamp') {
+    pointerSession = {
+      pointerId: event.pointerId, mode: 'pending-object-stamp',
+      areaId: selectedAreaId, startCanvas: point, startWorld: world
+    };
+    return;
+  }
+
+  if (isPaintKind(mapTool)) {
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'pending-draw',
+      kind: mapTool,
+      areaId: selectedAreaId,
+      startCanvas: point,
+      startWorld: world
+    };
+    return;
+  }
+
+  if (mapTool === 'actor-placement') {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y
+      )
+    );
+
+    if (
+      selectedActorPlacementId
+    ) {
+      draft =
+        updateActorPlacement(
+          draft,
+          selectedAreaId,
+          selectedActorPlacementId,
+          { x, y }
+        );
+    } else {
+      const actorDefinitionId =
+        $('actor-definition').value;
+      const before =
+        new Set(
+          currentActorPlacements()
+            .map(
+              (actor) =>
+                actor.id
+            )
+        );
+
+      draft =
+        addActorPlacement(
+          draft,
+          selectedAreaId,
+          {
+            actorDefinitionId,
+            x,
+            y
+          }
+        );
+
+      selectedActorPlacementId =
+        currentActorPlacements()
+          .find(
+            (actor) =>
+              !before.has(
+                actor.id
+              )
+          )?.id ??
+        null;
+    }
+
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode:
+        'drag-actor-placement'
+    };
+    refreshActorControls();
+    refreshJson();
+    renderPreview();
+    return;
+  }
+
+  if (mapTool === 'area-size') {
+    if (hitAreaResizeHandle(area, world)) {
+      pointerSession = {
+        pointerId: event.pointerId,
+        mode: 'resize-area'
+      };
+    } else {
+      pointerSession = {
+        pointerId: event.pointerId,
+        mode: 'pan',
+        startCanvas: point,
+        startCenter: { ...center },
+        startZoom: zoom
+      };
+    }
+    return;
+  }
+
+  const eventTrigger =
+    hitSelectedEventTrigger(
+      area,
+      world
+    );
+
+  if (eventTrigger) {
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'drag-event-trigger',
+      offsetX:
+        world.x -
+        eventTrigger.trigger.x,
+      offsetY:
+        world.y -
+        eventTrigger.trigger.y
+    };
+    return;
+  }
+
+  const gizmo = hitSelectedObjectGizmo(area, world);
+  if (gizmo?.kind === 'rotate') {
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'rotate-object',
+      centerX: gizmo.rect.x,
+      centerY: gizmo.rect.y,
+      angleOffset:
+        Math.atan2(
+          world.y - gizmo.rect.y,
+          world.x - gizmo.rect.x
+        ) - gizmo.rect.rotation
+    };
+    return;
+  }
+
+  if (gizmo?.kind === 'scale') {
+    const base = objectBaseDimensions(gizmo.object);
+    if (base) {
+      pointerSession = {
+        pointerId: event.pointerId,
+        mode: 'scale-object',
+        centerX: gizmo.rect.x,
+        centerY: gizmo.rect.y,
+        rotation: gizmo.rect.rotation,
+        baseWidth: base.width,
+        baseHeight: base.height
+      };
+      return;
+    }
+  }
+
+  const object = hitWorldObject(area, world);
+  if (object) {
+    selectedObjectId = object.id;
+    selectedSpawnId = null;
+    syncObjectLibraryToSelectedPlacement();
+    activateTab('objects');
+    pointerSession = {
+      pointerId: event.pointerId,
+      mode: 'drag-object',
+      offsetX: world.x - object.transform.x,
+      offsetY: world.y - object.transform.y
+    };
+    refreshObjectControls();
+    renderPreview();
+    return;
+  }
+
+  const spawn = hitSpawn(area, world);
+  if (spawn) {
+    selectedSpawnId = spawn.id;
+    selectedObjectId = null;
+    activateTab('area');
+
+    pointerSession = spawn.anchor
+      ? null
+      : {
+          pointerId: event.pointerId,
+          mode: 'drag-spawn',
+          offsetX: world.x - spawn.x,
+          offsetY: world.y - spawn.y
+        };
+
+    refreshAreaControls();
+    renderPreview();
+    return;
+  }
+
+  pointerSession = {
+    pointerId: event.pointerId,
+    mode: 'pan',
+    startCanvas: point,
+    startCenter: { ...center },
+    startZoom: zoom
+  };
+});
+
+canvas.addEventListener('pointermove', (event) => {
+  const hover = eventWorldPoint(event);
+  if (hover) hoverWorldPoint = hover;
+
+  if (!activePointers.has(event.pointerId)) {
+    if (isPaintKind(mapTool)) schedulePreviewRender();
+    return;
+  }
+
+  const canvasPoint = canvasCoordinates(event);
+  activePointers.set(event.pointerId, canvasPoint);
+
+  if (activePointers.size === 2) {
+    if (!pinchState) beginPinch();
+    updatePinch();
+    return;
+  }
+
+  if (
+    !pointerSession ||
+    pointerSession.pointerId !== event.pointerId
+  ) {
+    return;
+  }
+
+  const area = currentAreaRaw();
+  const world = hover ?? eventWorldPoint(event);
+  if (!area || !world) return;
+
+  if (pointerSession.mode === 'pending-object-stamp') {
+    const distance = Math.hypot(
+      canvasPoint.x - pointerSession.startCanvas.x,
+      canvasPoint.y - pointerSession.startCanvas.y
+    );
+    if (distance > 12) pointerSession = null;
+    return;
+  }
+
+  if (pointerSession.mode === 'pending-draw') {
+    const distance = Math.hypot(
+      canvasPoint.x - pointerSession.startCanvas.x,
+      canvasPoint.y - pointerSession.startCanvas.y
+    );
+
+    if (distance < 4) return;
+
+    const pathId = beginSurfacePath(
+      pointerSession.kind,
+      pointerSession.startWorld
+    );
+    if (!pathId) return;
+
+    appendDrawPoint(
+      pointerSession.kind,
+      pathId,
+      world,
+      true
+    );
+
+    pointerSession = {
+      ...pointerSession,
+      mode: 'draw-path',
+      pathId
+    };
+
+    refreshTerrainControls();
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'draw-path') {
+    pendingPaintPoint = {
+      kind: pointerSession.kind, pathId: pointerSession.pathId, point: world
+    };
+    schedulePreviewRender();
+    return;
+  }
+
+  if (
+    pointerSession.mode ===
+      'drag-actor-placement' &&
+    selectedActorPlacementId
+  ) {
+    draft =
+      updateActorPlacement(
+        draft,
+        selectedAreaId,
+        selectedActorPlacementId,
+        {
+          x: Math.max(
+            0,
+            Math.min(
+              area.width,
+              world.x
+            )
+          ),
+          y: Math.max(
+            0,
+            Math.min(
+              area.height,
+              world.y
+            )
+          )
+        }
+      );
+    refreshActorControls();
+    refreshJson();
+    schedulePreviewRender();
+    return;
+  }
+
+  if (
+    pointerSession.mode ===
+      'drag-event-trigger' &&
+    selectedEventId
+  ) {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x -
+          pointerSession.offsetX
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y -
+          pointerSession.offsetY
+      )
+    );
+
+    draft = updateWorldEvent(
+      draft,
+      selectedEventId,
+      (nextEvent) => {
+        if (
+          nextEvent.trigger?.kind !==
+            'point'
+        ) {
+          return;
+        }
+
+        nextEvent.trigger.x = x;
+        nextEvent.trigger.y = y;
+      }
+    );
+
+    $('event-point-x').value =
+      Math.round(x * 10) / 10;
+    $('event-point-y').value =
+      Math.round(y * 10) / 10;
+    refreshJson();
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'rotate-object') {
+    const pointerAngle = Math.atan2(
+      world.y - pointerSession.centerY,
+      world.x - pointerSession.centerX
+    );
+    let degrees =
+      (pointerAngle - pointerSession.angleOffset) *
+      180 / Math.PI;
+    degrees = ((degrees % 360) + 360) % 360;
+
+    draft = updateWorldObjectTransform(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      { rotationDeg: degrees }
+    );
+
+    $('object-rotation').value =
+      Math.round(degrees * 10) / 10;
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'scale-object') {
+    const dx = world.x - pointerSession.centerX;
+    const dy = world.y - pointerSession.centerY;
+    const cos = Math.cos(-pointerSession.rotation);
+    const sin = Math.sin(-pointerSession.rotation);
+    const localX = dx * cos - dy * sin;
+    const localY = dx * sin + dy * cos;
+
+    const scaleX = Math.max(
+      WORLD_OBJECT_LIMITS.minScale,
+      Math.min(
+        WORLD_OBJECT_LIMITS.maxScale,
+        Math.abs(localX) * 2 /
+          Math.max(1, pointerSession.baseWidth)
+      )
+    );
+    const scaleY = Math.max(
+      WORLD_OBJECT_LIMITS.minScale,
+      Math.min(
+        WORLD_OBJECT_LIMITS.maxScale,
+        Math.abs(localY) * 2 /
+          Math.max(1, pointerSession.baseHeight)
+      )
+    );
+
+    draft = updateWorldObjectTransform(
+      draft,
+      selectedAreaId,
+      selectedObjectId,
+      { scaleX, scaleY }
+    );
+
+    $('object-scale-x').value =
+      Math.round(scaleX * 100) / 100;
+    $('object-scale-y').value =
+      Math.round(scaleY * 100) / 100;
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'drag-object') {
+    pendingObjectMove = {
+      areaId: selectedAreaId, objectId: selectedObjectId,
+      x: Math.max(0, Math.min(area.width, world.x - pointerSession.offsetX)),
+      y: Math.max(0, Math.min(area.height, world.y - pointerSession.offsetY))
+    };
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'drag-spawn') {
+    const x = Math.max(
+      0,
+      Math.min(
+        area.width,
+        world.x - pointerSession.offsetX
+      )
+    );
+    const y = Math.max(
+      0,
+      Math.min(
+        area.height,
+        world.y - pointerSession.offsetY
+      )
+    );
+
+    draft = updateSpawn(
+      draft,
+      selectedAreaId,
+      selectedSpawnId,
+      { x, y }
+    );
+
+    $('spawn-x').value = Math.round(x * 10) / 10;
+    $('spawn-y').value = Math.round(y * 10) / 10;
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'resize-area') {
+    const width = Math.max(128, world.x);
+    const height = Math.max(128, world.y);
+
+    draft = updateAreaProperties(
+      draft,
+      selectedAreaId,
+      { width, height }
+    );
+
+    $('area-width').value = Math.round(width);
+    $('area-height').value = Math.round(height);
+    fitRequested = false;
+    schedulePreviewRender();
+    return;
+  }
+
+  if (pointerSession.mode === 'pan') {
+    center = {
+      ...panBuilderCenter({
+        center: pointerSession.startCenter,
+        deltaCanvasX:
+          canvasPoint.x - pointerSession.startCanvas.x,
+        deltaCanvasY:
+          canvasPoint.y - pointerSession.startCanvas.y,
+        zoom: pointerSession.startZoom
+      })
+    };
+    fitRequested = false;
+    schedulePreviewRender();
+  }
+});
+
+canvas.addEventListener('pointerleave', () => {
+  if (activePointers.size > 0) return;
+  hoverWorldPoint = null;
+  if (isPaintKind(mapTool)) schedulePreviewRender();
+});
+
+function endPointer(event) {
+  const wasTracked = activePointers.has(event.pointerId);
+  activePointers.delete(event.pointerId);
+
+  if (!wasTracked) return;
+
+  if (pointerSession?.mode === 'pending-object-stamp' &&
+      pointerSession.pointerId === event.pointerId) {
+    const p = canvasCoordinates(event);
+    if (Math.hypot(p.x - pointerSession.startCanvas.x,
+      p.y - pointerSession.startCanvas.y) <= 12) {
+      stampSelectedWorldObject(pointerSession.startWorld);
+    }
+  }
+  if (pointerSession?.mode === 'drag-object') flushPendingObjectMove();
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId &&
+    pointerSession.mode === 'pending-draw'
+  ) {
+    // A single touch stamps one brush point. WorldSurface remains canonical.
+    const pathId = beginSurfacePath(pointerSession.kind, pointerSession.startWorld);
+    if (pathId) {
+      pushDrawUndoReference({
+        areaId: pointerSession.areaId,
+        kind: pointerSession.kind,
+        pathId
+      });
+    }
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId &&
+    pointerSession.mode === 'draw-path'
+  ) {
+    flushPendingPaintPoint();
+    const world = eventWorldPoint(event);
+    if (world) {
+      appendDrawPoint(
+        pointerSession.kind,
+        pointerSession.pathId,
+        world,
+        true
+      );
+    }
+
+    pushDrawUndoReference({
+      areaId: pointerSession.areaId,
+      kind: pointerSession.kind,
+      pathId: pointerSession.pathId
+    });
+    // After finishing a gesture, selection no longer pins brush color/family
+    // to the previous stroke. Past strokes stay editable via Tracés.
+    selectedSurfaceKind = null;
+    selectedSurfacePathId = null;
+  }
+
+  if (activePointers.size < 2) {
+    pinchState = null;
+  }
+
+  if (
+    pointerSession &&
+    pointerSession.pointerId === event.pointerId
+  ) {
+    pointerSession = null;
+    finishPointerEditing();
+  } else if (activePointers.size === 0) {
+    canvas.dataset.dragging = 'false';
+  }
+
+  try {
+    canvas.releasePointerCapture(event.pointerId);
+  } catch {
+    // Ignore browsers that already released pointer capture.
+  }
+}
+
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+
+$('test-exploration').addEventListener('click', (event) => {
+  const result = currentValidation();
+
+  if (!result.valid || !result.document) {
+    event.preventDefault();
+    const guidance = describeWorldBuilderValidation(result.errors, result.document);
+    if (guidance.encounterFamilyId) {
+      // Direct users to the unique authoring controls; never mutate encounter odds.
+      selectedEncounterFamilyId = guidance.encounterFamilyId;
+      activateTab('terrain');
+      // The editor lives inside a collapsed <details>: open its only real panel.
+      // This is UI navigation only; no WorldDocument or encounter data mutation.
+      const advancedSettings = document.querySelector('.terrain-advanced');
+      if (advancedSettings) advancedSettings.open = true;
+      refreshFamilyEncounterControls();
+    }
+    setStatus(`Impossible de tester : ${guidance.message}`, true);
+    if (guidance.encounterFamilyId) {
+      document.querySelector('.terrain-encounter-panel')?.scrollIntoView({
+        block: 'start', behavior: 'auto'
+      });
+    }
+    return;
+  }
+
+  try {
+    saveWorldBuilderTestHandoff(
+      window.sessionStorage,
+      result.document
+    );
+  } catch (error) {
+    event.preventDefault();
+    setStatus(
+      `Impossible de préparer le test : ${error.message}`,
+      true
+    );
+  }
+});
+
+function exportWorldDocument() {
+  try {
+    const result = currentValidation();
+    if (!result.valid) {
+      throw new Error(`Carte invalide : ${result.errors.join(' · ')}`);
+    }
+    const json = serializeWorldBuilderDraft(draft);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const fileId = String(draft.id || 'world')
+      .replace(/[^a-z0-9_-]+/gi, '-')
+      .replace(/^-+|-+$/g, '') || 'world';
+    link.href = url;
+    link.download = `${fileId}.world.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus('Carte exportée : ' + link.download);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+$('export-json').addEventListener('click', exportWorldDocument);
+$('export-map').addEventListener('click', exportWorldDocument);
+
+$('new-blank-world').addEventListener('click', () => {
+  if (!window.confirm(
+    'Créer une nouvelle carte vierge ? Les modifications non exportées ' +
+    'seront perdues. Utilise « Exporter carte » pour conserver la carte actuelle.'
+  )) return;
+
+  draft = createBlankWorldBuilderDraft();
+  selectedStampPreset = null;
+  pendingPaintPoint = null;
+  pendingObjectMove = null;
+  pointerSession = null;
+  pinchState = null;
+  activePointers.clear();
+  hoverWorldPoint = null;
+  canvas.dataset.dragging = 'false';
+  drawUndoStack.length = 0;
+  selectedSurfaceKind = null;
+  selectedSurfacePathId = null;
+  selectedObjectId = null;
+  selectedActorPlacementId = null;
+  selectedSpawnId = null;
+  selectedPortalId = null;
+  selectedEventId = null;
+  selectedTerrainFamilyDefinitionId = draft.terrainFamilies[0]?.id ?? null;
+  selectedEncounterFamilyId = selectedTerrainFamilyDefinitionId;
+  selectAreaForEditing(draft.initialAreaId, {
+    refresh: false,
+    activateAreaTab: true
+  });
+  fitRequested = true;
+  refreshControls();
+  setStatus('Carte vierge prête : choisis le sol, peins, puis exporte ta carte.');
+});
+
+$('import-json').addEventListener('change', async () => {
+  const file = $('import-json').files?.[0];
+  if (!file) return;
+
+  try {
+    draft = importWorldBuilderDocument(await file.text());
+    selectedStampPreset = null;
+    selectedPortalId =
+      draft.portals?.[0]?.id ?? null;
+    selectAreaForEditing(
+      draft.initialAreaId ??
+        draft.areas[0]?.id ??
+        null,
+      {
+        refresh: false
+      }
+    );
+    refreshControls();
+    setStatus('WorldDocument importé et validé');
+  } catch (error) {
+    setStatus(error.message, true);
+  } finally {
+    $('import-json').value = '';
+  }
+});
+
+$('reset-demo').addEventListener('click', () => {
+  draft = createWorldBuilderDraft(defaultBuilderDocument);
+  selectedStampPreset = null;
+  selectedPortalId =
+    draft.portals?.[0]?.id ?? null;
+  selectAreaForEditing(
+    draft.initialAreaId ??
+      draft.areas[0]?.id ??
+      null,
+    {
+      refresh: false
+    }
+  );
+  refreshControls();
+});
+
+addEventListener('resize', () => {
+  renderPreview();
+});
+
+addEventListener(
+  'orientationchange',
+  () => {
+    fitRequested = true;
+    renderPreview();
+  }
+);
+
+addEventListener(
+  'pagehide',
+  () => {
+    terrainCompositor.clear();
+    textureLoader?.dispose?.();
+    userMaterialAssetResolver?.dispose?.();
+    objectImageLoader?.dispose?.();
+    userWorldObjectAssetResolver?.dispose?.();
+  },
+  { once: true }
+);
+
+refreshControls();
+if (resumeBuilderTest) {
+  setStatus(
+    'Session de test restaurée dans le World Builder'
+  );
+}

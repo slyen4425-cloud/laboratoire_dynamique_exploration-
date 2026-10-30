@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "sculpt.cliff.atlas.v47",
+  "source": "Five concept-approved/generated base gray, ochre, cracks, chunks, moss layers assembled into a compact runtime WebP atlas",
+  "file": "cliff-atlas-v47.webp",
+  "bytes": 8304,
+  "sha256": "ebaf2db3249c6901fd3cd81b1e606f022d116f7058c4d90f8791a0cd0cb30673",
+  "format": "RIFF/WEBP",
+  "width": 192,
+  "height": 160,
+  "layers": {
+    "gray": {
+      "x": 0,
+      "y": 0,
+      "width": 96,
+      "height": 96
+    },
+    "ochre": {
+      "x": 96,
+      "y": 0,
+      "width": 96,
+      "height": 96
+    },
+    "cracks": {
+      "x": 0,
+      "y": 96,
+      "width": 64,
+      "height": 64
+    },
+    "chunks": {
+      "x": 64,
+      "y": 96,
+      "width": 64,
+      "height": 64
+    },
+    "moss": {
+      "x": 128,
+      "y": 96,
+      "width": 64,
+      "height": 64
+    }
+  },
+  "comment": "Prototype runtime assets downsampled for phone; original PNG sources not overwritten. Validate aesthetic and seams with creator before GREEN."
+}

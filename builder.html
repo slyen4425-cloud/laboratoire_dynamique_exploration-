@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
+  />
+  <title>GenSrpG — World Builder Dynamique</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#071016" />
+  <link rel="stylesheet" href="./src/builder/world-builder.css?rev=encounter-selected-elements-v1&relief=relief-canyon-pilot-v1" />
+</head>
+<body>
+  <main class="builder-shell">
+    <header class="builder-header">
+      <div>
+        <strong>World Builder Dynamique</strong>
+        <span id="builder-status">Initialisation…</span>
+      </div>
+      <div class="builder-header-actions">
+        <button id="world-assembler-back" type="button" hidden>← Retour au monde</button>
+        <a class="header-link" id="world-assembler-open" href="./world-assembler.html">🌍 Assemblage</a>
+        <button id="new-blank-world" type="button">+ Carte vierge</button>
+        <button id="export-map" type="button">↓ Exporter carte</button>
+        <a id="test-exploration" class="header-link" href="./index.html?builderTest=1&rev=builder-paint-workflow-fix-v1">Tester en jeu</a>
+      </div>
+    <aside id="relief-pilot-notice" class="relief-pilot-notice" hidden>
+      <strong>🧪 Carte pilote : canyon 2,5D</strong>
+      <span>Décors de falaise et cascade dans le véritable Builder. Relief visuel uniquement : déplacement/collision 2D existants, pas d'étage jouable.</span>
+      <a class="header-link" href="./builder.html?rev=relief-canyon-pilot-v1-classic">↩ Revenir au style classique</a>
+    </aside>
+    </header>
+
+
+    <section class="preview-panel">
+      <div id="map-area-context" class="map-area-context" aria-label="Navigation de zone">
+        <div class="map-area-location">
+          <span>Zone active</span>
+          <strong id="map-area-label">Extérieur</strong>
+        </div>
+        <div class="map-area-actions">
+          <button id="map-area-back" type="button" hidden>← Extérieur</button>
+          <button id="map-area-enter" type="button" hidden>Intérieur →</button>
+          <button id="preview-fullscreen" type="button">⛶ Plein écran</button>
+          <button id="preview-fullscreen-exit" type="button" hidden>✕ Quitter</button>
+        </div>
+      </div>
+      <div id="builder-landscape-hint" class="builder-landscape-hint" role="status">
+        ↻ Tourne le téléphone pour éditer confortablement
+      </div>
+      <div class="map-tools" aria-label="Outils directs de carte">
+        <button id="map-tool-select" data-map-tool="select" type="button" class="active">Déplacer</button>
+        <button id="map-tool-object" data-map-tool="object-stamp" type="button">Placer objet</button>
+        <button id="map-tool-actor" data-map-tool="actor-placement" type="button">Placer acteur</button>
+        <button id="map-tool-area" data-map-tool="area-size" type="button">Taille Area</button>
+        <button id="map-tool-paint" data-map-tool="paint" type="button">Peindre</button>
+      </div>
+      <div id="map-object-tools" class="map-object-tools" hidden>
+        <label class="map-object-choice">Objet à placer
+          <select id="map-object-definition" aria-label="Choisir un arbre ou un autre objet à placer"></select>
+        </label>
+        <output id="map-object-copy-status" aria-live="polite">Modèle standard · taille ×1, rotation 0°</output>
+        <label class="checkbox-line map-object-transform-choice">
+          <input id="map-object-transform-enabled" type="checkbox" />
+          Autoriser taille / rotation
+        </label>
+      </div>
+      <canvas id="builder-preview" aria-label="Aperçu de la WorldArea"></canvas>
+      <div id="paint-floating-tools" class="paint-floating-tools" hidden>
+        <button id="paint-brush-minus" type="button" aria-label="Réduire le pinceau">−</button>
+        <output id="paint-brush-value" aria-live="polite">180</output>
+        <button id="paint-brush-plus" type="button" aria-label="Agrandir le pinceau">+</button>
+        <button id="paint-undo" type="button" aria-label="Annuler le dernier tracé">↶ Annuler</button>
+      </div>
+      <div class="preview-tools">
+        <button id="preview-fit" type="button">Vue Area</button>
+        <button id="preview-focus" type="button">Centrer sélection</button>
+        <span class="preview-gesture-hint">Zoom : pincer · molette/trackpad sur ordinateur</span>
+      </div>
+    </section>
+
+    <nav class="builder-tabs" aria-label="Sections du World Builder">
+      <button type="button" data-tab="area" class="active">Area</button>
+      <button type="button" data-tab="interior-floor" hidden>Sol intérieur</button>
+      <button type="button" data-tab="terrain">Terrain extérieur</button>
+      <button type="button" data-tab="objects">Objets</button>
+      <button type="button" data-tab="actors">Acteurs</button>
+      <button type="button" data-tab="portals">Passages</button>
+      <button type="button" data-tab="events">Événements</button>
+      <button type="button" data-tab="json">JSON</button>
+    </nav>
+
+    <section class="builder-controls">
+      <section class="builder-tab active" data-panel="area">
+        <h2>WorldArea</h2>
+        <label>
+          Area
+          <select id="area-select"></select>
+        </label>
+        <div class="grid-2">
+          <label>Largeur <input id="area-width" type="number" min="128" step="10" /></label>
+          <label>Hauteur <input id="area-height" type="number" min="128" step="10" /></label>
+        </div>
+        <div id="area-shape-fields" hidden>
+          <label>
+            <span>Forme intérieure</span>
+            <select id="area-shape"></select>
+          </label>
+          <p class="builder-hint">
+            Rectangle, L, T ou croix. La forme est redimensionnée avec Largeur / Hauteur sans créer une seconde géométrie.
+          </p>
+        </div>
+        <div class="grid-2">
+          <label>
+            Famille du sol
+            <select id="area-family"></select>
+          </label>
+          <label>
+            Texture du sol
+            <select id="area-material"></select>
+          </label>
+        </div>
+        <div id="area-interior-floor-shortcut" hidden>
+          <p class="builder-hint">Area permet de changer de zone. « Texture du sol » remplace le fond de toute la pièce. Pour poser plusieurs revêtements dans la même pièce, ouvre le pinceau intérieur.</p>
+          <button id="area-open-interior-floors" type="button">🎨 Choisir / peindre les sols intérieurs</button>
+        </div>
+        <p class="builder-hint">
+          Pour redimensionner directement : active « Taille Area » puis fais glisser le coin inférieur droit sur la map.
+        </p>
+
+        <h3>Spawns</h3>
+        <div class="row">
+          <select id="spawn-select"></select>
+          <button id="spawn-add" type="button">+ Spawn</button>
+          <button id="spawn-delete" type="button" class="danger">Supprimer</button>
+        </div>
+        <div class="grid-2">
+          <label>X <input id="spawn-x" type="number" step="1" /></label>
+          <label>Y <input id="spawn-y" type="number" step="1" /></label>
+        </div>
+      </section>
+
+
+      <section class="builder-tab" data-panel="interior-floor">
+        <h2>🎨 Sol intérieur</h2>
+        <p class="builder-hint">Choisis le revêtement du fond, puis peins d'autres sols dans la même pièce. Les 5 textures sont séparées du terrain extérieur et n'affectent pas la vitesse.</p>
+        <label>Sol de fond (toute la pièce)
+          <select id="interior-floor-base"></select>
+        </label>
+        <label>Texture du pinceau
+          <select id="interior-floor-material"></select>
+        </label>
+        <label>Taille du pinceau
+          <div class="brush-size-row">
+            <input id="interior-floor-brush-size" type="range" min="12" max="240" step="4" value="72" />
+            <output id="interior-floor-brush-size-value" for="interior-floor-brush-size">72</output>
+          </div>
+        </label>
+        <div class="row">
+          <button id="interior-floor-paint-toggle" type="button" aria-pressed="false">🖌 Activer le pinceau intérieur</button>
+          <button id="interior-floor-undo" type="button">↶ Annuler un sol peint</button>
+        </div>
+        <p class="builder-hint" id="interior-floor-paint-guide" role="status">1. Choisis le sol. 2. Active le pinceau. 3. Touche ou glisse dans la pièce ; deux doigts pour zoomer.</p>
+        <h3>Sols peints dans cette pièce</h3>
+        <div class="row">
+          <select id="interior-floor-zone-select" aria-label="Zone de sol intérieur à supprimer"></select>
+          <button id="interior-floor-zone-delete" type="button" class="danger">Supprimer</button>
+        </div>
+        <p class="builder-hint">Chaque trait est enregistré dans cette même WorldArea et reste modifiable après export/import.</p>
+      </section>
+
+      <section class="builder-tab" data-panel="terrain">
+        <h2>Terrain</h2>
+        <p class="builder-hint">
+          Peinture rapide : sélectionne un type de tracé, une famille et une texture. Active le pinceau, puis dessine sur la carte. La texture visuelle ne change pas les règles de déplacement ou de rencontre.
+        </p>
+
+        <label class="terrain-draw-kind-control">
+          Type de tracé
+          <select id="terrain-draw-kind">
+            <option value="terrain">Sol / surface</option>
+            <option value="route">Route</option>
+            <option value="river">Rivière / mer</option>
+          </select>
+        </label>
+
+        <div class="terrain-paint-start">
+          <button id="terrain-paint-toggle" type="button" aria-pressed="false">🖌 Activer le pinceau</button>
+          <p id="terrain-paint-guide" class="builder-hint" role="status">
+            1. Choisis Sol, Route ou Rivière. 2. Choisis famille et texture. 3. Active le pinceau.
+          </p>
+        </div>
+
+        <div class="terrain-brush-panel" data-terrain-kind-panel="terrain">
+          <div class="grid-2">
+            <label>
+              Famille à peindre
+              <select id="terrain-family"></select>
+            </label>
+            <label>
+              Texture à peindre
+              <select id="terrain-paint-material"></select>
+            </label>
+          </div>
+          <label>
+            Taille pinceau
+            <div class="brush-size-row">
+              <input id="terrain-brush-size" type="range" min="24" max="600" step="4" value="180" />
+              <output id="terrain-brush-size-value" for="terrain-brush-size">180</output>
+            </div>
+          </label>
+          <p class="builder-hint">
+            Le cercle correspond à la taille du pinceau. Un appui peint un point, un glissement dessine une zone.
+          </p>
+        </div>
+
+        <section data-terrain-kind-panel="route" hidden>
+          <h3>Route</h3>
+          <div class="grid-2">
+            <label>
+              Famille
+              <select id="terrain-route-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-route-material"></select>
+            </label>
+            <label>
+              Largeur route / pinceau
+              <div class="brush-size-row">
+                <input id="terrain-route-width" type="range" min="8" max="600" step="2" value="82" />
+                <output id="terrain-route-width-value" for="terrain-route-width">82</output>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section data-terrain-kind-panel="river" hidden>
+          <h3>Rivière / mer</h3>
+          <div class="grid-2">
+            <label>
+              Famille
+              <select id="terrain-river-family"></select>
+            </label>
+            <label>
+              Texture
+              <select id="terrain-river-material"></select>
+            </label>
+            <label>
+              Largeur rivière / pinceau
+              <div class="brush-size-row">
+                <input id="terrain-river-width" type="range" min="8" max="2400" step="4" value="72" />
+                <output id="terrain-river-width-value" for="terrain-river-width">72</output>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <details class="terrain-advanced">
+          <summary>Réglages avancés : textures personnelles, familles, rencontres et tracés</summary>
+          <p class="builder-hint">Ces paramètres sont facultatifs pour peindre avec les textures fournies.</p>
+        <details class="user-texture-panel">
+          <summary>Textures personnelles</summary>
+          <p class="builder-hint">
+            Importe une image : elle rejoint directement les mêmes listes Texture que les matériaux natifs.
+            Les fichiers restent stockés localement sur cet appareil.
+          </p>
+          <div class="grid-2">
+            <label>
+              Nom
+              <input id="user-texture-name" type="text" maxlength="80" placeholder="Ex. Pavés de ma ville" />
+            </label>
+            <label>
+              Usage
+              <select id="user-texture-kind">
+                <option value="surface">Sol / surface</option>
+                <option value="path">Route</option>
+                <option value="water">Rivière / mer</option>
+              </select>
+            </label>
+            <label>
+              Famille pour un sol
+              <select id="user-texture-family"></select>
+            </label>
+          </div>
+          <label>
+            Image PNG / JPEG / WebP
+            <input
+              id="user-texture-file"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+            />
+          </label>
+          <div class="row">
+            <button id="user-texture-import" type="button">Ajouter la texture</button>
+          </div>
+
+          <h4>Mes textures</h4>
+          <div class="row">
+            <select id="user-texture-library" aria-label="Textures personnelles"></select>
+            <button id="user-texture-delete" type="button" class="danger">Supprimer</button>
+          </div>
+          <p id="user-texture-status" class="builder-hint">
+            Stockage local en cours d'initialisation…
+          </p>
+        </details>
+
+        <section class="terrain-family-definition-panel">
+          <h3>Familles de terrain</h3>
+          <p class="builder-hint">
+            Les familles fournies par défaut sont des presets. Tu peux en ajouter et les renommer pour ce monde.
+          </p>
+          <div class="row">
+            <select id="terrain-family-definition-select"></select>
+            <button id="terrain-family-add" type="button">+ Famille</button>
+            <button id="terrain-family-delete" type="button" class="danger">Supprimer</button>
+          </div>
+          <div class="grid-2">
+            <label>
+              ID stable
+              <output id="terrain-family-id"></output>
+            </label>
+            <label>
+              Nom
+              <input id="terrain-family-label" type="text" />
+            </label>
+          </div>
+          <label>
+            Outil de peinture de cette famille
+            <select id="terrain-family-paint-kind">
+              <option value="terrain">Sol / surface</option>
+              <option value="route">Route</option>
+              <option value="river">Rivière / mer</option>
+            </select>
+          </label>
+          <div class="terrain-family-speed-panel">
+            <h4>Vitesse de déplacement sur cette famille</h4>
+            <p class="builder-hint">100 % = vitesse normale. 125 % = +25 %. 0 % interdit ce mode de déplacement. Les zones peintes et les routes utilisent ces réglages en jeu, indépendamment de la texture.</p>
+            <div class="grid-2">
+              <label>Marche (%) <input id="terrain-family-speed-ground" type="number" min="0" max="1000" step="5" inputmode="decimal" /></label>
+              <label>Nage (%) <input id="terrain-family-speed-swim" type="number" min="0" max="1000" step="5" inputmode="decimal" /></label>
+              <label>Vol (%) <input id="terrain-family-speed-fly" type="number" min="0" max="1000" step="5" inputmode="decimal" /></label>
+            </div>
+          </div>
+          <div id="terrain-family-materials-panel">
+            <p class="builder-hint">Textures de cette famille (modifiables). Coche les textures disponibles dans ce monde.</p>
+            <div id="terrain-family-materials" class="terrain-family-materials"></div>
+            <button id="terrain-family-materials-save" type="button">Enregistrer le classement des textures</button>
+          </div>
+          <p id="terrain-family-delete-status" class="builder-hint">
+            Une famille utilisée par une surface ne peut pas être supprimée.
+          </p>
+        </section>
+
+        <section class="terrain-encounter-panel">
+          <h3>Rencontres par famille</h3>
+          <label class="checkbox-line">
+            <input id="area-random-encounters-enabled" type="checkbox" />
+            Autoriser les rencontres aléatoires dans l'Area actuelle
+          </label>
+          <p id="area-random-encounters-status" class="builder-hint" role="status"></p>
+          <p class="builder-hint">
+            Le jeu vérifie les rencontres environ tous les 160 points parcourus par le héros :
+            « Chance de rencontre » est la probabilité à chaque vérification, pas un délai en secondes.
+            Le terrain sous le héros détermine la famille : le sol de base s'applique partout
+            sauf sur une zone peinte, route ou rivière. Les routes et rivières passent avant
+            les zones peintes. Pas besoin de peindre si le sol de base est déjà la bonne famille.
+            Les éléments cochés définissent toutes les créatures possibles ; leur rareté individuelle détermine laquelle apparaît.
+          </p>
+          <p class="builder-hint">
+            Configure une fois chaque famille. Toutes les surfaces portant cette famille utilisent
+            ses règles ; chaque créature conserve sa rareté propre définie dans Capture.
+          </p>
+
+          <label>
+            Famille à configurer
+            <select id="family-encounter-family"></select>
+          </label>
+          <p id="family-encounter-surface-info" class="builder-hint" role="status"></p>
+
+          <label>
+            Chance de rencontre
+            <div class="brush-size-row">
+              <input id="family-encounter-chance" type="range" min="0" max="100" step="1" value="0" />
+              <output id="family-encounter-chance-value" for="family-encounter-chance">0 %</output>
+            </div>
+          </label>
+
+          <h4>Choisir les éléments possibles</h4>
+          <p class="builder-hint">
+            Coche simplement Terre, Eau, Feu… selon les créatures souhaitées.
+            Le jeu pioche parmi TOUTES les créatures de ces éléments,
+            une seule fois par créature, et respecte la rareté propre à chacune.
+            « Terre · 23 créatures » indique seulement la taille du catalogue,
+            jamais un pourcentage à saisir. Au moins un élément doit être coché
+            si la chance de rencontre est supérieure à 0 %.
+          </p>
+          <div id="family-encounter-elements"></div>
+          <p id="family-encounter-catalog-summary" class="builder-hint">
+            Catalogue Capture en cours de chargement…
+          </p>
+        </section>
+
+        <h3>Tracés</h3>
+        <div class="row">
+          <select id="terrain-path-select"></select>
+          <button id="terrain-path-delete" type="button" class="danger">Supprimer tracé</button>
+        </div>
+        <p class="builder-hint">
+          Astuce : la Rivière peut monter jusqu’à 2400 pour créer de très larges étendues d’eau (lac/mer). Utilise deux doigts pour zoomer/déplacer la carte sans quitter l’outil.
+        </p>
+        </details>
+      </section>
+
+      <section class="builder-tab" data-panel="objects">
+        <h2>Objets placés</h2>
+        <p class="builder-hint">
+          Le World Builder référence une définition d’objet existante.
+          Le visuel, la taille logique, le footprint et les anchors appartiennent à l’Object Catalog.
+        </p>
+
+        <div class="grid-2">
+          <label>
+            Catégorie
+            <select id="object-library-category"></select>
+          </label>
+          <label>
+            Sous-dossier
+            <select id="object-library-folder"></select>
+          </label>
+        </div>
+
+        <label>
+          Modèle / objet à placer
+          <select id="object-definition"></select>
+        </label>
+        <p class="builder-hint">
+          Pour un bâtiment, ce sélecteur choisit le modèle. Après placement, sélectionne le bâtiment sur la carte pour régler son orientation et son intérieur.
+        </p>
+
+        <div class="row">
+          <button id="object-add" type="button">Choisir et placer sur la carte</button>
+          <button id="object-duplicate" type="button">Copier</button>
+          <button id="object-delete" type="button" class="danger">Supprimer</button>
+        </div>
+
+        <label>
+          Objet placé
+          <select id="object-select"></select>
+        </label>
+
+        <div id="building-authoring-fields" class="kind-fields" hidden>
+          <h3>Bâtiment sélectionné</h3>
+          <p class="builder-hint">
+            Les réglages ci-dessous modifient le bâtiment sélectionné. Le modèle reste une ObjectDefinition unique ; orientation et liaison utilisent les autorités canoniques existantes.
+          </p>
+
+          <div id="object-visual-variant-fields" class="kind-fields" hidden>
+            <h3>Orientation du bâtiment</h3>
+            <label>
+              Vue
+              <select id="object-visual-variant"></select>
+            </label>
+            <p class="builder-hint">
+              Avant / Côté / Arrière change uniquement le visuel déclaré par la définition.
+              Le footprint, la porte et le placement restent canoniques.
+            </p>
+          </div>
+
+          <div id="building-interior-fields" class="kind-fields" hidden>
+            <h3>Entrée et intérieur</h3>
+            <p id="building-interior-status" class="builder-hint">
+              Entrée non reliée.
+            </p>
+            <label>
+              Intérieur existant
+              <select id="building-interior-target-area"></select>
+            </label>
+            <div class="row">
+              <button id="building-interior-create" type="button">Créer un intérieur vide</button>
+              <button id="building-interior-link" type="button">Lier l’intérieur sélectionné</button>
+              <button id="building-interior-open" type="button">Ouvrir l’intérieur</button>
+            </div>
+            <p class="builder-hint">
+              La zone d’entrée est résolue depuis le doorAnchor du bâtiment. La liaison réelle reste un Passage (Portal) vers une WorldArea intérieure, avec retour vers un Spawn extérieur ancré.
+            </p>
+          </div>
+        </div>
+
+        <h3>Placement</h3>
+        <p class="builder-hint">Sélectionne un objet déjà placé, règle sa taille et sa rotation puis touche « Copier ». En mode « Placer objet », chaque appui dépose un nouvel exemplaire avec ces réglages. Sélectionner un autre modèle revient à sa taille normale.</p>
+        <p class="builder-hint">« Déplacer » : glisse un objet. Rotation et taille par geste : uniquement si la case dédiée est cochée sur la carte.</p>
+        <div class="grid-2">
+          <label>X <input id="object-x" type="number" step="1" /></label>
+          <label>Y <input id="object-y" type="number" step="1" /></label>
+          <label>Rotation° <input id="object-rotation" type="number" step="1" /></label>
+          <label>Scale X <input id="object-scale-x" type="number" min="0.25" max="4" step="0.05" /></label>
+          <label>Scale Y <input id="object-scale-y" type="number" min="0.25" max="4" step="0.05" /></label>
+        </div>
+
+        <div id="bridge-fields" class="kind-fields">
+          <h3>Override local du pont</h3>
+          <label>
+            Surfaces franchies (ids rivière, séparés par virgules)
+            <input id="bridge-obstacles" type="text" />
+          </label>
+          <p class="builder-hint">
+            La géométrie et le corridor du pont viennent de sa définition.
+            Ici on indique seulement quelles surfaces ce placement franchit.
+          </p>
+        </div>
+
+        <p id="object-source-status" class="builder-hint">
+          Sélectionner une définition puis placer l’objet.
+        </p>
+
+        <details class="terrain-encounter-panel">
+          <summary><strong>Importer un objet personnel</strong></summary>
+          <p class="builder-hint">
+            L’image est stockée localement sur cet appareil puis rejoint le même Object Catalog que les objets natifs.
+            Le dossier sert uniquement à organiser la bibliothèque.
+          </p>
+
+          <div class="grid-2">
+            <label>
+              Nom
+              <input id="user-object-name" type="text" maxlength="80" placeholder="Ex. Chêne enneigé" />
+            </label>
+            <label>
+              Type d’objet
+              <select id="user-object-kind">
+                <option value="building">Maison / bâtiment</option>
+                <option value="tree">Arbre</option>
+                <option value="rock">Rocher</option>
+                <option value="door">Porte / entrée</option>
+                <option value="stairs">Escalier</option>
+                <option value="decor">Décor / autre</option>
+              </select>
+            </label>
+            <label>
+              Collision
+              <select id="user-object-collision">
+                <option value="obstacle">Obstacle — bloque le passage</option>
+                <option value="passable">Traversable</option>
+              </select>
+            </label>
+            <label>
+              Ranger dans
+              <select id="user-object-folder"></select>
+            </label>
+            <label>
+              Sous-dossier personnalisé (optionnel)
+              <input id="user-object-custom-folder" type="text" maxlength="60" placeholder="Ex. Village enneigé" />
+            </label>
+          </div>
+
+          <label class="file-button">
+            Choisir PNG / JPEG / WebP
+            <input id="user-object-file" type="file" accept="image/png,image/jpeg,image/webp" />
+          </label>
+
+          <div class="row">
+            <button id="user-object-import" type="button">Importer dans la bibliothèque</button>
+            <select id="user-object-library"></select>
+            <button id="user-object-delete" type="button" class="danger">Supprimer l’import</button>
+          </div>
+
+          <p id="user-object-status" class="builder-hint">
+            Les imports sont stockés localement sur cet appareil.
+          </p>
+        </details>
+      </section>
+
+
+      <section class="builder-tab" data-panel="actors">
+        <h2>Acteurs placés</h2>
+        <p class="builder-hint">
+          Le World Builder sert uniquement à sélectionner et placer une définition Héros / PNJ / Créature.
+          Le visuel et ses réglages appartiennent à la définition de l’entité et sont résolus automatiquement.
+        </p>
+
+        <label>
+          Définition à placer
+          <select id="actor-definition"></select>
+        </label>
+
+        <div class="row">
+          <button id="actor-add" type="button">+ Placer au centre</button>
+          <button id="actor-delete" type="button">Supprimer</button>
+        </div>
+
+        <label>
+          Acteur placé
+          <select id="actor-placement-select"></select>
+        </label>
+
+        <div class="grid-2">
+          <label>X <input id="actor-x" type="number" step="1" /></label>
+          <label>Y <input id="actor-y" type="number" step="1" /></label>
+          <label>
+            Direction
+            <select id="actor-facing">
+              <option value="1">Droite</option>
+              <option value="-1">Gauche</option>
+            </select>
+          </label>
+        </div>
+
+        <p id="actor-source-status" class="builder-hint">
+          Sélectionner une définition puis utiliser « Placer acteur » sur la map.
+        </p>
+      </section>
+
+      <section class="builder-tab" data-panel="portals">
+        <h2>Passages</h2>
+        <p class="builder-hint">
+          Un Passage relie une zone de départ à une destination. Pour une maison, utilise d’abord « Entrée et intérieur » dans Objets ; cette page sert surtout à vérifier ou affiner la même liaison canonique.
+        </p>
+        <div class="row">
+          <select id="portal-select"></select>
+          <button id="portal-add" type="button">+ Passage</button>
+          <button id="portal-delete" type="button" class="danger">Supprimer</button>
+        </div>
+        <p id="portal-summary" class="builder-hint">
+          Sélectionner un Passage pour voir son départ et sa destination.
+        </p>
+
+        <details id="portal-advanced-settings">
+          <summary><strong>Réglages avancés</strong></summary>
+
+          <h3>Départ</h3>
+          <div class="grid-2">
+            <label>Area source <select id="portal-source-area"></select></label>
+            <label>Type de départ
+              <select id="portal-trigger-kind">
+                <option value="point">Point libre</option>
+                <option value="object-anchor">Entrée d’un bâtiment</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="portal-point-fields" class="grid-2">
+            <label>X <input id="portal-point-x" type="number" step="1" /></label>
+            <label>Y <input id="portal-point-y" type="number" step="1" /></label>
+          </div>
+
+          <div id="portal-building-fields" class="grid-2">
+            <label>Bâtiment <select id="portal-building"></select></label>
+            <label>Entrée <select id="portal-anchor"></select></label>
+          </div>
+
+          <h3>Zone d’activation</h3>
+          <div id="portal-trigger-zone-fields" class="grid-2">
+            <label>Rayon <input id="portal-radius" type="number" min="4" max="240" step="1" /></label>
+            <p class="builder-hint">Cette zone appartient au Passage, y compris lorsque le départ suit un doorAnchor.</p>
+          </div>
+
+          <h3>Destination</h3>
+          <div class="grid-2">
+            <label>Area cible <select id="portal-target-area"></select></label>
+            <label>Spawn d’arrivée <select id="portal-target-spawn"></select></label>
+          </div>
+
+          <h3>Affichage</h3>
+          <label class="checkbox-line">
+            <input id="portal-visible" type="checkbox" />
+            Afficher la zone sur la map
+          </label>
+          <div class="grid-2">
+            <label>Repère
+              <select id="portal-marker">
+                <option value="portal">Passage</option>
+                <option value="entry">Entrée</option>
+                <option value="exit">Sortie</option>
+              </select>
+            </label>
+            <label>Label <input id="portal-label" type="text" /></label>
+          </div>
+        </details>
+      </section>
+
+      <section class="builder-tab" data-panel="events">
+        <h2>Événements</h2>
+        <p class="builder-hint">
+          Crée simplement ce qui doit se passer à un endroit de la carte. Pour l'instant, l'action disponible est « Afficher un message ».
+        </p>
+
+        <div class="row">
+          <select id="event-select"></select>
+          <button id="event-add" type="button">+ Événement</button>
+          <button id="event-delete" type="button" class="danger">Supprimer</button>
+        </div>
+
+        <label class="checkbox-line">
+          <input id="event-enabled" type="checkbox" />
+          Événement actif
+        </label>
+
+        <div class="grid-2">
+          <label>Quand ?
+            <select id="event-activation">
+              <option value="on-enter">Entrer dans une zone</option>
+              <option value="on-portal-enter">Entrer dans un lieu ou bâtiment</option>
+              <option value="on-interact">Interagir</option>
+            </select>
+          </label>
+
+          <label id="event-trigger-kind-field">Où ?
+            <select id="event-trigger-kind">
+              <option value="point">Dans une zone de la carte</option>
+              <option value="object-anchor">Sur un objet</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid-2">
+          <label>Que faire ?
+            <select id="event-action-kind">
+              <option value="message">Afficher un message</option>
+            </select>
+          </label>
+
+          <label>Fréquence
+            <select id="event-repeat-policy">
+              <option value="once">Une seule fois</option>
+              <option value="repeatable">À chaque fois</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Message
+          <textarea id="event-message" rows="4" placeholder="Ex. : Une inscription ancienne est gravée sur la pierre…"></textarea>
+        </label>
+
+        <div id="event-portal-fields" hidden>
+          <label>Lieu / bâtiment
+            <select id="event-portal"></select>
+          </label>
+          <p class="builder-hint">
+            Le message se déclenche quand le joueur franchit l'entrée de ce lieu.
+          </p>
+        </div>
+
+        <p id="event-drag-hint" class="builder-hint">
+          Zone libre : fais glisser directement le cercle jaune sur la carte pour le placer.
+        </p>
+
+        <details id="event-position-details">
+          <summary>Position du déclencheur</summary>
+
+          <label>
+            Lieu
+            <select id="event-source-area"></select>
+          </label>
+
+          <div id="event-point-fields" class="grid-3">
+            <label>Position X <input id="event-point-x" type="number" step="1" /></label>
+            <label>Position Y <input id="event-point-y" type="number" step="1" /></label>
+            <label>Taille de la zone <input id="event-radius" type="number" min="4" max="240" step="1" /></label>
+          </div>
+
+          <div id="event-object-fields" class="grid-2">
+            <label>Objet <select id="event-object"></select></label>
+            <label>Point d'interaction <select id="event-anchor"></select></label>
+          </div>
+        </details>
+
+        <p class="builder-hint">
+          « Tester en jeu » permet de vérifier immédiatement le déclenchement et le message.
+        </p>
+      </section>
+
+      <section class="builder-tab" data-panel="json">
+        <h2>WorldDocument</h2>
+        <p class="builder-hint">Exporter en .world.json conserve les données éditables de la carte. Ce fichier se réimporte ici pour continuer la création, sans remplacer les textures personnelles stockées sur l'appareil.</p>
+        <div class="row">
+          <button id="export-json" type="button">Exporter la carte (.json)</button>
+          <label class="file-button">
+            Importer JSON
+            <input id="import-json" type="file" accept=".json,application/json" />
+          </label>
+          <button id="reset-demo" type="button">Recharger la démo</button>
+        </div>
+        <p id="validation-summary"></p>
+        <textarea id="json-preview" readonly spellcheck="false"></textarea>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./src/builder/world-builder-main.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1&brush=interior-floor-brush-v1&relief=relief-canyon-pilot-v1&rim=relief-cliff-rim-v1&water=relief-water-fx-v1&art=canyon-water-art-v2&kit=canyon-art-v3&waterline=canyon-continuous-river-v4&no-repeat=canyon-v5&shimmer=organic-reflections-v6&waterfalls-v3"></script>
+</body>
+</html>

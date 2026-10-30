@@ -1,0 +1,2069 @@
+import {
+  normalizeWorldDocument
+} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+import {
+  presetEncounterDefaults,encounterConfigNeedsExplicitInitialization
+} from './preset-encounter-defaults.js';
+import {
+  defaultTerrainFamilyTraversalModes,
+  normalizeTerrainFamilyTraversalModes
+} from '../world/terrain-family-registry.js?rev=terrain-family-speed-editor-v1';
+import {
+  findWorldAreaBoundarySafePoint,
+  normalizeWorldAreaBoundary
+} from '../world/world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
+import {
+  objectDefinitionCatalogV1
+} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
+
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function finite(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function findArea(draft, areaId) {
+  return draft.areas.find((area) => area.id === areaId) ?? null;
+}
+
+function uniqueId(prefix, items) {
+  const ids = new Set(items.map((item) => item.id));
+  let index = 1;
+  let candidate = `${prefix}-${index}`;
+
+  while (ids.has(candidate)) {
+    index += 1;
+    candidate = `${prefix}-${index}`;
+  }
+
+  return candidate;
+}
+
+function terrainFamilyExists(draft, terrainFamilyId) {
+  const id =
+    typeof terrainFamilyId === 'string'
+      ? terrainFamilyId.trim()
+      : '';
+
+  return Boolean(
+    id &&
+    draft?.terrainFamilies?.some(
+      (family) => family.id === id
+    )
+  );
+}
+
+function terrainFamilyIsUsed(draft, terrainFamilyId) {
+  for (const area of draft?.areas ?? []) {
+    const surface = area.surface ?? {};
+
+    if (
+      surface.baseTerrainFamilyId ===
+      terrainFamilyId
+    ) {
+      return true;
+    }
+
+    for (const collection of [
+      surface.zones,
+      surface.routes,
+      surface.rivers
+    ]) {
+      if (
+        collection?.some(
+          (item) =>
+            item.terrainFamilyId ===
+            terrainFamilyId
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export function addTerrainFamilyDefinition(
+  draft,
+  {
+    id = null,
+    label = 'Nouvelle famille',
+    paintKind = 'terrain'
+  } = {}
+) {
+  const next = clone(draft);
+  next.terrainFamilies ??= [];
+
+  const familyId =
+    typeof id === 'string' && id.trim()
+      ? id.trim()
+      : uniqueId(
+          'terrain-family',
+          next.terrainFamilies
+        );
+
+  if (
+    next.terrainFamilies.some(
+      (family) => family.id === familyId
+    )
+  ) {
+    return next;
+  }
+
+  next.terrainFamilies.push({
+    id: familyId,
+    label:
+      typeof label === 'string' &&
+      label.trim()
+        ? label.trim()
+        : familyId,
+    paintKind: ['terrain', 'route', 'river'].includes(paintKind) ? paintKind : 'terrain',
+    traversalModes: defaultTerrainFamilyTraversalModes(familyId, paintKind)
+  });
+
+  next.encounterConfig ??= {
+    version: 1,
+    families: []
+  };
+  next.encounterConfig.families ??= [];
+  next.encounterConfig.families.push({
+    terrainFamilyId: familyId,
+    encounterChancePercent: 0,
+    elementChances: []
+  });
+
+  return next;
+}
+
+export function updateTerrainFamilyDefinition(
+  draft,
+  terrainFamilyId,
+  {
+    label,
+    paintKind,
+    surfaceMaterialIds,
+    traversalModes
+  } = {}
+) {
+  const next = clone(draft);
+  const family =
+    next.terrainFamilies?.find(
+      (entry) =>
+        entry.id === terrainFamilyId
+    );
+
+  if (!family) return next;
+
+  if (
+    typeof label === 'string' &&
+    label.trim()
+  ) {
+    family.label = label.trim();
+  }
+
+  if (['terrain', 'route', 'river'].includes(paintKind)) {
+    family.paintKind = paintKind;
+  }
+  if (Array.isArray(surfaceMaterialIds)) {
+    family.surfaceMaterialIds = [...new Set(surfaceMaterialIds.filter(
+      (id) => typeof id === 'string' && id.trim()
+    ).map((id) => id.trim()))];
+  }
+  if (traversalModes && typeof traversalModes === 'object') {
+    family.traversalModes = normalizeTerrainFamilyTraversalModes(
+      { ...(family.traversalModes ?? {}), ...traversalModes },
+      defaultTerrainFamilyTraversalModes(family.id, family.paintKind)
+    );
+  }
+
+  return next;
+}
+
+export function deleteTerrainFamilyDefinition(
+  draft,
+  terrainFamilyId
+) {
+  const next = clone(draft);
+
+  if (
+    !Array.isArray(next.terrainFamilies) ||
+    next.terrainFamilies.length <= 1 ||
+    terrainFamilyIsUsed(
+      next,
+      terrainFamilyId
+    )
+  ) {
+    return next;
+  }
+
+  next.terrainFamilies =
+    next.terrainFamilies.filter(
+      (family) =>
+        family.id !== terrainFamilyId
+    );
+
+  if (
+    Array.isArray(
+      next.encounterConfig?.families
+    )
+  ) {
+    next.encounterConfig.families =
+      next.encounterConfig.families.filter(
+        (profile) =>
+          profile.terrainFamilyId !==
+          terrainFamilyId
+      );
+  }
+
+  return next;
+}
+
+export function createWorldBuilderDraft(sourceDocument) {
+  const normalized = normalizeWorldDocument(sourceDocument);
+  return clone(normalized);
+}
+
+/**
+ * Explicit, opt-in initialization for historical documents whose normalized
+ * EncounterConfig contains no enabled probabilities or elements.
+ * Any configured document is preserved byte-for-byte in its gameplay fields.
+ */
+export function initializeWorldPresetEncounters(draft) {
+  if (!encounterConfigNeedsExplicitInitialization(draft?.encounterConfig))
+    return createWorldBuilderDraft(draft);
+  const ids=(draft.terrainFamilies??[]).map(f=>f.id);
+  return createWorldBuilderDraft({...draft,
+    encounterConfig:presetEncounterDefaults(ids,draft.encounterConfig)});
+}
+
+/**
+ * Starting preset for an empty editable WorldDocument. The spawn is intentionally
+ * retained so "Tester en jeu" works; terrain/objects never copy the demo world.
+ * All dimensions, terrain, textures and encounters remain ordinary draft data.
+ */
+export function createBlankWorldBuilderDraft({
+  id = 'nouvelle-carte',
+  width = 2400,
+  height = 1600,
+  terrainFamilyId = 'plain',
+  materialId = 'ground.dirt'
+} = {}) {
+  const safeWidth = Math.max(128, Math.min(20000, finite(width, 2400)));
+  const safeHeight = Math.max(128, Math.min(20000, finite(height, 1600)));
+
+  return createWorldBuilderDraft({
+    id,
+    initialAreaId: 'area-principale',
+    initialSpawnId: 'depart',
+    areas: [{
+      id: 'area-principale',
+      kind: 'exterior',
+      width: safeWidth,
+      height: safeHeight,
+      encounters: { randomEnabled: true },
+      surface: {
+        baseTerrainFamilyId: terrainFamilyId,
+        baseMaterialId: materialId,
+        baseTraversalRuleId: 'terrain.ground',
+        zones: [],
+        routes: [],
+        rivers: []
+      },
+      objects: [],
+      actors: [],
+      obstacles: [],
+      spawns: [{ id: 'depart', x: safeWidth / 2, y: safeHeight / 2 }]
+    }],
+    portals: [],
+    events: []
+  });
+}
+
+/*
+ * World Assembler commands. Nodes/links are WorldArea and Portal data in the
+ * SAME WorldDocument draft as the existing detailed Builder. The graph UI is
+ * a read-only projection and never owns a second topology.
+ */
+function slugWorldAreaName(name) {
+  return String(name??'').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-|-$/g,'').slice(0,58)||'zone';
+}
+function nextWorldAreaId(areas, name) {
+  const base=slugWorldAreaName(name),used=new Set(areas.map(x=>x.id));
+  if(!used.has(base))return base;
+  let i=2;
+  while(used.has(base+'-'+i))i++;
+  return base+'-'+i;
+}
+
+export function addWorldArea(draft,{
+  name='Nouvelle zone',kind='exterior',width,height
+}={}) {
+  if(!draft || !Array.isArray(draft.areas))throw Error('WorldDocument requis');
+  if(draft.areas.length>=64)throw Error('Limite de 64 zones pour cet assemblage');
+  const next=clone(draft);
+  // Dungeon is a *kind of location*, not a new WorldArea kind or a parallel
+  // coordinate system. Its parent is the sourceAreaId of the inbound Portal.
+  const isDungeon=kind==='dungeon';
+  const isInterior=kind==='interior'||isDungeon;
+  if(!isInterior&&kind!=='exterior')throw Error('Type de WorldArea inconnu');
+  const id=nextWorldAreaId(next.areas,name);
+  // Native Sculpt tiles are 28×21 world units. New Areas fit the existing
+  // 2.5D editor; WorldDocument itself can still model larger worlds.
+  const w=Math.max(128,Math.min(20000,finite(width,isInterior?18*28:36*28)));
+  const h=Math.max(128,Math.min(20000,finite(height,isInterior?14*21:24*21)));
+  const family=next.terrainFamilies?.some(x=>x.id==='plain')
+    ?'plain':next.terrainFamilies?.[0]?.id;
+  if(!family)throw Error('Aucune famille de terrain dans ce WorldDocument');
+  next.areas.push({
+    id,label:String(name).trim().slice(0,80)||id,
+    kind:isInterior?'interior':'exterior',
+    ...(isDungeon?{siteKind:'dungeon'}:{}),
+    width:w,height:h,
+    encounters:{randomEnabled:!isInterior},
+    surface:{baseTerrainFamilyId:family,
+      baseMaterialId:isInterior?'floor.wood.house':'ground.dirt',
+      baseTraversalRuleId:'terrain.ground',zones:[],routes:[],rivers:[]},
+    objects:[],actors:[],obstacles:[],walls:[],
+    spawns:[{id:'arrivee',x:w/2,y:h/2}]
+  });
+  return createWorldBuilderDraft(next);
+}
+
+export function removeWorldArea(draft,areaId) {
+  const area=draft?.areas?.find(x=>x.id===areaId);
+  if(!area)throw Error('WorldArea introuvable');
+  if(draft.areas.length<2)throw Error('La dernière WorldArea doit rester');
+  if(draft.initialAreaId===areaId)
+    throw Error('Impossible de supprimer la zone de départ initiale');
+  if(draft.portals?.some(p=>p.sourceAreaId===areaId||p.targetAreaId===areaId))
+    throw Error('WorldArea liée à un passage Portal : supprime les passages avant');
+  if(draft.events?.some(e=>e.sourceAreaId===areaId||
+      e.areaId===areaId||e.targetAreaId===areaId))
+    throw Error('WorldArea liée à un événement : retire son événement avant');
+  const next=clone(draft);
+  next.areas=next.areas.filter(x=>x.id!==areaId);
+  return createWorldBuilderDraft(next);
+}
+
+export function setWorldInitialArea(draft,areaId) {
+  const area=draft?.areas?.find(x=>x.id===areaId);
+  if(!area||!area.spawns?.length)throw Error('Zone de départ sans Spawn');
+  const next=clone(draft);
+  next.initialAreaId=area.id;
+  next.initialSpawnId=area.spawns[0].id;
+  return createWorldBuilderDraft(next);
+}
+
+export function connectWorldAreas(draft,{
+  sourceAreaId,targetAreaId,returnPortal=false
+}={}) {
+  const source=draft?.areas?.find(x=>x.id===sourceAreaId);
+  const target=draft?.areas?.find(x=>x.id===targetAreaId);
+  if(!source||!target||source.id===target.id)
+    throw Error('Choisir deux WorldAreas distinctes');
+  if(!target.spawns?.length|| (returnPortal&&!source.spawns?.length))
+    throw Error('Un Spawn de destination est requis');
+  // Existing Portal constructor and normalizer are the only link owners.
+  function connectOne(input,from,to){
+    if(input.portals?.some(p=>p.sourceAreaId===from.id&&p.targetAreaId===to.id))
+      return input;
+    const n=input.portals?.filter(p=>p.sourceAreaId===from.id).length??0;
+    const y=Math.max(35,Math.min(from.height-35,from.height*(.27+((n%4)*.15))));
+    const trigger={kind:'point',x:Math.max(32,from.width-46),y,radius:20};
+    return addPortal(input,{
+      sourceAreaId:from.id,targetAreaId:to.id,
+      targetSpawnId:to.spawns[0].id,trigger,
+      enabled:true,visual:{visible:true,marker:'exit',label:to.id}
+    });
+  }
+  let next=connectOne(draft,source,target);
+  if(returnPortal)next=connectOne(next,target,source);
+  return createWorldBuilderDraft(next);
+}
+
+export function validateWorldBuilderDraft(
+  draft,
+  {
+    objectCatalog =
+      objectDefinitionCatalogV1
+  } = {}
+) {
+  const errors = [];
+
+  if (!draft || typeof draft !== 'object') {
+    return Object.freeze({
+      valid: false,
+      errors: Object.freeze(['draft-invalid']),
+      document: null
+    });
+  }
+
+  const rawAreas = Array.isArray(draft.areas) ? draft.areas : [];
+  const rawPortals = Array.isArray(draft.portals) ? draft.portals : [];
+  const rawEvents = Array.isArray(draft.events) ? draft.events : [];
+  const rawTerrainFamilies =
+    Array.isArray(draft.terrainFamilies)
+      ? draft.terrainFamilies
+      : [];
+  const document = normalizeWorldDocument(draft);
+  const terrainFamilyIds = new Set(
+    document.terrainFamilies.map(
+      (family) => family.id
+    )
+  );
+
+  if (
+    document.terrainFamilies.length !==
+      rawTerrainFamilies.length
+  ) {
+    errors.push(
+      'terrain-family-invalid-or-duplicate'
+    );
+  }
+
+  if (document.areas.length !== rawAreas.length) {
+    errors.push('area-invalid-or-duplicate');
+  }
+
+  for (const rawArea of rawAreas) {
+    const normalizedArea = document.areas.find(
+      (area) => area.id === rawArea.id
+    );
+
+    if (!normalizedArea) continue;
+
+    const rawObjects = Array.isArray(rawArea.objects)
+      ? rawArea.objects
+      : [];
+    const rawActors = Array.isArray(rawArea.actors)
+      ? rawArea.actors
+      : [];
+    const rawSpawns = Array.isArray(rawArea.spawns)
+      ? rawArea.spawns
+      : [];
+    const rawZones = Array.isArray(rawArea.surface?.zones)
+      ? rawArea.surface.zones
+      : [];
+    const rawRoutes = Array.isArray(rawArea.surface?.routes)
+      ? rawArea.surface.routes
+      : [];
+    const rawRivers = Array.isArray(rawArea.surface?.rivers)
+      ? rawArea.surface.rivers
+      : [];
+
+    if (normalizedArea.objects.length !== rawObjects.length) {
+      errors.push(`object-invalid:${rawArea.id}`);
+    }
+
+    for (const rawObject of rawObjects) {
+      const definitionId =
+        typeof rawObject?.objectDefinitionId === 'string'
+          ? rawObject.objectDefinitionId.trim()
+          : '';
+
+      if (
+        definitionId &&
+        !objectCatalog?.get?.(definitionId)
+      ) {
+        errors.push(
+          `object-definition-unknown:${definitionId}`
+        );
+      }
+    }
+
+    if (normalizedArea.actors.length !== rawActors.length) {
+      errors.push(`actor-invalid-or-duplicate:${rawArea.id}`);
+    }
+
+    if (normalizedArea.spawns.length !== rawSpawns.length) {
+      errors.push(`spawn-invalid-or-duplicate:${rawArea.id}`);
+    }
+
+    if (normalizedArea.surface.zones.length !== rawZones.length) {
+      errors.push(`terrain-zone-invalid:${rawArea.id}`);
+    }
+
+    if (normalizedArea.surface.routes.length !== rawRoutes.length) {
+      errors.push(`route-invalid:${rawArea.id}`);
+    }
+
+    if (normalizedArea.surface.rivers.length !== rawRivers.length) {
+      errors.push(`river-invalid:${rawArea.id}`);
+    }
+
+    const familyRefs = [
+      rawArea.surface?.baseTerrainFamilyId,
+      ...rawZones.map(
+        (item) => item.terrainFamilyId
+      ),
+      ...rawRoutes.map(
+        (item) => item.terrainFamilyId
+      ),
+      ...rawRivers.map(
+        (item) => item.terrainFamilyId
+      )
+    ].filter(Boolean);
+
+    for (const familyId of familyRefs) {
+      if (!terrainFamilyIds.has(familyId)) {
+        errors.push(
+          `terrain-family-unknown:${familyId}`
+        );
+      }
+    }
+  }
+
+  if (document.portals.length !== rawPortals.length) {
+    errors.push('portal-invalid-or-duplicate');
+  }
+
+  if (document.events.length !== rawEvents.length) {
+    errors.push('event-invalid-or-duplicate');
+  }
+
+  if (!document.initialAreaId || !document.initialSpawnId) {
+    errors.push('initial-area-or-spawn-missing');
+  }
+
+  for (const profile of document.encounterConfig?.families ?? []) {
+    if (profile.encounterChancePercent <= 0) continue;
+    // Element percentages from legacy WorldDocuments are selections only;
+    // no second probability gate exists between encounter and creature rarity.
+    if (!profile.elementChances.some((entry) => entry.chancePercent > 0)) {
+      errors.push(
+        `encounter-elements-empty:${profile.terrainFamilyId}`
+      );
+    }
+  }
+
+  return Object.freeze({
+    valid: errors.length === 0,
+    errors: Object.freeze(errors),
+    document
+  });
+}
+
+function reconcileAreaBoundaryDependents(
+  draft,
+  areaId
+) {
+  const area =
+    findArea(draft, areaId);
+
+  if (!area) return;
+
+  const spawnClearance =
+    new Map();
+
+  for (
+    const portal of
+      draft.portals ?? []
+  ) {
+    if (
+      portal.targetAreaId !==
+        areaId ||
+      typeof portal.targetSpawnId !==
+        'string'
+    ) {
+      continue;
+    }
+
+    const radius =
+      Math.max(
+        18,
+        finite(
+          portal.trigger?.radius,
+          18
+        )
+      );
+    const current =
+      spawnClearance.get(
+        portal.targetSpawnId
+      ) ?? 18;
+
+    spawnClearance.set(
+      portal.targetSpawnId,
+      Math.max(
+        current,
+        radius
+      )
+    );
+  }
+
+  for (
+    const spawn of
+      area.spawns ?? []
+  ) {
+    if (
+      spawn.anchor ||
+      !Number.isFinite(spawn.x) ||
+      !Number.isFinite(spawn.y)
+    ) {
+      continue;
+    }
+
+    const safe =
+      findWorldAreaBoundarySafePoint(
+        area,
+        {
+          x: spawn.x,
+          y: spawn.y
+        },
+        spawnClearance.get(
+          spawn.id
+        ) ?? 18
+      );
+
+    if (!safe) continue;
+
+    spawn.x = safe.x;
+    spawn.y = safe.y;
+  }
+
+  for (
+    const portal of
+      draft.portals ?? []
+  ) {
+    if (
+      portal.sourceAreaId !==
+        areaId ||
+      portal.trigger?.kind !==
+        'point'
+    ) {
+      continue;
+    }
+
+    const safe =
+      findWorldAreaBoundarySafePoint(
+        area,
+        {
+          x: portal.trigger.x,
+          y: portal.trigger.y
+        },
+        Math.max(
+          0,
+          finite(
+            portal.trigger.radius,
+            0
+          )
+        )
+      );
+
+    if (!safe) continue;
+
+    portal.trigger.x = safe.x;
+    portal.trigger.y = safe.y;
+  }
+}
+
+/**
+ * Explicit WorldArea authoring command. This changes only the existing
+ * WorldArea.encounters.randomEnabled field; the Encounter Controller remains
+ * the sole runtime authority for movement-distance encounter checks.
+ */
+export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || typeof enabled !== 'boolean') return next;
+  area.encounters ??= {};
+  area.encounters.randomEnabled = enabled;
+  return next;
+}
+
+export function updateAreaProperties(
+  draft,
+  areaId,
+  {
+    width,
+    height,
+    baseTerrainFamilyId,
+    baseMaterialId
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area) return next;
+
+  let geometryChanged = false;
+
+  if (width !== undefined) {
+    area.width =
+      finite(width, area.width);
+    geometryChanged = true;
+  }
+
+  if (height !== undefined) {
+    area.height =
+      finite(height, area.height);
+    geometryChanged = true;
+  }
+
+  if (
+    typeof baseTerrainFamilyId === 'string' &&
+    terrainFamilyExists(
+      next,
+      baseTerrainFamilyId
+    )
+  ) {
+    area.surface ??= {};
+    area.surface.baseTerrainFamilyId =
+      baseTerrainFamilyId.trim();
+  }
+
+  if (
+    typeof baseMaterialId === 'string' &&
+    baseMaterialId.trim()
+  ) {
+    area.surface ??= {};
+    area.surface.baseMaterialId = baseMaterialId.trim();
+  }
+
+  if (geometryChanged) {
+    reconcileAreaBoundaryDependents(
+      next,
+      areaId
+    );
+  }
+
+  return next;
+}
+
+
+export function updateAreaBoundary(
+  draft,
+  areaId,
+  boundary
+) {
+  const next = clone(draft);
+  const area =
+    findArea(next, areaId);
+
+  if (!area) return next;
+
+  area.boundary =
+    clone(
+      normalizeWorldAreaBoundary(
+        boundary
+      )
+    );
+
+  reconcileAreaBoundaryDependents(
+    next,
+    areaId
+  );
+
+  return next;
+}
+
+
+function surfaceCollection(area, kind) {
+  area.surface ??= {};
+  const key =
+    kind === 'river'
+      ? 'rivers'
+      : kind === 'terrain'
+        ? 'zones'
+        : 'routes';
+  area.surface[key] ??= [];
+  return area.surface[key];
+}
+
+export function addSurfacePath(
+  draft,
+  areaId,
+  kind,
+  {
+    width,
+    terrainFamilyId,
+    materialId,
+    points
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
+
+  const items = surfaceCollection(area, kind);
+  const prefix =
+    kind === 'river'
+      ? 'river'
+      : kind === 'terrain'
+        ? 'zone'
+        : 'road';
+  const id = uniqueId(prefix, items);
+  const fallbackMaterial =
+    kind === 'river'
+      ? 'water.forest_stream'
+      : kind === 'terrain'
+        ? 'grass.forest'
+        : 'road.dirt';
+  const preferredFallback =
+    kind === 'river'
+      ? 'sea'
+      : kind === 'route'
+        ? 'road'
+        : area.surface?.baseTerrainFamilyId;
+  const fallbackFamily =
+    terrainFamilyExists(
+      next,
+      preferredFallback
+    )
+      ? preferredFallback
+      : (
+          terrainFamilyExists(
+            next,
+            area.surface?.baseTerrainFamilyId
+          )
+            ? area.surface.baseTerrainFamilyId
+            : next.terrainFamilies?.[0]?.id
+        );
+  const resolvedFamily =
+    typeof terrainFamilyId === 'string' &&
+    terrainFamilyExists(
+      next,
+      terrainFamilyId
+    )
+      ? terrainFamilyId.trim()
+      : fallbackFamily;
+
+  const safePoints = Array.isArray(points)
+    ? points
+        .filter((point) =>
+          point &&
+          Number.isFinite(Number(point.x)) &&
+          Number.isFinite(Number(point.y))
+        )
+        .map((point) => ({
+          x: Number(point.x),
+          y: Number(point.y)
+        }))
+    : [];
+
+  if (safePoints.length === 1) {
+    safePoints.push({ ...safePoints[0] });
+  }
+
+  if (safePoints.length < 2) return next;
+
+  items.push({
+    id,
+    width: finite(
+      width,
+      kind === 'river' ? 72 : kind === 'terrain' ? 180 : 82
+    ),
+    terrainFamilyId: resolvedFamily,
+    materialId:
+      typeof materialId === 'string' && materialId.trim()
+        ? materialId.trim()
+        : fallbackMaterial,
+    points: safePoints
+  });
+
+  return next;
+}
+
+export function updateSurfacePath(
+  draft,
+  areaId,
+  kind,
+  pathId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
+
+  const item = surfaceCollection(area, kind)
+    .find((path) => path.id === pathId);
+  if (!item) return next;
+
+  if (patch.width !== undefined) {
+    item.width = Math.max(1, finite(patch.width, item.width));
+  }
+
+  if (
+    typeof patch.terrainFamilyId === 'string' &&
+    terrainFamilyExists(
+      next,
+      patch.terrainFamilyId
+    )
+  ) {
+    item.terrainFamilyId =
+      patch.terrainFamilyId.trim();
+  }
+
+  if (
+    typeof patch.materialId === 'string' &&
+    patch.materialId.trim()
+  ) {
+    item.materialId = patch.materialId.trim();
+  }
+
+  if (Array.isArray(patch.points)) {
+    const points = patch.points
+      .filter((point) =>
+        point &&
+        Number.isFinite(Number(point.x)) &&
+        Number.isFinite(Number(point.y))
+      )
+      .map((point) => ({
+        x: Number(point.x),
+        y: Number(point.y)
+      }));
+
+    if (points.length >= 2) item.points = points;
+  }
+
+  return next;
+}
+
+export function appendSurfacePathPoint(
+  draft,
+  areaId,
+  kind,
+  pathId,
+  point
+) {
+  // Painting can append many points per second. Deep-cloning the entire
+  // WorldDocument on every sample made each stroke slower as layers grew.
+  // Copy only the owning Area, surface collection, path and its points.
+  const key = kind === 'terrain' ? 'zones'
+    : kind === 'river' ? 'rivers'
+      : kind === 'route' ? 'routes' : null;
+  const areaIndex = draft?.areas?.findIndex(area => area.id === areaId) ?? -1;
+  const area = areaIndex >= 0 ? draft.areas[areaIndex] : null;
+  const source = key ? area?.surface?.[key] : null;
+  const pathIndex = source?.findIndex(path => path.id === pathId) ?? -1;
+  const x = Number(point?.x);
+  const y = Number(point?.y);
+  if (!area || pathIndex < 0 || !point ||
+      !Number.isFinite(x) || !Number.isFinite(y)) {
+    return clone(draft);
+  }
+
+  const nextPath = {
+    ...source[pathIndex],
+    points: [...(source[pathIndex].points ?? []), { x, y }]
+  };
+  const nextCollection = source.slice();
+  nextCollection[pathIndex] = nextPath;
+  const nextAreas = draft.areas.slice();
+  nextAreas[areaIndex] = {
+    ...area,
+    surface: { ...area.surface, [key]: nextCollection }
+  };
+  return { ...draft, areas: nextAreas };
+}
+
+export function deleteSurfacePath(
+  draft,
+  areaId,
+  kind,
+  pathId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !['route', 'river', 'terrain'].includes(kind)) return next;
+
+  const items = surfaceCollection(area, kind);
+  const index = items.findIndex((path) => path.id === pathId);
+  if (index >= 0) items.splice(index, 1);
+
+  return next;
+}
+
+function findEncounterProfile(draft, terrainFamilyId) {
+  return draft.encounterConfig?.families?.find(
+    (profile) =>
+      profile.terrainFamilyId === terrainFamilyId
+  ) ?? null;
+}
+
+export function updateTerrainFamilyEncounterProfile(
+  draft,
+  terrainFamilyId,
+  {
+    encounterChancePercent
+  } = {}
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(
+    next,
+    terrainFamilyId
+  );
+
+  if (!profile) return next;
+
+  if (encounterChancePercent !== undefined) {
+    profile.encounterChancePercent = Math.max(
+      0,
+      Math.min(
+        100,
+        finite(
+          encounterChancePercent,
+          profile.encounterChancePercent
+        )
+      )
+    );
+  }
+
+  return next;
+}
+
+/**
+ * Explicit authoring command: choose one element for 100% of an active family's
+ * encounters, without normalizing other families or changing encounter chance.
+ * Writes only the canonical WorldDocument encounterConfig profile.
+ */
+export function setTerrainFamilyExclusiveEncounterElement(
+  draft,
+  terrainFamilyId,
+  elementId
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(next, terrainFamilyId);
+
+  if (
+    !profile ||
+    typeof elementId !== 'string' ||
+    !elementId.trim()
+  ) {
+    return next;
+  }
+
+  profile.elementChances = [{
+    elementId: elementId.trim(),
+    chancePercent: 100
+  }];
+
+  return next;
+}
+
+/**
+ * Authoring for the v1 WorldDocument compatible element selection.
+ * Positive legacy percentages are treated as checked; checkbox writes a
+ * single positive marker. No element percentage affects rarity selection.
+ */
+export function setTerrainFamilyEncounterElementEnabled(
+  draft,
+  terrainFamilyId,
+  elementId,
+  enabled
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(next, terrainFamilyId);
+  if (!profile || typeof elementId !== 'string' ||
+      !elementId.trim() || typeof enabled !== 'boolean') return next;
+  const id = elementId.trim();
+  profile.elementChances ??= [];
+  profile.elementChances = profile.elementChances.filter(
+    (entry) => entry.elementId !== id
+  );
+  if (enabled) {
+    profile.elementChances.push({ elementId:id, chancePercent:1 });
+  }
+  return next;
+}
+
+export function updateTerrainFamilyElementChance(
+  draft,
+  terrainFamilyId,
+  elementId,
+  chancePercent
+) {
+  const next = clone(draft);
+  const profile = findEncounterProfile(
+    next,
+    terrainFamilyId
+  );
+
+  if (
+    !profile ||
+    typeof elementId !== 'string' ||
+    !elementId.trim()
+  ) {
+    return next;
+  }
+
+  profile.elementChances ??= [];
+  const id = elementId.trim();
+  const chance = Math.max(
+    0,
+    Math.min(100, finite(chancePercent, 0))
+  );
+  const index = profile.elementChances.findIndex(
+    (entry) => entry.elementId === id
+  );
+
+  if (chance <= 0) {
+    if (index >= 0) {
+      profile.elementChances.splice(index, 1);
+    }
+    return next;
+  }
+
+  if (index >= 0) {
+    profile.elementChances[index].chancePercent = chance;
+  } else {
+    profile.elementChances.push({
+      elementId: id,
+      chancePercent: chance
+    });
+  }
+
+  return next;
+}
+
+export function addActorPlacement(
+  draft,
+  areaId,
+  {
+    id = null,
+    actorDefinitionId,
+    x = null,
+    y = null,
+    facingX = 1
+  } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+
+  if (
+    !area ||
+    typeof actorDefinitionId !== 'string' ||
+    !actorDefinitionId.trim()
+  ) {
+    return next;
+  }
+
+  area.actors ??= [];
+  const actorId =
+    typeof id === 'string' && id.trim()
+      ? id.trim()
+      : uniqueId('actor', area.actors);
+
+  if (
+    area.actors.some(
+      (actor) => actor.id === actorId
+    )
+  ) {
+    return next;
+  }
+
+  area.actors.push({
+    id: actorId,
+    actorDefinitionId:
+      actorDefinitionId.trim(),
+    x: finite(x, area.width / 2),
+    y: finite(y, area.height / 2),
+    facingX:
+      Number(facingX) < 0 ? -1 : 1
+  });
+
+  return next;
+}
+
+export function updateActorPlacement(
+  draft,
+  areaId,
+  actorId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const actor = area?.actors?.find(
+    (item) => item.id === actorId
+  );
+
+  if (!actor) {
+    return next;
+  }
+
+  if (
+    typeof patch.actorDefinitionId ===
+      'string' &&
+    patch.actorDefinitionId.trim()
+  ) {
+    actor.actorDefinitionId =
+      patch.actorDefinitionId.trim();
+  }
+
+  if (patch.x !== undefined) {
+    actor.x = finite(patch.x, actor.x);
+  }
+
+  if (patch.y !== undefined) {
+    actor.y = finite(patch.y, actor.y);
+  }
+
+  if (patch.facingX !== undefined) {
+    actor.facingX =
+      Number(patch.facingX) < 0
+        ? -1
+        : 1;
+  }
+
+  return next;
+}
+
+export function deleteActorPlacement(
+  draft,
+  areaId,
+  actorId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+
+  if (
+    !area ||
+    !Array.isArray(area.actors)
+  ) {
+    return next;
+  }
+
+  area.actors = area.actors.filter(
+    (actor) => actor.id !== actorId
+  );
+
+  return next;
+}
+
+
+export function updateSpawn(
+  draft,
+  areaId,
+  spawnId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const spawn = area?.spawns?.find((item) => item.id === spawnId);
+  if (!spawn || spawn.anchor) return next;
+
+  if (patch.x !== undefined) spawn.x = finite(patch.x, spawn.x);
+  if (patch.y !== undefined) spawn.y = finite(patch.y, spawn.y);
+
+  return next;
+}
+
+export function addSpawn(
+  draft,
+  areaId,
+  { id = null, x = null, y = null } = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area) return next;
+
+  area.spawns ??= [];
+  const spawnId =
+    typeof id === 'string' && id.trim()
+      ? id.trim()
+      : uniqueId('spawn', area.spawns);
+
+  if (area.spawns.some((spawn) => spawn.id === spawnId)) {
+    return next;
+  }
+
+  area.spawns.push({
+    id: spawnId,
+    x: finite(x, area.width / 2),
+    y: finite(y, area.height / 2)
+  });
+
+  return next;
+}
+
+export function deleteSpawn(draft, areaId, spawnId) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !Array.isArray(area.spawns)) return next;
+
+  if (
+    next.initialAreaId === areaId &&
+    next.initialSpawnId === spawnId
+  ) {
+    return next;
+  }
+
+  const referenced = next.portals?.some(
+    (portal) =>
+      portal.targetAreaId === areaId &&
+      portal.targetSpawnId === spawnId
+  );
+
+  if (referenced) return next;
+
+  area.spawns = area.spawns.filter(
+    (spawn) => spawn.id !== spawnId
+  );
+
+  return next;
+}
+
+export function updateWorldObjectTransform(
+  draft,
+  areaId,
+  objectId,
+  patch = {}
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const object = area?.objects?.find((item) => item.id === objectId);
+  if (!object) return next;
+
+  object.transform ??= {};
+
+  for (const key of ['x', 'y', 'rotationDeg', 'scaleX', 'scaleY']) {
+    if (patch[key] === undefined) continue;
+    object.transform[key] = finite(
+      patch[key],
+      object.transform[key] ?? (key.startsWith('scale') ? 1 : 0)
+    );
+  }
+
+  return next;
+}
+
+export function updateWorldObjectOverrides(
+  draft,
+  areaId,
+  objectId,
+  {
+    traversalSurfaceFeatureIds,
+    visualVariantId
+  } = {},
+  objectCatalog =
+    objectDefinitionCatalogV1
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const object =
+    area?.objects?.find(
+      (item) => item.id === objectId
+    );
+
+  if (!object) return next;
+
+  const definition =
+    objectCatalog?.get?.(
+      object.objectDefinitionId
+    );
+
+  if (!definition) return next;
+
+  object.overrides ??= {};
+
+  if (
+    visualVariantId !== undefined
+  ) {
+    const variants =
+      Array.isArray(
+        definition.visual?.variants
+      )
+        ? definition.visual.variants
+        : [];
+    const id =
+      typeof visualVariantId === 'string'
+        ? visualVariantId.trim()
+        : '';
+
+    object.overrides.visualVariantId =
+      id &&
+      variants.some(
+        (variant) =>
+          variant?.id === id
+      )
+        ? id
+        : null;
+  }
+
+  if (
+    definition.kind === 'bridge' &&
+    Array.isArray(
+      traversalSurfaceFeatureIds
+    )
+  ) {
+    const ids = [];
+    const seen = new Set();
+
+    for (
+      const value of
+      traversalSurfaceFeatureIds
+    ) {
+      if (
+        typeof value !== 'string'
+      ) {
+        continue;
+      }
+
+      const id = value.trim();
+
+      if (
+        !id ||
+        seen.has(id)
+      ) {
+        continue;
+      }
+
+      seen.add(id);
+      ids.push(id);
+    }
+
+    object.overrides
+      .traversalSurfaceFeatureIds =
+        ids;
+  }
+
+  return next;
+}
+
+export function addWorldObject(
+  draft,
+  areaId,
+  {
+    id = null,
+    objectDefinitionId,
+    transform = {},
+    overrides = {}
+  } = {},
+  objectCatalog =
+    objectDefinitionCatalogV1
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+
+  const definition =
+    objectCatalog?.get?.(
+      objectDefinitionId
+    );
+
+  if (!area || !definition) {
+    return next;
+  }
+
+  area.objects ??= [];
+
+  const prefix =
+    definition.kind === 'building'
+      ? 'building'
+      : definition.kind === 'bridge'
+        ? 'bridge'
+        : 'object';
+
+  const placementId =
+    typeof id === 'string' &&
+    id.trim() &&
+    !area.objects.some(
+      (item) =>
+        item.id === id.trim()
+    )
+      ? id.trim()
+      : uniqueId(
+          prefix,
+          area.objects
+        );
+
+  area.objects.push({
+    id: placementId,
+    objectDefinitionId:
+      definition.id,
+    transform: {
+      x: finite(
+        transform.x,
+        area.width / 2
+      ),
+      y: finite(
+        transform.y,
+        area.height / 2
+      ),
+      rotationDeg: finite(
+        transform.rotationDeg,
+        0
+      ),
+      scaleX: finite(
+        transform.scaleX,
+        1
+      ),
+      scaleY: finite(
+        transform.scaleY,
+        1
+      )
+    },
+    overrides: {
+      visualVariantId:
+        typeof overrides.visualVariantId === 'string'
+          ? overrides.visualVariantId.trim() || null
+          : null,
+      traversalSurfaceFeatureIds:
+        Array.isArray(
+          overrides
+            .traversalSurfaceFeatureIds
+        )
+          ? [
+              ...new Set(
+                overrides
+                  .traversalSurfaceFeatureIds
+                  .filter(
+                    (value) =>
+                      typeof value ===
+                        'string' &&
+                      value.trim()
+                  )
+                  .map(
+                    (value) =>
+                      value.trim()
+                  )
+              )
+            ]
+          : []
+    }
+  });
+
+  return next;
+}
+
+export function duplicateWorldObject(
+  draft,
+  areaId,
+  objectId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  const source = area?.objects?.find((item) => item.id === objectId);
+  if (!source) return next;
+
+  const copy = clone(source);
+  copy.id = uniqueId(`${source.id}-copy`, area.objects);
+  copy.transform ??= {};
+  copy.transform.x = finite(copy.transform.x, 0) + 24;
+  copy.transform.y = finite(copy.transform.y, 0) + 24;
+  area.objects.push(copy);
+
+  return next;
+}
+
+export function deleteWorldObject(
+  draft,
+  areaId,
+  objectId
+) {
+  const next = clone(draft);
+  const area = findArea(next, areaId);
+  if (!area || !Array.isArray(area.objects)) return next;
+
+  const referencedByPortal = next.portals?.some(
+    (portal) =>
+      portal.sourceAreaId === areaId &&
+      portal.trigger?.kind === 'object-anchor' &&
+      portal.trigger.objectId === objectId
+  );
+
+  const referencedByEvent = next.events?.some(
+    (event) =>
+      event.sourceAreaId === areaId &&
+      event.trigger?.kind === 'object-anchor' &&
+      event.trigger.objectId === objectId
+  );
+
+  if (referencedByPortal || referencedByEvent) return next;
+
+  area.objects = area.objects.filter(
+    (object) => object.id !== objectId
+  );
+
+  return next;
+}
+
+export function updatePortal(
+  draft,
+  portalId,
+  patcher
+) {
+  const next = clone(draft);
+  const portal = next.portals?.find((item) => item.id === portalId);
+
+  if (portal && typeof patcher === 'function') {
+    patcher(portal);
+  }
+
+  return next;
+}
+
+export function addWorldEvent(
+  draft,
+  rawEvent
+) {
+  const next = clone(draft);
+  next.events ??= [];
+
+  if (!rawEvent || typeof rawEvent !== 'object') {
+    return next;
+  }
+
+  const event = clone(rawEvent);
+
+  if (
+    typeof event.id !== 'string' ||
+    !event.id.trim() ||
+    next.events.some(
+      (item) => item.id === event.id.trim()
+    )
+  ) {
+    event.id = uniqueId(
+      'event',
+      next.events
+    );
+  }
+
+  delete event.consumed;
+  next.events.push(event);
+  return next;
+}
+
+export function updateWorldEvent(
+  draft,
+  eventId,
+  patcher
+) {
+  const next = clone(draft);
+  const event = next.events?.find(
+    (item) => item.id === eventId
+  );
+
+  if (
+    event &&
+    typeof patcher === 'function'
+  ) {
+    patcher(event);
+    delete event.consumed;
+  }
+
+  return next;
+}
+
+export function deleteWorldEvent(
+  draft,
+  eventId
+) {
+  const next = clone(draft);
+  next.events = Array.isArray(next.events)
+    ? next.events.filter(
+        (event) => event.id !== eventId
+      )
+    : [];
+
+  return next;
+}
+
+function buildingPlacementDefinition(
+  draft,
+  sourceAreaId,
+  buildingId,
+  objectCatalog
+) {
+  const area =
+    findArea(draft, sourceAreaId);
+  const placement =
+    area?.objects?.find(
+      (object) =>
+        object.id === buildingId
+    );
+  const definition =
+    placement
+      ? objectCatalog?.get?.(
+          placement.objectDefinitionId
+        )
+      : null;
+
+  if (
+    !area ||
+    !placement ||
+    definition?.kind !== 'building'
+  ) {
+    return null;
+  }
+
+  return {
+    area,
+    placement,
+    definition
+  };
+}
+
+function existingBuildingInteriorPortal(
+  draft,
+  sourceAreaId,
+  buildingId,
+  anchorId
+) {
+  return (
+    draft.portals?.find(
+      (portal) =>
+        portal.sourceAreaId ===
+          sourceAreaId &&
+        portal.trigger?.kind ===
+          'object-anchor' &&
+        portal.trigger.objectId ===
+          buildingId &&
+        portal.trigger.anchorId ===
+          anchorId
+    ) ?? null
+  );
+}
+
+function clampInteriorEntryX(
+  area,
+  slot
+) {
+  const margin = 64;
+  const width =
+    Math.max(128, finite(area.width, 720));
+  const spread =
+    ((slot % 5) - 2) * 72;
+
+  return Math.min(
+    width - margin,
+    Math.max(
+      margin,
+      width / 2 + spread
+    )
+  );
+}
+
+export function createBuildingInteriorLink(
+  draft,
+  {
+    sourceAreaId,
+    buildingId,
+    anchorId = 'main-door',
+    targetAreaId = null,
+    interiorSize = null
+  } = {},
+  objectCatalog =
+    objectDefinitionCatalogV1
+) {
+  const next = clone(draft);
+  next.areas ??= [];
+  next.portals ??= [];
+
+  const source =
+    buildingPlacementDefinition(
+      next,
+      sourceAreaId,
+      buildingId,
+      objectCatalog
+    );
+
+  if (!source) {
+    return next;
+  }
+
+  const anchor =
+    source.definition
+      .doorAnchors
+      ?.find(
+        (item) =>
+          item.id === anchorId
+      );
+
+  if (!anchor) {
+    return next;
+  }
+
+  if (
+    existingBuildingInteriorPortal(
+      next,
+      sourceAreaId,
+      buildingId,
+      anchorId
+    )
+  ) {
+    return next;
+  }
+
+  const requestedTargetAreaId =
+    typeof targetAreaId === 'string' &&
+    targetAreaId.trim()
+      ? targetAreaId.trim()
+      : null;
+  let targetArea =
+    requestedTargetAreaId
+      ? findArea(
+          next,
+          requestedTargetAreaId
+        )
+      : null;
+
+  if (
+    requestedTargetAreaId &&
+    !targetArea
+  ) {
+    return next;
+  }
+
+  if (
+    targetArea &&
+    (
+      targetArea.id === sourceAreaId ||
+      targetArea.kind !== 'interior'
+    )
+  ) {
+    return next;
+  }
+
+  if (!targetArea) {
+    const areaId =
+      uniqueId(
+        `interior-${buildingId}`,
+        next.areas
+      );
+    const familyId =
+      source.area.surface
+        ?.baseTerrainFamilyId ??
+      next.terrainFamilies?.[0]?.id ??
+      'plain';
+
+    // Optional dimensions are explicit for Sculpt 2.5D consumers. The
+    // legacy 720×560 default remains unchanged for historical Builder users.
+    const interiorWidth = interiorSize?.width ?? 720;
+    const interiorHeight = interiorSize?.height ?? 560;
+    if (!Number.isInteger(interiorWidth) || !Number.isInteger(interiorHeight) ||
+        interiorWidth < 128 || interiorHeight < 128 ||
+        interiorWidth > 20000 || interiorHeight > 20000)
+      throw Error('Dimensions de pièce invalides');
+    targetArea = {
+      id: areaId,
+      kind: 'interior',
+      width: interiorWidth,
+      height: interiorHeight,
+      surface: {
+        baseTerrainFamilyId:
+          familyId,
+        baseMaterialId:
+          'floor.wood.house',
+        baseTraversalRuleId:
+          'terrain.ground',
+        zones: [],
+        routes: [],
+        rivers: []
+      },
+      objects: [],
+      actors: [],
+      obstacles: [],
+      spawns: []
+    };
+
+    next.areas.push(targetArea);
+  }
+
+  targetArea.spawns ??= [];
+  source.area.spawns ??= [];
+
+  const connectionSlot =
+    next.portals.filter(
+      (portal) =>
+        portal.sourceAreaId ===
+        targetArea.id
+    ).length;
+  const entryX =
+    clampInteriorEntryX(
+      targetArea,
+      connectionSlot
+    );
+  const entryY =
+    Math.max(
+      24,
+      finite(targetArea.height, 560) -
+        104
+    );
+  const exitY =
+    Math.max(
+      32,
+      finite(targetArea.height, 560) -
+        36
+    );
+  const entryPoint =
+    findWorldAreaBoundarySafePoint(
+      targetArea,
+      {
+        x: entryX,
+        y: entryY
+      },
+      32
+    );
+  const exitPoint =
+    findWorldAreaBoundarySafePoint(
+      targetArea,
+      {
+        x:
+          entryPoint?.x ??
+          entryX,
+        y: exitY
+      },
+      28
+    );
+
+  if (
+    !entryPoint ||
+    !exitPoint
+  ) {
+    return next;
+  }
+
+  const interiorSpawnId =
+    uniqueId(
+      `${buildingId}-entry`,
+      targetArea.spawns
+    );
+  const exteriorReturnSpawnId =
+    uniqueId(
+      `${buildingId}-return`,
+      source.area.spawns
+    );
+
+  targetArea.spawns.push({
+    id: interiorSpawnId,
+    x: entryPoint.x,
+    y: entryPoint.y
+  });
+
+  source.area.spawns.push({
+    id: exteriorReturnSpawnId,
+    anchor: {
+      kind: 'building-door',
+      objectId: buildingId,
+      anchorId,
+      offset: 72
+    }
+  });
+
+  next.portals.push({
+    id:
+      uniqueId(
+        `${buildingId}-enter`,
+        next.portals
+      ),
+    sourceAreaId,
+    trigger: {
+      kind: 'object-anchor',
+      objectId: buildingId,
+      anchorId,
+      radius: 32
+    },
+    targetAreaId:
+      targetArea.id,
+    targetSpawnId:
+      interiorSpawnId,
+    enabled: true,
+    visual: {
+      visible: true,
+      marker: 'entry',
+      label: 'Entrée'
+    }
+  });
+
+  next.portals.push({
+    id:
+      uniqueId(
+        `${buildingId}-exit`,
+        next.portals
+      ),
+    sourceAreaId:
+      targetArea.id,
+    trigger: {
+      kind: 'point',
+      x: exitPoint.x,
+      y: exitPoint.y,
+      radius: 28
+    },
+    targetAreaId:
+      sourceAreaId,
+    targetSpawnId:
+      exteriorReturnSpawnId,
+    enabled: true,
+    visual: {
+      visible: true,
+      marker: 'exit',
+      label: 'Sortie'
+    }
+  });
+
+  return next;
+}
+
+export function addPortal(draft, rawPortal) {
+  const next = clone(draft);
+  next.portals ??= [];
+
+  if (!rawPortal || typeof rawPortal !== 'object') return next;
+
+  const portal = clone(rawPortal);
+
+  if (
+    typeof portal.id !== 'string' ||
+    !portal.id.trim() ||
+    next.portals.some((item) => item.id === portal.id.trim())
+  ) {
+    portal.id = uniqueId('portal', next.portals);
+  }
+
+  next.portals.push(portal);
+  return next;
+}
+
+export function deletePortal(draft, portalId) {
+  const next = clone(draft);
+  next.portals = Array.isArray(next.portals)
+    ? next.portals.filter((portal) => portal.id !== portalId)
+    : [];
+
+  return next;
+}
+
+export function serializeWorldBuilderDraft(
+  draft,
+  options = {}
+) {
+  const result =
+    validateWorldBuilderDraft(
+      draft,
+      options
+    );
+
+  if (!result.valid) {
+    throw new Error(
+      `Invalid World Builder draft: ${result.errors.join(', ')}`
+    );
+  }
+
+  return JSON.stringify(result.document, null, 2);
+}
+
+export function importWorldBuilderDocument(
+  jsonText,
+  options = {}
+) {
+  const parsed = JSON.parse(jsonText);
+  const draft = clone(parsed);
+  const result =
+    validateWorldBuilderDraft(
+      draft,
+      options
+    );
+
+  if (!result.valid) {
+    throw new Error(
+      `Invalid WorldDocument import: ${result.errors.join(', ')}`
+    );
+  }
+
+  return createWorldBuilderDraft(result.document);
+}

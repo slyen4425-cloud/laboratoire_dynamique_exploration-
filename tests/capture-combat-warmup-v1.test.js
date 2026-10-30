@@ -1,0 +1,155 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createCaptureCombatWarmupV1,CAPTURE_COMBAT_WARMUP_PATHS_V1,captureEncounterVisualFilesV1} from '../src/encounters/capture-combat-warmup-v1.js';
+test('warm the current official bundle, HUD and visual catalog at idle exactly once',()=>{
+  let scheduled=null,requests=[];
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/preview/encounters-v80/sculpt-lab.html',
+    fetchImpl:(url,opts)=>{requests.push([url.href,opts]);return Promise.resolve({ok:true});},
+    schedule:fn=>{scheduled=fn;}
+  });
+  assert.equal(warm.start(),true);
+  assert.equal(warm.start(),false);
+  assert.deepEqual(requests,[],'navigation must be responsive before idle callback');
+  scheduled();
+  assert.equal(requests.length,CAPTURE_COMBAT_WARMUP_PATHS_V1.length);
+  assert.ok(requests.every(([u,options])=>u.startsWith('https://example.org/preview/encounters-v80/')&&options.priority==='low'));
+  assert.equal(requests.filter(([u])=>u.endsWith('encounter-bundle.v1.json')).length,1);
+});
+test('respect data saver and never make speculative fetch a Battle authority',()=>{
+  let count=0;
+  const save=createCaptureCombatWarmupV1({documentUrl:'https://example.org/map.html',saveData:true,
+    fetchImpl:()=>{count++;throw Error('offline')},schedule:fn=>fn()});
+  assert.equal(save.start(),false);assert.equal(count,0);
+  const offline=createCaptureCombatWarmupV1({documentUrl:'https://example.org/map.html',
+    fetchImpl:()=>{count++;throw Error('offline')},schedule:fn=>fn()});
+  assert.equal(offline.start(),true);
+  assert.equal(count,CAPTURE_COMBAT_WARMUP_PATHS_V1.length);
+});
+
+test('only the actual Showcase player/back and enemy/front art is prefetched',async()=>{
+  const bundle={creatureTransfers:[
+    {draft:{id:'crea_mossback',presentation:{visual:{back:{assetId:'moss-back'}}}}},
+    {draft:{id:'crea_nat_1',presentation:{visual:{front:{assetId:'grain-front'}}}}}
+  ]};
+  const assets={assets:[
+    {id:'moss-back',resource:{file:'capture/creatures/moss/back.webp'}},
+    {id:'grain-front',resource:{file:'capture/creatures/grain/front.webp'}},
+    {id:'ignored',resource:{file:'capture/creatures/ignored.webp'}}
+  ]};
+  const party={activeCreatureId:'crea_mossback'};
+  const files=captureEncounterVisualFilesV1({bundle,assetCatalog:assets,party,opponentId:'crea_nat_1'});
+  assert.deepEqual(files,['capture/creatures/moss/back.webp','capture/creatures/grain/front.webp']);
+  let requests=[];
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/preview/encounters-v80/sculpt-lab.html',
+    schedule:fn=>fn(),
+    fetchImpl:async url=>{
+      const path=url.pathname;requests.push(path);
+      if(path.endsWith('encounter-bundle.v1.json'))return {ok:true,json:async()=>bundle};
+      if(path.endsWith('global-visual-assets.v1.json'))return {ok:true,json:async()=>assets};
+      if(path.endsWith('party.preview.v1.json'))return {ok:true,json:async()=>party};
+      return {ok:true};
+    }
+  });
+  assert.deepEqual(await warm.warmCreature('crea_nat_1'),files);
+  assert.equal(requests.filter(x=>x.endsWith('.webp')).length,2);
+  assert.deepEqual(await warm.warmCreature('crea_nat_1'),files);
+  assert.equal(requests.filter(x=>x.endsWith('.webp')).length,2);
+});
+
+
+test('pre-decode approved portraits, icons and animations for the actual combatants only',async()=>{
+  const visual=(id,view)=>({draft:{id,presentation:{visual:{
+    [view]:{assetId:id+'-model'}, icon:{assetId:id+'-icon'},
+    [view==='front'?'movement':'movementBack']:{assetId:id+'-move'},
+    [view==='front'?'rangedAttack':'rangedAttackBack']:{assetId:id+'-attack'}
+  }}}});
+  const bundle={creatureTransfers:[visual('crea_mossback','back'),visual('crea_nat_1','front')]};
+  const all=['crea_mossback','crea_nat_1'].flatMap(id=>['model','icon','move','attack'].map(type=>id+'-'+type));
+  const assetCatalog={assets:all.map(id=>({id,resource:{file:'capture/combat/'+id+'.webp'}}))};
+  const decoded=[];
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/preview/encounters-v80/sculpt-lab.html',
+    schedule:fn=>fn(),
+    decodeImage:async url=>{decoded.push(url.href);},
+    fetchImpl:async url=>{
+      const path=url.pathname;
+      if(path.endsWith('encounter-bundle.v1.json'))return {ok:true,json:async()=>bundle};
+      if(path.endsWith('global-visual-assets.v1.json'))return {ok:true,json:async()=>assetCatalog};
+      if(path.endsWith('party.preview.v1.json'))return {ok:true,json:async()=>({activeCreatureId:'crea_mossback'})};
+      throw Error('Unexpected fetch: '+path);
+    }
+  });
+  const files=await warm.warmCreature('crea_nat_1');
+  assert.equal(files.length,8);
+  assert.deepEqual(decoded.sort(),files.map(file=>
+    'https://example.org/preview/encounters-v80/capture-assets/assets/library/'+file).sort());
+  assert.deepEqual(await warm.warmCreature('crea_nat_1'),files);
+  assert.equal(decoded.length,8);
+});
+
+test('a rapid second request shares the in-flight decode, without a second download',async()=>{
+  const bundle={creatureTransfers:[
+    {draft:{id:'crea_mossback',presentation:{visual:{back:{assetId:'moss-back'}}}}},
+    {draft:{id:'crea_nat_1',presentation:{visual:{front:{assetId:'grain-front'}}}}}
+  ]};
+  const catalog={assets:[
+    {id:'moss-back',resource:{file:'capture/moss.webp'}},
+    {id:'grain-front',resource:{file:'capture/grain.webp'}}
+  ]};
+  let release;const blocked=new Promise(resolve=>{release=resolve;});
+  let decodes=0;
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/preview/encounters-v80/sculpt-lab.html',
+    decodeImage:()=>{decodes++;return blocked;},
+    fetchImpl:async url=>({
+      ok:true,json:async()=>url.pathname.endsWith('encounter-bundle.v1.json')?bundle:
+        url.pathname.endsWith('global-visual-assets.v1.json')?catalog:{activeCreatureId:'crea_mossback'}
+    })
+  });
+  const first=warm.warmCreature('crea_nat_1');
+  const second=warm.warmCreature('crea_nat_1');
+  assert.equal(first,second,'the caller must wait for the SAME decode');
+  for(let i=0;i<5;i++)await Promise.resolve();
+  release();
+  assert.deepEqual(await first,['capture/moss.webp','capture/grain.webp']);
+  assert.equal(decodes,2);
+});
+test('warmup includes icons only for the currently equipped canonical skill transfers',()=>{
+  const bundle={
+    creatureTransfers:[
+      {draft:{id:'hero',presentation:{visual:{back:{assetId:'hero-back'}}}},
+        loadout:{slots:[{skillId:'selected'}]}},
+      {draft:{id:'enemy',presentation:{visual:{front:{assetId:'enemy-front'}}}},
+        loadout:{slots:[]}}
+    ],
+    skillTransfers:[
+      {draft:{id:'selected',presentation:{visual:{icon:{assetId:'chosen-icon'}}}}},
+      {draft:{id:'unselected',presentation:{visual:{icon:{assetId:'unselected-icon'}}}}}
+    ]
+  };
+  const assets={assets:['hero-back','enemy-front','chosen-icon','unselected-icon']
+    .map(id=>({id,resource:{file:'capture/'+id+'.webp'}}))};
+  assert.deepEqual(captureEncounterVisualFilesV1({
+    bundle,assetCatalog:assets,party:{activeCreatureId:'hero'},opponentId:'enemy'
+  }),['capture/hero-back.webp','capture/enemy-front.webp','capture/chosen-icon.webp']);
+});
+
+test('the first-paint barrier excludes giant animated strips but retains model and icons',()=>{
+  const visual=(id,view)=>({draft:{id,presentation:{visual:{
+    [view]:{assetId:id+'-model'},icon:{assetId:id+'-icon'},
+    [view==='front'?'movement':'movementBack']:{assetId:id+'-move'},
+    [view==='front'?'rangedAttack':'rangedAttackBack']:{assetId:id+'-attack'}
+  }}}});
+  const bundle={creatureTransfers:[visual('moss','back'),visual('grain','front')]};
+  const assets={assets:['moss','grain'].flatMap(id=>['model','icon','move','attack']
+    .map(type=>({id:id+'-'+type,resource:{file:'capture/'+id+'-'+type+'.webp'}})))};
+  const first=captureEncounterVisualFilesV1({
+    bundle,assetCatalog:assets,party:{activeCreatureId:'moss'},opponentId:'grain',firstPaintOnly:true
+  });
+  assert.deepEqual(first,['capture/moss-model.webp','capture/grain-model.webp']);
+  assert.equal(captureEncounterVisualFilesV1({
+    bundle,assetCatalog:assets,party:{activeCreatureId:'moss'},opponentId:'grain'
+  }).length,8);
+});
