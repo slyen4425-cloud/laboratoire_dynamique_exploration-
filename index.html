@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <title>GenSrpG — Labo Exploration</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="theme-color" content="#071016" />
+  <link rel="stylesheet" href="./src/style.css?rev=collision-boundary-worldobject-obstacles-v1-r2" />
+</head>
+<body>
+  <main id="app">
+    <canvas id="game" aria-label="Prototype exploration libre"></canvas>
+    <div id="runtime-landscape-hint" class="runtime-landscape-hint" role="status">
+      ↻ Tourne le téléphone pour jouer en paysage
+    </div>
+    <section class="hud">
+      <strong>GenSrpG Exploration — Phase 0</strong>
+      <span id="coords">x: 0 y: 0</span>
+    </section>
+    <a id="builder-shortcut" class="builder-shortcut" href="./builder.html">World Builder</a>
+    <section id="encounter-preview" class="encounter-preview" hidden>
+      <strong>Rencontre détectée</strong>
+      <span id="encounter-preview-summary"></span>
+      <button id="encounter-preview-combat" type="button">
+        Lancer le combat
+      </button>
+      <button id="encounter-preview-continue" type="button">
+        Ignorer (test labo)
+      </button>
+    </section>
+    <section id="world-event-dialog" class="world-event-dialog" hidden aria-live="polite">
+      <strong>Message</strong>
+      <p id="world-event-message"></p>
+      <button id="world-event-close" type="button">Continuer</button>
+    </section>
+
+    <button id="world-interact" class="world-interact" type="button" hidden>
+      Interagir
+    </button>
+
+    <section class="locomotion-controls" aria-label="Harnais de test locomotion" data-test-harness="locomotion">
+      <span class="test-harness-label">TEST locomotion labo</span>
+      <button type="button" data-locomotion="ground" class="active">Marche</button>
+      <button type="button" data-locomotion="swim">Nage</button>
+      <button type="button" data-locomotion="fly">Vol</button>
+    </section>
+    <div id="joystick" class="joystick" aria-label="Stick de déplacement">
+      <div id="stick" class="stick"></div>
+    </div>
+  </main>
+  <script type="module" src="./src/main.js?rev=builder-paint-workflow-fix-v1&runtime=terrain-tile-hitch-culling-v1&encounter=selected-elements-v1&speed=terrain-family-speed-editor-v1&floors=interior-floor-textures-v1&rim=relief-cliff-rim-v1&water=relief-water-fx-v1&art=canyon-water-art-v2&kit=canyon-art-v3&waterline=canyon-continuous-river-v4&no-repeat=canyon-v5&shimmer=organic-reflections-v6"></script>
+</body>
+</html>

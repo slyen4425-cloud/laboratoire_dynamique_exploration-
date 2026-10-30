@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "packId": "exploration-interior-floors-v1",
+  "profile": "mobile-test-128",
+  "ownership": "exploration-material-pack",
+  "generatedAt": "2026-10-17",
+  "purpose": "Sols intérieurs GenSrpG Exploration, WebP carré vu du dessus; les textures ne définissent jamais le gameplay",
+  "files": [
+    {
+      "path": "assets/exploration/materials/interior/surfaces/floor_wood_oak_01.webp",
+      "sha256": "d992ca6e0228ca24ad512e8e19026e870576ac94fb6ef414be65aa011f236731",
+      "bytes": 1434,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.floor.wood.oak.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/interior/surfaces/floor_wood_dark_01.webp",
+      "sha256": "598ff3c0ce5fef703e3fcac7f75c2c4ef03ffef4969eb110c8aee25628cc0953",
+      "bytes": 754,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.floor.wood.dark.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/interior/surfaces/floor_tile_light_01.webp",
+      "sha256": "aad0768454a6b6387394b6a0e978921ee95f228a4951dbb81ab6d63b248cf93a",
+      "bytes": 744,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.floor.tile.light.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/interior/surfaces/floor_tile_sandstone_01.webp",
+      "sha256": "c77ea46cc248b6d8d9d92bfeca3974d96e228408937e65c52e2aaf5714dd1df8",
+      "bytes": 1530,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.floor.tile.sandstone.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/interior/surfaces/floor_concrete_gray_01.webp",
+      "sha256": "43d0dae8ade63c7f39e0dbc04d8da228439bef7c53aaba655f366bae94de0e8d",
+      "bytes": 684,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.floor.concrete.gray.01",
+      "role": "surface-base"
+    }
+  ]
+}

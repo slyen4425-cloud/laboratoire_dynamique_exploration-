@@ -1,0 +1,419 @@
+{
+  "schemaVersion": 1,
+  "packId": "building-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "generatedAt": "2026-10-02",
+  "runtimeProfile": "mobile-webp-384x384-q82",
+  "purpose": "Top-down Building WorldObject visuals for World Builder Dynamique. Visuals never define collision, footprint, door anchors or portals. Additional isolated three-quarter / frontal 2.5D houses; no gameplay or collision change.",
+  "sourceProfile": {
+    "fileId": "file_00000000caa481f48cb5603bfdc0a907",
+    "generationId": "82a85817-f79e-4562-8cee-de81d1f2f5c5",
+    "format": "PNG RGBA",
+    "width": 1254,
+    "height": 1254,
+    "alpha": true,
+    "sha256": "704f8f41e52dc7c515b76c2666b48bca354cd8a75df3628d284f046469033e7f"
+  },
+  "runtimeProfileDetails": {
+    "format": "WebP RGBA",
+    "width": 384,
+    "height": 384,
+    "quality": 82,
+    "alpha": true
+  },
+  "files": [
+    {
+      "assetId": "object.building.house.fantasy_wood_stone.01",
+      "path": "assets/exploration/objects/buildings/building_house_fantasy_wood_stone_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "fantasy-wood-stone",
+      "view": "top-down",
+      "sha256": "cdff6100ebe363b4a5537e411043bbc32eefeb2d3a8a428a4d17bb5cce13458f",
+      "bytes": 52898
+    },
+    {
+      "assetId": "object.building.house.blue_cottage.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue-cottage",
+      "view": "top-down",
+      "sha256": "546be91f14935cbc0257d8c8de9a04bf3054e78948a05eb999601c830048b765",
+      "bytes": 40006
+    },
+    {
+      "assetId": "object.building.house.red_tile.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red-tile",
+      "view": "top-down",
+      "sha256": "0b40db1ed8791f2b495f87e907f139cff57130f4847922d32cbf04d6b28bfcd0",
+      "bytes": 46814
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden-thatch",
+      "view": "top-down",
+      "sha256": "2af3034567ab5b96b91aa492e1adc2c1ef62a10bd3cb1640a92994e4522da8fa",
+      "bytes": 37264
+    },
+    {
+      "assetId": "object.building.house.blue_cottage.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue-cottage",
+      "view": "top-down-side",
+      "sha256": "60662282ca9a6ba51e4383473272ad063914725429f3f64f65e0855120f706f9",
+      "bytes": 47208
+    },
+    {
+      "assetId": "object.building.house.blue_cottage.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue-cottage",
+      "view": "top-down-back",
+      "sha256": "fddd029b19855686c070ec7f115c07bace13622704ab7603c01cfbaa89a0e8d5",
+      "bytes": 34542
+    },
+    {
+      "assetId": "object.building.house.red_tile.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red-tile",
+      "view": "top-down-side",
+      "sha256": "45a2776d5ad711b8068a1e2990d7e512fb5287bcf83aa8e222216cf18ac28c45",
+      "bytes": 44222
+    },
+    {
+      "assetId": "object.building.house.red_tile.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red-tile",
+      "view": "top-down-back",
+      "sha256": "ea56ded05b69ed73cbb8aa37a07e6aea0990687548d04fb392f11322ebd6b3a5",
+      "bytes": 39116
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch.side.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_side_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden-thatch",
+      "view": "top-down-side",
+      "sha256": "3c2a1f1f665810c95a5dfb046cbe644f76340ede692d4e3786a1ab55a924887c",
+      "bytes": 37382
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch.back.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_back_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden-thatch",
+      "view": "top-down-back",
+      "sha256": "5d60e52eae168a8d3a605d07059591679da5a7b75d811a30ee08a0f0137a07db",
+      "bytes": 25394
+    },
+    {
+      "assetId": "object.building.house.blue_cottage_2p5d.oblique.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_oblique_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue_cottage",
+      "view": "oblique",
+      "bytes": 27476,
+      "sha256": "02e71c607b4ff56580ac869cf40ab389d915a5fef32e5ff63b028acfc456c61f",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.blue_cottage_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue_cottage",
+      "view": "side",
+      "bytes": 28980,
+      "sha256": "c0ad79046e7f1683ca6b938e92bc8a38b1e0045c02d1fd36f0dfbb8ae025882b",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.blue_cottage_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue_cottage",
+      "view": "back",
+      "bytes": 26102,
+      "sha256": "50b236e7f97793f61d08d90daad7799e0a5cd7305e07dc1f6a7a6861e0f5f291",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.blue_cottage_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "blue_cottage",
+      "view": "front",
+      "bytes": 27184,
+      "sha256": "e3257415be0544f7e2a83345f3b1f69350f8e8d8eb811e8092caf2d552f24b40",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.red_tile_2p5d.oblique.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_2p5d_oblique_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red_tile",
+      "view": "oblique",
+      "bytes": 27594,
+      "sha256": "5bb2cc821555a6c2f67474ef8fb5782d261e3d39f0741a006ebb0836783d6d64",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.red_tile_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red_tile",
+      "view": "side",
+      "bytes": 27916,
+      "sha256": "ba924b4f107c8411510ea0959cd5c1b43a05f257e5bf0928514620db208b5cfd",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.red_tile_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red_tile",
+      "view": "back",
+      "bytes": 26642,
+      "sha256": "1910d9b5b1996dd8ad9d2952830104993254d4a0b137cab78f6635c382c2b021",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.red_tile_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_red_tile_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "red_tile",
+      "view": "front",
+      "bytes": 26936,
+      "sha256": "c6afe93acb2f9326d11ea226a5d8b6dcdb13bc395fafc7b437a630d820d45c9e",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.green_moss_2p5d.oblique.01",
+      "path": "assets/exploration/objects/buildings/building_house_green_moss_2p5d_oblique_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "green_moss",
+      "view": "oblique",
+      "bytes": 30500,
+      "sha256": "9820faac4aee7e3898992d13b7f54e2a43a6cf8c45e79d8edc14593726b47243",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.green_moss_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_green_moss_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "green_moss",
+      "view": "side",
+      "bytes": 30046,
+      "sha256": "dc2c369d03a6daef578bcd40d8f1105445251935d3fca441bf04d55db2912dd4",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.green_moss_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_green_moss_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "green_moss",
+      "view": "back",
+      "bytes": 27198,
+      "sha256": "05ba312da3ec132a9191a33e7400816e5c9cd6b1d0348368ac0363a804d96555",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.green_moss_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_green_moss_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "green_moss",
+      "view": "front",
+      "bytes": 31040,
+      "sha256": "0cf9033f077f04e58f1d56519f30636b40d7ec707a20bcbcd70dff9aa21d7298",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch_2p5d.oblique.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_oblique_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden_thatch",
+      "view": "oblique",
+      "bytes": 25612,
+      "sha256": "9b9ba07e8f64c356538a002bf3a2e130fc99628b0605731cb34c5f89ea7c21c8",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden_thatch",
+      "view": "side",
+      "bytes": 26660,
+      "sha256": "5619d968323aa6726d9742aa82617e911c1a37c88a996537eac7ca4004cb030d",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden_thatch",
+      "view": "back",
+      "bytes": 25788,
+      "sha256": "becfa6866990a6be5a566ddd93add6d43e68d0cf2ce91dcccabbf0778e214ea6",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.inn.golden_thatch_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_inn_golden_thatch_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "inn",
+      "variant": "golden_thatch",
+      "view": "front",
+      "bytes": 23802,
+      "sha256": "1165a84fc78008f724b5e42cd543b5413ff1b2d28697a1a03c62d2869e25f9ba",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.purple_ivy_2p5d.oblique.01",
+      "path": "assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_oblique_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "purple_ivy",
+      "view": "oblique",
+      "bytes": 29850,
+      "sha256": "2acd56bc342a482e747d2c660bb2ec567ce0ccabb7c7f36dbdd6f99163e05cfc",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.purple_ivy_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "purple_ivy",
+      "view": "side",
+      "bytes": 29444,
+      "sha256": "195caf4c8a3a6b028286d79655cd3f1908170d9b863d75aecc7715be7431afc3",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.purple_ivy_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "purple_ivy",
+      "view": "back",
+      "bytes": 27154,
+      "sha256": "401d846f7f43e160f598c74505905ad1c4d4b603b38e0e4b159ed84eb7ed197b",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.purple_ivy_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_purple_ivy_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "purple_ivy",
+      "view": "front",
+      "bytes": 32154,
+      "sha256": "0a984915602c84624562e543c64d3b7142dfbb2cbd23210dd7c00197b5cb4db4",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.terracotta_2p5d.oblique.01",
+      "path": "assets/exploration/objects/buildings/building_house_terracotta_2p5d_oblique_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "terracotta",
+      "view": "oblique",
+      "bytes": 27840,
+      "sha256": "623b69d48da4310c262fd0f6cbfa74c7dead879505a3dcbbc700dd8f450281ac",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.terracotta_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_terracotta_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "terracotta",
+      "view": "side",
+      "bytes": 26108,
+      "sha256": "ddd9a9a73ffbc076edd91a5acf380fb4a5d1ce8f2173310460aa756a88f6efc4",
+      "quality": 78
+    },
+    {
+      "assetId": "object.building.house.terracotta_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_terracotta_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "terracotta",
+      "view": "back",
+      "bytes": 24818,
+      "sha256": "5d05e9c395793b3415c53003c345202fa84b7fc9a3c660c85ace884de09c0349",
+      "quality": 78
+    }
+  ],
+  "additionalSourceProfiles": [
+    {
+      "fileId": "file_00000000e1b08210846414f7b80255b6",
+      "generationId": "48ff180f-da55-4ad1-a247-c0abf02cc1c9",
+      "format": "PNG RGBA",
+      "width": 2172,
+      "height": 724,
+      "alpha": true,
+      "sha256": "3859663bf4a724a5a374d0706efd4f52d776a42fc7355121cb80b158b45796ee"
+    },
+    {
+      "fileId": "file_000000006f1882439b3ff130cb4ba1aa",
+      "generationId": "610b178a-d1db-429d-bd8c-8429a3abc6e1",
+      "format": "PNG RGB",
+      "width": 2172,
+      "height": 724,
+      "alpha": false,
+      "sha256": "a430bcc235dbf4f78e77d49da8eb4c0434649455817a95396356fbccd477d89c",
+      "purpose": "rear-view source sheet"
+    },
+    {
+      "fileId": "file_00000000580c81f4baa2542ff6eff81e",
+      "generationId": "d14d8c8c-59e7-4408-9a1b-400e5592b36c",
+      "format": "PNG RGBA",
+      "width": 1448,
+      "height": 1086,
+      "alpha": true,
+      "sha256": "0913c209d327c48b593b734edb9f3010a59f42470904e9e472b8cde6b9697a56",
+      "purpose": "side-view source sheet"
+    }
+  ],
+  "generatedPacks": [
+    {
+      "packId": "exploration-houses-2.5d-generated-v1",
+      "createdAt": "2026-10-20",
+      "fileCount": 23,
+      "format": "384x384 WebP RGBA",
+      "quality": 78
+    }
+  ]
+}

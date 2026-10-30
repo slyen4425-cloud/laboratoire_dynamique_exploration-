@@ -1,0 +1,79 @@
+name: Exploration CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'work/**'
+      - 'checkpoint/**'
+  pull_request:
+
+concurrency:
+  group: exploration-ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: npm run check
+
+  modern-combat-encounter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout isolated Exploration integration
+        uses: actions/checkout@v4
+      - name: Checkout live official Combat engine
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: main
+          path: combat-preview
+      - name: Checkout user-tested Capture Showcase snapshot (official author authority)
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          # CI-GREEN 40961441833, author source at 4fd08215. New author
+          # abilities must pass the Combat main contract before promotion.
+          ref: 4fd0821545eaa41ce1d3115e56f3574db6273426
+          path: combat-author
+      - name: Assemble isolated Exploration bridge over official Combat
+        run: |
+          cp integration/combat-bridge/exploration-encounter.html combat-preview/examples/dom-demo/exploration-encounter.html
+          cp integration/combat-bridge/exploration-encounter.js combat-preview/examples/dom-demo/exploration-encounter.js
+          cp integration/combat-bridge/exploration-native-source-v1.js combat-preview/examples/dom-demo/exploration-native-source-v1.js
+          cp integration/combat-bridge/party.preview.v1.json combat-preview/examples/dom-demo/party.preview.v1.json
+          git -C combat-preview rev-parse HEAD > combat-preview/.exploration-combat-source-sha
+      - name: Stage current author Showcase, skills and markers from canonical editor
+        run: node scripts/stage-capture-author-showcase.mjs combat-author combat-preview
+      - name: Checkout current Capture visual asset authority for Builder boot
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: global-assets
+          path: capture-assets
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify runtime ownership and native adapter contracts
+        run: |
+          node scripts/audit-combat-preview.mjs combat-preview
+          node scripts/combat-native-bridge-smoke.mjs
+      - name: Real Chromium Builder invalid-encounter navigation smoke
+        run: node scripts/smoke-builder-encounter-validation.mjs
+      - name: Real Chromium interior floor material and brush smoke
+        run: node scripts/smoke-interior-floor-brush.mjs
+      - name: Real Chromium opt-in relief canyon Builder and SVG gate
+        run: node scripts/smoke-relief-canyon-pilot.mjs
+      - name: Real Chromium sculptable terrain lab brush and material smoke
+        run: node scripts/smoke-sculpt-terrain-lab.mjs
+      - name: Native Chromium Explorer music gesture and actual MP3 playback
+        run: node scripts/smoke-exploration-music-playback.mjs
+      - name: Real Chromium Encounter startup smoke
+        run: node scripts/smoke-modern-combat-preview.mjs

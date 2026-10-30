@@ -1,0 +1,31 @@
+{
+  "name": "GenSrpG — Exploration dynamique",
+  "short_name": "GenSrpG Explore",
+  "description": "World Builder et exploration Monster Capture avec combats intégrés",
+  "id": "./",
+  "start_url": "./builder.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "orientation": "landscape",
+  "background_color": "#071016",
+  "theme_color": "#071016",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "./assets/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

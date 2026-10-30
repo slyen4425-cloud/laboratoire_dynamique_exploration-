@@ -1,0 +1,1161 @@
+import { normalize } from './core/vector.js';
+import { stepMovement } from './core/movement.js?rev=collision-boundary-worldobject-obstacles-v1-r2&speed=terrain-family-speed-editor-v1';
+import { normalizeExplorationConfig } from './core/config.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createWorldTraversalRuleRegistry,
+  resolveSurfaceTraversal
+} from './core/surface-traversal.js?rev=surface-traversal-replay-v1&speed=terrain-family-speed-editor-v1';
+import { createVirtualStick } from './input/virtual-stick.js';
+import { createSurfaceRenderer } from './render/surface-renderer.js?rev=runtime-terrain-cache-v1&water=canyon-continuous-river-v4';
+import { shouldRenderReliefWater, drawReliefRiverGlints, drawReliefRiverBankFoam, drawReliefWaterfallGlints } from './render/relief-water-overlay.js?rev=relief-water-fx-v1&art=canyon-water-art-v2&shimmer=organic-reflections-v6';
+import { createTerrainTileCache } from './render/terrain-raster-compositor.js?rev=terrain-tile-hitch-culling-v1';
+import {
+  clipWorldArea
+} from './render/world-area-clip.js?rev=interior-geometry-authoring-v1-r2';
+import { createWorldObjectRenderer } from './render/world-object-renderer.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import { createPortalRenderer } from './render/portal-renderer.js?rev=worldarea-portal-v1-exit-marker';
+import { createMapActorRenderer } from './render/map-actor-renderer.js?rev=map-actor-source-facing-v1';
+import { normalizeMapActorVisual } from './actors/map-actor-visual-model.js?rev=map-actor-source-facing-v1';
+import {
+  createPlacedMapActorView
+} from './actors/placed-map-actor-view.js';
+import {
+  createCaptureActorPreviewProviderV1
+} from './capture/capture-actor-preview-loader-v1.js?rev=actor-opponent-view-v1';
+import { materialPackV1 } from './materials/material-pack-v1.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2&water=canyon-continuous-river-v4&no-repeat=canyon-v5';
+import { createMaterialRegistry } from './materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
+import {
+  composeMaterialPackWithUserMaterials
+} from './materials/user-material-library.js?rev=terrain-family-perf-gatefix-v1';
+import {
+  createMaterialAssetResolver
+} from './assets/material-asset-adapter.js?rev=interior-floor-textures-v1&art=canyon-water-art-v2';
+import {
+  createUserMaterialAssetResolver
+} from './assets/user-material-asset-resolver.js?rev=user-texture-import-v1';
+import {
+  createUserMaterialStore
+} from './storage/user-material-store.js?rev=user-texture-import-v1';
+import {
+  createUserWorldObjectStore
+} from './storage/user-world-object-store.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createWorldObjectAssetResolver,
+  resolveWorldObjectAsset
+} from './assets/world-object-asset-adapter.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createUserWorldObjectAssetResolver
+} from './assets/user-world-object-asset-resolver.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  resolveWorldObjectPlacements as resolveWorldObjectPlacementsRaw
+} from './world/world-object-placement-model.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createComposedObjectDefinitionCatalog
+} from './objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-r2&rim=relief-cliff-rim-v1';
+import {
+  objectDefinitionFromUserRecord
+} from './objects/user-object-library.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+import {
+  createImageAssetLoader
+} from './assets/image-asset-loader.js?rev=map-actor-dataurl-fix-v1';
+import {
+  createMapActorAssetResolver
+} from './assets/map-actor-asset-adapter.js?rev=map-actor-visual-v1';
+import {
+  createMapActorVisualPreparer
+} from './assets/map-actor-visual-preparer.js?rev=map-actor-visual-v1';
+import {
+  collectMaterialAssetIds,
+  createMaterialTextureLoader
+} from './render/material-texture-loader.js';
+import {
+  createInitialExplorationState,
+  findWorldAreaById
+} from './world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+import {
+  applyPortalTransition,
+  findTriggeredPortal
+} from './world/portal-model.js?rev=builder-dynamic-return-v1';
+import {
+  createWorldEventController
+} from './world/world-event-controller.js?rev=world-event-message-v1';
+import { demoWorldDocument } from './world/demo-world.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+import {
+  readWorldBuilderTestHandoff,
+  readWorldBuilderTestSession
+} from './builder/world-builder-test-handoff.js?rev=builder-dynamic-return-v1';
+import {
+  createCaptureCreatureCatalogProvider
+} from './capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
+import {
+  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+} from './capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
+import {
+  createEncounterController
+} from './encounters/encounter-controller.js?rev=encounter-selected-elements-v1';
+import {
+  snapshotFromEncounterIntent
+} from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';
+import {
+  consumeCombatResult
+} from './encounters/combat-handoff-store.js?rev=phase7-combat-handoff-v1';
+import {
+  launchCombatHandoffNavigation
+} from './encounters/combat-handoff-navigation.js?rev=phase7-combat-handoff-v1';
+import {
+  resolveExplorationCombatReturn
+} from './encounters/combat-return.js?rev=phase7-combat-handoff-v1';
+import {
+  createImmersiveEncounterHostV1
+} from './encounters/immersive-encounter-host-v1.js';
+import {
+  demoLivingWorldConfig
+} from './living/demo-living-world.js?rev=phase5-wild-wander-territory-v1';
+import {
+  resolveDemoLivingActorDefinition
+} from './living/demo-living-actor-adapter.js?rev=phase5-wild-wander-territory-v1';
+import {
+  collectLivingMapActorAssetIds,
+  createInitialWildlife,
+  createWildMapActorView,
+  createWildWanderController
+} from './living/living-runtime.js?rev=collision-boundary-worldobject-obstacles-v1-r2';
+
+const canvas = document.querySelector('#game');
+const ctx = canvas.getContext('2d');
+const coords = document.querySelector('#coords');
+const joystick = document.querySelector('#joystick');
+const stick = document.querySelector('#stick');
+const locomotionButtons = [
+  ...document.querySelectorAll('[data-locomotion]')
+];
+const encounterPreview =
+  document.querySelector('#encounter-preview');
+const encounterPreviewSummary =
+  document.querySelector('#encounter-preview-summary');
+const encounterPreviewCombat =
+  document.querySelector('#encounter-preview-combat');
+const encounterPreviewContinue =
+  document.querySelector('#encounter-preview-continue');
+const worldEventDialog =
+  document.querySelector('#world-event-dialog');
+const worldEventMessage =
+  document.querySelector('#world-event-message');
+const worldEventClose =
+  document.querySelector('#world-event-close');
+const worldInteract =
+  document.querySelector('#world-interact');
+
+const config = normalizeExplorationConfig();
+const runtimeParams = new URL(document.URL).searchParams;
+const builderTest = runtimeParams.get('builderTest') === '1';
+const encounterTest =
+  runtimeParams.get('encounterTest') === '1';
+const combatReturn =
+  runtimeParams.get('combatReturn') === '1';
+const returnedCombatEnvelope =
+  combatReturn
+    ? consumeCombatResult(window.sessionStorage)
+    : null;
+const builderTestSession = builderTest
+  ? readWorldBuilderTestSession(window.sessionStorage)
+  : null;
+const builderTestDocument =
+  builderTestSession?.document ??
+  (
+    builderTest
+      ? readWorldBuilderTestHandoff(window.sessionStorage)
+      : null
+  );
+
+if (builderTest && !builderTestDocument) {
+  throw new Error(
+    'Session de test World Builder introuvable ou invalide'
+  );
+}
+
+const activeWorldDocument =
+  builderTestDocument ?? demoWorldDocument;
+
+const worldEventController =
+  createWorldEventController(
+    activeWorldDocument
+  );
+let activeWorldEventIntent = null;
+
+const builderShortcut = document.querySelector('#builder-shortcut');
+if (builderShortcut && builderTest) {
+  builderShortcut.href = './builder.html?resumeBuilderTest=1&rev=builder-paint-workflow-fix-v1';
+  builderShortcut.textContent = 'Retour World Builder';
+}
+
+const initialState = createInitialExplorationState(activeWorldDocument);
+
+if (!initialState) {
+  throw new Error('WorldDocument has no valid initial Area/Spawn');
+}
+
+const player = {
+  currentAreaId: initialState.currentAreaId,
+  x: initialState.x,
+  y: initialState.y,
+  radius: config.player.radius,
+  boundaryFootprint:
+    config.player.boundaryFootprint,
+  locomotion: { modes: ['ground'] },
+  viaPortalId: null,
+  facingX: 1,
+  moving: false,
+  mapVisual:
+    normalizeMapActorVisual({
+      assetId: 'actor.demo.hero.traveler.01',
+      role: 'hero'
+    })
+};
+
+let lastCombatOutcome = null;
+
+if (returnedCombatEnvelope) {
+  const restored =
+    resolveExplorationCombatReturn({
+      envelope: returnedCombatEnvelope,
+      worldDocument: activeWorldDocument
+    });
+
+  player.currentAreaId =
+    restored.currentAreaId;
+  player.x = restored.x;
+  player.y = restored.y;
+  lastCombatOutcome =
+    restored.outcome;
+
+  const cleanUrl = new URL(
+    document.URL
+  );
+  cleanUrl.searchParams.delete(
+    'combatReturn'
+  );
+  window.history.replaceState(
+    null,
+    '',
+    cleanUrl.href
+  );
+}
+
+const camera = { x: 0, y: 0 };
+const keys = new Set();
+const touchInput = createVirtualStick(joystick, stick);
+const traversalRegistry = createWorldTraversalRuleRegistry(
+  activeWorldDocument
+);
+
+const captureCreatureCatalog =
+  createCaptureCreatureCatalogProvider(
+    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
+  );
+
+const captureActorDefinitionProvider =
+  await createCaptureActorPreviewProviderV1();
+
+const CAPTURE_PLAYER_PARTY_REF =
+  'capture-party-player-v1';
+
+const encounterController = createEncounterController({
+  checkDistance: encounterTest ? 80 : 160
+});
+
+const encounterRandom =
+  encounterTest
+    ? () => 0
+    : Math.random;
+
+let pendingEncounterSnapshot = null;
+
+// The Exploration document stays alive throughout Combat. Only the
+// contract-complete result mutates its original position and encounter state.
+const immersiveCombatHost = createImmersiveEncounterHostV1({
+  windowRef: window,
+  documentRef: document,
+  storage: window.sessionStorage,
+  onCompleted(envelope) {
+    if (!pendingEncounterSnapshot ||
+        pendingEncounterSnapshot.encounterId !== envelope.snapshot.encounterId ||
+        pendingEncounterSnapshot.returnToken !== envelope.snapshot.returnToken) {
+      return false;
+    }
+    const restored = resolveExplorationCombatReturn({
+      envelope,
+      worldDocument: activeWorldDocument
+    });
+    if (!clearEncounterPreview()) return false;
+    player.currentAreaId = restored.currentAreaId;
+    player.x = restored.x;
+    player.y = restored.y;
+    lastCombatOutcome = restored.outcome;
+    keys.clear();
+    updateCamera();
+    return true;
+  }
+});
+
+if (encounterPreviewContinue) {
+  encounterPreviewContinue.hidden =
+    !encounterTest;
+}
+
+const livingWorldConfig = demoLivingWorldConfig;
+let wildCreatures = [];
+let wildWanderController = null;
+
+const userMaterialStore =
+  createUserMaterialStore();
+let userMaterialRecords = [];
+
+if (userMaterialStore.available) {
+  try {
+    userMaterialRecords =
+      await userMaterialStore.list();
+  } catch (error) {
+    console.error(
+      'User material storage unavailable',
+      error
+    );
+  }
+}
+
+const materialRegistry =
+  createMaterialRegistry(
+    composeMaterialPackWithUserMaterials(
+      materialPackV1,
+      userMaterialRecords
+    )
+  );
+
+const missingUserMaterialIds = [
+  ...new Set(
+    activeWorldDocument.areas.flatMap((area) => {
+      const surface = area.surface ?? {};
+      return [
+        surface.baseMaterialId,
+        ...(surface.zones ?? []).map(
+          (item) => item.materialId
+        ),
+        ...(surface.routes ?? []).map(
+          (item) => item.materialId
+        ),
+        ...(surface.rivers ?? []).map(
+          (item) => item.materialId
+        )
+      ];
+    })
+  )
+].filter(
+  (materialId) =>
+    typeof materialId === 'string' &&
+    materialId.startsWith('user.material.') &&
+    !materialRegistry.resolve(materialId)
+);
+
+if (missingUserMaterialIds.length > 0) {
+  throw new Error(
+    `Textures personnelles introuvables sur cet appareil : ${missingUserMaterialIds.join(', ')}`
+  );
+}
+
+const userMaterialAssetResolver =
+  createUserMaterialAssetResolver(
+    userMaterialRecords
+  );
+
+const resolveMaterialAsset =
+  createMaterialAssetResolver({
+    resolveUserAsset:
+      userMaterialAssetResolver.resolve
+  });
+
+const textureLoader =
+  createMaterialTextureLoader({
+    resolveAsset: resolveMaterialAsset,
+    cacheRevision: 'canyon-art-v3'
+  });
+
+const materialLoadStatus =
+  await textureLoader.load(
+    collectMaterialAssetIds(
+      materialRegistry.list()
+    )
+  );
+
+if (
+  materialLoadStatus.missing > 0 ||
+  materialLoadStatus.errors > 0
+) {
+  throw new Error(
+    `Material textures unavailable: ${JSON.stringify(materialLoadStatus)}`
+  );
+}
+
+const surfaceRenderer = createSurfaceRenderer({
+  materialRegistry,
+  textureLoader
+});
+// Finished terrain geometry is immutable during play; never redo its feather
+// masks for each animation frame as the player and creatures move.
+// Memory and rasterization budgets differ on coarse-pointer devices.
+// Rendering remains incremental and actor animation is always unrestricted.
+const mobileTerrainBudget = window.matchMedia?.('(pointer: coarse)')?.matches === true;
+const terrainCompositor = createTerrainTileCache({
+  tileSize: 384,
+  bleed: 128,
+  maxTiles: mobileTerrainBudget ? 28 : 48,
+  maxNewTilesPerFrame: mobileTerrainBudget ? 1 : 2
+});
+
+const userWorldObjectStore =
+  createUserWorldObjectStore();
+let userWorldObjectRecords = [];
+
+if (userWorldObjectStore.available) {
+  try {
+    userWorldObjectRecords =
+      await userWorldObjectStore.list();
+  } catch (error) {
+    console.error(
+      'User WorldObject storage unavailable',
+      error
+    );
+  }
+}
+
+const objectDefinitionCatalog =
+  createComposedObjectDefinitionCatalog(
+    userWorldObjectRecords.map(
+      objectDefinitionFromUserRecord
+    )
+  );
+
+const missingUserObjectDefinitionIds = [
+  ...new Set(
+    activeWorldDocument.areas
+      .flatMap((area) =>
+        (area.objects ?? []).map(
+          (placement) =>
+            placement.objectDefinitionId
+        )
+      )
+  )
+].filter(
+  (definitionId) =>
+    typeof definitionId === 'string' &&
+    definitionId.startsWith('user.objectdef.') &&
+    !objectDefinitionCatalog.get(
+      definitionId
+    )
+);
+
+if (
+  missingUserObjectDefinitionIds.length >
+  0
+) {
+  throw new Error(
+    `Objets personnels introuvables sur cet appareil : ${missingUserObjectDefinitionIds.join(', ')}`
+  );
+}
+
+wildCreatures = createInitialWildlife(
+  livingWorldConfig,
+  {
+    worldDocument: activeWorldDocument,
+    resolveActorDefinition:
+      resolveDemoLivingActorDefinition,
+    seed:
+      `${activeWorldDocument.id}:wildlife:v1`,
+    activationCount: 3,
+    traversalRegistry,
+    objectCatalog:
+      objectDefinitionCatalog
+  }
+);
+
+wildWanderController =
+  createWildWanderController(
+    livingWorldConfig,
+    {
+      worldDocument:
+        activeWorldDocument,
+      resolveActorDefinition:
+        resolveDemoLivingActorDefinition,
+      seed:
+        `${activeWorldDocument.id}:wander:v1`,
+      traversalRegistry,
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+
+const userWorldObjectAssetResolver =
+  createUserWorldObjectAssetResolver(
+    userWorldObjectRecords
+  );
+
+const resolveWorldObjectAssetComposed =
+  createWorldObjectAssetResolver({
+    resolveUserAsset:
+      userWorldObjectAssetResolver.resolve
+  });
+
+function resolveRuntimeWorldObjectPlacements(
+  placements
+) {
+  return resolveWorldObjectPlacementsRaw(
+    placements,
+    objectDefinitionCatalog
+  );
+}
+
+addEventListener(
+  'pagehide',
+  () => {
+    textureLoader.dispose?.();
+    userMaterialAssetResolver.dispose?.();
+    worldObjectImageLoader?.dispose?.();
+    userWorldObjectAssetResolver.dispose?.();
+  },
+  { once: true }
+);
+
+const worldObjectImageLoader = createImageAssetLoader({
+  resolveAsset:
+    resolveWorldObjectAssetComposed,
+  cacheRevision:
+    'world-object-library-v1-orientation-v1-canyon-art-v3'
+});
+
+const requiredWorldObjectAssetIds = Object.freeze([
+  ...new Set(
+    activeWorldDocument.areas
+      .flatMap((area) =>
+        resolveRuntimeWorldObjectPlacements(
+          area.objects
+        )
+      )
+      .map((object) =>
+        object.visual?.assetId
+      )
+      .filter(Boolean)
+  )
+]);
+
+const worldObjectAssetStatus = await worldObjectImageLoader.load(
+  requiredWorldObjectAssetIds
+);
+
+if (
+  worldObjectAssetStatus.ready !== requiredWorldObjectAssetIds.length ||
+  worldObjectAssetStatus.missing > 0 ||
+  worldObjectAssetStatus.errors > 0
+) {
+  coords.textContent =
+    'Erreur asset WorldObject — voir console';
+  throw new Error(
+    `WorldObject assets unavailable: ${JSON.stringify(worldObjectAssetStatus)}`
+  );
+}
+
+const worldObjectRenderer = createWorldObjectRenderer({
+  imageLoader: worldObjectImageLoader,
+  resolveVisualAsset:
+    resolveWorldObjectAssetComposed,
+  objectCatalog:
+    objectDefinitionCatalog
+});
+
+const captureMapActorAssets =
+  captureActorDefinitionProvider
+    .listAssets();
+
+const resolveRuntimeMapActorAsset =
+  createMapActorAssetResolver(
+    captureMapActorAssets
+  );
+
+const mapActorImageLoader =
+  createImageAssetLoader({
+    resolveAsset:
+      resolveRuntimeMapActorAsset,
+    cacheRevision:
+      'actor-placement-catalog-v1-2026-10-03'
+  });
+
+const placedActorAssetIds =
+  activeWorldDocument.areas
+    .flatMap(
+      (area) =>
+        area.actors ?? []
+    )
+    .map((placement) =>
+      captureActorDefinitionProvider
+        .resolveDefinition(
+          placement.actorDefinitionId
+        )
+        ?.mapVisual?.assetId
+    )
+    .filter(Boolean);
+
+const requiredMapActorAssetIds =
+  Object.freeze([
+    ...new Set([
+      player.mapVisual.assetId,
+      ...collectLivingMapActorAssetIds(
+        livingWorldConfig,
+        resolveDemoLivingActorDefinition
+      ),
+      ...placedActorAssetIds
+    ])
+  ]);
+
+const mapActorAssetStatus = await mapActorImageLoader.load(
+  requiredMapActorAssetIds
+);
+
+if (
+  mapActorAssetStatus.ready !== requiredMapActorAssetIds.length ||
+  mapActorAssetStatus.missing > 0 ||
+  mapActorAssetStatus.errors > 0
+) {
+  coords.textContent =
+    'Erreur asset Map Actor — voir console';
+  throw new Error(
+    `Map Actor assets unavailable: ${JSON.stringify(mapActorAssetStatus)}`
+  );
+}
+
+const mapActorVisualPreparer = createMapActorVisualPreparer({
+  imageLoader: mapActorImageLoader
+});
+const mapActorPreparationStatus = mapActorVisualPreparer.prepare(
+  requiredMapActorAssetIds
+);
+
+if (
+  mapActorPreparationStatus.ready !== requiredMapActorAssetIds.length ||
+  mapActorPreparationStatus.errors > 0
+) {
+  coords.textContent =
+    'Erreur préparation Map Actor — voir console';
+  throw new Error(
+    `Map Actor preparation failed: ${JSON.stringify(mapActorPreparationStatus)}`
+  );
+}
+
+const mapActorRenderer = createMapActorRenderer({
+  preparedVisuals: mapActorVisualPreparer
+});
+const portalRenderer = createPortalRenderer();
+let last = performance.now();
+
+function currentArea() {
+  const area = findWorldAreaById(
+    activeWorldDocument,
+    player.currentAreaId
+  );
+
+  if (!area) {
+    throw new Error(
+      `Unknown current WorldArea: ${player.currentAreaId}`
+    );
+  }
+
+  return area;
+}
+
+function showEncounterPreview(snapshot) {
+  pendingEncounterSnapshot = snapshot;
+
+  const creatureId =
+    snapshot.opponents[0]?.creatureId ?? '';
+  const creature =
+    captureCreatureCatalog.resolveCreature(creatureId);
+
+  encounterPreviewSummary.textContent =
+    `${creature?.name ?? creatureId} · élément ${snapshot.context.elementId} · famille ${snapshot.context.terrainFamilyId}`;
+
+  encounterPreview.hidden = false;
+}
+
+function launchPendingEncounterCombat() {
+  if (!pendingEncounterSnapshot || immersiveCombatHost.active) return false;
+  return launchCombatHandoffNavigation({
+    snapshot: pendingEncounterSnapshot,
+    player,
+    storage: window.sessionStorage,
+    documentUrl: document.URL,
+    navigate(url) {
+      // This callback still runs inside the original "Lancer le combat" tap:
+      // browsers may therefore authorize true fullscreen without a second tap.
+      // A CSS viewport overlay always works even if the Fullscreen API refuses.
+      immersiveCombatHost.open({ url, snapshot: pendingEncounterSnapshot });
+    }
+  });
+}
+
+function clearEncounterPreview() {
+  if (!pendingEncounterSnapshot) return false;
+
+  const released = encounterController.release(
+    pendingEncounterSnapshot.encounterId
+  );
+
+  if (!released) return false;
+
+  pendingEncounterSnapshot = null;
+  encounterPreview.hidden = true;
+  encounterPreviewSummary.textContent = '';
+  return true;
+}
+
+function showWorldEventIntent(intent) {
+  if (
+    !intent ||
+    intent.action?.kind !== 'message'
+  ) {
+    return false;
+  }
+
+  activeWorldEventIntent = intent;
+  worldEventMessage.textContent =
+    intent.action.text;
+  worldEventDialog.hidden = false;
+  worldInteract.hidden = true;
+  return true;
+}
+
+function closeWorldEventDialog() {
+  if (!activeWorldEventIntent) {
+    return false;
+  }
+
+  activeWorldEventIntent = null;
+  worldEventDialog.hidden = true;
+  worldEventMessage.textContent = '';
+  return true;
+}
+
+function refreshInteractionAvailability() {
+  if (
+    activeWorldEventIntent ||
+    pendingEncounterSnapshot
+  ) {
+    worldInteract.hidden = true;
+    return null;
+  }
+
+  const intent =
+    worldEventController
+      .peekInteractable({
+        currentAreaId:
+          player.currentAreaId,
+        entity: player
+      });
+
+  worldInteract.hidden = !intent;
+  return intent;
+}
+
+function triggerWorldInteraction() {
+  if (
+    activeWorldEventIntent ||
+    pendingEncounterSnapshot
+  ) {
+    return false;
+  }
+
+  const intent =
+    worldEventController.interact({
+      currentAreaId:
+        player.currentAreaId,
+      entity: player
+    });
+
+  return showWorldEventIntent(
+    intent
+  );
+}
+
+function resize() {
+  terrainCompositor.clear();
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  canvas.width = Math.floor(innerWidth * dpr);
+  canvas.height = Math.floor(innerHeight * dpr);
+  canvas.style.width = `${innerWidth}px`;
+  canvas.style.height = `${innerHeight}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function keyboardVector() {
+  let x = 0;
+  let y = 0;
+  if (keys.has('arrowleft') || keys.has('q') || keys.has('a')) x -= 1;
+  if (keys.has('arrowright') || keys.has('d')) x += 1;
+  if (keys.has('arrowup') || keys.has('z') || keys.has('w')) y -= 1;
+  if (keys.has('arrowdown') || keys.has('s')) y += 1;
+  return normalize(x, y);
+}
+
+function currentInput() {
+  if (Math.hypot(touchInput.x, touchInput.y) > config.input.deadzone) {
+    return touchInput;
+  }
+  return keyboardVector();
+}
+
+function updateCamera() {
+  const area = currentArea();
+
+  camera.x = Math.max(
+    0,
+    Math.min(
+      Math.max(0, area.width - innerWidth),
+      player.x - innerWidth / 2
+    )
+  );
+  camera.y = Math.max(
+    0,
+    Math.min(
+      Math.max(0, area.height - innerHeight),
+      player.y - innerHeight / 2
+    )
+  );
+}
+
+function applyTriggeredPortal() {
+  const portal = findTriggeredPortal(
+    activeWorldDocument,
+    player.currentAreaId,
+    player
+  );
+
+  if (!portal) return false;
+
+  const next = applyPortalTransition(
+    activeWorldDocument,
+    player,
+    portal
+  );
+
+  if (!next) return false;
+
+  player.currentAreaId = next.currentAreaId;
+  player.x = next.x;
+  player.y = next.y;
+  player.viaPortalId = next.viaPortalId;
+  return true;
+}
+
+function update(dt) {
+  const area = currentArea();
+  const input = currentInput();
+
+  if (
+    pendingEncounterSnapshot ||
+    activeWorldEventIntent
+  ) {
+    player.moving = false;
+    worldInteract.hidden = true;
+    updateCamera();
+    return;
+  }
+
+  player.moving =
+    Math.hypot(input.x, input.y) > config.input.deadzone;
+
+  if (Math.abs(input.x) > 0.05) {
+    player.facingX = input.x < 0 ? -1 : 1;
+  }
+
+  stepMovement(
+    area,
+    player,
+    input,
+    dt,
+    config.movement,
+    traversalRegistry,
+    {
+      objectCatalog:
+        objectDefinitionCatalog
+    }
+  );
+
+  applyTriggeredPortal();
+
+  const worldEventIntent =
+    worldEventController.step({
+      currentAreaId:
+        player.currentAreaId,
+      viaPortalId:
+        player.viaPortalId,
+      entity: player
+    });
+
+  if (
+    showWorldEventIntent(
+      worldEventIntent
+    )
+  ) {
+    player.moving = false;
+    updateCamera();
+    return;
+  }
+
+  refreshInteractionAvailability();
+
+  const encounterIntent = encounterController.step({
+    area: currentArea(),
+    player,
+    encounterConfig: activeWorldDocument.encounterConfig,
+    captureCatalog: captureCreatureCatalog,
+    playerPartyRef: CAPTURE_PLAYER_PARTY_REF,
+    rulesetId: 'capture.standard.1v1',
+    random: encounterRandom
+  });
+
+  if (encounterIntent) {
+    player.moving = false;
+    showEncounterPreview(
+      snapshotFromEncounterIntent(encounterIntent)
+    );
+    updateCamera();
+    return;
+  }
+
+  wildCreatures = wildWanderController.step(
+    wildCreatures,
+    dt
+  );
+
+  updateCamera();
+
+  const traversal = resolveSurfaceTraversal(
+    currentArea(),
+    player,
+    player.x,
+    player.y,
+    traversalRegistry
+  );
+
+  const activeWildCount = wildCreatures.filter(
+    (entity) => entity.areaId === player.currentAreaId
+  ).length;
+
+  coords.textContent =
+    `${player.currentAreaId} · x: ${player.x.toFixed(1)} y: ${player.y.toFixed(1)} · ${traversal.ruleId} ×${traversal.speedMultiplier.toFixed(2)} · sauvages: ${activeWildCount}` +
+    (
+      lastCombatOutcome
+        ? ` · combat: ${lastCombatOutcome}`
+        : ''
+    );
+}
+
+function drawGround() {
+  const area = currentArea();
+  const width = innerWidth;
+  const height = innerHeight;
+  terrainCompositor.draw({
+    ctx, renderer: surfaceRenderer,
+    surface: area.surface,
+    surfaceKey: area.id,
+    areaKey: area.id,
+    fallbackColor: materialRegistry.require(area.surface.baseMaterialId,'surface').render.baseColor,
+    camera,
+    viewport: { width, height },
+    canvasWidth: width, canvasHeight: height,
+    zoom: 1,
+    dpr: Math.min(devicePixelRatio || 1, 2),
+    // The terrain is static in game. Larger guard bands trade one slightly
+    // bigger buffer for substantially fewer expensive terrain rebakes.
+    overscanCssPx: Math.min(240, Math.max(130, Math.floor(Math.min(width, height) * 0.4))),
+    areaClip(layerCtx, layerCamera) {
+      clipWorldArea(layerCtx, area, layerCamera);
+    }
+  });
+}
+
+function drawObstacle(obstacle) {
+  const x = obstacle.x - camera.x;
+  const y = obstacle.y - camera.y;
+
+  if (
+    x + obstacle.w < 0 ||
+    y + obstacle.h < 0 ||
+    x > innerWidth ||
+    y > innerHeight
+  ) {
+    return;
+  }
+
+  if (obstacle.kind === 'river') return;
+
+  if (obstacle.kind === 'rock') {
+    ctx.fillStyle = '#666b62';
+  } else if (obstacle.kind === 'furniture') {
+    ctx.fillStyle = '#6f4d32';
+  } else {
+    ctx.fillStyle = '#244d2a';
+  }
+
+  ctx.fillRect(x, y, obstacle.w, obstacle.h);
+}
+
+function setLocomotionMode(mode) {
+  if (mode === 'swim') {
+    player.locomotion = { modes: ['ground', 'swim'] };
+  } else if (mode === 'fly') {
+    player.locomotion = { modes: ['fly'] };
+  } else {
+    player.locomotion = { modes: ['ground'] };
+  }
+
+  for (const button of locomotionButtons) {
+    button.classList.toggle(
+      'active',
+      button.dataset.locomotion === mode
+    );
+  }
+}
+
+function currentWildMapActors() {
+  return wildCreatures
+    .filter(
+      (entity) => entity.areaId === player.currentAreaId
+    )
+    .map((entity) =>
+      createWildMapActorView(
+        entity,
+        resolveDemoLivingActorDefinition
+      )
+    )
+    .filter(Boolean);
+}
+
+function currentPlacedMapActors() {
+  return (
+    currentArea()?.actors ?? []
+  )
+    .map((placement) =>
+      createPlacedMapActorView(
+        placement,
+        captureActorDefinitionProvider
+          .resolveDefinition
+      )
+    )
+    .filter(Boolean);
+}
+
+function render(timeSeconds = 0) {
+  const area = currentArea();
+  const wildMapActors = currentWildMapActors();
+  const placedMapActors =
+    currentPlacedMapActors();
+
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.save();
+
+  try {
+    clipWorldArea(
+      ctx,
+      area,
+      camera
+    );
+
+    drawGround();
+
+    if (shouldRenderReliefWater(activeWorldDocument.id, area)) {
+      drawReliefRiverGlints(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
+      drawReliefRiverBankFoam(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
+    }
+
+    area.obstacles.forEach(drawObstacle);
+
+    worldObjectRenderer.draw(ctx, {
+      camera,
+      viewport: {
+        width: innerWidth,
+        height: innerHeight
+      },
+      objects: area.objects
+    });
+
+    if (shouldRenderReliefWater(activeWorldDocument.id, area)) {
+      drawReliefWaterfallGlints(ctx, { area, camera, viewport: { width: innerWidth, height: innerHeight }, timeSeconds });
+    }
+
+    portalRenderer.draw(ctx, {
+      camera,
+      worldDocument: activeWorldDocument,
+      currentAreaId: player.currentAreaId
+    });
+
+    mapActorRenderer.draw(ctx, {
+      camera,
+      actors: [
+        ...placedMapActors,
+        ...wildMapActors,
+        player
+      ],
+      timeSeconds
+    });
+  } finally {
+    ctx.restore();
+  }
+}
+
+function frame(now) {
+  const dt = Math.min(
+    (now - last) / 1000,
+    config.simulation.maxDeltaSeconds
+  );
+  last = now;
+  update(dt);
+  render(now / 1000);
+  requestAnimationFrame(frame);
+}
+
+addEventListener('resize', resize);
+addEventListener('pagehide', () => {
+  immersiveCombatHost.dispose();
+  terrainCompositor.clear();
+  textureLoader?.dispose?.();
+}, { once: true });
+addEventListener('keydown', (event) => keys.add(event.key.toLowerCase()));
+addEventListener('keyup', (event) => keys.delete(event.key.toLowerCase()));
+
+for (const button of locomotionButtons) {
+  button.addEventListener('click', () => {
+    setLocomotionMode(button.dataset.locomotion);
+  });
+}
+
+encounterPreviewCombat.addEventListener(
+  'click',
+  launchPendingEncounterCombat
+);
+
+encounterPreviewContinue.addEventListener(
+  'click',
+  clearEncounterPreview
+);
+
+worldEventClose.addEventListener(
+  'click',
+  closeWorldEventDialog
+);
+
+worldInteract.addEventListener(
+  'click',
+  triggerWorldInteraction
+);
+
+setLocomotionMode('ground');
+resize();
+updateCamera();
+requestAnimationFrame(frame);
