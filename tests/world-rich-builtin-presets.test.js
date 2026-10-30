@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import {builtinSculptMapPresets} from '../src/builder/sculpt-builtin-map-presets.js';
 import {importSculptPreviewScene,SCULPT_OBJECT_LIMIT} from '../src/world/sculpt-scene-preview.js';
 import {sculptWaterAt} from '../src/world/sculpt-height-model.js';
+import {resolveWorldObjectPlacements} from '../src/world/world-object-placement-model.js';
+import {bridgeTraversalRect} from '../src/world/world-object-model.js';
+import {sculptBridgeBankHeights} from '../src/core/sculpt-navigation-collision.js';
 import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
 
@@ -24,6 +27,16 @@ test('the eight villages and wilderness presets contain an actual varied 2.5D la
          obj.objectDefinitionId.startsWith('objectdef.waterfall.'),
          'only an authored crossing or water effect may be on water');
      }
+   }
+   for(const bridge of resolveWorldObjectPlacements(grouped.bridges)){
+     const deck=bridgeTraversalRect(bridge);
+     assert.ok(deck,'real physical bridge deck required');
+     assert.ok(sculptBridgeBankHeights(scene.terrain,deck,
+       {cellWidth:28,cellHeight:21}),
+       preset.name+' bridge must have traversable shores on both sides');
+     assert.ok(sculptWaterAt(scene.terrain,
+       Math.floor(bridge.transform.x/28),Math.floor(bridge.transform.y/21))>0,
+       preset.name+' bridge should cross authored water rather than dry ground');
    }
    const hasWater=scene.terrain.waterLevels.some((n,j)=>n>scene.terrain.levels[j]);
    wet+=Number(hasWater);
