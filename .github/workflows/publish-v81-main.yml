@@ -57,7 +57,7 @@ jobs:
             "https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80/release-provenance.v1.json?v=$(date +%s)" \
             -o "$published"; then
             echo "publish=true" >> "$GITHUB_OUTPUT"
-          elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" --arg exploration "$stable_release_sha" \
+          elif jq -e --arg main "$main_sha" --arg author "$author_sha" --arg assets "$assets_sha" --arg exploration "$EXPLORATION_SOURCE_SHA" \
             '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration==$exploration' "$published" >/dev/null; then
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
@@ -476,7 +476,7 @@ jobs:
           jq -e --arg main "${{ needs.verify-and-assemble.outputs.combat_main }}" \
             --arg author "${{ needs.verify-and-assemble.outputs.author_showcase }}" \
             --arg assets "${{ needs.verify-and-assemble.outputs.visual_assets }}" \
-             --arg exploration "$EXPLORATION_SOURCE_SHA" \
+             --arg exploration "$stable_release_sha" \
             '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$author and .visualAssets==$assets and .exploration==$exploration' \
             /tmp/published-provenance.json >/dev/null
           curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$probe/combat-preview/data/capture/showcase/crea_nat_1.capture-creature-transfer-v1.json?build=$GITHUB_SHA" -o /tmp/published-grainou.json
