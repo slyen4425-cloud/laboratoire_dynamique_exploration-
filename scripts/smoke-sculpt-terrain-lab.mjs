@@ -3268,11 +3268,33 @@ try{
     const linked=window.__worldAssemblerProbe();
     document.querySelector('#start-area').click();
     const started=window.__worldAssemblerProbe();
+    const details=document.querySelector('#world-panel-details');
+    const workspace=document.querySelector('#world-workspace-layout');
+    const graph=document.querySelector('.center-panel');
+    const compact=details&&getComputedStyle(details).display!=='none';
+    // Mobile-first: the inspector must initially be collapsed, then become
+    // usable on a REAL touch-size control. The canonical panel remains one DOM.
+    const initiallyClosed=compact
+      ?workspace.dataset.panel==='none'&&
+        getComputedStyle(document.querySelector('.inspector')).display==='none'
+      :true;
+    const graphFullWidth=graph.getBoundingClientRect().width>=innerWidth-2;
+    if(compact)details.click();
     const panel=document.querySelector('.inspector').getBoundingClientRect();
+    const openAria=!compact||(
+      details.getAttribute('aria-expanded')==='true'&&
+      workspace.dataset.panel==='details');
     const header=document.querySelector('.app-header').getBoundingClientRect();
     const node=document.querySelector('.world-node.selected').getBoundingClientRect();
-    return {before,linked,started,
+    if(compact)details.click();
+    const closedAgain=!compact||(
+      details.getAttribute('aria-expanded')==='false'&&
+      getComputedStyle(document.querySelector('.inspector')).display==='none'&&
+      graph.getBoundingClientRect().width>=innerWidth-2);
+    if(compact)details.click(); // Reopen for the real detailed-area editor step.
+    return {before,linked,started,initiallyClosed,graphFullWidth,
       panelInLandscape:panel.right<=innerWidth&&panel.width>120,
+      openAria,closedAgain,
       headerInLandscape:header.top>=0&&header.bottom<100,
       selectedGraphNodeVisible:node.width>150&&node.height>70,
       portalRows:document.querySelectorAll('.portal-row').length};
@@ -3282,6 +3304,8 @@ try{
      newWorldGraph.linked.graphEdgeCount!==2||
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
      newWorldGraph.portalRows<2||!newWorldGraph.panelInLandscape||
+     !newWorldGraph.initiallyClosed||!newWorldGraph.graphFullWidth||
+     !newWorldGraph.openAria||!newWorldGraph.closedAgain||
      !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
     throw Error('World Builder visual assembly or canonical links failed: '+
       JSON.stringify(newWorldGraph));
