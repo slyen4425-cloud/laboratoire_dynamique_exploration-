@@ -72,11 +72,11 @@ const RICH=Object.freeze([
   waterfall:{x:784,y:378,style:'tiered',variant:'forest_stream'}},
  {homes:[[2,150,136],[0,332,130],[3,510,130],[1,690,134],[4,145,430]],
   ponds:[{x:9,y:17,r:2.6}],
-  bridge:{x:644,y:357,style:'stone_arch'},
+  bridge:{x:644,y:357,style:'stone_arch',view:'horizontal'},
   waterfall:{x:252,y:357,style:'three_quarter',variant:'turquoise'}},
  {homes:[[0,145,137],[2,500,130],[3,847,135],[1,145,430]],
   ponds:[{x:27,y:17,r:2.5}],
-  bridge:{x:756,y:357,style:'old_wood'}},
+  bridge:{x:756,y:357,style:'old_wood',view:'horizontal'}},
  {homes:[[3,145,135],[2,335,130],[4,510,132],[0,855,430],[1,145,430]],
   ponds:[{x:27,y:17,r:2.5},{x:9,y:21,r:2.0}],
   bridge:{x:756,y:357,style:'stone_arch'},
@@ -89,7 +89,7 @@ const RICH=Object.freeze([
  {homes:[[0,150,135],[1,340,130],[2,510,131],[3,855,135],
           [0,145,430],[1,860,430]],
   ponds:[{x:23,y:17,r:2.6},{x:8,y:18,r:2.2}],
-  bridge:{x:644,y:357,style:'wood_rustic'},
+  bridge:{x:644,y:357,style:'wood_rustic',view:'horizontal'},
   waterfall:{x:224,y:378,style:'side_narrow',variant:'forest_stream'}},
  {homes:[[3,315,130],[2,858,130]],
   ponds:[{x:27,y:17,r:2.5},{x:9,y:17,r:2.3}],
@@ -163,15 +163,18 @@ function createScene(config,index){
        points:[from,to],width:23});
  }
  if(rich.bridge){
-   const b=rich.bridge,from=nearestRoadPoint(b.x,b.y-113);
-   const bank={x:b.x,y:b.y-112};
+   const b=rich.bridge,horizontal=b.view==='horizontal';
+   const bank=horizontal?{x:b.x-113,y:b.y}:{x:b.x,y:b.y-112};
+   const from=nearestRoadPoint(bank.x,bank.y);
    if(from&&dryLink(from,bank))
      surface=appendSculptSurfaceStroke(surface,{materialId:'road.dirt',
        points:[from,bank],width:29});
-   const south={x:b.x,y:b.y+113},outer={x:Math.min(WORLD_W-40,b.x+90),y:south.y};
-   if(dryLink(south,outer))
+   const farBank=horizontal?{x:b.x+113,y:b.y}:{x:b.x,y:b.y+113};
+   const outer=horizontal?{x:Math.min(WORLD_W-40,b.x+155),y:b.y}:
+     {x:Math.min(WORLD_W-40,b.x+90),y:b.y+113};
+   if(dryLink(farBank,outer))
      surface=appendSculptSurfaceStroke(surface,{materialId:'road.dirt',
-       points:[south,outer],width:26});
+       points:[farBank,outer],width:26});
  }
  // Additional textured clearing by the home, still the canonical surface.
  // Dedicated forecourts and pedestrian spur paths join the native main road.
@@ -208,7 +211,7 @@ function createScene(config,index){
    const b=rich.bridge;
    if(sculptWaterAt(terrain,Math.floor(b.x/28),Math.floor(b.y/21))<=0)
      throw Error('Préset : pont sans eau '+config.name);
-   if(!place('objectdef.bridge.'+b.style+'_2p5d.01',b.x,b.y,1.16,0,'vertical'))
+   if(!place('objectdef.bridge.'+b.style+'_2p5d.01',b.x,b.y,1.16,0,b.view??'vertical'))
      throw Error('Préset : pont non implantable '+config.name);
  }
  if(rich.waterfall){
