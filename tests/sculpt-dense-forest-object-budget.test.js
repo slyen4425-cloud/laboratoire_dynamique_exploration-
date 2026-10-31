@@ -1,3 +1,4 @@
+// RED baseline: deliberately execute this unchanged failing test before the model fix.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
