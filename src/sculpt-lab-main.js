@@ -24,6 +24,9 @@ import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
  applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3d-connector-rotation';
+import {worldInteriorAdapter,worldInteriorFloors,worldInteriorDoorPortal,
+ resizeWorldInterior,editWorldInteriorDoor,addWorldInteriorFloor,editWorldInteriorConnector,
+ applyWorldInteriorTemplate} from './builder/world-interior-authoring.js?rev=canonical-room-editor-v1';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77&house=canonical-v1';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -772,12 +775,14 @@ function draw(){
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     const worldExit=sculptWorldCurrentInterior()?
-      worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point'):null;
+      worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??worldExit?.trigger,
-      stairPortals:sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
-        .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal')
+      stairPortals:(sculptWorldCurrentInterior()?worldOutboundPortals():
+        sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
+          .filter(p=>p.sourceAreaId===activeInteriorId))
+        .filter(p=>p.visual?.marker==='portal')
         .map(p=>interiorConnectorPreview?.id===p.id?
           {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),
       doorScale:interior?.exitPortal?.visual?.scale??worldExit?.visual?.scale??.58,
@@ -801,7 +806,7 @@ function draw(){
       ctx.restore();
     }
     if(interiorDoorMoving){
-      const p=interiorDoorPreview??interior?.exitPortal.trigger;
+      const p=interiorDoorPreview??interior?.exitPortal.trigger??worldExit?.trigger;
       if(p?.kind==='point'){
         ctx.save();ctx.setLineDash([4,4]);ctx.strokeStyle='#ffe89e';ctx.lineWidth=2;
         ctx.beginPath();ctx.arc(p.x,p.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
@@ -1223,7 +1228,7 @@ function begin(event){
     applySculptWorldPointerPlacement(point);
     return;
   }
-  if(activeInteriorId&&interiorConnectorMode){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorConnectorMode){
     const point=screenToWorldPoint(event);
     if(!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
@@ -1231,12 +1236,13 @@ function begin(event){
     interiorConnectorPreview={id:$('interior-connector-link').value,...point};
     scheduleDraw();return;
   }
-  if(activeInteriorId&&interiorDoorMoving){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorDoorMoving){
     const point=interiorDoorPointFromEvent(event);
     if(!point)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     interiorDoorGesture={pointerId:event.pointerId,point};
-    interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
+    interiorDoorPreview={...(currentSculptInterior()?.exitPortal??
+        worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId)).trigger,...point};
     scheduleDraw();return;
   }
   if((activeInteriorId||sculptWorldCurrentInterior())&&interiorWallMode){
@@ -1332,7 +1338,8 @@ function stroke(event){
     if(interiorDoorGesture&&event.pointerId===interiorDoorGesture.pointerId){
       const point=interiorDoorPointFromEvent(event);
       if(point){interiorDoorGesture.point=point;
-        interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
+        interiorDoorPreview={...(currentSculptInterior()?.exitPortal??
+        worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId)).trigger,...point};
         scheduleDraw();}
     }
     return;
@@ -1483,7 +1490,13 @@ function stop(event){
     interiorConnectorGesture=null;interiorConnectorPreview=null;
     if(event.type!=='pointercancel'){
       try{
-        sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+        if(sculptWorldCurrentInterior()){
+          const doc=commitCurrentSculptWorldArea();
+          sculptWorldDraft=editWorldInteriorConnector(doc,$('interior-connector-link').value,{
+            x:gesture.point.x,y:gesture.point.y,assetId:$('interior-connector-asset').value,
+            rotationDeg:Number($('interior-connector-rotation').value)});
+          saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+        }else sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
           sourceAreaId:activeInteriorId,portalId:$('interior-connector-link').value,
           x:gesture.point.x,y:gesture.point.y,assetId:$('interior-connector-asset').value});
         updateInteriorConnectorControls();
