@@ -3258,10 +3258,10 @@ function openSelectedSculptInterior(){
       commitCurrentSculptWorldArea();
       let portal=currentWorldHouseLink(resolved.id);
       if(!portal){
-        sculptWorldDraft=createBuildingInteriorLink(sculptWorldDraft,{
+        sculptWorldDraft=createWorldBuilderDraft(createBuildingInteriorLink(sculptWorldDraft,{
           sourceAreaId:sculptWorldAreaId,buildingId:resolved.id,anchorId:'main-door',
           interiorSize:{width:18*28,height:14*21}
-        });
+        }));
         portal=currentWorldHouseLink(resolved.id);
       }
       if(!portal)throw Error('Liaison intérieur/porte non créée : vérifier la définition de cette maison');
