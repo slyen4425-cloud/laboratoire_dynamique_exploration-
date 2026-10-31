@@ -91,6 +91,18 @@ test('two floors share only WorldDocument Portals, with independent walls/materi
    'the new upper floor must be reachable by normal manual Portal action');
  assert.throws(()=>resizeWorldInterior(next,a,{width:26,height:18,shape:'rectangle'}),/étage|passage|Portal/i);
 });
+test('nonrectangular room doors remain reachable: neither move nor resize hides a Portal in a cut-out',()=>{
+ let {d,a}=fixture();
+ d=resizeWorldInterior(d,a,{width:18,height:14,shape:'l'});
+ const before=JSON.stringify(d);
+ assert.throws(()=>editWorldInteriorDoor(d,a,{x:478,y:45}),/Porte hors du plancher/);
+ assert.equal(JSON.stringify(d),before,'rejected door must leave the whole world untouched');
+ d=editWorldInteriorDoor(d,a,{x:240,y:240});
+ const portal=d.portals.find(p=>p.sourceAreaId===a&&p.visual?.marker==='exit');
+ assert.equal(portal.trigger.x,240);
+ assert.equal(importWorldBuilderDocument(serializeWorldBuilderDraft(d)).portals.find(
+   p=>p.id===portal.id).trigger.y,240);
+});
 test('resizing a furnished WorldBuilder house also preserves painted floor stroke identities and materials',()=>{
  let {d,a,b}=fixture();
  const original=d.areas.find(room=>room.id===a);
