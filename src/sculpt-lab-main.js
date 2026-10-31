@@ -24,7 +24,7 @@ import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
  applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3d-connector-rotation';
-import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
+import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77&house=canonical-v1';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
 import {sculptAltitudeVisualState} from './render/sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
