@@ -59,7 +59,10 @@ function sculptEncounterSceneSettings(source = {}) {
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
 export const SCULPT_SCENE_PREVIEW_KIND='sculpt-preview-scene';
-export const SCULPT_OBJECT_LIMIT=128;
+// Safeguard against excessive mobile scenes, not a 128-tree authoring ceiling.
+// 2048 independent WorldObjects is enough for dense 80x60 forests; exports
+// beyond this budget fail explicitly instead of silently deleting objects.
+export const SCULPT_OBJECT_LIMIT=2048;
 export const SCULPT_ACTOR_LIMIT=80;
 // Only the existing sculpt terrain and placement formats own the data.
 // This constructor is a scene-level editor command, not a second world model.
@@ -95,7 +98,9 @@ function validVariant(definitionId,variantId){
   return sculptPreviewVariants(definitionId).some(v=>v.id===variantId)?variantId:null;
 }
 export function normalizeSculptPreviewObjects(raw=[]){
-  const safe=Array.isArray(raw)?raw.slice(0,SCULPT_OBJECT_LIMIT):[];
+  const safe=Array.isArray(raw)?raw:[];
+  if(safe.length>SCULPT_OBJECT_LIMIT)
+    throw Error('Scène sculptable : limite de '+SCULPT_OBJECT_LIMIT+' objets dépassée');
   const valid=safe.filter(o=>allowable.has(o?.objectDefinitionId));
   return normalizeWorldObjectPlacements(valid,objectDefinitionCatalogV1);
 }
