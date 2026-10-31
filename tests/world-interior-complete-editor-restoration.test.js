@@ -22,7 +22,7 @@ const fixture=()=>{
  return {d,a,b};
 };
 test('World Builder room editor commands preserve individual rooms, WorldDocument Portal+Spawn roundtrip',()=>{
- let {d,a,b}=fixture();const bBefore=JSON.stringify(d.areas.find(x=>x.id===b));
+ let {d,a,b}=fixture();const bBefore=JSON.stringify(importWorldBuilderDocument(serializeWorldBuilderDraft(d)).areas.find(x=>x.id===b));
  d=resizeWorldInterior(d,a,{width:22,height:18,shape:'l'});
  assert.equal(d.areas.find(x=>x.id===a).width,22*28);
  assert.equal(d.areas.find(x=>x.id===a).boundary.kind,'polygon');
@@ -54,7 +54,7 @@ test('room reusable template copies content but never identity, outside door or 
  assert.equal(importWorldBuilderDocument(serializeWorldBuilderDraft(result)).areas.find(x=>x.id===b).width,20*28);
 });
 test('two floors share only WorldDocument Portals, with independent walls/materials and editable connector',()=>{
- let {d,a,b}=fixture();const bBefore=JSON.stringify(d.areas.find(x=>x.id===b));
+ let {d,a,b}=fixture();const bBefore=JSON.stringify(importWorldBuilderDocument(serializeWorldBuilderDraft(d)).areas.find(x=>x.id===b));
  const made=addWorldInteriorFloor(d,a);
  d=made.document;
  assert.equal(worldInteriorFloors(d,a).length,2);
