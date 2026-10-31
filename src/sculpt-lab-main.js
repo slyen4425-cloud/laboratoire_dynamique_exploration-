@@ -1239,13 +1239,13 @@ function begin(event){
     interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
     scheduleDraw();return;
   }
-  if(activeInteriorId&&interiorWallMode){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorWallMode){
     const point=interiorWallPointFromEvent(event);
     if(!point)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     if(interiorWallMode==='remove'){
-      const entry=currentSculptInterior();
-      commitInteriorWalls(removeInteriorWallNear(entry.area.walls,point.x,point.y,24/zoom));
+      const area=currentInteriorAuthoringArea();
+      commitInteriorWalls(removeInteriorWallNear(area.walls,point.x,point.y,24/zoom));
       return;
     }
     const previousStart=interiorWallStart;
@@ -1337,7 +1337,7 @@ function stroke(event){
     }
     return;
   }
-  if(activeInteriorId&&interiorWallMode){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorWallMode){
     const gesture=interiorWallGesture;
     if(gesture&&event.pointerId===gesture.pointerId){
       const point=interiorWallPointFromEvent(event,gesture.first);
@@ -1508,7 +1508,7 @@ function stop(event){
     if(canceled){interiorWallStart=gesture.previousStart;interiorWallPreview=null;}
     else if(gesture.dragged||gesture.previousStart){
       interiorWallStart=null;interiorWallPreview=null;
-      try{commitInteriorWalls(appendInteriorWall(currentSculptInterior().area.walls,
+      try{commitInteriorWalls(appendInteriorWall(currentInteriorAuthoringArea().walls,
         {a:gesture.first,b:gesture.last}));}
       catch(error){status(error.message);}
     }else{interiorWallStart=gesture.origin;interiorWallPreview=gesture.origin;}
@@ -2829,7 +2829,7 @@ $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value
 function interiorWallPointFromEvent(event,from=null){
   const raw=screenToWorldPoint(event);
   if(!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return null;
-  return snapInteriorWallPoint(raw,currentSculptInterior()?.area.walls??[],{
+  return snapInteriorWallPoint(raw,currentInteriorAuthoringArea()?.walls??[],{
     grid:14,snapRadius:Math.min(22,14/zoom),from,
     orthogonal:!$('interior-wall-diagonal').checked,
     width:terrain.width*SCULPT_TILE.width,
@@ -2970,10 +2970,17 @@ $('interior-connector-turn-right').addEventListener('click',()=>{
   setInteriorConnectorRotation((Number($('interior-connector-rotation').value)+45)%360);
 });
 $('interior-wall-material').addEventListener('change',()=>{
-  const entry=currentSculptInterior();if(!entry)return;
-  const area=normalizeWorldArea({...entry.area,wallMaterialId:$('interior-wall-material').value});
-  sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
-    updateSculptInterior(e,{area}):e));
+  const previous=currentInteriorAuthoringArea();if(!previous)return;
+  const area=normalizeWorldArea({...previous,wallMaterialId:$('interior-wall-material').value});
+  const entry=currentSculptInterior();
+  if(entry){
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
+      updateSculptInterior(e,{area}):e));
+  }else if(sculptWorldCurrentInterior()){
+    sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+      areas:sculptWorldDraft.areas.map(a=>a.id===area.id?area:a)});
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+  }
   scheduleDraw();status('Texture des murs enregistrée pour cet étage.');
 });
 // Wall authoring reads/writes ONLY the canonical WorldArea.walls.
@@ -2981,13 +2988,18 @@ $('interior-wall-material').addEventListener('change',()=>{
 function currentSculptInterior(){
   return sculptInteriors.find(e=>e.area.id===activeInteriorId)??null;
 }
+// World Builder interior reads the actual WorldArea, standalone Sculpt its
+// original linked entry. Neither mode creates a duplicate collision authority.
+function currentInteriorAuthoringArea(){
+  return currentSculptInterior()?.area??(sculptWorldCurrentInterior()?sculptWorldArea():null);
+}
 function updateInteriorWallControls(){
-  const entry=currentSculptInterior(),count=entry?.area.walls.length??0;
-  $('interior-wall-toggle').disabled=!entry;
-  $('interior-wall-remove').disabled=!entry||count===0;
+  const area=currentInteriorAuthoringArea(),count=area?.walls.length??0;
+  $('interior-wall-toggle').disabled=!area;
+  $('interior-wall-remove').disabled=!area||count===0;
   $('interior-wall-cancel').disabled=!interiorWallStart;
-  $('interior-wall-undo').disabled=!entry||!interiorWallHistory.length;
-  $('interior-wall-redo').disabled=!entry||!interiorWallRedo.length;
+  $('interior-wall-undo').disabled=!area||!interiorWallHistory.length;
+  $('interior-wall-redo').disabled=!area||!interiorWallRedo.length;
   for(const [id,mode] of [['interior-wall-toggle','place'],['interior-wall-remove','remove']]){
     $(id).setAttribute('aria-pressed',String(interiorWallMode===mode));
     $(id).classList.toggle('active',interiorWallMode===mode);
@@ -3002,7 +3014,7 @@ function updateInteriorWallControls(){
 }
 function setInteriorWallMode(mode){
   if(mode&&interiorConnectorMode)setInteriorConnectorMode(false);
-  if(mode&& !activeInteriorId)return;
+  if(mode&&!currentInteriorAuthoringArea())return;
   if(mode){
     if(interiorDoorMoving)setInteriorDoorMoving(false);
     if(navigationTesting)setNavigationTesting(false);
@@ -3015,17 +3027,24 @@ function setInteriorWallMode(mode){
   updateInteriorWallControls();scheduleDraw();
 }
 function commitInteriorWalls(walls,{history=true}={}){
-  const entry=currentSculptInterior();
-  if(!entry||walls===entry.area.walls||
-    JSON.stringify(walls)===JSON.stringify(entry.area.walls))return false;
+  const previous=currentInteriorAuthoringArea();
+  if(!previous||walls===previous.walls||
+    JSON.stringify(walls)===JSON.stringify(previous.walls))return false;
+  const area=normalizeWorldArea({...previous,walls});
+  if(currentSculptInterior()){
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===area.id?
+      updateSculptInterior(e,{area}):e));
+  }else if(sculptWorldCurrentInterior()){
+    // Exactly one WorldArea owns collision, persistence and the editor walls.
+    sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+      areas:sculptWorldDraft.areas.map(a=>a.id===area.id?area:a)});
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+  }
   if(history){
-    interiorWallHistory.push(entry.area.walls);
+    interiorWallHistory.push(previous.walls);
     if(interiorWallHistory.length>40)interiorWallHistory.shift();
     interiorWallRedo=[];
   }
-  const area=normalizeWorldArea({...entry.area,walls});
-  sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
-    updateSculptInterior(e,{area}):e));
   updateInteriorWallControls();scheduleDraw();
   status('Murs sauvegardés avec cet intérieur · '+area.walls.length+' segment(s)');
   return true;
@@ -3044,13 +3063,13 @@ $('interior-wall-cancel').addEventListener('click',()=>{
   updateInteriorWallControls();scheduleDraw();
 });
 $('interior-wall-undo').addEventListener('click',()=>{
-  const entry=currentSculptInterior();if(!entry||!interiorWallHistory.length)return;
-  const before=interiorWallHistory.pop();interiorWallRedo.push(entry.area.walls);
+  const area=currentInteriorAuthoringArea();if(!area||!interiorWallHistory.length)return;
+  const before=interiorWallHistory.pop();interiorWallRedo.push(area.walls);
   commitInteriorWalls(before,{history:false});
 });
 $('interior-wall-redo').addEventListener('click',()=>{
-  const entry=currentSculptInterior();if(!entry||!interiorWallRedo.length)return;
-  const next=interiorWallRedo.pop();interiorWallHistory.push(entry.area.walls);
+  const area=currentInteriorAuthoringArea();if(!area||!interiorWallRedo.length)return;
+  const next=interiorWallRedo.pop();interiorWallHistory.push(area.walls);
   commitInteriorWalls(next,{history:false});
 });
 
