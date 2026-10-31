@@ -713,7 +713,7 @@ function draw(){
     ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   }
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
-  // Conservative render-only viewport: does not change the WorldDocument,
+  // Conservative render-only viewport: does not alter persisted scene data,
   // object placements, hit tests or collision ownership.
   previewObjectViewport={minX:-pan.x/zoom,maxX:(width-pan.x)/zoom,
     minY:-pan.y/zoom,maxY:(height-pan.y)/zoom};
@@ -2127,9 +2127,9 @@ function sortedResolvedPreviewObjects(){
   return sortedPreviewObjects;
 }
 function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipStairId=null){
-  for(const object of sortedResolvedPreviewObjects()){
-    if(object.transform.y<=maxY&&object.transform.y>minY&&
-      object.id!==skipBridgeId&&object.id!==skipStairId)drawPreviewObject(object);
+  for(const o of sortedResolvedPreviewObjects()){
+    if(o.transform.y<=maxY&&o.transform.y>minY&&
+      o.id!==skipBridgeId&&o.id!==skipStairId)drawPreviewObject(o);
   }
 }
 function refreshObjectOptions(){
