@@ -922,6 +922,14 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>
  <output id="sculpt-encounter-family-hint" aria-live="polite"></output>
+ <label>Distance entre vérifications dans ce monde
+  <span class="sculpt-encounter-editor__chance">
+   <input id="sculpt-encounter-distance" type="range" min="80" max="2000" step="20" value="300">
+   <output id="sculpt-encounter-distance-value" for="sculpt-encounter-distance">300 points</output>
+  </span>
+ </label>
+ <button type="button" id="sculpt-encounter-calm-baseline">🌿 Appliquer la base calme (300 points, routes 0 %)</button>
+ <small>Application volontaire : conserve les éléments déjà choisis et la rareté des créatures.</small>
  <label>Chance de rencontre
   <span class="sculpt-encounter-editor__chance">
    <input id="sculpt-encounter-chance" type="range" min="0" max="100" step="1" value="0">
@@ -934,7 +942,7 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
  </fieldset>
  <output id="sculpt-encounter-authoring-status" aria-live="polite"></output>
  <small id="sculpt-encounter-catalog-summary"></small>
- <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. Les rencontres se vérifient après déplacement, environ tous les 160 points (80 en mode test rapide). La texture ne modifie jamais ces règles. « Exporter scène » conserve tous les réglages.</small>
+ <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. La distance est modifiable (80 points en mode test rapide explicite). Les règles ne dépendent pas de la texture. « Exporter scène » conserve les rencontres ; le simple fichier de préset de carte ne les contient pas.</small>
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Pinceau de textures</strong>
