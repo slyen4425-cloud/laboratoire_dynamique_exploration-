@@ -3167,6 +3167,20 @@ function updateSculptAreaControls(){
     // Keep all linked portals correct; define its size before creating above.
     $('interior-layout-apply').disabled=false;
   }
+  if(worldRoom){
+    const floors=worldInteriorFloors(sculptWorldDraft,worldRoom.id);
+    const selector=$('interior-level-select');
+    selector.replaceChildren(...floors.map((id,i)=>new Option(i===0?
+      'Rez-de-chaussée':'Étage '+i,String(i))));
+    selector.value=String(floors.indexOf(worldRoom.id));
+    $('interior-level-add').disabled=floors.length>=SCULPT_INTERIOR_FLOOR_LIMIT||
+      sculptWorldDraft.areas.length>=64||floors.at(-1)!==worldRoom.id;
+    $('interior-width').value=String(worldRoom.width/SCULPT_TILE.width);
+    $('interior-height').value=String(worldRoom.height/SCULPT_TILE.height);
+    const kind=sculptInteriorShapeId(worldRoom);
+    $('interior-shape').value=kind==='custom'?'rectangle':kind;
+    $('interior-layout-apply').disabled=kind==='custom';
+  }
   if(entry){
     $('interior-width').value=String(entry.terrain.width);
     $('interior-height').value=String(entry.terrain.height);
@@ -3178,7 +3192,7 @@ function updateSculptAreaControls(){
   for(const option of $('surface-material').options)
     option.disabled=entry||worldRoom?!option.value.startsWith('floor.'):
       option.value.startsWith('floor.');
-  $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
+  $('interior-template-apply').disabled=(!entry&&!worldRoom)||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
@@ -3302,7 +3316,7 @@ function refreshSculptTemplateSelector(){
   select.replaceChildren(new Option('Édition libre (aucun modèle)',''),
     ...sculptInteriorTemplates.map(item=>new Option(item.name,item.id)));
   select.value=sculptInteriorTemplates.some(item=>item.id===current)?current:'';
-  $('interior-template-apply').disabled=!activeInteriorId||!select.value;
+  $('interior-template-apply').disabled=(!activeInteriorId&&!sculptWorldCurrentInterior())||!select.value;
 }
 function persistSculptTemplates(){
   try{localStorage.setItem(SCULPT_INTERIOR_TEMPLATE_STORAGE,
@@ -3316,6 +3330,17 @@ function loadSculptTemplates(){
   refreshSculptTemplateSelector();
 }
 $('interior-level-select').addEventListener('change',()=>{
+  if(sculptWorldCurrentInterior()){
+    const floors=worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId);
+    const target=floors[Number($('interior-level-select').value)];
+    if(target&&target!==sculptWorldAreaId){
+      commitCurrentSculptWorldArea();
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(target);
+      status('Étage ouvert : édition indépendante dans le même WorldDocument.');
+    }
+    return;
+  }
   const entry=currentSculptInterior();if(!entry)return;
   const floorIndex=Number($('interior-level-select').value);
   const target=sculptInteriors.find(e=>e.buildingId===entry.buildingId&&
@@ -3323,6 +3348,17 @@ $('interior-level-select').addEventListener('change',()=>{
   if(target)changeSculptArea(target.area.id);
 });
 $('interior-level-add').addEventListener('click',()=>{
+  if(sculptWorldCurrentInterior()){
+    try{
+      const doc=commitCurrentSculptWorldArea();
+      const result=addWorldInteriorFloor(doc,sculptWorldAreaId);
+      sculptWorldDraft=result.document;
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(result.areaId);
+      status('Nouvel étage et escaliers raccordés aux vrais Portals et Spawns.');
+    }catch(error){status('Étage non créé : '+error.message);}
+    return;
+  }
   const entry=currentSculptInterior();if(!entry)return;
   if(sculptInteriors.length>=SCULPT_INTERIOR_LIMIT){
     status('Nombre de cartes intérieures maximal atteint.');return;
@@ -3340,9 +3376,21 @@ $('interior-level-add').addEventListener('click',()=>{
   }catch(error){status(error.message);}
 });
 $('interior-shape').addEventListener('change',()=>{
-  if(currentSculptInterior())$('interior-layout-apply').click();
+  if(currentSculptInterior()||sculptWorldCurrentInterior())$('interior-layout-apply').click();
 });
 $('interior-layout-apply').addEventListener('click',()=>{
+  if(sculptWorldCurrentInterior()){
+    try{
+      const id=sculptWorldAreaId,doc=commitCurrentSculptWorldArea();
+      sculptWorldDraft=resizeWorldInterior(doc,id,{
+        width:Number($('interior-width').value),height:Number($('interior-height').value),
+        shape:$('interior-shape').value});
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(id);
+      status('Forme et dimensions enregistrées dans cette WorldArea.');
+    }catch(error){status('Forme/taille non appliquée : '+error.message);}
+    return;
+  }
   const entry=currentSculptInterior();if(!entry)return;
   if(sculptInteriors.some(e=>e.buildingId===entry.buildingId&&e.floorIndex>entry.floorIndex)&&
     (entry.terrain.width!==Number($('interior-width').value)||
@@ -3373,7 +3421,9 @@ $('interior-floor-base').addEventListener('change',()=>{
   status('Sol intérieur choisi : '+materialId+' · enregistré pour cette pièce.');
 });
 $('interior-template-save').addEventListener('click',()=>{
-  const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  const worldRoom=sculptWorldCurrentInterior();
+  const entry=worldRoom?worldInteriorAdapter(commitCurrentSculptWorldArea(),sculptWorldAreaId):
+    sculptInteriors.find(e=>e.area.id===activeInteriorId);
   if(!entry)return;
   const name=$('interior-template-name').value.trim();
   if(!name){status('Nomme ton modèle avant de l’enregistrer.');return;}
@@ -3383,8 +3433,8 @@ $('interior-template-save').addEventListener('click',()=>{
   const ids=new Set(sculptInteriorTemplates.map(t=>t.id));
   let serial=1;while(ids.has('interior-template-'+serial))serial++;
   try{
-    const item=createSculptInteriorTemplate(updateSculptInterior(entry,
-      captureSculptArea()),{id:'interior-template-'+serial,name});
+    const item=createSculptInteriorTemplate(worldRoom?entry:
+      updateSculptInterior(entry,captureSculptArea()),{id:'interior-template-'+serial,name});
     sculptInteriorTemplates=normalizeSculptInteriorTemplates([...sculptInteriorTemplates,item]);
     refreshSculptTemplateSelector();
     $('interior-template-select').value=item.id;
@@ -3396,7 +3446,19 @@ $('interior-template-save').addEventListener('click',()=>{
 $('interior-template-apply').addEventListener('click',()=>{
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
   const template=sculptInteriorTemplates.find(t=>t.id===$('interior-template-select').value);
-  if(!entry||!template)return;
+  if((!entry&&!sculptWorldCurrentInterior())||!template)return;
+  if(sculptWorldCurrentInterior()){
+    if(navigationTesting)setNavigationTesting(false);
+    try{
+      const id=sculptWorldAreaId,doc=commitCurrentSculptWorldArea();
+      // Explicit user action, never implicit on house selection.
+      sculptWorldDraft=applyWorldInteriorTemplate(doc,id,template);
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(id);
+      status('Modèle appliqué uniquement à cette maison · personnalisable.');
+    }catch(error){status('Modèle non appliqué : '+error.message);}
+    return;
+  }
   if(navigationTesting)setNavigationTesting(false);
   try{
     const updated=applySculptInteriorTemplate(entry,template);
@@ -3563,8 +3625,11 @@ function sculptWorldArea(){
   return sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)??null;
 }
 function sculptWorldHouseParentLink(){
+  if(!sculptWorldCurrentInterior())return null;
+  const floors=worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId);
+  const root=floors[0];
   return sculptWorldDraft?.portals.find(p=>
-    p.targetAreaId===sculptWorldAreaId&&p.trigger?.kind==='object-anchor'&&
+    p.targetAreaId===root&&p.trigger?.kind==='object-anchor'&&
     sculptWorldDraft.areas.some(a=>a.id===p.sourceAreaId&&a.kind==='exterior'))??null;
 }
 
