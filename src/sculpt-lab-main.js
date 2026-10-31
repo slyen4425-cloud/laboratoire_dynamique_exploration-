@@ -2074,10 +2074,14 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   // Dense forests keep all canonical objects but need not rasterize offscreen
   // billboards. A generous radius preserves tall/rotated sprites and sheared
   // 2.5D perspective near the screen edges.
-  const radius=Math.hypot(width,height)*2+Math.abs(artShift);
+  const projection=cameraView();
+  const visiblePoint=navigationTesting?point:{
+    x:rect.x,y:projection.shear*rect.x+projection.pitch*rect.y
+  };
+  const radius=Math.hypot(width,height)*(2+Math.abs(projection.shear))+Math.abs(artShift);
   const viewport=previewObjectViewport;
-  if(viewport&&(point.x+radius<viewport.minX||point.x-radius>viewport.maxX||
-    point.y+radius<viewport.minY||point.y-radius>viewport.maxY))return;
+  if(viewport&&(visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
+    visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
   ctx.save();ctx.translate(point.x,point.y);
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
