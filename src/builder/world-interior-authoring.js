@@ -102,6 +102,9 @@ export function resizeWorldInterior(d,id,{width,height,shape}={}){
   const room=requireRoom(d,id),door=requireNoOtherLinks(d,id);
   const adapter=worldInteriorAdapter(d,id);
   const changed=resizeSculptInterior(adapter,{width,height,shape});
+  if(!circleFitsWorldAreaBoundary(changed.area,changed.exitPortal.trigger.x,
+    changed.exitPortal.trigger.y,10))
+    throw Error('Nouvelle forme incompatible avec la porte : déplace la porte avant de modifier la pièce');
   const sx=changed.terrain.width/adapter.terrain.width,
         sy=changed.terrain.height/adapter.terrain.height;
   // Preserve the WorldSurface's existing route/zone IDs, materials and family
@@ -134,6 +137,10 @@ export function editWorldInteriorDoor(d,id,{x,y,scale,assetId}={}){
   const entry=inbound(d,id).find(p=>p.trigger?.kind==='object-anchor');
   if(!entry)throw Error('Entrée de maison introuvable');
   const atX=changed.exitPortal.trigger.x,atY=changed.exitPortal.trigger.y;
+  // The Portal trigger is the actual visible exit, not merely a drawing.
+  // A cut-out of an L/T/cross room must never leave its door unreachable.
+  if(!circleFitsWorldAreaBoundary(room,atX,atY,10))
+    throw Error('Porte hors du plancher : choisis un point accessible dans la forme');
   const arrival={x:atX,y:Math.max(12,atY-(door.trigger.radius??28)-18)};
   const safe=findWorldAreaBoundarySafePoint(room,arrival,18);
   if(!safe)throw Error('Porte hors sol : déplace-la sur le plancher réel');
@@ -149,6 +156,9 @@ export function applyWorldInteriorTemplate(d,id,template){
   const entry=inbound(d,id).find(p=>p.trigger?.kind==='object-anchor');
   if(!entry)throw Error('Entrée de maison introuvable');
   const at=updated.exitPortal.trigger;
+  const targetBoundary={...room,...canonicalScenePatch(updated)};
+  if(!circleFitsWorldAreaBoundary(targetBoundary,at.x,at.y,10))
+    throw Error('Modèle incompatible : sa porte se situe hors du plancher');
   const newSpawn={x:at.x,y:Math.max(12,at.y-(door.trigger.radius??28)-18)};
   const target={...room,...canonicalScenePatch(updated)};
   const safe=findWorldAreaBoundarySafePoint(target,newSpawn,18);
