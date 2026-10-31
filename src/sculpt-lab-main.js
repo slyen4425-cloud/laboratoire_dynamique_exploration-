@@ -3642,6 +3642,15 @@ function mountWorldSculptArea(areaId){
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
   mountSculptArea(scene);
+  // The preset filename belongs to the selected WorldArea, not the previously
+  // visited region. Never accidentally overwrite 'Area A' after visiting B.
+  const presetInput=$('sculpt-map-preset-name');
+  if(presetInput){
+    const areaName=(area.label?.trim()||'Ma carte').slice(0,64);
+    const builtin=builtinSculptMapPresets().some(p=>
+      p.name.toLocaleLowerCase('fr')===areaName.toLocaleLowerCase('fr'));
+    presetInput.value=builtin?(areaName.slice(0,49)+' (personnelle)'):areaName;
+  }
   // The Encounter editor follows the selected Area's actual terrain family.
   // It edits the same single saved EncounterConfig, never a local duplicate.
   selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
@@ -3954,7 +3963,8 @@ function installSculptMapPresetPalette(){
   }
   select.addEventListener('change',()=>{
     const preset=selected();
-    if(preset)nameInput.value=preset.name;
+    if(preset)nameInput.value=reserved(preset.name)
+      ?(preset.name.slice(0,49)+' (personnelle)'):preset.name;
     refresh(select.value);
   });
   $('sculpt-map-preset-save').addEventListener('click',()=>{
