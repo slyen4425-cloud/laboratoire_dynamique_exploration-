@@ -2059,7 +2059,8 @@ export function migrateLegacyBuildingDoorReturnSpawns(document) {
     const spawns = area.spawns.map(spawn => {
       const a = spawn.anchor;
       if (a?.kind !== 'building-door' || a.offset !== 72 ||
-          spawn.id !== a.objectId + '-return') return spawn;
+          !spawn.id.startsWith(a.objectId + '-return-') ||
+          !/^\\d+$/.test(spawn.id.slice((a.objectId + '-return-').length))) return spawn;
       const enter = document.portals.some(p => p.sourceAreaId === area.id &&
         p.trigger?.kind === 'object-anchor' && p.trigger.objectId === a.objectId &&
         p.trigger.anchorId === a.anchorId &&
