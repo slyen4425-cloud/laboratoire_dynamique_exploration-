@@ -4082,6 +4082,34 @@ try{
   console.log('Native prefab house interior REAL Chromium GREEN:',
     JSON.stringify({roomId:prefabRoom.areaId,roomTiles:'18x14',
       walls:prefabHouse.roomWalls,walkable:true,realPortals:true}));
+
+  // A previously broken path opened a detached standalone Sculpt room from a
+  // World Builder house. Verify the real linked WorldArea's parent action in
+  // Chromium, with the existing WorldDocument and Portals unchanged.
+  const prefabHouseBack=await run(`(()=>{
+    const button=document.querySelector('#world-area-house-back');
+    const available=!!button&&!button.hidden;
+    const was=window.__sculptWorldProbe?.().areaId;
+    document.querySelector('#navigation-toggle').click(); // return to editing
+    if(available)button.click();
+    const now=window.__sculptWorldProbe?.();
+    const raw=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const inside=raw?.areas.find(a=>a.id===was);
+    const outside=raw?.areas.find(a=>a.id===now?.areaId);
+    const link=raw?.portals.find(p=>p.sourceAreaId===now?.areaId&&
+      p.targetAreaId===was&&p.trigger?.kind==='object-anchor');
+    return {available,was,areaId:now?.areaId,inside:inside?.id,
+      outside:outside?.id,link:link?.id,
+      portalCount:raw?.portals.length,areaCount:raw?.areas.length,
+      editable:now?.editable};
+  })()`);
+  if(!prefabHouseBack.available||prefabHouseBack.was!==prefabHouse.roomId||
+     prefabHouseBack.areaId!==prefabHouse.outsideId||
+     !prefabHouseBack.link||!prefabHouseBack.editable)
+    throw Error('World Builder room must return to its OWN canonical house exterior: '+
+      JSON.stringify(prefabHouseBack));
+  console.log('World Builder house interior return REAL Chromium GREEN:',JSON.stringify(prefabHouseBack));
+
   console.log('Unified World/Map panels Chromium GREEN:',
     JSON.stringify({size:'40x31',areaId:unifiedBack.selectedAreaId,
       saved:unifiedBack.saved,oneWorldDocument:true}));
