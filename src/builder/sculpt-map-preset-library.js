@@ -2,7 +2,7 @@
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
 import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
-import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
 import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
 import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js';
 import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
