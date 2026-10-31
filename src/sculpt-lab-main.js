@@ -3192,6 +3192,8 @@ function openSelectedSculptInterior(){
       const room=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
       sculptWorldAreaScene(room); // Validate before abandoning the exterior editor.
       saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      if(objectEditing)setObjectEditing(false);
+      if(surfaceEditing)setSurfaceEditing(false);
       mountWorldSculptArea(room.id);
       sculptWorldStatus('Pièce indépendante liée à cette maison, enregistrée dans le même monde.');
     }catch(error){sculptWorldStatus('Intérieur de maison indisponible : '+error.message,true);}
