@@ -73,9 +73,8 @@ import {
   findWorldAreaById
 } from './world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
-  applyPortalTransition,
-  findTriggeredPortal
-} from './world/portal-model.js?rev=builder-dynamic-return-v1';
+  createAutomaticPortalTraversalGate
+} from './world/portal-model.js?rev=builder-dynamic-return-v1&reentry=once-per-approach-v1';
 import {
   createWorldEventController
 } from './world/world-event-controller.js?rev=world-event-message-v1';
@@ -828,21 +827,10 @@ function updateCamera() {
   );
 }
 
+// Legacy auto-traversal only; Sculpt 2.5D retains explicit Enter/Exit action.
+const automaticPortalTraversal = createAutomaticPortalTraversalGate();
 function applyTriggeredPortal() {
-  const portal = findTriggeredPortal(
-    activeWorldDocument,
-    player.currentAreaId,
-    player
-  );
-
-  if (!portal) return false;
-
-  const next = applyPortalTransition(
-    activeWorldDocument,
-    player,
-    portal
-  );
-
+  const next = automaticPortalTraversal.step(activeWorldDocument,player);
   if (!next) return false;
 
   player.currentAreaId = next.currentAreaId;

@@ -1,3 +1,12 @@
+# Correctif de sûreté — Portals automatiques hérités vs action manuelle Sculpt (31 octobre 2026)
+
+- **Constat d'usage utilisateur :** dans le test 2,5D Sculpt, l'entrée/sortie se valide avec le bouton « Entrer/Sortir ». Aucun risque de boucle automatique dans ce mode ; ne pas reculer le Spawn dans la route ni modifier son comportement manuel.
+- **Revue PR #309 :** dans l'ancien runtime `src/main.js`, `applyTriggeredPortal()` détectait **automatiquement à chaque frame** les Portals. Un Spawn généré de retour à 20 unités, à l'intérieur d'un trigger d'entrée rayon 32, pouvait produire un renvoi immédiat.
+- **Responsable** : garder le contrat canonique `Portal/Spawn`, préserver le seuil proche de la façade ; ajouter une barrière éphémère *automatique seulement* via `createAutomaticPortalTraversalGate()` dans le même `portal-model.js`. Après un passage auto, exiger une sortie physique des zones de détection avant d'autoriser une nouvelle entrée auto. Sans timer, sans deuxième géométrie ou état persisté, sans toucher au bouton Sculpt.
+- **Preuves attendues** : test RED forêt `sculpt-object-141` avec rayon 32 et retour 20, re-détection d'entrée, sortie de zone et retour possible volontaire ; CI Core + Chromium sur SHA exact ; intégration à la PR #301 isolée seulement. Checkpoint départ `checkpoint/exploration-portal-reentry-start-2026-10-31`, branche `work/exploration-portal-reentry-2026-10-31`, RED `work/exploration-portal-reentry-red-2026-10-31`. Aucune modification de `main` ou du fichier personnel.
+
+---
+
 # Lot — Seuils de maisons 2,5D et collision selon leur taille (31 octobre 2026)
 
 - **Cas utilisateur réel** : préset personnel inachevé `foret_1`, 80 × 60, 142 placements (128 pins, 11 rochers, 2 maisons, 1 escalier). Maison bois/pierre `sculpt-object-129` : scale 0,85, x780.49/y550.93. Maison terre cuite trois-quarts `sculpt-object-141` : scale 0,9, rotation 9°, x1507.58/y669.81. Ce fichier est une **fixture de référence locale**, jamais promu en préset intégré ni utilisé pour effacer le brouillon du joueur.
