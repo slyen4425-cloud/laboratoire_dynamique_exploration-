@@ -44,7 +44,7 @@ import {resolveWorldObjectPlacements} from './world/world-object-placement-model
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
-import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
+import {SCULPT_OBJECT_LIMIT,sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
@@ -698,6 +698,7 @@ function center(){
   pan={x:Math.round((width-bounds.width*zoom)/2),
     y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
 }
+let previewObjectViewport=null;
 function draw(){
   framePending=false;
   const {width,height}=dimensions(),dpr=Math.min(2,window.devicePixelRatio||1);
@@ -712,6 +713,10 @@ function draw(){
     ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   }
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+  // Conservative render-only viewport: does not change the WorldDocument,
+  // object placements, hit tests or collision ownership.
+  previewObjectViewport={minX:-pan.x/zoom,maxX:(width-pan.x)/zoom,
+    minY:-pan.y/zoom,maxY:(height-pan.y)/zoom};
   const view=cameraView();
   // Editor keeps the published V38 exact inverse pointer projection. In
   // Tester, project only the background texture, not standing actor sprites.
@@ -2066,6 +2071,13 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   const {width,height}=rect;
   const artShift=sculptBridgeDeckArtShift(rect,object);
   const point=navigationTesting?sculptCameraProject(cameraView(),rect.x,rect.y):rect;
+  // Dense forests keep all canonical objects but need not rasterize offscreen
+  // billboards. A generous radius preserves tall/rotated sprites and sheared
+  // 2.5D perspective near the screen edges.
+  const radius=Math.hypot(width,height)*2+Math.abs(artShift);
+  const viewport=previewObjectViewport;
+  if(viewport&&(point.x+radius<viewport.minX||point.x-radius>viewport.maxX||
+    point.y+radius<viewport.minY||point.y-radius>viewport.maxY))return;
   ctx.save();ctx.translate(point.x,point.y);
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
@@ -2099,12 +2111,22 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   }
   ctx.restore();
 }
+let sortedPreviewObjectSource=null,sortedPreviewObjects=[];
+function sortedResolvedPreviewObjects(){
+  // The placement array is immutable. Re-resolve only after an actual edit,
+  // not on every animation frame or either half of the actor depth pass.
+  if(sortedPreviewObjectSource!==placedObjects){
+    sortedPreviewObjectSource=placedObjects;
+    sortedPreviewObjects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
+      .sort((a,b)=>a.transform.y-b.transform.y);
+  }
+  return sortedPreviewObjects;
+}
 function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipStairId=null){
-  const objects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
-    .filter(o=>o.transform.y<=maxY&&o.transform.y>minY&&
-      o.id!==skipBridgeId&&o.id!==skipStairId)
-    .sort((a,b)=>a.transform.y-b.transform.y);
-  for(const object of objects)drawPreviewObject(object);
+  for(const object of sortedResolvedPreviewObjects()){
+    if(object.transform.y<=maxY&&object.transform.y>minY&&
+      object.id!==skipBridgeId&&object.id!==skipStairId)drawPreviewObject(object);
+  }
 }
 function refreshObjectOptions(){
   const current=$('object-definition').value;
@@ -2194,7 +2216,7 @@ function editSelectedObject(patch){
   }
 }
 function updateObjectCount(){
-  $('object-count').textContent=placedObjects.length+' objet(s) sur le relief';
+  $('object-count').textContent=placedObjects.length+' / '+SCULPT_OBJECT_LIMIT+' objet(s) sur le relief';
   $('object-undo').disabled=objectHistory.length===0;
   $('object-redo').disabled=objectRedo.length===0;
   if(objectSelectedId&&!placedObjects.some(o=>o.id===objectSelectedId))objectSelectedId=null;
@@ -2496,7 +2518,7 @@ function applyObjectAtCell(cell){
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
-  else status('Limite de 128 objets atteinte');
+  else status('Limite de '+SCULPT_OBJECT_LIMIT+' objets atteinte');
 }
 $('object-category').addEventListener('change',()=>{objectSelectedId=null;
   syncObjectSelectedControls();refreshObjectOptions();});
