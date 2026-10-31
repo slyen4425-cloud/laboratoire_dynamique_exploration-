@@ -70,7 +70,7 @@ test('old generated 72-unit return spawns migrate once; custom 72-unit spawns st
   interiorSize:{width:18*28,height:14*21}});
  const raw=JSON.parse(serializeWorldBuilderDraft(draft));
  const outside=raw.areas.find(a=>a.id===id);
- const generated=outside.spawns.find(s=>s.id===buildings[1].id+'-return');
+ const generated=outside.spawns.find(s=>s.id.startsWith(buildings[1].id+'-return-'));
  assert.equal(generated.anchor.offset,20);
  generated.anchor.offset=72;
  const upgraded=importWorldBuilderDocument(JSON.stringify(raw));
