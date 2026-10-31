@@ -78,6 +78,8 @@ test('old generated 72-unit return spawns migrate once; custom 72-unit spawns st
  const deliberate=structuredClone(raw);
  deliberate.areas.find(a=>a.id===id).spawns
   .find(s=>s.id===generated.id).id='my-custom-door-return';
+ deliberate.portals.find(p=>p.targetAreaId===id&&p.targetSpawnId===generated.id)
+  .targetSpawnId='my-custom-door-return';
  const loaded=importWorldBuilderDocument(JSON.stringify(deliberate));
  assert.equal(loaded.areas.find(a=>a.id===id).spawns
   .find(s=>s.id==='my-custom-door-return').anchor.offset,72,
