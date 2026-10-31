@@ -215,6 +215,20 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
   display:grid;gap:6px;padding:9px;background:rgba(19,43,52,.96);
   border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
 #object-palette[hidden]{display:none!important}
+#object-palette>summary{list-style:none;cursor:pointer;touch-action:manipulation;
+ display:flex;align-items:center;min-height:43px;padding:7px 9px;
+ border-radius:8px;background:#1d454b;font-weight:850;white-space:nowrap}
+#object-palette>summary::-webkit-details-marker{display:none}
+#object-palette>summary::before{content:"▾";margin-right:8px;color:#94f1d7}
+#object-palette[open]>summary{border-bottom:1px solid #4c8180;margin-bottom:3px}
+#object-palette:not([open]){width:max-content;max-width:min(205px,calc(100vw - 16px));
+ max-height:52px;overflow:hidden;padding:3px;gap:0}
+#object-palette:not([open]) > :not(summary){display:none!important}
+#object-palette:not([open])>summary::before{content:"▸"}
+/* Both chips remain independently tappable in a WorldArea on non-fullscreen. */
+body.world-area-editing #object-palette{top:58px}
+body.world-area-editing.sculpt-immersive #object-palette{
+ top:calc(env(safe-area-inset-top,0px) + 53px)}
 #sphere-profile-wrap[hidden]{display:none!important}
 #sphere-profile-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
 #sphere-profile-wrap .control{display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
@@ -951,7 +965,8 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
  <output id="surface-count">Aucune zone peinte</output>
  <small>Trace une route ou recouvre l'herbe d'une autre texture. La famille pilote les rencontres, la texture reste visuelle. Les familles et les textures sont enregistrées dans « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
 </section>
-<section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
+<details id="object-palette" open aria-label="Placer les objets et acteurs sur le relief" hidden>
+ <summary>🌳 Réglages objets</summary>
  <div id="object-controls">
  <strong>🌳 Placer un objet sur le relief</strong>
  <button type="button" id="actor-open">👥 Acteurs de map</button>
@@ -1027,7 +1042,7 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   <small id="actor-source-status">Chargement du catalogue Capture…</small>
   <small>Les vues Face/Dos utilisent les vrais visuels Capture quand ils existent. Pour modifier la taille et la direction après placement, choisis « Sélectionner / modifier », puis touche l'acteur. Aucune modification des collisions.</small>
  </section>
-</section>
+</details>
 <details id="navigation-hud" aria-label="Options de navigation du test" hidden>
   <summary>⚙ Options du test</summary>
   <div class="navigation-options-content">
