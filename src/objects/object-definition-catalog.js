@@ -382,16 +382,16 @@ const DEFINITIONS = frozen([
     },
     footprint: {
       enabled: true,
-      widthRatio: 0.78,
-      heightRatio: 0.62,
+      widthRatio: 0.9,
+      heightRatio: 0.68,
       offsetX: 0,
-      offsetY: -0.08
+      offsetY: -0.34
     },
     doorAnchors: [
       {
         id: 'main-door',
         x: 0,
-        y: 0.38
+        y: 0.1
       }
     ]
   },
@@ -426,8 +426,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 260, height: 240 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -460,8 +460,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 330, height: 280 },
-    footprint: { enabled: true, widthRatio: 0.78, heightRatio: 0.7, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -494,8 +494,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 440, height: 330 },
-    footprint: { enabled: true, widthRatio: 0.82, heightRatio: 0.72, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -513,8 +513,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 260, height: 240 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -532,8 +532,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 280, height: 250 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -551,8 +551,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 270, height: 245 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -570,8 +570,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 440, height: 330 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -589,8 +589,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 275, height: 245 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
@@ -607,8 +607,8 @@ const DEFINITIONS = frozen([
       ]
     },
     baseSize: { width: 270, height: 240 },
-    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
-    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+    footprint: { enabled: true, widthRatio: 0.9, heightRatio: 0.68, offsetX: 0, offsetY: -0.34 },
+    doorAnchors: [{ id: 'main-door', x: -0.1, y: 0.1 }]
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
