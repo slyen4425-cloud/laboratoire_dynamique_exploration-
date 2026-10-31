@@ -168,8 +168,15 @@ export function addWorldInteriorFloor(d,roomId){
   // The actual Spawn is the only authority for the arrival.
   next=replaceArea(next,upper.id,{siteKind:'building',
     spawns:upper.spawns.map(sp=>sp.id===up.targetSpawnId?{...sp,x:center.x,y:center.y}:sp)});
-  next=replaceArea(next,previous,{spawns:parent.spawns.map(sp=>
-    sp.id===down.targetSpawnId?{...sp,x:center.x,y:center.y}:sp)});
+  // The existing entry Spawn on the lower floor belongs to its own Portal.
+  // Connecting a staircase must NEVER steal/move it (particularly the
+  // exterior house entrance). The stairs have their own dedicated Spawn.
+  let landingId='stairs-arrival-from-'+index;
+  let serial=2;
+  while(parent.spawns.some(sp=>sp.id===landingId))landingId='stairs-arrival-from-'+index+'-'+serial++;
+  next=replaceArea(next,previous,{spawns:[...parent.spawns,{
+    id:landingId,x:center.x,y:center.y}]});
+  next=replacePortal(next,down.id,{targetSpawnId:landingId});
   const document=checked(next);
   return Object.freeze({document,areaId:upper.id});
 }
