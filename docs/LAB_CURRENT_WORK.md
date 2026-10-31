@@ -1,3 +1,15 @@
+# Correctif — matériaux de sol isolés par Area (31 octobre 2026)
+
+- **Signal utilisateur :** Area principale en herbe initialement, passage en montagne rocheuse, retour à Area principale qui affiche la roche. Les présets actuels ne sont pas à modifier : l'utilisateur créera ses propres modèles plus tard.
+- **Base / travail :** `work/exploration-area-ground-material-isolation-2026-10-31` depuis `dfc17b6e5a5f448d89bc90a47a162414dfd3dae5` (PR #301). Checkpoint START `checkpoint/exploration-area-ground-material-start-2026-10-31`.
+- **Cause constatée :** `#material` (choix « Sol réel ») ne modifiait que le bitmap affiché, pas `WorldSurface.baseMaterialId` sérialisé. L'éditeur lisait ensuite à nouveau la valeur DOM globale lors du montage d'une autre Area, introduisant une autorité visuelle transversale.
+- **Correction cause racine :** `WorldSurface.baseMaterialId` est la seule source du matériau rendu ; le choix UI modifie cette valeur via `normalizeSculptSurface` + `surfaceCommit`, avec historique. Au montage de chaque Area, le sélecteur est restauré depuis `surface`. Les anciennes textures sont immédiatement désactivées avant chargement async de la suivante, avec révision anti-race et invalidation du raster existant.
+- **Portée :** uniquement adaptation Sculpt rendu/éditeur ; modèles WorldArea/Portals/Spawn, rencontres, Combat, cartes utilisateur, présets, échelle de terrain, caméra, `main` et V80 inchangés.
+- **TDD :** sentinelle vrai Chromium `scripts/smoke-sculpt-terrain-lab.mjs` (choix de roche → sauvegarde → réouverture → choix d'herbe → sauvegarde → réouverture), et test du vrai modèle avec Portals A→B→A et JSON `tests/world-area-ground-material-isolation.test.js`.
+- **Validation finale requise :** CI Node + Chromium du SHA corrigé, puis vérification de publication isolée `/preview/rich-presets-pr301/` et essai utilisateur Pixel paysage. Ne pas annoncer GREEN final ni fusionner main avant ces contrôles.
+
+---
+
 # QA intégrée — World Builder mobile, liaisons A/B et audio (30 octobre 2026)
 
 - **Branche QA :** `work/exploration-three-fixes-qa-2026-10-30` issue de PR #301 `a7a100f545ef1f7930c7c1185a0767a207b85435`. Les lots distincts #302, #303 et #304 sont copiés dans un état de test combiné, jamais dans main.
