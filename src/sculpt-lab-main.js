@@ -24,7 +24,7 @@ import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
  applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3d-connector-rotation';
-import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77';
+import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77&house=canonical-v1';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
 import {sculptAltitudeVisualState} from './render/sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
@@ -44,7 +44,7 @@ import {resolveWorldObjectPlacements} from './world/world-object-placement-model
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
-import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
+import {SCULPT_OBJECT_LIMIT,sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
@@ -60,23 +60,24 @@ import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
 import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
-  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
-import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
+import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2-audio-fades-r1';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+  addImportedSculptMapPreset,importSculptMapPreset,sculptMapPresetFilename,
+  serializeSculptMapPresetForShare} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-preset-save-share-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
-import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
+import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js?rev=forest1-entrances-v1';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
-import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
@@ -110,6 +111,7 @@ let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=
 let sculptWorldDraft=null,sculptWorldAreaId=null,sculptWorldPortalPlacement=null;
 let sculptWorldAreaMounted=false; // derived from a successful canonical 2.5D WorldArea mount
 let sculptInteriorTemplates=Object.freeze([]);
+let lastSelectedInteriorHouseId=null; // UI-only selection; each WorldArea owns its own content
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
 let interiorWallGesture=null,interiorDoorMoving=false,interiorDoorGesture=null,interiorDoorPreview=null;
 let interiorWallHistory=[],interiorWallRedo=[];
@@ -433,7 +435,7 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     // Combat owns its audio until the validated iframe closes. Resume in
     // a microtask after the host has destroyed the iframe, without overlap.
-    queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.resume();});
+    queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.fadeIn({durationMs:900});});
     status('Combat terminé : '+restored.outcome+' · exploration reprise');
     return true;
   }
@@ -441,7 +443,7 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
 if(sculptEncounterDialog){
   $('sculpt-encounter-combat').addEventListener('click',()=>{
     if(!sculptPendingEncounter||sculptEncounterHost.active)return;
-    explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
+    explorationSoundtrack.fadeOut({durationMs:600}); // Transition vers la musique native Combat, sans coupure brusque.
     const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
     try{
       launchCombatHandoffNavigation({
@@ -450,7 +452,7 @@ if(sculptEncounterDialog){
         navigate(url){sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});}
       });
     }catch(error){
-      explorationSoundtrack.resume();
+      explorationSoundtrack.fadeIn({durationMs:650});
       status('Combat indisponible : '+error.message);
     }
   });
@@ -586,7 +588,7 @@ let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
 let sphereTexturesLoaded=0;
-const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
+const sculptGroundMaterials=Object.freeze(['ground.dirt','grass.forest','ground.forest_floor',
   'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
@@ -595,8 +597,9 @@ const themes=sculptGroundMaterials;
 const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
   meta.id.startsWith('floor.')).map(meta=>meta.id));
 const sculptWorldCurrentInterior=()=>sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)?.kind==='interior';
-const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
-  $('interior-floor-base').value:$('material').value;
+// WorldSurface is the ONLY base-material authority. The UI mirrors its
+// selection; the last visited Area's toolbar must never recolor this Area.
+const displayedBaseMaterialId=()=>surface.baseMaterialId;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
@@ -650,9 +653,15 @@ async function setTheme(){
   if(!((activeInteriorId||sculptWorldCurrentInterior())
     ?interiorFloorMaterials:themes).includes(id))return;
   const revision=++groundMaterialRevision;
+  // Release the previous Area's bitmap synchronously: never paint a mountain
+  // texture onto grass while the next material's image promise is pending.
+  currentTexture=null;
+  navTerrainCache=null;
+  scheduleDraw();
   const texture=await imageFor(id);
   if(revision!==groundMaterialRevision)return;
   currentTexture=texture;
+  navTerrainCache=null;
   scheduleDraw();
 }
 function dimensions(){
@@ -690,6 +699,7 @@ function center(){
   pan={x:Math.round((width-bounds.width*zoom)/2),
     y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
 }
+let previewObjectViewport=null;
 function draw(){
   framePending=false;
   const {width,height}=dimensions(),dpr=Math.min(2,window.devicePixelRatio||1);
@@ -704,6 +714,10 @@ function draw(){
     ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   }
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+  // Conservative render-only viewport: does not alter persisted scene data,
+  // object placements, hit tests or collision ownership.
+  previewObjectViewport={minX:-pan.x/zoom,maxX:(width-pan.x)/zoom,
+    minY:-pan.y/zoom,maxY:(height-pan.y)/zoom};
   const view=cameraView();
   // Editor keeps the published V38 exact inverse pointer projection. In
   // Tester, project only the background texture, not standing actor sprites.
@@ -1225,13 +1239,13 @@ function begin(event){
     interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
     scheduleDraw();return;
   }
-  if(activeInteriorId&&interiorWallMode){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorWallMode){
     const point=interiorWallPointFromEvent(event);
     if(!point)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     if(interiorWallMode==='remove'){
-      const entry=currentSculptInterior();
-      commitInteriorWalls(removeInteriorWallNear(entry.area.walls,point.x,point.y,24/zoom));
+      const area=currentInteriorAuthoringArea();
+      commitInteriorWalls(removeInteriorWallNear(area.walls,point.x,point.y,24/zoom));
       return;
     }
     const previousStart=interiorWallStart;
@@ -1323,7 +1337,7 @@ function stroke(event){
     }
     return;
   }
-  if(activeInteriorId&&interiorWallMode){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorWallMode){
     const gesture=interiorWallGesture;
     if(gesture&&event.pointerId===gesture.pointerId){
       const point=interiorWallPointFromEvent(event,gesture.first);
@@ -1494,7 +1508,7 @@ function stop(event){
     if(canceled){interiorWallStart=gesture.previousStart;interiorWallPreview=null;}
     else if(gesture.dragged||gesture.previousStart){
       interiorWallStart=null;interiorWallPreview=null;
-      try{commitInteriorWalls(appendInteriorWall(currentSculptInterior().area.walls,
+      try{commitInteriorWalls(appendInteriorWall(currentInteriorAuthoringArea().walls,
         {a:gesture.first,b:gesture.last}));}
       catch(error){status(error.message);}
     }else{interiorWallStart=gesture.origin;interiorWallPreview=gesture.origin;}
@@ -2058,6 +2072,17 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   const {width,height}=rect;
   const artShift=sculptBridgeDeckArtShift(rect,object);
   const point=navigationTesting?sculptCameraProject(cameraView(),rect.x,rect.y):rect;
+  // Dense forests keep all canonical objects but need not rasterize offscreen
+  // billboards. A generous radius preserves tall/rotated sprites and sheared
+  // 2.5D perspective near the screen edges.
+  const projection=cameraView();
+  const visiblePoint=navigationTesting?point:{
+    x:rect.x,y:projection.shear*rect.x+projection.pitch*rect.y
+  };
+  const radius=Math.hypot(width,height)*(2+Math.abs(projection.shear))+Math.abs(artShift);
+  const viewport=previewObjectViewport;
+  if(viewport&&(visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
+    visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
   ctx.save();ctx.translate(point.x,point.y);
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
@@ -2091,12 +2116,22 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   }
   ctx.restore();
 }
+let sortedPreviewObjectSource=null,sortedPreviewObjects=[];
+function sortedResolvedPreviewObjects(){
+  // The placement array is immutable. Re-resolve only after an actual edit,
+  // not on every animation frame or either half of the actor depth pass.
+  if(sortedPreviewObjectSource!==placedObjects){
+    sortedPreviewObjectSource=placedObjects;
+    sortedPreviewObjects=[...resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)]
+      .sort((a,b)=>a.transform.y-b.transform.y);
+  }
+  return sortedPreviewObjects;
+}
 function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipStairId=null){
-  const objects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
-    .filter(o=>o.transform.y<=maxY&&o.transform.y>minY&&
-      o.id!==skipBridgeId&&o.id!==skipStairId)
-    .sort((a,b)=>a.transform.y-b.transform.y);
-  for(const object of objects)drawPreviewObject(object);
+  for(const o of sortedResolvedPreviewObjects()){
+    if(o.transform.y<=maxY&&o.transform.y>minY&&
+      o.id!==skipBridgeId&&o.id!==skipStairId)drawPreviewObject(o);
+  }
 }
 function refreshObjectOptions(){
   const current=$('object-definition').value;
@@ -2146,21 +2181,50 @@ function refreshObjectVariants(preferred=null){
     $('object-variant').value=wanted;
   }
 }
+// In World Builder a house links to its own canonical WorldArea/Portal.
+// The old standalone Sculpt-only interior preview is not a world document room.
+function currentWorldHouseLink(buildingId){
+  if(!sculptWorldDraft||!sculptWorldAreaId)return null;
+  return sculptWorldDraft.portals.find(portal=>
+    portal.sourceAreaId===sculptWorldAreaId&&
+    portal.trigger?.kind==='object-anchor'&&
+    portal.trigger.objectId===buildingId&&
+    portal.targetAreaId!==sculptWorldAreaId&&
+    sculptWorldDraft.areas.some(area=>area.id===portal.targetAreaId&&area.kind==='interior'))??null;
+}
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
-  const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
+  const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId&&
+    (!sculptWorldDraft||sculptWorldArea()?.kind==='exterior');
+  const selectedHouseId=buildingSelected?selected.id:null;
+  const houseTemplate=$('object-interior-template');
+  houseTemplate.parentElement.hidden=!!sculptWorldDraft; // only standalone Sculpt uses templates
+  // The dropdown is a transient choice for THIS house only. Reusing its
+  // previous DOM value when selecting another house silently cloned the same
+  // template; opening an already-linked house could overwrite custom work.
+  if(lastSelectedInteriorHouseId!==selectedHouseId){
+    houseTemplate.value='';
+    lastSelectedInteriorHouseId=selectedHouseId;
+  }
   $('object-open-interior').hidden=!buildingSelected;
   $('object-interior-link').hidden=!buildingSelected;
   $('interior-house-link-info').hidden=!buildingSelected;
   if(buildingSelected){
-    const linked=sculptInteriors.some(e=>e.buildingId===selected.id);
+    const linked=sculptWorldDraft?!!currentWorldHouseLink(selected.id):
+      sculptInteriors.some(e=>e.buildingId===selected.id);
+    // Once an interior exists, its authored content is the only truth.
+    // Templates can be applied explicitly INSIDE its own editor instead.
+    houseTemplate.disabled=linked||!!sculptWorldDraft;
+    if(linked)houseTemplate.value='';
     $('object-open-interior').textContent=linked?'🏠 Modifier son intérieur lié':
       '🏠 Créer et lier un intérieur à cette maison';
     $('interior-house-link-info').textContent=linked?
-      'Intérieur lié à cette maison et à sa porte extérieure.':
-      'Aucun intérieur : la liaison à la porte de cette maison sera créée automatiquement.';
+      'Pièce indépendante de cette maison : modifier son intérieur ne modifie aucune autre maison.':
+      sculptWorldDraft?'Aucun intérieur World Builder : le bouton crée une vraie WorldArea et ses deux Portals pour CETTE maison.':
+        'Pièce libre ou modèle au choix pour CETTE maison uniquement.';
   }
+  if(!buildingSelected)houseTemplate.disabled=true;
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
   const def=selectedDef;
   $('object-category').value=def.kind;refreshObjectOptions();
@@ -2186,7 +2250,7 @@ function editSelectedObject(patch){
   }
 }
 function updateObjectCount(){
-  $('object-count').textContent=placedObjects.length+' objet(s) sur le relief';
+  $('object-count').textContent=placedObjects.length+' / '+SCULPT_OBJECT_LIMIT+' objet(s) sur le relief';
   $('object-undo').disabled=objectHistory.length===0;
   $('object-redo').disabled=objectRedo.length===0;
   if(objectSelectedId&&!placedObjects.some(o=>o.id===objectSelectedId))objectSelectedId=null;
@@ -2488,7 +2552,7 @@ function applyObjectAtCell(cell){
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
-  else status('Limite de 128 objets atteinte');
+  else status('Limite de '+SCULPT_OBJECT_LIMIT+' objets atteinte');
 }
 $('object-category').addEventListener('change',()=>{objectSelectedId=null;
   syncObjectSelectedControls();refreshObjectOptions();});
@@ -2531,7 +2595,8 @@ $('object-redo').addEventListener('click',()=>{
 });
 refreshObjectOptions();updateObjectCount();
 window.__sculptObjectsProbe=()=>Object.freeze({
-  active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
+  active:objectEditing,paletteExpanded:$('object-palette').open,
+  count:placedObjects.length,selectedId:objectSelectedId,
   terrainRasterBuilds,cachedGround:!!navTerrainCache,
   undoCount:objectHistory.length,redoCount:objectRedo.length,
   variantChoices:[...$('object-variant').options].map(o=>o.value),
@@ -2708,7 +2773,15 @@ $('camera-view').addEventListener('change',()=>{
     ?'Vue trois-quarts pilote : caméra inclinée ; les hauteurs, collisions et coups de pinceau restent identiques.'
     :'Vue précédente restaurée : aucun changement des données de terrain.');
 });
-$('material').addEventListener('change',setTheme);
+$('material').addEventListener('change',()=>{
+  if(activeInteriorId||sculptWorldCurrentInterior())return;
+  const baseMaterialId=$('material').value;
+  if(!themes.includes(baseMaterialId))return;
+  // The same WorldSurface used for serialization, collisions and painting
+  // owns the author's material choice, not a global select DOM node.
+  surfaceCommit(normalizeSculptSurface({...surface,baseMaterialId}));
+  setTheme();
+});
 $('water-material').addEventListener('change',setWaterMaterial);
 $('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
@@ -2756,7 +2829,7 @@ $('level-up').addEventListener('click',()=>changeTarget(Number($('target').value
 function interiorWallPointFromEvent(event,from=null){
   const raw=screenToWorldPoint(event);
   if(!Number.isFinite(raw.x)||!Number.isFinite(raw.y))return null;
-  return snapInteriorWallPoint(raw,currentSculptInterior()?.area.walls??[],{
+  return snapInteriorWallPoint(raw,currentInteriorAuthoringArea()?.walls??[],{
     grid:14,snapRadius:Math.min(22,14/zoom),from,
     orthogonal:!$('interior-wall-diagonal').checked,
     width:terrain.width*SCULPT_TILE.width,
@@ -2897,10 +2970,17 @@ $('interior-connector-turn-right').addEventListener('click',()=>{
   setInteriorConnectorRotation((Number($('interior-connector-rotation').value)+45)%360);
 });
 $('interior-wall-material').addEventListener('change',()=>{
-  const entry=currentSculptInterior();if(!entry)return;
-  const area=normalizeWorldArea({...entry.area,wallMaterialId:$('interior-wall-material').value});
-  sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
-    updateSculptInterior(e,{area}):e));
+  const previous=currentInteriorAuthoringArea();if(!previous)return;
+  const area=normalizeWorldArea({...previous,wallMaterialId:$('interior-wall-material').value});
+  const entry=currentSculptInterior();
+  if(entry){
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
+      updateSculptInterior(e,{area}):e));
+  }else if(sculptWorldCurrentInterior()){
+    sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+      areas:sculptWorldDraft.areas.map(a=>a.id===area.id?area:a)});
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+  }
   scheduleDraw();status('Texture des murs enregistrée pour cet étage.');
 });
 // Wall authoring reads/writes ONLY the canonical WorldArea.walls.
@@ -2908,13 +2988,18 @@ $('interior-wall-material').addEventListener('change',()=>{
 function currentSculptInterior(){
   return sculptInteriors.find(e=>e.area.id===activeInteriorId)??null;
 }
+// World Builder interior reads the actual WorldArea, standalone Sculpt its
+// original linked entry. Neither mode creates a duplicate collision authority.
+function currentInteriorAuthoringArea(){
+  return currentSculptInterior()?.area??(sculptWorldCurrentInterior()?sculptWorldArea():null);
+}
 function updateInteriorWallControls(){
-  const entry=currentSculptInterior(),count=entry?.area.walls.length??0;
-  $('interior-wall-toggle').disabled=!entry;
-  $('interior-wall-remove').disabled=!entry||count===0;
+  const area=currentInteriorAuthoringArea(),count=area?.walls.length??0;
+  $('interior-wall-toggle').disabled=!area;
+  $('interior-wall-remove').disabled=!area||count===0;
   $('interior-wall-cancel').disabled=!interiorWallStart;
-  $('interior-wall-undo').disabled=!entry||!interiorWallHistory.length;
-  $('interior-wall-redo').disabled=!entry||!interiorWallRedo.length;
+  $('interior-wall-undo').disabled=!area||!interiorWallHistory.length;
+  $('interior-wall-redo').disabled=!area||!interiorWallRedo.length;
   for(const [id,mode] of [['interior-wall-toggle','place'],['interior-wall-remove','remove']]){
     $(id).setAttribute('aria-pressed',String(interiorWallMode===mode));
     $(id).classList.toggle('active',interiorWallMode===mode);
@@ -2929,7 +3014,7 @@ function updateInteriorWallControls(){
 }
 function setInteriorWallMode(mode){
   if(mode&&interiorConnectorMode)setInteriorConnectorMode(false);
-  if(mode&& !activeInteriorId)return;
+  if(mode&&!currentInteriorAuthoringArea())return;
   if(mode){
     if(interiorDoorMoving)setInteriorDoorMoving(false);
     if(navigationTesting)setNavigationTesting(false);
@@ -2942,17 +3027,24 @@ function setInteriorWallMode(mode){
   updateInteriorWallControls();scheduleDraw();
 }
 function commitInteriorWalls(walls,{history=true}={}){
-  const entry=currentSculptInterior();
-  if(!entry||walls===entry.area.walls||
-    JSON.stringify(walls)===JSON.stringify(entry.area.walls))return false;
+  const previous=currentInteriorAuthoringArea();
+  if(!previous||walls===previous.walls||
+    JSON.stringify(walls)===JSON.stringify(previous.walls))return false;
+  const area=normalizeWorldArea({...previous,walls});
+  if(currentSculptInterior()){
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===area.id?
+      updateSculptInterior(e,{area}):e));
+  }else if(sculptWorldCurrentInterior()){
+    // Exactly one WorldArea owns collision, persistence and the editor walls.
+    sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+      areas:sculptWorldDraft.areas.map(a=>a.id===area.id?area:a)});
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+  }
   if(history){
-    interiorWallHistory.push(entry.area.walls);
+    interiorWallHistory.push(previous.walls);
     if(interiorWallHistory.length>40)interiorWallHistory.shift();
     interiorWallRedo=[];
   }
-  const area=normalizeWorldArea({...entry.area,walls});
-  sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?
-    updateSculptInterior(e,{area}):e));
   updateInteriorWallControls();scheduleDraw();
   status('Murs sauvegardés avec cet intérieur · '+area.walls.length+' segment(s)');
   return true;
@@ -2971,13 +3063,13 @@ $('interior-wall-cancel').addEventListener('click',()=>{
   updateInteriorWallControls();scheduleDraw();
 });
 $('interior-wall-undo').addEventListener('click',()=>{
-  const entry=currentSculptInterior();if(!entry||!interiorWallHistory.length)return;
-  const before=interiorWallHistory.pop();interiorWallRedo.push(entry.area.walls);
+  const area=currentInteriorAuthoringArea();if(!area||!interiorWallHistory.length)return;
+  const before=interiorWallHistory.pop();interiorWallRedo.push(area.walls);
   commitInteriorWalls(before,{history:false});
 });
 $('interior-wall-redo').addEventListener('click',()=>{
-  const entry=currentSculptInterior();if(!entry||!interiorWallRedo.length)return;
-  const next=interiorWallRedo.pop();interiorWallHistory.push(entry.area.walls);
+  const area=currentInteriorAuthoringArea();if(!area||!interiorWallRedo.length)return;
+  const next=interiorWallRedo.pop();interiorWallHistory.push(area.walls);
   commitInteriorWalls(next,{history:false});
 });
 
@@ -2988,7 +3080,12 @@ function captureSculptArea(){
 }
 function mountSculptArea(snapshot){
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
-  surface=snapshot.surface;
+  surface=normalizeSculptSurface(snapshot.surface);
+  // Restore the base surface before raster invalidation and any asynchronous
+  // image load. Every WorldArea (including user-authored ones) has its own
+  // material in its own saved area record.
+  if(!activeInteriorId&&!sculptWorldCurrentInterior()&&themes.includes(surface.baseMaterialId))
+    $('material').value=surface.baseMaterialId;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
   actorHistory=[];actorRedo=[];surfaceHistory=[];surfaceRedo=[];
   objectSelectedId=null;actorSelectedId=null;
@@ -3008,11 +3105,12 @@ function mountSculptArea(snapshot){
 }
 function updateSculptAreaControls(){
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
-  $('interior-area-bar').hidden=!entry;
-  document.body.classList.toggle('sculpt-interior-area',!!entry);
+  const worldRoom=sculptWorldCurrentInterior()?sculptWorldArea():null;
+  $('interior-area-bar').hidden=!entry&&!worldRoom;
+  document.body.classList.toggle('sculpt-interior-area',!!entry||!!worldRoom);
   $('interior-area-label').textContent=entry?
     '🏠 '+(entry.floorIndex===0?'Rez-de-chaussée':'Étage '+entry.floorIndex)+
-      ' · '+entry.buildingId:'🏞 Extérieur';
+      ' · '+entry.buildingId:worldRoom?'🏠 '+(worldRoom.label??'Intérieur de la maison'):'🏞 Extérieur';
   if(entry){
     const floors=sculptInteriors.filter(e=>e.buildingId===entry.buildingId)
       .sort((a,b)=>a.floorIndex-b.floorIndex);
@@ -3034,9 +3132,9 @@ function updateSculptAreaControls(){
     $('interior-shape').value=kind==='custom'?'rectangle':kind;
     $('interior-layout-apply').disabled=kind==='custom';
   }
-  $('new-map-toggle').disabled=!!entry;
+  $('new-map-toggle').disabled=!!entry||!!worldRoom;
   for(const option of $('surface-material').options)
-    option.disabled=entry?!option.value.startsWith('floor.'):
+    option.disabled=entry||worldRoom?!option.value.startsWith('floor.'):
       option.value.startsWith('floor.');
   $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
@@ -3044,8 +3142,8 @@ function updateSculptAreaControls(){
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
   updateInteriorWallControls();updateInteriorDoorControls();updateInteriorConnectorControls();
-  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';updateInteriorConnectorControls();
-  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';
+  if(entry||worldRoom)$('interior-wall-material').value=
+    (entry?.area??worldRoom).wallMaterialId??'plaster';
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(activeInteriorId===nextAreaId||(!activeInteriorId&&
@@ -3092,6 +3190,35 @@ function openSelectedSculptInterior(){
   const resolved=resolveWorldObjectPlacements(selected?[selected]:[],
     objectDefinitionCatalogV1)[0];
   if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
+
+  if(sculptWorldDraft){
+    // One world document and one set of portals: never open a detached Sculpt
+    // prototype that cannot be saved/entered through the World Builder.
+    if(sculptWorldArea()?.kind!=='exterior'||!sculptWorldAreaMounted){
+      sculptWorldStatus('Ouvre une maison depuis sa carte extérieure World Builder.',true);
+      return;
+    }
+    try{
+      commitCurrentSculptWorldArea();
+      let portal=currentWorldHouseLink(resolved.id);
+      if(!portal){
+        sculptWorldDraft=createBuildingInteriorLink(sculptWorldDraft,{
+          sourceAreaId:sculptWorldAreaId,buildingId:resolved.id,anchorId:'main-door',
+          interiorSize:{width:18*28,height:14*21}
+        });
+        portal=currentWorldHouseLink(resolved.id);
+      }
+      if(!portal)throw Error('Liaison intérieur/porte non créée : vérifier la définition de cette maison');
+      const room=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+      sculptWorldAreaScene(room); // Validate before abandoning the exterior editor.
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      if(objectEditing)setObjectEditing(false);
+      if(surfaceEditing)setSurfaceEditing(false);
+      mountWorldSculptArea(room.id);
+      sculptWorldStatus('Pièce indépendante liée à cette maison, enregistrée dans le même monde.');
+    }catch(error){sculptWorldStatus('Intérieur de maison indisponible : '+error.message,true);}
+    return;
+  }
   let entry=sculptInteriors.find(e=>e.buildingId===resolved.id&&e.floorIndex===0);
   const wanted=sculptInteriorTemplates.find(t=>t.id===$('object-interior-template').value);
   if(!entry){
@@ -3102,12 +3229,10 @@ function openSelectedSculptInterior(){
     if(!entry){status('Bâtiment sans porte canonique : intérieur non créé.');return;}
     if(wanted)entry=applySculptInteriorTemplate(entry,wanted);
     sculptInteriors=Object.freeze([...sculptInteriors,entry]);
-  }else if(wanted){
-    // Deliberate model selection in house palette updates ONLY this house's
-    // WorldArea content; entryPortal still points to its own area + doorAnchor.
-    entry=applySculptInteriorTemplate(entry,wanted);
-    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?entry:e));
   }
+  // Never re-apply a previously selected template when editing an existing
+  // room. The explicit "Appliquer le modèle choisi" control belongs INSIDE
+  // that room and leaves every other house unchanged.
   changeSculptArea(entry.area.id);
 }
 function updateSculptDoorAction(){
@@ -3194,12 +3319,16 @@ $('interior-layout-apply').addEventListener('click',()=>{
 });
 $('interior-template-select').addEventListener('change',refreshSculptTemplateSelector);
 $('interior-floor-base').addEventListener('change',()=>{
-  if(!activeInteriorId)return;
+  if(!activeInteriorId&&!sculptWorldCurrentInterior())return;
   const materialId=$('interior-floor-base').value;
   if(!interiorFloorMaterials.includes(materialId))return;
   surface={...surface,baseMaterialId:materialId};
   loadSurfacePaintAssets();updateSurfaceCount();setTheme();
-  status('Sol intérieur choisi : '+materialId+' · conservé dans la scène JSON.');
+  if(sculptWorldCurrentInterior()){
+    commitCurrentSculptWorldArea();
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+  }
+  status('Sol intérieur choisi : '+materialId+' · enregistré pour cette pièce.');
 });
 $('interior-template-save').addEventListener('click',()=>{
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
@@ -3235,11 +3364,13 @@ $('interior-template-apply').addEventListener('click',()=>{
   }catch(e){status(e.message);}
 });
 $('object-open-interior').addEventListener('click',openSelectedSculptInterior);
-$('interior-area-return').addEventListener('click',()=>
-  changeSculptArea(SCULPT_EXTERIOR_AREA_ID));
+$('interior-area-return').addEventListener('click',()=>{
+  if(sculptWorldCurrentInterior())returnToWorldHouseParent();
+  else changeSculptArea(SCULPT_EXTERIOR_AREA_ID);
+});
 $('interior-camera-angle').addEventListener('input',()=>{
   $('interior-camera-value').textContent=$('interior-camera-angle').value+'°';
-  if(activeInteriorId){navTerrainCache=null;fit();}
+  if(activeInteriorId||sculptWorldCurrentInterior()){navTerrainCache=null;fit();}
 });
 $('navigation-area-door').addEventListener('click',()=>{
   if(!navActor||!navigationTesting)return;
@@ -3389,6 +3520,12 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
 function sculptWorldArea(){
   return sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)??null;
 }
+function sculptWorldHouseParentLink(){
+  return sculptWorldDraft?.portals.find(p=>
+    p.targetAreaId===sculptWorldAreaId&&p.trigger?.kind==='object-anchor'&&
+    sculptWorldDraft.areas.some(a=>a.id===p.sourceAreaId&&a.kind==='exterior'))??null;
+}
+
 function worldOutboundPortals(){
   return sculptWorldDraft?.portals.filter(p=>p.sourceAreaId===sculptWorldAreaId)??[];
 }
@@ -3410,6 +3547,7 @@ function refreshSculptWorldPanel(){
   const panel=$('world-area-portal-panel');
   if(!sculptWorldDraft||!panel)return;
   const area=sculptWorldArea();if(!area)return;
+  $('world-area-house-back').hidden=!sculptWorldHouseParentLink();
   panel.hidden=false;
   $('world-area-current-name').textContent=(area.siteKind==='dungeon'?'🗝 ':'🏞 ')+
     (area.label??area.id);
@@ -3620,7 +3758,21 @@ function mountWorldSculptArea(areaId){
   sculptWorldAreaId=areaId;
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
+  // Wall history is scoped to THIS active canonical WorldArea. Carrying A's
+  // undo stack into B would overwrite B's walls through the shared editor.
+  interiorWallHistory=[];interiorWallRedo=[];
+  interiorWallMode=null;interiorWallStart=null;interiorWallPreview=null;
+  interiorWallGesture=null;document.body.classList.remove('interior-wall-authoring');
   mountSculptArea(scene);
+  // The preset filename belongs to the selected WorldArea, not the previously
+  // visited region. Never accidentally overwrite 'Area A' after visiting B.
+  const presetInput=$('sculpt-map-preset-name');
+  if(presetInput){
+    const areaName=(area.label?.trim()||'Ma carte').slice(0,64);
+    const builtin=builtinSculptMapPresets().some(p=>
+      p.name.toLocaleLowerCase('fr')===areaName.toLocaleLowerCase('fr'));
+    presetInput.value=builtin?(areaName.slice(0,49)+' (personnelle)'):areaName;
+  }
   // The Encounter editor follows the selected Area's actual terrain family.
   // It edits the same single saved EncounterConfig, never a local duplicate.
   selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
@@ -3628,14 +3780,10 @@ function mountWorldSculptArea(areaId){
   sculptExteriorEncounters=area.encounters;
   sculptEncounterConfig=sculptWorldDraft.encounterConfig;
   sculptEncounterAreaCache=null;
-  if(area.kind==='exterior'){
-    if([...$('material').options].some(o=>o.value===area.surface.baseMaterialId))
-      $('material').value=area.surface.baseMaterialId;
-  }
   updateSculptAreaControls();
   refreshSculptEncounterEditor();
   refreshSculptWorldPanel();
-  setTheme();fit();
+  fit();
 }
 function traverseSculptWorldPortal(){
   let portal=sculptWorldPortalAtHero();
@@ -3705,6 +3853,17 @@ function traverseSculptWorldPortal(){
     feedback.dataset.error='true';feedback.hidden=false;
   }
 }
+function returnToWorldHouseParent(){
+  const parent=sculptWorldHouseParentLink();
+  if(!parent||!sculptWorldAreaMounted)return;
+  try{
+    commitCurrentSculptWorldArea();
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+    if(interiorWallMode)setInteriorWallMode(null);
+    mountWorldSculptArea(parent.sourceAreaId);
+    sculptWorldStatus('Maison retrouvée : intérieur et extérieur sauvegardés dans le même monde.');
+  }catch(error){sculptWorldStatus('Retour à la maison impossible : '+error.message,true);}
+}
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
@@ -3764,6 +3923,7 @@ function installSculptWorldAreaEditing(){
   }
   $('world-area-unavailable-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-unavailable-create').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
+  $('world-area-house-back').addEventListener('click',returnToWorldHouseParent);
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-return-float').addEventListener('click',()=>saveAndReturnWorldArea());
@@ -3857,40 +4017,117 @@ function installSculptWorldAreaEditing(){
 // Local templates are versioned snapshots of the existing Sculpt scene, not
 // an alternative document de monde. Reusing them always enters the regular editor.
 function installSculptMapPresetPalette(){
-  const select=$('sculpt-map-preset-select');
+  const select=$('sculpt-map-preset-select'),nameInput=$('sculpt-map-preset-name');
   const presetStatus=(message,error=false)=>{
     const label=$('sculpt-map-preset-status');
     label.textContent=message;label.style.color=error?'#ffccbb':'#b7f2d6';
     status(message);
   };
+  const personal=()=>readSculptMapPresets(window.localStorage);
+  const selected=()=>listAvailableSculptMapPresets(window.localStorage)
+    .find(p=>p.id===select.value);
+  const reserved=name=>builtinSculptMapPresets().some(p=>
+    p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
+  function suggestName(){
+    const area=sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId);
+    const label=area?.label?.trim()||'Ma carte';
+    // A builtin label is a protected name. Copying its map never overwrites it.
+    return reserved(label)?(label+' (personnelle)').slice(0,64):label.slice(0,64);
+  }
   function refresh(selectedId){
     try{
       const library=listAvailableSculptMapPresets(window.localStorage);
       const previous=selectedId??select.value;
-      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
-        ...library.map(p=>new Option(p.name+' · '+p.scene.terrain.width+
-          ' × '+p.scene.terrain.height,p.id)));
+      select.replaceChildren(new Option('Sélectionner une carte',''),
+        ...library.map(p=>new Option(p.name,p.id)));
       if(library.some(p=>p.id===previous))select.value=previous;
       const available=!!select.value;
       $('sculpt-map-preset-apply').disabled=!available;
       $('sculpt-map-preset-export').disabled=!available;
+      $('sculpt-map-preset-count').textContent=personal().length+
+        ' carte(s) personnelle(s) · disponibles aussi dans World Builder';
       return library;
     }catch(error){presetStatus(error.message,true);return [];}
   }
-  const selected=()=>listAvailableSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
-  select.addEventListener('change',()=>refresh(select.value));
+  function storeCurrent(){
+    let name=nameInput.value.trim()||suggestName();
+    nameInput.value=name;
+    if(reserved(name))throw Error('Ce nom appartient à un modèle fourni : choisis un autre nom.');
+    const existing=personal().find(p=>
+      p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
+    if(existing&&!window.confirm('Remplacer ta carte enregistrée « '+existing.name+' » ?'))return null;
+    // The snapshot comes from the SAME Sculpt/WorldArea state as gameplay.
+    const saved=saveSculptMapPreset(window.localStorage,captureSculptArea(),name);
+    refresh(saved.id);
+    return saved;
+  }
+  function downloadPreset(preset){
+    const content=serializeSculptMapPresetForShare(preset);
+    const blob=new Blob([content],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=sculptMapPresetFilename(preset);
+    document.body.append(link);link.click();link.remove();
+    // A Chrome/Android download must retain the object URL until the browser
+    // has accepted the click. Immediate revocation broke some mobile exports.
+    window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+    presetStatus('Fichier « '+link.download+' » téléchargé. Tu peux me le joindre ici.');
+  }
+  async function sharePreset(preset){
+    const content=serializeSculptMapPresetForShare(preset);
+    const filename=sculptMapPresetFilename(preset);
+    if(typeof File==='function'&&typeof navigator.share==='function'&&
+        typeof navigator.canShare==='function'){
+      const file=new File([content],filename,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({title:'Carte '+preset.name,files:[file]});
+          presetStatus('Carte partagée : '+preset.name);
+          return;
+        }catch(error){
+          if(error?.name==='AbortError'){
+            presetStatus('Partage annulé · ta carte reste dans la bibliothèque.');
+            return;
+          }
+          // Native file sharing is optional. The identical validated file
+          // remains available as a normal download when Share fails.
+        }
+      }
+    }
+    downloadPreset(preset);
+  }
+  select.addEventListener('change',()=>{
+    const preset=selected();
+    if(preset)nameInput.value=reserved(preset.name)
+      ?(preset.name.slice(0,49)+' (personnelle)'):preset.name;
+    refresh(select.value);
+  });
   $('sculpt-map-preset-save').addEventListener('click',()=>{
     try{
-      const name=$('sculpt-map-preset-name').value.trim();
-      if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))
-        throw Error('Ce nom appartient à un modèle fourni : choisis un nouveau nom pour ta copie.');
-      const existing=readSculptMapPresets(window.localStorage)
-        .find(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
-      if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
-      const preset=saveSculptMapPreset(window.localStorage,captureSculptArea(),name);
-      refresh(preset.id);
-      presetStatus('Carte « '+preset.name+' » enregistrée. Réutilisable dans le World Builder.');
-    }catch(error){presetStatus(error.message,true);}
+      const saved=storeCurrent();
+      if(saved)presetStatus('✓ Carte « '+saved.name+' » conservée dans mes cartes et World Builder.');
+    }catch(error){presetStatus('Sauvegarde impossible : '+error.message+
+      '. Utilise « Enregistrer et partager » pour récupérer ton fichier.',true);}
+  });
+  $('sculpt-map-preset-save-share').addEventListener('click',async()=>{
+    let preset;
+    try{
+      preset=storeCurrent();
+      if(!preset)return;
+    }catch(error){
+      // Storage quota / private navigation cannot silently discard the map.
+      // Offer the real validated attachment without pretending it was saved.
+      const name=nameInput.value.trim()||suggestName();
+      if(reserved(name)){presetStatus('Choisis un nom différent du modèle fourni.',true);return;}
+      try{
+        preset=createSculptMapPreset(captureSculptArea(),{name});
+        presetStatus('Stockage local indisponible : partage le fichier maintenant.',true);
+      }catch(validationError){
+        presetStatus('Sauvegarde et fichier impossibles : '+validationError.message,true);
+        return;
+      }
+    }
+    try{await sharePreset(preset);}
+    catch(error){presetStatus('Partage impossible : '+error.message,true);}
   });
   $('sculpt-map-preset-apply').addEventListener('click',()=>{
     try{
@@ -3915,30 +4152,29 @@ function installSculptMapPresetPalette(){
       presetStatus('Préset « '+preset.name+' » appliqué · passages et arrivées inchangés.');
     }catch(error){presetStatus(error.message,true);}
   });
+
   $('sculpt-map-preset-export').addEventListener('click',()=>{
     try{
-      const preset=selected();if(!preset)throw Error('Choisis un préset à exporter');
-      const blob=new Blob([JSON.stringify(preset,null,2)],{type:'application/json'});
-      const url=URL.createObjectURL(blob),link=document.createElement('a');
-      link.href=url;link.download=preset.name.replace(/[^a-z0-9-_]+/gi,'-')+'.map-preset.json';
-      document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
-      presetStatus('Préset JSON exporté.');
-    }catch(error){presetStatus(error.message,true);}
+      const preset=selected();if(!preset)throw Error('Choisis une carte enregistrée');
+      downloadPreset(preset);
+    }catch(error){presetStatus('Export impossible : '+error.message,true);}
   });
   $('sculpt-map-preset-import').addEventListener('change',async event=>{
     const input=event.currentTarget,file=input.files?.[0];if(!file)return;
     try{
       const imported=importSculptMapPreset(await file.text());
-      const existing=readSculptMapPresets(window.localStorage).find(p=>
+      const existing=personal().find(p=>
         p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr'));
       if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
-      if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr')))
-        throw Error('Le nom de ce préset est réservé à une carte fournie : renomme le préset avant import.');
+      if(reserved(imported.name))
+        throw Error('Ce nom est déjà celui d’une carte fournie. Renomme le préset avant import.');
       const saved=addImportedSculptMapPreset(window.localStorage,imported);
-      refresh(saved.id);presetStatus('Préset « '+saved.name+' » importé.');
+      refresh(saved.id);nameInput.value=saved.name;
+      presetStatus('✓ Carte « '+saved.name+' » importée dans la bibliothèque, sans toucher au monde en cours.');
     }catch(error){presetStatus('Import refusé : '+error.message,true);}
     finally{input.value='';}
   });
+  nameInput.value=suggestName();
   refresh();
 }
 

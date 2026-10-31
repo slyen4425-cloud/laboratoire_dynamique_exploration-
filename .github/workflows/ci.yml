@@ -64,14 +64,16 @@ jobs:
         run: |
           node scripts/audit-combat-preview.mjs combat-preview
           node scripts/combat-native-bridge-smoke.mjs
-      - name: Real Chromium Builder invalid-encounter navigation smoke
-        run: node scripts/smoke-builder-encounter-validation.mjs
+      # Run the Area material/World Builder regression before the known
+      # intermittent Combat victory->return E2E; both remain mandatory gates.
+      - name: Real Chromium sculptable terrain lab brush and material smoke
+        run: node scripts/smoke-sculpt-terrain-lab.mjs
       - name: Real Chromium interior floor material and brush smoke
         run: node scripts/smoke-interior-floor-brush.mjs
       - name: Real Chromium opt-in relief canyon Builder and SVG gate
         run: node scripts/smoke-relief-canyon-pilot.mjs
-      - name: Real Chromium sculptable terrain lab brush and material smoke
-        run: node scripts/smoke-sculpt-terrain-lab.mjs
+      - name: Real Chromium Builder invalid-encounter navigation smoke
+        run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Native Chromium Explorer music gesture and actual MP3 playback
         run: node scripts/smoke-exploration-music-playback.mjs
       - name: Real Chromium Encounter startup smoke

@@ -5,6 +5,7 @@ import {createWorldBuilderDraft,connectWorldAreas,setWorldInitialArea,updatePort
 import {sculptWorldAreaScene,placeSculptWorldPortal} from './sculpt-world-area-link.js';
 import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {alignSculptReciprocalGatePair} from './sculpt-reciprocal-gates.js';
 
 export function playableSculptArea(area){
   if(!area)return false;
@@ -67,18 +68,13 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
       p.visual={...p.visual,label:destination.label??destination.id};
     });
   }
-  const knownPortals=new Set(next.portals.map(p=>p.id));
-  next=connectWorldAreas(next,{
-    sourceAreaId:source.id,targetAreaId:target.id,returnPortal:true
+  // An explicit repair also restores the correct edge ownership:
+  // source exit -> destination entry; destination entry -> source exit.
+  // The canonical contract reuses existing Portals and allocates distinct
+  // arrival Spawns, without moving any initial Spawn or object-anchor door.
+  next=alignSculptReciprocalGatePair(next,{
+    sourceAreaId:source.id,targetAreaId:target.id
   });
-  // Fresh reciprocal Portals are aligned with the prefab's WALKABLE road,
-  // including the return journey. Existing authored triggers are never moved.
-  for(const portal of next.portals.filter(p=>!knownPortals.has(p.id)&&
-    p.trigger?.kind==='point')){
-    const from=next.areas.find(a=>a.id===portal.sourceAreaId);
-    next=placeSculptWorldPortal(next,portal.id,
-      mapEdgePoint(sculptWorldAreaScene(from),'exit'));
-  }
   // The destination returns using its own canonical Portal, not a UI teleport.
   const reverse=next.portals.find(p=>p.sourceAreaId===target.id&&
     p.targetAreaId===source.id);
