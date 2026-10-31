@@ -1958,7 +1958,9 @@ export function createBuildingInteriorLink(
       kind: 'object-anchor',
       objectId: buildingId,
       anchorId,
-      radius: 32
+      // One canonical trigger, with enough approach distance in a 2.5D
+      // perspective for the player to reach the actual facade.
+      radius: 52
     },
     targetAreaId:
       targetArea.id,
@@ -2072,7 +2074,31 @@ export function migrateLegacyBuildingDoorReturnSpawns(document) {
     });
     return localChange ? {...area,spawns} : area;
   });
-  return changed ? {...document,areas} : document;
+
+  // Generated 32-unit entrances from the former default were too strict
+  // in the oblique 2.5D view. Migrate ONLY unmodified generator-owned
+  // entries backed by a matching return Portal and anchored outside Spawn.
+  const portals = document.portals.map(p => {
+    const anchor=p.trigger;
+    if(anchor?.kind!=='object-anchor' || anchor.radius!==32 ||
+       !p.id.startsWith(anchor.objectId+'-enter-') ||
+       !/^\d+$/.test(p.id.slice((anchor.objectId+'-enter-').length)))return p;
+    const target=document.areas.find(a=>a.id===p.targetAreaId);
+    if(target?.kind!=='interior')return p;
+    const matchingReturn=document.portals.some(ret=>
+      ret.sourceAreaId===target.id && ret.targetAreaId===p.sourceAreaId &&
+      document.areas.some(area=>area.id===p.sourceAreaId&&area.spawns.some(spawn=>
+        spawn.id===ret.targetSpawnId &&
+        spawn.anchor?.kind==='building-door' &&
+        spawn.anchor.objectId===anchor.objectId &&
+        spawn.anchor.anchorId===anchor.anchorId &&
+        spawn.id.startsWith(anchor.objectId+'-return-') &&
+        /^\d+$/.test(spawn.id.slice((anchor.objectId+'-return-').length)))));
+    if(!matchingReturn)return p;
+    changed=true;
+    return {...p,trigger:{...anchor,radius:52}};
+  });
+  return changed ? {...document,areas,portals} : document;
 }
 
 export function importWorldBuilderDocument(
