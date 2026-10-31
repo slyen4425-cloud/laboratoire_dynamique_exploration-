@@ -38,6 +38,22 @@ export function createSculptMapPreset(scene,{name='Ma carte',id='map-preset-1'}=
   return importSculptMapPreset({kind:SCULPT_MAP_PRESET_KIND,version:1,
     id,name:nameOf(name),scene:source});
 }
+// The .map-preset.json attachment is the SAME authoring contract consumed by
+// the World Builder. It is not a second export format or a height-grid dump.
+export function sculptMapPresetFilename(input){
+  const name=typeof input==='string'?input:input?.name;
+  const basename=String(name??'ma-carte').normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')
+    .slice(0,70)||'ma-carte';
+  return basename+'.map-preset.json';
+}
+export function serializeSculptMapPresetForShare(input){
+  // Revalidate before download: only versioned, complete Sculpt scenes leave
+  // the app; the debug UI and the WorldDocument are intentionally excluded.
+  return JSON.stringify(importSculptMapPreset(input));
+}
+
 export function readSculptMapPresets(storage){
   if(!storage||typeof storage.getItem!=='function')return [];
   const raw=storage.getItem(SCULPT_MAP_PRESET_KEY);

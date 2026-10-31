@@ -7,8 +7,10 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1';
-import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {createWorldAreaFromSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
+  importSculptMapPreset,addImportedSculptMapPreset,sculptMapPresetFilename,
+  serializeSculptMapPresetForShare} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1-preset-save-share-v1';
+import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2-zone-gates-r1';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
@@ -256,16 +258,16 @@ function installWorldAssembler(){
     const select=byId('world-map-preset-select'),previous=select.value;
     try{
       const presets=listAvailableSculptMapPresets(window.localStorage);
-      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
-        ...presets.map(p=>new Option(p.name+' · '+p.scene.terrain.width+' × '+
-          p.scene.terrain.height,p.id)));
+      select.replaceChildren(new Option('Choisir une carte',''),
+        ...presets.map(p=>new Option(p.name,p.id)));
       if(presets.some(p=>p.id===previous))select.value=previous;
       byId('world-map-preset-create').disabled=!select.value;
-      byId('world-map-preset-info').textContent=presets.length
-        ?'Chaque préset crée une WorldArea indépendante. Un donjon sera relié à la zone sélectionnée.'
-        :'Enregistre une carte dans Exploration 2,5D → « Mes cartes présets » pour pouvoir la placer ici.';
+      byId('world-map-preset-download').disabled=!select.value;
+      const count=readSculptMapPresets(window.localStorage).length;
+      byId('world-map-preset-info').textContent=count+' carte(s) personnelle(s) · mêmes cartes que dans Exploration 2,5D. Le préset conserve terrain, textures et objets ; pour conserver aussi les intérieurs personnalisés et les passages, utilise Exporter le monde complet.';
     }catch(error){
       byId('world-map-preset-create').disabled=true;
+      byId('world-map-preset-download').disabled=true;
       byId('world-map-preset-info').textContent='Bibliothèque indisponible : '+error.message;
     }
   }
@@ -274,13 +276,70 @@ function installWorldAssembler(){
     if(document.activeElement!==byId('world-name'))byId('world-name').value=draft.id;
     renderAreaList();renderGraph();renderInspector();refreshMapPresets();
   }
+  // Save the current, real WorldArea into the SAME local library used by
+  // Sculpt. Portals and Spawns stay in WorldDocument; no second world owner.
+  on(byId('world-map-preset-save-current'),'click',()=>{
+    try{
+      const area=getSelected();
+      const scene=sculptWorldAreaScene(area);
+      let name=areaLabel(area).slice(0,64);
+      if(builtinSculptMapPresets().some(p=>
+          p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))
+        name=(name.slice(0,49)+' (personnelle)').slice(0,64);
+      const old=readSculptMapPresets(window.localStorage).find(p=>
+        p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
+      if(old&&!window.confirm('Remplacer la carte enregistrée « '+old.name+' » ?'))return;
+      const saved=saveSculptMapPreset(window.localStorage,scene,name);
+      refreshMapPresets();
+      byId('world-map-preset-select').value=saved.id;
+      byId('world-map-preset-name').value=saved.name;
+      refreshMapPresets();
+      status('✓ '+saved.name+' enregistrée dans mes cartes personnelles. Tu peux la télécharger ou la réutiliser.');
+    }catch(error){status('Sauvegarde impossible : '+error.message+
+      ' · la zone actuelle reste inchangée.',true);}
+  });
+  on(byId('world-map-preset-import'),'change',async event=>{
+    const input=event.currentTarget,file=input.files?.[0];
+    if(!file)return;
+    try{
+      const imported=importSculptMapPreset(await file.text());
+      if(builtinSculptMapPresets().some(p=>
+        p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr')))
+        throw Error('Cette carte porte le nom d’un modèle fourni : choisis un autre nom.');
+      const old=readSculptMapPresets(window.localStorage).find(p=>
+        p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr'));
+      if(old&&!window.confirm('Remplacer la carte enregistrée « '+old.name+' » ?'))return;
+      const saved=addImportedSculptMapPreset(window.localStorage,imported);
+      refreshMapPresets();
+      byId('world-map-preset-select').value=saved.id;
+      byId('world-map-preset-name').value=saved.name;
+      refreshMapPresets();
+      status('✓ '+saved.name+' importée dans la bibliothèque, sans toucher au monde en cours.');
+    }catch(error){status('Import impossible : '+error.message,true);}
+    finally{input.value='';}
+  });
+  on(byId('world-map-preset-download'),'click',()=>{
+    try{
+      const preset=listAvailableSculptMapPresets(window.localStorage).find(p=>
+        p.id===byId('world-map-preset-select').value);
+      if(!preset)throw Error('Sélectionne une carte.');
+      const blob=new Blob([serializeSculptMapPresetForShare(preset)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),link=document.createElement('a');
+      link.href=url;link.download=sculptMapPresetFilename(preset);
+      document.body.append(link);link.click();link.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+      status('Fichier « '+link.download+' » téléchargé. Envoie-le dans la conversation pour que je l’intègre.');
+    }catch(error){status('Téléchargement impossible : '+error.message,true);}
+  });
   on(byId('world-map-preset-select'),'change',()=>{
     byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
+    byId('world-map-preset-download').disabled=!byId('world-map-preset-select').value;
     try{
       const preset=listAvailableSculptMapPresets(window.localStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
-      if(preset&&!byId('world-map-preset-name').value.trim())
-        byId('world-map-preset-name').value=preset.name;
+      // Switching to another preset must not reuse the former Area's name.
+      // An explicitly typed custom name can still be edited *after* selection.
+      if(preset)byId('world-map-preset-name').value=preset.name;
     }catch(error){status(error.message,true);}
   });
   on(byId('world-map-preset-create'),'click',()=>{

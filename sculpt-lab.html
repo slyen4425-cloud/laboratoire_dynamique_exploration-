@@ -514,7 +514,7 @@ body.world-area-editing .world-area-portal-panel:not([open]){
 body.navigation-testing #sculpt-map-preset-panel{display:none!important}
 #sculpt-map-preset-panel{
  position:absolute;z-index:20;left:8px;top:8px;
- width:min(230px,calc(100% - 16px));max-height:min(58dvh,calc(100% - 16px));
+ width:min(310px,calc(100% - 16px));max-height:min(72dvh,calc(100% - 16px));
  overflow-y:auto;border:1px solid #80bba9;border-radius:11px;background:#122d39f5;
  box-shadow:0 8px 24px #000a;
 }
@@ -523,20 +523,27 @@ body.navigation-testing #sculpt-map-preset-panel{display:none!important}
    Keep the preset chip below the ORIGINAL fullscreen action hitbox. */
 body.sculpt-immersive #sculpt-map-preset-panel{
  top:calc(env(safe-area-inset-top,0px) + 57px);
- max-height:min(53dvh,calc(100% - 65px));
+ max-height:min(70dvh,calc(100% - 65px));
 }
 #sculpt-map-preset-panel summary{padding:8px 10px;min-height:38px;
  font-size:.76rem;font-weight:800;cursor:pointer;touch-action:manipulation}
-#sculpt-map-preset-panel .preset-controls{display:grid;gap:6px;padding:8px;
+#sculpt-map-preset-panel .preset-controls{display:grid;gap:8px;padding:9px;
  border-top:1px solid #446f70;font-size:.72rem}
 #sculpt-map-preset-panel input,#sculpt-map-preset-panel select{
  width:100%;min-height:34px;padding:4px 6px}
-#sculpt-map-preset-panel button{min-height:35px;padding:5px;font-size:.72rem}
+#sculpt-map-preset-panel button{min-height:43px;padding:8px;font-size:.78rem}
+#sculpt-map-preset-panel .preset-primary{background:#24765e;border-color:#91e5ba;font-weight:850}
+#sculpt-map-preset-count{color:#bcf2d4;font-weight:750}
+#sculpt-advanced-json{margin-top:6px;border:1px dashed #51616b;border-radius:10px;padding:7px}
+#sculpt-advanced-json>summary{cursor:pointer;font-size:.75rem;color:#b2c4c8;min-height:32px}
+#sculpt-advanced-json[open]{padding:10px}
+#sculpt-advanced-json textarea{margin-top:8px;max-height:130px}
+body.sculpt-immersive #sculpt-advanced-json,body.navigation-testing #sculpt-advanced-json{display:none!important}
 #sculpt-map-preset-panel .preset-controls label{display:grid;gap:4px}
 #sculpt-map-preset-import{max-width:100%}
 @media(max-width:720px){
  #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
- #sculpt-map-preset-panel{width:min(205px,calc(100% - 16px))}
+ #sculpt-map-preset-panel{width:min(278px,calc(100% - 16px))}
 }
 /* The header intentionally disappears in immersive test. This independently
    reachable physical action always exits to the SAME WorldDocument editor. */
@@ -838,23 +845,27 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   <small id="world-area-portal-status" role="status" aria-live="polite">Place l'entrée sur ta carte ; le héros passera à la zone reliée en jeu.</small>
  </div>
 </details>
-<details id="sculpt-map-preset-panel" aria-label="Bibliothèque de cartes">
- <summary>🗺 Mes cartes présets</summary>
+<details id="sculpt-map-preset-panel" aria-label="Enregistrer mes cartes">
+ <summary>💾 Sauvegarder ma carte</summary>
  <div class="preset-controls">
-  <label>Nom de la carte
-   <input id="sculpt-map-preset-name" type="text" maxlength="64" placeholder="Ex. Forêt de départ">
+  <small>Crée ta carte, donne-lui un nom et enregistre-la. Aucun code ou numéro à copier.</small>
+  <label>Nom de ma carte
+   <input id="sculpt-map-preset-name" type="text" maxlength="64" autocomplete="off" placeholder="Ex. Mon village">
   </label>
-  <button id="sculpt-map-preset-save" type="button">💾 Enregistrer cette carte comme préset</button>
-  <label>Mes cartes enregistrées
-   <select id="sculpt-map-preset-select" aria-label="Sélectionner un préset de carte"></select>
+  <button id="sculpt-map-preset-save" class="preset-primary" type="button">💾 Enregistrer dans mes cartes</button>
+  <button id="sculpt-map-preset-save-share" type="button">📤 Enregistrer et partager le fichier</button>
+  <small id="sculpt-map-preset-count" aria-live="polite">Mes cartes personnelles</small>
+  <label>Retrouver une carte
+   <select id="sculpt-map-preset-select" aria-label="Sélectionner une carte enregistrée"></select>
   </label>
-  <button id="sculpt-map-preset-apply" type="button">📍 Charger ce préset dans la carte</button>
-  <button id="sculpt-map-preset-export" type="button">↓ Exporter le préset JSON</button>
-  <label>↑ Importer un préset JSON
-   <input id="sculpt-map-preset-import" type="file" accept=".json,.map-preset.json,application/json">
+  <button id="sculpt-map-preset-apply" type="button">📍 Utiliser cette carte</button>
+  <button id="sculpt-map-preset-export" type="button">↓ Télécharger cette carte</button>
+  <label>📂 Importer un fichier de carte
+   <input id="sculpt-map-preset-import" type="file" accept=".map-preset.json,.json,application/json">
   </label>
-  <small>Un préset conserve le relief, les textures et les assets, sans déplacer les passages ni leurs arrivées. En World Builder, les dimensions de la zone restent inchangées.</small>
-  <small id="sculpt-map-preset-status" role="status"></small>
+  <small>Le fichier .map-preset.json peut être joint à notre conversation pour intégrer ton modèle dans les cartes proposées par le Labo.</small>
+  <small>Une carte préset garde le terrain, les textures et les objets. Pour conserver un monde entier avec ses passages et intérieurs personnalisés, utilise l'export du World Builder.</small>
+  <small id="sculpt-map-preset-status" role="status" aria-live="polite"></small>
  </div>
 </details>
 <section id="new-map-panel" role="dialog" aria-modal="true" aria-label="Créer une carte vierge" hidden>
@@ -1165,11 +1176,18 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
 
 
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
-<section class="controls"><button id="scene-export">Exporter scène (terrain + objets)</button>
-<button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
-<button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
-<textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
+<details id="sculpt-advanced-json" class="sculpt-advanced-json">
+ <summary>Outils techniques avancés (JSON brut)</summary>
+ <section class="controls">
+  <button id="scene-export" type="button">Générer scène JSON</button>
+  <button id="export" type="button">Générer hauteurs JSON</button>
+  <button id="json-toggle" type="button">Afficher / masquer les données</button>
+  <button id="import" type="button">Importer ces données techniques</button>
+ </section>
+ <small>Réservé au diagnostic. Pour garder ou partager une carte, utilise « Sauvegarder ma carte » au-dessus du terrain : aucun chiffre à copier.</small>
+ <textarea id="json" hidden aria-label="Données JSON techniques de terrain et de scène"></textarea>
+</details>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-audio-fades-r1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-audio-fades-r1-preset-save-share-v1"></script>
 </body>
 </html>

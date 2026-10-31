@@ -1,3 +1,16 @@
+# Lot — Enregistrer, partager et importer ses présets sans JSON brut (31 octobre 2026)
+
+- **Demande :** enregistrer un préset personnel simplement sur Pixel paysage, le retrouver dans World Builder, récupérer un vrai fichier transférable à ChatGPT et permettre son intégration ultérieure au catalogue officiel après réception et validation.
+- **Base :** PR #301 `74f383475a1285c54c46a9a6f1141c0d4a2b5ce2`. Checkpoint START `checkpoint/exploration-preset-save-share-start-2026-10-31`. Branche `work/exploration-preset-save-share-2026-10-31`.
+- **Autorité :** exclusivement `SCULPT_MAP_PRESET_KIND` v1, `saveSculptMapPreset`, `importSculptMapPreset` et `SCULPT_MAP_PRESET_KEY` ; pas de second inventaire, pas de WorldDocument dans les présets. Le World Builder demeure propriétaire des vrais passages, spawns et pièces.
+- **UI :** une bibliothèque visible, nom lisible sans ID ni taille imposée ; sauvegarder en local, action explicite « Télécharger/Partager » du préset validé, fichier `.map-preset.json`, import simple depuis un fichier, compteur de cartes personnelles. Ne plus afficher des centaines de chiffres de terrain dans le chemin utilisateur ; conserver l'outil de diagnostic dans un volet avancé.
+- **Protection des données :** jamais d'effacement par erreur ; remplacement d'un préset homonyme après confirmation ; import valide avant toute écriture ; fichier partageable même si le stockage local n'est pas disponible ; sauvegarde courante intacte lors de l'import d'un préset en bibliothèque.
+- **Limites annoncées :** exporter un préset de carte (relief, texture, objets) n'est pas exporter un monde complet avec ses Portals, rencontres et intérieurs personnalisés. Pour cela, utiliser l'export WorldDocument existant.
+- **Tests requis :** TDD RED des contrats de fichier, de la bibliothèque sur le même localStorage (éditeur et World Builder), remplacement explicite, import/export round trip, bouton mobile sans textarea, vrais tests Chromium du site, CI du SHA exact ; checkpoint GREEN uniquement après preuves et revue mobile.
+- **Hors périmètre :** refonte du moteur, déplacement de Portal, changement de l'autorité de WorldDocument, retouche des présets générés, fusion main, changement Combat.
+
+---
+
 # Correctif — matériaux de sol isolés par Area (31 octobre 2026)
 
 - **Signal utilisateur :** Area principale en herbe initialement, passage en montagne rocheuse, retour à Area principale qui affiche la roche. Les présets actuels ne sont pas à modifier : l'utilisateur créera ses propres modèles plus tard.

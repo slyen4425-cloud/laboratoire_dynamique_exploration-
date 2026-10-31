@@ -78,6 +78,55 @@ try{
      let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
      return {visible,w:canvas.width,h:canvas.height};})()`);
   if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
+
+  // Real browser save -> file download -> import using the SAME official
+  // library. Debug numeric JSON remains hidden; no WorldDocument is touched.
+  const mapLibrary=await run(`(async()=>{
+    const key='gensrpg.exploration.map-presets.v1';
+    const previous=localStorage.getItem(key);
+    const name=document.querySelector('#sculpt-map-preset-name');
+    const panel=document.querySelector('#sculpt-map-preset-panel');
+    const advanced=document.querySelector('#sculpt-advanced-json');
+    if(!panel||!advanced||advanced.open)return {error:'missing or exposed debug panel'};
+    panel.open=true;
+    name.value='Ma clairière partageable';
+    document.querySelector('#sculpt-map-preset-save').click();
+    const first=JSON.parse(localStorage.getItem(key)??'[]');
+    const chosen=document.querySelector('#sculpt-map-preset-select').value;
+    let href=null,filename=null;
+    const originalClick=HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click=function(){href=this.href;filename=this.download;};
+    try{document.querySelector('#sculpt-map-preset-export').click();}
+    finally{HTMLAnchorElement.prototype.click=originalClick;}
+    const file=href?JSON.parse(await(await fetch(href)).text()):null;
+    const edited=JSON.parse(JSON.stringify(file??{}));
+    edited.name='Ma clairière réimportée';
+    const input=document.querySelector('#sculpt-map-preset-import');
+    Object.defineProperty(input,'files',{configurable:true,
+      value:[new File([JSON.stringify(edited)],'mon-test.map-preset.json',
+      {type:'application/json'})]});
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+    await new Promise(ok=>setTimeout(ok,90));
+    const saved=JSON.parse(localStorage.getItem(key)??'[]');
+    const result={name:first[0]?.name,chosen,filename,
+      fileKind:file?.kind,fileVersion:file?.version,
+      hasRealTerrain:!!file?.scene?.terrain,
+      hasWorldGraph:'portals' in (file??{}),
+      imported:saved.some(p=>p.name===edited.name),
+      sceneUnchanged:!document.querySelector('#json').value,
+      advancedClosed:!advanced.open};
+    if(previous===null)localStorage.removeItem(key);else localStorage.setItem(key,previous);
+    panel.open=false;
+    return result;
+  })()`);
+  if(mapLibrary.error||mapLibrary.name!=='Ma clairière partageable'||
+    mapLibrary.filename!=='ma-clairiere-partageable.map-preset.json'||
+    mapLibrary.fileKind!=='gensrpg-sculpt-map-preset'||mapLibrary.fileVersion!==1||
+    !mapLibrary.hasRealTerrain||mapLibrary.hasWorldGraph||!mapLibrary.imported||
+    !mapLibrary.advancedClosed||!mapLibrary.sceneUnchanged)
+    throw Error('Named mobile map preset save/download/reimport failed: '+JSON.stringify(mapLibrary));
+  console.log('GREEN real Chromium: named map saved, file downloaded, imported without altering the live scene or exposing numeric JSON');
+
   // V12 real Chromium feature pixels, not just toggles or SVG flags.
   const overlayGate=await run(`(async()=>{
  await new Promise(ok=>setTimeout(ok,220));
@@ -3884,6 +3933,31 @@ try{
     throw Error('Mobile playable WorldArea repair failed: '+JSON.stringify(repairedRoute));
   console.log('Legacy world playable destination repair REAL Chromium GREEN:',
     JSON.stringify(repairedRoute));
+
+  const builderPersonalMap=await run(`(()=>{
+    const key='gensrpg.exploration.map-presets.v1';
+    const old=localStorage.getItem(key);
+    const selected=window.__worldAssemblerProbe?.().selectedAreaId;
+    const area=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'))
+      .areas.find(a=>a.id===selected);
+    document.querySelector('#world-map-preset-save-current').click();
+    const saved=JSON.parse(localStorage.getItem(key)??'[]');
+    const choice=document.querySelector('#world-map-preset-select').value;
+    const button=document.querySelector('#world-map-preset-download');
+    const info=document.querySelector('#world-map-preset-info').textContent;
+    const result={area:selected,material:area?.surface?.baseMaterialId,
+      saved:saved.length,name:saved[0]?.name,choice,
+      canDownload:!button.disabled,countVisible:info.includes('1 carte(s) personnelle(s)'),
+      preservedWorld:JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'))
+        .areas.some(x=>x.id===selected)};
+    if(old===null)localStorage.removeItem(key);else localStorage.setItem(key,old);
+    return result;
+  })()`);
+  if(builderPersonalMap.saved!==1||!builderPersonalMap.choice||
+      !builderPersonalMap.canDownload||!builderPersonalMap.countVisible||
+      !builderPersonalMap.preservedWorld)
+    throw Error('World Builder real-area personal map library save failed: '+JSON.stringify(builderPersonalMap));
+  console.log('GREEN real Chromium World Builder: named zone added to SAME user map library, without changing WorldDocument');
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{

@@ -70,7 +70,8 @@ import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1
 import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2-audio-fades-r1';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+  addImportedSculptMapPreset,importSculptMapPreset,sculptMapPresetFilename,
+  serializeSculptMapPresetForShare} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-preset-save-share-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
@@ -3641,6 +3642,15 @@ function mountWorldSculptArea(areaId){
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
   mountSculptArea(scene);
+  // The preset filename belongs to the selected WorldArea, not the previously
+  // visited region. Never accidentally overwrite 'Area A' after visiting B.
+  const presetInput=$('sculpt-map-preset-name');
+  if(presetInput){
+    const areaName=(area.label?.trim()||'Ma carte').slice(0,64);
+    const builtin=builtinSculptMapPresets().some(p=>
+      p.name.toLocaleLowerCase('fr')===areaName.toLocaleLowerCase('fr'));
+    presetInput.value=builtin?(areaName.slice(0,49)+' (personnelle)'):areaName;
+  }
   // The Encounter editor follows the selected Area's actual terrain family.
   // It edits the same single saved EncounterConfig, never a local duplicate.
   selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
@@ -3873,40 +3883,117 @@ function installSculptWorldAreaEditing(){
 // Local templates are versioned snapshots of the existing Sculpt scene, not
 // an alternative document de monde. Reusing them always enters the regular editor.
 function installSculptMapPresetPalette(){
-  const select=$('sculpt-map-preset-select');
+  const select=$('sculpt-map-preset-select'),nameInput=$('sculpt-map-preset-name');
   const presetStatus=(message,error=false)=>{
     const label=$('sculpt-map-preset-status');
     label.textContent=message;label.style.color=error?'#ffccbb':'#b7f2d6';
     status(message);
   };
+  const personal=()=>readSculptMapPresets(window.localStorage);
+  const selected=()=>listAvailableSculptMapPresets(window.localStorage)
+    .find(p=>p.id===select.value);
+  const reserved=name=>builtinSculptMapPresets().some(p=>
+    p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
+  function suggestName(){
+    const area=sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId);
+    const label=area?.label?.trim()||'Ma carte';
+    // A builtin label is a protected name. Copying its map never overwrites it.
+    return reserved(label)?(label+' (personnelle)').slice(0,64):label.slice(0,64);
+  }
   function refresh(selectedId){
     try{
       const library=listAvailableSculptMapPresets(window.localStorage);
       const previous=selectedId??select.value;
-      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
-        ...library.map(p=>new Option(p.name+' · '+p.scene.terrain.width+
-          ' × '+p.scene.terrain.height,p.id)));
+      select.replaceChildren(new Option('Sélectionner une carte',''),
+        ...library.map(p=>new Option(p.name,p.id)));
       if(library.some(p=>p.id===previous))select.value=previous;
       const available=!!select.value;
       $('sculpt-map-preset-apply').disabled=!available;
       $('sculpt-map-preset-export').disabled=!available;
+      $('sculpt-map-preset-count').textContent=personal().length+
+        ' carte(s) personnelle(s) · disponibles aussi dans World Builder';
       return library;
     }catch(error){presetStatus(error.message,true);return [];}
   }
-  const selected=()=>listAvailableSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
-  select.addEventListener('change',()=>refresh(select.value));
+  function storeCurrent(){
+    let name=nameInput.value.trim()||suggestName();
+    nameInput.value=name;
+    if(reserved(name))throw Error('Ce nom appartient à un modèle fourni : choisis un autre nom.');
+    const existing=personal().find(p=>
+      p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
+    if(existing&&!window.confirm('Remplacer ta carte enregistrée « '+existing.name+' » ?'))return null;
+    // The snapshot comes from the SAME Sculpt/WorldArea state as gameplay.
+    const saved=saveSculptMapPreset(window.localStorage,captureSculptArea(),name);
+    refresh(saved.id);
+    return saved;
+  }
+  function downloadPreset(preset){
+    const content=serializeSculptMapPresetForShare(preset);
+    const blob=new Blob([content],{type:'application/json'});
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    link.href=url;link.download=sculptMapPresetFilename(preset);
+    document.body.append(link);link.click();link.remove();
+    // A Chrome/Android download must retain the object URL until the browser
+    // has accepted the click. Immediate revocation broke some mobile exports.
+    window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+    presetStatus('Fichier « '+link.download+' » téléchargé. Tu peux me le joindre ici.');
+  }
+  async function sharePreset(preset){
+    const content=serializeSculptMapPresetForShare(preset);
+    const filename=sculptMapPresetFilename(preset);
+    if(typeof File==='function'&&typeof navigator.share==='function'&&
+        typeof navigator.canShare==='function'){
+      const file=new File([content],filename,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({title:'Carte '+preset.name,files:[file]});
+          presetStatus('Carte partagée : '+preset.name);
+          return;
+        }catch(error){
+          if(error?.name==='AbortError'){
+            presetStatus('Partage annulé · ta carte reste dans la bibliothèque.');
+            return;
+          }
+          // Native file sharing is optional. The identical validated file
+          // remains available as a normal download when Share fails.
+        }
+      }
+    }
+    downloadPreset(preset);
+  }
+  select.addEventListener('change',()=>{
+    const preset=selected();
+    if(preset)nameInput.value=reserved(preset.name)
+      ?(preset.name.slice(0,49)+' (personnelle)'):preset.name;
+    refresh(select.value);
+  });
   $('sculpt-map-preset-save').addEventListener('click',()=>{
     try{
-      const name=$('sculpt-map-preset-name').value.trim();
-      if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))
-        throw Error('Ce nom appartient à un modèle fourni : choisis un nouveau nom pour ta copie.');
-      const existing=readSculptMapPresets(window.localStorage)
-        .find(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
-      if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
-      const preset=saveSculptMapPreset(window.localStorage,captureSculptArea(),name);
-      refresh(preset.id);
-      presetStatus('Carte « '+preset.name+' » enregistrée. Réutilisable dans le World Builder.');
-    }catch(error){presetStatus(error.message,true);}
+      const saved=storeCurrent();
+      if(saved)presetStatus('✓ Carte « '+saved.name+' » conservée dans mes cartes et World Builder.');
+    }catch(error){presetStatus('Sauvegarde impossible : '+error.message+
+      '. Utilise « Enregistrer et partager » pour récupérer ton fichier.',true);}
+  });
+  $('sculpt-map-preset-save-share').addEventListener('click',async()=>{
+    let preset;
+    try{
+      preset=storeCurrent();
+      if(!preset)return;
+    }catch(error){
+      // Storage quota / private navigation cannot silently discard the map.
+      // Offer the real validated attachment without pretending it was saved.
+      const name=nameInput.value.trim()||suggestName();
+      if(reserved(name)){presetStatus('Choisis un nom différent du modèle fourni.',true);return;}
+      try{
+        preset=createSculptMapPreset(captureSculptArea(),{name});
+        presetStatus('Stockage local indisponible : partage le fichier maintenant.',true);
+      }catch(validationError){
+        presetStatus('Sauvegarde et fichier impossibles : '+validationError.message,true);
+        return;
+      }
+    }
+    try{await sharePreset(preset);}
+    catch(error){presetStatus('Partage impossible : '+error.message,true);}
   });
   $('sculpt-map-preset-apply').addEventListener('click',()=>{
     try{
@@ -3931,30 +4018,29 @@ function installSculptMapPresetPalette(){
       presetStatus('Préset « '+preset.name+' » appliqué · passages et arrivées inchangés.');
     }catch(error){presetStatus(error.message,true);}
   });
+
   $('sculpt-map-preset-export').addEventListener('click',()=>{
     try{
-      const preset=selected();if(!preset)throw Error('Choisis un préset à exporter');
-      const blob=new Blob([JSON.stringify(preset,null,2)],{type:'application/json'});
-      const url=URL.createObjectURL(blob),link=document.createElement('a');
-      link.href=url;link.download=preset.name.replace(/[^a-z0-9-_]+/gi,'-')+'.map-preset.json';
-      document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);
-      presetStatus('Préset JSON exporté.');
-    }catch(error){presetStatus(error.message,true);}
+      const preset=selected();if(!preset)throw Error('Choisis une carte enregistrée');
+      downloadPreset(preset);
+    }catch(error){presetStatus('Export impossible : '+error.message,true);}
   });
   $('sculpt-map-preset-import').addEventListener('change',async event=>{
     const input=event.currentTarget,file=input.files?.[0];if(!file)return;
     try{
       const imported=importSculptMapPreset(await file.text());
-      const existing=readSculptMapPresets(window.localStorage).find(p=>
+      const existing=personal().find(p=>
         p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr'));
       if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
-      if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr')))
-        throw Error('Le nom de ce préset est réservé à une carte fournie : renomme le préset avant import.');
+      if(reserved(imported.name))
+        throw Error('Ce nom est déjà celui d’une carte fournie. Renomme le préset avant import.');
       const saved=addImportedSculptMapPreset(window.localStorage,imported);
-      refresh(saved.id);presetStatus('Préset « '+saved.name+' » importé.');
+      refresh(saved.id);nameInput.value=saved.name;
+      presetStatus('✓ Carte « '+saved.name+' » importée dans la bibliothèque, sans toucher au monde en cours.');
     }catch(error){presetStatus('Import refusé : '+error.message,true);}
     finally{input.value='';}
   });
+  nameInput.value=suggestName();
   refresh();
 }
 
