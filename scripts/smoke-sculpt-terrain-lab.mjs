@@ -200,6 +200,8 @@ try{
   // The WorldArea's right inspector must not cover the forest when closed.
   // Test real Chromium hit testing, selected settings and object placement
   // through the existing native canvas pointer path (no duplicate input).
+  await run("document.querySelector('#fullscreen-toggle').click()");
+  await run("new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))");
   const foldedStart=await run(`(()=>{
     document.querySelector('#mode-objects').click();
     const p=document.querySelector('#object-palette'),s=p.querySelector('summary');
@@ -213,21 +215,29 @@ try{
     const underPanel=document.elementFromPoint(x,y);
     const covered=p.contains(underPanel);
     s.click();
-    const free=document.elementFromPoint(x,y)?.id==='sculpt-canvas';
+    const freedElement=document.elementFromPoint(x,y);
+    const free=freedElement?.id==='sculpt-canvas';
     const probe=window.__sculptObjectsProbe();
     return {covered,free,expanded:probe.paletteExpanded,active:probe.active,
       action:document.querySelector('#object-action').value,
       definition,scale:Number(scale.value),panelWidth:p.getBoundingClientRect().width,
-      panelHeight:p.getBoundingClientRect().height};
+      panelHeight:p.getBoundingClientRect().height,
+      panelTop:rect.top,panelLeft:rect.left,viewportWidth:innerWidth,
+      viewportHeight:innerHeight,elementBefore:underPanel?.id??underPanel?.tagName,
+      elementAfter:freedElement?.id??freedElement?.tagName,
+      clickX:document.querySelector('#sculpt-canvas').getBoundingClientRect().left+
+        document.querySelector('#sculpt-canvas').getBoundingClientRect().width/2,
+      clickY:document.querySelector('#sculpt-canvas').getBoundingClientRect().top+
+        document.querySelector('#sculpt-canvas').getBoundingClientRect().height/2};
   })()`);
   if(!foldedStart.covered||!foldedStart.free||foldedStart.expanded||
     !foldedStart.active||foldedStart.action!=='place'||!foldedStart.definition||
     foldedStart.scale!==75||foldedStart.panelWidth>210||foldedStart.panelHeight>56)
     throw Error('Object palette did not release the covered map in Chromium: '+JSON.stringify(foldedStart));
   const beforeFoldPlacement=await run("window.__sculptObjectsProbe().count");
-  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
-  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:center.x,y:center.y,button:'left',clickCount:1});
-  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:center.x,y:center.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:foldedStart.clickX,y:foldedStart.clickY});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:foldedStart.clickX,y:foldedStart.clickY,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:foldedStart.clickX,y:foldedStart.clickY,button:'left',clickCount:1});
   const foldedEnd=await run(`(()=>{
     const p=document.querySelector('#object-palette');p.querySelector('summary').click();
     const probe=window.__sculptObjectsProbe();
@@ -238,6 +248,7 @@ try{
     const placed=probe.count;
     if(placed>0)document.querySelector('#object-undo').click();
     document.querySelector('#mode-objects').click();
+    document.querySelector('#fullscreen-toggle').click();
     return {same,placed,cleared:window.__sculptObjectsProbe().count,
       noLongerActive:!window.__sculptObjectsProbe().active,
       paletteHidden:p.hidden};
