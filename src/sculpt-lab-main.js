@@ -24,6 +24,9 @@ import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
  serializeSculptInteriors,importSculptInteriors,sculptInteriorTransition,sculptInteriorAvailablePortal,
  normalizeSculptInteriorTemplates,createSculptInteriorTemplate,
  applySculptInteriorTemplate} from './world/sculpt-interior-area-link.js?rev=interior-v79-r3d-connector-rotation';
+import {worldInteriorAdapter,worldInteriorFloors,worldInteriorDoorPortal,
+ resizeWorldInterior,editWorldInteriorDoor,addWorldInteriorFloor,editWorldInteriorConnector,
+ applyWorldInteriorTemplate} from './builder/world-interior-authoring.js?rev=canonical-room-editor-v1';
 import {sculptPreviewCollisionCatalog} from './core/sculpt-preview-object-collisions.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-ramp-v77&house=canonical-v1';
 import {sculptNavigationFrameSteps} from './core/sculpt-navigation-frame-clock.js';
 import {sculptVisualHeightStep} from './core/sculpt-visual-height-step.js';
@@ -772,12 +775,14 @@ function draw(){
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     const worldExit=sculptWorldCurrentInterior()?
-      worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point'):null;
+      worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??worldExit?.trigger,
-      stairPortals:sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
-        .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal')
+      stairPortals:(sculptWorldCurrentInterior()?worldOutboundPortals():
+        sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
+          .filter(p=>p.sourceAreaId===activeInteriorId))
+        .filter(p=>p.visual?.marker==='portal')
         .map(p=>interiorConnectorPreview?.id===p.id?
           {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),
       doorScale:interior?.exitPortal?.visual?.scale??worldExit?.visual?.scale??.58,
@@ -801,7 +806,7 @@ function draw(){
       ctx.restore();
     }
     if(interiorDoorMoving){
-      const p=interiorDoorPreview??interior?.exitPortal.trigger;
+      const p=interiorDoorPreview??interior?.exitPortal.trigger??worldExit?.trigger;
       if(p?.kind==='point'){
         ctx.save();ctx.setLineDash([4,4]);ctx.strokeStyle='#ffe89e';ctx.lineWidth=2;
         ctx.beginPath();ctx.arc(p.x,p.y,24,0,Math.PI*2);ctx.stroke();ctx.restore();
@@ -1223,7 +1228,7 @@ function begin(event){
     applySculptWorldPointerPlacement(point);
     return;
   }
-  if(activeInteriorId&&interiorConnectorMode){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorConnectorMode){
     const point=screenToWorldPoint(event);
     if(!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
@@ -1231,12 +1236,13 @@ function begin(event){
     interiorConnectorPreview={id:$('interior-connector-link').value,...point};
     scheduleDraw();return;
   }
-  if(activeInteriorId&&interiorDoorMoving){
+  if((activeInteriorId||sculptWorldCurrentInterior())&&interiorDoorMoving){
     const point=interiorDoorPointFromEvent(event);
     if(!point)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     interiorDoorGesture={pointerId:event.pointerId,point};
-    interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
+    interiorDoorPreview={...(currentSculptInterior()?.exitPortal??
+        worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId)).trigger,...point};
     scheduleDraw();return;
   }
   if((activeInteriorId||sculptWorldCurrentInterior())&&interiorWallMode){
@@ -1332,7 +1338,8 @@ function stroke(event){
     if(interiorDoorGesture&&event.pointerId===interiorDoorGesture.pointerId){
       const point=interiorDoorPointFromEvent(event);
       if(point){interiorDoorGesture.point=point;
-        interiorDoorPreview={...currentSculptInterior().exitPortal.trigger,...point};
+        interiorDoorPreview={...(currentSculptInterior()?.exitPortal??
+        worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId)).trigger,...point};
         scheduleDraw();}
     }
     return;
@@ -1483,7 +1490,13 @@ function stop(event){
     interiorConnectorGesture=null;interiorConnectorPreview=null;
     if(event.type!=='pointercancel'){
       try{
-        sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+        if(sculptWorldCurrentInterior()){
+          const doc=commitCurrentSculptWorldArea();
+          sculptWorldDraft=editWorldInteriorConnector(doc,$('interior-connector-link').value,{
+            x:gesture.point.x,y:gesture.point.y,assetId:$('interior-connector-asset').value,
+            rotationDeg:Number($('interior-connector-rotation').value)});
+          saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+        }else sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
           sourceAreaId:activeInteriorId,portalId:$('interior-connector-link').value,
           x:gesture.point.x,y:gesture.point.y,assetId:$('interior-connector-asset').value});
         updateInteriorConnectorControls();
@@ -2844,13 +2857,16 @@ function interiorDoorPointFromEvent(event){
 }
 function updateInteriorDoorControls(){
   const entry=currentSculptInterior();
-  $('interior-door-move').disabled=!entry||entry.floorIndex!==0;
-  $('interior-door-asset').disabled=!entry||entry.floorIndex!==0;
-  $('interior-door-asset').value=entry?.exitPortal.visual.assetId??'default';
-  $('interior-door-scale').disabled=!entry||entry.floorIndex!==0;
+  const worldDoor=sculptWorldCurrentInterior()?
+    worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId):null;
+  const door=entry?.exitPortal??worldDoor;
+  $('interior-door-move').disabled=!door||(entry&&entry.floorIndex!==0);
+  $('interior-door-asset').disabled=!door||(entry&&entry.floorIndex!==0);
+  $('interior-door-asset').value=door?.visual.assetId??'default';
+  $('interior-door-scale').disabled=!door||(entry&&entry.floorIndex!==0);
   $('interior-door-move').setAttribute('aria-pressed',String(interiorDoorMoving));
   $('interior-door-move').classList.toggle('active',interiorDoorMoving);
-  const size=Math.round(100*(entry?.exitPortal.visual.scale??.58));
+  const size=Math.round(100*(door?.visual.scale??.58));
   $('interior-door-scale').value=String(size);
   $('interior-door-scale-value').textContent=size+' %';
   $('interior-door-move').textContent=interiorDoorMoving?
@@ -2858,7 +2874,8 @@ function updateInteriorDoorControls(){
 }
 function setInteriorDoorMoving(on){
   if(on&&interiorConnectorMode)setInteriorConnectorMode(false);
-  if(on&&(!activeInteriorId||currentSculptInterior()?.floorIndex!==0))return;
+  if(on&&(!currentSculptInterior()&&!worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId)||
+    currentSculptInterior()?.floorIndex>0))return;
   if(on){
     if(interiorWallMode)setInteriorWallMode(null);
     if(navigationTesting)setNavigationTesting(false);
@@ -2870,6 +2887,17 @@ function setInteriorDoorMoving(on){
   updateInteriorDoorControls();scheduleDraw();
 }
 function commitInteriorDoor(point,{scale=null,assetId=null}={}){
+  if(sculptWorldCurrentInterior()){
+    try{
+      const doc=commitCurrentSculptWorldArea();
+      sculptWorldDraft=editWorldInteriorDoor(doc,sculptWorldAreaId,{
+        ...point,...(scale!==null?{scale}:{}),...(assetId!==null?{assetId}:{})});
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      updateInteriorDoorControls();scheduleDraw();
+      status('Porte modifiée · Portal et Spawn de cette maison sauvegardés.');
+    }catch(error){status('Porte non modifiée : '+error.message);}
+    return;
+  }
   const entry=currentSculptInterior();if(!entry||entry.floorIndex!==0)return;
   const updated=updateSculptInteriorDoor(entry,{...point,
     ...(scale!==null?{scale}:{}),...(assetId!==null?{assetId}:{})});
@@ -2885,12 +2913,14 @@ $('interior-door-move').addEventListener('click',()=>{
   setInteriorDoorMoving(!interiorDoorMoving);
 });
 $('interior-door-scale').addEventListener('input',()=>{
-  if(!currentSculptInterior())return;
+  if(!currentSculptInterior()&&!worldInteriorDoorPortal(sculptWorldDraft,sculptWorldAreaId))return;
   commitInteriorDoor({}, {scale:Number($('interior-door-scale').value)/100});
 });
 
 // Each connector is a canonical Portal/Spawn pair, with editor-only selection.
 function interiorConnectorPortals(){
+  if(sculptWorldCurrentInterior())return worldOutboundPortals().filter(p=>
+    p.visual?.marker==='portal'&&p.trigger?.kind==='point');
   return sculptInteriors.flatMap(e=>[e.entryPortal,e.exitPortal])
     .filter(p=>p.sourceAreaId===activeInteriorId&&p.visual.marker==='portal');
 }
@@ -2919,7 +2949,7 @@ function updateInteriorConnectorControls(){
     'Ajoute d’abord un étage pour placer un passage.';
 }
 function setInteriorConnectorMode(on){
-  if(on&&(!activeInteriorId||!interiorConnectorPortals().length))return;
+  if(on&&(!(activeInteriorId||sculptWorldCurrentInterior())||!interiorConnectorPortals().length))return;
   if(on){
     if(interiorWallMode)setInteriorWallMode(null);
     if(interiorDoorMoving)setInteriorDoorMoving(false);
@@ -2941,7 +2971,13 @@ $('interior-connector-asset').addEventListener('change',()=>{
   const portal=interiorConnectorPortals().find(p=>p.id===$('interior-connector-link').value);
   if(!portal)return;
   try{
-    sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+    if(sculptWorldCurrentInterior()){
+      const doc=commitCurrentSculptWorldArea();
+      sculptWorldDraft=editWorldInteriorConnector(doc,portal.id,{
+        x:portal.trigger.x,y:portal.trigger.y,assetId:$('interior-connector-asset').value,
+        rotationDeg:portal.visual.rotationDeg??0});
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+    }else sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
       sourceAreaId:activeInteriorId,portalId:portal.id,
       x:portal.trigger.x,y:portal.trigger.y,assetId:$('interior-connector-asset').value});
     updateInteriorConnectorControls();scheduleDraw();
@@ -2952,7 +2988,13 @@ function setInteriorConnectorRotation(degrees){
   const portal=interiorConnectorPortals().find(p=>p.id===$('interior-connector-link').value);
   if(!portal)return;
   try{
-    sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
+    if(sculptWorldCurrentInterior()){
+      const doc=commitCurrentSculptWorldArea();
+      sculptWorldDraft=editWorldInteriorConnector(doc,portal.id,{
+        x:portal.trigger.x,y:portal.trigger.y,
+        assetId:portal.visual.assetId??'stairs.wood',rotationDeg:degrees});
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+    }else sculptInteriors=updateSculptFloorConnector(sculptInteriors,{
       sourceAreaId:activeInteriorId,portalId:portal.id,
       x:portal.trigger.x,y:portal.trigger.y,
       assetId:portal.visual.assetId??'stairs.wood',rotationDeg:degrees
@@ -3125,6 +3167,20 @@ function updateSculptAreaControls(){
     // Keep all linked portals correct; define its size before creating above.
     $('interior-layout-apply').disabled=false;
   }
+  if(worldRoom){
+    const floors=worldInteriorFloors(sculptWorldDraft,worldRoom.id);
+    const selector=$('interior-level-select');
+    selector.replaceChildren(...floors.map((id,i)=>new Option(i===0?
+      'Rez-de-chaussée':'Étage '+i,String(i))));
+    selector.value=String(floors.indexOf(worldRoom.id));
+    $('interior-level-add').disabled=floors.length>=SCULPT_INTERIOR_FLOOR_LIMIT||
+      sculptWorldDraft.areas.length>=64||floors.at(-1)!==worldRoom.id;
+    $('interior-width').value=String(worldRoom.width/SCULPT_TILE.width);
+    $('interior-height').value=String(worldRoom.height/SCULPT_TILE.height);
+    const kind=sculptInteriorShapeId(worldRoom);
+    $('interior-shape').value=kind==='custom'?'rectangle':kind;
+    $('interior-layout-apply').disabled=kind==='custom';
+  }
   if(entry){
     $('interior-width').value=String(entry.terrain.width);
     $('interior-height').value=String(entry.terrain.height);
@@ -3136,7 +3192,7 @@ function updateSculptAreaControls(){
   for(const option of $('surface-material').options)
     option.disabled=entry||worldRoom?!option.value.startsWith('floor.'):
       option.value.startsWith('floor.');
-  $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
+  $('interior-template-apply').disabled=(!entry&&!worldRoom)||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
       ?.objectDefinitionId)?.kind!=='building';
@@ -3202,10 +3258,10 @@ function openSelectedSculptInterior(){
       commitCurrentSculptWorldArea();
       let portal=currentWorldHouseLink(resolved.id);
       if(!portal){
-        sculptWorldDraft=createBuildingInteriorLink(sculptWorldDraft,{
+        sculptWorldDraft=createWorldBuilderDraft(createBuildingInteriorLink(sculptWorldDraft,{
           sourceAreaId:sculptWorldAreaId,buildingId:resolved.id,anchorId:'main-door',
           interiorSize:{width:18*28,height:14*21}
-        });
+        }));
         portal=currentWorldHouseLink(resolved.id);
       }
       if(!portal)throw Error('Liaison intérieur/porte non créée : vérifier la définition de cette maison');
@@ -3260,7 +3316,7 @@ function refreshSculptTemplateSelector(){
   select.replaceChildren(new Option('Édition libre (aucun modèle)',''),
     ...sculptInteriorTemplates.map(item=>new Option(item.name,item.id)));
   select.value=sculptInteriorTemplates.some(item=>item.id===current)?current:'';
-  $('interior-template-apply').disabled=!activeInteriorId||!select.value;
+  $('interior-template-apply').disabled=(!activeInteriorId&&!sculptWorldCurrentInterior())||!select.value;
 }
 function persistSculptTemplates(){
   try{localStorage.setItem(SCULPT_INTERIOR_TEMPLATE_STORAGE,
@@ -3274,6 +3330,17 @@ function loadSculptTemplates(){
   refreshSculptTemplateSelector();
 }
 $('interior-level-select').addEventListener('change',()=>{
+  if(sculptWorldCurrentInterior()){
+    const floors=worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId);
+    const target=floors[Number($('interior-level-select').value)];
+    if(target&&target!==sculptWorldAreaId){
+      commitCurrentSculptWorldArea();
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(target);
+      status('Étage ouvert : édition indépendante dans le même WorldDocument.');
+    }
+    return;
+  }
   const entry=currentSculptInterior();if(!entry)return;
   const floorIndex=Number($('interior-level-select').value);
   const target=sculptInteriors.find(e=>e.buildingId===entry.buildingId&&
@@ -3281,6 +3348,17 @@ $('interior-level-select').addEventListener('change',()=>{
   if(target)changeSculptArea(target.area.id);
 });
 $('interior-level-add').addEventListener('click',()=>{
+  if(sculptWorldCurrentInterior()){
+    try{
+      const doc=commitCurrentSculptWorldArea();
+      const result=addWorldInteriorFloor(doc,sculptWorldAreaId);
+      sculptWorldDraft=result.document;
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(result.areaId);
+      status('Nouvel étage et escaliers raccordés aux vrais Portals et Spawns.');
+    }catch(error){status('Étage non créé : '+error.message);}
+    return;
+  }
   const entry=currentSculptInterior();if(!entry)return;
   if(sculptInteriors.length>=SCULPT_INTERIOR_LIMIT){
     status('Nombre de cartes intérieures maximal atteint.');return;
@@ -3298,9 +3376,21 @@ $('interior-level-add').addEventListener('click',()=>{
   }catch(error){status(error.message);}
 });
 $('interior-shape').addEventListener('change',()=>{
-  if(currentSculptInterior())$('interior-layout-apply').click();
+  if(currentSculptInterior()||sculptWorldCurrentInterior())$('interior-layout-apply').click();
 });
 $('interior-layout-apply').addEventListener('click',()=>{
+  if(sculptWorldCurrentInterior()){
+    try{
+      const id=sculptWorldAreaId,doc=commitCurrentSculptWorldArea();
+      sculptWorldDraft=resizeWorldInterior(doc,id,{
+        width:Number($('interior-width').value),height:Number($('interior-height').value),
+        shape:$('interior-shape').value});
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(id);
+      status('Forme et dimensions enregistrées dans cette WorldArea.');
+    }catch(error){status('Forme/taille non appliquée : '+error.message);}
+    return;
+  }
   const entry=currentSculptInterior();if(!entry)return;
   if(sculptInteriors.some(e=>e.buildingId===entry.buildingId&&e.floorIndex>entry.floorIndex)&&
     (entry.terrain.width!==Number($('interior-width').value)||
@@ -3331,7 +3421,9 @@ $('interior-floor-base').addEventListener('change',()=>{
   status('Sol intérieur choisi : '+materialId+' · enregistré pour cette pièce.');
 });
 $('interior-template-save').addEventListener('click',()=>{
-  const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+  const worldRoom=sculptWorldCurrentInterior();
+  const entry=worldRoom?worldInteriorAdapter(commitCurrentSculptWorldArea(),sculptWorldAreaId):
+    sculptInteriors.find(e=>e.area.id===activeInteriorId);
   if(!entry)return;
   const name=$('interior-template-name').value.trim();
   if(!name){status('Nomme ton modèle avant de l’enregistrer.');return;}
@@ -3341,8 +3433,8 @@ $('interior-template-save').addEventListener('click',()=>{
   const ids=new Set(sculptInteriorTemplates.map(t=>t.id));
   let serial=1;while(ids.has('interior-template-'+serial))serial++;
   try{
-    const item=createSculptInteriorTemplate(updateSculptInterior(entry,
-      captureSculptArea()),{id:'interior-template-'+serial,name});
+    const item=createSculptInteriorTemplate(worldRoom?entry:
+      updateSculptInterior(entry,captureSculptArea()),{id:'interior-template-'+serial,name});
     sculptInteriorTemplates=normalizeSculptInteriorTemplates([...sculptInteriorTemplates,item]);
     refreshSculptTemplateSelector();
     $('interior-template-select').value=item.id;
@@ -3354,7 +3446,19 @@ $('interior-template-save').addEventListener('click',()=>{
 $('interior-template-apply').addEventListener('click',()=>{
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
   const template=sculptInteriorTemplates.find(t=>t.id===$('interior-template-select').value);
-  if(!entry||!template)return;
+  if((!entry&&!sculptWorldCurrentInterior())||!template)return;
+  if(sculptWorldCurrentInterior()){
+    if(navigationTesting)setNavigationTesting(false);
+    try{
+      const id=sculptWorldAreaId,doc=commitCurrentSculptWorldArea();
+      // Explicit user action, never implicit on house selection.
+      sculptWorldDraft=applyWorldInteriorTemplate(doc,id,template);
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(id);
+      status('Modèle appliqué uniquement à cette maison · personnalisable.');
+    }catch(error){status('Modèle non appliqué : '+error.message);}
+    return;
+  }
   if(navigationTesting)setNavigationTesting(false);
   try{
     const updated=applySculptInteriorTemplate(entry,template);
@@ -3521,8 +3625,11 @@ function sculptWorldArea(){
   return sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)??null;
 }
 function sculptWorldHouseParentLink(){
+  if(!sculptWorldCurrentInterior())return null;
+  const floors=worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId);
+  const root=floors[0];
   return sculptWorldDraft?.portals.find(p=>
-    p.targetAreaId===sculptWorldAreaId&&p.trigger?.kind==='object-anchor'&&
+    p.targetAreaId===root&&p.trigger?.kind==='object-anchor'&&
     sculptWorldDraft.areas.some(a=>a.id===p.sourceAreaId&&a.kind==='exterior'))??null;
 }
 
@@ -3763,6 +3870,13 @@ function mountWorldSculptArea(areaId){
   interiorWallHistory=[];interiorWallRedo=[];
   interiorWallMode=null;interiorWallStart=null;interiorWallPreview=null;
   interiorWallGesture=null;document.body.classList.remove('interior-wall-authoring');
+  // Exactly one temporary authoring gesture may be active for this room.
+  // A doorway or staircase from the previous floor must never survive into
+  // the next WorldArea (where the corresponding Portal may not exist).
+  interiorDoorMoving=false;interiorDoorGesture=null;interiorDoorPreview=null;
+  document.body.classList.remove('interior-door-authoring');
+  interiorConnectorMode=false;interiorConnectorGesture=null;interiorConnectorPreview=null;
+  document.body.classList.remove('interior-connector-authoring');
   mountSculptArea(scene);
   // The preset filename belongs to the selected WorldArea, not the previously
   // visited region. Never accidentally overwrite 'Area A' after visiting B.

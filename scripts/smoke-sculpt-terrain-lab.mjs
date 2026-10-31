@@ -4103,6 +4103,85 @@ try{
       JSON.stringify(canonicalRoomTools));
   console.log('WorldBuilder house floor+wall material/authoring REAL Chromium GREEN:',
     JSON.stringify(canonicalRoomTools));
+  // Regression reported from Pixel: in WorldBuilder the complete room editor
+  // must remain usable, not merely show the wall and floor selector. These
+  // are real DOM clicks against the ONE persistent WorldDocument.
+  const furnishedRoom=await run(`(()=>{
+    const visible=id=>{
+      const el=document.querySelector(id);
+      return !!el&&!el.hidden&&getComputedStyle(el).display!=='none'&&
+        getComputedStyle(el.parentElement).display!=='none';
+    };
+    const groups=['.interior-floor-tools','.interior-layout-tools',
+      '.interior-door-tools','.interior-template-tools'];
+    const tools=groups.map(selector=>({selector,visible:visible(selector)}));
+    const roomId=window.__sculptWorldProbe().areaId;
+    const width=document.querySelector('#interior-width');
+    const height=document.querySelector('#interior-height');
+    width.value='20';height.value='16';
+    document.querySelector('#interior-layout-apply').click();
+    let doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const resized=doc.areas.find(a=>a.id===roomId);
+    const resizeStatus=document.querySelector('#brush-info')?.textContent;
+    const doorAsset=document.querySelector('#interior-door-asset');
+    doorAsset.value='object.door.interior.bois_renforce.face';
+    doorAsset.dispatchEvent(new Event('change',{bubbles:true}));
+    const doorScale=document.querySelector('#interior-door-scale');
+    doorScale.value='80';doorScale.dispatchEvent(new Event('input',{bubbles:true}));
+    doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const door=doc.portals.find(p=>p.sourceAreaId===roomId&&p.visual?.marker==='exit');
+    const name=document.querySelector('#interior-template-name');
+    name.value='Pièce de test indépendante';
+    document.querySelector('#interior-template-save').click();
+    const selected=document.querySelector('#interior-template-select').value;
+    const apply=document.querySelector('#interior-template-apply');
+    const canApply=!apply.disabled&&!!selected;
+    if(canApply)apply.click();
+    const beforeFloor=doc.areas.length;
+    // Move-door state from the ground floor must be cleared when opening
+    // upstairs, otherwise touching canvas dereferences the missing door.
+    document.querySelector('#interior-door-move').click();
+    const movingBefore=document.body.classList.contains('interior-door-authoring');
+    document.querySelector('#interior-level-add').click();
+    const movingAfter=document.body.classList.contains('interior-door-authoring');
+    doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const upperId=window.__sculptWorldProbe().areaId;
+    const stair=doc.portals.find(p=>p.sourceAreaId===upperId&&p.visual?.marker==='portal');
+    const levels=[...document.querySelector('#interior-level-select').options].map(x=>x.value);
+    const stairAsset=document.querySelector('#interior-connector-asset');
+    if(stair){
+      stairAsset.value='ladder.wood';stairAsset.dispatchEvent(new Event('change',{bubbles:true}));
+      const rotation=document.querySelector('#interior-connector-rotation');
+      rotation.value='90';rotation.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const stairSaved=doc.portals.find(p=>p.id===stair?.id);
+    const floorPicker=document.querySelector('#interior-level-select');
+    floorPicker.value='0';floorPicker.dispatchEvent(new Event('change',{bubbles:true}));
+    return {tools,roomId,resizeStatus,resized:[resized?.width,resized?.height],
+      doorAsset:door?.visual?.assetId,doorScale:door?.visual?.scale,
+      selected,canApply,beforeFloor,afterFloor:doc.areas.length,
+      movingBefore,movingAfter,
+      upperId,levels,stairAsset:stairSaved?.visual?.assetId,
+      stairRotation:stairSaved?.visual?.rotationDeg,
+      backToGround:window.__sculptWorldProbe().areaId,
+      roomCount:doc.areas.filter(a=>a.kind==='interior').length};
+  })()`);
+  if(furnishedRoom.tools.some(x=>!x.visible)||
+     furnishedRoom.resized.join('x')!=='560x336'||
+     furnishedRoom.doorAsset!=='object.door.interior.bois_renforce.face'||
+     furnishedRoom.doorScale!==.8||!furnishedRoom.canApply||
+     furnishedRoom.afterFloor!==furnishedRoom.beforeFloor+1||
+     !furnishedRoom.movingBefore||furnishedRoom.movingAfter||
+     furnishedRoom.upperId===furnishedRoom.roomId||
+     furnishedRoom.levels.length!==2||
+     furnishedRoom.stairAsset!=='ladder.wood'||
+     furnishedRoom.stairRotation!==90||
+     furnishedRoom.backToGround!==furnishedRoom.roomId)
+    throw Error('Full canonical WorldBuilder house editor broke in real Chromium: '+
+      JSON.stringify(furnishedRoom));
+  console.log('WorldBuilder complete home editing REAL Chromium GREEN:',
+    JSON.stringify(furnishedRoom));
   const prefabWalk=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {nav:window.__sculptNavProbe?.(),
