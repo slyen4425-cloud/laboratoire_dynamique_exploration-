@@ -2182,7 +2182,7 @@ function refreshObjectVariants(preferred=null){
   }
 }
 // In World Builder a house links to its own canonical WorldArea/Portal.
-// The old standalone Sculpt-only interior preview is not a WorldDocument room.
+// The old standalone Sculpt-only interior preview is not a world document room.
 function currentWorldHouseLink(buildingId){
   if(!sculptWorldDraft||!sculptWorldAreaId)return null;
   return sculptWorldDraft.portals.find(portal=>
@@ -3172,7 +3172,7 @@ function openSelectedSculptInterior(){
   if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
 
   if(sculptWorldDraft){
-    // One WorldDocument and one set of portals: never open a detached Sculpt
+    // One world document and one set of portals: never open a detached Sculpt
     // prototype that cannot be saved/entered through the World Builder.
     if(sculptWorldArea()?.kind!=='exterior'||!sculptWorldAreaMounted){
       sculptWorldStatus('Ouvre une maison depuis sa carte extérieure World Builder.',true);
