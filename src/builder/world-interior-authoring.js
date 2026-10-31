@@ -5,6 +5,7 @@ import {createWorldBuilderDraft,validateWorldBuilderDraft,addWorldArea,connectWo
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 import {sculptInteriorShapeId,resizeSculptInterior} from '../world/sculpt-interior-layout.js';
 import {updateSculptInteriorDoor,applySculptInteriorTemplate} from '../world/sculpt-interior-area-link.js';
+import {normalizeWorldArea} from '../world/world-area-model.js';
 import {circleFitsWorldAreaBoundary,findWorldAreaBoundarySafePoint} from '../world/world-area-geometry.js';
 import {validInteriorConnectorAsset} from '../world/interior-material-catalog.js';
 
@@ -69,7 +70,7 @@ export function worldInteriorAdapter(d,roomId){
   const entryPortal=inbound(d,roomId).find(p=>p.trigger?.kind==='object-anchor')??null;
   // A borrowed view of the *same* canonical area for existing geometry
   // commands; it is never placed in sculptInteriors or persisted separately.
-  const {sculptTerrain:unused,...geometry}=room;
+  const {sculptTerrain:unused,...geometry}=normalizeWorldArea(room);
   return Object.freeze({area:geometry,terrain:scene.terrain,
     objects:scene.objects,actors:scene.actors,surface:scene.surface,
     buildingId:entryPortal?.trigger.objectId??roomId,
