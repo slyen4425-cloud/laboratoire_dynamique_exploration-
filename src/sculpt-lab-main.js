@@ -3870,6 +3870,13 @@ function mountWorldSculptArea(areaId){
   interiorWallHistory=[];interiorWallRedo=[];
   interiorWallMode=null;interiorWallStart=null;interiorWallPreview=null;
   interiorWallGesture=null;document.body.classList.remove('interior-wall-authoring');
+  // Exactly one temporary authoring gesture may be active for this room.
+  // A doorway or staircase from the previous floor must never survive into
+  // the next WorldArea (where the corresponding Portal may not exist).
+  interiorDoorMoving=false;interiorDoorGesture=null;interiorDoorPreview=null;
+  document.body.classList.remove('interior-door-authoring');
+  interiorConnectorMode=false;interiorConnectorGesture=null;interiorConnectorPreview=null;
+  document.body.classList.remove('interior-connector-authoring');
   mountSculptArea(scene);
   // The preset filename belongs to the selected WorldArea, not the previously
   // visited region. Never accidentally overwrite 'Area A' after visiting B.
