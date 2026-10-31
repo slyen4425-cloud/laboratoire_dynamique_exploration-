@@ -120,3 +120,13 @@ test('canonical WorldBuilder room walls + floor have a live editor backed by the
  assert.match(html,/body\.world-area-editing\.sculpt-interior-area \.interior-template-tools\{display:none!important\}/);
  assert.match(source,/\$\('interior-area-bar'\)\.hidden=!entry&&!worldRoom/);
 });
+
+test('opening a different canonical room invalidates stale wall undo/redo before touch authoring',()=>{
+ const mount=source.slice(source.indexOf('function mountWorldSculptArea(areaId){'),
+   source.indexOf('function traverseSculptWorldPortal(){'));
+ assert.match(mount,/interiorWallHistory=\[\];interiorWallRedo=\[\]/);
+ assert.match(mount,/interiorWallMode=null;interiorWallStart=null;interiorWallPreview=null/);
+ assert.ok(mount.indexOf('interiorWallHistory=[]') < mount.indexOf('mountSculptArea(scene)'),
+   'house A wall history must not be offered for house B');
+ assert.match(mount,/document\.body\.classList\.remove\('interior-wall-authoring'\)/);
+});
