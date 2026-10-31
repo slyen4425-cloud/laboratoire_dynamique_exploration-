@@ -3758,6 +3758,11 @@ function mountWorldSculptArea(areaId){
   sculptWorldAreaId=areaId;
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
+  // Wall history is scoped to THIS active canonical WorldArea. Carrying A's
+  // undo stack into B would overwrite B's walls through the shared editor.
+  interiorWallHistory=[];interiorWallRedo=[];
+  interiorWallMode=null;interiorWallStart=null;interiorWallPreview=null;
+  interiorWallGesture=null;document.body.classList.remove('interior-wall-authoring');
   mountSculptArea(scene);
   // The preset filename belongs to the selected WorldArea, not the previously
   // visited region. Never accidentally overwrite 'Area A' after visiting B.
