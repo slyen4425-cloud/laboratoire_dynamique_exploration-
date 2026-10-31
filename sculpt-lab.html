@@ -350,6 +350,11 @@ body.sculpt-immersive .interior-area-bar>label{flex:1 1 130px}
 #ramp-cancel{flex:0 0 auto;min-height:36px;padding:5px 9px}
 body.terrain-ramp-authoring .precision-toggle{display:none!important}
 body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
+/* WorldBuilder rooms edit canonical WorldArea; hide standalone-only prototype tools. */
+body.world-area-editing.sculpt-interior-area .interior-floor-tools,
+body.world-area-editing.sculpt-interior-area .interior-layout-tools,
+body.world-area-editing.sculpt-interior-area .interior-door-tools,
+body.world-area-editing.sculpt-interior-area .interior-template-tools{display:none!important}
 /* Door interaction belongs to the PLAYFIELD, not the editor's options HUD. */
 #navigation-area-door.in-game-door-action{position:absolute;z-index:19;
   bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
@@ -802,12 +807,13 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
  <label>Inclinaison caméra <output id="interior-camera-value">55°</output>
   <input type="range" id="interior-camera-angle" min="35" max="90" value="55" step="5"
     aria-label="Inclinaison de la caméra intérieure en degrés"></label>
- <strong>Bibliothèque de pièces</strong>
+ <div class="interior-template-tools"><strong>Bibliothèque de pièces</strong>
  <label>Nom du modèle <input id="interior-template-name" type="text" maxlength="64" placeholder="Ex. Maison de village" aria-label="Nom du modèle de pièce"></label>
  <button id="interior-template-save" type="button">Enregistrer comme modèle</button>
  <label>Réutiliser <select id="interior-template-select" aria-label="Modèle de pièce à réutiliser"><option value="">Édition libre (aucun modèle)</option></select></label>
  <button id="interior-template-apply" type="button" disabled>Appliquer le modèle choisi</button>
  <small>Tu peux toujours personnaliser la pièce sans modèle. Appliquer remplace son contenu, sans modifier sa porte extérieure.</small>
+</div>
 </section>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
