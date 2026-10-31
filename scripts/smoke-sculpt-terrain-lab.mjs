@@ -160,7 +160,7 @@ try{
   if(flat.faceCount!==0)throw Error('Flat map still has cliff faces: '+JSON.stringify(flat));
   await run("document.querySelector('[data-mode=raise]').click()");
   await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
-  const center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+  let center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
     const x=r.x+r.width/2,y=r.y+r.height/2;
     return {x,y,inside:document.elementFromPoint(x,y)?.id,
       viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
@@ -258,6 +258,16 @@ try{
     !foldedEnd.paletteHidden)
     throw Error('Collapsed palette lost setting or blocked actual placement: '+JSON.stringify({foldedStart,foldedEnd}));
   console.log('GREEN real Chromium: right object inspector folds to a chip, map becomes clickable, tree is placed then undone, settings preserved');
+  // Returning from fullscreen changes both scroll and 2.5D camera layout.
+  // Refresh the ORIGINAL brush gate's pointer coordinate rather than
+  // injecting a stale offscreen click from before the landscape test.
+  await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
+  await run("new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))");
+  center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+    const x=r.x+r.width/2,y=r.y+r.height/2;
+    return {x,y,inside:document.elementFromPoint(x,y)?.id,
+      viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
+  if(center.inside!=='sculpt-canvas')throw Error('Canvas unavailable after object panel fullscreen test: '+JSON.stringify(center));
 
   await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
