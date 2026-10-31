@@ -2117,7 +2117,7 @@ function sortedResolvedPreviewObjects(){
   // not on every animation frame or either half of the actor depth pass.
   if(sortedPreviewObjectSource!==placedObjects){
     sortedPreviewObjectSource=placedObjects;
-    sortedPreviewObjects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
+    sortedPreviewObjects=[...resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)]
       .sort((a,b)=>a.transform.y-b.transform.y);
   }
   return sortedPreviewObjects;
