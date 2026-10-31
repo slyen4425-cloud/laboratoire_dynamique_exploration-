@@ -3395,6 +3395,57 @@ try{
      worldSculpt.portalCount!==4||worldSculpt.terrainWidth!==36)
     throw Error('Sculpt editor did not load canonical host Area: '+JSON.stringify(worldSculpt));
 
+  // Real regression: a World's base ground material belongs to each WorldArea,
+  // not the last selected global material toolbar value. Persist through the
+  // actual World/Map UI handoff and reopen the SAME area twice.
+  const materialSet=await run(`(()=>{
+    const before=window.__sculptLabProbe().materialId;
+    const selector=document.querySelector('#material');
+    selector.value='ground.mountain_rock';
+    selector.dispatchEvent(new Event('change',{bubbles:true}));
+    return {before,after:window.__sculptLabProbe().materialId};
+  })()`);
+  if(materialSet.before!=='grass.forest'||materialSet.after!=='ground.mountain_rock')
+    throw Error('Ground material selection is not valid in WorldArea: '+JSON.stringify(materialSet));
+  const readGround=async () => {
+    await run("document.querySelector('#world-workspace-world').click();true");
+    let ready=false;
+    for(let i=0;i<100;i++){
+      await sleep(110);
+      try{ready=await run("typeof window.__worldAssemblerProbe==='function'&&!!document.querySelector('#edit-sculpt-area')");}catch{}
+      if(ready)break;
+    }
+    if(!ready)throw Error('World Builder handoff failed after changing real WorldArea base material');
+    const data=await run(`(()=>{
+      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const area=doc.areas.find(a=>a.id==='area-principale');
+      document.querySelector('.world-node[data-area-id="area-principale"]').click();
+      const material=area.surface.baseMaterialId;
+      document.querySelector('#edit-sculpt-area').click();
+      return material;
+    })()`);
+    let mounted=null;
+    for(let i=0;i<110;i++){
+      await sleep(110);
+      try{mounted=await run("window.__sculptWorldProbe?.().areaId==='area-principale'?window.__sculptLabProbe().materialId:null");}catch{}
+      if(mounted)break;
+    }
+    return {saved:data,mounted};
+  };
+  const rockRoundTrip=await readGround();
+  if(rockRoundTrip.saved!=='ground.mountain_rock'||rockRoundTrip.mounted!=='ground.mountain_rock')
+    throw Error('WorldArea rock base not persisted/reloaded: '+JSON.stringify(rockRoundTrip));
+  await run(`(()=>{
+    const selector=document.querySelector('#material');
+    selector.value='grass.forest';
+    selector.dispatchEvent(new Event('change',{bubbles:true}));
+    return true;
+  })()`);
+  const grassRoundTrip=await readGround();
+  if(grassRoundTrip.saved!=='grass.forest'||grassRoundTrip.mounted!=='grass.forest')
+    throw Error('WorldArea grass base became mountain on return: '+JSON.stringify(grassRoundTrip));
+  console.log('GREEN real Chromium WorldArea grass -> mountain -> grass base texture survives Builder roundtrips');
+
   // Real mobile viewport, not merely a CSS/text assertion: the collapsed
   // Portal palette must leave the playfield visible and fullscreen reachable.
   await send('Emulation.setDeviceMetricsOverride',{
