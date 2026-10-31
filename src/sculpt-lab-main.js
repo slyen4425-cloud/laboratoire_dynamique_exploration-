@@ -595,8 +595,9 @@ const themes=sculptGroundMaterials;
 const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
   meta.id.startsWith('floor.')).map(meta=>meta.id));
 const sculptWorldCurrentInterior=()=>sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)?.kind==='interior';
-const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
-  $('interior-floor-base').value:$('material').value;
+// WorldSurface is the ONLY base-material authority. The UI mirrors its
+// selection; the last visited Area's toolbar must never recolor this Area.
+const displayedBaseMaterialId=()=>surface.baseMaterialId;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
@@ -650,9 +651,15 @@ async function setTheme(){
   if(!((activeInteriorId||sculptWorldCurrentInterior())
     ?interiorFloorMaterials:themes).includes(id))return;
   const revision=++groundMaterialRevision;
+  // Release the previous Area's bitmap synchronously: never paint a mountain
+  // texture onto grass while the next material's image promise is pending.
+  currentTexture=null;
+  navTerrainCache=null;
+  scheduleDraw();
   const texture=await imageFor(id);
   if(revision!==groundMaterialRevision)return;
   currentTexture=texture;
+  navTerrainCache=null;
   scheduleDraw();
 }
 function dimensions(){
@@ -2708,7 +2715,15 @@ $('camera-view').addEventListener('change',()=>{
     ?'Vue trois-quarts pilote : caméra inclinée ; les hauteurs, collisions et coups de pinceau restent identiques.'
     :'Vue précédente restaurée : aucun changement des données de terrain.');
 });
-$('material').addEventListener('change',setTheme);
+$('material').addEventListener('change',()=>{
+  if(activeInteriorId||sculptWorldCurrentInterior())return;
+  const baseMaterialId=$('material').value;
+  if(!themes.includes(baseMaterialId))return;
+  // The same WorldSurface used for serialization, collisions and painting
+  // owns the author's material choice, not a global select DOM node.
+  surfaceCommit(normalizeSculptSurface({...surface,baseMaterialId}));
+  setTheme();
+});
 $('water-material').addEventListener('change',setWaterMaterial);
 $('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
@@ -2988,7 +3003,12 @@ function captureSculptArea(){
 }
 function mountSculptArea(snapshot){
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
-  surface=snapshot.surface;
+  surface=normalizeSculptSurface(snapshot.surface);
+  // Restore the base surface before raster invalidation and any asynchronous
+  // image load. Every WorldArea (including user-authored ones) has its own
+  // material in the canonical WorldDocument.
+  if(!activeInteriorId&&!sculptWorldCurrentInterior()&&themes.includes(surface.baseMaterialId))
+    $('material').value=surface.baseMaterialId;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
   actorHistory=[];actorRedo=[];surfaceHistory=[];surfaceRedo=[];
   objectSelectedId=null;actorSelectedId=null;
@@ -3628,14 +3648,10 @@ function mountWorldSculptArea(areaId){
   sculptExteriorEncounters=area.encounters;
   sculptEncounterConfig=sculptWorldDraft.encounterConfig;
   sculptEncounterAreaCache=null;
-  if(area.kind==='exterior'){
-    if([...$('material').options].some(o=>o.value===area.surface.baseMaterialId))
-      $('material').value=area.surface.baseMaterialId;
-  }
   updateSculptAreaControls();
   refreshSculptEncounterEditor();
   refreshSculptWorldPanel();
-  setTheme();fit();
+  fit();
 }
 function traverseSculptWorldPortal(){
   let portal=sculptWorldPortalAtHero();
