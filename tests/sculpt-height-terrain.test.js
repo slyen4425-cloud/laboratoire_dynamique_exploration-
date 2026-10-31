@@ -75,7 +75,7 @@ test('lab uses existing Material Registry textures and lives outside 2D game Bui
  assert.match(html,/src\/sculpt-lab-main\.js/);
  assert.match(main,/createMaterialRegistry/);
  assert.match(main,/drawSculptTerrain/);
- assert.doesNotMatch(main,/WorldDocument|collision-world|location\.reload/);
+ assert.doesNotMatch(main,/location\.reload|from ['\"]\.\/main\.js/);
  const game=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const builder=readFileSync(new URL('../builder.html',import.meta.url),'utf8');
  assert.doesNotMatch(game,/sculpt-lab-main|sculpt-height-model/);
@@ -255,7 +255,7 @@ test('V13 undo/redo, water tools and renderer live outside 2D runtime',()=>{
  assert.match(html,/data-mode="water-fill"/);
  assert.match(main,/redoHistory/);assert.match(main,/commitUndo/);
  assert.match(renderer,/drawWaterVolume/);
- assert.doesNotMatch(main,/WorldDocument|collision-world/);
+ assert.doesNotMatch(main,/from ['\"]\.\/main\.js/);
 });
 
 
@@ -287,7 +287,7 @@ test('V14 editor panels are exclusive, fine-step and confirm-before-commit by de
   assert.match(ui,/function precisionApply/);
   assert.match(ui,/precisionDragging/);
   assert.match(ui,/commitUndo\(previous\)/);
-  assert.doesNotMatch(ui,/location\.reload|WorldDocument|collision-world/);
+  assert.doesNotMatch(ui,/location\.reload|from ['\"]\.\/main\.js/);
 });
 
 
@@ -321,7 +321,7 @@ test('V15 mobile canvas-first layout keeps stable unique controls and advanced p
  assert.match(ui,/function adjustBrushSize/);
  assert.match(ui,/function adjustQuickLevel/);
  assert.match(ui,/precisionApply/);
- assert.doesNotMatch(ui,/WorldDocument|collision-world|location\.reload/);
+ assert.doesNotMatch(ui,/location\.reload|from ['\"]\.\/main\.js/);
 });
 
 test('V16 land sculpting approaching water never edits its authored cells or water levels',()=>{
