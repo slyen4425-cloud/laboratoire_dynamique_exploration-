@@ -3006,7 +3006,7 @@ function mountSculptArea(snapshot){
   surface=normalizeSculptSurface(snapshot.surface);
   // Restore the base surface before raster invalidation and any asynchronous
   // image load. Every WorldArea (including user-authored ones) has its own
-  // material in the canonical WorldDocument.
+  // material in its own saved area record.
   if(!activeInteriorId&&!sculptWorldCurrentInterior()&&themes.includes(surface.baseMaterialId))
     $('material').value=surface.baseMaterialId;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
