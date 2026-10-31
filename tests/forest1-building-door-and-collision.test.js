@@ -61,3 +61,25 @@ test('new interior links use door-relative arrival near the facade after scale/r
  assert.equal(isBlocked(outside,{radius:9},returnSpawn.x,returnSpawn.y),false,
   'return spawn must be walkable, not inside the facade or on the road');
 });
+
+test('old generated 72-unit return spawns migrate once; custom 72-unit spawns stay authored',()=>{
+ let draft=createBlankWorldBuilderDraft({id:'migration-qa',width:80*28,height:60*21});
+ const id=draft.areas[0].id;
+ draft={...draft,areas:draft.areas.map(a=>a.id===id?{...a,objects:buildings}:a)};
+ draft=createBuildingInteriorLink(draft,{sourceAreaId:id,buildingId:buildings[1].id,
+  interiorSize:{width:18*28,height:14*21}});
+ const raw=JSON.parse(serializeWorldBuilderDraft(draft));
+ const outside=raw.areas.find(a=>a.id===id);
+ const generated=outside.spawns.find(s=>s.id===buildings[1].id+'-return');
+ assert.equal(generated.anchor.offset,20);
+ generated.anchor.offset=72;
+ const upgraded=importWorldBuilderDocument(JSON.stringify(raw));
+ assert.equal(upgraded.areas.find(a=>a.id===id).spawns.find(s=>s.id===generated.id).anchor.offset,20);
+ const deliberate=structuredClone(raw);
+ deliberate.areas.find(a=>a.id===id).spawns
+  .find(s=>s.id===generated.id).id='my-custom-door-return';
+ const loaded=importWorldBuilderDocument(JSON.stringify(deliberate));
+ assert.equal(loaded.areas.find(a=>a.id===id).spawns
+  .find(s=>s.id==='my-custom-door-return').anchor.offset,72,
+ 'explicit author adjustments must never be migrated by guess');
+});
