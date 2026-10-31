@@ -90,7 +90,7 @@ jobs:
       - name: Checkout pinned GREEN PR301 test preview (isolated from stable main)
         uses: actions/checkout@v4
         with:
-          ref: 1c2160fa34b3ee3ffcf349424b87df162d4378e4
+          ref: 40955a7838beb8fb76e74fd4b941ce4bb7cd1505
           path: rich-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
@@ -301,7 +301,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rich_sha="1c2160fa34b3ee3ffcf349424b87df162d4378e4"
+          rich_sha="40955a7838beb8fb76e74fd4b941ce4bb7cd1505"
           test "$(git -C rich-source rev-parse HEAD)" = "$rich_sha"
           rich="$GITHUB_WORKSPACE/site/preview/rich-presets-pr301"
           stable="$GITHUB_WORKSPACE/site/preview/encounters-v80"
@@ -383,7 +383,7 @@ jobs:
           grep -Fq 'id="world-map-preset-create"' /tmp/rich-world-assembler.html
           curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
             "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/rich-provenance.json
-          jq -e '.exploration=="1c2160fa34b3ee3ffcf349424b87df162d4378e4"' /tmp/rich-provenance.json >/dev/null
+          jq -e '.exploration=="40955a7838beb8fb76e74fd4b941ce4bb7cd1505"' /tmp/rich-provenance.json >/dev/null
           echo 'LIVE: stable + PR301 are both served from the same Pages artifact'
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash

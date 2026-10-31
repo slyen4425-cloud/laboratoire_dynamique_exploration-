@@ -17,11 +17,12 @@ test('scheduled main Pages upload includes the pinned PR301 preview on every ful
  assert.match(workflow,/cmp rich-source\/sculpt-lab\.html "\$rich\/sculpt-lab\.html"/);
 });
 test('main publisher pins a verified GREEN preview SHA and independently verifies public Pages',()=>{
- const sha='1c2160fa34b3ee3ffcf349424b87df162d4378e4';
+ const sha='40955a7838beb8fb76e74fd4b941ce4bb7cd1505';
  assert.match(workflow,new RegExp('ref: '+sha));
  assert.match(workflow,new RegExp('rich_sha="'+sha+'"'));
  assert.match(workflow,/Verify Pages also serves the pinned PR301 test editor/);
  assert.match(workflow,/for page in sculpt-lab\.html world-assembler\.html/);
+ assert.match(workflow,/full-editor-v1|rich-presets-pr301/);
  assert.match(workflow,/jq -e '.exploration=="/);
  assert.match(workflow,/ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc/);
 });
