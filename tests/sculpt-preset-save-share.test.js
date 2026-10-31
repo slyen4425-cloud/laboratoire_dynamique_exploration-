@@ -55,7 +55,7 @@ test('presets save from the canonical WorldArea surface without exporting its Po
  const preset=saveSculptMapPreset(storage,sculptWorldAreaScene(updated.areas[0]),'Mon bois');
  const file=serializeSculptMapPresetForShare(preset);
  const parsed=JSON.parse(file);
- assert.equal(parsed.scene.surface.baseMaterialId,'grass.forest');
+ assert.equal(importSculptPreviewScene(parsed.scene).surface.baseMaterialId,'grass.forest');
  assert.ok(!('portals' in parsed)&&!('spawns' in parsed)&&!('areas' in parsed));
  assert.deepEqual(updated.portals,original.portals);
  assert.equal(importSculptMapPreset(file).name,'Mon bois');
