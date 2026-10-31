@@ -258,6 +258,12 @@ try{
     !foldedEnd.paletteHidden)
     throw Error('Collapsed palette lost setting or blocked actual placement: '+JSON.stringify({foldedStart,foldedEnd}));
   console.log('GREEN real Chromium: right object inspector folds to a chip, map becomes clickable, tree is placed then undone, settings preserved');
+  // Restore only this test's fixtures; the normal editor never clears
+  // user settings on collapse, which the gate above already established.
+  await run(`(()=>{const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const scale=document.querySelector('#object-scale');scale.value='40';
+    scale.dispatchEvent(new Event('input',{bubbles:true}));})()`);
   // Returning from fullscreen changes both scroll and 2.5D camera layout.
   // Refresh the ORIGINAL brush gate's pointer coordinate rather than
   // injecting a stale offscreen click from before the landscape test.
