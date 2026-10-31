@@ -7,6 +7,7 @@ import {createSculptInteriorTemplate} from '../src/world/sculpt-interior-area-li
 import {worldInteriorAdapter,worldInteriorFloors,resizeWorldInterior,editWorldInteriorDoor,
   addWorldInteriorFloor,editWorldInteriorConnector,applyWorldInteriorTemplate} from '../src/builder/world-interior-authoring.js';
 import {sculptWorldAreaScene} from '../src/builder/sculpt-world-area-link.js';
+import {appendSculptSurfaceStroke} from '../src/world/sculpt-surface-paint.js';
 import {findTriggeredPortal,applyPortalTransition} from '../src/world/portal-model.js';
 const src=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const house=(id,x)=>({id,objectDefinitionId:'objectdef.building.house.fantasy_wood_stone.01',
@@ -89,6 +90,25 @@ test('two floors share only WorldDocument Portals, with independent walls/materi
    x:ascend.trigger.x,y:ascend.trigger.y})?.id,ascend.id,
    'the new upper floor must be reachable by normal manual Portal action');
  assert.throws(()=>resizeWorldInterior(next,a,{width:26,height:18,shape:'rectangle'}),/étage|passage|Portal/i);
+});
+test('resizing a furnished WorldBuilder house also preserves painted floor stroke identities and materials',()=>{
+ let {d,a,b}=fixture();
+ const original=d.areas.find(room=>room.id===a);
+ const painted=appendSculptSurfaceStroke(original.surface,{
+   materialId:'floor.tile.light',terrainFamilyId:'plain',
+   points:[{x:100,y:90},{x:220,y:110}],width:70});
+ const before=JSON.stringify(importWorldBuilderDocument(serializeWorldBuilderDraft(d)).areas.find(room=>room.id===b));
+ d={...d,areas:d.areas.map(room=>room.id===a?{...room,surface:painted}:room)};
+ const scaled=resizeWorldInterior(d,a,{width:20,height:16,shape:'rectangle'});
+ const zone=scaled.areas.find(room=>room.id===a).surface.zones[0];
+ assert.equal(zone.id,painted.zones[0].id);
+ assert.equal(zone.materialId,'floor.tile.light');
+ assert.ok(Math.abs(zone.points[0].x-100*(20/18))<.01);
+ assert.ok(Math.abs(zone.points[0].y-90*(16/14))<.01);
+ assert.ok(Math.abs(zone.width-70*Math.sqrt(20/18*16/14))<.01);
+ assert.equal(JSON.stringify(scaled.areas.find(room=>room.id===b)),before);
+ assert.equal(importWorldBuilderDocument(serializeWorldBuilderDraft(scaled)).areas.find(
+   room=>room.id===a).surface.zones[0].materialId,'floor.tile.light');
 });
 test('all published house-editor buttons remain visible and call WorldDocument adapters, no prototype authority',()=>{
  const html=src('sculpt-lab.html'),js=src('src/sculpt-lab-main.js');
