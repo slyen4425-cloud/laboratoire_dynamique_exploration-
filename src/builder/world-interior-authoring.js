@@ -86,6 +86,7 @@ function replacePortal(d,id,patch){
 function canonicalScenePatch(updated){
   return {width:updated.area.width,height:updated.area.height,
     boundary:updated.area.boundary,walls:updated.area.walls,
+    wallMaterialId:updated.area.wallMaterialId,
     spawns:updated.area.spawns,objects:updated.objects,actors:updated.actors,
     surface:updated.surface,sculptTerrain:updated.terrain};
 }
@@ -155,19 +156,24 @@ export function addWorldInteriorFloor(d,roomId){
   if(upper.id===previous)throw Error('Étage non créé');
   // Connect using the EXISTING WorldBuilder Portal constructor and IDs.
   next=connectWorldAreas(next,{sourceAreaId:previous,targetAreaId:upper.id,returnPortal:true});
-  const center={kind:'point',x:Math.round(parent.width*.5),
+  // The lower floor can already have a descending stair at its center.
+  // Ascending stairs use a second reachable location so the first matching
+  // Portal does not shadow access to floor 3 or 4.
+  const ascent={kind:'point',x:Math.round(parent.width*.25),
+    y:Math.round(parent.height*.48),radius:27};
+  const descent={kind:'point',x:Math.round(parent.width*.5),
     y:Math.round(parent.height*.52),radius:27};
   const up=next.portals.find(p=>p.sourceAreaId===previous&&p.targetAreaId===upper.id);
   const down=next.portals.find(p=>p.sourceAreaId===upper.id&&p.targetAreaId===previous);
   if(!up||!down)throw Error('Escalier : Portals canoniques non créés');
   const stairs={visible:true,marker:'portal',assetId:'stairs.wood'};
-  next=replacePortal(next,up.id,{trigger:center,
+  next=replacePortal(next,up.id,{trigger:ascent,
     visual:{...stairs,label:'Monter à l’étage '+index}});
-  next=replacePortal(next,down.id,{trigger:{...center},visual:{
+  next=replacePortal(next,down.id,{trigger:descent,visual:{
     ...stairs,label:'Descendre à l’étage '+(index-1)}});
   // The actual Spawn is the only authority for the arrival.
   next=replaceArea(next,upper.id,{siteKind:'building',
-    spawns:upper.spawns.map(sp=>sp.id===up.targetSpawnId?{...sp,x:center.x,y:center.y}:sp)});
+    spawns:upper.spawns.map(sp=>sp.id===up.targetSpawnId?{...sp,x:descent.x,y:descent.y}:sp)});
   // The existing entry Spawn on the lower floor belongs to its own Portal.
   // Connecting a staircase must NEVER steal/move it (particularly the
   // exterior house entrance). The stairs have their own dedicated Spawn.
@@ -175,7 +181,7 @@ export function addWorldInteriorFloor(d,roomId){
   let serial=2;
   while(parent.spawns.some(sp=>sp.id===landingId))landingId='stairs-arrival-from-'+index+'-'+serial++;
   next=replaceArea(next,previous,{spawns:[...parent.spawns,{
-    id:landingId,x:center.x,y:center.y}]});
+    id:landingId,x:ascent.x,y:Math.min(parent.height-18,ascent.y+36)}]});
   next=replacePortal(next,down.id,{targetSpawnId:landingId});
   const document=checked(next);
   return Object.freeze({document,areaId:upper.id});
