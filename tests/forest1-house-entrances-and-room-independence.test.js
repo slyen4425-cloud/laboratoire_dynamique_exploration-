@@ -88,6 +88,6 @@ test('individual interior templates never become a shared live house state',()=>
  // Existing linked interiors must be opened, not silently overwritten by a
  // still-selected template from the previously edited house.
  assert.doesNotMatch(source,/else if\s*\(wanted\)\s*\{[\s\S]{0,300}?applySculptInteriorTemplate\(entry,wanted\)/);
- assert.match(source,/houseSelect\.value\s*=\s*''/);
+ assert.match(source,/houseTemplate\.value\s*=\s*''/);
  assert.match(html,/Chaque maison[^<]+(?:propre|indépendant)/);
 });
