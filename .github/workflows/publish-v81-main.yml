@@ -318,11 +318,11 @@ jobs:
           mkdir -p "$rich/combat-preview" "$rich/capture-assets"
           rsync -a --exclude='.git' combat-source/ "$rich/combat-preview/"
           rsync -a --exclude='.git' capture-source/ "$rich/capture-assets/"
-          jq -n --arg main "$(git -C combat-source rev-parse HEAD)" \\
-            --arg author "$(git -C combat-author rev-parse HEAD)" \\
-            --arg assets "$(git -C capture-source rev-parse HEAD)" \\
-            --arg exploration "$rich_sha" \\
-            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$author,visualAssets:$assets,exploration:$exploration}' \\
+          jq -n --arg main "$(git -C combat-source rev-parse HEAD)" \
+            --arg author "$(git -C combat-author rev-parse HEAD)" \
+            --arg assets "$(git -C capture-source rev-parse HEAD)" \
+            --arg exploration "$rich_sha" \
+            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$author,visualAssets:$assets,exploration:$exploration}' \
             > "$rich/release-provenance.v1.json"
           # These byte-level sentinels prevent mixing the two editors or
           # their persisted WorldDocument / Portal owners.
@@ -376,12 +376,12 @@ jobs:
           set -euo pipefail
           probe="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/rich-presets-pr301"
           for page in sculpt-lab.html world-assembler.html; do
-            curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \\
+            curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
               "$probe/$page?run=$GITHUB_RUN_ID" -o "/tmp/rich-$page"
           done
           grep -Fq 'id="object-open-interior"' /tmp/rich-sculpt-lab.html
           grep -Fq 'id="world-map-preset-create"' /tmp/rich-world-assembler.html
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \\
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
             "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/rich-provenance.json
           jq -e '.exploration=="1c2160fa34b3ee3ffcf349424b87df162d4378e4"' /tmp/rich-provenance.json >/dev/null
           echo 'LIVE: stable + PR301 are both served from the same Pages artifact'
