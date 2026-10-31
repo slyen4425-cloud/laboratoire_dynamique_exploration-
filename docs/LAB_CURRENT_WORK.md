@@ -1,3 +1,14 @@
+# Lot correctif — forêt dense, plafond 128 objets (31 octobre 2026)
+
+- **Signal créateur :** `foret-1.map-preset.json`, relief 80 × 60, 128 placements natifs de `objectdef.tree.forest.pine_dense.01` ; impossible d'ajouter arbre/maison/objet #129. La sauvegarde n'était pas en cause.
+- **Base :** PR #301 `9fc1cc58770e60eefc8795a78e373448364a744b` ; START `checkpoint/exploration-forest-density-start-2026-10-31` ; lot isolé `work/exploration-forest-density-2026-10-31`. Aucune mutation de la carte personnelle.
+- **Cause racine :** `SCULPT_OBJECT_LIMIT=128` dans le seul `src/world/sculpt-scene-preview.js` limitait simultanément pose, normalisation, import et export ; message UI « Limite de 128 objets atteinte ». Le fichier partagé contenait exactement 128 arbres.
+- **Correction :** budget de sécurité 2048 placements par scène, sans second modèle ni troncature silencieuse ; au-delà, erreur explicite à l'import/normalisation. La même limite est affichée dans l'éditeur ; le WorldDocument et les fichiers `.map-preset.json` réutilisent les contrôles canoniques. Le rendu met en cache la liste triée jusqu'à mutation réelle et écarte les objets hors écran avec marge conservative dans la projection caméra 2,5D ; aucun changement de collisions, mouvements ou hit tests.
+- **TDD :** `tests/sculpt-dense-forest-object-budget.test.js` reproduit le 129e arbre, 513 arbres export/import du préset, sauvegarde WorldArea + WorldDocument 513 objets, et rejet explicite au-dessus du budget. Branche RED indépendante `test/red-forest-density-2026-10-31` au commit test initial `051d959d`.
+- **Gates :** CI et vrai Chromium sur SHA exact, tests de rendu et confort Pixel paysage lors d'une forêt dense ; vérifier le chargement/sauvegarde du préset existant intact. Maintenir `main`, Combat main, la V80 stable et les huit présets standards inchangés. Livraison possible uniquement sur preview PR #301 après intégration du lot validé ; ne pas annoncer GREEN mobile avant retour utilisateur.
+
+---
+
 # Lot — Enregistrer, partager et importer ses présets sans JSON brut (31 octobre 2026)
 
 - **Demande :** enregistrer un préset personnel simplement sur Pixel paysage, le retrouver dans World Builder, récupérer un vrai fichier transférable à ChatGPT et permettre son intégration ultérieure au catalogue officiel après réception et validation.
