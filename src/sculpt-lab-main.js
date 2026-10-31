@@ -111,6 +111,7 @@ let sculptInteriors=Object.freeze([]),outsideAreaSnapshot=null,activeInteriorId=
 let sculptWorldDraft=null,sculptWorldAreaId=null,sculptWorldPortalPlacement=null;
 let sculptWorldAreaMounted=false; // derived from a successful canonical 2.5D WorldArea mount
 let sculptInteriorTemplates=Object.freeze([]);
+let lastSelectedInteriorHouseId=null; // UI-only selection; each WorldArea owns its own content
 let interiorWallMode=null,interiorWallStart=null,interiorWallPreview=null;
 let interiorWallGesture=null,interiorDoorMoving=false,interiorDoorGesture=null,interiorDoorPreview=null;
 let interiorWallHistory=[],interiorWallRedo=[];
@@ -2184,17 +2185,31 @@ function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
   const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
+  const selectedHouseId=buildingSelected?selected.id:null;
+  const houseTemplate=$('object-interior-template');
+  // The dropdown is a transient choice for THIS house only. Reusing its
+  // previous DOM value when selecting another house silently cloned the same
+  // template; opening an already-linked house could overwrite custom work.
+  if(lastSelectedInteriorHouseId!==selectedHouseId){
+    houseTemplate.value='';
+    lastSelectedInteriorHouseId=selectedHouseId;
+  }
   $('object-open-interior').hidden=!buildingSelected;
   $('object-interior-link').hidden=!buildingSelected;
   $('interior-house-link-info').hidden=!buildingSelected;
   if(buildingSelected){
     const linked=sculptInteriors.some(e=>e.buildingId===selected.id);
+    // Once an interior exists, its authored content is the only truth.
+    // Templates can be applied explicitly INSIDE its own editor instead.
+    houseTemplate.disabled=linked;
+    if(linked)houseTemplate.value='';
     $('object-open-interior').textContent=linked?'🏠 Modifier son intérieur lié':
       '🏠 Créer et lier un intérieur à cette maison';
     $('interior-house-link-info').textContent=linked?
-      'Intérieur lié à cette maison et à sa porte extérieure.':
-      'Aucun intérieur : la liaison à la porte de cette maison sera créée automatiquement.';
+      'Intérieur indépendant déjà créé. Le modifier ne change aucune autre maison.':
+      'Pièce libre ou modèle au choix pour CETTE maison uniquement.';
   }
+  if(!buildingSelected)houseTemplate.disabled=true;
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
   const def=selectedDef;
   $('object-category').value=def.kind;refreshObjectOptions();
@@ -3150,12 +3165,10 @@ function openSelectedSculptInterior(){
     if(!entry){status('Bâtiment sans porte canonique : intérieur non créé.');return;}
     if(wanted)entry=applySculptInteriorTemplate(entry,wanted);
     sculptInteriors=Object.freeze([...sculptInteriors,entry]);
-  }else if(wanted){
-    // Deliberate model selection in house palette updates ONLY this house's
-    // WorldArea content; entryPortal still points to its own area + doorAnchor.
-    entry=applySculptInteriorTemplate(entry,wanted);
-    sculptInteriors=Object.freeze(sculptInteriors.map(e=>e.area.id===entry.area.id?entry:e));
   }
+  // Never re-apply a previously selected template when editing an existing
+  // room. The explicit "Appliquer le modèle choisi" control belongs INSIDE
+  // that room and leaves every other house unchanged.
   changeSculptArea(entry.area.id);
 }
 function updateSculptDoorAction(){
