@@ -4138,7 +4138,12 @@ try{
     const canApply=!apply.disabled&&!!selected;
     if(canApply)apply.click();
     const beforeFloor=doc.areas.length;
+    // Move-door state from the ground floor must be cleared when opening
+    // upstairs, otherwise touching canvas dereferences the missing door.
+    document.querySelector('#interior-door-move').click();
+    const movingBefore=document.body.classList.contains('interior-door-authoring');
     document.querySelector('#interior-level-add').click();
+    const movingAfter=document.body.classList.contains('interior-door-authoring');
     doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
     const upperId=window.__sculptWorldProbe().areaId;
     const stair=doc.portals.find(p=>p.sourceAreaId===upperId&&p.visual?.marker==='portal');
@@ -4156,6 +4161,7 @@ try{
     return {tools,roomId,resizeStatus,resized:[resized?.width,resized?.height],
       doorAsset:door?.visual?.assetId,doorScale:door?.visual?.scale,
       selected,canApply,beforeFloor,afterFloor:doc.areas.length,
+      movingBefore,movingAfter,
       upperId,levels,stairAsset:stairSaved?.visual?.assetId,
       stairRotation:stairSaved?.visual?.rotationDeg,
       backToGround:window.__sculptWorldProbe().areaId,
@@ -4166,6 +4172,7 @@ try{
      furnishedRoom.doorAsset!=='object.door.interior.bois_renforce.face'||
      furnishedRoom.doorScale!==.8||!furnishedRoom.canApply||
      furnishedRoom.afterFloor!==furnishedRoom.beforeFloor+1||
+     !furnishedRoom.movingBefore||furnishedRoom.movingAfter||
      furnishedRoom.upperId===furnishedRoom.roomId||
      furnishedRoom.levels.length!==2||
      furnishedRoom.stairAsset!=='ladder.wood'||
