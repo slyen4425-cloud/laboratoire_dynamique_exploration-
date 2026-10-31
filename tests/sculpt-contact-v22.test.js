@@ -49,7 +49,11 @@ test('V22 trees and houses block foot region, not the empty area behind the silh
     const w=base(terrain,objects),contact=context(terrain);
     const rect=worldObjectObstacleRect(resolveWorldObjectPlacements(objects,sculptPreviewCollisionCatalog)[0]);
     assert.ok(rect.y<180,'contact is positioned just above its visual foot');
-    assert.ok(rect.width < 65,'contact is less deep than full building/tree sprite');
+    if(def.includes('.building.')){
+      assert.ok(rect.width>65,'house collision must cover its walls after scale changes');
+      const canonical=worldObjectObstacleRect(resolveWorldObjectPlacements(objects,objectDefinitionCatalogV1)[0]);
+      assert.deepEqual(rect,canonical,'Sculpt must use native building footprint, not a smaller pilot box');
+    }else assert.ok(rect.width<65,'tree trunk contact stays shallow');
     assert.equal(isBlocked(w,actor(200,150),280,rect.y,undefined,contact),true);
     assert.equal(isBlocked(w,actor(200,150),280,rect.y-rect.width/2-7,undefined,contact),false);
   }
