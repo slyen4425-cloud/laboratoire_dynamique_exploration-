@@ -3492,6 +3492,12 @@ window.__sculptLabProbe=(screenPoint=null)=>Object.freeze({
 function sculptWorldArea(){
   return sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)??null;
 }
+function sculptWorldHouseParentLink(){
+  return sculptWorldDraft?.portals.find(p=>
+    p.targetAreaId===sculptWorldAreaId&&p.trigger?.kind==='object-anchor'&&
+    sculptWorldDraft.areas.some(a=>a.id===p.sourceAreaId&&a.kind==='exterior'))??null;
+}
+
 function worldOutboundPortals(){
   return sculptWorldDraft?.portals.filter(p=>p.sourceAreaId===sculptWorldAreaId)??[];
 }
@@ -3513,6 +3519,7 @@ function refreshSculptWorldPanel(){
   const panel=$('world-area-portal-panel');
   if(!sculptWorldDraft||!panel)return;
   const area=sculptWorldArea();if(!area)return;
+  $('world-area-house-back').hidden=!sculptWorldHouseParentLink();
   panel.hidden=false;
   $('world-area-current-name').textContent=(area.siteKind==='dungeon'?'🗝 ':'🏞 ')+
     (area.label??area.id);
@@ -3872,6 +3879,16 @@ function installSculptWorldAreaEditing(){
   }
   $('world-area-unavailable-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-unavailable-create').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
+  $('world-area-house-back').addEventListener('click',()=>{
+    const parent=sculptWorldHouseParentLink();
+    if(!parent||!sculptWorldAreaMounted)return;
+    try{
+      commitCurrentSculptWorldArea();
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(parent.sourceAreaId);
+      sculptWorldStatus('Maison retrouvée : intérieur et extérieur sauvegardés dans le même monde.');
+    }catch(error){sculptWorldStatus('Retour à la maison impossible : '+error.message,true);}
+  });
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-return-float').addEventListener('click',()=>saveAndReturnWorldArea());
