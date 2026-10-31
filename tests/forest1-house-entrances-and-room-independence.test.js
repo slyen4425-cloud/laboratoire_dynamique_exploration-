@@ -117,7 +117,7 @@ test('canonical WorldBuilder room walls + floor have a live editor backed by the
  assert.match(source,/sculptWorldDraft=createWorldBuilderDraft\(\{\.\.\.sculptWorldDraft,/);
  assert.match(source,/saveWorldAssemblerDraft\(window\.localStorage,sculptWorldDraft\)/);
  assert.match(source,/if\(!activeInteriorId&&!sculptWorldCurrentInterior\(\)\)return/);
- assert.match(html,/body\.world-area-editing\.sculpt-interior-area \.interior-template-tools\{display:none!important\}/);
+ assert.doesNotMatch(html,/body\\.world-area-editing\\.sculpt-interior-area \\.interior-template-tools\\{display:none!important\\}/);
  assert.match(source,/\$\('interior-area-bar'\)\.hidden=!entry&&!worldRoom/);
 });
 
