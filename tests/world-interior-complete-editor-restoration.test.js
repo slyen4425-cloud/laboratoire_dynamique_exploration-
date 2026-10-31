@@ -40,6 +40,7 @@ test('World Builder room editor commands preserve individual rooms, WorldDocumen
 });
 test('room reusable template copies content but never identity, outside door or other house',()=>{
  let {d,a,b}=fixture();
+ d={...d,areas:d.areas.map(room=>room.id===a?{...room,wallMaterialId:'stone'}:room)};
  d=resizeWorldInterior(d,a,{width:20,height:16,shape:'t'});
  const entry=worldInteriorAdapter(d,a);
  const t=createSculptInteriorTemplate(entry,{id:'interior-template-1',name:'Modèle de village'});
@@ -48,6 +49,8 @@ test('room reusable template copies content but never identity, outside door or 
  const result=applyWorldInteriorTemplate(d,b,t);
  assert.equal(result.areas.find(x=>x.id===b).width,20*28);
  assert.equal(result.areas.find(x=>x.id===b).boundary.kind,'polygon');
+ assert.equal(result.areas.find(x=>x.id===b).wallMaterialId,'stone',
+   'template wall material must be copied with the walls into house B');
  assert.equal(result.portals.find(x=>x.id===incomingId).targetAreaId,b);
  assert.equal(result.areas.find(x=>x.id===a).width,20*28);
  assert.equal(d.areas.find(x=>x.id===b),bBefore,'input draft immutable');
@@ -74,6 +77,17 @@ test('two floors share only WorldDocument Portals, with independent walls/materi
  const next=importWorldBuilderDocument(serializeWorldBuilderDraft(d));
  assert.equal(next.portals.find(x=>x.id===up.id).visual.rotationDeg,90);
  assert.equal(next.areas.find(x=>x.id===made.areaId).kind,'interior');
+ const third=addWorldInteriorFloor(next,made.areaId);
+ const doc3=third.document;
+ assert.equal(worldInteriorFloors(doc3,third.areaId).length,3);
+ const ascend=doc3.portals.find(p=>p.sourceAreaId===made.areaId&&p.targetAreaId===third.areaId);
+ const descend=doc3.portals.find(p=>p.sourceAreaId===made.areaId&&p.targetAreaId===a);
+ assert.ok(Math.hypot(ascend.trigger.x-descend.trigger.x,ascend.trigger.y-descend.trigger.y)>
+   ascend.trigger.radius+descend.trigger.radius,
+   'floor 2 up/down stair circles must not overlap');
+ assert.equal(findTriggeredPortal(doc3,made.areaId,{
+   x:ascend.trigger.x,y:ascend.trigger.y})?.id,ascend.id,
+   'the new upper floor must be reachable by normal manual Portal action');
  assert.throws(()=>resizeWorldInterior(next,a,{width:26,height:18,shape:'rectangle'}),/étage|passage|Portal/i);
 });
 test('all published house-editor buttons remain visible and call WorldDocument adapters, no prototype authority',()=>{
