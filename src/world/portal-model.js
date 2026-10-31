@@ -201,3 +201,30 @@ export function applyPortalTransition(
     viaPortalId: portal.id
   });
 }
+
+
+/**
+ * The legacy 2D runtime automatically crosses Portals when inside a trigger.
+ * A generated 2.5D house can legitimately return just outside its facade
+ * while still INSIDE the entrance trigger circle. Disarm that one automatic
+ * traversal until the actor has physically left every portal trigger.
+ *
+ * This is an ephemeral input gate, not a second Portal/Spawn geometry or a
+ * timer. The Sculpt 2.5D runtime continues to require its explicit button.
+ */
+export function createAutomaticPortalTraversalGate() {
+  let rearmOutsideTrigger = false;
+  return Object.freeze({
+    step(worldDocument, state) {
+      const portal = findTriggeredPortal(worldDocument, state?.currentAreaId, state);
+      if (!portal) {
+        rearmOutsideTrigger = false;
+        return null;
+      }
+      if (rearmOutsideTrigger) return null;
+      const next = applyPortalTransition(worldDocument, state, portal);
+      if (next) rearmOutsideTrigger = true;
+      return next;
+    }
+  });
+}
