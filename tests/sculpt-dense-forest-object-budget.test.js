@@ -7,6 +7,10 @@ import {createBlankSculptPreviewScene,SCULPT_OBJECT_LIMIT,
   from '../src/world/sculpt-scene-preview.js';
 import {importSculptMapPreset,serializeSculptMapPresetForShare}
   from '../src/builder/sculpt-map-preset-library.js';
+import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument}
+  from '../src/builder/world-builder-draft.js';
+import {saveSculptWorldArea,sculptWorldAreaScene}
+  from '../src/builder/sculpt-world-area-link.js';
 
 // Regression from a real 80x60 forest preset: object #129 was rejected.
 const PINE='objectdef.tree.forest.pine_dense.01';
@@ -55,4 +59,17 @@ test('the Sculpt UI reflects the actual canonical object budget',()=>{
   const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   assert.match(source,/SCULPT_OBJECT_LIMIT/);
   assert.doesNotMatch(source,/Limite de 128 objets atteinte/);
+});
+
+test('the same 513 trees survive canonical WorldArea save and WorldDocument reload',()=>{
+  const draft=createBlankWorldBuilderDraft({width:80*28,height:60*21});
+  const area=draft.areas[0];
+  const source=sculptWorldAreaScene(area);
+  const populated=saveSculptWorldArea(draft,area.id,{
+    ...source,objects:forestObjects(513)
+  });
+  assert.equal(populated.areas[0].objects.length,513);
+  const restored=importWorldBuilderDocument(serializeWorldBuilderDraft(populated));
+  assert.equal(sculptWorldAreaScene(restored.areas[0]).objects.length,513);
+  assert.equal(restored.areas[0].objects[512].id,'sculpt-object-513');
 });
