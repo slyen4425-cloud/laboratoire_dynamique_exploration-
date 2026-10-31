@@ -83,6 +83,15 @@ jobs:
         with:
           ref: ${{ env.EXPLORATION_SOURCE_SHA }}
           path: encounter-source
+      # The published site is a complete artifact, never an incremental upload.
+      # A later scheduled main release must restage this already GREEN trial,
+      # otherwise GitHub Pages removes /preview/rich-presets-pr301/ with a 404.
+      # This checkout is read-only and cannot promote PR301 code into main.
+      - name: Checkout pinned GREEN PR301 test preview (isolated from stable main)
+        uses: actions/checkout@v4
+        with:
+          ref: 1c2160fa34b3ee3ffcf349424b87df162d4378e4
+          path: rich-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
         with:
@@ -288,6 +297,46 @@ jobs:
           echo "combat_main=$main_sha" >> "$GITHUB_OUTPUT"
           echo "author_showcase=$author_sha" >> "$GITHUB_OUTPUT"
           echo "visual_assets=$assets_sha" >> "$GITHUB_OUTPUT"
+      - name: Stage pinned PR301 preview alongside stable main (never replace V80)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rich_sha="1c2160fa34b3ee3ffcf349424b87df162d4378e4"
+          test "$(git -C rich-source rev-parse HEAD)" = "$rich_sha"
+          rich="$GITHUB_WORKSPACE/site/preview/rich-presets-pr301"
+          stable="$GITHUB_WORKSPACE/site/preview/encounters-v80"
+          test -d "$stable"
+          test ! -e "$rich"
+          mkdir -p "$rich"
+          cp rich-source/sculpt-lab.html rich-source/sculpt-lab-v80.html "$rich/"
+          cp rich-source/world-assembler.html rich-source/builder.html rich-source/index.html "$rich/"
+          cp rich-source/manifest.webmanifest "$rich/"
+          for folder in src assets; do
+            mkdir -p "$rich/$folder"
+            rsync -a --exclude='.git' "rich-source/$folder/" "$rich/$folder/"
+          done
+          mkdir -p "$rich/combat-preview" "$rich/capture-assets"
+          rsync -a --exclude='.git' combat-source/ "$rich/combat-preview/"
+          rsync -a --exclude='.git' capture-source/ "$rich/capture-assets/"
+          jq -n --arg main "$(git -C combat-source rev-parse HEAD)" \
+            --arg author "$(git -C combat-author rev-parse HEAD)" \
+            --arg assets "$(git -C capture-source rev-parse HEAD)" \
+            --arg exploration "$rich_sha" \
+            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$author,visualAssets:$assets,exploration:$exploration}' \
+            > "$rich/release-provenance.v1.json"
+          # These byte-level sentinels prevent mixing the two editors or
+          # their persisted WorldDocument / Portal owners.
+          cmp rich-source/sculpt-lab.html "$rich/sculpt-lab.html"
+          cmp rich-source/world-assembler.html "$rich/world-assembler.html"
+          cmp encounter-source/sculpt-lab.html "$stable/sculpt-lab.html"
+          cmp encounter-source/world-assembler.html "$stable/world-assembler.html"
+          test -s "$rich/src/sculpt-lab-main.js"
+          test -s "$rich/src/builder/world-assembler-main.js"
+          grep -Fq 'const RICH=Object.freeze' "$rich/src/builder/sculpt-builtin-map-presets.js"
+          ! grep -Fq 'const RICH=Object.freeze' "$stable/src/builder/sculpt-builtin-map-presets.js"
+          jq -e --arg sha "$rich_sha" '.exploration==$sha' "$rich/release-provenance.v1.json" >/dev/null
+          jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha' "$stable/release-provenance.v1.json" >/dev/null
+          echo 'SAFE: main + V80 unchanged; pinned PR301 preserved by every full Pages deployment'
       - name: Real Chromium test of the assembled preview, not a mock page
         shell: bash
         run: |
@@ -321,6 +370,21 @@ jobs:
         with:
           ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: release-check
+      - name: Verify Pages also serves the pinned PR301 test editor after this main deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/rich-presets-pr301"
+          for page in sculpt-lab.html world-assembler.html; do
+            curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+              "$probe/$page?run=$GITHUB_RUN_ID" -o "/tmp/rich-$page"
+          done
+          grep -Fq 'id="object-open-interior"' /tmp/rich-sculpt-lab.html
+          grep -Fq 'id="world-map-preset-create"' /tmp/rich-world-assembler.html
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/rich-provenance.json
+          jq -e '.exploration=="1c2160fa34b3ee3ffcf349424b87df162d4378e4"' /tmp/rich-provenance.json >/dev/null
+          echo 'LIVE: stable + PR301 are both served from the same Pages artifact'
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |
