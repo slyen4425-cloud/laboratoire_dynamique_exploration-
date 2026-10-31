@@ -1,3 +1,13 @@
+# Lot — Rencontres moins fréquentes et cadence éditable (31 octobre 2026)
+
+- Constat utilisateur : trop de combats aléatoires ; forêt historique 22 % tous les 160 points (80 en test explicite). Les fichiers `.map-preset.json` sont volontairement des scènes seules ; `foret-1.map-preset(3).json` (80×60, 142 objets) ne transporte aucune configuration de rencontres.
+- Checkpoint départ : `checkpoint/exploration-encounters-calm-start-2026-10-31` au SHA PR301 `40955a7838beb8fb76e74fd4b941ce4bb7cd1505`. Branche unique `work/exploration-encounters-calm-cadence-2026-10-31` ; test exigence écrit avant la correction (`tests/encounter-calm-cadence.test.js`).
+- Autorité : `WorldDocument.encounterConfig` (version 1) continue de posséder toutes les probabilités et porte maintenant `checkDistance` borné à 80–2000 points ; `EncounterController` conserve l'unique compteur des déplacements. La scène Sculpt ne fait que transporter la même configuration en export complet ; un préset de carte n'est toujours PAS un WorldDocument.
+- Réglages : distance 300 points par défaut, probabilité de forêt 6 %, plaine 5 %, montagne 6 %, neige 6 %, volcan 10 %, routes 0 %, mer 6 %, sable 5 %. Les profils existants ne sont jamais réécrits par l'ouverture d'un document. Bouton volontaire « Appliquer la base calme » dans les deux éditeurs : ajuste distance/chances, préserve tous les éléments choisis, les raretés Capture et le drapeau randomEnabled de chaque zone. Le mode test accéléré à 80 reste réservé au paramètre explicite encounterTest.
+- Gates : Node tests complets, check syntaxe, vrais Chromium Builder/Exploration, vérification import/export WorldDocument et scène Sculpt, validation utilisateur tactile. Pas de modification de main ni V80 avant GREEN et autorisation de promotion. Présets personnels : lot de remplacement ultérieur distinct, pas de suppression dans ce lot.
+
+---
+
 # Régression — Rétablissement complet de l'édition intérieure World Builder (31 octobre 2026)
 
 - **Signal** : après PR311, les maisons ont des WorldAreas et Portals indépendants, mais le mode World Builder cache la forme/taille, les étages, les portes et les modèles ; leurs callbacks possédaient encore uniquement `sculptInteriors` prototype. L'utilisateur impose : réparation sans masquage, rustine ni double autorité.
