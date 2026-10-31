@@ -160,7 +160,7 @@ try{
   if(flat.faceCount!==0)throw Error('Flat map still has cliff faces: '+JSON.stringify(flat));
   await run("document.querySelector('[data-mode=raise]').click()");
   await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
-  const center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+  let center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
     const x=r.x+r.width/2,y=r.y+r.height/2;
     return {x,y,inside:document.elementFromPoint(x,y)?.id,
       viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
@@ -196,6 +196,85 @@ try{
       .catch(error=>{legacyEncounterConsentError='CDP legacy encounter consent: '+error.message;});
   });
   await send('Page.enable',{});
+
+  // The WorldArea's right inspector must not cover the forest when closed.
+  // Test real Chromium hit testing, selected settings and object placement
+  // through the existing native canvas pointer path (no duplicate input).
+  await run("document.querySelector('#fullscreen-toggle').click()");
+  await run("new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))");
+  const foldedStart=await run(`(()=>{
+    document.querySelector('#mode-objects').click();
+    const p=document.querySelector('#object-palette'),s=p.querySelector('summary');
+    const category=document.querySelector('#object-category');
+    category.value='tree';category.dispatchEvent(new Event('change',{bubbles:true}));
+    const definition=document.querySelector('#object-definition').value;
+    const scale=document.querySelector('#object-scale');
+    scale.value='75';scale.dispatchEvent(new Event('input',{bubbles:true}));
+    const rect=p.getBoundingClientRect(),x=rect.left+rect.width/2;
+    const y=rect.top+Math.min(100,rect.height-12);
+    const underPanel=document.elementFromPoint(x,y);
+    const covered=p.contains(underPanel);
+    s.click();
+    const freedElement=document.elementFromPoint(x,y);
+    const free=freedElement?.id==='sculpt-canvas';
+    const probe=window.__sculptObjectsProbe();
+    return {covered,free,expanded:probe.paletteExpanded,active:probe.active,
+      action:document.querySelector('#object-action').value,
+      definition,scale:Number(scale.value),panelWidth:p.getBoundingClientRect().width,
+      panelHeight:p.getBoundingClientRect().height,
+      panelTop:rect.top,panelLeft:rect.left,viewportWidth:innerWidth,
+      viewportHeight:innerHeight,elementBefore:underPanel?.id??underPanel?.tagName,
+      elementAfter:freedElement?.id??freedElement?.tagName,
+      clickX:document.querySelector('#sculpt-canvas').getBoundingClientRect().left+
+        document.querySelector('#sculpt-canvas').getBoundingClientRect().width/2,
+      clickY:document.querySelector('#sculpt-canvas').getBoundingClientRect().top+
+        document.querySelector('#sculpt-canvas').getBoundingClientRect().height/2};
+  })()`);
+  if(!foldedStart.covered||!foldedStart.free||foldedStart.expanded||
+    !foldedStart.active||foldedStart.action!=='place'||!foldedStart.definition||
+    foldedStart.scale!==75||foldedStart.panelWidth>210||foldedStart.panelHeight>56)
+    throw Error('Object palette did not release the covered map in Chromium: '+JSON.stringify(foldedStart));
+  const beforeFoldPlacement=await run("window.__sculptObjectsProbe().count");
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:foldedStart.clickX,y:foldedStart.clickY});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:foldedStart.clickX,y:foldedStart.clickY,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:foldedStart.clickX,y:foldedStart.clickY,button:'left',clickCount:1});
+  const foldedEnd=await run(`(()=>{
+    const p=document.querySelector('#object-palette');p.querySelector('summary').click();
+    const probe=window.__sculptObjectsProbe();
+    const same=probe.paletteExpanded&&probe.active&&
+      document.querySelector('#object-category').value==='tree'&&
+      document.querySelector('#object-scale').value==='75'&&
+      document.querySelector('#object-definition').value===${JSON.stringify(foldedStart.definition)};
+    const placed=probe.count;
+    if(placed>0)document.querySelector('#object-undo').click();
+    document.querySelector('#mode-objects').click();
+    document.querySelector('#fullscreen-toggle').click();
+    return {same,placed,cleared:window.__sculptObjectsProbe().count,
+      noLongerActive:!window.__sculptObjectsProbe().active,
+      paletteHidden:p.hidden};
+  })()`);
+  if(!foldedEnd.same||foldedEnd.placed!==beforeFoldPlacement+1||
+    foldedEnd.cleared!==beforeFoldPlacement||!foldedEnd.noLongerActive||
+    !foldedEnd.paletteHidden)
+    throw Error('Collapsed palette lost setting or blocked actual placement: '+JSON.stringify({foldedStart,foldedEnd}));
+  console.log('GREEN real Chromium: right object inspector folds to a chip, map becomes clickable, tree is placed then undone, settings preserved');
+  // Restore only this test's fixtures; the normal editor never clears
+  // user settings on collapse, which the gate above already established.
+  await run(`(()=>{const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const scale=document.querySelector('#object-scale');scale.value='40';
+    scale.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  // Returning from fullscreen changes both scroll and 2.5D camera layout.
+  // Refresh the ORIGINAL brush gate's pointer coordinate rather than
+  // injecting a stale offscreen click from before the landscape test.
+  await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
+  await run("new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))");
+  center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+    const x=r.x+r.width/2,y=r.y+r.height/2;
+    return {x,y,inside:document.elementFromPoint(x,y)?.id,
+      viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
+  if(center.inside!=='sculpt-canvas')throw Error('Canvas unavailable after object panel fullscreen test: '+JSON.stringify(center));
+
   await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
   await sleep(70);

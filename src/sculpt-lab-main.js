@@ -2565,7 +2565,8 @@ $('object-redo').addEventListener('click',()=>{
 });
 refreshObjectOptions();updateObjectCount();
 window.__sculptObjectsProbe=()=>Object.freeze({
-  active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
+  active:objectEditing,paletteExpanded:$('object-palette').open,
+  count:placedObjects.length,selectedId:objectSelectedId,
   terrainRasterBuilds,cachedGround:!!navTerrainCache,
   undoCount:objectHistory.length,redoCount:objectRedo.length,
   variantChoices:[...$('object-variant').options].map(o=>o.value),
