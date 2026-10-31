@@ -77,7 +77,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
-import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
@@ -2181,12 +2181,25 @@ function refreshObjectVariants(preferred=null){
     $('object-variant').value=wanted;
   }
 }
+// In World Builder a house links to its own canonical WorldArea/Portal.
+// The old standalone Sculpt-only interior preview is not a WorldDocument room.
+function currentWorldHouseLink(buildingId){
+  if(!sculptWorldDraft||!sculptWorldAreaId)return null;
+  return sculptWorldDraft.portals.find(portal=>
+    portal.sourceAreaId===sculptWorldAreaId&&
+    portal.trigger?.kind==='object-anchor'&&
+    portal.trigger.objectId===buildingId&&
+    portal.targetAreaId!==sculptWorldAreaId&&
+    sculptWorldDraft.areas.some(area=>area.id===portal.targetAreaId&&area.kind==='interior'))??null;
+}
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
-  const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
+  const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId&&
+    (!sculptWorldDraft||sculptWorldArea()?.kind==='exterior');
   const selectedHouseId=buildingSelected?selected.id:null;
   const houseTemplate=$('object-interior-template');
+  houseTemplate.parentElement.hidden=!!sculptWorldDraft; // only standalone Sculpt uses templates
   // The dropdown is a transient choice for THIS house only. Reusing its
   // previous DOM value when selecting another house silently cloned the same
   // template; opening an already-linked house could overwrite custom work.
@@ -2198,16 +2211,18 @@ function syncObjectSelectedControls(){
   $('object-interior-link').hidden=!buildingSelected;
   $('interior-house-link-info').hidden=!buildingSelected;
   if(buildingSelected){
-    const linked=sculptInteriors.some(e=>e.buildingId===selected.id);
+    const linked=sculptWorldDraft?!!currentWorldHouseLink(selected.id):
+      sculptInteriors.some(e=>e.buildingId===selected.id);
     // Once an interior exists, its authored content is the only truth.
     // Templates can be applied explicitly INSIDE its own editor instead.
-    houseTemplate.disabled=linked;
+    houseTemplate.disabled=linked||!!sculptWorldDraft;
     if(linked)houseTemplate.value='';
     $('object-open-interior').textContent=linked?'🏠 Modifier son intérieur lié':
       '🏠 Créer et lier un intérieur à cette maison';
     $('interior-house-link-info').textContent=linked?
-      'Intérieur indépendant déjà créé. Le modifier ne change aucune autre maison.':
-      'Pièce libre ou modèle au choix pour CETTE maison uniquement.';
+      'Pièce indépendante de cette maison : modifier son intérieur ne modifie aucune autre maison.':
+      sculptWorldDraft?'Aucun intérieur World Builder : le bouton crée une vraie WorldArea et ses deux Portals pour CETTE maison.':
+        'Pièce libre ou modèle au choix pour CETTE maison uniquement.';
   }
   if(!buildingSelected)houseTemplate.disabled=true;
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
@@ -3155,6 +3170,33 @@ function openSelectedSculptInterior(){
   const resolved=resolveWorldObjectPlacements(selected?[selected]:[],
     objectDefinitionCatalogV1)[0];
   if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
+
+  if(sculptWorldDraft){
+    // One WorldDocument and one set of portals: never open a detached Sculpt
+    // prototype that cannot be saved/entered through the World Builder.
+    if(sculptWorldArea()?.kind!=='exterior'||!sculptWorldAreaMounted){
+      sculptWorldStatus('Ouvre une maison depuis sa carte extérieure World Builder.',true);
+      return;
+    }
+    try{
+      commitCurrentSculptWorldArea();
+      let portal=currentWorldHouseLink(resolved.id);
+      if(!portal){
+        sculptWorldDraft=createBuildingInteriorLink(sculptWorldDraft,{
+          sourceAreaId:sculptWorldAreaId,buildingId:resolved.id,anchorId:'main-door',
+          interiorSize:{width:18*28,height:14*21}
+        });
+        portal=currentWorldHouseLink(resolved.id);
+      }
+      if(!portal)throw Error('Liaison intérieur/porte non créée : vérifier la définition de cette maison');
+      const room=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+      sculptWorldAreaScene(room); // Validate before abandoning the exterior editor.
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(room.id);
+      sculptWorldStatus('Pièce indépendante liée à cette maison, enregistrée dans le même monde.');
+    }catch(error){sculptWorldStatus('Intérieur de maison indisponible : '+error.message,true);}
+    return;
+  }
   let entry=sculptInteriors.find(e=>e.buildingId===resolved.id&&e.floorIndex===0);
   const wanted=sculptInteriorTemplates.find(t=>t.id===$('object-interior-template').value);
   if(!entry){
