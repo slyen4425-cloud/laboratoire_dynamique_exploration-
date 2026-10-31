@@ -1,3 +1,14 @@
+# Lot UI — Masquer les réglages d'objets pendant la pose (31 octobre 2026)
+
+- **Signal utilisateur / preuve :** capture réelle Pixel paysage, mode Objets, inspecteur droit « Escaliers » recouvrant des arbres et maisons de la forêt ; le toucher sous le panneau ne peut pas atteindre le canevas.
+- **Base :** PR #301 `b6c21b65573e1d003d00d4895ca954b6c9ecce6d`; checkpoint START `checkpoint/exploration-object-panel-start-2026-10-31`; branche isolée `work/exploration-object-panel-collapse-2026-10-31`. `main` et V80 inchangés.
+- **Propriétaire :** uniquement `sculpt-lab.html` (DOM/CSS de l'inspecteur Object Palette) et le probe existant dans `src/sculpt-lab-main.js` ; aucun modèle, Spawn/Portal, caméra, hitbox, ObjectDefinition, combat, sauvegarde ou asset modifié.
+- **Comportement :** panneau Objet natif `details/summary` initialement ouvert, repliable en un petit onglet au même emplacement (sous Passages) ; réglages restent montés et inchangés, `objectEditing` et action de placement ne changent pas ; touche et clavier via `summary`. Repliement conservé lors du passage temporaire à Textures/Terre puis retour Objets.
+- **RED :** `tests/sculpt-object-palette-collapse.test.js` exige le panneau repliable + présence unique des contrôles + état indépendant. **Chromium vrai** dans `scripts/smoke-sculpt-terrain-lab.mjs` : panneau réellement bloquant avant, `elementFromPoint` montre le canevas découvert après repli, pose par pointeur natif et undo, rouvrir conserve arbre/taille/mode.
+- **Critères :** CI Core/Chromium GREEN sur SHA précis, déploiement HTTPS isolé PR #301 après intégration, puis essai tactile Pixel paysage réel par l'utilisateur. **Pas de checkpoint GREEN final** sans validation manuelle de l'ergonomie.
+
+---
+
 # Lot correctif — forêt dense, plafond 128 objets (31 octobre 2026)
 
 - **Signal créateur :** `foret-1.map-preset.json`, relief 80 × 60, 128 placements natifs de `objectdef.tree.forest.pine_dense.01` ; impossible d'ajouter arbre/maison/objet #129. La sauvegarde n'était pas en cause.
