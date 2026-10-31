@@ -108,3 +108,15 @@ test('World Builder house editor opens the existing linked canonical WorldArea i
  assert.match(html,/id="world-area-house-back"/);
  assert.match(source,/houseTemplate\.parentElement\.hidden=!!sculptWorldDraft/);
 });
+
+test('canonical WorldBuilder room walls + floor have a live editor backed by the one WorldArea',()=>{
+ assert.match(source,/function currentInteriorAuthoringArea\(\)/);
+ assert.match(source,/sculptWorldCurrentInterior\(\)\?sculptWorldArea\(\)/);
+ assert.match(source,/if\(mode&&!currentInteriorAuthoringArea\(\)\)return/);
+ assert.match(source,/interior-wall-toggle'\)\.disabled=!area/);
+ assert.match(source,/sculptWorldDraft=createWorldBuilderDraft\(\{\.\.\.sculptWorldDraft,/);
+ assert.match(source,/saveWorldAssemblerDraft\(window\.localStorage,sculptWorldDraft\)/);
+ assert.match(source,/if\(!activeInteriorId&&!sculptWorldCurrentInterior\(\)\)return/);
+ assert.match(html,/body\.world-area-editing\.sculpt-interior-area \.interior-template-tools\{display:none!important\}/);
+ assert.match(source,/\$\('interior-area-bar'\)\.hidden=!entry&&!worldRoom/);
+});
