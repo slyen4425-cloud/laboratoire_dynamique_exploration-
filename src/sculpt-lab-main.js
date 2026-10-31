@@ -71,7 +71,7 @@ import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.j
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset,sculptMapPresetFilename,
-  serializeSculptMapPresetForShare} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+  serializeSculptMapPresetForShare} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-preset-save-share-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
