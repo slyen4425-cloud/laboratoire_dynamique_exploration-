@@ -586,7 +586,7 @@ let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
 let sphereTexturesLoaded=0;
-const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
+const sculptGroundMaterials=Object.freeze(['ground.dirt','grass.forest','ground.forest_floor',
   'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
