@@ -3933,6 +3933,31 @@ try{
     throw Error('Mobile playable WorldArea repair failed: '+JSON.stringify(repairedRoute));
   console.log('Legacy world playable destination repair REAL Chromium GREEN:',
     JSON.stringify(repairedRoute));
+
+  const builderPersonalMap=await run(`(()=>{
+    const key='gensrpg.exploration.map-presets.v1';
+    const old=localStorage.getItem(key);
+    const selected=window.__worldAssemblerProbe?.().selectedAreaId;
+    const area=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'))
+      .areas.find(a=>a.id===selected);
+    document.querySelector('#world-map-preset-save-current').click();
+    const saved=JSON.parse(localStorage.getItem(key)??'[]');
+    const choice=document.querySelector('#world-map-preset-select').value;
+    const button=document.querySelector('#world-map-preset-download');
+    const info=document.querySelector('#world-map-preset-info').textContent;
+    const result={area:selected,material:area?.surface?.baseMaterialId,
+      saved:saved.length,name:saved[0]?.name,choice,
+      canDownload:!button.disabled,countVisible:info.includes('1 carte(s) personnelle(s)'),
+      preservedWorld:JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'))
+        .areas.some(x=>x.id===selected)};
+    if(old===null)localStorage.removeItem(key);else localStorage.setItem(key,old);
+    return result;
+  })()`);
+  if(builderPersonalMap.saved!==1||!builderPersonalMap.choice||
+      !builderPersonalMap.canDownload||!builderPersonalMap.countVisible||
+      !builderPersonalMap.preservedWorld)
+    throw Error('World Builder real-area personal map library save failed: '+JSON.stringify(builderPersonalMap));
+  console.log('GREEN real Chromium World Builder: named zone added to SAME user map library, without changing WorldDocument');
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{
