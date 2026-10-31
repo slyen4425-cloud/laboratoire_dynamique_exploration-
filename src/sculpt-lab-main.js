@@ -3105,11 +3105,12 @@ function mountSculptArea(snapshot){
 }
 function updateSculptAreaControls(){
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
-  $('interior-area-bar').hidden=!entry;
-  document.body.classList.toggle('sculpt-interior-area',!!entry);
+  const worldRoom=sculptWorldCurrentInterior()?sculptWorldArea():null;
+  $('interior-area-bar').hidden=!entry&&!worldRoom;
+  document.body.classList.toggle('sculpt-interior-area',!!entry||!!worldRoom);
   $('interior-area-label').textContent=entry?
     '🏠 '+(entry.floorIndex===0?'Rez-de-chaussée':'Étage '+entry.floorIndex)+
-      ' · '+entry.buildingId:'🏞 Extérieur';
+      ' · '+entry.buildingId:worldRoom?'🏠 '+(worldRoom.label??'Intérieur de la maison'):'🏞 Extérieur';
   if(entry){
     const floors=sculptInteriors.filter(e=>e.buildingId===entry.buildingId)
       .sort((a,b)=>a.floorIndex-b.floorIndex);
@@ -3131,9 +3132,9 @@ function updateSculptAreaControls(){
     $('interior-shape').value=kind==='custom'?'rectangle':kind;
     $('interior-layout-apply').disabled=kind==='custom';
   }
-  $('new-map-toggle').disabled=!!entry;
+  $('new-map-toggle').disabled=!!entry||!!worldRoom;
   for(const option of $('surface-material').options)
-    option.disabled=entry?!option.value.startsWith('floor.'):
+    option.disabled=entry||worldRoom?!option.value.startsWith('floor.'):
       option.value.startsWith('floor.');
   $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
@@ -3141,8 +3142,8 @@ function updateSculptAreaControls(){
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
   updateInteriorWallControls();updateInteriorDoorControls();updateInteriorConnectorControls();
-  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';updateInteriorConnectorControls();
-  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';
+  if(entry||worldRoom)$('interior-wall-material').value=
+    (entry?.area??worldRoom).wallMaterialId??'plaster';
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(activeInteriorId===nextAreaId||(!activeInteriorId&&
@@ -3318,12 +3319,16 @@ $('interior-layout-apply').addEventListener('click',()=>{
 });
 $('interior-template-select').addEventListener('change',refreshSculptTemplateSelector);
 $('interior-floor-base').addEventListener('change',()=>{
-  if(!activeInteriorId)return;
+  if(!activeInteriorId&&!sculptWorldCurrentInterior())return;
   const materialId=$('interior-floor-base').value;
   if(!interiorFloorMaterials.includes(materialId))return;
   surface={...surface,baseMaterialId:materialId};
   loadSurfacePaintAssets();updateSurfaceCount();setTheme();
-  status('Sol intérieur choisi : '+materialId+' · conservé dans la scène JSON.');
+  if(sculptWorldCurrentInterior()){
+    commitCurrentSculptWorldArea();
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+  }
+  status('Sol intérieur choisi : '+materialId+' · enregistré pour cette pièce.');
 });
 $('interior-template-save').addEventListener('click',()=>{
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
@@ -3359,11 +3364,13 @@ $('interior-template-apply').addEventListener('click',()=>{
   }catch(e){status(e.message);}
 });
 $('object-open-interior').addEventListener('click',openSelectedSculptInterior);
-$('interior-area-return').addEventListener('click',()=>
-  changeSculptArea(SCULPT_EXTERIOR_AREA_ID));
+$('interior-area-return').addEventListener('click',()=>{
+  if(sculptWorldCurrentInterior())returnToWorldHouseParent();
+  else changeSculptArea(SCULPT_EXTERIOR_AREA_ID);
+});
 $('interior-camera-angle').addEventListener('input',()=>{
   $('interior-camera-value').textContent=$('interior-camera-angle').value+'°';
-  if(activeInteriorId){navTerrainCache=null;fit();}
+  if(activeInteriorId||sculptWorldCurrentInterior()){navTerrainCache=null;fit();}
 });
 $('navigation-area-door').addEventListener('click',()=>{
   if(!navActor||!navigationTesting)return;
@@ -3841,6 +3848,17 @@ function traverseSculptWorldPortal(){
     feedback.dataset.error='true';feedback.hidden=false;
   }
 }
+function returnToWorldHouseParent(){
+  const parent=sculptWorldHouseParentLink();
+  if(!parent||!sculptWorldAreaMounted)return;
+  try{
+    commitCurrentSculptWorldArea();
+    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+    if(interiorWallMode)setInteriorWallMode(null);
+    mountWorldSculptArea(parent.sourceAreaId);
+    sculptWorldStatus('Maison retrouvée : intérieur et extérieur sauvegardés dans le même monde.');
+  }catch(error){sculptWorldStatus('Retour à la maison impossible : '+error.message,true);}
+}
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
@@ -3900,16 +3918,7 @@ function installSculptWorldAreaEditing(){
   }
   $('world-area-unavailable-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-unavailable-create').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
-  $('world-area-house-back').addEventListener('click',()=>{
-    const parent=sculptWorldHouseParentLink();
-    if(!parent||!sculptWorldAreaMounted)return;
-    try{
-      commitCurrentSculptWorldArea();
-      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
-      mountWorldSculptArea(parent.sourceAreaId);
-      sculptWorldStatus('Maison retrouvée : intérieur et extérieur sauvegardés dans le même monde.');
-    }catch(error){sculptWorldStatus('Retour à la maison impossible : '+error.message,true);}
-  });
+  $('world-area-house-back').addEventListener('click',returnToWorldHouseParent);
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-return-float').addEventListener('click',()=>saveAndReturnWorldArea());
