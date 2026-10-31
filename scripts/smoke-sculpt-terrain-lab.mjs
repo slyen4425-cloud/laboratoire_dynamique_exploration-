@@ -3401,11 +3401,13 @@ try{
   const materialSet=await run(`(()=>{
     const before=window.__sculptLabProbe().materialId;
     const selector=document.querySelector('#material');
+    const matchedBefore=selector.value===before&&[...selector.options].some(o=>o.value===before);
     selector.value='ground.mountain_rock';
     selector.dispatchEvent(new Event('change',{bubbles:true}));
-    return {before,after:window.__sculptLabProbe().materialId};
+    return {before,matchedBefore,after:window.__sculptLabProbe().materialId};
   })()`);
-  if(materialSet.before!=='grass.forest'||materialSet.after!=='ground.mountain_rock')
+  if(materialSet.before!=='ground.dirt'||!materialSet.matchedBefore||
+     materialSet.after!=='ground.mountain_rock')
     throw Error('Ground material selection is not valid in WorldArea: '+JSON.stringify(materialSet));
   const readGround=async () => {
     await run("document.querySelector('#world-workspace-world').click();true");
