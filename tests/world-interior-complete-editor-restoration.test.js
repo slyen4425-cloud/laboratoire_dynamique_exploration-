@@ -55,9 +55,13 @@ test('room reusable template copies content but never identity, outside door or 
 });
 test('two floors share only WorldDocument Portals, with independent walls/materials and editable connector',()=>{
  let {d,a,b}=fixture();const bBefore=JSON.stringify(importWorldBuilderDocument(serializeWorldBuilderDraft(d)).areas.find(x=>x.id===b));
+ const entry=d.portals.find(p=>p.targetAreaId===a&&p.trigger.kind==='object-anchor');
+ const arrival=d.areas.find(x=>x.id===a).spawns.find(s=>s.id===entry.targetSpawnId);
  const made=addWorldInteriorFloor(d,a);
  d=made.document;
  assert.equal(worldInteriorFloors(d,a).length,2);
+ assert.deepEqual(d.areas.find(x=>x.id===a).spawns.find(s=>s.id===entry.targetSpawnId),arrival,
+   'adding stairs must not move the original house entrance Spawn');
  const up=d.portals.find(x=>x.sourceAreaId===a&&x.targetAreaId===made.areaId);
  assert.ok(up?.visual.marker==='portal');
  assert.ok(d.portals.some(x=>x.sourceAreaId===made.areaId&&x.targetAreaId===a));
