@@ -2,14 +2,14 @@ import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
   serializeWorldBuilderDraft,importWorldBuilderDocument
-} from './world-builder-draft.js?rev=preset-travel-encounters-v2';
+} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
 import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
-} from './world-assembler-handoff.js';
+} from './world-assembler-handoff.js?rev=forest1-entrances-v1';
 import {createWorldAreaFromSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   importSculptMapPreset,addImportedSculptMapPreset,sculptMapPresetFilename,
-  serializeSculptMapPresetForShare} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1-preset-save-share-v1';
+  serializeSculptMapPresetForShare} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1-preset-save-share-v1&house=forest1-entrances-v1';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2-zone-gates-r1';

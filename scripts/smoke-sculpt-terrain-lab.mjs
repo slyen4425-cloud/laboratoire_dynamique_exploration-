@@ -4070,6 +4070,39 @@ try{
      prefabRoom?.areaKind!=='interior')
     throw Error('Prefab interior did not open in REAL Sculpt 2.5D editor: '+
       JSON.stringify({prefabHouse,prefabRoom}));
+  const canonicalRoomTools=await run(`(()=>{
+    const room=document.querySelector('#interior-area-bar');
+    const toggle=document.querySelector('#interior-wall-toggle');
+    const floor=document.querySelector('#interior-floor-base');
+    const wall=document.querySelector('#interior-wall-material');
+    const visible=!room.hidden&&getComputedStyle(room).display!=='none';
+    const wallEnabled=!toggle.disabled;
+    const floorBefore=floor.value;
+    floor.value='floor.wood.dark';
+    floor.dispatchEvent(new Event('change',{bubbles:true}));
+    wall.value='brick';
+    wall.dispatchEvent(new Event('change',{bubbles:true}));
+    const canEdit=toggle&&!toggle.disabled;
+    if(canEdit)toggle.click();
+    const mode=document.body.classList.contains('interior-wall-authoring');
+    if(mode)toggle.click();
+    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const saved=doc?.areas.find(a=>a.id===window.__sculptWorldProbe().areaId);
+    return {visible,wallEnabled,canEdit,mode,floorBefore,
+      savedFloor:saved?.surface?.baseMaterialId,
+      savedWallMaterial:saved?.wallMaterialId,
+      saveWalls:saved?.walls?.length,
+      roomId:saved?.id};
+  })()`);
+  if(!canonicalRoomTools.visible||!canonicalRoomTools.wallEnabled||
+    !canonicalRoomTools.canEdit||!canonicalRoomTools.mode||
+    canonicalRoomTools.savedFloor!=='floor.wood.dark'||
+    canonicalRoomTools.savedWallMaterial!=='brick'||
+    canonicalRoomTools.saveWalls<2)
+    throw Error('Real WorldBuilder house room must retain canonical floor and wall authoring: '+
+      JSON.stringify(canonicalRoomTools));
+  console.log('WorldBuilder house floor+wall material/authoring REAL Chromium GREEN:',
+    JSON.stringify(canonicalRoomTools));
   const prefabWalk=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {nav:window.__sculptNavProbe?.(),
@@ -4082,6 +4115,34 @@ try{
   console.log('Native prefab house interior REAL Chromium GREEN:',
     JSON.stringify({roomId:prefabRoom.areaId,roomTiles:'18x14',
       walls:prefabHouse.roomWalls,walkable:true,realPortals:true}));
+
+  // A previously broken path opened a detached standalone Sculpt room from a
+  // World Builder house. Verify the real linked WorldArea's parent action in
+  // Chromium, with the existing WorldDocument and Portals unchanged.
+  const prefabHouseBack=await run(`(()=>{
+    const button=document.querySelector('#world-area-house-back');
+    const available=!!button&&!button.hidden;
+    const was=window.__sculptWorldProbe?.().areaId;
+    document.querySelector('#navigation-toggle').click(); // return to editing
+    if(available)button.click();
+    const now=window.__sculptWorldProbe?.();
+    const raw=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const inside=raw?.areas.find(a=>a.id===was);
+    const outside=raw?.areas.find(a=>a.id===now?.areaId);
+    const link=raw?.portals.find(p=>p.sourceAreaId===now?.areaId&&
+      p.targetAreaId===was&&p.trigger?.kind==='object-anchor');
+    return {available,was,areaId:now?.areaId,inside:inside?.id,
+      outside:outside?.id,link:link?.id,
+      portalCount:raw?.portals.length,areaCount:raw?.areas.length,
+      editable:now?.editable};
+  })()`);
+  if(!prefabHouseBack.available||prefabHouseBack.was!==prefabHouse.roomId||
+     prefabHouseBack.areaId!==prefabHouse.outsideId||
+     !prefabHouseBack.link||!prefabHouseBack.editable)
+    throw Error('World Builder room must return to its OWN canonical house exterior: '+
+      JSON.stringify(prefabHouseBack));
+  console.log('World Builder house interior return REAL Chromium GREEN:',JSON.stringify(prefabHouseBack));
+
   console.log('Unified World/Map panels Chromium GREEN:',
     JSON.stringify({size:'40x31',areaId:unifiedBack.selectedAreaId,
       saved:unifiedBack.saved,oneWorldDocument:true}));
