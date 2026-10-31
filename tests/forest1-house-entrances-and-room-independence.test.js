@@ -91,3 +91,20 @@ test('individual interior templates never become a shared live house state',()=>
  assert.match(source,/houseTemplate\.value\s*=\s*''/);
  assert.match(html,/Chaque maison possède une pièce différente/);
 });
+
+test('World Builder house editor opens the existing linked canonical WorldArea instead of a detached Sculpt copy',()=>{
+ assert.match(source,/function currentWorldHouseLink\(buildingId\)/);
+ const fn=source.slice(source.indexOf('function openSelectedSculptInterior(){'),
+   source.indexOf('function updateSculptDoorAction(){'));
+ assert.match(fn,/if\(sculptWorldDraft\)\{/);
+ assert.match(fn,/commitCurrentSculptWorldArea\(\)/);
+ assert.match(fn,/createBuildingInteriorLink\(sculptWorldDraft,/);
+ assert.match(fn,/mountWorldSculptArea\(room\.id\)/);
+ assert.match(fn,/saveWorldAssemblerDraft\(window\.localStorage,sculptWorldDraft\)/);
+ assert.ok(fn.indexOf('if(sculptWorldDraft)') < fn.indexOf('createSculptInteriorArea'),
+   'canonical WorldDocument mode must be routed before legacy standalone interiors');
+ assert.match(source,/function sculptWorldHouseParentLink\(\)/);
+ assert.match(source,/mountWorldSculptArea\(parent\.sourceAreaId\)/);
+ assert.match(html,/id="world-area-house-back"/);
+ assert.match(source,/houseTemplate\.parentElement\.hidden=!!sculptWorldDraft/);
+});
