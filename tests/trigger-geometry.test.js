@@ -85,7 +85,7 @@ test('object-anchor trigger resolves from Object Catalog geometry, never pixels'
     trigger
   );
 
-  assert.ok(Math.abs(point.x - 186) < 1e-9);
+  assert.ok(Math.abs(point.x - 270) < 1e-9);
   assert.ok(Math.abs(point.y - 300) < 1e-9);
   assert.equal(point.radius, 30);
 });

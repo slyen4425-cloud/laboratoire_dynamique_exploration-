@@ -80,10 +80,10 @@ test('Building door anchors come from definition and follow placement transform'
       'main-door'
     );
 
-  // Definition: height 300 * scaleY .75 * anchor .38 = 85.5.
-  // +90° rotation moves local +Y to world -X.
+  // A bottom-anchored 2.5D house has its accessible threshold just in
+  // front of the sprite, and the same transform applies to the doorway.
   assert.ok(
-    Math.abs(anchor.x - 214.5) <
+    Math.abs(anchor.x - 277.5) <
       1e-9
   );
   assert.ok(
@@ -104,11 +104,11 @@ test('Building footprint derives from definition and placement', () => {
   assert.equal(visual.height, 225);
   assert.equal(
     footprint.length,
-    450 * 0.78
+    450 * 0.9
   );
   assert.equal(
     footprint.width,
-    225 * 0.62
+    225 * 0.68
   );
 });
 

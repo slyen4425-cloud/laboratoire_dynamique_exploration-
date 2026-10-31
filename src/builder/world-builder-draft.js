@@ -1941,7 +1941,9 @@ export function createBuildingInteriorLink(
       kind: 'building-door',
       objectId: buildingId,
       anchorId,
-      offset: 72
+      // The doorway belongs to the scaled building, not the middle of a road.
+      // One small local exit clearance is projected by the existing door model.
+      offset: 20
     }
   });
 
@@ -2047,6 +2049,32 @@ export function serializeWorldBuilderDraft(
   return JSON.stringify(result.document, null, 2);
 }
 
+// Historical generated house links used 72 world units of exterior clearance,
+// placing the hero in the road rather than at the threshold. Upgrade ONLY
+// unmodified generator-owned pairs, not a player's explicit anchored offset.
+export function migrateLegacyBuildingDoorReturnSpawns(document) {
+  let changed = false;
+  const areas = document.areas.map(area => {
+    let localChange = false;
+    const spawns = area.spawns.map(spawn => {
+      const a = spawn.anchor;
+      if (a?.kind !== 'building-door' || a.offset !== 72 ||
+          !spawn.id.startsWith(a.objectId + '-return-') ||
+          !/^\d+$/.test(spawn.id.slice((a.objectId + '-return-').length))) return spawn;
+      const enter = document.portals.some(p => p.sourceAreaId === area.id &&
+        p.trigger?.kind === 'object-anchor' && p.trigger.objectId === a.objectId &&
+        p.trigger.anchorId === a.anchorId &&
+        document.portals.some(ret => ret.sourceAreaId === p.targetAreaId &&
+          ret.targetAreaId === area.id && ret.targetSpawnId === spawn.id));
+      if (!enter) return spawn;
+      changed = true;localChange = true;
+      return {...spawn, anchor:{...a,offset:20}};
+    });
+    return localChange ? {...area,spawns} : area;
+  });
+  return changed ? {...document,areas} : document;
+}
+
 export function importWorldBuilderDocument(
   jsonText,
   options = {}
@@ -2065,5 +2093,5 @@ export function importWorldBuilderDocument(
     );
   }
 
-  return createWorldBuilderDraft(result.document);
+  return createWorldBuilderDraft(migrateLegacyBuildingDoorReturnSpawns(result.document));
 }
