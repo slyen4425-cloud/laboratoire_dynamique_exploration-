@@ -9,7 +9,7 @@ import {
 } from './world-assembler-handoff.js';
 import {createWorldAreaFromSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   importSculptMapPreset,addImportedSculptMapPreset,sculptMapPresetFilename,
-  serializeSculptMapPresetForShare} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1';
+  serializeSculptMapPresetForShare} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2-zone-gates-r1-preset-save-share-v1';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2-zone-gates-r1';
