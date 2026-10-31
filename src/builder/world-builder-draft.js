@@ -1941,7 +1941,9 @@ export function createBuildingInteriorLink(
       kind: 'building-door',
       objectId: buildingId,
       anchorId,
-      offset: 72
+      // The doorway belongs to the scaled building, not the middle of a road.
+      // One small local exit clearance is projected by the existing door model.
+      offset: 20
     }
   });
 
