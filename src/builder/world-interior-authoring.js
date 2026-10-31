@@ -6,6 +6,7 @@ import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 import {sculptInteriorShapeId,resizeSculptInterior} from '../world/sculpt-interior-layout.js';
 import {updateSculptInteriorDoor,applySculptInteriorTemplate} from '../world/sculpt-interior-area-link.js';
 import {normalizeWorldArea} from '../world/world-area-model.js';
+import {normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {circleFitsWorldAreaBoundary,findWorldAreaBoundarySafePoint} from '../world/world-area-geometry.js';
 import {validInteriorConnectorAsset} from '../world/interior-material-catalog.js';
 
@@ -100,11 +101,26 @@ function requireNoOtherLinks(d,id){
 export function resizeWorldInterior(d,id,{width,height,shape}={}){
   const room=requireRoom(d,id),door=requireNoOtherLinks(d,id);
   const adapter=worldInteriorAdapter(d,id);
-  if((width!==adapter.terrain.width||height!==adapter.terrain.height)&&
-     (room.surface?.zones?.length||room.surface?.routes?.length||room.surface?.rivers?.length))
-    throw Error('Dimensions bloquées : zones peintes à conserver avant redimensionnement');
   const changed=resizeSculptInterior(adapter,{width,height,shape});
-  let next=replaceArea(d,id,canonicalScenePatch(changed));
+  const sx=changed.terrain.width/adapter.terrain.width,
+        sy=changed.terrain.height/adapter.terrain.height;
+  // Preserve the WorldSurface's existing route/zone IDs, materials and family
+  // semantics while resizing their authored geometry. No new paint authority.
+  const scaleStroke=(stroke)=>{
+    const strokeWidth=stroke.width*Math.sqrt(sx*sy);
+    if(strokeWidth<6||strokeWidth>480)throw Error(
+      'Dimensions incompatibles avec la largeur des zones peintes (6–480)');
+    return {...stroke,width:strokeWidth,
+      points:stroke.points.map(p=>({
+        x:Math.min(changed.area.width-.01,p.x*sx),
+        y:Math.min(changed.area.height-.01,p.y*sy)}))};
+  };
+  const surface=(sx===1&&sy===1)?adapter.surface:normalizeSculptSurface({
+    ...adapter.surface,
+    routes:adapter.surface.routes.map(scaleStroke),
+    zones:adapter.surface.zones.map(scaleStroke)
+  });
+  let next=replaceArea(d,id,{...canonicalScenePatch(changed),surface});
   next=replacePortal(next,door.id,{trigger:changed.exitPortal.trigger,
     visual:changed.exitPortal.visual});
   return checked(next);
