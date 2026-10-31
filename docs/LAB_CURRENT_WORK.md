@@ -1,3 +1,15 @@
+# Lot — Seuils de maisons 2,5D et collision selon leur taille (31 octobre 2026)
+
+- **Cas utilisateur réel** : préset personnel inachevé `foret_1`, 80 × 60, 142 placements (128 pins, 11 rochers, 2 maisons, 1 escalier). Maison bois/pierre `sculpt-object-129` : scale 0,85, x780.49/y550.93. Maison terre cuite trois-quarts `sculpt-object-141` : scale 0,9, rotation 9°, x1507.58/y669.81. Ce fichier est une **fixture de référence locale**, jamais promu en préset intégré ni utilisé pour effacer le brouillon du joueur.
+- **Signal** : détection de porte et retour au milieu de la route, impression de passer sous les maisons ; les `doorAnchors` des définitions prenaient Y=+0,38/0,46 de la hauteur visuelle depuis le pied tandis que Sculpt rend les maisons au-dessus de leur ancre ; les Spawns générés ajoutaient +72 unités. Les empreintes centrées vers le pied laissaient le mur arrière traversable.
+- **Périmètre** : autorité native `ObjectDefinition.footprint` et `doorAnchors` (10 bâtiments) + seul `createBuildingInteriorLink` pour le décalage de sortie et migration des anciens retours générés. Aucun obstacle invisible supplémentaire, pas de clonage Portal/Spawn, pas de modifications Combat/GenSrpg, pas d'écriture dans la sauvegarde locale du téléphone.
+- **Réglage** : empreinte solide orientée/scalée du bâtiment couvrant 90 % de la largeur et 68 % de la hauteur depuis le pied ; seuil à Y=.10 hauteur et décentré de X=-.10 largeur sur la terre cuite 3/4 ; nouvel offset de retour 20 unités. Migration uniquement si ancien Spawn `<buildingId>-return-<num>` + Portal aller-retour cohérent + `offset===72`. Tout autre retour personnalisé conserve son décalage.
+- **Procédure** : START `checkpoint/exploration-building-thresholds-start-2026-10-31`, branche `work/exploration-building-thresholds-2026-10-31`; test RED `tests/forest1-building-door-and-collision.test.js`, branche de preuve `work/exploration-building-thresholds-red-2026-10-31`; test du vrai déplacement Collision World et import/export WorldDocument, sentinelles historiques maintenues.
+- **Gate** : CI Core + Chromium sur SHA final, preview Pages isolée PR #301 puis validation tactile Pixel de la marche autour des murs, de la porte et du retour. Pas de GREEN final avant ce dernier retour.
+- **Sauvegardes** : `WORLD_ASSEMBLER_DRAFT_KEY` persiste automatiquement le **monde entier** dans `localStorage`; `SCULPT_MAP_PRESET_KEY` contient les **cartes nommées** (relief/objets/texture) ; export `.world.json` conserve intérieurs/Portals/Spawns. Ne jamais remplacer silencieusement un monde local par un préset inachevé. Un éventuel assistant d'import explicite constitue un lot UI distinct.
+
+---
+
 # Lot UI — Masquer les réglages d'objets pendant la pose (31 octobre 2026)
 
 - **Signal utilisateur / preuve :** capture réelle Pixel paysage, mode Objets, inspecteur droit « Escaliers » recouvrant des arbres et maisons de la forêt ; le toucher sous le panneau ne peut pas atteindre le canevas.
