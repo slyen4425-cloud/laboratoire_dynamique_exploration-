@@ -350,11 +350,8 @@ body.sculpt-immersive .interior-area-bar>label{flex:1 1 130px}
 #ramp-cancel{flex:0 0 auto;min-height:36px;padding:5px 9px}
 body.terrain-ramp-authoring .precision-toggle{display:none!important}
 body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
-/* WorldBuilder rooms edit canonical WorldArea; hide standalone-only prototype tools. */
-body.world-area-editing.sculpt-interior-area .interior-floor-tools,
-body.world-area-editing.sculpt-interior-area .interior-layout-tools,
-body.world-area-editing.sculpt-interior-area .interior-door-tools,
-body.world-area-editing.sculpt-interior-area .interior-template-tools{display:none!important}
+/* Every room tool now calls the canonical WorldDocument adapters; none is hidden
+   or replaced by the older detached Sculpt interior prototype. */
 /* Door interaction belongs to the PLAYFIELD, not the editor's options HUD. */
 #navigation-area-door.in-game-door-action{position:absolute;z-index:19;
   bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
