@@ -337,8 +337,9 @@ function installWorldAssembler(){
     try{
       const preset=listAvailableSculptMapPresets(window.localStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
-      if(preset&&!byId('world-map-preset-name').value.trim())
-        byId('world-map-preset-name').value=preset.name;
+      // Switching to another preset must not reuse the former Area's name.
+      // An explicitly typed custom name can still be edited *after* selection.
+      if(preset)byId('world-map-preset-name').value=preset.name;
     }catch(error){status(error.message,true);}
   });
   on(byId('world-map-preset-create'),'click',()=>{
