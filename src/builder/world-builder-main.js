@@ -39,7 +39,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1';
+} from './world-builder-draft.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1&calm=inherit-v1';
 import {
   copyWorldObjectAsStamp,
   worldObjectStampInput
