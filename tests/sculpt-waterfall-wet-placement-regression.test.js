@@ -26,7 +26,8 @@ test('wet exception does not authorize buildings, rocks, trees, stairs or any no
    assert.equal(sculptObjectCanOccupyCell(terrain,def.id,5,5),false,def.id);
  const otherDecor=objectDefinitionCatalogV1.list().filter(d=>d.kind==='decor'&&
    !d.visual?.assetId?.startsWith('object.waterfall.')&&!d.id.startsWith('objectdef.relief.'));
- assert.ok(otherDecor.length>0);
+ assert.equal(sculptObjectCanOccupyCell(terrain,'objectdef.relief.waterfall.blue.01',5,5),false,
+   'legacy relief decoration is not a placeable animated waterfall');
  for(const def of otherDecor)
    assert.equal(sculptObjectCanOccupyCell(terrain,def.id,5,5),false,def.id);
  assert.equal(sculptObjectCanOccupyCell(terrain,'objectdef.bridge.wood_rustic_2p5d.01',5,5),true);
