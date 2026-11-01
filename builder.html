@@ -361,7 +361,7 @@
           </label>
           <p id="area-random-encounters-status" class="builder-hint" role="status"></p>
           <p class="builder-hint">
-            Le jeu vérifie les rencontres environ tous les 160 points parcourus par le héros :
+            Le monde utilise une cadence globale calme (300 points par défaut), modifiable ici :
             « Chance de rencontre » est la probabilité à chaque vérification, pas un délai en secondes.
             Le terrain sous le héros détermine la famille : le sol de base s'applique partout
             sauf sur une zone peinte, route ou rivière. Les routes et rivières passent avant
@@ -373,10 +373,33 @@
             ses règles ; chaque créature conserve sa rareté propre définie dans Capture.
           </p>
 
+          <button type="button" id="family-encounter-calm-baseline">🌿 Appliquer le mode calme à tout le monde (sans modifier les zones personnalisées)</button>
+          <label>Distance globale entre vérifications
+            <div class="brush-size-row">
+              <input id="family-encounter-distance" type="range" min="80" max="2000" step="20" value="300" />
+              <output id="family-encounter-distance-value" for="family-encounter-distance">300 points</output>
+            </div>
+          </label>
           <label>
-            Famille à configurer
+            Famille à configurer globalement
             <select id="family-encounter-family"></select>
           </label>
+          <h4>Réglages particuliers de la zone sélectionnée (facultatif)</h4>
+          <label class="checkbox-line">
+            <input id="area-encounter-override-enabled" type="checkbox" />
+            Personnaliser cette zone au lieu d'hériter du monde
+          </label>
+          <div id="area-encounter-override-controls" hidden>
+            <label>Chance dans cette zone (tous terrains)
+              <input id="area-encounter-override-chance" type="range" min="0" max="100" step="1" value="6" />
+              <output id="area-encounter-override-chance-value">6 %</output>
+            </label>
+            <label>Distance dans cette zone
+              <input id="area-encounter-override-distance" type="range" min="80" max="2000" step="20" value="300" />
+              <output id="area-encounter-override-distance-value">300 points</output>
+            </label>
+          </div>
+          <p id="area-encounter-override-status" class="builder-hint" role="status">Par défaut, toutes les zones héritent du monde.</p>
           <p id="family-encounter-surface-info" class="builder-hint" role="status"></p>
 
           <label>
