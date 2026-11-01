@@ -8,6 +8,7 @@ import {sculptObjectCanOccupyCell,appendSculptPreviewObject,
   updateSculptPreviewObject,serializeSculptPreviewScene,importSculptPreviewScene}
   from '../src/world/sculpt-scene-preview.js';
 import {objectDefinitionCatalogV1} from '../src/objects/object-definition-catalog.js';
+import {sculptObjectVisualRect} from '../src/render/sculpt-object-picking.js';
 import {applySculptWaterStroke} from '../src/world/sculpt-height-model.js';
 
 const W=18,H=18;
@@ -45,6 +46,11 @@ test('waterfall on the pond stays movable, persists in scene, preserving authore
  assert.equal(scene.objects[0].objectDefinitionId,waterfallIds[0]);
  assert.equal(scene.objects[0].transform.x,x+28);
  assert.equal(JSON.stringify(t),before);
+ // The waterfall's visible foot is on the surface, not submerged on riverbed.
+ const bottom=sculptObjectVisualRect(moved[0],t);
+ const cellX=Math.floor(moved[0].transform.x/28),cellY=Math.floor(moved[0].transform.y/21);
+ const wetLevel=t.waterLevels[cellY*t.width+cellX];
+ assert.equal(bottom.y,moved[0].transform.y-wetLevel*18);
 });
 test('terrain can rise to 16 levels with one shared model limit and save/import exact heights',()=>{
  assert.equal(SCULPT_TERRAIN_MAX_LEVEL,16);
