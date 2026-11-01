@@ -12,7 +12,7 @@ test('single Pages publisher stages immutable PR316 ramp test preview alongside 
  assert.match(workflow,/ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc/);
  assert.match(workflow,/action[s]?\/deploy-pages@v4/);
  assert.match(workflow,/src\/render\/sculpt-ramp-renderer\.js/);
- assert.match(workflow,/sculptSurfacePaintAt/);
+ assert.match(workflow,/ctx\\.closePath\\(\\);ctx\\.clip\\(\\);/);
 });
 test('publisher validates the exact live test SHA, never returns a stale PR301 preview as PR316',()=>{
  assert.match(workflow,/probe="https:\/\/slyen4425-cloud\.github\.io\/laboratoire_dynamique_exploration-\/preview\/ramp-pr316"/);
