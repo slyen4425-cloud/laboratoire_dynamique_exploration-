@@ -2,7 +2,7 @@
 // is assembled once from the exact same public SculptTerrain, SculptSurface,
 // Scene and ObjectDefinition commands available to the user editor. The user
 // may copy it to any WorldArea; no Portal, Spawn, or Encounter state is saved.
-import {createBlankSculptPreviewScene,appendSculptPreviewObject}
+import {createBlankSculptPreviewScene,appendSculptPreviewObject,sculptObjectCanOccupyCell}
   from '../world/sculpt-scene-preview.js';
 import {applySculptWaterStroke,applySculptStroke,sculptWaterAt}
   from '../world/sculpt-height-model.js';
@@ -192,9 +192,7 @@ function createScene(config,index){
    if(Math.hypot(x-18.5*28,y-12.5*21)<73)return false; // default Spawn
    // A bridge is the legal water crossing; waterfalls are nonblocking
    // visual decor. Other WorldObjects stay on dry ground.
-   const wet=sculptWaterAt(terrain,Math.floor(x/28),Math.floor(y/21))>0;
-   if(wet&&!id.startsWith('objectdef.bridge.')&&
-      !id.startsWith('objectdef.waterfall.'))return false;
+   if(!sculptObjectCanOccupyCell(terrain,id,Math.floor(x/28),Math.floor(y/21)))return false;
    if(used.some(p=>Math.hypot(p.x-x,p.y-y)<56))return false;
    const next=appendSculptPreviewObject(objects,{definitionId:id,x,y,scale,
      rotationDeg,variantId});
