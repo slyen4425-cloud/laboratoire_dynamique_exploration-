@@ -6,7 +6,7 @@ import {
 import {resolveTerrainFamilyEncounter} from '../src/encounters/terrain-family-encounter-resolver.js';
 import {createCaptureCreatureCatalogProvider} from '../src/capture/capture-creature-catalog-provider.js';
 import {
-  createBlankWorldBuilderDraft, setTerrainFamilyEncounterElementEnabled,
+  createBlankWorldBuilderDraft, createWorldBuilderDraft, setTerrainFamilyEncounterElementEnabled,
   updateTerrainFamilyEncounterProfile, validateWorldBuilderDraft,
   serializeWorldBuilderDraft, importWorldBuilderDocument
 } from '../src/builder/world-builder-draft.js';
@@ -42,6 +42,11 @@ test('multielement creature is not counted twice when two matching elements sele
 
 test('checkbox setter keeps exactly the selected ids and no sum-to-100 validation',()=>{
   let world=createBlankWorldBuilderDraft({terrainFamilyId:'forest',materialId:'grass.forest'});
+  // Explicitly clear this test family's inherited calm elements: this test
+  // verifies that checkbox selection (not automatic baseline) repairs it.
+  world=createWorldBuilderDraft({...world,encounterConfig:{...world.encounterConfig,
+    families:world.encounterConfig.families.map(p=>p.terrainFamilyId==='forest'
+      ?{...p,elementChances:[]}:p)}});
   world=updateTerrainFamilyEncounterProfile(world,'forest',{encounterChancePercent:100});
   assert.equal(validateWorldBuilderDraft(world).valid,false);
   world=setTerrainFamilyEncounterElementEnabled(world,'forest','fire',true);
