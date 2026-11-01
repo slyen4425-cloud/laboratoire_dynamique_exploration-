@@ -39,6 +39,7 @@ function weightedPick(items, chanceOf, random) {
 export function resolveTerrainFamilyEncounter({
   terrainFamilyId,
   config,
+  chancePercentOverride,
   captureCatalog,
   random = Math.random
 }) {
@@ -57,7 +58,10 @@ export function resolveTerrainFamilyEncounter({
 
   const encounterRoll = boundedRandom(random) * 100;
 
-  if (encounterRoll >= profile.encounterChancePercent) {
+  const chance=Number.isFinite(chancePercentOverride)
+    ?Math.max(0,Math.min(100,chancePercentOverride))
+    :profile.encounterChancePercent;
+  if (encounterRoll >= chance) {
     return Object.freeze({
       triggered: false,
       reason: 'chance',
