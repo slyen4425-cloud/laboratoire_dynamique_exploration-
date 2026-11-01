@@ -67,7 +67,8 @@ test('editor retains quick level, detailed slider, water permission on placing A
  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  assert.match(html,/id="target"[^>]*max="16"/);
  assert.match(html,/Niveau exact 0 à 16/);
- assert.match(main,/const limit=editorKind==='water'\?10:16/);
+ assert.match(main,/const limit=editorKind==='water'\?10:SCULPT_MAX_GROUND_LEVEL/);
+ assert.match(main,/Math\.min\(SCULPT_MAX_GROUND_LEVEL,Number\(level\)\)/);
  assert.match(main,/sculptObjectCanOccupyCell\(terrain,definitionId,cell\.x,cell\.y\)/);
  assert.match(main,/sculptObjectCanOccupyCell\(terrain,current\.objectDefinitionId,/);
 });
