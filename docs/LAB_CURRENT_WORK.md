@@ -1,3 +1,14 @@
+# Régression PR316 — route peinte recouvre intégralement la pente (1 novembre 2026)
+
+- **Signal utilisateur, reproduction** : après publication de la preview `/preview/ramp-pr316/` (CI GREEN `41288365269`, Pages `41298380614`), peindre une route de 24 unités de large sur une pente native de 140 unités couvre **toute la largeur de la pente**. L'algorithme PR316 échantillonnait le matériau au milieu de chacune des 24 bandes et remplissait la bande entière avec cette texture.
+- **Cause racine** : confusion entre échantillonnage de couleur et **empreinte géométrique réelle** du trait WorldSurface. Une texture de terrain peinte doit être un masque/stroke 2D et non un remplacement de matériau par tranche.
+- **Départ** : SHA corrigé PR316 `c8d689796bddeccd4e772e4c17fd6893818c84fe` ; checkpoint `checkpoint/exploration-ramp-road-width-start-2026-11-01`; branche de travail `work/exploration-ramp-road-width-2026-11-01`. Nouveau test TDD RED `tests/sculpt-ramp-road-stroke-width-regression.test.js` introduit avant correction, puis adaptation du test PR316.
+- **Autorité / périmètre** : un seul modèle `WorldSurface v3`, un seul maillage de pente `SculptTerrain.ramps`. Uniquement l'adaptateur de rendu `drawSculptRamp` : garder le maillage de base, découper la peinture au contour du maillage, projeter les traits de zone et de route dans le repère de la pente, mêmes largeurs / ordre / feather que `sculptPaintByCell`. Aucun objet décoratif, modèle de peinture parallèle, texture de secours, changement collision, niveau, mouvement, export ou données carte utilisateur.
+- **Cas de test** : route longitudinale 24 sur pente 140, route transversale 18, zone forestière sous route, ordre zone puis route, trois angles 90/55/35, pente sans peinture inchangée, serialization/collision V77. La validation Node et Chromium sur SHA exact est obligatoire, preview HTTPS par le publisher unique avec provenance exacte et essai Pixel avant GREEN utilisateur.
+- **Séparation** : ni main stable ni le moteur Combat ni les présets forestiers ni les paramètres de rencontre ne sont modifiés par ce lot. L'ancienne preview PR316 reste identifiée comme **incorrecte pour une route partielle** jusqu'à déploiement d'une nouvelle révision vérifiée.
+
+---
+
 # Régression 2,5D — pente marron sur sol forestier peint (1 novembre 2026)
 
 - **Reproduction à partir du fichier utilisateur** : `foret-1.map-preset(3).json`, carte `foret_1` 80×60, 142 WorldObjects, sol de base `ground.dirt`, zones `ground.forest_floor` et tracés `road.dirt`. La scène importée ne contient encore aucune pente. Après création dans une zone de forêt, l'ancien rendu de pente projetait exclusivement `currentTexture` du **sol de base** : brun, malgré la forêt visuellement peinte sur le terrain.
