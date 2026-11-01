@@ -5,7 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
  <meta name="theme-color" content="#0b1822">
  <title>GenSrpG — Constructeur de mondes</title>
- <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-v1">
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-mobile-drawers-r1">
 </head>
 <body>
  <div class="app-shell">
@@ -20,6 +20,10 @@
     <button id="world-workspace-world-active" type="button" class="selected" aria-current="page">🌍 Monde</button>
     <button id="world-workspace-map" type="button" title="Éditer la carte de la zone sélectionnée">🗺 Carte 2,5D</button>
    </nav>
+   <div class="mobile-workspace-tools" aria-label="Panneaux du constructeur">
+    <button id="world-panel-zones" type="button" aria-controls="world-structure-panel" aria-expanded="false">☰ Zones</button>
+    <button id="world-panel-details" type="button" aria-controls="world-inspector-panel" aria-expanded="false">⚙ Détails</button>
+   </div>
    <div class="header-actions">
     <span id="save-state" class="save-state" role="status">Monde local</span>
     <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
@@ -28,8 +32,8 @@
     </label>
    </div>
   </header>
-  <div class="workspace">
-   <aside class="left-rail" aria-label="Bibliothèque de zones">
+  <div class="workspace" id="world-workspace-layout" data-panel="none">
+   <aside class="left-rail" id="world-structure-panel" aria-label="Bibliothèque de zones">
     <div class="panel-heading"><span>STRUCTURE</span><strong id="world-area-count">1 zone</strong></div>
     <label class="field">Nom du monde
       <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
@@ -60,7 +64,12 @@
      <button class="accent block" type="submit">+ Ajouter au monde</button>
     </form>
     <section class="add-panel" id="world-map-preset-library" aria-label="Bibliothèque de cartes présets">
-     <strong>🗺 Mes cartes présets</strong>
+     <strong>💾 Mes cartes personnelles</strong>
+     <p class="help-note">Enregistre la zone sélectionnée ici, ou importe le fichier d'une carte. Elle reste disponible dans ce World Builder et l'éditeur 2,5D.</p>
+     <button id="world-map-preset-save-current" class="accent block" type="button">💾 Enregistrer cette zone comme préset</button>
+     <label class="field">📂 Importer un fichier de carte
+      <input id="world-map-preset-import" type="file" accept=".map-preset.json,.json,application/json">
+     </label>
      <label class="field">Carte enregistrée
       <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
      </label>
@@ -75,6 +84,7 @@
       </select>
      </label>
      <button id="world-map-preset-create" class="accent block" type="button" disabled>+ Créer une zone depuis ce préset</button>
+     <button id="world-map-preset-download" class="block" type="button" disabled>↓ Télécharger cette carte pour partage</button>
      <p id="world-map-preset-info" class="help-note">Les nouvelles cartes seront reliées à la zone sélectionnée si elle est compatible avec le mode 2,5D. Sinon, tu pourras choisir cette carte comme nouveau départ sans modifier l’ancienne zone.</p>
     </section>
     <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
@@ -104,7 +114,7 @@
      <span id="world-portal-count" class="footer-count">0 passage</span>
     </div>
    </main>
-   <aside class="inspector" aria-label="Détails de la zone sélectionnée">
+   <aside class="inspector" id="world-inspector-panel" aria-label="Détails de la zone sélectionnée">
     <div class="panel-heading"><span>INSPECTEUR</span><span id="area-kind-badge">ZONE</span></div>
     <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
     <h2 id="selected-name">Zone principale</h2>
@@ -149,6 +159,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-mobile-drawers-r1-preset-save-share-v1-forest1-houses-canonical-v1"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 // Visual-only hit testing for the SAME resolved WorldObject rectangles
 // used by the sculpt renderer. Never creates a gameplay collision shape.
-import {sculptHeightAt} from '../world/sculpt-height-model.js';
+import {sculptHeightAt,sculptWaterAt} from '../world/sculpt-height-model.js';
 import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=sculpt-bridge-dimensions-v63-deck-v70-rails-v71';
 import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
 import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
@@ -31,7 +31,15 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
     object.visual?.assetId?.includes('_2p5d.')
     ?sculptBridgeDeckHeight(terrain,[object],t.x,t.y,
       {cellWidth:tileWidth,cellHeight:tileHeight}):null;
-  const level=bridgeDeck??groundLevel;
+  // Waterfalls are nonblocking decorations whose sprite foot should touch
+  // the canonical WATER surface, not the dry riverbed underneath it. Picking
+  // and rendering already consume this SAME visual rectangle, so dragging and
+  // reselecting remain aligned. No collision, height or WorldObject mutations.
+  const waterAllowed=objectDefinitionCatalogV1.get(object.objectDefinitionId)?.placement?.waterAllowed===true;
+  const wet=terrain&&col>=0&&row>=0&&col<terrain.width&&row<terrain.height&&
+    sculptWaterAt(terrain,col,row)>0;
+  const level=bridgeDeck??(waterAllowed&&wet
+    ?terrain.waterLevels[row*terrain.width+col]:groundLevel);
   // The stair picture must actually REACH the upper platform on screen.
   // Vertical world distance is the full footprint; rise adds only its
   // projected altitude, read from the same corridor as Collision World.

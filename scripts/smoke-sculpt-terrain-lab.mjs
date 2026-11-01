@@ -78,6 +78,184 @@ try{
      let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
      return {visible,w:canvas.width,h:canvas.height};})()`);
   if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
+
+  // Reproduce the actual Pixel report: the model permits level 16 but the
+  // legacy UI target change handler previously snapped every action back to 7.
+  // Use the real quickbar, detailed + button and range slider in Chromium.
+  const legacyUiHeightGate=await run(`(()=>{
+    const q=id=>document.querySelector('#'+id);
+    const emit=id=>q(id).dispatchEvent(new Event('input',{bubbles:true}));
+    q('quick-tool').value='plateau';
+    q('quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    q('target').value='7';emit('target');
+    q('level-up').click();const afterDetail=Number(q('target').value);
+    q('quick-level-plus').click();const afterQuick=Number(q('target').value);
+    q('target').value='16';emit('target');
+    const afterSlider=Number(q('target').value);
+    q('quick-level-plus').click();const upperCap=Number(q('target').value);
+    const output=Number(q('target-value').textContent);
+    const quickOutput=Number(q('quick-level-value').textContent);
+    q('target').value='3';emit('target');
+    q('quick-tool').value='dig';
+    q('quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    return {afterDetail,afterQuick,afterSlider,upperCap,output,quickOutput,
+      restoredMode:window.__sculptLabProbe().quickTool,
+      stillOriginalTerrain:window.__sculptLabProbe().highestLevel===5};
+  })()`);
+  if(legacyUiHeightGate.afterDetail!==8||legacyUiHeightGate.afterQuick!==9||
+      legacyUiHeightGate.afterSlider!==16||legacyUiHeightGate.upperCap!==16||
+      legacyUiHeightGate.output!==16||legacyUiHeightGate.quickOutput!==16||
+      legacyUiHeightGate.restoredMode!=='dig'||!legacyUiHeightGate.stillOriginalTerrain)
+    throw Error('UI still caps actual plateau height at 7: '+JSON.stringify(legacyUiHeightGate));
+  console.log('GREEN real Chromium: old 7 -> detailed +8 -> quickbar +9 -> slider 16 -> bound 16');
+
+
+  // PR318 visual gate: real Chromium Canvas pixels on a native ramp.
+  // The route is narrower than the incline, not a material replacement.
+  const rampPaintPixels=await run(`(async()=>{
+    const {createSculptTerrain,appendSculptTerrainRamp,sculptTerrainRampProjections}
+      =await import('/src/world/sculpt-height-model.js');
+    const {createSculptSurface,appendSculptSurfaceStroke}
+      =await import('/src/world/sculpt-surface-paint.js');
+    const {drawSculptRamp,sculptRampVisualMesh}
+      =await import('/src/render/sculpt-ramp-renderer.js');
+    const {sculptCameraGameView,sculptCameraProject}
+      =await import('/src/render/sculpt-camera-projection.js');
+    const image=async hex=>{
+      const img=new Image();
+      img.src='data:image/svg+xml,'+encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">'+
+        '<rect width="32" height="32" fill="'+hex+'"/></svg>');
+      await img.decode();return img;
+    };
+    const [brown,forest,road]=await Promise.all([
+      image('#695032'),image('#00bd2d'),image('#b45028')]);
+    const width=18,height=22;
+    const t=createSculptTerrain({width,height,
+      levels:Array.from({length:width*height},(_,i)=>Math.floor(i/width)<8?5:2)});
+    const terrain=appendSculptTerrainRamp(t,{x:238,y:283.5,
+      endX:238,endY:94.5,width:140});
+    const ramp=sculptTerrainRampProjections(terrain)[0];
+    let paint=appendSculptSurfaceStroke(createSculptSurface(),
+      {materialId:'ground.forest_floor',width:240,
+       points:[{x:238,y:90},{x:238,y:300}]});
+    paint=appendSculptSurfaceStroke(paint,{materialId:'road.dirt',
+      width:24,points:[{x:238,y:140},{x:238,y:235}]});
+    const images=new Map([['ground.forest_floor',forest],['road.dirt',road]]);
+    const pixels=[];
+    for(const angle of [90,55,35]){
+      const view=sculptCameraGameView(angle);
+      const cv=document.createElement('canvas');
+      cv.width=500;cv.height=420;const c=cv.getContext('2d',{willReadFrequently:true});
+      if(!drawSculptRamp(c,ramp,terrain,{view,texture:brown,
+         paintSurface:paint,paintImages:images}))return {error:'draw failed'};
+      const samples=sculptRampVisualMesh(terrain,ramp,{view,segments:24}).samples;
+      const m=samples[12],at=sculptCameraProject(view,m.worldX,m.worldY-m.level*18);
+      const rgb=(x,y)=>[...c.getImageData(Math.floor(x),Math.floor(y),1,1).data].slice(0,3);
+      pixels.push({angle,center:rgb(at.x,at.y),left:rgb(at.x-38,at.y),
+        right:rgb(at.x+38,at.y)});
+    }
+    return {pixels};
+  })()`);
+  if(rampPaintPixels.error||rampPaintPixels.pixels?.length!==3||
+    rampPaintPixels.pixels.some(p=>
+      p.center[0]<p.left[0]+70||
+      p.center[0]<p.right[0]+70||
+      p.left[1]<p.center[1]+35||
+      p.right[1]<p.center[1]+35))
+    throw Error('PR318 real Chromium slope painted whole-road instead of narrow stroke: '+
+      JSON.stringify(rampPaintPixels));
+  console.log('GREEN Chromium PR318: 24-unit route stays narrow on 140-unit forest slope at 90/55/35 degrees');
+
+  // Regression: wet-cell object authoring and elevated terrain share exactly
+  // the same core policy as the actual mobile Sculpt editor, not a mock.
+  const waterfallAndTallTerrain=await run(`(async()=>{
+    const height=await import('/src/world/sculpt-height-model.js');
+    const scene=await import('/src/world/sculpt-scene-preview.js');
+    const visuals=await import('/src/render/sculpt-object-picking.js');
+    const catalog=await import('/src/objects/object-definition-catalog.js');
+    const width=20,h=20;
+    let terrain=height.createSculptTerrain({width,height:h});
+    terrain=height.applySculptWaterStroke(terrain,{mode:'water-fill',target:6,
+      radius:3,points:[{x:10.5,y:10.5}]});
+    const ids=['front_wide','side_narrow','three_quarter','tiered']
+      .map(s=>'objectdef.waterfall.'+s+'.01');
+    if(ids.some(id=>!scene.sculptObjectCanOccupyCell(terrain,id,10,10)))
+      return {error:'waterfall wet-cell permission missing'};
+    const house=catalog.objectDefinitionCatalogV1.list().find(x=>x.kind==='building');
+    if(scene.sculptObjectCanOccupyCell(terrain,house.id,10,10))
+      return {error:'waterfall permission leaked to building'};
+    const x=10.5*28,y=10.5*21;
+    const placed=scene.appendSculptPreviewObject([],{definitionId:ids[0],x,y,scale:.40});
+    const rendered=catalog.objectDefinitionCatalogV1.get(placed[0].objectDefinitionId);
+    const rect=visuals.sculptObjectVisualRect({...placed[0],kind:rendered.kind,
+      baseSize:rendered.baseSize},terrain);
+    const waterLevel=terrain.waterLevels[10*width+10];
+    if(Math.abs(rect.y-(y-waterLevel*18))>.01)
+      return {error:'waterfall foot misses water surface',waterLevel,rectY:rect.y};
+    for(let n=0;n<8;n++)terrain=height.applySculptStroke(terrain,
+      {mode:'raise',strength:3,radius:1,points:[{x:4.5,y:4.5}]});
+    const level=height.sculptHeightAt(terrain,4,4);
+    const saved=height.importSculptTerrain(height.serializeSculptTerrain(terrain));
+    return {level,roundtrip:saved.levels[4*width+4]===16,
+      waterfallCount:placed.length,targetMax:document.querySelector('#target')?.max,
+      waterMax:document.querySelector('#water-target')?.max};
+  })()`);
+  if(waterfallAndTallTerrain.error||waterfallAndTallTerrain.level!==16||
+      !waterfallAndTallTerrain.roundtrip||waterfallAndTallTerrain.waterfallCount!==1||
+      waterfallAndTallTerrain.targetMax!=='16'||waterfallAndTallTerrain.waterMax!=='10')
+    throw Error('Waterfall + tall terrain real Chromium authoring regression: '+
+      JSON.stringify(waterfallAndTallTerrain));
+  console.log('GREEN real Chromium: waterfall over pond + water-level foot, ground level 16 and exact save/import');
+
+  // Real browser save -> file download -> import using the SAME official
+  // library. Debug numeric JSON remains hidden; no WorldDocument is touched.
+  const mapLibrary=await run(`(async()=>{
+    const key='gensrpg.exploration.map-presets.v1';
+    const previous=localStorage.getItem(key);
+    const name=document.querySelector('#sculpt-map-preset-name');
+    const panel=document.querySelector('#sculpt-map-preset-panel');
+    const advanced=document.querySelector('#sculpt-advanced-json');
+    if(!panel||!advanced||advanced.open)return {error:'missing or exposed debug panel'};
+    panel.open=true;
+    name.value='Ma clairière partageable';
+    document.querySelector('#sculpt-map-preset-save').click();
+    const first=JSON.parse(localStorage.getItem(key)??'[]');
+    const chosen=document.querySelector('#sculpt-map-preset-select').value;
+    let href=null,filename=null;
+    const originalClick=HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click=function(){href=this.href;filename=this.download;};
+    try{document.querySelector('#sculpt-map-preset-export').click();}
+    finally{HTMLAnchorElement.prototype.click=originalClick;}
+    const file=href?JSON.parse(await(await fetch(href)).text()):null;
+    const edited=JSON.parse(JSON.stringify(file??{}));
+    edited.name='Ma clairière réimportée';
+    const input=document.querySelector('#sculpt-map-preset-import');
+    Object.defineProperty(input,'files',{configurable:true,
+      value:[new File([JSON.stringify(edited)],'mon-test.map-preset.json',
+      {type:'application/json'})]});
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+    await new Promise(ok=>setTimeout(ok,90));
+    const saved=JSON.parse(localStorage.getItem(key)??'[]');
+    const result={name:first[0]?.name,chosen,filename,
+      fileKind:file?.kind,fileVersion:file?.version,
+      hasRealTerrain:!!file?.scene?.terrain,
+      hasWorldGraph:'portals' in (file??{}),
+      imported:saved.some(p=>p.name===edited.name),
+      sceneUnchanged:!document.querySelector('#json').value,
+      advancedClosed:!advanced.open};
+    if(previous===null)localStorage.removeItem(key);else localStorage.setItem(key,previous);
+    panel.open=false;
+    return result;
+  })()`);
+  if(mapLibrary.error||mapLibrary.name!=='Ma clairière partageable'||
+    mapLibrary.filename!=='ma-clairiere-partageable.map-preset.json'||
+    mapLibrary.fileKind!=='gensrpg-sculpt-map-preset'||mapLibrary.fileVersion!==1||
+    !mapLibrary.hasRealTerrain||mapLibrary.hasWorldGraph||!mapLibrary.imported||
+    !mapLibrary.advancedClosed||!mapLibrary.sceneUnchanged)
+    throw Error('Named mobile map preset save/download/reimport failed: '+JSON.stringify(mapLibrary));
+  console.log('GREEN real Chromium: named map saved, file downloaded, imported without altering the live scene or exposing numeric JSON');
+
   // V12 real Chromium feature pixels, not just toggles or SVG flags.
   const overlayGate=await run(`(async()=>{
  await new Promise(ok=>setTimeout(ok,220));
@@ -111,7 +289,7 @@ try{
   if(flat.faceCount!==0)throw Error('Flat map still has cliff faces: '+JSON.stringify(flat));
   await run("document.querySelector('[data-mode=raise]').click()");
   await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
-  const center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+  let center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
     const x=r.x+r.width/2,y=r.y+r.height/2;
     return {x,y,inside:document.elementFromPoint(x,y)?.id,
       viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
@@ -147,6 +325,85 @@ try{
       .catch(error=>{legacyEncounterConsentError='CDP legacy encounter consent: '+error.message;});
   });
   await send('Page.enable',{});
+
+  // The WorldArea's right inspector must not cover the forest when closed.
+  // Test real Chromium hit testing, selected settings and object placement
+  // through the existing native canvas pointer path (no duplicate input).
+  await run("document.querySelector('#fullscreen-toggle').click()");
+  await run("new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))");
+  const foldedStart=await run(`(()=>{
+    document.querySelector('#mode-objects').click();
+    const p=document.querySelector('#object-palette'),s=p.querySelector('summary');
+    const category=document.querySelector('#object-category');
+    category.value='tree';category.dispatchEvent(new Event('change',{bubbles:true}));
+    const definition=document.querySelector('#object-definition').value;
+    const scale=document.querySelector('#object-scale');
+    scale.value='75';scale.dispatchEvent(new Event('input',{bubbles:true}));
+    const rect=p.getBoundingClientRect(),x=rect.left+rect.width/2;
+    const y=rect.top+Math.min(100,rect.height-12);
+    const underPanel=document.elementFromPoint(x,y);
+    const covered=p.contains(underPanel);
+    s.click();
+    const freedElement=document.elementFromPoint(x,y);
+    const free=freedElement?.id==='sculpt-canvas';
+    const probe=window.__sculptObjectsProbe();
+    return {covered,free,expanded:probe.paletteExpanded,active:probe.active,
+      action:document.querySelector('#object-action').value,
+      definition,scale:Number(scale.value),panelWidth:p.getBoundingClientRect().width,
+      panelHeight:p.getBoundingClientRect().height,
+      panelTop:rect.top,panelLeft:rect.left,viewportWidth:innerWidth,
+      viewportHeight:innerHeight,elementBefore:underPanel?.id??underPanel?.tagName,
+      elementAfter:freedElement?.id??freedElement?.tagName,
+      clickX:document.querySelector('#sculpt-canvas').getBoundingClientRect().left+
+        document.querySelector('#sculpt-canvas').getBoundingClientRect().width/2,
+      clickY:document.querySelector('#sculpt-canvas').getBoundingClientRect().top+
+        document.querySelector('#sculpt-canvas').getBoundingClientRect().height/2};
+  })()`);
+  if(!foldedStart.covered||!foldedStart.free||foldedStart.expanded||
+    !foldedStart.active||foldedStart.action!=='place'||!foldedStart.definition||
+    foldedStart.scale!==75||foldedStart.panelWidth>210||foldedStart.panelHeight>56)
+    throw Error('Object palette did not release the covered map in Chromium: '+JSON.stringify(foldedStart));
+  const beforeFoldPlacement=await run("window.__sculptObjectsProbe().count");
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:foldedStart.clickX,y:foldedStart.clickY});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:foldedStart.clickX,y:foldedStart.clickY,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:foldedStart.clickX,y:foldedStart.clickY,button:'left',clickCount:1});
+  const foldedEnd=await run(`(()=>{
+    const p=document.querySelector('#object-palette');p.querySelector('summary').click();
+    const probe=window.__sculptObjectsProbe();
+    const same=probe.paletteExpanded&&probe.active&&
+      document.querySelector('#object-category').value==='tree'&&
+      document.querySelector('#object-scale').value==='75'&&
+      document.querySelector('#object-definition').value===${JSON.stringify(foldedStart.definition)};
+    const placed=probe.count;
+    if(placed>0)document.querySelector('#object-undo').click();
+    document.querySelector('#mode-objects').click();
+    document.querySelector('#fullscreen-toggle').click();
+    return {same,placed,cleared:window.__sculptObjectsProbe().count,
+      noLongerActive:!window.__sculptObjectsProbe().active,
+      paletteHidden:p.hidden};
+  })()`);
+  if(!foldedEnd.same||foldedEnd.placed!==beforeFoldPlacement+1||
+    foldedEnd.cleared!==beforeFoldPlacement||!foldedEnd.noLongerActive||
+    !foldedEnd.paletteHidden)
+    throw Error('Collapsed palette lost setting or blocked actual placement: '+JSON.stringify({foldedStart,foldedEnd}));
+  console.log('GREEN real Chromium: right object inspector folds to a chip, map becomes clickable, tree is placed then undone, settings preserved');
+  // Restore only this test's fixtures; the normal editor never clears
+  // user settings on collapse, which the gate above already established.
+  await run(`(()=>{const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const scale=document.querySelector('#object-scale');scale.value='40';
+    scale.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+  // Returning from fullscreen changes both scroll and 2.5D camera layout.
+  // Refresh the ORIGINAL brush gate's pointer coordinate rather than
+  // injecting a stale offscreen click from before the landscape test.
+  await run("document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'})");
+  await run("new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)))");
+  center=await run(`(()=>{const c=document.querySelector('#sculpt-canvas'),r=c.getBoundingClientRect();
+    const x=r.x+r.width/2,y=r.y+r.height/2;
+    return {x,y,inside:document.elementFromPoint(x,y)?.id,
+      viewport:[innerWidth,innerHeight],rect:{x:r.x,y:r.y,width:r.width,height:r.height}};})()`);
+  if(center.inside!=='sculpt-canvas')throw Error('Canvas unavailable after object panel fullscreen test: '+JSON.stringify(center));
+
   await run("window.__sculptInputEvents=[];document.querySelector('#sculpt-canvas').addEventListener('pointerdown',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));document.querySelector('#sculpt-canvas').addEventListener('pointerup',e=>window.__sculptInputEvents.push({type:e.type,x:e.clientX,y:e.clientY,button:e.button}));");
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:center.x,y:center.y});
   await sleep(70);
@@ -3268,11 +3525,33 @@ try{
     const linked=window.__worldAssemblerProbe();
     document.querySelector('#start-area').click();
     const started=window.__worldAssemblerProbe();
+    const details=document.querySelector('#world-panel-details');
+    const workspace=document.querySelector('#world-workspace-layout');
+    const graph=document.querySelector('.center-panel');
+    const compact=details&&getComputedStyle(details).display!=='none';
+    // Mobile-first: the inspector must initially be collapsed, then become
+    // usable on a REAL touch-size control. The canonical panel remains one DOM.
+    const initiallyClosed=compact
+      ?workspace.dataset.panel==='none'&&
+        getComputedStyle(document.querySelector('.inspector')).display==='none'
+      :true;
+    const graphFullWidth=graph.getBoundingClientRect().width>=innerWidth-2;
+    if(compact)details.click();
     const panel=document.querySelector('.inspector').getBoundingClientRect();
+    const openAria=!compact||(
+      details.getAttribute('aria-expanded')==='true'&&
+      workspace.dataset.panel==='details');
     const header=document.querySelector('.app-header').getBoundingClientRect();
     const node=document.querySelector('.world-node.selected').getBoundingClientRect();
-    return {before,linked,started,
+    if(compact)details.click();
+    const closedAgain=!compact||(
+      details.getAttribute('aria-expanded')==='false'&&
+      getComputedStyle(document.querySelector('.inspector')).display==='none'&&
+      graph.getBoundingClientRect().width>=innerWidth-2);
+    if(compact)details.click(); // Reopen for the real detailed-area editor step.
+    return {before,linked,started,initiallyClosed,graphFullWidth,
       panelInLandscape:panel.right<=innerWidth&&panel.width>120,
+      openAria,closedAgain,
       headerInLandscape:header.top>=0&&header.bottom<100,
       selectedGraphNodeVisible:node.width>150&&node.height>70,
       portalRows:document.querySelectorAll('.portal-row').length};
@@ -3282,6 +3561,8 @@ try{
      newWorldGraph.linked.graphEdgeCount!==2||
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
      newWorldGraph.portalRows<2||!newWorldGraph.panelInLandscape||
+     !newWorldGraph.initiallyClosed||!newWorldGraph.graphFullWidth||
+     !newWorldGraph.openAria||!newWorldGraph.closedAgain||
      !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
     throw Error('World Builder visual assembly or canonical links failed: '+
       JSON.stringify(newWorldGraph));
@@ -3370,6 +3651,59 @@ try{
   if(worldSculpt?.areaId!=='area-principale'||worldSculpt.areaCount!==4||
      worldSculpt.portalCount!==4||worldSculpt.terrainWidth!==36)
     throw Error('Sculpt editor did not load canonical host Area: '+JSON.stringify(worldSculpt));
+
+  // Real regression: a World's base ground material belongs to each WorldArea,
+  // not the last selected global material toolbar value. Persist through the
+  // actual World/Map UI handoff and reopen the SAME area twice.
+  const materialSet=await run(`(()=>{
+    const before=window.__sculptLabProbe().materialId;
+    const selector=document.querySelector('#material');
+    const matchedBefore=selector.value===before&&[...selector.options].some(o=>o.value===before);
+    selector.value='ground.mountain_rock';
+    selector.dispatchEvent(new Event('change',{bubbles:true}));
+    return {before,matchedBefore,after:window.__sculptLabProbe().materialId};
+  })()`);
+  if(materialSet.before!=='ground.dirt'||!materialSet.matchedBefore||
+     materialSet.after!=='ground.mountain_rock')
+    throw Error('Ground material selection is not valid in WorldArea: '+JSON.stringify(materialSet));
+  const readGround=async () => {
+    await run("document.querySelector('#world-workspace-world').click();true");
+    let ready=false;
+    for(let i=0;i<100;i++){
+      await sleep(110);
+      try{ready=await run("typeof window.__worldAssemblerProbe==='function'&&!!document.querySelector('#edit-sculpt-area')");}catch{}
+      if(ready)break;
+    }
+    if(!ready)throw Error('World Builder handoff failed after changing real WorldArea base material');
+    const data=await run(`(()=>{
+      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const area=doc.areas.find(a=>a.id==='area-principale');
+      document.querySelector('.world-node[data-area-id="area-principale"]').click();
+      const material=area.surface.baseMaterialId;
+      document.querySelector('#edit-sculpt-area').click();
+      return material;
+    })()`);
+    let mounted=null;
+    for(let i=0;i<110;i++){
+      await sleep(110);
+      try{mounted=await run("window.__sculptWorldProbe?.().areaId==='area-principale'?window.__sculptLabProbe().materialId:null");}catch{}
+      if(mounted)break;
+    }
+    return {saved:data,mounted};
+  };
+  const rockRoundTrip=await readGround();
+  if(rockRoundTrip.saved!=='ground.mountain_rock'||rockRoundTrip.mounted!=='ground.mountain_rock')
+    throw Error('WorldArea rock base not persisted/reloaded: '+JSON.stringify(rockRoundTrip));
+  await run(`(()=>{
+    const selector=document.querySelector('#material');
+    selector.value='grass.forest';
+    selector.dispatchEvent(new Event('change',{bubbles:true}));
+    return true;
+  })()`);
+  const grassRoundTrip=await readGround();
+  if(grassRoundTrip.saved!=='grass.forest'||grassRoundTrip.mounted!=='grass.forest')
+    throw Error('WorldArea grass base became mountain on return: '+JSON.stringify(grassRoundTrip));
+  console.log('GREEN real Chromium WorldArea grass -> mountain -> grass base texture survives Builder roundtrips');
 
   // Real mobile viewport, not merely a CSS/text assertion: the collapsed
   // Portal palette must leave the playfield visible and fullscreen reachable.
@@ -3807,6 +4141,31 @@ try{
     throw Error('Mobile playable WorldArea repair failed: '+JSON.stringify(repairedRoute));
   console.log('Legacy world playable destination repair REAL Chromium GREEN:',
     JSON.stringify(repairedRoute));
+
+  const builderPersonalMap=await run(`(()=>{
+    const key='gensrpg.exploration.map-presets.v1';
+    const old=localStorage.getItem(key);
+    const selected=window.__worldAssemblerProbe?.().selectedAreaId;
+    const area=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'))
+      .areas.find(a=>a.id===selected);
+    document.querySelector('#world-map-preset-save-current').click();
+    const saved=JSON.parse(localStorage.getItem(key)??'[]');
+    const choice=document.querySelector('#world-map-preset-select').value;
+    const button=document.querySelector('#world-map-preset-download');
+    const info=document.querySelector('#world-map-preset-info').textContent;
+    const result={area:selected,material:area?.surface?.baseMaterialId,
+      saved:saved.length,name:saved[0]?.name,choice,
+      canDownload:!button.disabled,countVisible:info.includes('1 carte(s) personnelle(s)'),
+      preservedWorld:JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'))
+        .areas.some(x=>x.id===selected)};
+    if(old===null)localStorage.removeItem(key);else localStorage.setItem(key,old);
+    return result;
+  })()`);
+  if(builderPersonalMap.saved!==1||!builderPersonalMap.choice||
+      !builderPersonalMap.canDownload||!builderPersonalMap.countVisible||
+      !builderPersonalMap.preservedWorld)
+    throw Error('World Builder real-area personal map library save failed: '+JSON.stringify(builderPersonalMap));
+  console.log('GREEN real Chromium World Builder: named zone added to SAME user map library, without changing WorldDocument');
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{
@@ -3840,6 +4199,118 @@ try{
      prefabRoom?.areaKind!=='interior')
     throw Error('Prefab interior did not open in REAL Sculpt 2.5D editor: '+
       JSON.stringify({prefabHouse,prefabRoom}));
+  const canonicalRoomTools=await run(`(()=>{
+    const room=document.querySelector('#interior-area-bar');
+    const toggle=document.querySelector('#interior-wall-toggle');
+    const floor=document.querySelector('#interior-floor-base');
+    const wall=document.querySelector('#interior-wall-material');
+    const visible=!room.hidden&&getComputedStyle(room).display!=='none';
+    const wallEnabled=!toggle.disabled;
+    const floorBefore=floor.value;
+    floor.value='floor.wood.dark';
+    floor.dispatchEvent(new Event('change',{bubbles:true}));
+    wall.value='brick';
+    wall.dispatchEvent(new Event('change',{bubbles:true}));
+    const canEdit=toggle&&!toggle.disabled;
+    if(canEdit)toggle.click();
+    const mode=document.body.classList.contains('interior-wall-authoring');
+    if(mode)toggle.click();
+    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const saved=doc?.areas.find(a=>a.id===window.__sculptWorldProbe().areaId);
+    return {visible,wallEnabled,canEdit,mode,floorBefore,
+      savedFloor:saved?.surface?.baseMaterialId,
+      savedWallMaterial:saved?.wallMaterialId,
+      saveWalls:saved?.walls?.length,
+      roomId:saved?.id};
+  })()`);
+  if(!canonicalRoomTools.visible||!canonicalRoomTools.wallEnabled||
+    !canonicalRoomTools.canEdit||!canonicalRoomTools.mode||
+    canonicalRoomTools.savedFloor!=='floor.wood.dark'||
+    canonicalRoomTools.savedWallMaterial!=='brick'||
+    canonicalRoomTools.saveWalls<2)
+    throw Error('Real WorldBuilder house room must retain canonical floor and wall authoring: '+
+      JSON.stringify(canonicalRoomTools));
+  console.log('WorldBuilder house floor+wall material/authoring REAL Chromium GREEN:',
+    JSON.stringify(canonicalRoomTools));
+  // Regression reported from Pixel: in WorldBuilder the complete room editor
+  // must remain usable, not merely show the wall and floor selector. These
+  // are real DOM clicks against the ONE persistent WorldDocument.
+  const furnishedRoom=await run(`(()=>{
+    const visible=id=>{
+      const el=document.querySelector(id);
+      return !!el&&!el.hidden&&getComputedStyle(el).display!=='none'&&
+        getComputedStyle(el.parentElement).display!=='none';
+    };
+    const groups=['.interior-floor-tools','.interior-layout-tools',
+      '.interior-door-tools','.interior-template-tools'];
+    const tools=groups.map(selector=>({selector,visible:visible(selector)}));
+    const roomId=window.__sculptWorldProbe().areaId;
+    const width=document.querySelector('#interior-width');
+    const height=document.querySelector('#interior-height');
+    width.value='20';height.value='16';
+    document.querySelector('#interior-layout-apply').click();
+    let doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const resized=doc.areas.find(a=>a.id===roomId);
+    const resizeStatus=document.querySelector('#brush-info')?.textContent;
+    const doorAsset=document.querySelector('#interior-door-asset');
+    doorAsset.value='object.door.interior.bois_renforce.face';
+    doorAsset.dispatchEvent(new Event('change',{bubbles:true}));
+    const doorScale=document.querySelector('#interior-door-scale');
+    doorScale.value='80';doorScale.dispatchEvent(new Event('input',{bubbles:true}));
+    doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const door=doc.portals.find(p=>p.sourceAreaId===roomId&&p.visual?.marker==='exit');
+    const name=document.querySelector('#interior-template-name');
+    name.value='Pièce de test indépendante';
+    document.querySelector('#interior-template-save').click();
+    const selected=document.querySelector('#interior-template-select').value;
+    const apply=document.querySelector('#interior-template-apply');
+    const canApply=!apply.disabled&&!!selected;
+    if(canApply)apply.click();
+    const beforeFloor=doc.areas.length;
+    // Move-door state from the ground floor must be cleared when opening
+    // upstairs, otherwise touching canvas dereferences the missing door.
+    document.querySelector('#interior-door-move').click();
+    const movingBefore=document.body.classList.contains('interior-door-authoring');
+    document.querySelector('#interior-level-add').click();
+    const movingAfter=document.body.classList.contains('interior-door-authoring');
+    doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const upperId=window.__sculptWorldProbe().areaId;
+    const stair=doc.portals.find(p=>p.sourceAreaId===upperId&&p.visual?.marker==='portal');
+    const levels=[...document.querySelector('#interior-level-select').options].map(x=>x.value);
+    const stairAsset=document.querySelector('#interior-connector-asset');
+    if(stair){
+      stairAsset.value='ladder.wood';stairAsset.dispatchEvent(new Event('change',{bubbles:true}));
+      const rotation=document.querySelector('#interior-connector-rotation');
+      rotation.value='90';rotation.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const stairSaved=doc.portals.find(p=>p.id===stair?.id);
+    const floorPicker=document.querySelector('#interior-level-select');
+    floorPicker.value='0';floorPicker.dispatchEvent(new Event('change',{bubbles:true}));
+    return {tools,roomId,resizeStatus,resized:[resized?.width,resized?.height],
+      doorAsset:door?.visual?.assetId,doorScale:door?.visual?.scale,
+      selected,canApply,beforeFloor,afterFloor:doc.areas.length,
+      movingBefore,movingAfter,
+      upperId,levels,stairAsset:stairSaved?.visual?.assetId,
+      stairRotation:stairSaved?.visual?.rotationDeg,
+      backToGround:window.__sculptWorldProbe().areaId,
+      roomCount:doc.areas.filter(a=>a.kind==='interior').length};
+  })()`);
+  if(furnishedRoom.tools.some(x=>!x.visible)||
+     furnishedRoom.resized.join('x')!=='560x336'||
+     furnishedRoom.doorAsset!=='object.door.interior.bois_renforce.face'||
+     furnishedRoom.doorScale!==.8||!furnishedRoom.canApply||
+     furnishedRoom.afterFloor!==furnishedRoom.beforeFloor+1||
+     !furnishedRoom.movingBefore||furnishedRoom.movingAfter||
+     furnishedRoom.upperId===furnishedRoom.roomId||
+     furnishedRoom.levels.length!==2||
+     furnishedRoom.stairAsset!=='ladder.wood'||
+     furnishedRoom.stairRotation!==90||
+     furnishedRoom.backToGround!==furnishedRoom.roomId)
+    throw Error('Full canonical WorldBuilder house editor broke in real Chromium: '+
+      JSON.stringify(furnishedRoom));
+  console.log('WorldBuilder complete home editing REAL Chromium GREEN:',
+    JSON.stringify(furnishedRoom));
   const prefabWalk=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {nav:window.__sculptNavProbe?.(),
@@ -3852,6 +4323,34 @@ try{
   console.log('Native prefab house interior REAL Chromium GREEN:',
     JSON.stringify({roomId:prefabRoom.areaId,roomTiles:'18x14',
       walls:prefabHouse.roomWalls,walkable:true,realPortals:true}));
+
+  // A previously broken path opened a detached standalone Sculpt room from a
+  // World Builder house. Verify the real linked WorldArea's parent action in
+  // Chromium, with the existing WorldDocument and Portals unchanged.
+  const prefabHouseBack=await run(`(()=>{
+    const button=document.querySelector('#world-area-house-back');
+    const available=!!button&&!button.hidden;
+    const was=window.__sculptWorldProbe?.().areaId;
+    document.querySelector('#navigation-toggle').click(); // return to editing
+    if(available)button.click();
+    const now=window.__sculptWorldProbe?.();
+    const raw=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const inside=raw?.areas.find(a=>a.id===was);
+    const outside=raw?.areas.find(a=>a.id===now?.areaId);
+    const link=raw?.portals.find(p=>p.sourceAreaId===now?.areaId&&
+      p.targetAreaId===was&&p.trigger?.kind==='object-anchor');
+    return {available,was,areaId:now?.areaId,inside:inside?.id,
+      outside:outside?.id,link:link?.id,
+      portalCount:raw?.portals.length,areaCount:raw?.areas.length,
+      editable:now?.editable};
+  })()`);
+  if(!prefabHouseBack.available||prefabHouseBack.was!==prefabHouse.roomId||
+     prefabHouseBack.areaId!==prefabHouse.outsideId||
+     !prefabHouseBack.link||!prefabHouseBack.editable)
+    throw Error('World Builder room must return to its OWN canonical house exterior: '+
+      JSON.stringify(prefabHouseBack));
+  console.log('World Builder house interior return REAL Chromium GREEN:',JSON.stringify(prefabHouseBack));
+
   console.log('Unified World/Map panels Chromium GREEN:',
     JSON.stringify({size:'40x31',areaId:unifiedBack.selectedAreaId,
       saved:unifiedBack.saved,oneWorldDocument:true}));

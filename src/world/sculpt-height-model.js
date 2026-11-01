@@ -1,6 +1,8 @@
 // Experimental heightfield. Isolated from WorldSurface/WorldDocument and Collision World.
 // Cells, heights and brush results are deterministic, immutable, JSON-compatible data.
 export const SCULPT_SCHEMA_VERSION=1;
+// Shared authored ground/hill elevation cap. Water height retains its own bound.
+export const SCULPT_TERRAIN_MAX_LEVEL=16;
 // V76: canonical continuous spherical relief; never inferred from painted pixels.
 export const SCULPT_SPHERE_LIMIT=24;
 export const SCULPT_TERRAIN_RAMP_LIMIT=64;
@@ -11,8 +13,8 @@ const validSphere=(f,w,h)=>f&&typeof f.id==='string'&&/^sculpt-sphere-[1-9][0-9]
   sphericalKinds.has(f.kind)&&[f.x,f.y,f.radius].every(Number.isFinite)&&
   f.radius>=14&&f.radius<=448&&f.x-f.radius>=0&&f.y-f.radius>=0&&
   f.x+f.radius<=w*28&&f.y+f.radius<=h*21&&
-  Number.isInteger(f.height)&&f.height>=1&&f.height<=7&&
-  Number.isInteger(f.baseLevel)&&f.baseLevel>=0&&f.baseLevel<=7&&
+  Number.isInteger(f.height)&&f.height>=1&&f.height<=SCULPT_TERRAIN_MAX_LEVEL&&
+  Number.isInteger(f.baseLevel)&&f.baseLevel>=0&&f.baseLevel<=SCULPT_TERRAIN_MAX_LEVEL&&
   (f.summitRatio===undefined||(Number.isFinite(f.summitRatio)&&f.summitRatio>=0&&f.summitRatio<=1))&&
   (f.wallMaterial===undefined||sphereWallMaterials.has(f.wallMaterial));
 export function sculptSphereDisplacementAt(terrain,x,y){
@@ -41,7 +43,7 @@ export function sculptSphereAt(terrain,x,y,padding=0){
 export function appendSculptSphere(terrain,{kind='hill',x,y,radius=112,height=3,
   summitRatio=0,wallMaterial='rock'}={}){
   if(!terrain||!sphericalKinds.has(kind)||!Number.isFinite(x)||!Number.isFinite(y)||
-     !Number.isFinite(radius)||!Number.isInteger(height)||height<1||height>7||
+     !Number.isFinite(radius)||!Number.isInteger(height)||height<1||height>SCULPT_TERRAIN_MAX_LEVEL||
      (terrain.spheres?.length??0)>=SCULPT_SPHERE_LIMIT)return terrain;
   const baseLevel=sculptHeightAt(terrain,Math.floor(x/28),Math.floor(y/21));
   const ids=new Set((terrain.spheres??[]).map(f=>f.id));
@@ -69,7 +71,7 @@ const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const int=(v,f)=>Number.isInteger(v)?v:f;
 export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null,ramps=null}={}){
   const w=clamp(int(width,36),8,80),h=clamp(int(height,24),8,64);
-  const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,7));
+  const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,SCULPT_TERRAIN_MAX_LEVEL));
   const water=Array.from({length:w*h},(_,i)=>clamp(int(waterLevels?.[i],-1),-1,10));
   const contours=Array.from({length:w*h},(_,i)=>clamp(int(roundness?.[i],95),0,150));
   return Object.freeze({schemaVersion:SCULPT_SCHEMA_VERSION,width:w,height:h,
@@ -187,7 +189,7 @@ export function applySculptStroke(terrain,{
   const limit=terrain.width*terrain.height;
   const weights=footprintWeights(terrain,clean,r,soften,{protectWater:!allowUnderwaterTerrainEdit,shape});
   const chosen=clamp(int(target,sculptHeightAt(terrain,
-    Math.floor(clean[0].x),Math.floor(clean[0].y))),0,7);
+    Math.floor(clean[0].x),Math.floor(clean[0].y))),0,SCULPT_TERRAIN_MAX_LEVEL);
   const next=[...terrain.levels];
   const profiles=[...terrain.roundness];
   const profile=rockRoundness===null?null:clamp(Math.round(Number(rockRoundness)||0),0,150);
@@ -225,7 +227,7 @@ export function applySculptStroke(terrain,{
       }
       value=old+clamp(Math.round(sum/count)-old,-step,step);
     }
-    value=clamp(value,0,7);
+    value=clamp(value,0,SCULPT_TERRAIN_MAX_LEVEL);
     if(value!==old){next[i]=value;modified=true;}
     if(profile!==null && profiles[i]!==profile){profiles[i]=profile;modified=true;}
   }
@@ -330,7 +332,7 @@ export function importSculptTerrain(serialized){
      !Number.isInteger(input.height)||input.width<8||input.width>80||
      input.height<8||input.height>64||
      !Array.isArray(input.levels)||input.levels.length!==input.width*input.height||
-     !input.levels.every(v=>Number.isInteger(v)&&v>=0&&v<=7)||
+     !input.levels.every(v=>Number.isInteger(v)&&v>=0&&v<=SCULPT_TERRAIN_MAX_LEVEL)||
      (input.waterLevels!==undefined&&(!Array.isArray(input.waterLevels)||
       input.waterLevels.length!==input.width*input.height||
       !input.waterLevels.every(v=>Number.isInteger(v)&&v>=-1&&v<=10)))||

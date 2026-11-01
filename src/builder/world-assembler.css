@@ -84,4 +84,46 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 @media(max-width:1100px){.workspace{grid-template-columns:213px minmax(0,1fr) 237px}.left-rail,.inspector{padding:12px 10px 20px}.canvas-header{padding:11px 13px}.canvas-header h2{font-size:18px}.canvas-header p{display:none}}
 @media(max-width:780px){.app-header{height:61px;padding:7px 10px}.app-header h1{font-size:16px}.header-actions{gap:5px}.save-state{display:none}.header-actions button,.import-btn{font-size:10px;padding:8px}.workspace{grid-template-columns:175px minmax(0,1fr) 205px}.left-rail,.inspector{padding:9px 8px}.world-node{width:175px;min-height:91px}.canvas-header{padding:7px 9px}.canvas-header h2{font-size:15px}.canvas-actions button{font-size:10px;padding:6px}.stat-row{grid-template-columns:1fr 1fr}}
 @media(orientation:portrait) and (max-width:640px){body{overflow:auto}.app-shell{min-height:100dvh;height:auto}.workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(360px,60dvh) auto}.left-rail{border-right:0;border-bottom:1px solid #36515e}.area-list{grid-template-columns:1fr 1fr;max-height:none}.inspector{border-left:0;border-top:1px solid #36515e}.header-actions{flex-wrap:wrap;justify-content:flex-end}.canvas-header p{display:block}.app-toast{position:sticky;bottom:0}}
+/* On a landscape phone the graph is the workspace, not the leftover
+   column between two permanently visible sidebars. Both panels remain
+   the original World Builder controls and are opt-in drawers. */
+.mobile-workspace-tools{display:none;align-items:center;gap:5px}
+@media(orientation:landscape) and (max-width:1250px){
+ .app-shell{height:100dvh;min-height:0}
+ .app-header{height:59px;min-height:59px;padding:5px 9px;gap:7px}
+ .app-brand{min-width:0;max-width:138px}
+ .app-brand .eyebrow{display:none}
+ .app-brand h1{font-size:13px;line-height:1.2;margin:0}
+ .mobile-workspace-tools{display:flex;flex:0 0 auto}
+ .mobile-workspace-tools button{min-height:38px;padding:7px 10px;font-size:12px}
+ .mobile-workspace-tools button[aria-expanded="true"]{background:#24615e;border-color:#95e7ce}
+ .header-actions{margin-left:auto;gap:5px}
+ .header-actions .save-state{display:none}
+ .header-actions button,.import-btn{padding:7px 8px;min-height:37px;font-size:11px}
+ .workspace{display:block;position:relative;min-width:0;overflow:hidden}
+ .center-panel{height:100%;width:100%;min-width:0;min-height:0}
+ .canvas-header{padding:9px 12px;gap:10px}
+ .canvas-header h2{font-size:17px}
+ .canvas-header p{display:none}
+ .canvas-actions{flex-wrap:nowrap}
+ .canvas-actions button{min-height:35px;padding:5px 8px}
+ .left-rail,.inspector{display:none;position:absolute;top:0;bottom:0;
+   z-index:12;overflow:auto;overscroll-behavior:contain;
+   width:min(340px,84vw);padding:13px 11px 22px;
+   box-shadow:0 0 25px #000b}
+ .left-rail{left:0;border-right:1px solid #8cd6c3}
+ .inspector{right:0;border-left:1px solid #8cd6c3}
+ .workspace[data-panel="zones"] .left-rail{display:block}
+ .workspace[data-panel="details"] .inspector{display:block}
+ .area-list{max-height:32vh}
+ .app-toast{min-height:27px;padding:5px 11px;font-size:11px}
+}
+@media(orientation:landscape) and (max-height:540px) and (max-width:1250px){
+ .app-brand{display:none}
+ .canvas-header .eyebrow,.canvas-header p{display:none}
+ .canvas-header h2{font-size:15px}
+ .canvas-header{padding:6px 9px}
+ .world-workspace-tabs button{font-size:11px}
+ .area-list{max-height:40vh}
+}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}

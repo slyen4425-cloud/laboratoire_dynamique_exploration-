@@ -20,8 +20,8 @@ test('each native map links to its host using distinct edge entry and exit with 
   const spawn=area.spawns[0];
   assert.ok(spawn.x<area.width*.2,preset.name+' entry should be near left boundary');
   const outbound=document.portals.find(p=>p.sourceAreaId===area.id);
-  assert.ok(outbound.trigger.x>area.width*.8,preset.name+' exit should be near right boundary');
-  assert.ok(Math.abs(spawn.x-outbound.trigger.x)>area.width*.6,preset.name+' must cross the map');
+  assert.ok(outbound.trigger.x<area.width*.2,preset.name+' return to host must be at the destination ENTRY');
+  assert.ok(Math.abs(spawn.x-outbound.trigger.x)<area.width*.2,preset.name+' entry and reverse Portal use the same road end');
   const scene=sculptWorldAreaScene(area);
   for(const point of [spawn,outbound.trigger]){
     const col=Math.floor(point.x/28),row=Math.floor(point.y/21);
@@ -31,13 +31,14 @@ test('each native map links to its host using distinct edge entry and exit with 
   assert.ok(leaving,preset.name+' must have a usable active exit');
   const arrived=applyPortalTransition(document,{currentAreaId:area.id,...outbound.trigger},leaving);
   assert.equal(arrived.currentAreaId,host.initialAreaId);
-  assert.ok(arrived.x<host.areas[0].width*.2,'host return arrival must be an edge');
+  assert.ok(arrived.x>host.areas[0].width*.65,'host return arrival must remain near its outbound exit');
   const hostGate=document.portals.find(p=>p.sourceAreaId===host.initialAreaId);
   const entering=findTriggeredPortal(document,host.initialAreaId,hostGate.trigger);
   assert.ok(entering,preset.name+' host gate must be interactive');
   const entered=applyPortalTransition(document,{currentAreaId:host.initialAreaId,...hostGate.trigger},entering);
   assert.equal(entered.currentAreaId,area.id);
-  assert.equal(entered.x,spawn.x);assert.equal(entered.y,spawn.y);
+  assert.ok(entered.x>outbound.trigger.x+outbound.trigger.radius+3,'arrival must not retrigger the return Portal');
+  assert.notEqual(entered.x,spawn.x,'independent entry Spawn prevents immediate bounce');
   assert.ok(serializeWorldBuilderDraft(document).includes(area.id));
  }
 });
