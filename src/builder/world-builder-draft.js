@@ -250,9 +250,13 @@ export function applyCalmEncounterBaseline(draft){
   const next=clone(draft);
   next.encounterConfig??={version:1,families:[]};
   next.encounterConfig.checkDistance=300;
-  next.encounterConfig.families=(next.encounterConfig.families??[]).map(f=>({
-    ...f,encounterChancePercent:CALM_CHANCES[f.terrainFamilyId]??5
-  }));
+  const template=presetEncounterDefaults((next.terrainFamilies??[]).map(f=>f.id));
+  next.encounterConfig.families=(next.encounterConfig.families??[]).map(f=>{
+    const sample=template.families.find(x=>x.terrainFamilyId===f.terrainFamilyId);
+    return {...f,encounterChancePercent:CALM_CHANCES[f.terrainFamilyId]??5,
+      elementChances:f.elementChances?.length?f.elementChances:
+        (sample?.elementChances??[])};
+  });
   return next;
 }
 export function updateWorldEncounterCheckDistance(draft,distance){
@@ -320,8 +324,7 @@ export function createBlankWorldBuilderDraft({
       spawns: [{ id: 'depart', x: safeWidth / 2, y: safeHeight / 2 }]
     }],
     portals: [],
-    events: [],
-    encounterConfig:presetEncounterDefaults()
+    events: []
   });
 }
 
