@@ -1,3 +1,15 @@
+# Cascades sur l'eau et terrain au-delà de 7 niveaux — 1 novembre 2026
+
+- **Signal exact utilisateur** : dans l'éditeur 2,5D, impossible de placer ou déplacer les cascades au-dessus de l'eau ; le **terrain sculpté** s'arrête au niveau 7. La taille/hauteur des sprites des cascades n'est PAS demandée à être augmentée.
+- **Départ/isolement** : base du dernier test de pente `0dc90b9778b0a9e530adf7e90ac6d2506599c952` (PR318), checkpoint `checkpoint/exploration-waterfalls-and-terrain-height-start-2026-11-01`, branche unique `work/exploration-waterfalls-and-terrain-height-2026-11-01`. V80/main et version PR318 publiée restent inchangés pendant le travail.
+- **Cause** : `sculptObjectCanOccupyCell` interdisait les cases immergées à tous les objets non ponts, tandis que les présets du même dépôt permettaient explicitement les cascades sur l'eau. Les hauteurs de terrain étaient plafonnées par des constantes 7 divergentes dans l'import/export, le pinceau, l'UI, la caméra et les bosses analytiques.
+- **Autorités réutilisées** : `ObjectDefinition.placement.waterAllowed` signé sur les quatre cascades animées seulement ; `sculptObjectCanOccupyCell` propriétaire de l'autorisation d'implantation **et** déplacement, réutilisé par la génération de présets, sans nouvelle table parallèle. Les cascades restent des `decor` non bloquants. `sculptObjectVisualRect` ancre leur pied sur le niveau d'eau canonique pour les dessiner et les sélectionner au bon endroit.
+- **Terrain** : `SCULPT_TERRAIN_MAX_LEVEL=16` dans l'unique modèle de hauteur ; même contrat pour sculpture, collines analytiques, import/export des `schemaVersion:1`, contrôle mobile et dimensions caméra/raster. Les hauteurs d'eau restent limitées à 10 **indépendamment** du terrain. Compatibilité des cartes existantes 0–7 conservée.
+- **Tests** : TDD RED `tests/sculpt-waterfall-wet-and-terrain-height-ceiling.test.js` puis validation Node, scénarios vraie eau + quatre variantes + pont vs maison, déplacement/export, niveau 16, refus 17, ancienne carte, relief analytique >7 et véritable test Chromium `scripts/smoke-sculpt-terrain-lab.mjs` de l'éditeur mobile. Gates avant annonce GREEN : CI du SHA exact, publication isolée avec preuve HTTPS du SHA publié, test manuel Pixel de cascade depuis une rive haute vers un bassin.
+- **Hors périmètre** : refonte des sprites cascades, nouvelle simulation de fluide, changement des règles collision/mouvement/rencontre, modification de la carte personnelle `foret_1`, écrasement de V80.
+
+---
+
 # Régression PR316 — route peinte recouvre intégralement la pente (1 novembre 2026)
 
 - **Signal utilisateur, reproduction** : après publication de la preview `/preview/ramp-pr316/` (CI GREEN `41288365269`, Pages `41298380614`), peindre une route de 24 unités de large sur une pente native de 140 unités couvre **toute la largeur de la pente**. L'algorithme PR316 échantillonnait le matériau au milieu de chacune des 24 bandes et remplissait la bande entière avec cette texture.

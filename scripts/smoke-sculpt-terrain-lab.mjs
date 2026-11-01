@@ -136,6 +136,47 @@ try{
       JSON.stringify(rampPaintPixels));
   console.log('GREEN Chromium PR318: 24-unit route stays narrow on 140-unit forest slope at 90/55/35 degrees');
 
+  // Regression: wet-cell object authoring and elevated terrain share exactly
+  // the same core policy as the actual mobile Sculpt editor, not a mock.
+  const waterfallAndTallTerrain=await run(`(async()=>{
+    const height=await import('/src/world/sculpt-height-model.js');
+    const scene=await import('/src/world/sculpt-scene-preview.js');
+    const visuals=await import('/src/render/sculpt-object-picking.js');
+    const catalog=await import('/src/objects/object-definition-catalog.js');
+    const width=20,h=20;
+    let terrain=height.createSculptTerrain({width,height:h});
+    terrain=height.applySculptWaterStroke(terrain,{mode:'water-fill',target:6,
+      radius:3,points:[{x:10.5,y:10.5}]});
+    const ids=['front_wide','side_narrow','three_quarter','tiered']
+      .map(s=>'objectdef.waterfall.'+s+'.01');
+    if(ids.some(id=>!scene.sculptObjectCanOccupyCell(terrain,id,10,10)))
+      return {error:'waterfall wet-cell permission missing'};
+    const house=catalog.objectDefinitionCatalogV1.list().find(x=>x.kind==='building');
+    if(scene.sculptObjectCanOccupyCell(terrain,house.id,10,10))
+      return {error:'waterfall permission leaked to building'};
+    const x=10.5*28,y=10.5*21;
+    const placed=scene.appendSculptPreviewObject([],{definitionId:ids[0],x,y,scale:.40});
+    const rendered=catalog.objectDefinitionCatalogV1.get(placed[0].objectDefinitionId);
+    const rect=visuals.sculptObjectVisualRect({...placed[0],kind:rendered.kind,
+      baseSize:rendered.baseSize},terrain);
+    const waterLevel=terrain.waterLevels[10*width+10];
+    if(Math.abs(rect.y-(y-waterLevel*18))>.01)
+      return {error:'waterfall foot misses water surface',waterLevel,rectY:rect.y};
+    for(let n=0;n<8;n++)terrain=height.applySculptStroke(terrain,
+      {mode:'raise',strength:3,radius:1,points:[{x:4.5,y:4.5}]});
+    const level=height.sculptHeightAt(terrain,4,4);
+    const saved=height.importSculptTerrain(height.serializeSculptTerrain(terrain));
+    return {level,roundtrip:saved.levels[4*width+4]===16,
+      waterfallCount:placed.length,targetMax:document.querySelector('#target')?.max,
+      waterMax:document.querySelector('#water-target')?.max};
+  })()`);
+  if(waterfallAndTallTerrain.error||waterfallAndTallTerrain.level!==16||
+      !waterfallAndTallTerrain.roundtrip||waterfallAndTallTerrain.waterfallCount!==1||
+      waterfallAndTallTerrain.targetMax!=='16'||waterfallAndTallTerrain.waterMax!=='10')
+    throw Error('Waterfall + tall terrain real Chromium authoring regression: '+
+      JSON.stringify(waterfallAndTallTerrain));
+  console.log('GREEN real Chromium: waterfall over pond + water-level foot, ground level 16 and exact save/import');
+
   // Real browser save -> file download -> import using the SAME official
   // library. Debug numeric JSON remains hidden; no WorldDocument is touched.
   const mapLibrary=await run(`(async()=>{

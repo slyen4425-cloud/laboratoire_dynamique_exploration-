@@ -83,6 +83,7 @@ const DEFINITIONS = frozen([
     id: 'objectdef.waterfall.front_wide.01',
     label: '2,5D · Cascade animée · Large de face',
     kind: 'decor',
+    placement: { waterAllowed: true },
     library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
     visual: {
       assetId: 'object.waterfall.front_wide.forest_stream.flow.01',
@@ -102,6 +103,7 @@ const DEFINITIONS = frozen([
     id: 'objectdef.waterfall.side_narrow.01',
     label: '2,5D · Cascade animée · Étroite de côté',
     kind: 'decor',
+    placement: { waterAllowed: true },
     library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
     visual: {
       assetId: 'object.waterfall.side_narrow.forest_stream.flow.01',
@@ -121,6 +123,7 @@ const DEFINITIONS = frozen([
     id: 'objectdef.waterfall.three_quarter.01',
     label: '2,5D · Cascade animée · Trois-quarts',
     kind: 'decor',
+    placement: { waterAllowed: true },
     library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
     visual: {
       assetId: 'object.waterfall.three_quarter.forest_stream.flow.01',
@@ -140,6 +143,7 @@ const DEFINITIONS = frozen([
     id: 'objectdef.waterfall.tiered.01',
     label: '2,5D · Cascade animée · Paliers',
     kind: 'decor',
+    placement: { waterAllowed: true },
     library: { categoryId: 'decor', folderId: 'decor/general', provenance: 'native' },
     visual: {
       assetId: 'object.waterfall.tiered.forest_stream.flow.01',
