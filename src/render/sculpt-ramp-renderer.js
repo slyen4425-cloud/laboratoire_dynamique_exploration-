@@ -3,7 +3,6 @@
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
 import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptCameraProject} from './sculpt-camera-projection.js';
-import {sculptSurfacePaintAt} from '../world/sculpt-surface-paint.js';
 
 export function sculptRampVisualMesh(terrain,object,{
   cellWidth=28,cellHeight=21,rise=18,view=null,segments=16
@@ -50,33 +49,83 @@ export function drawSculptRamp(ctx,object,terrain,{
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
     pattern.setTransform(new DOMMatrix().scale(.55));
   ctx.fillStyle=pattern??baseColor;
-  // For a painted WorldSurface the base material can be brown dirt while the
-  // *visible* ground is forest floor/snow/road. Project the exact existing
-  // WorldSurface stroke material onto each incline strip, never substituting
-  // a fixed grass color or storing a second texture in the terrain ramp.
-  const authoredPatterns=new Map();
-  const patternFor=materialId=>{
-    if(!paintImages||!materialId)return null;
-    if(authoredPatterns.has(materialId))return authoredPatterns.get(materialId);
-    const image=paintImages.get(materialId);
-    let painted=null;
-    if(image?.naturalWidth&&typeof ctx.createPattern==='function'){
-      painted=ctx.createPattern(image,'repeat');
-      if(painted?.setTransform&&typeof DOMMatrix!=='undefined')
-        painted.setTransform(new DOMMatrix().scale(.55));
-    }
-    authoredPatterns.set(materialId,painted);
-    return painted;
-  };
-  // Slight overlap closes micro gaps created by device-pixel rasterization.
+  // The incline keeps the ONE canonical mesh and base material. A WorldSurface
+  // road is a stroke in world coordinates; never turn an entire mesh strip into
+  // the sampled centre texture (that incorrectly made 24px roads 140px wide).
   for(let i=1;i<rows.length;i++){
     const a=rows[i-1],b=rows[i];
-    const materialId=sculptSurfacePaintAt(paintSurface,
-      (a.worldX+b.worldX)/2,(a.worldY+b.worldY)/2);
-    ctx.fillStyle=patternFor(materialId)??pattern??baseColor;
     ctx.beginPath();ctx.moveTo(a.left.x,a.left.y);
     ctx.lineTo(b.left.x,b.left.y);ctx.lineTo(b.right.x,b.right.y);
     ctx.lineTo(a.right.x,a.right.y);ctx.closePath();ctx.fill();
+  }
+  if(paintSurface&&paintImages){
+    const features=[...(paintSurface.zones??[]),...(paintSurface.routes??[])];
+    if(features.length){
+      const foot=rows[0],head=rows.at(-1);
+      const dx=head.worldX-foot.worldX,dy=head.worldY-foot.worldY;
+      const lengthSq=dx*dx+dy*dy;
+      if(lengthSq>0){
+        // The slope is an affine elevation plane. Use its SAME physical rise
+        // to map standard WorldSurface strokes without a new paint model.
+        const projected=(x,y)=>{
+          const t=((x-foot.worldX)*dx+(y-foot.worldY)*dy)/lengthSq;
+          const level=foot.level+(head.level-foot.level)*t;
+          const raisedY=y-level*rise;
+          return view?sculptCameraProject(view,x,raisedY):{x,y:raisedY};
+        };
+        const origin=projected(0,0),xAxis=projected(1,0),yAxis=projected(0,1);
+        const width=(object.baseSize?.width??0)*
+          (object.transform?.scaleX??1)*.68;
+        const minX=Math.min(foot.worldX,head.worldX)-width*.5-6;
+        const maxX=Math.max(foot.worldX,head.worldX)+width*.5+6;
+        const minY=Math.min(foot.worldY,head.worldY)-width*.5-6;
+        const maxY=Math.max(foot.worldY,head.worldY)+width*.5+6;
+        ctx.save();
+        // Clip all strokes to the whole incline polygon; a path can cross
+        // from grass to ramp to grass without painting beyond its edges.
+        ctx.beginPath();ctx.moveTo(rows[0].left.x,rows[0].left.y);
+        for(let i=1;i<rows.length;i++)ctx.lineTo(rows[i].left.x,rows[i].left.y);
+        for(let i=rows.length-1;i>=0;i--)ctx.lineTo(rows[i].right.x,rows[i].right.y);
+        ctx.closePath();ctx.clip();
+        ctx.transform(xAxis.x-origin.x,xAxis.y-origin.y,
+          yAxis.x-origin.x,yAxis.y-origin.y,origin.x,origin.y);
+        ctx.lineCap='round';ctx.lineJoin='round';
+        const patterns=new Map();
+        for(const feature of features){
+          if(!feature?.materialId||!Array.isArray(feature.points)||
+            feature.points.length<2||!Number.isFinite(feature.width))continue;
+          const rad=feature.width*.5+6;
+          if(!feature.points.some(p=>p.x>=minX-rad&&p.x<=maxX+rad&&
+             p.y>=minY-rad&&p.y<=maxY+rad) &&
+             !feature.points.some((point,i)=>{
+               if(!i)return false;
+               const other=feature.points[i-1];
+               return Math.max(point.x,other.x)>=minX-rad &&
+                 Math.min(point.x,other.x)<=maxX+rad &&
+                 Math.max(point.y,other.y)>=minY-rad &&
+                 Math.min(point.y,other.y)<=maxY+rad;
+             }))continue;
+          let painted=patterns.get(feature.materialId);
+          if(painted===undefined){
+            const image=paintImages.get(feature.materialId);
+            painted=image?.naturalWidth&&typeof ctx.createPattern==='function'
+              ?ctx.createPattern(image,'repeat'):null;
+            if(painted?.setTransform&&typeof DOMMatrix!=='undefined')
+              painted.setTransform(new DOMMatrix().scale(.55));
+            patterns.set(feature.materialId,painted);
+          }
+          if(!painted)continue;
+          ctx.beginPath();
+          ctx.moveTo(feature.points[0].x,feature.points[0].y);
+          for(let i=1;i<feature.points.length;i++)
+            ctx.lineTo(feature.points[i].x,feature.points[i].y);
+          ctx.strokeStyle=painted;
+          ctx.lineWidth=feature.width+6;ctx.globalAlpha=.20;ctx.stroke();
+          ctx.lineWidth=feature.width;ctx.globalAlpha=.95;ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
   }
   // Very subtle world-space soil/grass seam, with no cartoon edge outline.
   const first=rows[0],last=rows.at(-1);

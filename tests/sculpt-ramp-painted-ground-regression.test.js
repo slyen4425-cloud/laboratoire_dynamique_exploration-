@@ -25,13 +25,16 @@ function painted(){
    points:[{x:100,y:7*21},{x:400,y:7*21}]});
 }
 function recorder(){
- const fills=[],ctx={
-   fillStyle:null,strokeStyle:null,lineWidth:1,
-   save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},stroke(){},
+ const fills=[],strokes=[],ctx={
+   fillStyle:null,strokeStyle:null,lineWidth:1,globalAlpha:1,
+   save(){},restore(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},
+   clip(){},transform(){},
+   stroke(){strokes.push({name:this.strokeStyle?.from??this.strokeStyle,
+     width:this.lineWidth,alpha:this.globalAlpha});},
    createPattern(img){return {from:img.name};},
    fill(){fills.push(this.fillStyle?.from??this.fillStyle);}
  };
- return {ctx,fills};
+ return {ctx,fills,strokes};
 }
 test('painted forest floor is the visible slope material even when base terrain is brown dirt',()=>{
  const surface=painted();
@@ -44,7 +47,7 @@ test('painted forest floor is the visible slope material even when base terrain 
 test('native ramp uses the actual painted ground patterns, preserving route overlaps',()=>{
  const t=terrain(),r=sculptTerrainRampProjections(t)[0];
  assert.ok(r);
- const {ctx,fills}=recorder();
+ const {ctx,fills,strokes}=recorder();
  const surface=painted();
  const images=new Map([
   ['ground.forest_floor',{name:'forest-texture',naturalWidth:64}],
@@ -52,9 +55,12 @@ test('native ramp uses the actual painted ground patterns, preserving route over
  ]);
  assert.equal(drawSculptRamp(ctx,r,t,{texture:{name:'brown-dirt',naturalWidth:64},
    baseColor:'#654321',paintSurface:surface,paintImages:images}),true);
- assert.ok(fills.includes('forest-texture'),'forest painted texture must cover slope');
- assert.ok(fills.includes('road-texture'),'route paint layer must be respected on slope');
- assert.ok(!fills.includes('brown-dirt'),'the brown default must not cover painted incline');
+ assert.ok(strokes.some(x=>x.name==='forest-texture'&&x.width===300),
+  'forest paint must be applied as clipped native WorldSurface brush stroke');
+ assert.ok(strokes.some(x=>x.name==='road-texture'&&x.width===42),
+  'route paint must remain its authored width, even across the incline');
+ assert.ok(fills.every(x=>x==='brown-dirt'),
+  'the base mesh is filled once; painted materials overlay it rather than replacing whole bands');
 });
 test('unpainted native ramp remains exactly on base ground material',()=>{
  const t=terrain(),r=sculptTerrainRampProjections(t)[0];

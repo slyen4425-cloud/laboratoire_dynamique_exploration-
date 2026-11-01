@@ -79,6 +79,63 @@ try{
      return {visible,w:canvas.width,h:canvas.height};})()`);
   if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
 
+  // PR318 visual gate: real Chromium Canvas pixels on a native ramp.
+  // The route is narrower than the incline, not a material replacement.
+  const rampPaintPixels=await run(`(async()=>{
+    const {createSculptTerrain,appendSculptTerrainRamp,sculptTerrainRampProjections}
+      =await import('/src/world/sculpt-height-model.js');
+    const {createSculptSurface,appendSculptSurfaceStroke}
+      =await import('/src/world/sculpt-surface-paint.js');
+    const {drawSculptRamp,sculptRampVisualMesh}
+      =await import('/src/render/sculpt-ramp-renderer.js');
+    const {sculptCameraGameView,sculptCameraProject}
+      =await import('/src/render/sculpt-camera-projection.js');
+    const image=async hex=>{
+      const img=new Image();
+      img.src='data:image/svg+xml,'+encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32">'+
+        '<rect width="32" height="32" fill="'+hex+'"/></svg>');
+      await img.decode();return img;
+    };
+    const [brown,forest,road]=await Promise.all([
+      image('#695032'),image('#00bd2d'),image('#b45028')]);
+    const width=18,height=22;
+    const t=createSculptTerrain({width,height,
+      levels:Array.from({length:width*height},(_,i)=>Math.floor(i/width)<8?5:2)});
+    const terrain=appendSculptTerrainRamp(t,{x:238,y:283.5,
+      endX:238,endY:94.5,width:140});
+    const ramp=sculptTerrainRampProjections(terrain)[0];
+    let paint=appendSculptSurfaceStroke(createSculptSurface(),
+      {materialId:'ground.forest_floor',width:240,
+       points:[{x:238,y:90},{x:238,y:300}]});
+    paint=appendSculptSurfaceStroke(paint,{materialId:'road.dirt',
+      width:24,points:[{x:238,y:140},{x:238,y:235}]});
+    const images=new Map([['ground.forest_floor',forest],['road.dirt',road]]);
+    const pixels=[];
+    for(const angle of [90,55,35]){
+      const view=sculptCameraGameView(angle);
+      const cv=document.createElement('canvas');
+      cv.width=500;cv.height=420;const c=cv.getContext('2d',{willReadFrequently:true});
+      if(!drawSculptRamp(c,ramp,terrain,{view,texture:brown,
+         paintSurface:paint,paintImages:images}))return {error:'draw failed'};
+      const samples=sculptRampVisualMesh(terrain,ramp,{view,segments:24}).samples;
+      const m=samples[12],at=sculptCameraProject(view,m.worldX,m.worldY-m.level*18);
+      const rgb=(x,y)=>[...c.getImageData(Math.floor(x),Math.floor(y),1,1).data].slice(0,3);
+      pixels.push({angle,center:rgb(at.x,at.y),left:rgb(at.x-38,at.y),
+        right:rgb(at.x+38,at.y)});
+    }
+    return {pixels};
+  })()`);
+  if(rampPaintPixels.error||rampPaintPixels.pixels?.length!==3||
+    rampPaintPixels.pixels.some(p=>
+      p.center[0]<p.left[0]+70||
+      p.center[0]<p.right[0]+70||
+      p.left[1]<p.center[1]+35||
+      p.right[1]<p.center[1]+35))
+    throw Error('PR318 real Chromium slope painted whole-road instead of narrow stroke: '+
+      JSON.stringify(rampPaintPixels));
+  console.log('GREEN Chromium PR318: 24-unit route stays narrow on 140-unit forest slope at 90/55/35 degrees');
+
   // Real browser save -> file download -> import using the SAME official
   // library. Debug numeric JSON remains hidden; no WorldDocument is touched.
   const mapLibrary=await run(`(async()=>{
