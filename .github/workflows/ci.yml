@@ -85,6 +85,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install screenshot decoder for black-frame regression proof
+        run: npm install --no-save --no-package-lock pngjs@7.0.0
       - name: Prove exact immutable HTTPS source really paints native 2.5D pixels
         env:
           EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}

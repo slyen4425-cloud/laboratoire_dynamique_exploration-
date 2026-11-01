@@ -3,6 +3,8 @@ import {spawn,spawnSync} from 'node:child_process';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import pngjs from 'pngjs';
+const {PNG}=pngjs;
 const sha=process.env.EXPLORATION_SHA;
 if(!/^[a-f0-9]{40}$/.test(sha||''))throw Error('Missing immutable source SHA');
 const url='https://raw.githack.com/slyen4425-cloud/laboratoire_dynamique_exploration-/'+sha+'/sculpt-lab.html';
@@ -79,16 +81,41 @@ try{
  "}catch(e){return {exists:true,w,h,initialized,error:String(e)}}})()"
  ].join('');
  let pixels;
- for(let n=0;n<110;n++){
+ for(let n=0;n<100;n++){
    pixels=await read(expression);
-   if(pixels?.initialized&&pixels.w>300&&pixels.h>150&&pixels.colors>=4&&pixels.visible>=8)break;
+   if(pixels?.initialized&&pixels.w>300&&pixels.h>150&&(
+     pixels.colors>=4&&pixels.visible>=8 || String(pixels.error||'').includes('SecurityError')))break;
    await sleep(500);
+ }
+ // The browser legitimately taints a canvas after drawing third-party imagery.
+ // CDP screenshots capture the actual *displayed* compositor, without changing
+ // CORS flags, touching the original textures, or fabricating render pixels.
+ let screenshotProof=null;
+ if(pixels?.initialized&&pixels.w>300&&pixels.h>150){
+   const rect=await read("(()=>{const c=document.querySelector('#sculpt-canvas');c.scrollIntoView({block:'center',behavior:'instant'});const r=c.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};})()");
+   await sleep(280);
+   if(rect.x>=0&&rect.y>=0&&rect.width>300&&rect.height>150){
+     const captured=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:true,
+       clip:{x:rect.x,y:rect.y,width:rect.width,height:rect.height,scale:1}});
+     const png=PNG.sync.read(Buffer.from(captured.result.data,'base64'));
+     const colors=new Set();let lit=0;
+     for(let y=1;y<=11;y++)for(let x=1;x<=11;x++){
+       const px=Math.min(png.width-1,Math.floor(png.width*x/12));
+       const py=Math.min(png.height-1,Math.floor(png.height*y/12));
+       const i=(py*png.width+px)*4, r=png.data[i],g=png.data[i+1],b=png.data[i+2];
+       colors.add(r+','+g+','+b);if(r+g+b>80)lit++;
+     }
+     screenshotProof={width:png.width,height:png.height,colors:colors.size,litSamples:lit};
+   }
  }
  const fatal=issues.filter(x=>/framePending|ReferenceError|TypeError|Cannot access|Failed to fetch/i.test(x));
  const diagnostic=await read('(()=>({href:location.href,title:document.title,contentType:document.contentType,body:document.body?.innerText?.slice(0,800),head:document.documentElement?.outerHTML?.slice(0,700),readyState:document.readyState}))()');
- if(!(pixels?.initialized&&pixels.w>300&&pixels.h>150&&pixels.colors>=4&&pixels.visible>=8)||fatal.length)
-   throw Error('Native HTTPS 2.5D source or renderer not usable: '+JSON.stringify({sha,pixels,document:diagnostic,errors:issues.slice(-18)}));
- console.log('GREEN real 2.5D HTTPS pixels '+JSON.stringify({sha,...pixels,errorCount:issues.length}));
+ if(!(pixels?.initialized&&pixels.w>300&&pixels.h>150&&
+   screenshotProof?.colors>=4&&screenshotProof.litSamples>=8)||fatal.length)
+   throw Error('Native HTTPS 2.5D screenshot has no drawn terrain: '+
+     JSON.stringify({sha,pixels,screenshotProof,document:diagnostic,errors:issues.slice(-18)}));
+ console.log('GREEN native 2.5D visual HTTPS compositor pixels '+
+   JSON.stringify({sha,...pixels,screenshotProof,errorCount:issues.length}));
 }finally{
  try{socket?.close()}catch{}
  if(chrome){
