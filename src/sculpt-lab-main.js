@@ -1117,7 +1117,7 @@ function syncQuickToolbar(){
 }
 function adjustQuickLevel(delta){
   const el=editorKind==='water' ? $('water-target') : $('target');
-  const limit=editorKind==='water'?10:7;
+  const limit=editorKind==='water'?10:16;
   const minimum=editorKind==='ground'&&
     (selectedMode==='sphere-hill'||selectedMode==='sphere-basin')?1:0;
   el.value=String(Math.max(minimum,Math.min(limit,Number(el.value)+delta)));
@@ -1371,8 +1371,8 @@ function stroke(event){
       source.origin.x+world.x-source.start.x));
     const y=Math.max(.001,Math.min(terrain.height*SCULPT_TILE.height-.001,
       source.origin.y+world.y-source.start.y));
-    // The SAME native bridge permission as placement: a bridge may be
-    // repositioned on wet cells, all other kinds must stay on dry ground.
+    // The SAME native placement policy: bridges and nonblocking waterfalls
+    // may move over water; solid buildings/trees/rocks remain forbidden.
     const current=placedObjects.find(o=>o.id===source.id);
     if(!current||!sculptObjectCanOccupyCell(terrain,current.objectDefinitionId,
       Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height)))return;
