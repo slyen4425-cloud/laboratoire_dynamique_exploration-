@@ -73,8 +73,9 @@ try{
    await sleep(500);
  }
  const fatal=issues.filter(x=>/framePending|ReferenceError|TypeError|Cannot access|Failed to fetch/i.test(x));
+ const diagnostic=await read('(()=>({href:location.href,title:document.title,contentType:document.contentType,body:document.body?.innerText?.slice(0,800),head:document.documentElement?.outerHTML?.slice(0,700),readyState:document.readyState}))()');
  if(!(pixels?.initialized&&pixels.w>300&&pixels.h>150&&pixels.colors>=4&&pixels.visible>=8)||fatal.length)
-   throw Error('Native HTTPS 2.5D map still black: '+JSON.stringify({sha,pixels,errors:issues.slice(-18)}));
+   throw Error('Native HTTPS 2.5D source or renderer not usable: '+JSON.stringify({sha,pixels,document:diagnostic,errors:issues.slice(-18)}));
  console.log('GREEN real 2.5D HTTPS pixels '+JSON.stringify({sha,...pixels,errorCount:issues.length}));
 }finally{
  try{socket?.close()}catch{}
