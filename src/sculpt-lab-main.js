@@ -281,7 +281,7 @@ function refreshSculptEncounterEditor(){
       ?'Cette famille est le sol de base : aucune peinture nécessaire.'
       :'Sol de base : '+baseName+'. '+familyName+' s’applique sur les zones et routes de cette famille.';
   const profile=sculptEncounterProfile();
-  const worldDistance=sculptEncounterConfig.checkDistance??300;
+  const worldDistance=sculptEncounterConfig.checkDistance??160;
   $('sculpt-encounter-distance').value=String(worldDistance);
   $('sculpt-encounter-distance-value').textContent=worldDistance+' points';
   const zone=sculptCurrentAreaEncounterSettings()??{};
@@ -372,7 +372,7 @@ if(sculptEncounterEditor){
       f.terrainFamilyId===surface.baseTerrainFamilyId);
     setSculptCurrentAreaEncounterOverrides(enabled?{
       chancePercentOverride:base?.encounterChancePercent??0,
-      checkDistanceOverride:sculptEncounterConfig.checkDistance??300
+      checkDistanceOverride:sculptEncounterConfig.checkDistance??160
     }:{chancePercentOverride:null,checkDistanceOverride:null});
     refreshSculptEncounterEditor();
   });
