@@ -918,6 +918,25 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   Rencontres aléatoires autorisées dans cette zone
  </label>
  <output id="sculpt-encounter-area-status" aria-live="polite"></output>
+ <label class="sculpt-encounter-editor__toggle">
+  <input id="sculpt-encounter-custom" type="checkbox">
+  Personnaliser cette zone (sinon, reprendre les règles du monde)
+ </label>
+ <div id="sculpt-encounter-custom-controls" hidden>
+  <label>Intensité locale (100 % = règles du monde)
+   <span class="sculpt-encounter-editor__chance">
+    <input id="sculpt-encounter-intensity" type="range" min="0" max="300" step="10" value="100">
+    <output id="sculpt-encounter-intensity-value" for="sculpt-encounter-intensity">100 %</output>
+   </span>
+  </label>
+  <label>Distance entre rencontres dans cette zone
+   <span class="sculpt-encounter-editor__chance">
+    <input id="sculpt-encounter-local-distance" type="range" min="80" max="2000" step="20" value="300">
+    <output id="sculpt-encounter-local-distance-value" for="sculpt-encounter-local-distance">300 points</output>
+   </span>
+  </label>
+  <small>Les éléments et raretés restent ceux du monde. Décoche pour restaurer l'héritage.</small>
+ </div>
  <label>Famille de terrain à configurer
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>
