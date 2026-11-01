@@ -2508,8 +2508,8 @@ function refreshFamilyEncounterControls() {
       : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
 
   const profile = encounterProfile();
-  $('family-encounter-distance').value=String(draft.encounterConfig?.checkDistance??300);
-  $('family-encounter-distance-value').value=String(draft.encounterConfig?.checkDistance??300)+' points';
+  $('family-encounter-distance').value=String(draft.encounterConfig?.checkDistance??160);
+  $('family-encounter-distance-value').value=String(draft.encounterConfig?.checkDistance??160)+' points';
   const overrides=area?.encounters??{};
   const custom=Number.isFinite(overrides.chancePercentOverride)||
     Number.isFinite(overrides.checkDistanceOverride);
@@ -2521,7 +2521,7 @@ function refreshFamilyEncounterControls() {
   const baseProfile=draft.encounterConfig?.families.find(f=>
     f.terrainFamilyId===area?.surface?.baseTerrainFamilyId);
   const zoneChance=overrides.chancePercentOverride??baseProfile?.encounterChancePercent??0;
-  const zoneDistance=overrides.checkDistanceOverride??draft.encounterConfig?.checkDistance??300;
+  const zoneDistance=overrides.checkDistanceOverride??draft.encounterConfig?.checkDistance??160;
   $('area-encounter-override-chance').value=String(zoneChance);
   $('area-encounter-override-chance-value').value=Math.round(zoneChance)+' %';
   $('area-encounter-override-distance').value=String(zoneDistance);
