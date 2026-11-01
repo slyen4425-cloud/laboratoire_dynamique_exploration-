@@ -3,6 +3,7 @@
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
 import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptCameraProject} from './sculpt-camera-projection.js';
+import {sculptSurfacePaintAt} from '../world/sculpt-surface-paint.js';
 
 export function sculptRampVisualMesh(terrain,object,{
   cellWidth=28,cellHeight=21,rise=18,view=null,segments=16
@@ -26,7 +27,7 @@ export function sculptRampVisualMesh(terrain,object,{
       const x=cx+sx*sign*width*.5,y=cy+sy*sign*width*.5-level*rise;
       return Object.freeze(view?sculptCameraProject(view,x,y):{x,y});
     };
-    samples.push(Object.freeze({left:project(-1),right:project(1),level}));
+    samples.push(Object.freeze({left:project(-1),right:project(1),level,worldX:cx,worldY:cy}));
   }
   return Object.freeze({valid:!!corridor,id:object.id,
     footLevel:corridor?.bottomLevel??null,headLevel:corridor?.topLevel??null,
@@ -37,7 +38,7 @@ export function sculptRampVisualMesh(terrain,object,{
 // or isolated color palette. Its mesh follows the canonical incline corridor.
 export function drawSculptRamp(ctx,object,terrain,{
   view=null,tileWidth=28,tileHeight=21,rise=18,
-  texture=null,baseColor='#677955'
+  texture=null,baseColor='#677955',paintSurface=null,paintImages=null
 }={}){
   const mesh=sculptRampVisualMesh(terrain,object,
     {cellWidth:tileWidth,cellHeight:tileHeight,rise,view,segments:24});
@@ -49,9 +50,30 @@ export function drawSculptRamp(ctx,object,terrain,{
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
     pattern.setTransform(new DOMMatrix().scale(.55));
   ctx.fillStyle=pattern??baseColor;
+  // For a painted WorldSurface the base material can be brown dirt while the
+  // *visible* ground is forest floor/snow/road. Project the exact existing
+  // WorldSurface stroke material onto each incline strip, never substituting
+  // a fixed grass color or storing a second texture in the terrain ramp.
+  const authoredPatterns=new Map();
+  const patternFor=materialId=>{
+    if(!paintImages||!materialId)return null;
+    if(authoredPatterns.has(materialId))return authoredPatterns.get(materialId);
+    const image=paintImages.get(materialId);
+    let painted=null;
+    if(image?.naturalWidth&&typeof ctx.createPattern==='function'){
+      painted=ctx.createPattern(image,'repeat');
+      if(painted?.setTransform&&typeof DOMMatrix!=='undefined')
+        painted.setTransform(new DOMMatrix().scale(.55));
+    }
+    authoredPatterns.set(materialId,painted);
+    return painted;
+  };
   // Slight overlap closes micro gaps created by device-pixel rasterization.
   for(let i=1;i<rows.length;i++){
     const a=rows[i-1],b=rows[i];
+    const materialId=sculptSurfacePaintAt(paintSurface,
+      (a.worldX+b.worldX)/2,(a.worldY+b.worldY)/2);
+    ctx.fillStyle=patternFor(materialId)??pattern??baseColor;
     ctx.beginPath();ctx.moveTo(a.left.x,a.left.y);
     ctx.lineTo(b.left.x,b.left.y);ctx.lineTo(b.right.x,b.right.y);
     ctx.lineTo(a.right.x,a.right.y);ctx.closePath();ctx.fill();
