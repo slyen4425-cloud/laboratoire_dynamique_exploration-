@@ -1,3 +1,15 @@
+# Publication de test isolée — rendu 2,5D PR327 (1 novembre 2026)
+
+- **But** : permettre le test Pixel de la correction de l'écran noir sans promouvoir la PR327 dans le moteur \`main\`, et sans retirer V80 ni les aperçus PR301/PR318/PR325.
+- **Départ** : \`main@ba0701224b764f4c60d4294c9729a49ade5869ad\`, checkpoint \`checkpoint/exploration-sculpt-boot-pr327-preview-start-2026-11-01\`, branche \`work/exploration-sculpt-boot-pr327-preview-2026-11-01\`.
+- **Source unique** : PR327 \`9b9ca751cf37b5a23dd46c7c2aab4253d60ad9be\` épinglée en lecture seule, CI [41333645753](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41333645753) GREEN avec vrais pixels HTTPS, CI du publisher PR [41333645761](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41333645761) GREEN sans déploiement. Aucune autre source de règles ou de moteur.
+- **TDD RED** : \`tests/sculpt-boot-pr327-preview-publisher.test.js\`, commit \`b7413f3e5e0556ca88e5c07c6a68ef3616a7ef03\`, [run 41335187253](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41335187253) avec \`core-tests / Run npm test\` en échec attendu, avant l'ajout du publisher.
+- **Autorité Pages** : seul \`.github/workflows/publish-v81-main.yml\`; copier un artefact complet \`/preview/sculpt-boot-pr327/\` à partir du SHA immuable et de Combat \`main\`. Préserver byte-for-byte les quatre aperçus existants et la V80.
+- **Gates avant lien actif** : CI Core/Chromium de la branche publisher, test réel du rendu dans l'artefact assemblé, intégration contrôlée du seul publisher, déploiement Pages réussi, vérification HTTPS de \`release-provenance.v1.json\`, HTML et JS sur le SHA exact. Le statut produit et la promotion moteur \`main\` restent **NON GREEN** jusqu'à validation smartphone. Ne jamais affirmer le lien servi à la seule ouverture de la PR.
+- **Hors périmètre** : aucun changement à WorldDocument, WorldArea, textures, collisions, moteur Combat, GenSrpg, ou aux données personnelles. Pas de rattrapage par une deuxième source de vérité.
+
+---
+
 # Publication isolée — cascades sur eau et terrain 16 niveaux (1 novembre 2026)
 
 - **Demande de test** : Cascades V3 refusées sur les cellules humides alors que les présets les posent, et relief du terrain plafonné à 7 niveaux. Rehausser la sculpture et permettre les cascades de la rive haute vers le plan d'eau. Ne PAS modifier la hauteur des sprites cascade.
