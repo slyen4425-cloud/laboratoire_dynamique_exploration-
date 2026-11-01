@@ -1,3 +1,13 @@
+# Correction — placement des cascades animées sur l’eau (1 novembre 2026)
+
+- **Signal** : impossible de poser ou glisser une cascade dans l’eau pour la faire descendre d’un terrain élevé vers un bassin. Les presets riches avaient leur propre exception sur ID `objectdef.waterfall.*`, mais l’éditeur refusait tout objet non-pont.
+- **Départ / autorité** : checkpoint `checkpoint/exploration-waterfall-wet-placement-start-2026-11-01` au SHA `0dc90b9778b0a9e530adf7e90ac6d2506599c952` de PR318 validée pour les pentes. Une branche `work/exploration-waterfall-wet-placement-2026-11-01`. Règle unique de placement `sculptObjectCanOccupyCell` dans Scene Preview et définition native du catalogue ; la hauteur et l’eau restent exclusivement `SculptTerrain`.
+- **Correction** : autoriser sur cellules immergées les quatre définitions `decor` dont l’asset déclaré est `object.waterfall.*` ; autres décors, maisons, arbres, rochers, escaliers refusés, ponts préservés. Le placement, le drag et la génération des cartes exemples utilisent la même permission. Message d’interdiction clarifié.
+- **Tests** : TDD RED `tests/sculpt-waterfall-wet-placement-regression.test.js`, cas 4 cascades, étang, arbres/rochers/maisons bloqués, pont et carte sérialisée inchangés, contrat éditeur/drag/presets, sentinelles Node et Chromium. Validation tactile Pixel sur vraie carte avant checkpoint GREEN utilisateur.
+- **Hors périmètre** : hauteur des terrains (lot indépendant), limites d’objets, navigation, physique de l’eau, collisions, sprites, Combat, main et V80.
+
+---
+
 # Régression PR316 — route peinte recouvre intégralement la pente (1 novembre 2026)
 
 - **Signal utilisateur, reproduction** : après publication de la preview `/preview/ramp-pr316/` (CI GREEN `41288365269`, Pages `41298380614`), peindre une route de 24 unités de large sur une pente native de 140 unités couvre **toute la largeur de la pente**. L'algorithme PR316 échantillonnait le matériau au milieu de chacune des 24 bandes et remplissait la bande entière avec cette texture.
