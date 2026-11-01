@@ -1,3 +1,15 @@
+# Consolidation du Labo Exploration vers une version stable unifiée (1 novembre 2026)
+
+- **Clarification utilisateur** : l'écran noir concerne le raccord GenSrpg, pas le Labo Exploration ; ne PAS intégrer PR327 dans le moteur Labo. Fermeture PR328 sans merge (prévisualisation inutile). La demande prioritaire du Labo était le terrain 16 niveaux sur cartes anciennes et les cascades sur eau.
+- **Objectif** : une seule version officielle moderne remplace V80 après preuves, sans masquer les commandes ni inventer un deuxième WorldDocument, un deuxième catalogue Combat ou un second publisher.
+- **Départ** : main `ba0701224b764f4c60d4294c9729a49ade5869ad`, checkpoint `checkpoint/exploration-unified-v80-replacement-start-2026-11-01`, branche `work/exploration-unified-main-v80-replacement-2026-11-01`.
+- **Consolidation à deux parents** : commit `813cf8c0058e391cef080ba1c0846e1136fe92d6` conserve les 16 commits main récents (workflow, charte, tests, URLs) et apporte le code natif complet du SHA PR325 `d4b9d8c804e592392c5b7a2ec7cc2f160291a076` (lignée PR301, 313, 316, 318, 320, 325), exactement 52 chemins de code/tests modifiés. Aucune copie du correctif PR327. Les deux propriétaires des mêmes données ne sont pas lancés en parallèle.
+- **Gates** : TDD RED pour la recette de publication stable, CI Node + Chromium du SHA consolidé, contrôle réel d'une ancienne carte de niveau 7 qui passe à 16, route sur pente non élargie, cascades eau, portes/intérieurs, round-trip sauvegarde, audio et raccord Combat main. Déploiement Pages et contrôle HTTPS exact puis validation mobile de la release complète.
+- **Publication** : le seul workflow `.github/workflows/publish-v81-main.yml` doit faire du moteur source `main` la version canonique du site `/sculpt-lab.html` et du World Builder `/world-assembler.html`. V80 conserve le statut de checkpoint historique/retour arrière seulement, jamais autorité runtime. Les previews immuables ne sont pas la source du moteur canonique.
+- **Statut** : candidat non validé ; ne pas déclarer GREEN, ne pas fusionner/promouvoir sur main avant les preuves complètes, et préserver les sauvegardes existantes. Les branches divergentes restantes font l'objet d'un audit de portée/validation avant toute prise en charge.
+
+---
+
 # Publication isolée — cascades sur eau et terrain 16 niveaux (1 novembre 2026)
 
 - **Demande de test** : Cascades V3 refusées sur les cellules humides alors que les présets les posent, et relief du terrain plafonné à 7 niveaux. Rehausser la sculpture et permettre les cascades de la rive haute vers le plan d'eau. Ne PAS modifier la hauteur des sprites cascade.
