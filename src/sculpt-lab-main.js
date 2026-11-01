@@ -2834,8 +2834,10 @@ $('water-target').addEventListener('input',()=>{
   syncQuickToolbar();status('Surface d’eau absolue : niveau '+$('water-target').value);scheduleDraw();
 });
 function changeTarget(level){
+ // The preview already uses SCULPT_TERRAIN_MAX_LEVEL throughout the
+ // heightfield, imports and quickbar. Do not reintroduce the old UI 7 cap.
  const value=Math.max(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?1:0,
-    Math.min(7,Number(level)));
+    Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
  syncQuickToolbar();status(selectedMode==='sphere-basin'?'Profondeur sphérique : −'+value+' niveaux':
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':

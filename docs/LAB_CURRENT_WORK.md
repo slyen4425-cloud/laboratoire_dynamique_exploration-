@@ -1,3 +1,13 @@
+# Régression — niveau 8+ bloqué dans l'éditeur malgré le modèle 16 (1 novembre 2026)
+
+- **Signal utilisateur** : avec une carte antérieure `foret_1`, le réglage ne dépasse pas 7 malgré la version de test censée autoriser 16. **Une carte ancienne doit pouvoir dépasser 7**, sans migration ni nouvelle carte.
+- **Cause précise** : dans le SHA publié de PR320 `c6ab2df548f5bcb0fe797d3f851d5ca10b1a1c1d`, `changeTarget` de `src/sculpt-lab-main.js` utilisait encore `Math.min(7, Number(level))`, en dépit de la constante de hauteur 16 dans le modèle, le slider et la barre rapide. Le test Chromium PR320 montait à 16 via un appel **direct au modèle** ; il n'exerçait pas les boutons effectivement utilisés par le joueur.
+- **Correction racine** : remplacer la dernière limite 7 dans `changeTarget` par `SCULPT_TERRAIN_MAX_LEVEL` (source unique), garder eau et autres modes intacts; modifier le cache-buster du module principal dans le HTML pour empêcher de rejouer une ancienne version chargée.
+- **Preuves** : nouveau RED `tests/sculpt-terrain-legacy-ui-16-regression.test.js` (UI, ancienne carte, sauvegarde), test **vrai Chromium** avec + détaillé 7→8, + barre rapide 8→9, slider→16 et borne 16; le test retourne le mode et la carte à leurs états initiaux. CI Node et Chromium SHA exact, publication preview épinglée et HTTPS puis validation tactile Pixel, sans toucher à V80/Combat.
+- **Isolé** : checkpoint `checkpoint/exploration-height-16-ui-start-2026-11-01` sur PR320, développement `work/exploration-height-16-ui-regression-2026-11-01`. Ne pas fusionner directement PR320 dans main avant validation de ce correctif.
+
+---
+
 # Cascades sur l'eau et terrain au-delà de 7 niveaux — 1 novembre 2026
 
 - **Signal exact utilisateur** : dans l'éditeur 2,5D, impossible de placer ou déplacer les cascades au-dessus de l'eau ; le **terrain sculpté** s'arrête au niveau 7. La taille/hauteur des sprites des cascades n'est PAS demandée à être augmentée.
