@@ -1,3 +1,14 @@
+# Extension — plafond du relief de 7 à 16 niveaux (1 novembre 2026)
+
+- **Demande précise** : le maximum de **7 cases en hauteur** concerne la sculpture des niveaux de terrain, non la longueur/hauteur d'une cascade. L'autorisation des cascades au-dessus de l'eau est corrigée dans un lot séparé.
+- **Départ** : la branche de travail de l'eau `work/exploration-waterfall-wet-placement-2026-11-01` SHA `c84f9c975eb0e02b67ac056e4bdc43cb21e06d6e`, checkpoint `checkpoint/exploration-terrain-height-16-start-2026-11-01`, branche `work/exploration-terrain-height-16-2026-11-01`.
+- **Cause** : le modèle `SculptTerrain` bloquait les niveaux >7 lors de la création, des coups de pinceau et de l'import; le curseur, les commandes +/− et le panneau détaillé avaient chacun leur propre limite. Le plafond de base des collines sphériques reposait également sur 7.
+- **Solution** : une constante canonique `SCULPT_MAX_TERRAIN_LEVEL=16` (plafond de sécurité adapté au format mobile) utilisée par les outils de sculpture, la validation et la sérialisation sans changement de version ; UI synchronisée. Les collines sphériques gardent leur **hauteur individuelle maximum 7** ; elles peuvent désormais être construites sur un plateau 12+. La limite d'eau indépendante à 10 demeure. Les cartes existantes de 0 à 7 restent identiques.
+- **Tests** : `tests/sculpt-terrain-height-16-regression.test.js` TDD RED : niveau 12/16, pinceau, import/export anciens/nouveaux, haut plateau avec colline sphérique et rampe, bornes UI; CI Node+Chromium et validation Pixel avant checkpoint GREEN. Conserver la collision et la caméra canoniques, aucun double relief ou migration destructive.
+- **Hors périmètre** : hauteur des sprites de cascades, modèles des créatures, Combat, carte personnelle, V80 stable et main. Publication test uniquement après CI des deux lots.
+
+---
+
 # Correction — placement des cascades animées sur l’eau (1 novembre 2026)
 
 - **Signal** : impossible de poser ou glisser une cascade dans l’eau pour la faire descendre d’un terrain élevé vers un bassin. Les presets riches avaient leur propre exception sur ID `objectdef.waterfall.*`, mais l’éditeur refusait tout objet non-pont.
