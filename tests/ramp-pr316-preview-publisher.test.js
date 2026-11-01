@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const workflow=readFileSync(new URL('../.github/workflows/publish-v81-main.yml',import.meta.url),'utf8');
-const rampSha='c8d689796bddeccd4e772e4c17fd6893818c84fe';
+const rampSha='0dc90b9778b0a9e530adf7e90ac6d2506599c952';
 test('single Pages publisher stages immutable PR316 ramp test preview alongside original PR301 and V80',()=>{
  assert.match(workflow,new RegExp(rampSha));
  assert.match(workflow,/path: ramp-source/);
