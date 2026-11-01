@@ -88,7 +88,11 @@ export function sculptObjectCanOccupyCell(terrain,definitionId,col,row){
     col<0||row<0||col>=terrain.width||row>=terrain.height)return false;
   const definition=objectDefinitionCatalogV1.get(definitionId);
   if(!definition||!allowable.has(definitionId))return false;
-  return sculptWaterAt(terrain,col,row)<=0||definition.kind==='bridge';
+  // Exactly the four catalog-owned animated waterfall visuals are water-safe
+  // decoration. All other decor/solid objects remain on dry ground.
+  return sculptWaterAt(terrain,col,row)<=0||definition.kind==='bridge'||
+    (definition.kind==='decor'&&
+     definition.visual?.assetId?.startsWith('object.waterfall.'));
 }
 export function sculptPreviewVariants(definitionId){
   const def=objectDefinitionCatalogV1.get(definitionId);
