@@ -92,7 +92,10 @@ export function createEncounterController({
 
     // WorldDocument owns the live cadence; the constructor remains a fallback
     // for legacy callers and focused tests. No second timer or travel state.
-    const effectiveThreshold = positiveDistance(checkDistance, threshold);
+    const effectiveThreshold = positiveDistance(
+      area.encounters?.checkDistance,
+      positiveDistance(checkDistance, threshold)
+    );
     if (travelledSinceCheck < effectiveThreshold) {
       return null;
     }
@@ -116,6 +119,7 @@ export function createEncounterController({
       terrainFamilyId: family.terrainFamilyId,
       config: encounterConfig,
       captureCatalog,
+      chanceScalePercent: area.encounters?.intensityPercent,
       random
     });
 
