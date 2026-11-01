@@ -2552,7 +2552,7 @@ function applyObjectAtCell(cell){
   const definitionId=$('object-definition').value;
   // Placement and drag use one Scene Preview authoring permission.
   if(!sculptObjectCanOccupyCell(terrain,definitionId,cell.x,cell.y)){
-    status('Pose refusée dans l’eau : choisir une case de terre sèche');return;
+    status('Pose refusée : seul un pont ou une cascade peut être placé dans l’eau');return;
   }
   const kind=objectDefinitionCatalogV1.get(definitionId)?.kind;
   const bridgeMode=kind==='bridge',stairMode=kind==='stairs'||kind==='ramp';
