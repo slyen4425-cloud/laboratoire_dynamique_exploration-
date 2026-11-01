@@ -73,6 +73,45 @@ try{
   if(!boot)throw Error('Sculpt lab did not boot: '+JSON.stringify(await run(`({title:document.title,resources:performance.getEntriesByType('resource').map(x=>x.name).slice(-10)})`)));
   if(boot.faceCount<20||boot.levelSpread<3||boot.width!==36||boot.height!==24)
     throw Error('Sculpt heightfield demo or generated cliffs absent: '+JSON.stringify(boot));
+  // Waterfall-on-water + terrain maximum test in REAL loaded Sculpt UI.
+  const waterfallTerrainGate=await run(`(async()=>{
+    const slider=document.querySelector('#target');
+    const previous=slider.value;
+    slider.value='7';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#level-up').click();
+    const clicked=Number(slider.value);
+    slider.value=previous;slider.dispatchEvent(new Event('input',{bubbles:true}));
+    const {createSculptTerrain,applySculptStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain}
+      =await import('/src/world/sculpt-height-model.js');
+    const {sculptObjectCanOccupyCell,appendSculptPreviewObject,updateSculptPreviewObject}
+      =await import('/src/world/sculpt-scene-preview.js');
+    const W=14,H=14,levels=Array(W*H).fill(2),waterLevels=Array(W*H).fill(-1);
+    levels[7*W+9]=0;waterLevels[7*W+9]=5;
+    const terrain=createSculptTerrain({width:W,height:H,levels,waterLevels});
+    const ids=['front_wide','side_narrow','three_quarter','tiered'];
+    const allowed=ids.every(kind=>sculptObjectCanOccupyCell(terrain,
+      'objectdef.waterfall.'+kind+'.01',9,7));
+    const forbidden=!sculptObjectCanOccupyCell(terrain,
+      'objectdef.building.house.blue_cottage.01',9,7);
+    const waterfallId='objectdef.waterfall.front_wide.01';
+    const item=appendSculptPreviewObject([],{definitionId:waterfallId,
+      x:7.5*28,y:7.5*21,scale:.5});
+    const moved=updateSculptPreviewObject(item,item[0].id,
+      {x:9.5*28,y:7.5*21});
+    const high=applySculptStroke(terrain,{mode:'plateau',target:16,
+      points:[{x:5.5,y:5.5}],radius:1});
+    const roundtrip=importSculptTerrain(serializeSculptTerrain(high));
+    return {sliderMax:Number(slider.max),clicked,allowed,forbidden,
+      wet:sculptWaterAt(terrain,9,7),moved:moved[0].transform.x===9.5*28,
+      height:high.levels[5*W+5],roundtrip:roundtrip.levels[5*W+5]};
+  })()`);
+  if(waterfallTerrainGate.sliderMax!==16||waterfallTerrainGate.clicked!==8||
+    !waterfallTerrainGate.allowed||!waterfallTerrainGate.forbidden||
+    waterfallTerrainGate.wet<=0||!waterfallTerrainGate.moved||
+    waterfallTerrainGate.height!==16||waterfallTerrainGate.roundtrip!==16)
+    throw Error('Real Chromium waterfall wet placement or level>7 editor regression: '+
+      JSON.stringify(waterfallTerrainGate));
+  console.log('GREEN real Chromium: 4 native waterfalls over water, drag, UI level 8/16 and saved 16');
   const pixelInfo=await run(`(()=>{const canvas=document.querySelector('#sculpt-canvas');
      const p=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
      let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
