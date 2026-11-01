@@ -36,10 +36,11 @@ function checkEncounter(world, {x=1370,y=800} = {}) {
   return controller.step({...context,player:{currentAreaId:area.id,x,y}});
 }
 
-test('new blank exterior allows encounters once the author configures the family; no automatic odds are inserted', () => {
+test('new blank exterior inherits calm global odds and allows an explicit family override', () => {
   const blank=makeForest();
   assert.equal(blank.areas[0].encounters.randomEnabled,true);
-  assert.ok(blank.encounterConfig.families.every(p=>p.encounterChancePercent===0));
+  assert.equal(blank.encounterConfig.families.find(p=>p.terrainFamilyId==='forest').encounterChancePercent,6);
+  assert.equal(blank.encounterConfig.families.find(p=>p.terrainFamilyId==='road').encounterChancePercent,0);
   const world=configured(blank);
   assert.equal(validateWorldBuilderDraft(world).valid,true);
   const intent=checkEncounter(world);
@@ -84,7 +85,7 @@ test('Builder exposes Area-owned activation, visible warning and explanation of 
   const main=await readFile(new URL('../src/builder/world-builder-main.js',import.meta.url),'utf8');
   assert.match(html,/id="area-random-encounters-enabled"/);
   assert.match(html,/id="area-random-encounters-status"/);
-  assert.match(html,/160/);
+  assert.match(html,/300/);
   assert.match(html,/sol de base|sol principal/i);
   assert.match(html,/id="family-encounter-surface-info"/);
   assert.match(main,/baseFamilyId === selectedEncounterFamilyId/);
