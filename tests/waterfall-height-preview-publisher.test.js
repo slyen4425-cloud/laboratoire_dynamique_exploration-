@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const published=readFileSync(new URL('../.github/workflows/publish-v81-main.yml',import.meta.url),'utf8');
-const source='c6ab2df548f5bcb0fe797d3f851d5ca10b1a1c1d';
+const source='d4b9d8c804e592392c5b7a2ec7cc2f160291a076';
 test('independent GREEN waterfall/16-level preview uses exact pinned source and preserves old test links',()=>{
  assert.ok(published.includes('ref: '+source));
  assert.match(published,/path: waterfall-source/);
