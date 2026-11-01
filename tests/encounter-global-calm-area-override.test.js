@@ -18,11 +18,16 @@ function intent(controller,world,area,x){
   playerPartyRef:'party',rulesetId:'combat',random:()=>0});
 }
 
-test('new worlds inherit a calm, shared EncounterConfig without configuring each Area',()=>{
+test('new and historical worlds retain their authored probabilities until the global Calm command',()=>{
  const world=createBlankWorldBuilderDraft();
- assert.equal(world.encounterConfig.checkDistance,300);
- assert.equal(family(world,'forest').encounterChancePercent,6);
+ assert.equal(world.encounterConfig.checkDistance,160);
+ assert.equal(family(world,'forest').encounterChancePercent,0);
  assert.equal(family(world,'road').encounterChancePercent,0);
+ const calm=applyCalmEncounterBaseline(world);
+ assert.equal(calm.encounterConfig.checkDistance,300);
+ assert.equal(family(calm,'forest').encounterChancePercent,6);
+ assert.equal(family(calm,'road').encounterChancePercent,0);
+ assert.ok(family(calm,'forest').elementChances.length>0,'calm must configure eligible elements once for the whole world');
  assert.equal(world.areas[0].encounters.chancePercentOverride,undefined);
  assert.equal(world.areas[0].encounters.checkDistanceOverride,undefined);
 });
@@ -63,7 +68,7 @@ test('per-zone opt-in override and reset inherit one shared world config through
 });
 
 test('controller uses world cadence and a zone-specific override without second timer',()=>{
- const world=createBlankWorldBuilderDraft();
+ const world=applyCalmEncounterBaseline(createBlankWorldBuilderDraft());
  world.encounterConfig.families.find(f=>f.terrainFamilyId==='plain').elementChances=[{
   elementId:'nature',chancePercent:100
  }];
@@ -89,6 +94,7 @@ test('existing customized documents are never silently replaced with calm',()=>{
  const old=createWorldBuilderDraft({...source,encounterConfig:{
   version:1,families:source.encounterConfig.families
  }});
+ assert.equal(old.encounterConfig.checkDistance,160);
  assert.equal(family(old,'forest').encounterChancePercent,81);
  assert.equal(old.areas[0].encounters.chancePercentOverride,undefined);
 });
