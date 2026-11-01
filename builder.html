@@ -360,6 +360,25 @@
             Autoriser les rencontres aléatoires dans l'Area actuelle
           </label>
           <p id="area-random-encounters-status" class="builder-hint" role="status"></p>
+          <label class="checkbox-line">
+            <input id="area-encounter-custom" type="checkbox" />
+            Personnaliser les rencontres de cette zone (sinon, hériter du monde)
+          </label>
+          <div id="area-encounter-custom-controls" hidden>
+            <label>Intensité locale (100 % = règle du monde, 0 % = aucune rencontre)
+              <div class="brush-size-row">
+                <input id="area-encounter-intensity" type="range" min="0" max="300" step="10" value="100" />
+                <output id="area-encounter-intensity-value" for="area-encounter-intensity">100 %</output>
+              </div>
+            </label>
+            <label>Distance locale entre les vérifications
+              <div class="brush-size-row">
+                <input id="area-encounter-local-distance" type="range" min="80" max="2000" step="20" value="300" />
+                <output id="area-encounter-local-distance-value" for="area-encounter-local-distance">300 points</output>
+              </div>
+            </label>
+            <p class="builder-hint">Le terrain, les éléments et les raretés continuent d'utiliser la règle mondiale. Décoche pour revenir à l'héritage automatique.</p>
+          </div>
           <p class="builder-hint">
             La distance entre vérifications est réglable ci-dessous pour le monde entier.
             « Chance de rencontre » est la probabilité à chaque vérification, pas un délai en secondes.
