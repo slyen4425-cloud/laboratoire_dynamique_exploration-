@@ -918,7 +918,25 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   Rencontres aléatoires autorisées dans cette zone
  </label>
  <output id="sculpt-encounter-area-status" aria-live="polite"></output>
- <label>Famille de terrain à configurer
+ <button type="button" id="sculpt-encounter-calm-baseline">🌿 Mode calme pour toutes les zones (300 points)</button>
+ <label>Distance globale entre vérifications
+  <input id="sculpt-encounter-distance" type="range" min="80" max="2000" step="20" value="300">
+  <output id="sculpt-encounter-distance-value">300 points</output>
+ </label>
+ <label>Personnaliser uniquement la zone actuelle
+  <input id="sculpt-encounter-override-enabled" type="checkbox">
+ </label>
+ <div id="sculpt-encounter-override-controls" hidden>
+  <label>Chance propre à cette zone (tous terrains)
+   <input id="sculpt-encounter-override-chance" type="range" min="0" max="100" step="1" value="6">
+   <output id="sculpt-encounter-override-chance-value">6 %</output>
+  </label>
+  <label>Distance propre à cette zone
+   <input id="sculpt-encounter-override-distance" type="range" min="80" max="2000" step="20" value="300">
+   <output id="sculpt-encounter-override-distance-value">300 points</output>
+  </label>
+ </div>
+ <label>Famille de terrain à configurer globalement
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>
  <output id="sculpt-encounter-family-hint" aria-live="polite"></output>
@@ -934,7 +952,7 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
  </fieldset>
  <output id="sculpt-encounter-authoring-status" aria-live="polite"></output>
  <small id="sculpt-encounter-catalog-summary"></small>
- <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. Les rencontres se vérifient après déplacement, environ tous les 160 points (80 en mode test rapide). La texture ne modifie jamais ces règles. « Exporter scène » conserve tous les réglages.</small>
+ <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. Les rencontres héritent du mode calme du monde (300 points par défaut), sauf réglage volontaire de la zone. Le test rapide conserve son comportement dédié. La texture ne modifie jamais ces règles. « Exporter scène » conserve tous les réglages.</small>
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Pinceau de textures</strong>
