@@ -31,7 +31,8 @@ test('new blank map keeps one editable playable area and no demo content', () =>
   assert.equal(area.spawns.length, 1);
   assert.equal(blank.initialSpawnId, area.spawns[0].id);
   assert.equal(blank.initialAreaId, area.id);
-  assert.equal(blank.encounterConfig.families.every(p => p.encounterChancePercent === 0), true);
+  assert.equal(blank.encounterConfig.families.find(p => p.terrainFamilyId === 'forest').encounterChancePercent, 6);
+  assert.equal(blank.encounterConfig.families.find(p => p.terrainFamilyId === 'road').encounterChancePercent, 0);
   assert.ok(blank.terrainFamilies.some(f => f.id === 'plain'));
 });
 
