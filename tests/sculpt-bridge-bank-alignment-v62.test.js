@@ -49,8 +49,8 @@ test('V62 no duplicate authority, renderer and actual collision read identical s
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  assert.match(source,/sculptBridgeDeckHeight\(terrain,\[object\],t\.x,t\.y/);
-  assert.match(source,/const level=bridgeDeck\\?\\?\\(waterAllowed&&wet/);
-  assert.match(source,/sculptWaterAt\\(terrain,col,row\\)>0/);
+ assert.ok(source.includes('const level=bridgeDeck??(waterAllowed&&wet'));
+ assert.ok(source.includes('sculptWaterAt(terrain,col,row)>0'));
  assert.match(main,/sculpt-object-picking\.js\?rev=sculpt-(?:bridge-bank-v62|bridge-dimensions-v63|bridge-deck-anchor-v67)/);
  assert.match(page,/src\/sculpt-lab-main\.js\?rev=sculpt-(?:bridge-bank-v62|high-platform-bridge-v63|bridge-tactile-v64|bridge-camera-v65|bridge-input-v66|bridge-deck-anchor-v67)/);
 });
