@@ -106,6 +106,12 @@ jobs:
         with:
           ref: d4b9d8c804e592392c5b7a2ec7cc2f160291a076
           path: waterfall-source
+      # Render boot fix: separate immutable public preview, not a new terrain authority.
+      - name: Checkout pinned GREEN PR327 native sculpt bootstrap correction
+        uses: actions/checkout@v4
+        with:
+          ref: 9b9ca751cf37b5a23dd46c7c2aab4253d60ad9be
+          path: sculpt-boot-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
         with:
@@ -466,6 +472,55 @@ jobs:
             node scripts/smoke-sculpt-terrain-lab.mjs
           )
           rm "$waterfall/scripts"
+      - name: Stage isolated PR327 render-boot preview without modifying stable V80
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="9b9ca751cf37b5a23dd46c7c2aab4253d60ad9be"
+          test "$(git -C sculpt-boot-source rev-parse HEAD)" = "$source_sha"
+          folder="$GITHUB_WORKSPACE/site/preview/sculpt-boot-pr327"
+          test ! -e "$folder"
+          for approved in encounters-v80 rich-presets-pr301 ramp-pr316 waterfall-height-pr320; do
+            test -d "$GITHUB_WORKSPACE/site/preview/$approved"
+          done
+          mkdir -p "$folder"
+          cp sculpt-boot-source/sculpt-lab.html sculpt-boot-source/sculpt-lab-v80.html "$folder/"
+          cp sculpt-boot-source/world-assembler.html sculpt-boot-source/builder.html sculpt-boot-source/index.html "$folder/"
+          cp sculpt-boot-source/manifest.webmanifest "$folder/"
+          for asset in src assets; do
+            mkdir -p "$folder/$asset"
+            rsync -a --exclude='.git' "sculpt-boot-source/$asset/" "$folder/$asset/"
+          done
+          mkdir -p "$folder/combat-preview" "$folder/capture-assets"
+          rsync -a --exclude='.git' combat-source/ "$folder/combat-preview/"
+          rsync -a --exclude='.git' capture-source/ "$folder/capture-assets/"
+          jq -n --arg main "$(git -C combat-source rev-parse HEAD)" \
+            --arg author "$(git -C combat-author rev-parse HEAD)" \
+            --arg assets "$(git -C capture-source rev-parse HEAD)" \
+            --arg exploration "$source_sha" \
+            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$author,visualAssets:$assets,exploration:$exploration}' \
+            > "$folder/release-provenance.v1.json"
+          grep -Fq 'let sculptBootReady=false;' sculpt-boot-source/src/sculpt-lab-main.js
+          grep -Fq 'if(!sculptBootReady)return' "$folder/src/sculpt-lab-main.js"
+          grep -Fq 'sculptBootReady=true;fit();' "$folder/src/sculpt-lab-main.js"
+          test "$(grep -Fc 'let framePending=false;' "$folder/src/sculpt-lab-main.js")" = 1
+          cmp sculpt-boot-source/sculpt-lab.html "$folder/sculpt-lab.html"
+          cmp encounter-source/sculpt-lab.html site/preview/encounters-v80/sculpt-lab.html
+          cmp rich-source/sculpt-lab.html site/preview/rich-presets-pr301/sculpt-lab.html
+          cmp ramp-source/sculpt-lab.html site/preview/ramp-pr316/sculpt-lab.html
+          cmp waterfall-source/sculpt-lab.html site/preview/waterfall-height-pr320/sculpt-lab.html
+          jq -e --arg sha "$source_sha" '.exploration==$sha' "$folder/release-provenance.v1.json" >/dev/null
+      - name: Real Chromium PR327 booted terrain pixels in assembled preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          folder="$GITHUB_WORKSPACE/site/preview/sculpt-boot-pr327"
+          ln -s "$GITHUB_WORKSPACE/sculpt-boot-source/scripts" "$folder/scripts"
+          (
+            cd "$folder"
+            node scripts/smoke-sculpt-terrain-lab.mjs
+          )
+          rm "$folder/scripts"
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -548,6 +603,26 @@ jobs:
           grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/waterfall-height-pr320-main.js
           grep -Fq 'world-room-full-editor-v1-height16-ui-r1' /tmp/waterfall-height-pr320-sculpt.html
           echo 'LIVE PR325 UI fix verified in PR320 preview at exact SHA; V80 and PR318 pinned'
+      - name: Verify live HTTPS PR327 sculpt boot preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha="9b9ca751cf37b5a23dd46c7c2aab4253d60ad9be"
+          root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$root/preview/sculpt-boot-pr327/release-provenance.v1.json?run=$GITHUB_RUN_ID" \
+            -o /tmp/sculpt-boot-pr327-provenance.json
+          jq -e --arg sha "$sha" '.exploration==$sha' /tmp/sculpt-boot-pr327-provenance.json >/dev/null
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$root/preview/sculpt-boot-pr327/sculpt-lab.html?run=$GITHUB_RUN_ID" \
+            -o /tmp/sculpt-boot-pr327-lab.html
+          grep -Fq 'id="sculpt-canvas"' /tmp/sculpt-boot-pr327-lab.html
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$root/preview/sculpt-boot-pr327/src/sculpt-lab-main.js?run=$GITHUB_RUN_ID" \
+            -o /tmp/sculpt-boot-pr327-main.js
+          grep -Fq 'if(!sculptBootReady)return' /tmp/sculpt-boot-pr327-main.js
+          grep -Fq 'sculptBootReady=true;fit();' /tmp/sculpt-boot-pr327-main.js
+          echo 'LIVE PR327: source boot guard served at the exact pinned SHA; user mobile gate pending'
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |
