@@ -26,6 +26,9 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  setAreaEncounterOverrides,
+  applyCalmEncounterBaseline,
+  updateWorldEncounterCheckDistance,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled,
@@ -2505,6 +2508,24 @@ function refreshFamilyEncounterControls() {
       : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
 
   const profile = encounterProfile();
+  $('family-encounter-distance').value=String(draft.encounterConfig?.checkDistance??300);
+  $('family-encounter-distance-value').value=String(draft.encounterConfig?.checkDistance??300)+' points';
+  const overrides=area?.encounters??{};
+  const custom=Number.isFinite(overrides.chancePercentOverride)||
+    Number.isFinite(overrides.checkDistanceOverride);
+  $('area-encounter-override-enabled').checked=custom;
+  $('area-encounter-override-controls').hidden=!custom;
+  $('area-encounter-override-status').textContent=custom
+    ?'Cette zone utilise ses propres valeurs. Désactive la personnalisation pour retrouver les valeurs du monde.'
+    :'Cette zone hérite du monde et des familles de terrain sans copie locale.';
+  const baseProfile=draft.encounterConfig?.families.find(f=>
+    f.terrainFamilyId===area?.surface?.baseTerrainFamilyId);
+  const zoneChance=overrides.chancePercentOverride??baseProfile?.encounterChancePercent??0;
+  const zoneDistance=overrides.checkDistanceOverride??draft.encounterConfig?.checkDistance??300;
+  $('area-encounter-override-chance').value=String(zoneChance);
+  $('area-encounter-override-chance-value').value=Math.round(zoneChance)+' %';
+  $('area-encounter-override-distance').value=String(zoneDistance);
+  $('area-encounter-override-distance-value').value=String(zoneDistance)+' points';
   if (!profile) return;
 
   $('family-encounter-chance').value =
@@ -5514,6 +5535,43 @@ for (const [kind, selectId] of [
     }
   );
 }
+
+$('family-encounter-calm-baseline').addEventListener('click',()=>{
+  draft=applyCalmEncounterBaseline(draft);
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
+$('family-encounter-distance').addEventListener('input',()=>{
+  draft=updateWorldEncounterCheckDistance(draft,
+    Number($('family-encounter-distance').value));
+  $('family-encounter-distance-value').value=draft.encounterConfig.checkDistance+' points';
+  refreshJson();
+});
+$('area-encounter-override-enabled').addEventListener('change',()=>{
+  const on=$('area-encounter-override-enabled').checked;
+  const area=currentAreaRaw();
+  const base=draft.encounterConfig.families.find(f=>
+    f.terrainFamilyId===area?.surface?.baseTerrainFamilyId);
+  draft=setAreaEncounterOverrides(draft,selectedAreaId,on?{
+    chancePercentOverride:base?.encounterChancePercent??0,
+    checkDistanceOverride:draft.encounterConfig.checkDistance
+  }:{chancePercentOverride:null,checkDistanceOverride:null});
+  refreshFamilyEncounterControls();refreshJson();
+});
+$('area-encounter-override-chance').addEventListener('input',()=>{
+  draft=setAreaEncounterOverrides(draft,selectedAreaId,{
+    chancePercentOverride:Number($('area-encounter-override-chance').value)});
+  $('area-encounter-override-chance-value').value=
+    $('area-encounter-override-chance').value+' %';
+  refreshJson();
+});
+$('area-encounter-override-distance').addEventListener('input',()=>{
+  draft=setAreaEncounterOverrides(draft,selectedAreaId,{
+    checkDistanceOverride:Number($('area-encounter-override-distance').value)});
+  $('area-encounter-override-distance-value').value=
+    $('area-encounter-override-distance').value+' points';
+  refreshJson();
+});
 
 $('family-encounter-family').addEventListener(
   'change',
