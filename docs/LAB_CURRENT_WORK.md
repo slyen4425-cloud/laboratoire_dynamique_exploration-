@@ -1,3 +1,14 @@
+# Régression 2,5D — pente marron sur sol forestier peint (1 novembre 2026)
+
+- **Reproduction à partir du fichier utilisateur** : `foret-1.map-preset(3).json`, carte `foret_1` 80×60, 142 WorldObjects, sol de base `ground.dirt`, zones `ground.forest_floor` et tracés `road.dirt`. La scène importée ne contient encore aucune pente. Après création dans une zone de forêt, l'ancien rendu de pente projetait exclusivement `currentTexture` du **sol de base** : brun, malgré la forêt visuellement peinte sur le terrain.
+- **Checkpoint** : `checkpoint/exploration-ramp-painted-surface-start-2026-11-01` au SHA de PR301 `40955a7838beb8fb76e74fd4b941ce4bb7cd1505`. Une branche : `work/exploration-ramp-painted-surface-2026-11-01`, TDD RED `tests/sculpt-ramp-painted-ground-regression.test.js` avant correction.
+- **Cause, propriétaire, gel** : ce défaut est dans le **rendu** ; ne pas toucher `SculptTerrain.ramps`, la géométrie, la collision, la navigation, les assets ou les exports. `WorldSurface` reste l'unique autorité des traits visuels ; `sculptSurfacePaintAt` lit leurs zones puis leurs routes dans l'ordre du peintre `sculptPaintByCell`.
+- **Correctif** : les mailles de `drawSculptRamp` conservent leur projection canonique ; chaque tranche utilise les vrais points monde de la pente pour lire le matériau des zones/routes existantes puis l'image chargée par `paintImages`. Si aucun trait n'est présent, l'ancien sol de base et sa texture restent inchangés. Rendu native terrain et ancien adaptateur de pente raccordés au même matériau, sans second système ni modification de carte personnelle.
+- **Gates** : RED puis tests Node de rendu + sentinelles V77 (pente/interaction/collision/import-export) ; CI de la branche sur SHA exact et vrai Chromium ; prévisualisation isolée, essai mobile Pixel en zone de forêt peinte et route peinte. **Pas GREEN utilisateur, pas merge main ni V80** avant validation. PR301 reste DRAFT.
+- **Hors lot** : taux des rencontres PR315, retrait des présets provisoires, peinture éditoriale de `foret_1`, textures/objets non concernés.
+
+---
+
 # Régression — Rétablissement complet de l'édition intérieure World Builder (31 octobre 2026)
 
 - **Signal** : après PR311, les maisons ont des WorldAreas et Portals indépendants, mais le mode World Builder cache la forme/taille, les étages, les portes et les modèles ; leurs callbacks possédaient encore uniquement `sculptInteriors` prototype. L'utilisateur impose : réparation sans masquage, rustine ni double autorité.
