@@ -705,6 +705,48 @@ export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
   return next;
 }
 
+/** Local frequency percentage of the inherited biome policy.
+ * 100% = global world rates; 0% = no random encounters;
+ * 300% = three times the world chance, never above 100% absolute.
+ * Does not clone or alter the WorldDocument family rules.
+ */
+export function setAreaEncounterIntensity(draft, areaId, intensityPercent) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  const value=Number(intensityPercent);
+  if(!Number.isFinite(value))throw Error('Intensité locale invalide');
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  area.encounters.intensityPercent=Math.max(0,Math.min(300,Math.round(value)));
+  return next;
+}
+
+/** Per-Area distance exception; the Encounter Controller is still the sole
+ * distance counter. Inheritance is restored by clearAreaEncounterOverrides.
+ */
+export function setAreaEncounterCheckDistance(draft, areaId, distance) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  const value=Number(distance);
+  if(!Number.isFinite(value))throw Error('Distance locale invalide');
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  area.encounters.checkDistance=Math.max(80,Math.min(2000,Math.round(value)));
+  return next;
+}
+
+/** Restore inheritance without changing the enable/disable flag, spawns,
+ * elements, rarity or any other authored data. */
+export function clearAreaEncounterOverrides(draft,areaId) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  delete area.encounters.intensityPercent;
+  delete area.encounters.checkDistance;
+  return next;
+}
+
 export function updateAreaProperties(
   draft,
   areaId,
