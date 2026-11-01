@@ -40,6 +40,7 @@ export function resolveTerrainFamilyEncounter({
   terrainFamilyId,
   config,
   captureCatalog,
+  chanceScalePercent = 100,
   random = Math.random
 }) {
   const profile = findTerrainFamilyEncounterProfile(
@@ -57,7 +58,12 @@ export function resolveTerrainFamilyEncounter({
 
   const encounterRoll = boundedRandom(random) * 100;
 
-  if (encounterRoll >= profile.encounterChancePercent) {
+  // A zone optionally scales the inherited world/family chance; the enabled
+  // elements and rarity remain exclusively owned by WorldDocument/Capture.
+  const scale=Number.isFinite(chanceScalePercent)
+    ?Math.max(0,Math.min(300,chanceScalePercent)):100;
+  const effectiveChance=Math.min(100,profile.encounterChancePercent*scale/100);
+  if (encounterRoll >= effectiveChance) {
     return Object.freeze({
       triggered: false,
       reason: 'chance',
