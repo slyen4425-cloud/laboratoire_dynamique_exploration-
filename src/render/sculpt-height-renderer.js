@@ -805,6 +805,6 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   let terrainRampCount=0;
   for(const ramp of sculptTerrainRampProjections(terrain))
     if(drawSculptRamp(ctx,ramp,terrain,{
-      tileWidth:w,tileHeight:h,rise,texture,baseColor}))terrainRampCount++;
+      tileWidth:w,tileHeight:h,rise,texture,baseColor,paintSurface,paintImages}))terrainRampCount++;
   return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight};
 }
