@@ -13,6 +13,6 @@ test('sculpt render scheduling state exists before early interior image onload h
   assert.ok(firstHook>0,'the original interior image owner must remain');
   assert.ok(declaration>=0&&declaration<firstHook,
     'framePending must be initialized before early async image callbacks are installed');
-  assert.equal((source.match(/\\blet framePending=false;/g)||[]).length,1,
+  assert.equal((source.match(/let framePending=false;/g)||[]).length,1,
     'a single frame scheduler owner only');
 });

@@ -1,3 +1,13 @@
+# Correctif : image préchargée avant ordonnanceur de rendu 2.5D (01/11/2026)
+
+- **Signal réel** : GenSrpg PR #225 prévisualisation Android présente un canvas 2.5D noir. Reproduction Chromium externe [run #41326095665](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41326095665) : `ReferenceError: Cannot access 'framePending' before initialization` lors de `pic.onload → scheduleDraw`; canvas 300×150 pixels entièrement noirs.
+- **Propriétaire et périmètre** : Labo Exploration seul, `src/sculpt-lab-main.js`. Le gestionnaire de trames doit exister avant l'enregistrement des callbacks d'image. Aucun changement des moteurs de terrain, collision, caméra, sauvegarde, assets, Combat, ou édition de la scène.
+- **Point de départ** : main `ba0701224b764f4c60d4294c9729a49ade5869ad`, checkpoint `checkpoint/exploration-start-frame-pending-image-load-2026-11-01`, branche `work/exploration-image-onload-before-sculpt-frame-2026-11-01`.
+- **TDD RED** : test `tests/sculpt-frame-initialization-order.test.js`, [run #41326367421](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41326367421) : contrôle `core-tests` FAIL à la bonne assertion, callback trop précoce.
+- **Correction** : déplacer la déclaration unique `let framePending=false;` avant les premiers `Image.onload`, sans modifier le moteur de dessin ; conserver le test statique et le navigateur à pixels GenSrpg. GREEN à confirmer uniquement après CI Explorer et prévisualisation réelle ; aucune promotion sur main avant les contrôles et la validation utilisateur.
+
+---
+
 # Publication isolée — cascades sur eau et terrain 16 niveaux (1 novembre 2026)
 
 - **Demande de test** : Cascades V3 refusées sur les cellules humides alors que les présets les posent, et relief du terrain plafonné à 7 niveaux. Rehausser la sculpture et permettre les cascades de la rive haute vers le plan d'eau. Ne PAS modifier la hauteur des sprites cascade.

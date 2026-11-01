@@ -143,6 +143,8 @@ let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
+// Frame scheduling must exist before cached visual Image callbacks can run.
+let framePending=false;
 const interiorVisualImages=new Map();
 for(const visual of [...INTERIOR_DOOR_ASSETS,...INTERIOR_CONNECTOR_ASSETS]){
   if(!visual.path)continue;
@@ -581,7 +583,6 @@ if(demoActorAsset){
 const ribbonTextures={water:null,road:null};
 // The legacy visual road belongs to the example only, not blank scene data.
 let exampleRoadEnabled=true;
-let framePending=false;
 let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
