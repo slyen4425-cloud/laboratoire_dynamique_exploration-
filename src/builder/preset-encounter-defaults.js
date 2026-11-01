@@ -9,6 +9,7 @@ export function presetEncounterDefaults(terrainFamilyIds=null,previousConfig=nul
   const ids=terrainFamilyIds??source.map(f=>f.terrainFamilyId);
   return {
     version:1,
+    checkDistance:previousConfig?.checkDistance??demoWorldDocument.encounterConfig.checkDistance,
     families:ids.map(id=>{
       const user=previous.find(f=>f.terrainFamilyId===id);
       const sample=source.find(f=>f.terrainFamilyId===id);

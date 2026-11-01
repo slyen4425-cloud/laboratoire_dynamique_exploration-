@@ -1,6 +1,7 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1&calm=inherit-v1';
+import {normalizeEncounterCheckDistance,normalizeEncounterChancePercent} from '../encounters/terrain-family-encounter-config.js';
 import {
   presetEncounterDefaults,encounterConfigNeedsExplicitInitialization
 } from './preset-encounter-defaults.js';
@@ -238,6 +239,50 @@ export function initializeWorldPresetEncounters(draft) {
   const ids=(draft.terrainFamilies??[]).map(f=>f.id);
   return createWorldBuilderDraft({...draft,
     encounterConfig:presetEncounterDefaults(ids,draft.encounterConfig)});
+}
+
+// This preset edits the ONE WorldDocument EncounterConfig. Per-area opt-ins
+// are stored only in the canonical WorldArea.encounters data.
+const CALM_CHANCES=Object.freeze({
+  forest:6,plain:5,mountain:6,snow:6,volcano:10,sea:6,sand:5,road:0
+});
+export function applyCalmEncounterBaseline(draft){
+  const next=clone(draft);
+  next.encounterConfig??={version:1,families:[]};
+  next.encounterConfig.checkDistance=300;
+  const template=presetEncounterDefaults((next.terrainFamilies??[]).map(f=>f.id));
+  next.encounterConfig.families=(next.encounterConfig.families??[]).map(f=>{
+    const sample=template.families.find(x=>x.terrainFamilyId===f.terrainFamilyId);
+    return {...f,encounterChancePercent:CALM_CHANCES[f.terrainFamilyId]??5,
+      elementChances:f.elementChances?.length?f.elementChances:
+        (sample?.elementChances??[])};
+  });
+  return next;
+}
+export function updateWorldEncounterCheckDistance(draft,distance){
+  const next=clone(draft);
+  next.encounterConfig??={version:1,families:[]};
+  next.encounterConfig.checkDistance=normalizeEncounterCheckDistance(distance);
+  return next;
+}
+export function setAreaEncounterOverrides(draft,areaId,{
+  chancePercentOverride,checkDistanceOverride
+}={}){
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  if(chancePercentOverride!==undefined){
+    if(chancePercentOverride===null)delete area.encounters.chancePercentOverride;
+    else if(Number.isFinite(Number(chancePercentOverride)))
+      area.encounters.chancePercentOverride=normalizeEncounterChancePercent(chancePercentOverride);
+  }
+  if(checkDistanceOverride!==undefined){
+    if(checkDistanceOverride===null)delete area.encounters.checkDistanceOverride;
+    else if(Number.isFinite(Number(checkDistanceOverride)))
+      area.encounters.checkDistanceOverride=normalizeEncounterCheckDistance(checkDistanceOverride);
+  }
+  return next;
 }
 
 /**

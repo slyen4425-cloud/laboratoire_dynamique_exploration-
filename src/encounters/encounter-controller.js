@@ -3,7 +3,7 @@ import {
 } from './terrain-family-resolver.js?rev=terrain-family-encounters-v1';
 import {
   resolveTerrainFamilyEncounter
-} from './terrain-family-encounter-resolver.js?rev=encounter-selected-elements-v1';
+} from './terrain-family-encounter-resolver.js?rev=encounter-selected-elements-v1&calm=inherit-v1';
 
 function positiveDistance(value, fallback) {
   const number = Number(value);
@@ -89,11 +89,15 @@ export function createEncounterController({
 
     travelledSinceCheck += moved;
 
-    if (travelledSinceCheck < threshold) {
+    // WorldDocument owns shared cadence. One optional WorldArea override;
+    // the controller still owns the ONLY movement distance accumulator.
+    const effectiveThreshold=positiveDistance(area.encounters?.checkDistanceOverride,
+      positiveDistance(encounterConfig?.checkDistance,threshold));
+    if (travelledSinceCheck < effectiveThreshold) {
       return null;
     }
 
-    travelledSinceCheck %= threshold;
+    travelledSinceCheck %= effectiveThreshold;
 
     const family = resolveTerrainFamilyAtPoint(
       area.surface,
@@ -111,6 +115,7 @@ export function createEncounterController({
     const resolved = resolveTerrainFamilyEncounter({
       terrainFamilyId: family.terrainFamilyId,
       config: encounterConfig,
+      chancePercentOverride:area.encounters?.chancePercentOverride,
       captureCatalog,
       random
     });

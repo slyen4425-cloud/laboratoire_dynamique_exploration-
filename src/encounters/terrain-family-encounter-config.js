@@ -3,6 +3,17 @@ import {
 } from '../world/terrain-family-registry.js?rev=terrain-family-extensibility-v1';
 
 export const TERRAIN_FAMILY_ENCOUNTER_CONFIG_VERSION = 1;
+// Imported worlds without this field retain the previous 160-unit cadence.
+// The explicit Calm command sets 300 for the whole WorldDocument.
+export const ENCOUNTER_CHECK_DISTANCE_DEFAULT = 160;
+export function normalizeEncounterCheckDistance(value,fallback=ENCOUNTER_CHECK_DISTANCE_DEFAULT){
+  const n=Number(value);
+  return Number.isFinite(n)&&n>0?Math.max(80,Math.min(2000,Math.round(n))):fallback;
+}
+export function normalizeEncounterChancePercent(value){
+  const n=Number(value);
+  return Number.isFinite(n)?Math.max(0,Math.min(100,n)):0;
+}
 
 function finitePercent(value, fallback = 0) {
   const number = Number(value);
@@ -134,6 +145,11 @@ export function normalizeTerrainFamilyEncounterConfig(
   return Object.freeze({
     version:
       TERRAIN_FAMILY_ENCOUNTER_CONFIG_VERSION,
+    // Legacy documents did not serialize cadence. Leave it ABSENT so an
+    // explicitly configured EncounterController threshold still applies.
+    // Calm persists its 300-unit value ONLY after author opt-in.
+    ...(source.checkDistance!==undefined&&source.checkDistance!==null
+      ?{checkDistance:normalizeEncounterCheckDistance(source.checkDistance)}:{}),
     families: Object.freeze(families)
   });
 }

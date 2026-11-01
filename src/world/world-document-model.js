@@ -1,6 +1,6 @@
 import {
   normalizeTerrainFamilyEncounterConfig
-} from '../encounters/terrain-family-encounter-config.js?rev=terrain-family-extensibility-v1';
+} from '../encounters/terrain-family-encounter-config.js?rev=terrain-family-extensibility-v1&calm=inherit-v1';
 import {
   normalizeTerrainFamilyDefinitions
 } from './terrain-family-registry.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
@@ -10,7 +10,7 @@ import {
   findWorldAreaSpawn,
   normalizeWorldAreas,
   resolveWorldAreaSpawnPoint
-} from './world-area-model.js?rev=interior-geometry-authoring-v1-r2';
+} from './world-area-model.js?rev=interior-geometry-authoring-v1-r2&calm=inherit-v1';
 import {
   normalizePortals,
   portalReferencesAreValid

@@ -1,3 +1,4 @@
+import {normalizeEncounterCheckDistance,normalizeEncounterChancePercent} from '../encounters/terrain-family-encounter-config.js';
 import {normalizeInteriorWalls} from './interior-wall-model.js';
 import {importSculptTerrain} from './sculpt-height-model.js';
 import {interiorWallMaterialId} from './interior-material-catalog.js';
@@ -84,7 +85,11 @@ function normalizeWorldAreaEncounters(raw, kind) {
     randomEnabled:
       typeof encounters.randomEnabled === 'boolean'
         ? encounters.randomEnabled
-        : kind !== 'interior'
+        : kind !== 'interior',
+    ...(Number.isFinite(encounters.chancePercentOverride)
+      ?{chancePercentOverride:normalizeEncounterChancePercent(encounters.chancePercentOverride)}:{}),
+    ...(Number.isFinite(encounters.checkDistanceOverride)
+      ?{checkDistanceOverride:normalizeEncounterCheckDistance(encounters.checkDistanceOverride)}:{})
   });
 }
 

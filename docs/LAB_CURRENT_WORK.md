@@ -1,3 +1,15 @@
+# Rencontres : mode calme global avec réglages facultatifs par WorldArea (1 novembre 2026)
+
+- **Exigence** : une action `Calme pour tout le monde` évite de configurer chaque zone ; le joueur peut ensuite personnaliser individuellement la chance et la distance d'une zone. Les familles/éléments/raretés restent la source officielle Capture via Combat main.
+- **Base** : candidat unifié PR #329, SHA `92a68a41555d4f41a0d83707b43b9e6915a3b9f6`. Checkpoint `checkpoint/exploration-encounters-calm-inherit-start-2026-11-01`, branche `work/exploration-encounters-calm-zone-overrides-2026-11-01`, un seul lot.
+- **Autorité de configuration** : `WorldDocument.encounterConfig` est l'unique paramétrage global (distance et chances par famille) ; `WorldArea.encounters` n'enregistre que des nombres de surcharge explicite (`chancePercentOverride`, `checkDistanceOverride`), aucun catalogue ni deuxième moteur. `EncounterController` reste seul propriétaire du compteur de déplacement.
+- **Calme explicitement demandé** : distance 300 points ; forêt 6 %, plaine 5 %, montagne 6 %, neige 6 %, volcan 10 %, mer 6 %, sable 5 %, routes 0 %. Les éléments déjà choisis sont conservés ; les familles restées vides peuvent recevoir les éléments des présets officiels. La rareté individuelle des créatures n'est jamais réécrite.
+- **Compatibilité** : les anciens mondes conservent leurs chances et leur cadence historique 160 points **sans activation silencieuse**. Tout nouvel override peut être réinitialisé en désactivant « Personnaliser cette zone » : retour à l'héritage, sans dupliquer les données du monde. Les règles intérieures désactivées conservent priorité.
+- **UI** : l'éditeur World Builder et le Labo 2,5D utilisent les commandes du même Builder et n'enregistrent ni nouveau tableau de créatures ni second système de rencontres.
+- **Preuves** : test TDD RED `tests/encounter-global-calm-area-override.test.js` commit `a06f707b968adc2377dd4e665e3343ee5dd9d5ab` ; CI, tests du contrôleur/portails/import, Chromium, export/import et test utilisateur requis avant promotion dans PR #329 ou main. Aucun changement du moteur GenSrpg dans ce lot.
+
+---
+
 # Consolidation du Labo Exploration vers une version stable unifiée (1 novembre 2026)
 
 - **Clarification utilisateur** : l'écran noir concerne le raccord GenSrpg, pas le Labo Exploration ; ne PAS intégrer PR327 dans le moteur Labo. Fermeture PR328 sans merge (prévisualisation inutile). La demande prioritaire du Labo était le terrain 16 niveaux sur cartes anciennes et les cascades sur eau.
