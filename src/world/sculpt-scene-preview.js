@@ -88,7 +88,9 @@ export function sculptObjectCanOccupyCell(terrain,definitionId,col,row){
     col<0||row<0||col>=terrain.width||row>=terrain.height)return false;
   const definition=objectDefinitionCatalogV1.get(definitionId);
   if(!definition||!allowable.has(definitionId))return false;
-  return sculptWaterAt(terrain,col,row)<=0||definition.kind==='bridge';
+  return sculptWaterAt(terrain,col,row)<=0||definition.kind==='bridge'||
+    (definition.kind==='decor'&&definition.id.startsWith('objectdef.waterfall.'));
+
 }
 export function sculptPreviewVariants(definitionId){
   const def=objectDefinitionCatalogV1.get(definitionId);
