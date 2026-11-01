@@ -20,7 +20,7 @@ function intent(controller,world,area,x){
 
 test('new and historical worlds retain their authored probabilities until the global Calm command',()=>{
  const world=createBlankWorldBuilderDraft();
- assert.equal(world.encounterConfig.checkDistance,160);
+ assert.equal(world.encounterConfig.checkDistance,undefined);
  assert.equal(family(world,'forest').encounterChancePercent,0);
  assert.equal(family(world,'road').encounterChancePercent,0);
  const calm=applyCalmEncounterBaseline(world);
@@ -36,7 +36,8 @@ test('calm preset is an explicit global command and keeps family elements and ra
  const before=createBlankWorldBuilderDraft();
  const tuned=createWorldBuilderDraft({...before,encounterConfig:{
   ...before.encounterConfig,checkDistance:110,
-  families:before.encounterConfig.families.map(f=>({...f,encounterChancePercent:74}))
+  families:before.encounterConfig.families.map(f=>({...f,encounterChancePercent:74,
+    ...(f.terrainFamilyId==='forest'?{elementChances:[{elementId:'nature',chancePercent:1}]}:{})}))
  }});
  const calm=applyCalmEncounterBaseline(tuned);
  assert.equal(calm.encounterConfig.checkDistance,300);
@@ -94,7 +95,7 @@ test('existing customized documents are never silently replaced with calm',()=>{
  const old=createWorldBuilderDraft({...source,encounterConfig:{
   version:1,families:source.encounterConfig.families
  }});
- assert.equal(old.encounterConfig.checkDistance,160);
+ assert.equal(old.encounterConfig.checkDistance,undefined);
  assert.equal(family(old,'forest').encounterChancePercent,81);
  assert.equal(old.areas[0].encounters.chancePercentOverride,undefined);
 });
