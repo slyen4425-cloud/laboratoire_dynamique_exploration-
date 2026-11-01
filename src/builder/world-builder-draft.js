@@ -285,6 +285,9 @@ export function createBlankWorldBuilderDraft({
 
   return createWorldBuilderDraft({
     id,
+    // Only newly created worlds inherit the calm demo template automatically.
+    // Imported/historical WorldDocuments retain their explicitly authored rates.
+    encounterConfig:presetEncounterDefaults(),
     initialAreaId: 'area-principale',
     initialSpawnId: 'depart',
     areas: [{
