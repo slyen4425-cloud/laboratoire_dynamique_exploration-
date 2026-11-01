@@ -2073,7 +2073,8 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
       view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       texture:currentTexture,
-      baseColor:registry.require(displayedBaseMaterialId(),'surface')?.render?.baseColor??'#677955'
+      baseColor:registry.require(displayedBaseMaterialId(),'surface')?.render?.baseColor??'#677955',
+      paintSurface:surface,paintImages:surfacePaintImages
     });
     return;
   }
