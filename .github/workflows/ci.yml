@@ -72,6 +72,10 @@ jobs:
         run: node scripts/smoke-relief-canyon-pilot.mjs
       - name: Real Chromium sculptable terrain lab brush and material smoke
         run: node scripts/smoke-sculpt-terrain-lab.mjs
+      - name: Real HTTPS 2.5D original canvas pixel proof
+        env:
+          EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/smoke-sculpt-remote-pixels.mjs
       - name: Native Chromium Explorer music gesture and actual MP3 playback
         run: node scripts/smoke-exploration-music-playback.mjs
       - name: Real Chromium Encounter startup smoke
