@@ -59,13 +59,13 @@ import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
 
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
 import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
-import {createEncounterController} from './encounters/encounter-controller.js';
+import {createEncounterController} from './encounters/encounter-controller.js?rev=calm-inherit-v1';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
-import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
+import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js?rev=calm-inherit-v1';
 import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled,setAreaEncounterOverrides,
   applyCalmEncounterBaseline,updateWorldEncounterCheckDistance} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=inherit-v1';
-import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
+import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js?rev=calm-inherit-v1';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';

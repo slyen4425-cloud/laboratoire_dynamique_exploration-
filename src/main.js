@@ -71,7 +71,7 @@ import {
 import {
   createInitialExplorationState,
   findWorldAreaById
-} from './world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+} from './world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1&calm=inherit-v1';
 import {
   createAutomaticPortalTraversalGate
 } from './world/portal-model.js?rev=builder-dynamic-return-v1&reentry=once-per-approach-v1';
@@ -91,7 +91,7 @@ import {
 } from './capture/capture-showcase-encounter-source-v1.js';
 import {
   createEncounterController
-} from './encounters/encounter-controller.js?rev=encounter-selected-elements-v1';
+} from './encounters/encounter-controller.js?rev=encounter-selected-elements-v1&calm=inherit-v1';
 import {
   snapshotFromEncounterIntent
 } from './encounters/encounter-bridge.js?rev=phase7-snapshot-v1';

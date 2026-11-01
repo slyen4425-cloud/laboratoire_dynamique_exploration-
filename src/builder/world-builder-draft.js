@@ -1,6 +1,6 @@
 import {
   normalizeWorldDocument
-} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
+} from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1&calm=inherit-v1';
 import {normalizeEncounterCheckDistance,normalizeEncounterChancePercent} from '../encounters/terrain-family-encounter-config.js';
 import {
   presetEncounterDefaults,encounterConfigNeedsExplicitInitialization

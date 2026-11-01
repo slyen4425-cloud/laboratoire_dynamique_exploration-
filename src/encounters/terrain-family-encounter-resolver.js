@@ -1,6 +1,6 @@
 import {
   findTerrainFamilyEncounterProfile
-} from './terrain-family-encounter-config.js?rev=terrain-family-encounters-v1';
+} from './terrain-family-encounter-config.js?rev=terrain-family-encounters-v1&calm=inherit-v1';
 
 function boundedRandom(random) {
   const value = Number(random());

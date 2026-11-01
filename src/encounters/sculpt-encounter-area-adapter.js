@@ -1,4 +1,4 @@
-import { normalizeWorldArea } from '../world/world-area-model.js';
+import { normalizeWorldArea } from '../world/world-area-model.js?rev=calm-inherit-v1';
 import { SCULPT_EXTERIOR_AREA_ID } from '../world/sculpt-interior-area-link.js';
 import { demoWorldDocument } from '../world/demo-world.js';
 
