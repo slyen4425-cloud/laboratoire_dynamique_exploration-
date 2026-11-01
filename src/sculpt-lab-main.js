@@ -194,8 +194,19 @@ const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest'
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
   checkDistance:sculptEncounterTest?80:160
 }):null;
-const sculptEncounterCatalog=sculptEncounterController
-  ?createCaptureCreatureCatalogProvider(await loadCaptureShowcaseEncounterSourceV1()):null;
+// Combat's official Showcase is required for encounters, NOT for drawing the
+// WorldArea. Fail encounters closed with the real error, while the terrain,
+// editor, collision and camera keep their original independent owners.
+let sculptEncounterCatalog=null,sculptEncounterSourceError=null;
+if(sculptEncounterController){
+  try{
+    sculptEncounterCatalog=createCaptureCreatureCatalogProvider(
+      await loadCaptureShowcaseEncounterSourceV1());
+  }catch(error){
+    sculptEncounterSourceError=error;
+    console.error('Rencontres Capture indisponibles : source Combat officielle requise',error);
+  }
+}
 const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
 let sculptPendingEncounter=null;
 let sculptEncounterSetupOffered=false;
@@ -260,6 +271,13 @@ function refreshSculptEncounterEditor(){
     String(Math.round(profile?.encounterChancePercent??0))+' %';
   const container=$('sculpt-encounter-elements');
   container.replaceChildren();
+  if(!sculptEncounterCatalog){
+    $('sculpt-encounter-catalog-summary').textContent=sculptEncounterSourceError
+      ?'Rencontres indisponibles (Combat officiel requis) : '+sculptEncounterSourceError.message
+      :'Rencontres indisponibles : source Combat non chargée';
+    refreshSculptEncounterAuthoringStatus();
+    return;
+  }
   const checked=new Set((profile?.elementChances??[])
     .filter(x=>x.chancePercent>0).map(x=>x.elementId));
   for(const element of sculptEncounterCatalog.listElements()){
@@ -381,7 +399,7 @@ function navigationEncounterArea(){
   return projected;
 }
 function sculptEncounterStep(){
-  if(!sculptEncounterController||!navigationTesting||!navActor||sculptPendingEncounter)
+  if(!sculptEncounterController||!sculptEncounterCatalog||!navigationTesting||!navActor||sculptPendingEncounter)
     return null;
   const area=navigationEncounterArea();
   const intent=sculptEncounterController.step({

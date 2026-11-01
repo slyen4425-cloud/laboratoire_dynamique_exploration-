@@ -22,7 +22,7 @@ test('sculpt render scheduling state exists before early interior image onload h
   const firstHook=source.indexOf('pic.onload=()=>scheduleDraw()');
   const guard=source.indexOf('if(!sculptBootReady)return;');
   const ready=source.indexOf('sculptBootReady=true;fit();');
-  const lastBoot=source.indexOf('loadSphereWallImages();',ready-180);
+  const lastBoot=source.lastIndexOf('loadSphereWallImages();',ready);
   assert.ok(bootstrap>0&&bootstrap<firstHook,
     'pre-registered asset callbacks must see one false bootstrap state');
   assert.ok(guard>firstHook&&guard<ready,
@@ -33,3 +33,16 @@ test('sculpt render scheduling state exists before early interior image onload h
   assert.equal((source.match(/sculptBootReady=true;fit\(\);/g)||[]).length,1,
     'one boot transition, no global watchdog or duplicate renderer');
  });
+
+test('missing official Combat showcase fails only encounters, never the 2.5D renderer',()=>{
+  assert.match(source,/sculptEncounterSourceError=error;/,
+    'retain precise Combat source loading error, no alternative catalogue');
+  assert.match(source,/if\(!sculptEncounterCatalog\)/,
+    'native encounter controls must report their unavailable official source');
+  assert.match(source,/!sculptEncounterCatalog\|\|!navigationTesting/,
+    'native Tester must fail closed without an official creature catalog');
+  assert.doesNotMatch(source,/createCaptureCreatureCatalogProvider\s*\(\s*\[\s*\]/,
+    'never make a fake empty Combat catalog to silence failure');
+  assert.match(source,/sculptBootReady=true;fit\(\);/,
+    'terrain must still complete startup when optional cross-module author data is absent');
+});
