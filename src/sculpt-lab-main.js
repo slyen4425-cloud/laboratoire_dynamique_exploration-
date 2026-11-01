@@ -143,8 +143,11 @@ let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
-// Frame scheduling must exist before cached visual Image callbacks can run.
+// Frame state is owned once before image callbacks register. Decoding can
+// finish while this ES module is suspended at top-level await; never queue a
+// draw until all canvas/WorldArea/camera dependencies have initialized.
 let framePending=false;
+let sculptBootReady=false;
 const interiorVisualImages=new Map();
 for(const visual of [...INTERIOR_DOOR_ASSETS,...INTERIOR_CONNECTOR_ASSETS]){
   if(!visual.path)continue;
@@ -958,7 +961,10 @@ function pumpWaterfallFrame(now){
 function ensureWaterfallPump(){
   if(!waterfallPumpHandle&&waterfallPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
-function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
+function scheduleDraw(){
+  if(!sculptBootReady)return; // The single boot boundary, not a retry loop.
+  if(!framePending){framePending=true;requestAnimationFrame(draw);}
+}
 function screenToWorldPoint(event){
   const rect=canvas.getBoundingClientRect();
   // One inverse shared by brush picking and object drag; drag itself NEVER
@@ -3949,6 +3955,9 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
   $('precision-mode').checked=true;
 }
 updatePrecisionActions();
-updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();fit();
+updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();
+// All synchronously declared renderer/world/camera owners now exist. Asynchronous
+// images arriving earlier will be included in this first canonical draw.
+sculptBootReady=true;fit();
 installSculptWorldAreaEditing();
 installSculptMapPresetPalette();

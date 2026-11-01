@@ -1,3 +1,11 @@
+# GenSrpg noir : barrières d'initialisation du rendu natif 2.5D — 1 novembre 2026 (NON GREEN produit)
+
+- **TDD navigateur RED exact** : [run GenSrpg #41326099323](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41326099323) `framePending` TDZ + canvas noir 300×150 ; en validant la vraie URL HTTPS et en franchissant l'avertissement standard de l'hébergeur, [run Exploration #41332547648](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41332547648) montre ensuite `ReferenceError: Cannot access 'sculptWorldCurrentInterior' before initialization` dans `cameraView`. Cause commune : les images terminent pendant le `top-level await` de la source Capture et `requestAnimationFrame(draw)` démarre alors que l'ES module n'a pas fini de déclarer les propriétaires WorldArea/caméra.
+- **Correction au propriétaire unique** : `src/sculpt-lab-main.js` crée `framePending` et `sculptBootReady=false` avant tout callback ; `scheduleDraw` ne programme pas de RAF pendant la phase de construction ; **une seule transition** `sculptBootReady=true;fit()` après les autres initialisations et abonnements ; aucun mécanisme de retry, copie, masque, nouveau rendu ou changement de gameplay.
+- **Gates obligatoires** : test statique de déclaration et transition unique ; vrai Chromium local dessinant les pixels de terrain et interactions ; preuve HTTPS sur la même branche à SHA immuable (en respectant la confirmation d'hébergement) ; CI et publisher non fusionnés ; validation tactile ultérieure. PR [#327](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/327) DRAFT, main Exploration non modifié. GenSrpg PR #225 continue à n'utiliser QUE main ; ne pas transférer ce code dans GenSrpg.
+
+---
+
 # Correctif : image préchargée avant ordonnanceur de rendu 2.5D (01/11/2026)
 
 - **Signal réel** : GenSrpg PR #225 prévisualisation Android présente un canvas 2.5D noir. Reproduction Chromium externe [run #41326095665](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41326095665) : `ReferenceError: Cannot access 'framePending' before initialization` lors de `pic.onload → scheduleDraw`; canvas 300×150 pixels entièrement noirs.

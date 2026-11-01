@@ -16,3 +16,20 @@ test('sculpt render scheduling state exists before early interior image onload h
   assert.equal((source.match(/let framePending=false;/g)||[]).length,1,
     'a single frame scheduler owner only');
 });
+
+ test('renderer cannot schedule an animation frame until the real sculpt bootstrap is complete',()=>{
+  const bootstrap=source.indexOf('let sculptBootReady=false;');
+  const firstHook=source.indexOf('pic.onload=()=>scheduleDraw()');
+  const guard=source.indexOf('if(!sculptBootReady)return;');
+  const ready=source.indexOf('sculptBootReady=true;fit();');
+  const lastBoot=source.indexOf('loadSphereWallImages();',ready-180);
+  assert.ok(bootstrap>0&&bootstrap<firstHook,
+    'pre-registered asset callbacks must see one false bootstrap state');
+  assert.ok(guard>firstHook&&guard<ready,
+    'scheduler must block callbacks during top-level async module evaluation');
+  assert.ok(lastBoot>guard&&lastBoot<ready,
+    'boot turns ready only after all source-owned render dependencies are set');
+  assert.equal((source.match(/let sculptBootReady=false;/g)||[]).length,1);
+  assert.equal((source.match(/sculptBootReady=true;fit\(\);/g)||[]).length,1,
+    'one boot transition, no global watchdog or duplicate renderer');
+ });
