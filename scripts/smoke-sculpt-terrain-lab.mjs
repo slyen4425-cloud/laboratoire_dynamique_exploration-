@@ -82,7 +82,7 @@ try{
   // Reproduce the actual Pixel report: the model permits level 16 but the
   // legacy UI target change handler previously snapped every action back to 7.
   // Use the real quickbar, detailed + button and range slider in Chromium.
-  const legacyUiHeightGate=await run(\`(()=>{
+  const legacyUiHeightGate=await run(`(()=>{
     const q=id=>document.querySelector('#'+id);
     const emit=id=>q(id).dispatchEvent(new Event('input',{bubbles:true}));
     q('quick-tool').value='plateau';
@@ -101,7 +101,7 @@ try{
     return {afterDetail,afterQuick,afterSlider,upperCap,output,quickOutput,
       restoredMode:window.__sculptLabProbe().quickTool,
       stillOriginalTerrain:window.__sculptLabProbe().highestLevel===5};
-  })()\`);
+  })()`);
   if(legacyUiHeightGate.afterDetail!==8||legacyUiHeightGate.afterQuick!==9||
       legacyUiHeightGate.afterSlider!==16||legacyUiHeightGate.upperCap!==16||
       legacyUiHeightGate.output!==16||legacyUiHeightGate.quickOutput!==16||
