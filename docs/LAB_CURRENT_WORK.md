@@ -1,3 +1,14 @@
+# Labo Exploration — cascade au-dessus de l’eau et relief > 7 (1 novembre 2026)
+
+- **Retour utilisateur** : les pentes sont validées ; les quatre cascades visuelles ne peuvent ni être posées ni déplacées au-dessus de l’eau. La limite **sept cases** concerne exclusivement la sculpture du **relief de terrain**, pas la hauteur du sprite de cascade. Scénario : placer une cascade dont le haut arrive sur une berge haute et dont le pied tombe dans une étendue d’eau.
+- **Source initiale** : branche de développement validée pour les routes étroites `work/exploration-ramp-road-width-2026-11-01`, SHA `0dc90b9778b0a9e530adf7e90ac6d2506599c952`. Checkpoint `checkpoint/exploration-waterfall-wet-terrain-height-start-2026-11-01`, branche `work/exploration-waterfall-wet-terrain-height-2026-11-01`. PR301, Combat et stable V80 intacts.
+- **Cause racine des cascades** : `sculptObjectCanOccupyCell` (utilisé à la fois par la pose et le glissement) n’admettait que les ponts en case mouillée ; la cascade est `kind:'decor'` sans collision. Modification limitée aux identifiants `objectdef.waterfall.*` animés reconnus par le catalogue, sans autoriser les autres décors, bâtiments, arbres ou roches à flotter.
+- **Cause racine de la hauteur** : quatre limites contradictoires mais codées en dur à 7 dans `src/world/sculpt-height-model.js` (construction, pinceau, import, collines sphériques) et deux contrôles UI `sculpt-lab.html` / `src/sculpt-lab-main.js`. Même modèle de données, aucun nouveau système. Déplafonnement du relief à **16 niveaux** via `SCULPT_MAX_GROUND_LEVEL` unique, même canal de sauvegarde schemaVersion 1, lecture des anciennes cartes inchangée. Niveau d’eau plafonné à 10 indépendamment.
+- **TDD** : `tests/sculpt-waterfall-wet-and-higher-ground.test.js` créé RED avant modifications : quatre cascades sur eau sèche/mouillée et export/import, refus d’autres objets, élévation jusqu’à 16 sans perte, contrôle 17 refusé, colline à 12, contrôles de l’éditeur et héritage préservation. Gates : CI Node, navigation Chromium, essai tactile Pixel et preview distincte/versionnée avant promotion ; ne pas déclarer GREEN utilisateur sans preuve.
+- **Hors périmètre** : textures de cascades, palette des assets, modification du niveau de l’eau 10, collisions des ponts, commandes de pente validées, carte privée `foret_1`, autres dépôts.
+
+---
+
 # Régression PR316 — route peinte recouvre intégralement la pente (1 novembre 2026)
 
 - **Signal utilisateur, reproduction** : après publication de la preview `/preview/ramp-pr316/` (CI GREEN `41288365269`, Pages `41298380614`), peindre une route de 24 unités de large sur une pente native de 140 unités couvre **toute la largeur de la pente**. L'algorithme PR316 échantillonnait le matériau au milieu de chacune des 24 bandes et remplissait la bande entière avec cette texture.
