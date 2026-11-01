@@ -145,7 +145,11 @@ export function normalizeTerrainFamilyEncounterConfig(
   return Object.freeze({
     version:
       TERRAIN_FAMILY_ENCOUNTER_CONFIG_VERSION,
-    checkDistance:normalizeEncounterCheckDistance(source.checkDistance),
+    // Legacy documents did not serialize cadence. Leave it ABSENT so an
+    // explicitly configured EncounterController threshold still applies.
+    // Calm persists its 300-unit value ONLY after author opt-in.
+    ...(source.checkDistance!==undefined&&source.checkDistance!==null
+      ?{checkDistance:normalizeEncounterCheckDistance(source.checkDistance)}:{}),
     families: Object.freeze(families)
   });
 }
