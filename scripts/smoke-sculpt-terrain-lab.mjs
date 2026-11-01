@@ -79,6 +79,37 @@ try{
      return {visible,w:canvas.width,h:canvas.height};})()`);
   if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
 
+  // Reproduce the actual Pixel report: the model permits level 16 but the
+  // legacy UI target change handler previously snapped every action back to 7.
+  // Use the real quickbar, detailed + button and range slider in Chromium.
+  const legacyUiHeightGate=await run(\`(()=>{
+    const q=id=>document.querySelector('#'+id);
+    const emit=id=>q(id).dispatchEvent(new Event('input',{bubbles:true}));
+    q('quick-tool').value='plateau';
+    q('quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    q('target').value='7';emit('target');
+    q('level-up').click();const afterDetail=Number(q('target').value);
+    q('quick-level-plus').click();const afterQuick=Number(q('target').value);
+    q('target').value='16';emit('target');
+    const afterSlider=Number(q('target').value);
+    q('quick-level-plus').click();const upperCap=Number(q('target').value);
+    const output=Number(q('target-value').textContent);
+    const quickOutput=Number(q('quick-level-value').textContent);
+    q('target').value='3';emit('target');
+    q('quick-tool').value='dig';
+    q('quick-tool').dispatchEvent(new Event('change',{bubbles:true}));
+    return {afterDetail,afterQuick,afterSlider,upperCap,output,quickOutput,
+      restoredMode:window.__sculptLabProbe().quickTool,
+      stillOriginalTerrain:window.__sculptLabProbe().highestLevel===5};
+  })()\`);
+  if(legacyUiHeightGate.afterDetail!==8||legacyUiHeightGate.afterQuick!==9||
+      legacyUiHeightGate.afterSlider!==16||legacyUiHeightGate.upperCap!==16||
+      legacyUiHeightGate.output!==16||legacyUiHeightGate.quickOutput!==16||
+      legacyUiHeightGate.restoredMode!=='dig'||!legacyUiHeightGate.stillOriginalTerrain)
+    throw Error('UI still caps actual plateau height at 7: '+JSON.stringify(legacyUiHeightGate));
+  console.log('GREEN real Chromium: old 7 -> detailed +8 -> quickbar +9 -> slider 16 -> bound 16');
+
+
   // PR318 visual gate: real Chromium Canvas pixels on a native ramp.
   // The route is narrower than the incline, not a material replacement.
   const rampPaintPixels=await run(`(async()=>{
