@@ -92,6 +92,13 @@ jobs:
         with:
           ref: 40955a7838beb8fb76e74fd4b941ce4bb7cd1505
           path: rich-source
+      # CI GREEN on this exact fixed branch SHA. The pinned PR301 and frozen
+      # V80 copies remain independently present in the complete Pages artifact.
+      - name: Checkout pinned GREEN PR316 corrected slopes preview
+        uses: actions/checkout@v4
+        with:
+          ref: c8d689796bddeccd4e772e4c17fd6893818c84fe
+          path: ramp-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
         with:
@@ -337,6 +344,43 @@ jobs:
           jq -e --arg sha "$rich_sha" '.exploration==$sha' "$rich/release-provenance.v1.json" >/dev/null
           jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha' "$stable/release-provenance.v1.json" >/dev/null
           echo 'SAFE: main + V80 unchanged; pinned PR301 preserved by every full Pages deployment'
+      - name: Stage verified PR316 slope preview without changing PR301 or frozen V80
+        shell: bash
+        run: |
+          set -euo pipefail
+          ramp_sha="c8d689796bddeccd4e772e4c17fd6893818c84fe"
+          test "$(git -C ramp-source rev-parse HEAD)" = "$ramp_sha"
+          ramp="$GITHUB_WORKSPACE/site/preview/ramp-pr316"
+          test ! -e "$ramp"
+          test -d "$GITHUB_WORKSPACE/site/preview/rich-presets-pr301"
+          test -d "$GITHUB_WORKSPACE/site/preview/encounters-v80"
+          mkdir -p "$ramp"
+          cp ramp-source/sculpt-lab.html ramp-source/sculpt-lab-v80.html "$ramp/"
+          cp ramp-source/world-assembler.html ramp-source/builder.html ramp-source/index.html "$ramp/"
+          cp ramp-source/manifest.webmanifest "$ramp/"
+          for folder in src assets; do
+            mkdir -p "$ramp/$folder"
+            rsync -a --exclude='.git' "ramp-source/$folder/" "$ramp/$folder/"
+          done
+          mkdir -p "$ramp/combat-preview" "$ramp/capture-assets"
+          rsync -a --exclude='.git' combat-source/ "$ramp/combat-preview/"
+          rsync -a --exclude='.git' capture-source/ "$ramp/capture-assets/"
+          jq -n --arg main "$(git -C combat-source rev-parse HEAD)" \
+            --arg author "$(git -C combat-author rev-parse HEAD)" \
+            --arg assets "$(git -C capture-source rev-parse HEAD)" \
+            --arg exploration "$ramp_sha" \
+            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$author,visualAssets:$assets,exploration:$exploration}' \
+            > "$ramp/release-provenance.v1.json"
+          # The raster and the special legacy Object ramp MUST both use the
+          # actual surface painting material. An old PR301 preview fails here.
+          grep -Fq 'sculptSurfacePaintAt' "$ramp/src/render/sculpt-ramp-renderer.js"
+          grep -Fq 'paintSurface,paintImages}))terrainRampCount++' "$ramp/src/render/sculpt-height-renderer.js"
+          grep -Fq 'paintSurface:surface,paintImages:surfacePaintImages' "$ramp/src/sculpt-lab-main.js"
+          cmp ramp-source/sculpt-lab.html "$ramp/sculpt-lab.html"
+          cmp rich-source/sculpt-lab.html site/preview/rich-presets-pr301/sculpt-lab.html
+          cmp encounter-source/sculpt-lab.html site/preview/encounters-v80/sculpt-lab.html
+          jq -e --arg sha "$ramp_sha" '.exploration==$sha' "$ramp/release-provenance.v1.json" >/dev/null
+          echo 'PR316 test-only preview staged; PR301, main & V80 unchanged'
       - name: Real Chromium test of the assembled preview, not a mock page
         shell: bash
         run: |
@@ -385,6 +429,24 @@ jobs:
             "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/rich-provenance.json
           jq -e '.exploration=="40955a7838beb8fb76e74fd4b941ce4bb7cd1505"' /tmp/rich-provenance.json >/dev/null
           echo 'LIVE: stable + PR301 are both served from the same Pages artifact'
+      - name: Verify public PR316 ramp preview serves the fixed immutable SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/ramp-pr316"
+          sha="c8d689796bddeccd4e772e4c17fd6893818c84fe"
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" \
+            -o /tmp/ramp-pr316-provenance.json
+          jq -e --arg sha "$sha" '.exploration==$sha' /tmp/ramp-pr316-provenance.json >/dev/null
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$probe/sculpt-lab.html?run=$GITHUB_RUN_ID" -o /tmp/ramp-pr316-sculpt.html
+          grep -Fq 'id="ramp-guide"' /tmp/ramp-pr316-sculpt.html
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$probe/src/render/sculpt-ramp-renderer.js?run=$GITHUB_RUN_ID" \
+            -o /tmp/ramp-pr316-renderer.js
+          grep -Fq 'sculptSurfacePaintAt' /tmp/ramp-pr316-renderer.js
+          echo "LIVE PR316: https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/ramp-pr316/sculpt-lab.html"
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |
