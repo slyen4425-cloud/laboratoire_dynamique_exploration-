@@ -22,10 +22,14 @@ test('new World Builder worlds give native prefab terrain a nonzero configured C
   const rule=world.encounterConfig.families.find(f=>f.terrainFamilyId===family);
   assert.ok(rule?.encounterChancePercent>0,'Missing actual encounter chance: '+family);
   const controller=createEncounterController({checkDistance:160});
+  // Roads are intentionally peaceful globally. Simulate a forced road
+  // encounter only inside this movement/bridge integration test.
+  const encounterConfig={...world.encounterConfig,families:world.encounterConfig.families.map(p=>
+    p.terrainFamilyId==='road'?{...p,encounterChancePercent:100}:p)};
   const y=area.surface.routes[0].points[0].y;
   const player=x=>({currentAreaId:area.id,x,y});
-  controller.step({area,player:player(76),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
-  const intent=controller.step({area,player:player(270),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
+  controller.step({area,player:player(76),encounterConfig,captureCatalog:catalog,random:()=>0});
+  const intent=controller.step({area,player:player(270),encounterConfig,captureCatalog:catalog,random:()=>0});
   assert.ok(intent?.opponentCreatureId,'No real Capture intent despite walking: '+family);
  }
 });
