@@ -11,7 +11,9 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 
 test('RED: actual height editor +/- and input clamp to the canonical terrain maximum instead of 7',()=>{
   const js=read('../src/sculpt-lab-main.js');
-  const handler=js.match(/function changeTarget\(level\)\{([\s\S]*?)\n\}/)?.[1];
+  const start=js.indexOf('function changeTarget(level){');
+  const end=js.indexOf("$('target').addEventListener('input'",start);
+  const handler=start<0||end<=start?null:js.slice(start,end);
   assert.ok(handler,'use the actual target input handler, no parallel UI model');
   assert.match(handler,/SCULPT_TERRAIN_MAX_LEVEL/,
     'click + and slider must permit level 8..16');
