@@ -1,3 +1,14 @@
+# Lot — Rencontres calmes héritées du monde, exceptions par zone (1 novembre 2026)
+
+- **Demande confirmée** : une règle générique « calme » appliquée à toutes les zones sans paramétrage manuel, avec possibilité de personnaliser volontairement une zone sans modifier les autres.
+- **Branche** : `work/exploration-calm-inheritance-2026-11-01` issue de la version unifiée PR #329 SHA `92a68a41555d4f41a0d83707b43b9e6915a3b9f6` ; checkpoint `checkpoint/exploration-calm-inheritance-start-2026-11-01`. Labo autonome uniquement ; aucun écran noir ni correctif GenSrpg dans ce lot.
+- **Migration PR315** : hunk-by-hunk de ses 11 fichiers sans écraser les nouvelles versions terrain 16, cascades et intérieurs. Ses anciennes CI échouaient parce que plusieurs tests exigeaient un événement de rencontre avec des chances devenues 5–10 % ; réparer les tests pour une configuration déterministe, **pas** relever artificiellement les taux du jeu.
+- **Autorité unique** : `WorldDocument.encounterConfig` définit les chances de chaque famille, les éléments et la distance mondiale ; les nouveaux mondes héritent de la base calme (300 points, forêt 6 %, route 0 %). `WorldArea.encounters` ne stocke que `randomEnabled` et, si l'utilisateur choisit « Personnaliser », deux exceptions scalaires (`intensityPercent` 0–300 et `checkDistance` 80–2000). Une intensité de 100 % laisse la probabilité mondiale intacte, une zone à 0 % ne génère pas de combat et les routes restent à 0 % même à 300 %. En décochant, les exceptions disparaissent ; les anciennes sauvegardes héritent sans écrasement.
+- **Intégration** : Builder et Sculpt 2.5D éditent la même WorldArea ; seul `EncounterController` compte les distances et seule la résolution de rencontre officielle décide de la créature Capture. Aucun duplicata des règles/éléments/raretés ni migration silencieuse des anciennes configurations.
+- **Tests/Gates** : RED `tests/encounter-calm-area-inheritance.test.js` avant les corrections ; `tests/encounter-calm-cadence.test.js` repris ; CI Node, sérialisation roundtrip, zones indépendantes, vieux monde intact, Chromium Builder+Sculpt, terrain 16/nouveaux imports, publication PR en lecture seule. Ne pas déclarer GREEN ni fusionner avant CI du SHA exact et essai Pixel paysage. La PR #329 reste le candidat stable et n'est pas modifiée directement.
+
+---
+
 # Consolidation du Labo Exploration vers une version stable unifiée (1 novembre 2026)
 
 - **Clarification utilisateur** : l'écran noir concerne le raccord GenSrpg, pas le Labo Exploration ; ne PAS intégrer PR327 dans le moteur Labo. Fermeture PR328 sans merge (prévisualisation inutile). La demande prioritaire du Labo était le terrain 16 niveaux sur cartes anciennes et les cascades sur eau.

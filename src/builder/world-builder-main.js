@@ -26,6 +26,9 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  setAreaEncounterIntensity,setAreaEncounterCheckDistance,clearAreaEncounterOverrides,
+  updateWorldEncounterCheckDistance,
+  applyCalmEncounterBaseline,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled,
@@ -2468,6 +2471,17 @@ function refreshFamilyEncounterControls() {
   const area = currentAreaRaw();
   const enabled = area?.encounters?.randomEnabled !== false;
   $('area-random-encounters-enabled').checked = enabled;
+  const custom=area?.encounters?.checkDistance!==undefined||
+    area?.encounters?.intensityPercent!==undefined;
+  $('area-encounter-custom').checked=custom;
+  $('area-encounter-custom').disabled=!area;
+  $('area-encounter-custom-controls').hidden=!custom;
+  const intensity=area?.encounters?.intensityPercent??100;
+  const localDistance=area?.encounters?.checkDistance??draft.encounterConfig.checkDistance;
+  $('area-encounter-intensity').value=String(intensity);
+  $('area-encounter-intensity-value').value=String(intensity)+' %';
+  $('area-encounter-local-distance').value=String(localDistance);
+  $('area-encounter-local-distance-value').value=String(localDistance)+' points';
   $('area-random-encounters-status').textContent = enabled
     ? `Rencontres autorisées dans l'Area « ${area?.id ?? 'inconnue'} ». Chaque tirage dépend de la famille sous le héros et de sa chance.`
     : `Rencontres DÉSACTIVÉES dans l'Area « ${area?.id ?? 'inconnue'} » : aucun combat aléatoire ne peut apparaître, même si la chance de rencontre est à 100 %. Active la case ci-dessus pour cette Area.`;
@@ -2504,6 +2518,8 @@ function refreshFamilyEncounterControls() {
       ? `La famille « ${selectedFamilyName} » est le sol de base de l'Area : aucune peinture nécessaire pour rencontrer ses créatures.`
       : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
 
+  $('family-encounter-distance').value = draft.encounterConfig.checkDistance;
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
   const profile = encounterProfile();
   if (!profile) return;
 
@@ -5529,6 +5545,39 @@ $('area-random-encounters-enabled').addEventListener('change', () => {
     draft, selectedAreaId, $('area-random-encounters-enabled').checked
   );
   refreshFamilyEncounterControls();
+  refreshJson();
+});
+$('area-encounter-custom').addEventListener('change',()=>{
+  if($('area-encounter-custom').checked){
+    draft=setAreaEncounterIntensity(draft,selectedAreaId,100);
+    draft=setAreaEncounterCheckDistance(
+      draft,selectedAreaId,draft.encounterConfig.checkDistance);
+  }else{
+    draft=clearAreaEncounterOverrides(draft,selectedAreaId);
+  }
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
+$('area-encounter-intensity').addEventListener('input',()=>{
+  draft=setAreaEncounterIntensity(draft,selectedAreaId,
+    Number($('area-encounter-intensity').value));
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
+$('area-encounter-local-distance').addEventListener('input',()=>{
+  draft=setAreaEncounterCheckDistance(draft,selectedAreaId,
+    Number($('area-encounter-local-distance').value));
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
+
+$('family-encounter-distance').addEventListener('input', () => {
+  draft = updateWorldEncounterCheckDistance(draft, $('family-encounter-distance').value);
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
+  refreshJson();
+});
+$('family-encounter-calm-baseline').addEventListener('click', () => {
+  draft = applyCalmEncounterBaseline(draft);
   refreshJson();
 });
 

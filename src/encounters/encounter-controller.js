@@ -40,6 +40,7 @@ export function createEncounterController({
     area,
     player,
     encounterConfig,
+    checkDistance,
     captureCatalog,
     playerPartyRef,
     rulesetId,
@@ -89,11 +90,17 @@ export function createEncounterController({
 
     travelledSinceCheck += moved;
 
-    if (travelledSinceCheck < threshold) {
+    // WorldDocument owns the live cadence; the constructor remains a fallback
+    // for legacy callers and focused tests. No second timer or travel state.
+    const effectiveThreshold = positiveDistance(
+      area.encounters?.checkDistance,
+      positiveDistance(checkDistance, threshold)
+    );
+    if (travelledSinceCheck < effectiveThreshold) {
       return null;
     }
 
-    travelledSinceCheck %= threshold;
+    travelledSinceCheck %= effectiveThreshold;
 
     const family = resolveTerrainFamilyAtPoint(
       area.surface,
@@ -112,6 +119,7 @@ export function createEncounterController({
       terrainFamilyId: family.terrainFamilyId,
       config: encounterConfig,
       captureCatalog,
+      chanceScalePercent: area.encounters?.intensityPercent,
       random
     });
 

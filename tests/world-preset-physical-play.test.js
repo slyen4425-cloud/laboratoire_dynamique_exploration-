@@ -32,9 +32,13 @@ function walkPrefabArea(doc,area,expectEncounter){
  assert.ok(exit,'prefab must have an outside exit');
  const catalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
  const encounters=createEncounterController({checkDistance:160});
+ // This test proves portals and combat integration, not default calm odds.
+ // The road has 0% chance in production: make only the TEST road deterministic.
+ const encounterConfig={...doc.encounterConfig,families:doc.encounterConfig.families.map(p=>
+   p.terrainFamilyId==='road'?{...p,encounterChancePercent:100}:p)};
  const inputs=()=>({
    area,player:{currentAreaId:area.id,x:actor.x,y:actor.y},
-   encounterConfig:doc.encounterConfig,captureCatalog:catalog,
+   encounterConfig,captureCatalog:catalog,
    playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',random:()=>0
  });
  encounters.step(inputs());let encounter=null;

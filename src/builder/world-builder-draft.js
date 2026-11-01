@@ -232,6 +232,34 @@ export function createWorldBuilderDraft(sourceDocument) {
  * EncounterConfig contains no enabled probabilities or elements.
  * Any configured document is preserved byte-for-byte in its gameplay fields.
  */
+const CALM_ENCOUNTER_CHANCES = Object.freeze({
+  forest:6, plain:5, mountain:6, snow:6, volcano:10,
+  sea:6, sand:5, road:0
+});
+
+/** Explicit WorldDocument authoring command; never changes rarity or movement. */
+export function updateWorldEncounterCheckDistance(draft, distance) {
+  const next=clone(draft);
+  const value=Number(distance);
+  if (!Number.isFinite(value)) throw Error('Distance de rencontre invalide');
+  next.encounterConfig={...next.encounterConfig,
+    checkDistance:Math.max(80,Math.min(2000,Math.round(value)))};
+  return next;
+}
+
+/** Author opt-in only: change cadence and encounter odds, not element lists, rarity or Area flags. */
+export function applyCalmEncounterBaseline(draft) {
+  const next=clone(draft);
+  if(!Array.isArray(next.encounterConfig?.families))
+    throw Error('Configuration des rencontres introuvable');
+  next.encounterConfig={...next.encounterConfig,checkDistance:300,
+    families:next.encounterConfig.families.map(profile=>({
+      ...profile,encounterChancePercent:(profile.elementChances??[]).length
+        ?(CALM_ENCOUNTER_CHANCES[profile.terrainFamilyId]??6):0
+    }))};
+  return next;
+}
+
 export function initializeWorldPresetEncounters(draft) {
   if (!encounterConfigNeedsExplicitInitialization(draft?.encounterConfig))
     return createWorldBuilderDraft(draft);
@@ -257,6 +285,9 @@ export function createBlankWorldBuilderDraft({
 
   return createWorldBuilderDraft({
     id,
+    // Only newly created worlds inherit the calm demo template automatically.
+    // Imported/historical WorldDocuments retain their explicitly authored rates.
+    encounterConfig:presetEncounterDefaults(),
     initialAreaId: 'area-principale',
     initialSpawnId: 'depart',
     areas: [{
@@ -674,6 +705,48 @@ export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
   if (!area || typeof enabled !== 'boolean') return next;
   area.encounters ??= {};
   area.encounters.randomEnabled = enabled;
+  return next;
+}
+
+/** Local frequency percentage of the inherited biome policy.
+ * 100% = global world rates; 0% = no random encounters;
+ * 300% = three times the world chance, never above 100% absolute.
+ * Does not clone or alter the WorldDocument family rules.
+ */
+export function setAreaEncounterIntensity(draft, areaId, intensityPercent) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  const value=Number(intensityPercent);
+  if(!Number.isFinite(value))throw Error('Intensité locale invalide');
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  area.encounters.intensityPercent=Math.max(0,Math.min(300,Math.round(value)));
+  return next;
+}
+
+/** Per-Area distance exception; the Encounter Controller is still the sole
+ * distance counter. Inheritance is restored by clearAreaEncounterOverrides.
+ */
+export function setAreaEncounterCheckDistance(draft, areaId, distance) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  const value=Number(distance);
+  if(!Number.isFinite(value))throw Error('Distance locale invalide');
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  area.encounters.checkDistance=Math.max(80,Math.min(2000,Math.round(value)));
+  return next;
+}
+
+/** Restore inheritance without changing the enable/disable flag, spawns,
+ * elements, rarity or any other authored data. */
+export function clearAreaEncounterOverrides(draft,areaId) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  delete area.encounters.intensityPercent;
+  delete area.encounters.checkDistance;
   return next;
 }
 

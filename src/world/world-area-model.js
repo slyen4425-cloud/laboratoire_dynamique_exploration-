@@ -80,11 +80,19 @@ function normalizeWorldAreaEncounters(raw, kind) {
       ? raw
       : {};
 
+  // Optional, explicit WorldArea exceptions. An absent value inherits the
+  // unique WorldDocument encounter policy; never copy global profiles here.
+  const intensity=encounters.intensityPercent;
+  const cadence=encounters.checkDistance;
   return Object.freeze({
     randomEnabled:
       typeof encounters.randomEnabled === 'boolean'
         ? encounters.randomEnabled
-        : kind !== 'interior'
+        : kind !== 'interior',
+    ...(intensity!==undefined&&intensity!==null&&Number.isFinite(Number(intensity))
+      ?{intensityPercent:Math.max(0,Math.min(300,Math.round(Number(intensity))))}:{}),
+    ...(cadence!==undefined&&cadence!==null&&Number.isFinite(Number(cadence))
+      ?{checkDistance:Math.max(80,Math.min(2000,Math.round(Number(cadence))))}:{})
   });
 }
 
