@@ -32,7 +32,7 @@ test('round hills can be authored on a 12-level plateau and native slopes still 
  const hill=appendSculptSphere(t,{kind:'hill',x:8*28,y:4*21,radius:28,height:2});
  assert.equal(hill.spheres.length,1,'baseLevel up to 16 must not reject existing sphere geometry');
  assert.deepEqual(importSculptTerrain(serializeSculptTerrain(hill)).spheres,hill.spheres);
- const ramp=appendSculptTerrainRamp(t,{x:8*28,y:16*21,endX:8*28,endY:6*21,width:56});
+ const ramp=appendSculptTerrainRamp(t,{x:8*28,y:20*21,endX:8*28,endY:4*21,width:56});
  assert.equal(sculptTerrainRampProjections(ramp).length,1);
 });
 test('UI slider and both quickbar handlers use the model cap, with independent 7-level spherical limit',()=>{
