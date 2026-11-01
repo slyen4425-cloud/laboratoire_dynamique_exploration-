@@ -101,10 +101,10 @@ jobs:
           path: ramp-source
       # Preview only: canonical waterfall placement and terrain-height UI,
       # pinned to the exact upstream CI HEAD (no PR code promoted into main).
-      - name: Checkout pinned PR320 waterfall and terrain-height authoring preview
+      - name: Checkout pinned GREEN PR325 waterfall and 16-level UI correction source
         uses: actions/checkout@v4
         with:
-          ref: c6ab2df548f5bcb0fe797d3f851d5ca10b1a1c1d
+          ref: d4b9d8c804e592392c5b7a2ec7cc2f160291a076
           path: waterfall-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
@@ -417,7 +417,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          source_sha="c6ab2df548f5bcb0fe797d3f851d5ca10b1a1c1d"
+          source_sha="d4b9d8c804e592392c5b7a2ec7cc2f160291a076"
           test "$(git -C waterfall-source rev-parse HEAD)" = "$source_sha"
           folder="$GITHUB_WORKSPACE/site/preview/waterfall-height-pr320"
           test ! -e "$folder"
@@ -445,13 +445,17 @@ jobs:
           grep -Fq 'waterAllowed===true' "$folder/src/world/sculpt-scene-preview.js"
           grep -Fq 'sculptWaterAt(terrain,col,row)>0' "$folder/src/render/sculpt-object-picking.js"
           grep -Fq 'id="target" type="range" min="0" max="16"' "$folder/sculpt-lab.html"
+          # Real user regression: after a legacy 7-level scene, the actual
+          # detailed +/- and quickbar must be able to select 8..16.
+          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' "$folder/src/sculpt-lab-main.js"
+          grep -Fq 'world-room-full-editor-v1-height16-ui-r1' "$folder/sculpt-lab.html"
           cmp waterfall-source/sculpt-lab.html "$folder/sculpt-lab.html"
           cmp ramp-source/sculpt-lab.html site/preview/ramp-pr316/sculpt-lab.html
           cmp rich-source/sculpt-lab.html site/preview/rich-presets-pr301/sculpt-lab.html
           cmp encounter-source/sculpt-lab.html site/preview/encounters-v80/sculpt-lab.html
           jq -e --arg sha "$source_sha" '.exploration==$sha' "$folder/release-provenance.v1.json" >/dev/null
           echo 'PR320 staged; approved slopes, PR301, stable V80 unchanged'
-      - name: Real Chromium PR320 waterfall-on-water and 16-level terrain gate
+      - name: Real Chromium PR325 actual target +/- and slider level 16 plus waterfalls
         shell: bash
         run: |
           set -euo pipefail
@@ -520,7 +524,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sha="c6ab2df548f5bcb0fe797d3f851d5ca10b1a1c1d"
+          sha="d4b9d8c804e592392c5b7a2ec7cc2f160291a076"
           root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
           curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
             "$root/preview/waterfall-height-pr320/release-provenance.v1.json?run=$GITHUB_RUN_ID" \
@@ -538,7 +542,12 @@ jobs:
             "$root/preview/waterfall-height-pr320/src/world/sculpt-scene-preview.js?run=$GITHUB_RUN_ID" \
             -o /tmp/waterfall-height-pr320-scene.js
           grep -Fq 'waterAllowed===true' /tmp/waterfall-height-pr320-scene.js
-          echo 'LIVE PR320 verified at exact source SHA; V80 and PR318 still pinned'
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$root/preview/waterfall-height-pr320/src/sculpt-lab-main.js?run=$GITHUB_RUN_ID" \
+            -o /tmp/waterfall-height-pr320-main.js
+          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/waterfall-height-pr320-main.js
+          grep -Fq 'world-room-full-editor-v1-height16-ui-r1' /tmp/waterfall-height-pr320-sculpt.html
+          echo 'LIVE PR325 UI fix verified in PR320 preview at exact SHA; V80 and PR318 pinned'
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |
