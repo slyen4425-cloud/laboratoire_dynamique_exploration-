@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sculpt-ramp-v77-r2';
+import {SCULPT_MAX_TERRAIN_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sculpt-ramp-v77-r2';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -1117,7 +1117,8 @@ function syncQuickToolbar(){
 }
 function adjustQuickLevel(delta){
   const el=editorKind==='water' ? $('water-target') : $('target');
-  const limit=editorKind==='water'?10:7;
+  const isSphere=selectedMode==='sphere-hill'||selectedMode==='sphere-basin';
+  const limit=editorKind==='water'?10:isSphere?7:SCULPT_MAX_TERRAIN_LEVEL;
   const minimum=editorKind==='ground'&&
     (selectedMode==='sphere-hill'||selectedMode==='sphere-basin')?1:0;
   el.value=String(Math.max(minimum,Math.min(limit,Number(el.value)+delta)));
@@ -1178,7 +1179,11 @@ function selectMode(mode){
     updatePrecisionActions();
   }
   $('height-label').textContent=mode==='sphere-basin'?'Profondeur':mode==='sphere-hill'?'Hauteur de colline':'Hauteur du plateau';
-  $('target').min=mode==='sphere-hill'||mode==='sphere-basin'?'1':'0';
+  const isSphere=mode==='sphere-hill'||mode==='sphere-basin';
+  $('target').min=isSphere?'1':'0';
+  $('target').max=isSphere?'7':String(SCULPT_MAX_TERRAIN_LEVEL);
+  if(Number($('target').value)>Number($('target').max))
+    changeTarget(Number($('target').max));
   if(mode==='sphere-hill'||mode==='sphere-basin'){
     if(Number($('target').value)<1){$('target').value='3';$('target').dispatchEvent(new Event('input',{bubbles:true}));}
     $('brush-shape').value='circle';
@@ -2829,7 +2834,7 @@ $('water-target').addEventListener('input',()=>{
 });
 function changeTarget(level){
  const value=Math.max(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?1:0,
-    Math.min(7,Number(level)));
+    Math.min(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?7:SCULPT_MAX_TERRAIN_LEVEL,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
  syncQuickToolbar();status(selectedMode==='sphere-basin'?'Profondeur sphérique : −'+value+' niveaux':
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':
