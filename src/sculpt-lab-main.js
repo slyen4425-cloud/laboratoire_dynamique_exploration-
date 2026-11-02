@@ -797,10 +797,13 @@ function drawSculptPassabilityOverlay(){
   }
   ctx.restore();
 }
-$('passability-overlay-toggle').addEventListener('click',()=>{
+// The byte-frozen V80 HTML intentionally has no overlay control. The SAME
+// module still boots that historical page; only the new opt-in UI is absent.
+const passabilityToggle=$('passability-overlay-toggle');
+if(passabilityToggle)passabilityToggle.addEventListener('click',()=>{
   if(navigationTesting)return;
   passabilityOverlayEnabled=!passabilityOverlayEnabled;
-  $('passability-overlay-toggle').setAttribute('aria-pressed',String(passabilityOverlayEnabled));
+  passabilityToggle.setAttribute('aria-pressed',String(passabilityOverlayEnabled));
   $('passability-overlay-legend').hidden=!passabilityOverlayEnabled;
   passabilityCellsCache=null; // on-demand, never recompute when filter off
   scheduleDraw();
@@ -1995,8 +1998,9 @@ function setNavigationTesting(on){
   if(on){
     // The filter is an editor-only visual aid, not a gameplay HUD overlay.
     passabilityOverlayEnabled=false;passabilityCellsCache=null;
-    $('passability-overlay-toggle').setAttribute('aria-pressed','false');
-    $('passability-overlay-legend').hidden=true;
+    passabilityToggle?.setAttribute('aria-pressed','false');
+    const passabilityLegend=$('passability-overlay-legend');
+    if(passabilityLegend)passabilityLegend.hidden=true;
     if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
     if(interiorDoorMoving)setInteriorDoorMoving(false);
