@@ -652,6 +652,18 @@ body.world-area-unavailable .sculpt-quickbar,
 body.world-area-unavailable #sculpt-map-preset-panel,
 body.world-area-unavailable #world-area-portal-panel{display:none!important}
 
+/* Passability is a read-only layer on the SAME native Sculpt canvas. */
+.editor-switch #passability-overlay-toggle{font-size:.76rem;min-height:37px;padding:5px 7px}
+.editor-switch #passability-overlay-toggle[aria-pressed="true"]{background:#315c56;border-color:#89dec0}
+#passability-overlay-legend{position:absolute;z-index:8;right:8px;bottom:70px;
+ display:flex;gap:7px;flex-wrap:wrap;align-items:center;justify-content:flex-end;
+ max-width:min(96%,380px);background:#0b1d28dd;color:#e3f8f0;
+ padding:7px 9px;border-radius:9px;font-size:.72rem;pointer-events:none}
+#passability-overlay-legend[hidden]{display:none!important}
+#passability-overlay-legend .passability-free{color:#85f5a9}
+#passability-overlay-legend .passability-limited{color:#ffd47b}
+#passability-overlay-legend .passability-blocked{color:#ff9797}
+#passability-overlay-legend small{width:100%;text-align:right;color:#c2d8d6}
 </style>
 </head>
 <body>
@@ -670,6 +682,7 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
 <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
 <button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
 <button type="button" id="mode-encounters" aria-pressed="false" aria-controls="sculpt-encounter-editor">🐾 Rencontres</button>
+<button type="button" id="passability-overlay-toggle" aria-pressed="false" title="Voir les zones où le héros peut réellement marcher">◉ Passabilité</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
 <button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
@@ -815,6 +828,12 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
+<div id="passability-overlay-legend" role="status" aria-label="Légende de passabilité" hidden>
+ <span class="passability-free">● Libre</span>
+ <span class="passability-limited">● Accès limité / pente</span>
+ <span class="passability-blocked">● Bloqué</span>
+ <small>Lecture seule · piéton · centre des cases</small>
+</div>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
  <div class="unavailable-card">
   <strong>🗺 Carte non disponible en 2,5D</strong>
