@@ -360,6 +360,21 @@
             Autoriser les rencontres aléatoires dans l'Area actuelle
           </label>
           <p id="area-random-encounters-status" class="builder-hint" role="status"></p>
+          <label class="checkbox-line">
+            <input id="family-encounter-area-inherit" type="checkbox" checked />
+            Utiliser les réglages généraux du monde dans cette zone
+          </label>
+          <div id="family-encounter-area-overrides" hidden>
+            <label>Distance entre tirages — cette zone
+              <input id="family-encounter-area-distance" type="range" min="80" max="2000" step="20" value="300" />
+              <output id="family-encounter-area-distance-value">300 points</output>
+            </label>
+            <label>Fréquence relative — cette zone
+              <input id="family-encounter-area-multiplier" type="range" min="0" max="300" step="10" value="100" />
+              <output id="family-encounter-area-multiplier-value">100 %</output>
+            </label>
+            <p class="builder-hint">100 % : chances générales de chaque terrain, 200 % : deux fois plus. Les créatures et leurs raretés restent gérées par Capture.</p>
+          </div>
           <p class="builder-hint">
             La distance entre vérifications est réglable ci-dessous pour le monde entier.
             « Chance de rencontre » est la probabilité à chaque vérification, pas un délai en secondes.

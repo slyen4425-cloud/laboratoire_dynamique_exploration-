@@ -26,6 +26,7 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  updateAreaEncounterOverrides,
   updateWorldEncounterCheckDistance,
   applyCalmEncounterBaseline,
   updateTerrainFamilyDefinition,
@@ -2468,6 +2469,16 @@ function refreshTerrainFamilyDefinitionControls() {
 
 function refreshFamilyEncounterControls() {
   const area = currentAreaRaw();
+  const local=area?.encounters??{};
+  const inherited=local.checkDistance==null&&local.chanceMultiplierPercent==null;
+  $('family-encounter-area-inherit').checked=inherited;
+  $('family-encounter-area-overrides').hidden=inherited;
+  const d=local.checkDistance??draft.encounterConfig?.checkDistance??300;
+  const m=local.chanceMultiplierPercent??100;
+  $('family-encounter-area-distance').value=String(d);
+  $('family-encounter-area-distance-value').textContent=d+' points';
+  $('family-encounter-area-multiplier').value=String(m);
+  $('family-encounter-area-multiplier-value').textContent=m+' %';
   const enabled = area?.encounters?.randomEnabled !== false;
   $('area-random-encounters-enabled').checked = enabled;
   $('area-random-encounters-status').textContent = enabled
@@ -5534,6 +5545,28 @@ $('area-random-encounters-enabled').addEventListener('change', () => {
   );
   refreshFamilyEncounterControls();
   refreshJson();
+});
+
+function applySelectedAreaFrequency(values) {
+  draft=updateAreaEncounterOverrides(draft,selectedAreaId,values);
+  refreshFamilyEncounterControls();
+  refreshJson();
+}
+$('family-encounter-area-inherit').addEventListener('change',()=>{
+  const checked=$('family-encounter-area-inherit').checked;
+  applySelectedAreaFrequency(checked
+    ?{checkDistance:null,chanceMultiplierPercent:null}
+    :{checkDistance:draft.encounterConfig.checkDistance,chanceMultiplierPercent:100});
+});
+$('family-encounter-area-distance').addEventListener('input',()=>{
+  applySelectedAreaFrequency({
+    checkDistance:Number($('family-encounter-area-distance').value)
+  });
+});
+$('family-encounter-area-multiplier').addEventListener('input',()=>{
+  applySelectedAreaFrequency({
+    chanceMultiplierPercent:Number($('family-encounter-area-multiplier').value)
+  });
 });
 
 $('family-encounter-distance').addEventListener('input', () => {
