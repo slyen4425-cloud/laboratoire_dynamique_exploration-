@@ -47,6 +47,7 @@ import {resolveWorldObjectPlacements} from './world/world-object-placement-model
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
+import {sculptPassabilityCells} from './core/sculpt-passability-diagnostics.js?rev=passability-inspector-v1';
 import {SCULPT_OBJECT_LIMIT,sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
@@ -765,6 +766,45 @@ function center(){
     y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
 }
 let previewObjectViewport=null;
+// Diagnostic ONLY. Same Collision World and WorldArea as Tester; no saved
+// passability tiles, alternative navigation state or editor-only hitboxes.
+let passabilityOverlayEnabled=false,passabilityCellsCache=null;
+function drawSculptPassabilityOverlay(){
+  if(!passabilityOverlayEnabled||navigationTesting)return;
+  const cached=passabilityCellsCache;
+  if(!cached||cached.terrain!==terrain||cached.objects!==placedObjects||
+     cached.world!==sculptWorldDraft||cached.interiors!==sculptInteriors||
+     cached.interiorId!==activeInteriorId||cached.areaId!==sculptWorldAreaId){
+    passabilityCellsCache={
+      terrain,objects:placedObjects,world:sculptWorldDraft,
+      interiors:sculptInteriors,interiorId:activeInteriorId,areaId:sculptWorldAreaId,
+      cells:sculptPassabilityCells({world:navigationWorld(),terrain,
+        collisionContext:navigationContext(),
+        tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,radius:5})
+    };
+  }
+  ctx.save();
+  ctx.globalAlpha=.35;
+  for(const {col,row,kind} of passabilityCellsCache.cells){
+    // Display at the same true model altitude as the ground tile; terrain
+    // projection is already applied by draw(), not guessed from image pixels.
+    const top=row*SCULPT_TILE.height-
+      sculptHeightAt(terrain,col,row)*SCULPT_TILE.rise;
+    ctx.fillStyle=kind==='blocked'?'#ff4d5e':
+      kind==='limited'?'#ffbb52':'#47dc85';
+    ctx.fillRect(col*SCULPT_TILE.width+1,top+1,
+      SCULPT_TILE.width-2,SCULPT_TILE.height-2);
+  }
+  ctx.restore();
+}
+$('passability-overlay-toggle').addEventListener('click',()=>{
+  if(navigationTesting)return;
+  passabilityOverlayEnabled=!passabilityOverlayEnabled;
+  $('passability-overlay-toggle').setAttribute('aria-pressed',String(passabilityOverlayEnabled));
+  $('passability-overlay-legend').hidden=!passabilityOverlayEnabled;
+  passabilityCellsCache=null; // on-demand, never recompute when filter off
+  scheduleDraw();
+});
 function draw(){
   framePending=false;
   const {width,height}=dimensions(),dpr=Math.min(2,window.devicePixelRatio||1);
@@ -905,6 +945,7 @@ function draw(){
     drawPreviewObjects();
     drawPlacedActors();
   }
+  if(!navigationTesting&&passabilityOverlayEnabled)drawSculptPassabilityOverlay();
   // A temporary stroke preview is visual only; WorldSurface is committed on
   // pointerup. No hidden draft geometry is persisted by the renderer.
   if(surfaceEditing){
@@ -1952,6 +1993,10 @@ function setNavigationTesting(on){
     }
   }
   if(on){
+    // The filter is an editor-only visual aid, not a gameplay HUD overlay.
+    passabilityOverlayEnabled=false;passabilityCellsCache=null;
+    $('passability-overlay-toggle').setAttribute('aria-pressed','false');
+    $('passability-overlay-legend').hidden=true;
     if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
     if(interiorDoorMoving)setInteriorDoorMoving(false);
