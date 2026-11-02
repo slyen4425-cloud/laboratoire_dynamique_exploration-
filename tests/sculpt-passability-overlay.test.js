@@ -20,7 +20,7 @@ test('read-only passability sample reuses same collision world for object, wall 
  const source=area(t,{obstacles:[{x:28,y:21,w:28,h:21}]});
  const before=JSON.stringify(source.world)+JSON.stringify(t);
  const cells=sculptPassabilityCells(source);
- assert.equal(cells.length,16);
+ assert.equal(cells.length,t.width*t.height,'terrain dimension normalization is authoritative');
  assert.equal(cell(cells,1,1).kind,'blocked');
  assert.equal(cell(cells,3,3).kind,'passable');
  assert.equal(JSON.stringify(source.world)+JSON.stringify(t),before);
@@ -28,20 +28,20 @@ test('read-only passability sample reuses same collision world for object, wall 
 });
 
 test('water on the canonical heightfield is blocked to a ground walker',()=>{
- const levels=Array(16).fill(0),waterLevels=Array(16).fill(-1);
- waterLevels[5]=2;
- const t=createSculptTerrain({width:4,height:4,levels,waterLevels});
+ const levels=Array(64).fill(0),waterLevels=Array(64).fill(-1);
+ waterLevels[9]=2; // the physical (col=1,row=1) tile of an 8-wide heightfield
+ const t=createSculptTerrain({width:8,height:8,levels,waterLevels});
  const cells=sculptPassabilityCells(area(t));
  assert.equal(cell(cells,1,1).kind,'blocked');
  assert.equal(cell(cells,3,3).kind,'passable');
 });
 
-test('unconnected raised land reports limited access instead of being painted free everywhere',()=>{
- const levels=Array(16).fill(0);levels[5]=4;
- const t=createSculptTerrain({width:4,height:4,levels});
+test('cliff ground is blocked when the authoritative physical projection blocks it',()=>{
+ const levels=Array(64).fill(0);levels[9]=4;
+ const t=createSculptTerrain({width:8,height:8,levels});
  const cells=sculptPassabilityCells(area(t));
- assert.equal(cell(cells,1,1).kind,'limited');
- assert.equal(cell(cells,3,3).kind,'passable');
+ assert.equal(cell(cells,1,1).kind,'blocked');
+ assert.equal(cell(cells,6,6).kind,'passable');
 });
 
 test('UI is opt-in, disabled during Tester, drawn with same canvas and never exported',()=>{
