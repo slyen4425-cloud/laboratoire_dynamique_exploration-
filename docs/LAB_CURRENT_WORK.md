@@ -1,3 +1,14 @@
+# Lot — Filtre visuel de passabilité dans l'éditeur 2,5D (2 novembre 2026)
+
+- **Demande** : bouton facultatif en mode Éditer pour voir le terrain réellement franchissable avant l'essai de déplacement, particulièrement autour des objets, murs, lacs, falaises et chemins/pentes.
+- **Autorité unique** : lire `isBlocked` de `src/core/collision.js`, et le **même** `navigationWorld()` + `navigationContext()` que `stepMovement`. Le nouveau `src/core/sculpt-passability-diagnostics.js` calcule des échantillons read-only au centre des cases avec le rayon 5 du héros test. Aucun nouveau moteur de collision, tableau de navigation sauvegardé, grille de déplacement ou masquage.
+- **Affichage** : sur le canvas Sculpt existant, vert = centre passable, rouge = centre bloqué, orange = transition vers une case libre voisine limitée par une règle de déplacement (falaise, pente, etc.), pas une promesse de chemin complet jusqu'à un Spawn. Fonction désactivée par défaut, indisponible pendant Tester, état strictement éphémère et absent des exports. Calcul en cache par identités de scène pour éviter les rescans à chaque frame.
+- **Branche** : départ `work/exploration-unified-main-v80-replacement-2026-11-01@77607520574c8509becf91a6dc55783e29c1570c` ; branche de travail `work/exploration-passability-overlay-2026-11-02`, checkpoint START `checkpoint/exploration-passability-overlay-start-2026-11-02`. TDD RED test `tests/sculpt-passability-overlay.test.js`, checkpoint `checkpoint/exploration-passability-overlay-red-2026-11-02` SHA `0f3903eaf28c1388e31803353d4773fbc1c68b65`.
+- **Gates** : Node `npm test` + `npm run check`, Chromium terrain/recharge, non-modification import/export, affichage correct sous angle caméra et sur Pixel paysage, essai de montée 7→16, cascade et anciennes cartes. Puis integration dans #329 après validation et publication de la vraie version main par son workflow unique. Si une sample indique « limité », le jeu réel reste autoritaire.
+- **Hors périmètre** : aucun changement de collision physique, Spawn, sauvegarde, Engine Combat, GenSrpg, terrain V80 de production ; pas de GREEN avant preuves CI, URL de test et visuel mobile.
+
+---
+
 # Lot — Rencontres calmes héritées du monde, exceptions opt-in par zone (2 novembre 2026)
 
 - **Clarification utilisateur** : une base générique *calme* doit supprimer toute obligation de régler chaque zone ; les joueurs peuvent personnaliser la fréquence et distance d'une WorldArea individuellement, sans affecter les autres.
