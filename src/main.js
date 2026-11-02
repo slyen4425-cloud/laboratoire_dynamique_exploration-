@@ -901,6 +901,7 @@ function update(dt) {
     area: currentArea(),
     player,
     encounterConfig: activeWorldDocument.encounterConfig,
+    checkDistance: encounterTest ? 80 : activeWorldDocument.encounterConfig.checkDistance,
     captureCatalog: captureCreatureCatalog,
     playerPartyRef: CAPTURE_PLAYER_PARTY_REF,
     rulesetId: 'capture.standard.1v1',

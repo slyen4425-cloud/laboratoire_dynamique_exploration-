@@ -26,6 +26,8 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  updateWorldEncounterCheckDistance,
+  applyCalmEncounterBaseline,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled,
@@ -2504,6 +2506,8 @@ function refreshFamilyEncounterControls() {
       ? `La famille « ${selectedFamilyName} » est le sol de base de l'Area : aucune peinture nécessaire pour rencontrer ses créatures.`
       : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
 
+  $('family-encounter-distance').value = draft.encounterConfig.checkDistance;
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
   const profile = encounterProfile();
   if (!profile) return;
 
@@ -5529,6 +5533,16 @@ $('area-random-encounters-enabled').addEventListener('change', () => {
     draft, selectedAreaId, $('area-random-encounters-enabled').checked
   );
   refreshFamilyEncounterControls();
+  refreshJson();
+});
+
+$('family-encounter-distance').addEventListener('input', () => {
+  draft = updateWorldEncounterCheckDistance(draft, $('family-encounter-distance').value);
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
+  refreshJson();
+});
+$('family-encounter-calm-baseline').addEventListener('click', () => {
+  draft = applyCalmEncounterBaseline(draft);
   refreshJson();
 });
 
