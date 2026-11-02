@@ -2,7 +2,7 @@ import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createNewWorldBuilderDraft,createWorldBuilderDraft,
   serializeWorldBuilderDraft,importWorldBuilderDocument
-} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
+} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=global-area-r1';
 import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft

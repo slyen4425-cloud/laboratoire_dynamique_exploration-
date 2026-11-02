@@ -64,7 +64,7 @@ import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
 import {setAreaEncounterRandomEnabled,updateAreaEncounterLocalRules,updateTerrainFamilyEncounterProfile,
   updateWorldEncounterCheckDistance,applyCalmEncounterBaseline,
-  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
+  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=global-area-r1';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
@@ -81,7 +81,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js?rev=forest1-entrances-v1';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
-import {createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
+import {createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=global-area-r1';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
