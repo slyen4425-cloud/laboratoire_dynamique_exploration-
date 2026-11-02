@@ -71,6 +71,31 @@ function distanceToSegment(point,a,b){
     ((point.x-a.x)*dx+(point.y-a.y)*dy)/length));
   return Math.hypot(point.x-a.x-t*dx,point.y-a.y-t*dy);
 }
+// Read-only sampling of the SAME standard WorldSurface strokes painted by
+// Sculpt. The painter orders zones first and routes last; the ramp uses that
+// order at its world-space position, without owning another material layer.
+export function sculptSurfacePaintAt(surface,x,y){
+  if(!surface||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const point={x,y};
+  let materialId=null;
+  for(const feature of [...(surface.zones??[]),...(surface.routes??[])]){
+    if(!feature?.materialId||!Number.isFinite(feature.width)||
+       feature.width<=0||!Array.isArray(feature.points))continue;
+    const radius=feature.width/2;
+    for(let i=1;i<feature.points.length;i++){
+      const a=feature.points[i-1],b=feature.points[i];
+      // Fast rejection for long user-painted forests and mobile render.
+      if(x<Math.min(a.x,b.x)-radius||x>Math.max(a.x,b.x)+radius||
+         y<Math.min(a.y,b.y)-radius||y>Math.max(a.y,b.y)+radius)continue;
+      if(distanceToSegment(point,a,b)<=radius){
+        materialId=feature.materialId;
+        break;
+      }
+    }
+  }
+  return materialId;
+}
+
 export function removeSculptSurfaceAt(raw,point){
   const surface=normalizeSculptSurface(raw);
   let found=null;

@@ -1,8 +1,8 @@
-# Historic filename retained to update the single existing Pages publisher
-# atomically. This is the ONLY remaining Pages deployment authority.
-# The old pages-preview.yml publisher is retired to prevent a later V80-only
-# deployment from removing the isolated Encounter preview path.
-name: Publish canonical main Exploration + frozen V80 preview
+# Single Pages publication authority: the checked-out, CI-verified Exploration
+# main source is served at the public root. V80 is preserved only as a rollback
+# HTML and historic preview; it never overrides the canonical current renderer.
+# Historic filename retained to avoid a second deployment workflow.
+name: Publish unified main Exploration with frozen V80 rollback
 on:
   pull_request:
     branches: [main]
@@ -73,10 +73,10 @@ jobs:
       author_showcase: ${{ steps.provenance.outputs.author_showcase }}
       visual_assets: ${{ steps.provenance.outputs.visual_assets }}
     steps:
-      - name: Checkout byte-frozen V80 production source
+      - name: Checkout canonical current Exploration engine into public root
         uses: actions/checkout@v4
         with:
-          ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
+          ref: ${{ env.EXPLORATION_SOURCE_SHA }}
           path: site
       - name: Checkout the authoritative main Exploration source commit
         uses: actions/checkout@v4
@@ -139,7 +139,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
+          test "$(git -C site rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
           test "$(git -C encounter-source rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
           test "$(git -C combat-author rev-parse HEAD)" = "$(git -C combat-source rev-parse HEAD)"
           test -s encounter-source/src/audio/exploration-soundtrack-v1.js
@@ -347,7 +347,8 @@ jobs:
           test -s "$rich/src/sculpt-lab-main.js"
           test -s "$rich/src/builder/world-assembler-main.js"
           grep -Fq 'const RICH=Object.freeze' "$rich/src/builder/sculpt-builtin-map-presets.js"
-          ! grep -Fq 'const RICH=Object.freeze' "$stable/src/builder/sculpt-builtin-map-presets.js"
+          # The canonical Encounter preview now shares the unified native main source.
+          grep -Fq 'const RICH=Object.freeze' "$stable/src/builder/sculpt-builtin-map-presets.js"
           jq -e --arg sha "$rich_sha" '.exploration==$sha' "$rich/release-provenance.v1.json" >/dev/null
           jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha' "$stable/release-provenance.v1.json" >/dev/null
           echo 'SAFE: main + V80 unchanged; pinned PR301 preserved by every full Pages deployment'
@@ -466,6 +467,35 @@ jobs:
             node scripts/smoke-sculpt-terrain-lab.mjs
           )
           rm "$waterfall/scripts"
+      - name: Stage canonical main runtime at public root
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The public root is the SAME checked-out official release tree:
+          # no legacy V80 engine is allowed to overwrite /sculpt-lab.html.
+          test "$(git -C site rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
+          cmp encounter-source/sculpt-lab.html site/sculpt-lab.html
+          cmp encounter-source/world-assembler.html site/world-assembler.html
+          cmp encounter-source/src/sculpt-lab-main.js site/src/sculpt-lab-main.js
+          test -s site/src/builder/world-assembler-main.js
+          grep -Fq 'SCULPT_TERRAIN_MAX_LEVEL=16' site/src/world/sculpt-height-model.js
+          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' site/src/sculpt-lab-main.js
+          grep -Fq 'waterAllowed===true' site/src/world/sculpt-scene-preview.js
+          grep -Fq 'id="object-open-interior"' site/sculpt-lab.html
+          grep -Fq 'const RICH=Object.freeze' site/src/builder/sculpt-builtin-map-presets.js
+          # Combat remains supplied ONLY from its approved main commit and
+          # the existing visual catalog. Static copies are not extra rule owners.
+          mkdir -p site/combat-preview site/capture-assets
+          rsync -a --exclude='.git' combat-source/ site/combat-preview/
+          rsync -a --exclude='.git' capture-source/ site/capture-assets/
+          cp site/preview/encounters-v80/release-provenance.v1.json site/release-provenance.v1.json
+          jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha and .combatMain==.authorShowcase' site/release-provenance.v1.json >/dev/null
+          # Keep old URL as historical rollback only; no second live renderer.
+          test -s site/sculpt-lab-v80.html
+          test -s site/preview/waterfall-height-pr320/sculpt-lab.html
+          test -s site/preview/ramp-pr316/sculpt-lab.html
+          test -s site/preview/rich-presets-pr301/sculpt-lab.html
+          echo 'CANONICAL MAIN: current native 2.5D at root; V80 byte-frozen rollback only'
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -548,6 +578,26 @@ jobs:
           grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/waterfall-height-pr320-main.js
           grep -Fq 'world-room-full-editor-v1-height16-ui-r1' /tmp/waterfall-height-pr320-sculpt.html
           echo 'LIVE PR325 UI fix verified in PR320 preview at exact SHA; V80 and PR318 pinned'
+      - name: Verify canonical public root is unified native 2.5D, not V80
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/sculpt-lab.html?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-sculpt.html
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/world-assembler.html?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-world.html
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/src/sculpt-lab-main.js?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-engine.js
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/src/world/sculpt-height-model.js?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-heights.js
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/src/world/sculpt-scene-preview.js?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-scene.js
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/src/builder/sculpt-builtin-map-presets.js?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-presets.js
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 "$base/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/main-canonical-provenance.json
+          grep -Fq 'id="object-open-interior"' /tmp/main-canonical-sculpt.html
+          grep -Fq 'id="graph-nodes"' /tmp/main-canonical-world.html
+          grep -Fq 'SCULPT_TERRAIN_MAX_LEVEL=16' /tmp/main-canonical-heights.js
+          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/main-canonical-engine.js
+          grep -Fq 'waterAllowed===true' /tmp/main-canonical-scene.js
+          grep -Fq 'const RICH=Object.freeze' /tmp/main-canonical-presets.js
+          jq -e --arg sha "$EXPLORATION_SOURCE_SHA" '.exploration==$sha and .combatMain==.authorShowcase' /tmp/main-canonical-provenance.json >/dev/null
+          echo "CANONICAL main native 2.5D verified at $EXPLORATION_SOURCE_SHA"
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |

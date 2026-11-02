@@ -1,3 +1,26 @@
+# Lot — Rencontres calmes héritées du monde, exceptions opt-in par zone (2 novembre 2026)
+
+- **Clarification utilisateur** : une base générique *calme* doit supprimer toute obligation de régler chaque zone ; les joueurs peuvent personnaliser la fréquence et distance d'une WorldArea individuellement, sans affecter les autres.
+- **Source** : branche `work/exploration-calm-global-zone-2026-11-02` créée depuis candidat natif unifié PR329 SHA `92a68a41555d4f41a0d83707b43b9e6915a3b9f6` ; checkpoint `checkpoint/exploration-calm-global-zone-start-2026-11-02`. Aucun développement sur main.
+- **Réemploi autorité unique** : transplant des 11 fichiers exacts de PR315 par patch sans écraser les améliorations #329. Le profil du monde `WorldDocument.encounterConfig` est la seule autorité des chances par terrain, éléments, rareté Capture et distance globale. Le contrôleur de rencontres reste seul compteur de déplacements / tirage ; `WorldArea.encounters` contient seulement `randomEnabled` et au besoin les exceptions `checkDistance` (80–2000) et `chanceMultiplierPercent` (0–300). Pas de copie de profils par zone.
+- **Héritage** : exception absente → règles mondiales. Action explicite « Hériter du monde » supprime les champs locaux ; l'export/import du WorldDocument sauvegarde exactement la sélection. Éditeurs Builder et Sculpt proposent les mêmes réglages, avec zone sélectionnée. Base calme des nouveaux documents : monde 300 points, chances 5–10 % selon terrain, routes 0 % ; un monde ancien configuré n'est pas modifié automatiquement ; bouton d'application globale volontaire disponible. Les créatures restent celles de Combat/Capture main et rareté intacte.
+- **RED/critères** : test dédié `tests/encounter-global-calm-area-overrides.test.js` créé en premier (SHA `c8e694a1b52b7f67e86b932506aa33341c43f89c`) ; vérifier normalisation, sélection de zone, roundtrip, multiplicateur et UI. Reprendre CI complète + Chromium, corriger les quatre tests anciens en échec de PR315 sans supprimer les assertions de déplacements réels ; vérifier la séparation des sauvegardes et publication Pages.
+- **Statut** : développement en branche, **pas encore GREEN**, aucune fusion sur PR329 ni publication V80/main. Garder PR315 historique pour traçabilité.
+
+---
+
+# Consolidation du Labo Exploration vers une version stable unifiée (1 novembre 2026)
+
+- **Clarification utilisateur** : l'écran noir concerne le raccord GenSrpg, pas le Labo Exploration ; ne PAS intégrer PR327 dans le moteur Labo. Fermeture PR328 sans merge (prévisualisation inutile). La demande prioritaire du Labo était le terrain 16 niveaux sur cartes anciennes et les cascades sur eau.
+- **Objectif** : une seule version officielle moderne remplace V80 après preuves, sans masquer les commandes ni inventer un deuxième WorldDocument, un deuxième catalogue Combat ou un second publisher.
+- **Départ** : main `ba0701224b764f4c60d4294c9729a49ade5869ad`, checkpoint `checkpoint/exploration-unified-v80-replacement-start-2026-11-01`, branche `work/exploration-unified-main-v80-replacement-2026-11-01`.
+- **Consolidation à deux parents** : commit `813cf8c0058e391cef080ba1c0846e1136fe92d6` conserve les 16 commits main récents (workflow, charte, tests, URLs) et apporte le code natif complet du SHA PR325 `d4b9d8c804e592392c5b7a2ec7cc2f160291a076` (lignée PR301, 313, 316, 318, 320, 325), exactement 52 chemins de code/tests modifiés. Aucune copie du correctif PR327. Les deux propriétaires des mêmes données ne sont pas lancés en parallèle.
+- **Gates** : TDD RED pour la recette de publication stable, CI Node + Chromium du SHA consolidé, contrôle réel d'une ancienne carte de niveau 7 qui passe à 16, route sur pente non élargie, cascades eau, portes/intérieurs, round-trip sauvegarde, audio et raccord Combat main. Déploiement Pages et contrôle HTTPS exact puis validation mobile de la release complète.
+- **Publication** : le seul workflow `.github/workflows/publish-v81-main.yml` doit faire du moteur source `main` la version canonique du site `/sculpt-lab.html` et du World Builder `/world-assembler.html`. V80 conserve le statut de checkpoint historique/retour arrière seulement, jamais autorité runtime. Les previews immuables ne sont pas la source du moteur canonique.
+- **Statut** : candidat non validé ; ne pas déclarer GREEN, ne pas fusionner/promouvoir sur main avant les preuves complètes, et préserver les sauvegardes existantes. Les branches divergentes restantes font l'objet d'un audit de portée/validation avant toute prise en charge.
+
+---
+
 # Publication isolée — cascades sur eau et terrain 16 niveaux (1 novembre 2026)
 
 - **Demande de test** : Cascades V3 refusées sur les cellules humides alors que les présets les posent, et relief du terrain plafonné à 7 niveaux. Rehausser la sculpture et permettre les cascades de la rive haute vers le plan d'eau. Ne PAS modifier la hauteur des sprites cascade.

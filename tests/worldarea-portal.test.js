@@ -171,9 +171,9 @@ test('object-anchor Portal resolves from the GREEN Building doorAnchor, never fr
   const portal = document.portals.find((item) => item.id === 'enter');
   const point = resolvePortalTriggerPoint(document.areas, portal);
 
-  // Definition: local door Y = 300 * 0.38 = 114.
+  // The bottom-anchored facade threshold is local Y = 300 * .10 = 30.
   // Building is rotated 90°: local +Y becomes world -X.
-  assert.ok(Math.abs(point.x - 186) < 1e-9);
+  assert.ok(Math.abs(point.x - 270) < 1e-9);
   assert.ok(Math.abs(point.y - 300) < 1e-9);
   assert.equal(point.radius, 30);
 });
@@ -184,14 +184,14 @@ test('findTriggeredPortal detects only the active Area trigger', () => {
   const enter = findTriggeredPortal(
     document,
     'outside',
-    { x: 186, y: 300 }
+    { x: 270, y: 300 }
   );
   assert.equal(enter?.id, 'enter');
 
   const wrongArea = findTriggeredPortal(
     document,
     'inside',
-    { x: 186, y: 300 }
+    { x: 270, y: 300 }
   );
   assert.equal(wrongArea, null);
 
@@ -384,10 +384,10 @@ test('regression: Building return follows the moved and scaled door instead of a
     exit
   );
 
-  // main-door: y = 700 + (300 * 1.2 * 0.38) = 836.8
-  // safe exterior offset: +56 world units = 892.8
+  // main-door: y = 700 + (300 * 1.2 * .10) = 736
+  // explicitly authored exterior offset: +56 = 792
   assert.ok(Math.abs(next.x - 1350) < 1e-9);
-  assert.ok(Math.abs(next.y - 892.8) < 1e-9);
+  assert.ok(Math.abs(next.y - 792) < 1e-9);
 });
 
 
@@ -419,7 +419,7 @@ test('anchored Spawn stores no competing X/Y and resolves from its Building door
   assert.equal('y' in spawn, false);
 
   assert.ok(Math.abs(point.x - 820) < 1e-9);
-  assert.ok(Math.abs(point.y - 1100) < 1e-9);
+  assert.ok(Math.abs(point.y - 1016) < 1e-9);
 });
 
 

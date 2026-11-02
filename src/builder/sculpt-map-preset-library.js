@@ -2,11 +2,12 @@
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
 import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
-import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
 import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
 import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js';
 import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {appendInteriorWall} from '../world/interior-wall-model.js';
+import {alignSculptReciprocalGatePair} from './sculpt-reciprocal-gates.js';
 
 export const SCULPT_MAP_PRESET_KEY='gensrpg.exploration.map-presets.v1';
 export const SCULPT_MAP_PRESET_KIND='gensrpg-sculpt-map-preset';
@@ -37,6 +38,22 @@ export function createSculptMapPreset(scene,{name='Ma carte',id='map-preset-1'}=
   return importSculptMapPreset({kind:SCULPT_MAP_PRESET_KIND,version:1,
     id,name:nameOf(name),scene:source});
 }
+// The .map-preset.json attachment is the SAME authoring contract consumed by
+// the World Builder. It is not a second export format or a height-grid dump.
+export function sculptMapPresetFilename(input){
+  const name=typeof input==='string'?input:input?.name;
+  const basename=String(name??'ma-carte').normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')
+    .slice(0,70)||'ma-carte';
+  return basename+'.map-preset.json';
+}
+export function serializeSculptMapPresetForShare(input){
+  // Revalidate before download: only versioned, complete Sculpt scenes leave
+  // the app; the debug UI and the WorldDocument are intentionally excluded.
+  return JSON.stringify(importSculptMapPreset(input));
+}
+
 export function readSculptMapPresets(storage){
   if(!storage||typeof storage.getItem!=='function')return [];
   const raw=storage.getItem(SCULPT_MAP_PRESET_KEY);
@@ -112,29 +129,12 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
   if(hostAreaId){
     const host=next.areas.find(other=>other.id===hostAreaId);
     if(!host||host.id===area.id)throw Error('Zone hôte introuvable');
-    next=connectWorldAreas(next,{
-      sourceAreaId:hostAreaId,targetAreaId:area.id,returnPortal:true
+    // One canonical directional contract for 2, 3 or more zones:
+    // host EXIT -> new zone ENTRY; new zone ENTRY -> host EXIT.
+    // Arrival Spawns are offset from their trigger to prevent auto-bounce.
+    next=alignSculptReciprocalGatePair(next,{
+      sourceAreaId:hostAreaId,targetAreaId:area.id
     });
-    const hostOutbound=next.portals.find(p=>p.sourceAreaId===hostAreaId&&
-      p.targetAreaId===area.id);
-    if(hostOutbound&&host.sculptTerrain&&host.surface?.routes?.[0]?.points?.length){
-      const route=host.surface.routes[0].points;
-      next=placeSculptWorldPortal(next,hostOutbound.id,{
-        x:host.width-64,y:Math.max(48,Math.min(host.height-48,route.at(-1).y))});
-    }
-    const outbound=next.portals.find(p=>p.sourceAreaId===area.id&&
-      p.targetAreaId===hostAreaId);
-    if(!outbound)throw Error('Passage retour non créé');
-    // Exit on the opposite edge, aligned with the last path segment.
-    next=placeSculptWorldPortal(next,outbound.id,mapEdgePoint(source,'exit'));
-    // A dedicated host arrival is placed at its own entry edge. The existing
-    // initial Spawn is NEVER moved, nor are any existing Portal destinations.
-    const hostSurface=host.surface?.routes?.[0]?.points??[];
-    const hostY=hostSurface[0]?.y??host.height/2;
-    next=addSpawn(next,hostAreaId,{x:Math.min(64,host.width/2),
-      y:Math.max(48,Math.min(host.height-48,hostY))});
-    const last=next.areas.find(a=>a.id===hostAreaId).spawns.at(-1);
-    next=updatePortal(next,outbound.id,p=>{p.targetSpawnId=last.id;});
   }
   // A native map preset only contains decor. Once instanced as a WorldArea,
   // link each real house to an *independent* editable interior, using the

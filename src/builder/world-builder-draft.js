@@ -232,6 +232,67 @@ export function createWorldBuilderDraft(sourceDocument) {
  * EncounterConfig contains no enabled probabilities or elements.
  * Any configured document is preserved byte-for-byte in its gameplay fields.
  */
+const CALM_ENCOUNTER_CHANCES = Object.freeze({
+  forest:6, plain:5, mountain:6, snow:6, volcano:10,
+  sea:6, sand:5, road:0
+});
+
+/** Explicit WorldDocument authoring command; never changes rarity or movement. */
+/**
+ * Optional per-Area exceptions only. No copied encounter profiles: all terrain
+ * families, selected elements and creature rarity stay owned by WorldDocument.
+ * null resets the selected field to world inheritance.
+ */
+export function updateAreaEncounterLocalRules(draft, areaId, {
+  checkDistance, chanceMultiplierPercent
+} = {}) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  for(const [key,value,min,max] of [
+    ['checkDistance',checkDistance,80,2000],
+    ['chanceMultiplierPercent',chanceMultiplierPercent,0,300]
+  ]) {
+    if(value===undefined)continue;
+    if(value===null){delete area.encounters[key];continue;}
+    const number=Number(value);
+    if(!Number.isFinite(number))throw Error('Réglage de rencontres invalide : '+key);
+    area.encounters[key]=Math.max(min,Math.min(max,Math.round(number)));
+  }
+  return next;
+}
+
+export function updateWorldEncounterCheckDistance(draft, distance) {
+  const next=clone(draft);
+  const value=Number(distance);
+  if (!Number.isFinite(value)) throw Error('Distance de rencontre invalide');
+  next.encounterConfig={...next.encounterConfig,
+    checkDistance:Math.max(80,Math.min(2000,Math.round(value)))};
+  return next;
+}
+
+/** Author opt-in only: change cadence and encounter odds, not element lists, rarity or Area flags. */
+export function applyCalmEncounterBaseline(draft) {
+  const next=clone(draft);
+  if(!Array.isArray(next.encounterConfig?.families))
+    throw Error('Configuration des rencontres introuvable');
+  next.encounterConfig={...next.encounterConfig,checkDistance:300,
+    families:next.encounterConfig.families.map(profile=>({
+      ...profile,encounterChancePercent:(profile.elementChances??[]).length
+        ?(CALM_ENCOUNTER_CHANCES[profile.terrainFamilyId]??6):0
+    }))};
+  return next;
+}
+
+/**
+ * User-facing new-world command: one calm policy is authored in WorldDocument.
+ * Old imports and deliberate empty maps are never silently initialized.
+ */
+export function createNewWorldBuilderDraft(options={}) {
+  return initializeWorldPresetEncounters(createBlankWorldBuilderDraft(options));
+}
+
 export function initializeWorldPresetEncounters(draft) {
   if (!encounterConfigNeedsExplicitInitialization(draft?.encounterConfig))
     return createWorldBuilderDraft(draft);
@@ -1941,7 +2002,9 @@ export function createBuildingInteriorLink(
       kind: 'building-door',
       objectId: buildingId,
       anchorId,
-      offset: 72
+      // The doorway belongs to the scaled building, not the middle of a road.
+      // One small local exit clearance is projected by the existing door model.
+      offset: 20
     }
   });
 
@@ -1956,7 +2019,9 @@ export function createBuildingInteriorLink(
       kind: 'object-anchor',
       objectId: buildingId,
       anchorId,
-      radius: 32
+      // One canonical trigger, with enough approach distance in a 2.5D
+      // perspective for the player to reach the actual facade.
+      radius: 52
     },
     targetAreaId:
       targetArea.id,
@@ -2047,6 +2112,56 @@ export function serializeWorldBuilderDraft(
   return JSON.stringify(result.document, null, 2);
 }
 
+// Historical generated house links used 72 world units of exterior clearance,
+// placing the hero in the road rather than at the threshold. Upgrade ONLY
+// unmodified generator-owned pairs, not a player's explicit anchored offset.
+export function migrateLegacyBuildingDoorReturnSpawns(document) {
+  let changed = false;
+  const areas = document.areas.map(area => {
+    let localChange = false;
+    const spawns = area.spawns.map(spawn => {
+      const a = spawn.anchor;
+      if (a?.kind !== 'building-door' || a.offset !== 72 ||
+          !spawn.id.startsWith(a.objectId + '-return-') ||
+          !/^\d+$/.test(spawn.id.slice((a.objectId + '-return-').length))) return spawn;
+      const enter = document.portals.some(p => p.sourceAreaId === area.id &&
+        p.trigger?.kind === 'object-anchor' && p.trigger.objectId === a.objectId &&
+        p.trigger.anchorId === a.anchorId &&
+        document.portals.some(ret => ret.sourceAreaId === p.targetAreaId &&
+          ret.targetAreaId === area.id && ret.targetSpawnId === spawn.id));
+      if (!enter) return spawn;
+      changed = true;localChange = true;
+      return {...spawn, anchor:{...a,offset:20}};
+    });
+    return localChange ? {...area,spawns} : area;
+  });
+
+  // Generated 32-unit entrances from the former default were too strict
+  // in the oblique 2.5D view. Migrate ONLY unmodified generator-owned
+  // entries backed by a matching return Portal and anchored outside Spawn.
+  const portals = document.portals.map(p => {
+    const anchor=p.trigger;
+    if(anchor?.kind!=='object-anchor' || anchor.radius!==32 ||
+       !p.id.startsWith(anchor.objectId+'-enter-') ||
+       !/^\d+$/.test(p.id.slice((anchor.objectId+'-enter-').length)))return p;
+    const target=document.areas.find(a=>a.id===p.targetAreaId);
+    if(target?.kind!=='interior')return p;
+    const matchingReturn=document.portals.some(ret=>
+      ret.sourceAreaId===target.id && ret.targetAreaId===p.sourceAreaId &&
+      document.areas.some(area=>area.id===p.sourceAreaId&&area.spawns.some(spawn=>
+        spawn.id===ret.targetSpawnId &&
+        spawn.anchor?.kind==='building-door' &&
+        spawn.anchor.objectId===anchor.objectId &&
+        spawn.anchor.anchorId===anchor.anchorId &&
+        spawn.id.startsWith(anchor.objectId+'-return-') &&
+        /^\d+$/.test(spawn.id.slice((anchor.objectId+'-return-').length)))));
+    if(!matchingReturn)return p;
+    changed=true;
+    return {...p,trigger:{...anchor,radius:52}};
+  });
+  return changed ? {...document,areas,portals} : document;
+}
+
 export function importWorldBuilderDocument(
   jsonText,
   options = {}
@@ -2065,5 +2180,5 @@ export function importWorldBuilderDocument(
     );
   }
 
-  return createWorldBuilderDraft(result.document);
+  return createWorldBuilderDraft(migrateLegacyBuildingDoorReturnSpawns(result.document));
 }

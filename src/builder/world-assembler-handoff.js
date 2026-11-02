@@ -1,7 +1,7 @@
 import {
   importWorldBuilderDocument,
   serializeWorldBuilderDraft
-} from './world-builder-draft.js';
+} from './world-builder-draft.js?rev=forest1-entrances-v1';
 
 // Transport and persistence of the SAME canonical WorldDocument only. These
 // adapters never write a second WorldGraph or reinterpret Portal/Area IDs.
