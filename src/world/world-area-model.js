@@ -74,7 +74,7 @@ function normalizeSpawn(raw, index) {
   });
 }
 
-function normalizeWorldAreaEncounters(raw, kind) {
+export function normalizeWorldAreaEncounters(raw, kind) {
   const encounters =
     raw && typeof raw === 'object'
       ? raw

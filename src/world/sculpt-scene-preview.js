@@ -4,6 +4,7 @@ import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWat
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-family-encounter-config.js';
+import {normalizeWorldAreaEncounters} from './world-area-model.js';
 import {TERRAIN_FAMILY_IDS} from './terrain-family-registry.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js?rev=waterfalls-v3-ramp-v77';
@@ -53,7 +54,7 @@ function sculptEncounterSceneSettings(source = {}) {
     throw Error('Scène sculptable : rencontres de l\'Area extérieure invalides');
   return Object.freeze({
     encounterConfig:config,
-    exteriorEncounters:Object.freeze({randomEnabled:rawArea?.randomEnabled??true})
+    exteriorEncounters:normalizeWorldAreaEncounters(rawArea,'exterior')
   });
 }
 

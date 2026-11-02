@@ -918,6 +918,21 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   Rencontres aléatoires autorisées dans cette zone
  </label>
  <output id="sculpt-encounter-area-status" aria-live="polite"></output>
+ <label class="sculpt-encounter-editor__toggle">
+  <input id="sculpt-encounter-area-inherit" type="checkbox" checked>
+  Hériter des rencontres générales du monde
+ </label>
+ <div id="sculpt-encounter-area-overrides" hidden>
+  <label>Distance — zone actuelle uniquement
+   <input id="sculpt-encounter-area-distance" type="range" min="80" max="2000" step="20" value="300">
+   <output id="sculpt-encounter-area-distance-value">300 points</output>
+  </label>
+  <label>Fréquence — zone actuelle uniquement
+   <input id="sculpt-encounter-area-multiplier" type="range" min="0" max="300" step="10" value="100">
+   <output id="sculpt-encounter-area-multiplier-value">100 %</output>
+  </label>
+  <small>100 % = chances du monde, 200 % = deux fois plus. Les éléments autorisés et les raretés Capture restent inchangés.</small>
+ </div>
  <label>Famille de terrain à configurer
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>

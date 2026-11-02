@@ -75,6 +75,6 @@ test('both authoring UIs expose real frequency control and deliberate calm prese
   assert.match(html,/id="(?:family|sculpt)-encounter-distance"/);
   assert.match(html,/id="(?:family|sculpt)-encounter-calm-baseline"/);
  }
- assert.match(source('src/main.js'),/checkDistance: encounterTest \? 80 : activeWorldDocument\.encounterConfig\.checkDistance/);
- assert.match(source('src/sculpt-lab-main.js'),/checkDistance:sculptEncounterTest\?80:sculptEncounterConfig\.checkDistance/);
+ assert.match(source('src/main.js'),/checkDistance: encounterTest \? 80 : undefined/);
+ assert.match(source('src/sculpt-lab-main.js'),/checkDistance:sculptEncounterTest\?80:undefined/);
 });
