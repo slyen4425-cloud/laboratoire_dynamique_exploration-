@@ -1,0 +1,58 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
+import {sculptPassabilityCells} from '../src/core/sculpt-passability-diagnostics.js';
+
+const area=(terrain,other={})=>({
+  world:{width:terrain.width*28,height:terrain.height*21,
+    objects:[],obstacles:[],walls:[],...other},
+  terrain,
+  collisionContext:{sculptNavigation:{terrain,cellWidth:28,cellHeight:21,
+    projectionRise:18,maxStepUp:0,maxStepDown:0,shoreEntryFraction:.14,
+    bridges:[],stairs:[]}},
+  tileWidth:28,tileHeight:21,radius:5
+});
+const cell=(cells,x,y)=>cells.find(c=>c.col===x&&c.row===y);
+
+test('read-only passability sample reuses same collision world for object, wall and map bounds',()=>{
+ const t=createSculptTerrain({width:4,height:4});
+ const source=area(t,{obstacles:[{x:28,y:21,w:28,h:21}]});
+ const before=JSON.stringify(source.world)+JSON.stringify(t);
+ const cells=sculptPassabilityCells(source);
+ assert.equal(cells.length,16);
+ assert.equal(cell(cells,1,1).kind,'blocked');
+ assert.equal(cell(cells,3,3).kind,'passable');
+ assert.equal(JSON.stringify(source.world)+JSON.stringify(t),before);
+ assert.ok(Object.isFrozen(cells));
+});
+
+test('water on the canonical heightfield is blocked to a ground walker',()=>{
+ const levels=Array(16).fill(0),waterLevels=Array(16).fill(-1);
+ waterLevels[5]=2;
+ const t=createSculptTerrain({width:4,height:4,levels,waterLevels});
+ const cells=sculptPassabilityCells(area(t));
+ assert.equal(cell(cells,1,1).kind,'blocked');
+ assert.equal(cell(cells,3,3).kind,'passable');
+});
+
+test('unconnected raised land reports limited access instead of being painted free everywhere',()=>{
+ const levels=Array(16).fill(0);levels[5]=4;
+ const t=createSculptTerrain({width:4,height:4,levels});
+ const cells=sculptPassabilityCells(area(t));
+ assert.equal(cell(cells,1,1).kind,'limited');
+ assert.equal(cell(cells,3,3).kind,'passable');
+});
+
+test('UI is opt-in, disabled during Tester, drawn with same canvas and never exported',()=>{
+ const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(html,/id="passability-overlay-toggle"/);
+ assert.match(html,/aria-pressed="false"/);
+ assert.match(html,/id="passability-overlay-legend"/);
+ assert.match(main,/sculptPassabilityCells/);
+ assert.match(main,/isBlocked/);
+ assert.match(main,/if\(!navigationTesting&&passabilityOverlayEnabled\)/);
+ assert.match(main,/passability-overlay-toggle.*addEventListener/);
+ assert.match(main,/drawSculptPassabilityOverlay/);
+});
