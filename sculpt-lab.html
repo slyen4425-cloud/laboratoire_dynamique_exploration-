@@ -918,10 +918,35 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   Rencontres aléatoires autorisées dans cette zone
  </label>
  <output id="sculpt-encounter-area-status" aria-live="polite"></output>
+ <fieldset class="sculpt-encounter-editor__elements">
+  <legend>Exception facultative pour cette zone</legend>
+  <output id="sculpt-encounter-area-override-status">Règles mondiales héritées.</output>
+  <label>Distance locale (80–2000)
+   <span class="sculpt-encounter-editor__chance">
+    <input id="sculpt-encounter-area-distance" type="range" min="80" max="2000" step="20" value="300">
+    <output id="sculpt-encounter-area-distance-value" for="sculpt-encounter-area-distance">300 points</output>
+   </span>
+  </label>
+  <label>Fréquence locale relative au monde (0–300 %)
+   <span class="sculpt-encounter-editor__chance">
+    <input id="sculpt-encounter-area-chance-multiplier" type="range" min="0" max="300" step="5" value="100">
+    <output id="sculpt-encounter-area-chance-multiplier-value" for="sculpt-encounter-area-chance-multiplier">100 %</output>
+   </span>
+  </label>
+  <button id="sculpt-encounter-area-inherit" type="button">Hériter du monde (annuler les exceptions)</button>
+ </fieldset>
  <label>Famille de terrain à configurer
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>
  <output id="sculpt-encounter-family-hint" aria-live="polite"></output>
+ <label>Distance entre vérifications dans ce monde
+  <span class="sculpt-encounter-editor__chance">
+   <input id="sculpt-encounter-distance" type="range" min="80" max="2000" step="20" value="300">
+   <output id="sculpt-encounter-distance-value" for="sculpt-encounter-distance">300 points</output>
+  </span>
+ </label>
+ <button type="button" id="sculpt-encounter-calm-baseline">🌿 Appliquer la base calme (300 points, routes 0 %)</button>
+ <small>Application volontaire : conserve les éléments déjà choisis et la rareté des créatures.</small>
  <label>Chance de rencontre
   <span class="sculpt-encounter-editor__chance">
    <input id="sculpt-encounter-chance" type="range" min="0" max="100" step="1" value="0">
@@ -934,7 +959,7 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
  </fieldset>
  <output id="sculpt-encounter-authoring-status" aria-live="polite"></output>
  <small id="sculpt-encounter-catalog-summary"></small>
- <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. Les rencontres se vérifient après déplacement, environ tous les 160 points (80 en mode test rapide). La texture ne modifie jamais ces règles. « Exporter scène » conserve tous les réglages.</small>
+ <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. La distance est modifiable (80 points en mode test rapide explicite). Les règles ne dépendent pas de la texture. « Exporter scène » conserve les rencontres ; le simple fichier de préset de carte ne les contient pas.</small>
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
  <strong>🎨 Pinceau de textures</strong>
@@ -1207,6 +1232,6 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
  <textarea id="json" hidden aria-label="Données JSON techniques de terrain et de scène"></textarea>
 </details>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-audio-fades-r1-preset-save-share-v1-forest1-houses-canonical-v1-world-room-full-editor-v1-height16-ui-r1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-audio-fades-r1-preset-save-share-v1-forest1-houses-canonical-v1-world-room-full-editor-v1-height16-ui-r1-calm-inherit-area-r1"></script>
 </body>
 </html>

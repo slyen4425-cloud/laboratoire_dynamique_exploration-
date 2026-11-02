@@ -1,8 +1,8 @@
 import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
-  deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
+  deletePortal,createNewWorldBuilderDraft,createWorldBuilderDraft,
   serializeWorldBuilderDraft,importWorldBuilderDocument
-} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
+} from './world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=global-area-r1';
 import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
@@ -124,7 +124,7 @@ function installWorldAssembler(){
   const transfer=new URLSearchParams(window.location.search).get('return')==='1'
     ?readWorldAssemblerHandoff(window.sessionStorage):null;
   let draft=transfer?.document??readWorldAssemblerDraft(window.localStorage)
-    ??createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21});
+    ??createNewWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21});
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
   function status(message,isError=false){
@@ -536,7 +536,7 @@ function installWorldAssembler(){
   on(byId('reset-world'),'click',()=>dialog.showModal());
   on(dialog,'close',()=>{
     if(dialog.returnValue!=='confirm')return;
-    apply(()=>createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}),
+    apply(()=>createNewWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}),
       'Nouveau monde vierge prêt à assembler.');
     selectedId=draft.initialAreaId;render();
   });

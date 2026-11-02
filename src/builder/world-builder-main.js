@@ -12,6 +12,7 @@ import {
   appendSurfacePathPoint,
   createBuildingInteriorLink,
   createBlankWorldBuilderDraft,
+  createNewWorldBuilderDraft,
   createWorldBuilderDraft,
   deleteActorPlacement,
   deletePortal,
@@ -26,6 +27,9 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  updateAreaEncounterLocalRules,
+  updateWorldEncounterCheckDistance,
+  applyCalmEncounterBaseline,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled,
@@ -36,7 +40,7 @@ import {
   updateWorldObjectTransform,
   updateWorldObjectOverrides as updateWorldObjectOverridesDraft,
   validateWorldBuilderDraft as validateWorldBuilderDraftRaw
-} from './world-builder-draft.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1';
+} from './world-builder-draft.js?rev=encounter-selected-elements-v1&speed=terrain-family-speed-editor-v1&calm=global-area-r1';
 import {
   copyWorldObjectAsStamp,
   worldObjectStampInput
@@ -2504,6 +2508,18 @@ function refreshFamilyEncounterControls() {
       ? `La famille « ${selectedFamilyName} » est le sol de base de l'Area : aucune peinture nécessaire pour rencontrer ses créatures.`
       : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
 
+  $('family-encounter-distance').value = draft.encounterConfig.checkDistance;
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
+  const areaRules=area?.encounters??{};
+  const areaDistance=areaRules.checkDistance??draft.encounterConfig.checkDistance;
+  const areaChance=areaRules.chanceMultiplierPercent??100;
+  $('family-encounter-area-distance').value=areaDistance;
+  $('family-encounter-area-distance-value').value=areaDistance+' points';
+  $('family-encounter-area-chance-multiplier').value=areaChance;
+  $('family-encounter-area-chance-multiplier-value').value=areaChance+' %';
+  $('family-encounter-area-override-status').textContent=
+    areaRules.checkDistance===undefined&&areaRules.chanceMultiplierPercent===undefined
+      ?'Règles mondiales héritées.':'Exception active pour cette zone : les autres zones restent inchangées.';
   const profile = encounterProfile();
   if (!profile) return;
 
@@ -5532,6 +5548,33 @@ $('area-random-encounters-enabled').addEventListener('change', () => {
   refreshJson();
 });
 
+$('family-encounter-distance').addEventListener('input', () => {
+  draft = updateWorldEncounterCheckDistance(draft, $('family-encounter-distance').value);
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
+  refreshJson();
+});
+$('family-encounter-calm-baseline').addEventListener('click', () => {
+  draft = applyCalmEncounterBaseline(draft);
+  refreshJson();
+});
+for(const [id,key] of [
+  ['family-encounter-area-distance','checkDistance'],
+  ['family-encounter-area-chance-multiplier','chanceMultiplierPercent']
+]){
+  $(id).addEventListener('input',()=>{
+    draft=updateAreaEncounterLocalRules(draft,selectedAreaId,{[key]:$(id).value});
+    refreshFamilyEncounterControls();
+    refreshJson();
+  });
+}
+$('family-encounter-area-inherit').addEventListener('click',()=>{
+  draft=updateAreaEncounterLocalRules(draft,selectedAreaId,{
+    checkDistance:null,chanceMultiplierPercent:null
+  });
+  refreshFamilyEncounterControls();
+  refreshJson();
+});
+
 $('family-encounter-chance').addEventListener(
   'input',
   () => {
@@ -7406,7 +7449,7 @@ $('new-blank-world').addEventListener('click', () => {
     'seront perdues. Utilise « Exporter carte » pour conserver la carte actuelle.'
   )) return;
 
-  draft = createBlankWorldBuilderDraft();
+  draft = createNewWorldBuilderDraft();
   selectedStampPreset = null;
   pendingPaintPoint = null;
   pendingObjectMove = null;

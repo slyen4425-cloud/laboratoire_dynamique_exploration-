@@ -1,3 +1,14 @@
+# Lot — Rencontres calmes héritées du monde, exceptions opt-in par zone (2 novembre 2026)
+
+- **Clarification utilisateur** : une base générique *calme* doit supprimer toute obligation de régler chaque zone ; les joueurs peuvent personnaliser la fréquence et distance d'une WorldArea individuellement, sans affecter les autres.
+- **Source** : branche `work/exploration-calm-global-zone-2026-11-02` créée depuis candidat natif unifié PR329 SHA `92a68a41555d4f41a0d83707b43b9e6915a3b9f6` ; checkpoint `checkpoint/exploration-calm-global-zone-start-2026-11-02`. Aucun développement sur main.
+- **Réemploi autorité unique** : transplant des 11 fichiers exacts de PR315 par patch sans écraser les améliorations #329. Le profil du monde `WorldDocument.encounterConfig` est la seule autorité des chances par terrain, éléments, rareté Capture et distance globale. Le contrôleur de rencontres reste seul compteur de déplacements / tirage ; `WorldArea.encounters` contient seulement `randomEnabled` et au besoin les exceptions `checkDistance` (80–2000) et `chanceMultiplierPercent` (0–300). Pas de copie de profils par zone.
+- **Héritage** : exception absente → règles mondiales. Action explicite « Hériter du monde » supprime les champs locaux ; l'export/import du WorldDocument sauvegarde exactement la sélection. Éditeurs Builder et Sculpt proposent les mêmes réglages, avec zone sélectionnée. Base calme des nouveaux documents : monde 300 points, chances 5–10 % selon terrain, routes 0 % ; un monde ancien configuré n'est pas modifié automatiquement ; bouton d'application globale volontaire disponible. Les créatures restent celles de Combat/Capture main et rareté intacte.
+- **RED/critères** : test dédié `tests/encounter-global-calm-area-overrides.test.js` créé en premier (SHA `c8e694a1b52b7f67e86b932506aa33341c43f89c`) ; vérifier normalisation, sélection de zone, roundtrip, multiplicateur et UI. Reprendre CI complète + Chromium, corriger les quatre tests anciens en échec de PR315 sans supprimer les assertions de déplacements réels ; vérifier la séparation des sauvegardes et publication Pages.
+- **Statut** : développement en branche, **pas encore GREEN**, aucune fusion sur PR329 ni publication V80/main. Garder PR315 historique pour traçabilité.
+
+---
+
 # Consolidation du Labo Exploration vers une version stable unifiée (1 novembre 2026)
 
 - **Clarification utilisateur** : l'écran noir concerne le raccord GenSrpg, pas le Labo Exploration ; ne PAS intégrer PR327 dans le moteur Labo. Fermeture PR328 sans merge (prévisualisation inutile). La demande prioritaire du Labo était le terrain 16 niveaux sur cartes anciennes et les cascades sur eau.

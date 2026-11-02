@@ -62,8 +62,9 @@ import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-e
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
-import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
-  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
+import {setAreaEncounterRandomEnabled,updateAreaEncounterLocalRules,updateTerrainFamilyEncounterProfile,
+  updateWorldEncounterCheckDistance,applyCalmEncounterBaseline,
+  setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=global-area-r1';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
@@ -80,7 +81,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js?rev=forest1-entrances-v1';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
-import {createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
+import {createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1&calm=global-area-r1';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
@@ -255,6 +256,18 @@ function refreshSculptEncounterEditor(){
       ?'Cette famille est le sol de base : aucune peinture nécessaire.'
       :'Sol de base : '+baseName+'. '+familyName+' s’applique sur les zones et routes de cette famille.';
   const profile=sculptEncounterProfile();
+  $('sculpt-encounter-distance').value=String(sculptEncounterConfig.checkDistance);
+  $('sculpt-encounter-distance-value').textContent=String(sculptEncounterConfig.checkDistance)+' points';
+  const areaRules=navigationEncounterArea().encounters;
+  const localDistance=areaRules.checkDistance??sculptEncounterConfig.checkDistance;
+  const localChance=areaRules.chanceMultiplierPercent??100;
+  $('sculpt-encounter-area-distance').value=String(localDistance);
+  $('sculpt-encounter-area-distance-value').textContent=localDistance+' points';
+  $('sculpt-encounter-area-chance-multiplier').value=String(localChance);
+  $('sculpt-encounter-area-chance-multiplier-value').textContent=localChance+' %';
+  $('sculpt-encounter-area-override-status').textContent=
+    areaRules.checkDistance===undefined&&areaRules.chanceMultiplierPercent===undefined
+      ?'Règles mondiales héritées.':'Exception active uniquement dans cette zone.';
   $('sculpt-encounter-chance').value=String(profile?.encounterChancePercent??0);
   $('sculpt-encounter-chance-value').textContent=
     String(Math.round(profile?.encounterChancePercent??0))+' %';
@@ -301,6 +314,29 @@ function setSculptEncounterEditorOpen(on){
   $('mode-encounters').setAttribute('aria-pressed',String(on));
   if(on)refreshSculptEncounterEditor();
 }
+function saveSculptAreaEncounterRules(encounters){
+  // Same WorldArea and same WorldDocument as the Editor, not a parallel
+  // encounter configuration. Only the user-selected area is changed.
+  const frozen=Object.freeze({...encounters});
+  if(activeInteriorId){
+    const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
+    if(!entry)throw Error('WorldArea intérieure absente');
+    const nextArea=normalizeWorldArea({...entry.area,encounters:frozen});
+    sculptInteriors=Object.freeze(sculptInteriors.map(e=>
+      e.area.id===entry.area.id?updateSculptInterior(e,{area:nextArea}):e
+    ));
+  }else{
+    sculptExteriorEncounters=frozen;
+    if(sculptWorldDraft&&sculptWorldAreaId&&
+       sculptWorldDraft.areas.some(e=>e.id===sculptWorldAreaId)){
+      sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+        areas:sculptWorldDraft.areas.map(a=>a.id===sculptWorldAreaId
+          ?{...a,encounters:frozen}:a)});
+    }
+  }
+  sculptEncounterAreaCache=null;
+  refreshSculptEncounterEditor();
+}
 if(sculptEncounterEditor){
   $('mode-encounters').addEventListener('click',
     ()=>setSculptEncounterEditorOpen(sculptEncounterEditor.hidden));
@@ -311,6 +347,17 @@ if(sculptEncounterEditor){
   }
   $('sculpt-encounter-family').addEventListener('change',()=>{
     selectedSculptEncounterFamilyId=$('sculpt-encounter-family').value;
+    refreshSculptEncounterEditor();
+  });
+  $('sculpt-encounter-distance').addEventListener('input',()=>{
+    const draft=updateWorldEncounterCheckDistance(
+      {encounterConfig:sculptEncounterConfig},$('sculpt-encounter-distance').value);
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(draft.encounterConfig);
+    $('sculpt-encounter-distance-value').textContent=sculptEncounterConfig.checkDistance+' points';
+  });
+  $('sculpt-encounter-calm-baseline').addEventListener('click',()=>{
+    const draft=applyCalmEncounterBaseline({encounterConfig:sculptEncounterConfig});
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(draft.encounterConfig);
     refreshSculptEncounterEditor();
   });
   $('sculpt-encounter-chance').addEventListener('input',()=>{
@@ -328,19 +375,26 @@ if(sculptEncounterEditor){
     const changed=setAreaEncounterRandomEnabled(
       {areas:[area]},area.id,$('sculpt-encounter-area-enabled').checked
     );
-    const encounters=Object.freeze({...changed.areas[0].encounters});
-    if(activeInteriorId){
-      const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
-      if(!entry)throw Error('WorldArea intérieure absente');
-      const nextArea=normalizeWorldArea({...entry.area,encounters});
-      sculptInteriors=Object.freeze(sculptInteriors.map(e=>
-        e.area.id===entry.area.id?updateSculptInterior(e,{area:nextArea}):e
-      ));
-    }else{
-      sculptExteriorEncounters=encounters;
-    }
-    sculptEncounterAreaCache=null;
-    refreshSculptEncounterEditor();
+    saveSculptAreaEncounterRules(changed.areas[0].encounters);
+  });
+  for(const [id,key] of [
+    ['sculpt-encounter-area-distance','checkDistance'],
+    ['sculpt-encounter-area-chance-multiplier','chanceMultiplierPercent']
+  ]){
+    $(id).addEventListener('input',()=>{
+      const area=navigationEncounterArea();
+      const changed=updateAreaEncounterLocalRules({areas:[area]},area.id,{
+        [key]:$(id).value
+      });
+      saveSculptAreaEncounterRules(changed.areas[0].encounters);
+    });
+  }
+  $('sculpt-encounter-area-inherit').addEventListener('click',()=>{
+    const area=navigationEncounterArea();
+    const changed=updateAreaEncounterLocalRules({areas:[area]},area.id,{
+      checkDistance:null,chanceMultiplierPercent:null
+    });
+    saveSculptAreaEncounterRules(changed.areas[0].encounters);
   });
   window.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&!sculptEncounterEditor.hidden)
@@ -351,6 +405,7 @@ window.__sculptEncounterEditorProbe=()=>Object.freeze({
   available:!!sculptEncounterEditor,open:!!sculptEncounterEditor&&!sculptEncounterEditor.hidden,
   familyId:selectedSculptEncounterFamilyId,
   chance:sculptEncounterProfile()?.encounterChancePercent??null,
+  checkDistance:sculptEncounterConfig.checkDistance,
   enabledElementIds:(sculptEncounterProfile()?.elementChances??[])
     .filter(x=>x.chancePercent>0).map(x=>x.elementId),
   allowedInArea:sculptEncounterAreaEnabled(),
@@ -387,6 +442,7 @@ function sculptEncounterStep(){
   const intent=sculptEncounterController.step({
     area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
     encounterConfig:sculptEncounterConfig,
+    checkDistance:sculptEncounterTest?80:sculptEncounterConfig.checkDistance,
     captureCatalog:sculptEncounterCatalog,
     playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',
     random:sculptEncounterRandom
