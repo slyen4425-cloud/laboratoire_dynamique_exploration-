@@ -106,6 +106,13 @@ jobs:
         with:
           ref: d4b9d8c804e592392c5b7a2ec7cc2f160291a076
           path: waterfall-source
+      # Full unified candidate already CI-validated under PR329 and
+      # merged calm-area sublot PR333. One test-only preview; NEVER V80 root.
+      - name: Checkout pinned unified mobile candidate from approved exact SHA
+        uses: actions/checkout@v4
+        with:
+          ref: 77607520574c8509becf91a6dc55783e29c1570c
+          path: unified-source
       - name: Checkout official current Capture Combat main
         uses: actions/checkout@v4
         with:
@@ -466,6 +473,63 @@ jobs:
             node scripts/smoke-sculpt-terrain-lab.mjs
           )
           rm "$waterfall/scripts"
+      - name: Stage full unified mobile trial without replacing V80
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate_sha="77607520574c8509becf91a6dc55783e29c1570c"
+          test "$(git -C unified-source rev-parse HEAD)" = "$candidate_sha"
+          test "$(git -C site rev-parse HEAD)" = 933c852c41c4511cb0eed0717c246cc6b19aeddc
+          trial="$GITHUB_WORKSPACE/site/preview/unified-candidate"
+          test ! -e "$trial"
+          for historic in encounters-v80 rich-presets-pr301 ramp-pr316 waterfall-height-pr320; do
+            test -s "site/preview/$historic/sculpt-lab.html"
+          done
+          mkdir -p "$trial"
+          cp unified-source/sculpt-lab.html unified-source/sculpt-lab-v80.html "$trial/"
+          cp unified-source/world-assembler.html unified-source/builder.html unified-source/index.html "$trial/"
+          cp unified-source/manifest.webmanifest "$trial/"
+          for folder in src assets; do
+            mkdir -p "$trial/$folder"
+            rsync -a --exclude='.git' "unified-source/$folder/" "$trial/$folder/"
+          done
+          mkdir -p "$trial/combat-preview" "$trial/capture-assets"
+          rsync -a --exclude='.git' combat-source/ "$trial/combat-preview/"
+          rsync -a --exclude='.git' capture-source/ "$trial/capture-assets/"
+          jq -n --arg exploration "$candidate_sha" \
+            --arg main "$(git -C combat-source rev-parse HEAD)" \
+            --arg author "$(git -C combat-author rev-parse HEAD)" \
+            --arg assets "$(git -C capture-source rev-parse HEAD)" \
+            '{schema:"gensrpg-exploration-combat-release-v1",exploration:$exploration,combatMain:$main,authorShowcase:$author,visualAssets:$assets,stage:"test-only-unified-candidate"}' \
+            > "$trial/release-provenance.v1.json"
+          # Independent proof of full source and gameplay rules: NOT a mock UI.
+          cmp unified-source/sculpt-lab.html "$trial/sculpt-lab.html"
+          cmp unified-source/src/sculpt-lab-main.js "$trial/src/sculpt-lab-main.js"
+          cmp unified-source/world-assembler.html "$trial/world-assembler.html"
+          grep -Fq 'SCULPT_TERRAIN_MAX_LEVEL=16' "$trial/src/world/sculpt-height-model.js"
+          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' "$trial/src/sculpt-lab-main.js"
+          grep -Fq 'waterAllowed===true' "$trial/src/world/sculpt-scene-preview.js"
+          grep -Fq 'const RICH=Object.freeze' "$trial/src/builder/sculpt-builtin-map-presets.js"
+          grep -Fq 'id="sculpt-encounter-area-inherit"' "$trial/sculpt-lab.html"
+          grep -Fq 'id="family-encounter-area-inherit"' "$trial/builder.html"
+          grep -Fq 'createNewWorldBuilderDraft' "$trial/src/builder/world-assembler-main.js"
+          grep -Fq 'chanceMultiplierPercent: area.encounters?.chanceMultiplierPercent' "$trial/src/encounters/encounter-controller.js"
+          jq -e --arg sha "$candidate_sha" '.exploration==$sha and .combatMain==.authorShowcase' \
+            "$trial/release-provenance.v1.json" >/dev/null
+          # Guard against altering the pinned production V80 byte-for-byte.
+          cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
+          echo 'ONE unified Pixel trial staged independently, V80 root and older links preserved'
+      - name: Test actual assembled unified candidate in Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          trial="$GITHUB_WORKSPACE/site/preview/unified-candidate"
+          ln -s "$GITHUB_WORKSPACE/unified-source/scripts" "$trial/scripts"
+          (
+            cd "$trial"
+            node scripts/smoke-sculpt-terrain-lab.mjs
+          )
+          rm "$trial/scripts"
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -487,6 +551,34 @@ jobs:
         with:
           ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: release-check
+      - name: Verify HTTPS unified candidate and original V80 after Pages deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          trial="$root/preview/unified-candidate"
+          sha="77607520574c8509becf91a6dc55783e29c1570c"
+          for page in sculpt-lab.html world-assembler.html builder.html; do
+            curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+              "$trial/$page?run=$GITHUB_RUN_ID" -o "/tmp/unified-$page"
+          done
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$trial/src/world/sculpt-height-model.js?run=$GITHUB_RUN_ID" -o /tmp/unified-height.js
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$trial/src/sculpt-lab-main.js?run=$GITHUB_RUN_ID" -o /tmp/unified-main.js
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$trial/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/unified-provenance.json
+          grep -Fq 'SCULPT_TERRAIN_MAX_LEVEL=16' /tmp/unified-height.js
+          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/unified-main.js
+          grep -Fq 'id="sculpt-encounter-area-inherit"' /tmp/unified-sculpt-lab.html
+          grep -Fq 'id="family-encounter-area-inherit"' /tmp/unified-builder.html
+          grep -Fq 'id="graph-nodes"' /tmp/unified-world-assembler.html
+          jq -e --arg sha "$sha" '.exploration==$sha and .combatMain==.authorShowcase' \
+            /tmp/unified-provenance.json >/dev/null
+          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
+            "$root/sculpt-lab-v80.html?run=$GITHUB_RUN_ID" -o /tmp/published-v80.html
+          cmp release-check/sculpt-lab-v80.html /tmp/published-v80.html
+          echo "Live unified trial verified at $sha; V80 frozen byte-for-byte"
       - name: Verify Pages also serves the pinned PR301 test editor after this main deployment
         shell: bash
         run: |
