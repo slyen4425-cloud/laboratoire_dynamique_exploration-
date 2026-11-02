@@ -80,11 +80,21 @@ function normalizeWorldAreaEncounters(raw, kind) {
       ? raw
       : {};
 
+  // Local values are optional overrides on the SAME WorldDocument world policy.
+  // An absent key inherits the world's check distance and terrain-family chance.
+  const distance = encounters.checkDistance;
+  const chanceMultiplier = encounters.chanceMultiplierPercent;
   return Object.freeze({
     randomEnabled:
       typeof encounters.randomEnabled === 'boolean'
         ? encounters.randomEnabled
-        : kind !== 'interior'
+        : kind !== 'interior',
+    ...(distance !== null && distance !== undefined && Number.isFinite(Number(distance))
+      ? {checkDistance: Math.max(80, Math.min(2000, Math.round(Number(distance))))}
+      : {}),
+    ...(chanceMultiplier !== null && chanceMultiplier !== undefined && Number.isFinite(Number(chanceMultiplier))
+      ? {chanceMultiplierPercent: Math.max(0, Math.min(300, Math.round(Number(chanceMultiplier))))}
+      : {})
   });
 }
 

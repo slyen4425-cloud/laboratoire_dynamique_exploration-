@@ -238,6 +238,31 @@ const CALM_ENCOUNTER_CHANCES = Object.freeze({
 });
 
 /** Explicit WorldDocument authoring command; never changes rarity or movement. */
+/**
+ * Optional per-Area exceptions only. No copied encounter profiles: all terrain
+ * families, selected elements and creature rarity stay owned by WorldDocument.
+ * null resets the selected field to world inheritance.
+ */
+export function updateAreaEncounterLocalRules(draft, areaId, {
+  checkDistance, chanceMultiplierPercent
+} = {}) {
+  const next=clone(draft);
+  const area=findArea(next,areaId);
+  if(!area)return next;
+  area.encounters??={randomEnabled:area.kind!=='interior'};
+  for(const [key,value,min,max] of [
+    ['checkDistance',checkDistance,80,2000],
+    ['chanceMultiplierPercent',chanceMultiplierPercent,0,300]
+  ]) {
+    if(value===undefined)continue;
+    if(value===null){delete area.encounters[key];continue;}
+    const number=Number(value);
+    if(!Number.isFinite(number))throw Error('Réglage de rencontres invalide : '+key);
+    area.encounters[key]=Math.max(min,Math.min(max,Math.round(number)));
+  }
+  return next;
+}
+
 export function updateWorldEncounterCheckDistance(draft, distance) {
   const next=clone(draft);
   const value=Number(distance);

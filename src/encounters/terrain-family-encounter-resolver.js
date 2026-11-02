@@ -40,6 +40,7 @@ export function resolveTerrainFamilyEncounter({
   terrainFamilyId,
   config,
   captureCatalog,
+  chanceMultiplierPercent = 100,
   random = Math.random
 }) {
   const profile = findTerrainFamilyEncounterProfile(
@@ -57,7 +58,13 @@ export function resolveTerrainFamilyEncounter({
 
   const encounterRoll = boundedRandom(random) * 100;
 
-  if (encounterRoll >= profile.encounterChancePercent) {
+  const multiplier = Number.isFinite(Number(chanceMultiplierPercent))
+    ? Math.max(0, Math.min(300, Number(chanceMultiplierPercent)))
+    : 100;
+  const effectiveChance = Math.max(0, Math.min(100,
+    profile.encounterChancePercent * multiplier / 100
+  ));
+  if (encounterRoll >= effectiveChance) {
     return Object.freeze({
       triggered: false,
       reason: 'chance',
