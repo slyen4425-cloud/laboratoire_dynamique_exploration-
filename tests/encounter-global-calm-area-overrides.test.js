@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {normalizeWorldArea} from '../src/world/world-area-model.js';
-import {createBlankWorldBuilderDraft,updateAreaEncounterLocalRules,serializeWorldBuilderDraft,importWorldBuilderDocument,
+import {createBlankWorldBuilderDraft,createNewWorldBuilderDraft,updateAreaEncounterLocalRules,serializeWorldBuilderDraft,importWorldBuilderDocument,
   updateTerrainFamilyEncounterProfile,setTerrainFamilyExclusiveEncounterElement}
   from '../src/builder/world-builder-draft.js';
 import {resolveTerrainFamilyEncounter} from '../src/encounters/terrain-family-encounter-resolver.js';
@@ -84,4 +84,21 @@ test('physical encounter controller respects local distance and 0%-override, wit
  assert.ok(stepWorld(active)?.opponentCreatureId,'local 80-unit rule must trigger real Capture intent');
  assert.equal(world.areas[0].encounters.checkDistance,undefined,'world stays unchanged');
  assert.equal(world.encounterConfig.checkDistance,300);
+});
+
+
+test('user-created worlds receive calm global defaults while deliberate blank fixtures and old saves remain unchanged',()=>{
+ const fresh=createNewWorldBuilderDraft({id:'calm-default'});
+ const forest=fresh.encounterConfig.families.find(p=>p.terrainFamilyId==='forest');
+ const road=fresh.encounterConfig.families.find(p=>p.terrainFamilyId==='road');
+ assert.equal(fresh.encounterConfig.checkDistance,300);
+ assert.equal(forest.encounterChancePercent,6);
+ assert.equal(road.encounterChancePercent,0);
+ assert.equal(fresh.areas[0].encounters.checkDistance,undefined);
+ assert.equal(fresh.areas[0].encounters.chanceMultiplierPercent,undefined);
+ const blank=createBlankWorldBuilderDraft({id:'explicit-blank'});
+ assert.ok(blank.encounterConfig.families.every(p=>p.encounterChancePercent===0));
+ assert.equal(importWorldBuilderDocument(serializeWorldBuilderDraft(blank)).encounterConfig.families[0].encounterChancePercent,0);
+ assert.match(read('src/builder/world-assembler-main.js'),/createNewWorldBuilderDraft/);
+ assert.match(read('src/builder/world-builder-main.js'),/draft = createNewWorldBuilderDraft\(\)/);
 });

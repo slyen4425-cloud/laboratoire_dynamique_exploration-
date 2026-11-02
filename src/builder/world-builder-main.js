@@ -12,6 +12,7 @@ import {
   appendSurfacePathPoint,
   createBuildingInteriorLink,
   createBlankWorldBuilderDraft,
+  createNewWorldBuilderDraft,
   createWorldBuilderDraft,
   deleteActorPlacement,
   deletePortal,
@@ -7448,7 +7449,7 @@ $('new-blank-world').addEventListener('click', () => {
     'seront perdues. Utilise « Exporter carte » pour conserver la carte actuelle.'
   )) return;
 
-  draft = createBlankWorldBuilderDraft();
+  draft = createNewWorldBuilderDraft();
   selectedStampPreset = null;
   pendingPaintPoint = null;
   pendingObjectMove = null;

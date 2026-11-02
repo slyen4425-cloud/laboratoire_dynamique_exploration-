@@ -285,6 +285,14 @@ export function applyCalmEncounterBaseline(draft) {
   return next;
 }
 
+/**
+ * User-facing new-world command: one calm policy is authored in WorldDocument.
+ * Old imports and deliberate empty maps are never silently initialized.
+ */
+export function createNewWorldBuilderDraft(options={}) {
+  return initializeWorldPresetEncounters(createBlankWorldBuilderDraft(options));
+}
+
 export function initializeWorldPresetEncounters(draft) {
   if (!encounterConfigNeedsExplicitInitialization(draft?.encounterConfig))
     return createWorldBuilderDraft(draft);
