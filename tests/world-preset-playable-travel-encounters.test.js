@@ -24,8 +24,9 @@ test('new World Builder worlds give native prefab terrain a nonzero configured C
   const controller=createEncounterController({checkDistance:160});
   const y=area.surface.routes[0].points[0].y;
   const player=x=>({currentAreaId:area.id,x,y});
-  controller.step({area,player:player(76),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
-  const intent=controller.step({area,player:player(270),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
+  // This is a deliberately fast authoring test, NOT the world cadence (300).
+  controller.step({area,player:player(76),encounterConfig:world.encounterConfig,checkDistance:80,captureCatalog:catalog,random:()=>0});
+  const intent=controller.step({area,player:player(270),encounterConfig:world.encounterConfig,checkDistance:80,captureCatalog:catalog,random:()=>0});
   assert.ok(intent?.opponentCreatureId,'No real Capture intent despite walking: '+family);
  }
 });
