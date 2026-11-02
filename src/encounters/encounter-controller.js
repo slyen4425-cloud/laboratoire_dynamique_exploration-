@@ -92,7 +92,11 @@ export function createEncounterController({
 
     // WorldDocument owns the live cadence; the constructor remains a fallback
     // for legacy callers and focused tests. No second timer or travel state.
-    const effectiveThreshold = positiveDistance(checkDistance, threshold);
+    // One EncounterController timer; only the actual WorldArea can override
+    // the world baseline. Explicit call-site override is reserved for test mode.
+    const effectiveThreshold = positiveDistance(checkDistance,
+      positiveDistance(area.encounters?.checkDistance,
+        positiveDistance(encounterConfig?.checkDistance, threshold)));
     if (travelledSinceCheck < effectiveThreshold) {
       return null;
     }
@@ -115,6 +119,7 @@ export function createEncounterController({
     const resolved = resolveTerrainFamilyEncounter({
       terrainFamilyId: family.terrainFamilyId,
       config: encounterConfig,
+      chanceMultiplierPercent:area.encounters?.chanceMultiplierPercent??100,
       captureCatalog,
       random
     });

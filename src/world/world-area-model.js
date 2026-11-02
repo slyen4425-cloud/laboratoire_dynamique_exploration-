@@ -80,11 +80,20 @@ function normalizeWorldAreaEncounters(raw, kind) {
       ? raw
       : {};
 
+  // WorldArea is the single owner of optional overrides. Null means inherit
+  // the WorldDocument policy; old Areas remain perfectly compatible.
+  const distance=Number(encounters.checkDistance);
+  const multiplier=Number(encounters.chanceMultiplierPercent);
   return Object.freeze({
     randomEnabled:
       typeof encounters.randomEnabled === 'boolean'
         ? encounters.randomEnabled
-        : kind !== 'interior'
+        : kind !== 'interior',
+    checkDistance: Number.isFinite(distance)&&distance>=80&&distance<=2000
+      ?Math.round(distance):null,
+    chanceMultiplierPercent: Number.isFinite(multiplier)&&multiplier>=0&&multiplier<=300&&
+      encounters.chanceMultiplierPercent!==null&&encounters.chanceMultiplierPercent!==undefined
+      ?Math.round(multiplier):null
   });
 }
 

@@ -40,6 +40,7 @@ export function resolveTerrainFamilyEncounter({
   terrainFamilyId,
   config,
   captureCatalog,
+  chanceMultiplierPercent = 100,
   random = Math.random
 }) {
   const profile = findTerrainFamilyEncounterProfile(
@@ -57,7 +58,12 @@ export function resolveTerrainFamilyEncounter({
 
   const encounterRoll = boundedRandom(random) * 100;
 
-  if (encounterRoll >= profile.encounterChancePercent) {
+  // Per-Area multiplier scales only the probability, never the element
+  // selection or the Capture-authored creature rarity.
+  const multiplier=Number.isFinite(chanceMultiplierPercent)
+    ?Math.max(0,Math.min(300,chanceMultiplierPercent)):100;
+  const localChance=Math.min(100,profile.encounterChancePercent*multiplier/100);
+  if (encounterRoll >= localChance) {
     return Object.freeze({
       triggered: false,
       reason: 'chance',

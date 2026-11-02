@@ -696,6 +696,28 @@ function reconcileAreaBoundaryDependents(
  * WorldArea.encounters.randomEnabled field; the Encounter Controller remains
  * the sole runtime authority for movement-distance encounter checks.
  */
+/** Explicit overrides for a single WorldArea. Null restores inherited
+ * WorldDocument cadence / terrain-family chances, with no copied profiles.
+ * Optional fields can be changed independently without affecting other Areas. */
+export function updateAreaEncounterOverrides(draft, areaId, {
+  checkDistance, chanceMultiplierPercent
+}={}) {
+  const next=clone(draft),area=findArea(next,areaId);
+  if(!area)throw Error('WorldArea introuvable');
+  area.encounters??={};
+  for(const [field,value,min,max] of [
+    ['checkDistance',checkDistance,80,2000],
+    ['chanceMultiplierPercent',chanceMultiplierPercent,0,300]
+  ]){
+    if(value===undefined)continue;
+    if(value===null){delete area.encounters[field];continue;}
+    const n=Number(value);
+    if(!Number.isFinite(n))throw Error('Réglage de rencontre invalide : '+field);
+    area.encounters[field]=Math.round(Math.max(min,Math.min(max,n)));
+  }
+  return next;
+}
+
 export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
   const next = clone(draft);
   const area = findArea(next, areaId);
