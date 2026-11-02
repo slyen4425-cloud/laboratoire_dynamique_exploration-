@@ -53,6 +53,7 @@ test('UI is opt-in, disabled during Tester, drawn with same canvas and never exp
  assert.match(main,/sculptPassabilityCells/);
  assert.match(main,/isBlocked/);
  assert.match(main,/if\(!navigationTesting&&passabilityOverlayEnabled\)/);
- assert.match(main,/passability-overlay-toggle.*addEventListener/);
+ assert.match(main,/if\(passabilityToggle\)passabilityToggle\.addEventListener/);
+ assert.match(main,/passabilityToggle\?\.setAttribute/);
  assert.match(main,/drawSculptPassabilityOverlay/);
 });
