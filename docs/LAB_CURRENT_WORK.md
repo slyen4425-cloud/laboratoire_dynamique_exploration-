@@ -1,3 +1,13 @@
+# Correctif source — initialisation 2.5D après chargement d'images (2 novembre 2026)
+
+- **Origine prouvée** : échec du test navigateur de la preview externe GenSrpg PR #225, [root browser 41358104186](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41358104186) et [architecture browser 41358104235](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41358104235). Message navigateur exact : `Cannot access 'framePending' before initialization` dans `scheduleDraw` appelée depuis le `pic.onload` des visuels intérieurs. Les callbacks sont enregistrés vers les lignes 147–151 avant le `let framePending=false` actuellement déclaré ligne 584. Le transport externe n'est pas une preuve de compatibilité complète, mais cette TDZ est un défaut dans le propriétaire Exploration.
+- **START** : `main@ba0701224b764f4c60d4294c9729a49ade5869ad`, checkpoint `checkpoint/exploration-start-sculpt-image-init-2026-11-02`, branche `work/exploration-sculpt-image-init-2026-11-02`. **Aucun changement sur main**, ni sur PR #329 (unification V80), ni sur GenSrpg.
+- **Périmètre strict** : initialisation de l'ordonnanceur graphique *dans le seul propriétaire* `src/sculpt-lab-main.js` ; déplacer l'état `framePending` avant toute souscription `Image.onload`, garder sa valeur et son unicité, sans timer, garde de masquage, moteur de rendu bis, changement de caméra, moteur Combat, catalogue, carte ou sauvegarde.
+- **TDD** : caractériser RED avec `tests/sculpt-image-bootstrap-order.test.js`, qui extrait de la source officielle l'inscription des callbacks et le scheduler, simule un chargement d'image précoce synchronisé et exige un rendu planifié une seule fois sans exception. Exécuter Node `npm test` et `npm run check`, puis la matrice CI du Labo Exploration ; valider le vrai navigateur sur preview native/GenSrpg après promotion officielle si autorisée.
+- **Interdit de conclure GREEN produit** : la preview externe raw.githack peut encore présenter une autre frontière cross-origin. Ne jamais repin GenSrpg sur une branche de développement ni promouvoir la source sur Exploration main sans validation. Documenter CI/PR avant toute promotion.
+
+---
+
 # Publication isolée — cascades sur eau et terrain 16 niveaux (1 novembre 2026)
 
 - **Demande de test** : Cascades V3 refusées sur les cellules humides alors que les présets les posent, et relief du terrain plafonné à 7 niveaux. Rehausser la sculpture et permettre les cascades de la rive haute vers le plan d'eau. Ne PAS modifier la hauteur des sprites cascade.
