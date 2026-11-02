@@ -36,11 +36,11 @@ test('water on the canonical heightfield is blocked to a ground walker',()=>{
  assert.equal(cell(cells,3,3).kind,'passable');
 });
 
-test('cliff ground is blocked when the authoritative physical projection blocks it',()=>{
+test('isolated raised land is limited by the canonical swept cliff transition',()=>{
  const levels=Array(64).fill(0);levels[9]=4;
  const t=createSculptTerrain({width:8,height:8,levels});
  const cells=sculptPassabilityCells(area(t));
- assert.equal(cell(cells,1,1).kind,'blocked');
+ assert.equal(cell(cells,1,1).kind,'limited','standing possible but approaching from flat ground is restricted');
  assert.equal(cell(cells,6,6).kind,'passable');
 });
 
