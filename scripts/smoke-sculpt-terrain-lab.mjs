@@ -79,6 +79,49 @@ try{
      return {visible,w:canvas.width,h:canvas.height};})()`);
   if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
 
+  // Real Chromium proof: the same edit canvas gets an opt-in overlay from
+  // Collision World. No duplicate drawing surface, edited map or saved tiles.
+  const passabilityUi=await run(`(async()=>{
+    const button=document.querySelector('#passability-overlay-toggle');
+    const legend=document.querySelector('#passability-overlay-legend');
+    const canvas=document.querySelector('#sculpt-canvas');
+    if(!button||!legend||!canvas)return {missing:true};
+    const context=canvas.getContext('2d',{willReadFrequently:true});
+    const baseline=context.getImageData(0,0,canvas.width,canvas.height).data;
+    const before=window.__sculptLabProbe?.();
+    const authoredBefore=localStorage.getItem('gensrpg.world-assembler.document.v1');
+    const initial={pressed:button.getAttribute('aria-pressed'),hidden:legend.hidden};
+    button.click();
+    await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
+    const painted=context.getImageData(0,0,canvas.width,canvas.height).data;
+    let changed=0;
+    for(let i=0;i<baseline.length;i+=64)
+      if(Math.abs(baseline[i]-painted[i])+
+         Math.abs(baseline[i+1]-painted[i+1])+
+         Math.abs(baseline[i+2]-painted[i+2])>25)changed++;
+    const toggled={pressed:button.getAttribute('aria-pressed'),hidden:legend.hidden};
+    const authoredAfter=localStorage.getItem('gensrpg.world-assembler.document.v1');
+    const after=window.__sculptLabProbe?.();
+    document.querySelector('#navigation-toggle').click();
+    const testing={on:document.body.classList.contains('navigation-testing'),
+      pressed:button.getAttribute('aria-pressed'),hidden:legend.hidden};
+    if(testing.on)document.querySelector('#navigation-toggle').click();
+    return {initial,toggled,changed,testing,
+      worldUnchanged:authoredBefore===authoredAfter,
+      terrainUnchanged:before?.highestLevel===after?.highestLevel&&
+        before?.undoCount===after?.undoCount};
+  })()`);
+  if(passabilityUi.missing||passabilityUi.initial.pressed!=='false'||
+     !passabilityUi.initial.hidden||passabilityUi.toggled.pressed!=='true'||
+     passabilityUi.toggled.hidden||passabilityUi.changed<100||
+     !passabilityUi.worldUnchanged||!passabilityUi.terrainUnchanged||
+     !passabilityUi.testing.on||passabilityUi.testing.pressed!=='false'||
+     !passabilityUi.testing.hidden)
+    throw Error('PASSABILITY editor-only overlay failed in actual Chromium: '+
+      JSON.stringify(passabilityUi));
+  console.log('GREEN actual Chromium passability: real pixel overlay, no world mutation, Tester off',
+    JSON.stringify(passabilityUi));
+
   // Reproduce the actual Pixel report: the model permits level 16 but the
   // legacy UI target change handler previously snapped every action back to 7.
   // Use the real quickbar, detailed + button and range slider in Chromium.
