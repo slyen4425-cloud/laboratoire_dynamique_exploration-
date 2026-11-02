@@ -31,8 +31,9 @@ test('unified preview includes same complete Combat main/visual assets as canoni
 
 test('preview verifies public HTTPS provenance and leaves original V80 byte-frozen',()=>{
  assert.match(workflow,/Verify HTTPS unified candidate and original V80 after Pages deployment/);
- assert.match(workflow,/preview\/unified-candidate\/release-provenance\.v1\.json/);
- assert.match(workflow,/preview\/unified-candidate\/sculpt-lab\.html/);
+ assert.match(workflow,/trial="\$root\/preview\/unified-candidate"/);
+ assert.match(workflow,/"\$trial\/release-provenance\.v1\.json\?run=\$GITHUB_RUN_ID"/);
+ assert.match(workflow,/for page in sculpt-lab\.html world-assembler\.html builder\.html/);
  assert.match(workflow,/cmp release-check\/sculpt-lab-v80\.html \/tmp\/published-v80\.html/);
  assert.match(workflow,/\.exploration==\$sha/);
 });
