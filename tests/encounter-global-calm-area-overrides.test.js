@@ -2,9 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {normalizeWorldArea} from '../src/world/world-area-model.js';
-import {createBlankWorldBuilderDraft,updateAreaEncounterLocalRules,serializeWorldBuilderDraft,importWorldBuilderDocument}
+import {createBlankWorldBuilderDraft,updateAreaEncounterLocalRules,serializeWorldBuilderDraft,importWorldBuilderDocument,
+  updateTerrainFamilyEncounterProfile,setTerrainFamilyExclusiveEncounterElement}
   from '../src/builder/world-builder-draft.js';
 import {resolveTerrainFamilyEncounter} from '../src/encounters/terrain-family-encounter-resolver.js';
+import {createEncounterController} from '../src/encounters/encounter-controller.js';
+import {createCaptureCreatureCatalogProvider} from '../src/capture/capture-creature-catalog-provider.js';
+import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from '../src/capture/capture-creature-catalog-preview-v1.js';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('areas inherit global calm settings by default; opt-in modifiers normalize and serialize without duplicate profiles',()=>{
@@ -51,4 +55,33 @@ test('Builder and Sculpt expose editable local controls and encounter runtime us
  const controller=read('src/encounters/encounter-controller.js');
  assert.match(controller,/area\.encounters\?\.checkDistance/);
  assert.match(controller,/chanceMultiplierPercent:\s*area\.encounters\?\.chanceMultiplierPercent/);
+});
+
+
+test('physical encounter controller respects local distance and 0%-override, with inherited world unchanged',()=>{
+ const initial=createBlankWorldBuilderDraft({id:'local-policy-test',terrainFamilyId:'forest',materialId:'grass.forest'});
+ const world=setTerrainFamilyExclusiveEncounterElement(
+   updateTerrainFamilyEncounterProfile(initial,'forest',{encounterChancePercent:100}),'forest','earth');
+ const id=world.areas[0].id;
+ const catalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
+ const stepWorld=(document)=>{
+   const controller=createEncounterController({checkDistance:160});
+   const area=document.areas[0];
+   const input=(x)=>({
+     area,player:{currentAreaId:id,x,y:800},
+     encounterConfig:document.encounterConfig,
+     checkDistance:document.encounterConfig.checkDistance,
+     captureCatalog:catalog,random:()=>0,
+     playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1'
+   });
+   controller.step(input(1200));
+   return controller.step(input(1380));
+ };
+ assert.equal(stepWorld(world),null,'180 units remains below inherited 300');
+ const muted=updateAreaEncounterLocalRules(world,id,{checkDistance:80,chanceMultiplierPercent:0});
+ assert.equal(stepWorld(muted),null,'local zero frequency suppresses even certain global chance');
+ const active=updateAreaEncounterLocalRules(muted,id,{chanceMultiplierPercent:100});
+ assert.ok(stepWorld(active)?.opponentCreatureId,'local 80-unit rule must trigger real Capture intent');
+ assert.equal(world.areas[0].encounters.checkDistance,undefined,'world stays unchanged');
+ assert.equal(world.encounterConfig.checkDistance,300);
 });
