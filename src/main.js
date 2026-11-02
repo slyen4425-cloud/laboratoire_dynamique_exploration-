@@ -260,7 +260,7 @@ const CAPTURE_PLAYER_PARTY_REF =
   'capture-party-player-v1';
 
 const encounterController = createEncounterController({
-  checkDistance: encounterTest ? 80 : 160
+  checkDistance: encounterTest ? 80 : undefined
 });
 
 const encounterRandom =

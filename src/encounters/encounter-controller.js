@@ -23,12 +23,12 @@ function validPosition(player) {
 }
 
 export function createEncounterController({
-  checkDistance = 160
+  checkDistance = null
 } = {}) {
-  const threshold = positiveDistance(
-    checkDistance,
-    160
-  );
+  // Explicit constructor cadence remains authoritative for legacy callers.
+  // A normal game caller omits it, inheriting the actual WorldDocument.
+  const constructorThreshold=positiveDistance(checkDistance,null);
+  const threshold=constructorThreshold??160;
 
   let lastPosition = null;
   let travelledSinceCheck = 0;
@@ -96,7 +96,8 @@ export function createEncounterController({
     // the world baseline. Explicit call-site override is reserved for test mode.
     const effectiveThreshold = positiveDistance(checkDistance,
       positiveDistance(area.encounters?.checkDistance,
-        positiveDistance(encounterConfig?.checkDistance, threshold)));
+        positiveDistance(constructorThreshold,
+          positiveDistance(encounterConfig?.checkDistance, threshold))));
     if (travelledSinceCheck < effectiveThreshold) {
       return null;
     }

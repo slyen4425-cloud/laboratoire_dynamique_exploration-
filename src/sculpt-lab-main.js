@@ -194,7 +194,7 @@ const sculptCombatWarmup=createCaptureCombatWarmupV1({
 });
 const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
-  checkDistance:sculptEncounterTest?80:160
+  checkDistance:sculptEncounterTest?80:undefined
 }):null;
 const sculptEncounterCatalog=sculptEncounterController
   ?createCaptureCreatureCatalogProvider(await loadCaptureShowcaseEncounterSourceV1()):null;
