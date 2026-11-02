@@ -32,9 +32,20 @@ function walkPrefabArea(doc,area,expectEncounter){
  assert.ok(exit,'prefab must have an outside exit');
  const catalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
  const encounters=createEncounterController({checkDistance:160});
+ // Global calm intentionally disables road encounters. To test the SAME
+ // real movement/collision/Portal route AND actual Capture handoff, author
+ // a deterministic test-only rule, without changing the world under test.
+ const testEncounterConfig={...doc.encounterConfig,checkDistance:160,
+   families:doc.encounterConfig.families.map(profile=>({
+     ...profile,encounterChancePercent:100,
+     elementChances:profile.elementChances.length
+       ?profile.elementChances:[{elementId:'nature',chancePercent:100}]
+   }))};
+ assert.equal(doc.encounterConfig.families.find(f=>f.terrainFamilyId==='road').encounterChancePercent,0,
+   'The published default road must stay calm');
  const inputs=()=>({
    area,player:{currentAreaId:area.id,x:actor.x,y:actor.y},
-   encounterConfig:doc.encounterConfig,captureCatalog:catalog,
+   encounterConfig:testEncounterConfig,captureCatalog:catalog,
    playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',random:()=>0
  });
  encounters.step(inputs());let encounter=null;

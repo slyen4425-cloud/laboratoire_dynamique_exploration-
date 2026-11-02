@@ -24,8 +24,16 @@ test('new World Builder worlds give native prefab terrain a nonzero configured C
   const controller=createEncounterController({checkDistance:160});
   const y=area.surface.routes[0].points[0].y;
   const player=x=>({currentAreaId:area.id,x,y});
-  controller.step({area,player:player(76),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
-  const intent=controller.step({area,player:player(270),encounterConfig:world.encounterConfig,captureCatalog:catalog,random:()=>0});
+  // The prefab footpath is a ROAD, deliberately set to 0% in calm mode.
+  // Test the encounter mechanism with an authored road rule for this test
+  // only; keep the actual world/profiles unchanged and validate that policy.
+  assert.equal(world.encounterConfig.families.find(f=>f.terrainFamilyId==='road').encounterChancePercent,0);
+  const configured={...world.encounterConfig,checkDistance:160,
+   families:world.encounterConfig.families.map(p=>p.terrainFamilyId==='road'
+     ?{...p,encounterChancePercent:100,elementChances:[{elementId:'nature',chancePercent:100}]}
+     :p)};
+  controller.step({area,player:player(76),encounterConfig:configured,captureCatalog:catalog,random:()=>0});
+  const intent=controller.step({area,player:player(270),encounterConfig:configured,captureCatalog:catalog,random:()=>0});
   assert.ok(intent?.opponentCreatureId,'No real Capture intent despite walking: '+family);
  }
 });
