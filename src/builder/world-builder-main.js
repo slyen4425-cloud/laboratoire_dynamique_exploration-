@@ -26,6 +26,7 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  updateAreaEncounterLocalRules,
   updateWorldEncounterCheckDistance,
   applyCalmEncounterBaseline,
   updateTerrainFamilyDefinition,
@@ -2508,6 +2509,16 @@ function refreshFamilyEncounterControls() {
 
   $('family-encounter-distance').value = draft.encounterConfig.checkDistance;
   $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
+  const areaRules=area?.encounters??{};
+  const areaDistance=areaRules.checkDistance??draft.encounterConfig.checkDistance;
+  const areaChance=areaRules.chanceMultiplierPercent??100;
+  $('family-encounter-area-distance').value=areaDistance;
+  $('family-encounter-area-distance-value').value=areaDistance+' points';
+  $('family-encounter-area-chance-multiplier').value=areaChance;
+  $('family-encounter-area-chance-multiplier-value').value=areaChance+' %';
+  $('family-encounter-area-override-status').textContent=
+    areaRules.checkDistance===undefined&&areaRules.chanceMultiplierPercent===undefined
+      ?'Règles mondiales héritées.':'Exception active pour cette zone : les autres zones restent inchangées.';
   const profile = encounterProfile();
   if (!profile) return;
 
@@ -5543,6 +5554,23 @@ $('family-encounter-distance').addEventListener('input', () => {
 });
 $('family-encounter-calm-baseline').addEventListener('click', () => {
   draft = applyCalmEncounterBaseline(draft);
+  refreshJson();
+});
+for(const [id,key] of [
+  ['family-encounter-area-distance','checkDistance'],
+  ['family-encounter-area-chance-multiplier','chanceMultiplierPercent']
+]){
+  $(id).addEventListener('input',()=>{
+    draft=updateAreaEncounterLocalRules(draft,selectedAreaId,{[key]:$(id).value});
+    refreshFamilyEncounterControls();
+    refreshJson();
+  });
+}
+$('family-encounter-area-inherit').addEventListener('click',()=>{
+  draft=updateAreaEncounterLocalRules(draft,selectedAreaId,{
+    checkDistance:null,chanceMultiplierPercent:null
+  });
+  refreshFamilyEncounterControls();
   refreshJson();
 });
 

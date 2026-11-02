@@ -380,6 +380,23 @@
             </div>
           </label>
           <button id="family-encounter-calm-baseline" type="button">🌿 Appliquer la base calme (300 points, routes 0 %)</button>
+          <fieldset aria-label="Exceptions de la zone actuelle">
+            <legend>Exception facultative pour cette zone</legend>
+            <p id="family-encounter-area-override-status" class="builder-hint" role="status">Règles mondiales héritées.</p>
+            <label>Distance dans cette zone (80–2000)
+              <div class="brush-size-row">
+                <input id="family-encounter-area-distance" type="range" min="80" max="2000" step="20" value="300" />
+                <output id="family-encounter-area-distance-value" for="family-encounter-area-distance">300 points</output>
+              </div>
+            </label>
+            <label>Fréquence dans cette zone, par rapport au monde (0–300 %)
+              <div class="brush-size-row">
+                <input id="family-encounter-area-chance-multiplier" type="range" min="0" max="300" step="5" value="100" />
+                <output id="family-encounter-area-chance-multiplier-value" for="family-encounter-area-chance-multiplier">100 %</output>
+              </div>
+            </label>
+            <button id="family-encounter-area-inherit" type="button">Réinitialiser : hériter du monde</button>
+          </fieldset>
           <p class="builder-hint">La base calme est appliquée uniquement si tu appuies sur le bouton ; elle conserve les éléments choisis et les raretés Capture.</p>
           <label>
             Famille à configurer
