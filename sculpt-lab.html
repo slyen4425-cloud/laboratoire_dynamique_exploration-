@@ -918,6 +918,23 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
   Rencontres aléatoires autorisées dans cette zone
  </label>
  <output id="sculpt-encounter-area-status" aria-live="polite"></output>
+ <fieldset class="sculpt-encounter-editor__elements">
+  <legend>Exception facultative pour cette zone</legend>
+  <output id="sculpt-encounter-area-override-status">Règles mondiales héritées.</output>
+  <label>Distance locale (80–2000)
+   <span class="sculpt-encounter-editor__chance">
+    <input id="sculpt-encounter-area-distance" type="range" min="80" max="2000" step="20" value="300">
+    <output id="sculpt-encounter-area-distance-value" for="sculpt-encounter-area-distance">300 points</output>
+   </span>
+  </label>
+  <label>Fréquence locale relative au monde (0–300 %)
+   <span class="sculpt-encounter-editor__chance">
+    <input id="sculpt-encounter-area-chance-multiplier" type="range" min="0" max="300" step="5" value="100">
+    <output id="sculpt-encounter-area-chance-multiplier-value" for="sculpt-encounter-area-chance-multiplier">100 %</output>
+   </span>
+  </label>
+  <button id="sculpt-encounter-area-inherit" type="button">Hériter du monde (annuler les exceptions)</button>
+ </fieldset>
  <label>Famille de terrain à configurer
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>
