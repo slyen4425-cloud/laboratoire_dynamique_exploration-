@@ -26,6 +26,9 @@ import {
   updateAreaBoundary,
   updateAreaProperties,
   setAreaEncounterRandomEnabled,
+  updateAreaEncounterOverrides,
+  updateWorldEncounterCheckDistance,
+  applyCalmEncounterBaseline,
   updateTerrainFamilyDefinition,
   updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled,
@@ -2466,6 +2469,16 @@ function refreshTerrainFamilyDefinitionControls() {
 
 function refreshFamilyEncounterControls() {
   const area = currentAreaRaw();
+  const local=area?.encounters??{};
+  const inherited=local.checkDistance==null&&local.chanceMultiplierPercent==null;
+  $('family-encounter-area-inherit').checked=inherited;
+  $('family-encounter-area-overrides').hidden=inherited;
+  const d=local.checkDistance??draft.encounterConfig?.checkDistance??300;
+  const m=local.chanceMultiplierPercent??100;
+  $('family-encounter-area-distance').value=String(d);
+  $('family-encounter-area-distance-value').textContent=d+' points';
+  $('family-encounter-area-multiplier').value=String(m);
+  $('family-encounter-area-multiplier-value').textContent=m+' %';
   const enabled = area?.encounters?.randomEnabled !== false;
   $('area-random-encounters-enabled').checked = enabled;
   $('area-random-encounters-status').textContent = enabled
@@ -2504,6 +2517,8 @@ function refreshFamilyEncounterControls() {
       ? `La famille « ${selectedFamilyName} » est le sol de base de l'Area : aucune peinture nécessaire pour rencontrer ses créatures.`
       : `Attention : le sol de base de l'Area est « ${baseFamilyName} », et tu configures « ${selectedFamilyName} ». Ses rencontres s'appliquent uniquement là où une surface peinte ou un tracé possède cette famille.`;
 
+  $('family-encounter-distance').value = draft.encounterConfig.checkDistance;
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
   const profile = encounterProfile();
   if (!profile) return;
 
@@ -5529,6 +5544,38 @@ $('area-random-encounters-enabled').addEventListener('change', () => {
     draft, selectedAreaId, $('area-random-encounters-enabled').checked
   );
   refreshFamilyEncounterControls();
+  refreshJson();
+});
+
+function applySelectedAreaFrequency(values) {
+  draft=updateAreaEncounterOverrides(draft,selectedAreaId,values);
+  refreshFamilyEncounterControls();
+  refreshJson();
+}
+$('family-encounter-area-inherit').addEventListener('change',()=>{
+  const checked=$('family-encounter-area-inherit').checked;
+  applySelectedAreaFrequency(checked
+    ?{checkDistance:null,chanceMultiplierPercent:null}
+    :{checkDistance:draft.encounterConfig.checkDistance,chanceMultiplierPercent:100});
+});
+$('family-encounter-area-distance').addEventListener('input',()=>{
+  applySelectedAreaFrequency({
+    checkDistance:Number($('family-encounter-area-distance').value)
+  });
+});
+$('family-encounter-area-multiplier').addEventListener('input',()=>{
+  applySelectedAreaFrequency({
+    chanceMultiplierPercent:Number($('family-encounter-area-multiplier').value)
+  });
+});
+
+$('family-encounter-distance').addEventListener('input', () => {
+  draft = updateWorldEncounterCheckDistance(draft, $('family-encounter-distance').value);
+  $('family-encounter-distance-value').value = draft.encounterConfig.checkDistance+' points';
+  refreshJson();
+});
+$('family-encounter-calm-baseline').addEventListener('click', () => {
+  draft = applyCalmEncounterBaseline(draft);
   refreshJson();
 });
 

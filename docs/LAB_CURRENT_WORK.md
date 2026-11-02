@@ -1,3 +1,15 @@
+# Lot — rencontres « calme » héritées du monde, personnalisables par zone (2 novembre 2026)
+
+- **Demande utilisateur** : réglages de rencontres génériques calmes, sans modifier chaque carte, mais exception manuelle possible sur chaque zone. Ne pas confondre le chantier GenSrpg écran noir et le Labo Exploration. Les changements vont sur la version unifiée #329, pas directement sur main/V80.
+- **Départ** : branche mère `work/exploration-unified-main-v80-replacement-2026-11-01` SHA `92a68a41555d4f41a0d83707b43b9e6915a3b9f6`, checkpoint `checkpoint/exploration-calm-inheritance-start-2026-11-02`, branche `work/exploration-calm-inheritance-2026-11-02`. Test TDD RED `tests/encounter-calm-area-inheritance.test.js` commit `8575fe47997b4f9197d7c40fc5f863305ab55480`, checkpoint indépendant `checkpoint/exploration-calm-inheritance-red-2026-11-02`.
+- **Source réutilisée** : PR315 (SHA `76bde4e1bfd49dcd03a97c8ad18950b4a2fe4ab0`) posait les réglages monde `WorldDocument.encounterConfig.checkDistance` 80–2000, défaut 300, et chances famille 5–10 %, routes 0 %, bouton « base calme » opt-in pour anciens mondes. Les scènes et le Builder réutilisent la même autorité. Les cartes utilisateur déjà configurées ne sont pas silencieusement réinitialisées.
+- **Extension explicitement demandée** : `WorldArea.encounters` porte seulement les **exceptions** optionnelles `checkDistance` et `chanceMultiplierPercent` (valeur nulle = héritage du monde, 100 %=chance normale, 0 %=désactivation), plus l'activation existante. Le moteur `EncounterController` demeure seul à compter les distances, le résolveur applique le multiplicateur **avant** la sélection du monstre, et la rareté Capture reste officielle.
+- **Interfaces** : même comportement dans Builder 2D et Sculpt 2,5D (héritage par défaut, mode local explicite, retour à l'héritage) ; zone active sauvegardée dans `WorldDocument` ou export scène sans double autorité. Ne pas fixer les chances de toutes les zones aux valeurs du monde, ce qui empêcherait l'héritage après modification des paramètres globaux.
+- **Régression CI de PR315** : run [41244076382](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41244076382) : 4 tests d'anciennes rencontres fréquentes échouaient sur parcours trop courts et textes périmés. Conserver le monde calme en production et adapter les **fixtures** d'exercice en mode rapide, sans baisser les seuils du jeu.
+- **Gates** : Node/TDD, Chromium runtime & exports (ancienne carte, zone A héritée + B personnalisée + retour A), audio, sources Combat main, CI Pages source SHA, validation Pixel ; pas de promotion prématurée.
+
+---
+
 # Consolidation du Labo Exploration vers une version stable unifiée (1 novembre 2026)
 
 - **Clarification utilisateur** : l'écran noir concerne le raccord GenSrpg, pas le Labo Exploration ; ne PAS intégrer PR327 dans le moteur Labo. Fermeture PR328 sans merge (prévisualisation inutile). La demande prioritaire du Labo était le terrain 16 niveaux sur cartes anciennes et les cascades sur eau.

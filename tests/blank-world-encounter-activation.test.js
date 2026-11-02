@@ -84,7 +84,8 @@ test('Builder exposes Area-owned activation, visible warning and explanation of 
   const main=await readFile(new URL('../src/builder/world-builder-main.js',import.meta.url),'utf8');
   assert.match(html,/id="area-random-encounters-enabled"/);
   assert.match(html,/id="area-random-encounters-status"/);
-  assert.match(html,/160/);
+  assert.match(html,/id="family-encounter-distance"/);
+  assert.match(html,/300 points/);
   assert.match(html,/sol de base|sol principal/i);
   assert.match(html,/id="family-encounter-surface-info"/);
   assert.match(main,/baseFamilyId === selectedEncounterFamilyId/);

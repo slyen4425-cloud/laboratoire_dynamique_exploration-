@@ -62,7 +62,9 @@ import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-e
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
-import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
+import {setAreaEncounterRandomEnabled,updateAreaEncounterOverrides,
+  updateTerrainFamilyEncounterProfile,
+  updateWorldEncounterCheckDistance,applyCalmEncounterBaseline,
   setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2&house=forest1-entrances-v1';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
@@ -192,7 +194,7 @@ const sculptCombatWarmup=createCaptureCombatWarmupV1({
 });
 const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
-  checkDistance:sculptEncounterTest?80:160
+  checkDistance:sculptEncounterTest?80:undefined
 }):null;
 const sculptEncounterCatalog=sculptEncounterController
   ?createCaptureCreatureCatalogProvider(await loadCaptureShowcaseEncounterSourceV1()):null;
@@ -212,6 +214,11 @@ let selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
 function sculptEncounterProfile(){
   return sculptEncounterConfig.families.find(
     f=>f.terrainFamilyId===selectedSculptEncounterFamilyId)??null;
+}
+function sculptCurrentAreaOverrides(){
+  return activeInteriorId
+    ?sculptInteriors.find(e=>e.area.id===activeInteriorId)?.area.encounters??{}
+    :sculptExteriorEncounters;
 }
 function sculptEncounterAreaEnabled(){
   return activeInteriorId
@@ -243,6 +250,16 @@ function refreshSculptEncounterEditor(){
     select.replaceChildren(...families.map(x=>new Option(x.label,x.id)));
   select.value=selectedSculptEncounterFamilyId;
   const enabled=sculptEncounterAreaEnabled();
+  const local=sculptCurrentAreaOverrides();
+  const inherited=local.checkDistance==null&&local.chanceMultiplierPercent==null;
+  $('sculpt-encounter-area-inherit').checked=inherited;
+  $('sculpt-encounter-area-overrides').hidden=inherited;
+  const d=local.checkDistance??sculptEncounterConfig.checkDistance;
+  const m=local.chanceMultiplierPercent??100;
+  $('sculpt-encounter-area-distance').value=String(d);
+  $('sculpt-encounter-area-distance-value').textContent=d+' points';
+  $('sculpt-encounter-area-multiplier').value=String(m);
+  $('sculpt-encounter-area-multiplier-value').textContent=m+' %';
   $('sculpt-encounter-area-enabled').checked=enabled;
   $('sculpt-encounter-area-status').textContent=
     (activeInteriorId?'Pièce / étage actuel':'Extérieur')+' · '+(enabled
@@ -255,6 +272,8 @@ function refreshSculptEncounterEditor(){
       ?'Cette famille est le sol de base : aucune peinture nécessaire.'
       :'Sol de base : '+baseName+'. '+familyName+' s’applique sur les zones et routes de cette famille.';
   const profile=sculptEncounterProfile();
+  $('sculpt-encounter-distance').value=String(sculptEncounterConfig.checkDistance);
+  $('sculpt-encounter-distance-value').textContent=String(sculptEncounterConfig.checkDistance)+' points';
   $('sculpt-encounter-chance').value=String(profile?.encounterChancePercent??0);
   $('sculpt-encounter-chance-value').textContent=
     String(Math.round(profile?.encounterChancePercent??0))+' %';
@@ -313,6 +332,17 @@ if(sculptEncounterEditor){
     selectedSculptEncounterFamilyId=$('sculpt-encounter-family').value;
     refreshSculptEncounterEditor();
   });
+  $('sculpt-encounter-distance').addEventListener('input',()=>{
+    const draft=updateWorldEncounterCheckDistance(
+      {encounterConfig:sculptEncounterConfig},$('sculpt-encounter-distance').value);
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(draft.encounterConfig);
+    $('sculpt-encounter-distance-value').textContent=sculptEncounterConfig.checkDistance+' points';
+  });
+  $('sculpt-encounter-calm-baseline').addEventListener('click',()=>{
+    const draft=applyCalmEncounterBaseline({encounterConfig:sculptEncounterConfig});
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(draft.encounterConfig);
+    refreshSculptEncounterEditor();
+  });
   $('sculpt-encounter-chance').addEventListener('input',()=>{
     const chance=Number($('sculpt-encounter-chance').value);
     const updated=updateTerrainFamilyEncounterProfile(
@@ -323,11 +353,9 @@ if(sculptEncounterEditor){
     $('sculpt-encounter-chance-value').textContent=Math.round(chance)+' %';
     refreshSculptEncounterAuthoringStatus();
   });
-  $('sculpt-encounter-area-enabled').addEventListener('change',()=>{
+  function saveSculptCurrentAreaEncounters(command){
     const area=navigationEncounterArea();
-    const changed=setAreaEncounterRandomEnabled(
-      {areas:[area]},area.id,$('sculpt-encounter-area-enabled').checked
-    );
+    const changed=command({areas:[area]},area.id);
     const encounters=Object.freeze({...changed.areas[0].encounters});
     if(activeInteriorId){
       const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
@@ -338,9 +366,37 @@ if(sculptEncounterEditor){
       ));
     }else{
       sculptExteriorEncounters=encounters;
+      // WorldDocument remains the canonical owner when the map is mounted.
+      // Update its SAME Area, rather than only the detached Sculpt scene export.
+      if(sculptWorldDraft&&sculptWorldAreaId){
+        sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+          areas:sculptWorldDraft.areas.map(a=>
+            a.id===sculptWorldAreaId?{...a,encounters}:a)});
+      }
     }
     sculptEncounterAreaCache=null;
     refreshSculptEncounterEditor();
+  }
+  $('sculpt-encounter-area-enabled').addEventListener('change',()=>{
+    saveSculptCurrentAreaEncounters((draft,id)=>
+      setAreaEncounterRandomEnabled(draft,id,$('sculpt-encounter-area-enabled').checked));
+  });
+  $('sculpt-encounter-area-inherit').addEventListener('change',()=>{
+    const inherited=$('sculpt-encounter-area-inherit').checked;
+    saveSculptCurrentAreaEncounters((draft,id)=>updateAreaEncounterOverrides(
+      draft,id,inherited
+        ?{checkDistance:null,chanceMultiplierPercent:null}
+        :{checkDistance:sculptEncounterConfig.checkDistance,chanceMultiplierPercent:100}));
+  });
+  $('sculpt-encounter-area-distance').addEventListener('input',()=>{
+    const n=Number($('sculpt-encounter-area-distance').value);
+    saveSculptCurrentAreaEncounters((draft,id)=>
+      updateAreaEncounterOverrides(draft,id,{checkDistance:n}));
+  });
+  $('sculpt-encounter-area-multiplier').addEventListener('input',()=>{
+    const n=Number($('sculpt-encounter-area-multiplier').value);
+    saveSculptCurrentAreaEncounters((draft,id)=>
+      updateAreaEncounterOverrides(draft,id,{chanceMultiplierPercent:n}));
   });
   window.addEventListener('keydown',event=>{
     if(event.key==='Escape'&&!sculptEncounterEditor.hidden)
@@ -351,6 +407,7 @@ window.__sculptEncounterEditorProbe=()=>Object.freeze({
   available:!!sculptEncounterEditor,open:!!sculptEncounterEditor&&!sculptEncounterEditor.hidden,
   familyId:selectedSculptEncounterFamilyId,
   chance:sculptEncounterProfile()?.encounterChancePercent??null,
+  checkDistance:sculptEncounterConfig.checkDistance,
   enabledElementIds:(sculptEncounterProfile()?.elementChances??[])
     .filter(x=>x.chancePercent>0).map(x=>x.elementId),
   allowedInArea:sculptEncounterAreaEnabled(),
@@ -387,6 +444,7 @@ function sculptEncounterStep(){
   const intent=sculptEncounterController.step({
     area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
     encounterConfig:sculptEncounterConfig,
+    checkDistance:sculptEncounterTest?80:undefined,
     captureCatalog:sculptEncounterCatalog,
     playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',
     random:sculptEncounterRandom

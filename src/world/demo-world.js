@@ -8,7 +8,7 @@ export const demoWorldDocument = normalizeWorldDocument({
     families: [
       {
         terrainFamilyId: 'plain',
-        encounterChancePercent: 12,
+        encounterChancePercent: 5,
         elementChances: [
           { elementId: 'nature', chancePercent: 30 },
           { elementId: 'earth', chancePercent: 25 },
@@ -20,7 +20,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'forest',
-        encounterChancePercent: 22,
+        encounterChancePercent: 6,
         elementChances: [
           { elementId: 'nature', chancePercent: 50 },
           { elementId: 'earth', chancePercent: 20 },
@@ -31,7 +31,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'sea',
-        encounterChancePercent: 18,
+        encounterChancePercent: 6,
         elementChances: [
           { elementId: 'water', chancePercent: 70 },
           { elementId: 'ice', chancePercent: 15 },
@@ -41,7 +41,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'mountain',
-        encounterChancePercent: 16,
+        encounterChancePercent: 6,
         elementChances: [
           { elementId: 'earth', chancePercent: 50 },
           { elementId: 'air', chancePercent: 25 },
@@ -51,7 +51,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'volcano',
-        encounterChancePercent: 24,
+        encounterChancePercent: 10,
         elementChances: [
           { elementId: 'fire', chancePercent: 70 },
           { elementId: 'earth', chancePercent: 20 },
@@ -60,7 +60,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'snow',
-        encounterChancePercent: 18,
+        encounterChancePercent: 6,
         elementChances: [
           { elementId: 'ice', chancePercent: 65 },
           { elementId: 'water', chancePercent: 15 },
@@ -70,7 +70,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'road',
-        encounterChancePercent: 4,
+        encounterChancePercent: 0,
         elementChances: [
           { elementId: 'nature', chancePercent: 25 },
           { elementId: 'earth', chancePercent: 25 },
@@ -82,7 +82,7 @@ export const demoWorldDocument = normalizeWorldDocument({
       },
       {
         terrainFamilyId: 'sand',
-        encounterChancePercent: 14,
+        encounterChancePercent: 5,
         elementChances: [
           { elementId: 'earth', chancePercent: 35 },
           { elementId: 'fire', chancePercent: 25 },

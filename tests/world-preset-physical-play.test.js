@@ -34,7 +34,7 @@ function walkPrefabArea(doc,area,expectEncounter){
  const encounters=createEncounterController({checkDistance:160});
  const inputs=()=>({
    area,player:{currentAreaId:area.id,x:actor.x,y:actor.y},
-   encounterConfig:doc.encounterConfig,captureCatalog:catalog,
+   encounterConfig:doc.encounterConfig,checkDistance:80,captureCatalog:catalog,
    playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',random:()=>0
  });
  encounters.step(inputs());let encounter=null;

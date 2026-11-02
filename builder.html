@@ -360,8 +360,23 @@
             Autoriser les rencontres aléatoires dans l'Area actuelle
           </label>
           <p id="area-random-encounters-status" class="builder-hint" role="status"></p>
+          <label class="checkbox-line">
+            <input id="family-encounter-area-inherit" type="checkbox" checked />
+            Utiliser les réglages généraux du monde dans cette zone
+          </label>
+          <div id="family-encounter-area-overrides" hidden>
+            <label>Distance entre tirages — cette zone
+              <input id="family-encounter-area-distance" type="range" min="80" max="2000" step="20" value="300" />
+              <output id="family-encounter-area-distance-value">300 points</output>
+            </label>
+            <label>Fréquence relative — cette zone
+              <input id="family-encounter-area-multiplier" type="range" min="0" max="300" step="10" value="100" />
+              <output id="family-encounter-area-multiplier-value">100 %</output>
+            </label>
+            <p class="builder-hint">100 % : chances générales de chaque terrain, 200 % : deux fois plus. Les créatures et leurs raretés restent gérées par Capture.</p>
+          </div>
           <p class="builder-hint">
-            Le jeu vérifie les rencontres environ tous les 160 points parcourus par le héros :
+            La distance entre vérifications est réglable ci-dessous pour le monde entier.
             « Chance de rencontre » est la probabilité à chaque vérification, pas un délai en secondes.
             Le terrain sous le héros détermine la famille : le sol de base s'applique partout
             sauf sur une zone peinte, route ou rivière. Les routes et rivières passent avant
@@ -373,6 +388,14 @@
             ses règles ; chaque créature conserve sa rareté propre définie dans Capture.
           </p>
 
+          <label>Distance parcourue entre deux vérifications (toutes les familles)
+            <div class="brush-size-row">
+              <input id="family-encounter-distance" type="range" min="80" max="2000" step="20" value="300" />
+              <output id="family-encounter-distance-value" for="family-encounter-distance">300 points</output>
+            </div>
+          </label>
+          <button id="family-encounter-calm-baseline" type="button">🌿 Appliquer la base calme (300 points, routes 0 %)</button>
+          <p class="builder-hint">La base calme est appliquée uniquement si tu appuies sur le bouton ; elle conserve les éléments choisis et les raretés Capture.</p>
           <label>
             Famille à configurer
             <select id="family-encounter-family"></select>

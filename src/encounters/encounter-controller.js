@@ -23,12 +23,12 @@ function validPosition(player) {
 }
 
 export function createEncounterController({
-  checkDistance = 160
+  checkDistance = null
 } = {}) {
-  const threshold = positiveDistance(
-    checkDistance,
-    160
-  );
+  // Explicit constructor cadence remains authoritative for legacy callers.
+  // A normal game caller omits it, inheriting the actual WorldDocument.
+  const constructorThreshold=positiveDistance(checkDistance,null);
+  const threshold=constructorThreshold??160;
 
   let lastPosition = null;
   let travelledSinceCheck = 0;
@@ -40,6 +40,7 @@ export function createEncounterController({
     area,
     player,
     encounterConfig,
+    checkDistance,
     captureCatalog,
     playerPartyRef,
     rulesetId,
@@ -89,11 +90,19 @@ export function createEncounterController({
 
     travelledSinceCheck += moved;
 
-    if (travelledSinceCheck < threshold) {
+    // WorldDocument owns the live cadence; the constructor remains a fallback
+    // for legacy callers and focused tests. No second timer or travel state.
+    // One EncounterController timer; only the actual WorldArea can override
+    // the world baseline. Explicit call-site override is reserved for test mode.
+    const effectiveThreshold = positiveDistance(checkDistance,
+      positiveDistance(area.encounters?.checkDistance,
+        positiveDistance(constructorThreshold,
+          positiveDistance(encounterConfig?.checkDistance, threshold))));
+    if (travelledSinceCheck < effectiveThreshold) {
       return null;
     }
 
-    travelledSinceCheck %= threshold;
+    travelledSinceCheck %= effectiveThreshold;
 
     const family = resolveTerrainFamilyAtPoint(
       area.surface,
@@ -111,6 +120,7 @@ export function createEncounterController({
     const resolved = resolveTerrainFamilyEncounter({
       terrainFamilyId: family.terrainFamilyId,
       config: encounterConfig,
+      chanceMultiplierPercent:area.encounters?.chanceMultiplierPercent??100,
       captureCatalog,
       random
     });

@@ -260,7 +260,7 @@ const CAPTURE_PLAYER_PARTY_REF =
   'capture-party-player-v1';
 
 const encounterController = createEncounterController({
-  checkDistance: encounterTest ? 80 : 160
+  checkDistance: encounterTest ? 80 : undefined
 });
 
 const encounterRandom =
@@ -901,6 +901,7 @@ function update(dt) {
     area: currentArea(),
     player,
     encounterConfig: activeWorldDocument.encounterConfig,
+    checkDistance: encounterTest ? 80 : undefined,
     captureCatalog: captureCreatureCatalog,
     playerPartyRef: CAPTURE_PLAYER_PARTY_REF,
     rulesetId: 'capture.standard.1v1',

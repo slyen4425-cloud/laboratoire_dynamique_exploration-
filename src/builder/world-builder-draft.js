@@ -232,6 +232,34 @@ export function createWorldBuilderDraft(sourceDocument) {
  * EncounterConfig contains no enabled probabilities or elements.
  * Any configured document is preserved byte-for-byte in its gameplay fields.
  */
+const CALM_ENCOUNTER_CHANCES = Object.freeze({
+  forest:6, plain:5, mountain:6, snow:6, volcano:10,
+  sea:6, sand:5, road:0
+});
+
+/** Explicit WorldDocument authoring command; never changes rarity or movement. */
+export function updateWorldEncounterCheckDistance(draft, distance) {
+  const next=clone(draft);
+  const value=Number(distance);
+  if (!Number.isFinite(value)) throw Error('Distance de rencontre invalide');
+  next.encounterConfig={...next.encounterConfig,
+    checkDistance:Math.max(80,Math.min(2000,Math.round(value)))};
+  return next;
+}
+
+/** Author opt-in only: change cadence and encounter odds, not element lists, rarity or Area flags. */
+export function applyCalmEncounterBaseline(draft) {
+  const next=clone(draft);
+  if(!Array.isArray(next.encounterConfig?.families))
+    throw Error('Configuration des rencontres introuvable');
+  next.encounterConfig={...next.encounterConfig,checkDistance:300,
+    families:next.encounterConfig.families.map(profile=>({
+      ...profile,encounterChancePercent:(profile.elementChances??[]).length
+        ?(CALM_ENCOUNTER_CHANCES[profile.terrainFamilyId]??6):0
+    }))};
+  return next;
+}
+
 export function initializeWorldPresetEncounters(draft) {
   if (!encounterConfigNeedsExplicitInitialization(draft?.encounterConfig))
     return createWorldBuilderDraft(draft);
@@ -668,6 +696,28 @@ function reconcileAreaBoundaryDependents(
  * WorldArea.encounters.randomEnabled field; the Encounter Controller remains
  * the sole runtime authority for movement-distance encounter checks.
  */
+/** Explicit overrides for a single WorldArea. Null restores inherited
+ * WorldDocument cadence / terrain-family chances, with no copied profiles.
+ * Optional fields can be changed independently without affecting other Areas. */
+export function updateAreaEncounterOverrides(draft, areaId, {
+  checkDistance, chanceMultiplierPercent
+}={}) {
+  const next=clone(draft),area=findArea(next,areaId);
+  if(!area)throw Error('WorldArea introuvable');
+  area.encounters??={};
+  for(const [field,value,min,max] of [
+    ['checkDistance',checkDistance,80,2000],
+    ['chanceMultiplierPercent',chanceMultiplierPercent,0,300]
+  ]){
+    if(value===undefined)continue;
+    if(value===null){delete area.encounters[field];continue;}
+    const n=Number(value);
+    if(!Number.isFinite(n))throw Error('Réglage de rencontre invalide : '+field);
+    area.encounters[field]=Math.round(Math.max(min,Math.min(max,n)));
+  }
+  return next;
+}
+
 export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
   const next = clone(draft);
   const area = findArea(next, areaId);
