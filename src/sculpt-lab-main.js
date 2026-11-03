@@ -3686,6 +3686,7 @@ function mountWorldSculptArea(areaId){
 function traverseSculptWorldPortal(){
   let portal=sculptWorldPortalAtHero();
   if(!portal){
+    if(sculptPlayActive)return; // Gameplay never creates a Portal.
     if(worldOutboundPortals().some(p=>p.enabled===true)||
        !playableExteriorArea(sculptWorldArea())||!navigationTesting)return;
     if(!window.confirm('Cette carte n’a pas de sortie. Créer des Portals aller-retour vers une autre région jouable ? '+ 
@@ -3707,7 +3708,7 @@ function traverseSculptWorldPortal(){
     let target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
     try{sculptWorldAreaScene(target);}
     catch(error){
-      if(portal.trigger?.kind!=='point'||!playableExteriorArea(sculptWorldArea()))throw error;
+      if(sculptPlayActive||portal.trigger?.kind!=='point'||!playableExteriorArea(sculptWorldArea()))throw error;
       if(!window.confirm('Cette sortie mène à une ancienne zone non jouable en 2,5D. '+ 
           'Réparer les passages vers les cartes compatibles et activer les rencontres non configurées ? '+ 
           'La zone historique, ses dimensions et ses objets resteront intacts.'))return;
@@ -3735,6 +3736,11 @@ function traverseSculptWorldPortal(){
     mountWorldSculptArea(transition.currentAreaId);
     setNavigationTesting(true);
     if(!navActor)throw Error('Zone de destination non praticable');
+    if(sculptPlayActive){
+      const arrival={...navActor,x:transition.x,y:transition.y};
+      if(isBlocked(navigationWorld(),arrival,arrival.x,arrival.y,undefined,navigationContext()))
+        throw Error('Spawn cible bloqué par le relief ou un objet');
+    }
     navActor.x=transition.x;navActor.y=transition.y;
     navActor.moving=false;
     sculptEncounterController?.resetAnchor();
