@@ -18,3 +18,6 @@ Node `npm test`, `npm run check` et vrais Chromium/Combat doivent réussir sur l
 
 ## Chantier suivant distinct
 Concevoir ensuite « Jouer une partie » dans Labo Exploration sur une branche **séparée**, avec `Nouvelle partie` / `Continuer` depuis GenSRPG dans un second temps : Explorer propriétaire du monde, Combat propriétaire des créatures publiées/skills/batailles et Aventure propriétaire des règles XP/loot/capture/sauvegardes. Garder Tester indépendant. Ne pas raccorder GenSRPG tant que le jeu n'est pas validé.
+
+
+- **Défaut CI supplémentaire démontré** : run 41641768939, test `native-https-pixels` initialisait la page du SHA exact sur `raw.githack.com` mais le module JS n'était jamais exécuté (Canvas par défaut 300×150, `window.__sculptLabProbe` absent, aucun pixel rendu). Ce service tiers est précisément celui où l'utilisateur ne voyait pas la carte et n'est pas une autorité de publication. Suppression de cette **dépendance du test**, sans affaiblir les assertions : nouveau serveur HTTP 127.0.0.1 depuis le checkout au SHA immuable, vrai Chromium canvas et screenshot compositeur, vérification effective du lien flottant visible en immersif standalone et caché en Tester/session World Builder. Le workflow Pages unique reste responsable de vérifier **HTTPS public**, CSS et assets de la version publiée. 
