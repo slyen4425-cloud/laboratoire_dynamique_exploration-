@@ -4,7 +4,7 @@ import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.j
 import {
   EXPLORATION_PLAY_NAV_KEY,createNewExplorationPlay,
   readExplorationPlay,saveExplorationPlayPosition,
-  playWorldFingerprint
+  createExplorationPlayProgressWriter,explorationPlayNavigationKey,playWorldFingerprint
 } from '../src/play/exploration-play-session.js';
 
 const world=()=>createBlankWorldBuilderDraft({id:'aventure-test',width:36*28,height:24*21});
@@ -55,4 +55,49 @@ test('Play checkpoint is only navigation progress, never a duplicate WorldDocume
  assert.equal('creatures' in saved,false);
  assert.equal(JSON.stringify(doc),before);
  assert.equal(storage.snapshot().size,1);
+});
+
+test('GenSRPG session identity isolates real navigational checkpoints, never replacing standalone Jouer',()=>{
+ const doc=world(),storage=store(),before=JSON.stringify(doc);
+ const legacy=createNewExplorationPlay(storage,doc);
+ const a={sessionId:'adventure-a'},b={sessionId:'adventure-b'};
+ const first=createNewExplorationPlay(storage,doc,a);
+ const second=createNewExplorationPlay(storage,doc,b);
+ assert.equal(first.sessionId,'adventure-a');
+ assert.equal(second.sessionId,'adventure-b');
+ assert.equal(explorationPlayNavigationKey(),EXPLORATION_PLAY_NAV_KEY);
+ assert.equal(explorationPlayNavigationKey('adventure-a'),EXPLORATION_PLAY_NAV_KEY+':adventure-a');
+ assert.equal(storage.snapshot().size,3);
+ saveExplorationPlayPosition(storage,doc,{currentAreaId:doc.initialAreaId,x:220,y:230},a);
+ saveExplorationPlayPosition(storage,doc,{currentAreaId:doc.initialAreaId,x:330,y:340},b);
+ assert.deepEqual([readExplorationPlay(storage,doc,a).x,readExplorationPlay(storage,doc,a).y],[220,230]);
+ assert.deepEqual([readExplorationPlay(storage,doc,b).x,readExplorationPlay(storage,doc,b).y],[330,340]);
+ assert.deepEqual(readExplorationPlay(storage,doc),legacy);
+ assert.equal(JSON.stringify(doc),before);
+});
+
+test('GenSRPG scoped writer preserves the one official WorldDocument and refuses a mismatched session',()=>{
+ const doc=world(),storage=store(),a={sessionId:'adventure-A'},b={sessionId:'adventure-B'};
+ createNewExplorationPlay(storage,doc,a);
+ createNewExplorationPlay(storage,doc,b);
+ const write=createExplorationPlayProgressWriter(storage,doc,a);
+ write({currentAreaId:doc.initialAreaId,x:151,y:152});
+ assert.equal(readExplorationPlay(storage,doc,a).x,151);
+ assert.notEqual(readExplorationPlay(storage,doc,b).x,151);
+ const aKey=explorationPlayNavigationKey(a.sessionId);
+ const bKey=explorationPlayNavigationKey(b.sessionId);
+ storage.setItem(bKey,storage.getItem(aKey));
+ assert.throws(()=>readExplorationPlay(storage,doc,b),/session/i);
+ assert.equal(readExplorationPlay(storage,doc,a).x,151);
+});
+
+test('GenSRPG navigation session identifiers are safe and never silently fall back to legacy save',()=>{
+ const doc=world(),storage=store();
+ createNewExplorationPlay(storage,doc);
+ for(const bad of ['', ' ', '../escape', 'with/slash', 'x?mode=1', 'a'.repeat(131), null]){
+  assert.throws(()=>explorationPlayNavigationKey(bad),/session/i);
+  assert.throws(()=>readExplorationPlay(storage,doc,{sessionId:bad}),/session/i);
+ }
+ assert.equal(readExplorationPlay(storage,doc,{sessionId:'uninitialized'}),null);
+ assert.ok(readExplorationPlay(storage,doc),'standalone save remains intact');
 });
