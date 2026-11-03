@@ -156,3 +156,51 @@ export function createCaptureCreatureCatalogProvider(source) {
     }
   });
 }
+
+
+// Read-only consumer gate for GenSRPG's *already certified* Combat Bestiary.
+// The caller supplies published IDs from Combat's canonical publication
+// predicate; this adapter neither decides publication nor clones creature data,
+// rarity, skills, elements or any encounter rules. The authoring provider
+// remains unchanged for the Lab Tester.
+export function restrictCaptureCatalogToPublishedSpeciesV1(captureCatalog,publishedSpeciesIds){
+  const names=['listCreatures','listElements','resolveCreature','findByElement'];
+  if(!captureCatalog||names.some(name=>typeof captureCatalog[name]!=='function'))
+    throw new TypeError('Official Capture catalog provider required');
+  if(!Array.isArray(publishedSpeciesIds)||publishedSpeciesIds.length===0)
+    throw new RangeError('Bestiaire publié requis : aucun ID de publication validé');
+  const allowed=new Set();
+  for(const id of publishedSpeciesIds){
+    if(typeof id!=='string'||id!==id.trim()||!id)
+      throw new RangeError('Bestiaire publié contient un ID de publication invalide');
+    if(allowed.has(id))
+      throw new RangeError('Bestiaire publié contient un ID de publication en doublon');
+    allowed.add(id);
+  }
+  const source=captureCatalog.listCreatures();
+  if(!Array.isArray(source))
+    throw new TypeError('Official Capture catalog provider listCreatures invalid');
+  const filtered=Object.freeze(source.filter(creature=>allowed.has(creature.id)));
+  if(filtered.length!==allowed.size||
+     filtered.some(creature=>captureCatalog.resolveCreature(creature.id)!==creature))
+    throw new RangeError('Bestiaire publié : espèce absente du catalogue Combat officiel');
+  const elements=captureCatalog.listElements();
+  if(!Array.isArray(elements))
+    throw new TypeError('Official Capture catalog provider listElements invalid');
+  const elementIds=new Set(filtered.flatMap(creature=>creature.elements));
+  const publishedElements=Object.freeze(elements.filter(element=>elementIds.has(element.id)));
+  return Object.freeze({
+    listCreatures(){return filtered;},
+    listElements(){return publishedElements;},
+    resolveCreature(id){
+      return typeof id==='string'&&allowed.has(id)
+        ?captureCatalog.resolveCreature(id):null;
+    },
+    findByElement(elementId){
+      const matches=captureCatalog.findByElement(elementId);
+      if(!Array.isArray(matches))
+        throw new TypeError('Official Capture catalog provider findByElement invalid');
+      return Object.freeze(matches.filter(creature=>allowed.has(creature.id)));
+    }
+  });
+}
