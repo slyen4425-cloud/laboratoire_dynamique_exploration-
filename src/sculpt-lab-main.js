@@ -143,6 +143,11 @@ let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
+// Frame state is owned once before image callbacks register. Decoding can
+// finish while this ES module is suspended at top-level await; never queue a
+// draw until all canvas/WorldArea/camera dependencies have initialized.
+let framePending=false;
+let sculptBootReady=false;
 const interiorVisualImages=new Map();
 for(const visual of [...INTERIOR_DOOR_ASSETS,...INTERIOR_CONNECTOR_ASSETS]){
   if(!visual.path)continue;
@@ -189,8 +194,19 @@ const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest'
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
   checkDistance:sculptEncounterTest?80:160
 }):null;
-const sculptEncounterCatalog=sculptEncounterController
-  ?createCaptureCreatureCatalogProvider(await loadCaptureShowcaseEncounterSourceV1()):null;
+// Combat's official Showcase is required for encounters, NOT for drawing the
+// WorldArea. Fail encounters closed with the real error, while the terrain,
+// editor, collision and camera keep their original independent owners.
+let sculptEncounterCatalog=null,sculptEncounterSourceError=null;
+if(sculptEncounterController){
+  try{
+    sculptEncounterCatalog=createCaptureCreatureCatalogProvider(
+      await loadCaptureShowcaseEncounterSourceV1());
+  }catch(error){
+    sculptEncounterSourceError=error;
+    console.error('Rencontres Capture indisponibles : source Combat officielle requise',error);
+  }
+}
 const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
 let sculptPendingEncounter=null;
 let sculptEncounterSetupOffered=false;
@@ -255,6 +271,13 @@ function refreshSculptEncounterEditor(){
     String(Math.round(profile?.encounterChancePercent??0))+' %';
   const container=$('sculpt-encounter-elements');
   container.replaceChildren();
+  if(!sculptEncounterCatalog){
+    $('sculpt-encounter-catalog-summary').textContent=sculptEncounterSourceError
+      ?'Rencontres indisponibles (Combat officiel requis) : '+sculptEncounterSourceError.message
+      :'Rencontres indisponibles : source Combat non chargée';
+    refreshSculptEncounterAuthoringStatus();
+    return;
+  }
   const checked=new Set((profile?.elementChances??[])
     .filter(x=>x.chancePercent>0).map(x=>x.elementId));
   for(const element of sculptEncounterCatalog.listElements()){
@@ -376,7 +399,7 @@ function navigationEncounterArea(){
   return projected;
 }
 function sculptEncounterStep(){
-  if(!sculptEncounterController||!navigationTesting||!navActor||sculptPendingEncounter)
+  if(!sculptEncounterController||!sculptEncounterCatalog||!navigationTesting||!navActor||sculptPendingEncounter)
     return null;
   const area=navigationEncounterArea();
   const intent=sculptEncounterController.step({
@@ -581,7 +604,6 @@ if(demoActorAsset){
 const ribbonTextures={water:null,road:null};
 // The legacy visual road belongs to the example only, not blank scene data.
 let exampleRoadEnabled=true;
-let framePending=false;
 let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
@@ -957,7 +979,10 @@ function pumpWaterfallFrame(now){
 function ensureWaterfallPump(){
   if(!waterfallPumpHandle&&waterfallPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
-function scheduleDraw(){if(!framePending){framePending=true;requestAnimationFrame(draw);}}
+function scheduleDraw(){
+  if(!sculptBootReady)return; // The single boot boundary, not a retry loop.
+  if(!framePending){framePending=true;requestAnimationFrame(draw);}
+}
 function screenToWorldPoint(event){
   const rect=canvas.getBoundingClientRect();
   // One inverse shared by brush picking and object drag; drag itself NEVER
@@ -3948,6 +3973,9 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
   $('precision-mode').checked=true;
 }
 updatePrecisionActions();
-updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();fit();
+updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();
+// All synchronously declared renderer/world/camera owners now exist. Asynchronous
+// images arriving earlier will be included in this first canonical draw.
+sculptBootReady=true;fit();
 installSculptWorldAreaEditing();
 installSculptMapPresetPalette();

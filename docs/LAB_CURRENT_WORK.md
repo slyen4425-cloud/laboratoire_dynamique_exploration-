@@ -9,6 +9,34 @@
 
 ---
 
+# GenSrpg / Exploration : défaillance de dépendance Combat isolée du renderer — 01/11/2026 (NON GREEN)
+
+- **Preuve HTTPS en vrai Chromium** : [run Exploration #41332822279](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41332822279) atteint le HTML officiel `sculpt-lab.html`, mais l'import top-level `loadCaptureShowcaseEncounterSourceV1()` échoue sur le bundle Combat officiel absent (`combat-preview/data/capture/showcase/encounter-bundle.v1.json`, HTTP 404), empêchant l'initialisation du canvas (300×150). L'erreur antérieure `sculptWorldCurrentInterior` TDZ est protégée par l'ordonnanceur de premier dessin du lot précédent ; le 404 restant est **distinct et doit rester signalé**.
+- **Règle d'autorité** : Combat seul fournit le catalogue des créatures et les données Showcase ; si leur bundle n'est pas monté sur l'origine attendue, les rencontres ne peuvent pas démarrer. Mais le terrain 2.5D ne doit pas exiger les données Combat pour peindre son sol.
+- **Correctif localisé** : recueillir l'erreur de source officielle pour les rencontres, **ne créer aucun catalogue de remplacement**, présenter le motif dans la rubrique Rencontres, empêcher `sculptEncounterStep()` d'exécuter sans source. Autoriser le reste du bootstrap visuel à terminer et dessiner le terrain, avec renderer, scène, caméra et WorldArea inchangés. Comportement normal avec bundle présent = strictement le même catalogue initial que précédemment.
+- **Tests** : test statique de source unique + garde de rencontres, test de premier frame et pixels 2.5D sur URL de la PR au SHA exact. Ce jalon est uniquement visuel : **il ne certifie pas les rencontres, ni le raccord Combat**. L'assemblage final devra inclure le bundle dérivé des données Combat `main` exactes via le script officiel Exploration ; aucun moteur ou catalogue local alternatif.
+- **Gouvernance** : PR Exploration #327 encore DRAFT et `main` Exploration inchangé ; GenSrpg #225 consomme `main` seulement. Pas de GREEN produit, pas de promotion avant CI et validation mobile.
+
+---
+
+# GenSrpg noir : barrières d'initialisation du rendu natif 2.5D — 1 novembre 2026 (NON GREEN produit)
+
+- **TDD navigateur RED exact** : [run GenSrpg #41326099323](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41326099323) `framePending` TDZ + canvas noir 300×150 ; en validant la vraie URL HTTPS et en franchissant l'avertissement standard de l'hébergeur, [run Exploration #41332547648](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41332547648) montre ensuite `ReferenceError: Cannot access 'sculptWorldCurrentInterior' before initialization` dans `cameraView`. Cause commune : les images terminent pendant le `top-level await` de la source Capture et `requestAnimationFrame(draw)` démarre alors que l'ES module n'a pas fini de déclarer les propriétaires WorldArea/caméra.
+- **Correction au propriétaire unique** : `src/sculpt-lab-main.js` crée `framePending` et `sculptBootReady=false` avant tout callback ; `scheduleDraw` ne programme pas de RAF pendant la phase de construction ; **une seule transition** `sculptBootReady=true;fit()` après les autres initialisations et abonnements ; aucun mécanisme de retry, copie, masque, nouveau rendu ou changement de gameplay.
+- **Gates obligatoires** : test statique de déclaration et transition unique ; vrai Chromium local dessinant les pixels de terrain et interactions ; preuve HTTPS sur la même branche à SHA immuable (en respectant la confirmation d'hébergement) ; CI et publisher non fusionnés ; validation tactile ultérieure. PR [#327](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/pull/327) DRAFT, main Exploration non modifié. GenSrpg PR #225 continue à n'utiliser QUE main ; ne pas transférer ce code dans GenSrpg.
+
+---
+
+# Correctif : image préchargée avant ordonnanceur de rendu 2.5D (01/11/2026)
+
+- **Signal réel** : GenSrpg PR #225 prévisualisation Android présente un canvas 2.5D noir. Reproduction Chromium externe [run #41326095665](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41326095665) : `ReferenceError: Cannot access 'framePending' before initialization` lors de `pic.onload → scheduleDraw`; canvas 300×150 pixels entièrement noirs.
+- **Propriétaire et périmètre** : Labo Exploration seul, `src/sculpt-lab-main.js`. Le gestionnaire de trames doit exister avant l'enregistrement des callbacks d'image. Aucun changement des moteurs de terrain, collision, caméra, sauvegarde, assets, Combat, ou édition de la scène.
+- **Point de départ** : main `ba0701224b764f4c60d4294c9729a49ade5869ad`, checkpoint `checkpoint/exploration-start-frame-pending-image-load-2026-11-01`, branche `work/exploration-image-onload-before-sculpt-frame-2026-11-01`.
+- **TDD RED** : test `tests/sculpt-frame-initialization-order.test.js`, [run #41326367421](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41326367421) : contrôle `core-tests` FAIL à la bonne assertion, callback trop précoce.
+- **Correction** : déplacer la déclaration unique `let framePending=false;` avant les premiers `Image.onload`, sans modifier le moteur de dessin ; conserver le test statique et le navigateur à pixels GenSrpg. GREEN à confirmer uniquement après CI Explorer et prévisualisation réelle ; aucune promotion sur main avant les contrôles et la validation utilisateur.
+
+---
+
 # Publication isolée — cascades sur eau et terrain 16 niveaux (1 novembre 2026)
 
 - **Demande de test** : Cascades V3 refusées sur les cellules humides alors que les présets les posent, et relief du terrain plafonné à 7 niveaux. Rehausser la sculpture et permettre les cascades de la rive haute vers le plan d'eau. Ne PAS modifier la hauteur des sprites cascade.

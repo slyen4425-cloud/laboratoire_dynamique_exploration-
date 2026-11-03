@@ -76,3 +76,18 @@ jobs:
         run: node scripts/smoke-exploration-music-playback.mjs
       - name: Real Chromium Encounter startup smoke
         run: node scripts/smoke-modern-combat-preview.mjs
+
+  native-https-pixels:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install screenshot decoder for black-frame regression proof
+        run: npm install --no-save --no-package-lock pngjs@7.0.0
+      - name: Prove exact immutable HTTPS source really paints native 2.5D pixels
+        env:
+          EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/smoke-sculpt-remote-pixels.mjs
