@@ -540,6 +540,16 @@ body.sculpt-immersive #sculpt-map-preset-panel{
 }
 /* The header intentionally disappears in immersive test. This independently
    reachable physical action always exits to the SAME WorldDocument editor. */
+#world-assembler-shortcut-float{display:none!important}
+body.sculpt-immersive:not(.world-area-editing):not(.navigation-testing) #world-assembler-shortcut-float{
+  display:block!important;position:absolute;z-index:26;
+  right:calc(env(safe-area-inset-right,0px) + 9px);
+  bottom:calc(env(safe-area-inset-bottom,0px) + 137px);
+  min-height:44px;max-width:45vw;padding:10px 13px;
+  border:2px solid #8cdec6;border-radius:12px;
+  background:#143a3bee;color:#e7fff3;font-size:.82rem;font-weight:850;
+  box-shadow:0 5px 19px #0009;text-decoration:none;touch-action:manipulation
+}
 #world-workspace-return-float{display:none!important}
 body.world-area-editing.sculpt-immersive #world-workspace-return-float{
  display:block!important;position:absolute;z-index:26;
@@ -641,6 +651,7 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
 </nav>
 <div class="world-entry-links"><a href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 World Builder</a> <a href="./builder.html" aria-label="Ouvrir le Builder 2D détaillé">Éditeur 2D</a></div></header>
 <main>
+<a id="world-assembler-shortcut-float" href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 Monde</a>
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>

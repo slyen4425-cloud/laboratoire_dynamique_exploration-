@@ -1,3 +1,16 @@
+# Lot — rétablir l'accès World Builder depuis le lien officiel (03/11/2026)
+
+- **Signal utilisateur** : correctif fluidité PC satisfaisant, mais lien direct `/sculpt-lab.html` semble supprimer l'accès au constructeur de mondes.
+- **Diagnostic précis** : le hub `index.html` pointe « World Builder » vers `builder.html` (ancien éditeur 2D) ; le lien correct `world-assembler.html` est caché avec le header en mode plein écran de l'éditeur Sculpt autonome. Le bouton flottant existant n'est présent que si la carte a été ouverte depuis World Builder.
+- **Lot isolé** : `main@d5309570ea0f31afd31fd5ebcf41e104e74498fd` déjà publié, checkpoint `checkpoint/exploration-world-assembler-entry-start-2026-11-03`, branche `work/exploration-world-assembler-entry-2026-11-03`, PR #342.
+- **Correctif** : hub « World Builder » → `world-assembler.html` ; lien flottant « 🌍 Monde » visible dans le plein écran **autonome hors Tester**, masqué dans une zone déjà ouverte depuis World Builder afin de préserver la sauvegarde/retour canonique. Aucune modification des cartes, imports, sauvegardes, outils ou moteurs.
+- **TDD RED** : `tests/world-builder-entry-accessibility.test.js` commit `7d665afb1d830bf713e388b02452de7de2b3dd68`. CI Node, check, Chromium, publication Pages HTTP au SHA exact avant GREEN et test utilisateur.
+
+- **Défaut CI supplémentaire démontré** : run 41641768939, test `native-https-pixels` initialisait la page du SHA exact sur `raw.githack.com` mais le module JS n'était jamais exécuté (Canvas par défaut 300×150, `window.__sculptLabProbe` absent, aucun pixel rendu). Ce service tiers est précisément celui où l'utilisateur ne voyait pas la carte et n'est pas une autorité de publication. Suppression de cette **dépendance du test**, sans affaiblir les assertions : nouveau serveur HTTP 127.0.0.1 depuis le checkout au SHA immuable, vrai Chromium canvas et screenshot compositeur, vérification effective du lien flottant visible en immersif standalone et caché en Tester/session World Builder. Le workflow Pages unique reste responsable de vérifier **HTTPS public**, CSS et assets de la version publiée. 
+- **Suite distincte** : mode « Jouer une partie » dans Labo Exploration, en conservant l'onglet Tester comme harnais ; lancement GenSRPG Nouvelle partie/Continuer raccordé plus tard, sans doubler les autorités de combat ou sauvegarde.
+
+---
+
 # Lot isolé — fluidité du Tester publiée sur main du Labo uniquement (03/11/2026)
 
 **Demande utilisateur** : le lien alternatif sur la branche PR #338 n'affichait aucune carte. Reprendre la correction sur le laboratoire officiel déjà fonctionnel, afin de tester sur PC avec le lien habituel. Autorisation explicite de publier **ce seul correctif** ; ne pas intégrer la candidate globale #329, ni les cartes personnelles #337 avant le lot moulin/éolienne, et ne pas toucher à GenSRPG ni au futur « Jouer une partie ».
