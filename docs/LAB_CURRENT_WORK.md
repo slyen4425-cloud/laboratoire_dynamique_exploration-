@@ -1,3 +1,12 @@
+# Lot asset visuel 03/11/2026 — six animations moulin/éolienne (PREVALIDATION)
+
+- Lot isolé : `work/exploration-six-wind-animations-assets-2026-11-03`, aligné par fusion sans force sur la dernière base `main@2f492471471868f5808d3f73b5a5d15883b98059`.
+- 6 ZIP validés, 72 frames PNG RGBA 512×512, 6 feuilles WebP 4×3 de 256 px.
+- Manifeste officiel du pack : `assets/exploration/objects/animated/manifest.v1.json`; tests `tests/animated-wind-object-sources.test.js`.
+- Aucun changement des autorités Jouer/Combat/World Builder et collisions. PR #349 ; CI et publication au SHA exact avant GREEN ; le catalogue de placement animé fera l'objet d'un lot distinct.
+
+---
+
 # Correctif isolé 03/11/2026 — bouton Nouvelle partie visible malgré [hidden] dans Jouer GenSRPG
 
 - **Signal CI consommateur** : GenSRPG [root-browser #41709236087](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41709236087), ligne 179 : `#play-new` réellement visible lors d'une reprise GenSRPG. L'identité de partie est valide et la navigation 2.5D a démarré ; la première erreur apparaît au retour Menu.
