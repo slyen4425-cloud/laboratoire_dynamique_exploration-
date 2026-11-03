@@ -3792,7 +3792,7 @@ function installSculptPlayMode(){
     const checkpoint=readExplorationPlay(window.localStorage,world);
     if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
     // Single world, scene, camera, renderer and collision authority: NO new
-    // scene graph, WorldDocument copy in save, or editor handoff.
+    // scene graph, competing world graph or authored area copy in save.
     sculptWorldDraft=world;
     sculptEncounterConfig=world.encounterConfig;
     document.body.classList.add('world-area-editing');
