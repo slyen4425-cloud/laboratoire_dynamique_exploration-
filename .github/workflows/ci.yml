@@ -78,16 +78,20 @@ jobs:
         run: node scripts/smoke-modern-combat-preview.mjs
 
   native-https-pixels:
+    # Only GitHub Pages validates live HTTPS. This job paints the exact
+    # immutable checkout without depending on a third-party CDN (raw.githack).
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install screenshot decoder for black-frame regression proof
         run: npm install --no-save --no-package-lock pngjs@7.0.0
-      - name: Prove exact immutable HTTPS source really paints native 2.5D pixels
+      - name: Prove pinned source paints native 2.5D pixels and visible World Builder entry
         env:
           EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/smoke-sculpt-remote-pixels.mjs
