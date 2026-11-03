@@ -530,6 +530,32 @@ jobs:
             node scripts/smoke-sculpt-terrain-lab.mjs
           )
           rm "$trial/scripts"
+      - name: Stage canonical World Builder entry for root URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Explicit first-party URL alias. WorldDocument stays in canonical
+          # /preview/encounters-v80; frozen V80 bytes and source are untouched.
+          test -s site/preview/encounters-v80/world-assembler.html
+          test -s site/preview/encounters-v80/src/builder/world-assembler-main.js
+          test ! -e site/world-assembler.html
+          cat > site/world-assembler.html <<'HTML'
+          <!doctype html>
+          <html lang="fr">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>World Builder — Labo Exploration</title>
+            <meta http-equiv="refresh" content="0;url=./preview/encounters-v80/world-assembler.html">
+            <link rel="canonical" href="./preview/encounters-v80/world-assembler.html">
+          </head>
+          <body>
+            <p>Ouvrir le <a href="./preview/encounters-v80/world-assembler.html">World Builder 2,5D</a>.</p>
+          </body>
+          </html>
+          HTML
+          grep -Fq 'content="0;url=./preview/encounters-v80/world-assembler.html"' site/world-assembler.html
+          cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -761,6 +787,19 @@ jobs:
           grep -Fq 'initializeEncounters' /tmp/published-playable-route.js
           printf 'LIVE OK: pinned V80 identical; two-way playable preset routes, configured encounters, Capture combat and required assets HTTP 200\\n'
 
+      - name: Verify root World Builder entry after Pages deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 \
+            "$root/world-assembler.html?run=$GITHUB_RUN_ID" -o /tmp/world-builder-root-entry.html
+          grep -Fq 'content="0;url=./preview/encounters-v80/world-assembler.html"' /tmp/world-builder-root-entry.html
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 \
+            "$root/preview/encounters-v80/world-assembler.html?run=$GITHUB_RUN_ID" \
+            -o /tmp/world-builder-canonical.html
+          grep -Fq 'id="graph-nodes"' /tmp/world-builder-canonical.html
+          echo 'LIVE ROOT WORLD BUILDER 200 -> canonical WorldDocument verified'
       - name: Record verified live URL on the published commit
         shell: bash
         env:
