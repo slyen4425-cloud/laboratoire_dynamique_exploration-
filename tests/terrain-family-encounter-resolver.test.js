@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  createCaptureCreatureCatalogProvider
+  createCaptureCreatureCatalogProvider,restrictCaptureCatalogToPublishedSpeciesV1
 } from '../src/capture/capture-creature-catalog-provider.js';
 import {
   normalizeTerrainFamilyEncounterConfig
@@ -176,4 +176,24 @@ test('zero-spawn creatures are never selected', () => {
 
   assert.equal(result.triggered, false);
   assert.equal(result.reason, 'no-element');
+});
+
+test('real Encounter resolver sees only Combat-published Bestiary species, never unpublished drafts', () => {
+ const catalog=restrictCaptureCatalogToPublishedSpeciesV1(provider(),['common-fire']);
+ const rules=normalizeTerrainFamilyEncounterConfig({families:[{
+  terrainFamilyId:'forest',encounterChancePercent:100,
+  elementChances:[{elementId:'fire',chancePercent:100}]
+ }]});
+ for(const roll of [0,0.01,0.5,0.99]){
+  const result=resolveTerrainFamilyEncounter({
+   terrainFamilyId:'forest',config:rules,captureCatalog:catalog,
+   random:sequence([0,0,roll])
+  });
+  assert.equal(result.triggered,true);
+  assert.equal(result.creatureId,'common-fire');
+  assert.equal(result.spawnChance,25,
+   'Spawn probability remains the official Combat creature value');
+ }
+ assert.equal(provider().resolveCreature('legend-fire').spawnChance,0.5,
+  'The authoring source remains untouched and may still be used by Tester');
 });
