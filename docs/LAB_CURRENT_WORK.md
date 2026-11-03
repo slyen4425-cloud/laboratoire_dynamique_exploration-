@@ -1,3 +1,14 @@
+# Lot en cours — Forêt 1 et Plaine 1 intégrées aux données du jeu (3 novembre 2026)
+
+- **Demande** : rendre les deux cartes d'auteur disponibles dans les presets de tous les appareils, sans import manuel ni localStorage. Attendre les nouveaux assets `moulin` / `éolienne` avant publication commune, puis validation du raccord vers l'application.
+- **Source** : `map.zip` contenant un WorldDocument utilisateur avec les zones `foret-1` et `plaine-1`. Données figées dans `src/builder/sculpt-author-map-snapshots.js` : Forêt 1 80×60 / 142 objets / 5 routes ; Plaine 1 80×60 / 64 objets / 14 routes / 7 rampes. Les autres zones et les six Portal ne sont pas des presets et ne sont pas copiés.
+- **Base** : PR #335 filtre de passabilité (SHA `c7e42cb35f37b2bb38c5943b84755a9b8f46e938`) reposant sur la candidate unifiée PR #329. Départ figé `checkpoint/exploration-author-presets-start-2026-11-03`; branche `work/exploration-author-presets-forest-plain-2026-11-03`, PR draft #337.
+- **TDD** : test RED introduit au SHA `26369193d735e89496ea2d62be89d50e8041a7a3`, `tests/sculpt-authored-presets-shared.test.js`. Intégration ensuite via `createSculptMapPreset` et `listAvailableSculptMapPresets`. Les anciens IDs 101–108 restent stables, nouveaux IDs 109/110. La bibliothèque personnelle demeure indépendante. Checkpoint GREEN uniquement après réussite CI SHA exact.
+- **Sécurité / suspension** : aucune fusion vers `main`, aucun remplacement V80, aucune publication Pages et aucun raccord Combat/GenSrpg tant que le lot des assets et la validation finale ne sont pas terminés. Les sauvegardes utilisateur ne sont pas migrées ou écrasées.
+- **Prochaine étape** : ajouter les assets moulin/éolienne sur une source unique vérifiée, puis contrôle des versions et du raccordement Minds/GenSRPG sur navigateur PC + Pixel paysage, avant publication à la demande.
+
+---
+
 # Lot — Filtre visuel de passabilité dans l'éditeur 2,5D (2 novembre 2026)
 
 - **Demande** : bouton facultatif en mode Éditer pour voir le terrain réellement franchissable avant l'essai de déplacement, particulièrement autour des objets, murs, lacs, falaises et chemins/pentes.
