@@ -80,3 +80,16 @@ Avant import dans GenSrpG :
 6. ajouter tests de non-interférence Capture/Dungeon/Survie/PvP ;
 7. ouvrir un lot d'intégration dédié côté GenSrpG ;
 8. ne rien merger tant que le raccord réel n'est pas GREEN.
+
+## Jouer natif : identité de session Aventure GenSRPG (03/11/2026)
+
+**Propriétaires** : GenSRPG Capture/Core Storage conserve `AdventureSession`, créatures/XP/loot/équipe et son `sessionId`; Labo Exploration conserve **uniquement** les coordonnées/zone et l'empreinte du véritable `WorldDocument` via le module public `src/play/exploration-play-session.js`. Ni combat ni inventaire ne sont lus depuis ce module.
+
+**Contrat optionnel version 1** :
+- Jouer autonome : `createNewExplorationPlay(storage,world)` et `readExplorationPlay(storage,world)` utilisent inchangée `gensrpg.exploration.play.navigation.v1`.
+- Partie GenSRPG : `createNewExplorationPlay(storage,world,{sessionId})`, `readExplorationPlay(...,{sessionId})`, `createExplorationPlayProgressWriter(...,{sessionId})`, `saveExplorationPlayPosition(...,{sessionId})` utilisent `gensrpg.exploration.play.navigation.v1:<sessionId>`. Identité sûre et présente dans le checkpoint ; lecture d'une autre session refusée ; aucun fallback sur la clé autonome.
+- Le seul lancement de navigation depuis GenSRPG est `sculpt-lab.html?play=1&adventureSession=<id>` au **même origin** que GenSRPG, après création d'une vraie `AdventureSession` et d'un checkpoint officiel. Le retour Menu conserve l'identifiant ; dans le menu scoped `play.html?adventureSession=<id>`, **Nouvelle partie est désactivé** (propriétaire GenSRPG), seul `Continuer` peut relancer la navigation existante.
+- Si le monde est absent, modifié ou incompatible, la reprise est bloquée avec message ; pas de carte de démo ni de réparation de Portal. La sauvegarde demeure intacte.
+- Le World Builder du Labo externe et celui embarqué dans GenSRPG ont des origines de navigateur différentes : les données privées de l'un ne doivent pas être aspirées depuis l'autre. Export/import ou même origine requis.
+
+Cette API facultative ne modifie pas le déplacement, la caméra, les collisions, les rencontres, le résultat Combat, les options joueur ou la politique de sauvegarde de GenSRPG. Tests TDD Node + vrai Chromium sur deux sessions et Jouer autonome. Publication GenSRPG uniquement après promotion de cette API sur le **main officiel Exploration SHA exact** et certification par les tests consommateur.
