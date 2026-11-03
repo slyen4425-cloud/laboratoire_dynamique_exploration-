@@ -564,7 +564,13 @@ try{
       scene:[app.width,app.height],terrainCached:p.terrainCached,
       displayed:!document.querySelector('#navigation-hud').hidden};
   })()`);
-  if(actualPaintMetrics.moving!=='walk'||
+  // The actor was confirmed walking above. On the 36x24 real map it may
+  // legitimately reach a solid wall during this 950ms sampling window:
+  // Collision World must stop it, not be punished by a visual FPS test.
+  // Require actual distance/s in the HUD during the sample instead.
+  const observedSpeed=Number(
+    actualPaintMetrics.hud.match(/· ([0-9]+) unités\/s réelles/)?.[1]);
+  if(!(observedSpeed>0)||
      !(actualPaintMetrics.renderFps>0)||
      !(actualPaintMetrics.tickFps>0)||
      !(actualPaintMetrics.canvasSize[0]>100&&actualPaintMetrics.canvasSize[1]>100)||
