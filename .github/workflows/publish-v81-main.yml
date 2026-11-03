@@ -258,6 +258,7 @@ jobs:
           mkdir -p "$preview"
           cp encounter-source/sculpt-lab.html encounter-source/sculpt-lab-v80.html "$preview/"
           cp encounter-source/world-assembler.html encounter-source/builder.html encounter-source/index.html "$preview/"
+          cp encounter-source/play.html "$preview/"
           cp encounter-source/manifest.webmanifest "$preview/"
           # Verify the Exploration tests against their original repository
           # tree; Combat is a separate owner and has separate tests. Never
@@ -274,6 +275,11 @@ jobs:
           done
           test -s "$preview/src/sculpt-lab-main.js"
           test -s "$preview/src/builder/world-assembler-main.js"
+          test -s "$preview/src/play/exploration-play-session.js"
+          test -s "$preview/src/play/exploration-play-entry.js"
+          grep -Fq 'id="play-new"' "$preview/play.html"
+          grep -Fq 'id="play-continue"' "$preview/play.html"
+          grep -Fq 'id="world-play-open"' "$preview/world-assembler.html"
           test -s "$preview/src/builder/world-assembler.css"
           grep -Fq 'id="graph-nodes"' "$preview/world-assembler.html"
           grep -Fq 'id="edit-sculpt-area"' "$preview/world-assembler.html"
@@ -556,6 +562,26 @@ jobs:
           HTML
           grep -Fq 'content="0;url=./preview/encounters-v80/world-assembler.html"' site/world-assembler.html
           cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
+      - name: Stage public Jouer entry alongside canonical world
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s site/preview/encounters-v80/play.html
+          test ! -e site/play.html
+          cat > site/play.html <<'HTML'
+          <!doctype html>
+          <html lang="fr">
+          <head>
+            <meta charset="utf-8">
+            <title>Jouer — Labo Exploration</title>
+            <meta http-equiv="refresh" content="0;url=./preview/encounters-v80/play.html">
+            <link rel="canonical" href="./preview/encounters-v80/play.html">
+          </head>
+          <body><a href="./preview/encounters-v80/play.html">Jouer une partie</a></body>
+          </html>
+          HTML
+          grep -Fq 'content="0;url=./preview/encounters-v80/play.html"' site/play.html
+          cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -800,6 +826,19 @@ jobs:
             -o /tmp/world-builder-canonical.html
           grep -Fq 'id="graph-nodes"' /tmp/world-builder-canonical.html
           echo 'LIVE ROOT WORLD BUILDER 200 -> canonical WorldDocument verified'
+      - name: Verify Jouer entry after Pages deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$root/play.html?run=$GITHUB_RUN_ID" -o /tmp/play-entry-root.html
+          grep -Fq 'content="0;url=./preview/encounters-v80/play.html"' /tmp/play-entry-root.html
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$root/preview/encounters-v80/play.html?run=$GITHUB_RUN_ID" -o /tmp/play-entry-canonical.html
+          grep -Fq 'id="play-new"' /tmp/play-entry-canonical.html
+          grep -Fq 'id="play-continue"' /tmp/play-entry-canonical.html
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$root/preview/encounters-v80/src/play/exploration-play-session.js?run=$GITHUB_RUN_ID" -o /tmp/play-session-module.js
+          grep -Fq 'createNewExplorationPlay' /tmp/play-session-module.js
+          echo 'LIVE JOUER MENU AND NATIVE SESSION SOURCE HTTP 200 VERIFIED'
       - name: Record verified live URL on the published commit
         shell: bash
         env:

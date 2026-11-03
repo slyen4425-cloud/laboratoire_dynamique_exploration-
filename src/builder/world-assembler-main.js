@@ -117,6 +117,13 @@ function installWorldAssembler(){
       status('Stockage local indisponible : '+error.message+' · utilise Exporter',true);
     }
   }
+  on(byId('world-play-open'),'click',event=>{
+    persist();
+    if(!autosaveAvailable){
+      event.preventDefault();
+      status('Monde non sauvegardé : exporte ton travail avant de jouer.',true);
+    }
+  });
   function getSelected(){
     return draft.areas.find(area=>area.id===selectedId)??draft.areas[0];
   }

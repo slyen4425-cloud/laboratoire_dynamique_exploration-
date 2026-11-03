@@ -28,7 +28,7 @@ a{color:#bce7df;text-decoration:none}.app-shell{display:flex;flex-direction:colu
 .go-back{font-size:36px;display:grid;place-items:center;line-height:1;border:1px solid #385e6a;border-radius:10px;width:44px;height:44px;flex:0 0 44px}
 .eyebrow{letter-spacing:.14em;font-size:10px;font-weight:800;color:#83bdb9;display:block}
 h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing:-.025em}h2{font-size:17px;line-height:1.22;margin:5px 0}h3{font-size:14px;margin:0}
-.header-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}.header-actions button,.import-btn{min-height:38px;font-size:12px;padding:9px 12px}
+.header-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}.world-play-entry{display:inline-flex;align-items:center;justify-content:center;min-height:38px;border:1px solid #88e2cf;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;white-space:nowrap}.header-actions button,.import-btn{min-height:38px;font-size:12px;padding:9px 12px}
 .save-state{font-size:11px;color:#96bdba;max-width:180px;white-space:normal;text-align:right}.import-btn{display:grid;place-items:center;border:1px solid #426878;border-radius:9px;background:#1d3745;color:#deeeee;font-weight:700}
 #import-world{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .workspace{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr) 284px;gap:0}

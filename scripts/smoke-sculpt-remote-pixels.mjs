@@ -5,6 +5,8 @@ import {spawn,spawnSync,execFileSync} from 'node:child_process';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
+import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
+import {WORLD_ASSEMBLER_DRAFT_KEY} from '../src/builder/world-assembler-handoff.js';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -142,6 +144,61 @@ try{
    worldEntry.worldArea!=='none')
    throw Error('Native HTTPS 2.5D screenshot has no drawn terrain: '+
      JSON.stringify({sha,pixels,screenshotProof,worldEntry,document:diagnostic,errors:issues.slice(-18)}));
+ // Also prove that Jouer really boots the SAME 2.5D Canvas and native
+ // navigation owner, with no Builder controls and a resumable checkpoint.
+ const gameWorld=serializeWorldBuilderDraft(
+   createBlankWorldBuilderDraft({id:'ci-native-play',width:36*28,height:24*21})
+ );
+ await read(`localStorage.setItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)},${JSON.stringify(gameWorld)});`);
+ await send('Page.navigate',{url:new URL('./play.html',url).href});
+ let menu;
+ for(let i=0;i<70;i++){
+   menu=await read("(()=>({newGame:!document.querySelector('#play-new')?.disabled,continueDisabled:document.querySelector('#play-continue')?.disabled,href:location.pathname}))()");
+   if(menu?.newGame&&menu.continueDisabled===true)break;
+   await sleep(250);
+ }
+ if(!menu?.newGame||menu.continueDisabled!==true)
+   throw Error('Native Jouer game menu did not load the canonical WorldDocument: '+JSON.stringify(menu));
+ await read("document.querySelector('#play-new').click()");
+ let play;
+ for(let i=0;i<100;i++){
+   play=await read("(()=>({play:window.__sculptPlayProbe?.(),nav:window.__sculptNavProbe?.(),canvas:(()=>{const c=document.querySelector('#sculpt-canvas');return c?[c.width,c.height]:null})(),path:location.pathname,error:document.querySelector('#play-start-error-message')?.textContent}))()");
+   if(play?.play?.active&&play?.play?.playing&&play.play.editorHidden&&play.canvas?.[0]>300)break;
+   await sleep(250);
+ }
+ if(!(play?.play?.active&&play.play.playing&&play.play.editorHidden&&
+      play.play.menuVisible&&play.canvas?.[0]>300&&play.nav?.activeFrames))
+   throw Error('Native Jouer did not load authored 2.5D map and gameplay input: '+JSON.stringify(play));
+ const startX=play.nav.player.x;
+ await send('Input.dispatchKeyEvent',{type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+ await sleep(280);
+ await send('Input.dispatchKeyEvent',{type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+ const moved=await read("window.__sculptNavProbe().player.x");
+ if(!(Math.abs(moved-startX)>2))
+   throw Error('Native Jouer hero does not move through authoritative collision engine: '+JSON.stringify({startX,moved}));
+ await read("document.querySelector('#play-menu-button').click()");
+ let afterMenu;
+ for(let i=0;i<50;i++){
+   afterMenu=await read("(()=>({url:location.pathname,continueEnabled:!document.querySelector('#play-continue')?.disabled,checkpoint:localStorage.getItem('gensrpg.exploration.play.navigation.v1')}))()");
+   if(afterMenu?.url.endsWith('/play.html')&&afterMenu.continueEnabled)break;
+   await sleep(250);
+ }
+ if(!afterMenu?.continueEnabled)throw Error('Jouer menu did not save navigation checkpoint: '+JSON.stringify(afterMenu));
+ const checkpoint=JSON.parse(afterMenu.checkpoint);
+ if(Math.abs(checkpoint.x-moved)>2||checkpoint.currentAreaId!=='area-principale')
+   throw Error('Jouer checkpoint does not match real hero and WorldArea: '+JSON.stringify(checkpoint));
+ await read("document.querySelector('#play-continue').click()");
+ let resumed;
+ for(let i=0;i<70;i++){
+   resumed=await read("(()=>({play:window.__sculptPlayProbe?.(),nav:window.__sculptNavProbe?.()}))()");
+   if(resumed?.play?.active&&resumed.nav?.player)break;
+   await sleep(250);
+ }
+ if(!resumed?.play?.active||Math.abs(resumed.nav.player.x-checkpoint.x)>1)
+   throw Error('Jouer continue did not resume saved world position: '+JSON.stringify({checkpoint,resumed}));
+ const savedDocument=await read(`localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})`);
+ if(savedDocument!==gameWorld)throw Error('Gameplay changed World Builder canonical document unexpectedly');
+ console.log('GREEN native Jouer/Continuer: same 2.5D rendered map, collision, checkpoint, no editor');
  console.log('GREEN native 2.5D immutable checked-out source compositor and World Builder entry '+
    JSON.stringify({sha,...pixels,screenshotProof,errorCount:issues.length}));
 }finally{

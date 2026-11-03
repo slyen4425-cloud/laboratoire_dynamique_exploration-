@@ -1,3 +1,14 @@
+# Introduction de Jouer dans Labo Exploration (03/11/2026)
+
+- **Demande** : après validation qualitative de la fluidité PC et la correction du World Builder, ouvrir une vraie partie **Nouvelle partie / Continuer**. Base : `main@2f20cbac59685889c3b00918479d068ca8bae134`, Pages GREEN `41647191660`, checkpoint `checkpoint/exploration-native-play-intro-start-2026-11-03`, branche `work/exploration-native-play-intro-2026-11-03`, issue [#343](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/343).
+- **TDD RED premier** : `tests/exploration-play-session.test.js` SHA `cc56c5d5246416e71047f69a560637fff28aa12e`, puis test rendu/publication `tests/exploration-play-publication.test.js` SHA `0510a34186e3117f97389d84cfdbd54525037076`.
+- **Livrable du lot** : `play.html` (Nouvelle partie / Continuer), WorldDocument v3 uniquement, session native `sculpt-lab.html?play=1`, vrais sprites/caméra/Collision World/portals, sauvegarde légère area+X/Y (pas de world modifié), HUD jeu sans éditeurs, arrêt au menu, route via le World Builder. Tout défaut de Spawn ou d'édition du monde bloque proprement la reprise.
+- **Publication** : mettre `play.html` et modules en `/preview/encounters-v80/`, avec URL première partie `/play.html` à la racine via le seul workflow GitHub Pages. Préserver V80 octet par octet, la preview unifiée et les autres branches.
+- **Autorités** : Exploration = monde/navigations ; Combat main = bestiaire publié/combat ; GenSRPG Aventure PR233 = sauvegardes et XP/capture/loot. Dans ce premier lot, les rencontres non filtrées sont désactivées **uniquement pour Jouer**, pas pour Tester. Aucun faux combat ni inventaire/XP local ajouté.
+- **Tests requis** : Node, check, vrai Chromium entrée nouvelle partie -> Canvas héros -> déplacement -> menu/sauvegarde -> Continuer à même position, et CI combat/Pages HTTPS pour le SHA exact. Pas de GREEN de publication avant les preuves.
+
+---
+
 # Lot — rétablir l'accès World Builder depuis le lien officiel (03/11/2026)
 
 - **Signal utilisateur** : correctif fluidité PC satisfaisant, mais lien direct `/sculpt-lab.html` semble supprimer l'accès au constructeur de mondes.
