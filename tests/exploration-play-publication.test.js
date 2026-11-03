@@ -26,3 +26,17 @@ test('Pages artifact must stage play menu, game module and first-party route',()
  assert.match(flow,/site\/play\.html/);
  assert.match(flow,/name: Verify Jouer entry after Pages deployment/);
 });
+
+test('native Play menu and real Sculpt runtime retain GenSRPG scoped navigation across reload and return',()=>{
+ const entry=read('src/play/exploration-play-entry.js');
+ const sculpt=read('src/sculpt-lab-main.js');
+ assert.match(entry,/searchParams\.get\('adventureSession'\)/);
+ assert.match(entry,/\$\('play-new'\)\.disabled=Boolean\(playOptions\)/);
+ assert.match(entry,/\$\('play-new'\)\.hidden=Boolean\(playOptions\)/);
+ assert.match(entry,/createNewExplorationPlay\(window\.localStorage,world,playOptions\)/);
+ assert.match(entry,/readExplorationPlay\(window\.localStorage,world,playOptions\)/);
+ assert.match(sculpt,/searchParams\.get\('adventureSession'\)/);
+ assert.match(sculpt,/readExplorationPlay\(window\.localStorage,world,playOptions\)/);
+ assert.match(sculpt,/createExplorationPlayProgressWriter\(window\.localStorage,world,playOptions\)/);
+ assert.match(sculpt,/play\.html\?adventureSession=/);
+});

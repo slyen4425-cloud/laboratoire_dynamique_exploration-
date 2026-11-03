@@ -7,6 +7,26 @@ import {sculptWorldAreaScene} from '../builder/sculpt-world-area-link.js';
 export const EXPLORATION_PLAY_NAV_KEY='gensrpg.exploration.play.navigation.v1';
 export const EXPLORATION_PLAY_NAV_SCHEMA='gensrpg.exploration.play-navigation.v1';
 
+// GenSRPG supplies only an opaque *identity* for its AdventureSession.
+// Exploration alone owns area/X/Y; standalone Jouer keeps its original key.
+// A scoped checkpoint never reads or rewrites the standalone checkpoint.
+export function explorationPlayNavigationKey(sessionId){
+  if(arguments.length===0)return EXPLORATION_PLAY_NAV_KEY;
+  if(typeof sessionId!=='string'||
+     !/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(sessionId))
+    throw new RangeError('Invalid GenSRPG adventure session identifier');
+  return EXPLORATION_PLAY_NAV_KEY+':'+sessionId;
+}
+function playScope(options){
+  if(options===undefined)return {key:EXPLORATION_PLAY_NAV_KEY,sessionId:null};
+  if(!options||typeof options!=='object'||Array.isArray(options)||
+     Object.keys(options).length!==1||
+     !Object.hasOwn(options,'sessionId'))
+    throw new TypeError('GenSRPG play session scope must contain only sessionId');
+  const {sessionId}=options;
+  return {key:explorationPlayNavigationKey(sessionId),sessionId};
+}
+
 function authoritativeWorld(world){
   if(!world||typeof world!=='object'||typeof world.id!=='string'||
     !world.id||!Array.isArray(world.areas)||!world.areas.length||
@@ -44,12 +64,12 @@ function requirePlayableState(world,state,validatedAreas=null){
   return {currentAreaId:area.id,x:state.x,y:state.y};
 }
 
-function snapshot(world,state){
+function snapshot(world,state,sessionId=null){
   const position=requirePlayableState(world,state);
   return Object.freeze({
     schema:EXPLORATION_PLAY_NAV_SCHEMA,version:1,
     worldId:world.id,worldFingerprint:playWorldFingerprint(world),
-    ...position
+    ...(sessionId===null?{}:{sessionId}),...position
   });
 }
 
@@ -59,24 +79,28 @@ function storageRequired(storage){
   return storage;
 }
 
-export function createNewExplorationPlay(storage,rawWorld){
+export function createNewExplorationPlay(storage,rawWorld,options){
+  const scope=playScope(options);
   const world=authoritativeWorld(rawWorld);
   const initial=createInitialExplorationState(world);
   if(!initial)throw new Error('Spawn initial manquant : configure le départ dans World Builder');
-  const result=snapshot(world,initial);
-  storageRequired(storage).setItem(EXPLORATION_PLAY_NAV_KEY,JSON.stringify(result));
+  const result=snapshot(world,initial,scope.sessionId);
+  storageRequired(storage).setItem(scope.key,JSON.stringify(result));
   return result;
 }
 
-export function readExplorationPlay(storage,rawWorld){
+export function readExplorationPlay(storage,rawWorld,options){
+  const scope=playScope(options);
   const world=authoritativeWorld(rawWorld);
-  const saved=storageRequired(storage).getItem(EXPLORATION_PLAY_NAV_KEY);
+  const saved=storageRequired(storage).getItem(scope.key);
   if(saved===null)return null;
   let value;
   try{value=JSON.parse(saved);}
   catch{throw new Error('Checkpoint de partie illisible : sauvegarde conservée');}
   if(value?.schema!==EXPLORATION_PLAY_NAV_SCHEMA||value?.version!==1)
     throw new Error('Version du checkpoint de partie incompatible');
+  if((value.sessionId??null)!==scope.sessionId)
+    throw new Error('Checkpoint de navigation de session incompatible : sauvegarde conservée');
   if(value.worldId!==world.id||value.worldFingerprint!==playWorldFingerprint(world))
     throw new Error('Le monde a été modifié depuis la sauvegarde : partie conservée, reprise bloquée');
   const position=requirePlayableState(world,value);
@@ -87,24 +111,26 @@ export function readExplorationPlay(storage,rawWorld){
 // Rehashing a large WorldDocument on each movement paint causes PC microstutter;
 // this checkpoint writer validates the WorldDocument ONCE on creation, then
 // serializes only actor position into the existing navigation save key.
-export function createExplorationPlayProgressWriter(storage,rawWorld){
+export function createExplorationPlayProgressWriter(storage,rawWorld,options){
+  const scope=playScope(options);
   const world=authoritativeWorld(rawWorld);
-  const current=readExplorationPlay(storage,world);
+  const current=readExplorationPlay(storage,world,options);
   if(!current)throw new Error('Aucune partie à reprendre');
   const validatedAreas=new Set([current.currentAreaId]);
   return position=>{
     const valid=requirePlayableState(world,position,validatedAreas);
     const result=Object.freeze({...current,...valid});
-    storage.setItem(EXPLORATION_PLAY_NAV_KEY,JSON.stringify(result));
+    storageRequired(storage).setItem(scope.key,JSON.stringify(result));
     return result;
   };
 }
 
-export function saveExplorationPlayPosition(storage,rawWorld,position){
+export function saveExplorationPlayPosition(storage,rawWorld,position,options){
+  const scope=playScope(options);
   const world=authoritativeWorld(rawWorld);
-  const previous=readExplorationPlay(storage,world);
+  const previous=readExplorationPlay(storage,world,options);
   if(!previous)throw new Error('Aucune partie à sauvegarder : utilise Nouvelle partie');
-  const updated=snapshot(world,position);
-  storage.setItem(EXPLORATION_PLAY_NAV_KEY,JSON.stringify(updated));
+  const updated=snapshot(world,position,scope.sessionId);
+  storageRequired(storage).setItem(scope.key,JSON.stringify(updated));
   return updated;
 }
