@@ -29,12 +29,15 @@ export function playWorldFingerprint(raw){
   return serialized.length+':'+(a>>>0).toString(36)+':'+(b>>>0).toString(36);
 }
 
-function requirePlayableState(world,state){
+function requirePlayableState(world,state,validatedAreas=null){
   const area=world.areas.find(a=>a.id===state?.currentAreaId);
   if(!area)throw new Error('WorldArea de partie absente du WorldDocument');
   // The same adapter used by the genuine Sculpt engine checks 2.5D area
   // dimensions and authored objects. No demo terrain fallback.
-  sculptWorldAreaScene(area);
+  if(!validatedAreas?.has(area.id)){
+    sculptWorldAreaScene(area);
+    validatedAreas?.add(area.id);
+  }
   if(!Number.isFinite(state.x)||!Number.isFinite(state.y)||
      state.x<0||state.y<0||state.x>area.width||state.y>area.height)
     throw new Error('Position de partie invalide ou hors carte');
@@ -88,8 +91,9 @@ export function createExplorationPlayProgressWriter(storage,rawWorld){
   const world=authoritativeWorld(rawWorld);
   const current=readExplorationPlay(storage,world);
   if(!current)throw new Error('Aucune partie à reprendre');
+  const validatedAreas=new Set([current.currentAreaId]);
   return position=>{
-    const valid=requirePlayableState(world,position);
+    const valid=requirePlayableState(world,position,validatedAreas);
     const result=Object.freeze({...current,...valid});
     storage.setItem(EXPLORATION_PLAY_NAV_KEY,JSON.stringify(result));
     return result;
