@@ -85,7 +85,8 @@ test('mobile terrain slider, camera and raster use shared height cap; water unch
  assert.match(ui,/SCULPT_TERRAIN_MAX_LEVEL/);
  assert.doesNotMatch(ui,/7\*SCULPT_TILE\.rise/);
  assert.doesNotMatch(ui,/editorKind==='water'\?10:7/);
- const presets=readFileSync(new URL('../src/builder/sculpt-builtin-map-presets.js',import.meta.url),'utf8');
- assert.match(presets,/sculptObjectCanOccupyCell/);
- assert.doesNotMatch(presets,/id\.startsWith\('objectdef\.waterfall\.'/);
+ const scene=readFileSync(new URL('../src/world/sculpt-scene-preview.js',import.meta.url),'utf8');
+ assert.match(scene,/export function sculptObjectCanOccupyCell/);
+ assert.match(scene,/waterAllowed/);
+ assert.doesNotMatch(scene,/id\.startsWith\('objectdef\.waterfall\.'/);
 });
