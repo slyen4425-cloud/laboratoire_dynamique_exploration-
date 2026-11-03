@@ -196,19 +196,21 @@ try{
  }
  if(!resumed?.play?.active||Math.abs(resumed.nav.player.x-checkpoint.x)>1)
    throw Error('Jouer continue did not resume saved world position: '+JSON.stringify({checkpoint,resumed}));
- // GenSRPG consumer sessions use the SAME real 2.5D engine but an isolated
- // navigation key. Reload/menu must never point at an unrelated party.
+ // GenSRPG's consumer owns New Game: create the scoped navigation only via
+ // the public Exploration API, never by clicking Lab New Game.
  const legacyCheckpoint=await read("localStorage.getItem('gensrpg.exploration.play.navigation.v1')");
+ const createdScoped=await read("(async()=>{const [{createNewExplorationPlay},{readWorldAssemblerDraft}]=await Promise.all([import('/src/play/exploration-play-session.js'),import('/src/builder/world-assembler-handoff.js')]);const world=readWorldAssemblerDraft(localStorage);return createNewExplorationPlay(localStorage,world,{sessionId:'ci-adventure-a'}).sessionId;})()");
+ if(createdScoped!=='ci-adventure-a')throw Error('Official Exploration scoped creation failed');
  await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
  let scopedMenu;
  for(let i=0;i<55;i++){
-   scopedMenu=await read("(()=>({newGame:!document.querySelector('#play-new')?.disabled,continueDisabled:document.querySelector('#play-continue')?.disabled,session:new URL(location.href).searchParams.get('adventureSession')}))()");
-   if(scopedMenu?.newGame&&scopedMenu.continueDisabled===true)break;
+   scopedMenu=await read("(()=>({newDisabled:document.querySelector('#play-new')?.disabled,newHidden:document.querySelector('#play-new')?.hidden,continueEnabled:!document.querySelector('#play-continue')?.disabled,session:new URL(location.href).searchParams.get('adventureSession')}))()");
+   if(scopedMenu?.newDisabled&&scopedMenu.newHidden&&scopedMenu.continueEnabled)break;
    await sleep(250);
  }
- if(!scopedMenu?.newGame||!scopedMenu.continueDisabled||scopedMenu.session!=='ci-adventure-a')
-   throw Error('Scoped Aventure did not isolate its new native Play menu: '+JSON.stringify(scopedMenu));
- await read("document.querySelector('#play-new').click()");
+ if(!scopedMenu?.newDisabled||!scopedMenu.newHidden||!scopedMenu.continueEnabled||scopedMenu.session!=='ci-adventure-a')
+   throw Error('Native GenSRPG scoped menu allowed a duplicate new game: '+JSON.stringify(scopedMenu));
+ await read("document.querySelector('#play-continue').click()");
  let scopedPlay;
  for(let i=0;i<90;i++){
    scopedPlay=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession')}))()");
@@ -232,11 +234,11 @@ try{
  await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-b',url).href});
  let secondMenu;
  for(let i=0;i<55;i++){
-   secondMenu=await read("(()=>({newGame:!document.querySelector('#play-new')?.disabled,continueDisabled:document.querySelector('#play-continue')?.disabled}))()");
-   if(secondMenu?.newGame&&secondMenu.continueDisabled)break;
+   secondMenu=await read("(()=>({newDisabled:document.querySelector('#play-new')?.disabled,continueDisabled:document.querySelector('#play-continue')?.disabled}))()");
+   if(secondMenu?.newDisabled&&secondMenu.continueDisabled)break;
    await sleep(250);
  }
- if(!secondMenu?.newGame||!secondMenu.continueDisabled)
+ if(!secondMenu?.newDisabled||!secondMenu.continueDisabled)
    throw Error('Second GenSRPG AdventureSession inherited the first checkpoint: '+JSON.stringify(secondMenu));
  await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
  let resumedMenu;
