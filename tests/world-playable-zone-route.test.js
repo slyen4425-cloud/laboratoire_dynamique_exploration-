@@ -53,10 +53,10 @@ test('an imported existing playable map can become the real host for new prefabs
  const first=createWorldAreaFromSculptMapPreset(initial,presets[0],{name:'Forêt'});
  const forest=first.areas.find(a=>a.id!==initial.initialAreaId);
  const next=createWorldAreaFromSculptMapPreset(first,presets[1],{name:'Plaine',hostAreaId:forest.id});
- const snow=next.areas.find(a=>a.label==='Plaine');
+ const plain=next.areas.find(a=>a.label==='Plaine');
  assert.ok(plain);
- assert.ok(next.portals.find(p=>p.sourceAreaId===forest.id&&p.targetAreaId===snow.id));
- assert.ok(next.portals.find(p=>p.sourceAreaId===snow.id&&p.targetAreaId===forest.id));
+ assert.ok(next.portals.find(p=>p.sourceAreaId===forest.id&&p.targetAreaId===plain.id));
+ assert.ok(next.portals.find(p=>p.sourceAreaId===plain.id&&p.targetAreaId===forest.id));
 });
 
 test('new prefabs keep the canonical terrain-family encounter configuration for Monster Capture',()=>{
