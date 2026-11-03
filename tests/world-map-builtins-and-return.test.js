@@ -1,57 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {builtinSculptMapPresets,listAvailableSculptMapPresets} from '../src/builder/sculpt-builtin-map-presets.js';
+import {builtinSculptMapPresets,listAvailableSculptMapPresets}
+  from '../src/builder/sculpt-builtin-map-presets.js';
 import {importSculptPreviewScene} from '../src/world/sculpt-scene-preview.js';
-import {sculptWaterAt} from '../src/world/sculpt-height-model.js';
-import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
-import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
-import {serializeWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
+import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft}
+  from '../src/builder/world-builder-draft.js';
+import {createWorldAreaFromSculptMapPreset}
+  from '../src/builder/sculpt-map-preset-library.js';
 const source=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
-test('eight native editable presets with real water, routes, assets and safe initial center',()=>{
- const entries=builtinSculptMapPresets().slice(0,8);
- assert.equal(entries.length,8);
- assert.equal(new Set(entries.map(p=>p.id)).size,8);
- assert.equal(new Set(entries.map(p=>p.name)).size,8);
- let ponds=0,snow=0,roads=0,buildings=0,trees=0;
+test('only the two authored 80x60 maps are built-in and create real editable WorldAreas',()=>{
+ const entries=builtinSculptMapPresets();
+ assert.equal(entries.length,2);
+ assert.deepEqual(entries.map(p=>p.name),['Forêt 1 · projet','Plaine 1 · projet']);
+ assert.equal(new Set(entries.map(p=>p.id)).size,2);
  for(const preset of entries){
    const scene=importSculptPreviewScene(preset.scene);
    assert.ok(Object.isFrozen(preset));
-   assert.ok(scene.terrain.width>=24&&scene.terrain.height>=18);
-   assert.ok(scene.objects.length>=3,preset.name+' needs real terrain decorations');
-   assert.equal(scene.actors.length,0);
-   assert.ok(!('portals' in preset.scene));
-   assert.ok(!('spawns' in preset.scene));
-   const centerX=Math.floor(scene.terrain.width/2),centerY=Math.floor(scene.terrain.height/2);
-   assert.equal(sculptWaterAt(scene.terrain,centerX,centerY),0,preset.name+' spawn wet');
-   assert.ok(scene.objects.every(obj=>Math.hypot(obj.transform.x-(centerX+.5)*28,
-     obj.transform.y-(centerY+.5)*21)>65),preset.name+' blocked spawn');
-   if(scene.terrain.waterLevels.some((w,i)=>w>scene.terrain.levels[i]))ponds++;
-   if(scene.surface.baseMaterialId==='ground.snow')snow++;
-   roads+=scene.surface.routes.length;
-   buildings+=scene.objects.filter(o=>o.objectDefinitionId.includes('.building.')).length;
-   trees+=scene.objects.filter(o=>o.objectDefinitionId.includes('.tree.')).length;
+   assert.equal(scene.terrain.width,80);
+   assert.equal(scene.terrain.height,60);
+   assert.ok(scene.objects.length>0);
+   assert.ok(scene.surface.routes.length>0);
+   assert.ok(!('portals' in preset.scene)&&!('spawns' in preset.scene));
    const base=createBlankWorldBuilderDraft({id:'test-'+preset.id,width:36*28,height:24*21});
    const result=createWorldAreaFromSculptMapPreset(base,preset,{name:preset.name,kind:'exterior'});
-   const houses=scene.objects.filter(o=>o.objectDefinitionId.includes('.building.')).length;
-   assert.equal(result.areas.length,2+houses,'each house instantiates an independent WorldArea');
-   assert.equal(result.areas[1].sculptTerrain.width,scene.terrain.width);
+   const houses=scene.objects.filter(o=>o.objectDefinitionId.startsWith('objectdef.building.')).length;
+   assert.equal(result.areas.length,2+houses,'each building gets its own interior');
+   assert.equal(result.areas[1].sculptTerrain.width,80);
    assert.ok(serializeWorldBuilderDraft(result).length>1000);
  }
- assert.ok(ponds>=2,'multiple real ponds');
- assert.ok(snow>=2,'winter maps');
- assert.ok(roads>=5,'usable paths');
- assert.ok(buildings>=3,'habitable maps');
- assert.ok(trees>=30,'forested map variation');
 });
-test('native presets remain read-only, separate from user library, and prelisted',()=>{
+test('built-in catalogue is exactly two author maps on a fresh browser',()=>{
  const store={getItem:()=>null};
- const presets=listAvailableSculptMapPresets(store);
- assert.equal(presets.length,10);
- assert.equal(presets[0].id,builtinSculptMapPresets()[0].id);
- assert.equal(presets[0].kind,'gensrpg-sculpt-map-preset');
+ const entries=listAvailableSculptMapPresets(store);
+ assert.equal(entries.length,2);
+ assert.equal(entries[0].id,builtinSculptMapPresets()[0].id);
+ assert.equal(entries[0].kind,'gensrpg-sculpt-map-preset');
 });
+
 test('World return survives fullscreen and refresh without a parallel world-state owner',()=>{
  const html=source('sculpt-lab.html');
  const main=source('src/sculpt-lab-main.js');
