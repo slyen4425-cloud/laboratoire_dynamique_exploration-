@@ -204,11 +204,11 @@ try{
  await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
  let scopedMenu;
  for(let i=0;i<55;i++){
-   scopedMenu=await read("(()=>({newDisabled:document.querySelector('#play-new')?.disabled,newHidden:document.querySelector('#play-new')?.hidden,continueEnabled:!document.querySelector('#play-continue')?.disabled,session:new URL(location.href).searchParams.get('adventureSession')}))()");
+   scopedMenu=await read("(()=>({newDisabled:document.querySelector('#play-new')?.disabled,newHidden:document.querySelector('#play-new')?.hidden,newRendered:(()=>{const b=document.querySelector('#play-new');return !!b?.getClientRects().length&&getComputedStyle(b).display!=='none'})(),continueEnabled:!document.querySelector('#play-continue')?.disabled,session:new URL(location.href).searchParams.get('adventureSession')}))()");
    if(scopedMenu?.newDisabled&&scopedMenu.newHidden&&scopedMenu.continueEnabled)break;
    await sleep(250);
  }
- if(!scopedMenu?.newDisabled||!scopedMenu.newHidden||!scopedMenu.continueEnabled||scopedMenu.session!=='ci-adventure-a')
+ if(!scopedMenu?.newDisabled||!scopedMenu.newHidden||scopedMenu.newRendered||!scopedMenu.continueEnabled||scopedMenu.session!=='ci-adventure-a')
    throw Error('Native GenSRPG scoped menu allowed a duplicate new game: '+JSON.stringify(scopedMenu));
  await read("document.querySelector('#play-continue').click()");
  let scopedPlay;

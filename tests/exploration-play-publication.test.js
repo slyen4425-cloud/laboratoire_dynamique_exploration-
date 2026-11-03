@@ -40,3 +40,11 @@ test('native Play menu and real Sculpt runtime retain GenSRPG scoped navigation 
  assert.match(sculpt,/createExplorationPlayProgressWriter\(window\.localStorage,world,playOptions\)/);
  assert.match(sculpt,/play\.html\?adventureSession=/);
 });
+
+test('native Jouer menu respects actual hidden CSS precedence for GenSRPG-owned New Game',()=>{
+ const html=read('play.html');
+ assert.match(html,/\[hidden\]\s*\{\s*display\s*:\s*none\s*!important\s*;?\s*\}/,
+  'The Play menu button display:flex must never override the semantic hidden attribute');
+ const entry=read('src/play/exploration-play-entry.js');
+ assert.match(entry,/\$\('play-new'\)\.hidden=Boolean\(playOptions\)/);
+});
