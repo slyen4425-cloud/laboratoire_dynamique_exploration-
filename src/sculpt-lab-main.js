@@ -180,6 +180,8 @@ function objectImage(assetId){
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
+const adventureSessionId=new URL(document.URL).searchParams.get('adventureSession');
+const playOptions=adventureSessionId===null?undefined:{sessionId:adventureSessionId};
 let sculptPlayActive=false,playLastCheckpointAt=0,playPositionWriter=null;
 
 const sculptEncounterDialog=$('sculpt-encounter-preview');
@@ -3789,7 +3791,7 @@ function installSculptPlayMode(){
   try{
     const world=readWorldAssemblerDraft(window.localStorage);
     if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
-    const checkpoint=readExplorationPlay(window.localStorage,world);
+    const checkpoint=readExplorationPlay(window.localStorage,world,playOptions);
     if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
     // Single world, scene, camera, renderer and collision authority: NO new
     // scene graph, competing world graph or authored area copy in save.
@@ -3797,7 +3799,7 @@ function installSculptPlayMode(){
     sculptEncounterConfig=world.encounterConfig;
     document.body.classList.add('world-area-editing');
     mountWorldSculptArea(checkpoint.currentAreaId);
-    playPositionWriter=createExplorationPlayProgressWriter(window.localStorage,world);
+    playPositionWriter=createExplorationPlayProgressWriter(window.localStorage,world,playOptions);
     sculptPlayActive=true;
     setImmersive(true);
     setNavigationTesting(true);
@@ -3813,7 +3815,8 @@ function installSculptPlayMode(){
     $('play-location').hidden=false;
     $('play-location').textContent='🌍 '+(sculptWorldArea()?.label||sculptWorldAreaId);
     $('play-menu-button').addEventListener('click',()=>{
-      if(persistPlayNavigationCheckpoint())window.location.assign('./play.html');
+      if(persistPlayNavigationCheckpoint())window.location.assign(playOptions?
+        './play.html?adventureSession='+encodeURIComponent(playOptions.sessionId):'./play.html');
     });
     window.addEventListener('pagehide',persistPlayNavigationCheckpoint,{once:true});
     window.__sculptPlayProbe=()=>Object.freeze({
