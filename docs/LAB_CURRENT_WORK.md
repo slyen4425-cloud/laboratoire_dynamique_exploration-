@@ -1,3 +1,13 @@
+# Lot 03/11/2026 — identifiants de rencontre non réutilisables après reprise GenSRPG (EN COURS, NON GREEN)
+
+- **Signal d'audit** : `src/encounters/encounter-controller.js` produit actuellement `encounter-1:return-1` en mémoire après chaque chargement. Après Jouer → Menu → Continuer, le contrôleur réinitialisé peut réutiliser la même paire, alors que GenSRPG Aventure protège `processedEncounterKeys` par `encounterId:returnToken`. La seconde victoire serait considérée déjà traitée. Une référence d'une autre partie pourrait aussi se confondre.
+- **Base** : Labo Exploration `main@2f492471471868f5808d3f73b5a5d15883b98059`, checkpoint START `checkpoint/exploration-capture-encounter-ids-start-2026-11-03`, branche `work/exploration-capture-encounter-ids-2026-11-03`; `main` inchangé.
+- **Autorité** : Encounter Controller Exploration est seul responsable de produire les identifiants d'une rencontre. Ajouter une **stratégie facultative injectée** `createCorrelationIds` dans le constructeur existant, avec validation stricte. Par défaut, le Tester historique conserve les séquences déterministes ; pour `?play=1&adventureSession=...`, le même contrôleur peut recevoir des IDs opaques `crypto.randomUUID()` uniques au redémarrage. La stratégie n'écrit ni stockage ni règles GenSRPG.
+- **TDD** : tests RED de collision après réinstanciation, corruption/duplicate ref, invariants legacy, puis code. CI Node/Chromium/Builder et Pages au SHA exact avant GREEN. Pas de second moteur Encounter ni d'appel au Combat.
+- **Hors périmètre** : activation des rencontres Jouer (bloquée jusqu'au Bestiaire publié), retour Combat, allocation XP/loot, moteur Combat, génération de monde et PWA. Aucun changement de l'éditeur historique ni des paramètres de terrain.
+
+---
+
 # Correctif isolé 03/11/2026 — bouton Nouvelle partie visible malgré [hidden] dans Jouer GenSRPG
 
 - **Signal CI consommateur** : GenSRPG [root-browser #41709236087](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41709236087), ligne 179 : `#play-new` réellement visible lors d'une reprise GenSRPG. L'identité de partie est valide et la navigation 2.5D a démarré ; la première erreur apparaît au retour Menu.
