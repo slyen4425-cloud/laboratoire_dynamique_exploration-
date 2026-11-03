@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createBlankWorldBuilderDraft,addWorldArea} from '../src/builder/world-builder-draft.js';
+import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {
   EXPLORATION_PLAY_NAV_KEY,createNewExplorationPlay,
   readExplorationPlay,saveExplorationPlayPosition,
@@ -40,7 +40,7 @@ test('No invisible demo world, no import of wrong save, no partial overwrite on 
  assert.throws(()=>createNewExplorationPlay(storage,null),/WorldDocument/);
  assert.equal(storage.getItem(EXPLORATION_PLAY_NAV_KEY),null);
  createNewExplorationPlay(storage,doc);
- const changed={...doc,areas:doc.areas.map(a=>({...a,label:'Changement'})};
+ const changed={...doc,areas:doc.areas.map(a=>({...a,label:'Changement'}))};
  assert.notEqual(playWorldFingerprint(changed),playWorldFingerprint(doc));
  assert.throws(()=>readExplorationPlay(storage,changed),/modifié/);
  assert.equal(JSON.parse(storage.getItem(EXPLORATION_PLAY_NAV_KEY)).worldId,doc.id);
