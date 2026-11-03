@@ -9,13 +9,12 @@ import {importSculptMapPreset,createWorldAreaFromSculptMapPreset}
 import {createBlankWorldBuilderDraft}
   from '../src/builder/world-builder-draft.js';
 
-test('fresh browser includes the unchanged 8 originals plus Forêt 1 and Plaine 1 as shipped assets',()=>{
+test('fresh browser lists only Forêt 1 and Plaine 1 as shipped assets',()=>{
   const presets=builtinSculptMapPresets();
-  assert.equal(presets.length,10,'two authored maps must be shipped in code, not localStorage');
-  assert.deepEqual(presets.slice(0,8).map(p=>p.id),
-    Array.from({length:8},(_,i)=>'map-preset-'+(101+i)),
-    'existing built-in IDs must not change');
-  const personal=presets.slice(8);
+  assert.equal(presets.length,2,'the eight obsolete examples must not be shipped');
+  const personal=presets;
+  assert.ok(personal.every(p=>!['map-preset-101','map-preset-102','map-preset-103','map-preset-104','map-preset-105','map-preset-106','map-preset-107','map-preset-108'].includes(p.id)),
+    'all eight retired builtins must be absent on a fresh install');
   assert.deepEqual(personal.map(p=>p.name),['Forêt 1 · projet','Plaine 1 · projet']);
   assert.deepEqual(personal.map(p=>p.id),['map-preset-109','map-preset-110']);
   assert.deepEqual(personal.map(p=>[p.scene.terrain.width,p.scene.terrain.height]),
@@ -45,7 +44,7 @@ test('the immutable snapshot files exactly match the author-supplied 2026-11-03 
 });
 
 test('the two authored maps instantiate as canonical WorldAreas without changing the source scene',()=>{
-  for(const preset of builtinSculptMapPresets().slice(8)){
+  for(const preset of builtinSculptMapPresets()){
     const before=JSON.stringify(preset.scene);
     const world=createBlankWorldBuilderDraft({
       id:'authored-preset-'+preset.id,width:36*28,height:24*21
