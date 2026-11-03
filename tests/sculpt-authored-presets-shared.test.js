@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {AUTHOR_SCULPT_MAP_SNAPSHOTS} from '../src/builder/sculpt-author-map-snapshots.js';
 import {builtinSculptMapPresets,listAvailableSculptMapPresets}
   from '../src/builder/sculpt-builtin-map-presets.js';
 import {importSculptMapPreset,createWorldAreaFromSculptMapPreset}
@@ -29,6 +31,17 @@ test('fresh browser includes the unchanged 8 originals plus Forêt 1 and Plaine 
   const virginBrowser={getItem:()=>null};
   assert.deepEqual(listAvailableSculptMapPresets(virginBrowser).map(p=>p.id),
     presets.map(p=>p.id));
+});
+
+test('the immutable snapshot files exactly match the author-supplied 2026-11-03 scenes',()=>{
+  const expected=[
+    'a090ac1436399eab27b6ae41df803ceabe797b0de048fd6fee79d14d7179b58b',
+    '7292ab0c8a2394fa894ecc36d06bb87aeabae301d1d6bd113f3b93b8eece361d'
+  ];
+  for(const [i,item] of AUTHOR_SCULPT_MAP_SNAPSHOTS.entries()){
+    const actual=createHash('sha256').update(JSON.stringify(item.scene)).digest('hex');
+    assert.equal(actual,expected[i],item.name+' must not be altered before creator editing');
+  }
 });
 
 test('the two authored maps instantiate as canonical WorldAreas without changing the source scene',()=>{
