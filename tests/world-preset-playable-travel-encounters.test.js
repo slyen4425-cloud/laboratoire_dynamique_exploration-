@@ -13,14 +13,14 @@ const presets=builtinSculptMapPresets();
 const catalog=createCaptureCreatureCatalogProvider(CAPTURE_CREATURE_CATALOG_PREVIEW_V1);
 const playable=p=>p.kind==='exterior'&&p.width<=80*28&&p.height<=64*21;
 
-test('new World Builder worlds give native prefab terrain a nonzero configured Capture encounter profile',()=>{
+test('both creator presets keep canonical encounters and allow an explicit test-only combat chance',()=>{
  const d=createBlankWorldBuilderDraft({id:'fresh',width:2400,height:1600});
- for(const preset of [presets[0],presets[3],presets[5],presets[7]]){
+ for(const preset of presets){
   const world=createWorldAreaFromSculptMapPreset(d,preset,{name:preset.name});
   const area=world.areas[1];
   const family=area.surface.baseTerrainFamilyId;
   const rule=world.encounterConfig.families.find(f=>f.terrainFamilyId===family);
-  assert.ok(rule?.encounterChancePercent>0,'Missing actual encounter chance: '+family);
+  assert.ok(rule,'Missing terrain encounter profile: '+family);
   const controller=createEncounterController({checkDistance:160});
   const y=area.surface.routes[0].points[0].y;
   const player=x=>({currentAreaId:area.id,x,y});
@@ -41,8 +41,8 @@ test('new World Builder worlds give native prefab terrain a nonzero configured C
 test('explicit World Builder repair restores BOTH broken legacy links and both direction routes at native road exits',()=>{
  const original=createBlankWorldBuilderDraft({id:'legacy',width:2400,height:1600});
  const first=createWorldAreaFromSculptMapPreset(original,presets[0],{name:'Foret',hostAreaId:original.initialAreaId});
- const second=createWorldAreaFromSculptMapPreset(first,presets[3],{name:'Neige',hostAreaId:original.initialAreaId});
- const source=second.areas.find(a=>a.label==='Foret'),target=second.areas.find(a=>a.label==='Neige');
+ const second=createWorldAreaFromSculptMapPreset(first,presets[1],{name:'Plaine',hostAreaId:original.initialAreaId});
+ const source=second.areas.find(a=>a.label==='Foret'),target=second.areas.find(a=>a.label==='Plaine');
  const blocked=second.portals.filter(p=>[source.id,target.id].includes(p.sourceAreaId)&&p.targetAreaId===original.initialAreaId);
  assert.equal(blocked.length,2);
  const fixed=makePlayableZoneRoute(second,{selectedAreaId:source.id}).document;

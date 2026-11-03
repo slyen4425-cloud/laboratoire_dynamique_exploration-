@@ -42,7 +42,7 @@ test('2 zones: A exit -> B entry; B entry -> A exit, never B exit -> A',()=>{
  const blank=createBlankWorldBuilderDraft({id:'two-way-road',width:1008,height:504});
  const one=createWorldAreaFromSculptMapPreset(blank,presets[0],{name:'Zone A'});
  const a=one.areas.find(x=>x.label==='Zone A');
- const world=createWorldAreaFromSculptMapPreset(one,presets[3],{name:'Zone B',hostAreaId:a.id});
+ const world=createWorldAreaFromSculptMapPreset(one,presets[1],{name:'Zone B',hostAreaId:a.id});
  const b=world.areas.find(x=>x.label==='Zone B');
  assertDirectionalPair(world,a,b);
 });
@@ -50,9 +50,9 @@ test('3 zones: A exit -> B entry; B exit -> C entry; returns at each entry',()=>
  const blank=createBlankWorldBuilderDraft({id:'three-way-road',width:1008,height:504});
  const one=createWorldAreaFromSculptMapPreset(blank,presets[0],{name:'Zone A'});
  const a=one.areas.find(x=>x.label==='Zone A');
- const two=createWorldAreaFromSculptMapPreset(one,presets[3],{name:'Zone B',hostAreaId:a.id});
+ const two=createWorldAreaFromSculptMapPreset(one,presets[1],{name:'Zone B',hostAreaId:a.id});
  const b=two.areas.find(x=>x.label==='Zone B');
- const three=createWorldAreaFromSculptMapPreset(two,presets[5],{name:'Zone C',hostAreaId:b.id});
+ const three=createWorldAreaFromSculptMapPreset(two,presets[0],{name:'Zone C',hostAreaId:b.id});
  const c=three.areas.find(x=>x.label==='Zone C');
  assertDirectionalPair(three,a,b);assertDirectionalPair(three,b,c);
 });
@@ -60,7 +60,7 @@ test('explicit repair of old worlds relocates reverse gate to B entry without mu
  const blank=createBlankWorldBuilderDraft({id:'repair',width:1008,height:504});
  const first=createWorldAreaFromSculptMapPreset(blank,presets[1],{name:'Zone A'});
  const a=first.areas.find(x=>x.label==='Zone A');
- const second=createWorldAreaFromSculptMapPreset(first,presets[4],{name:'Zone B',hostAreaId:a.id});
+ const second=createWorldAreaFromSculptMapPreset(first,presets[1],{name:'Zone B',hostAreaId:a.id});
  const b=second.areas.find(x=>x.label==='Zone B');
  const repaired=makePlayableZoneRoute(second,{selectedAreaId:a.id}).document;
  assertDirectionalPair(repaired,a,b);

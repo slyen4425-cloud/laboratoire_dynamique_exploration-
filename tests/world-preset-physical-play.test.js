@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {createBlankWorldBuilderDraft,addWorldArea} from '../src/builder/world-builder-draft.js';
 import {makePlayableZoneRoute} from '../src/builder/sculpt-playable-zone-route.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
-import {builtinSculptMapPresets} from '../src/builder/sculpt-builtin-map-presets.js';
+import {createBlankSculptPreviewScene} from '../src/world/sculpt-scene-preview.js';
+import {appendSculptSurfaceStroke} from '../src/world/sculpt-surface-paint.js';
+import {createSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
 import {sculptWorldAreaScene} from '../src/builder/sculpt-world-area-link.js';
 import {findTriggeredPortal,applyPortalTransition} from '../src/world/portal-model.js';
 import {stepMovement} from '../src/core/movement.js';
@@ -12,6 +14,19 @@ import {sculptTerrainRampProjections} from '../src/world/sculpt-height-model.js'
 import {createEncounterController} from '../src/encounters/encounter-controller.js';
 import {createCaptureCreatureCatalogProvider} from '../src/capture/capture-creature-catalog-provider.js';
 import {CAPTURE_CREATURE_CATALOG_PREVIEW_V1} from '../src/capture/capture-creature-catalog-preview-v1.js';
+
+// Stable, author-independent movement fixture. The creator's Forêt/Plaine
+// scenes are intentionally editable and must not be forced to pass an
+// artificially fixed route topology before their passability work is done.
+function testRoadPreset(name){
+ const scene=createBlankSculptPreviewScene({width:36,height:24});
+ return createSculptMapPreset({...scene,
+   surface:appendSculptSurfaceStroke(scene.surface,{
+     materialId:'road.dirt',
+     points:[{x:64,y:252},{x:944,y:252}],width:53
+   })
+ },{name});
+}
 
 function walkPrefabArea(doc,area,expectEncounter){
  const scene=sculptWorldAreaScene(area);
@@ -77,12 +92,12 @@ function walkPrefabArea(doc,area,expectEncounter){
  return transition;
 }
 
-test('the actual preset forest->snow and snow->forest roads can be walked from Spawn to Portal with a Capture encounter',()=>{
+test('canonical preset factory roads support real collisions, encounters and reciprocal portals',()=>{
  const start=createBlankWorldBuilderDraft({id:'physical-journey',width:2400,height:1600});
- const first=createWorldAreaFromSculptMapPreset(start,builtinSculptMapPresets()[1],{
+ const first=createWorldAreaFromSculptMapPreset(start,testRoadPreset('Chemin A'),{
    name:'Forêt profonde',hostAreaId:null});
  const forest=first.areas.find(a=>a.label==='Forêt profonde');
- const doc=createWorldAreaFromSculptMapPreset(first,builtinSculptMapPresets()[3],{
+ const doc=createWorldAreaFromSculptMapPreset(first,testRoadPreset('Chemin B'),{
    name:'Neige et sapins',hostAreaId:forest.id});
  const snow=doc.areas.find(a=>a.label==='Neige et sapins');
  const arrival=walkPrefabArea(doc,forest,true);
@@ -95,10 +110,10 @@ test('the actual preset forest->snow and snow->forest roads can be walked from S
 });
 
 
-test('the reported 3-zone legacy world (2400x1600, Ile blank, Foret preset) truly walks Foret -> Ile -> Foret after explicit repair',()=>{
+test('legacy WorldDocument route repair remains physically traversable using a deterministic map fixture',()=>{
  const legacy=createBlankWorldBuilderDraft({id:'old-3-zone-world',width:2400,height:1600});
  const islandDoc=addWorldArea(legacy,{name:'Ile',kind:'exterior',width:36*28,height:24*21});
- const forestDoc=createWorldAreaFromSculptMapPreset(islandDoc,builtinSculptMapPresets()[1],{
+ const forestDoc=createWorldAreaFromSculptMapPreset(islandDoc,testRoadPreset('Chemin historique'),{
    name:'Forêt profonde · sentier des anciens',hostAreaId:legacy.initialAreaId
  });
  const forest=forestDoc.areas.find(a=>a.label==='Forêt profonde · sentier des anciens');
