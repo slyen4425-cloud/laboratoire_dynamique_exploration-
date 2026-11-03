@@ -8,6 +8,7 @@ import {applySculptWaterStroke,applySculptStroke,sculptWaterAt}
   from '../world/sculpt-height-model.js';
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke}
   from '../world/sculpt-surface-paint.js';
+import {AUTHOR_SCULPT_MAP_SNAPSHOTS} from './sculpt-author-map-snapshots.js';
 import {createSculptMapPreset,readSculptMapPresets}
   from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
 
@@ -246,10 +247,16 @@ function createScene(config,index){
  }
  return {terrain,surface,objects,actors:[]};
 }
+// Keep existing eight stable (IDs 101-108). The two authored WorldArea scenes
+// are first-party SHIPPED templates, not browser-local drafts or extra owners.
 const templates=Object.freeze(CONFIGS.map((cfg,i)=>
  createSculptMapPreset(createScene(cfg,i),{id:'map-preset-'+(101+i),name:cfg.name})));
-export function builtinSculptMapPresets(){return templates;}
+const authoredTemplates=Object.freeze(AUTHOR_SCULPT_MAP_SNAPSHOTS.map((p,i)=>
+ createSculptMapPreset(p.scene,{id:'map-preset-'+(109+i),name:p.name})));
+const builtins=Object.freeze([...templates,...authoredTemplates]);
+export function builtinSculptMapPresets(){return builtins;}
 export function listAvailableSculptMapPresets(storage){
- // User library is independent. No builtin is written to localStorage.
- return Object.freeze([...templates,...readSculptMapPresets(storage)]);
+ // User library remains independent. Shipped presets are always present
+ // on a fresh PC/mobile origin, without ever writing to localStorage.
+ return Object.freeze([...builtins,...readSculptMapPresets(storage)]);
 }
