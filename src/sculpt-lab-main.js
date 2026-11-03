@@ -76,7 +76,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
-import {readExplorationPlay,saveExplorationPlayPosition} from './play/exploration-play-session.js';
+import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
@@ -180,7 +180,7 @@ function objectImage(assetId){
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
-let sculptPlayActive=false,playLastCheckpointAt=0;
+let sculptPlayActive=false,playLastCheckpointAt=0,playPositionWriter=null;
 
 const sculptEncounterDialog=$('sculpt-encounter-preview');
 // The frozen V80 page intentionally exposes no encounter UI; the editor's
@@ -3762,7 +3762,7 @@ function traverseSculptWorldPortal(){
 function persistPlayNavigationCheckpoint(){
   if(!sculptPlayActive||!navigationTesting||!navActor||!sculptWorldDraft)return false;
   try{
-    saveExplorationPlayPosition(window.localStorage,sculptWorldDraft,{
+    playPositionWriter({
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
     });
     const output=$('play-save-status');
@@ -3797,6 +3797,7 @@ function installSculptPlayMode(){
     sculptEncounterConfig=world.encounterConfig;
     document.body.classList.add('world-area-editing');
     mountWorldSculptArea(checkpoint.currentAreaId);
+    playPositionWriter=createExplorationPlayProgressWriter(window.localStorage,world);
     sculptPlayActive=true;
     setImmersive(true);
     setNavigationTesting(true);
@@ -3819,7 +3820,7 @@ function installSculptPlayMode(){
       active:sculptPlayActive,worldId:sculptWorldDraft?.id??null,
       areaId:sculptWorldAreaId,playing:navigationTesting,
       actor:navActor?{x:navActor.x,y:navActor.y}:null,
-      editorHidden:getComputedStyle($('mode-ground')).display==='none',
+      editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
   }catch(error){sculptPlayActive=false;fail(error);}
