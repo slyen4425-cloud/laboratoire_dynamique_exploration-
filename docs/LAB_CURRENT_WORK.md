@@ -1,3 +1,16 @@
+# Lot 03/11/2026 — liaison de navigation Jouer par identité de partie GenSRPG (EN COURS, NON GREEN)
+
+- **Demande** : poursuivre le raccordement Monster Capture depuis GenSRPG, sans refaire le moteur Jouer.
+- **Base immuable** : Exploration `main@d999e8e6ab57c3f891edc5b0d79d8c40192c90a9` (PR #345), checkpoint START `checkpoint/exploration-adventure-session-scope-start-2026-11-03`, branche `work/exploration-play-session-scoped-owner-2026-11-03`.
+- **Propriétaire unique** : Exploration `src/play/exploration-play-session.js` stocke seulement la navigation WorldDocument/Area/X/Y et sa clé. GenSRPG possède identifiant de session, progression, bestiaire et sauvegarde de partie. La clé historique sans session reste strictement inchangée et doit être compatible.
+- **Périmètre** : API versionnée facultative `{sessionId}` sur create/read/write; stockage isolé par session et validation stricte de l'identifiant; `play.html?adventureSession=...` et `sculpt-lab.html?play=1&adventureSession=...` transportent uniquement le contexte opaque de navigation. Aucune copie de carte, aucun déplacement/caméra/collision/rencontre ou import de règles Combat.
+- **TDD** : RED d'abord pour l'isolation de deux parties, les identifiants invalides, la non-réinitialisation de l'ancien checkpoint et la reprise multi-Area; ensuite code; tests réels Node et navigateur requis, CI exacte.
+- **Limites** : aucun monde du Labo localStorage ne peut être lu automatiquement depuis l'origine GenSRPG : le World Builder consommé dans GenSRPG devra fournir son vrai WorldDocument. Les sauvegardes restent sur l'origine du site. Aucun déploiement ni promotion sur main avant les gates.
+- **Hors périmètre** : GenSRPG source, Labo Combat, récompenses, IA, whitelist, options vitesse/caméra, Service Worker, versions V80 et Publisher.
+- **Gate** : vérifications historiques `play` autonome + scénarios GenSRPG sessionScoped/legacy, rendu Chromium, CI, preuve mobile utilisateur si changement perceptible. NE PAS déclarer GREEN produit avant partie complète GenSRPG.
+
+---
+
 # Introduction de Jouer dans Labo Exploration (03/11/2026)
 
 - **Demande** : après validation qualitative de la fluidité PC et la correction du World Builder, ouvrir une vraie partie **Nouvelle partie / Continuer**. Base : `main@2f20cbac59685889c3b00918479d068ca8bae134`, Pages GREEN `41647191660`, checkpoint `checkpoint/exploration-native-play-intro-start-2026-11-03`, branche `work/exploration-native-play-intro-2026-11-03`, issue [#343](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/issues/343).
