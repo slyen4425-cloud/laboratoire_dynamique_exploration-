@@ -1,5 +1,10 @@
-// Verify original 2.5D sculpt renderer on immutable public HTTPS, not a fake canvas.
-import {spawn,spawnSync} from 'node:child_process';
+// Verify that the EXACT checked-out SHA paints the real native Chromium 2.5D Canvas.
+// The third-party raw.githack CDN can serve HTML while starving module loads;
+// the official Pages workflow independently verifies live HTTPS after deployment.
+import {spawn,spawnSync,execFileSync} from 'node:child_process';
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -7,7 +12,24 @@ import pngjs from 'pngjs';
 const {PNG}=pngjs;
 const sha=process.env.EXPLORATION_SHA;
 if(!/^[a-f0-9]{40}$/.test(sha||''))throw Error('Missing immutable source SHA');
-const url='https://raw.githack.com/slyen4425-cloud/laboratoire_dynamique_exploration-/'+sha+'/sculpt-lab.html';
+const actualSha=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+if(actualSha!==sha)throw Error('Chromium source SHA mismatch: '+actualSha+' != '+sha);
+const root=process.cwd();
+const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript',
+  '.css':'text/css','.json':'application/json','.svg':'image/svg+xml',
+  '.png':'image/png','.webp':'image/webp','.ico':'image/x-icon'};
+const server=createServer(async(req,res)=>{
+  try{
+    const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+    const path=resolve(root,'.'+pathname);
+    if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
+    const bytes=await readFile(path);
+    res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
+      'Cache-Control':'no-store'}).end(bytes);
+  }catch{res.writeHead(404).end('missing');}
+});
+await new Promise((ok,fail)=>{server.once('error',fail);server.listen(0,'127.0.0.1',ok);});
+const url='http://127.0.0.1:'+server.address().port+'/sculpt-lab.html';
 const chromeBin=[process.env.CHROME_PATH,'google-chrome','chromium','chromium-browser']
  .find(x=>x&&spawnSync('which',[x]).status===0);
 if(!chromeBin)throw Error('Native Chromium unavailable');
@@ -54,17 +76,7 @@ try{
    if(p.method==='Network.loadingFailed'&&!p.params?.canceled)issues.push('network '+p.params?.errorText);
  });
  await Promise.all([send('Runtime.enable'),send('Log.enable'),send('Network.enable')]);
- // The hosting provider explicitly documents a consent cookie for automated
- // browsers. Set it with its required Secure+HttpOnly attributes BEFORE
- // reloading; no renderer state, app content or source URL is modified.
  await send('Page.enable');
- const consent=await send('Network.setCookie',{
-   name:'__Http-phish',value:'1',url:'https://raw.githack.com/',
-   secure:true,httpOnly:true,sameSite:'Lax'
- });
- if(consent.result?.success!==true)
-   throw Error('rawgit.hack consent cookie not accepted: '+JSON.stringify(consent));
- await send('Page.reload',{ignoreCache:true});
  await sleep(1200);
  const expression=[
  "(()=>{const c=document.querySelector('#sculpt-canvas');",
@@ -110,11 +122,27 @@ try{
  }
  const fatal=issues.filter(x=>/framePending|ReferenceError|TypeError|Cannot access|Failed to fetch/i.test(x));
  const diagnostic=await read('(()=>({href:location.href,title:document.title,contentType:document.contentType,body:document.body?.innerText?.slice(0,800),head:document.documentElement?.outerHTML?.slice(0,700),readyState:document.readyState}))()');
+ const worldEntry=await read(`(()=>{
+   const link=document.querySelector('#world-assembler-shortcut-float');
+   if(!link)return {exists:false};
+   document.body.classList.add('sculpt-immersive');
+   const standalone=getComputedStyle(link).display;
+   document.body.classList.add('navigation-testing');
+   const testing=getComputedStyle(link).display;
+   document.body.classList.remove('navigation-testing');
+   document.body.classList.add('world-area-editing');
+   const worldArea=getComputedStyle(link).display;
+   document.body.classList.remove('sculpt-immersive','world-area-editing');
+   return {exists:true,href:link.getAttribute('href'),standalone,testing,worldArea};
+ })()`);
  if(!(pixels?.initialized&&pixels.w>300&&pixels.h>150&&
-   screenshotProof?.colors>=4&&screenshotProof.litSamples>=8)||fatal.length)
+   screenshotProof?.colors>=4&&screenshotProof.litSamples>=8)||fatal.length||
+   !worldEntry?.exists||worldEntry.href!=='./world-assembler.html'||
+   worldEntry.standalone==='none'||worldEntry.testing!=='none'||
+   worldEntry.worldArea!=='none')
    throw Error('Native HTTPS 2.5D screenshot has no drawn terrain: '+
-     JSON.stringify({sha,pixels,screenshotProof,document:diagnostic,errors:issues.slice(-18)}));
- console.log('GREEN native 2.5D visual HTTPS compositor pixels '+
+     JSON.stringify({sha,pixels,screenshotProof,worldEntry,document:diagnostic,errors:issues.slice(-18)}));
+ console.log('GREEN native 2.5D immutable checked-out source compositor and World Builder entry '+
    JSON.stringify({sha,...pixels,screenshotProof,errorCount:issues.length}));
 }finally{
  try{socket?.close()}catch{}
@@ -129,4 +157,5 @@ try{
   }
  }
  await rm(profile,{recursive:true,force:true,maxRetries:10,retryDelay:200});
+ await new Promise(ok=>server.close(ok));
 }
