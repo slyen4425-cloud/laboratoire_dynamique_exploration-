@@ -55,6 +55,6 @@ $('play-continue').addEventListener('click',()=>{
   try{
     if(!world||!readExplorationPlay(window.localStorage,world,playOptions))
       throw new Error('Aucune partie enregistrée');
-    window.location.assign(playUrl);
+    window.location.assign(playUrl());
   }catch(error){message(error.message,true);}
 });
