@@ -551,6 +551,30 @@ try{
   const v26Walking=await run('window.__sculptNavProbe()');
   if(v26Walking.actorMotion!=='walk')
     throw Error('V26 native walk motion never starts on real displacement: '+JSON.stringify(v26Walking));
+  // Official main deploy must paint the REAL loaded terrain Canvas in Tester,
+  // not a disconnected helper fixture or a raw-GitHub page with missing maps.
+  await sleep(950);
+  const actualPaintMetrics=await run(`(()=>{
+    const p=window.__sculptNavProbe();
+    const app=window.__sculptLabProbe();
+    const c=document.querySelector('#sculpt-canvas');
+    return {renderFps:p.renderFps,tickFps:p.fps,moving:p.actorMotion,
+      hud:document.querySelector('#navigation-metrics').textContent,
+      canvasSize:[c.width,c.height],
+      scene:[app.width,app.height],terrainCached:p.terrainCached,
+      displayed:!document.querySelector('#navigation-hud').hidden};
+  })()`);
+  if(actualPaintMetrics.moving!=='walk'||
+     !(actualPaintMetrics.renderFps>0)||
+     !(actualPaintMetrics.tickFps>0)||
+     !(actualPaintMetrics.canvasSize[0]>100&&actualPaintMetrics.canvasSize[1]>100)||
+     !(actualPaintMetrics.scene[0]>0&&actualPaintMetrics.scene[1]>0)||
+     !actualPaintMetrics.terrainCached||!actualPaintMetrics.displayed||
+     !/Rendu [0-9]+ FPS · Calcul [0-9]+ FPS/.test(actualPaintMetrics.hud))
+    throw Error('Official main real map and painted Canvas FPS not observable: '+
+      JSON.stringify(actualPaintMetrics));
+  console.log('GREEN real map and walking Canvas FPS on official Labo main:',
+    JSON.stringify(actualPaintMetrics));
   await sleep(200);
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});

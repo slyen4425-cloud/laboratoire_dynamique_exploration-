@@ -1,3 +1,16 @@
+# Lot isolé — fluidité du Tester publiée sur main du Labo uniquement (03/11/2026)
+
+**Demande utilisateur** : le lien alternatif sur la branche PR #338 n'affichait aucune carte. Reprendre la correction sur le laboratoire officiel déjà fonctionnel, afin de tester sur PC avec le lien habituel. Autorisation explicite de publier **ce seul correctif** ; ne pas intégrer la candidate globale #329, ni les cartes personnelles #337 avant le lot moulin/éolienne, et ne pas toucher à GenSRPG ni au futur « Jouer une partie ».
+
+- Départ `main@9d5b198f193b73c1912dd21881311786415ba113`, checkpoint `checkpoint/exploration-render-fluidity-main-start-2026-11-03`.
+- Branche lot `work/exploration-render-fluidity-main-2026-11-03`, PR ciblant directement `main`. TDD RED `tests/sculpt-navigation-frame-pacing.test.js` créé à `1bbfbf072f2a80c7c0ea461520921854f795307d`.
+- Modifications : dessin complet à chaque RAF durant marche / suivi d'altitude, cadence ralentie seulement à l'arrêt, mesure `Rendu N FPS / Calcul N FPS`, invalidation du cache `sculpt-lab.html`.
+- Gate Chromium : dessin du vrai Canvas 2,5D chargé depuis la page officielle, acteur en marche et FPS de rendu observables, ajoutée à `scripts/smoke-sculpt-terrain-lab.mjs`.
+- Réutiliser **uniquement** `.github/workflows/publish-v81-main.yml` après CI du SHA exact et checkpoint GREEN ; vérification live GitHub Pages requise avant lien au testeur.
+- Les autres branches restent isolées ; aucune action GenSRPG.
+
+---
+
 # Publication d'une UNIQUE preview mobile du candidat Exploration unifié (2 novembre 2026)
 
 - **Motif** : l'utilisateur demande de poursuivre conformément à la charte après validation Node+Chromium de la base calme #333 et consolidation dans #329. Les tests mobiles exigent un lien autonome sur Pixel paysage avant toute promotion de V80.
