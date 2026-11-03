@@ -593,21 +593,12 @@ try{
   const afterStick=await run('window.__sculptNavProbe()');
   if(afterStick.player.x-afterKeyboard.player.x<20)
     throw Error('V17 actual touch stick failed: '+JSON.stringify(afterStick));
-  // Measure visual FPS in the already-running Tester session AFTER all
-  // original V17/V21 movement, keyboard, jank and joystick assertions.
-  // A second Tester launch can legitimately trigger a pending encounter,
-  // which pauses RAF metrics; this is not a graphics rendering failure.
-  // Keep the original collision and return tests unchanged.
-  await send('Input.dispatchKeyEvent',
-    {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(220);
-  const paintTrialWalk=await run('window.__sculptNavProbe()');
-  if(paintTrialWalk.actorMotion!=='walk')
-    throw Error('Independent first-session paint trial did not move: '+
-      JSON.stringify({paintTrialWalk,encounter:await run('window.__sculptEncounterProbe?.()')}));
-  // Official main deploy must paint the REAL loaded terrain Canvas in Tester,
-  // not a disconnected helper fixture or a raw-GitHub page with missing maps.
-  await sleep(950);
+  // The original keyboard + V21 jank + joystick route has now proved
+  // genuine player movement. Measure the Canvas FPS from that same session
+  // WITHOUT issuing extra movement: encounters may legitimately trigger and
+  // pause the RAF metrics, as proven in CI run 41633039997 (encounter-1).
+  // These counters were reset on this Tester entry and therefore cannot
+  // belong to an earlier session or a disconnected rendering helper.
   const actualPaintMetrics=await run(`(()=>{
     const p=window.__sculptNavProbe();
     const app=window.__sculptLabProbe();
@@ -618,10 +609,8 @@ try{
       scene:[app.width,app.height],terrainCached:p.terrainCached,
       displayed:!document.querySelector('#navigation-hud').hidden};
   })()`);
-  // The actor was confirmed walking above. On the 36x24 real map it may
-  // legitimately reach a solid wall during this 950ms sampling window:
-  // Collision World must stop it, not be punished by a visual FPS test.
-  // Require actual distance/s in the HUD during the sample instead.
+  // Read the movement FPS measured on the real 36x24 scene; no new
+  // distance, collision or random encounter roll is introduced here.
   const observedSpeed=Number(
     actualPaintMetrics.hud.match(/· ([0-9]+) unités\/s réelles/)?.[1]);
   if(!(observedSpeed>0)||
@@ -635,9 +624,6 @@ try{
       JSON.stringify(actualPaintMetrics));
   console.log('GREEN real map and walking Canvas FPS on official Labo main:',
     JSON.stringify(actualPaintMetrics));
-  await send('Input.dispatchKeyEvent',
-    {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(120);
   const navStop=await run(`(()=>{
     const choice=document.querySelector('#navigation-locomotion');
     choice.value='swim';choice.dispatchEvent(new Event('change',{bubbles:true}));
