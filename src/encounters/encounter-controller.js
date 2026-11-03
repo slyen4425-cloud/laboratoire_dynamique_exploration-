@@ -23,8 +23,11 @@ function validPosition(player) {
 }
 
 export function createEncounterController({
-  checkDistance = 160
+  checkDistance = 160,
+  createCorrelationIds
 } = {}) {
+  if(createCorrelationIds!==undefined&&typeof createCorrelationIds!=='function')
+    throw new TypeError('createCorrelationIds must be an explicit function');
   const threshold = positiveDistance(
     checkDistance,
     160
@@ -121,8 +124,17 @@ export function createEncounterController({
 
     sequence += 1;
 
-    const encounterId = `encounter-${sequence}`;
-    const returnToken = `return-${sequence}`;
+    // The standalone Tester remains deterministic; the scoped GenSRPG game
+    // injects unique IDs so a page reload cannot reuse a previously awarded
+    // encounterId:returnToken pair. Never fall back after a bad custom ID.
+    const correlation = createCorrelationIds
+      ?createCorrelationIds({sequence})
+      :{encounterId:`encounter-${sequence}`,returnToken:`return-${sequence}`};
+    const {encounterId,returnToken}=correlation??{};
+    const safe=value=>typeof value==='string'&&
+      /^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(value);
+    if(!safe(encounterId)||!safe(returnToken)||encounterId===returnToken)
+      throw new RangeError('Invalid Encounter correlation encounterId/returnToken');
 
     activeEncounterId = encounterId;
 
