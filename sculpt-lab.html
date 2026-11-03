@@ -639,6 +639,45 @@ body.world-area-unavailable .sculpt-quickbar,
 body.world-area-unavailable #sculpt-map-preset-panel,
 body.world-area-unavailable #world-area-portal-panel{display:none!important}
 
+/* Native Jouer uses the ONE Sculpt scene, but none of its authoring UI. */
+body.sculpt-play-mode .editor-switch,
+body.sculpt-play-mode .sculpt-quickbar,
+body.sculpt-play-mode #world-area-portal-panel,
+body.sculpt-play-mode #navigation-hud,
+body.sculpt-play-mode #sculpt-map-preset-panel,
+body.sculpt-play-mode #sculpt-encounter-editor,
+body.sculpt-play-mode #world-assembler-shortcut-float,
+body.sculpt-play-mode .precision-actions,
+body.sculpt-play-mode #brush-info,
+body.sculpt-play-mode #world-workspace-tabs{display:none!important}
+body.sculpt-play-mode.world-area-editing.sculpt-immersive #world-workspace-return-float{display:none!important}
+#play-menu-button,#play-location,#play-save-status{display:none}
+body.sculpt-play-mode #play-menu-button:not([hidden]){
+  display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);
+  left:calc(env(safe-area-inset-left,0px) + 9px);z-index:49;
+  border:2px solid #89d6bd;border-radius:11px;background:#163a3bed;
+  color:#f2fff6;min-height:43px;padding:7px 12px;font-weight:800;touch-action:manipulation;
+}
+body.sculpt-play-mode #play-location:not([hidden]){
+  display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 13px);
+  right:calc(env(safe-area-inset-right,0px) + 11px);z-index:24;
+  max-width:45vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background:#10353acb;color:#eafff6;border-radius:9px;padding:6px 10px;
+  font-size:.8rem;font-weight:750;pointer-events:none;
+}
+body.sculpt-play-mode #play-save-status{
+  display:block;position:absolute;top:calc(env(safe-area-inset-top,0px) + 58px);
+  left:9px;z-index:24;color:#bdebd7;font-size:.69rem;pointer-events:none;
+}
+body.sculpt-play-mode #play-save-status[data-error=true]{color:#ffd1a0}
+#play-start-error[hidden]{display:none!important}
+body.sculpt-play-unavailable .canvas-wrap{visibility:hidden}
+body.sculpt-play-unavailable #play-start-error{
+  display:grid;place-content:center;gap:14px;position:fixed;inset:0;
+  z-index:2500;background:#091a20;padding:22px;text-align:center;
+  color:#e8fff7;line-height:1.5;
+}
+#play-start-error a{color:#b2ffe0;border:1px solid #77bba7;padding:12px 18px;border-radius:10px;text-decoration:none}
 </style>
 </head>
 <body>
@@ -651,6 +690,14 @@ body.world-area-unavailable #world-area-portal-panel{display:none!important}
 </nav>
 <div class="world-entry-links"><a href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 World Builder</a> <a href="./builder.html" aria-label="Ouvrir le Builder 2D détaillé">Éditeur 2D</a></div></header>
 <main>
+<button id="play-menu-button" type="button" hidden aria-label="Enregistrer et revenir au menu Jouer">☰ Menu</button>
+<output id="play-location" hidden aria-live="polite"></output>
+<output id="play-save-status" role="status" aria-live="polite"></output>
+<section id="play-start-error" role="alert" hidden>
+  <strong>Partie indisponible</strong>
+  <p id="play-start-error-message"></p>
+  <a href="./play.html">Revenir à Jouer</a>
+</section>
 <a id="world-assembler-shortcut-float" href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 Monde</a>
 <nav class="editor-switch" aria-label="Choisir la matière à sculpter">
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
