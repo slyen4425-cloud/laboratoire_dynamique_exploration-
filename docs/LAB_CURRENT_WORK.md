@@ -1,3 +1,15 @@
+# Lot en cours — Saccades visuelles du Tester PC, cadence du rendu (3 novembre 2026)
+
+- **Signal** : en mode Tester, mouvement de carte très désagréable sur PC avec impression de « sauts de lignes », moins perceptible sur mobile.
+- **Cause démontrable dans le code** : simulation `navigationTick` sur RAF écran, mais ancienne demande de rendu bloquée par un intervalle fixe de **33 ms pendant la marche** (~30 FPS max, indépendamment des 60/120/144 Hz de l'écran). Ancien indicateur « FPS » mesurait la simulation, non les Canvas réellement peints. Ceci constitue une source certaine de *judder*, mais ne permet pas d'exclure un tearing matériel/pilote sans essai PC.
+- **Autorité unique** : `requestAnimationFrame` reste l'horloge visuelle et `scheduleDraw` reste le seul propriétaire des rendus Canvas, avec demande dédoublonnée via `framePending`. Fonction pure `shouldPaintSculptNavigationFrame` ne calcule pas le mouvement : elle autorise la demande d'image chaque RAF si acteur mobile ou altitude en transition et à ~55 ms seulement au repos.
+- **Instrumentation** : compter les appels `draw()` effectivement terminés durant Tester ; afficher `Rendu N FPS · Calcul M FPS`, exposer `window.__sculptNavProbe().renderFps`. Cela permettra une recette PC vérifiable, pas un ressenti seul.
+- **Base / gouvernance** : PR #337 `work/exploration-author-presets-forest-plain-2026-11-03@c4d084ad1cb4f807e34c084d3d32f44ddc9ad270`; checkpoint START `checkpoint/exploration-test-navigation-frame-pacing-start-2026-11-03`; branche `work/exploration-test-navigation-frame-pacing-2026-11-03`, PR draft #338. TDD RED `6c00c15b1371505c2ea464a7a2e0630ba0b6a397`.
+- **Tests** : `tests/sculpt-navigation-frame-pacing.test.js` simule 60/120/144 Hz marche, altitude, repos ; smoke Chromium mesure une vraie fréquence des paints distincte des rafales RAF. CI de tête exacte et essai réel PC à obtenir avant GREEN. Aucun changement collisions, mouvements, données, commandes, performance du cache, moteur Combat ou World Builder.
+- **Blocage de publication** : pas de fusion `main`, pas de Pages ni de raccord GenSRPG avant que les nouveaux assets moulin/éolienne soient présents et que la correction soit validée sur PC et Pixel.
+
+---
+
 # Lot en cours — Forêt 1 et Plaine 1 intégrées aux données du jeu (3 novembre 2026)
 
 - **Demande** : rendre les deux cartes d'auteur disponibles dans les presets de tous les appareils, sans import manuel ni localStorage. Attendre les nouveaux assets `moulin` / `éolienne` avant publication commune, puis validation du raccord vers l'application.
