@@ -3753,6 +3753,71 @@ function traverseSculptWorldPortal(){
     feedback.dataset.error='true';feedback.hidden=false;
   }
 }
+function persistPlayNavigationCheckpoint(){
+  if(!sculptPlayActive||!navigationTesting||!navActor||!sculptWorldDraft)return false;
+  try{
+    saveExplorationPlayPosition(window.localStorage,sculptWorldDraft,{
+      currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
+    });
+    const output=$('play-save-status');
+    if(output){output.textContent='Partie enregistrée';output.dataset.error='false';}
+    if($('play-location'))$('play-location').textContent='🌍 '+
+      (sculptWorldArea()?.label||sculptWorldAreaId);
+    return true;
+  }catch(error){
+    const output=$('play-save-status');
+    if(output){output.textContent='Sauvegarde impossible : '+error.message;output.dataset.error='true';}
+    console.error('Checkpoint de navigation refusé :',error);
+    return false;
+  }
+}
+function installSculptPlayMode(){
+  if(!sculptPlayRequested)return;
+  document.body.classList.add('sculpt-play-mode');
+  const fail=error=>{
+    document.body.classList.add('sculpt-play-unavailable','sculpt-immersive');
+    $('play-start-error').hidden=false;
+    $('play-start-error-message').textContent=error.message;
+    console.error('Lancement Jouer refusé :',error);
+  };
+  try{
+    const world=readWorldAssemblerDraft(window.localStorage);
+    if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
+    const checkpoint=readExplorationPlay(window.localStorage,world);
+    if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
+    // Single world, scene, camera, renderer and collision authority: NO new
+    // scene graph, WorldDocument copy in save, or editor handoff.
+    sculptWorldDraft=world;
+    sculptEncounterConfig=world.encounterConfig;
+    document.body.classList.add('world-area-editing');
+    mountWorldSculptArea(checkpoint.currentAreaId);
+    sculptPlayActive=true;
+    setImmersive(true);
+    setNavigationTesting(true);
+    if(!navigationTesting||!navActor)
+      throw Error('Aucun emplacement de marche praticable dans cette carte.');
+    const point={...navActor,x:checkpoint.x,y:checkpoint.y};
+    if(isBlocked(navigationWorld(),point,point.x,point.y,undefined,navigationContext()))
+      throw Error('Position sauvegardée bloquée : corrige le Spawn ou la carte dans World Builder.');
+    navActor.x=point.x;navActor.y=point.y;navActor.moving=false;
+    navVisualLevel=navHeight();
+    centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+    $('play-menu-button').hidden=false;
+    $('play-location').hidden=false;
+    $('play-location').textContent='🌍 '+(sculptWorldArea()?.label||sculptWorldAreaId);
+    $('play-menu-button').addEventListener('click',()=>{
+      if(persistPlayNavigationCheckpoint())window.location.assign('./play.html');
+    });
+    window.addEventListener('pagehide',persistPlayNavigationCheckpoint,{once:true});
+    window.__sculptPlayProbe=()=>Object.freeze({
+      active:sculptPlayActive,worldId:sculptWorldDraft?.id??null,
+      areaId:sculptWorldAreaId,playing:navigationTesting,
+      actor:navActor?{x:navActor.x,y:navActor.y}:null,
+      editorHidden:getComputedStyle($('mode-ground')).display==='none',
+      menuVisible:!$('play-menu-button').hidden
+    });
+  }catch(error){sculptPlayActive=false;fail(error);}
+}
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
@@ -4001,4 +4066,5 @@ updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();set
 // images arriving earlier will be included in this first canonical draw.
 sculptBootReady=true;fit();
 installSculptWorldAreaEditing();
+installSculptPlayMode();
 installSculptMapPresetPalette();
