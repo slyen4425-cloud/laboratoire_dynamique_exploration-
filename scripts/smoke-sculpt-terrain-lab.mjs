@@ -4226,18 +4226,20 @@ try{
       !builderPersonalMap.preservedWorld)
     throw Error('World Builder real-area personal map library save failed: '+JSON.stringify(builderPersonalMap));
   console.log('GREEN real Chromium World Builder: named zone added to SAME user map library, without changing WorldDocument');
-  // V82: test native prefab building interiors through the REAL World Builder
-  // and its real Map panel in landscape Chromium, not just serialized data.
+  // Test a REAL shipped author's house interior through the World Builder
+  // and its Map panel, not the retired procedural prefab 101.
+  // The old 101 selection silently stayed on a different option after its removal.
   const prefabHouse=await run(`(()=>{
     const select=document.querySelector('#world-map-preset-select');
-    select.value='map-preset-101';select.dispatchEvent(new Event('change'));
+    select.value='map-preset-109';select.dispatchEvent(new Event('change'));
+    if(select.value!=='map-preset-109')return {error:'authored Forêt 1 missing from real selector'};
     document.querySelector('#world-map-preset-create').click();
     const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
-    const outside=doc?.areas.find(a=>a.label==='Forêt du village · chemin, maison et mare');
+    const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');
     const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
       p.trigger?.kind==='object-anchor');
     const room=doc?.areas.find(a=>a.id===door?.targetAreaId);
-    if(!outside||!door||!room)return {error:'house interior or link absent',areas:doc?.areas.length};
+    if(!outside||!door||!room)return {error:'author Forest 1 house interior or link absent',areas:doc?.areas.length};
     document.querySelector('#graph-nodes [data-area-id="'+room.id+'"]').click();
     document.querySelector('#world-workspace-map').click();
     return {outsideId:outside.id,roomId:room.id,
@@ -4247,7 +4249,7 @@ try{
   })()`);
   if(prefabHouse.error||prefabHouse.roomWalls<2||
      prefabHouse.roomTiles.join('x')!=='18x14'||prefabHouse.outsideDoor!=='object-anchor')
-    throw Error('Prefab House / WorldArea authoring invalid: '+JSON.stringify(prefabHouse));
+    throw Error('Author Forêt 1 House / WorldArea authoring invalid: '+JSON.stringify(prefabHouse));
   let prefabRoom=null;
   for(let i=0;i<90;i++){
     await sleep(110);
@@ -4380,7 +4382,7 @@ try{
      !prefabWalk.walls)
     throw Error('Prefab house interior not walkable in actual Tester: '+
       JSON.stringify(prefabWalk));
-  console.log('Native prefab house interior REAL Chromium GREEN:',
+  console.log('Native author Forêt 1 house interior REAL Chromium GREEN:',
     JSON.stringify({roomId:prefabRoom.areaId,roomTiles:'18x14',
       walls:prefabHouse.roomWalls,walkable:true,realPortals:true}));
 
