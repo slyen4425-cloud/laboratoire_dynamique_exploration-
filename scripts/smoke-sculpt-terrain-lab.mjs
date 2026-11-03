@@ -851,6 +851,23 @@ try{
   const v26Walking=await run('window.__sculptNavProbe()');
   if(v26Walking.actorMotion!=='walk')
     throw Error('V26 native walk motion never starts on real displacement: '+JSON.stringify(v26Walking));
+  // Real Chromium browser gate for the desktop report: before this fix
+  // navigation ticked every RAF but canvas paints were capped at 30 FPS.
+  // Record the actual painted-frame metric, not the simulated movement FPS.
+  await sleep(950);
+  const actualPaintMetrics=await run(`(()=>{
+    const p=window.__sculptNavProbe();
+    return {renderFps:p.renderFps,tickFps:p.fps,moving:p.actorMotion,
+      hud:document.querySelector('#navigation-metrics').textContent};
+  })()`);
+  if(actualPaintMetrics.moving!=='walk'||
+     !(actualPaintMetrics.renderFps>0)||
+     !(actualPaintMetrics.tickFps>0)||
+     !/Rendu [0-9]+ FPS · Calcul [0-9]+ FPS/.test(actualPaintMetrics.hud))
+    throw Error('Real Chromium moving Canvas FPS not observable: '+
+      JSON.stringify(actualPaintMetrics));
+  console.log('Chromium PC frame-pacing diagnostic: actual moving paints / RAF',
+    JSON.stringify(actualPaintMetrics));
   await sleep(200);
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
