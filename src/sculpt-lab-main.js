@@ -76,6 +76,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
+import {readExplorationPlay,saveExplorationPlayPosition} from './play/exploration-play-session.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
 import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
@@ -178,6 +179,8 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
+let sculptPlayActive=false,playLastCheckpointAt=0;
 
 const sculptEncounterDialog=$('sculpt-encounter-preview');
 // The frozen V80 page intentionally exposes no encounter UI; the editor's
@@ -400,6 +403,9 @@ function navigationEncounterArea(){
   return projected;
 }
 function sculptEncounterStep(){
+  // The real game cannot draw creatures from the unpublished author catalog.
+  // Wait for Combat's official Bestiary whitelist, never invent gameplay data.
+  if(sculptPlayActive)return null;
   if(!sculptEncounterController||!sculptEncounterCatalog||!navigationTesting||!navActor||sculptPendingEncounter)
     return null;
   const area=navigationEncounterArea();
@@ -1846,6 +1852,9 @@ function navigationTick(time){
       }
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
+      if(sculptPlayActive&&moved>.001&&time-playLastCheckpointAt>1500){
+        persistPlayNavigationCheckpoint();playLastCheckpointAt=time;
+      }
       // Trigger only from canonical post-collision hero coordinates.
       // No dice roll from materials, pixels, or pre-collision input.
       sculptEncounterStep();
@@ -1888,7 +1897,7 @@ function setNavigationTesting(on){
   if(on)setSculptEncounterEditorOpen(false);
   // Old world saves predate encounter profiles. The user must explicitly
   // approve initializing them; intentional 0% gameplay is never overwritten.
-  if(on&&sculptWorldDraft&&!sculptEncounterSetupOffered&&
+  if(on&&!sculptPlayActive&&sculptWorldDraft&&!sculptEncounterSetupOffered&&
       encounterConfigNeedsExplicitInitialization(sculptEncounterConfig)){
     sculptEncounterSetupOffered=true;
     if(window.confirm('Ce monde ne peut déclencher aucune rencontre (0 % sur tous les terrains). '+
@@ -3543,7 +3552,7 @@ function updateSculptWorldPortalAction(){
   const button=$('world-portal-traverse');
   if(!button)return;
   const exits=worldOutboundPortals().filter(p=>p.enabled===true);
-  const canConnect=!exits.length&&playableExteriorArea(sculptWorldArea());
+  const canConnect=!sculptPlayActive&&!exits.length&&playableExteriorArea(sculptWorldArea());
   button.hidden=!navigationTesting||!sculptWorldDraft||
     (!exits.length&&!canConnect)||!!sculptPendingEncounter;
   if(button.hidden)return;
@@ -3563,7 +3572,7 @@ function updateSculptWorldPortalAction(){
     // 2400×1600 target cannot be mounted; do not advertise a fake transition.
     try{sculptWorldAreaScene(target);}
     catch(error){
-      if(portal.trigger?.kind==='point'&&playableExteriorArea(sculptWorldArea())){
+      if(!sculptPlayActive&&portal.trigger?.kind==='point'&&playableExteriorArea(sculptWorldArea())){
         button.disabled=false;
         button.textContent='🔗 Réparer ce passage';
         button.title='Destination ancienne/incompatible : réparation confirmée au toucher';
@@ -3714,7 +3723,8 @@ function traverseSculptWorldPortal(){
       sculptWorldAreaScene(target);
     }
     // The SAME runtime Portal resolver used by the 2D world document.
-    const document=commitCurrentSculptWorldArea();
+    // Gameplay may traverse existing Portals but cannot commit an authored map.
+    const document=sculptPlayActive?sculptWorldDraft:commitCurrentSculptWorldArea();
     const transition=applyPortalTransition(document,{
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
     },portal);
@@ -3730,6 +3740,7 @@ function traverseSculptWorldPortal(){
     sculptEncounterController?.resetAnchor();
     navVisualLevel=navHeight();
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+    if(sculptPlayActive)persistPlayNavigationCheckpoint();
     sculptWorldStatus('Passage franchi : '+sculptWorldArea().label+
       ' · arrivée par Spawn '+portal.targetSpawnId);
     const feedback=$('world-portal-feedback');
