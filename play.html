@@ -16,6 +16,8 @@ small{color:#b7d5d1}#play-status[data-error=true]{color:#ffcfad}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 button,a.link{display:flex;align-items:center;justify-content:center;flex:1 1 165px;min-height:48px;border-radius:11px;padding:10px 14px;border:1px solid #70b9a7;background:#236e5e;color:#fff;font:700 1rem system-ui;cursor:pointer;text-decoration:none}
 button:disabled{opacity:.4;cursor:not-allowed}
+/* Semantic HTML visibility has priority over the menu button display:flex. */
+[hidden]{display:none!important}
 button.secondary{background:#234453;border-color:#567989}
 a.link{font-size:.85rem;background:transparent;border-color:#406c72;color:#dbf5e9}
 footer{margin-top:16px;border-top:1px solid #36545d;padding-top:14px;color:#accac5;font-size:.83rem;line-height:1.5}
