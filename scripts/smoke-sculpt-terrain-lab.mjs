@@ -593,44 +593,18 @@ try{
   const afterStick=await run('window.__sculptNavProbe()');
   if(afterStick.player.x-afterKeyboard.player.x<20)
     throw Error('V17 actual touch stick failed: '+JSON.stringify(afterStick));
-  const navStop=await run(`(()=>{
-    const choice=document.querySelector('#navigation-locomotion');
-    choice.value='swim';choice.dispatchEvent(new Event('change',{bubbles:true}));
-    const swimmable=window.__sculptNavProbe().player.locomotion.includes('swim');
-    choice.value='fly';choice.dispatchEvent(new Event('change',{bubbles:true}));
-    const flying=window.__sculptNavProbe().player.locomotion.includes('fly');
-    document.querySelector('#navigation-toggle').click();
-    document.querySelector('#export').click();
-    return {swimmable,flying,
-      json:document.querySelector('#json').value,
-      after:window.__sculptNavProbe(),
-      hudHidden:document.querySelector('#navigation-hud').hidden,
-      stickHidden:document.querySelector('#navigation-stick').hidden};
-  })()`);
-  if(!navStop.swimmable||!navStop.flying||navStop.after.enabled||
-      navStop.after.joystickAttached||!navStop.hudHidden||!navStop.stickHidden||
-      navStop.json!==navStart.json)
-    throw Error('V17 nav exit or immutable sculpture regression: '+JSON.stringify(navStop));
-  console.log('V17 real keyboard and touch navigation / safe exit:',
-    JSON.stringify({keyboardDistance:afterKeyboard.player.x-navStart.before.player.x,
-      touchDistance:afterStick.player.x-afterKeyboard.player.x,
-      mapUnchanged:navStop.json===navStart.json,hudHidden:navStop.hudHidden}));
-
-  // The extended 950ms sample must not change V21's original input route:
-  // the real hero could hit a solid wall before the 190ms freeze/step test.
-  // Start a fresh Tester input trial exclusively for PC paint measurements.
-  const paintTrial=await run(`(()=>{
-    document.querySelector('#navigation-toggle').click();
-    return window.__sculptNavProbe();
-  })()`);
-  if(!paintTrial.enabled||!paintTrial.player)
-    throw Error('Cannot start independent real-map paint trial: '+JSON.stringify(paintTrial));
+  // Measure visual FPS in the already-running Tester session AFTER all
+  // original V17/V21 movement, keyboard, jank and joystick assertions.
+  // A second Tester launch can legitimately trigger a pending encounter,
+  // which pauses RAF metrics; this is not a graphics rendering failure.
+  // Keep the original collision and return tests unchanged.
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   await sleep(220);
   const paintTrialWalk=await run('window.__sculptNavProbe()');
   if(paintTrialWalk.actorMotion!=='walk')
-    throw Error('Independent paint trial has no real movement: '+JSON.stringify(paintTrialWalk));
+    throw Error('Independent first-session paint trial did not move: '+
+      JSON.stringify({paintTrialWalk,encounter:await run('window.__sculptEncounterProbe?.()')}));
   // Official main deploy must paint the REAL loaded terrain Canvas in Tester,
   // not a disconnected helper fixture or a raw-GitHub page with missing maps.
   await sleep(950);
@@ -663,12 +637,29 @@ try{
     JSON.stringify(actualPaintMetrics));
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  const paintTrialEnd=await run(`(()=>{
+  await sleep(120);
+  const navStop=await run(`(()=>{
+    const choice=document.querySelector('#navigation-locomotion');
+    choice.value='swim';choice.dispatchEvent(new Event('change',{bubbles:true}));
+    const swimmable=window.__sculptNavProbe().player.locomotion.includes('swim');
+    choice.value='fly';choice.dispatchEvent(new Event('change',{bubbles:true}));
+    const flying=window.__sculptNavProbe().player.locomotion.includes('fly');
     document.querySelector('#navigation-toggle').click();
-    return window.__sculptNavProbe();
+    document.querySelector('#export').click();
+    return {swimmable,flying,
+      json:document.querySelector('#json').value,
+      after:window.__sculptNavProbe(),
+      hudHidden:document.querySelector('#navigation-hud').hidden,
+      stickHidden:document.querySelector('#navigation-stick').hidden};
   })()`);
-  if(paintTrialEnd.enabled||paintTrialEnd.joystickAttached)
-    throw Error('Independent paint trial did not restore editing state: '+JSON.stringify(paintTrialEnd));
+  if(!navStop.swimmable||!navStop.flying||navStop.after.enabled||
+      navStop.after.joystickAttached||!navStop.hudHidden||!navStop.stickHidden||
+      navStop.json!==navStart.json)
+    throw Error('V17 nav exit or immutable sculpture regression: '+JSON.stringify(navStop));
+  console.log('V17 real keyboard and touch navigation / safe exit:',
+    JSON.stringify({keyboardDistance:afterKeyboard.player.x-navStart.before.player.x,
+      touchDistance:afterStick.player.x-afterKeyboard.player.x,
+      mapUnchanged:navStop.json===navStart.json,hudHidden:navStop.hudHidden}));
 
   // V18: existing on-disk Material Registry visuals must change actual pixels
   // without writing a single authored height or water cell.
