@@ -1,3 +1,14 @@
+# Correctif isolé 03/11/2026 — bouton Nouvelle partie visible malgré [hidden] dans Jouer GenSRPG
+
+- **Signal CI consommateur** : GenSRPG [root-browser #41709236087](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41709236087), ligne 179 : `#play-new` réellement visible lors d'une reprise GenSRPG. L'identité de partie est valide et la navigation 2.5D a démarré ; la première erreur apparaît au retour Menu.
+- **Cause racine** : `src/play/exploration-play-entry.js` place `play-new.hidden=true` en scoped GenSRPG, mais `play.html` définit `button,a.link{display:flex}` qui réaffiche le bouton en dépit du style HTML `hidden`. Ce défaut n'était pas détecté par le test qui vérifiait seulement la propriété `.hidden`. Il ne s'agit ni d'un moteur manquant, ni d'un inventaire, ni d'une règle d'autorisation.
+- **Source propriétaire** : Exploration `main@e36ed7a89f8a4179ea9ae05b2fff61aa1a86acaa`, checkpoint START `checkpoint/exploration-native-play-hidden-button-start-2026-11-03`, branche `work/exploration-native-play-hidden-button-2026-11-03`.
+- **Périmètre** : CSS `play.html` exclusivement + test Chromium réel sur `getComputedStyle()/getClientRects()`; la politique `hidden` de tous les boutons reste celle de la sémantique HTML. Jouer standalone n'est pas affecté. Ne toucher ni moteur Sculpt, ni WorldDocument, ni session/XP/combat, ni GenSRPG.
+- **TDD** : RED d'abord test qui détecte le rendu du bouton, GREEN ensuite règle CSS ciblée. Tester un Jouer scoped et un Jouer autonome, JS/Node/Chromium et publication du SHA exact. Pas de contournement du test consommateur.
+- **Garde de publication** : aucune promotion GenSRPG avant PR Exploration sur main au SHA officiel et revalidation du vrai navigateur. Recette mobile avant GREEN produit.
+
+---
+
 # Lot 03/11/2026 — liaison de navigation Jouer par identité de partie GenSRPG (EN COURS, NON GREEN)
 
 - **Demande** : poursuivre le raccordement Monster Capture depuis GenSRPG, sans refaire le moteur Jouer.
