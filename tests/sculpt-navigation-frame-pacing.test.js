@@ -49,4 +49,6 @@ test('the live Tester measures displayed canvas frames independently of input RA
    'expose measured painted FPS in the already-existing navigation probe');
  assert.match(main,/navRenderFps.*FPS/,
    'show actual displayed FPS in the player HUD');
+ const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ assert.match(html,/navigation-raf-pacing-v1/, 'future Pages deployment must invalidate cached runtime URL');
 });
