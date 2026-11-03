@@ -1,3 +1,11 @@
+# Lot asset visuel 03/11/2026 — 6 animations moulin/éolienne (PREVALIDATION)
+
+- Branche `work/exploration-six-wind-animations-assets-2026-11-03` ; base `main@b4288d82dea9d39e64b07f8ddc23f0d4bcb07a99` ; 6 ZIP déjà déposés et approuvés, 72 frames 512×512.
+- Périmètre : rangement et manifeste `assets/exploration/objects/animated/manifest.v1.json`, extraction reproductible, tests d'intégrité ; aucun changement du World Builder / Jouer / Combat / collisions.
+- Checkpoint : `docs/checkpoints/EXPLORATION_WIND_ANIMATIONS_SIX_ASSETS_START_2026-11-03.md`. Suivant : importer les ressources et tester dans l'éditeur via un lot distinct.
+
+---
+
 # Lot 03/11/2026 — liaison de navigation Jouer par identité de partie GenSRPG (EN COURS, NON GREEN)
 
 - **Demande** : poursuivre le raccordement Monster Capture depuis GenSRPG, sans refaire le moteur Jouer.
