@@ -196,6 +196,66 @@ try{
  }
  if(!resumed?.play?.active||Math.abs(resumed.nav.player.x-checkpoint.x)>1)
    throw Error('Jouer continue did not resume saved world position: '+JSON.stringify({checkpoint,resumed}));
+ // GenSRPG consumer sessions use the SAME real 2.5D engine but an isolated
+ // navigation key. Reload/menu must never point at an unrelated party.
+ const legacyCheckpoint=await read("localStorage.getItem('gensrpg.exploration.play.navigation.v1')");
+ await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
+ let scopedMenu;
+ for(let i=0;i<55;i++){
+   scopedMenu=await read("(()=>({newGame:!document.querySelector('#play-new')?.disabled,continueDisabled:document.querySelector('#play-continue')?.disabled,session:new URL(location.href).searchParams.get('adventureSession')}))()");
+   if(scopedMenu?.newGame&&scopedMenu.continueDisabled===true)break;
+   await sleep(250);
+ }
+ if(!scopedMenu?.newGame||!scopedMenu.continueDisabled||scopedMenu.session!=='ci-adventure-a')
+   throw Error('Scoped Aventure did not isolate its new native Play menu: '+JSON.stringify(scopedMenu));
+ await read("document.querySelector('#play-new').click()");
+ let scopedPlay;
+ for(let i=0;i<90;i++){
+   scopedPlay=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession')}))()");
+   if(scopedPlay?.play?.active&&scopedPlay.play.playing)break;
+   await sleep(250);
+ }
+ if(!scopedPlay?.play?.active||scopedPlay.session!=='ci-adventure-a')
+   throw Error('GenSRPG-scoped game did not open the real native Canvas: '+JSON.stringify(scopedPlay));
+ await read("document.querySelector('#play-menu-button').click()");
+ let scopedAfter;
+ for(let i=0;i<50;i++){
+   scopedAfter=await read("(()=>({menu:location.pathname.endsWith('/play.html'),session:new URL(location.href).searchParams.get('adventureSession'),continueEnabled:!document.querySelector('#play-continue')?.disabled,checkpoint:localStorage.getItem('gensrpg.exploration.play.navigation.v1:ci-adventure-a')}))()");
+   if(scopedAfter?.menu&&scopedAfter.continueEnabled)break;
+   await sleep(250);
+ }
+ if(!scopedAfter?.continueEnabled||scopedAfter.session!=='ci-adventure-a'||
+    JSON.parse(scopedAfter.checkpoint||'null')?.sessionId!=='ci-adventure-a')
+   throw Error('Scoped native Jouer lost its session on Menu/Save: '+JSON.stringify(scopedAfter));
+ if(await read("localStorage.getItem('gensrpg.exploration.play.navigation.v1')")!==legacyCheckpoint)
+   throw Error('GenSRPG-scoped session overwrote the standalone native Jouer save');
+ await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-b',url).href});
+ let secondMenu;
+ for(let i=0;i<55;i++){
+   secondMenu=await read("(()=>({newGame:!document.querySelector('#play-new')?.disabled,continueDisabled:document.querySelector('#play-continue')?.disabled}))()");
+   if(secondMenu?.newGame&&secondMenu.continueDisabled)break;
+   await sleep(250);
+ }
+ if(!secondMenu?.newGame||!secondMenu.continueDisabled)
+   throw Error('Second GenSRPG AdventureSession inherited the first checkpoint: '+JSON.stringify(secondMenu));
+ await send('Page.navigate',{url:new URL('./play.html?adventureSession=ci-adventure-a',url).href});
+ let resumedMenu;
+ for(let i=0;i<55;i++){
+   resumedMenu=await read("(()=>({continueEnabled:!document.querySelector('#play-continue')?.disabled}))()");
+   if(resumedMenu?.continueEnabled)break;
+   await sleep(250);
+ }
+ if(!resumedMenu?.continueEnabled)throw Error('First scoped session cannot resume');
+ await read("document.querySelector('#play-continue').click()");
+ let resumedScoped;
+ for(let i=0;i<75;i++){
+   resumedScoped=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession')}))()");
+   if(resumedScoped?.play?.active)break;
+   await sleep(250);
+ }
+ if(!resumedScoped?.play?.active||resumedScoped.session!=='ci-adventure-a')
+   throw Error('Real Sculpt engine did not resume the correct GenSRPG session: '+JSON.stringify(resumedScoped));
+ console.log('GREEN scoped GenSRPG AdventureSession: native Canvas, isolated checkpoints, menu and resume');
  const savedDocument=await read(`localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})`);
  if(savedDocument!==gameWorld)throw Error('Gameplay changed World Builder canonical document unexpectedly');
  console.log('GREEN native Jouer/Continuer: same 2.5D rendered map, collision, checkpoint, no editor');
