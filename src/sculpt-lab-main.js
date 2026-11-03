@@ -7,6 +7,7 @@ import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBB
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
+import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
@@ -542,7 +543,8 @@ const navKeys=new Set();
 // Preview-only navigation speed; authoritative runtime movement remains unchanged.
 const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
-let navFps=0,navStepSpeed=0,navMetricLast=0,navMetricFrames=0,navMetricDistance=0;
+let navFps=0,navRenderFps=0,navStepSpeed=0,navMetricLast=0;
+let navMetricFrames=0,navPaintFrames=0,navMetricDistance=0;
 // Passive real-RAF diagnostic: how much simulation time truly processed input.
 // Does not influence movement, encounter cadence, collisions or camera.
 let navInputElapsedMs=0;
@@ -1068,6 +1070,7 @@ function draw(){
       (precisionOn?' · appuie sur Appliquer pour sculpter':' · bord '+$('edge').value+' %') :
       precisionOn?'Placement précis : vise au doigt sans modifier le terrain, puis confirme':
         'Déplace le pointeur ou touche le terrain : empreinte visible avant la sculpture';
+  if(navigationTesting)navPaintFrames++; // Actual completed Canvas paints, not RAF movement ticks.
   ensureWaterfallPump();
 }
 // One 12 FPS redraw pump only while animated decorations are placed.
@@ -1963,18 +1966,26 @@ function navigationTick(time){
     if(Math.hypot(intent.x,intent.y)>.13 ||
        Math.abs(navVisualLevel-previousVisualLevel)>.0001)
       centerNavigationCamera();
-    // Idle remains alive without keeping the heavy canvas redraw at 60fps.
-    if(time-navLastVisualPaint>=(navActor.moving?33:55)){
+    // Walk and camera-height follow paint at the actual display refresh rate.
+    // scheduleDraw() already coalesces concurrent requests into one RAF draw.
+    // Only true idle keeps the lower-cost ~18 FPS presentation on mobile.
+    if(shouldPaintSculptNavigationFrame({
+      moving:navActor.moving,
+      altitudeChanging:Math.abs(navVisualLevel-previousVisualLevel)>.0001,
+      elapsedSincePaintMs:time-navLastVisualPaint
+    })){
       navLastVisualPaint=time;scheduleDraw();
     }
     if(!navMetricLast)navMetricLast=time;
     if(time-navMetricLast>=900){
       const elapsedSec=(time-navMetricLast)/1000;
       navFps=Math.round(navMetricFrames/elapsedSec);
+      navRenderFps=Math.round(navPaintFrames/elapsedSec);
       navStepSpeed=Math.round(navMetricDistance/elapsedSec);
-      $('navigation-metrics').textContent=navFps+' FPS · '+navStepSpeed+
-        ' unités/s réelles'+(navBlocked?' · obstacle':'');
-      navMetricFrames=0;navMetricDistance=0;navMetricLast=time;
+      $('navigation-metrics').textContent='Rendu '+navRenderFps+' FPS · Calcul '+
+        navFps+' FPS · '+navStepSpeed+' unités/s réelles'+
+        (navBlocked?' · obstacle':'');
+      navMetricFrames=0;navPaintFrames=0;navMetricDistance=0;navMetricLast=time;
     }
   }
   navPreviousTime=time;
@@ -2028,10 +2039,10 @@ function setNavigationTesting(on){
     // Keep the hero and movement legible on a small phone display.
     zoom=navigationCameraZoom();
     $('zoom').value=String(Math.round(zoom*100));
-    navTerrainCache=null;navFps=0;navStepSpeed=0;
+    navTerrainCache=null;navFps=0;navRenderFps=0;navStepSpeed=0;
     navVisualLevel=navHeight();
     navVisualTime=0;navLastVisualPaint=-Infinity;
-    navMetricLast=0;navMetricFrames=0;navMetricDistance=0;
+    navMetricLast=0;navMetricFrames=0;navPaintFrames=0;navMetricDistance=0;
     navInputElapsedMs=0;
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
@@ -2133,7 +2144,8 @@ window.__sculptNavProbe=()=>Object.freeze({
   enabled:navigationTesting,player:navActor?{x:navActor.x,y:navActor.y,
     level:navHeight(),locomotion:[...navActor.locomotion.modes]}:null,
   blocked:navBlocked,blockReason:navBlockReason,maxStep:navigationMaxStep(),
-  speed:navSpeed(),zoom,fps:navFps,actualSpeed:navStepSpeed,
+  speed:navSpeed(),zoom,fps:navFps,renderFps:navRenderFps,
+  actualSpeed:navStepSpeed,
   inputElapsedMs:navInputElapsedMs,
   terrainCached:!!navTerrainCache,joystickAttached:!!navStick,activeFrames:navFrame>0,
   actorMotion:navActor?.moving?'walk':'idle',
