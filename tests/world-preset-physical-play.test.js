@@ -113,7 +113,7 @@ test('canonical preset factory roads support real collisions, encounters and rec
 test('legacy WorldDocument route repair remains physically traversable using a deterministic map fixture',()=>{
  const legacy=createBlankWorldBuilderDraft({id:'old-3-zone-world',width:2400,height:1600});
  const islandDoc=addWorldArea(legacy,{name:'Ile',kind:'exterior',width:36*28,height:24*21});
- const forestDoc=createWorldAreaFromSculptMapPreset(islandDoc,builtinSculptMapPresets()[1],{
+ const forestDoc=createWorldAreaFromSculptMapPreset(islandDoc,testRoadPreset('Chemin historique'),{
    name:'Forêt profonde · sentier des anciens',hostAreaId:legacy.initialAreaId
  });
  const forest=forestDoc.areas.find(a=>a.label==='Forêt profonde · sentier des anciens');
