@@ -26,7 +26,20 @@
       "bytes": 3874202,
       "ownership": "exploration-world-objects",
       "usage": "visual-only",
-      "approved": true
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/windmill/front/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/windmill/front/frames"
     },
     {
       "id": "object.animation.windmill.three_quarters_left.01",
@@ -47,7 +60,20 @@
       "bytes": 4031057,
       "ownership": "exploration-world-objects",
       "usage": "visual-only",
-      "approved": true
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/windmill/three_quarters_left/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/windmill/three_quarters_left/frames"
     },
     {
       "id": "object.animation.windmill.three_quarters_right.01",
@@ -68,7 +94,20 @@
       "bytes": 4084180,
       "ownership": "exploration-world-objects",
       "usage": "visual-only",
-      "approved": true
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/windmill/three_quarters_right/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/windmill/three_quarters_right/frames"
     },
     {
       "id": "object.animation.wind_turbine.front.01",
@@ -89,7 +128,20 @@
       "bytes": 2070756,
       "ownership": "exploration-world-objects",
       "usage": "visual-only",
-      "approved": true
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/wind_turbine/front/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/wind_turbine/front/frames"
     },
     {
       "id": "object.animation.wind_turbine.three_quarters_left.01",
@@ -110,7 +162,20 @@
       "bytes": 3034662,
       "ownership": "exploration-world-objects",
       "usage": "visual-only",
-      "approved": true
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/wind_turbine/three_quarters_left/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/wind_turbine/three_quarters_left/frames"
     },
     {
       "id": "object.animation.wind_turbine.three_quarters_right.01",
@@ -131,7 +196,21 @@
       "bytes": 3120909,
       "ownership": "exploration-world-objects",
       "usage": "visual-only",
-      "approved": true
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/wind_turbine/three_quarters_right/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/wind_turbine/three_quarters_right/frames"
     }
-  ]
+  ],
+  "status": "staged-local-assets; not yet registered in WorldObject placement catalog"
 }
