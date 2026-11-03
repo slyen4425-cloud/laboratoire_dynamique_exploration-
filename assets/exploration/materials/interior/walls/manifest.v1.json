@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "packId": "exploration-interior-walls-v1",
+  "profile": "mobile-test-128",
+  "ownership": "exploration-material-pack",
+  "files": [
+    {
+      "path": "assets/exploration/materials/interior/walls/wall_stone_gray_01.webp",
+      "sha256": "8c13035c69c60dfb3f5eb624901a946479f0f92cfb7996a466063be7dab19610",
+      "bytes": 5318,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.wall.stone.gray.01",
+      "role": "wall-surface"
+    },
+    {
+      "path": "assets/exploration/materials/interior/walls/wall_wood_01.webp",
+      "sha256": "1e08a21d1f28d57d6f60c81d34516ca753f143b6e0bec19d1b09b77d1bd480d4",
+      "bytes": 3616,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.wall.wood.01",
+      "role": "wall-surface"
+    },
+    {
+      "path": "assets/exploration/materials/interior/walls/wall_brick_red_01.webp",
+      "sha256": "00b7da6bff5975dd4dc27219987ed9999f662020942123c8b462315c7aa270bc",
+      "bytes": 5888,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.wall.brick.red.01",
+      "role": "wall-surface"
+    },
+    {
+      "path": "assets/exploration/materials/interior/walls/wall_stone_light_01.webp",
+      "sha256": "9ef69faf7babcf64db5e92fe5ce467534f0359112f7113743d4f70c995dd2440",
+      "bytes": 5926,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.wall.stone.light.01",
+      "role": "wall-surface"
+    },
+    {
+      "path": "assets/exploration/materials/interior/walls/wall_stone_dark_01.webp",
+      "sha256": "1f67fe1a6e6295a74a9e6392efe35ae80bcd3c6ab92455f9f5206bf2b1cba929",
+      "bytes": 4756,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.wall.stone.dark.01",
+      "role": "wall-surface"
+    }
+  ]
+}
