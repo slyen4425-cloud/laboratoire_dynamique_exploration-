@@ -593,6 +593,37 @@ try{
   const afterStick=await run('window.__sculptNavProbe()');
   if(afterStick.player.x-afterKeyboard.player.x<20)
     throw Error('V17 actual touch stick failed: '+JSON.stringify(afterStick));
+  // The original keyboard + V21 jank + joystick route has now proved
+  // genuine player movement. Measure the Canvas FPS from that same session
+  // WITHOUT issuing extra movement: encounters may legitimately trigger and
+  // pause the RAF metrics, as proven in CI run 41633039997 (encounter-1).
+  // These counters were reset on this Tester entry and therefore cannot
+  // belong to an earlier session or a disconnected rendering helper.
+  const actualPaintMetrics=await run(`(()=>{
+    const p=window.__sculptNavProbe();
+    const app=window.__sculptLabProbe();
+    const c=document.querySelector('#sculpt-canvas');
+    return {renderFps:p.renderFps,tickFps:p.fps,moving:p.actorMotion,
+      hud:document.querySelector('#navigation-metrics').textContent,
+      canvasSize:[c.width,c.height],
+      scene:[app.width,app.height],terrainCached:p.terrainCached,
+      displayed:!document.querySelector('#navigation-hud').hidden};
+  })()`);
+  // Read the movement FPS measured on the real 36x24 scene; no new
+  // distance, collision or random encounter roll is introduced here.
+  const observedSpeed=Number(
+    actualPaintMetrics.hud.match(/· ([0-9]+) unités\/s réelles/)?.[1]);
+  if(!(observedSpeed>0)||
+     !(actualPaintMetrics.renderFps>0)||
+     !(actualPaintMetrics.tickFps>0)||
+     !(actualPaintMetrics.canvasSize[0]>100&&actualPaintMetrics.canvasSize[1]>100)||
+     !(actualPaintMetrics.scene[0]>0&&actualPaintMetrics.scene[1]>0)||
+     !actualPaintMetrics.terrainCached||!actualPaintMetrics.displayed||
+     !/Rendu [0-9]+ FPS · Calcul [0-9]+ FPS/.test(actualPaintMetrics.hud))
+    throw Error('Official main real map and painted Canvas FPS not observable: '+
+      JSON.stringify(actualPaintMetrics));
+  console.log('GREEN real map and walking Canvas FPS on official Labo main:',
+    JSON.stringify(actualPaintMetrics));
   const navStop=await run(`(()=>{
     const choice=document.querySelector('#navigation-locomotion');
     choice.value='swim';choice.dispatchEvent(new Event('change',{bubbles:true}));
@@ -615,60 +646,6 @@ try{
     JSON.stringify({keyboardDistance:afterKeyboard.player.x-navStart.before.player.x,
       touchDistance:afterStick.player.x-afterKeyboard.player.x,
       mapUnchanged:navStop.json===navStart.json,hudHidden:navStop.hudHidden}));
-
-  // The extended 950ms sample must not change V21's original input route:
-  // the real hero could hit a solid wall before the 190ms freeze/step test.
-  // Start a fresh Tester input trial exclusively for PC paint measurements.
-  const paintTrial=await run(`(()=>{
-    document.querySelector('#navigation-toggle').click();
-    return window.__sculptNavProbe();
-  })()`);
-  if(!paintTrial.enabled||!paintTrial.player)
-    throw Error('Cannot start independent real-map paint trial: '+JSON.stringify(paintTrial));
-  await send('Input.dispatchKeyEvent',
-    {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(220);
-  const paintTrialWalk=await run('window.__sculptNavProbe()');
-  if(paintTrialWalk.actorMotion!=='walk')
-    throw Error('Independent paint trial has no real movement: '+JSON.stringify(paintTrialWalk));
-  // Official main deploy must paint the REAL loaded terrain Canvas in Tester,
-  // not a disconnected helper fixture or a raw-GitHub page with missing maps.
-  await sleep(950);
-  const actualPaintMetrics=await run(`(()=>{
-    const p=window.__sculptNavProbe();
-    const app=window.__sculptLabProbe();
-    const c=document.querySelector('#sculpt-canvas');
-    return {renderFps:p.renderFps,tickFps:p.fps,moving:p.actorMotion,
-      hud:document.querySelector('#navigation-metrics').textContent,
-      canvasSize:[c.width,c.height],
-      scene:[app.width,app.height],terrainCached:p.terrainCached,
-      displayed:!document.querySelector('#navigation-hud').hidden};
-  })()`);
-  // The actor was confirmed walking above. On the 36x24 real map it may
-  // legitimately reach a solid wall during this 950ms sampling window:
-  // Collision World must stop it, not be punished by a visual FPS test.
-  // Require actual distance/s in the HUD during the sample instead.
-  const observedSpeed=Number(
-    actualPaintMetrics.hud.match(/· ([0-9]+) unités\/s réelles/)?.[1]);
-  if(!(observedSpeed>0)||
-     !(actualPaintMetrics.renderFps>0)||
-     !(actualPaintMetrics.tickFps>0)||
-     !(actualPaintMetrics.canvasSize[0]>100&&actualPaintMetrics.canvasSize[1]>100)||
-     !(actualPaintMetrics.scene[0]>0&&actualPaintMetrics.scene[1]>0)||
-     !actualPaintMetrics.terrainCached||!actualPaintMetrics.displayed||
-     !/Rendu [0-9]+ FPS · Calcul [0-9]+ FPS/.test(actualPaintMetrics.hud))
-    throw Error('Official main real map and painted Canvas FPS not observable: '+
-      JSON.stringify(actualPaintMetrics));
-  console.log('GREEN real map and walking Canvas FPS on official Labo main:',
-    JSON.stringify(actualPaintMetrics));
-  await send('Input.dispatchKeyEvent',
-    {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  const paintTrialEnd=await run(`(()=>{
-    document.querySelector('#navigation-toggle').click();
-    return window.__sculptNavProbe();
-  })()`);
-  if(paintTrialEnd.enabled||paintTrialEnd.joystickAttached)
-    throw Error('Independent paint trial did not restore editing state: '+JSON.stringify(paintTrialEnd));
 
   // V18: existing on-disk Material Registry visuals must change actual pixels
   // without writing a single authored height or water cell.
