@@ -68,7 +68,7 @@ test('revisions require the same named preset and do not overwrite other persona
  const revised=saveSculptMapPreset(storage,scene,'Ma clairière');
  assert.equal(first.id,revised.id);
  assert.equal(readSculptMapPresets(storage).length,2);
- assert.equal(builtinSculptMapPresets().length,8);
+ assert.equal(builtinSculptMapPresets().length,10);
  assert.throws(()=>importSculptMapPreset('{"kind":"gensrpg-sculpt-map-preset","version":1}'));
 });
 
