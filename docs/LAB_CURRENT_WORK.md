@@ -1,3 +1,15 @@
+# Lot 03/11/2026 — filtre de rencontres basé sur le Bestiaire publié GenSRPG (EN COURS)
+
+- **Propriétaires** : Combat main → créatures, statistiques, éléments et rareté ; GenSRPG Aventure → seule sélection des espèces **publiées** via la même fonction Bestiaire Combat ; Exploration → résolveur de rencontres, déplacement, terrain et consommation d'un catalogue *lecture seule* filtré.
+- **Départ** : Exploration `main@2f492471471868f5808d3f73b5a5d15883b98059` (Jouer, correction CSS PR #347), checkpoint START `checkpoint/exploration-published-bestiary-encounter-source-start-2026-11-03`, branche `work/exploration-published-bestiary-encounter-source-2026-11-03`. GenSRPG candidat navigateur GREEN `a75e42e396fa3f373e4029532cdb294f8998694b`, issue principale #235.
+- **Risque constaté** : le fournisseur actuel `createCaptureCreatureCatalogProvider()` consomme les brouillons officiels Combat, pas seulement les espèces du Bestiaire publiées. En Tester cela est correct, mais en Jouer GenSRPG ce serait une fuite de créatures non validées.
+- **Périmètre strict** : ajouter au propriétaire Exploration un *adaptateur de lecture seule* qui accepte une liste d'IDs canoniques **déjà certifiés par Combat** ; refuse vide, doublons, IDs inconnus ou provider invalide ; expose les mêmes fonctions `listCreatures/listElements/resolveCreature/findByElement` en conservant les objets/règles/raretés officiels ; ne calcule jamais une liste publiée lui-même.
+- **TDD RED avant code** : insérer des tests sur le fournisseur de créatures et sur `resolveTerrainFamilyEncounter` ; une espèce non publiée doit rester inaccessible même si sa rareté est élevée ; l'origine doit rester inchangée ; l'ID manquant bloque sans fallback.
+- **Hors périmètre** : activation automatique des rencontres Jouer, transport du whitelist depuis GenSRPG, overlay combat, CombatResult, XP/loot/capture, progression, WorldDocument, caméra, PWA/Service Worker, toute copie de moteur. Ces raccords exigeront des lots distincts et tests end-to-end.
+- **Contrôles** : `npm test`, `npm run check`, Chromium natif, CI/préflight Pages exact SHA ; aucun GREEN produit ou promotion de `main` sans validation. Préserver V80, World Builder et Jouer autonome.
+
+---
+
 # Correctif isolé 03/11/2026 — bouton Nouvelle partie visible malgré [hidden] dans Jouer GenSRPG
 
 - **Signal CI consommateur** : GenSRPG [root-browser #41709236087](https://github.com/slyen4425-cloud/Zombicide-40k/actions/runs/41709236087), ligne 179 : `#play-new` réellement visible lors d'une reprise GenSRPG. L'identité de partie est valide et la navigation 2.5D a démarré ; la première erreur apparaît au retour Menu.
