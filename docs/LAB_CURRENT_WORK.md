@@ -1,3 +1,14 @@
+# Publication d'une UNIQUE preview mobile du candidat Exploration unifié (2 novembre 2026)
+
+- **Motif** : l'utilisateur demande de poursuivre conformément à la charte après validation Node+Chromium de la base calme #333 et consolidation dans #329. Les tests mobiles exigent un lien autonome sur Pixel paysage avant toute promotion de V80.
+- **Périmètre du lot** : publication *test-only* dans `/preview/unified-candidate/`, depuis le SHA exact PR329 `77607520574c8509becf91a6dc55783e29c1570c`. Le publisher `.github/workflows/publish-v81-main.yml` reste la SEULE autorité GitHub Pages. L'ancien V80 reste à la racine et byte-for-byte ; le chantier ne modifie aucun gameplay, aucune donnée Combat, aucun raccord GenSrpg.
+- **Checkpoint START** : `checkpoint/exploration-unified-mobile-preview-start-2026-11-02`, SHA main `ba0701224b764f4c60d4294c9729a49ade5869ad`. Branche `work/exploration-unified-mobile-preview-publish-2026-11-02` issue du même main. Checkpoint TDD RED `checkpoint/exploration-unified-mobile-preview-red-2026-11-02` au SHA `ed96091ed1c02ce03442515981dd21867705dcd6`.
+- **Preuves prévues** : test RED `tests/exploration-unified-trial-preview.test.js` ; CI Node, réel Chromium du dossier Pages assemblé (pas une page simulée), contrôle que le terrain monte à 16 via UI, cascades sur eau, portail/route et contrôles de rencontre global/local. Publication uniquement via PR sur main après CI et statut candidat validé. HTTPS `sculpt-lab.html`, `world-assembler.html`, `builder.html`, JS, provenance 4 SHA et sentinelle V80 inchangée.
+- **Règles** : la preview N'EST PAS une nouvelle autorité runtime ; elle est une copie figée de la future release candidate, uniquement accessible via lien de test. Aucune nouvelle PWA/runtime parallèle et aucun changement du moteur officiel sur main avant recette tactile + GREEN. La future PR #329 changera la racine, puis cette preview de validation pourra être retirée lors du nettoyage contrôlé.
+- **Statut** : en cours, ne pas appeler GREEN avant CI SHA exact, publication HTTPS, puis essai tactile Pixel paysage. Pas de lien prétendu actif avant preuves.
+
+---
+
 # GenSrpg / Exploration : défaillance de dépendance Combat isolée du renderer — 01/11/2026 (NON GREEN)
 
 - **Preuve HTTPS en vrai Chromium** : [run Exploration #41332822279](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41332822279) atteint le HTML officiel `sculpt-lab.html`, mais l'import top-level `loadCaptureShowcaseEncounterSourceV1()` échoue sur le bundle Combat officiel absent (`combat-preview/data/capture/showcase/encounter-bundle.v1.json`, HTTP 404), empêchant l'initialisation du canvas (300×150). L'erreur antérieure `sculptWorldCurrentInterior` TDZ est protégée par l'ordonnanceur de premier dessin du lot précédent ; le 404 restant est **distinct et doit rester signalé**.
