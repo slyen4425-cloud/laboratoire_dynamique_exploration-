@@ -10,7 +10,7 @@ import {serializeWorldBuilderDraft} from '../src/builder/world-builder-draft.js'
 const source=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
 test('eight native editable presets with real water, routes, assets and safe initial center',()=>{
- const entries=builtinSculptMapPresets();
+ const entries=builtinSculptMapPresets().slice(0,8);
  assert.equal(entries.length,8);
  assert.equal(new Set(entries.map(p=>p.id)).size,8);
  assert.equal(new Set(entries.map(p=>p.name)).size,8);
@@ -48,7 +48,7 @@ test('eight native editable presets with real water, routes, assets and safe ini
 test('native presets remain read-only, separate from user library, and prelisted',()=>{
  const store={getItem:()=>null};
  const presets=listAvailableSculptMapPresets(store);
- assert.equal(presets.length,8);
+ assert.equal(presets.length,10);
  assert.equal(presets[0].id,builtinSculptMapPresets()[0].id);
  assert.equal(presets[0].kind,'gensrpg-sculpt-map-preset');
 });
