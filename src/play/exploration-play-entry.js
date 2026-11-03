@@ -24,7 +24,10 @@ try{
     $('play-world-name').textContent='🌍 '+world.id;
     $('play-world-detail').textContent='Départ : '+(area?.label||area?.id||'non configuré')+
       ' · '+world.areas.length+' zone(s)';
-    $('play-new').disabled=false;
+    // GenSRPG owns New Game for a scoped AdventureSession; Exploration only
+    // lets that already-created session Continue in the canonical world.
+    $('play-new').disabled=Boolean(playOptions);
+    $('play-new').hidden=Boolean(playOptions);
     try{
       const existing=readExplorationPlay(window.localStorage,world,playOptions);
       if(existing){
@@ -32,7 +35,9 @@ try{
         const savedArea=world.areas.find(a=>a.id===existing.currentAreaId);
         message('Partie enregistrée : '+(savedArea?.label||savedArea?.id)+
           '. Tu peux continuer ou créer une nouvelle partie.');
-      }else message('Aucune partie en cours. Nouvelle partie démarre au Spawn officiel du monde.');
+      }else message(playOptions?
+        'Session GenSRPG sans checkpoint : crée et lance la partie depuis Aventure.':
+        'Aucune partie en cours. Nouvelle partie démarre au Spawn officiel du monde.');
     }catch(error){
       message(error.message+' · L’ancienne sauvegarde reste intacte.',true);
     }
@@ -44,6 +49,7 @@ try{
 $('play-new').addEventListener('click',()=>{
   if(!world)return;
   try{
+    if(playOptions)throw Error('Nouvelle partie appartient à GenSRPG Aventure, pas au menu Exploration');
     if(window.localStorage.getItem(playOptions?
       explorationPlayNavigationKey(playOptions.sessionId):explorationPlayNavigationKey())&&
        !window.confirm('Nouvelle partie : remplacer uniquement le checkpoint de navigation précédent ?'))return;
