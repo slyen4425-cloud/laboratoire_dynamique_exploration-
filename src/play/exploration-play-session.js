@@ -80,6 +80,22 @@ export function readExplorationPlay(storage,rawWorld){
   return Object.freeze({...value,...position});
 }
 
+// The play runtime uses one pre-validated document for its entire lifetime.
+// Rehashing a large WorldDocument on each movement paint causes PC microstutter;
+// this checkpoint writer validates the WorldDocument ONCE on creation, then
+// serializes only actor position into the existing navigation save key.
+export function createExplorationPlayProgressWriter(storage,rawWorld){
+  const world=authoritativeWorld(rawWorld);
+  const current=readExplorationPlay(storage,world);
+  if(!current)throw new Error('Aucune partie à reprendre');
+  return position=>{
+    const valid=requirePlayableState(world,position);
+    const result=Object.freeze({...current,...valid});
+    storage.setItem(EXPLORATION_PLAY_NAV_KEY,JSON.stringify(result));
+    return result;
+  };
+}
+
 export function saveExplorationPlayPosition(storage,rawWorld,position){
   const world=authoritativeWorld(rawWorld);
   const previous=readExplorationPlay(storage,world);
