@@ -2,6 +2,7 @@
 // Official Combat owns statistics, skill definitions, loadouts, tactical rules and
 // roster semantics. This file does not read the September historical catalog.
 import { importCaptureTransferJsonV1 } from '../../src/adapters/input/capture/capture-entity-transfer-v1.js';
+import { buildCaptureEncounterCombatSourceV1 } from '../../src/ui/capture-encounter-combat-source-v1.js';
 import { buildCaptureEditorCombatTestV1 } from '../../src/ui/capture-editor-combat-test-v1.js';
 import { adaptCaptureCombatExportStackV1 } from '../../src/adapters/input/capture/capture-export-adapter-stack-v1.js';
 import { normalizeCaptureSkillEditorDraftV1 } from '../../src/contracts/capture-skill-editor-draft-v1.js';
@@ -18,7 +19,7 @@ function required(value, field) {
 }
 
 export function buildExplorationNativeCombatSourceV1({
-  snapshot, party, showcaseCreatureTransfers, showcaseSkillTransfers,
+  snapshot, party, adventureParty, showcaseCreatureTransfers, showcaseSkillTransfers,
   nativeSkillCatalog, statRegistry, progressionRules, baseFighterRules,
   previewLevel = 20, arenaId = 'forest'
 }) {
@@ -28,6 +29,11 @@ export function buildExplorationNativeCombatSourceV1({
   if(required(party?.id,'party.id')!==snapshot.player?.partyRef)
     throw new RangeError('Capture player partyRef not resolved');
   const playerId=required(party.activeCreatureId,'party.activeCreatureId');
+  const scoped=party.id.startsWith('adventure-party:');
+  if(scoped&&(!adventureParty||adventureParty.partyRef!==party.id||adventureParty.active?.speciesId!==playerId))
+    throw new RangeError('Aventure exige le combattant actif de la partie autorisée');
+  if(!scoped&&adventureParty!==undefined)
+    throw new RangeError('Aventure et Tester ont des équipes distinctes');
   const enemyId=required(snapshot.opponents[0]?.creatureId,'opponent.creatureId');
   if(!Array.isArray(showcaseCreatureTransfers)||!showcaseCreatureTransfers.length)
     throw new TypeError('Official Capture author creature transfers required');
@@ -87,16 +93,21 @@ export function buildExplorationNativeCombatSourceV1({
     movementEnergyPerStep:Number(baseFighterRules?.movementEnergyPerStep),
     chargeTimeModifierPct:Number(baseFighterRules?.chargeTimeModifierPct)
   };
+  const options={
+    configuredCreatures,configuredSkills,arenaId,combatRules,
+    statRegistry,progressionRules,skillSpeedMultiplier:0.5
+  };
+  const sourceCreatureIds=Object.freeze({player:playerId,opponent:enemyId});
+  if(scoped){
+    const source=buildCaptureEncounterCombatSourceV1({
+      ...options,local:adventureParty.active,
+      opponent:{speciesId:enemyId,level:configuredCreatures.get(enemyId).draft.level}
+    });
+    return Object.freeze({...source,sourceCreatureIds});
+  }
   const exported=buildCaptureEditorCombatTestV1({
-    configuredCreatures,configuredSkills,
-    localCreatureIds:[playerId],opponentCreatureIds:[enemyId],
-    activePerTeam:1,arenaId,combatRules,
-    statRegistry,progressionRules,previewLevel,
-    skillSpeedMultiplier:0.5
+    ...options,localCreatureIds:[playerId],opponentCreatureIds:[enemyId],
+    activePerTeam:1,previewLevel
   });
-  return Object.freeze({
-    ...adaptCaptureCombatExportStackV1(exported),
-    exported,
-    sourceCreatureIds:Object.freeze({player:playerId,opponent:enemyId})
-  });
+  return Object.freeze({...adaptCaptureCombatExportStackV1(exported),exported,sourceCreatureIds});
 }

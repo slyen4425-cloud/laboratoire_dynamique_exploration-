@@ -116,8 +116,12 @@ const own=adventure.exported.creatures.find(creature=>creature.id===speciesId);
 assert.equal(own.metadata.editor.level,1,'Aventure never uses Tester level 20');
 const authoredLevel=byId.get(speciesId).draft.level;
 assert.equal(adventure.skillIdsByActor['local-1'].length,1);
-if(authoredLevel>1)assert.notEqual(adventure.battleFormat.actor('opponent-1').fighterConfigId,
- adventure.battleFormat.actor('local-1').fighterConfigId);
+const ownOtherLevel=authoredLevel===5?1:5;
+const mirror=buildExplorationNativeCombatSourceV1({
+ ...inputs,adventureParty:{...adventureParty,active:{...adventureParty.active,level:ownOtherLevel}}
+});
+assert.notEqual(mirror.battleFormat.actor('opponent-1').fighterConfigId,
+ mirror.battleFormat.actor('local-1').fighterConfigId);
 assert.equal(adventure.battleFormat.actor('opponent-1').creatureId,speciesId);
 assert.throws(()=>buildExplorationNativeCombatSourceV1({
  ...inputs,adventureParty:{...adventureParty,partyRef:'adventure-party:other'}
