@@ -213,11 +213,11 @@ try{
  await read("document.querySelector('#play-continue').click()");
  let scopedPlay;
  for(let i=0;i<90;i++){
-   scopedPlay=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession')}))()");
+   scopedPlay=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession'),publishedCount:window.__sculptEncounterProbe?.().playPublishedCount}))()");
    if(scopedPlay?.play?.active&&scopedPlay.play.playing)break;
    await sleep(250);
  }
- if(!scopedPlay?.play?.active||scopedPlay.session!=='ci-adventure-a')
+ if(!scopedPlay?.play?.active||scopedPlay.session!=='ci-adventure-a'||scopedPlay.publishedCount!==0)
    throw Error('GenSRPG-scoped game did not open the real native Canvas: '+JSON.stringify(scopedPlay));
  await read("document.querySelector('#play-menu-button').click()");
  let scopedAfter;
