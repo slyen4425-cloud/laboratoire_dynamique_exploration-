@@ -15,11 +15,11 @@ const storage=()=>{
 
 test('World Builder Nouvelle carte vierge uses the ONE official 2.5D authoring size adapter',async()=>{
  const source=await readFile(new URL('../src/builder/world-builder-main.js',import.meta.url),'utf8');
- assert.match(source,/import\\s*\\{\\s*worldAreaSizeFromTiles\\s*\\}\\s*from\\s*['"]\\.\\/world-area-size-command\\.js['"]/);
+ assert.match(source,/import\s*\{\s*worldAreaSizeFromTiles\s*\}\s*from\s*['"]\.\/world-area-size-command\.js['"]/);
  const start=source.indexOf("$('new-blank-world').addEventListener('click'");
  assert.ok(start>=0,'real UI New blank world handler required');
  const handler=source.slice(start,start+950);
- assert.match(handler,/draft\\s*=\\s*createBlankWorldBuilderDraft\\(\\{\\s*\\.\\.\\.worldAreaSizeFromTiles\\(\\{\\s*width:\\s*36,\\s*height:\\s*24\\s*\\}\\)\\s*\\}\\)/,
+ assert.match(handler,/draft\s*=\s*createBlankWorldBuilderDraft\(\{\s*\.\.\.worldAreaSizeFromTiles\(\{\s*width:\s*36,\s*height:\s*24\s*\}\)\s*\}\)/,
   'New blank world must use the official WorldArea size conversion, not legacy unsupported 2400x1600');
 });
 
