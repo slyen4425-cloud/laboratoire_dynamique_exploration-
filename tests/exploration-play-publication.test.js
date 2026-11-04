@@ -70,3 +70,14 @@ test('real native GenSRPG Jouer only enables encounters after scope and Core han
  assert.match(main,/if\(pending\)await recoverScopedSculptEncounter\(pending\);\s+if\(scopedEncounter\)scopedEncounter\.armed=true;/);
  assert.doesNotMatch(main,/createNewEncounterEngine|catalogueLegacy|monstersSeptember/i);
 });
+
+test('frozen Tester previews never import the scoped Adventure readers during module startup',()=>{
+ const bridge=read('integration/combat-bridge/exploration-encounter.js');
+ const readers=['world-assembler-handoff.js','adventure-published-encounters-v1.js','adventure-playing-party-v1.js'];
+ for(const reader of readers){
+  const filename=reader.replaceAll('.','\\.');
+  assert.doesNotMatch(bridge,new RegExp("from\\s*['\"][^'\"]*"+filename+"['\"]"));
+  assert.match(bridge,new RegExp("import\\(['\"][^'\"]*"+filename+"['\"]\\)"));
+ }
+ assert.match(bridge,/encounterSessionId===undefined\?undefined:\s*await readAdventureCombatParty\(handoff,authorBundle\)/);
+});
