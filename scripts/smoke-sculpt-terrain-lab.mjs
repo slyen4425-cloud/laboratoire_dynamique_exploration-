@@ -851,6 +851,18 @@ try{
   console.log('V23 house 3 views/rotate/selected edit roundtrip Chromium:',
     JSON.stringify({views:v23Config.views,rotation:137,backAssetLoaded:rearLoaded}));
 
+  // Use the native Scene importer to clear the older V20/V23 sample objects
+  // before placing the winter house. Never mistake occupancy for an asset fault.
+  // The V51 smoke restores the saved legacy fixture independently below.
+  const emptyForWinter=await run(`(()=>{
+    const scene=JSON.parse(window.__v23Scene);
+    scene.objects=[];
+    document.querySelector('#json').value=JSON.stringify(scene);
+    document.querySelector('#import').click();
+    return window.__sculptObjectsProbe().count;
+  })()`);
+  if(emptyForWinter!==0)
+    throw Error('Native Sculpt import did not clear prior building placements');
   // Winter 2,5D: exercise real World Builder palette, actual canvas placement,
   // 3 directional visual variants, export/import and WebP network loading.
   const snowPicker=await run(`(()=>{
@@ -872,7 +884,7 @@ try{
   })()`);
   if(!snowPicker.available||!snowPicker.visible||snowPicker.views.join(',')!=='front,side,back')
     throw Error('Winter 2,5D building missing from real World Builder palette: '+JSON.stringify(snowPicker));
-  const snowPt={x:objectBegin.position.x+93,y:objectBegin.position.y+46};
+  const snowPt={x:sidePt.x,y:sidePt.y}; // Same proven land cell as V23
   async function tapSnow(){
     await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:snowPt.x,y:snowPt.y});
     await send('Input.dispatchMouseEvent',{type:'mousePressed',x:snowPt.x,y:snowPt.y,button:'left',clickCount:1});
