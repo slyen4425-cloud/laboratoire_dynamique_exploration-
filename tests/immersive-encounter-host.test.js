@@ -134,3 +134,35 @@ test('real AdventureSession CombatResult stays pending until the GenSRPG Core re
  assert.equal(calls,8);
  host.dispose();
 });
+
+test('a scoped battle waits for the asynchronous Core receipt and handles only one in-flight completion',async()=>{
+ const h=fakeDom(),store=storage(),sessionId='session-game-1';
+ const scoped={...snapshot,player:{partyRef:'adventure-party:'+sessionId}};
+ const saved=saveCombatHandoff(store,{snapshot:scoped,returnState:{
+  areaId:'forest-exterior',x:45,y:67,returnUrl:origin+'/index.html?combatReturn=1'
+ }},{sessionId});
+ saveCombatHandoff(store,attachCombatResult(saved,{
+  encounterId:'e1',returnToken:'r1',outcome:'fled'
+ }),{sessionId});
+ let resolveReceipt,calls=0,acknowledged=0;
+ const pending=new Promise(resolve=>{resolveReceipt=resolve;});
+ const host=createImmersiveEncounterHostV1({
+  windowRef:h.win,documentRef:h.doc,storage:store,sessionId,
+  onCompleted(){calls++;return pending;},
+  onAcknowledged(){acknowledged++;}
+ });
+ host.open({url:origin+'/combat-preview/examples/dom-demo/exploration-encounter.html',snapshot:scoped});
+ const frame=h.nodes[0].children[0].contentWindow;
+ const message={source:frame,origin,data:{type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'}};
+ h.listeners.get('message')(message);
+ h.listeners.get('message')(message);
+ assert.equal(calls,1);
+ assert.equal(acknowledged,0);
+ assert.equal(h.nodes.length,1);
+ resolveReceipt({persisted:true,session:{sessionId,processedEncounterKeys:['e1:r1']}});
+ await pending;
+ assert.equal(acknowledged,1);
+ assert.equal(h.nodes.length,0);
+ assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ host.dispose();
+});
