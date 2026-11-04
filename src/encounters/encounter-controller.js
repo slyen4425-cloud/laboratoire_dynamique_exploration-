@@ -179,6 +179,12 @@ export function createEncounterController({
   return Object.freeze({
     step,
     release,
+    restore(encounterId){
+      if(activeEncounterId||typeof encounterId!=='string'||
+         !/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(encounterId))return false;
+      activeEncounterId=encounterId;
+      return true;
+    },
     resetAnchor,
     get activeEncounterId() {
       return activeEncounterId;

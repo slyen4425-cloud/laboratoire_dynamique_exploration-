@@ -27,6 +27,7 @@ const status = $('[data-bridge-status]');
 let mountedVisuals = null, mountedCombat = null, watchId = null, completed = false;
 let soundtrack = null;
 const fullButton = $('[data-encounter-fullscreen]');
+const fleeButton = $('[data-encounter-flee]');
 const displayMode = createCapturePreviewDisplayModeV1({
   documentRef: document, screenRef: globalThis.screen,
   fullscreenHost: document.documentElement, previewShell: $('[data-capture-preview-shell]')
@@ -176,21 +177,30 @@ function showNativeCombatOutcome(outcome) {
   message(outcome==='victory'?'Victoire ! · fin du combat':
     outcome==='defeat'?'Défaite · fin du combat':'Fuite · retour en exploration');
 }
-function completeBattle(outcome) {
-  if (completed) return;
-  const handoff = readCombatHandoff(handoffStorage, handoffScope);
-  if (!handoff || handoff.result) throw new Error('CombatResult déjà résolu ou handoff absent');
+function recordCombatResult(handoff, outcome, hp, instanceId) {
   const result = createCaptureCombatResult({
     encounterId: handoff.snapshot.encounterId,
     returnToken: handoff.snapshot.returnToken,
     outcome,
-    partyState: { activeCreatureId: mountedCombat.format.actor('local-1').creatureId,
-      hp: mountedCombat.session.snapshot().fighters['local-1'].hp }
+    partyState: {
+      activeCreatureId: mountedCombat.format.actor('local-1').creatureId,
+      hp,
+      ...(instanceId === undefined ? {} : {activeInstanceId:instanceId})
+    }
   });
-  saveCombatHandoff(handoffStorage, {...handoff, result}, handoffScope);
+  return saveCombatHandoff(handoffStorage, {...handoff, result}, handoffScope).result;
+}
+function completeBattle(outcome) {
+  if (completed) return;
+  const handoff = readCombatHandoff(handoffStorage, handoffScope);
+  if (!handoff) throw new Error('CombatResult : handoff absent');
+  const result = handoff.result ?? recordCombatResult(
+    handoff,outcome,mountedCombat.session.snapshot().fighters['local-1'].hp);
+  if(result.outcome!==outcome)throw new Error('CombatResult : issue différente du résultat journalisé');
   completed = true;
   if (watchId !== null) cancelAnimationFrame(watchId);
-  message(outcome === 'victory' ? 'Victoire · retour en exploration' : 'Défaite · retour en exploration');
+  message(outcome==='victory'?'Victoire · retour en exploration':
+    outcome==='defeat'?'Défaite · retour en exploration':'Fuite · retour en exploration');
   // Message is only a signal; the parent validates the persisted result.
   let notified = false;
   try {
@@ -208,6 +218,29 @@ function completeBattle(outcome) {
     window.location.assign(destination.href);
   }
 }
+async function readAdventureCombatParty(handoff,bundle){
+  // Historical Tester previews package this bridge over older Exploration.
+  // Load the scoped readers only when the launched battle belongs to Aventure.
+  const [{readWorldAssemblerDraft},{readScopedAdventurePublishedEncountersV1},
+    {readScopedAdventurePlayingPartyV1}]=await Promise.all([
+    import('../../../src/builder/world-assembler-handoff.js'),
+    import('../../../src/encounters/adventure-published-encounters-v1.js'),
+    import('../../../src/encounters/adventure-playing-party-v1.js')
+  ]);
+  const world=readWorldAssemblerDraft(window.localStorage);
+  if(!world)throw new Error('Le monde de la partie Aventure est absent');
+  const context={
+    storage:window.sessionStorage,sessionId:encounterSessionId,worldId:world.id,
+    authorSha:bundle.authorSha,engineSha:bundle.engineSha
+  };
+  const allowedCreatureIds=readScopedAdventurePublishedEncountersV1(context);
+  if(!allowedCreatureIds?.includes(handoff.snapshot.opponents[0].creatureId))
+    throw new Error('Adversaire absent du Bestiaire autorisé pour cette partie');
+  const party=readScopedAdventurePlayingPartyV1({...context,allowedCreatureIds});
+  if(!party||party.partyRef!==handoff.snapshot.player.partyRef||party.active.hp===0)
+    throw new Error('Combattant Aventure absent ou hors combat');
+  return party;
+}
 async function launch() {
   const handoff=readCombatHandoff(handoffStorage, handoffScope);
   if(!handoff||handoff.result)throw new Error('EncounterSnapshot v1 absent ou déjà terminé');
@@ -215,9 +248,9 @@ async function launch() {
   // resolves concurrently. Only one build-produced bundle supplies every
   // approved creature/skill, never 70+ independent cold-start requests.
   const templateResponse=fetch('./capture-editor-v2.html',{cache:'force-cache'});
-  const [party,nativeSkillCatalog,statRegistry,progressionRules,baseFighterRules,
+  const [testerParty,nativeSkillCatalog,statRegistry,progressionRules,baseFighterRules,
     assetCatalog,...profilesAndBundle] = await Promise.all([
-    readJson('./party.preview.v1.json'),
+    encounterSessionId===undefined?readJson('./party.preview.v1.json'):null,
     readJson(resource('data/combat/skills/catalog.v1.json')),
     readJson(resource('data/capture/monster-capture-stat-registry.v1.json')),
     readJson(resource('data/capture/monster-capture-progression-rules.v1.json')),
@@ -229,12 +262,17 @@ async function launch() {
   ]);
   const profiles=profilesAndBundle.slice(0,5);
   const authorBundle=normalizeCaptureAuthorEncounterBundleV1(profilesAndBundle[5]);
+  const adventureParty=encounterSessionId===undefined?undefined:
+    await readAdventureCombatParty(handoff,authorBundle);
+  const party=adventureParty
+    ?{id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId}
+    :testerParty;
   const creatureTransfers=authorBundle.creatureTransfers;
   const skillTransfers=authorBundle.skillTransfers;
   const terrain=handoff.snapshot.context.terrainFamilyId;
   const arenaId=({forest:'forest',snow:'snow',volcano:'lava',mountain:'cave'})[terrain]??'forest';
   const nativeCombatSource=buildExplorationNativeCombatSourceV1({
-    snapshot:handoff.snapshot,party,showcaseCreatureTransfers:creatureTransfers,
+    snapshot:handoff.snapshot,party,adventureParty,showcaseCreatureTransfers:creatureTransfers,
     showcaseSkillTransfers:skillTransfers,nativeSkillCatalog,statRegistry,
     progressionRules,baseFighterRules,arenaId,previewLevel:20
   });
@@ -271,9 +309,26 @@ async function launch() {
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
+    ...(adventureParty?{embeddedBattle:{initialHpByActor:Object.fromEntries(
+      nativeCombatSource.fighters.map(fighter=>[fighter.id,
+        fighter.id==='local-1'?(adventureParty.active.hp??fighter.maxHp):fighter.maxHp]))}}:{}),
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
-  observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
+  if(adventureParty){
+    fleeButton.hidden=false;
+    fleeButton.addEventListener('click',()=>mountedCombat.flee(),{once:true});
+    void mountedCombat.completion.then(({outcome,state})=>{
+      if(!mountedCombat)return;
+      const resolved=outcome==='flee'?'fled':outcome;
+      // Persist the native result immediately. Closing during presentation
+      // must leave a recoverable outcome, not a replayable completed battle.
+      recordCombatResult(handoff,resolved,state.fighters['local-1'].hp,adventureParty.active.instanceId);
+      fleeButton.hidden=true;
+      showNativeCombatOutcome(resolved);
+    }).catch(error=>message('Résultat de combat non enregistré : '+error.message,true));
+  }else{
+    observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
+  }
   message('Combat réel · textures et capacités prêtes');
   // Chrome/PWA may allow play after the parent "Tester" gesture. Try once,
   // and fall back to the first battle gesture if autoplay is rejected.

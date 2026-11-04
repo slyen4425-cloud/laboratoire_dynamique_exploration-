@@ -15,7 +15,7 @@ export function createCombatOutcomeHoldV1({
   return Object.freeze({
     start(outcome) {
       if(disposed||pending!==null)return false;
-      if(!['victory','defeat','escape'].includes(outcome))
+      if(!['victory','defeat','escape','fled'].includes(outcome))
         throw new RangeError('Invalid authoritative Combat outcome');
       pending=outcome;
       timer=schedule(()=>{

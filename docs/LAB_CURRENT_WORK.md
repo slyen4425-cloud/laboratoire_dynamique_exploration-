@@ -32,6 +32,38 @@
 
 ---
 
+## 2026-11-04 — Duel sauvage natif avec l’instance Aventure
+
+- START `checkpoint/exploration-adventure-native-duel-start-2026-11-04` sur main `12759a802f57b83127aef46884763ef53e13b481`, arbre identique à #365 CI 3/3 et prévalidation Pages. Branche `work/exploration-adventure-native-duel-2026-11-04`. Combat officiel `46b4efede522f3410778271fddec872a36f1c54b`, arbre certifié #241 CI 5/5.
+- Périmètre : l’entrée Combat d’Exploration reconnaît une vraie AdventureSession, lit les permissions et le combattant de GenSRPG, utilise le nouveau port Combat officiel 1v1, transmet les PV et journalise son résultat natif. Le Tester autonome conserve son équipe et ses niveaux de prévisualisation. Aucun calcul de récompense ou de règle Combat ajouté.
+- TDD : source officielle en cas d’espèce miroir, niveau de départ, projection des capacités du niveau réel, refus de l’équipe Tester, PV et issue via Combat natif. L’activation sur la carte appartient au même raccord : port de reçu GenSRPG versionné, verrou de partie, retour à la position persistée et reprise d’un journal non acquitté.
+- Prévalidation Pages : [PR318 sur l’artefact assemblé](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41883538491/job/126761936339) arrêtée au démarrage du Tester. Sa source gelée `0dc90b97` ne contient pas les lecteurs équipe/Bestiaire Aventure. RED sur les imports statiques ; chargement des lecteurs uniquement lors d’un duel rattaché à une partie. Les sources gelées, leurs routes, leurs médias et le port Aventure restent sous leurs propriétaires.
+
+
+## 2026-11-04 — Jouer : journal durable de CombatResult par AdventureSession
+
+- START `checkpoint/exploration-adventure-combat-journal-start-2026-11-04` sur main `0f9d9ffc18396f911e5460b439786949185905d4` (intégration #363, même arbre que sa CI 3/3 SUCCESS et prévalidation Pages). Branche `work/exploration-adventure-combat-journal-2026-11-04`.
+- Cause : `sessionStorage` disparaît à la fermeture de l’onglet. Le journal existant doit utiliser le stockage durable avec une clé par partie pour Jouer. L’enveloppe, le propriétaire du retour à la carte et le mécanisme d’acquittement restent uniques. La preuve Core devient obligatoire au point de consommation, y compris hors iframe. Le Tester conserve son journal de session historique.
+- Périmètre : journal/transport de l’identité entre Sculpt et l’iframe Combat. TDD sur fermeture/reprise du contexte, isolation par partie, mauvais partyRef, lecture/écriture et acquittement avec preuve Core. Pas d’activation des combats, de règle XP/loot ni de sauvegarde dupliquée. Le rétablissement du parcours et l’appel au Core sont les suites dépendantes.
+
+## 2026-11-04 — Réintégration des prérequis Jouer sur la base Exploration courante
+
+- Base immuable `a890625b059a15465de4b8c6721fa7723e41bedf`, checkpoint START `checkpoint/exploration-adventure-prerequisites-start-2026-11-04`, branche `work/exploration-adventure-prerequisites-2026-11-04`. Les dépôts ZIP déjà intégrés à main restent intacts.
+- Périmètre unique : réintégrer les propriétaires Exploration déjà testés pour préparer le vrai Jouer GenSRPG. Sources : lecteur d'équipe #354, héros #355–#358, nouvelle carte #360, préservation et acquittement #361–#362. #358 corrige le scénario Chromium RED de #357. Les branches et historiques restent traçables via les parents. Les conflits de réunion concernent uniquement les notes de suivi et les entrées des différents lots sont conservées.
+- Validation de la combinaison : suite Node, syntaxe, Chromium héros et Combat/Exploration, prévalidation Pages et CI au SHA exact. Le vrai déclenchement et le raccord au Core GenSRPG restent un lot séparé. Le Tester, les archives utilisateur, Combat main et la sauvegarde Core sont protégés.
+
+# Lot 04/11/2026 — lecture du vrai combattant d'Aventure (TESTS NATIVE GREEN, LECTEUR SEUL, NON ENCORE RACCORDÉ AU COMBAT)
+
+- **Source** : Labo Exploration `main@a5c02440d7b5b5e0c136b3161036c50ffe15be6f`, START `checkpoint/exploration-adventure-active-party-reader-start-2026-11-04`, branche `work/exploration-adventure-active-party-reader-2026-11-04`. Les PR #350/#351 sur main demeurent immuables, V80 et Tester gelés.
+- **Fait authentifié** : l'entrée Combat intégrée `integration/combat-bridge/exploration-encounter.js` charge encore `party.preview.v1.json` et `previewLevel:20`. Le vrai Jouer GenSRPG a un autre `partyRef` et des instances `instanceId/speciesId/level/hp`; utiliser l'équipe du Tester attribuerait un faux résultat et de fausses récompenses.
+- **Propriétaires** : GenSRPG Aventure écrit seul une projection temporaire de sa vraie `AdventureSession` via `sessionStorage` sur la même origine, format `gensrpg.capture.v2.active-party.v1:<sessionId>` et contrat `{schema,version,sessionId,worldId,combatSha,partyRef,active:{instanceId,speciesId,level,hp}}`. Exploration est seulement lecteur/validateur du contrat public, conserve EncounterController et le WorldDocument ; Combat main reste le seul propriétaire des statistiques, niveaux d'instances et résultat Combat. Aucune lecture de la sauvegarde GenSRPG par le Labo.
+- **Frontière** : `partyRef === 'adventure-party:'+sessionId`, session/world/Combat SHA cohérents avec la whitelist Bestiaire déjà validée, espèce publiée autorisée, instance et niveau valides, HP optionnels `null|entier >=0`; rejet des champs additionnels, données périmées ou corrompues sans effacer l'écrit ni replier vers la fiche démo. Pas de création de joueur fictif si la permission est absente.
+- **TDD RED→GREEN** : test pur du lecteur de transport, incohérences session/World/Combat, fake species/unpublished, partyRef fixe du Tester, doublons/identifiants douteux, corruption conservée ; compatibilité avec vrai lecteur Bestiaire. Test publication/CI native Node/HTTPS et vrai Chromium de garde. **Ce lot ne retire PAS le verrou `sculptPlayActive`** ni ne lance le Combat, car celui-ci ne consomme toujours pas les niveaux des instances.
+- **Hors périmètre** : GenSRPG UI/règles, Labo Combat, récompenses, écrans héro, WorldDocument, caméra, équipes de Tester, remise à zéro de sauvegarde, PWA et tout contenu créé à la main.
+- **Premières preuves** : tests d'identité/monde/Combat SHA/species dans `tests/adventure-playing-party-v1.test.js`; le commit test seul `589e42709e65f311789db5cb39c7dd8b78781359` précède l'implémentation (TDD RED). Lecture pure `src/encounters/adventure-playing-party-v1.js` au SHA `cd1c8dc230bf7161d931a5affdda0e30515aeca8`, [Exploration CI #41815471016](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41815471016) **SUCCESS sur 3 jobs** (moteur, combat et vrai Chromium HTTPS), [preflight Pages #41815470858](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41815470858) en attente de clôture lors de ce jalon. Sans branchement au moteur Jouer, la vraie partie conserve son verrou : **aucune victoire simulée ni récompense attribuée**.
+
+---
+
 # 04/11/2026 — Héros Jouer : vraie carte sculptable dans le test navigateur (CI À RECERTIFIER)
 
 - **Problème prouvé** : CI Explorer [#41848268552](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41848268552) sur PR #357 : core-tests SUCCESS, native-https-pixels SUCCESS, modern-combat-encounter FAILURE dans `scripts/smoke-hero-play-browser.mjs`. La suite créait explicitement `2400×1600` WorldArea alors que `sculptWorldAreaScene` n'accepte que des dimensions exactes multiples de `28×21`, dans `8..80×8..64` cases. La sauvegarde était refusée *avant* l'import HeroDefinition : aucune preuve de bug moteur Héros.
