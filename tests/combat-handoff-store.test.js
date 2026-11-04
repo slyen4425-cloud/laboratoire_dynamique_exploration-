@@ -6,7 +6,8 @@ import {
   saveCombatHandoff,
   readCombatHandoff,
   attachCombatResult,
-  consumeCombatResult
+  consumeCombatResult,
+  COMBAT_HANDOFF_STORAGE_KEY
 } from '../src/encounters/combat-handoff-store.js';
 import {
   createCaptureEncounterSnapshot
@@ -112,4 +113,85 @@ test('combat result is consumed exactly once', () => {
   assert.equal(consumed.result.outcome, 'victory');
   assert.equal(readCombatHandoff(store), null);
   assert.equal(consumeCombatResult(store), null);
+});
+
+
+test('an unreadable pending CombatResult is NEVER deleted or acknowledged, even after refresh',()=>{
+ const store=storage();
+ for(const corrupted of ['{broken','',JSON.stringify({version:1,snapshot:{bad:1}})]){
+  store.setItem(COMBAT_HANDOFF_STORAGE_KEY,corrupted);
+  assert.throws(()=>readCombatHandoff(store),/Combat handoff|handoff|corrompu|invalid|incompatible/i);
+  assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),corrupted,
+   'The exact raw handoff must remain recoverable for diagnosis/export');
+  assert.throws(()=>consumeCombatResult(store),/Combat handoff|handoff|corrompu|invalid|incompatible/i);
+  assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),corrupted,
+   'Failed result read cannot consume or erase a pending CombatResult');
+ }
+});
+
+test('a future handoff schema version is refused, NEVER coerced to v1 or erased',()=>{
+ const store=storage();
+ saveCombatHandoff(store,{
+  snapshot:snapshot(),
+  returnState:{areaId:'forest-exterior',x:10,y:20,returnUrl:'/resume'}
+ });
+ const original=JSON.parse(store.getItem(COMBAT_HANDOFF_STORAGE_KEY));
+ original.version=2;
+ const exact=JSON.stringify(original);
+ store.setItem(COMBAT_HANDOFF_STORAGE_KEY,exact);
+ assert.throws(()=>readCombatHandoff(store),/version|incompatible/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),exact);
+ assert.throws(()=>consumeCombatResult(store),/version|incompatible/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),exact);
+});
+
+test('valid pending CombatResult survives repeated reads until the one explicit consume',()=>{
+ const store=storage();
+ const envelope=createCombatHandoffEnvelope({
+  snapshot:snapshot(),
+  returnState:{areaId:'forest-exterior',x:10,y:20,returnUrl:'/resume'}
+ });
+ const withResult=attachCombatResult(envelope,createCaptureCombatResult({
+  encounterId:'encounter-1',returnToken:'return-1',outcome:'victory'
+ }));
+ saveCombatHandoff(store,withResult);
+ const exact=store.getItem(COMBAT_HANDOFF_STORAGE_KEY);
+ assert.equal(readCombatHandoff(store).result.outcome,'victory');
+ assert.equal(readCombatHandoff(store).result.outcome,'victory');
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),exact);
+ assert.equal(consumeCombatResult(store).result.outcome,'victory');
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),null);
+});
+
+test('a second encounter cannot overwrite an unacknowledged CombatResult, nor mutate its return position',()=>{
+ const store=storage(),first=snapshot();
+ const position={areaId:'forest-exterior',x:10,y:20,returnUrl:'/return'};
+ saveCombatHandoff(store,{snapshot:first,returnState:position});
+ const second=createCaptureEncounterSnapshot({
+  encounterId:'encounter-2',playerPartyRef:'capture-party-preview',
+  opponentCreatureId:'crea_nat_3',rulesetId:'capture.standard.1v1',
+  areaId:'forest-exterior',terrainFamilyId:'forest',elementId:'nature',
+  returnToken:'return-2'
+ });
+ const initial=store.getItem(COMBAT_HANDOFF_STORAGE_KEY);
+ assert.throws(()=>saveCombatHandoff(store,{snapshot:second,returnState:position}),/pending|handoff|encounter/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),initial);
+ assert.throws(()=>saveCombatHandoff(store,{snapshot:first,
+  returnState:{...position,x:999}}),/pending|handoff|return/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),initial);
+ const complete=attachCombatResult(readCombatHandoff(store),createCaptureCombatResult({
+  encounterId:'encounter-1',returnToken:'return-1',outcome:'victory'
+ }));
+ saveCombatHandoff(store,complete);
+ const awarded=store.getItem(COMBAT_HANDOFF_STORAGE_KEY);
+ assert.throws(()=>saveCombatHandoff(store,{snapshot:second,returnState:position}),
+  /pending|handoff|encounter/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),awarded);
+ const forged=attachCombatResult({snapshot:first,returnState:position},
+  createCaptureCombatResult({encounterId:'encounter-1',returnToken:'return-1',outcome:'fled'}));
+ assert.throws(()=>saveCombatHandoff(store,forged),/pending|result|handoff/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),awarded);
+ assert.equal(consumeCombatResult(store).result.outcome,'victory');
+ saveCombatHandoff(store,{snapshot:second,returnState:position});
+ assert.equal(readCombatHandoff(store).snapshot.encounterId,'encounter-2');
 });
