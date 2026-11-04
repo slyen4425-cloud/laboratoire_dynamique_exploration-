@@ -1,3 +1,9 @@
+## 2026-11-04 — Jouer relit les PV exacts du Combat officiel
+
+- START `checkpoint/exploration-start-adventure-exact-combat-hp-2026-11-04` sur `main@725eef49ab18e4f051b24fd2e4a5ded703e5529a` (#366, CI #41894554158, Pages #41894554147). Branche `work/exploration-adventure-exact-combat-hp-2026-11-04`.
+- Le vrai duel Chromium Lumilo/Noctigriffe a produit des PV décimaux. Le propriétaire GenSRPG doit conserver leur valeur exacte et le lecteur Jouer doit accepter la projection correspondante. Combat main admet déjà des PV initiaux finis strictement positifs jusqu’au maximum du combattant.
+- TDD lecteur officiel sur une fraction, maintien des données historiques et du rejet de PV invalides. Ni arrondi, ni changement du Tester, de l’acquittement, de la sauvegarde Core ou du journal. Certifier Exploration avant le nouveau pin GenSRPG.
+
 ## 2026-11-04 — Duel sauvage natif avec l’instance Aventure
 
 - START `checkpoint/exploration-adventure-native-duel-start-2026-11-04` sur main `12759a802f57b83127aef46884763ef53e13b481`, arbre identique à #365 CI 3/3 et prévalidation Pages. Branche `work/exploration-adventure-native-duel-2026-11-04`. Combat officiel `46b4efede522f3410778271fddec872a36f1c54b`, arbre certifié #241 CI 5/5.
