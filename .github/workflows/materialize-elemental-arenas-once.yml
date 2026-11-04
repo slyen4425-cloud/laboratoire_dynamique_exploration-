@@ -1,0 +1,27 @@
+name: Materialize 10 elemental arenas ONCE
+on:
+  push:
+    branches:
+      - work/exploration-elemental-arenas-assets-2026-11-04
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  materialize:
+    if: "!contains(github.event.head_commit.message, 'materialize(arena)')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Validate uploaded ZIP and extract exact PNG/WebP
+        run: python3 scripts/materialize-elemental-arenas.py
+      - name: Commit 20 assets and remove one-shot workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/exploration/objects/buildings/arenas/
+          git rm .github/workflows/materialize-elemental-arenas-once.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "materialize(arena): verified 10 PNG and 10 WebP RGBA"
+          git push origin "HEAD:$GITHUB_REF_NAME"
