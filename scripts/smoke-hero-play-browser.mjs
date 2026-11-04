@@ -92,7 +92,7 @@ try{
  await send('Runtime.enable');
  await send('Page.enable');
  await send('Emulation.setDeviceMetricsOverride',
-  {width:932,height:430,deviceScaleFactor:2,isMobile:true});
+  {width:932,height:430,deviceScaleFactor:2,mobile:true});
  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
  await waitFor("document.querySelector('#hero-name')!==null",'hero editor');
  const generated=await evaluate(`(async()=>{
@@ -123,6 +123,7 @@ try{
  if(!generated?.heroId?.startsWith('hero.user.')||generated.checkpoint?.version!==1)
   throw Error('Real Hero/WorldDocument/Play session could not initialize '+JSON.stringify(generated));
  await send('Page.navigate',{url:origin+'/sculpt-lab.html?play=1&adventureSession='+generated.sessionId});
+ await sleep(950);
  const ready=await waitFor(`(()=>{
   const p=window.__sculptPlayProbe?.();
   if(p?.active)return p;
@@ -144,6 +145,7 @@ try{
   sessionStorage.setItem(key,JSON.stringify(v));
  })()`);
  await send('Page.reload',{ignoreCache:true});
+ await sleep(950);
  const rejected=await waitFor(`(()=>{
   if(!document.body.classList.contains('sculpt-play-unavailable'))return null;
   return document.getElementById('play-start-error-message')?.textContent||'empty error';
