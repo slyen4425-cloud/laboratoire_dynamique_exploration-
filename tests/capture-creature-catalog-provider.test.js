@@ -101,7 +101,8 @@ test('native Capture provider restricts wild species to the Combat Bestiary publ
  const gated=createCaptureCreatureCatalogProvider(database(),{
   allowedCreatureIds:['crea_fire_common','crea_water']
  });
- assert.deepEqual(gated.listCreatures().map(c=>c.id),['crea_fire_common','crea_water']);
+ assert.deepEqual(gated.listCreatures().map(c=>c.id),['crea_water','crea_fire_common'],
+  'the native provider retains its existing French name sort, not the grant order');
  assert.equal(gated.resolveCreature('crea_fire_legend'),null);
  assert.equal(gated.resolveCreature('crea_fire_common').spawnChance,
   original.resolveCreature('crea_fire_common').spawnChance);
