@@ -3919,6 +3919,7 @@ async function installSculptPlayMode(){
     window.__sculptPlayProbe=()=>Object.freeze({
       active:sculptPlayActive,worldId:sculptWorldDraft?.id??null,
       heroDefinitionId:sculptPlayHeroDefinitionId,
+      heroVisualPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
       areaId:sculptWorldAreaId,playing:navigationTesting,
       actor:navActor?{x:navActor.x,y:navActor.y}:null,
       editorHidden:$('mode-ground').getClientRects().length===0,
