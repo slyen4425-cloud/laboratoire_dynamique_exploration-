@@ -140,15 +140,23 @@ export function saveCombatHandoff(
   storage,
   envelope
 ) {
-  const value = createCombatHandoffEnvelope(
-    envelope
-  );
-
-  storage.setItem(
-    COMBAT_HANDOFF_STORAGE_KEY,
-    JSON.stringify(value)
-  );
-
+  const value = createCombatHandoffEnvelope(envelope);
+  // A second battle must not erase an unsettled encounter / return point.
+  // Combat may attach the matching authoritative result exactly once.
+  // A corrupted or newer stored record throws from readCombatHandoff and is
+  // retained byte-for-byte; it is NEVER silently replaced.
+  const pending = readCombatHandoff(storage);
+  if (pending) {
+    if (JSON.stringify(pending.snapshot) !== JSON.stringify(value.snapshot) ||
+        JSON.stringify(pending.returnState) !== JSON.stringify(value.returnState)) {
+      throw new Error('Combat handoff pending : previous encounter not acknowledged');
+    }
+    if (pending.result !== null &&
+        JSON.stringify(pending.result) !== JSON.stringify(value.result)) {
+      throw new Error('CombatResult pending : authoritative outcome cannot be overwritten');
+    }
+  }
+  storage.setItem(COMBAT_HANDOFF_STORAGE_KEY,JSON.stringify(value));
   return value;
 }
 
