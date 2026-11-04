@@ -56,7 +56,11 @@ import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,rem
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
 
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
-import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
+import {
+  loadCaptureAuthorEncounterBundleV1,
+  projectCaptureShowcaseEncounterSourceV1
+} from './capture/capture-showcase-encounter-source-v1.js';
+import {readScopedAdventurePublishedEncountersV1} from './encounters/adventure-published-encounters-v1.js';
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
 import {normalizeTerrainFamilyEncounterConfig} from './encounters/terrain-family-encounter-config.js';
@@ -213,10 +217,14 @@ const sculptEncounterController=sculptEncounterDialog?createEncounterController(
 // WorldArea. Fail encounters closed with the real error, while the terrain,
 // editor, collision and camera keep their original independent owners.
 let sculptEncounterCatalog=null,sculptEncounterSourceError=null;
+let sculptEncounterSource=null,sculptEncounterSourceBundle=null;
+let sculptPlayPublishedCount=0;
 if(sculptEncounterController){
   try{
-    sculptEncounterCatalog=createCaptureCreatureCatalogProvider(
-      await loadCaptureShowcaseEncounterSourceV1());
+    sculptEncounterSourceBundle=await loadCaptureAuthorEncounterBundleV1();
+    sculptEncounterSource=projectCaptureShowcaseEncounterSourceV1(
+      sculptEncounterSourceBundle.creatureTransfers);
+    sculptEncounterCatalog=createCaptureCreatureCatalogProvider(sculptEncounterSource);
   }catch(error){
     sculptEncounterSourceError=error;
     console.error('Rencontres Capture indisponibles : source Combat officielle requise',error);
@@ -500,6 +508,7 @@ if(sculptEncounterDialog){
 window.__sculptEncounterProbe=()=>Object.freeze({
   supported:!!sculptEncounterController,
   testing:navigationTesting,
+  playPublishedCount:sculptPlayPublishedCount,
   areaId:activeInteriorId??SCULPT_EXTERIOR_AREA_ID,
   terrainFamilyId:navActor?(
     navigationEncounterArea().surface&&
@@ -3802,6 +3811,23 @@ function installSculptPlayMode(){
     if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
     const checkpoint=readExplorationPlay(window.localStorage,world,playOptions);
     if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
+    // GenSRPG sends ONLY a short-lived projection of the true Combat
+    // Bestiary. The native Exploration provider retains every actual
+    // creature/element/spawnChance definition, and never invents an entry.
+    // Without a grant, keep *all* real-play encounters disabled.
+    if(playOptions&&sculptEncounterSourceBundle&&sculptEncounterSource){
+      const ids=readScopedAdventurePublishedEncountersV1({
+        storage:window.sessionStorage,
+        sessionId:playOptions.sessionId,worldId:world.id,
+        authorSha:sculptEncounterSourceBundle.authorSha,
+        engineSha:sculptEncounterSourceBundle.engineSha
+      });
+      sculptEncounterCatalog=createCaptureCreatureCatalogProvider(
+        sculptEncounterSource,{allowedCreatureIds:ids??[]});
+      sculptPlayPublishedCount=ids?.length??0;
+      if(ids===null)
+        console.warn('Rencontres GenSRPG verrouillées : autorisation du Bestiaire officiel absente');
+    }
     // Single world, scene, camera, renderer and collision authority: NO new
     // scene graph, competing world graph or authored area copy in save.
     sculptWorldDraft=world;

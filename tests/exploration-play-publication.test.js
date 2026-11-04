@@ -56,3 +56,15 @@ test('only GenSRPG-scoped Jouer requests unique Encounter Controller correlation
  assert.match(runtime,/returnToken:'return-'\+window\.crypto\.randomUUID\(\)/);
  assert.match(runtime,/if\(sculptPlayActive\)return null/,'published-only gate remains closed pending official Combat Bestiary');
 });
+
+test('real native GenSRPG Jouer reads the versioned published Bestiary grant but retains reward safety gate',()=>{
+ const main=read('src/sculpt-lab-main.js');
+ assert.match(main,/readScopedAdventurePublishedEncountersV1\(\{/);
+ assert.match(main,/storage:window\.sessionStorage/);
+ assert.match(main,/sessionId:playOptions\.sessionId,worldId:world\.id/);
+ assert.match(main,/authorSha:sculptEncounterSourceBundle\.authorSha/);
+ assert.match(main,/engineSha:sculptEncounterSourceBundle\.engineSha/);
+ assert.match(main,/allowedCreatureIds:ids\?\?\[\]/);
+ assert.match(main,/if\(sculptPlayActive\)return null/,'combat/reward handoff remains blocked in this isolated lot');
+ assert.doesNotMatch(main,/createNewEncounterEngine|catalogueLegacy|monstersSeptember/i);
+});

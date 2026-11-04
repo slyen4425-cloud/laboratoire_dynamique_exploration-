@@ -95,3 +95,34 @@ test('Capture provider exposes only element ids actually declared by creatures',
     ['fire', 'water']
   );
 });
+
+test('native Capture provider restricts wild species to the Combat Bestiary published IDs without rewriting rarity',()=>{
+ const original=createCaptureCreatureCatalogProvider(database());
+ const gated=createCaptureCreatureCatalogProvider(database(),{
+  allowedCreatureIds:['crea_fire_common','crea_water']
+ });
+ assert.deepEqual(gated.listCreatures().map(c=>c.id),['crea_water','crea_fire_common'],
+  'the native provider retains its existing French name sort, not the grant order');
+ assert.equal(gated.resolveCreature('crea_fire_legend'),null);
+ assert.equal(gated.resolveCreature('crea_fire_common').spawnChance,
+  original.resolveCreature('crea_fire_common').spawnChance);
+ assert.deepEqual(gated.findByElement('fire').map(x=>x.id),['crea_fire_common']);
+ assert.deepEqual(gated.listElements().map(x=>x.id),['fire','water']);
+ assert.equal(original.resolveCreature('crea_fire_legend').spawnChance,0.5,
+  'standalone native provider source must stay intact');
+});
+
+test('native Capture provider fails closed on forged/duplicate/unpublished allowed IDs',()=>{
+ for(const ids of [
+  ['crea_fake'],['crea_water','crea_water'],['bad/id'],
+  'crea_water',null
+ ]){
+  assert.throws(()=>createCaptureCreatureCatalogProvider(database(),{
+   allowedCreatureIds:ids
+  }),/allowed|creature|duplicate|published|identif/i);
+ }
+ const empty=createCaptureCreatureCatalogProvider(database(),{allowedCreatureIds:[]});
+ assert.deepEqual(empty.listCreatures(),[]);
+ assert.deepEqual(empty.listElements(),[]);
+ assert.equal(empty.resolveCreature('crea_water'),null);
+});

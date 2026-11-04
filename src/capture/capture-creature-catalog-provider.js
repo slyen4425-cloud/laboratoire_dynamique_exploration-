@@ -89,7 +89,7 @@ function recordsFromPreview(source) {
     .filter(Boolean);
 }
 
-export function createCaptureCreatureCatalogProvider(source) {
+export function createCaptureCreatureCatalogProvider(source,options) {
   const records =
     recordsFromDatabase(source) ??
     recordsFromPreview(source);
@@ -111,11 +111,31 @@ export function createCaptureCreatureCatalogProvider(source) {
     byId.set(record.id, record);
   }
 
+  // Optional allowlist is a read-only projection of Combat's true
+  // Bestiary, verified through the versioned GenSRPG Adventure grant.
+  // No second species/rarity/element catalog is authored in Exploration.
+  let allowedIds = null;
+  if(options !== undefined){
+    if(!options||typeof options!=='object'||Array.isArray(options)||
+       Object.keys(options).length!==1||
+       !Object.hasOwn(options,'allowedCreatureIds')||
+       !Array.isArray(options.allowedCreatureIds))
+      throw new TypeError('Official published allowedCreatureIds array required');
+    allowedIds = new Set();
+    for(const id of options.allowedCreatureIds){
+      if(typeof id!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(id))
+        throw new RangeError('Invalid published allowed creature id');
+      if(allowedIds.has(id))throw new RangeError('Duplicate published allowed creature '+id);
+      if(!byId.has(id))throw new RangeError('Unpublished or unknown native Capture creature '+id);
+      allowedIds.add(id);
+    }
+  }
+
   const creatures = Object.freeze(
-    [...byId.values()].sort((a, b) =>
-      a.name.localeCompare(b.name, 'fr')
-    )
+    [...byId.values()].filter(record=>allowedIds===null||allowedIds.has(record.id))
+      .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
   );
+  const accessibleById=new Map(creatures.map(record=>[record.id,record]));
 
   const elementIds = [
     ...new Set(
@@ -141,7 +161,7 @@ export function createCaptureCreatureCatalogProvider(source) {
 
     resolveCreature(id) {
       const key = text(id);
-      return key ? byId.get(key) ?? null : null;
+      return key ? accessibleById.get(key) ?? null : null;
     },
 
     findByElement(elementId) {
