@@ -17,9 +17,6 @@ import {
 import { createCombatSoundtrackPreviewBridgeV1 } from '../../src/adapters/audio/combat-soundtrack-preview-bridge-v1.js';
 import { buildExplorationNativeCombatSourceV1 } from './exploration-native-source-v1.js';
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
-import { readWorldAssemblerDraft } from '../../../src/builder/world-assembler-handoff.js';
-import { readScopedAdventurePublishedEncountersV1 } from '../../../src/encounters/adventure-published-encounters-v1.js';
-import { readScopedAdventurePlayingPartyV1 } from '../../../src/encounters/adventure-playing-party-v1.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
 import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
 import {captureEncounterVisualFilesV1} from '../../../src/encounters/capture-combat-warmup-v1.js';
@@ -221,7 +218,15 @@ function completeBattle(outcome) {
     window.location.assign(destination.href);
   }
 }
-function readAdventureCombatParty(handoff,bundle){
+async function readAdventureCombatParty(handoff,bundle){
+  // Historical Tester previews package this bridge over older Exploration.
+  // Load the scoped readers only when the launched battle belongs to Aventure.
+  const [{readWorldAssemblerDraft},{readScopedAdventurePublishedEncountersV1},
+    {readScopedAdventurePlayingPartyV1}]=await Promise.all([
+    import('../../../src/builder/world-assembler-handoff.js'),
+    import('../../../src/encounters/adventure-published-encounters-v1.js'),
+    import('../../../src/encounters/adventure-playing-party-v1.js')
+  ]);
   const world=readWorldAssemblerDraft(window.localStorage);
   if(!world)throw new Error('Le monde de la partie Aventure est absent');
   const context={
@@ -258,7 +263,7 @@ async function launch() {
   const profiles=profilesAndBundle.slice(0,5);
   const authorBundle=normalizeCaptureAuthorEncounterBundleV1(profilesAndBundle[5]);
   const adventureParty=encounterSessionId===undefined?undefined:
-    readAdventureCombatParty(handoff,authorBundle);
+    await readAdventureCombatParty(handoff,authorBundle);
   const party=adventureParty
     ?{id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId}
     :testerParty;

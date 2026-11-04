@@ -3,6 +3,8 @@
 - START `checkpoint/exploration-adventure-native-duel-start-2026-11-04` sur main `12759a802f57b83127aef46884763ef53e13b481`, arbre identique à #365 CI 3/3 et prévalidation Pages. Branche `work/exploration-adventure-native-duel-2026-11-04`. Combat officiel `46b4efede522f3410778271fddec872a36f1c54b`, arbre certifié #241 CI 5/5.
 - Périmètre : l’entrée Combat d’Exploration reconnaît une vraie AdventureSession, lit les permissions et le combattant de GenSRPG, utilise le nouveau port Combat officiel 1v1, transmet les PV et journalise son résultat natif. Le Tester autonome conserve son équipe et ses niveaux de prévisualisation. Aucun calcul de récompense ou de règle Combat ajouté.
 - TDD : source officielle en cas d’espèce miroir, niveau de départ, projection des capacités du niveau réel, refus de l’équipe Tester, PV et issue via Combat natif. L’activation sur la carte appartient au même raccord : port de reçu GenSRPG versionné, verrou de partie, retour à la position persistée et reprise d’un journal non acquitté.
+- Prévalidation Pages : [PR318 sur l’artefact assemblé](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41883538491/job/126761936339) arrêtée au démarrage du Tester. Sa source gelée `0dc90b97` ne contient pas les lecteurs équipe/Bestiaire Aventure. RED sur les imports statiques ; chargement des lecteurs uniquement lors d’un duel rattaché à une partie. Les sources gelées, leurs routes, leurs médias et le port Aventure restent sous leurs propriétaires.
+
 
 ## 2026-11-04 — Jouer : journal durable de CombatResult par AdventureSession
 
