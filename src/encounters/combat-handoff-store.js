@@ -177,7 +177,11 @@ export function readCombatHandoff(storage) {
   } catch (cause) {
     // The existing sessionStorage bytes are the only recoverable evidence of
     // a CombatResult not yet committed by GenSRPG Aventure. Fail closed.
-    throw new Error('Combat handoff invalide : données conservées sans acquittement', {cause});
+    // Give an explicit version error without serializing untrusted user data.
+    const reason=cause?.message==='Combat handoff version incompatible'
+      ? 'Combat handoff version incompatible'
+      : 'Combat handoff invalide';
+    throw new Error(reason+' : données conservées sans acquittement', {cause});
   }
 }
 
