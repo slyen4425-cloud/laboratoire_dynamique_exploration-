@@ -97,6 +97,7 @@ try{
  await waitFor("document.querySelector('#hero-name')!==null",'hero editor');
  const generated=await evaluate(`(async()=>{
   const {createBlankWorldBuilderDraft}=await import('/src/builder/world-builder-draft.js');
+  const {worldAreaSizeFromTiles}=await import('/src/builder/world-area-size-command.js');
   const {saveWorldAssemblerDraft}=await import('/src/builder/world-assembler-handoff.js');
   const {createNewExplorationPlay}=await import('/src/play/exploration-play-session.js');
   const {createUserHeroDefinitionV1}=await import('/src/actors/user-hero-definition-v1.js');
@@ -111,7 +112,28 @@ try{
    mode:'image',now:new Date().toISOString()
   });
   await createUserHeroStoreV1().put(hero);
-  const world=createBlankWorldBuilderDraft({id:'world-hero-real-play',width:2400,height:1600});
+  // Reproduce the rejected legacy WorldBuilder default without weakening its
+  // guard or resizing a real author document. The Play checkpoint must never
+  // be created for an unsupported 2400×1600 WorldArea.
+  const unsupported=createBlankWorldBuilderDraft({
+   id:'world-hero-unsupported',width:2400,height:1600
+  });
+  const invalidSession='hero-oversized-validation-probe';
+  let rejectedOversize=false;
+  try{createNewExplorationPlay(localStorage,unsupported,{sessionId:invalidSession});}
+  catch(error){
+   if(!/Zone hors des dimensions prises en charge/.test(error?.message||''))throw error;
+   rejectedOversize=true;
+  }
+  if(!rejectedOversize||
+     localStorage.getItem('gensrpg.exploration.play.navigation.v1:'+invalidSession)!==null)
+   throw Error('Unsupported WorldDocument was silently resized or checkpointed');
+  // This is an actual authorable 2.5D WorldArea: use the SAME canonical
+  // tile→world converter as the World Assembler instead of a demo map.
+  const size=worldAreaSizeFromTiles({width:36,height:24});
+  const world=createBlankWorldBuilderDraft({id:'world-hero-real-play',...size});
+  if(world.areas[0].width!==size.width||world.areas[0].height!==size.height)
+   throw Error('WorldBuilder modified authored playable dimensions');
   saveWorldAssemblerDraft(localStorage,world);
   const sessionId='session-hero-real-play';
   const checkpoint=createNewExplorationPlay(localStorage,world,{sessionId});
