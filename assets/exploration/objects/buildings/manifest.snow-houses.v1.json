@@ -1,0 +1,717 @@
+{
+  "schemaVersion": 1,
+  "packId": "winter-houses-2p5d-10x3-v1",
+  "ownership": "exploration-world-objects",
+  "createdAt": "2026-11-04",
+  "runtimeProfile": "mobile-webp-rgba-384x384-q82",
+  "source": "planche_isométrique_des_maisons_enneigées.png",
+  "sourceSha256": "36f37b11669b72664a96894a60bdd318d02ca098c06b3e844f72d9349d73ca97",
+  "purpose": "10 houses, three matching canonical camera views each (front/side/back); non-gameplay visuals",
+  "modelCount": 10,
+  "viewCount": 3,
+  "models": [
+    {
+      "id": "alpine_timber",
+      "label": "Chalet alpin bois-pierre"
+    },
+    {
+      "id": "stone_cottage",
+      "label": "Petite maison de pierre"
+    },
+    {
+      "id": "banner_lodge",
+      "label": "Chalet des bannières"
+    },
+    {
+      "id": "round_earth",
+      "label": "Maison ronde des bois"
+    },
+    {
+      "id": "ice_crystal",
+      "label": "Pavillon aux cristaux de glace"
+    },
+    {
+      "id": "mushroom_round",
+      "label": "Maison au toit bombé"
+    },
+    {
+      "id": "east_pagoda",
+      "label": "Maison aux avant-toits courbes"
+    },
+    {
+      "id": "watchtower",
+      "label": "Maison à tour de guet"
+    },
+    {
+      "id": "nordic_tent",
+      "label": "Habitation nordique en toile"
+    },
+    {
+      "id": "elven_crystal",
+      "label": "Maison féérique aux cristaux"
+    }
+  ],
+  "integrationStatus": "approved-artwork-ready-for-native-catalog-integration",
+  "files": [
+    {
+      "assetId": "object.building.house.snow_alpine_timber_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_alpine_timber_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "alpine_timber",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 1,
+      "sourceRegion": [
+        150,
+        360,
+        5,
+        158
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 21044,
+      "sha256": "da0339e243a176e336ecc882fdae7d320818cc4472cd015415d494e346a2f4a5"
+    },
+    {
+      "assetId": "object.building.house.snow_alpine_timber_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_alpine_timber_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "alpine_timber",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 1,
+      "sourceRegion": [
+        367,
+        567,
+        5,
+        158
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 21874,
+      "sha256": "fbf2219711dae5e3a0f99a250eafe3058f3fc44b503f512d36b0b127cc54f4f6"
+    },
+    {
+      "assetId": "object.building.house.snow_alpine_timber_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_alpine_timber_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "alpine_timber",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 1,
+      "sourceRegion": [
+        581,
+        786,
+        5,
+        158
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19882,
+      "sha256": "627a0bc39ff5d18591eb535fb8a237c7fc71495b86bd8fa430639dd2918263b6"
+    },
+    {
+      "assetId": "object.building.house.snow_stone_cottage_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_stone_cottage_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "stone_cottage",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 2,
+      "sourceRegion": [
+        150,
+        360,
+        190,
+        340
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20080,
+      "sha256": "474038fcfac81177dea16365a4708e5322432be77a67ffc3e6fd9840fd36596d"
+    },
+    {
+      "assetId": "object.building.house.snow_stone_cottage_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_stone_cottage_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "stone_cottage",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 2,
+      "sourceRegion": [
+        367,
+        567,
+        190,
+        340
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 17712,
+      "sha256": "333f31fa2f38f1213d5d8675a710242cb14b67403f2632d04efabe1372b2657a"
+    },
+    {
+      "assetId": "object.building.house.snow_stone_cottage_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_stone_cottage_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "stone_cottage",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 2,
+      "sourceRegion": [
+        581,
+        786,
+        190,
+        340
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20542,
+      "sha256": "8db467a24df749b5136f162b7b8d888ff23bc007f21138877dc55d42b99e01f3"
+    },
+    {
+      "assetId": "object.building.house.snow_banner_lodge_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_banner_lodge_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "banner_lodge",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 3,
+      "sourceRegion": [
+        150,
+        360,
+        375,
+        525
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19820,
+      "sha256": "e583546f3cde3de21ddea40db5324417672485d1d43806f8de50e7c8d76b1763"
+    },
+    {
+      "assetId": "object.building.house.snow_banner_lodge_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_banner_lodge_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "banner_lodge",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 3,
+      "sourceRegion": [
+        367,
+        567,
+        375,
+        525
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20512,
+      "sha256": "970459e2e4a1f710fd35eac29cc2554ac673da6540aa463cd83e1f7eed544c73"
+    },
+    {
+      "assetId": "object.building.house.snow_banner_lodge_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_banner_lodge_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "banner_lodge",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 3,
+      "sourceRegion": [
+        581,
+        786,
+        375,
+        525
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20478,
+      "sha256": "9ca43b7b79eda7b0bb61bbb77cd4bb9965a331bcc0a74701e492eebe8d7b75a9"
+    },
+    {
+      "assetId": "object.building.house.snow_round_earth_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_round_earth_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "round_earth",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 4,
+      "sourceRegion": [
+        150,
+        360,
+        559,
+        705
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19370,
+      "sha256": "08291c90748627e0f6f73876cb3125746552440ed2436409845ff9cd2075dae2"
+    },
+    {
+      "assetId": "object.building.house.snow_round_earth_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_round_earth_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "round_earth",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 4,
+      "sourceRegion": [
+        367,
+        567,
+        559,
+        705
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20982,
+      "sha256": "faa9aac37c1255a1376266fc607d06cb1bd55657ba5aee18eff021c4f0272e4e"
+    },
+    {
+      "assetId": "object.building.house.snow_round_earth_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_round_earth_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "round_earth",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 4,
+      "sourceRegion": [
+        581,
+        786,
+        559,
+        705
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 18562,
+      "sha256": "c9d7fdaf9f7abb405b182a7955c05b3c205449322e49ad5dabadcca1d5c21069"
+    },
+    {
+      "assetId": "object.building.house.snow_ice_crystal_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_ice_crystal_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "ice_crystal",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 5,
+      "sourceRegion": [
+        150,
+        360,
+        737,
+        890
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20338,
+      "sha256": "478e3f02000ce9d0c06bfc7981db60d8c3305f0e4841fe92e0bc1190cfd9b196"
+    },
+    {
+      "assetId": "object.building.house.snow_ice_crystal_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_ice_crystal_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "ice_crystal",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 5,
+      "sourceRegion": [
+        367,
+        567,
+        737,
+        890
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20994,
+      "sha256": "c6664e3853fc4fdc2a14b84f8b32820a6ac65cde7264637a5259551bfd349335"
+    },
+    {
+      "assetId": "object.building.house.snow_ice_crystal_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_ice_crystal_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "ice_crystal",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 5,
+      "sourceRegion": [
+        581,
+        786,
+        737,
+        890
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 21112,
+      "sha256": "dddc8b0351f2ce2e33b9e15e10510ebcc1a7405b19b6d3d4bca0f8f2f03dc93a"
+    },
+    {
+      "assetId": "object.building.house.snow_mushroom_round_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_mushroom_round_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "mushroom_round",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 6,
+      "sourceRegion": [
+        970,
+        1180,
+        5,
+        158
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 21352,
+      "sha256": "057860eb29ebbb3b932b56127aa43f1413f4c72ffd5f32f1f4d20c9b5c692295"
+    },
+    {
+      "assetId": "object.building.house.snow_mushroom_round_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_mushroom_round_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "mushroom_round",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 6,
+      "sourceRegion": [
+        1186,
+        1403,
+        5,
+        158
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20724,
+      "sha256": "82167eafeddec20761035a1b7294fc1c2b4dd14e932abab26618897d60d6ae4f"
+    },
+    {
+      "assetId": "object.building.house.snow_mushroom_round_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_mushroom_round_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "mushroom_round",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 6,
+      "sourceRegion": [
+        1406,
+        1627,
+        5,
+        158
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19802,
+      "sha256": "59a34615b0bf91f07e30c03784805bc8fcf5b1269ddb0c43ffaa880050869e74"
+    },
+    {
+      "assetId": "object.building.house.snow_east_pagoda_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_east_pagoda_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "east_pagoda",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 7,
+      "sourceRegion": [
+        970,
+        1180,
+        190,
+        340
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20668,
+      "sha256": "a19780fd742d23a350b0ea7a229a2b885639716d61da5812dfef8a5f7693a63a"
+    },
+    {
+      "assetId": "object.building.house.snow_east_pagoda_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_east_pagoda_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "east_pagoda",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 7,
+      "sourceRegion": [
+        1186,
+        1403,
+        190,
+        340
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 21520,
+      "sha256": "7e38cf49f247c81188e9d8e3930678286e84bfc8908a9d41f0150572e9ad22ef"
+    },
+    {
+      "assetId": "object.building.house.snow_east_pagoda_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_east_pagoda_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "east_pagoda",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 7,
+      "sourceRegion": [
+        1406,
+        1627,
+        190,
+        340
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20140,
+      "sha256": "37a4a6e572e9149ea055e2f4652749e658182fbccdefc30997d746bfbdd11be0"
+    },
+    {
+      "assetId": "object.building.house.snow_watchtower_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_watchtower_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "watchtower",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 8,
+      "sourceRegion": [
+        970,
+        1180,
+        375,
+        525
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20568,
+      "sha256": "d1f08b4e678eacc8b8b13e11b8c5100b8b10b5c6dc6fe6c67c70e34b693c4eca"
+    },
+    {
+      "assetId": "object.building.house.snow_watchtower_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_watchtower_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "watchtower",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 8,
+      "sourceRegion": [
+        1186,
+        1403,
+        375,
+        525
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 21954,
+      "sha256": "6c1609adf0114b00e7de4209f9b53251c12d043d079d436a6b9a32cd89860bbb"
+    },
+    {
+      "assetId": "object.building.house.snow_watchtower_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_watchtower_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "watchtower",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 8,
+      "sourceRegion": [
+        1406,
+        1627,
+        375,
+        525
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20746,
+      "sha256": "72fbe85bbfccbb6bdf9938cc8583a0b26d9dc252260598409eded492f1fd6098"
+    },
+    {
+      "assetId": "object.building.house.snow_nordic_tent_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_nordic_tent_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "nordic_tent",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 9,
+      "sourceRegion": [
+        970,
+        1180,
+        559,
+        705
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19534,
+      "sha256": "cb6e5e3c0c9f8ec2cd021460c3224e0c7c42297c4b0e570b5d45e0a027cfc886"
+    },
+    {
+      "assetId": "object.building.house.snow_nordic_tent_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_nordic_tent_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "nordic_tent",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 9,
+      "sourceRegion": [
+        1186,
+        1403,
+        559,
+        705
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19372,
+      "sha256": "ff114caa91eda123bd5898426ee10ea56e32997274544c2451c4f9ab287c2509"
+    },
+    {
+      "assetId": "object.building.house.snow_nordic_tent_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_nordic_tent_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "nordic_tent",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 9,
+      "sourceRegion": [
+        1406,
+        1627,
+        559,
+        705
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 19466,
+      "sha256": "b0cc39fac4379faab9676546d81680577be40b8335e13b989f61a0818ad568ce"
+    },
+    {
+      "assetId": "object.building.house.snow_elven_crystal_2p5d.front.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_elven_crystal_2p5d_front_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "elven_crystal",
+      "view": "front",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 10,
+      "sourceRegion": [
+        970,
+        1180,
+        737,
+        890
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 22218,
+      "sha256": "4c5890af6097ee03dd5ae4cfdea238b35972182028d527524a7596c6b07c0249"
+    },
+    {
+      "assetId": "object.building.house.snow_elven_crystal_2p5d.side.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_elven_crystal_2p5d_side_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "elven_crystal",
+      "view": "side",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 10,
+      "sourceRegion": [
+        1186,
+        1403,
+        737,
+        890
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 22060,
+      "sha256": "33e4b507e62bde42647c0b3e66fae3836219e11355596b6fb6c6290cc5ad53a9"
+    },
+    {
+      "assetId": "object.building.house.snow_elven_crystal_2p5d.back.01",
+      "path": "assets/exploration/objects/buildings/building_house_snow_elven_crystal_2p5d_back_01.webp",
+      "role": "building-visual",
+      "family": "house",
+      "variant": "elven_crystal",
+      "view": "back",
+      "perspective": "three-quarter-2.5d",
+      "sourceHouse": 10,
+      "sourceRegion": [
+        1406,
+        1627,
+        737,
+        890
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "quality": 82,
+      "bytes": 20814,
+      "sha256": "95b726eb77350ef23658e61ccc0da7dd5a97c977ef2e3c1ce31bc0f7bb692e8f"
+    }
+  ]
+}

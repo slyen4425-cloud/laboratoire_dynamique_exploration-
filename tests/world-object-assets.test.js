@@ -132,16 +132,28 @@ test('building manifest and semantic asset adapter stay in sync', async () => {
   assert.equal(manifest.packId, 'building-visual-assets-v1');
   assert.equal(manifest.runtimeProfile, 'mobile-webp-384x384-q82');
 
-  const manifestIds = new Set(
-    manifest.files.map((item) => item.assetId)
+  // This pack is additive: both official manifests jointly describe every
+  // native building visual; neither manifest can silently override the other.
+  const winter = JSON.parse(
+    await readFile(
+      new URL('../assets/exploration/objects/buildings/manifest.snow-houses.v1.json', import.meta.url),
+      'utf8'
+    )
   );
-  const adapterIds = new Set(
-    listWorldObjectAssets()
-      .filter((item) => item.kind === 'building-visual')
-      .map((item) => item.id)
-  );
-
+  assert.equal(winter.schemaVersion, 1);
+  assert.equal(winter.packId, 'winter-houses-2p5d-10x3-v1');
+  assert.equal(winter.files.length, 30);
+  const allEntries = [...manifest.files, ...winter.files];
+  const manifestIds = new Set(allEntries.map((entry) => entry.assetId));
+  const manifestPaths = new Set(allEntries.map((entry) => entry.path));
+  assert.equal(manifestIds.size, allEntries.length, 'duplicate building visual asset ID');
+  assert.equal(manifestPaths.size, allEntries.length, 'duplicate building visual file');
+  const adapters = listWorldObjectAssets().filter((item) => item.kind === 'building-visual');
+  const adapterIds = new Set(adapters.map((entry) => entry.id));
   assert.deepEqual(manifestIds, adapterIds);
+  for (const entry of allEntries) {
+    assert.equal(resolveWorldObjectAsset(entry.assetId)?.path, './' + entry.path);
+  }
 });
 
 test('shared image loader loads WorldObject visuals with explicit lifecycle', async () => {

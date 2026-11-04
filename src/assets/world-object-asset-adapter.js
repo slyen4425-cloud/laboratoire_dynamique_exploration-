@@ -550,6 +550,186 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/buildings/building_house_terracotta_2p5d_back_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.building.house.snow_alpine_timber_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_alpine_timber_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_alpine_timber_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_alpine_timber_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_alpine_timber_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_alpine_timber_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_alpine_timber_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_alpine_timber_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_alpine_timber_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_stone_cottage_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_stone_cottage_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_stone_cottage_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_stone_cottage_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_stone_cottage_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_stone_cottage_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_stone_cottage_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_stone_cottage_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_stone_cottage_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_banner_lodge_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_banner_lodge_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_banner_lodge_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_banner_lodge_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_banner_lodge_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_banner_lodge_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_banner_lodge_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_banner_lodge_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_banner_lodge_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_round_earth_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_round_earth_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_round_earth_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_round_earth_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_round_earth_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_round_earth_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_round_earth_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_round_earth_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_round_earth_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_ice_crystal_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_ice_crystal_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_ice_crystal_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_ice_crystal_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_ice_crystal_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_ice_crystal_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_ice_crystal_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_ice_crystal_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_ice_crystal_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_mushroom_round_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_mushroom_round_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_mushroom_round_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_mushroom_round_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_mushroom_round_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_mushroom_round_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_mushroom_round_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_mushroom_round_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_mushroom_round_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_east_pagoda_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_east_pagoda_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_east_pagoda_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_east_pagoda_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_east_pagoda_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_east_pagoda_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_east_pagoda_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_east_pagoda_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_east_pagoda_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_watchtower_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_watchtower_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_watchtower_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_watchtower_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_watchtower_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_watchtower_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_watchtower_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_watchtower_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_watchtower_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_nordic_tent_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_nordic_tent_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_nordic_tent_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_nordic_tent_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_nordic_tent_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_nordic_tent_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_nordic_tent_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_nordic_tent_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_nordic_tent_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_elven_crystal_2p5d.front.01': Object.freeze({
+    id: 'object.building.house.snow_elven_crystal_2p5d.front.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_elven_crystal_2p5d_front_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_elven_crystal_2p5d.side.01': Object.freeze({
+    id: 'object.building.house.snow_elven_crystal_2p5d.side.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_elven_crystal_2p5d_side_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.house.snow_elven_crystal_2p5d.back.01': Object.freeze({
+    id: 'object.building.house.snow_elven_crystal_2p5d.back.01',
+    kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/building_house_snow_elven_crystal_2p5d_back_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.tree.forest.pine_dense.01': Object.freeze({
     id: 'object.tree.forest.pine_dense.01', kind: 'tree-visual',
     path: './assets/exploration/objects/trees/tree_forest_pine_dense_01.webp',
