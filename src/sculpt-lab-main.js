@@ -37,6 +37,9 @@ import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
+import {createUserHeroStoreV1} from './storage/user-hero-store-v1.js';
+import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js';
+import {readScopedAdventureHeroSelectionV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
@@ -613,18 +616,67 @@ function navigationBackground(){
   return navTerrainCache;
 }
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
-const navigationActorVisual=normalizeMapActorVisual({
+let navigationActorVisual=normalizeMapActorVisual({
   assetId:'actor.demo.hero.traveler.01',role:'hero',targetHeight:37,
   motion:{idleAmplitude:.55,idleFrequency:.8,walkAmplitude:2.0,walkFrequency:3.8}
 });
-const navigationActorPreparer=createMapActorVisualPreparer({imageLoader:{
+const demoNavigationActorPreparer=createMapActorVisualPreparer({imageLoader:{
   get:id=>id===demoActorAsset?.id?demoActorImage:null
 }});
-const navigationActorRenderer=createMapActorRenderer({preparedVisuals:navigationActorPreparer});
+let navigationActorPreparer=demoNavigationActorPreparer;
+let navigationActorRenderer=createMapActorRenderer({preparedVisuals:navigationActorPreparer});
+let authoredHeroMedia=null,sculptPlayHeroDefinitionId=null;
+
+// The canonical UserHeroStore owns all image bytes. This adapter only
+// switches the existing Map Actor Visual/Preparer/Renderer once every asset
+// has been decoded. It never writes actor coordinates, locomotion or camera.
+async function installAuthoredHeroMapActor(heroDefinitionId){
+ const store=createUserHeroStoreV1();
+ const definition=await store.get(heroDefinitionId);
+ if(!definition)
+  throw new Error('Héros sélectionné introuvable dans la bibliothèque locale : '+heroDefinitionId);
+ const resolver=createUserHeroAssetResolverV1(definition);
+ const loader=createImageAssetLoader({resolveAsset:resolver.resolve});
+ let preparer=null;
+ try{
+  const ids=resolver.list().map(entry=>entry.id);
+  const loaded=await loader.load(ids);
+  if(loaded.ready!==ids.length)
+   throw new Error('Images du héros sélectionné indisponibles : '+loaded.ready+'/'+ids.length);
+  preparer=createMapActorVisualPreparer({imageLoader:loader});
+  const prepared=preparer.prepare(ids,{
+   preserveCanvas:definition.mapVisual.animation.mode==='frames'
+  });
+  if(prepared.ready!==ids.length)
+   throw new Error('Sprites du héros non préparés : '+prepared.ready+'/'+ids.length);
+  const renderer=createMapActorRenderer({preparedVisuals:preparer});
+  // The switch is atomic. No fallback to a demo actor after selection.
+  navigationActorVisual=definition.mapVisual;
+  navigationActorPreparer=preparer;
+  navigationActorRenderer=renderer;
+  sculptPlayHeroDefinitionId=definition.id;
+  authoredHeroMedia={resolver,loader,preparer};
+  scheduleDraw();
+ }catch(error){
+  preparer?.dispose();
+  loader.dispose();
+  resolver.dispose();
+  throw error;
+ }
+}
+window.addEventListener('pagehide',()=>{
+ const owned=authoredHeroMedia;
+ authoredHeroMedia=null;
+ if(owned){
+  owned.preparer.dispose();
+  owned.loader.dispose();
+  owned.resolver.dispose();
+ }
+}, {once:true});
 let navVisualTime=0,navLastVisualPaint=-Infinity;
 if(demoActorAsset){
   demoActorImage.onload=()=>{
-    navigationActorPreparer.prepare([demoActorAsset.id]);scheduleDraw();
+    demoNavigationActorPreparer.prepare([demoActorAsset.id]);scheduleDraw();
   };
   demoActorImage.src=demoActorAsset.path;
 }
@@ -3797,7 +3849,7 @@ function persistPlayNavigationCheckpoint(){
     return false;
   }
 }
-function installSculptPlayMode(){
+async function installSculptPlayMode(){
   if(!sculptPlayRequested)return;
   document.body.classList.add('sculpt-play-mode');
   const fail=error=>{
@@ -3834,6 +3886,16 @@ function installSculptPlayMode(){
     sculptEncounterConfig=world.encounterConfig;
     document.body.classList.add('world-area-editing');
     mountWorldSculptArea(checkpoint.currentAreaId);
+    // Selection is owned by GenSRPG, visual definitions/media by Exploration.
+    // A missing grant preserves old standalone/Jouer saves. A requested but
+    // missing/corrupted hero MUST fail visibly, never silently use demo art.
+    if(playOptions){
+      const selectedId=readScopedAdventureHeroSelectionV1({
+        storage:window.sessionStorage,
+        sessionId:playOptions.sessionId,worldId:world.id
+      });
+      if(selectedId)await installAuthoredHeroMapActor(selectedId);
+    }
     playPositionWriter=createExplorationPlayProgressWriter(window.localStorage,world,playOptions);
     sculptPlayActive=true;
     setImmersive(true);
@@ -3856,6 +3918,7 @@ function installSculptPlayMode(){
     window.addEventListener('pagehide',persistPlayNavigationCheckpoint,{once:true});
     window.__sculptPlayProbe=()=>Object.freeze({
       active:sculptPlayActive,worldId:sculptWorldDraft?.id??null,
+      heroDefinitionId:sculptPlayHeroDefinitionId,
       areaId:sculptWorldAreaId,playing:navigationTesting,
       actor:navActor?{x:navActor.x,y:navActor.y}:null,
       editorHidden:$('mode-ground').getClientRects().length===0,
