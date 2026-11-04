@@ -13,6 +13,7 @@ export function createImmersiveEncounterHostV1({
   windowRef = globalThis.window,
   documentRef = globalThis.document,
   storage,
+  sessionId,
   onCompleted,
   screenRef = globalThis.screen
 }) {
@@ -42,7 +43,7 @@ export function createImmersiveEncounterHostV1({
 
     // A postMessage is never authority for battle victory/defeat. Only the
     // existing contract-validated CombatResult written by Combat may finish.
-    const envelope = readCombatHandoff(storage);
+    const envelope = readCombatHandoff(storage, { sessionId });
     if (!envelope?.result ||
         envelope.snapshot.encounterId !== active.snapshot.encounterId ||
         envelope.snapshot.returnToken !== active.snapshot.returnToken ||
@@ -57,25 +58,9 @@ export function createImmersiveEncounterHostV1({
       return;
     }
     if (acknowledgment === false) return;
-    // The standalone Exploration Tester retains its historical synchronous
-    // completion contract. A GenSRPG AdventureSession has a stricter owner:
-    // a successful visual return is NOT evidence that XP, HP and loot were
-    // committed to the one authoritative GenSRPG Core Storage save.
-    const partyRef=envelope.snapshot.player?.partyRef;
-    if (typeof partyRef==='string' && partyRef.startsWith('adventure-party:')) {
-      const sessionId=partyRef.slice('adventure-party:'.length);
-      const processedKey=envelope.snapshot.encounterId+':'+envelope.snapshot.returnToken;
-      const receipt=acknowledgment;
-      if (!sessionId || receipt?.persisted!==true ||
-          receipt?.session?.sessionId!==sessionId ||
-          !Array.isArray(receipt.session.processedEncounterKeys) ||
-          !receipt.session.processedEncounterKeys.includes(processedKey)) {
-        // No forged victory or invented Core receipt: keep the battle and
-        // result intact so its rightful owner can persist/retry exactly once.
-        return;
-      }
-    }
-    consumeCombatResult(storage);
+    // The journal owns consumption and requires GenSRPG's durable receipt
+    // for Adventure, including when the caller later resumes outside this iframe.
+    if (!consumeCombatResult(storage, { sessionId, receipt: acknowledgment })) return;
     close();
   }
 

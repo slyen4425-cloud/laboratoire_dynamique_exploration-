@@ -43,6 +43,9 @@ document.addEventListener('fullscreenchange',syncFullscreenButton);
 syncFullscreenButton();
 const rootPath = new URL('../../', import.meta.url);
 const resource = path => new URL(path, rootPath);
+const encounterSessionId = new URL(document.URL).searchParams.get('adventureSession') ?? undefined;
+const handoffScope = { sessionId: encounterSessionId };
+const handoffStorage = encounterSessionId === undefined ? window.sessionStorage : window.localStorage;
 async function readJson(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error('Fichier Combat introuvable : ' + url.pathname + ' (HTTP ' + response.status + ')');
@@ -136,7 +139,7 @@ function showOfficialCombatTemplate(source, templateResponse) {
       }
     }
     const arena = root.querySelector('[data-combat-arena]');
-    const family = readCombatHandoff(sessionStorage)?.snapshot.context.terrainFamilyId;
+    const family = readCombatHandoff(handoffStorage, handoffScope)?.snapshot.context.terrainFamilyId;
     const arenaId = ({forest:'forest',snow:'snow',volcano:'lava',mountain:'cave'})[family] ?? 'forest';
     const preset = demoPresentationAssets.presentationForArena(arenaId);
     if (preset?.background?.url) {
@@ -175,7 +178,7 @@ function showNativeCombatOutcome(outcome) {
 }
 function completeBattle(outcome) {
   if (completed) return;
-  const handoff = readCombatHandoff(sessionStorage);
+  const handoff = readCombatHandoff(handoffStorage, handoffScope);
   if (!handoff || handoff.result) throw new Error('CombatResult déjà résolu ou handoff absent');
   const result = createCaptureCombatResult({
     encounterId: handoff.snapshot.encounterId,
@@ -184,7 +187,7 @@ function completeBattle(outcome) {
     partyState: { activeCreatureId: mountedCombat.format.actor('local-1').creatureId,
       hp: mountedCombat.session.snapshot().fighters['local-1'].hp }
   });
-  saveCombatHandoff(sessionStorage, {...handoff, result});
+  saveCombatHandoff(handoffStorage, {...handoff, result}, handoffScope);
   completed = true;
   if (watchId !== null) cancelAnimationFrame(watchId);
   message(outcome === 'victory' ? 'Victoire · retour en exploration' : 'Défaite · retour en exploration');
@@ -206,7 +209,7 @@ function completeBattle(outcome) {
   }
 }
 async function launch() {
-  const handoff=readCombatHandoff(sessionStorage);
+  const handoff=readCombatHandoff(handoffStorage, handoffScope);
   if(!handoff||handoff.result)throw new Error('EncounterSnapshot v1 absent ou déjà terminé');
   // Start downloading the official HUD immediately; independent source data
   // resolves concurrently. Only one build-produced bundle supplies every
