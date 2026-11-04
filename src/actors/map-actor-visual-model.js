@@ -18,6 +18,48 @@ function normalizeRole(value) {
     : 'hero';
 }
 
+// Frames are existing prepared MapActor image references, never file paths
+// nor a second sprite renderer. The visual owner selects the presentation;
+// the Exploration navigation/collision owner still determines movement.
+function animationAssetIds(value,field,{required=false}={}){
+ if(value===undefined){
+  if(required)throw new TypeError(field+' frames are required');
+  return Object.freeze([]);
+ }
+ if(!Array.isArray(value)||value.length>(32)|| (required&&value.length===0))
+  throw new RangeError(field+' frames must contain 1-32 registered asset references');
+ const ids=new Set();
+ for(const id of value){
+  if(typeof id!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,129}$/.test(id))
+   throw new TypeError('Invalid Map Actor '+field+' asset ID');
+  if(ids.has(id))throw new RangeError('Duplicate Map Actor '+field+' frame '+id);
+  ids.add(id);
+ }
+ return Object.freeze([...ids]);
+}
+
+function normalizeActorAnimation(raw){
+ if(raw===undefined)return Object.freeze({mode:'image'});
+ if(!raw||typeof raw!=='object'||Array.isArray(raw))
+  throw new TypeError('Map Actor animation must be a configuration object');
+ const keys=Object.keys(raw);
+ if(raw.mode==='image'){
+  if(keys.some(k=>k!=='mode'))throw new TypeError('Image motion does not support sprite frames');
+  return Object.freeze({mode:'image'});
+ }
+ if(raw.mode!=='frames')throw new RangeError('Unknown Map Actor animation mode');
+ if(keys.some(k=>!['mode','framesPerSecond','idle','walk'].includes(k)))
+  throw new TypeError('Unknown Map Actor animation configuration field');
+ if(typeof raw.framesPerSecond!=='number'||!Number.isFinite(raw.framesPerSecond)||
+    raw.framesPerSecond<1||raw.framesPerSecond>30)
+  throw new RangeError('Map Actor animation framesPerSecond must be 1-30');
+ return Object.freeze({
+  mode:'frames',framesPerSecond:raw.framesPerSecond,
+  idle:animationAssetIds(raw.idle,'idle'),
+  walk:animationAssetIds(raw.walk,'walk',{required:true})
+ });
+}
+
 export function normalizeMapActorVisual(raw = {}) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const role = normalizeRole(source.role);
@@ -30,6 +72,7 @@ export function normalizeMapActorVisual(raw = {}) {
         ? source.assetId.trim()
         : null,
     role,
+    animation:normalizeActorAnimation(source.animation),
     targetHeight: finiteNumber(
       source.targetHeight,
       defaults.targetHeight,

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GenSRPG Exploration — Éditeur de héros</title>
+<style>
+:root{color-scheme:dark;font:14px system-ui,sans-serif;background:#0d1720;color:#edf3f8}
+*{box-sizing:border-box}
+body{margin:0;padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+header{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:clamp(20px,3vw,27px);margin:0}
+h2{font-size:17px;margin:0 0 12px}
+p{color:#b8ccd8;margin:6px 0}
+main{display:grid;grid-template-columns:minmax(290px,1fr) minmax(290px,1fr);gap:14px;max-width:1200px;margin:auto}
+.panel{border:1px solid #36505d;border-radius:12px;background:#152734;padding:14px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:5px;color:#d0e4ec}
+label.wide{grid-column:1/-1}
+input,select,button{font:inherit;color:#edf6fa;border:1px solid #51717e;border-radius:8px;background:#213746;min-height:38px;padding:6px 9px;max-width:100%}
+input[type=file]{padding:5px}
+button{cursor:pointer;background:#1b5161;font-weight:650}
+button:hover{background:#256475}
+button:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#hero-canvas{display:block;max-width:100%;width:100%;height:auto;aspect-ratio:2/1;border-radius:9px;background:#243b4b}
+#hero-status{display:block;min-height:26px;color:#b9ebdf}
+#hero-status[data-error=true]{color:#ffc0b5}
+.hint{font-size:12px}
+[hidden]{display:none!important}
+@media(max-width:690px){main{grid-template-columns:1fr}body{padding:9px}.fields{gap:7px}.panel{padding:10px}}
+</style>
+</head>
+<body>
+<header><div><h1>Éditeur de héros</h1><p>Apparence du personnage sur la carte 2,5D · Labo Exploration</p></div>
+<a href="./sculpt-lab.html" style="color:#b6f3ed">Retour au laboratoire</a></header>
+<main>
+<section class="panel">
+<h2>Créer ou modifier un héros</h2>
+<div class="fields">
+<label class="wide">Héros enregistré
+<select id="hero-saved"><option value="">Nouveau héros…</option></select></label>
+<label class="wide">Nom du héros <input id="hero-name" maxlength="80" placeholder="Nom visible en jeu"></label>
+<label class="wide">Image principale PNG/WebP (obligatoire à la création)
+<input id="hero-image" type="file" accept="image/png,image/webp"></label>
+<label>Animation
+<select id="hero-mode"><option value="image">Image fixe · mouvement simulé</option><option value="frames">Sprites animés</option></select></label>
+<label>Taille du héros sur la carte
+<input id="hero-height" type="number" value="37" min="24" max="240"></label>
+<label id="hero-idle-label" class="wide" hidden>Sprites à l'arrêt (PNG/WebP, facultatifs)
+<input id="hero-idle" type="file" multiple accept="image/png,image/webp"></label>
+<label id="hero-walk-label" class="wide" hidden>Sprites de déplacement (PNG/WebP, obligatoires en mode sprites)
+<input id="hero-walk" type="file" multiple accept="image/png,image/webp"></label>
+<label id="hero-fps-label" hidden>Images par seconde
+<input id="hero-fps" type="number" value="8" min="1" max="30" step="1"></label>
+<label>Orientation naturelle
+<select id="hero-source-facing"><option value="1">Droite</option><option value="-1">Gauche</option></select></label>
+<label>Oscillation à l'arrêt (image fixe)
+<input id="hero-idle-amplitude" type="number" value="0.55" min="0" max="8" step=".1"></label>
+<label>Oscillation en marche (image fixe)
+<input id="hero-walk-amplitude" type="number" value="2" min="0" max="12" step=".1"></label>
+</div>
+<div class="actions">
+<button id="hero-save" type="button">Enregistrer le héros</button>
+<button id="hero-delete" type="button" disabled>Supprimer la définition</button>
+</div>
+<p class="hint">Les images et les sprites sont conservés en IndexedDB. Les références sont réutilisables par les cartes et les parties, sans copie dans le World Builder.</p>
+</section>
+<section class="panel">
+<h2>Prévisualisation réelle</h2>
+<canvas id="hero-canvas" width="420" height="210" aria-label="Aperçu du héros sur la carte"></canvas>
+<div class="actions"><button id="hero-preview-idle" type="button">Repos</button><button id="hero-preview-walk" type="button">Marche</button></div>
+<output id="hero-status" role="status" aria-live="polite">Choisis un héros ou importe une nouvelle image.</output>
+<p class="hint">Aperçu assuré par le même Map Actor Renderer que le jeu. Les frames conservent leur canevas et leur point de contact au sol pour empêcher les sauts.</p>
+</section>
+</main>
+<script type="module" src="./src/actors/hero-editor-v1.js"></script>
+</body>
+</html>

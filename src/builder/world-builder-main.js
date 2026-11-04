@@ -1,4 +1,6 @@
 import { describeWorldBuilderValidation } from './world-builder-validation-guidance.js?rev=encounter-selected-elements-v1';
+// Reuse World Assembler's canonical WorldArea size conversion for new native Jouer maps.
+import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import { demoWorldDocument } from '../world/demo-world.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import { reliefCanyonPilotDocument } from '../world/relief-canyon-pilot-world.js?rev=relief-canyon-pilot-v1';
 import {
@@ -7406,7 +7408,11 @@ $('new-blank-world').addEventListener('click', () => {
     'seront perdues. Utilise « Exporter carte » pour conserver la carte actuelle.'
   )) return;
 
-  draft = createBlankWorldBuilderDraft();
+  // Newly authored maps must be valid in the same native 2.5D Jouer that
+  // previews them. Existing imported/historical WorldDocuments are untouched.
+  draft = createBlankWorldBuilderDraft({
+    ...worldAreaSizeFromTiles({width:36,height:24})
+  });
   selectedStampPreset = null;
   pendingPaintPoint = null;
   pendingObjectMove = null;

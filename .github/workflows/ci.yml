@@ -64,6 +64,8 @@ jobs:
         run: |
           node scripts/audit-combat-preview.mjs combat-preview
           node scripts/combat-native-bridge-smoke.mjs
+      - name: Real Chromium touch landscape — scoped official HeroDefinition in native Jouer, no fallback
+        run: node scripts/smoke-hero-play-browser.mjs
       - name: Real Chromium Builder invalid-encounter navigation smoke
         run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Real Chromium interior floor material and brush smoke
@@ -91,6 +93,8 @@ jobs:
           node-version: '22'
       - name: Install screenshot decoder for black-frame regression proof
         run: npm install --no-save --no-package-lock pngjs@7.0.0
+      - name: Real Chromium 932x430 Hero Editor PNG, IndexedDB save/reload, animated sprites and canvas
+        run: node scripts/smoke-hero-editor-browser.mjs
       - name: Prove pinned source paints native 2.5D pixels and visible World Builder entry
         env:
           EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}

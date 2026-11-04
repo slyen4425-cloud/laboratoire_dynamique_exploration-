@@ -12,9 +12,10 @@ export function createMapActorVisualPreparer({
 
   const prepared = new Map();
   const states = new Map();
+  const canvasModes = new Map();
   let disposed = false;
 
-  function prepareOne(assetId) {
+  function prepareOne(assetId,preserveCanvas=false) {
     if (disposed) {
       return Object.freeze({
         assetId,
@@ -23,6 +24,8 @@ export function createMapActorVisualPreparer({
     }
 
     if (prepared.has(assetId)) {
+      if(canvasModes.get(assetId)!==preserveCanvas)
+        throw new RangeError('Prepared Map Actor canvas mode cannot change silently');
       return Object.freeze({
         assetId,
         state: 'ready'
@@ -78,28 +81,20 @@ export function createMapActorVisualPreparer({
     processedData.data.set(result.pixels);
     sourceContext.putImageData(processedData, 0, 0);
 
-    const outputCanvas = canvasFactory();
-    outputCanvas.width = result.bounds.width;
-    outputCanvas.height = result.bounds.height;
-    const outputContext = outputCanvas.getContext('2d');
-
-    outputContext.clearRect(
-      0,
-      0,
-      outputCanvas.width,
-      outputCanvas.height
-    );
-    outputContext.drawImage(
-      sourceCanvas,
-      result.bounds.x,
-      result.bounds.y,
-      result.bounds.width,
-      result.bounds.height,
-      0,
-      0,
-      result.bounds.width,
-      result.bounds.height
-    );
+    // Sprite frames share the same authored canvas geometry and a constant
+    // foot anchor. Cropping each silhouette independently makes movement
+    // sequences jump as the legs/arms change pose. The original single-image
+    // mode retains its proven auto-crop and anchor behaviour.
+    const outputCanvas=preserveCanvas?sourceCanvas:canvasFactory();
+    if(!preserveCanvas){
+      outputCanvas.width=result.bounds.width;
+      outputCanvas.height=result.bounds.height;
+      const outputContext=outputCanvas.getContext('2d');
+      outputContext.clearRect(0,0,outputCanvas.width,outputCanvas.height);
+      outputContext.drawImage(sourceCanvas,result.bounds.x,result.bounds.y,
+        result.bounds.width,result.bounds.height,0,0,
+        result.bounds.width,result.bounds.height);
+    }
 
     prepared.set(
       assetId,
@@ -110,11 +105,12 @@ export function createMapActorVisualPreparer({
         height: outputCanvas.height,
         aspectRatio:
           outputCanvas.width / Math.max(1, outputCanvas.height),
-        anchor: result.anchor,
+        anchor: preserveCanvas?Object.freeze({x:.5,y:.96}):result.anchor,
         backgroundMode: result.backgroundMode
       })
     );
     states.set(assetId, 'ready');
+    canvasModes.set(assetId,preserveCanvas);
 
     return Object.freeze({
       assetId,
@@ -122,7 +118,7 @@ export function createMapActorVisualPreparer({
     });
   }
 
-  function prepare(assetIds) {
+  function prepare(assetIds,{preserveCanvas=false}={}) {
     const ids = Array.isArray(assetIds)
       ? [...new Set(
           assetIds.filter(
@@ -133,7 +129,7 @@ export function createMapActorVisualPreparer({
         )]
       : [];
 
-    const results = ids.map(prepareOne);
+    const results = ids.map(id=>prepareOne(id,preserveCanvas===true));
 
     return Object.freeze({
       total: results.length,
@@ -159,6 +155,7 @@ export function createMapActorVisualPreparer({
     disposed = true;
     prepared.clear();
     states.clear();
+    canvasModes.clear();
   }
 
   return Object.freeze({
