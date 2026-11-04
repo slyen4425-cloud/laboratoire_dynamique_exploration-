@@ -1,3 +1,15 @@
+# Lot 04/11/2026 — Arènes élémentaires natives 2,5D (PRÉVALIDATION, NON GREEN)
+
+- Source `main@699c87f83ac6b87fb77fb7ca340008b97d538e02`, branche `work/exploration-elemental-arenas-assets-2026-11-04`, START `docs/checkpoints/EXPLORATION_ELEMENTAL_ARENAS_START_2026-11-04.md`.
+- Dix arènes Monster Capture issues du ZIP source immuable ; PNG + WebP RGBA sous `assets/exploration/objects/buildings/arenas/`.
+- Définitions natives `objectdef.building.arena.element.*.01` → Asset Adapter officiel → WebP ; dossier `buildings/arenas/elemental`, aucun ID saisi par l'utilisateur.
+- Visuels statiques placés uniquement. Aucun combat, collision, portail, récompense ni rôle de champion inventé.
+- TDD RED au commit `335ab3216cb797fc02b57e939551efc5c40b8d71`, suite `tests/exploration-elemental-arenas-assets.test.js`.
+- GREEN uniquement après matérialisation, CI SHA exact, fusion, publication SHA exact et validation visuelle dans World Builder. Ne pas affecter les autres PR ni les files GitHub Actions.
+- Hors périmètre : GenSRPG, Combat, Dungeon, Jouer et mécanique d'arène de champion.
+
+---
+
 # Lot 04/11/2026 — autorisation des rencontres du Jouer GenSRPG par Bestiaire Combat OFFICIEL (EN COURS, NON GREEN)
 
 - **Source immuable / checkpoint** : Exploration `main@ecfb3276d494540a59d3e70f5c6702dce4cbf72f`, checkpoint START `checkpoint/exploration-scoped-published-encounters-start-2026-11-04`, branche `work/exploration-scoped-published-encounters-2026-11-04`.
