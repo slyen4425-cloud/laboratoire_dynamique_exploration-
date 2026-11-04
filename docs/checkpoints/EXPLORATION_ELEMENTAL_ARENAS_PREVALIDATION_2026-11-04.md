@@ -17,3 +17,5 @@
 - Arbre Git exact vérifié : **20 fichiers** dans `assets/exploration/objects/buildings/arenas/`, soit **10 PNG RGBA + 10 WebP** ; source ZIP inchangée, 10 hashes complets validés ; workflow temporaire retiré de l'arbre.
 - Ce checkpoint ajoute une modification documentaire pour tester en CI **le SHA final contenant physiquement les assets** et ne modifie aucun contenu de jeu.
 - **Statut maintenu NON GREEN** jusqu'aux résultats du nouveau SHA, la fusion vérifiée et la publication HTTPS du même SHA. Les anciens runs échoués sur le SHA `431fc67d82fa` restent conservés comme preuves de la cause corrigée.
+
+- TDD du SHA `bf1dcc1de0bec9e5a91d83eb61b96356ac69a826` : fichiers présents et hashes WebP corrects ; un unique test échoue sur une faute de chemin `arena_` au lieu du chemin source canonique `arene_` (ENOENT). Corriger l'assertion sans déplacer ni renommer un asset. Conserver le test de résolution et relancer sur le SHA exact.

@@ -37,7 +37,7 @@ test('10 elemental arenas have one official native definition and visual each', 
     assert.equal(webp.subarray(0, 4).toString('ascii'), 'RIFF', assetId);
     assert.equal(webp.subarray(8, 12).toString('ascii'), 'WEBP', assetId);
     assert.equal(webp.readUInt32LE(4) + 8, webp.length, assetId + ' size');
-    const png = await readFile(new URL('../assets/exploration/objects/buildings/arenas/arena_' + element + '_2p5d.png', import.meta.url));
+    const png = await readFile(new URL('../assets/exploration/objects/buildings/arenas/arene_' + element + '_2p5d.png', import.meta.url));
     assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', assetId + ' PNG');
     assert.equal(png.readUInt32BE(16), 512, assetId + ' PNG width');
     assert.equal(png.readUInt32BE(20), 512, assetId + ' PNG height');
