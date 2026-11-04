@@ -612,6 +612,196 @@ const DEFINITIONS = frozen([
   },
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_alpine_timber_2p5d.01',
+    label: 'Maison enneigée 2,5D · Chalet alpin bois-pierre',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_alpine_timber_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_alpine_timber_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_alpine_timber_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_alpine_timber_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 290, height: 270 },
+    footprint: { enabled: true, widthRatio: 0.78, heightRatio: 0.67, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_stone_cottage_2p5d.01',
+    label: 'Maison enneigée 2,5D · Petite maison de pierre',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_stone_cottage_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_stone_cottage_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_stone_cottage_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_stone_cottage_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 255, height: 245 },
+    footprint: { enabled: true, widthRatio: 0.76, heightRatio: 0.69, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_banner_lodge_2p5d.01',
+    label: 'Maison enneigée 2,5D · Chalet des bannières',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_banner_lodge_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_banner_lodge_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_banner_lodge_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_banner_lodge_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 295, height: 260 },
+    footprint: { enabled: true, widthRatio: 0.78, heightRatio: 0.67, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_round_earth_2p5d.01',
+    label: 'Maison enneigée 2,5D · Maison ronde des bois',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_round_earth_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_round_earth_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_round_earth_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_round_earth_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 250, height: 235 },
+    footprint: { enabled: true, widthRatio: 0.74, heightRatio: 0.66, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_ice_crystal_2p5d.01',
+    label: 'Maison enneigée 2,5D · Pavillon aux cristaux de glace',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_ice_crystal_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_ice_crystal_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_ice_crystal_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_ice_crystal_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 310, height: 280 },
+    footprint: { enabled: true, widthRatio: 0.8, heightRatio: 0.67, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_mushroom_round_2p5d.01',
+    label: 'Maison enneigée 2,5D · Maison au toit bombé',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_mushroom_round_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_mushroom_round_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_mushroom_round_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_mushroom_round_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 270, height: 245 },
+    footprint: { enabled: true, widthRatio: 0.8, heightRatio: 0.66, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_east_pagoda_2p5d.01',
+    label: 'Maison enneigée 2,5D · Maison aux avant-toits courbes',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_east_pagoda_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_east_pagoda_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_east_pagoda_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_east_pagoda_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 315, height: 255 },
+    footprint: { enabled: true, widthRatio: 0.82, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_watchtower_2p5d.01',
+    label: 'Maison enneigée 2,5D · Maison à tour de guet',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_watchtower_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_watchtower_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_watchtower_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_watchtower_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 310, height: 335 },
+    footprint: { enabled: true, widthRatio: 0.78, heightRatio: 0.69, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_nordic_tent_2p5d.01',
+    label: 'Maison enneigée 2,5D · Habitation nordique en toile',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_nordic_tent_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_nordic_tent_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_nordic_tent_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_nordic_tent_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 280, height: 240 },
+    footprint: { enabled: true, widthRatio: 0.78, heightRatio: 0.66, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.house.snow_elven_crystal_2p5d.01',
+    label: 'Maison enneigée 2,5D · Maison féérique aux cristaux',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/houses/snow', provenance: 'native' },
+    visual: {
+      assetId: 'object.building.house.snow_elven_crystal_2p5d.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face · trois-quarts', assetId: 'object.building.house.snow_elven_crystal_2p5d.front.01' },
+        { id: 'side', label: 'Côté · trois-quarts', assetId: 'object.building.house.snow_elven_crystal_2p5d.side.01' },
+        { id: 'back', label: 'Dos · trois-quarts', assetId: 'object.building.house.snow_elven_crystal_2p5d.back.01' }
+      ]
+    },
+    baseSize: { width: 330, height: 275 },
+    footprint: { enabled: true, widthRatio: 0.81, heightRatio: 0.68, offsetX: 0, offsetY: 0.02 },
+    doorAnchors: [{ id: 'main-door', x: 0, y: 0.46 }]
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.tree.forest.pine_dense.01', label: 'Pin dense 2,5D', kind: 'tree',
     visual: { assetId: 'object.tree.forest.pine_dense.01' },
     baseSize: { width: 180, height: 230 },
