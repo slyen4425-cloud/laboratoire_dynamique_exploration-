@@ -1,3 +1,13 @@
+# Lot visuel 04/11/2026 — 20 arbres enneigés 2,5D (EN COURS, NON GREEN)
+
+- **Demande validée** : les deux planches de 10 arbres enneigés ont été approuvées et le ZIP source GENSRPG_LaboExploration_Arbres_Enneiges_20.zip a été déposé à la racine de main.
+- **Source / branche** : main@a890625b059a15465de4b8c6721fa7723e41bedf ; branche isolée work/exploration-snow-trees-20-assets-2026-11-04. Aucun changement GenSRPG ni Combat, ni au runtime de déplacement, caméra ou rencontres.
+- **Autorité** : catalogue natif unique src/objects/object-definition-catalog.js, résolveur visuel unique src/assets/world-object-asset-adapter.js, dossier historique assets/exploration/objects/trees/ et onglet Végétation > Arbres. Les 20 WebP 384x384 transparents sont copiés depuis le ZIP **sans recodage** ; 20 identifiants sémantiques distincts et collision basée sur WorldObject, jamais sur le rendu.
+- **Validation** : test RED tests/snow-tree-assets-v1.test.js avant intégration ; contrôle des 20 SHA256, taille, WebP + alpha + dimensions ; tests natifs de catalogue/placement/export et non-régression des 8 arbres historiques. CI de branche + contrôle réel World Builder/Canvas, puis PR et checkpoint uniquement après GREEN du SHA exact. Ne pas publier sur main ni déclarer GREEN produit sans tests.
+- **Provenance** : ZIP auteur approuvé sur main, manifest manifest.snow-trees.v1.json et somme de contrôle. Ne pas introduire un chargeur ZIP runtime, un nouveau catalogue ou de fallback silencieux.
+- **Sûreté** : conserver les autres PR ouvertes et les runs CI/Pages en cours ; un workflow temporaire de dépaquetage sur la branche est retiré avant toute proposition de fusion.
+
+---
 # Lot 04/11/2026 — autorisation des rencontres du Jouer GenSRPG par Bestiaire Combat OFFICIEL (EN COURS, NON GREEN)
 
 - **Source immuable / checkpoint** : Exploration `main@ecfb3276d494540a59d3e70f5c6702dce4cbf72f`, checkpoint START `checkpoint/exploration-scoped-published-encounters-start-2026-11-04`, branche `work/exploration-scoped-published-encounters-2026-11-04`.
