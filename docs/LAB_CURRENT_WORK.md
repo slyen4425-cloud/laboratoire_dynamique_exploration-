@@ -1,3 +1,9 @@
+## 2026-11-04 — Jouer : journal durable de CombatResult par AdventureSession
+
+- START `checkpoint/exploration-adventure-combat-journal-start-2026-11-04` sur main `0f9d9ffc18396f911e5460b439786949185905d4` (intégration #363, même arbre que sa CI 3/3 SUCCESS et prévalidation Pages). Branche `work/exploration-adventure-combat-journal-2026-11-04`.
+- Cause : `sessionStorage` disparaît à la fermeture de l’onglet. Le journal existant doit utiliser le stockage durable avec une clé par partie pour Jouer. L’enveloppe, le propriétaire du retour à la carte et le mécanisme d’acquittement restent uniques. La preuve Core devient obligatoire au point de consommation, y compris hors iframe. Le Tester conserve son journal de session historique.
+- Périmètre : journal/transport de l’identité entre Sculpt et l’iframe Combat. TDD sur fermeture/reprise du contexte, isolation par partie, mauvais partyRef, lecture/écriture et acquittement avec preuve Core. Pas d’activation des combats, de règle XP/loot ni de sauvegarde dupliquée. Le rétablissement du parcours et l’appel au Core sont les suites dépendantes.
+
 ## 2026-11-04 — Réintégration des prérequis Jouer sur la base Exploration courante
 
 - Base immuable `a890625b059a15465de4b8c6721fa7723e41bedf`, checkpoint START `checkpoint/exploration-adventure-prerequisites-start-2026-11-04`, branche `work/exploration-adventure-prerequisites-2026-11-04`. Les dépôts ZIP déjà intégrés à main restent intacts.

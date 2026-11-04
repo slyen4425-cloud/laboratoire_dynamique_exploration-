@@ -106,3 +106,20 @@ test('combat bridge refuses external origins, traversal, and non-HTML pages', ()
     assert.throws(() => normalizeLocalCombatPreviewPage(input), RangeError);
   }
 });
+
+test('scoped navigation carries the Adventure identity to the Combat iframe without touching the Tester key', () => {
+  const durableStorage = storage();
+  const sessionId = 'adventure-a';
+  let target;
+  launchCombatHandoffNavigation({
+    snapshot: { ...snapshot, player: { partyRef: 'adventure-party:' + sessionId } },
+    player: { currentAreaId: 'forest-exterior', x: 12, y: 34 },
+    storage: durableStorage,
+    documentUrl: 'https://example.test/sculpt-lab.html?play=1&adventureSession=' + sessionId,
+    sessionId,
+    navigate: url => { target = new URL(url); }
+  });
+  assert.equal(target.searchParams.get('adventureSession'), sessionId);
+  assert.equal(readCombatHandoff(durableStorage), null);
+  assert.equal(readCombatHandoff(durableStorage, { sessionId }).returnState.x, 12);
+});

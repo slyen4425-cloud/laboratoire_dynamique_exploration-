@@ -195,3 +195,37 @@ test('a second encounter cannot overwrite an unacknowledged CombatResult, nor mu
  saveCombatHandoff(store,{snapshot:second,returnState:position});
  assert.equal(readCombatHandoff(store).snapshot.encounterId,'encounter-2');
 });
+
+test('a scoped Adventure result survives replacing the tab storage and requires a matching Core receipt', () => {
+  const durableStorage = storage();
+  const scope = { sessionId: 'adventure-a' };
+  const scopedSnapshot = { ...snapshot(), player: { partyRef: 'adventure-party:adventure-a' } };
+  const envelope = createCombatHandoffEnvelope({
+    snapshot: scopedSnapshot,
+    returnState: { areaId: 'forest-exterior', x: 10, y: 20, returnUrl: '/return' }
+  });
+  saveCombatHandoff(durableStorage, envelope, scope);
+  assert.equal(readCombatHandoff(durableStorage), null);
+  assert.equal(readCombatHandoff(durableStorage, { sessionId: 'adventure-b' }), null);
+  assert.throws(() => saveCombatHandoff(durableStorage, envelope, { sessionId: 'adventure-b' }), /partyRef/);
+  assert.throws(() => readCombatHandoff(durableStorage, { sessionId: '../adventure-a' }), /session/i);
+  const fromCombat = attachCombatResult(readCombatHandoff(durableStorage, scope), {
+    encounterId: 'encounter-1', returnToken: 'return-1', outcome: 'fled',
+    partyState: { activeCreatureId: 'crea_nat_3', hp: 17 }
+  });
+  saveCombatHandoff(durableStorage, fromCombat, scope);
+  const newTabStorage = storage();
+  assert.equal(readCombatHandoff(newTabStorage, scope), null);
+  assert.deepEqual(readCombatHandoff(durableStorage, scope), fromCombat);
+
+  assert.equal(consumeCombatResult(durableStorage, scope), null);
+  const receipt = { persisted: true, session: {
+    sessionId: 'adventure-a', processedEncounterKeys: ['encounter-1:return-1']
+  } };
+  assert.equal(consumeCombatResult(durableStorage, {
+    ...scope, receipt: { ...receipt, session: { ...receipt.session, sessionId: 'adventure-b' } }
+  }), null);
+  assert.deepEqual(readCombatHandoff(durableStorage, scope), fromCombat);
+  assert.deepEqual(consumeCombatResult(durableStorage, { ...scope, receipt }), fromCombat);
+  assert.equal(readCombatHandoff(durableStorage, scope), null);
+});
