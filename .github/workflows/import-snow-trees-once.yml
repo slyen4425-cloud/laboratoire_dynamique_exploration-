@@ -1,0 +1,69 @@
+name: Import verified 20 winter tree sprites (temporary)
+on:
+  push:
+    branches:
+      - work/exploration-snow-trees-20-assets-2026-11-04
+    paths:
+      - .github/workflows/import-snow-trees-once.yml
+permissions:
+  contents: write
+jobs:
+  import-tree-sprites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+      - name: Unpack and verify exactly 20 approved winter WebP assets
+        run: |
+          python3 - <<'PY'
+          import zipfile, hashlib, json, pathlib, sys
+          source = pathlib.Path('GENSRPG_LaboExploration_Arbres_Enneiges_20.zip')
+          assert source.is_file(), 'ZIP source missing'
+          with zipfile.ZipFile(source) as z:
+              assert z.testzip() is None, 'corrupt ZIP'
+              manifest = json.loads(z.read('manifest.snow-trees.v1.json'))
+              entries = manifest.get('files', [])
+              assert manifest['packId'] == 'tree-snow-visual-assets-v1'
+              assert len(entries) == 20
+              names = [entry['path'] for entry in entries]
+              assert len(set(names)) == 20
+              for entry in entries:
+                  path = entry['path']
+                  assert path.startswith('assets/exploration/objects/trees/tree_snow_')
+                  assert path.endswith('.webp')
+                  assert '/' not in path.removeprefix('assets/exploration/objects/trees/')
+                  data = z.read(path)
+                  assert len(data) == entry['bytes'], path + ': bytes'
+                  assert hashlib.sha256(data).hexdigest() == entry['sha256'], path + ': SHA256'
+                  assert data[0:4] == b'RIFF' and data[8:16] == b'WEBPVP8X'
+                  assert int.from_bytes(data[4:8], 'little') + 8 == len(data)
+                  assert data[20] & 0x10, path + ': alpha'
+                  assert int.from_bytes(data[24:27], 'little') + 1 == 384, path + ': width'
+                  assert int.from_bytes(data[27:30], 'little') + 1 == 384, path + ': height'
+                  dest = pathlib.Path(path)
+                  assert not dest.exists(), path + ': refuses overwrite'
+                  dest.parent.mkdir(parents=True, exist_ok=True)
+                  dest.write_bytes(data)
+              manifest['integrationStatus'] = 'native-catalog-connected'
+              (pathlib.Path('assets/exploration/objects/trees/manifest.snow-trees.v1.json')).write_text(
+                  json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf8'
+              )
+              pathlib.Path('assets/exploration/objects/trees/SHA256SUMS.snow-trees-v1.txt').write_bytes(
+                  z.read('SHA256SUMS.txt')
+              )
+              print('Verified 20 transparent 384x384 WebP files and SHA256 checksums')
+          PY
+      - name: Commit only approved WebP assets and provenance in this isolated branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/exploration/objects/trees/tree_snow_*.webp
+          git add assets/exploration/objects/trees/manifest.snow-trees.v1.json
+          git add assets/exploration/objects/trees/SHA256SUMS.snow-trees-v1.txt
+          git diff --cached --stat
+          test "$(git diff --cached --name-only | grep -c 'tree_snow_.*\.webp')" -eq 20
+          git commit -m "assets(exploration): verify and import 20 winter trees from approved ZIP [skip ci]"
+          git push origin HEAD:work/exploration-snow-trees-20-assets-2026-11-04
