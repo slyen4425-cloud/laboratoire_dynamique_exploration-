@@ -23,6 +23,7 @@ export function launchCombatHandoffNavigation({
   player,
   storage,
   documentUrl,
+  sessionId,
   combatPage = DEFAULT_COMBAT_PREVIEW_PAGE,
   navigate = (url) =>
     globalThis.location.assign(url)
@@ -45,6 +46,13 @@ export function launchCombatHandoffNavigation({
     currentUrl
   );
 
+  if (sessionId !== undefined) {
+    if (currentUrl.searchParams.get('adventureSession') !== sessionId) {
+      throw new RangeError('Combat handoff requires the current Adventure session identity');
+    }
+    bridgeUrl.searchParams.set('adventureSession', sessionId);
+  }
+
   saveCombatHandoff(
     storage,
     {
@@ -55,7 +63,8 @@ export function launchCombatHandoffNavigation({
         y: player.y,
         returnUrl: returnUrl.href
       }
-    }
+    },
+    { sessionId }
   );
 
   navigate(

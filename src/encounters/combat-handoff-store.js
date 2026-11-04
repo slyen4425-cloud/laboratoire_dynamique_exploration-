@@ -136,16 +136,44 @@ export function attachCombatResult(
   });
 }
 
-export function saveCombatHandoff(
-  storage,
-  envelope
-) {
+const ADVENTURE_PARTY_PREFIX = 'adventure-party:';
+
+function handoffKey(sessionId) {
+  if (sessionId === undefined) return COMBAT_HANDOFF_STORAGE_KEY;
+  if (typeof sessionId !== 'string' ||
+      !/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(sessionId)) {
+    throw new RangeError('Invalid Adventure session identifier for combat handoff');
+  }
+  return COMBAT_HANDOFF_STORAGE_KEY + ':' + sessionId;
+}
+
+function assertHandoffParty(envelope, sessionId) {
+  if (sessionId !== undefined &&
+      envelope.snapshot.player.partyRef !== ADVENTURE_PARTY_PREFIX + sessionId) {
+    throw new RangeError('Combat handoff partyRef does not match Adventure session');
+  }
+}
+
+function canConsumeResult(envelope, receipt) {
+  const partyRef = envelope.snapshot.player.partyRef;
+  if (!partyRef.startsWith(ADVENTURE_PARTY_PREFIX)) return true;
+  const sessionId = partyRef.slice(ADVENTURE_PARTY_PREFIX.length);
+  const key = envelope.snapshot.encounterId + ':' + envelope.snapshot.returnToken;
+  return !!sessionId && receipt?.persisted === true &&
+    receipt.session?.sessionId === sessionId &&
+    Array.isArray(receipt.session.processedEncounterKeys) &&
+    receipt.session.processedEncounterKeys.includes(key);
+}
+
+export function saveCombatHandoff(storage, envelope, { sessionId } = {}) {
+  const key = handoffKey(sessionId);
   const value = createCombatHandoffEnvelope(envelope);
+  assertHandoffParty(value, sessionId);
   // A second battle must not erase an unsettled encounter / return point.
   // Combat may attach the matching authoritative result exactly once.
   // A corrupted or newer stored record throws from readCombatHandoff and is
   // retained byte-for-byte; it is NEVER silently replaced.
-  const pending = readCombatHandoff(storage);
+  const pending = readCombatHandoff(storage, { sessionId });
   if (pending) {
     if (JSON.stringify(pending.snapshot) !== JSON.stringify(value.snapshot) ||
         JSON.stringify(pending.returnState) !== JSON.stringify(value.returnState)) {
@@ -156,14 +184,12 @@ export function saveCombatHandoff(
       throw new Error('CombatResult pending : authoritative outcome cannot be overwritten');
     }
   }
-  storage.setItem(COMBAT_HANDOFF_STORAGE_KEY,JSON.stringify(value));
+  storage.setItem(key, JSON.stringify(value));
   return value;
 }
 
-export function readCombatHandoff(storage) {
-  const text = storage.getItem(
-    COMBAT_HANDOFF_STORAGE_KEY
-  );
+export function readCombatHandoff(storage, { sessionId } = {}) {
+  const text = storage.getItem(handoffKey(sessionId));
   // No handoff is normal only when the key is absent. An empty string,
   // malformed JSON or an unknown schema MUST NOT erase a pending battle result.
   if (text === null || text === undefined) return null;
@@ -173,9 +199,11 @@ export function readCombatHandoff(storage) {
     if (raw?.version !== COMBAT_HANDOFF_VERSION) {
       throw new RangeError('Combat handoff version incompatible');
     }
-    return createCombatHandoffEnvelope(raw);
+    const envelope = createCombatHandoffEnvelope(raw);
+    assertHandoffParty(envelope, sessionId);
+    return envelope;
   } catch (cause) {
-    // The existing sessionStorage bytes are the only recoverable evidence of
+    // The existing storage bytes are the only recoverable evidence of
     // a CombatResult not yet committed by GenSRPG Aventure. Fail closed.
     // Give an explicit version error without serializing untrusted user data.
     const reason=cause?.message==='Combat handoff version incompatible'
@@ -185,14 +213,9 @@ export function readCombatHandoff(storage) {
   }
 }
 
-export function consumeCombatResult(storage) {
-  const envelope = readCombatHandoff(storage);
-
-  if (!envelope?.result) return null;
-
-  storage.removeItem(
-    COMBAT_HANDOFF_STORAGE_KEY
-  );
-
+export function consumeCombatResult(storage, { sessionId, receipt } = {}) {
+  const envelope = readCombatHandoff(storage, { sessionId });
+  if (!envelope?.result || !canConsumeResult(envelope, receipt)) return null;
+  storage.removeItem(handoffKey(sessionId));
   return envelope;
 }

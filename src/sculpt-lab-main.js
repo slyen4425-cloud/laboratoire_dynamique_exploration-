@@ -189,6 +189,8 @@ let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navSti
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
 const adventureSessionId=new URL(document.URL).searchParams.get('adventureSession');
 const playOptions=adventureSessionId===null?undefined:{sessionId:adventureSessionId};
+const sculptCombatSessionId=sculptPlayRequested?playOptions?.sessionId:undefined;
+const sculptCombatStorage=sculptCombatSessionId===undefined?window.sessionStorage:window.localStorage;
 let sculptPlayActive=false,playLastCheckpointAt=0,playPositionWriter=null;
 
 const sculptEncounterDialog=$('sculpt-encounter-preview');
@@ -464,7 +466,8 @@ function releaseSculptEncounter(){
   return true;
 }
 const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHostV1({
-  windowRef:window,documentRef:document,storage:window.sessionStorage,
+  windowRef:window,documentRef:document,storage:sculptCombatStorage,
+  sessionId:sculptCombatSessionId,
   onCompleted(envelope){
     if(!sculptPendingEncounter||
        envelope.snapshot.encounterId!==sculptPendingEncounter.encounterId||
@@ -498,7 +501,7 @@ if(sculptEncounterDialog){
     try{
       launchCombatHandoffNavigation({
         snapshot:sculptPendingEncounter,player,
-        storage:window.sessionStorage,documentUrl:document.URL,
+        storage:sculptCombatStorage,documentUrl:document.URL,sessionId:sculptCombatSessionId,
         navigate(url){sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});}
       });
     }catch(error){
