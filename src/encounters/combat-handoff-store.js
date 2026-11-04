@@ -156,17 +156,20 @@ export function readCombatHandoff(storage) {
   const text = storage.getItem(
     COMBAT_HANDOFF_STORAGE_KEY
   );
-  if (!text) return null;
+  // No handoff is normal only when the key is absent. An empty string,
+  // malformed JSON or an unknown schema MUST NOT erase a pending battle result.
+  if (text === null || text === undefined) return null;
 
   try {
-    return createCombatHandoffEnvelope(
-      JSON.parse(text)
-    );
-  } catch {
-    storage.removeItem(
-      COMBAT_HANDOFF_STORAGE_KEY
-    );
-    return null;
+    const raw = JSON.parse(text);
+    if (raw?.version !== COMBAT_HANDOFF_VERSION) {
+      throw new RangeError('Combat handoff version incompatible');
+    }
+    return createCombatHandoffEnvelope(raw);
+  } catch (cause) {
+    // The existing sessionStorage bytes are the only recoverable evidence of
+    // a CombatResult not yet committed by GenSRPG Aventure. Fail closed.
+    throw new Error('Combat handoff invalide : données conservées sans acquittement', {cause});
   }
 }
 
