@@ -162,3 +162,36 @@ test('valid pending CombatResult survives repeated reads until the one explicit 
  assert.equal(consumeCombatResult(store).result.outcome,'victory');
  assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),null);
 });
+
+test('a second encounter cannot overwrite an unacknowledged CombatResult, nor mutate its return position',()=>{
+ const store=storage(),first=snapshot();
+ const position={areaId:'forest-exterior',x:10,y:20,returnUrl:'/return'};
+ saveCombatHandoff(store,{snapshot:first,returnState:position});
+ const second=createCaptureEncounterSnapshot({
+  encounterId:'encounter-2',playerPartyRef:'capture-party-preview',
+  opponentCreatureId:'crea_nat_3',rulesetId:'capture.standard.1v1',
+  areaId:'forest-exterior',terrainFamilyId:'forest',elementId:'nature',
+  returnToken:'return-2'
+ });
+ const initial=store.getItem(COMBAT_HANDOFF_STORAGE_KEY);
+ assert.throws(()=>saveCombatHandoff(store,{snapshot:second,returnState:position}),/pending|handoff|encounter/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),initial);
+ assert.throws(()=>saveCombatHandoff(store,{snapshot:first,
+  returnState:{...position,x:999}}),/pending|handoff|return/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),initial);
+ const complete=attachCombatResult(readCombatHandoff(store),createCaptureCombatResult({
+  encounterId:'encounter-1',returnToken:'return-1',outcome:'victory'
+ }));
+ saveCombatHandoff(store,complete);
+ const awarded=store.getItem(COMBAT_HANDOFF_STORAGE_KEY);
+ assert.throws(()=>saveCombatHandoff(store,{snapshot:second,returnState:position}),
+  /pending|handoff|encounter/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),awarded);
+ const forged=attachCombatResult({snapshot:first,returnState:position},
+  createCaptureCombatResult({encounterId:'encounter-1',returnToken:'return-1',outcome:'fled'}));
+ assert.throws(()=>saveCombatHandoff(store,forged),/pending|result|handoff/i);
+ assert.equal(store.getItem(COMBAT_HANDOFF_STORAGE_KEY),awarded);
+ assert.equal(consumeCombatResult(store).result.outcome,'victory');
+ saveCombatHandoff(store,{snapshot:second,returnState:position});
+ assert.equal(readCombatHandoff(store).snapshot.encounterId,'encounter-2');
+});
