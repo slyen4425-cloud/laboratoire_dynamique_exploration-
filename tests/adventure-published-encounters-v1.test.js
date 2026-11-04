@@ -34,7 +34,7 @@ test('published encounter grant is strictly tied to the REAL GenSRPG session, Wo
  assert.equal(s.snapshot().size,1);
  assert.deepEqual(JSON.parse(s.getItem(adventurePublishedEncounterStorageKeyV1(sessionId))),g,
   'gate never mutates the published authority');
- assert.throws(()=>read(s,{sessionId:'another'}),/session|absence|authorization/i);
+ assert.equal(read(s,{sessionId:'another'}),null, 'another session sees no grant and no fallback');
  assert.throws(()=>read(s,{worldId:'different-world'}),/world/i);
  assert.throws(()=>read(s,{authorSha:'b'.repeat(40)}),/Combat|sha|source/i);
  assert.throws(()=>read(s,{engineSha:'b'.repeat(40)}),/Combat|sha|source/i);
