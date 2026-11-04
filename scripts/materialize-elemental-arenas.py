@@ -26,6 +26,7 @@ def verify(data, filename):
 def main():
     assert hashlib.sha256(ZIP.read_bytes()).hexdigest() == CHECKSUM, "Source ZIP changed"
     records = {r["assetId"]: r for r in json.loads(MANIFEST.read_text(encoding="utf8"))["files"]}
+    assert all(len(r["sha256"]) == 64 for r in records.values() if r.get("family") == "elemental-arena"), "Invalid SHA-256 length in arena manifest"
     OUT.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(ZIP) as z:
         assert z.testzip() is None, "Corrupt ZIP"

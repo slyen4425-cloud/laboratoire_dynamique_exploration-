@@ -29,6 +29,7 @@ test('10 elemental arenas have one official native definition and visual each', 
     assert.equal(asset?.kind, 'building-visual', assetId);
     const entry = items.find(item => item.assetId === assetId);
     assert.ok(entry, assetId);
+    assert.match(entry.sha256, /^[0-9a-f]{64}$/, assetId + ' canonical SHA-256');
     assert.equal(asset.path, './' + entry.path);
     const webp = await readFile(new URL('../' + entry.path, import.meta.url));
     assert.equal(webp.length, entry.bytes, assetId + ' bytes');

@@ -443,7 +443,7 @@
       "sourceArchiveSha256": "6cde858a912e99ad7be38ab444733bdd9d573949c8f19d5d453c0a22a617b191",
       "runtimeFormat": "WebP RGBA 512x512 lossless",
       "bytes": 184020,
-      "sha256": "f6c8a59af5d3cadb0f62d3facf68ee713e3e0852e140f5ebf3037a8c7"
+      "sha256": "f6c8a59af5d3cadb0f62d3facf68ee713e3e0852e140f5a2d20f5ebf3037a8c7"
     },
     {
       "assetId": "object.building.arena.element.foudre.01",
