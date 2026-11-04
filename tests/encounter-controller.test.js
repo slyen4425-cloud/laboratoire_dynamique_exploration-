@@ -429,3 +429,47 @@ test('explicit interior randomEnabled override can produce terrain-random', () =
   assert.equal(intent?.source, 'terrain-random');
   assert.equal(intent?.areaId, dangerousInterior.id);
 });
+
+
+test('GenSRPG encounter correlation IDs survive controller re-creation without duplicate rewards',()=>{
+ let issued=0;
+ const createCorrelationIds=()=>{
+  issued++;
+  return {encounterId:'encounter-official-'+issued,
+   returnToken:'return-official-'+issued};
+ };
+ const first=createEncounterController({checkDistance:50,createCorrelationIds});
+ const second=createEncounterController({checkDistance:50,createCorrelationIds});
+ step(first,{x:100,y:100});
+ const a=step(first,{x:160,y:100});
+ step(second,{x:100,y:100});
+ const b=step(second,{x:160,y:100});
+ assert.equal(a.encounterId,'encounter-official-1');
+ assert.equal(b.encounterId,'encounter-official-2');
+ assert.notEqual(a.encounterId+':'+a.returnToken,b.encounterId+':'+b.returnToken);
+ assert.equal(first.release(a.encounterId),true);
+ assert.equal(second.release(b.encounterId),true);
+});
+
+test('invalid explicit correlation IDs fail closed, with no live encounter locked',()=>{
+ for(const make of [
+  ()=>({encounterId:'',returnToken:'return-ok'}),
+  ()=>({encounterId:'encounter-ok',returnToken:''}),
+  ()=>({encounterId:'same',returnToken:'same'}),
+  ()=>({encounterId:'bad/escape',returnToken:'good'}),
+  ()=>({encounterId:'encounter-ok',returnToken:123})
+ ]){
+  const controller=createEncounterController({checkDistance:50,createCorrelationIds:make});
+  step(controller,{x:100,y:100});
+  assert.throws(()=>step(controller,{x:160,y:100}),/correlation|encounterId|returnToken/i);
+  assert.equal(controller.activeEncounterId,null);
+ }
+});
+
+test('default Tester encounter sequencing remains unchanged without an explicit strategy',()=>{
+ const first=createEncounterController({checkDistance:50});
+ step(first,{x:100,y:100});
+ const a=step(first,{x:160,y:100});
+ assert.equal(a.encounterId,'encounter-1');
+ assert.equal(a.returnToken,'return-1');
+});

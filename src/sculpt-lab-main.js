@@ -198,7 +198,16 @@ const sculptCombatWarmup=createCaptureCombatWarmupV1({
 });
 const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
-  checkDistance:sculptEncounterTest?80:160
+  checkDistance:sculptEncounterTest?80:160,
+  // Only a GenSRPG-owned AdventureSession needs stable uniqueness across
+  // page reloads. The official Tester keeps deterministic sequential IDs.
+  // This does not grant permission to spawn unpublished creatures in Jouer.
+  createCorrelationIds:sculptPlayRequested&&adventureSessionId!==null
+    ?()=>({
+      encounterId:'encounter-'+window.crypto.randomUUID(),
+      returnToken:'return-'+window.crypto.randomUUID()
+    })
+    :undefined
 }):null;
 // Combat's official Showcase is required for encounters, NOT for drawing the
 // WorldArea. Fail encounters closed with the real error, while the terrain,

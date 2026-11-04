@@ -48,3 +48,11 @@ test('native Jouer menu respects actual hidden CSS precedence for GenSRPG-owned 
  const entry=read('src/play/exploration-play-entry.js');
  assert.match(entry,/\$\('play-new'\)\.hidden=Boolean\(playOptions\)/);
 });
+
+test('only GenSRPG-scoped Jouer requests unique Encounter Controller correlation, never Tester',()=>{
+ const runtime=read('src/sculpt-lab-main.js');
+ assert.match(runtime,/createCorrelationIds:sculptPlayRequested&&adventureSessionId!==null/);
+ assert.match(runtime,/encounterId:'encounter-'\+window\.crypto\.randomUUID\(\)/);
+ assert.match(runtime,/returnToken:'return-'\+window\.crypto\.randomUUID\(\)/);
+ assert.match(runtime,/if\(sculptPlayActive\)return null/,'published-only gate remains closed pending official Combat Bestiary');
+});
