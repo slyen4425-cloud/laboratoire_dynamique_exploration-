@@ -63,6 +63,9 @@ import {
   loadCaptureAuthorEncounterBundleV1,
   projectCaptureShowcaseEncounterSourceV1
 } from './capture/capture-showcase-encounter-source-v1.js';
+import {readScopedAdventurePlayingPartyV1} from './encounters/adventure-playing-party-v1.js';
+import {acquireAdventureEncounterLeaseV1,requestAdventureCombatHostV1} from './encounters/adventure-combat-host-client-v1.js';
+import {consumeCombatResult,readCombatHandoff} from './encounters/combat-handoff-store.js';
 import {readScopedAdventurePublishedEncountersV1} from './encounters/adventure-published-encounters-v1.js';
 import {createEncounterController} from './encounters/encounter-controller.js';
 import {resolveTerrainFamilyAtPoint} from './encounters/terrain-family-resolver.js';
@@ -205,7 +208,7 @@ const sculptCombatWarmup=createCaptureCombatWarmupV1({
     :window.setTimeout(callback,300),
   saveData:window.navigator?.connection?.saveData===true
 });
-const sculptEncounterTest=new URL(document.URL).searchParams.get('encounterTest')==='1';
+const sculptEncounterTest=!sculptPlayRequested&&new URL(document.URL).searchParams.get('encounterTest')==='1';
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
   checkDistance:sculptEncounterTest?80:160,
   // Only a GenSRPG-owned AdventureSession needs stable uniqueness across
@@ -223,7 +226,7 @@ const sculptEncounterController=sculptEncounterDialog?createEncounterController(
 // editor, collision and camera keep their original independent owners.
 let sculptEncounterCatalog=null,sculptEncounterSourceError=null;
 let sculptEncounterSource=null,sculptEncounterSourceBundle=null;
-let sculptPlayPublishedCount=0;
+let sculptPlayPublishedCount=0,scopedEncounter=null;
 if(sculptEncounterController){
   try{
     sculptEncounterSourceBundle=await loadCaptureAuthorEncounterBundleV1();
@@ -427,9 +430,8 @@ function navigationEncounterArea(){
   return projected;
 }
 function sculptEncounterStep(){
-  // The real game cannot draw creatures from the unpublished author catalog.
-  // Wait for Combat's official Bestiary whitelist, never invent gameplay data.
-  if(sculptPlayActive)return null;
+  // Jouer may only spawn from the scoped Bestiary with an active Core host.
+  if(sculptPlayRequested&&(!scopedEncounter?.armed||scopedEncounter.party.active.hp===0))return null;
   if(!sculptEncounterController||!sculptEncounterCatalog||!navigationTesting||!navActor||sculptPendingEncounter)
     return null;
   const area=navigationEncounterArea();
@@ -437,11 +439,15 @@ function sculptEncounterStep(){
     area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
     encounterConfig:sculptEncounterConfig,
     captureCatalog:sculptEncounterCatalog,
-    playerPartyRef:'capture-party-player-v1',rulesetId:'capture.standard.1v1',
+    playerPartyRef:scopedEncounter?.party.partyRef??'capture-party-player-v1',rulesetId:'capture.standard.1v1',
     random:sculptEncounterRandom
   });
   if(!intent)return null;
-  sculptPendingEncounter=snapshotFromEncounterIntent(intent);
+  return presentSculptEncounter(snapshotFromEncounterIntent(intent));
+}
+function presentSculptEncounter(snapshot,recovered=false){
+  sculptPendingEncounter=snapshot;
+  $('sculpt-encounter-continue').hidden=recovered;
   navActor.moving=false;
   navKeys.clear();navStick?.reset();
   const creatureId=sculptPendingEncounter.opponents[0].creatureId;
@@ -465,6 +471,39 @@ function releaseSculptEncounter(){
   navKeys.clear();navStick?.reset();
   return true;
 }
+function restoreSculptEncounterPosition(envelope){
+  const area=navigationEncounterArea();
+  const restored=resolveExplorationCombatReturn({
+    envelope,worldDocument:{areas:[area]}
+  });
+  const point={...navActor,x:restored.x,y:restored.y};
+  if(sculptPlayActive&&isBlocked(navigationWorld(),point,point.x,point.y,undefined,navigationContext()))
+    throw Error('Position de retour du combat bloquée');
+  navActor.x=restored.x;navActor.y=restored.y;navActor.moving=false;
+  navVisualLevel=navHeight();
+  zoom=navigationCameraZoom();
+  $('zoom').value=String(Math.round(zoom*100));
+  centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+}
+function finishSculptEncounter(envelope){
+  if(!releaseSculptEncounter())return;
+  queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.resume();});
+  status('Combat terminé : '+envelope.result.outcome+' · exploration reprise');
+}
+async function commitScopedSculptEncounter(envelope){
+  const response=await requestAdventureCombatHostV1(window.frameElement,sculptCombatSessionId,'commit');
+  const receipt=response?.receipt;
+  const key=envelope.snapshot.encounterId+':'+envelope.snapshot.returnToken;
+  if(receipt?.persisted!==true||receipt.session?.sessionId!==sculptCombatSessionId||
+     !receipt.session.processedEncounterKeys?.includes(key))
+    throw Error('Le Core Aventure n’a pas confirmé ce combat');
+  const party=readScopedAdventurePlayingPartyV1(scopedEncounter.context);
+  if(!party)throw Error('Équipe Aventure non actualisée');
+  restoreSculptEncounterPosition(envelope);
+  if(!persistPlayNavigationCheckpoint())throw Error('Position de retour non enregistrée');
+  scopedEncounter.party=party;
+  return receipt;
+}
 const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHostV1({
   windowRef:window,documentRef:document,storage:sculptCombatStorage,
   sessionId:sculptCombatSessionId,
@@ -472,44 +511,37 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
     if(!sculptPendingEncounter||
        envelope.snapshot.encounterId!==sculptPendingEncounter.encounterId||
        envelope.snapshot.returnToken!==sculptPendingEncounter.returnToken)return false;
-    const area=navigationEncounterArea();
-    const restored=resolveExplorationCombatReturn({
-      envelope,worldDocument:{areas:[area]}
-    });
-    if(!releaseSculptEncounter())return false;
-    // Only the existing Exploration actor position owns x/y. Combat sends a
-    // validated result, never a replacement scene or actor position.
-    navActor.x=restored.x;navActor.y=restored.y;navActor.moving=false;
-    navVisualLevel=navHeight();
-    // Return uses the same Navigation camera slider as before the fight.
-    // The fullscreen resize handler above enforces it again after overlay removal.
-    zoom=navigationCameraZoom();
-    $('zoom').value=String(Math.round(zoom*100));
-    centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
-    // Combat owns its audio until the validated iframe closes. Resume in
-    // a microtask after the host has destroyed the iframe, without overlap.
-    queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.resume();});
-    status('Combat terminé : '+restored.outcome+' · exploration reprise');
+    if(scopedEncounter)return commitScopedSculptEncounter(envelope);
+    restoreSculptEncounterPosition(envelope);
     return true;
-  }
+  },
+  onAcknowledged:finishSculptEncounter,
+  onFailure(error){status('Combat conservé pour la reprise : '+error.message);}
 }):null;
+
 if(sculptEncounterDialog){
   $('sculpt-encounter-combat').addEventListener('click',()=>{
     if(!sculptPendingEncounter||sculptEncounterHost.active)return;
+    if(scopedEncounter&&!persistPlayNavigationCheckpoint())return;
     explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
     const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
     try{
       launchCombatHandoffNavigation({
         snapshot:sculptPendingEncounter,player,
         storage:sculptCombatStorage,documentUrl:document.URL,sessionId:sculptCombatSessionId,
-        navigate(url){sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});}
+        navigate(url){
+          if(scopedEncounter)$('sculpt-encounter-continue').hidden=true;
+          sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});
+        }
       });
     }catch(error){
       explorationSoundtrack.resume();
       status('Combat indisponible : '+error.message);
     }
   });
-  $('sculpt-encounter-continue').addEventListener('click',releaseSculptEncounter);
+  $('sculpt-encounter-continue').addEventListener('click',()=>{
+    if(!sculptEncounterHost.active&&!$('sculpt-encounter-continue').hidden)releaseSculptEncounter();
+  });
 }
 window.__sculptEncounterProbe=()=>Object.freeze({
   supported:!!sculptEncounterController,
@@ -3852,6 +3884,46 @@ function persistPlayNavigationCheckpoint(){
     return false;
   }
 }
+async function installScopedSculptEncounters(world,allowedCreatureIds){
+  if(!allowedCreatureIds?.length||!window.frameElement)return;
+  let ready;
+  try{
+    ready=await requestAdventureCombatHostV1(window.frameElement,sculptCombatSessionId,'ready');
+  }catch(error){
+    console.warn('Rencontres Aventure indisponibles :',error.message);
+    return;
+  }
+  if(ready?.ready!==true)return;
+  const context={
+    storage:window.sessionStorage,sessionId:sculptCombatSessionId,worldId:world.id,
+    authorSha:sculptEncounterSourceBundle.authorSha,engineSha:sculptEncounterSourceBundle.engineSha,
+    allowedCreatureIds
+  };
+  const party=readScopedAdventurePlayingPartyV1(context);
+  if(!party)return;
+  const release=await acquireAdventureEncounterLeaseV1(window.navigator.locks,sculptCombatSessionId);
+  if(!release)throw Error('Cette partie Aventure est déjà ouverte dans un autre onglet');
+  window.addEventListener('pagehide',release,{once:true});
+  scopedEncounter={context,party,release,armed:false};
+}
+async function recoverScopedSculptEncounter(pending){
+  if(!pending)return;
+  if(pending.snapshot.context.areaId!==navigationEncounterArea().id||
+     pending.returnState.areaId!==navigationEncounterArea().id)
+    throw Error('Zone du combat en attente différente de la sauvegarde');
+  if(!scopedEncounter.context.allowedCreatureIds.includes(pending.snapshot.opponents[0].creatureId))
+    throw Error('Le combat en attente concerne un adversaire hors Bestiaire autorisé');
+  if(pending.result){
+    const receipt=await commitScopedSculptEncounter(pending);
+    if(!consumeCombatResult(sculptCombatStorage,{sessionId:sculptCombatSessionId,receipt}))
+      throw Error('Le journal du combat en attente n’a pas été acquitté');
+    status('Résultat du combat récupéré · exploration reprise');
+    return;
+  }
+  if(!sculptEncounterController.restore(pending.snapshot.encounterId))
+    throw Error('Le combat en attente ne peut pas être rouvert');
+  presentSculptEncounter(pending.snapshot,true);
+}
 async function installSculptPlayMode(){
   if(!sculptPlayRequested)return;
   document.body.classList.add('sculpt-play-mode');
@@ -3880,6 +3952,7 @@ async function installSculptPlayMode(){
       sculptEncounterCatalog=createCaptureCreatureCatalogProvider(
         sculptEncounterSource,{allowedCreatureIds:ids??[]});
       sculptPlayPublishedCount=ids?.length??0;
+      await installScopedSculptEncounters(world,ids);
       if(ids===null)
         console.warn('Rencontres GenSRPG verrouillées : autorisation du Bestiaire officiel absente');
     }
@@ -3905,12 +3978,15 @@ async function installSculptPlayMode(){
     setNavigationTesting(true);
     if(!navigationTesting||!navActor)
       throw Error('Aucun emplacement de marche praticable dans cette carte.');
-    const point={...navActor,x:checkpoint.x,y:checkpoint.y};
+    const pending=scopedEncounter?readCombatHandoff(sculptCombatStorage,{sessionId:sculptCombatSessionId}):null;
+    const point={...navActor,x:pending?.returnState.x??checkpoint.x,y:pending?.returnState.y??checkpoint.y};
     if(isBlocked(navigationWorld(),point,point.x,point.y,undefined,navigationContext()))
       throw Error('Position sauvegardée bloquée : corrige le Spawn ou la carte dans World Builder.');
     navActor.x=point.x;navActor.y=point.y;navActor.moving=false;
     navVisualLevel=navHeight();
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
+    if(pending)await recoverScopedSculptEncounter(pending);
+    if(scopedEncounter)scopedEncounter.armed=true;
     $('play-menu-button').hidden=false;
     $('play-location').hidden=false;
     $('play-location').textContent='🌍 '+(sculptWorldArea()?.label||sculptWorldAreaId);
@@ -3928,7 +4004,12 @@ async function installSculptPlayMode(){
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
-  }catch(error){sculptPlayActive=false;fail(error);}
+  }catch(error){
+    scopedEncounter?.release();
+    scopedEncounter=null;
+    sculptPlayActive=false;
+    fail(error);
+  }
 }
 function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;

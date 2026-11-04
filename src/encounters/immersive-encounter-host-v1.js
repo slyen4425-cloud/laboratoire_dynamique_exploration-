@@ -15,6 +15,8 @@ export function createImmersiveEncounterHostV1({
   storage,
   sessionId,
   onCompleted,
+  onAcknowledged,
+  onFailure,
   screenRef = globalThis.screen
 }) {
   if (!windowRef || !documentRef || !storage ||
@@ -43,25 +45,45 @@ export function createImmersiveEncounterHostV1({
 
     // A postMessage is never authority for battle victory/defeat. Only the
     // existing contract-validated CombatResult written by Combat may finish.
-    const envelope = readCombatHandoff(storage, { sessionId });
+    let envelope;
+    try{
+      envelope=readCombatHandoff(storage,{sessionId});
+    }catch(error){
+      console.error('Combat journal could not be read:',error);
+      onFailure?.(error);
+      return;
+    }
     if (!envelope?.result ||
         envelope.snapshot.encounterId !== active.snapshot.encounterId ||
         envelope.snapshot.returnToken !== active.snapshot.returnToken ||
         envelope.result.encounterId !== active.snapshot.encounterId ||
         envelope.result.returnToken !== active.snapshot.returnToken) return;
 
-    let acknowledgment;
-    try {
-      acknowledgment = onCompleted(envelope);
-    } catch (error) {
-      console.error('Combat result could not be applied to Exploration:', error);
-      return;
-    }
-    if (acknowledgment === false) return;
-    // The journal owns consumption and requires GenSRPG's durable receipt
-    // for Adventure, including when the caller later resumes outside this iframe.
-    if (!consumeCombatResult(storage, { sessionId, receipt: acknowledgment })) return;
-    close();
+    const battle=active;
+    if(battle.finishing)return;
+    const fail=error=>{
+      battle.finishing=false;
+      if(active===battle){
+        console.error('Combat result could not be applied to Exploration:',error);
+        onFailure?.(error);
+      }
+    };
+    const acknowledge=receipt=>{
+      if(active!==battle||disposed)return;
+      battle.finishing=false;
+      if(receipt===false||!consumeCombatResult(storage,{sessionId,receipt}))return;
+      close();
+      onAcknowledged?.(envelope);
+    };
+    try{
+      const receipt=onCompleted(envelope);
+      if(sessionId!==undefined&&typeof receipt?.then==='function'){
+        battle.finishing=true;
+        void Promise.resolve(receipt).then(acknowledge).catch(fail);
+      }else{
+        acknowledge(receipt);
+      }
+    }catch(error){fail(error);}
   }
 
   windowRef.addEventListener('message', onCombatComplete);

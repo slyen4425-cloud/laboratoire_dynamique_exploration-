@@ -29,3 +29,9 @@ test('never accepts unvalidated outcomes or zero-length presentation',()=>{
   assert.throws(()=>createCombatOutcomeHoldV1({onRelease:()=>{},delayMs:0}),/duration/);
   const h=harness();assert.throws(()=>h.hold.start('unknown'),/outcome/);
 });
+test('native Adventure flee uses the journal outcome and still returns once',()=>{
+  const h=harness();
+  assert.equal(h.hold.start('fled'),true);
+  h.run();
+  assert.deepEqual(h.results,['fled']);
+});

@@ -14,7 +14,7 @@ test('Jouer has its own real menu rather than opening a Builder Tester',()=>{
  assert.match(main,/function installSculptPlayMode\(/);
  assert.match(main,/const sculptPlayRequested=.*\.get\('play'\)==='1'/);
  assert.match(main,/sculptPlayActive\?sculptWorldDraft:commitCurrentSculptWorldArea\(\)/);
- assert.match(main,/if\(sculptPlayActive\)return null;[\s\S]{0,120}if\(!sculptEncounterController/);
+ assert.match(main,/if\(sculptPlayRequested&&\(!scopedEncounter\?\.armed\|\|scopedEncounter\.party\.active\.hp===0\)\)return null;[\s\S]{0,120}if\(!sculptEncounterController/);
  assert.match(read('sculpt-lab.html'),/body\.sculpt-play-mode \.editor-switch/);
 });
 
@@ -54,10 +54,10 @@ test('only GenSRPG-scoped Jouer requests unique Encounter Controller correlation
  assert.match(runtime,/createCorrelationIds:sculptPlayRequested&&adventureSessionId!==null/);
  assert.match(runtime,/encounterId:'encounter-'\+window\.crypto\.randomUUID\(\)/);
  assert.match(runtime,/returnToken:'return-'\+window\.crypto\.randomUUID\(\)/);
- assert.match(runtime,/if\(sculptPlayActive\)return null/,'published-only gate remains closed pending official Combat Bestiary');
+ assert.match(runtime,/if\(sculptPlayRequested&&\(!scopedEncounter\?\.armed\|\|scopedEncounter\.party\.active\.hp===0\)\)return null/,'scoped play needs its Core host and a fighter able to fight');
 });
 
-test('real native GenSRPG Jouer reads the versioned published Bestiary grant but retains reward safety gate',()=>{
+test('real native GenSRPG Jouer only enables encounters after scope and Core handshake',()=>{
  const main=read('src/sculpt-lab-main.js');
  assert.match(main,/readScopedAdventurePublishedEncountersV1\(\{/);
  assert.match(main,/storage:window\.sessionStorage/);
@@ -65,6 +65,19 @@ test('real native GenSRPG Jouer reads the versioned published Bestiary grant but
  assert.match(main,/authorSha:sculptEncounterSourceBundle\.authorSha/);
  assert.match(main,/engineSha:sculptEncounterSourceBundle\.engineSha/);
  assert.match(main,/allowedCreatureIds:ids\?\?\[\]/);
- assert.match(main,/if\(sculptPlayActive\)return null/,'combat/reward handoff remains blocked in this isolated lot');
+ assert.match(main,/await installScopedSculptEncounters\(world,ids\)/);
+ assert.match(main,/requestAdventureCombatHostV1\(window\.frameElement,sculptCombatSessionId,'ready'\)/);
+ assert.match(main,/if\(pending\)await recoverScopedSculptEncounter\(pending\);\s+if\(scopedEncounter\)scopedEncounter\.armed=true;/);
  assert.doesNotMatch(main,/createNewEncounterEngine|catalogueLegacy|monstersSeptember/i);
+});
+
+test('frozen Tester previews never import the scoped Adventure readers during module startup',()=>{
+ const bridge=read('integration/combat-bridge/exploration-encounter.js');
+ const readers=['world-assembler-handoff.js','adventure-published-encounters-v1.js','adventure-playing-party-v1.js'];
+ for(const reader of readers){
+  const filename=reader.replaceAll('.','\\.');
+  assert.doesNotMatch(bridge,new RegExp("from\\s*['\"][^'\"]*"+filename+"['\"]"));
+  assert.match(bridge,new RegExp("import\\(['\"][^'\"]*"+filename+"['\"]\\)"));
+ }
+ assert.match(bridge,/encounterSessionId===undefined\?undefined:\s*await readAdventureCombatParty\(handoff,authorBundle\)/);
 });
