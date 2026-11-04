@@ -111,7 +111,7 @@ try{
    mode:'image',now:new Date().toISOString()
   });
   await createUserHeroStoreV1().put(hero);
-  const world=createBlankWorldBuilderDraft({id:'world-hero-real-play',width:640,height:480});
+  const world=createBlankWorldBuilderDraft({id:'world-hero-real-play',width:2400,height:1600});
   saveWorldAssemblerDraft(localStorage,world);
   const sessionId='session-hero-real-play';
   const checkpoint=createNewExplorationPlay(localStorage,world,{sessionId});
