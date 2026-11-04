@@ -1,3 +1,14 @@
+# 04/11/2026 — HeroDefinition officielle dans le Jouer 2.5D (LOT EMPILÉ, NON GREEN)
+
+- **Demande** : un créateur GenSRPG doit pouvoir choisir un héros parmi ses définitions Explorateur (image fixe à mouvement simulé OU frames de marche/repos) ; la carte doit rendre CE héros sans toucher au mouvement/collision/caméra. Aucun héros n'est un combattant Capture par défaut.
+- **Base et protection** : Exploration `work/exploration-hero-authoring-2026-11-04@cef548c7af5286193c4f42d9f94e78e95efa263a` (PR #356), checkpoint START `checkpoint/exploration-hero-play-handoff-start-2026-11-04`, work `work/exploration-hero-play-handoff-2026-11-04`. PR empilée sur #356, elle-même sur #355, aucune modification du main/V80. L'écran authoring et ses tests navigateur restent protégés.
+- **Frontière unique** : GenSRPG Aventure (futur consommateur) possède la sélection `heroDefinitionId` dans sa session et délivre un grant de session éphémère strict `gensrpg.capture.v2.hero-selection.v1:<sessionId>` ; Exploration **lit et valide** {schema,version,sessionId,worldId,heroDefinitionId} sur même origine, ouvre sa véritable `UserHeroStore` IndexedDB et rend avec le même MapActorRenderer/Preparer existant. Pas de lecture du stockage GenSRPG depuis Exploration ; aucune définition copiée, aucun chemin distant de sprite dans une sauvegarde. Retour/refresh/reprise utilisent session et WorldDocument officiels.
+- **Refus contrôlés** : sessionId/worldId/données contradictoires, héros supprimé, sprites incomplets, IndexedDB indisponible, media non décodable : **Jouer doit montrer une erreur** sans remplacer silencieusement par le héros demo si un ID a été explicitement demandé. Sans grant (standalone et sauvegardes anciennes), comportement demo inchangé. Tous les fichiers doivent être réellement préparés avant que le visuel sélectionné devienne actif.
+- **Périmètre** : nouveau lecteur versionné de grant, un port asynchrone dans `src/sculpt-lab-main.js` qui ne possède que le visuel, lifecycle dispose et tests de la source réelle. Ne pas déclencher les rencontres Jouer, ni envoyer un faux combat, ni inventer une liste de héros. Le choix UI appartient à GenSRPG, hors de ce lot, après main Exploration certifiée.
+- **TDD RED→GREEN** : exactitude schema/scope, validateur, absence de fallback, renderer prêt, refresh et identité, non mutation du navActor/caméra/WorldDocument ; tests Node et Chromium réel puis CI. Smartphone paysage requis avant GREEN produit. Base officielle non mutée.
+
+---
+
 # Lot 04/11/2026 — Héros : éditeur natif images et sprites, fichiers locaux IndexedDB (TDD EN COURS)
 
 - Besoin : le créateur importe une image fixe (mouvement visuel automatique MapActorVisual) ou plusieurs frames PNG/WebP de marche/repos. Depuis la restructuration le personnage Jouer utilise encore l'avatar de démonstration ; l'éditeur de visuel appartient aux définitions Héros, pas au World Builder.
