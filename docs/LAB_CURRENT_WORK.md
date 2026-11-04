@@ -1,3 +1,12 @@
+# Lot 04/11/2026 — Héros : éditeur natif images et sprites, fichiers locaux IndexedDB (TDD EN COURS)
+
+- Besoin : le créateur importe une image fixe (mouvement visuel automatique MapActorVisual) ou plusieurs frames PNG/WebP de marche/repos. Depuis la restructuration le personnage Jouer utilise encore l'avatar de démonstration ; l'éditeur de visuel appartient aux définitions Héros, pas au World Builder.
+- Source : branche et checkpoint démarrent sur 1f00c8473990b59509ce7ee4abd39c772102d752 de la PR Exploration #355. START checkpoint/exploration-hero-authoring-start-2026-11-04 ; work/exploration-hero-authoring-2026-11-04 ; PR empilée sur #355, aucun main ni V80 muté.
+- Propriétaire : Actor Definition Editor Exploration enregistre une HeroDefinition v1 et ses blobs dans un IndexedDB propre au domaine; MapActorVisual/Preparer/Renderer existants dessinent le modèle. GenSRPG sauvegardera une référence de héros seule, jamais les blobs ou une copie des frames. Aucun moteur de déplacement, caméra, collision, combat ni XP dans cet éditeur.
+- Périmètre : page hero-editor.html indépendante; nom auteur, image base, option de frames idle/walk avec cadence et contrôle du mouvement simulé; import PNG/WebP et limites taille/dimensions; identifiants émis automatiquement; catalogue versionné; preview sur renderer existant; enregistrement/réouverture réelle.
+- Tests : TDD RED puis GREEN contrat de médias, choix image/sprites, source asset unique, validation de dimensions/doublons, IndexDB persistant (pas data URL en Core), reprise Chromium écran paysage, sauvegardes et World Builder intacts. Pas de compétence ou fiche de héros ici; raccord GenSRPG Adventure et Jouer restent des lots séparés.
+
+---
 # Lot 04/11/2026 — Héros 2.5D : image fixe OU séquence de sprites (CI GREEN, VALIDATION VISUELLE UTILISATEUR RESTANTE)
 - **CI sur code exact** : Exploration Node [#41840125765](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41840125765) SUCCESS et Pages preflight [#41840125546](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41840125546) SUCCESS sur `79868de9be4039f959a8c3485de7ad4f368bb783` ; déploiement Pages SKIPPED sur PR, ne pas confondre avec production. Les tests image fixe existants et nouveau mode 3 frames sont verts. Aucun asset utilisateur/selection GenSRPG n'est livré par ce seul contrat, et recette visuelle Pixel physique non faite.
 
