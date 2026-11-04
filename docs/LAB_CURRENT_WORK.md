@@ -1,3 +1,14 @@
+# Lot 04/11/2026 — Héros 2.5D : image fixe animée par moteur existant OU séquence de sprites (TDD EN COURS)
+
+- **Décision utilisateur** : au choix du créateur, avatar à image unique avec l'oscillation existante ou images d'animation pour repos/marche. Aucune contrainte d'import de visuel supplémentaire pour le mode image seule. Sélectionner un héros ne doit pas déplacer sa position, changer la caméra/collision, ni figer le smartphone.
+- **Base immuable** : Exploration main `a5c02440d7b5b5e0c136b3161036c50ffe15be6f`, checkpoint START `checkpoint/exploration-hero-visual-modes-start-2026-11-04`, work `work/exploration-hero-visual-modes-2026-11-04`. Main Exploration et V80 site intacts.
+- **Propriété** : seul `src/actors/map-actor-visual-model.js` décrit le visuel et les références d'assets; seul `src/render/map-actor-renderer.js` choisit l'image de la frame selon `actor.moving` et le temps de rendu déjà fourni ; seul `Map Actor Visual Preparer` fournit les images préparées et les ancrages. Ne pas créer de nouveau moteur d'animation, de mouvement ni de parseur sprite à importer. Les frames sont références vers des assets déjà enregistrés par les catalogues d'images; aucun chemin libre/inventé dans le WorldDocument.
+- **Périmètre exact** : extension additive du `MapActorVisual` existant avec option facultative `animation` : mode `image` (défaut historique, bob sinusoïdal inchangé) ou `frames` avec séquences d'asset IDs `idle/walk` et cadence de lecture auteur, support du miroir existant. Fallback image principale uniquement pour l'animation non configurée, sans charger une créature ou un sprite dupliqué; si une image déclarée manque, fail-closed visuellement sans faux rendu.
+- **TDD** : tests RED puis GREEN pour rétrocompatibilité image fixe, sélection de frame marchée/arrêtée, tailles et cadences, miroir et ancrage, tailles invalides, non-mutation de x/y/actor, invariants renderer. CI tests + publication preview exacte avant fusion, recette PC et Pixel paysage avant GREEN produit.
+- **Hors périmètre** : uploader d'assets, catalogue de héros et UI GenSRPG, Combat, compétences/XP, refonte caméra ou mouvements, WorldDocument et service worker. Un lot consommateur suivant sélectionnera une définition de héros officiellement publiée, puis fournira sa référence au moteur Explorer. Pas de bouton de sélection fictif avant catalogue.
+
+---
+
 # Lot 04/11/2026 — autorisation des rencontres du Jouer GenSRPG par Bestiaire Combat OFFICIEL (EN COURS, NON GREEN)
 
 - **Source immuable / checkpoint** : Exploration `main@ecfb3276d494540a59d3e70f5c6702dce4cbf72f`, checkpoint START `checkpoint/exploration-scoped-published-encounters-start-2026-11-04`, branche `work/exploration-scoped-published-encounters-2026-11-04`.
