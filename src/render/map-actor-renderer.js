@@ -23,6 +23,17 @@ function motionOffset(visual, actor, timeSeconds) {
   return Math.sin(timeSeconds * Math.PI * 2 * frequency) * amplitude;
 }
 
+// Exactly one Map Actor Renderer controls both display modes. Frame assets
+// have already been registered/prepared by the same existing asset service.
+function displayAssetId(visual,actor,timeSeconds){
+ const animation=visual.animation;
+ if(animation?.mode!=='frames')return visual.assetId;
+ const sequence=actor.moving===true?animation.walk:animation.idle;
+ if(!sequence?.length)return visual.assetId;
+ const time=Math.max(0,Number.isFinite(timeSeconds)?timeSeconds:0);
+ return sequence[Math.floor(time*animation.framesPerSecond)%sequence.length];
+}
+
 export function createMapActorRenderer({
   preparedVisuals
 } = {}) {
@@ -40,12 +51,11 @@ export function createMapActorRenderer({
         const visual = actor.mapVisual;
         if (!visual?.assetId) continue;
 
-        const prepared = preparedVisuals.get(visual.assetId);
+        const currentAssetId=displayAssetId(visual,actor,timeSeconds);
+        const prepared=preparedVisuals.get(currentAssetId);
 
         if (!prepared) {
-          throw new Error(
-            `Map Actor visual not prepared: ${visual.assetId}`
-          );
+          throw new Error(`Map Actor visual not prepared: ${currentAssetId}`);
         }
 
         // Scale only the picture and contact shadow; movement stays
@@ -56,11 +66,10 @@ export function createMapActorRenderer({
         const worldWidth =
           worldHeight * prepared.aspectRatio;
         const anchor = actorAnchor(visual, prepared);
-        const bob = motionOffset(
-          visual,
-          actor,
-          timeSeconds
-        );
+        // A single picture retains the historical idle/walk movement;
+        // authored sprite frames already contain motion and must not bounce.
+        const bob = visual.animation?.mode==='frames'
+          ?0:motionOffset(visual,actor,timeSeconds);
         const screenX = actor.x - camera.x;
         const screenY = actor.y - camera.y;
 
