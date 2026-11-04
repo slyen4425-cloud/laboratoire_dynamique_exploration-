@@ -40,6 +40,12 @@ test('official Combat grant authorises ONLY the true same-origin Adventure party
  assert.equal(Object.isFrozen(result.active),true);
  assert.deepEqual(JSON.parse(s.getItem(key)),party,'Exploration must not rewrite GenSRPG party authority');
 });
+test('reads the exact fractional HP from the previous native fight',()=>{
+ const s=storage(),allowed=authorised(s),party=sample();
+ party.active.hp=33.47000000000003;
+ s.setItem(adventurePlayingPartyStorageKeyV1(sessionId),JSON.stringify(party));
+ assert.equal(read(s,allowed).active.hp,party.active.hp);
+});
 test('missing party is never replaced by fixed preview creature or default lv20',()=>{
  const s=storage(),allowed=authorised(s);
  assert.equal(read(s,allowed),null);

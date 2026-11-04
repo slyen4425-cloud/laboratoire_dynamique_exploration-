@@ -60,8 +60,8 @@ export function readScopedAdventurePlayingPartyV1({
   throw new RangeError('Playing creature is not in the official published Bestiaire');
  if(!Number.isSafeInteger(active.level)||active.level<1||active.level>100)
   throw new RangeError('Playing creature level must be an integer in 1..100');
- if(active.hp!==null&&(!Number.isSafeInteger(active.hp)||active.hp<0))
-  throw new RangeError('Playing creature HP must be null or a nonnegative integer');
+ if(active.hp!==null&&(!Number.isFinite(active.hp)||active.hp<0||active.hp>Number.MAX_SAFE_INTEGER))
+  throw new RangeError('Playing creature HP must be null or a finite nonnegative number');
  return Object.freeze({
   schema:ADVENTURE_PLAYING_PARTY_SCHEMA_V1,version:1,
   sessionId,worldId,combatSha:value.combatSha,partyRef:value.partyRef,
