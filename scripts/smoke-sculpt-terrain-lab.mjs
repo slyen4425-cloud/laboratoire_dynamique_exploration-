@@ -851,6 +851,69 @@ try{
   console.log('V23 house 3 views/rotate/selected edit roundtrip Chromium:',
     JSON.stringify({views:v23Config.views,rotation:137,backAssetLoaded:rearLoaded}));
 
+  // Winter 2,5D: exercise real World Builder palette, actual canvas placement,
+  // 3 directional visual variants, export/import and WebP network loading.
+  const snowPicker=await run(`(()=>{
+    document.querySelector('#mode-objects').click();
+    const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const defs=document.querySelector('#object-definition');
+    const winter='objectdef.building.house.snow_alpine_timber_2p5d.01';
+    const available=[...defs.options].some(o=>o.value===winter);
+    if(available){
+      defs.value=winter;defs.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    const variant=document.querySelector('#object-variant');
+    const views=[...variant.options].map(o=>o.value);
+    variant.value='front';variant.dispatchEvent(new Event('change',{bubbles:true}));
+    const mode=document.querySelector('#object-action');
+    mode.value='place';mode.dispatchEvent(new Event('change',{bubbles:true}));
+    return {available,views,visible:!document.querySelector('#object-variant-wrap').hidden};
+  })()`);
+  if(!snowPicker.available||!snowPicker.visible||snowPicker.views.join(',')!=='front,side,back')
+    throw Error('Winter 2,5D building missing from real World Builder palette: '+JSON.stringify(snowPicker));
+  const snowPt={x:objectBegin.position.x+93,y:objectBegin.position.y+46};
+  async function tapSnow(){
+    await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:snowPt.x,y:snowPt.y});
+    await send('Input.dispatchMouseEvent',{type:'mousePressed',x:snowPt.x,y:snowPt.y,button:'left',clickCount:1});
+    await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:snowPt.x,y:snowPt.y,button:'left',clickCount:1});
+    await sleep(180);
+  }
+  await tapSnow();
+  const snowPlaced=await run('window.__sculptObjectsProbe()');
+  const snowObject=snowPlaced.objects.find(o=>o.definition==='objectdef.building.house.snow_alpine_timber_2p5d.01');
+  if(!snowObject||snowObject.visualVariantId!=='front')
+    throw Error('Winter 2,5D building not placed by real canvas pointer: '+JSON.stringify(snowPlaced));
+  const snowAssets=['front','side','back'];
+  for(const view of snowAssets){
+    if(view!=='front'){
+      await run(`(()=>{const action=document.querySelector('#object-action');
+        action.value='select';action.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);
+      await tapSnow();
+      await run(`(()=>{const variant=document.querySelector('#object-variant');
+        variant.value='${view}';variant.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);
+    }
+    await sleep(320);
+    const loaded=await run(`(()=>performance.getEntriesByType('resource').some(r=>
+       r.name.includes('building_house_snow_alpine_timber_2p5d_${view}_01.webp')&&r.responseEnd>0))()`);
+    if(!loaded)throw Error('Winter building WebP not loaded in real Chromium: '+view);
+  }
+  const snowScene=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    return {probe:window.__sculptObjectsProbe(),scene:JSON.parse(document.querySelector('#json').value)};
+  })()`);
+  const savedSnow=snowScene.scene.objects.find(o=>o.objectDefinitionId==='objectdef.building.house.snow_alpine_timber_2p5d.01');
+  if(!savedSnow||savedSnow.overrides.visualVariantId!=='back')
+    throw Error('Winter building 2.5D view not persisted through real Scene export');
+  await run(`(()=>{
+    document.querySelector('#json').value=JSON.stringify(${JSON.stringify(snowScene.scene)});
+    document.querySelector('#import').click();return true;
+  })()`);
+  const winterImported=await run('window.__sculptObjectsProbe()');
+  if(!winterImported.objects.some(o=>o.definition==='objectdef.building.house.snow_alpine_timber_2p5d.01'&&o.visualVariantId==='back'))
+    throw Error('Winter building 2.5D view lost after Scene import');
+  await run("document.querySelector('#mode-ground').click()");
+  console.log('GREEN: winter building 3-view real Chromium palette, scene and WebP',JSON.stringify(snowPicker));
   // V51: Full browser path: the 7 native bridge families are selectable, a
   // four-direction view is applied, and a bridge alone may be placed on water.
   const bridgePicker=await run(`(()=>{
