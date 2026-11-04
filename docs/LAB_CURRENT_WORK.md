@@ -1,4 +1,6 @@
-# Lot 04/11/2026 — Héros 2.5D : image fixe animée par moteur existant OU séquence de sprites (TDD EN COURS)
+# Lot 04/11/2026 — Héros 2.5D : image fixe OU séquence de sprites (CI GREEN, VALIDATION VISUELLE UTILISATEUR RESTANTE)
+- **CI sur code exact** : Exploration Node [#41840125765](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41840125765) SUCCESS et Pages preflight [#41840125546](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41840125546) SUCCESS sur `79868de9be4039f959a8c3485de7ad4f368bb783` ; déploiement Pages SKIPPED sur PR, ne pas confondre avec production. Les tests image fixe existants et nouveau mode 3 frames sont verts. Aucun asset utilisateur/selection GenSRPG n'est livré par ce seul contrat, et recette visuelle Pixel physique non faite.
+
 
 - **Décision utilisateur** : au choix du créateur, avatar à image unique avec l'oscillation existante ou images d'animation pour repos/marche. Aucune contrainte d'import de visuel supplémentaire pour le mode image seule. Sélectionner un héros ne doit pas déplacer sa position, changer la caméra/collision, ni figer le smartphone.
 - **Base immuable** : Exploration main `a5c02440d7b5b5e0c136b3161036c50ffe15be6f`, checkpoint START `checkpoint/exploration-hero-visual-modes-start-2026-11-04`, work `work/exploration-hero-visual-modes-2026-11-04`. Main Exploration et V80 site intacts.
