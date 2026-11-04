@@ -1,3 +1,13 @@
+# 04/11/2026 — Héros Jouer : vraie carte sculptable dans le test navigateur (CI À RECERTIFIER)
+
+- **Problème prouvé** : CI Explorer [#41848268552](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41848268552) sur PR #357 : core-tests SUCCESS, native-https-pixels SUCCESS, modern-combat-encounter FAILURE dans `scripts/smoke-hero-play-browser.mjs`. La suite créait explicitement `2400×1600` WorldArea alors que `sculptWorldAreaScene` n'accepte que des dimensions exactes multiples de `28×21`, dans `8..80×8..64` cases. La sauvegarde était refusée *avant* l'import HeroDefinition : aucune preuve de bug moteur Héros.
+- **Isolation** : base PR #357 `df913e74eba3457e0d531e43d3b5ed6688c2accc` (non GREEN), checkpoint START `checkpoint/exploration-hero-play-valid-world-start-2026-11-04`, branche `work/exploration-hero-play-valid-world-2026-11-04`. Dernier état de repli pour l'éditeur Héros : PR #356 (core CI SUCCESS). Aucun changement de `main` ni V80.
+- **Correction limitée au vrai test navigateur** : carte neuve créée depuis le véritable `createBlankWorldBuilderDraft` avec la conversion canonique `worldAreaSizeFromTiles(36×24)`, comme le World Assembler ; mêmes APIs de Spawn, Play checkpoint, IndexedDB Hero, sélection de session, renderer 2.5D, recharge et erreur visible si héros supprimé. Pas de terrain simulé/adapter alternatif.
+- **Protection explicite conservée** : le même test construit aussi une carte auteur non supportée `2400×1600` et exige le refus du Play checkpoint **sans création de sauvegarde** ni réduction silencieuse des dimensions. L'ancien modèle WorldBuilder/document auteur reste intact : le mode Jouer n'a pas le droit de tronquer des cartes existantes. Compatibilité des anciennes cartes grandes = sujet distinct dans #235, pas un correctif graphique du héros.
+- **Preuves attendues** : tests Node complets, Chromium mobile `modern-combat-encounter`, navigateur Hero Editor `native-https-pixels`, non-régression World Builder et comparaison avec la branche #357. Pas de promotion sans CI sur SHA exact ni validation physique du visuel.
+
+---
+
 # 04/11/2026 — HeroDefinition officielle dans le Jouer 2.5D (LOT EMPILÉ, NON GREEN)
 
 - **Demande** : un créateur GenSRPG doit pouvoir choisir un héros parmi ses définitions Explorateur (image fixe à mouvement simulé OU frames de marche/repos) ; la carte doit rendre CE héros sans toucher au mouvement/collision/caméra. Aucun héros n'est un combattant Capture par défaut.
