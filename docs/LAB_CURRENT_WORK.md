@@ -1,3 +1,13 @@
+# Lot assets 04/11/2026 — 10 maisons enneigées, 30 vues 2,5D (EN COURS, NON GREEN)
+
+- **Validation auteur :** le concept des dix maisons et leurs vues front/side/back a été approuvé ; archive déposée sur main `GENSRPG_LaboExploration_Maisons_Enneigees_10x3.zip` (8 911 652 octets). Aucun changement dans les dépôts Combat ou GenSRPG.
+- **Base immuable :** Exploration `main@f8b6cf7564e9a24721292310c56f104064d3860a`, branche `work/exploration-snow-houses-10x3-assets-2026-11-04` ; tests TDD RED `tests/snow-house-assets-v1.test.js` créés avant extraction.
+- **Autorité unique :** 10 nouveaux WorldObject `building`, chacun à trois variantes visuelles dans `src/objects/object-definition-catalog.js`, avec `library: buildings/houses/snow`, et 30 résolutions dans `src/assets/world-object-asset-adapter.js`. Rien dans la sauvegarde ni dans la logique de navigation. Empreintes/collisions via `footprint` existant, porte ancrée selon contrat du World Builder ; aucun intérieur fabriqué.
+- **Import :** extraction ponctuelle **dans la branche uniquement**, copie exacte des 30 WebP 384×384 transparents depuis le ZIP, test SHA256/Riff/alpha/dimensions ; sauvegarde du manifeste sous `assets/exploration/objects/buildings/manifest.snow-houses.v1.json` sans toucher au manifeste des maisons tempérées. Supprimer workflow d'import à la fin.
+- **Critères :** aucune perte d'ancienne maison, 10 × 3 vues à l'édition, Scene export/import stable, collisions/portes sous autorité ObjectDefinition, tests Node et vraie Chromium 2,5D, CI d'un SHA exact, publication Pages de ce SHA seulement après review/fusion. Ne pas annoncer GREEN sans preuve.
+- **Concurrence :** ne pas annuler la CI/Pages de `main` ni les PRs d'autres lots. Les exécutions `main` 41893909409 (CI) et 41893909266 (Pages) étaient in_progress au démarrage ; diagnostic isolé.
+
+---
 ## 2026-11-04 — Jouer : journal durable de CombatResult par AdventureSession
 
 - START `checkpoint/exploration-adventure-combat-journal-start-2026-11-04` sur main `0f9d9ffc18396f911e5460b439786949185905d4` (intégration #363, même arbre que sa CI 3/3 SUCCESS et prévalidation Pages). Branche `work/exploration-adventure-combat-journal-2026-11-04`.
