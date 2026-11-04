@@ -27,7 +27,7 @@ test('20 winter trees are native placeable WorldObjects in the existing vegetati
     assert.equal(paths.has(entry.path), false, 'duplicate asset path');
     ids.add(entry.assetId);
     paths.add(entry.path);
-    assert.match(entry.assetId, /^object\.tree\.snow\.[a-z0-9_]+\.[0-9]{2}$/);
+    assert.match(entry.assetId, /^object\.tree\.snow\.[a-z0-9_]+_[0-9]{2}$/);
     assert.match(entry.path, /^assets\/exploration\/objects\/trees\/tree_snow_[a-z0-9_]+\.webp$/);
     const defId = entry.assetId.replace('object.tree.', 'objectdef.tree.');
     const def = objectDefinitionCatalogV1.require(defId);
