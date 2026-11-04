@@ -93,3 +93,33 @@ for(const [opponentId,name] of [
 }
 console.log('GREEN Encounter and Combat consume '+creatureTransfers.length+
   ' identical current author creatures and '+skillTransfers.length+' authored skill transfers');
+
+
+const speciesId='crea_mossback';
+const adventureParty={partyRef:'adventure-party:native-smoke',
+ active:{instanceId:'owned-1',speciesId,level:1,hp:17}};
+const adventureSnapshot={
+ schema:'capture-encounter-snapshot-v1',version:1,source:'terrain-random',
+ encounterId:'native-adventure-smoke',returnToken:'native-adventure-return',
+ player:{partyRef:adventureParty.partyRef},opponents:[{creatureId:speciesId}],
+ rules:{rulesetId:'capture.standard.1v1'},
+ context:{areaId:'forest',terrainFamilyId:'forest',elementId:'nature'}
+};
+const inputs={
+ snapshot:adventureSnapshot,party:{id:adventureParty.partyRef,activeCreatureId:speciesId},
+ showcaseCreatureTransfers:creatureTransfers,showcaseSkillTransfers:skillTransfers,
+ nativeSkillCatalog,statRegistry,progressionRules,baseFighterRules
+};
+assert.throws(()=>buildExplorationNativeCombatSourceV1(inputs),/Aventure|Adventure/);
+const adventure=buildExplorationNativeCombatSourceV1({...inputs,adventureParty});
+const own=adventure.exported.creatures.find(creature=>creature.id===speciesId);
+assert.equal(own.metadata.editor.level,1,'Aventure never uses Tester level 20');
+const authoredLevel=byId.get(speciesId).draft.level;
+assert.equal(adventure.skillIdsByActor['local-1'].length,1);
+if(authoredLevel>1)assert.notEqual(adventure.battleFormat.actor('opponent-1').fighterConfigId,
+ adventure.battleFormat.actor('local-1').fighterConfigId);
+assert.equal(adventure.battleFormat.actor('opponent-1').creatureId,speciesId);
+assert.throws(()=>buildExplorationNativeCombatSourceV1({
+ ...inputs,adventureParty:{...adventureParty,partyRef:'adventure-party:other'}
+}),/Aventure|Adventure/);
+console.log('GREEN: official Adventure mirror battle uses owned level 1 and authored opponent level '+authoredLevel);
