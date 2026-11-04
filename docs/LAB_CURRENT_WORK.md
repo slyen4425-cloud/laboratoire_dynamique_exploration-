@@ -1,4 +1,4 @@
-# Lot 04/11/2026 — lecture du vrai combattant d'Aventure (LECTEUR SEUL, TDD, NON GREEN)
+# Lot 04/11/2026 — lecture du vrai combattant d'Aventure (TESTS NATIVE GREEN, LECTEUR SEUL, NON ENCORE RACCORDÉ AU COMBAT)
 
 - **Source** : Labo Exploration `main@a5c02440d7b5b5e0c136b3161036c50ffe15be6f`, START `checkpoint/exploration-adventure-active-party-reader-start-2026-11-04`, branche `work/exploration-adventure-active-party-reader-2026-11-04`. Les PR #350/#351 sur main demeurent immuables, V80 et Tester gelés.
 - **Fait authentifié** : l'entrée Combat intégrée `integration/combat-bridge/exploration-encounter.js` charge encore `party.preview.v1.json` et `previewLevel:20`. Le vrai Jouer GenSRPG a un autre `partyRef` et des instances `instanceId/speciesId/level/hp`; utiliser l'équipe du Tester attribuerait un faux résultat et de fausses récompenses.
@@ -6,6 +6,7 @@
 - **Frontière** : `partyRef === 'adventure-party:'+sessionId`, session/world/Combat SHA cohérents avec la whitelist Bestiaire déjà validée, espèce publiée autorisée, instance et niveau valides, HP optionnels `null|entier >=0`; rejet des champs additionnels, données périmées ou corrompues sans effacer l'écrit ni replier vers la fiche démo. Pas de création de joueur fictif si la permission est absente.
 - **TDD RED→GREEN** : test pur du lecteur de transport, incohérences session/World/Combat, fake species/unpublished, partyRef fixe du Tester, doublons/identifiants douteux, corruption conservée ; compatibilité avec vrai lecteur Bestiaire. Test publication/CI native Node/HTTPS et vrai Chromium de garde. **Ce lot ne retire PAS le verrou `sculptPlayActive`** ni ne lance le Combat, car celui-ci ne consomme toujours pas les niveaux des instances.
 - **Hors périmètre** : GenSRPG UI/règles, Labo Combat, récompenses, écrans héro, WorldDocument, caméra, équipes de Tester, remise à zéro de sauvegarde, PWA et tout contenu créé à la main.
+- **Premières preuves** : tests d'identité/monde/Combat SHA/species dans `tests/adventure-playing-party-v1.test.js`; le commit test seul `589e42709e65f311789db5cb39c7dd8b78781359` précède l'implémentation (TDD RED). Lecture pure `src/encounters/adventure-playing-party-v1.js` au SHA `cd1c8dc230bf7161d931a5affdda0e30515aeca8`, [Exploration CI #41815471016](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41815471016) **SUCCESS sur 3 jobs** (moteur, combat et vrai Chromium HTTPS), [preflight Pages #41815470858](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/41815470858) en attente de clôture lors de ce jalon. Sans branchement au moteur Jouer, la vraie partie conserve son verrou : **aucune victoire simulée ni récompense attribuée**.
 
 ---
 
