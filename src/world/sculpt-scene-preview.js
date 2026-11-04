@@ -1,3 +1,4 @@
+import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-family-encounter-config.js';
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js';
@@ -14,7 +15,7 @@ export const SCULPT_ACTOR_LIMIT=80;
 // This constructor is a scene-level editor command, not a second world model.
 export function createBlankSculptPreviewScene({width=36,height=24}={}){
   const terrain=createSculptTerrain({width,height});
-  return Object.freeze({terrain,objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:true});
+  return Object.freeze({terrain,objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),encounterConfig:normalizeTerrainFamilyEncounterConfig(),isScene:true});
 }
 const validKinds=new Set(['building','tree','rock','bridge','stairs','ramp','decor']);
 export function listSculptPlaceableDefinitions(){
@@ -178,12 +179,13 @@ export function removeSculptPreviewActorAt(raw,x,y,threshold=24){
   const found=findSculptPreviewActorNear(actors,x,y,threshold);
   return found?Object.freeze(actors.filter(a=>a.id!==found.id)):actors;
 }
-export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[]){
+export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterConfig){
   const paint=normalizeSculptSurface(surface);
   return JSON.stringify({kind:SCULPT_SCENE_PREVIEW_KIND,
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
     objects:normalizeSculptPreviewObjects(objects),
+    ...(encounterConfig?{encounterConfig:normalizeTerrainFamilyEncounterConfig(encounterConfig)}:{}),
     ...(paint.routes.length||paint.zones.length?{surface:paint}:{}),
     ...(actors.length?{actors:normalizeSculptPreviewActors(actors)}:{})});
 }
@@ -192,7 +194,7 @@ export function importSculptPreviewScene(raw){
   if(source?.schemaVersion===1&&Array.isArray(source.levels)){
     // Exact compatibility with earlier "export heights" users.
     return Object.freeze({terrain:importSculptTerrain(source),
-      objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),isScene:false});
+      objects:Object.freeze([]),actors:Object.freeze([]),surface:createSculptSurface(),encounterConfig:normalizeTerrainFamilyEncounterConfig(),isScene:false});
   }
   if(source?.kind!==SCULPT_SCENE_PREVIEW_KIND||
       source?.sceneVersion!==SCULPT_SCENE_PREVIEW_VERSION||
@@ -230,5 +232,5 @@ export function importSculptPreviewScene(raw){
     if(feature.points.some(p=>p.x>=terrain.width*28||p.y>=terrain.height*21))
       throw Error('Peinture sculptable hors de la carte');
   }
-  return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,isScene:true});
+  return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,encounterConfig:normalizeTerrainFamilyEncounterConfig(source.encounterConfig),isScene:true});
 }

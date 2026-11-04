@@ -1,21 +1,43 @@
-# LAB_CURRENT_WORK — V80 portes intérieures
+# LAB_CURRENT_WORK — V81 mobile + rencontres (chantier regroupé)
+Date : 2026-10-27
+Branche unique : work/exploration-v81-mobile-settings-20261027
+Checkpoint de départ : checkpoint/exploration-start-mobile-settings-20261027
+Base V80 validée : work/exploration-v80-door-html-cachefix-20261026
+PR de travail : #253 ; pas de fusion ni publication avant tests.
 
-Date : 2026-10-26
-Branche : `work/exploration-door-assets-v80-2026-10-26`
-Base : V79 R3E `3bd48a50a99953bac74025aa815b9c223953f568`
+## Périmètre regroupé, une même livraison
+1. Panneau canonique de réglages accessible en plein écran smartphone paysage, sans duplication.
+2. Raccordement du système historique de rencontres (terrainFamilyId, probabilité par famille, répartition élémentaire, rareté capture.spawnChance).
+3. Édition mobile des rencontres dans ce même panneau, sérialisation et retour de combat.
+4. Publication d'une URL de test dédiée après tests automatisés et vérification des fichiers servis.
 
-## Périmètre
-Intégrer 10 portes d'intérieur (20 PNG face/3/4) depuis `lot/portes-interieures-20-assets-20261026`, `assets/interiors/doors/manifest.json`, dans le sélecteur de porte du Builder 2.5D, sans modifier la logique canonique des portails.
+## Propriétaires
+Builder : réglages et sauvegarde ; World Model : famille de terrain ; Encounter Controller : tirage ; CaptureDatabaseV1 : créatures et rareté ; Capture Combat : résolution.
+Aucune seconde base de créatures ni second moteur de rencontres. Pas d'ID manuel.
 
-## Vérifications requises
-- 20 PNG valides et chemins présents ;
-- 20 entrées au catalogue et 20 options dans `sculpt-lab.html` ;
-- `npm test` et `npm run check` ;
-- test navigateur : choix, affichage, sauvegarde/rechargement, passage de porte ;
-- publication vérifiée avant annonce de lien V80.
+## Garde-fous / tests requis
+Tests RED puis GREEN : pourcentages, familles, rareté, round-trip JSON, rencontres pendant navigation, retour combat ; paysage smartphone : panneau ouvrable/fermable, défilement, zones tactiles ; régression portes V80.
+CI et URL publique réellement vérifiées avant annonce GREEN.
+Ne pas fusionner les historiques divergents de main et V80.
+La branche V82 séparée reste une préparation documentaire non intégrée, abandonnée au profit de ce lot unique.
 
-## Statut
-En attente de validation des tests navigateur et de publication. NON GREEN.
+## Audit du code historique (2026-10-27)
+Ancien panneau confirmé : builder.html section .terrain-encounter-panel.
+Contrôleur confirmé : src/builder/world-builder-main.js, avec updateTerrainFamilyEncounterProfile, setTerrainFamilyEncounterElementEnabled et setAreaEncounterRandomEnabled depuis world-builder-draft.js ; catalogue depuis capture-creature-catalog-provider.js.
+Le nouvel éditeur src/sculpt-lab-main.js exporte une scène sculptée, pas encore le WorldDocument canonique avec encounterConfig. Le raccord exige un adapter de sérialisation explicite et des tests de round-trip, sans copier les états du Builder.
 
-## Interdictions
-Aucune fusion dans `main` ou modification du labo Combat / production sans accord utilisateur.
+## Jalons réalisés 2026-10-27
+- Famille de terrain explicite dans le pinceau sculpté, distincte du matériau ; correction de l'identifiant non canonique desert.
+- Projection en lecture seule de WorldSurface v3 vers terrainFamilyId au point X/Y du héros, avec priorité des routes sur les zones.
+- Tests de la projection ajoutés, exécution CI non encore confirmée.
+- Ne pas déclencher de combat simulé sans le contrat Encounter Bridge : résolution des créatures et retour combat à raccorder au propriétaire Capture.
+
+## État
+Panneau mobile et réglages rencontres câblés dans sculpt-lab-v80.html sur branche V81 ; source des créatures = projection Capture en lecture seule ; édition déléguée au Builder canonique. Export/import encounterConfig raccordé. Restent : terrainFamilyId effectif des surfaces sculptées, Encounter Controller durant navigation, retour combat, tests exécutés, preview publiée.
+NON GREEN, aucune URL de test annoncée.
+
+## Dépendance inter-labos — consigne utilisateur 2026-10-27
+Labo Combat publie son artefact officiel depuis main validée, avec manifest de version, SHA, schéma et contrat public. Exploration et GenS RPG sont consommateurs ; ils ne recopient ni moteur ni données propriétaires Combat. La synchronisation doit détecter une nouvelle publication, contrôler les contrats/CI, puis activer atomiquement la version compatible ; échec = conservation de la dernière version compatible, diagnostic visible. Aucun basculement silencieux vers une version non validée. Le catalogue Capture et le contrat Encounter Bridge sont injectés par leurs propriétaires. L'intégration et les workflows inter-dépôts sont un chantier coordonné distinct, non déclarés opérationnels par cette note.
+
+## Reprise — déclenchement post-déplacement
+Adaptateur src/encounters/sculpt-encounter-movement-adapter.js ajouté, avec tests. Il réutilise terrainFamilyAtWorldPosition et resolveTerrainFamilyEncounter. NON raccordé à navigationTick : une politique explicite de cadence/distance et un bridge Combat injecté sont requis avant activation pour éviter un tirage à chaque frame. Tests non exécutés, CI non attestée. Publication V81 toujours bloquée.
