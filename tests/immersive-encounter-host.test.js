@@ -87,3 +87,50 @@ test('immersion never navigates to a foreign origin or takes over an already run
  assert.equal(host.open({url:origin+'/combat-preview/examples/dom-demo/exploration-encounter.html',snapshot}),false);
  host.dispose();
 });
+
+test('real AdventureSession CombatResult stays pending until the GenSRPG Core receipt proves persistence',()=>{
+ const h=fakeDom(),store=storage();
+ const scoped={...snapshot,player:{partyRef:'adventure-party:session-game-1'}};
+ saveCombatHandoff(store,{snapshot:scoped,returnState:{
+  areaId:'forest-exterior',x:45,y:67,
+  returnUrl:origin+'/index.html?combatReturn=1'
+ }});
+ const saved=JSON.parse(store.getItem('gensrpg.capture.combat-handoff.v1'));
+ const completed=attachCombatResult(saved,{
+  schema:'capture-combat-result-v1',version:1,
+  encounterId:'e1',returnToken:'r1',outcome:'victory',
+  partyState:{activeCreatureId:'crea_ombre_1',hp:70}
+ });
+ saveCombatHandoff(store,completed);
+ const raw=store.getItem('gensrpg.capture.combat-handoff.v1');
+ let receipt=true,calls=0;
+ const host=createImmersiveEncounterHostV1({
+  windowRef:h.win,documentRef:h.doc,storage:store,
+  onCompleted(){calls++;return receipt;}
+ });
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ host.open({url,snapshot:scoped});
+ const frame=h.nodes[0].children[0].contentWindow;
+ const finish=()=>h.listeners.get('message')({source:frame,origin,
+  data:{type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'}});
+ for(const failedAck of [
+  true,undefined,false,Promise.resolve({persisted:true}),
+  {persisted:false,session:{sessionId:'session-game-1',processedEncounterKeys:['e1:r1']}},
+  {persisted:true,session:{sessionId:'other-game',processedEncounterKeys:['e1:r1']}},
+  {persisted:true,session:{sessionId:'session-game-1',processedEncounterKeys:[]}}
+ ]){
+  receipt=failedAck;
+  finish();
+  assert.equal(h.nodes.length,1,'unacknowledged battle stays in the iframe');
+  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1'),raw,
+   'pending CombatResult must not be consumed without its exact Core commit');
+ }
+ assert.equal(calls,7);
+ receipt={persisted:true,applied:true,
+  session:{sessionId:'session-game-1',processedEncounterKeys:['e1:r1']}};
+ finish();
+ assert.equal(h.nodes.length,0,'only a correlated Core receipt closes the battle');
+ assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1'),null);
+ assert.equal(calls,8);
+ host.dispose();
+});
