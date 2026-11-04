@@ -756,8 +756,15 @@ try{
   const touchStart=await run(`(()=>{
     document.querySelector('#object-category').value='tree';
     document.querySelector('#object-category').dispatchEvent(new Event('change',{bubbles:true}));
+    const select=document.querySelector('#object-definition');
+    const snowy='objectdef.tree.snow.spruce_dense_01';
+    const snowAvailable=[...select.options].some(option=>option.value===snowy);
+    if(snowAvailable){
+      select.value=snowy;
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+    }
     document.querySelector('#object-action').value='place';
-    return window.__sculptObjectsProbe();
+    return {...window.__sculptObjectsProbe(),snowAvailable,snowSelected:select.value===snowy};
   })()`);
   await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
   await send('Input.dispatchTouchEvent',{type:'touchStart',
@@ -768,6 +775,14 @@ try{
   const afterObjectTouch=await run('window.__sculptObjectsProbe()');
   if(afterObjectTouch.count!==2||!afterObjectTouch.objects.some(o=>o.definition.includes('tree')))
     throw Error('V20 actual touch planting a tree failed: '+JSON.stringify({touchStart,afterObjectTouch}));
+  // Winter pack: verify the same native vegetation palette and renderer on real Chromium.
+  if(!touchStart.snowAvailable||!touchStart.snowSelected||
+     !afterObjectTouch.objects.some(o=>o.definition==='objectdef.tree.snow.spruce_dense_01'))
+    throw Error('Snow tree is not selectable or placeable in real Chromium: '+JSON.stringify({touchStart,afterObjectTouch}));
+  await sleep(550);
+  const snowResource=await run("performance.getEntriesByType('resource').some(r=>r.name.includes('tree_snow_spruce_dense_01.webp')&&r.responseEnd>0)");
+  if(!snowResource)
+    throw Error('Snow tree native WebP was not loaded by real Chromium 2.5D renderer');
   await run("document.querySelector('#navigation-toggle').click()");
   const walkingWithObjects=await run(`(()=>({
     walking:window.__sculptNavProbe().enabled,

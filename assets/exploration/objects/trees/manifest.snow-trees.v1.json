@@ -1,0 +1,431 @@
+{
+  "schemaVersion": 1,
+  "packId": "tree-snow-visual-assets-v1",
+  "ownership": "exploration-world-objects",
+  "createdAt": "2026-11-04",
+  "runtimeProfile": "mobile-webp-384x384-q84-alpha",
+  "purpose": "20 separately isolated 2.5D snow tree visuals, approved from two sprite sheets. Assets do not define collision or gameplay.",
+  "integrationStatus": "native-catalog-connected",
+  "files": [
+    {
+      "assetId": "object.tree.snow.broadleaf_oak_01",
+      "path": "assets/exploration/objects/trees/tree_snow_broadleaf_oak_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "broadleaf_oak_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 1,
+      "sourcePixelRegion": [
+        0,
+        0,
+        440,
+        440
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "1850b8b8ba0c3f73a7822917bc1c4e32af96b2afe9855768822cbfaca19a7939",
+      "bytes": 41522
+    },
+    {
+      "assetId": "object.tree.snow.broadleaf_round_02",
+      "path": "assets/exploration/objects/trees/tree_snow_broadleaf_round_02.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "broadleaf_round_02",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 2,
+      "sourcePixelRegion": [
+        440,
+        0,
+        765,
+        440
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "0f2624a1fe1b0e63abb758335784b15784dd067844c7ccb3f43a277c78870aac",
+      "bytes": 38412
+    },
+    {
+      "assetId": "object.tree.snow.fir_tiered_01",
+      "path": "assets/exploration/objects/trees/tree_snow_fir_tiered_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "fir_tiered_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 3,
+      "sourcePixelRegion": [
+        765,
+        0,
+        1070,
+        440
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "855b62f016ac08c3662fd40d21f502c84d36f3f44c6cb8b2e82df34bd95a2c41",
+      "bytes": 32818
+    },
+    {
+      "assetId": "object.tree.snow.fir_wide_02",
+      "path": "assets/exploration/objects/trees/tree_snow_fir_wide_02.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "fir_wide_02",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 4,
+      "sourcePixelRegion": [
+        1070,
+        0,
+        1420,
+        440
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "55ef9a1eec2ae5eafdf4eee9ba56e107149f8980357c091976dafde61b188b3a",
+      "bytes": 36128
+    },
+    {
+      "assetId": "object.tree.snow.oak_bare_01",
+      "path": "assets/exploration/objects/trees/tree_snow_oak_bare_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "oak_bare_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 5,
+      "sourcePixelRegion": [
+        1420,
+        0,
+        1774,
+        440
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "22010a0af53bfee10d6f363d1dcab507941a28c536eded055c592d26384c2287",
+      "bytes": 60910
+    },
+    {
+      "assetId": "object.tree.snow.birch_multi_01",
+      "path": "assets/exploration/objects/trees/tree_snow_birch_multi_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "birch_multi_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 6,
+      "sourcePixelRegion": [
+        0,
+        440,
+        340,
+        887
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "02535c17f07bee1017c4f43a7420b920821db779bc89f41048878798e16f5035",
+      "bytes": 37400
+    },
+    {
+      "assetId": "object.tree.snow.broadleaf_cluster_01",
+      "path": "assets/exploration/objects/trees/tree_snow_broadleaf_cluster_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "broadleaf_cluster_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 7,
+      "sourcePixelRegion": [
+        340,
+        440,
+        730,
+        887
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "0afa01fcf4810077b29ecfdbed2c6aa008e3ae6e13f9682cc49d741757fff9a3",
+      "bytes": 37964
+    },
+    {
+      "assetId": "object.tree.snow.bonsai_01",
+      "path": "assets/exploration/objects/trees/tree_snow_bonsai_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "bonsai_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 8,
+      "sourcePixelRegion": [
+        730,
+        440,
+        1100,
+        887
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "a0bc22c545d4b485a44024898a769717694eea0423264546c87d6ef5a5f983dd",
+      "bytes": 40082
+    },
+    {
+      "assetId": "object.tree.snow.fir_tall_03",
+      "path": "assets/exploration/objects/trees/tree_snow_fir_tall_03.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "fir_tall_03",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 9,
+      "sourcePixelRegion": [
+        1100,
+        440,
+        1410,
+        887
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "16d893de6bcb7a6f4018866948983f1a346b61ef3715c00bfd0cc83b46cc5340",
+      "bytes": 30630
+    },
+    {
+      "assetId": "object.tree.snow.thicket_01",
+      "path": "assets/exploration/objects/trees/tree_snow_thicket_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "thicket_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_A",
+      "sourceIndex": 10,
+      "sourcePixelRegion": [
+        1410,
+        440,
+        1774,
+        887
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "fb6122a96851b8aabc9bbfb98256217096a9282126a022d8fb6258332a67067a",
+      "bytes": 34036
+    },
+    {
+      "assetId": "object.tree.snow.spruce_dense_01",
+      "path": "assets/exploration/objects/trees/tree_snow_spruce_dense_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "spruce_dense_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 1,
+      "sourcePixelRegion": [
+        0,
+        0,
+        420,
+        399
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "018ce834b745e916bca456ba5595fe89b92ae3a6040e3b4c9a4b1470187311c3",
+      "bytes": 44514
+    },
+    {
+      "assetId": "object.tree.snow.spruce_slender_01",
+      "path": "assets/exploration/objects/trees/tree_snow_spruce_slender_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "spruce_slender_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 2,
+      "sourcePixelRegion": [
+        420,
+        0,
+        730,
+        399
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "5083c92974a5ba114996adddf89ef1e523afab8706405892f3ee54ac8b041a27",
+      "bytes": 38314
+    },
+    {
+      "assetId": "object.tree.snow.ancient_oak_01",
+      "path": "assets/exploration/objects/trees/tree_snow_ancient_oak_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "ancient_oak_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 3,
+      "sourcePixelRegion": [
+        730,
+        0,
+        1220,
+        399
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "a9b91eb620d2e84d35479365849e3b955cac8c3f008d7ad0d3b5bec884a554f1",
+      "bytes": 64300
+    },
+    {
+      "assetId": "object.tree.snow.birch_bare_01",
+      "path": "assets/exploration/objects/trees/tree_snow_birch_bare_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "birch_bare_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 4,
+      "sourcePixelRegion": [
+        1220,
+        0,
+        1580,
+        399
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "f000a69ccb9da5476cfea50a93ff669e7f6bcbc3ddc80a4d6c153909da817a45",
+      "bytes": 62950
+    },
+    {
+      "assetId": "object.tree.snow.pine_windswept_01",
+      "path": "assets/exploration/objects/trees/tree_snow_pine_windswept_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "pine_windswept_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 5,
+      "sourcePixelRegion": [
+        1580,
+        0,
+        1983,
+        399
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "3814405fdd94934890a368bd75f7e644ddf5c87c96c609f33874e6db6e6de872",
+      "bytes": 67808
+    },
+    {
+      "assetId": "object.tree.snow.broadleaf_massive_01",
+      "path": "assets/exploration/objects/trees/tree_snow_broadleaf_massive_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "broadleaf_massive_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 6,
+      "sourcePixelRegion": [
+        0,
+        399,
+        395,
+        793
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "c5deec6309aad62995bd46daa9647b6cd328984f70ae817d12ac40de08c031ce",
+      "bytes": 58764
+    },
+    {
+      "assetId": "object.tree.snow.cedar_layered_01",
+      "path": "assets/exploration/objects/trees/tree_snow_cedar_layered_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "cedar_layered_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 7,
+      "sourcePixelRegion": [
+        395,
+        399,
+        845,
+        793
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "6113f8c0f81a97b3f8e300ccef72b6437d2b2642bbd3fc9f995fdc13b09e27b5",
+      "bytes": 64362
+    },
+    {
+      "assetId": "object.tree.snow.sapling_01",
+      "path": "assets/exploration/objects/trees/tree_snow_sapling_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "sapling_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 8,
+      "sourcePixelRegion": [
+        845,
+        399,
+        1145,
+        793
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "ac898bf009584b08576b46ad7f4bc400968dbf371365c8fd245767fa442f8165",
+      "bytes": 37288
+    },
+    {
+      "assetId": "object.tree.snow.willow_frosted_01",
+      "path": "assets/exploration/objects/trees/tree_snow_willow_frosted_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "willow_frosted_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 9,
+      "sourcePixelRegion": [
+        1145,
+        399,
+        1590,
+        793
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "766d22e7fd9d528d0835c441d3af03e51c74484f2b280700858e9c5adfc02fc8",
+      "bytes": 79034
+    },
+    {
+      "assetId": "object.tree.snow.ancient_twisted_01",
+      "path": "assets/exploration/objects/trees/tree_snow_ancient_twisted_01.webp",
+      "role": "tree-visual",
+      "family": "snow",
+      "variant": "ancient_twisted_01",
+      "view": "three-quarter-2.5d",
+      "sourceSheet": "planche_B",
+      "sourceIndex": 10,
+      "sourcePixelRegion": [
+        1590,
+        399,
+        1983,
+        793
+      ],
+      "alpha": true,
+      "width": 384,
+      "height": 384,
+      "sha256": "0b6165bc81c71883db3f75e91b52efb6358450669cf2e9cded35dfd105b284df",
+      "bytes": 73260
+    }
+  ]
+}
