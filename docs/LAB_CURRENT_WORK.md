@@ -1,3 +1,14 @@
+# Lot 04/11/2026 — lecture du vrai combattant d'Aventure (LECTEUR SEUL, TDD, NON GREEN)
+
+- **Source** : Labo Exploration `main@a5c02440d7b5b5e0c136b3161036c50ffe15be6f`, START `checkpoint/exploration-adventure-active-party-reader-start-2026-11-04`, branche `work/exploration-adventure-active-party-reader-2026-11-04`. Les PR #350/#351 sur main demeurent immuables, V80 et Tester gelés.
+- **Fait authentifié** : l'entrée Combat intégrée `integration/combat-bridge/exploration-encounter.js` charge encore `party.preview.v1.json` et `previewLevel:20`. Le vrai Jouer GenSRPG a un autre `partyRef` et des instances `instanceId/speciesId/level/hp`; utiliser l'équipe du Tester attribuerait un faux résultat et de fausses récompenses.
+- **Propriétaires** : GenSRPG Aventure écrit seul une projection temporaire de sa vraie `AdventureSession` via `sessionStorage` sur la même origine, format `gensrpg.capture.v2.active-party.v1:<sessionId>` et contrat `{schema,version,sessionId,worldId,combatSha,partyRef,active:{instanceId,speciesId,level,hp}}`. Exploration est seulement lecteur/validateur du contrat public, conserve EncounterController et le WorldDocument ; Combat main reste le seul propriétaire des statistiques, niveaux d'instances et résultat Combat. Aucune lecture de la sauvegarde GenSRPG par le Labo.
+- **Frontière** : `partyRef === 'adventure-party:'+sessionId`, session/world/Combat SHA cohérents avec la whitelist Bestiaire déjà validée, espèce publiée autorisée, instance et niveau valides, HP optionnels `null|entier >=0`; rejet des champs additionnels, données périmées ou corrompues sans effacer l'écrit ni replier vers la fiche démo. Pas de création de joueur fictif si la permission est absente.
+- **TDD RED→GREEN** : test pur du lecteur de transport, incohérences session/World/Combat, fake species/unpublished, partyRef fixe du Tester, doublons/identifiants douteux, corruption conservée ; compatibilité avec vrai lecteur Bestiaire. Test publication/CI native Node/HTTPS et vrai Chromium de garde. **Ce lot ne retire PAS le verrou `sculptPlayActive`** ni ne lance le Combat, car celui-ci ne consomme toujours pas les niveaux des instances.
+- **Hors périmètre** : GenSRPG UI/règles, Labo Combat, récompenses, écrans héro, WorldDocument, caméra, équipes de Tester, remise à zéro de sauvegarde, PWA et tout contenu créé à la main.
+
+---
+
 # Lot 04/11/2026 — autorisation des rencontres du Jouer GenSRPG par Bestiaire Combat OFFICIEL (EN COURS, NON GREEN)
 
 - **Source immuable / checkpoint** : Exploration `main@ecfb3276d494540a59d3e70f5c6702dce4cbf72f`, checkpoint START `checkpoint/exploration-scoped-published-encounters-start-2026-11-04`, branche `work/exploration-scoped-published-encounters-2026-11-04`.
