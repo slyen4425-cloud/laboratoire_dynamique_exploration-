@@ -35,7 +35,7 @@ test('official Combat grant authorises ONLY the true same-origin Adventure party
  const s=storage(),allowed=authorised(s),party=sample(),key=adventurePlayingPartyStorageKeyV1(sessionId);
  s.setItem(key,JSON.stringify(party));
  const result=read(s,allowed);
- assert.deepEqual(result,party);
+ assert.deepEqual(result,{...party,combatHpMultiplier:1},'historical party keeps full battle HP');
  assert.equal(Object.isFrozen(result),true);
  assert.equal(Object.isFrozen(result.active),true);
  assert.deepEqual(JSON.parse(s.getItem(key)),party,'Exploration must not rewrite GenSRPG party authority');
