@@ -52,7 +52,11 @@ async function waitFor(expression,title,attempts=115){
   if(value)return value;
   await sleep(220);
  }
- throw Error('No '+title+' (last '+JSON.stringify(value)+')');
+ let observed;
+ try{
+  observed=await evaluate("(()=>({href:location.href,title:document.title,ready:document.readyState,body:document.body?.textContent?.slice(0,400),heroNameCount:document.querySelectorAll('#hero-name').length}))()");
+ }catch(error){observed={probeError:error.message};}
+ throw Error('No '+title+' (last '+JSON.stringify(value)+', page '+JSON.stringify(observed)+', exceptions '+JSON.stringify(exceptions.slice(-3))+')');
 }
 try{
  chrome=spawn(browser,['--headless=new','--no-sandbox','--disable-dev-shm-usage',
