@@ -18,7 +18,7 @@ test('assembled waterfall preview passes Chromium before compact Pages publish, 
  assert.match(published,/release-provenance\.v1\.json/);
  assert.match(published,/SCULPT_TERRAIN_MAX_LEVEL=16/);
  assert.match(published,/\$folder\/src\/world\/sculpt-height-model\.js/);
- assert.match(published,/waterfall-height-pr320\/sculpt-lab\.html/);
+ assert.ok(published.includes('cmp waterfall-source/sculpt-lab.html "$folder/sculpt-lab.html"'), 'Pinned historical HTML must be byte-identical BEFORE compacting');
  assert.match(published,/Verify retired trial URLs redirect to maintained World Builder/);
  assert.ok(published.indexOf('Real Chromium PR325')<published.indexOf('prune-pages-duplicate-previews.mjs'));
 });
