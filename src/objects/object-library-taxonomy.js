@@ -9,6 +9,7 @@ const CATEGORIES = Object.freeze([
 ]);
 
 const FOLDERS = Object.freeze([
+  Object.freeze({ id: 'buildings/utility/wind', categoryId: 'buildings', label: 'Moulins / éoliennes animés', defaultKind: 'building' }),
   Object.freeze({ id: 'buildings/houses/temperate', categoryId: 'buildings', label: 'Maisons · Tempéré', defaultKind: 'building' }),
   Object.freeze({ id: 'buildings/houses/snow', categoryId: 'buildings', label: 'Maisons · Neige', defaultKind: 'building' }),
   Object.freeze({ id: 'buildings/houses/sand', categoryId: 'buildings', label: 'Maisons · Sable', defaultKind: 'building' }),
