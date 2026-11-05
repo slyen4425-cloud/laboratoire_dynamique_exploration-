@@ -1,5 +1,19 @@
 # LAB_CHARTE — GenSrpG Exploration
 
+## RÈGLE 0 — CRITIQUE : pas de doublons d'assets ni d'archive de publication ingérable (5 novembre 2026)
+
+**Priorité bloquante pour tous les chantiers Exploration, Combat et GenSRPG.** Chaque dépôt doit appliquer cette règle à ses propres publications ; ce texte n'autorise pas Exploration à modifier les sources des autres dépôts.
+
+1. **Une bibliothèque d'assets canonique par site** : interdiction de recopier intégralement les bibliothèques Combat/Capture, musiques, sprites et atlas dans plusieurs previews. Les anciennes versions peuvent rester accessibles via des chemins/redirects versionnés, sans créer de bibliothèque lourde concurrente. Les ZIP source restent dans les dépôts sources, pas dans le site navigateur sauf besoin démontré.
+2. **Mesure obligatoire AVANT mise en ligne** : rapport automatique des octets par preview, bibliothèque Combat, bibliothèque Capture, assets et site complet, plus empreintes/SHA et nombre de copies. Budget bloquant interne GitHub Pages : **900 Mio non compressés pour le site assemblé** tant qu'un autre budget n'est pas explicitement documenté et validé.
+3. **Correction de cause racine seulement** : interdiction d'augmenter les timeouts/retries ou de relancer aveuglément pour masquer la taille ; pas de seconde source d'autorité ni d'assets. Toute nouvelle preview complète doit démontrer son coût et son utilité.
+4. **Aucune perte fonctionnelle silencieuse** : inventorier les anciennes URL, préserver l'éditeur V80 gelé, l'éditeur officiel, les accès Jeu et le raccord Combat/Capture ; fournir des redirections explicites pour les previews retirées et contrôler que chaque asset nécessaire se charge. Une redirection n'est pas une conservation de l'ancienne version fonctionnelle : ce changement doit être documenté. Aucun original, sauvegarde, branche, historique ou asset source ne doit être supprimé.
+5. **Gate automatique permanente** : la CI vérifie la taille réelle, les copies, les chemins vers assets, les anciennes URL conservées, les imports/exports et un vrai navigateur. Vérifier le SHA effectivement servi en HTTPS après Pages et le trio Forêt 1 / Plaine 1 / Neige 1. État NON GREEN tant que le déploiement exact et les tests ne sont pas confirmés.
+6. **Checkpoint obligatoire** : rapport de taille avant/après, SHA, workflow, décision sur les URL historiques, régressions, liens Pages et tests. Le simple succès des tests de PR ne vaut pas livraison.
+
+**Cette règle prime sur les habitudes et anciens workflows** : aucune duplication ne bénéficie d'une dérogation implicite parce qu'elle fonctionnait auparavant.
+
+
 ## 1. Mission
 Créer et valider le moteur d'exploration libre de GenSrpG, d'abord pour Capture Monster, sans dépendre du moteur Dungeon ni du laboratoire Combat Dynamique.
 
