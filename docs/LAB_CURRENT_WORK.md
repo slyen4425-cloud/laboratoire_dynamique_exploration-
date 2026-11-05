@@ -362,3 +362,13 @@
 - CI Node + vrais tests Chromium, dont lecture réelle d'un MP3 sur clic Tester, passage Combat retour, World Builder et sauvegardes.
 - Assemblage Pages + 4 SHA256 MP3 + vérification HTTP + preuve V80 identique.
 - Checkpoint final GREEN avec SHA et runs ; pas de déclaration GREEN sans preuve.
+
+---
+
+## 2026-11-05 — Monster Capture / Exploration : transport des points de statistiques d'instance (C2 EN REVUE)
+
+- **Départ** : Exploration `main@7155516b51db9892183cc043837037c4c87a0315` (CI 41949196778), checkpoint `checkpoint/exploration-start-adventure-owned-stats-transport-2026-11-05`, PR #371. Labo Combat est l'unique propriétaire du calcul des effets statistiques, via main `954f38e6b84e842bc8bf6d8515d5c77b93aca5f1` certifié CI 42036361285. GenSRPG possède les points sauvegardés.
+- **TDD** : RED CI Exploration #42035798101 `core-tests` FAILURE sur `active.statAllocations` absent du lecteur; GREEN 3/3 sur #42036039453 et #42037074351; préflight Pages candidat #42037074289 SUCCESS. Rien ne change la récupération des PV décimaux, le niveau libre, les anciens grants, le Tester ou l'autorité du Bestiaire.
+- **Réconciliations de source** : un premier update de la PR #371 a intégré les 20 arbres neige de la PR #372 depuis `main@57360da785d59802678070e66728b020833f8763`, CI #42039053191 3/3 SUCCESS, Pages préflight #42039053358 SUCCESS. La PR #375 a ensuite enrichi le main avec les tests d'arbres validés sans toucher aux contrats de partie. Nouveau point de départ `checkpoint/exploration-start-owned-stats-final-main-reconcile-2026-11-05` sur `main@7ad545f04cdc911b42be9c2490217440f4962e7b`. Les anciens candidats restent sous `checkpoint/exploration-owned-stats-pre-reconcile-2026-11-05` et `checkpoint/exploration-owned-stats-after-first-reconcile-2026-11-05`.
+- **Choix structurel** : appliquer uniquement `src/encounters/adventure-playing-party-v1.js`, `tests/adventure-owned-stats-transport-v1.test.js` et cette annexe de journal sur le main actuel, sans modifier arbres/asset adapters/World Builder. L'annexe est ajoutée en fin de document pour éviter le conflit avec les comptes-rendus d'assets ajoutés en tête du journal par d'autres chantiers.
+- **Sortie** : CI exacte 3/3 + préflight Pages + checkpoint GREEN avant fusion, puis CI officielle de main et adoption GenSRPG par pin SHA immuable; aucune publication de Monster Capture par cette PR.
