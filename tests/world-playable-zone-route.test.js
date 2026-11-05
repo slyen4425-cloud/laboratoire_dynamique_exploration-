@@ -14,13 +14,13 @@ test('explicit repair reconnects the existing blocked preview exit without resiz
  const map=createWorldAreaFromSculptMapPreset(initial,presets[0],{hostAreaId:initial.initialAreaId,name:'Forêt'});
  const forest=map.areas[1],old=map.portals.find(p=>p.sourceAreaId===forest.id&&p.targetAreaId===initial.initialAreaId);
  assert.ok(old);
- const repaired=makePlayableZoneRoute(map,{selectedAreaId:forest.id,preset:presets[3]});
+ const repaired=makePlayableZoneRoute(map,{selectedAreaId:forest.id,preset:presets[1]});
  const doc=repaired.document;
  assert.equal(doc.areas.find(a=>a.id===initial.initialAreaId).width,2400);
  assert.equal(doc.areas.find(a=>a.id===initial.initialAreaId).height,1600);
  assert.equal(doc.initialAreaId,forest.id);
  const next=doc.areas.find(a=>a.id===repaired.targetAreaId);
- assert.equal(sculptWorldAreaScene(next).terrain.width,36);
+ assert.equal(sculptWorldAreaScene(next).terrain.width,80);
  const gate=doc.portals.find(p=>p.id===old.id);
  assert.equal(gate.targetAreaId,next.id);
  const hit=findTriggeredPortal(doc,forest.id,gate.trigger);
@@ -52,23 +52,23 @@ test('an imported existing playable map can become the real host for new prefabs
  const initial=createBlankWorldBuilderDraft({id:'legacy',width:2400,height:1600});
  const first=createWorldAreaFromSculptMapPreset(initial,presets[0],{name:'Forêt'});
  const forest=first.areas.find(a=>a.id!==initial.initialAreaId);
- const next=createWorldAreaFromSculptMapPreset(first,presets[3],{name:'Neige',hostAreaId:forest.id});
- const snow=next.areas.find(a=>a.label==='Neige');
- assert.ok(snow);
- assert.ok(next.portals.find(p=>p.sourceAreaId===forest.id&&p.targetAreaId===snow.id));
- assert.ok(next.portals.find(p=>p.sourceAreaId===snow.id&&p.targetAreaId===forest.id));
+ const next=createWorldAreaFromSculptMapPreset(first,presets[1],{name:'Plaine',hostAreaId:forest.id});
+ const plain=next.areas.find(a=>a.label==='Plaine');
+ assert.ok(plain);
+ assert.ok(next.portals.find(p=>p.sourceAreaId===forest.id&&p.targetAreaId===plain.id));
+ assert.ok(next.portals.find(p=>p.sourceAreaId===plain.id&&p.targetAreaId===forest.id));
 });
 
 test('new prefabs keep the canonical terrain-family encounter configuration for Monster Capture',()=>{
  const start=createBlankWorldBuilderDraft({id:'encounters',width:36*28,height:24*21});
- const doc=createWorldAreaFromSculptMapPreset(start,presets[3],{
-    name:'Forêt de neige',kind:'exterior',hostAreaId:start.initialAreaId});
- const snow=doc.areas.find(a=>a.label==='Forêt de neige');
- assert.ok(snow);
- assert.equal(snow.encounters.randomEnabled,true);
- assert.equal(snow.surface.baseTerrainFamilyId,'snow');
- assert.ok(doc.encounterConfig.families.some(x=>x.terrainFamilyId==='snow'));
- const config=doc.encounterConfig.families.find(x=>x.terrainFamilyId==='snow');
+ const doc=createWorldAreaFromSculptMapPreset(start,presets[1],{
+    name:'Plaine test',kind:'exterior',hostAreaId:start.initialAreaId});
+ const plain=doc.areas.find(a=>a.label==='Plaine test');
+ assert.ok(plain);
+ assert.equal(plain.encounters.randomEnabled,true);
+ assert.equal(plain.surface.baseTerrainFamilyId,'road');
+ assert.ok(doc.encounterConfig.families.some(x=>x.terrainFamilyId==='road'));
+ const config=doc.encounterConfig.families.find(x=>x.terrainFamilyId==='road');
  assert.equal(typeof config.encounterChancePercent,'number');
  assert.ok(Array.isArray(config.elementChances));
 });
