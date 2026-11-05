@@ -1,5 +1,9 @@
 # GenSrpG Exploration — Règles de développement strictes
 
+## Règle 0 absolue — toute publication doit être compacte et vérifiable
+
+Le lot est bloqué si un même site contient plusieurs copies des assets Combat/Capture, si la taille du site dépasse 900 Mio non compressés, si le rapport de taille par dossier manque ou si le SHA public HTTPS n'est pas contrôlé. Supprimer les doublons de livraison, pas les sources, en conservant les URLs utiles et en documentant les redirections. Ne pas masquer un timeout Pages par un retry, ni déclarer GREEN sur CI seulement. Voir LAB_CHARTE « RÈGLE 0 CRITIQUE ».
+
 ## Règle 0 — ne jamais casser un système validé pour en ajouter un autre
 
 Un nouvel élément utilise l'autorité existante ou un contrat public. Il ne recrée pas silencieusement un système concurrent.
