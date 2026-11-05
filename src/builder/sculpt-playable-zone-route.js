@@ -66,6 +66,12 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
       p.targetSpawnId=destination.spawns[0].id;
       p.visual={...p.visual,label:destination.label??destination.id};
     });
+    // Retargeted legacy gate was placed against the old, unplayable
+    // destination; align it with the real route end on its source map.
+    // Only point-based legacy gates from this explicit repair are touched.
+    const origin=next.areas.find(a=>a.id===old.sourceAreaId);
+    next=placeSculptWorldPortal(next,old.id,
+      mapEdgePoint(sculptWorldAreaScene(origin),old.sourceAreaId===source.id?'exit':'entry'));
   }
   const knownPortals=new Set(next.portals.map(p=>p.id));
   next=connectWorldAreas(next,{
