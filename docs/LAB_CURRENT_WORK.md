@@ -1,3 +1,13 @@
+## 2026-11-05 — Jouer Aventure : transporter les allocations de stats d'instance sans dupliquer les règles (C2 EN COURS)
+
+- **START** : Exploration `main@7155516b51db9892183cc043837037c4c87a0315`, CI #41949196778 3/3 SUCCESS ; checkpoint `checkpoint/exploration-start-adventure-owned-stats-transport-2026-11-05`, branche `work/exploration-adventure-owned-stats-transport-2026-11-05`.
+- **Cause** : GenSRPG Aventure possède des allocations de stats sauvegardées; leur grant Jouer n'en transporte aucune vers Combat. Exploration ne doit jamais posséder les calculs santé/dégâts/résistances du Labo Combat.
+- **Périmètre strict** : lecture facultative `active.statAllocations` (nombres entiers sûrs non négatifs, IDs syntaxiquement valides) dans le même contrat de partie; préserver les grants existants, identité, niveau >100, PV décimaux, `combatHpMultiplier`, permissions Bestiaire et rejet des champs inattendus. Relayer uniquement vers le constructeur **officiel** Combat via `adventureParty.active`, sans copie des règles de statistiques. La route Tester ne reçoit pas les points de partie.
+- **TDD RED→GREEN** : tests de transport distincts d'abord sur ancien lecteur, puis réparation; invalides refusés sans altérer la sauvegarde, ancien jouable, source native identique et aucun faux bonus dans le Tester. **Dépendance** : ne finaliser le branchement du constructeur Combat ni la publication que lorsque le port optionnel est intégré et certifié sur Combat `main` ; PR Combat #251 en préparation.
+- **Livraison** : tests 3/3 CI + Pages sur vrai SHA, checkpoint GREEN puis fusion officielle si validée. Ensuite seulement GenSRPG repinnera Exploration et Combat main dans un lot distinct, avec test navigateur. Aucun changement dans Dungeon, PWA, World Builder, arènes ou catalogue d'objets Monster Capture.
+
+---
+
 ## 2026-11-05 — Réconciliation du plafond libre avec le nouveau HP policy main (PR #370)
 - **Conflit de base constaté** : pendant la validation de la PR #370, Exploration `main` a intégré la politique Combat HP (PR #369), commit officiel `2b27339a5706fcdb436558aeebd4f8b6b0ce9d85`, CI #41945445069 SUCCESS. L'ancienne PR #370 fondée sur `4e7abd15` est devenue `dirty`, donc **pas de merge direct**.
 - **Reprise sûre** : checkpoint `checkpoint/exploration-freecap-rebase-start-2026-11-05` au nouveau main certifié, branche auxiliaire de réconciliation `work/exploration-freecap-rebase-2026-11-05`, puis mise à jour par lease de la branche PR #370. Réappliquer uniquement son test et sa validation de niveau, sur le code qui conserve `combatHpMultiplier` optionnel et tous les contrôles du pont HP. Aucun changement au HP, Combat, Explorer, PWA ou au World Builder.
