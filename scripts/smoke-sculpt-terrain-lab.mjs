@@ -869,7 +869,7 @@ try{
   })()`);
   if(!arenaSelect.exists||arenaSelect.selected!=='objectdef.building.arena.element.glace.01')
     throw Error('Arène élémentaire absente de la bibliothèque native: '+JSON.stringify(arenaSelect));
-  const arenaPt={x:objectBegin.position.x+110,y:objectBegin.position.y+52};
+  const arenaPt={x:sidePt.x,y:sidePt.y};
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:arenaPt.x,y:arenaPt.y});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:arenaPt.x,y:arenaPt.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:arenaPt.x,y:arenaPt.y,button:'left',clickCount:1});
