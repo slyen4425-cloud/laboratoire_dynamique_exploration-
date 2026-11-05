@@ -12,7 +12,11 @@ export function presetEncounterDefaults(terrainFamilyIds=null,previousConfig=nul
     families:ids.map(id=>{
       const user=previous.find(f=>f.terrainFamilyId===id);
       const sample=source.find(f=>f.terrainFamilyId===id);
-      return clone(sample??user??{terrainFamilyId:id,encounterChancePercent:0,elementChances:[]});
+      const base=clone(sample??user??{terrainFamilyId:id,encounterChancePercent:0,elementChances:[]});
+      // Roads are traversable rest corridors by default; creators can edit the
+      // WorldDocument profile later, but demo data must not enable random fights.
+      if(id==='road')base.encounterChancePercent=0;
+      return base;
     })
   };
 }
