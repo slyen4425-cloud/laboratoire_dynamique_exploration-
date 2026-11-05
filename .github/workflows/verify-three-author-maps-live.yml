@@ -1,0 +1,44 @@
+name: Verify live 3 author maps (one-shot)
+on:
+  pull_request:
+    paths:
+      - .github/workflows/verify-three-author-maps-live.yml
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch actual GitHub Pages release and validate the 3 maps
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/encounters-v80"
+          fetch() {
+            local name="$1" relative="$2"
+            echo "::group::GET $relative"
+            if ! curl -fSL --retry 2 --retry-delay 1 --max-time 25 "$base/$relative?verify=$GITHUB_RUN_ID" -o "/tmp/$name"; then
+              echo "::error::LIVE Pages file inaccessible: $relative"
+              exit 1
+            fi
+            wc -c "/tmp/$name"
+            echo "::endgroup::"
+          }
+          fetch editor world-assembler.html
+          grep -Fq 'id="world-map-preset-select"' /tmp/editor || { echo "::error::World Builder missing map selection"; exit 1; }
+          fetch catalog src/builder/sculpt-builtin-map-presets.js
+          grep -Fq 'AUTHOR_SNOW_MAP_SNAPSHOT' /tmp/catalog || { echo "::error::LIVE catalog does not contain Neige 1"; exit 1; }
+          grep -Fq 'AUTHOR_SCULPT_MAP_SNAPSHOTS' /tmp/catalog || { echo "::error::LIVE catalog does not contain Forêt 1/Plaine 1"; exit 1; }
+          fetch author src/builder/sculpt-author-map-snapshots.js
+          fetch snow src/builder/sculpt-author-snow-map-snapshot.js
+          grep -Fq 'Forêt 1 · projet' /tmp/author || { echo "::error::Forêt 1 missing"; exit 1; }
+          grep -Fq 'Plaine 1 · projet' /tmp/author || { echo "::error::Plaine 1 missing"; exit 1; }
+          grep -Fq 'Neige 1 · projet' /tmp/snow || { echo "::error::Neige 1 missing"; exit 1; }
+          fetch provenance release-provenance.v1.json
+          jq -e --arg sha c6432654cb86cb57f75995e3be6460cbb888f286 '.exploration == $sha' /tmp/provenance || {
+            echo "::error::LIVE Pages provenance does not match merged source SHA c6432654..."
+            cat /tmp/provenance
+            exit 1
+          }
+          echo "SUCCESS: LIVE World Builder and 3 author maps come from exact merged main SHA"
