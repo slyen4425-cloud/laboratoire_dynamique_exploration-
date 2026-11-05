@@ -1,3 +1,14 @@
+## 2026-11-05 — URGENT : publication Pages sans copies redondantes, règle 0
+
+- Base : main@c6432654cb86cb57f75995e3be6460cbb888f286, PR #378 (trois cartes auteur) fusionnée, CI 3/3 et préflight success ; mise en ligne échouée : workflow main #42081258974, deploy Pages timeout pendant syncing_files.
+- Preuve : artefact Pages 6 984 337 485 octets ; cinq previews complètes copient Combat main et Capture global-assets cinq fois, sans partage, alors que la source officielle des cartes est sur main.
+- Branche : work/exploration-pages-dedupe-charter-2026-11-05. Périmètre : uniquement gouvernance documentaire, packaging et tests de publication. AUCUN changement des assets originaux, des cartes, des sauvegardes, du moteur, de GenSRPG ni de Combat.
+- Invariant : V80 de production inchangée ; trois cartes visibles dans le World Builder moderne ; anciens liens d'entrée préservés ou redirigés explicitement ; pas de prétention de préservation des vieux comportements si une preview est redirigée ; contrôle HTTP et preuve SHAs.
+- Tests : taille et structure du payload, détection duplication, tests Chromium avant publication, validation des dépendances runtime, smoke HTTPS sur le SHA exact après GitHub Pages. GREEN interdit avant toutes les preuves ; garder la PR de diagnostic #379 séparée et non fusionnée.
+- La taille diagnostiquée sera documentée AVANT/APRÈS et les exclusions seront explicites, non destructrices.
+
+---
+
 ## 2026-11-05 — Réconciliation des moulins et éoliennes animés après intégration arènes
 
 - Source approuvée PR #374 `8b2937b995b6034b578619648ff4f99bfaba16eb` ; base actuelle `main@62318b0737c37f0a34a6d6c4da0dc2673d8f1300` incluant 20 arbres et 10 arènes.
