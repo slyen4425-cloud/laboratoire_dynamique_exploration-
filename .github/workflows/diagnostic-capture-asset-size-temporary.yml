@@ -1,0 +1,28 @@
+name: Temporary Capture assets size inventory
+on:
+  pull_request:
+    paths:
+      - .github/workflows/diagnostic-capture-asset-size-temporary.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout global assets branch without changing it
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: global-assets
+          path: capture-assets
+      - name: Measure all asset families and largest files
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "TOTAL"; du -sh capture-assets
+          echo "TOP SIZE LEVEL 1"; du -h --max-depth=1 capture-assets | sort -h
+          echo "TOP SIZE LEVEL 3"; du -h --max-depth=3 capture-assets | sort -h | tail -n 85
+          echo "LARGEST FILES"; find capture-assets -type f -size +5M -printf '%s %p\n' | sort -nr | head -n 80 || true
+          echo "CATEGORIES"; find capture-assets -type f | awk -F. '{print $NF}' | sort | uniq -c | sort -nr | head -n 30
