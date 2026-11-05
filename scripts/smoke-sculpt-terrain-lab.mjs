@@ -869,6 +869,43 @@ try{
   const afterV23Import=await run('window.__sculptObjectsProbe()');
   if(!afterV23Import.objects.some(o=>o.visualVariantId==='back'&&o.rotationDeg===137))
     throw Error('V23 house rear perspective lost after scene import: '+JSON.stringify(afterV23Import));
+  // Windmill animation: choose the approved 3/4-left view, place on real
+  // Canvas, and verify the official 12-frame WebP atlas is fetched.
+  const windChosen=await run(`(()=>{
+    const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const def=document.querySelector('#object-definition');
+    const wind='objectdef.building.windmill.01';
+    const exists=[...def.options].some(o=>o.value===wind);
+    if(exists){def.value=wind;def.dispatchEvent(new Event('change',{bubbles:true}));}
+    const variant=document.querySelector('#object-variant');
+    const views=[...variant.options].map(o=>o.value);
+    if(views.includes('three_quarters_left')){
+      variant.value='three_quarters_left';
+      variant.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    const mode=document.querySelector('#object-action');
+    mode.value='place';mode.dispatchEvent(new Event('change',{bubbles:true}));
+    return {exists,selected:def.value,views,view:variant.value};
+  })()`);
+  if(!windChosen.exists||windChosen.selected!=='objectdef.building.windmill.01'||
+      windChosen.views.join(',')!=='front,three_quarters_left,three_quarters_right'||
+      windChosen.view!=='three_quarters_left')
+    throw Error('Windmill native animation variants unavailable: '+JSON.stringify(windChosen));
+  const windPt={x:sidePt.x,y:sidePt.y};
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:windPt.x,y:windPt.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
+  await sleep(700);
+  const windLive=await run(`(()=>({
+    objects:window.__sculptObjectsProbe().objects,
+    loaded:performance.getEntriesByType('resource').some(r=>
+      r.name.includes('/animated/windmill/three_quarters_left/sheet.webp')&&r.responseEnd>0)
+  }))()`);
+  if(!windLive.objects.some(o=>o.definition==='objectdef.building.windmill.01'&&o.visualVariantId==='three_quarters_left')||!windLive.loaded)
+    throw Error('Windmill atlas not placed/loaded in native Canvas: '+JSON.stringify(windLive));
+  await run(`(()=>{document.querySelector('#json').value=window.__v23Scene;
+    document.querySelector('#import').click();return true;})()`);
   // Elemental arena: actual native building selection + place + image load.
   // Restore the previous V23 scene so later checks observe identical object state.
   const arenaSelect=await run(`(()=>{
