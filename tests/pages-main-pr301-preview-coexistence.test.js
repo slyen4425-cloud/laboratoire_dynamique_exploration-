@@ -23,6 +23,7 @@ test('public PR301 URL is a disclosed version alias, not a duplicate engine and 
  assert.match(workflow,new RegExp('rich_sha="'+sha+'"'));
  assert.match(workflow,/Verify retired trial URLs redirect to maintained World Builder/);
  assert.match(workflow,/historical-preview-alias\.v1\.json/);
- assert.match(workflow,/anciennement|ancienne prévisualisation est archivée/);
+ const alias=readFileSync(new URL('../scripts/prune-pages-duplicate-previews.mjs',import.meta.url),'utf8');
+ assert.match(alias,/ancienne prévisualisation est archivée/);
  assert.match(workflow,/ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc/);
 });
