@@ -1,3 +1,10 @@
+## 2026-11-05 — Correctif test navigateur d'arène sur la base main actuelle
+- Échec reproduit sous PR #373 au smoke V20 : l'ajout des arènes en tête de catalogue change la première définition sélectionnée. Le vieux test cherchait arbitrairement un `building_house_*.webp` alors qu'il venait de placer une arène. Source : `scripts/smoke-sculpt-terrain-lab.mjs`, test faux-positif d'ordre de catalogue.
+- Correction cause racine : sélectionner **explicitement** l'ancien modèle `objectdef.building.house.blue_cottage.01` pour la sentinelle V20, puis vérifier séparément en vrai navigateur l'arène Glace, son placement et le chargement du WebP natif. Restaurer la scène test après vérification.
+- Aucun changement de code gameplay, d'ordre du catalogue, de renderer ou d'asset ; ne pas déclarer GREEN avant CI/Pages du SHA complet.
+
+---
+
 ## 2026-11-05 — Réconciliation des dix bâtiments d'arènes élémentaires
 
 - Source originale certifiée PR #359 SHA c1aee37d154400eefe50a978bad5a045758803f6 ; base saine `main@7155516b51db9892183cc043837037c4c87a0315`; RED `96a43799ddb24d782d41720fde1ba3155c3de9cf`.
