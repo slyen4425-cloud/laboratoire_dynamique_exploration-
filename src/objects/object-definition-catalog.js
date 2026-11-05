@@ -80,6 +80,186 @@ function normalizeDefinition(definition) {
 const DEFINITIONS = frozen([
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.broadleaf_oak_01',
+    label: 'Chêne enneigé large · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.broadleaf_oak_01' },
+    baseSize: { width: 240, height: 230 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.3, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.broadleaf_round_02',
+    label: 'Feuillu enneigé rond · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.broadleaf_round_02' },
+    baseSize: { width: 220, height: 210 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.27, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.fir_tiered_01',
+    label: 'Sapin enneigé à étages · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.fir_tiered_01' },
+    baseSize: { width: 175, height: 245 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.25, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.fir_wide_02',
+    label: 'Sapin enneigé large · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.fir_wide_02' },
+    baseSize: { width: 205, height: 225 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.26, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.oak_bare_01',
+    label: 'Chêne dénudé givré · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.oak_bare_01' },
+    baseSize: { width: 215, height: 245 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.27, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.birch_multi_01',
+    label: 'Bouleaux enneigés multiples · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.birch_multi_01' },
+    baseSize: { width: 215, height: 230 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.26, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.broadleaf_cluster_01',
+    label: 'Feuillu enneigé en bouquets · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.broadleaf_cluster_01' },
+    baseSize: { width: 245, height: 225 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.29, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.bonsai_01',
+    label: 'Pin enneigé tortueux · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.bonsai_01' },
+    baseSize: { width: 225, height: 205 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.28, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.fir_tall_03',
+    label: 'Sapin enneigé élancé · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.fir_tall_03' },
+    baseSize: { width: 165, height: 260 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.25, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.thicket_01',
+    label: 'Bosquet enneigé · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.thicket_01' },
+    baseSize: { width: 215, height: 195 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.32, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.spruce_dense_01',
+    label: 'Épicéa enneigé dense · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.spruce_dense_01' },
+    baseSize: { width: 205, height: 245 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.27, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.spruce_slender_01',
+    label: 'Épicéa enneigé fin · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.spruce_slender_01' },
+    baseSize: { width: 175, height: 265 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.25, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.ancient_oak_01',
+    label: 'Chêne ancien enneigé · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.ancient_oak_01' },
+    baseSize: { width: 270, height: 255 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.32, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.birch_bare_01',
+    label: 'Bouleau givré sans feuilles · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.birch_bare_01' },
+    baseSize: { width: 185, height: 255 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.25, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.pine_windswept_01',
+    label: 'Pin de montagne sous la neige · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.pine_windswept_01' },
+    baseSize: { width: 240, height: 225 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.3, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.broadleaf_massive_01',
+    label: 'Grand feuillu enneigé · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.broadleaf_massive_01' },
+    baseSize: { width: 265, height: 240 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.32, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.cedar_layered_01',
+    label: 'Cèdre enneigé en terrasses · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.cedar_layered_01' },
+    baseSize: { width: 255, height: 230 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.3, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.sapling_01',
+    label: 'Jeune sapin enneigé · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.sapling_01' },
+    baseSize: { width: 145, height: 185 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.24, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.willow_frosted_01',
+    label: 'Saule pleureur givré · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.willow_frosted_01' },
+    baseSize: { width: 245, height: 245 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.29, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.tree.snow.ancient_twisted_01',
+    label: 'Arbre ancien noueux givré · 2,5D',
+    kind: 'tree',
+    visual: { assetId: 'object.tree.snow.ancient_twisted_01' },
+    baseSize: { width: 275, height: 245 },
+    collision: { role: 'obstacle', shape: 'box', widthRatio: 0.33, heightRatio: 0.22, offsetX: 0, offsetY: 0.29 }
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.waterfall.front_wide.01',
     label: '2,5D · Cascade animée · Large de face',
     kind: 'decor',
