@@ -59,7 +59,7 @@ function sculptEncounterSceneSettings(source = {}) {
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
 export const SCULPT_SCENE_PREVIEW_KIND='sculpt-preview-scene';
-export const SCULPT_OBJECT_LIMIT=128;
+export const SCULPT_OBJECT_LIMIT=256;
 export const SCULPT_ACTOR_LIMIT=80;
 // Only the existing sculpt terrain and placement formats own the data.
 // This constructor is a scene-level editor command, not a second world model.
