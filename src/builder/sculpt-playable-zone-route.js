@@ -77,7 +77,7 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
     p.trigger?.kind==='point')){
     const from=next.areas.find(a=>a.id===portal.sourceAreaId);
     next=placeSculptWorldPortal(next,portal.id,
-      mapEdgePoint(sculptWorldAreaScene(from),'exit'));
+      mapEdgePoint(sculptWorldAreaScene(from),portal.sourceAreaId===source.id?'exit':'entry'));
   }
   // The destination returns using its own canonical Portal, not a UI teleport.
   const reverse=next.portals.find(p=>p.sourceAreaId===target.id&&
