@@ -7,8 +7,8 @@ import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
   saveWorldAssemblerDraft,readWorldAssemblerDraft
 } from './world-assembler-handoff.js';
-import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
-import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
+import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
