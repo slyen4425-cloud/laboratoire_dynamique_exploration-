@@ -100,7 +100,10 @@ export function buildExplorationNativeCombatSourceV1({
   const sourceCreatureIds=Object.freeze({player:playerId,opponent:enemyId});
   if(scoped){
     const source=buildCaptureEncounterCombatSourceV1({
-      ...options,local:adventureParty.active,
+      // Global real-game HP rule is applied by Combat's one authoritative
+      // encounter builder, after official stat projection. No creature edits.
+      ...options,hpMultiplier:adventureParty.combatHpMultiplier,
+      local:adventureParty.active,
       opponent:{speciesId:enemyId,level:configuredCreatures.get(enemyId).draft.level}
     });
     return Object.freeze({...source,sourceCreatureIds});

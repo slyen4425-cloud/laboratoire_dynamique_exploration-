@@ -1,3 +1,12 @@
+## 2026-11-05 — Aventure : PV × 0,25 en partie réelle, Tester inchangé (raccord source officielle)
+- Demande auteur : les PV configurés pour le test au niveau 20 rendent le mode Jeu niveau 1 trop long. Nouvelle règle globale de vitrine GenSrpG : 25 % des PV au début d'un combat réel, 100 % en mode Test, sans retoucher chaque créature.
+- BASE `main@4e7abd15d7b57909524ba697b74f63a193fce839`; START `checkpoint/exploration-start-adventure-hp-policy-2026-11-05`; WORK `work/exploration-adventure-hp-policy-2026-11-05`.
+- Le seul contrat existant `adventure-playing-party-v1.js` accepte un **champ additionnel facultatif** `combatHpMultiplier`, borné (0,1], et restitue 1 pour les enveloppes historiques. Ne change ni `active.hp` ni `active.level`, l'autorisation Bestiaire, la corrélation des parties, ni le modèle de sauvegarde GenSrpG.
+- Le pont d'intégration `integration/combat-bridge/exploration-native-source-v1.js` transmet `hpMultiplier:adventureParty.combatHpMultiplier` au builder natif **Labo Combat main**, qui est seul propriétaire du calcul. La route Tester ne transmet rien et garde la prévisualisation niveau 20. Aucune copie de moteur, pas de nouveau registre PV.
+- TDD RED dans `tests/adventure-hp-policy-v1.test.js`, sentinelle historique `tests/adventure-playing-party-v1.test.js` actualisée pour ancien contrat. CI officielle, checkpoint GREEN et fusion main uniquement après avoir vérifié le builder ajouté au **Combat main** sous PR #249 GREEN ; publication/HTML en lot indépendant GenSrpG.
+
+---
+
 ## 2026-11-04 — Jouer relit les PV exacts du Combat officiel
 
 - START `checkpoint/exploration-start-adventure-exact-combat-hp-2026-11-04` sur `main@725eef49ab18e4f051b24fd2e4a5ded703e5529a` (#366, CI #41894554158, Pages #41894554147). Branche `work/exploration-adventure-exact-combat-hp-2026-11-04`.
