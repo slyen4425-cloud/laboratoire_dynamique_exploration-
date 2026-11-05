@@ -514,6 +514,78 @@
       "runtimeFormat": "WebP RGBA 512x512 lossless",
       "bytes": 190186,
       "sha256": "dcf6b47dd8785f91201c9490985a81c7efdbea5f3de112fc2ca08bc771a7ddea"
+    },
+    {
+      "assetId": "object.animation.windmill.front.01",
+      "path": "assets/exploration/objects/animated/windmill/front/sheet.webp",
+      "role": "building-visual",
+      "family": "windmill",
+      "variant": "front",
+      "view": "front",
+      "bytes": 152946,
+      "sha256": "892314fcdc6b9552838c1d11043b6dec7c4ba0cad1a585466e40fd397e3627fd",
+      "runtimeProfile": "animated-webp-1024x768-4x3-256px-10fps",
+      "sourceManifest": "assets/exploration/objects/animated/manifest.v1.json"
+    },
+    {
+      "assetId": "object.animation.windmill.three_quarters_left.01",
+      "path": "assets/exploration/objects/animated/windmill/three_quarters_left/sheet.webp",
+      "role": "building-visual",
+      "family": "windmill",
+      "variant": "three_quarters_left",
+      "view": "three_quarters_left",
+      "bytes": 114866,
+      "sha256": "962a4f9bd1ff49cc004f484ddb74814fd057bffe7b1b8ffcb0e659d382f7352f",
+      "runtimeProfile": "animated-webp-1024x768-4x3-256px-10fps",
+      "sourceManifest": "assets/exploration/objects/animated/manifest.v1.json"
+    },
+    {
+      "assetId": "object.animation.windmill.three_quarters_right.01",
+      "path": "assets/exploration/objects/animated/windmill/three_quarters_right/sheet.webp",
+      "role": "building-visual",
+      "family": "windmill",
+      "variant": "three_quarters_right",
+      "view": "three_quarters_right",
+      "bytes": 114976,
+      "sha256": "24809201dc9821e9d112703d4cb4cd47fa0ff55635f97991ef9d53c6bd0ddd56",
+      "runtimeProfile": "animated-webp-1024x768-4x3-256px-10fps",
+      "sourceManifest": "assets/exploration/objects/animated/manifest.v1.json"
+    },
+    {
+      "assetId": "object.animation.wind_turbine.front.01",
+      "path": "assets/exploration/objects/animated/wind_turbine/front/sheet.webp",
+      "role": "building-visual",
+      "family": "wind_turbine",
+      "variant": "front",
+      "view": "front",
+      "bytes": 74908,
+      "sha256": "667f75327543d90113c5fd23d7a495c3b43331b23f7e55b114c880830387d109",
+      "runtimeProfile": "animated-webp-1024x768-4x3-256px-10fps",
+      "sourceManifest": "assets/exploration/objects/animated/manifest.v1.json"
+    },
+    {
+      "assetId": "object.animation.wind_turbine.three_quarters_left.01",
+      "path": "assets/exploration/objects/animated/wind_turbine/three_quarters_left/sheet.webp",
+      "role": "building-visual",
+      "family": "wind_turbine",
+      "variant": "three_quarters_left",
+      "view": "three_quarters_left",
+      "bytes": 78996,
+      "sha256": "146ca3db21ee4bc5b8589e061c79fed469ec9fe9e2bc5f382e117a9414ce86cc",
+      "runtimeProfile": "animated-webp-1024x768-4x3-256px-10fps",
+      "sourceManifest": "assets/exploration/objects/animated/manifest.v1.json"
+    },
+    {
+      "assetId": "object.animation.wind_turbine.three_quarters_right.01",
+      "path": "assets/exploration/objects/animated/wind_turbine/three_quarters_right/sheet.webp",
+      "role": "building-visual",
+      "family": "wind_turbine",
+      "variant": "three_quarters_right",
+      "view": "three_quarters_right",
+      "bytes": 78998,
+      "sha256": "dd37aebabab4d266aa6cceb9a58f77ceb72212392c0d69edbee1bea0b3d0378f",
+      "runtimeProfile": "animated-webp-1024x768-4x3-256px-10fps",
+      "sourceManifest": "assets/exploration/objects/animated/manifest.v1.json"
     }
   ],
   "additionalSourceProfiles": [
@@ -545,7 +617,8 @@
       "alpha": true,
       "sha256": "0913c209d327c48b593b734edb9f3010a59f42470904e9e472b8cde6b9697a56",
       "purpose": "side-view source sheet"
-    }
+    },
+    "animated-wind-6-views-4x3-10fps"
   ],
   "generatedPacks": [
     {

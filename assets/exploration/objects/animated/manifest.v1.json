@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "packId": "capture-wind-objects-six-views-v1",
+  "sourceRepository": "slyen4425-cloud/laboratoire_dynamique_exploration-",
+  "sourceCommit": "b4288d82dea9d39e64b07f8ddc23f0d4bcb07a99",
+  "runtimeProfile": "webp-spritesheet-4x3-256",
+  "importMethod": "python3 scripts/materialize-wind-animations.py --extract --sheets",
+  "collisionAuthority": "World Model only; visuals do not define collisions",
+  "animations": [
+    {
+      "id": "object.animation.windmill.front.01",
+      "family": "windmill",
+      "view": "front",
+      "sourceArchive": "assets/exploration/objects/animated/windmill/front/source.zip",
+      "originalUpload": "moulin_face_12_moyeu_corrige.zip",
+      "sourceFramePrefix": "moulin_face_frame_",
+      "targetDir": "windmill/front",
+      "frameCount": 12,
+      "frameSize": [
+        512,
+        512
+      ],
+      "fps": 10,
+      "sourceBlobSha": "ef30c81bfc37110eba20a79dbef21bba68239445",
+      "sha256": "46e8b9806a0278026acb342736a7de57c443fd0df70b98d66cc74c3c52ed4118",
+      "bytes": 3874202,
+      "ownership": "exploration-world-objects",
+      "usage": "visual-only",
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/windmill/front/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/windmill/front/frames"
+    },
+    {
+      "id": "object.animation.windmill.three_quarters_left.01",
+      "family": "windmill",
+      "view": "three_quarters_left",
+      "sourceArchive": "assets/exploration/objects/animated/windmill/three_quarters_left/source.zip",
+      "originalUpload": "moulin_3q_gauche_12_sprites_preview.zip",
+      "sourceFramePrefix": "moulin_3q_gauche_frame_",
+      "targetDir": "windmill/three_quarters_left",
+      "frameCount": 12,
+      "frameSize": [
+        512,
+        512
+      ],
+      "fps": 10,
+      "sourceBlobSha": "da98cf43e1943ea851721474992fcb7367535d06",
+      "sha256": "7b734bbd00030467344dd47791abadaf6ac9b75b211f56b0d813ee1f692ffa79",
+      "bytes": 4031057,
+      "ownership": "exploration-world-objects",
+      "usage": "visual-only",
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/windmill/three_quarters_left/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/windmill/three_quarters_left/frames"
+    },
+    {
+      "id": "object.animation.windmill.three_quarters_right.01",
+      "family": "windmill",
+      "view": "three_quarters_right",
+      "sourceArchive": "assets/exploration/objects/animated/windmill/three_quarters_right/source.zip",
+      "originalUpload": "moulin_3q_droite_12_sprites_preview.zip",
+      "sourceFramePrefix": "moulin_3q_droite_frame_",
+      "targetDir": "windmill/three_quarters_right",
+      "frameCount": 12,
+      "frameSize": [
+        512,
+        512
+      ],
+      "fps": 10,
+      "sourceBlobSha": "e8f3c17bb9dfd5c3538a28dece105a6dc80a1075",
+      "sha256": "cdebe8e38463f12444ef42d9beda175b3e5e0c6a355881b5cbbb65d1eaf60337",
+      "bytes": 4084180,
+      "ownership": "exploration-world-objects",
+      "usage": "visual-only",
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/windmill/three_quarters_right/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/windmill/three_quarters_right/frames"
+    },
+    {
+      "id": "object.animation.wind_turbine.front.01",
+      "family": "wind_turbine",
+      "view": "front",
+      "sourceArchive": "assets/exploration/objects/animated/wind_turbine/front/source.zip",
+      "originalUpload": "eolienne_face_12_sprites_preview.zip",
+      "sourceFramePrefix": "eolienne_face_frame_",
+      "targetDir": "wind_turbine/front",
+      "frameCount": 12,
+      "frameSize": [
+        512,
+        512
+      ],
+      "fps": 10,
+      "sourceBlobSha": "731de083be9ed96c732d6bd06231fa4940080130",
+      "sha256": "2d9d93c18470a19eed26f60afb9f23b3e87bf9f75ecb52072c4b414f235ed2a1",
+      "bytes": 2070756,
+      "ownership": "exploration-world-objects",
+      "usage": "visual-only",
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/wind_turbine/front/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/wind_turbine/front/frames"
+    },
+    {
+      "id": "object.animation.wind_turbine.three_quarters_left.01",
+      "family": "wind_turbine",
+      "view": "three_quarters_left",
+      "sourceArchive": "assets/exploration/objects/animated/wind_turbine/three_quarters_left/source.zip",
+      "originalUpload": "GENSRPG_Eolienne_3Q_Gauche_12_A_VALIDER.zip",
+      "sourceFramePrefix": "eolienne_3q_gauche_",
+      "targetDir": "wind_turbine/three_quarters_left",
+      "frameCount": 12,
+      "frameSize": [
+        512,
+        512
+      ],
+      "fps": 10,
+      "sourceBlobSha": "c70d9ed3e90d807bb9eb06d78884b44b3482a3d3",
+      "sha256": "6445765712bcc27724ba1a036af33af8f6a209fac82dfa595b3dd19fdfd3f877",
+      "bytes": 3034662,
+      "ownership": "exploration-world-objects",
+      "usage": "visual-only",
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/wind_turbine/three_quarters_left/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/wind_turbine/three_quarters_left/frames"
+    },
+    {
+      "id": "object.animation.wind_turbine.three_quarters_right.01",
+      "family": "wind_turbine",
+      "view": "three_quarters_right",
+      "sourceArchive": "assets/exploration/objects/animated/wind_turbine/three_quarters_right/source.zip",
+      "originalUpload": "GENSRPG_Eolienne_3Q_Droite_12_A_VALIDER.zip",
+      "sourceFramePrefix": "eolienne_3q_droite_",
+      "targetDir": "wind_turbine/three_quarters_right",
+      "frameCount": 12,
+      "frameSize": [
+        512,
+        512
+      ],
+      "fps": 10,
+      "sourceBlobSha": "7c53ae20f77941c9681c5ddbcba1885033005fbf",
+      "sha256": "23d6a7cbe40798682dbab69f5a01fd551d7dd09007d0f457b0201d285ec77983",
+      "bytes": 3120909,
+      "ownership": "exploration-world-objects",
+      "usage": "visual-only",
+      "approved": true,
+      "runtimeAtlas": {
+        "path": "assets/exploration/objects/animated/wind_turbine/three_quarters_right/sheet.webp",
+        "animation": {
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "fps": 10,
+          "frameWidth": 256,
+          "frameHeight": 256,
+          "loop": true
+        }
+      },
+      "framesDir": "assets/exploration/objects/animated/wind_turbine/three_quarters_right/frames"
+    }
+  ],
+  "status": "native-catalog-connected"
+}

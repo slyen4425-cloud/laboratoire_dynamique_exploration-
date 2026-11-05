@@ -80,6 +80,46 @@ function normalizeDefinition(definition) {
 const DEFINITIONS = frozen([
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.windmill.01',
+    label: '2,5D · Moulin animé · 12 frames',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/utility/wind', provenance: 'native' },
+    visual: {
+      assetId: 'object.animation.windmill.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.animation.windmill.front.01' },
+        { id: 'three_quarters_left', label: 'Trois-quarts gauche', assetId: 'object.animation.windmill.three_quarters_left.01' },
+        { id: 'three_quarters_right', label: 'Trois-quarts droite', assetId: 'object.animation.windmill.three_quarters_right.01' }
+      ]
+    },
+    baseSize: { width: 300, height: 320 },
+    // Visual only: do not synthesize a portal or obstacle shape from alpha sprites.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.wind_turbine.01',
+    label: '2,5D · Éolienne animée · 12 frames',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/utility/wind', provenance: 'native' },
+    visual: {
+      assetId: 'object.animation.wind_turbine.front.01',
+      defaultVariantId: 'front',
+      variants: [
+        { id: 'front', label: 'Face', assetId: 'object.animation.wind_turbine.front.01' },
+        { id: 'three_quarters_left', label: 'Trois-quarts gauche', assetId: 'object.animation.wind_turbine.three_quarters_left.01' },
+        { id: 'three_quarters_right', label: 'Trois-quarts droite', assetId: 'object.animation.wind_turbine.three_quarters_right.01' }
+      ]
+    },
+    baseSize: { width: 280, height: 340 },
+    // Visual only: do not synthesize a portal or obstacle shape from alpha sprites.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.building.arena.element.nature.01',
     label: 'Arène élémentaire · Sanctuaire de l’Arbre-Monde',
     kind: 'building',

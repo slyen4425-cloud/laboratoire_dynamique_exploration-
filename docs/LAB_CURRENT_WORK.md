@@ -1,3 +1,13 @@
+## 2026-11-05 — Réconciliation des moulins et éoliennes animés après intégration arènes
+
+- Source approuvée PR #374 `8b2937b995b6034b578619648ff4f99bfaba16eb` ; base actuelle `main@62318b0737c37f0a34a6d6c4da0dc2673d8f1300` incluant 20 arbres et 10 arènes.
+- Lot unique `work/exploration-wind-animated-reconcile-after-arenas-2026-11-05` : 6 ZIP source, 72 PNG RGBA et 6 atlas WebP copiés au SHA Git identique ; deux définitions natives et six variantes visuelles, 10 images/s via animateur existant.
+- Manifeste courant ENRICHI et non remplacé pour conserver les 10 arènes et maisons enneigées ; les corrections antérieures des arbres ne sont pas modifiées.
+- Test utilisateur nécessaire : sélection, vraie rotation animée des deux moulins en 3 vues, import/export et rendu paysage smartphone.
+- **NON GREEN** avant CI 3/3, préflight Pages, fusion vers main actuel et publication du SHA exact.
+
+---
+
 ## 2026-11-05 — Réconciliation croisée : arbres enneigés + arènes élémentaires
 
 - Base actuelle `main@7ad545f04cdc911b42be9c2490217440f4962e7b` après fusion des arbres et de la restauration de leurs tests. La PR #373 réconcilie ses fichiers par merge commit deux parents.

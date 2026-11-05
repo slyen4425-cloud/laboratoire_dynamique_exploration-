@@ -1,4 +1,40 @@
 const WORLD_OBJECT_ASSETS = Object.freeze({
+  'object.animation.windmill.front.01': Object.freeze({
+    id: 'object.animation.windmill.front.01', kind: 'building-visual',
+    path: './assets/exploration/objects/animated/windmill/front/sheet.webp',
+    animation: Object.freeze({"columns":4,"rows":3,"frames":12,"fps":10,"frameWidth":256,"frameHeight":256,"loop":true}),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.animation.windmill.three_quarters_left.01': Object.freeze({
+    id: 'object.animation.windmill.three_quarters_left.01', kind: 'building-visual',
+    path: './assets/exploration/objects/animated/windmill/three_quarters_left/sheet.webp',
+    animation: Object.freeze({"columns":4,"rows":3,"frames":12,"fps":10,"frameWidth":256,"frameHeight":256,"loop":true}),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.animation.windmill.three_quarters_right.01': Object.freeze({
+    id: 'object.animation.windmill.three_quarters_right.01', kind: 'building-visual',
+    path: './assets/exploration/objects/animated/windmill/three_quarters_right/sheet.webp',
+    animation: Object.freeze({"columns":4,"rows":3,"frames":12,"fps":10,"frameWidth":256,"frameHeight":256,"loop":true}),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.animation.wind_turbine.front.01': Object.freeze({
+    id: 'object.animation.wind_turbine.front.01', kind: 'building-visual',
+    path: './assets/exploration/objects/animated/wind_turbine/front/sheet.webp',
+    animation: Object.freeze({"columns":4,"rows":3,"frames":12,"fps":10,"frameWidth":256,"frameHeight":256,"loop":true}),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.animation.wind_turbine.three_quarters_left.01': Object.freeze({
+    id: 'object.animation.wind_turbine.three_quarters_left.01', kind: 'building-visual',
+    path: './assets/exploration/objects/animated/wind_turbine/three_quarters_left/sheet.webp',
+    animation: Object.freeze({"columns":4,"rows":3,"frames":12,"fps":10,"frameWidth":256,"frameHeight":256,"loop":true}),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.animation.wind_turbine.three_quarters_right.01': Object.freeze({
+    id: 'object.animation.wind_turbine.three_quarters_right.01', kind: 'building-visual',
+    path: './assets/exploration/objects/animated/wind_turbine/three_quarters_right/sheet.webp',
+    animation: Object.freeze({"columns":4,"rows":3,"frames":12,"fps":10,"frameWidth":256,"frameHeight":256,"loop":true}),
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.building.arena.element.nature.01': Object.freeze({
     id: 'object.building.arena.element.nature.01', kind: 'building-visual',
     path: './assets/exploration/objects/buildings/arenas/arene_nature_2p5d.webp',

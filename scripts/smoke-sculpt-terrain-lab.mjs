@@ -708,6 +708,11 @@ try{
     const select=document.querySelector('#object-definition');
     const fixture='objectdef.building.house.blue_cottage.01';
     if(![...select.options].some(option=>option.value===fixture))
+      throw Error('V20 approved house fixture unavailable');
+    select.value=fixture;
+    select.dispatchEvent(new Event('change',{bubbles:true}));
+    const fixture='objectdef.building.house.blue_cottage.01';
+    if(![...select.options].some(option=>option.value===fixture))
       throw Error('V20 official house fixture missing');
     select.value=fixture;
     select.dispatchEvent(new Event('change',{bubbles:true}));
@@ -799,6 +804,43 @@ try{
   if(!walkingWithObjects.walking||!walkingWithObjects.paletteHidden||walkingWithObjects.objects!==2)
     throw Error('V20 object palette overlaps live walking test: '+JSON.stringify(walkingWithObjects));
   await run("document.querySelector('#navigation-toggle').click()");
+  // Windmill animation: choose the approved 3/4-left view, place on real
+  // Canvas, and verify the official 12-frame WebP atlas is fetched.
+  const windChosen=await run(`(()=>{
+    const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const def=document.querySelector('#object-definition');
+    const wind='objectdef.building.windmill.01';
+    const exists=[...def.options].some(o=>o.value===wind);
+    if(exists){def.value=wind;def.dispatchEvent(new Event('change',{bubbles:true}));}
+    const variant=document.querySelector('#object-variant');
+    const views=[...variant.options].map(o=>o.value);
+    if(views.includes('three_quarters_left')){
+      variant.value='three_quarters_left';
+      variant.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    const mode=document.querySelector('#object-action');
+    mode.value='place';mode.dispatchEvent(new Event('change',{bubbles:true}));
+    return {exists,selected:def.value,views,view:variant.value};
+  })()`);
+  if(!windChosen.exists||windChosen.selected!=='objectdef.building.windmill.01'||
+      windChosen.views.join(',')!=='front,three_quarters_left,three_quarters_right'||
+      windChosen.view!=='three_quarters_left')
+    throw Error('Windmill native animation variants unavailable: '+JSON.stringify(windChosen));
+  const windPt={x:sidePt.x,y:sidePt.y};
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:windPt.x,y:windPt.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
+  await sleep(700);
+  const windLive=await run(`(()=>({
+    objects:window.__sculptObjectsProbe().objects,
+    loaded:performance.getEntriesByType('resource').some(r=>
+      r.name.includes('/animated/windmill/three_quarters_left/sheet.webp')&&r.responseEnd>0)
+  }))()`);
+  if(!windLive.objects.some(o=>o.definition==='objectdef.building.windmill.01'&&o.visualVariantId==='three_quarters_left')||!windLive.loaded)
+    throw Error('Windmill atlas not placed/loaded in native Canvas: '+JSON.stringify(windLive));
+  await run(`(()=>{document.querySelector('#json').value=window.__v23Scene;
+    document.querySelector('#import').click();return true;})()`);
   await run("document.querySelector('#mode-ground').click()");
   if((await run('window.__sculptObjectsProbe().active'))!==false)
     throw Error('V20 returning to terrain brush did not close object palette');
