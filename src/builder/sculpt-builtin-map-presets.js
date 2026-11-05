@@ -4,7 +4,7 @@
 // Previously shipped generic IDs 101-108 are deliberately retired from the
 // selection UI without deleting or migrating existing user WorldDocuments.
 import {createSculptMapPreset,readSculptMapPresets}
-  from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+  from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {AUTHOR_SCULPT_MAP_SNAPSHOTS} from './sculpt-author-map-snapshots.js';
 import {AUTHOR_SNOW_MAP_SNAPSHOT} from './sculpt-author-snow-map-snapshot.js';
 
