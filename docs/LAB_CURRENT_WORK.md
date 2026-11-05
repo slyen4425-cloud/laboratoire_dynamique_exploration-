@@ -1,3 +1,13 @@
+## 2026-11-05 — Moulins et éoliennes animés, raccord au World Builder
+
+- Six vues 2,5D, 72 frames originales et six atlas WebP 4×3 12 frames à 10 FPS issues de la PR #349 SHA 413584312d13e3c7a78e455973d2d83d4406e31f.
+- Mêmes IDs source `object.animation.*` dans le manifeste unique et l'Asset Adapter. Deux bâtiments natifs, trois vues sélectionnables chacun, bibliothèque `Bâtiments > Moulins / éoliennes animés`.
+- `worldObjectAnimationFrame` et la pompe de rendu des animations existante restent les seuls mécanismes ; pas d'animateur bis. Aucun portail/collision arbitraire.
+- Branche `work/exploration-wind-animations-catalog-main-2026-11-05`, base main `7155516b51db9892183cc043837037c4c87a0315`, RED `03ccfba3ea16430e4a74213506f8c3614a47f576`, tests source ZIPs, atlas, placements et frames.
+- Ne pas déclarer GREEN avant CI 3/3, préflight, fusion et Pages au SHA exact.
+
+---
+
 ## 2026-11-05 — Réconciliation du plafond libre avec le nouveau HP policy main (PR #370)
 - **Conflit de base constaté** : pendant la validation de la PR #370, Exploration `main` a intégré la politique Combat HP (PR #369), commit officiel `2b27339a5706fcdb436558aeebd4f8b6b0ce9d85`, CI #41945445069 SUCCESS. L'ancienne PR #370 fondée sur `4e7abd15` est devenue `dirty`, donc **pas de merge direct**.
 - **Reprise sûre** : checkpoint `checkpoint/exploration-freecap-rebase-start-2026-11-05` au nouveau main certifié, branche auxiliaire de réconciliation `work/exploration-freecap-rebase-2026-11-05`, puis mise à jour par lease de la branche PR #370. Réappliquer uniquement son test et sa validation de niveau, sur le code qui conserve `combatHpMultiplier` optionnel et tous les contrôles du pont HP. Aucun changement au HP, Combat, Explorer, PWA ou au World Builder.
