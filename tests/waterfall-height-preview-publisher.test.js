@@ -16,7 +16,8 @@ test('assembled waterfall preview passes Chromium before compact Pages publish, 
  assert.match(published,/waterfall-source\/scripts/);
  assert.match(published,/node scripts\/smoke-sculpt-terrain-lab\.mjs/);
  assert.match(published,/release-provenance\.v1\.json/);
- assert.match(published,/waterfall-height-pr320\/src\/world\/sculpt-height-model\.js/);
+ assert.match(published,/SCULPT_TERRAIN_MAX_LEVEL=16/);
+ assert.match(published,/\$folder\/src\/world\/sculpt-height-model\.js/);
  assert.match(published,/waterfall-height-pr320\/sculpt-lab\.html/);
  assert.match(published,/Verify retired trial URLs redirect to maintained World Builder/);
  assert.ok(published.indexOf('Real Chromium PR325')<published.indexOf('prune-pages-duplicate-previews.mjs'));
