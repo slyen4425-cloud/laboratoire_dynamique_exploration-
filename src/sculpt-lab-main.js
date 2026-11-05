@@ -805,7 +805,7 @@ function cameraView(){
 }
 function cameraBounds(){
   return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
-    terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
+    terrain.height*SCULPT_TILE.height,16*SCULPT_TILE.rise);
 }
 function fit(){
   // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
@@ -2895,7 +2895,7 @@ $('water-target').addEventListener('input',()=>{
 });
 function changeTarget(level){
  const value=Math.max(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?1:0,
-    Math.min(7,Number(level)));
+    Math.min(16,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
  syncQuickToolbar();status(selectedMode==='sphere-basin'?'Profondeur sphérique : −'+value+' niveaux':
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':
