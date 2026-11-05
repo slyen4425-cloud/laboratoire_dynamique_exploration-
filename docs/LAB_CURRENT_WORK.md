@@ -1,3 +1,13 @@
+## 2026-11-05 — Réintégration des 20 arbres enneigés validés
+
+- Base certifiée `main@7155516b51db9892183cc043837037c4c87a0315`, PR source #364 `77b358c2bcf815372b112a1982518535906641a3`, TDD RED `9aa7c6fc8ca746e76a5c85105b219a988958db27`.
+- Lot isolé : 20 WebP RGBA réutilisés byte-for-byte, 20 définitions natives, 20 résolutions via l'Asset Adapter officiel, manifeste auteur et sommes SHA-256.
+- Catégorie existante `Végétation > Arbres`, sélection/placement tactile et requête du vrai WebP testées par le smoke Chromium intégré.
+- La PR historique #364 en conflit n'est pas fusionnée en masse ; aucun ajout à Combat, Jouer, Dungeon ou aux règles gameplay.
+- Publication conditionnée aux 3 jobs CI + Pages et au contrôle HTTPS du SHA fusionné (PRÉVALIDATION tant que manquants).
+
+---
+
 ## 2026-11-05 — Réconciliation du plafond libre avec le nouveau HP policy main (PR #370)
 - **Conflit de base constaté** : pendant la validation de la PR #370, Exploration `main` a intégré la politique Combat HP (PR #369), commit officiel `2b27339a5706fcdb436558aeebd4f8b6b0ce9d85`, CI #41945445069 SUCCESS. L'ancienne PR #370 fondée sur `4e7abd15` est devenue `dirty`, donc **pas de merge direct**.
 - **Reprise sûre** : checkpoint `checkpoint/exploration-freecap-rebase-start-2026-11-05` au nouveau main certifié, branche auxiliaire de réconciliation `work/exploration-freecap-rebase-2026-11-05`, puis mise à jour par lease de la branche PR #370. Réappliquer uniquement son test et sa validation de niveau, sur le code qui conserve `combatHpMultiplier` optionnel et tous les contrôles du pont HP. Aucun changement au HP, Combat, Explorer, PWA ou au World Builder.
