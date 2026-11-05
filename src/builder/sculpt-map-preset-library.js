@@ -1,13 +1,13 @@
 // Reusable, explicit map-template library. A preset is a snapshot of the
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
-import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
+import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js?rev=author-maps-three-v1';
 import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
-import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js';
+import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js?rev=author-maps-three-v1';
 import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {appendInteriorWall} from '../world/interior-wall-model.js';
-import {sculptWaterAt} from '../world/sculpt-height-model.js';
+import {sculptWaterAt} from '../world/sculpt-height-model.js?rev=author-maps-three-v1';
 
 export const SCULPT_MAP_PRESET_KEY='gensrpg.exploration.map-presets.v1';
 export const SCULPT_MAP_PRESET_KIND='gensrpg-sculpt-map-preset';
