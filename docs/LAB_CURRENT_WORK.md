@@ -1,3 +1,13 @@
+## 2026-11-05 — Rétablir la sentinelle test du lot Arbres #372
+
+- Après la fusion #372 sur `main@57360da785d59802678070e66728b020833f8763`, les 20 WebP, 20 définitions et le smoke tactile sont présents, mais la reconstruction de l'arbre Git avait omis le fichier de test RED dédié (suppression constatée avant clôture).
+- Correction ciblée : réinstaller **le même** `tests/snow-tree-assets-v1.test.js` de #364, sans toucher à aucun asset ni code runtime, et le checkpoint START original.
+- Une nouvelle CI sur ce SHA doit prouver les 20 résolutions dans le catalogue, 20 WebP RGBA dimensionnés/empreintes, préservation des anciens arbres, ainsi que le navigateur.
+- Cause racine : mauvais `base_tree` lors de la première réconciliation après le RED. Tous les prochains lots conservent explicitement les tests du parent.
+- **NON GREEN** tant que CI et publication du commit ne sont pas confirmées.
+
+---
+
 ## 2026-11-05 — Réintégration des 20 arbres enneigés validés
 
 - Base certifiée `main@7155516b51db9892183cc043837037c4c87a0315`, PR source #364 `77b358c2bcf815372b112a1982518535906641a3`, TDD RED `9aa7c6fc8ca746e76a5c85105b219a988958db27`.
