@@ -3,8 +3,8 @@
 import {createWorldBuilderDraft,connectWorldAreas,setWorldInitialArea,updatePortal,initializeWorldPresetEncounters}
   from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene,placeSculptWorldPortal} from './sculpt-world-area-link.js';
-import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
-import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
+import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 
 export function playableSculptArea(area){
   if(!area)return false;
