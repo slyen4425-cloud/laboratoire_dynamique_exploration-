@@ -80,6 +80,126 @@ function normalizeDefinition(definition) {
 const DEFINITIONS = frozen([
   {
     schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.nature.01',
+    label: 'Arène élémentaire · Sanctuaire de l’Arbre-Monde',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.nature.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.feu.01',
+    label: 'Arène élémentaire · Forge magmatique',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.feu.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.eau.01',
+    label: 'Arène élémentaire · Palais des marées',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.eau.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.air.01',
+    label: 'Arène élémentaire · Citadelle suspendue',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.air.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.terre.01',
+    label: 'Arène élémentaire · Bastion des falaises',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.terre.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.foudre.01',
+    label: 'Arène élémentaire · Tour des orages',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.foudre.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.glace.01',
+    label: 'Arène élémentaire · Crypte du givre',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.glace.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.lumiere.01',
+    label: 'Arène élémentaire · Sanctuaire du zénith',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.lumiere.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.tenebres.01',
+    label: 'Arène élémentaire · Forteresse de l’éclipse',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.tenebres.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
+    id: 'objectdef.building.arena.element.arcane.01',
+    label: 'Arène élémentaire · Observatoire arcanique',
+    kind: 'building',
+    library: { categoryId: 'buildings', folderId: 'buildings/arenas/elemental', provenance: 'native' },
+    visual: { assetId: 'object.building.arena.element.arcane.01' },
+    baseSize: { width: 370, height: 360 },
+    // Art-only object: no invented battle, doors or collision.
+    footprint: { enabled: false },
+    doorAnchors: []
+  },
+  {
+    schemaVersion: OBJECT_DEFINITION_SCHEMA_VERSION,
     id: 'objectdef.waterfall.front_wide.01',
     label: '2,5D · Cascade animée · Large de face',
     kind: 'decor',

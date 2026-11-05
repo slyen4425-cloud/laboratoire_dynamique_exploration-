@@ -1,3 +1,12 @@
+## 2026-11-05 — Réconciliation des dix bâtiments d'arènes élémentaires
+
+- Source originale certifiée PR #359 SHA c1aee37d154400eefe50a978bad5a045758803f6 ; base saine `main@7155516b51db9892183cc043837037c4c87a0315`; RED `96a43799ddb24d782d41720fde1ba3155c3de9cf`.
+- 10 PNG + 10 WebP copiés **par SHA Git Blob**, indexés dans le manifeste unique des bâtiments, dix defs `building`, catégorie `buildings/arenas/elemental`, Asset Adapter canonique.
+- Visuels uniquement (pas de faux portail/collision/rencontre/champion). PR source en conflit non fusionnée.
+- Tests Node et Chromium, Pages préflight et publication du SHA exigés; hors périmètre Jouer/Combat/Dungeon et vieux V80.
+
+---
+
 ## 2026-11-05 — Réconciliation du plafond libre avec le nouveau HP policy main (PR #370)
 - **Conflit de base constaté** : pendant la validation de la PR #370, Exploration `main` a intégré la politique Combat HP (PR #369), commit officiel `2b27339a5706fcdb436558aeebd4f8b6b0ce9d85`, CI #41945445069 SUCCESS. L'ancienne PR #370 fondée sur `4e7abd15` est devenue `dirty`, donc **pas de merge direct**.
 - **Reprise sûre** : checkpoint `checkpoint/exploration-freecap-rebase-start-2026-11-05` au nouveau main certifié, branche auxiliaire de réconciliation `work/exploration-freecap-rebase-2026-11-05`, puis mise à jour par lease de la branche PR #370. Réappliquer uniquement son test et sa validation de niveau, sur le code qui conserve `combatHpMultiplier` optionnel et tous les contrôles du pont HP. Aucun changement au HP, Combat, Explorer, PWA ou au World Builder.

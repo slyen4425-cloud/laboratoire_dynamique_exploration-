@@ -1,4 +1,54 @@
 const WORLD_OBJECT_ASSETS = Object.freeze({
+  'object.building.arena.element.nature.01': Object.freeze({
+    id: 'object.building.arena.element.nature.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_nature_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.feu.01': Object.freeze({
+    id: 'object.building.arena.element.feu.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_feu_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.eau.01': Object.freeze({
+    id: 'object.building.arena.element.eau.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_eau_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.air.01': Object.freeze({
+    id: 'object.building.arena.element.air.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_air_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.terre.01': Object.freeze({
+    id: 'object.building.arena.element.terre.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_terre_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.foudre.01': Object.freeze({
+    id: 'object.building.arena.element.foudre.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_foudre_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.glace.01': Object.freeze({
+    id: 'object.building.arena.element.glace.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_glace_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.lumiere.01': Object.freeze({
+    id: 'object.building.arena.element.lumiere.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_lumiere_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.tenebres.01': Object.freeze({
+    id: 'object.building.arena.element.tenebres.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_tenebres_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.building.arena.element.arcane.01': Object.freeze({
+    id: 'object.building.arena.element.arcane.01', kind: 'building-visual',
+    path: './assets/exploration/objects/buildings/arenas/arene_arcane_2p5d.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.waterfall.front_wide.forest_stream.flow.01': Object.freeze({
     id: 'object.waterfall.front_wide.forest_stream.flow.01',
     kind: 'decor-visual',
