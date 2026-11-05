@@ -40,8 +40,16 @@ export function readScopedAdventurePlayingPartyV1({
  let value;
  try{value=JSON.parse(raw);}
  catch{throw new Error('Adventure playing party JSON illisible; preserved for diagnosis');}
- exactFields(value,['schema','version','sessionId','worldId','combatSha','partyRef','active'],
+ const hasHpPolicy=Object.hasOwn(value,'combatHpMultiplier');
+ exactFields(value,['schema','version','sessionId','worldId','combatSha','partyRef','active',
+  ...(hasHpPolicy?['combatHpMultiplier']:[])],
   'Adventure playing party');
+ // Legacy games without the field still use 100% HP; never infer game
+ // rules from an author's species, level, or the standalone Tester.
+ const combatHpMultiplier=hasHpPolicy?value.combatHpMultiplier:1;
+ if(typeof combatHpMultiplier!=='number'||!Number.isFinite(combatHpMultiplier)||
+    combatHpMultiplier<=0||combatHpMultiplier>1)
+  throw new RangeError('Invalid Adventure combatHpMultiplier in (0,1]');
  if(value.schema!==ADVENTURE_PLAYING_PARTY_SCHEMA_V1||value.version!==1)
   throw new RangeError('Invalid versioned Adventure playing party schema');
  if(value.sessionId!==sessionId)
@@ -65,6 +73,7 @@ export function readScopedAdventurePlayingPartyV1({
  return Object.freeze({
   schema:ADVENTURE_PLAYING_PARTY_SCHEMA_V1,version:1,
   sessionId,worldId,combatSha:value.combatSha,partyRef:value.partyRef,
-  active:Object.freeze({instanceId,speciesId,level:active.level,hp:active.hp})
+  active:Object.freeze({instanceId,speciesId,level:active.level,hp:active.hp}),
+  combatHpMultiplier
  });
 }
