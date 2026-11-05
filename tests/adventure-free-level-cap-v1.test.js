@@ -23,7 +23,10 @@ test('native Exploration rejects invalid gameplay level without destroying a pen
  for(const n of [0,-1,1.5,NaN,Number.MAX_SAFE_INTEGER+1]){
   const x=saved(n);
   assert.throws(x.read,/level/i);
-  assert.equal(JSON.parse(x.raw).active.level,n,
+  assert.equal(x.raw,JSON.stringify({schema:'gensrpg.capture.v2.active-party.v1',
+   version:1,sessionId:'session-capped-test',worldId:'world-42',
+   combatSha:sha,partyRef:'adventure-party:session-capped-test',
+   active:{instanceId:'instance-1',speciesId:'lumilo',level:n,hp:9.25}}),
    'transport data stays untouched on a rejected grant');
  }
 });
