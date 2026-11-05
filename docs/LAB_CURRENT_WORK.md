@@ -1,3 +1,12 @@
+## 2026-11-05 — Tests de vraie animation et sélection des moulins
+
+- Le smoke V20 historique utilisait arbitrairement la première entrée Bâtiments pour attendre un fichier `building_house_*.webp`. Depuis l'ajout des objets animés, ce choix devient le moulin et le test aurait attribué un faux échec au rendu.
+- Vérification V20 désormais fixe : sélectionner explicitement la maison ancienne `objectdef.building.house.blue_cottage.01` ; le contrôle exact de son WebP reste obligatoire.
+- Nouvelle sentinelle Chromium, isolée : sélectionner le moulin, vérifier ses trois vues, placer en trois-quarts gauche, vérifier le chargement du **vrai atlas WebP** par le renderer, puis restaurer la scène et ses objets.
+- Aucun changement au runtime, collision ou autorité d'animation. CI du SHA à refaire avant promotion.
+
+---
+
 ## 2026-11-05 — Moulins et éoliennes animés, raccord au World Builder
 
 - Six vues 2,5D, 72 frames originales et six atlas WebP 4×3 12 frames à 10 FPS issues de la PR #349 SHA 413584312d13e3c7a78e455973d2d83d4406e31f.
