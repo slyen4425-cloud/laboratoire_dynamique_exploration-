@@ -703,7 +703,14 @@ try{
     document.querySelector('#fit').click();
     document.querySelector('#mode-objects').click();
     const r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    // Explicit stable fixture: new native building families must not change which
+    // previously-approved house visual this historical smoke proves.
     const select=document.querySelector('#object-definition');
+    const fixture='objectdef.building.house.blue_cottage.01';
+    if(![...select.options].some(option=>option.value===fixture))
+      throw Error('V20 official house fixture missing');
+    select.value=fixture;
+    select.dispatchEvent(new Event('change',{bubbles:true}));
     return {position:{x:r.left+r.width*.5,y:r.top+r.height*.5},
       probe:window.__sculptObjectsProbe(),
       type:select.value,paletteVisible:!document.querySelector('#object-palette').hidden};
@@ -862,6 +869,35 @@ try{
   const afterV23Import=await run('window.__sculptObjectsProbe()');
   if(!afterV23Import.objects.some(o=>o.visualVariantId==='back'&&o.rotationDeg===137))
     throw Error('V23 house rear perspective lost after scene import: '+JSON.stringify(afterV23Import));
+  // Elemental arena: actual native building selection + place + image load.
+  // Restore the previous V23 scene so later checks observe identical object state.
+  const arenaSelect=await run(`(()=>{
+    const cat=document.querySelector('#object-category');
+    cat.value='building';cat.dispatchEvent(new Event('change',{bubbles:true}));
+    const def=document.querySelector('#object-definition');
+    const arena='objectdef.building.arena.element.glace.01';
+    const exists=[...def.options].some(o=>o.value===arena);
+    if(exists){def.value=arena;def.dispatchEvent(new Event('change',{bubbles:true}));}
+    const mode=document.querySelector('#object-action');
+    mode.value='place';mode.dispatchEvent(new Event('change',{bubbles:true}));
+    return {exists,selected:def.value};
+  })()`);
+  if(!arenaSelect.exists||arenaSelect.selected!=='objectdef.building.arena.element.glace.01')
+    throw Error('Arène élémentaire absente de la bibliothèque native: '+JSON.stringify(arenaSelect));
+  const arenaPt={x:sidePt.x,y:sidePt.y};
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:arenaPt.x,y:arenaPt.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:arenaPt.x,y:arenaPt.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:arenaPt.x,y:arenaPt.y,button:'left',clickCount:1});
+  await sleep(700);
+  const arenaPlacement=await run(`(()=>({
+    objects:window.__sculptObjectsProbe().objects,
+    downloaded:performance.getEntriesByType('resource').some(r=>
+      r.name.includes('arenas/arene_glace_2p5d.webp')&&r.responseEnd>0)
+  }))()`);
+  if(!arenaPlacement.objects.some(o=>o.definition==='objectdef.building.arena.element.glace.01')||!arenaPlacement.downloaded)
+    throw Error('Arène élémentaire non affichée en vrai Canvas: '+JSON.stringify(arenaPlacement));
+  await run(`(()=>{document.querySelector('#json').value=window.__v23Scene;
+    document.querySelector('#import').click();return true;})()`);
   await run("document.querySelector('#mode-ground').click()");
   console.log('V23 house 3 views/rotate/selected edit roundtrip Chromium:',
     JSON.stringify({views:v23Config.views,rotation:137,backAssetLoaded:rearLoaded}));

@@ -1,3 +1,13 @@
+## 2026-11-05 — Réconciliation croisée : arbres enneigés + arènes élémentaires
+
+- Base actuelle `main@7ad545f04cdc911b42be9c2490217440f4962e7b` après fusion des arbres et de la restauration de leurs tests. La PR #373 réconcilie ses fichiers par merge commit deux parents.
+- Préservation des 20 arbres, de leur test dédié, de leur placement tactile et des 30 vues de maisons enneigées.
+- 10 arènes 2,5D `Bâtiments > Arènes élémentaires`, visuels PNG/WebP source et manifest.
+- Le smoke Chromium sélectionne explicitement une maison existante puis teste l'arène Glace dans le vrai Canvas, avec un point de placement déjà prouvé et restauration de la scène.
+- CI exacte 3/3, préflight Pages et publication exigés avant GREEN, autres modules intacts.
+
+---
+
 ## 2026-11-05 — Rétablir la sentinelle test du lot Arbres #372
 
 - Après la fusion #372 sur `main@57360da785d59802678070e66728b020833f8763`, les 20 WebP, 20 définitions et le smoke tactile sont présents, mais la reconstruction de l'arbre Git avait omis le fichier de test RED dédié (suppression constatée avant clôture).
