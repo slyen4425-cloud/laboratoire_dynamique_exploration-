@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sculpt-ramp-v77-r2';
+import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -81,13 +81,13 @@ import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1
 import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
+  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
-import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
@@ -805,7 +805,7 @@ function cameraView(){
 }
 function cameraBounds(){
   return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
-    terrain.height*SCULPT_TILE.height,7*SCULPT_TILE.rise);
+    terrain.height*SCULPT_TILE.height,16*SCULPT_TILE.rise);
 }
 function fit(){
   // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
@@ -2895,7 +2895,7 @@ $('water-target').addEventListener('input',()=>{
 });
 function changeTarget(level){
  const value=Math.max(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?1:0,
-    Math.min(7,Number(level)));
+    Math.min(16,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
  syncQuickToolbar();status(selectedMode==='sphere-basin'?'Profondeur sphérique : −'+value+' niveaux':
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':

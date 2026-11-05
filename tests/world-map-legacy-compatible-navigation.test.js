@@ -11,7 +11,7 @@ const presets=builtinSculptMapPresets();
 test('World/Map navigation offers an existing playable Area instead of blocking on the 2400x1600 legacy start',()=>{
   const legacy=createBlankWorldBuilderDraft({id:'capture-old',width:2400,height:1600});
   const withIsland=createWorldAreaFromSculptMapPreset(legacy,presets[0],{name:'Ile',hostAreaId:null});
-  const world=createWorldAreaFromSculptMapPreset(withIsland,presets[3],{name:'Forêt',hostAreaId:null});
+  const world=createWorldAreaFromSculptMapPreset(withIsland,presets[1],{name:'Forêt',hostAreaId:null});
   const before=serializeWorldBuilderDraft(world);
   const target=resolveSculptAreaForEditor(world,legacy.initialAreaId);
   assert.equal(target?.areaId,world.areas[1].id);

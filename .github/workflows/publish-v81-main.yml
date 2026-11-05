@@ -763,7 +763,13 @@ jobs:
           grep -Fq 'builtinSculptMapPresets' /tmp/published-builtin-maps.js
           curl -fsSL "$probe/src/builder/sculpt-playable-zone-route.js?build=$GITHUB_SHA" -o /tmp/published-playable-route.js
           grep -Fq 'makePlayableZoneRoute' /tmp/published-playable-route.js
-          grep -Fq "Forêt du village" /tmp/published-builtin-maps.js
+          grep -Fq "AUTHOR_SCULPT_MAP_SNAPSHOTS" /tmp/published-builtin-maps.js
+          grep -Fq "AUTHOR_SNOW_MAP_SNAPSHOT" /tmp/published-builtin-maps.js
+          curl -fsSL "$probe/src/builder/sculpt-author-map-snapshots.js?build=$GITHUB_SHA" -o /tmp/published-author-maps.js
+          curl -fsSL "$probe/src/builder/sculpt-author-snow-map-snapshot.js?build=$GITHUB_SHA" -o /tmp/published-snow-map.js
+          grep -Fq 'Forêt 1 · projet' /tmp/published-author-maps.js
+          grep -Fq 'Plaine 1 · projet' /tmp/published-author-maps.js
+          grep -Fq 'Neige 1 · projet' /tmp/published-snow-map.js
           curl -fsSL "$probe/src/builder/sculpt-map-preset-library.js?build=$GITHUB_SHA" -o /tmp/published-map-presets.js
           grep -Fq 'createWorldAreaFromSculptMapPreset' /tmp/published-map-presets.js
           grep -Fq 'function mapEdgePoint' /tmp/published-map-presets.js

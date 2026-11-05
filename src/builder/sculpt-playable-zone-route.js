@@ -3,8 +3,8 @@
 import {createWorldBuilderDraft,connectWorldAreas,setWorldInitialArea,updatePortal,initializeWorldPresetEncounters}
   from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene,placeSculptWorldPortal} from './sculpt-world-area-link.js';
-import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js?rev=preset-travel-encounters-v2';
-import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=preset-travel-encounters-v2';
+import {createWorldAreaFromSculptMapPreset,mapEdgePoint} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
+import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 
 export function playableSculptArea(area){
   if(!area)return false;
@@ -28,7 +28,7 @@ export function resolveSculptAreaForEditor(draft,selectedAreaId){
 }
 const nextArea=(after,before)=>after.areas.find(a=>!before.has(a.id));
 
-export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[3],initializeEncounters=false}={}){
+export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[1],initializeEncounters=false}={}){
   let next=createWorldBuilderDraft(draft);
   const previousIds=new Set(next.areas.map(a=>a.id));
   let source=next.areas.find(a=>a.id===selectedAreaId&&playableExteriorArea(a))
@@ -66,6 +66,12 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
       p.targetSpawnId=destination.spawns[0].id;
       p.visual={...p.visual,label:destination.label??destination.id};
     });
+    // Retargeted legacy gate was placed against the old, unplayable
+    // destination; align it with the real route end on its source map.
+    // Only point-based legacy gates from this explicit repair are touched.
+    const origin=next.areas.find(a=>a.id===old.sourceAreaId);
+    next=placeSculptWorldPortal(next,old.id,
+      mapEdgePoint(sculptWorldAreaScene(origin),old.sourceAreaId===source.id?'exit':'entry'));
   }
   const knownPortals=new Set(next.portals.map(p=>p.id));
   next=connectWorldAreas(next,{
@@ -77,7 +83,7 @@ export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculpt
     p.trigger?.kind==='point')){
     const from=next.areas.find(a=>a.id===portal.sourceAreaId);
     next=placeSculptWorldPortal(next,portal.id,
-      mapEdgePoint(sculptWorldAreaScene(from),'exit'));
+      mapEdgePoint(sculptWorldAreaScene(from),portal.sourceAreaId===source.id?'exit':'entry'));
   }
   // The destination returns using its own canonical Portal, not a UI teleport.
   const reverse=next.portals.find(p=>p.sourceAreaId===target.id&&

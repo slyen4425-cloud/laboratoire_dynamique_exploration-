@@ -1,6 +1,6 @@
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
-import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js';
+import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js?rev=author-maps-three-v1';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
 import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-family-encounter-config.js';
@@ -59,7 +59,7 @@ function sculptEncounterSceneSettings(source = {}) {
 
 export const SCULPT_SCENE_PREVIEW_VERSION=1;
 export const SCULPT_SCENE_PREVIEW_KIND='sculpt-preview-scene';
-export const SCULPT_OBJECT_LIMIT=128;
+export const SCULPT_OBJECT_LIMIT=256;
 export const SCULPT_ACTOR_LIMIT=80;
 // Only the existing sculpt terrain and placement formats own the data.
 // This constructor is a scene-level editor command, not a second world model.

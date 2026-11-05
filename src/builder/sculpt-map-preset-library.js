@@ -1,12 +1,13 @@
 // Reusable, explicit map-template library. A preset is a snapshot of the
 // existing SculptPreviewScene contract, NEVER a WorldDocument/Portal/Spawn
 // authority. Applying it goes through saveSculptWorldArea once.
-import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js';
+import {serializeSculptPreviewScene,importSculptPreviewScene} from '../world/sculpt-scene-preview.js?rev=author-maps-three-v1';
 import {addWorldArea,connectWorldAreas,addSpawn,updateSpawn,updatePortal,createWorldBuilderDraft,createBuildingInteriorLink,initializeWorldPresetEncounters} from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {saveSculptWorldArea,placeSculptWorldPortal} from './sculpt-world-area-link.js';
-import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js';
+import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js?rev=author-maps-three-v1';
 import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {appendInteriorWall} from '../world/interior-wall-model.js';
+import {sculptWaterAt} from '../world/sculpt-height-model.js?rev=author-maps-three-v1';
 
 export const SCULPT_MAP_PRESET_KEY='gensrpg.exploration.map-presets.v1';
 export const SCULPT_MAP_PRESET_KIND='gensrpg-sculpt-map-preset';
@@ -82,8 +83,21 @@ export function mapEdgePoint(scene,side){
   const width=scene.terrain.width*28,height=scene.terrain.height*21;
   const firstRoute=scene.surface.routes[0]?.points??[];
   const endpoint=side==='entry'?firstRoute[0]:firstRoute.at(-1);
-  return {x:side==='entry'?64:width-64,
-    y:Math.max(48,Math.min(height-48,endpoint?.y??height/2))};
+  const x=side==='entry'?64:width-64;
+  const y=Math.max(48,Math.min(height-48,endpoint?.y??height/2));
+  const column=Math.floor(x/28),centerRow=Math.floor(y/21);
+  // A creator's painted route need not end at the outer boundary: the
+  // actual Portal/Spawn must still be on dry, traversable terrain.
+  // Never change the authored heightfield, water or road geometry.
+  if(sculptWaterAt(scene.terrain,column,centerRow)===0)return {x,y};
+  for(let offset=1;offset<scene.terrain.height;offset++){
+    for(const row of [centerRow+offset,centerRow-offset]){
+      if(row<0||row>=scene.terrain.height)continue;
+      if(sculptWaterAt(scene.terrain,column,row)===0)
+        return {x,y:Math.max(48,Math.min(height-48,(row+.5)*21))};
+    }
+  }
+  throw Error('Aucune entrée terrestre disponible sur le bord de la carte');
 }
 export function createWorldAreaFromSculptMapPreset(draft,preset,{
   name,kind='exterior',hostAreaId=null,initializeEncounters=true
