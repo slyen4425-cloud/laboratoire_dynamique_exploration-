@@ -22,6 +22,22 @@ function exactFields(value,keys,field){
   throw new TypeError('Invalid '+field+' fields');
  return value;
 }
+// Validates transport syntax only. Combat's official stat registry is solely
+// responsible for whether a stat exists and what its points change.
+function scopedStatAllocations(input){
+ if(!input || typeof input!=='object' || Array.isArray(input) ||
+    Object.getPrototypeOf(input)!==Object.prototype)
+  throw new TypeError('Adventure statAllocations must be a plain object');
+ const entries=Object.entries(input);
+ for(const [id,points] of entries){
+  if(!/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(id))
+   throw new RangeError('Invalid Adventure stat allocation ID');
+  if(typeof points!=='number'||!Number.isSafeInteger(points)||points<0)
+   throw new RangeError('Adventure stat allocation points must be nonnegative safe integers');
+ }
+ return Object.freeze(Object.fromEntries(entries));
+}
+
 export function adventurePlayingPartyStorageKeyV1(sessionId){
  return ADVENTURE_PLAYING_PARTY_STORAGE_PREFIX_V1+safeId(sessionId,'sessionId');
 }
@@ -60,8 +76,11 @@ export function readScopedAdventurePlayingPartyV1({
   throw new Error('Adventure playing party Combat sha mismatch');
  if(value.partyRef!=='adventure-party:'+sessionId)
   throw new Error('Adventure partyRef must match saved AdventureSession; Tester forbidden');
- const active=exactFields(value.active,['instanceId','speciesId','level','hp'],
+ const hasStatAllocations=Object.hasOwn(value.active??{},'statAllocations');
+ const active=exactFields(value.active,['instanceId','speciesId','level','hp',
+  ...(hasStatAllocations?['statAllocations']:[])],
   'Adventure playing party active creature');
+ const statAllocations=hasStatAllocations?scopedStatAllocations(active.statAllocations):null;
  const instanceId=safeId(active.instanceId,'instanceId');
  const speciesId=safeId(active.speciesId,'speciesId');
  if(!allowedCreatureIds.includes(speciesId))
@@ -73,7 +92,8 @@ export function readScopedAdventurePlayingPartyV1({
  return Object.freeze({
   schema:ADVENTURE_PLAYING_PARTY_SCHEMA_V1,version:1,
   sessionId,worldId,combatSha:value.combatSha,partyRef:value.partyRef,
-  active:Object.freeze({instanceId,speciesId,level:active.level,hp:active.hp}),
+  active:Object.freeze({instanceId,speciesId,level:active.level,hp:active.hp,
+   ...(hasStatAllocations?{statAllocations}:{})}),
   combatHpMultiplier
  });
 }

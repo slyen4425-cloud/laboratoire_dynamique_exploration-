@@ -1,3 +1,25 @@
+## 2026-11-05 — Réconciliation propriétaire des allocations Aventure avec PR #372 arbres enneigés (CI REQUISE)
+
+- **Pourquoi** : Exploration `main@57360da785d59802678070e66728b020833f8763` a intégré 20 arbres approuvés pendant la CI de la PR #371 (ancien parent `7155516b`), sans altérer les contrats de Combat. Refus de fusionner une branche divergeante.
+- **Conservation** : l'ancien candidat #371 `d6451982eca0f6415568ef410793eaa178319be4` demeure sur `checkpoint/exploration-owned-stats-pre-reconcile-2026-11-05`; checkpoint départ de réconciliation `checkpoint/exploration-start-owned-stats-main-reconcile-2026-11-05` au main PR #372. Les 20 assets, catalogues et tests `snow-trees` viennent exclusivement du nouveau main.
+- **Raccord exact** : réappliquer seulement le lecteur optionnel `active.statAllocations` et son test comportemental sur le nouveau parent, préserver tous les autres fichiers via la tree de `main`. Aucun calcul Stats dans Exploration, aucun octet d'asset modifié.
+- **Gates** : refaire CI 3/3 et Pages préflight du NOUVEAU SHA exact, certifier les deux changements composés puis seulement fusionner la PR #371 et vérifier CI/main/Pages. Ne pas déclarer GREEN avant preuves.
+
+---
+
+## 2026-11-05 — Jouer Aventure : transporter les allocations de stats d'instance sans dupliquer les règles (CI 3/3 GREEN, revue finale)
+
+- **START** : Exploration `main@7155516b51db9892183cc043837037c4c87a0315`, CI #41949196778 3/3 SUCCESS ; checkpoint `checkpoint/exploration-start-adventure-owned-stats-transport-2026-11-05`, branche `work/exploration-adventure-owned-stats-transport-2026-11-05`.
+- **Cause** : GenSRPG Aventure possède des allocations de stats sauvegardées; leur grant Jouer n'en transporte aucune vers Combat. Exploration ne doit jamais posséder les calculs santé/dégâts/résistances du Labo Combat.
+- **Périmètre strict** : lecture facultative `active.statAllocations` (nombres entiers sûrs non négatifs, IDs syntaxiquement valides) dans le même contrat de partie; préserver les grants existants, identité, niveau >100, PV décimaux, `combatHpMultiplier`, permissions Bestiaire et rejet des champs inattendus. Relayer uniquement vers le constructeur **officiel** Combat via `adventureParty.active`, sans copie des règles de statistiques. La route Tester ne reçoit pas les points de partie.
+- **TDD RED→GREEN** : tests de transport distincts d'abord sur ancien lecteur, puis réparation; invalides refusés sans altérer la sauvegarde, ancien jouable, source native identique et aucun faux bonus dans le Tester. **Dépendance** : ne finaliser le branchement du constructeur Combat ni la publication que lorsque le port optionnel est intégré et certifié sur Combat `main` ; PR Combat #251 en préparation.
+- **TDD réel** : [RED Exploration CI #42035798101](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/42035798101), `core-tests` FAILURE sur `Invalid Adventure playing party active creature fields` avec nouvel ensemble `statAllocations`, autres fonctions conservées. Code corrigé uniquement dans `src/encounters/adventure-playing-party-v1.js`, lecteur optionnel sans calcul.
+- **Preuve GREEN candidat** : [Exploration CI #42036039453](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/42036039453) **3/3 SUCCESS** (core-tests, native-https-pixels, modern-combat-encounter), SHA exact `0a8315f745365ebc1d59af8833689eb1bcf201e7`; ancien grant, niveaux 250, PV décimaux et `combatHpMultiplier` préservés. Le même bridge natif relaie `adventureParty.active` sans recréer un moteur.
+- **Dépendance officielle actualisée** : Combat PR #251 fusionnée `main@954f38e6b84e842bc8bf6d8515d5c77b93aca5f1`, CI main #42036361285 5/5 SUCCESS. Aucune dépendance à un HEAD de PR.
+- **Livraison** : recertifier ce journal sur le SHA final puis créer checkpoint GREEN et fusion contrôlée après gates; confirmer Exploration main CI + publisher. Ensuite seulement GenSRPG repinnera Exploration et Combat main dans un lot distinct, avec navigateur réel et publication séparée. Aucun changement dans Dungeon, PWA, World Builder, arènes ou catalogue d'objets Monster Capture.
+
+---
+
 ## 2026-11-05 — Réintégration des 20 arbres enneigés validés
 
 - Base certifiée `main@7155516b51db9892183cc043837037c4c87a0315`, PR source #364 `77b358c2bcf815372b112a1982518535906641a3`, TDD RED `9aa7c6fc8ca746e76a5c85105b219a988958db27`.
