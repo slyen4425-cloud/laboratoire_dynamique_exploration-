@@ -1,3 +1,9 @@
+## 2026-11-05 — Réconciliation du plafond libre avec le nouveau HP policy main (PR #370)
+- **Conflit de base constaté** : pendant la validation de la PR #370, Exploration `main` a intégré la politique Combat HP (PR #369), commit officiel `2b27339a5706fcdb436558aeebd4f8b6b0ce9d85`, CI #41945445069 SUCCESS. L'ancienne PR #370 fondée sur `4e7abd15` est devenue `dirty`, donc **pas de merge direct**.
+- **Reprise sûre** : checkpoint `checkpoint/exploration-freecap-rebase-start-2026-11-05` au nouveau main certifié, branche auxiliaire de réconciliation `work/exploration-freecap-rebase-2026-11-05`, puis mise à jour par lease de la branche PR #370. Réappliquer uniquement son test et sa validation de niveau, sur le code qui conserve `combatHpMultiplier` optionnel et tous les contrôles du pont HP. Aucun changement au HP, Combat, Explorer, PWA ou au World Builder.
+- **TDD** : cas >100 et entiers invalides déjà RED sur le nouveau main (l'ancien validateur refuse 101/250), tests historiques de grant maintenus et corrigés pour rejeter un entier non sûr. Refuser de qualifier GREEN tant que les trois jobs du nouveau SHA de la PR #370 ne sont pas SUCCESS.
+---
+
 ## 2026-11-05 — Aventure : PV × 0,25 en partie réelle, Tester inchangé (raccord source officielle)
 - Demande auteur : les PV configurés pour le test au niveau 20 rendent le mode Jeu niveau 1 trop long. Nouvelle règle globale de vitrine GenSrpG : 25 % des PV au début d'un combat réel, 100 % en mode Test, sans retoucher chaque créature.
 - BASE `main@4e7abd15d7b57909524ba697b74f63a193fce839`; START `checkpoint/exploration-start-adventure-hp-policy-2026-11-05`; WORK `work/exploration-adventure-hp-policy-2026-11-05`.
