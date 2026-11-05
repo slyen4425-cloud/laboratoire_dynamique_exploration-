@@ -28,7 +28,7 @@ export function resolveSculptAreaForEditor(draft,selectedAreaId){
 }
 const nextArea=(after,before)=>after.areas.find(a=>!before.has(a.id));
 
-export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[3],initializeEncounters=false}={}){
+export function makePlayableZoneRoute(draft,{selectedAreaId,preset=builtinSculptMapPresets()[1],initializeEncounters=false}={}){
   let next=createWorldBuilderDraft(draft);
   const previousIds=new Set(next.areas.map(a=>a.id));
   let source=next.areas.find(a=>a.id===selectedAreaId&&playableExteriorArea(a))
