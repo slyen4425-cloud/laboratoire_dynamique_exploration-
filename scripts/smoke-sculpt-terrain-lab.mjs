@@ -4005,10 +4005,10 @@ try{
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{
     const select=document.querySelector('#world-map-preset-select');
-    select.value='map-preset-101';select.dispatchEvent(new Event('change'));
+    select.value='map-preset-109';select.dispatchEvent(new Event('change'));
     document.querySelector('#world-map-preset-create').click();
     const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
-    const outside=doc?.areas.find(a=>a.label==='Forêt du village · chemin, maison et mare');
+    const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');
     const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
       p.trigger?.kind==='object-anchor');
     const room=doc?.areas.find(a=>a.id===door?.targetAreaId);
