@@ -5,19 +5,22 @@ import {readFileSync} from 'node:fs';
 const workflow=readFileSync(new URL('../.github/workflows/publish-v81-main.yml',import.meta.url),'utf8');
 const candidate='77607520574c8509becf91a6dc55783e29c1570c';
 
-test('unified mobile candidate is pinned to exact CI SHA in single existing Pages publisher',()=>{
+test('unified mobile candidate remains pinned to exact CI SHA for real Chromium validation',()=>{
  assert.match(workflow,new RegExp('ref: '+candidate));
  assert.match(workflow,/path: unified-source/);
  assert.match(workflow,/Stage full unified mobile trial without replacing V80/);
  assert.match(workflow,/site\/preview\/unified-candidate/);
  assert.match(workflow,/test "\$\(git -C unified-source rev-parse HEAD\)" = "\$candidate_sha"/);
  const staging=workflow.indexOf('Stage full unified mobile trial without replacing V80');
+ const browser=workflow.indexOf('Test actual assembled unified candidate in Chromium');
+ const prune=workflow.indexOf('prune-pages-duplicate-previews.mjs');
  const upload=workflow.indexOf('actions/upload-pages-artifact@v3');
- assert.ok(staging>0&&staging<upload,'new trial must be part of complete site artifact');
+ assert.ok(staging>0&&staging<browser&&browser<prune&&prune<upload,
+  'Candidate is tested from immutable historical bytes, then compacted before public upload');
  assert.match(workflow,/ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc/);
 });
 
-test('unified preview includes same complete Combat main/visual assets as canonical and tests real browser',()=>{
+test('pre-compaction unified candidate retains approved engine and tests real browser',()=>{
  assert.match(workflow,/unified-source\/sculpt-lab\.html/);
  assert.match(workflow,/unified-source\/world-assembler\.html/);
  assert.match(workflow,/unified-source\/builder\.html/);
@@ -29,11 +32,11 @@ test('unified preview includes same complete Combat main/visual assets as canoni
  assert.match(workflow,/Math\.min\(SCULPT_TERRAIN_MAX_LEVEL,Number\(level\)\)/);
 });
 
-test('preview verifies public HTTPS provenance and leaves original V80 byte-frozen',()=>{
- assert.match(workflow,/Verify HTTPS unified candidate and original V80 after Pages deployment/);
- assert.match(workflow,/trial="\$root\/preview\/unified-candidate"/);
- assert.match(workflow,/"\$trial\/release-provenance\.v1\.json\?run=\$GITHUB_RUN_ID"/);
- assert.match(workflow,/for page in sculpt-lab\.html world-assembler\.html builder\.html/);
- assert.match(workflow,/cmp release-check\/sculpt-lab-v80\.html \/tmp\/published-v80\.html/);
- assert.match(workflow,/\.exploration==\$sha/);
+test('historical unified entry URLs now explicitly redirect; V80 production unchanged',()=>{
+ assert.match(workflow,/Verify retired trial URLs redirect to maintained World Builder without duplicated assets/);
+ assert.match(workflow,/rich-presets-pr301 ramp-pr316 waterfall-height-pr320 unified-candidate/);
+ assert.match(workflow,/historical-preview-alias\.v1\.json/);
+ assert.match(workflow,/\.\.\/encounters-v80\/\$page/);
+ assert.match(workflow,/cmp release-check\/sculpt-lab-v80\.html \/tmp\/frozen-v80\.html/);
+ assert.match(workflow,/jq -e --arg main/);
 });
