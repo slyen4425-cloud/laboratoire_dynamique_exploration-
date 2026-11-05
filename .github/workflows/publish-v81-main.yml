@@ -582,6 +582,26 @@ jobs:
           HTML
           grep -Fq 'content="0;url=./preview/encounters-v80/play.html"' site/play.html
           cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
+      - name: Compact official Capture assets to catalog-only files
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Staging copy only; sources in capture-source and its .git remain intact.
+          rm -rf site/preview/encounters-v80/capture-assets
+          node encounter-source/scripts/stage-pages-capture-assets.mjs capture-source site/preview/encounters-v80/capture-assets
+          test -s site/preview/encounters-v80/capture-assets/data/assets/catalog/global-visual-assets.v1.json
+          test -s site/preview/encounters-v80/capture-assets/assets/library/capture/creatures/heriplante/animations/movement/opponent/atlases/heriplante_movement_opponent_12f.webp
+      - name: Check release size and duplicate asset directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          node encounter-source/scripts/prune-pages-duplicate-previews.mjs site
+          ! find site/preview -mindepth 2 -type d -name capture-assets | grep -v '/encounters-v80/capture-assets'
+          ! find site/preview -mindepth 2 -type d -name combat-preview | grep -v '/encounters-v80/combat-preview'
+          for old in rich-presets-pr301 ramp-pr316 waterfall-height-pr320 unified-candidate; do
+            test -s "site/preview/$old/historical-preview-alias.v1.json"
+          done
+          cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
@@ -603,95 +623,27 @@ jobs:
         with:
           ref: 933c852c41c4511cb0eed0717c246cc6b19aeddc
           path: release-check
-      - name: Verify HTTPS unified candidate and original V80 after Pages deployment
+      - name: Verify retired trial URLs redirect to maintained World Builder without duplicated assets
         shell: bash
         run: |
           set -euo pipefail
           root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
-          trial="$root/preview/unified-candidate"
-          sha="77607520574c8509becf91a6dc55783e29c1570c"
-          for page in sculpt-lab.html world-assembler.html builder.html; do
-            curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-              "$trial/$page?run=$GITHUB_RUN_ID" -o "/tmp/unified-$page"
+          for old in rich-presets-pr301 ramp-pr316 waterfall-height-pr320 unified-candidate; do
+            alias="$root/preview/$old"
+            for page in sculpt-lab.html world-assembler.html builder.html index.html play.html; do
+              curl -fsSL --retry 16 --retry-all-errors --retry-delay 3 \
+                "$alias/$page?run=$GITHUB_RUN_ID" -o /tmp/historic-alias.html
+              grep -Fq "../encounters-v80/$page" /tmp/historic-alias.html
+              grep -Fq "ancienne prévisualisation est archivée" /tmp/historic-alias.html
+            done
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 3 \
+              "$alias/historical-preview-alias.v1.json?run=$GITHUB_RUN_ID" -o /tmp/historic-alias.json
+            jq -e --arg name "$old" '.kind=="exploration-historical-preview-redirect" and .name==$name' /tmp/historic-alias.json >/dev/null
           done
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$trial/src/world/sculpt-height-model.js?run=$GITHUB_RUN_ID" -o /tmp/unified-height.js
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$trial/src/sculpt-lab-main.js?run=$GITHUB_RUN_ID" -o /tmp/unified-main.js
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$trial/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/unified-provenance.json
-          grep -Fq 'SCULPT_TERRAIN_MAX_LEVEL=16' /tmp/unified-height.js
-          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/unified-main.js
-          grep -Fq 'id="sculpt-encounter-area-inherit"' /tmp/unified-sculpt-lab.html
-          grep -Fq 'id="family-encounter-area-inherit"' /tmp/unified-builder.html
-          grep -Fq 'id="graph-nodes"' /tmp/unified-world-assembler.html
-          jq -e --arg sha "$sha" '.exploration==$sha and .combatMain==.authorShowcase' \
-            /tmp/unified-provenance.json >/dev/null
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$root/sculpt-lab-v80.html?run=$GITHUB_RUN_ID" -o /tmp/published-v80.html
-          cmp release-check/sculpt-lab-v80.html /tmp/published-v80.html
-          echo "Live unified trial verified at $sha; V80 frozen byte-for-byte"
-      - name: Verify Pages also serves the pinned PR301 test editor after this main deployment
-        shell: bash
-        run: |
-          set -euo pipefail
-          probe="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/rich-presets-pr301"
-          for page in sculpt-lab.html world-assembler.html; do
-            curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-              "$probe/$page?run=$GITHUB_RUN_ID" -o "/tmp/rich-$page"
-          done
-          grep -Fq 'id="object-open-interior"' /tmp/rich-sculpt-lab.html
-          grep -Fq 'id="world-map-preset-create"' /tmp/rich-world-assembler.html
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" -o /tmp/rich-provenance.json
-          jq -e '.exploration=="40955a7838beb8fb76e74fd4b941ce4bb7cd1505"' /tmp/rich-provenance.json >/dev/null
-          echo 'LIVE: stable + PR301 are both served from the same Pages artifact'
-      - name: Verify public PR318 narrow-road ramp preview serves the fixed immutable SHA
-        shell: bash
-        run: |
-          set -euo pipefail
-          probe="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/ramp-pr316"
-          sha="0dc90b9778b0a9e530adf7e90ac6d2506599c952"
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$probe/release-provenance.v1.json?run=$GITHUB_RUN_ID" \
-            -o /tmp/ramp-pr316-provenance.json
-          jq -e --arg sha "$sha" '.exploration==$sha' /tmp/ramp-pr316-provenance.json >/dev/null
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$probe/sculpt-lab.html?run=$GITHUB_RUN_ID" -o /tmp/ramp-pr316-sculpt.html
-          grep -Fq 'id="ramp-guide"' /tmp/ramp-pr316-sculpt.html
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$probe/src/render/sculpt-ramp-renderer.js?run=$GITHUB_RUN_ID" \
-            -o /tmp/ramp-pr316-renderer.js
-          grep -Fq 'ctx.closePath();ctx.clip();' /tmp/ramp-pr316-renderer.js
-          echo "LIVE PR316: https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/preview/ramp-pr316/sculpt-lab.html"
-      - name: Verify live HTTPS PR320 cascade and ground height preview
-        shell: bash
-        run: |
-          set -euo pipefail
-          sha="d4b9d8c804e592392c5b7a2ec7cc2f160291a076"
-          root="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$root/preview/waterfall-height-pr320/release-provenance.v1.json?run=$GITHUB_RUN_ID" \
-            -o /tmp/waterfall-height-pr320-provenance.json
-          jq -e --arg sha "$sha" '.exploration==$sha' /tmp/waterfall-height-pr320-provenance.json >/dev/null
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$root/preview/waterfall-height-pr320/sculpt-lab.html?run=$GITHUB_RUN_ID" \
-            -o /tmp/waterfall-height-pr320-sculpt.html
-          grep -Fq 'id="target" type="range" min="0" max="16"' /tmp/waterfall-height-pr320-sculpt.html
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$root/preview/waterfall-height-pr320/src/world/sculpt-height-model.js?run=$GITHUB_RUN_ID" \
-            -o /tmp/waterfall-height-pr320-model.js
-          grep -Fq 'SCULPT_TERRAIN_MAX_LEVEL=16' /tmp/waterfall-height-pr320-model.js
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$root/preview/waterfall-height-pr320/src/world/sculpt-scene-preview.js?run=$GITHUB_RUN_ID" \
-            -o /tmp/waterfall-height-pr320-scene.js
-          grep -Fq 'waterAllowed===true' /tmp/waterfall-height-pr320-scene.js
-          curl -fsSL --retry 18 --retry-all-errors --retry-delay 4 \
-            "$root/preview/waterfall-height-pr320/src/sculpt-lab-main.js?run=$GITHUB_RUN_ID" \
-            -o /tmp/waterfall-height-pr320-main.js
-          grep -Fq 'Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level))' /tmp/waterfall-height-pr320-main.js
-          grep -Fq 'world-room-full-editor-v1-height16-ui-r1' /tmp/waterfall-height-pr320-sculpt.html
-          echo 'LIVE PR325 UI fix verified in PR320 preview at exact SHA; V80 and PR318 pinned'
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 3 \
+            "$root/sculpt-lab-v80.html?run=$GITHUB_RUN_ID" -o /tmp/frozen-v80.html
+          cmp release-check/sculpt-lab-v80.html /tmp/frozen-v80.html
+          echo "LIVE: all historic preview links redirect; frozen V80 byte-identical"
       - name: Verify live HTTPS pages, assets and untouched V80
         shell: bash
         run: |

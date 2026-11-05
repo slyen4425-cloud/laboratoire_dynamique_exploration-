@@ -1,3 +1,20 @@
+## 2026-11-05 — URGENT : publication Pages sans copies redondantes, règle 0
+
+- Base : main@c6432654cb86cb57f75995e3be6460cbb888f286, PR #378 (trois cartes auteur) fusionnée, CI 3/3 et préflight success ; mise en ligne échouée : workflow main #42081258974, deploy Pages timeout pendant syncing_files.
+- Preuve : artefact Pages 6 984 337 485 octets ; cinq previews complètes copient Combat main et Capture global-assets cinq fois, sans partage, alors que la source officielle des cartes est sur main.
+- Branche : work/exploration-pages-dedupe-charter-2026-11-05. Périmètre : uniquement gouvernance documentaire, packaging et tests de publication. AUCUN changement des assets originaux, des cartes, des sauvegardes, du moteur, de GenSRPG ni de Combat.
+- Invariant : V80 de production inchangée ; trois cartes visibles dans le World Builder moderne ; anciens liens d'entrée préservés ou redirigés explicitement ; pas de prétention de préservation des vieux comportements si une preview est redirigée ; contrôle HTTP et preuve SHAs.
+- Checkpoint START : `checkpoint/exploration-pages-dedupe-start-2026-11-05` pointe sur main@`c6432654cb86cb57f75995e3be6460cbb888f286` ; branche de travail dédiée, PR #380 DRAFT ; PR de diagnostic #379 indépendante, jamais fusionnée.
+- Mesure du paquet initial par GitHub Actions #42104751247 : cinq previews d'environ 1,4 Go ; 84 Mo de Combat et 1,3 Go de Capture par preview, soit environ 6,7 Go de site complet. Cause racine : copies de déploiement redondantes, pas taille du World Builder ou des trois cartes.
+- Test du catalogue officiel Capture réussi dans le run #42108895951 : **306 assets référencés, 332 fichiers pour 202 039 135 octets (195 Mio sur disque)**, sans ZIP de travail ni suppression en source ; contrôles des animations Hériplante et du catalogue passés. Le workflow de diagnostic lourd a été retiré de la branche après cette preuve.
+- La compression retire quatre anciennes previews complètes **après** leurs tests Chromium, et conserve leurs liens d'entrée sous forme de redirects documentés vers l'éditeur moderne unique. La fonctionnalité historique indépendante à ces anciennes URL n'est pas conservée ; les SHAs archivés restent disponibles dans Git. V80 en racine inchangé.
+- Publication encore **NON GREEN** : taille finale de l'artefact, CI exacte, préflight puis déploiement Pages main et provenance HTTPS non encore prouvés ; ne pas annoncer le lien comme livré.
+
+- Tests : taille et structure du payload, détection duplication, tests Chromium avant publication, validation des dépendances runtime, smoke HTTPS sur le SHA exact après GitHub Pages. GREEN interdit avant toutes les preuves ; garder la PR de diagnostic #379 séparée et non fusionnée.
+- La taille diagnostiquée sera documentée AVANT/APRÈS et les exclusions seront explicites, non destructrices.
+
+---
+
 ## 2026-11-05 — Réconciliation des moulins et éoliennes animés après intégration arènes
 
 - Source approuvée PR #374 `8b2937b995b6034b578619648ff4f99bfaba16eb` ; base actuelle `main@62318b0737c37f0a34a6d6c4da0dc2673d8f1300` incluant 20 arbres et 10 arènes.
