@@ -708,11 +708,6 @@ try{
     const select=document.querySelector('#object-definition');
     const fixture='objectdef.building.house.blue_cottage.01';
     if(![...select.options].some(option=>option.value===fixture))
-      throw Error('V20 approved house fixture unavailable');
-    select.value=fixture;
-    select.dispatchEvent(new Event('change',{bubbles:true}));
-    const fixture='objectdef.building.house.blue_cottage.01';
-    if(![...select.options].some(option=>option.value===fixture))
       throw Error('V20 official house fixture missing');
     select.value=fixture;
     select.dispatchEvent(new Event('change',{bubbles:true}));
