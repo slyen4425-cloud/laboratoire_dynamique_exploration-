@@ -1,16 +1,30 @@
-## 2026-11-05 — Correctif test navigateur d'arène sur la base main actuelle
-- Échec reproduit sous PR #373 au smoke V20 : l'ajout des arènes en tête de catalogue change la première définition sélectionnée. Le vieux test cherchait arbitrairement un `building_house_*.webp` alors qu'il venait de placer une arène. Source : `scripts/smoke-sculpt-terrain-lab.mjs`, test faux-positif d'ordre de catalogue.
-- Correction cause racine : sélectionner **explicitement** l'ancien modèle `objectdef.building.house.blue_cottage.01` pour la sentinelle V20, puis vérifier séparément en vrai navigateur l'arène Glace, son placement et le chargement du WebP natif. Restaurer la scène test après vérification.
-- Aucun changement de code gameplay, d'ordre du catalogue, de renderer ou d'asset ; ne pas déclarer GREEN avant CI/Pages du SHA complet.
+## 2026-11-05 — Réconciliation croisée : arbres enneigés + arènes élémentaires
+
+- Base actuelle `main@7ad545f04cdc911b42be9c2490217440f4962e7b` après fusion des arbres et de la restauration de leurs tests. La PR #373 réconcilie ses fichiers par merge commit deux parents.
+- Préservation des 20 arbres, de leur test dédié, de leur placement tactile et des 30 vues de maisons enneigées.
+- 10 arènes 2,5D `Bâtiments > Arènes élémentaires`, visuels PNG/WebP source et manifest.
+- Le smoke Chromium sélectionne explicitement une maison existante puis teste l'arène Glace dans le vrai Canvas, avec un point de placement déjà prouvé et restauration de la scène.
+- CI exacte 3/3, préflight Pages et publication exigés avant GREEN, autres modules intacts.
 
 ---
 
-## 2026-11-05 — Réconciliation des dix bâtiments d'arènes élémentaires
+## 2026-11-05 — Rétablir la sentinelle test du lot Arbres #372
 
-- Source originale certifiée PR #359 SHA c1aee37d154400eefe50a978bad5a045758803f6 ; base saine `main@7155516b51db9892183cc043837037c4c87a0315`; RED `96a43799ddb24d782d41720fde1ba3155c3de9cf`.
-- 10 PNG + 10 WebP copiés **par SHA Git Blob**, indexés dans le manifeste unique des bâtiments, dix defs `building`, catégorie `buildings/arenas/elemental`, Asset Adapter canonique.
-- Visuels uniquement (pas de faux portail/collision/rencontre/champion). PR source en conflit non fusionnée.
-- Tests Node et Chromium, Pages préflight et publication du SHA exigés; hors périmètre Jouer/Combat/Dungeon et vieux V80.
+- Après la fusion #372 sur `main@57360da785d59802678070e66728b020833f8763`, les 20 WebP, 20 définitions et le smoke tactile sont présents, mais la reconstruction de l'arbre Git avait omis le fichier de test RED dédié (suppression constatée avant clôture).
+- Correction ciblée : réinstaller **le même** `tests/snow-tree-assets-v1.test.js` de #364, sans toucher à aucun asset ni code runtime, et le checkpoint START original.
+- Une nouvelle CI sur ce SHA doit prouver les 20 résolutions dans le catalogue, 20 WebP RGBA dimensionnés/empreintes, préservation des anciens arbres, ainsi que le navigateur.
+- Cause racine : mauvais `base_tree` lors de la première réconciliation après le RED. Tous les prochains lots conservent explicitement les tests du parent.
+- **NON GREEN** tant que CI et publication du commit ne sont pas confirmées.
+
+---
+
+## 2026-11-05 — Réintégration des 20 arbres enneigés validés
+
+- Base certifiée `main@7155516b51db9892183cc043837037c4c87a0315`, PR source #364 `77b358c2bcf815372b112a1982518535906641a3`, TDD RED `9aa7c6fc8ca746e76a5c85105b219a988958db27`.
+- Lot isolé : 20 WebP RGBA réutilisés byte-for-byte, 20 définitions natives, 20 résolutions via l'Asset Adapter officiel, manifeste auteur et sommes SHA-256.
+- Catégorie existante `Végétation > Arbres`, sélection/placement tactile et requête du vrai WebP testées par le smoke Chromium intégré.
+- La PR historique #364 en conflit n'est pas fusionnée en masse ; aucun ajout à Combat, Jouer, Dungeon ou aux règles gameplay.
+- Publication conditionnée aux 3 jobs CI + Pages et au contrôle HTTPS du SHA fusionné (PRÉVALIDATION tant que manquants).
 
 ---
 

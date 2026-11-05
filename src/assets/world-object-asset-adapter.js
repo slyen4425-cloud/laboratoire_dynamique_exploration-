@@ -49,6 +49,126 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/buildings/arenas/arene_arcane_2p5d.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.tree.snow.broadleaf_oak_01': Object.freeze({
+    id: 'object.tree.snow.broadleaf_oak_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_broadleaf_oak_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.broadleaf_round_02': Object.freeze({
+    id: 'object.tree.snow.broadleaf_round_02',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_broadleaf_round_02.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.fir_tiered_01': Object.freeze({
+    id: 'object.tree.snow.fir_tiered_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_fir_tiered_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.fir_wide_02': Object.freeze({
+    id: 'object.tree.snow.fir_wide_02',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_fir_wide_02.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.oak_bare_01': Object.freeze({
+    id: 'object.tree.snow.oak_bare_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_oak_bare_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.birch_multi_01': Object.freeze({
+    id: 'object.tree.snow.birch_multi_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_birch_multi_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.broadleaf_cluster_01': Object.freeze({
+    id: 'object.tree.snow.broadleaf_cluster_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_broadleaf_cluster_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.bonsai_01': Object.freeze({
+    id: 'object.tree.snow.bonsai_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_bonsai_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.fir_tall_03': Object.freeze({
+    id: 'object.tree.snow.fir_tall_03',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_fir_tall_03.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.thicket_01': Object.freeze({
+    id: 'object.tree.snow.thicket_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_thicket_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.spruce_dense_01': Object.freeze({
+    id: 'object.tree.snow.spruce_dense_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_spruce_dense_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.spruce_slender_01': Object.freeze({
+    id: 'object.tree.snow.spruce_slender_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_spruce_slender_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.ancient_oak_01': Object.freeze({
+    id: 'object.tree.snow.ancient_oak_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_ancient_oak_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.birch_bare_01': Object.freeze({
+    id: 'object.tree.snow.birch_bare_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_birch_bare_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.pine_windswept_01': Object.freeze({
+    id: 'object.tree.snow.pine_windswept_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_pine_windswept_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.broadleaf_massive_01': Object.freeze({
+    id: 'object.tree.snow.broadleaf_massive_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_broadleaf_massive_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.cedar_layered_01': Object.freeze({
+    id: 'object.tree.snow.cedar_layered_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_cedar_layered_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.sapling_01': Object.freeze({
+    id: 'object.tree.snow.sapling_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_sapling_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.willow_frosted_01': Object.freeze({
+    id: 'object.tree.snow.willow_frosted_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_willow_frosted_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
+  'object.tree.snow.ancient_twisted_01': Object.freeze({
+    id: 'object.tree.snow.ancient_twisted_01',
+    kind: 'tree-visual',
+    path: './assets/exploration/objects/trees/tree_snow_ancient_twisted_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.waterfall.front_wide.forest_stream.flow.01': Object.freeze({
     id: 'object.waterfall.front_wide.forest_stream.flow.01',
     kind: 'decor-visual',
