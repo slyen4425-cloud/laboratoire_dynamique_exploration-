@@ -582,6 +582,23 @@ jobs:
           HTML
           grep -Fq 'content="0;url=./preview/encounters-v80/play.html"' site/play.html
           cmp site/sculpt-lab-v80.html encounter-source/sculpt-lab-v80.html
+      - name: Measure exact Pages payload by preview and repeated dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'PAGES SIZE REPORT — top-level'
+          du -sh site/* | sort -h
+          echo 'PAGES SIZE REPORT — each preview'
+          du -sh site/preview/* | sort -h
+          echo 'PAGES SIZE REPORT — repeated Combat/Capture directories'
+          for p in site/preview/*; do
+            test -d "$p" || continue
+            for d in "$p/combat-preview" "$p/capture-assets" "$p/src" "$p/assets"; do
+              test -d "$d" && du -sh "$d"
+            done
+          done
+          echo 'PAGES SIZE REPORT — overall'
+          du -sh site
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
