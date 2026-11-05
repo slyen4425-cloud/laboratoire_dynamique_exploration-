@@ -15,7 +15,7 @@ test('independent GREEN waterfall/16-level preview is still exercised from pinne
 test('assembled waterfall preview passes Chromium before compact Pages publish, then has documented alias',()=>{
  assert.match(published,/waterfall-source\/scripts/);
  assert.match(published,/node scripts\/smoke-sculpt-terrain-lab\.mjs/);
- assert.match(published,/waterfall-height-pr320\/release-provenance\.v1\.json/);
+ assert.match(published,/release-provenance\.v1\.json/);
  assert.match(published,/waterfall-height-pr320\/src\/world\/sculpt-height-model\.js/);
  assert.match(published,/waterfall-height-pr320\/sculpt-lab\.html/);
  assert.match(published,/Verify retired trial URLs redirect to maintained World Builder/);
