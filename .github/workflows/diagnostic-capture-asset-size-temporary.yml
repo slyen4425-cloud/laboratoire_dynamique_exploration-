@@ -17,6 +17,18 @@ jobs:
           repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
           ref: global-assets
           path: capture-assets
+      - name: Checkout PR source for exact catalog package
+        uses: actions/checkout@v4
+        with:
+          path: exploration
+      - name: Verify reduced Capture package preserves every catalog referenced file
+        shell: bash
+        run: |
+          set -euo pipefail
+          node exploration/scripts/stage-pages-capture-assets.mjs capture-assets /tmp/exploration-capture-published
+          du -sh /tmp/exploration-capture-published
+          test -s /tmp/exploration-capture-published/data/assets/catalog/global-visual-assets.v1.json
+          test -s /tmp/exploration-capture-published/assets/library/capture/creatures/heriplante/animations/movement/opponent/atlases/heriplante_movement_opponent_12f.webp
       - name: Measure all asset families and largest files
         shell: bash
         run: |
