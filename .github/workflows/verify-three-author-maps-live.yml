@@ -28,6 +28,16 @@ jobs:
           fetch editor world-assembler.html
           grep -Fq 'id="world-map-preset-select"' /tmp/editor || { echo "::error::World Builder missing map selection"; exit 1; }
           fetch catalog src/builder/sculpt-builtin-map-presets.js
+          echo "PUBLIC CATALOG HEAD:"
+          head -c 800 /tmp/catalog || true
+          echo
+          echo "MAIN PUBLISH WORKFLOW RUNS:"
+          curl -fsSL --max-time 25 "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/publish-v81-main.yml/runs?branch=main&per_page=7" |
+            jq -r '.workflow_runs[] | [.id,.head_sha,.status,.conclusion,.created_at,.html_url] | @tsv' || true
+          fetch provenance release-provenance.v1.json
+          echo "PUBLIC RELEASE PROVENANCE:"
+          cat /tmp/provenance
+          echo
           grep -Fq 'AUTHOR_SNOW_MAP_SNAPSHOT' /tmp/catalog || { echo "::error::LIVE catalog does not contain Neige 1"; exit 1; }
           grep -Fq 'AUTHOR_SCULPT_MAP_SNAPSHOTS' /tmp/catalog || { echo "::error::LIVE catalog does not contain Forêt 1/Plaine 1"; exit 1; }
           fetch author src/builder/sculpt-author-map-snapshots.js
@@ -35,7 +45,6 @@ jobs:
           grep -Fq 'Forêt 1 · projet' /tmp/author || { echo "::error::Forêt 1 missing"; exit 1; }
           grep -Fq 'Plaine 1 · projet' /tmp/author || { echo "::error::Plaine 1 missing"; exit 1; }
           grep -Fq 'Neige 1 · projet' /tmp/snow || { echo "::error::Neige 1 missing"; exit 1; }
-          fetch provenance release-provenance.v1.json
           jq -e --arg sha c6432654cb86cb57f75995e3be6460cbb888f286 '.exploration == $sha' /tmp/provenance || {
             echo "::error::LIVE Pages provenance does not match merged source SHA c6432654..."
             cat /tmp/provenance
