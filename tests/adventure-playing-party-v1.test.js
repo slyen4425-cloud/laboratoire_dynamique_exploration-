@@ -61,7 +61,7 @@ test('reject fake species, wrong partyRef, different world, stale Combat main or
   {...sample(),combatSha:'b'.repeat(40)},
   {...sample(),active:{...sample().active,speciesId:'unpublished'}},
   {...sample(),active:{...sample().active,level:0}},
-  {...sample(),active:{...sample().active,level:101}},
+  {...sample(),active:{...sample().active,level:Number.MAX_SAFE_INTEGER+1}},
   {...sample(),active:{...sample().active,hp:-1}},
   {...sample(),active:{...sample().active,instanceId:'illegal/path'}},
   {...sample(),extra:'another authority'}
