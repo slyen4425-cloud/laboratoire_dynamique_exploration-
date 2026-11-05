@@ -877,7 +877,7 @@ try{
       windChosen.views.join(',')!=='front,three_quarters_left,three_quarters_right'||
       windChosen.view!=='three_quarters_left')
     throw Error('Windmill native animation variants unavailable: '+JSON.stringify(windChosen));
-  const windPt={x:objectBegin.position.x+110,y:objectBegin.position.y+52};
+  const windPt={x:sidePt.x,y:sidePt.y};
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:windPt.x,y:windPt.y});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
