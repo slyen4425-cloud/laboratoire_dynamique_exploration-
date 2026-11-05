@@ -1,3 +1,10 @@
+## 2026-11-05 — Lecture du niveau libre Aventure, sans plafond arbitraire
+- **START** `checkpoint/exploration-start-adventure-free-level-cap-2026-11-05`, SHA `4e7abd15d7b57909524ba697b74f63a193fce839`, branche `work/exploration-adventure-free-level-cap-2026-11-05`.
+- **Cause racine** : le seul lecteur du grant officiel Adventure `src/encounters/adventure-playing-party-v1.js` rejetait systématiquement `level>100` alors que GenSRPG sauvegarde le plafond par créateur. **RED** `tests/adventure-free-level-cap-v1.test.js` (niveaux 101/250/1500/1M et données invalides). **Correction** : niveau entier positif sûr, aucun plafonnement ni réécriture ; identité session/world, provenance SHA, bestiaire, HP et stockage inchangés. Le propriétaire GenSRPG contrôle le plafond exact de la partie avant projection.
+- **Gates** : Node/Chromium/CI officiel Exploration et checkpoint GREEN au SHA exact. **Pas de fusion/publication** sans CI ; rien de l'UI World Builder ni des collisions n'est modifié. Jouer n'introduit aucun calcul XP, aucun roster concurrent.
+
+---
+
 ## 2026-11-04 — Jouer relit les PV exacts du Combat officiel
 
 - START `checkpoint/exploration-start-adventure-exact-combat-hp-2026-11-04` sur `main@725eef49ab18e4f051b24fd2e4a5ded703e5529a` (#366, CI #41894554158, Pages #41894554147). Branche `work/exploration-adventure-exact-combat-hp-2026-11-04`.
