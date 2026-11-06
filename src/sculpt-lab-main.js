@@ -89,7 +89,8 @@ import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDr
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {emitExplorationPlayNavigationCommittedV1
 } from './play/exploration-play-events-v1.js';
-import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_V1
+import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
+ EXPLORATION_PEER_RECEIVER_READY_EVENT_V1
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
@@ -4048,10 +4049,23 @@ async function installSculptPlayMode(){
      });
      window.addEventListener(EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
       acceptExplorationPeerSnapshot);
+     // Same-origin host may subscribe after iframe load, so readiness is
+     // both signaled as an event and exposed as one immutable capability.
+     // It contains scope ONLY: no local hero, save or movement data.
+     const peerReady=Object.freeze({
+      schema:EXPLORATION_PEER_RECEIVER_READY_EVENT_V1,version:1,
+      sessionId:playOptions.sessionId,worldId:world.id,
+      worldFingerprint:checkpoint.worldFingerprint
+     });
+     window.__sculptPeerReceiverReadyV1=peerReady;
+     window.dispatchEvent(new CustomEvent(
+      EXPLORATION_PEER_RECEIVER_READY_EVENT_V1,{detail:peerReady}
+     ));
      window.addEventListener('pagehide',()=>{
       window.removeEventListener(EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
        acceptExplorationPeerSnapshot);
       sculptPeerProjection?.dispose();sculptPeerProjection=null;
+      window.__sculptPeerReceiverReadyV1=null;
      },{once:true});
     }
     $('play-menu-button').hidden=false;
