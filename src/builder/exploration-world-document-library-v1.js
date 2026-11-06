@@ -3,7 +3,7 @@
 // WorldDocument serializer and importer, without an alternate world graph.
 import {serializeWorldBuilderDraft,importWorldBuilderDocument}
  from './world-builder-draft.js';
-import {readWorldAssemblerDraft,saveWorldAssemblerDraft}
+import {readWorldAssemblerDraft,saveWorldAssemblerDraft,WORLD_ASSEMBLER_DRAFT_KEY}
  from './world-assembler-handoff.js';
 
 export const EXPLORATION_WORLD_LIBRARY_INDEX_V1=
@@ -96,7 +96,12 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
  }
  function activate(worldId){
   const selected=load(worldId);
+  // readWorldAssemblerDraft deliberately returns null for corrupted bytes;
+  // never mistake them for an empty editor and erase the original draft.
+  const activeBytes=storage.getItem(WORLD_ASSEMBLER_DRAFT_KEY);
   const current=readWorldAssemblerDraft(storage);
+  if(activeBytes!==null&&!current)
+   throw new Error('Document actif illisible : exporte ou répare la sauvegarde avant de changer de monde');
   if(current){
    const original=serializeWorldBuilderDraft(current);
    const registered=storage.getItem(slotKey(current.id));
