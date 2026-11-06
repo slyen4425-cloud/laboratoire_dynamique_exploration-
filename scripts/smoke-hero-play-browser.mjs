@@ -194,6 +194,60 @@ try{
   throw Error('Real navigation event did not follow native Play checkpoint: '+JSON.stringify(movement));
  console.log('GREEN real browser: collision-checked native Play movement emits a scoped event without another save authority');
 
+ // C4: the SAME REAL Chrome+native canvas must paint a REMOTE avatar supplied
+ // only as a scoped visual snapshot. Its pose must NEVER overwrite the
+ // locally validated Exploration navigation checkpoint or authored hero.
+ const receiver=await waitFor(`(()=>{
+  const ready=window.__sculptPeerReceiverReadyV1;
+  return ready?.schema==='gensrpg.exploration.play.peer-receiver-ready.v1'?ready:null;
+ })()`,'official peer viewport readiness');
+ if(receiver.sessionId!==generated.sessionId||
+    receiver.worldId!==generated.worldId||
+    receiver.worldFingerprint!==movement.saved.worldFingerprint)
+  throw Error('Peer viewer readiness does not match official scoped WorldDocument');
+ const paintedBefore=await evaluate('window.__sculptPlayProbe?.().remoteActorPaints??-1');
+ const checkpointBefore=await evaluate(`JSON.stringify(localStorage.getItem(
+  'gensrpg.exploration.play.navigation.v1:session-hero-real-play'))`);
+ await evaluate(`(()=>{
+  const checkpoint=JSON.parse(localStorage.getItem(
+   'gensrpg.exploration.play.navigation.v1:session-hero-real-play'));
+  window.dispatchEvent(new CustomEvent(
+   'gensrpg.exploration.play.peer-snapshot.v1',{detail:{
+     schema:'gensrpg.exploration.play.peer-snapshot.v1',version:1,
+     sessionId:'session-hero-real-play',worldId:checkpoint.worldId,
+     worldFingerprint:checkpoint.worldFingerprint,revision:1,
+     actors:[{actorId:'93b5ba2f-07b4-4b01-9b94-5fbd0215e02a',
+      areaId:checkpoint.currentAreaId,x:checkpoint.x+40,y:checkpoint.y+15,seq:1}]
+   }}
+  ));
+ })()`);
+ const remotePainted=await waitFor(`(()=>{
+  const p=window.__sculptPlayProbe?.();
+  return p?.remoteActors===1&&p.remoteActorPaints>${paintedBefore}?p:null;
+ })()`,'native canvas drawing official remote guest actor');
+ if(remotePainted.heroDefinitionId!==generated.heroId||
+   remotePainted.worldId!==generated.worldId)
+  throw Error('Remote pose changed local hero or WorldDocument');
+ const checkpointAfter=await evaluate(`JSON.stringify(localStorage.getItem(
+  'gensrpg.exploration.play.navigation.v1:session-hero-real-play'))`);
+ if(checkpointBefore!==checkpointAfter)
+  throw Error('Remote visual update changed the canonical local checkpoint');
+ await evaluate(`(()=>{
+  const checkpoint=JSON.parse(localStorage.getItem(
+   'gensrpg.exploration.play.navigation.v1:session-hero-real-play'));
+  window.dispatchEvent(new CustomEvent(
+   'gensrpg.exploration.play.peer-snapshot.v1',{detail:{
+     schema:'gensrpg.exploration.play.peer-snapshot.v1',version:1,
+     sessionId:'session-hero-real-play',worldId:checkpoint.worldId,
+     worldFingerprint:checkpoint.worldFingerprint,revision:2,actors:[]
+   }}
+  ));
+ })()`);
+ await waitFor("window.__sculptPlayProbe?.().remoteActors===0",
+  'remote actor removal while local avatar remains unchanged');
+ console.log('GREEN real mobile Chromium: native painter draws and removes remote actor without modifying local checkpoint or personal HeroDefinition');
+
+
 
  // Explicit stale deleted definition is an error; never pretend the demo
  // avatar is the chosen hero. The world/position checkpoint remains intact.
