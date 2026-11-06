@@ -161,6 +161,39 @@ try{
   ready.heroDefinitionId!==generated.heroId||ready.worldId!==generated.worldId)
   throw Error('Native 2.5D Jouer failed real hero selection '+JSON.stringify(ready));
  console.log('GREEN real mobile Chromium: native Jouer loaded HeroDefinition and exact authorized avatar',JSON.stringify(ready));
+ // Prove the real engine, not a synthetic callback, emits navigation only
+ // after the native collision-checked 2.5D checkpoint has been persisted.
+ await evaluate(`(()=>{
+  window.__scopedPlayMovementEvents=[];
+  window.addEventListener('gensrpg.exploration.play.navigation-committed.v1',
+   event=>window.__scopedPlayMovementEvents.push(event.detail));
+ })()`);
+ await send('Input.dispatchKeyEvent',{
+  type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39
+ });
+ await sleep(2150);
+ await send('Input.dispatchKeyEvent',{
+  type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39
+ });
+ const movement=await waitFor(`(()=>{
+  const events=window.__scopedPlayMovementEvents??[];
+  const latest=events.at(-1);
+  if(!latest)return null;
+  const saved=JSON.parse(localStorage.getItem(
+   'gensrpg.exploration.play.navigation.v1:session-hero-real-play')||'null');
+  if(!saved)return null;
+  return {event:latest,saved};
+ })()`,'post-collision scoped real-play navigation event');
+ if(movement.event?.schema!=='gensrpg.exploration.play.navigation-committed.v1'||
+    movement.event?.version!==1||
+    movement.event?.navigation?.sessionId!==generated.sessionId||
+    movement.event?.navigation?.worldId!==generated.worldId||
+    movement.event.navigation.x<=generated.checkpoint.x||
+    movement.saved.x<movement.event.navigation.x||
+    movement.event.navigation.worldFingerprint!==movement.saved.worldFingerprint)
+  throw Error('Real navigation event did not follow native Play checkpoint: '+JSON.stringify(movement));
+ console.log('GREEN real browser: collision-checked native Play movement emits a scoped event without another save authority');
+
 
  // Explicit stale deleted definition is an error; never pretend the demo
  // avatar is the chosen hero. The world/position checkpoint remains intact.
