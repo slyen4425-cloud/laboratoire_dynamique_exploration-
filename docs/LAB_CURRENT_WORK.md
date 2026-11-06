@@ -1,3 +1,14 @@
+## 2026-11-06 — Exploration C7 : rencontres absentes d'une carte vierge (START / NON GREEN)
+
+- **Retour utilisateur avant publication main** : aucune créature rencontrée sur une carte vierge en Jouer Monster Capture. Diagnostic officiel : `createBlankWorldBuilderDraft` donne un WorldDocument valide avec `encounters.randomEnabled=true`, mais ses `encounterConfig.families` peuvent rester à 0 %, donc `sculptEncounterStep` ne produit rien : ce n'est pas une panne des collisions ni du Combat. Le Bestiaire sélectionné par le propriétaire Combat reste nécessaire.
+- **Branche dédiée** : `work/exploration-capture-encounter-setup-2026-11-06`, START `checkpoint/exploration-start-capture-encounter-setup-2026-11-06`, base candidate bibliothèque-mondes `18b7f946bcc765a1ae655672dbff02cbdd0bbdc1` PR #383, non publiée. NE PAS appeler GREEN la base avant succès CI et publication SHA. Pas de main ni de dérive dans les autres dépôts.
+- **Propriétaire unique** : le World Builder officiel possède le seul `WorldDocument.encounterConfig`; utiliser son API existante `encounterConfigNeedsExplicitInitialization` et `initializeWorldPresetEncounters` qui s'appuient sur le preset documenté. Aucune probabilité ou espèce codée en dur par GenSrpg, aucune réécriture du moteur de rencontre ni du bestiaire.
+- **Solution à tester** : afficher clairement « Rencontres 0 % » pour les cartes sans réglages ; bouton explicite « Initialiser les rencontres » (avec confirmation) depuis World Builder, enregistrant les vrais profils dans le document ; toujours respecter un profil personnalisé, y compris le choix intentionnel de 0 % qui reste possible. Ne jamais inventer un combat. L'avertissement doit persister tant que toutes les familles sont neutralisées.
+- **Tests** : TDD document vierge aucune rencontre, opt-in sur WorldDocument natif, absence d'écrasement d'une configuration existante, UI réelle, CI Exploration et smartphone paysage. 
+- **Hors périmètre** : PWA/Survie/Dungeon, Supabase, multijoueur C3, objets et moteur Combat inchangés.
+
+---
+
 ## 2026-11-06 — Labo Exploration : bibliothèque de plusieurs WorldDocuments (START, NON GREEN)
 
 - **Motif avant publication GenSrpg main** : enregistrer plusieurs mondes de l'auteur, choisir celui à utiliser pour une nouvelle partie, empêcher le document actif du Builder de masquer ou détruire les autres. Le bug « partie déjà en cours » est corrigé séparément côté GenSrpg C5 (PR #297).
