@@ -58,6 +58,13 @@ test('same world ID never silently overwrites a prior authored document',()=>{
  lib.save(edited,{replace:true});
  assert.equal(lib.load('monde-1').areas[0].label,'Nouvelle zone');
 });
+test('corrupted active editor WorldDocument cannot be overwritten by opening a saved world',()=>{
+ const {storage,data}=memory(),lib=createExplorationWorldDocumentLibraryV1({storage});
+ lib.save(world('foret-valide'));
+ data.set(WORLD_ASSEMBLER_DRAFT_KEY,'{broken-legacy-document');
+ assert.throws(()=>lib.activate('foret-valide'),/illisible|sauvegarde|répare/i);
+ assert.equal(data.get(WORLD_ASSEMBLER_DRAFT_KEY),'{broken-legacy-document');
+});
 test('corrupt archive and index are explicit errors, not destructive reinitializations',()=>{
  const {storage,data}=memory(),lib=createExplorationWorldDocumentLibraryV1({storage});
  lib.save(world('forest'));
