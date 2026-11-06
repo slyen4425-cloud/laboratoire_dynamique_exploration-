@@ -1,3 +1,13 @@
+## 2026-11-06 — Contrat officiel de notification navigation Jouer (Capture réseau, START)
+
+- **START** : `checkpoint/exploration-start-capture-peer-nav-event-2026-11-06` sur `main@a2db1825f0a1a833fadcd02d7804f887c864a1d2`. Branche isolée `work/exploration-capture-peer-nav-event-2026-11-06` ; main/published Pages restent inchangés.
+- **Contrat inter-dépôts** : GenSrpg Monster Capture PR #296 attend un événement versionné au moment où l'Exploration officiel a **déjà validé les collisions / la zone et enregistré son checkpoint**. Source unique du mouvement : `createExplorationPlayProgressWriter`. Aucune seconde position calculée, aucun moteur ou renderer en double, aucune lecture de sauvegarde hors Exploration.
+- **Périmètre LE** : petit helper dans `src/play/` et un seul hook dans `persistPlayNavigationCheckpoint` de `src/sculpt-lab-main.js`. Événement local `window` (iframe même origine), exclusivement lorsque `adventureSession` existe ; detail = navigation officiellement enregistrée. Pas de serveur, de compte, de salle, de `postMessage('*')`, de timer, de `Storage.prototype`, de capture des clics ou de nouvelles ressources.
+- **TDD** : RED import/helper absent, puis tests emitter success/fail closed, déclenchement après writer, isolation éditeur standalone/V80, CI Exploration. Tester la vraie page/Browser au SHA final avant promotion ; la CI de PR seule ne vaut pas publication GREEN (charte Règle 0).
+- **Coordination** : le code GenSrpg ne consomme QUE le futur main Exploration vérifié (pin source `a2db...` actuel immuable). Jamais de référence au work branch Exploration dans l'application livrée ; pas de fusion main non validée, autres chantiers LE (assets, Pages) intacts.
+
+---
+
 ## 2026-11-05 — URGENT : publication Pages sans copies redondantes, règle 0
 
 - Base : main@c6432654cb86cb57f75995e3be6460cbb888f286, PR #378 (trois cartes auteur) fusionnée, CI 3/3 et préflight success ; mise en ligne échouée : workflow main #42081258974, deploy Pages timeout pendant syncing_files.
