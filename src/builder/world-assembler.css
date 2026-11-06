@@ -95,3 +95,11 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 .world-library-controls button{min-height:40px;padding:7px 9px;font-size:12px}
 #world-library-status{font-size:11px;color:#9edbc9;overflow-wrap:anywhere}
 #world-library-status[data-error=true]{color:#ffb4a8}
+
+/* Author-controlled Monster Capture encounters: never silently enable RNG. */
+.world-encounter-onboarding{display:grid;gap:7px;padding:9px;margin:6px 0 12px;
+ border:1px solid #795d40;border-radius:10px;background:#332819}
+#world-encounters-status{font-size:11px;line-height:1.45;color:#f6d7a9}
+#world-encounters-initialize{font-size:11px;min-height:39px;background:#5d4632;
+ border-color:#b38c61;color:#ffe6c8}
+#world-encounters-initialize[hidden]{display:none}
