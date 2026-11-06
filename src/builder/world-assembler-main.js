@@ -10,6 +10,7 @@ import {
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
+import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 
@@ -103,6 +104,49 @@ function installWorldAssembler(){
     ??createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21});
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
+  const library=createExplorationWorldDocumentLibraryV1({storage:window.localStorage});
+  function refreshWorldLibrary(){
+    const picker=byId('world-library-select');
+    const selected=picker.value;
+    const worlds=library.list();
+    picker.replaceChildren(...(worlds.length?worlds.map(w=>
+      new Option(w.id+' · '+w.areaCount+' zone(s)',w.id))
+      :[new Option('Aucun monde enregistré','')]));
+    if(worlds.some(w=>w.id===selected))picker.value=selected;
+    else if(worlds.some(w=>w.id===draft.id))picker.value=draft.id;
+    picker.disabled=!worlds.length;
+    byId('world-library-open').disabled=!worlds.length;
+  }
+  function libraryStatus(message,error=false){
+    const out=byId('world-library-status');
+    out.textContent=message;out.dataset.error=String(error);
+  }
+  function archiveCurrentWorld(){
+    try{return library.save(draft);}
+    catch(error){
+      if(!/existe déjà/.test(error.message))throw error;
+      if(!window.confirm('Ce monde est déjà archivé. Remplacer sa version enregistrée par les modifications actuelles ?'))return null;
+      return library.save(draft,{replace:true});
+    }
+  }
+  on(byId('world-library-save'),'click',()=>{
+    try{
+      const saved=archiveCurrentWorld();
+      if(!saved){libraryStatus('Sauvegarde annulée : monde archivé conservé.');return;}
+      refreshWorldLibrary();
+      libraryStatus('✓ Monde '+saved.id+' enregistré dans Mes mondes.');
+    }catch(error){libraryStatus(error.message,true);}
+  });
+  on(byId('world-library-open'),'click',()=>{
+    const id=byId('world-library-select').value;
+    if(!id){libraryStatus('Choisis un monde enregistré.',true);return;}
+    try{
+      const opened=library.activate(id);
+      draft=opened;selectedId=draft.initialAreaId;
+      persist();render();refreshWorldLibrary();
+      libraryStatus('✓ Monde '+opened.id+' chargé sans supprimer les autres.');
+    }catch(error){libraryStatus(error.message,true);}
+  });
   function status(message,isError=false){
     toast.textContent=message;toast.dataset.error=String(isError);
   }
@@ -452,14 +496,22 @@ function installWorldAssembler(){
   on(byId('reset-world'),'click',()=>dialog.showModal());
   on(dialog,'close',()=>{
     if(dialog.returnValue!=='confirm')return;
-    apply(()=>createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}),
-      'Nouveau monde vierge prêt à assembler.');
-    selectedId=draft.initialAreaId;render();
+    try{
+      const archived=archiveCurrentWorld();
+      if(!archived){libraryStatus('Nouveau monde annulé : modifications du monde actif conservées.');return;}
+      apply(()=>createBlankWorldBuilderDraft({
+        id:'nouveau-monde-'+crypto.randomUUID().slice(0,8),
+        width:36*28,height:24*21
+      }), 'Nouveau monde vierge prêt à assembler. L’ancien est archivé.');
+      selectedId=draft.initialAreaId;render();refreshWorldLibrary();
+    }catch(error){libraryStatus(error.message,true);}
   });
   if(transfer){
     persist();status('Carte modifiée : même monde, même WorldArea et mêmes passages.');
   }else status('Choisis une WorldArea puis utilise le panneau Carte pour la modifier.');
   render();
+  try{refreshWorldLibrary();}
+  catch(error){libraryStatus(error.message,true);}
   // Coming from the map panel with "Nouvelle carte de taille libre" only
   // focuses the native Area form: it never starts a standalone map.
   if(new URLSearchParams(window.location.search).get('createArea')==='1'){

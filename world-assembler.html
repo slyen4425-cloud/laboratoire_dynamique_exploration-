@@ -35,6 +35,18 @@
     <label class="field">Nom du monde
       <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
     </label>
+    <section class="world-library-controls" aria-labelledby="world-library-title">
+     <h2 id="world-library-title">Mes mondes sauvegardés</h2>
+     <p>Enregistre ce monde sous son nom avant d'en ouvrir un autre. Les mondes précédents restent dans ta bibliothèque.</p>
+     <button id="world-library-save" type="button">💾 Enregistrer ce monde</button>
+     <label class="field">Choisir un monde
+      <select id="world-library-select" aria-label="Mes mondes enregistrés">
+       <option value="">Aucun monde archivé</option>
+      </select>
+     </label>
+     <button id="world-library-open" type="button">🌍 Ouvrir le monde choisi</button>
+     <output id="world-library-status" role="status" aria-live="polite"></output>
+    </section>
     <div class="section-head"><h2>Zones et instances</h2></div>
     <div id="area-list" class="area-list" aria-label="Sélectionner une zone"></div>
     <form id="area-add-form" class="add-panel">

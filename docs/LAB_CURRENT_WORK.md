@@ -1,3 +1,14 @@
+## 2026-11-06 — Labo Exploration : bibliothèque de plusieurs WorldDocuments (START, NON GREEN)
+
+- **Motif avant publication GenSrpg main** : enregistrer plusieurs mondes de l'auteur, choisir celui à utiliser pour une nouvelle partie, empêcher le document actif du Builder de masquer ou détruire les autres. Le bug « partie déjà en cours » est corrigé séparément côté GenSrpg C5 (PR #297).
+- **Base identifiée** : Exploration C4 PR #382 SHA `2430b9da7a31ba7392aeda2b053ab97a57807916` (CI Exploration SUCCESS #42299685248, pas de publication main). START `checkpoint/exploration-start-capture-world-library-2026-11-06`, branche `work/exploration-capture-world-library-2026-11-06`, intégration via PR sur branche C4, jamais une copie directe du labo dans GenSrpg.
+- **Propriétaire unique** : `world-assembler-handoff.js` reste le seul emplacement du brouillon actif `WorldDocument`; la bibliothèque est une archive de documents officiels serialisés/validés par `serializeWorldBuilderDraft` et `importWorldBuilderDocument`. Les snapshots sauvegardés dans l'archive ne sont pas un second moteur, et seul le document explicitement activé rejoint le Jouer et le Builder. L'archive n'accède à aucun AdventureSave ou Combat.
+- **Non-perte** : le brouillon actuel ne peut pas être remplacé par un autre monde s'il n'est pas déjà archivé à son contenu exact; un ID déjà présent ne peut pas être réécrit sans demande explicite ; données invalides préservées et signalées, jamais réparées silencieusement ; ancienne clé du World Builder laissée inchangée.
+- **TDD et sortie** : tester l'archive indépendante de 2 mondes, la reprise, les fichiers invalides/corrompus, l'activation avec copie non destructrice du brouillon courant et refus d'écrasement, document inchangé, vérification CI Exploration réelle, référentiel de Source et tailles de site. Puis GenSrpg devra choisir et activer l'un de ces mondes dans un lot Capture indépendant.
+- **Ne pas toucher** : moteur de mouvement/rendu, rencontres, Sprites, Survie, Combat, V80, PWA, main, CI de publication, presets du créateur, historique ni objets.
+
+---
+
 ## 2026-11-06 — C4 Capture : acteurs invités distants dans le renderer officiel (CANDIDAT / NON PUBLIÉ)
 
 - **Base et checkpoint START** : dépendance Exploration PR #381 à son SHA `e2982a2fd719875ddadf596ab997ddde3b9fc0de`; checkpoint `checkpoint/exploration-start-capture-remote-actors-2026-11-06` identique, branche propre `work/exploration-capture-remote-actors-2026-11-06`. Aucun changement de `main`, `gh-pages` ou version V80.
