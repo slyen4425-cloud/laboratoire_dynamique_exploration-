@@ -676,7 +676,7 @@ const explorationPeerVisual=normalizeMapActorVisual({
  assetId:demoActorAsset?.id??null,role:'hero',targetHeight:37,
  motion:{idleAmplitude:.55,idleFrequency:.8,walkAmplitude:2,walkFrequency:3.8}
 });
-let sculptPeerProjection=null;
+let sculptPeerProjection=null,explorationPeerPaints=0;
 function acceptExplorationPeerSnapshot(event){
  if(!sculptPlayActive||!playOptions||!sculptPeerProjection)return;
  if(sculptPeerProjection.apply(event?.detail))scheduleDraw();
@@ -1895,9 +1895,12 @@ function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
     mapVisual:explorationPeerVisual,
     visualScale:sculptAltitudeVisualState(level).heroScale};
   });
- if(peers.length)explorationPeerRenderer.draw(ctx,{
-  camera:{x:0,y:0},actors:peers,timeSeconds:navVisualTime
- });
+ if(peers.length){
+  explorationPeerRenderer.draw(ctx,{
+   camera:{x:0,y:0},actors:peers,timeSeconds:navVisualTime
+  });
+  explorationPeerPaints+=peers.length;
+ }
 }
 function navigationSpawn(){
   // WorldBuilder's Spawn, not a prototype test position, owns the entrance
@@ -4082,6 +4085,8 @@ async function installSculptPlayMode(){
       heroVisualPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
       areaId:sculptWorldAreaId,playing:navigationTesting,
       actor:navActor?{x:navActor.x,y:navActor.y}:null,
+      remoteActors:sculptPeerProjection?.forArea(sculptWorldAreaId).length??0,
+      remoteActorPaints:explorationPeerPaints,
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
