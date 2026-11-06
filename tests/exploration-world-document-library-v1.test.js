@@ -49,10 +49,6 @@ test('same world ID never silently overwrites a prior authored document',()=>{
  const {storage,data}=memory(),lib=createExplorationWorldDocumentLibraryV1({storage});
  const before=world('monde-1');
  lib.save(before);
- const changed=createWorldBuilderDraft({...before,id:before.id,label:'forbidden-new-field'});
- // The world normalization may reject a custom field. Instead update valid
- // starter area label without duplicating its schema.
- assert.ok(changed);
  const edited=createWorldBuilderDraft({...before,
   areas:before.areas.map((area,i)=>i===0?{...area,label:'Nouvelle zone'}:area)});
  assert.throws(()=>lib.save(edited),/existe|remplacer|confirmation/i);
@@ -76,11 +72,14 @@ test('corrupt archive and index are explicit errors, not destructive reinitializ
  assert.throws(()=>lib.load('forest'),/corrompu|invalide|invalid|document/i);
  assert.equal(data.get(slot),'{broken');
 });
-test('world library is officially owned by Exploration: current editor and on-screen selection use it',()=>{
- const src=(path)=>requireFile(path);
- function requireFile(path){
-  // Avoid filesystem access to other Lab projects, only this owner's files.
-  return import.meta.resolve('../'+path);
- }
- assert.ok(src('src/builder/exploration-world-document-library-v1.js'));
+test('official world assembler UI uses the library and exposes a list/open/save control',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const main=readFileSync(new URL('../src/builder/world-assembler-main.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../world-assembler.html',import.meta.url),'utf8');
+ assert.match(main,/createExplorationWorldDocumentLibraryV1/);
+ assert.match(main,/library\.save\(/);
+ assert.match(main,/library\.activate\(/);
+ assert.match(html,/id="world-library-save"/);
+ assert.match(html,/id="world-library-select"/);
+ assert.match(html,/id="world-library-open"/);
 });
