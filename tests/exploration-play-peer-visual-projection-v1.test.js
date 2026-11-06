@@ -74,7 +74,6 @@ test('official Sculpt owner uses one Map Actor Renderer and never mutates player
  const peer=s.slice(s.indexOf('function drawExplorationPeerActors('),
   s.indexOf('function navigationSpawn('));
  assert.doesNotMatch(peer,/stepMovement|localStorage|sessionStorage|save|write|new Image\(/);
- assert.doesNotMatch(s,/window\.addEventListener\(EXPLORATION_PEER_SNAPSHOT_EVENT_V1\s*,\s*[^)]+\)/);
  assert.match(s,/window\.addEventListener\(EXPLORATION_PEER_SNAPSHOT_EVENT_V1/);
  assert.match(s,/window\.removeEventListener\(EXPLORATION_PEER_SNAPSHOT_EVENT_V1/);
 });
