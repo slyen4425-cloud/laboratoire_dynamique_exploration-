@@ -3,6 +3,8 @@
 // checkpoint or avatar artwork is authoritative outside Exploration.
 export const EXPLORATION_PEER_SNAPSHOT_EVENT_V1=
  'gensrpg.exploration.play.peer-snapshot.v1';
+export const EXPLORATION_PEER_RECEIVER_READY_EVENT_V1=
+ 'gensrpg.exploration.play.peer-receiver-ready.v1';
 const PACKET_KEYS=['schema','version','sessionId','worldId',
  'worldFingerprint','revision','actors'];
 const ACTOR_KEYS=['actorId','areaId','x','y','seq'];
