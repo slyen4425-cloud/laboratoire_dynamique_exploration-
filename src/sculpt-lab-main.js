@@ -87,6 +87,8 @@ import {sculptWorldAreaScene,saveSculptWorldArea,
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
+import {emitExplorationPlayNavigationCommittedV1
+} from './play/exploration-play-events-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
@@ -3869,9 +3871,18 @@ function traverseSculptWorldPortal(){
 function persistPlayNavigationCheckpoint(){
   if(!sculptPlayActive||!navigationTesting||!navActor||!sculptWorldDraft)return false;
   try{
-    playPositionWriter({
+    const committed=playPositionWriter({
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
     });
+    // An opt-in scoped consumer may observe the SAME canonical checkpoint.
+    // The notification is never allowed to change the result of a save.
+    try{
+      emitExplorationPlayNavigationCommittedV1({
+        target:window,navigation:committed
+      });
+    }catch(error){
+      console.warn('Navigation du joueur enregistrée, notification indisponible',error);
+    }
     const output=$('play-save-status');
     if(output){output.textContent='Partie enregistrée';output.dataset.error='false';}
     if($('play-location'))$('play-location').textContent='🌍 '+
