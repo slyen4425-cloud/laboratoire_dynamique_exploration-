@@ -1,3 +1,13 @@
+## 2026-11-07 — World Builder : activation explicite des rencontres sur cartes vierges (lot indépendant / START)
+
+- **Diagnostic** : une zone vierge peut autoriser des rencontres aléatoires avec probabilités de familles/éléments à 0 %, et donc n'émettre aucun monstre ; ne jamais inventer de créatures ni modifier le moteur Combat.
+- **Point de départ** : main après la bibliothèque de mondes `4c5490e0bd877c2369bf084959fd36a5d9d9452d`, checkpoint `checkpoint/exploration-start-encounter-setup-main-2026-11-07`, branche `work/exploration-encounter-setup-main-2026-11-07`. Backport strict du lot autoritaire original PR #384 (`a1bb29b6e2f7b751384c72f4459369d40137b37b`) sans code des avatars multijoueurs PR #382.
+- **Contrat** : World Builder officiel seul utilise `encounterConfigNeedsExplicitInitialization` et `initializeWorldPresetEncounters`; la probabilité est totalement éditable et l'activation demande un accord explicite. Les configurations personnalisées restent intactes; l'éditeur informe clairement si tout est à 0 %. La bibliothèque de mondes et la sauvegarde historique restent intactes.
+- **CI** : tests `tests/exploration-world-encounter-setup-v1.test.js`, `npm test`, navigateur Chromium et gate publication propre sur SHA exact ; pas de fusion ni GREEN avant les succès.
+- **Intouchés** : Survie, Dungeon, Duel, Combat, créatures publiées, WorldDocument sérialisé, navigation 2,5D, PWA et V80.
+
+---
+
 ## 2026-11-07 — World Builder : bibliothèque officielle de plusieurs mondes (lot de publication indépendant, START)
 
 - **Livraison isolée** : base main `556922f8a2347e95088233ceee2cd56617d77208`, checkpoint `checkpoint/exploration-start-world-library-main-2026-11-07`, branche `work/exploration-world-library-main-2026-11-07`. Backport strict des CINQ fichiers métier/test validés sur Exploration PR #383 (SHA `bca1ac3eb8832c5a13b9b508ecaea6cc5b616c16`). Ne contient PAS les avatars multijoueurs PR #382, non validés sur deux navigateurs.

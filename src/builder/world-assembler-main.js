@@ -1,7 +1,7 @@
 import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
-  serializeWorldBuilderDraft,importWorldBuilderDocument
+  initializeWorldPresetEncounters,serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
@@ -11,6 +11,7 @@ import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
+import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 
@@ -129,6 +130,16 @@ function installWorldAssembler(){
       return library.save(draft,{replace:true});
     }
   }
+  on(byId('world-encounters-initialize'),'click',()=>{
+    if(!encounterConfigNeedsExplicitInitialization(draft.encounterConfig)){
+      libraryStatus('Rencontres déjà configurées : paramètres conservés.');
+      return;
+    }
+    if(!window.confirm('Les rencontres de ce monde sont à 0 %. Initialiser les probabilités par terrain et les éléments depuis les profils officiels ? Tu pourras ensuite tout modifier dans l’éditeur.'))return;
+    const ok=apply(()=>initializeWorldPresetEncounters(draft),
+      'Rencontres du monde initialisées avec les profils officiels, sans valeur cachée.');
+    if(ok)libraryStatus('✓ Rencontres activées dans le WorldDocument. Enregistre ton monde dans Mes mondes avant de changer de carte.');
+  });
   on(byId('world-library-save'),'click',()=>{
     try{
       const saved=archiveCurrentWorld();
@@ -301,6 +312,11 @@ function installWorldAssembler(){
     if(!draft.areas.some(a=>a.id===selectedId))selectedId=draft.initialAreaId;
     if(document.activeElement!==byId('world-name'))byId('world-name').value=draft.id;
     renderAreaList();renderGraph();renderInspector();refreshMapPresets();
+    const dormant=encounterConfigNeedsExplicitInitialization(draft.encounterConfig);
+    byId('world-encounters-status').textContent=dormant
+      ?'⚠ Rencontres à 0 % : aucune créature sauvage ne peut apparaître sur cette carte tant que tu ne les configures pas.'
+      :'✓ Rencontres configurées dans ce monde ; les apparitions dépendent des chances et du Bestiaire officiel.';
+    byId('world-encounters-initialize').hidden=!dormant;
   }
   on(byId('world-map-preset-select'),'change',()=>{
     byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
