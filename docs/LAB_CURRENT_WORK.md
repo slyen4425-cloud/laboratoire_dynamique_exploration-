@@ -1,3 +1,12 @@
+## 2026-11-07 — Caméra Aventure réglée par le créateur (PR #388)
+- **Base publiée / START** : Exploration main@c18b34cacf6d9d157d62e7e507c4c155d6e1b11c, checkpoint/exploration-start-creator-game-camera-angle-2026-11-07, branche work/exploration-creator-game-camera-angle-2026-11-07.
+- **Propriétaire** : seule la caméra 2.5D du Labo Exploration utilise l’angle transmis par l’aventure GenSRPG via `?play=1&adventureSession=...&cameraAngle=...`, jamais un second renderer. Validation fondée sur `SCULPT_GAME_CAMERA_ANGLE` officiel (35..90°, pas 5).
+- **Effet** : uniquement en mode Jouer avec session active, angle verrouillé dans le HUD même après entrée/sortie d’intérieur, zoom 100–240 % restant au joueur. Tester et World Builder inchangés.
+- **TDD** : test RED initial `tests/exploration-creator-camera-policy-v1.test.js`, helper propriétaire `src/play/exploration-creator-camera-v1.js`. Validation npm test/check, vraie page Chromium PC/mobile, CI de ce SHA, Pages officielle et checkpoint GREEN requis avant que GenSRPG consomme ce main.
+- **Interdits** : toucher WorldDocument, gameplay, collision, sprites, sauvegardes, PWA, V80 ou autres propriétaires.
+
+---
+
 ## 2026-11-07 — Spawns du Builder et traversée native Jouer (lot LE propriétaire)
 
 - **BASE LE main** : `66ec19c6da9124a936702d96915d6c89b6b4d31c` ; START `checkpoint/exploration-start-play-portal-spawn-panel-2026-11-07` ; branche `work/exploration-play-portal-spawn-panel-2026-11-07`.
