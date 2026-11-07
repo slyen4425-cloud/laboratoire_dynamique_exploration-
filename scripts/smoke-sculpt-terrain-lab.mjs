@@ -73,11 +73,19 @@ try{
   if(!boot)throw Error('Sculpt lab did not boot: '+JSON.stringify(await run(`({title:document.title,resources:performance.getEntriesByType('resource').map(x=>x.name).slice(-10)})`)));
   if(boot.faceCount<20||boot.levelSpread<3||boot.width!==36||boot.height!==24)
     throw Error('Sculpt heightfield demo or generated cliffs absent: '+JSON.stringify(boot));
-  const pixelInfo=await run(`(()=>{const canvas=document.querySelector('#sculpt-canvas');
-     const p=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
-     let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
-     return {visible,w:canvas.width,h:canvas.height};})()`);
-  if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels: '+JSON.stringify(pixelInfo));
+  // The heightfield model can become probe-ready before the first Canvas
+  // requestAnimationFrame. Assert REAL painted pixels, not just a ready flag.
+  // Re-check for at most 12 seconds; never lower the visual threshold.
+  let pixelInfo=null;
+  for(let frame=0;frame<80;frame++){
+    pixelInfo=await run(`(()=>{const canvas=document.querySelector('#sculpt-canvas');
+       const p=canvas.getContext('2d',{willReadFrequently:true}).getImageData(0,0,canvas.width,canvas.height);
+       let visible=0;for(let i=0;i<p.data.length;i+=12){if(p.data[i]>65&&p.data[i+1]>65)visible++;}
+       return {visible,w:canvas.width,h:canvas.height};})()`);
+    if(pixelInfo.visible>=100)break;
+    await sleep(150);
+  }
+  if(pixelInfo.visible<100)throw Error('Sculpt renderer did not paint real Canvas pixels after draw-ready window: '+JSON.stringify(pixelInfo));
   // V12 real Chromium feature pixels, not just toggles or SVG flags.
   const overlayGate=await run(`(async()=>{
  await new Promise(ok=>setTimeout(ok,220));
