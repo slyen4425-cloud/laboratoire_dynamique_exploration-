@@ -66,6 +66,8 @@ jobs:
           node scripts/combat-native-bridge-smoke.mjs
       - name: Real Chromium touch landscape — scoped official HeroDefinition in native Jouer, no fallback
         run: node scripts/smoke-hero-play-browser.mjs
+      - name: Real Chromium scoped native Jouer Portal traversal and checkpoint
+        run: node scripts/smoke-world-portal-scoped-play.mjs
       - name: Real Chromium Builder invalid-encounter navigation smoke
         run: node scripts/smoke-builder-encounter-validation.mjs
       - name: Real Chromium interior floor material and brush smoke
