@@ -1,3 +1,12 @@
+## 2026-11-07 — World Builder : bibliothèque officielle de plusieurs mondes (lot de publication indépendant, START)
+
+- **Livraison isolée** : base main `556922f8a2347e95088233ceee2cd56617d77208`, checkpoint `checkpoint/exploration-start-world-library-main-2026-11-07`, branche `work/exploration-world-library-main-2026-11-07`. Backport strict des CINQ fichiers métier/test validés sur Exploration PR #383 (SHA `bca1ac3eb8832c5a13b9b508ecaea6cc5b616c16`). Ne contient PAS les avatars multijoueurs PR #382, non validés sur deux navigateurs.
+- **Propriétaire** : World Builder officiel/WorldDocument `serializeWorldBuilderDraft` + `importWorldBuilderDocument`; les parties Capture et les autres modules ne possèdent ni ne recopient cette archive. Brouillon historique `gensrpg.world-assembler.document.v1` préservé sans suppression. Deux mondes sauvegardés restent indépendants; activation explicitement confirmée.
+- **Garantie** : pas de remplacement caché des cartes, pas de migration destructrice, pas de changement Survie, Dungeon, Combat, cache ou V80. Tests TDD officiels `tests/exploration-world-document-library-v1.test.js`, suite CI Exploration et navigateurs avant GREEN / main. Le lot rencontres C7 reste séparé.
+- **Statut** : branche de publication et PR à valider ; pas déclaré GREEN avant SHA exact et CI.
+
+---
+
 ## 2026-11-06 — Contrat officiel de notification navigation Jouer (Capture réseau, START)
 
 - **START** : `checkpoint/exploration-start-capture-peer-nav-event-2026-11-06` sur `main@a2db1825f0a1a833fadcd02d7804f887c864a1d2`. Branche isolée `work/exploration-capture-peer-nav-event-2026-11-06` ; main/published Pages restent inchangés.

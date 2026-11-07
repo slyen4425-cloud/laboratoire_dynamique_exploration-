@@ -85,3 +85,13 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 @media(max-width:780px){.app-header{height:61px;padding:7px 10px}.app-header h1{font-size:16px}.header-actions{gap:5px}.save-state{display:none}.header-actions button,.import-btn{font-size:10px;padding:8px}.workspace{grid-template-columns:175px minmax(0,1fr) 205px}.left-rail,.inspector{padding:9px 8px}.world-node{width:175px;min-height:91px}.canvas-header{padding:7px 9px}.canvas-header h2{font-size:15px}.canvas-actions button{font-size:10px;padding:6px}.stat-row{grid-template-columns:1fr 1fr}}
 @media(orientation:portrait) and (max-width:640px){body{overflow:auto}.app-shell{min-height:100dvh;height:auto}.workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(360px,60dvh) auto}.left-rail{border-right:0;border-bottom:1px solid #36515e}.area-list{grid-template-columns:1fr 1fr;max-height:none}.inspector{border-left:0;border-top:1px solid #36515e}.header-actions{flex-wrap:wrap;justify-content:flex-end}.canvas-header p{display:block}.app-toast{position:sticky;bottom:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* One official WorldDocument archive, not a second map editor. */
+.world-library-controls{display:grid;gap:7px;margin:13px 0 15px;padding:10px;
+ border:1px solid #345b65;border-radius:11px;background:#142e36}
+.world-library-controls h2{font-size:14px;margin:0;color:#c6f2e5}
+.world-library-controls p{font-size:11px;line-height:1.4;color:#a9c6c8;margin:0}
+.world-library-controls .field{margin:4px 0 0}
+.world-library-controls button{min-height:40px;padding:7px 9px;font-size:12px}
+#world-library-status{font-size:11px;color:#9edbc9;overflow-wrap:anywhere}
+#world-library-status[data-error=true]{color:#ffb4a8}
