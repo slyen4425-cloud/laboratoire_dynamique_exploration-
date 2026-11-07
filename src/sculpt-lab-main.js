@@ -85,6 +85,7 @@ import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
+import {describeWorldAreaSpawnsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {emitExplorationPlayNavigationCommittedV1
@@ -3558,8 +3559,7 @@ function currentWorldPortal(){
 }
 function selectedWorldSpawn(){
   const area=sculptWorldArea();
-  return area?.spawns.find(p=>p.id===$('world-area-spawn-select')?.value)
-    ??area?.spawns[0]??null;
+  return area?.spawns.find(p=>p.id===$('world-area-spawn-select')?.value)??null;
 }
 function refreshSculptWorldPanel(){
   const panel=$('world-area-portal-panel');
@@ -3587,17 +3587,23 @@ function refreshSculptWorldPanel(){
   $('world-area-portal-y').value=portal?.trigger.kind==='point'?
     String(Math.round(portal.trigger.y)):'';
   $('world-area-portal-label').value=portal?.visual?.label??'';
-  const spawns=area.spawns.filter(s=>Number.isFinite(s.x)&&Number.isFinite(s.y));
+  const spawnOptions=describeWorldAreaSpawnsForEditorV1(sculptWorldDraft,sculptWorldAreaId);
   const selector=$('world-area-spawn-select'),selected=selector.value;
-  selector.replaceChildren(...spawns.map(s=>new Option(
-    s.id===sculptWorldDraft.initialSpawnId&&area.id===sculptWorldDraft.initialAreaId
-      ?'★ Point de départ':'📍 Arrivée '+s.id,s.id)));
-  if(spawns.some(s=>s.id===selected))selector.value=selected;
-  const spawn=selectedWorldSpawn();
+  selector.replaceChildren(...spawnOptions.map(spawn=>new Option(spawn.label,spawn.id)));
+  if(spawnOptions.some(spawn=>spawn.id===selected))selector.value=selected;
+  const spawnOption=spawnOptions.find(spawn=>spawn.id===selector.value)??null;
+  const spawnEditable=spawnOption?.editable===true&&!!spawnOption.point;
   for(const id of ['world-area-spawn-place','world-area-spawn-save',
-    'world-area-spawn-x','world-area-spawn-y'])$(id).disabled=!spawn;
-  $('world-area-spawn-x').value=spawn?String(Math.round(spawn.x)):'';
-  $('world-area-spawn-y').value=spawn?String(Math.round(spawn.y)):'';
+    'world-area-spawn-x','world-area-spawn-y'])$(id).disabled=!spawnEditable;
+  $('world-area-spawn-x').value=spawnOption?.point?String(Math.round(spawnOption.point.x)):'';
+  $('world-area-spawn-y').value=spawnOption?.point?String(Math.round(spawnOption.point.y)):'';
+  $('world-area-spawn-info').textContent=!spawnOption
+    ?'Aucun point de départ ou d’arrivée défini pour cette zone.'
+    :!spawnOption.editable
+      ?'Point lié à une porte : sa position appartient au bâtiment et se règle dans Objets > Porte, pas avec un Spawn libre.'
+      :spawnOption.initial
+        ?'★ Départ principal du monde : déplace-le ici ou directement sur le terrain.'
+        :'Point d’arrivée libre : position modifiable sur le terrain.';
   $('world-area-portal-place').textContent=
     sculptWorldPortalPlacement==='portal'?'✕ Annuler la pose de l’entrée':
       '📍 Pointer l’entrée sur le terrain';
@@ -3635,7 +3641,8 @@ function commitSculptWorldPortal(point){
 }
 function commitSculptWorldSpawn(point){
   const spawn=selectedWorldSpawn();
-  if(!spawn)throw Error('Aucun Spawn modifiable dans cette zone');
+  if(!spawn)throw Error('Aucun Spawn sélectionné dans cette zone');
+  if(spawn.anchor)throw Error('Ce Spawn est ancré à une porte : modifie la porte dans le bâtiment propriétaire');
   const position=validSculptWorldAuthoringPoint(point);
   sculptWorldDraft=placeSculptWorldSpawn(
     sculptWorldDraft,sculptWorldAreaId,spawn.id,position);
