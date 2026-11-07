@@ -1,6 +1,6 @@
-// Real Chromium integration gate: same-origin GenSRPG scoped hero grant
-// -> actual Hero IndexedDB -> native 2.5D Jouer Map Actor renderer.
-// Uses the real WorldDocument/play checkpoint owner, no demo snapshot.
+// Real Chromium landscape gate: use two official WorldAreas and Portals in
+// scoped native Jouer; assert actual UI traversal and persisted checkpoints.
+// Reuse only Exploration's WorldDocument/Navigation authoring and save owners.
 import {createServer} from 'node:http';
 import {readFile,mkdtemp,rm} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
