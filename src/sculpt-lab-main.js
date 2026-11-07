@@ -9,6 +9,7 @@ import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
+import {cameraAngleFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
@@ -192,6 +193,14 @@ function objectImage(assetId){
   return picture;
 }
 let navigationTesting=false,navActor=null,navFrame=0,navPreviousTime=null,navStick=null;
+// The Adventure host chooses ONLY the angle. The authoritative camera
+// projection remains here, and each player keeps the native zoom slider.
+const sculptCreatorCameraAngle=cameraAngleFromAdventurePlayUrlV1(window.location.search);
+if(sculptCreatorCameraAngle!==null){
+  $('navigation-camera-angle').value=String(sculptCreatorCameraAngle);
+  $('navigation-camera-angle').disabled=true;
+  $('navigation-camera-angle-value').textContent=sculptCreatorCameraAngle+'° · créateur';
+}
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
 const adventureSessionId=new URL(document.URL).searchParams.get('adventureSession');
 const playOptions=adventureSessionId===null?undefined:{sessionId:adventureSessionId};
@@ -2097,7 +2106,11 @@ $('navigation-max-step').addEventListener('input',()=>{
   updateNavigationInfo(true);
 });
 $('navigation-camera-angle').addEventListener('input',()=>{
-  $('navigation-camera-angle-value').textContent=$('navigation-camera-angle').value+'°';
+  // Do not allow a player's synthetic input to override the creator's angle.
+  if(sculptCreatorCameraAngle!==null)
+    $('navigation-camera-angle').value=String(sculptCreatorCameraAngle);
+  $('navigation-camera-angle-value').textContent=$('navigation-camera-angle').value+'°'+
+    (sculptCreatorCameraAngle!==null?' · créateur':'');
   // The cache is unmodified; affine reprojection of the existing raster is cheap.
   if(navigationTesting){centerNavigationCamera();scheduleDraw();}
 });
@@ -3231,8 +3244,10 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   }
   updateSculptAreaControls();refreshSculptEncounterEditor();fit();
   if(wasTesting){
-    $('navigation-camera-angle').value=activeInteriorId?
-      $('interior-camera-angle').value:$('navigation-camera-angle').value;
+    if(sculptCreatorCameraAngle===null)
+      $('navigation-camera-angle').value=activeInteriorId?
+        $('interior-camera-angle').value:$('navigation-camera-angle').value;
+    else $('navigation-camera-angle').value=String(sculptCreatorCameraAngle);
     $('navigation-camera-angle').dispatchEvent(new Event('input'));
     setNavigationTesting(true);
     if(spawn&&navActor){navActor.x=spawn.x;navActor.y=spawn.y;
@@ -4018,6 +4033,8 @@ async function installSculptPlayMode(){
       heroDefinitionId:sculptPlayHeroDefinitionId,
       heroVisualPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
       areaId:sculptWorldAreaId,playing:navigationTesting,
+      creatorCameraAngle:sculptCreatorCameraAngle,
+      zoomAdjustable:!$('navigation-camera-zoom').disabled,
       actor:navActor?{x:navActor.x,y:navActor.y}:null,
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
