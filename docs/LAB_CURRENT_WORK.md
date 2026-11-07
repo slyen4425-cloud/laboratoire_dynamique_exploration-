@@ -1,3 +1,14 @@
+## 2026-11-07 — Spawns du Builder et traversée native Jouer (lot LE propriétaire)
+
+- **BASE LE main** : `66ec19c6da9124a936702d96915d6c89b6b4d31c` ; START `checkpoint/exploration-start-play-portal-spawn-panel-2026-11-07` ; branche `work/exploration-play-portal-spawn-panel-2026-11-07`.
+- **Retours** : trois Spawns visibles dans le WorldDocument mais seulement deux contrôlables en 2,5D ; suspicion de passages liés non traversables dans Monster Capture alors que Tester fonctionne.
+- **Cause du décalage d'affichage** : `refreshSculptWorldPanel()` excluait les Spawns ancrés à une porte car ils n'avaient pas de X/Y bruts. Le contrôle affiche maintenant TOUS les Spawns, y compris les ancrés en lecture seule, et la vraie position résolue par `resolveWorldAreaSpawnPoint` du propriétaire WorldArea, avec guidance vers bâtiment/porte. Aucun déverrouillage de pose libre d'un Spawn ancré.
+- **Preuve parcours** : test du contrat officiel Portal et du checkpoint persistant de session, et nouveau vrai Chromium paysage `scripts/smoke-world-portal-scoped-play.mjs` lançant `sculpt-lab.html?play=1&adventureSession`, traversant un Portal aller-retour par le **bouton réel**, vérifiant `WorldDocument` et la sauvegarde `createExplorationPlayProgressWriter`. Pas de second téléporteur ou logique GenSRPG.
+- **Invariants** : uniquement propriétaire LE ; pas de modification Combat, GenSRPG, mode Dungeon/Survie, assets ou publication de copies ; pas de transition silencieuse entre WorldDocuments différents. Gate `npm test`, `npm run check`, 3 jobs CI, vrai navigateur, test Pixel avant GREEN, puis publication officielle et promotion GenSRPG seulement sur LE main certifié.
+- **Statut** : CI exacte à suivre, aucun GREEN annoncé sans résultats.
+
+---
+
 ## 2026-11-07 — World Builder : activation explicite des rencontres sur cartes vierges (lot indépendant / START)
 
 - **Diagnostic** : une zone vierge peut autoriser des rencontres aléatoires avec probabilités de familles/éléments à 0 %, et donc n'émettre aucun monstre ; ne jamais inventer de créatures ni modifier le moteur Combat.
