@@ -882,9 +882,10 @@ body.sculpt-play-unavailable #play-start-error{
    <input id="world-area-portal-label" type="text" maxlength="80" placeholder="Ex. Porte de la crypte">
   </label>
   <button id="world-area-portal-label-save" type="button">🏷 Enregistrer le nom du repère</button>
-  <label>Point d'arrivée dans cette zone
-   <select id="world-area-spawn-select" aria-label="Choisir le point d'arrivée"></select>
+  <label>Points de départ et d'arrivée dans cette zone
+   <select id="world-area-spawn-select" aria-label="Choisir un point de départ ou d'arrivée"></select>
   </label>
+  <small id="world-area-spawn-info" role="status" aria-live="polite">Les points attachés à une porte se règlent par le bâtiment propriétaire.</small>
   <div class="world-area-grid">
    <label>Arrivée X<input id="world-area-spawn-x" type="number" step="1"></label>
    <label>Arrivée Y<input id="world-area-spawn-y" type="number" step="1"></label>
