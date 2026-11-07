@@ -54,7 +54,7 @@ async function waitFor(expression,title,attempts=115){
  }
  let observed;
  try{
-  observed=await evaluate("(()=>({href:location.href,title:document.title,ready:document.readyState,body:document.body?.textContent?.slice(0,400),heroNameCount:document.querySelectorAll('#hero-name').length}))()");
+  observed=await evaluate("(()=>({href:location.href,ready:document.readyState,bodyClass:document.body.className,play:window.__sculptPlayProbe?.(),world:window.__sculptWorldProbe?.(),feedback:document.getElementById('world-portal-feedback')?.textContent,worldStatus:document.getElementById('world-area-portal-status')?.textContent,playError:document.getElementById('play-start-error-message')?.textContent,playSave:document.getElementById('play-save-status')?.textContent}))()");
  }catch(error){observed={probeError:error.message};}
  throw Error('No '+title+' (last '+JSON.stringify(value)+', page '+JSON.stringify(observed)+', exceptions '+JSON.stringify(exceptions.slice(-3))+')');
 }
