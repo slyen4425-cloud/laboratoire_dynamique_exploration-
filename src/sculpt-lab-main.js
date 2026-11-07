@@ -4134,7 +4134,6 @@ function installSculptWorldAreaEditing(){
       y:Number($('world-area-spawn-y').value)
     });}catch(error){sculptWorldStatus(error.message,true);}
   });
-  $('world-portal-traverse').addEventListener('click',traverseSculptWorldPortal);
   // Persist on refresh/navigation as well; the landing screen can recover
   // the selected area using areaId and this exact world document.
   window.addEventListener('pagehide',()=>{
@@ -4276,6 +4275,10 @@ updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();set
 // All synchronously declared renderer/world/camera owners now exist. Asynchronous
 // images arriving earlier will be included in this first canonical draw.
 sculptBootReady=true;fit();
+// The SAME canonical Portal action must be wired in both World Builder Tester
+// and native scoped Jouer. The former editor-only registration left an
+// enabled-looking door button inert in real play.
+$('world-portal-traverse').addEventListener('click',traverseSculptWorldPortal);
 installSculptWorldAreaEditing();
 installSculptPlayMode();
 installSculptMapPresetPalette();
