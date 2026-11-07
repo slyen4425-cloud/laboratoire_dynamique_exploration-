@@ -35,6 +35,10 @@
     <label class="field">Nom du monde
       <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
     </label>
+    <section class="world-encounter-onboarding" aria-label="Apparitions de créatures">
+     <output id="world-encounters-status" role="status" aria-live="polite">Vérification des rencontres du monde…</output>
+     <button id="world-encounters-initialize" type="button">🐾 Initialiser les rencontres de ce monde</button>
+    </section>
     <section class="world-library-controls" aria-labelledby="world-library-title">
      <h2 id="world-library-title">Mes mondes sauvegardés</h2>
      <p>Enregistre ce monde sous son nom avant d'en ouvrir un autre. Les mondes précédents restent dans ta bibliothèque.</p>
