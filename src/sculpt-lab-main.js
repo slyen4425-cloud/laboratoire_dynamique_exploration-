@@ -489,7 +489,7 @@ function presentSculptEncounter(snapshot,recovered=false){
   const creatureId=sculptPendingEncounter.opponents[0].creatureId;
   // Prewarm only the two real author-selected creature portraits while the
   // player reads the encounter dialog. No gameplay change or visual fallback.
-  void sculptCombatWarmup.warmCreature(creatureId);
+  void sculptCombatWarmup.warmCreature(creatureId,scopedEncounter?.party?.active?.speciesId??null);
   const creature=sculptEncounterCatalog.resolveCreature(creatureId);
   $('sculpt-encounter-summary').textContent=
     (creature?.name??creatureId)+' · '+sculptPendingEncounter.context.terrainFamilyId+
@@ -1817,7 +1817,7 @@ function navigationBlockMessage(reason){
 }
 function navHeight(){
   const stairLevel=navActor?.sculptStairId?sculptStairHeightAt(terrain,
-    [...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)],
+    [...resolvedSculptStairs(),...resolvedSculptTerrainRamps()],
     navActor.sculptStairId,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
   if(stairLevel!==null)return stairLevel;
@@ -4028,6 +4028,8 @@ async function installSculptPlayMode(){
     document.body.classList.add('sculpt-play-unavailable','sculpt-immersive');
     $('play-start-error').hidden=false;
     $('play-start-error-message').textContent=error.message;
+    $('sculpt-play-boot-mask')?.setAttribute('hidden','');
+    document.documentElement.classList.remove('sculpt-play-booting');
     console.error('Lancement Jouer refusé :',error);
   };
   try{
@@ -4125,6 +4127,18 @@ async function installSculptPlayMode(){
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
+    // The canonical canvas is actually painted before the host exposes it.
+    // Loading is a presentation state, not another map or game simulation.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const cover=$('sculpt-play-boot-mask');
+      if(cover)cover.hidden=true;
+      document.documentElement.classList.remove('sculpt-play-booting');
+      if(playOptions&&window.parent!==window)window.parent.postMessage({
+        schema:'gensrpg.exploration.play.ready.v1',
+        sessionId:playOptions.sessionId,worldId:world.id,
+        areaId:sculptWorldAreaId
+      },window.location.origin);
+    }));
   }catch(error){
     scopedEncounter?.release();
     scopedEncounter=null;
