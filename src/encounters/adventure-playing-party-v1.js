@@ -1,3 +1,4 @@
+import {assertExplorationWorldDocumentIdV1} from '../world/world-document-identity-v1.js';
 // Read-only transport of the TRUE Capture-owned party. This is NOT a second
 // roster, creature catalog, combat resolver, XP system or Adventure save.
 // A scoped game must never fall back to the standalone Tester party or level.
@@ -47,7 +48,7 @@ export function readScopedAdventurePlayingPartyV1({
  if(typeof storage?.getItem!=='function')
   throw new TypeError('Same-origin sessionStorage reader required');
  const key=adventurePlayingPartyStorageKeyV1(sessionId);
- safeId(worldId,'worldId');
+ assertExplorationWorldDocumentIdV1(worldId);
  verifiedSha(authorSha,'author');verifiedSha(engineSha,'engine');
  const raw=storage.getItem(key);
  if(raw===null)return null;
