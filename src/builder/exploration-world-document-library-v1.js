@@ -5,18 +5,14 @@ import {serializeWorldBuilderDraft,importWorldBuilderDocument}
  from './world-builder-draft.js';
 import {readWorldAssemblerDraft,saveWorldAssemblerDraft,WORLD_ASSEMBLER_DRAFT_KEY}
  from './world-assembler-handoff.js';
+import {assertExplorationWorldDocumentIdV1 as id}
+ from '../world/world-document-identity-v1.js';
 
 export const EXPLORATION_WORLD_LIBRARY_INDEX_V1=
  'gensrpg.exploration.world-library.index.v1';
 export const EXPLORATION_WORLD_LIBRARY_SLOT_V1=
  'gensrpg.exploration.world-library.document.v1:';
 const SCHEMA='gensrpg.exploration.world-library.index.v1';
-function id(value){
- if(typeof value!=='string'||!value.trim()||value.length>130||
-    /[\u0000-\u001f\u007f]/.test(value))
-  throw new TypeError('Identifiant de WorldDocument officiel invalide');
- return value;
-}
 function slotKey(value){return EXPLORATION_WORLD_LIBRARY_SLOT_V1+encodeURIComponent(id(value));}
 function indexShape(value){
  if(!value||typeof value!=='object'||Array.isArray(value)||

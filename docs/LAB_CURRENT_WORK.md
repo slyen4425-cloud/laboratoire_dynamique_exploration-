@@ -1,3 +1,12 @@
+## 2026-11-08 — Aventure : mondes « Test 1 » autorisés et PV d'entrée bornés au maximum Combat
+- START : Exploration main certifié `d9f90f5bf48b8c42699f0db2f2f797f1ebf17fa1`, checkpoint `checkpoint/exploration-start-world-spaced-id-2026-11-08`, branche `work/exploration-world-spaced-id-2026-11-08`.
+- Retour Android : écran de préparation affichant le WorldDocument « Test 1 » et `Invalid WorldDocument identity for Adventure hero selection`. Cause : le propriétaire bibliothèque WorldDocument autorise espaces/accents dans ses IDs, mais 3 lecteurs de grants Aventure/Exploration avaient une expression régulière limitée aux slugs ASCII. Uniquement l'identité **WorldDocument** est alignée sur une unique validation exportée par Exploration ; IDs session, héros, créatures et SHA restent stricts. Aucune réécriture de monde ou sauvegarde.
+- PV historique : pour une partie réglée à 25 %, un HP ancien de 46 peut excéder le maximum Combat officiel 35. `projectAdventureInitialCombatHpV1` borne les HP transitoires lors de l'entrée en combat à `fighter.maxHp` (calculé par Combat), conserve le 0 KO et ne modifie pas le stockage Core.
+- TDD `tests/adventure-world-spaced-id-20261108.test.js` : Test 1/Forêt 1 entre Hero, Bestiaire et Party, refus de mauvais monde, sauvegarde non modifiée, PV 46/35 et KO ; `npm test` sous CI + navigateurs. Aucun moteur, Renderer ni nouveau WorldDocument.
+- Publication/consommation GenSRPG : seulement après la CI source/Pages exacte GREEN et pin Exploration certifié.
+
+---
+
 ## 2026-11-07 — Caméra Aventure réglée par le créateur (PR #388)
 - **Base publiée / START** : Exploration main@c18b34cacf6d9d157d62e7e507c4c155d6e1b11c, checkpoint/exploration-start-creator-game-camera-angle-2026-11-07, branche work/exploration-creator-game-camera-angle-2026-11-07.
 - **Propriétaire** : seule la caméra 2.5D du Labo Exploration utilise l’angle transmis par l’aventure GenSRPG via `?play=1&adventureSession=...&cameraAngle=...`, jamais un second renderer. Validation fondée sur `SCULPT_GAME_CAMERA_ANGLE` officiel (35..90°, pas 5).

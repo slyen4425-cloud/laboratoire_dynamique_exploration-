@@ -276,6 +276,15 @@ async function launch() {
     showcaseSkillTransfers:skillTransfers,nativeSkillCatalog,statRegistry,
     progressionRules,baseFighterRules,arenaId,previewLevel:20
   });
+  // Combat has already applied the creator's HP percentage. An old saved
+  // current HP must never exceed that REAL battle maximum on the first frame.
+  const initialAdventureHp=adventureParty
+    ?(await import('../../../src/encounters/adventure-initial-hp-v1.js'))
+      .projectAdventureInitialCombatHpV1({
+        savedHp:adventureParty.active.hp,
+        maxHp:nativeCombatSource.fighters.find(f=>f.id==='local-1')?.maxHp
+      })
+    :null;
   const nativeVisualSource=adaptCaptureExportToNativeVisualSourceV1({
     exported:nativeCombatSource.exported,assetCatalog,profiles,assetUrlForFile
   });
@@ -311,7 +320,7 @@ async function launch() {
     root,visuals:mountedVisuals,nativeCombatSource,
     ...(adventureParty?{embeddedBattle:{initialHpByActor:Object.fromEntries(
       nativeCombatSource.fighters.map(fighter=>[fighter.id,
-        fighter.id==='local-1'?(adventureParty.active.hp??fighter.maxHp):fighter.maxHp]))}}:{}),
+        fighter.id==='local-1'?initialAdventureHp:fighter.maxHp]))}}:{}),
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
   if(adventureParty){
