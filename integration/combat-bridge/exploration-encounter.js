@@ -20,6 +20,7 @@ import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/co
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
 import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
 import {captureEncounterVisualFilesV1} from '../../../src/encounters/capture-combat-warmup-v1.js';
+import {officialAdventureCombatRequestV1} from '../../../src/encounters/official-adventure-combat-request-v1.js';
 
 const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');
@@ -47,8 +48,14 @@ const resource = path => new URL(path, rootPath);
 const encounterSessionId = new URL(document.URL).searchParams.get('adventureSession') ?? undefined;
 const handoffScope = { sessionId: encounterSessionId };
 const handoffStorage = encounterSessionId === undefined ? window.sessionStorage : window.localStorage;
+const scopedReleaseLoadId=encounterSessionId===undefined?null:window.crypto.randomUUID();
+const scopedRequest=url=>officialAdventureCombatRequestV1(
+  new URL(url,document.baseURI),{
+    sessionId:encounterSessionId??null,loadId:scopedReleaseLoadId
+  });
 async function readJson(url) {
-  const response = await fetch(url);
+  const request=scopedRequest(url);
+  const response = await fetch(request.url,request.init);
   if (!response.ok) throw new Error('Fichier Combat introuvable : ' + url.pathname + ' (HTTP ' + response.status + ')');
   return response.json();
 }
@@ -247,7 +254,9 @@ async function launch() {
   // Start downloading the official HUD immediately; independent source data
   // resolves concurrently. Only one build-produced bundle supplies every
   // approved creature/skill, never 70+ independent cold-start requests.
-  const templateResponse=fetch('./capture-editor-v2.html',{cache:'force-cache'});
+  const templateRequest=scopedRequest('./capture-editor-v2.html');
+  const templateResponse=fetch(templateRequest.url,
+    encounterSessionId===undefined?{cache:'force-cache'}:templateRequest.init);
   const [testerParty,nativeSkillCatalog,statRegistry,progressionRules,baseFighterRules,
     assetCatalog,...profilesAndBundle] = await Promise.all([
     encounterSessionId===undefined?readJson('./party.preview.v1.json'):null,

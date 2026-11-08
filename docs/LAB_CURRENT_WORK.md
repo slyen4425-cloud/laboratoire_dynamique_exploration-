@@ -1,3 +1,12 @@
+## 2026-11-08 — Correctif B1 : ancien bundle Combat dans l'iframe (incident réel)
+- **Reproduction utilisateur** : après Bestiaire OK puis Exploration OK, l'iframe du combat affiche « Combat indisponible : Adventure publication does not match official Combat author/engine sha ». La dernière chaîne n'appliquait pas l'isolation de cache : `integration/combat-bridge/exploration-encounter.js` utilisait toujours `fetch(url)` pour ses JSON.
+- **Cause** : ancien worker PWA Android peut servir le bundle d'un ancien Combat SHA au moment où Combat revalide la même autorisation Adventure. Le contrôle est correct et demeure obligatoire.
+- **Correction Exploration propriétaire** : un UUID éphémère de lancement pour toutes les ressources du vrai Combat scoped, URLs uniques + `cache:'no-store'`; aucune source alternative, aucun assouplissement de SHA, aucun changement au Combat main ; Tester reste inchangé.
+- **START** main@`f743ae9d0df5e1aa2c24ed009a551435e5cc8e04`, checkpoint `checkpoint/exploration-start-adventure-combat-version-2026-11-08`, lot `work/exploration-adventure-combat-version-2026-11-08`. CI Node et réel Chromium, publication Pages exacte, puis repin Capture GenSRPG main et preuve HTTPS obligatoires.
+- **Partie/équipe** : pas de reset ; AdventureSession détient ses 1–6 créatures ; seule la créature active du combat est envoyée au moteur 1v1. Vérifier le menu Équipe en jeu et le passage carte→combat→carte.
+
+---
+
 ## 2026-11-08 — Android C2, écran « Partie indisponible » SHA Combat (8 novembre)
 - **Symptôme prouvé :** après la réparation du Bestiaire, Exploration affiche « Adventure publication does not match official Combat author/engine sha » lors de l’entrée en monde.
 - **Cause :** le loader propriétaire `loadCaptureAuthorEncounterBundleV1` demande encore le JSON de Combat par URL historique `force-cache`. Une PWA installée peut fournir des anciens octets, alors que Capture a désormais son manifeste Combat frais.
