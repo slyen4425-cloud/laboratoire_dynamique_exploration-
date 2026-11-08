@@ -22,7 +22,10 @@ test('only true Portal traversal shows loading BEFORE expensive map mount; hide 
  assert.match(main,/const overlay=sculptPlayActive\?\$\('play-area-loading'\):null/);
  const entering=main.indexOf('overlay.hidden=false');
  const yieldFrame=main.indexOf('await new Promise(resolve=>requestAnimationFrame',entering);
- const mount=main.indexOf('mountWorldSculptArea(transition.currentAreaId)',yieldFrame);
+ // The mount now consumes the scene already validated before the portal.
+ // Require its two-argument form rather than accidentally matching a second
+ // projection. The loading veil must still cover the full native mount.
+ const mount=main.indexOf('mountWorldSculptArea(transition.currentAreaId,destinationScene)',yieldFrame);
  const rendering=main.indexOf('requestAnimationFrame(()=>requestAnimationFrame(resolve))',mount);
  const hide=main.indexOf('overlay.hidden=true',rendering);
  assert.ok(entering>=0&&entering<yieldFrame&&yieldFrame<mount&&mount<rendering&&rendering<hide);
