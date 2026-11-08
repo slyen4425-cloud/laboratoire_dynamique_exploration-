@@ -3811,13 +3811,15 @@ function commitCurrentSculptWorldArea(){
   });
   return sculptWorldDraft;
 }
-function mountWorldSculptArea(areaId){
+function mountWorldSculptArea(areaId,validatedScene=null){
   sculptWorldAreaMounted=false;
   const area=sculptWorldDraft?.areas.find(a=>a.id===areaId);
   if(!area)throw Error('WorldArea cible absente');
   document.querySelector('header h1').textContent='World Builder · '+(area.label??'Carte');
   document.querySelector('header p').textContent='Un seul monde · deux panneaux · '+area.width/28+' × '+area.height/21+' cases';
-  const scene=sculptWorldAreaScene(area);
+  // Use the already validated destination scene after a real Portal. Rebuilding
+  // it two or three times on the same transition blocks Android's render thread.
+  const scene=validatedScene??sculptWorldAreaScene(area);
   sculptWorldAreaId=areaId;
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
@@ -3870,7 +3872,8 @@ async function traverseSculptWorldPortal(){
   }
   try{
     let target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-    try{sculptWorldAreaScene(target);}
+    let validatedTargetScene=null;
+    try{validatedTargetScene=sculptWorldAreaScene(target);}
     catch(error){
       if(sculptPlayActive||portal.trigger?.kind!=='point'||!playableExteriorArea(sculptWorldArea()))throw error;
       if(!window.confirm('Cette sortie mène à une ancienne zone non jouable en 2,5D. '+ 
@@ -3885,7 +3888,7 @@ async function traverseSculptWorldPortal(){
       portal=sculptWorldDraft.portals.find(p=>p.id===portal.id);
       if(!portal)throw Error('Portal réparé introuvable');
       target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-      sculptWorldAreaScene(target);
+      validatedTargetScene=sculptWorldAreaScene(target);
     }
     // The SAME runtime Portal resolver used by the 2D world document.
     // Gameplay may traverse existing Portals but cannot commit an authored map.
@@ -3894,10 +3897,16 @@ async function traverseSculptWorldPortal(){
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
     },portal);
     if(!transition)throw Error('Portal / Spawn cible invalide');
-    // Load and validate the destination BEFORE releasing the current Area.
-    sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId));
+    // The destination was validated before we released the current Area.
+    // In Jouer, reuse that exact pure scene projection instead of building
+    // it THREE times during one Portal transition (Android main-thread stalls).
+    // Editor repair can change document bytes, so it always revalidates once.
+    const destinationScene=sculptPlayActive&&transition.currentAreaId===target.id
+      ?validatedTargetScene
+      :sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId));
+    if(!destinationScene)throw Error('Scene de destination invalide');
     if(navigationTesting)setNavigationTesting(false);
-    mountWorldSculptArea(transition.currentAreaId);
+    mountWorldSculptArea(transition.currentAreaId,destinationScene);
     setNavigationTesting(true);
     if(!navActor)throw Error('Zone de destination non praticable');
     if(sculptPlayActive){
