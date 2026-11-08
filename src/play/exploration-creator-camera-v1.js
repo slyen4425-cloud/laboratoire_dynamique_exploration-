@@ -15,3 +15,17 @@ export function cameraAngleFromAdventurePlayUrlV1(search){
   throw new RangeError('Angle de caméra du créateur : 35 à 90 degrés par pas de 5');
  return angle;
 }
+
+/** Initial zoom is an Adventure preference, never a second map camera.
+ * After first paint the player can still change native Exploration zoom. */
+export function cameraInitialZoomFromAdventurePlayUrlV1(search){
+ const params=new URLSearchParams(search);
+ if(params.get('play')!=='1'||!params.get('adventureSession'))return null;
+ const raw=params.get('cameraZoom');
+ if(raw===null)return null; // Old saves keep the native 175% without migration.
+ if(!/^\d+$/.test(raw))throw new RangeError('Zoom initial de caméra invalide');
+ const percent=Number(raw);
+ if(!Number.isSafeInteger(percent)||percent<100||percent>240||percent%5!==0)
+  throw new RangeError('Zoom initial de caméra : 100 à 240 %, par pas de 5');
+ return percent;
+}
