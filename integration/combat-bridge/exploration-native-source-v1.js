@@ -104,8 +104,15 @@ export function buildExplorationNativeCombatSourceV1({
       // encounter builder, after official stat projection. No creature edits.
       ...options,hpMultiplier:adventureParty.combatHpMultiplier,
       local:adventureParty.active,
+      // Keep the saved order and identities. Combat alone builds the
+      // rechargeable native bench, individual stats and KO rules.
+      localReserve:adventureParty.reserve??[],
       opponent:{speciesId:enemyId,level:configuredCreatures.get(enemyId).draft.level}
     });
+    const expected=1+(adventureParty.reserve?.length??0);
+    const bench=source.roster?.teams?.['local-1']?.members;
+    if(!Array.isArray(bench)||bench.length!==expected)
+      throw new Error('Official Combat did not register all Adventure party members');
     return Object.freeze({...source,sourceCreatureIds});
   }
   const exported=buildCaptureEditorCombatTestV1({
