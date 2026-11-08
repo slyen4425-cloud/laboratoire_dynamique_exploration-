@@ -1,3 +1,4 @@
+import {assertExplorationWorldDocumentIdV1} from '../world/world-document-identity-v1.js';
 // Exploration reads ONLY an explicit, versioned, same-origin Hero selection
 // from the GenSRPG Adventure owner. It never chooses the hero, accesses
 // GenSRPG's saved session, stores Blob URLs or invents an asset.
@@ -26,7 +27,7 @@ export function readScopedAdventureHeroSelectionV1({
  if(typeof storage?.getItem!=='function')
   throw new TypeError('Same-origin temporary Hero selection storage required');
  const key=adventureHeroSelectionStorageKeyV1(sessionId);
- safeId(worldId,'world');
+ assertExplorationWorldDocumentIdV1(worldId);
  const raw=storage.getItem(key);
  if(raw===null)return null;
  let value;
