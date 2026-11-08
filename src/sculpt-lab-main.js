@@ -4057,7 +4057,9 @@ async function installSculptPlayMode(){
           schema:'gensrpg.exploration.play.return-title.v1',
           sessionId:playOptions.sessionId
         },window.location.origin);
-      }else window.location.assign('./play.html');
+      }else window.location.assign(playOptions?
+        './play.html?adventureSession='+encodeURIComponent(playOptions.sessionId):
+        './play.html');
       return true;
     };
     $('play-menu-button').addEventListener('click',returnToTitle);
