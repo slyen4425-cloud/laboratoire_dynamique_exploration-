@@ -9,7 +9,7 @@ import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
-import {cameraAngleFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
+import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
@@ -202,6 +202,15 @@ if(sculptCreatorCameraAngle!==null){
   $('navigation-camera-angle-value').textContent=sculptCreatorCameraAngle+'° · créateur';
 }
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
+if(sculptPlayRequested){
+  // Same camera and zoom slider as the native Tester. Apply a creator-chosen
+  // starting distance without locking later player pinch/slider zoom.
+  const initialZoom=cameraInitialZoomFromAdventurePlayUrlV1(window.location.search);
+  if(initialZoom!==null){
+    $('navigation-camera-zoom').value=String(initialZoom);
+    $('navigation-camera-zoom-value').textContent=initialZoom+' % · départ';
+  }
+}
 // GenSRPG only supplies a creator preference. Native Exploration still owns
 // the actual movement speed, collision and simulation clock.
 if(sculptPlayRequested){

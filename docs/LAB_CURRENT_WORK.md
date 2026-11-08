@@ -1,3 +1,11 @@
+## 2026-11-08 — Caméra de départ Aventure, sans seconde autorité
+- **Demande** : cadrage plus près du sol + plus zoomé avant démarrer ; réglage explicite, zoom toujours libre en jeu.
+- **Exploration propriétaire** : interpréter le paramètre scoped `cameraZoom=100..240` par pas de 5 (ancien lien sans valeur conserve le 175 % natif), l'appliquer **à la réglette existante** au chargement avant le rendu. L'angle `cameraAngle` natif 35–90° reste indépendant ; 45° est plus oblique, plus proche du sol que 55°.
+- **START** main@`f743ae9d0df5e1aa2c24ed009a551435e5cc8e04`, checkpoint `checkpoint/exploration-start-adventure-camera-2026-11-08`, lot `work/exploration-adventure-camera-2026-11-08`.
+- **Gates** : CI Node + Chromium, publisher unique / HTTPS SHA. Le consentement et la configuration avant la partie restent dans Capture (raccord séparé) ; aucun nouveau moteur caméra, aucune altération du WorldDocument ou des sauvegardes.
+
+---
+
 ## 2026-11-08 — Android C2, écran « Partie indisponible » SHA Combat (8 novembre)
 - **Symptôme prouvé :** après la réparation du Bestiaire, Exploration affiche « Adventure publication does not match official Combat author/engine sha » lors de l’entrée en monde.
 - **Cause :** le loader propriétaire `loadCaptureAuthorEncounterBundleV1` demande encore le JSON de Combat par URL historique `force-cache`. Une PWA installée peut fournir des anciens octets, alors que Capture a désormais son manifeste Combat frais.
