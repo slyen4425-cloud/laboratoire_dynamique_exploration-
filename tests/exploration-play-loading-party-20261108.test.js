@@ -44,6 +44,8 @@ test('native play never reveals the editor before a painted frame, and ramp heig
  assert.match(js,/schema:'gensrpg\.exploration\.play\.ready\.v1'/);
  assert.match(js,/\.\.\.resolvedSculptTerrainRamps\(\)\],\s*navActor\.sculptStairId/);
  assert.match(js,/void sculptCombatWarmup\.warmCreature\(creatureId,scopedEncounter\?\.party\?\.active\?\.speciesId\?\?null\)/);
+ assert.match(js,/if\(!sculptPlayRequested\)\{\s*refreshSculptEncounterEditor\(\);\s*refreshSculptWorldPanel\(\);/,
+  'real play should never build hidden authoring panels during a zone mount');
 });
 
 test('genuine Combat iframe remains masked until correlated readiness, spoofing cannot unlock it',()=>{
