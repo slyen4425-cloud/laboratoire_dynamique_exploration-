@@ -47,10 +47,19 @@ export function normalizeCaptureAuthorEncounterBundleV1(raw) {
     throw new RangeError('Official Combat encounter bundle contains duplicate IDs');
   return raw;
 }
-export async function loadCaptureAuthorEncounterBundleV1({fetchImpl=globalThis.fetch}={}) {
+export async function loadCaptureAuthorEncounterBundleV1({
+  fetchImpl=globalThis.fetch,releaseLoadId=null
+}={}) {
   if(typeof fetchImpl!=='function')throw new TypeError('fetchImpl required');
   const url=new URL('../../combat-preview/data/capture/showcase/encounter-bundle.v1.json',import.meta.url);
-  const response=await fetchImpl(url,{cache:'force-cache'});
+  // A scoped GenSRPG Adventure must not trust a historical Android PWA cache.
+  // The immutable official Combat bytes and all strict SHA checks remain intact.
+  if(releaseLoadId!==null){
+    if(typeof releaseLoadId!=='string'||!/^[a-f0-9-]{36}$/.test(releaseLoadId))
+      throw new RangeError('Invalid immutable Adventure release load ID');
+    url.searchParams.set('_gens_capture_release',releaseLoadId);
+  }
+  const response=await fetchImpl(url,{cache:releaseLoadId===null?'force-cache':'no-store'});
   if(!response.ok)throw new Error('Official Combat encounter bundle unavailable: HTTP '+response.status);
   return normalizeCaptureAuthorEncounterBundleV1(await response.json());
 }

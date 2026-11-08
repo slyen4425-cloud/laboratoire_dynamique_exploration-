@@ -251,7 +251,11 @@ let sculptEncounterSource=null,sculptEncounterSourceBundle=null;
 let sculptPlayPublishedCount=0,scopedEncounter=null;
 if(sculptEncounterController){
   try{
-    sculptEncounterSourceBundle=await loadCaptureAuthorEncounterBundleV1();
+    sculptEncounterSourceBundle=await loadCaptureAuthorEncounterBundleV1(
+      sculptPlayRequested&&playOptions
+        ?{releaseLoadId:window.crypto.randomUUID()}
+        : {}
+    );
     sculptEncounterSource=projectCaptureShowcaseEncounterSourceV1(
       sculptEncounterSourceBundle.creatureTransfers);
     sculptEncounterCatalog=createCaptureCreatureCatalogProvider(sculptEncounterSource);

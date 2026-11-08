@@ -1,3 +1,13 @@
+## 2026-11-08 — Android C2, écran « Partie indisponible » SHA Combat (8 novembre)
+- **Symptôme prouvé :** après la réparation du Bestiaire, Exploration affiche « Adventure publication does not match official Combat author/engine sha » lors de l’entrée en monde.
+- **Cause :** le loader propriétaire `loadCaptureAuthorEncounterBundleV1` demande encore le JSON de Combat par URL historique `force-cache`. Une PWA installée peut fournir des anciens octets, alors que Capture a désormais son manifeste Combat frais.
+- **Correctif propriétaire :** Exploration uniquement, lecture `no-store` avec URL unique UUID pour une vraie session scoped `play=1&adventureSession`, sans changer les données et la comparaison SHA. Tester et éditeur conservent leur charge originale.
+- **START** `main@7a4f4b3e198e6fe3b5707c4b5b6dfed5d17007b9`, checkpoint `checkpoint/exploration-start-capture-grant-cache-2026-11-08`, branche unique `work/exploration-capture-grant-cache-2026-11-08`.
+- **Validation :** tests de cache historique, CI Exploration, Chromium de l’artefact assemblé, Pages/HTTPS ; raccorder ensuite Capture source puis GenSRPG publisher sur SHA exact sans second moteur.
+- **Protections :** sauvegardes, positions, WorldDocument, créatures et Combat main intacts ; V80 figée, site sous 900 Mio, aucune copie d’assets.
+
+---
+
 ## 2026-11-08 — Publisher Exploration : vrai Combat smoke déterministe (C2)
 - Départ protégé `main@0c52b5602d157e89d437d9a933da78a6bdb6aee1` ; checkpoint `checkpoint/exploration-start-combat-smoke-choice-2026-11-08`, travail `work/exploration-combat-smoke-choice-2026-11-08`.
 - Incident : Pages main run `42460042393` rouge au test `scripts/smoke-builder-encounter-validation.mjs` malgré 1 050 tests Node verts, car le driver cliquant la première capacité disponible consommait parfois l'énergie sur une défense/auto-buff au lieu d'assurer une séquence offensive ; à 108 secondes le Combat réel n'avait pas encore résolu le KO (38/100 PV).
