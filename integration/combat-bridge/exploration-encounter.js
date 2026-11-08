@@ -183,7 +183,7 @@ function showNativeCombatOutcome(outcome) {
   message(outcome==='victory'?'Victoire ! · fin du combat':
     outcome==='defeat'?'Défaite · fin du combat':'Fuite · retour en exploration');
 }
-function recordCombatResult(handoff, outcome, hp, instanceId) {
+function recordCombatResult(handoff, outcome, hp, instanceId, nativePartyMembers=null) {
   const result = createCaptureCombatResult({
     encounterId: handoff.snapshot.encounterId,
     returnToken: handoff.snapshot.returnToken,
@@ -191,7 +191,8 @@ function recordCombatResult(handoff, outcome, hp, instanceId) {
     partyState: {
       activeCreatureId: mountedCombat.format.actor('local-1').creatureId,
       hp,
-      ...(instanceId === undefined ? {} : {activeInstanceId:instanceId})
+      ...(instanceId === undefined ? {} : {activeInstanceId:instanceId}),
+      ...(nativePartyMembers===null?{}:{members:nativePartyMembers})
     }
   });
   return saveCombatHandoff(handoffStorage, {...handoff, result}, handoffScope).result;
@@ -334,12 +335,29 @@ async function launch() {
   if(adventureParty){
     fleeButton.hidden=false;
     fleeButton.addEventListener('click',()=>mountedCombat.flee(),{once:true});
-    void mountedCombat.completion.then(({outcome,state})=>{
+    void mountedCombat.completion.then(({outcome,state,roster})=>{
       if(!mountedCombat)return;
       const resolved=outcome==='flee'?'fled':outcome;
+      const withReserve=(adventureParty.reserve?.length??0)>0;
+      // No second HP ledger: Combat's existing RosterSession supplies all
+      // member HP after recalls and KO replacements, mapped to the immutable
+      // instance IDs projected by the source builder.
+      let nativeMembers=null;
+      if(withReserve){
+        const saved=roster?.['local-1']?.members;
+        const ids=nativeCombatSource.localInstanceIdsByMemberId;
+        if(!Array.isArray(saved)||saved.length!==1+adventureParty.reserve.length||
+           !ids||new Set(saved.map(member=>ids[member.id])).size!==saved.length||
+           saved.some(member=>typeof ids[member.id]!=='string'))
+          throw new Error('Native Combat reserve snapshot does not match the saved party');
+        nativeMembers=saved.map(member=>Object.freeze({
+          instanceId:ids[member.id],speciesId:member.creatureId,hp:member.hp
+        }));
+      }
       // Persist the native result immediately. Closing during presentation
       // must leave a recoverable outcome, not a replayable completed battle.
-      recordCombatResult(handoff,resolved,state.fighters['local-1'].hp,adventureParty.active.instanceId);
+      recordCombatResult(handoff,resolved,state.fighters['local-1'].hp,
+        adventureParty.active.instanceId,nativeMembers);
       fleeButton.hidden=true;
       showNativeCombatOutcome(resolved);
     }).catch(error=>message('Résultat de combat non enregistré : '+error.message,true));

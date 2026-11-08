@@ -1,3 +1,11 @@
+## 2026-11-08 — Transport Jouer des 1–6 créatures vers la réserve Combat (owner Exploration)
+- **Base START :** `main@6915526c5ea2f96265bbd4cfbe6bd081ebea0ec2`, checkpoint `checkpoint/exploration-start-capture-wild-reserve-2026-11-08`, branche `work/exploration-capture-wild-reserve-2026-11-08`.
+- **Périmètre :** `adventure-playing-party-v1.js` lit le grant transitoire signé de la vraie AdventureSession, accepte le champ facultatif `reserve` (0–5), valide identité, ordre, PV, stat allocations et Bestiaire officiel. Le pont `exploration-native-source-v1.js` transmet directement `localReserve` au seul `buildCaptureEncounterCombatSourceV1` propriétaire ; le pont retour associe les PV du seul `RosterSession` aux IDs sauvegardés et produit un `CaptureCombatResult` v1 enrichi facultativement.
+- **Frontières :** Explorer ne sauvegarde ni HP ni XP, ne crée aucun combattant, ne détermine aucune victoire, ne maintient aucune équipe concurrente. Les événements scénarisés / cap d'actifs feront l'objet d'une configuration versionnée ultérieure, sans changer la rencontre sauvage existante (1 actif + banc).
+- **Tests :** `tests/adventure-native-reserve-20261108.test.js` vérifie 1–6, doublons d'instances refusés, KO, invalides rejetés sans réécriture, transit natif. Exploration CI `42504934607` GREEN avant documentation ; gate final nouveau commit puis Pages `main` + preuve HTTPS/Android/PWA avant repin GenSRPG.
+
+---
+
 ## 2026-11-08 — B1 transport figé : correctif d'assemblage
 - **CI PR #393 réellement bloquée** dans le smoke de la preview PR318 : le Combat embarqué restait sur « Chargement du moteur Combat officiel… ». Diagnostic : le fichier de pont importait un module nouveau situé dans `src/encounters/`, alors que les previews historiques ne transportaient que quatre fichiers de bridge. L'ancien browser smoke n'avait donc pas toutes les dépendances.
 - **Correction de cause racine** : déplacer l'unique fonction `officialAdventureCombatRequestV1` vers `integration/combat-bridge/exploration-native-source-v1.js`, déjà transporté par tous les scripts de packaging (sans ajout de fichier ou copie lourde). Le fichier supplémentaire non utilisé est supprimé. Smoke exécute la véritable fonction sur le pont livré, assure URL unique et `no-store` scoped ; vieux Tester inchangé.
