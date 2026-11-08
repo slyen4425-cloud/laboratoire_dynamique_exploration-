@@ -202,6 +202,16 @@ if(sculptCreatorCameraAngle!==null){
   $('navigation-camera-angle-value').textContent=sculptCreatorCameraAngle+'° · créateur';
 }
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
+// GenSRPG only supplies a creator preference. Native Exploration still owns
+// the actual movement speed, collision and simulation clock.
+if(sculptPlayRequested){
+  const requested=new URL(document.URL).searchParams.get('moveSpeed');
+  const parsed=requested===null?90:Number(requested);
+  const speed=Number.isSafeInteger(parsed)&&parsed>=90&&parsed<=360&&
+    (parsed-90)%10===0?parsed:90;
+  $('navigation-speed').value=String(speed);
+  $('navigation-speed-value').textContent=String(speed);
+}
 const adventureSessionId=new URL(document.URL).searchParams.get('adventureSession');
 const playOptions=adventureSessionId===null?undefined:{sessionId:adventureSessionId};
 const sculptCombatSessionId=sculptPlayRequested?playOptions?.sessionId:undefined;
@@ -578,7 +588,8 @@ let navHeroRenderTransform=null; // diagnostic only: actual Canvas matrix at spr
 let navVisualLevel=null;
 const navKeys=new Set();
 // Preview-only navigation speed; authoritative runtime movement remains unchanged.
-const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||220));
+const navSpeed=()=>Math.max(90,Math.min(360,Number($('navigation-speed').value)||
+  (sculptPlayRequested?90:220)));
 let navViewport=null,navLastState='',navBlocked=false,navBlockReason=null;
 let navFps=0,navRenderFps=0,navStepSpeed=0,navMetricLast=0;
 let navMetricFrames=0,navPaintFrames=0,navMetricDistance=0;
@@ -3814,7 +3825,9 @@ function mountWorldSculptArea(areaId){
   refreshSculptWorldPanel();
   setTheme();fit();
 }
-function traverseSculptWorldPortal(){
+let sculptPortalLoading=false;
+async function traverseSculptWorldPortal(){
+  if(sculptPortalLoading)return;
   let portal=sculptWorldPortalAtHero();
   if(!portal){
     if(sculptPlayActive)return; // Gameplay never creates a Portal.
@@ -3834,6 +3847,13 @@ function traverseSculptWorldPortal(){
       sculptWorldStatus('✓ Sortie créée sur le chemin. Rejoins le cercle SORTIE pour changer de zone.');
     }catch(error){sculptWorldStatus('Raccord refusé : '+error.message,true);}
     return;
+  }
+  const overlay=sculptPlayActive?$('play-area-loading'):null;
+  if(overlay){
+    sculptPortalLoading=true;
+    overlay.hidden=false;
+    // Yield a real painted frame BEFORE the expensive destination mount.
+    await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
   }
   try{
     let target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
@@ -3888,6 +3908,13 @@ function traverseSculptWorldPortal(){
     const feedback=$('world-portal-feedback');
     feedback.textContent='Passage bloqué : '+error.message;
     feedback.dataset.error='true';feedback.hidden=false;
+  }finally{
+    if(overlay){
+      // One renderer stays authoritative. Reveal only after its first paint.
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      overlay.hidden=true;
+      sculptPortalLoading=false;
+    }
   }
 }
 function persistPlayNavigationCheckpoint(){
@@ -4023,9 +4050,29 @@ async function installSculptPlayMode(){
     $('play-menu-button').hidden=false;
     $('play-location').hidden=false;
     $('play-location').textContent='🌍 '+(sculptWorldArea()?.label||sculptWorldAreaId);
-    $('play-menu-button').addEventListener('click',()=>{
-      if(persistPlayNavigationCheckpoint())window.location.assign(playOptions?
-        './play.html?adventureSession='+encodeURIComponent(playOptions.sessionId):'./play.html');
+    const returnToTitle=()=>{
+      if(!persistPlayNavigationCheckpoint())return false;
+      if(playOptions&&window.parent!==window){
+        window.parent.postMessage({
+          schema:'gensrpg.exploration.play.return-title.v1',
+          sessionId:playOptions.sessionId
+        },window.location.origin);
+      }else window.location.assign('./play.html');
+      return true;
+    };
+    $('play-menu-button').addEventListener('click',returnToTitle);
+    // Only this Exploration owner can commit the navigation position before
+    // its Capture host closes the native iframe. No fake pagehide or direct DOM call.
+    window.addEventListener('message',event=>{
+      if(event.origin!==window.location.origin||event.source!==window.parent||
+         event.data?.sessionId!==playOptions?.sessionId)return;
+      if(event.data.schema==='gensrpg.capture.v2.save-and-title.v1')
+        returnToTitle();
+      else if(event.data.schema==='gensrpg.capture.v2.party-refresh.v1'&&
+              scopedEncounter&&!sculptPendingEncounter){
+        const latest=readScopedAdventurePlayingPartyV1(scopedEncounter.context);
+        if(latest)scopedEncounter.party=latest;
+      }
     });
     window.addEventListener('pagehide',persistPlayNavigationCheckpoint,{once:true});
     window.__sculptPlayProbe=()=>Object.freeze({
