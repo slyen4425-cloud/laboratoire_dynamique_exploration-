@@ -58,8 +58,9 @@ export function readScopedAdventurePlayingPartyV1({
  try{value=JSON.parse(raw);}
  catch{throw new Error('Adventure playing party JSON illisible; preserved for diagnosis');}
  const hasHpPolicy=Object.hasOwn(value,'combatHpMultiplier');
+ const hasReserve=Object.hasOwn(value,'reserve');
  exactFields(value,['schema','version','sessionId','worldId','combatSha','partyRef','active',
-  ...(hasHpPolicy?['combatHpMultiplier']:[])],
+  ...(hasReserve?['reserve']:[]),...(hasHpPolicy?['combatHpMultiplier']:[])],
   'Adventure playing party');
  // Legacy games without the field still use 100% HP; never infer game
  // rules from an author's species, level, or the standalone Tester.
@@ -77,24 +78,35 @@ export function readScopedAdventurePlayingPartyV1({
   throw new Error('Adventure playing party Combat sha mismatch');
  if(value.partyRef!=='adventure-party:'+sessionId)
   throw new Error('Adventure partyRef must match saved AdventureSession; Tester forbidden');
- const hasStatAllocations=Object.hasOwn(value.active??{},'statAllocations');
- const active=exactFields(value.active,['instanceId','speciesId','level','hp',
-  ...(hasStatAllocations?['statAllocations']:[])],
-  'Adventure playing party active creature');
- const statAllocations=hasStatAllocations?scopedStatAllocations(active.statAllocations):null;
- const instanceId=safeId(active.instanceId,'instanceId');
- const speciesId=safeId(active.speciesId,'speciesId');
- if(!allowedCreatureIds.includes(speciesId))
-  throw new RangeError('Playing creature is not in the official published Bestiaire');
- if(!Number.isSafeInteger(active.level)||active.level<1)
-  throw new RangeError('Playing creature level must be a positive safe integer');
- if(active.hp!==null&&(!Number.isFinite(active.hp)||active.hp<0||active.hp>Number.MAX_SAFE_INTEGER))
-  throw new RangeError('Playing creature HP must be null or a finite nonnegative number');
+ // The GenSRPG AdventureSession remains the sole roster owner. This
+ // reader validates the bounded transport only; it never edits party order.
+ function scopedMember(entry,label){
+  const hasStats=Object.hasOwn(entry??{},'statAllocations');
+  const actor=exactFields(entry,['instanceId','speciesId','level','hp',
+   ...(hasStats?['statAllocations']:[])],label);
+  const instanceId=safeId(actor.instanceId,'instanceId');
+  const speciesId=safeId(actor.speciesId,'speciesId');
+  if(!allowedCreatureIds.includes(speciesId))
+   throw new RangeError('Playing creature is not in the official published Bestiaire');
+  if(!Number.isSafeInteger(actor.level)||actor.level<1)
+   throw new RangeError('Playing creature level must be a positive safe integer');
+  if(actor.hp!==null&&(!Number.isFinite(actor.hp)||actor.hp<0||actor.hp>Number.MAX_SAFE_INTEGER))
+   throw new RangeError('Playing creature HP must be null or a finite nonnegative number');
+  return Object.freeze({instanceId,speciesId,level:actor.level,hp:actor.hp,
+   ...(hasStats?{statAllocations:scopedStatAllocations(actor.statAllocations)}:{})});
+ }
+ const active=scopedMember(value.active,'Adventure playing party active creature');
+ const reserve=hasReserve?value.reserve:null;
+ if(reserve!==null&&(!Array.isArray(reserve)||reserve.length>5))
+  throw new RangeError('Adventure playing party reserve must have 0 to 5 members');
+ const reserveMembers=reserve?.map((member,index)=>scopedMember(member,'Adventure reserve '+index))??[];
+ const all=[active,...reserveMembers];
+ if(new Set(all.map(member=>member.instanceId)).size!==all.length)
+  throw new RangeError('Duplicate Adventure party instanceId');
  return Object.freeze({
   schema:ADVENTURE_PLAYING_PARTY_SCHEMA_V1,version:1,
   sessionId,worldId,combatSha:value.combatSha,partyRef:value.partyRef,
-  active:Object.freeze({instanceId,speciesId,level:active.level,hp:active.hp,
-   ...(hasStatAllocations?{statAllocations}:{})}),
+  active,...(hasReserve?{reserve:Object.freeze(reserveMembers)}:{}),
   combatHpMultiplier
  });
 }
