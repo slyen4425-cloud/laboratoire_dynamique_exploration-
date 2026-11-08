@@ -2,7 +2,7 @@
 // The same author Showcase manifests and transfers feed Encounter & Combat.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildExplorationNativeCombatSourceV1} from '../combat-preview/examples/dom-demo/exploration-native-source-v1.js';
+import {buildExplorationNativeCombatSourceV1,officialAdventureCombatRequestV1} from '../combat-preview/examples/dom-demo/exploration-native-source-v1.js';
 import {CAPTURE_SHOWCASE_CREATURE_PRESET_FILES_V1} from '../combat-preview/src/catalogs/capture-showcase-creature-presets-v1.js';
 import {CAPTURE_SHOWCASE_SKILL_PRESET_FILES_V1} from '../combat-preview/src/catalogs/capture-showcase-skill-presets-v1.js';
 import {loadCoop2v2CombatSource} from '../combat-preview/src/ui/combat-2v2-test-ui.js';
@@ -127,3 +127,17 @@ assert.throws(()=>buildExplorationNativeCombatSourceV1({
  ...inputs,adventureParty:{...adventureParty,partyRef:'adventure-party:other'}
 }),/Aventure|Adventure/);
 console.log('GREEN: official Adventure mirror battle uses owned level 1 and authored opponent level '+authoredLevel);
+
+const oldRequest='https://game.test/preview/combat-preview/data/capture/showcase/encounter-bundle.v1.json';
+const loadId='e8f9fe1f-9ec7-4c9c-9510-617fb0b73435';
+const tester=officialAdventureCombatRequestV1(oldRequest);
+const scoped=officialAdventureCombatRequestV1(oldRequest,{sessionId:'test-session',loadId});
+assert.equal(tester.url,oldRequest);
+assert.equal(tester.init,undefined);
+assert.notEqual(scoped.url,tester.url,'Scoped Adventure must use a new exact URL, evading old Android cache');
+assert.equal(new URL(scoped.url).searchParams.get('_gens_capture_release'),loadId);
+assert.equal(scoped.init.cache,'no-store');
+assert.throws(()=>officialAdventureCombatRequestV1(oldRequest,{
+ sessionId:'test-session',loadId:'../escape'
+}),/boot UUID/);
+console.log('GREEN: nested official Combat bridge cache-isolation request from the SAME already-staged native file');

@@ -1,3 +1,19 @@
+## 2026-11-08 — B1 transport figé : correctif d'assemblage
+- **CI PR #393 réellement bloquée** dans le smoke de la preview PR318 : le Combat embarqué restait sur « Chargement du moteur Combat officiel… ». Diagnostic : le fichier de pont importait un module nouveau situé dans `src/encounters/`, alors que les previews historiques ne transportaient que quatre fichiers de bridge. L'ancien browser smoke n'avait donc pas toutes les dépendances.
+- **Correction de cause racine** : déplacer l'unique fonction `officialAdventureCombatRequestV1` vers `integration/combat-bridge/exploration-native-source-v1.js`, déjà transporté par tous les scripts de packaging (sans ajout de fichier ou copie lourde). Le fichier supplémentaire non utilisé est supprimé. Smoke exécute la véritable fonction sur le pont livré, assure URL unique et `no-store` scoped ; vieux Tester inchangé.
+- **Gates conservés** : PR #393 CI complète, Chromium PR318 historique obligatoire, publication main et HTTPS ; SHA Combat strict, pas de fallback, ni changement de sauvegardes.
+
+---
+
+## 2026-11-08 — Correctif B1 : ancien bundle Combat dans l'iframe (incident réel)
+- **Reproduction utilisateur** : après Bestiaire OK puis Exploration OK, l'iframe du combat affiche « Combat indisponible : Adventure publication does not match official Combat author/engine sha ». La dernière chaîne n'appliquait pas l'isolation de cache : `integration/combat-bridge/exploration-encounter.js` utilisait toujours `fetch(url)` pour ses JSON.
+- **Cause** : ancien worker PWA Android peut servir le bundle d'un ancien Combat SHA au moment où Combat revalide la même autorisation Adventure. Le contrôle est correct et demeure obligatoire.
+- **Correction Exploration propriétaire** : un UUID éphémère de lancement pour toutes les ressources du vrai Combat scoped, URLs uniques + `cache:'no-store'`; aucune source alternative, aucun assouplissement de SHA, aucun changement au Combat main ; Tester reste inchangé.
+- **START** main@`f743ae9d0df5e1aa2c24ed009a551435e5cc8e04`, checkpoint `checkpoint/exploration-start-adventure-combat-version-2026-11-08`, lot `work/exploration-adventure-combat-version-2026-11-08`. CI Node et réel Chromium, publication Pages exacte, puis repin Capture GenSRPG main et preuve HTTPS obligatoires.
+- **Partie/équipe** : pas de reset ; AdventureSession détient ses 1–6 créatures ; seule la créature active du combat est envoyée au moteur 1v1. Vérifier le menu Équipe en jeu et le passage carte→combat→carte.
+
+---
+
 ## 2026-11-08 — Caméra de départ Aventure, sans seconde autorité
 - **Demande** : cadrage plus près du sol + plus zoomé avant démarrer ; réglage explicite, zoom toujours libre en jeu.
 - **Exploration propriétaire** : interpréter le paramètre scoped `cameraZoom=100..240` par pas de 5 (ancien lien sans valeur conserve le 175 % natif), l'appliquer **à la réglette existante** au chargement avant le rendu. L'angle `cameraAngle` natif 35–90° reste indépendant ; 45° est plus oblique, plus proche du sol que 55°.
