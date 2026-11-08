@@ -671,6 +671,16 @@ body.sculpt-play-mode #play-save-status{
 }
 body.sculpt-play-mode #play-save-status[data-error=true]{color:#ffd1a0}
 #play-start-error[hidden]{display:none!important}
+#play-area-loading[hidden]{display:none!important}
+#play-area-loading{position:fixed;inset:0;z-index:95;display:grid;place-items:center;
+ background:#07151deb;color:#e9fff6;text-align:center;pointer-events:auto}
+.play-loading-inner{display:grid;justify-items:center;gap:10px;padding:20px}
+.play-loading-inner strong{font-size:clamp(19px,4vw,27px)}
+.play-loading-inner p{margin:0;color:#afcfc5;font-size:14px}
+.play-loading-spinner{width:45px;height:45px;border:4px solid #41615f;
+ border-top-color:#92e3c3;border-radius:50%;animation:play-area-spin 1s linear infinite}
+@keyframes play-area-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.play-loading-spinner{animation:none}}
 body.sculpt-play-unavailable .canvas-wrap{visibility:hidden}
 body.sculpt-play-unavailable #play-start-error{
   display:grid;place-content:center;gap:14px;position:fixed;inset:0;
@@ -690,9 +700,13 @@ body.sculpt-play-unavailable #play-start-error{
 </nav>
 <div class="world-entry-links"><a href="./world-assembler.html" aria-label="Ouvrir le constructeur de mondes">🌍 World Builder</a> <a href="./builder.html" aria-label="Ouvrir le Builder 2D détaillé">Éditeur 2D</a></div></header>
 <main>
-<button id="play-menu-button" type="button" hidden aria-label="Enregistrer et revenir au menu Jouer">☰ Menu</button>
+<button id="play-menu-button" type="button" hidden aria-label="Enregistrer et revenir à l'écran titre">☰ Menu</button>
 <output id="play-location" hidden aria-live="polite"></output>
 <output id="play-save-status" role="status" aria-live="polite"></output>
+<div id="play-area-loading" role="status" aria-live="polite" aria-busy="true" hidden>
+ <div class="play-loading-inner"><span class="play-loading-spinner" aria-hidden="true"></span>
+ <strong>Chargement de la zone…</strong><p>Préparation du terrain et des décors.</p></div>
+</div>
 <section id="play-start-error" role="alert" hidden>
   <strong>Partie indisponible</strong>
   <p id="play-start-error-message"></p>

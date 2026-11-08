@@ -1,3 +1,12 @@
+## 2026-11-08 — En cours : transition de zones et vitesse Jouer (Monster Capture)
+- START `main@58bb25863d2b3f981436426a3183f7ca5297de84`, checkpoint `checkpoint/exploration-start-play-transition-speed-2026-11-08`, branche `work/exploration-play-transition-speed-2026-11-08` ; `main` public conservé jusqu'à tests et gate.
+- Vitesse native : Aventure délègue le réglage 90–360 par palier de 10 ; 90 par défaut pour les nouvelles parties sans réglage, éditeur Tester inchangé. Exploration conserve `stepMovement`, collision, cadence et joystick.
+- Portal/Spawn : en mode Jouer uniquement, afficher un vrai voile « Chargement de la zone… » avant le montage de la scène, attendre une frame visible, garder le voile jusqu'au premier rendu officiel ; ne jamais créer de fausse carte, déplacer les spawns ou modifier les sauvegardes WorldDocument.
+- Menu : la sortie du mode Jouer valide le checkpoint de navigation puis notifie le parent officiel GenSrpG en same-origin ; le consommateur seul retourne au titre. Projection d'équipe relue sans deuxième sauvegarde et uniquement hors combat.
+- Préserver V80, les assets source, les mondes, les sauvegardes et les URL, sans duplications. Valider npm test/check, smoke Chromium Portal+Spawn/paysage et CI de main avant tout nouveau pin dans GenSrpG.
+- Statut : code candidat non certifié, attente de tests et publication.
+---
+
 ## 2026-11-08 — Aventure : mondes « Test 1 » autorisés et PV d'entrée bornés au maximum Combat
 - START : Exploration main certifié `d9f90f5bf48b8c42699f0db2f2f797f1ebf17fa1`, checkpoint `checkpoint/exploration-start-world-spaced-id-2026-11-08`, branche `work/exploration-world-spaced-id-2026-11-08`.
 - Retour Android : écran de préparation affichant le WorldDocument « Test 1 » et `Invalid WorldDocument identity for Adventure hero selection`. Cause : le propriétaire bibliothèque WorldDocument autorise espaces/accents dans ses IDs, mais 3 lecteurs de grants Aventure/Exploration avaient une expression régulière limitée aux slugs ASCII. Uniquement l'identité **WorldDocument** est alignée sur une unique validation exportée par Exploration ; IDs session, héros, créatures et SHA restent stricts. Aucune réécriture de monde ou sauvegarde.
