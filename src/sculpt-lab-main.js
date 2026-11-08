@@ -3737,7 +3737,7 @@ function updateSculptWorldPortalAction(){
   button.disabled=!portal;
   if(portal){
     const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-    // Preview once per immutable WorldArea/WorldDocument, instead of
+    // Preview once per immutable area and its enclosing draft, instead of
     // importing/normalizing the full destination on EVERY walking frame.
     // The actual transition keeps its own independent validation.
     const readiness=sculptPortalPreviewReadiness(target,sculptWorldDraft);
