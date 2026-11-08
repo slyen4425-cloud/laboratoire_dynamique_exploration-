@@ -1,3 +1,9 @@
+## 2026-11-08 — Publisher Exploration : vrai Combat smoke déterministe (C2)
+- Départ protégé `main@0c52b5602d157e89d437d9a933da78a6bdb6aee1` ; checkpoint `checkpoint/exploration-start-combat-smoke-choice-2026-11-08`, travail `work/exploration-combat-smoke-choice-2026-11-08`.
+- Incident : Pages main run `42460042393` rouge au test `scripts/smoke-builder-encounter-validation.mjs` malgré 1 050 tests Node verts, car le driver cliquant la première capacité disponible consommait parfois l'énergie sur une défense/auto-buff au lieu d'assurer une séquence offensive ; à 108 secondes le Combat réel n'avait pas encore résolu le KO (38/100 PV).
+- Correctif exclusivement côté smoke : consulter les dégâts des vraies capacités du même bundle Combat main certifié, cliquer seulement une attaque réellement activable, par priorité de dégâts ; Combat garde sa simulation et la décision KO. Aucun faux résultat, aucun timeout/retry supplémentaire, aucun changement moteur/HP/skills/WorldDocument/asset/sauvegarde.
+- Gates : CI du SHA exact, vrai Combat intégré avec retour KO dans Chromium, publication du seul `main` sur GitHub Pages, provenance HTTPS, V80 figée et budget 900 Mio ; si encore rouge, investiguer sans contourner.
+---
 ## 2026-11-08 — En cours : transition de zones et vitesse Jouer (Monster Capture)
 - START `main@58bb25863d2b3f981436426a3183f7ca5297de84`, checkpoint `checkpoint/exploration-start-play-transition-speed-2026-11-08`, branche `work/exploration-play-transition-speed-2026-11-08` ; `main` public conservé jusqu'à tests et gate.
 - Vitesse native : Aventure délègue le réglage 90–360 par palier de 10 ; 90 par défaut pour les nouvelles parties sans réglage, éditeur Tester inchangé. Exploration conserve `stepMovement`, collision, cadence et joystick.

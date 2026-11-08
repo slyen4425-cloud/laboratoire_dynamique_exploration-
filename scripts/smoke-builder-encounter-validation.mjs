@@ -331,6 +331,28 @@ try {
     throw Error('Real blank Forest Shadow 100% map did not encounter after walking: '+JSON.stringify(realEncounter));
   console.log('GREEN real Chromium blank map -> movement -> native Shadow Encounter visible');
 
+  // The smoke driver does not author an attack or a victory. Consult the
+  // exact staged official Combat main bundle to prefer a real damaging skill
+  // when it is enabled. Clicking the first enabled button used to spend
+  // scarce energy on defensive buffs, then time out before a genuine KO.
+  // All damage, cooldowns, energy and outcome still run in native Combat.
+  const officialBundle=JSON.parse(await readFile(resolve(root,
+    'combat-preview/data/capture/showcase/encounter-bundle.v1.json'),'utf8'));
+  if(officialBundle.schema!=='capture-author-encounter-bundle-v1'||
+     !Array.isArray(officialBundle.skillTransfers)||
+     officialBundle.skillTransfers.length===0)
+    throw Error('Missing real official Combat author bundle for browser smoke');
+  const authoredDamage=Object.fromEntries(officialBundle.skillTransfers.map(transfer=>{
+    const definition=transfer.draft?.definition;
+    if(typeof definition?.id!=='string'||!Array.isArray(definition.effects))
+      throw Error('Malformed Combat author skill in browser smoke');
+    const damage=definition.effects.filter(effect=>effect.kind==='damage')
+      .reduce((sum,effect)=>sum+Number(effect.amount??0),0);
+    return [definition.id,Math.max(0,damage)];
+  }));
+  if(!Object.values(authoredDamage).some(value=>value>0))
+    throw Error('Official Combat bundle has no damage skill');
+  const authoredDamageJson=JSON.stringify(authoredDamage);
   // Seamless immersion gate: the real movement-triggered Encounter must
   // open Combat INSIDE the same Explorer page, not navigate a new document.
   // The existing owner completes the genuine versioned handoff and signals
@@ -374,17 +396,26 @@ try {
     // Drive actual native Combat buttons until the official Combat Session
     // resolves a KO. Do not inject a CombatResult or forge a postMessage.
     let fought;
+    const chosenSkillCounts=new Map();
     for (let attempt = 0; attempt < 240; attempt++) {
       const res = await evaluate(`(() => {
+        const authoredDamage=${authoredDamageJson};
         const overlay=document.querySelector('.combat-overlay__frame');
         if(!overlay)return {finished:true, pressed:0, actions:[]};
         const doc=overlay.contentDocument;
         const all=[...(doc?.querySelectorAll('[data-combat-skill]')??[])];
         const usable=all.filter(button=>!button.disabled&&!button.hidden);
-        if(usable[0])usable[0].click();
+        // Every action is an actual enabled DOM button. Buffs and shields
+        // are deliberately not selected by this KO-focused smoke test.
+        const attacks=usable.filter(button=>authoredDamage[button.dataset.combatSkill]>0)
+          .sort((a,b)=>authoredDamage[b.dataset.combatSkill]-
+            authoredDamage[a.dataset.combatSkill]);
+        const selected=attacks[0]??null;
+        if(selected)selected.click();
         return {
-          finished:false,pressed:usable.length>0?1:0,
-          actions:usable.slice(0,3).map(button=>button.dataset.combatSkill),
+          finished:false,pressed:selected?1:0,
+          chosenSkill:selected?.dataset.combatSkill??null,
+          actions:attacks.slice(0,3).map(button=>button.dataset.combatSkill),
           skillStates:all.map(b=>({id:b.dataset.combatSkill,disabled:b.disabled,title:b.title})),
           energy:doc?.querySelector('[data-combat-energy-value="local-1"]')?.textContent??'',
           localHp:doc?.querySelector('[data-combat-hp-value="local-1"]')?.textContent??'',
@@ -397,11 +428,14 @@ try {
       if (res.error || res.result?.exceptionDetails)
         throw Error('Native Combat gameplay action failed: '+JSON.stringify(res));
       fought=res.result?.result?.value;
+      if(fought?.chosenSkill)chosenSkillCounts.set(fought.chosenSkill,
+        (chosenSkillCounts.get(fought.chosenSkill)??0)+1);
       if (fought?.finished) break;
       await sleep(450);
     }
     if (!fought?.finished)
-      throw Error('Real Combat Session never resolved KO/return: '+JSON.stringify(fought));
+      throw Error('Real Combat Session never resolved KO/return: '+
+       JSON.stringify({last:fought,realAttacks:[...chosenSkillCounts]}));
     let restored;
     for (let tries=0; tries<80; tries++) {
       const res = await evaluate(`(()=>({
