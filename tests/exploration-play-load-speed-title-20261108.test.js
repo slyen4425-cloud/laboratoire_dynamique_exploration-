@@ -40,3 +40,10 @@ test('native title exit checkpoints first, notifies only same-origin Capture par
  assert.match(main,/readScopedAdventurePlayingPartyV1\(scopedEncounter\.context\)/);
  assert.doesNotMatch(main,/window\.parent\.document\.querySelector/);
 });
+
+test('embedded Adventure cannot steal fullscreen from Capture parent HUD and Tester retains native fullscreen',()=>{
+ assert.match(main,/if\(sculptPlayRequested&&window\.frameElement\)\{\s*setImmersive\(true\);\s*return;/);
+ assert.match(main,/if\(entering&&typeof document\.documentElement\.requestFullscreen==='function'\)/);
+ assert.match(main,/\$\('fullscreen-toggle'\)\.hidden=true/);
+ assert.match(main,/document\.addEventListener\('fullscreenchange'/);
+});
