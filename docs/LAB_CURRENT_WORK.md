@@ -1,3 +1,11 @@
+## 2026-11-08 — Embedded Capture fullscreen owner : préserver Sac/Équipe (candidat)
+- **START :** main Explorer `bb358ee38410f9590d5f80fa116e0286c23f6216`; checkpoint `checkpoint/exploration-start-capture-fullscreen-owner-2026-11-08`; branche `work/exploration-capture-fullscreen-owner-2026-11-08`. Pas de nouvelle autorité ni de modification au main public avant CI.
+- **Reproduction :** Capture Jeu charge Explorer en iframe ; le plein écran natif demandé depuis l'enfant masque l'HUD parent (Sac/Équipe). **Propriétaire :** Capture doit posséder le fullscreen parent ; Explorer conserve son unique renderer/caméra, n'affiche pas le bouton fullscreen éditeur et refuse de prendre le fullscreen natif en mode Aventure intégré. Tester autonome et outils Exploration restent inchangés.
+- **Contrôles :** test du garde, CI Exploration, revue paysage Android iframe (Sac cliquable au-dessus, retour titre, refus permission), CI site assemblé GenSRPG. Couplage avec le candidat Capture PR #344 ; aucune publication isolée de l'un sans validation de l'autre.
+- **Performance :** deux fortes saccades signalées sur carte ; diagnostic séparé de cette livraison (profil métriques rendu/calcul, transition, re-raster terrain, sauvegarde et décors), sans modifier aveuglément la boucle de jeu.
+
+---
+
 ## 2026-11-08 — Transport Jouer des 1–6 créatures vers la réserve Combat (owner Exploration)
 - **Base START :** `main@6915526c5ea2f96265bbd4cfbe6bd081ebea0ec2`, checkpoint `checkpoint/exploration-start-capture-wild-reserve-2026-11-08`, branche `work/exploration-capture-wild-reserve-2026-11-08`.
 - **Périmètre :** `adventure-playing-party-v1.js` lit le grant transitoire signé de la vraie AdventureSession, accepte le champ facultatif `reserve` (0–5), valide identité, ordre, PV, stat allocations et Bestiaire officiel. Le pont `exploration-native-source-v1.js` transmet directement `localReserve` au seul `buildCaptureEncounterCombatSourceV1` propriétaire ; le pont retour associe les PV du seul `RosterSession` aux IDs sauvegardés et produit un `CaptureCombatResult` v1 enrichi facultativement.
