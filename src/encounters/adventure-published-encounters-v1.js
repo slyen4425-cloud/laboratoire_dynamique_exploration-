@@ -1,3 +1,4 @@
+import {assertExplorationWorldDocumentIdV1} from '../world/world-document-identity-v1.js';
 // Pure reader for a *derived*, temporary GenSRPG publication grant.
 // Combat's real Bestiary is the ONLY publisher. Exploration still owns its
 // Showcase catalog, terrain-family encounter resolver and spawn probabilities.
@@ -35,7 +36,7 @@ export function readScopedAdventurePublishedEncountersV1({
  if(typeof storage?.getItem!=='function')
   throw new TypeError('Official same-origin sessionStorage adapter required');
  const key=adventurePublishedEncounterStorageKeyV1(sessionId);
- safeId(worldId,'world');
+ assertExplorationWorldDocumentIdV1(worldId);
  sha(authorSha,'author');sha(engineSha,'engine');
  const raw=storage.getItem(key);
  if(raw===null)return null;
