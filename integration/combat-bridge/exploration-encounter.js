@@ -365,6 +365,13 @@ async function launch() {
     observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
   }
   message('Combat réel · textures et capacités prêtes');
+  // The actual native Combat renderer alone certifies mounted first-frame
+  // readiness. Exploration owns the veil and never infers this from iframe load.
+  if(window.parent!==window)window.parent.postMessage({
+    type:'gensrpg.capture.combat-ready.v1',
+    encounterId:handoff.snapshot.encounterId,
+    returnToken:handoff.snapshot.returnToken
+  },window.location.origin);
   // Chrome/PWA may allow play after the parent "Tester" gesture. Try once,
   // and fall back to the first battle gesture if autoplay is rejected.
   startSoundtrackOnGesture();
@@ -379,4 +386,15 @@ function dispose() {
   mountedVisuals?.dispose(); mountedVisuals = null;
 }
 window.addEventListener('pagehide', dispose, {once:true});
-launch().catch(error => { dispose(); message('Combat indisponible : ' + error.message, true); console.error(error); });
+launch().catch(error => {
+ dispose();message('Combat indisponible : '+error.message,true);
+ try{
+   const handoff=readCombatHandoff(handoffStorage,handoffScope);
+   if(handoff?.snapshot&&window.parent!==window)window.parent.postMessage({
+     type:'gensrpg.capture.combat-failed.v1',
+     encounterId:handoff.snapshot.encounterId,
+     returnToken:handoff.snapshot.returnToken,message:error.message
+   },window.location.origin);
+ }catch{ /* Encounter journal remains unchanged for retry. */ }
+ console.error(error);
+});
