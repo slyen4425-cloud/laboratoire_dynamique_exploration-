@@ -3851,9 +3851,15 @@ function mountWorldSculptArea(areaId,validatedScene=null){
       $('material').value=area.surface.baseMaterialId;
   }
   updateSculptAreaControls();
-  refreshSculptEncounterEditor();
-  refreshSculptWorldPanel();
-  setTheme();fit();
+  // In native Jouer all authoring panels are hidden. Rebuilding their element
+  // lists, thumbnails and portal selectors on every area switch used to
+  // synchronously delay the next painted gameplay frame.
+  if(!sculptPlayRequested){
+    refreshSculptEncounterEditor();
+    refreshSculptWorldPanel();
+    setTheme(); // Editor-only refresh; mountSculptArea already loaded the texture.
+  }
+  fit();
 }
 let sculptPortalLoading=false;
 async function traverseSculptWorldPortal(){
