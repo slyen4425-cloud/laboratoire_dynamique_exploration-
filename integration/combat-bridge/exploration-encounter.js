@@ -15,12 +15,11 @@ import {
   SOUNDTRACK_STARTER_CAPTURE_PROJECT_V1
 } from '../../src/assets/soundtrack-starter-catalog-v1.js';
 import { createCombatSoundtrackPreviewBridgeV1 } from '../../src/adapters/audio/combat-soundtrack-preview-bridge-v1.js';
-import { buildExplorationNativeCombatSourceV1 } from './exploration-native-source-v1.js';
+import { buildExplorationNativeCombatSourceV1,officialAdventureCombatRequestV1 } from './exploration-native-source-v1.js';
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
 import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
 import {captureEncounterVisualFilesV1} from '../../../src/encounters/capture-combat-warmup-v1.js';
-import {officialAdventureCombatRequestV1} from '../../../src/encounters/official-adventure-combat-request-v1.js';
 
 const $ = selector => document.querySelector(selector);
 const host = $('[data-capture-preview-host]');

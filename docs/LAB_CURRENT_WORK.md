@@ -1,3 +1,10 @@
+## 2026-11-08 — B1 transport figé : correctif d'assemblage
+- **CI PR #393 réellement bloquée** dans le smoke de la preview PR318 : le Combat embarqué restait sur « Chargement du moteur Combat officiel… ». Diagnostic : le fichier de pont importait un module nouveau situé dans `src/encounters/`, alors que les previews historiques ne transportaient que quatre fichiers de bridge. L'ancien browser smoke n'avait donc pas toutes les dépendances.
+- **Correction de cause racine** : déplacer l'unique fonction `officialAdventureCombatRequestV1` vers `integration/combat-bridge/exploration-native-source-v1.js`, déjà transporté par tous les scripts de packaging (sans ajout de fichier ou copie lourde). Le fichier supplémentaire non utilisé est supprimé. Smoke exécute la véritable fonction sur le pont livré, assure URL unique et `no-store` scoped ; vieux Tester inchangé.
+- **Gates conservés** : PR #393 CI complète, Chromium PR318 historique obligatoire, publication main et HTTPS ; SHA Combat strict, pas de fallback, ni changement de sauvegardes.
+
+---
+
 ## 2026-11-08 — Correctif B1 : ancien bundle Combat dans l'iframe (incident réel)
 - **Reproduction utilisateur** : après Bestiaire OK puis Exploration OK, l'iframe du combat affiche « Combat indisponible : Adventure publication does not match official Combat author/engine sha ». La dernière chaîne n'appliquait pas l'isolation de cache : `integration/combat-bridge/exploration-encounter.js` utilisait toujours `fetch(url)` pour ses JSON.
 - **Cause** : ancien worker PWA Android peut servir le bundle d'un ancien Combat SHA au moment où Combat revalide la même autorisation Adventure. Le contrôle est correct et demeure obligatoire.
