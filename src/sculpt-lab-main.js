@@ -4030,6 +4030,10 @@ async function installSculptPlayMode(){
     $('play-start-error-message').textContent=error.message;
     $('sculpt-play-boot-mask')?.setAttribute('hidden','');
     document.documentElement.classList.remove('sculpt-play-booting');
+    if(playOptions&&window.parent!==window)window.parent.postMessage({
+      schema:'gensrpg.exploration.play.failed.v1',
+      sessionId:playOptions.sessionId,message:error.message
+    },window.location.origin);
     console.error('Lancement Jouer refusé :',error);
   };
   try{
