@@ -202,6 +202,11 @@ if(sculptCreatorCameraAngle!==null){
   $('navigation-camera-angle-value').textContent=sculptCreatorCameraAngle+'° · créateur';
 }
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
+if(sculptPlayRequested&&window.frameElement){
+  // The host Capture document owns the browser fullscreen and Sac/Équipe HUD.
+  // Hide only this nested editor control; standalone Tester remains unchanged.
+  $('fullscreen-toggle').hidden=true;
+}
 if(sculptPlayRequested){
   // Same camera and zoom slider as the native Tester. Apply a creator-chosen
   // starting distance without locking later player pinch/slider zoom.
@@ -1294,6 +1299,10 @@ function setImmersive(enabled){
   requestAnimationFrame(fit);
 }
 function toggleImmersive(){
+  if(sculptPlayRequested&&window.frameElement){
+    setImmersive(true);
+    return;
+  }
   const entering=!document.body.classList.contains('sculpt-immersive');
   setImmersive(entering);
   if(entering&&typeof document.documentElement.requestFullscreen==='function'){
