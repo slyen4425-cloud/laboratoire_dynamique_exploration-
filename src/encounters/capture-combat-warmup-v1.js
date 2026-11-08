@@ -77,11 +77,14 @@ export function createCaptureCombatWarmupV1({
       });
       return true;
     },
-    warmCreature(opponentId) {
+    warmCreature(opponentId,activeCreatureId=null) {
       if(saveData||typeof opponentId!=='string'||!opponentId)return Promise.resolve([]);
+      if(activeCreatureId!==null&&(typeof activeCreatureId!=='string'||!activeCreatureId))
+        throw new TypeError('Saved active creature id must be a real Combat species id');
+      const cacheKey=opponentId+'|'+(activeCreatureId??'');
       // Return the pending decode to every caller, including a rapid Battle tap.
       // Do not mistake an in-flight warmup for a completed one.
-      if(primedCreatures.has(opponentId))return primedCreatures.get(opponentId);
+      if(primedCreatures.has(cacheKey))return primedCreatures.get(cacheKey);
       const pending=(async()=>{
       try {
         const json=async path=>{
@@ -89,10 +92,14 @@ export function createCaptureCombatWarmupV1({
           if(!response.ok)throw new Error('Speculative resource not available');
           return response.json();
         };
+        // In scoped real Adventure, the only active creature is the saved
+        // AdventureSession projection. Never warm the unrelated Tester roster.
         const [bundle,assetCatalog,party]=await Promise.all([
           json('combat-preview/data/capture/showcase/encounter-bundle.v1.json'),
           json('capture-assets/data/assets/catalog/global-visual-assets.v1.json'),
-          json('combat-preview/examples/dom-demo/party.preview.v1.json')
+          activeCreatureId===null
+            ?json('combat-preview/examples/dom-demo/party.preview.v1.json')
+            :Promise.resolve({activeCreatureId})
         ]);
         const files=captureEncounterVisualFilesV1({bundle,assetCatalog,party,opponentId});
         await Promise.allSettled(files.map(file=>{
@@ -108,7 +115,7 @@ export function createCaptureCombatWarmupV1({
         return files;
       }catch{return [];}
       })();
-      primedCreatures.set(opponentId,pending);
+      primedCreatures.set(cacheKey,pending);
       return pending;
     },
     get started(){return started;}
