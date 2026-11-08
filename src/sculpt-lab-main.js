@@ -10,6 +10,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
+import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
@@ -1759,6 +1760,16 @@ function navigationMaxStep(){
   return SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp;
 }
 let navBridgePlacements=null,navBridgeProjection=null,navStairProjection=null;
+// Heightfield ramps are immutable until the terrain identity changes. Never
+// allocate their projections in each 60 Hz movement/collision tick.
+let navRampTerrain=null,navRampProjections=null;
+function resolvedSculptTerrainRamps(){
+  if(navRampTerrain!==terrain){
+    navRampTerrain=terrain;
+    navRampProjections=sculptTerrainRampProjections(terrain);
+  }
+  return navRampProjections;
+}
 function resolvedSculptBridges(){
   if(navBridgePlacements!==placedObjects){
     navBridgePlacements=placedObjects;
@@ -1783,7 +1794,7 @@ function navigationContext(){
       cellHeight:SCULPT_TILE.height,projectionRise:SCULPT_TILE.rise,
        maxStepUp:maxStep,maxStepDown:maxStep,
       shoreEntryFraction:.14,bridges:resolvedSculptBridges(),
-      stairs:[...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)]}};
+      stairs:[...resolvedSculptStairs(),...resolvedSculptTerrainRamps()]}};
 }
 // Explain actual rejection from the SAME swept-height check used by Collision
 // World; never guess physics from rounded visual cliff pixels.
@@ -2195,7 +2206,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   deckBridgeId:activeSculptBridge()?.id??null,
   stairId:navActor?.sculptStairId??null,stairHeight:navActor?navHeight():null,
   inclineKind:navActor?.sculptStairId
-    ?[...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)]
+    ?[...resolvedSculptStairs(),...resolvedSculptTerrainRamps()]
       .find(o=>o.id===navActor.sculptStairId)?.kind??null:null,
   physicalBridgeLayer:navActor?.sculptBridgeId?'deck':'ground',
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
@@ -3699,6 +3710,9 @@ function applySculptWorldPointerPlacement(point){
   }catch(error){sculptWorldStatus(error.message,true);}
   refreshSculptWorldPanel();
 }
+// Only the Portal HUD preview is cached. The actual traversal still validates
+// the destination independently, so no stale readiness can permit entry.
+const sculptPortalPreviewReadiness=createSculptPlaySceneReadinessCacheV1(sculptWorldAreaScene);
 function sculptWorldPortalAtHero(){
   if(!navigationTesting||!navActor||!sculptWorldDraft)return null;
   return findTriggeredPortal(sculptWorldDraft,sculptWorldAreaId,navActor);
@@ -3723,10 +3737,11 @@ function updateSculptWorldPortalAction(){
   button.disabled=!portal;
   if(portal){
     const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-    // The button must reflect actual Sculpt capacity BEFORE click. A legacy
-    // 2400×1600 target cannot be mounted; do not advertise a fake transition.
-    try{sculptWorldAreaScene(target);}
-    catch(error){
+    // Preview once per immutable WorldArea/WorldDocument, instead of
+    // importing/normalizing the full destination on EVERY walking frame.
+    // The actual transition keeps its own independent validation.
+    const readiness=sculptPortalPreviewReadiness(target,sculptWorldDraft);
+    if(!readiness.ok){
       if(!sculptPlayActive&&portal.trigger?.kind==='point'&&playableExteriorArea(sculptWorldArea())){
         button.disabled=false;
         button.textContent='🔗 Réparer ce passage';
@@ -3734,7 +3749,7 @@ function updateSculptWorldPortalAction(){
       }else{
         button.disabled=true;
         button.textContent='🚪 Passage impossible en 2,5D';
-        button.title='Zone cible non compatible : '+error.message;
+        button.title='Zone cible non compatible : '+readiness.error;
       }
       return;
     }
