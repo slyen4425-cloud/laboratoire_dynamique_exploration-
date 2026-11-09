@@ -6,6 +6,35 @@
 
 ---
 
+## 2026-11-08 — Jouer natif : micro-freezes, écrans de transitions et warmup équipe sauvée (C3 / candidat)
+- **START main certifié :** `d30465b9653a1ad90730af0caae4ace21d16a23c`, checkpoint `checkpoint/exploration-start-play-transitions-stutter-2026-11-08`, branche `work/exploration-play-transitions-stutter-2026-11-08`. Seule autorité graphique et navigation : Exploration main ; source Capture `8f7bc6b` et publisher GenSRPG `8156b54` inchangés avant les gates.
+- **Régression observée dans le code :** `navHeight` re-projetait toutes les pentes `sculptTerrainRampProjections(terrain)` à chaque échantillonnage du déplacement sur escalier malgré le cache natif `resolvedSculptTerrainRamps`, désormais réutilisé. En Jouer Aventure, le warmup Combat lisait encore `party.preview.v1.json` (héros Tester au lieu de l'instance sauvegardée) ; il précharge désormais le combatant actif canonique, dont l'identité vient du grant AdventureSession GenSRPG, et une seule fois par paire combattant/adversaire.
+- **Transitions :** voile GenSRPG avant le premier rendu réel de `sculpt-lab.html?play=1`, non visible dans l'éditeur standalone ; signal de première frame via `postMessage` exact et scoped. Overlay chargé de la zone déjà existant conserve son propriétaire et reçoit le branding. Combat charge sous voile genSRPG (avec annulation qui ne consomme ni CombatResult ni save), jusqu'à la notification `gensrpg.capture.combat-ready.v1` émise seulement après le montage officiel du renderer Combat. Échecs notifiés, sans timeout magique.
+- **Tests :** `tests/exploration-play-loading-party-20261108.test.js`, anciens `capture-combat-warmup-v1`, `immersive-encounter-host`, `sculpt-stairs-dynamic-height-v78`, `npm test`, `npm run check`, browser/SHA, V80 et budget Pages ≤900 Mio. Mesurer les microstutters sur le vrai Pixel reste nécessaire ; pas de promesse FPS avant ce test.
+- **Politique :** pas de moteur, screenshot, asset ou bibliothèque dupliqués ; pas d'effet sur Builder, Dungeon, Survie ou SAVES, pas de mutation directe d'une partie par un écran de chargement. Diffusion sur Exploration main après GREEN, puis repin par publisher GenSRPG en lot distinct.
+
+---
+
+## 2026-11-08 — Régression de fluidité 2,5D : prévisualisation du Portal (C1 / EN COURS)
+- **Signalement réel :** ralentissements importants de carte Android dans GenSRPG Monster Capture. Aucun chronométrage Pixel disponible dans ce lot : seule une cause CPU répétitive concrète a été repérée et corrigée ; la disparition complète des freezes nécessite un essai Android.
+- **START :** Exploration main `bb358ee38410f9590d5f80fa116e0286c23f6216`, checkpoint `checkpoint/exploration-start-capture-map-stutter-2026-11-08`, branche unique `work/exploration-capture-map-stutter-2026-11-08`, dernier main GREEN identique.
+- **Cause ciblée :** `updateNavigationInfo` se répète sur chaque déplacement, appelle `updateSculptWorldPortalAction` qui, dès que le héros entre dans un trigger, exécutait `sculptWorldAreaScene(target)` à CHAQUE frame. Cette fonction reparse le terrain complet, normalise tous les objets/acteurs et peut générer une longue interruption sur grande carte. `navigationContext` allouait également de nouvelles rampes à chaque simulation.
+- **Correctif propriétaire :** cache UI en lecture seule par identité `WorldDocument` / `WorldArea` pour le statut du bouton ; validation intégrale native **inchangée** lors du vrai passage ; ramps projetées une fois par terrain immuable, recalcul automatique après nouveau terrain. Aucune règle gameplay, image, sauvegarde ou boucle de navigation modifiée.
+- **Tests :** `tests/sculpt-play-portal-readiness-perf-20261108.test.js` démontre 120 frames → une validation, erreur invalidante conservée, invalidation sur nouveau monde et vérification explicite du chemin canonique à la traversée. Exécuter `npm test`, `npm run check`, CI + smoke Chromium ciblé, publication main + SHA public exact ; refaire test Android réel avec cartes dont plusieurs Portals, même vitesse/zoom/décors.
+- **Invariants :** LE reste propriétaire du rendu, du WorldDocument et des Portals ; Combat + GenSRPG + Builder V80 + PWA + Survie/Dungeon intacts ; pas de seconde autorité, pas de bibliothèques dupliquées et budget Pages 900 Mio.
+- **État :** candidat, pas de GREEN ni de publication présumée. Prochaine étape : gates réels, checkpoint GREEN, PR main, Pages certifié puis repin via GenSRPG si nécessaire.
+
+---
+
+## 2026-11-08 — Optimisation transition Portal/Jouer Capture Android (C1/C2, validation en cours)
+- **Retour utilisateur :** deux gros ralentissements de carte observés après intégration Monster Capture ; aucun chronométrage réel Pixel 10a disponible dans la CI. Un coût superflu est néanmoins vérifié dans le propriétaire Exploration : `traverseSculptWorldPortal` appelait jusqu'à trois fois `sculptWorldAreaScene` pour la même zone de destination à chaque transition, avant/après le montage. Chaque projection reconstruit la scène 2.5D, coûteuse sur smartphone.
+- **START :** Exploration main `bb358ee38410f9590d5f80fa116e0286c23f6216`, checkpoint `checkpoint/exploration-start-capture-map-stutter-2026-11-08`, branche `work/exploration-capture-map-stutter-2026-11-08`. Dernier main GREEN connu : CI `42506481003`, Pages `42506477244`.
+- **Correction localisée :** première projection de destination validée AVANT quitter la zone, réutilisée en Jeu si le WorldArea visé est inchangé ; l'éditeur ou une réparation recalculent la scène si le document a changé. `mountWorldSculptArea` accepte une projection déjà validée sans changer le renderer. Aucun moteur, matériel, formule, collision, save, Spawn, HUD, texture ni boucle d'animation n'est dupliqué.
+- **Test :** `tests/sculpt-play-portal-projection-once-20261108.test.js`, `npm test` et `npm run check`, smoke navigable Portal/Spawn et régressions V80/Forêt/Plaine/Neige, CI+Pages exactes. Une optimisation démontrée de transitions n'est pas une preuve que les deux saccades signalées ont disparu : un test Android réel reste nécessaire.
+- **Prochaine étape :** vérification CI puis mise à jour du seul `main` Exploration, nouveau pin immuable GenSRPG dans un publisher unique après certification, et test Android de la même carte.
+
+---
+
 ## 2026-11-08 — Transport Jouer des 1–6 créatures vers la réserve Combat (owner Exploration)
 - **Base START :** `main@6915526c5ea2f96265bbd4cfbe6bd081ebea0ec2`, checkpoint `checkpoint/exploration-start-capture-wild-reserve-2026-11-08`, branche `work/exploration-capture-wild-reserve-2026-11-08`.
 - **Périmètre :** `adventure-playing-party-v1.js` lit le grant transitoire signé de la vraie AdventureSession, accepte le champ facultatif `reserve` (0–5), valide identité, ordre, PV, stat allocations et Bestiaire officiel. Le pont `exploration-native-source-v1.js` transmet directement `localReserve` au seul `buildCaptureEncounterCombatSourceV1` propriétaire ; le pont retour associe les PV du seul `RosterSession` aux IDs sauvegardés et produit un `CaptureCombatResult` v1 enrichi facultativement.

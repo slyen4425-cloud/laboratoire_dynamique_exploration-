@@ -39,9 +39,23 @@ export function createImmersiveEncounterHostV1({
     if (!active || disposed ||
         event.origin !== windowRef.location.origin ||
         event.source !== active.frame.contentWindow ||
-        event.data?.type !== IMMERSIVE_COMBAT_COMPLETE_TYPE_V1 ||
-        event.data.encounterId !== active.snapshot.encounterId ||
-        event.data.returnToken !== active.snapshot.returnToken) return;
+        event.data?.encounterId !== active.snapshot.encounterId ||
+        event.data?.returnToken !== active.snapshot.returnToken) return;
+    if(event.data.type==='gensrpg.capture.combat-ready.v1'){
+      // Display only after the actual official Combat renderer finished mounting.
+      active.frame.dataset.combatReady='true';
+      active.frame.style.opacity='1';
+      active.frame.style.pointerEvents='auto';
+      active.loading?.remove();
+      return;
+    }
+    if(event.data.type==='gensrpg.capture.combat-failed.v1'){
+      if(active.loadingMessage)active.loadingMessage.textContent=
+        'Combat indisponible : '+String(event.data.message??'ressources non chargées');
+      onFailure?.(new Error(String(event.data.message??'Échec du chargement du Combat')));
+      return;
+    }
+    if(event.data.type!==IMMERSIVE_COMBAT_COMPLETE_TYPE_V1)return;
 
     // A postMessage is never authority for battle victory/defeat. Only the
     // existing contract-validated CombatResult written by Combat may finish.
@@ -131,9 +145,30 @@ export function createImmersiveEncounterHostV1({
       frame.className = 'combat-overlay__frame';
       frame.title = 'Combat Monster Capture';
       frame.setAttribute('allow', 'fullscreen; autoplay');
+      frame.dataset.combatReady='false';
+      frame.style.opacity='0';
+      frame.style.pointerEvents='none';
       overlay.append(frame);
+      const loading=documentRef.createElement('div');
+      loading.className='combat-overlay__loading';
+      loading.setAttribute('role','status');
+      loading.setAttribute('aria-live','polite');
+      const brand=documentRef.createElement('strong');
+      brand.className='combat-overlay__brand';
+      brand.textContent='GenSRPG';
+      const message=documentRef.createElement('p');
+      message.textContent='Préparation de l’arène et des créatures…';
+      const spinner=documentRef.createElement('span');
+      spinner.className='combat-overlay__spinner';
+      spinner.setAttribute('aria-hidden','true');
+      const cancel=documentRef.createElement('button');
+      cancel.type='button';
+      cancel.textContent='Annuler le chargement';
+      cancel.onclick=()=>close(); // No fake result or snapshot consumption.
+      loading.append(brand);loading.append(spinner);loading.append(message);loading.append(cancel);
+      overlay.append(loading);
       documentRef.body.append(overlay);
-      active = { overlay, frame, snapshot };
+      active = { overlay, frame, snapshot, loading, loadingMessage:message };
       frame.src = target.href;
       return true;
     },

@@ -452,6 +452,17 @@ body.sculpt-immersive #sculpt-encounter-editor{
 .sculpt-encounter-preview__actions button{flex:1;min-height:44px}
 .combat-overlay{position:fixed;inset:0;z-index:2000;width:100%;height:100dvh;
   overflow:hidden;background:#071016;overscroll-behavior:none;touch-action:none}
+.combat-overlay__loading{position:absolute;inset:0;z-index:2;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  padding:20px;text-align:center;background:#07151d;color:#eafff6}
+.combat-overlay__brand{font-size:clamp(27px,7vw,44px);letter-spacing:.08em;
+  color:#caffde;text-shadow:0 0 20px #1673589c}
+.combat-overlay__loading p{margin:0;color:#c0dcd5}
+.combat-overlay__spinner{width:44px;height:44px;border:4px solid #41615f;
+ border-top-color:#92e3c3;border-radius:50%;animation:play-area-spin 1s linear infinite}
+.combat-overlay__loading button{font-size:14px;min-height:44px;border-radius:10px;
+ border:1px solid #6cae98;background:#17393b;color:#eafff6;padding:10px 16px}
+@media(prefers-reduced-motion:reduce){.combat-overlay__spinner{animation:none}}
 .combat-overlay__frame{display:block;width:100%;height:100%;border:0;
   background:#071016;touch-action:manipulation}
 .world-entry-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.world-entry-links a{padding:8px 11px;border:1px solid #528f90;border-radius:9px;background:#16313b;color:#def5eb;font-size:.77rem;text-decoration:none;white-space:nowrap}@media(max-width:600px){.world-entry-links{gap:4px}.world-entry-links a{padding:6px;font-size:.67rem}}
@@ -670,6 +681,13 @@ body.sculpt-play-mode #play-save-status{
   left:9px;z-index:24;color:#bdebd7;font-size:.69rem;pointer-events:none;
 }
 body.sculpt-play-mode #play-save-status[data-error=true]{color:#ffd1a0}
+/* The native map's own first frame must finish before any editor is visible. */
+#sculpt-play-boot-mask{display:none;position:fixed;inset:0;z-index:3000;
+  background:#07151d;color:#e9fff6;place-items:center;text-align:center;pointer-events:auto}
+html.sculpt-play-booting #sculpt-play-boot-mask{display:grid!important}
+#sculpt-play-boot-mask .play-loading-inner{max-width:90vw}
+.play-loading-brand{font-weight:900;font-size:clamp(27px,7vw,43px);
+  letter-spacing:.07em;color:#caffde;text-shadow:0 0 21px #1673589c}
 #play-start-error[hidden]{display:none!important}
 #play-area-loading[hidden]{display:none!important}
 #play-area-loading{position:fixed;inset:0;z-index:95;display:grid;place-items:center;
@@ -689,8 +707,19 @@ body.sculpt-play-unavailable #play-start-error{
 }
 #play-start-error a{color:#b2ffe0;border:1px solid #77bba7;padding:12px 18px;border-radius:10px;text-decoration:none}
 </style>
+<script>
+ // Play-mode cover is activated before module imports and before the first
+ // editor paint. It is never shown when opening the standalone Sculpt editor.
+ if(new URLSearchParams(location.search).get('play')==='1')
+   document.documentElement.classList.add('sculpt-play-booting');
+</script>
 </head>
 <body>
+<div id="sculpt-play-boot-mask" role="status" aria-live="polite" aria-busy="true" hidden>
+ <div class="play-loading-inner"><span class="play-loading-brand">GenSRPG</span>
+ <span class="play-loading-spinner" aria-hidden="true"></span>
+ <strong>Préparation de l’aventure…</strong><p>Chargement du monde et des décors.</p></div>
+</div>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
 <p>Terrain visible en priorité · outils avancés sous la carte.</p></div>
 <nav class="world-workspace-tabs" id="world-workspace-tabs" aria-label="Panneaux du même éditeur de monde" hidden>
@@ -704,7 +733,8 @@ body.sculpt-play-unavailable #play-start-error{
 <output id="play-location" hidden aria-live="polite"></output>
 <output id="play-save-status" role="status" aria-live="polite"></output>
 <div id="play-area-loading" role="status" aria-live="polite" aria-busy="true" hidden>
- <div class="play-loading-inner"><span class="play-loading-spinner" aria-hidden="true"></span>
+ <div class="play-loading-inner"><span class="play-loading-brand" aria-label="GenSRPG">GenSRPG</span>
+ <span class="play-loading-spinner" aria-hidden="true"></span>
  <strong>Chargement de la zone…</strong><p>Préparation du terrain et des décors.</p></div>
 </div>
 <section id="play-start-error" role="alert" hidden>

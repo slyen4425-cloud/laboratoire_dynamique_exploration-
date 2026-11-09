@@ -10,6 +10,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
+import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
@@ -203,8 +204,8 @@ if(sculptCreatorCameraAngle!==null){
 }
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
 if(sculptPlayRequested&&window.frameElement){
-  // The host Capture document owns the browser fullscreen and Sac/Équipe HUD.
-  // Hide only this nested editor control; standalone Tester remains unchanged.
+  // The host Capture document owns browser fullscreen and the Sac/Équipe HUD.
+  // Never allow its nested Exploration editor to replace this top layer.
   $('fullscreen-toggle').hidden=true;
 }
 if(sculptPlayRequested){
@@ -493,7 +494,7 @@ function presentSculptEncounter(snapshot,recovered=false){
   const creatureId=sculptPendingEncounter.opponents[0].creatureId;
   // Prewarm only the two real author-selected creature portraits while the
   // player reads the encounter dialog. No gameplay change or visual fallback.
-  void sculptCombatWarmup.warmCreature(creatureId);
+  void sculptCombatWarmup.warmCreature(creatureId,scopedEncounter?.party?.active?.speciesId??null);
   const creature=sculptEncounterCatalog.resolveCreature(creatureId);
   $('sculpt-encounter-summary').textContent=
     (creature?.name??creatureId)+' · '+sculptPendingEncounter.context.terrainFamilyId+
@@ -1300,6 +1301,8 @@ function setImmersive(enabled){
 }
 function toggleImmersive(){
   if(sculptPlayRequested&&window.frameElement){
+    // After both battle startup and return, Explorer only owns CSS immersive.
+    // The parent Capture iframe and its Sac always remain in the visible layer.
     setImmersive(true);
     return;
   }
@@ -1768,6 +1771,16 @@ function navigationMaxStep(){
   return SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp;
 }
 let navBridgePlacements=null,navBridgeProjection=null,navStairProjection=null;
+// Heightfield ramps are immutable until the terrain identity changes. Never
+// allocate their projections in each 60 Hz movement/collision tick.
+let navRampTerrain=null,navRampProjections=null;
+function resolvedSculptTerrainRamps(){
+  if(navRampTerrain!==terrain){
+    navRampTerrain=terrain;
+    navRampProjections=sculptTerrainRampProjections(terrain);
+  }
+  return navRampProjections;
+}
 function resolvedSculptBridges(){
   if(navBridgePlacements!==placedObjects){
     navBridgePlacements=placedObjects;
@@ -1792,7 +1805,7 @@ function navigationContext(){
       cellHeight:SCULPT_TILE.height,projectionRise:SCULPT_TILE.rise,
        maxStepUp:maxStep,maxStepDown:maxStep,
       shoreEntryFraction:.14,bridges:resolvedSculptBridges(),
-      stairs:[...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)]}};
+      stairs:[...resolvedSculptStairs(),...resolvedSculptTerrainRamps()]}};
 }
 // Explain actual rejection from the SAME swept-height check used by Collision
 // World; never guess physics from rounded visual cliff pixels.
@@ -1815,7 +1828,7 @@ function navigationBlockMessage(reason){
 }
 function navHeight(){
   const stairLevel=navActor?.sculptStairId?sculptStairHeightAt(terrain,
-    [...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)],
+    [...resolvedSculptStairs(),...resolvedSculptTerrainRamps()],
     navActor.sculptStairId,navActor.x,navActor.y,
     {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height}):null;
   if(stairLevel!==null)return stairLevel;
@@ -2204,7 +2217,7 @@ window.__sculptNavProbe=()=>Object.freeze({
   deckBridgeId:activeSculptBridge()?.id??null,
   stairId:navActor?.sculptStairId??null,stairHeight:navActor?navHeight():null,
   inclineKind:navActor?.sculptStairId
-    ?[...resolvedSculptStairs(),...sculptTerrainRampProjections(terrain)]
+    ?[...resolvedSculptStairs(),...resolvedSculptTerrainRamps()]
       .find(o=>o.id===navActor.sculptStairId)?.kind??null:null,
   physicalBridgeLayer:navActor?.sculptBridgeId?'deck':'ground',
   bridgeCorridorVisible:$('navigation-show-bridge-corridor')?.checked??false,
@@ -3708,6 +3721,9 @@ function applySculptWorldPointerPlacement(point){
   }catch(error){sculptWorldStatus(error.message,true);}
   refreshSculptWorldPanel();
 }
+// Only the Portal HUD preview is cached. The actual traversal still validates
+// the destination independently, so no stale readiness can permit entry.
+const sculptPortalPreviewReadiness=createSculptPlaySceneReadinessCacheV1(sculptWorldAreaScene);
 function sculptWorldPortalAtHero(){
   if(!navigationTesting||!navActor||!sculptWorldDraft)return null;
   return findTriggeredPortal(sculptWorldDraft,sculptWorldAreaId,navActor);
@@ -3732,10 +3748,11 @@ function updateSculptWorldPortalAction(){
   button.disabled=!portal;
   if(portal){
     const target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-    // The button must reflect actual Sculpt capacity BEFORE click. A legacy
-    // 2400×1600 target cannot be mounted; do not advertise a fake transition.
-    try{sculptWorldAreaScene(target);}
-    catch(error){
+    // Preview once per immutable area and its enclosing draft, instead of
+    // importing/normalizing the full destination on EVERY walking frame.
+    // The actual transition keeps its own independent validation.
+    const readiness=sculptPortalPreviewReadiness(target,sculptWorldDraft);
+    if(!readiness.ok){
       if(!sculptPlayActive&&portal.trigger?.kind==='point'&&playableExteriorArea(sculptWorldArea())){
         button.disabled=false;
         button.textContent='🔗 Réparer ce passage';
@@ -3743,7 +3760,7 @@ function updateSculptWorldPortalAction(){
       }else{
         button.disabled=true;
         button.textContent='🚪 Passage impossible en 2,5D';
-        button.title='Zone cible non compatible : '+error.message;
+        button.title='Zone cible non compatible : '+readiness.error;
       }
       return;
     }
@@ -3820,13 +3837,15 @@ function commitCurrentSculptWorldArea(){
   });
   return sculptWorldDraft;
 }
-function mountWorldSculptArea(areaId){
+function mountWorldSculptArea(areaId,validatedScene=null){
   sculptWorldAreaMounted=false;
   const area=sculptWorldDraft?.areas.find(a=>a.id===areaId);
   if(!area)throw Error('WorldArea cible absente');
   document.querySelector('header h1').textContent='World Builder · '+(area.label??'Carte');
   document.querySelector('header p').textContent='Un seul monde · deux panneaux · '+area.width/28+' × '+area.height/21+' cases';
-  const scene=sculptWorldAreaScene(area);
+  // Use the already validated destination scene after a real Portal. Rebuilding
+  // it two or three times on the same transition blocks Android's render thread.
+  const scene=validatedScene??sculptWorldAreaScene(area);
   sculptWorldAreaId=areaId;
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
@@ -3843,9 +3862,15 @@ function mountWorldSculptArea(areaId){
       $('material').value=area.surface.baseMaterialId;
   }
   updateSculptAreaControls();
-  refreshSculptEncounterEditor();
-  refreshSculptWorldPanel();
-  setTheme();fit();
+  // In native Jouer all authoring panels are hidden. Rebuilding their element
+  // lists, thumbnails and portal selectors on every area switch used to
+  // synchronously delay the next painted gameplay frame.
+  if(!sculptPlayRequested){
+    refreshSculptEncounterEditor();
+    refreshSculptWorldPanel();
+    setTheme(); // Editor-only refresh; mountSculptArea already loaded the texture.
+  }
+  fit();
 }
 let sculptPortalLoading=false;
 async function traverseSculptWorldPortal(){
@@ -3879,7 +3904,8 @@ async function traverseSculptWorldPortal(){
   }
   try{
     let target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-    try{sculptWorldAreaScene(target);}
+    let validatedTargetScene=null;
+    try{validatedTargetScene=sculptWorldAreaScene(target);}
     catch(error){
       if(sculptPlayActive||portal.trigger?.kind!=='point'||!playableExteriorArea(sculptWorldArea()))throw error;
       if(!window.confirm('Cette sortie mène à une ancienne zone non jouable en 2,5D. '+ 
@@ -3894,7 +3920,7 @@ async function traverseSculptWorldPortal(){
       portal=sculptWorldDraft.portals.find(p=>p.id===portal.id);
       if(!portal)throw Error('Portal réparé introuvable');
       target=sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
-      sculptWorldAreaScene(target);
+      validatedTargetScene=sculptWorldAreaScene(target);
     }
     // The SAME runtime Portal resolver used by the 2D world document.
     // Gameplay may traverse existing Portals but cannot commit an authored map.
@@ -3903,10 +3929,16 @@ async function traverseSculptWorldPortal(){
       currentAreaId:sculptWorldAreaId,x:navActor.x,y:navActor.y
     },portal);
     if(!transition)throw Error('Portal / Spawn cible invalide');
-    // Load and validate the destination BEFORE releasing the current Area.
-    sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId));
+    // The destination was validated before we released the current Area.
+    // In Jouer, reuse that exact pure scene projection instead of building
+    // it THREE times during one Portal transition (Android main-thread stalls).
+    // Editor repair can change document bytes, so it always revalidates once.
+    const destinationScene=sculptPlayActive&&transition.currentAreaId===target.id
+      ?validatedTargetScene
+      :sculptWorldAreaScene(document.areas.find(a=>a.id===transition.currentAreaId));
+    if(!destinationScene)throw Error('Scene de destination invalide');
     if(navigationTesting)setNavigationTesting(false);
-    mountWorldSculptArea(transition.currentAreaId);
+    mountWorldSculptArea(transition.currentAreaId,destinationScene);
     setNavigationTesting(true);
     if(!navActor)throw Error('Zone de destination non praticable');
     if(sculptPlayActive){
@@ -4013,6 +4045,12 @@ async function installSculptPlayMode(){
     document.body.classList.add('sculpt-play-unavailable','sculpt-immersive');
     $('play-start-error').hidden=false;
     $('play-start-error-message').textContent=error.message;
+    $('sculpt-play-boot-mask')?.setAttribute('hidden','');
+    document.documentElement.classList.remove('sculpt-play-booting');
+    if(playOptions&&window.parent!==window)window.parent.postMessage({
+      schema:'gensrpg.exploration.play.failed.v1',
+      sessionId:playOptions.sessionId,message:error.message
+    },window.location.origin);
     console.error('Lancement Jouer refusé :',error);
   };
   try{
@@ -4110,6 +4148,18 @@ async function installSculptPlayMode(){
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
+    // The canonical canvas is actually painted before the host exposes it.
+    // Loading is a presentation state, not another map or game simulation.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      const cover=$('sculpt-play-boot-mask');
+      if(cover)cover.hidden=true;
+      document.documentElement.classList.remove('sculpt-play-booting');
+      if(playOptions&&window.parent!==window)window.parent.postMessage({
+        schema:'gensrpg.exploration.play.ready.v1',
+        sessionId:playOptions.sessionId,worldId:world.id,
+        areaId:sculptWorldAreaId
+      },window.location.origin);
+    }));
   }catch(error){
     scopedEncounter?.release();
     scopedEncounter=null;
