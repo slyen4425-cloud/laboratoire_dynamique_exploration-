@@ -46,6 +46,12 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     raw.returnToken,
     'returnToken'
   );
+  // Additive, optional v1 field: old snapshots and saved encounters retain
+  // their exact shape. Only the WorldArea Encounter owner may select the level.
+  if(raw.opponentLevel!==undefined&&
+     (!Number.isSafeInteger(raw.opponentLevel)||
+      raw.opponentLevel<1||raw.opponentLevel>9999))
+    throw new RangeError('Encounter opponentLevel must be a positive integer');
 
   return Object.freeze({
     schema: CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA,
@@ -57,7 +63,8 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     }),
     opponents: Object.freeze([
       Object.freeze({
-        creatureId: opponentCreatureId
+        creatureId: opponentCreatureId,
+        ...(raw.opponentLevel===undefined?{}:{level:raw.opponentLevel})
       })
     ]),
     rules: Object.freeze({
