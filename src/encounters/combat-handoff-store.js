@@ -40,6 +40,7 @@ function normalizeSnapshot(raw) {
     playerPartyRef: raw.player?.partyRef,
     opponentCreatureId:
       raw.opponents?.[0]?.creatureId,
+    opponentLevel: raw.opponents?.[0]?.level,
     rulesetId: raw.rules?.rulesetId,
     areaId: raw.context?.areaId,
     terrainFamilyId:

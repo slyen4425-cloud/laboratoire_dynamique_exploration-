@@ -677,6 +677,21 @@ export function setAreaEncounterRandomEnabled(draft, areaId, enabled) {
   return next;
 }
 
+/** World Builder is the sole author of the optional per-Area encounter level range.
+ * Existing worlds without this setting keep their prior encounter semantics.
+ */
+export function setAreaEncounterLevelRange(draft,areaId,{minLevel,maxLevel}={}){
+ if(!Number.isSafeInteger(minLevel)||!Number.isSafeInteger(maxLevel)||
+    minLevel<1||maxLevel<minLevel||maxLevel>9999)
+   throw new RangeError('Niveaux de rencontre : minimum et maximum entiers de 1 à 9999, minimum ≤ maximum');
+ const next=clone(draft),area=findArea(next,areaId);
+ if(!area)throw new RangeError('WorldArea inconnue pour les niveaux de rencontre');
+ area.encounters ??= {};
+ area.encounters.minLevel=minLevel;
+ area.encounters.maxLevel=maxLevel;
+ return next;
+}
+
 export function updateAreaProperties(
   draft,
   areaId,

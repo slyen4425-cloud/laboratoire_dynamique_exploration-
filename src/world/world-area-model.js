@@ -80,11 +80,22 @@ function normalizeWorldAreaEncounters(raw, kind) {
       ? raw
       : {};
 
+  // The optional per-Area range preserves exact legacy WorldDocuments when
+  // absent. Encounter selection owns the roll; Combat owns battle statistics.
+  const hasMin=Object.hasOwn(encounters,'minLevel');
+  const hasMax=Object.hasOwn(encounters,'maxLevel');
+  if(hasMin!==hasMax)throw new RangeError('WorldArea encounter min/max levels must be defined together');
+  if(hasMin&&(!Number.isSafeInteger(encounters.minLevel)||
+     !Number.isSafeInteger(encounters.maxLevel)||
+     encounters.minLevel<1||encounters.maxLevel<encounters.minLevel||
+     encounters.maxLevel>9999))
+    throw new RangeError('WorldArea encounter level range must be integers from 1 to 9999, min ≤ max');
   return Object.freeze({
     randomEnabled:
       typeof encounters.randomEnabled === 'boolean'
         ? encounters.randomEnabled
-        : kind !== 'interior'
+        : kind !== 'interior',
+    ...(hasMin?{minLevel:encounters.minLevel,maxLevel:encounters.maxLevel}:{})
   });
 }
 

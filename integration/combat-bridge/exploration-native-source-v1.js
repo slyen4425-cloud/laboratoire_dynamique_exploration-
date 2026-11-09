@@ -35,6 +35,10 @@ export function buildExplorationNativeCombatSourceV1({
   if(!scoped&&adventureParty!==undefined)
     throw new RangeError('Aventure et Tester ont des équipes distinctes');
   const enemyId=required(snapshot.opponents[0]?.creatureId,'opponent.creatureId');
+  const authoredEnemyLevel=snapshot.opponents[0]?.level;
+  if(authoredEnemyLevel!==undefined&&(!Number.isSafeInteger(authoredEnemyLevel)||
+     authoredEnemyLevel<1||authoredEnemyLevel>9999))
+    throw new RangeError('Encounter opponent.level must be a valid authored WorldArea level');
   if(!Array.isArray(showcaseCreatureTransfers)||!showcaseCreatureTransfers.length)
     throw new TypeError('Official Capture author creature transfers required');
   if(!Array.isArray(showcaseSkillTransfers)||!showcaseSkillTransfers.length)
@@ -107,7 +111,7 @@ export function buildExplorationNativeCombatSourceV1({
       // Keep the saved order and identities. Combat alone builds the
       // rechargeable native bench, individual stats and KO rules.
       localReserve:adventureParty.reserve??[],
-      opponent:{speciesId:enemyId,level:configuredCreatures.get(enemyId).draft.level}
+      opponent:{speciesId:enemyId,level:authoredEnemyLevel??configuredCreatures.get(enemyId).draft.level}
     });
     const expected=1+(adventureParty.reserve?.length??0);
     const bench=source.roster?.teams?.['local-1']?.members;
