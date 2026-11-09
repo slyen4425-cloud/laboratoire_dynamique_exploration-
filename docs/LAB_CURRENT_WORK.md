@@ -1,3 +1,14 @@
+## 2026-11-09 — World Builder : plan de zones déplaçables et contenu natif par Area (lot isolé)
+
+- **Départ certifié** : `main@9ae6a89c870cf001b540207e2dc7889ec930d518` ; checkpoint immuable `checkpoint/exploration-world-assembler-layout-contents-start-2026-11-09` ; travail `work/exploration-world-assembler-layout-contents-2026-11-09`.
+- **Demande auteur** : organiser librement les WorldArea du plan (glisser-déposer PC et tactile), sauvegarder cet agencement à l’export/import et dans la bibliothèque de mondes ; depuis une Area, inventorier les vraies maisons, arènes, autres objets et instances/donjons liés ; lancer le placement via l'éditeur de carte natif.
+- **Propriétaire unique** : `WorldDocument` reste la seule autorité des `areas`, `objects`, `portals` et `spawns`. Une métadonnée facultative `authoringLayout`, purement graphique et sans effet dans le jeu, porte les positions; données nettoyées et bornées lors de l'import. Aucun moteur de bâtiment, carte ou passage bis.
+- **Périmètre strict** : `src/world/world-document-model.js`, `src/builder/world-builder-draft.js`, `src/builder/world-assembler-main.js`, `world-assembler.html`, `src/builder/world-assembler.css`, tests ciblés. L'éditeur 2,5D déjà existant reste l'unique point d'ajout de décor/maison/arène, et l'éditeur d'intérieurs le seul créateur de liens de porte.
+- **Protégés** : 20 arbres enneigés, 10 arènes élémentaires, moulins/éoliennes, maisons et Portals, Sculpt V80 gelé, sauvegardes historiques, rencontres, niveaux par WorldArea, Play, Combat, GenSRPG/PWA, catalogues et ZIP sources. Aucune suppression ou déplacement des médias ni modification d'autre dépôt.
+- **Gate** : tests unitaires sérialisation et non-régression portails/objets, `npm run check`, `npm test`, CI au SHA exact, World Builder navigateur/tactile, checkpoint GREEN puis seulement promotion `main` et Pages. CI seule ≠ validation physique Android.
+
+---
+
 ## 2026-11-09 — Niveaux sauvages configurables par WorldArea (lot candidat)
 - **START immutable** : `main@6129365d8e31c8254305d3264bfa1bad8274b956`; checkpoint `checkpoint/exploration-start-worldarea-encounter-levels-2026-11-09` ; lot `work/exploration-worldarea-encounter-levels-2026-11-09`.
 - **Propriétaire** : World Builder crée `WorldArea.encounters.minLevel/maxLevel` optionnels, 1–9999, sur la zone sélectionnée. `normalizeWorldArea` conserve les documents anciens sans inventer des limites, refuse seulement un couple partiel/invalide. `Encounter Controller` garde son déclenchement par terrain et ses probabilités existantes ; après rencontre confirmée, il tire uniformément un entier min..max. Une plage 1–5 distribue donc 20 % par niveau **parmi les rencontres déclenchées**, indépendamment de leur taux de déclenchement.
