@@ -121,6 +121,7 @@ function installWorldAssembler(){
   let autosaveAvailable=true;
   let linksShown=true;
   let requestedInteriorHostId=null;
+  const areaDialog=byId('area-details-dialog');
   const library=createExplorationWorldDocumentLibraryV1({storage:window.localStorage});
   function refreshWorldLibrary(){
     const picker=byId('world-library-select');
@@ -184,6 +185,10 @@ function installWorldAssembler(){
   });
   function status(message,isError=false){
     toast.textContent=message;toast.dataset.error=String(isError);
+    // This is feedback, never another settings panel or second WorldDocument.
+    const modalStatus=byId('area-editor-feedback');
+    modalStatus.textContent=message;
+    modalStatus.dataset.error=String(isError);
   }
   function persist(){
     try{
@@ -211,6 +216,26 @@ function installWorldAssembler(){
     if(id!==selectedId)requestedInteriorHostId=null;
     selectedId=id;render();
   }
+  // One actual native dialog owns ALL existing Area controls.
+  function openAreaDetails(id){
+    if(!draft.areas.some(a=>a.id===id))return;
+    select(id);
+    if(!areaDialog.open)areaDialog.showModal();
+  }
+  on(byId('open-selected-area'),'click',()=>openAreaDetails(selectedId));
+  on(byId('new-world-area'),'click',()=>{
+    openAreaDetails(selectedId);
+    requestedInteriorHostId=null;
+    byId('area-creation-details').open=true;
+    byId('area-kind').value='exterior';
+    byId('area-kind').dispatchEvent(new Event('change'));
+    byId('area-name').focus();
+  });
+  on(byId('close-area-editor'),'click',()=>areaDialog.close());
+  on(areaDialog,'close',()=>{
+    requestedInteriorHostId=null;
+    byId('area-creation-details').open=false;
+  });
   function apply(command,success){
     try{
       const next=command();
@@ -238,7 +263,7 @@ function installWorldAssembler(){
       const note=document.createElement('small');note.textContent=
         (area.id===draft.initialAreaId?'★ Départ · ':'')+kindName(area);
       copy.append(title,note);button.append(icon,copy);
-      button.addEventListener('click',()=>select(area.id));list.append(button);
+      button.addEventListener('click',()=>openAreaDetails(area.id));list.append(button);
     }
     byId('world-area-count').textContent=draft.areas.length+' zone'+(draft.areas.length>1?'s':'');
   }
@@ -318,7 +343,7 @@ function installWorldAssembler(){
     for(const area of draft.areas){
       const pos=layout.positions.get(area.id);
       if(pos)nodes.append(nodeButton(area,pos,draft,selectedId,
-        ()=>select(area.id),
+        ()=>openAreaDetails(area.id),
         event=>startGraphNodeDrag(event,area,event.currentTarget,pos),
         event=>moveGraphNodeByKeyboard(event,area,pos)));
     }
@@ -375,6 +400,40 @@ function installWorldAssembler(){
     byId('selected-content-count').textContent=
       (placed.length+interiors.size)+' élément'+(placed.length+interiors.size>1?'s':'');
   }
+  function renderAreaEvents(area){
+    // Read-only inventory from the SAME WorldDocument events.
+    // Event creation and trigger editing stay in the native map editor.
+    const events=(draft.events??[]).filter(event=>event.sourceAreaId===area.id);
+    const host=byId('selected-events');host.replaceChildren();
+    const names={
+      'on-enter':'Entrée dans une zone',
+      'on-portal-enter':'Arrivée par passage',
+      'on-interact':'Interaction'
+    };
+    for(const event of events){
+      const row=document.createElement('div');row.className='area-content-entry';
+      const icon=document.createElement('span');icon.className='content-icon';
+      icon.textContent='🎬';
+      const meta=document.createElement('span');meta.className='content-text';
+      const title=document.createElement('strong');
+      title.textContent=names[event.activation]??'Événement';
+      const detail=document.createElement('small');
+      detail.textContent=(event.enabled?'Actif':'Désactivé')+' · '+
+        (event.action?.text??event.id).slice(0,100);
+      meta.append(title,detail);
+      row.append(icon,meta);
+      const edit=document.createElement('button');edit.type='button';
+      edit.textContent='Éditer';edit.addEventListener('click',
+        ()=>openAreaEditor('./builder.html?worldAssembler=1'));
+      row.append(edit);host.append(row);
+    }
+    if(!events.length){
+      const empty=document.createElement('p');empty.className='empty-links';
+      empty.textContent='Aucun événement dans cette zone.';
+      host.append(empty);
+    }
+    byId('selected-event-count').textContent=String(events.length);
+  }
   function renderInspector(){
     const area=getSelected();if(!area)return;
     byId('selected-name').textContent=areaLabel(area);
@@ -391,6 +450,7 @@ function installWorldAssembler(){
     byId('area-kind-badge').textContent=area.kind==='interior'?'INSTANCE':'RÉGION';
     byId('selected-size').textContent=Math.round(area.width)+' × '+Math.round(area.height);
     renderAreaContents(area);
+    renderAreaEvents(area);
     byId('area-encounter-min-level').value=String(area.encounters?.minLevel??1);
     byId('area-encounter-max-level').value=String(area.encounters?.maxLevel??5);
     byId('area-encounter-levels-status').textContent=
@@ -552,7 +612,8 @@ function installWorldAssembler(){
         :'Nouvelle WorldArea ajoutée au monde.');
     if(ok){requestedInteriorHostId=null;
       selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
-      byId('area-add-form').reset();areaSizeTouched=false;render();}
+      byId('area-add-form').reset();areaSizeTouched=false;
+      byId('area-creation-details').open=false;render();}
   });
   on(byId('area-kind'),'change',()=>{
     const kind=byId('area-kind').value;
@@ -623,6 +684,7 @@ function installWorldAssembler(){
   on(byId('place-area-object'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('create-area-instance'),'click',()=>{
     requestedInteriorHostId=selectedId;
+    byId('area-creation-details').open=true;
     byId('area-kind').value='interior';
     byId('area-kind').dispatchEvent(new Event('change'));
     byId('area-name').value='';
@@ -646,6 +708,9 @@ function installWorldAssembler(){
   on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('edit-area'),'click',()=>{
+    openAreaEditor('./builder.html?worldAssembler=1');
+  });
+  on(byId('edit-area-events'),'click',()=>{
     openAreaEditor('./builder.html?worldAssembler=1');
   });
   on(byId('export-world'),'click',()=>{
@@ -707,6 +772,8 @@ function installWorldAssembler(){
     selectedWidth:getSelected()?.width??null,
     graphNodeCount:byId('graph-nodes').childElementCount,
     graphEdgeCount:byId('graph-links').querySelectorAll('.graph-edge').length,
+    areaEditorOpen:areaDialog.open,
+    selectedEventCount:(draft.events??[]).filter(e=>e.sourceAreaId===selectedId).length,
     saved:autosaveAvailable,source:'WorldDocument'
   });
   return {dispose(){
