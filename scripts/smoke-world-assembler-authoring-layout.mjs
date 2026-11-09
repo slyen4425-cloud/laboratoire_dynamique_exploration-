@@ -161,6 +161,29 @@ try{
      edited.levels[0]!==4||edited.levels[1]!==17||
      !edited.terrainUnchanged||edited.portals!==2||edited.events!=='0')
     throw Error('Real Area modal, unique controls or terrain RNG isolation failed '+JSON.stringify(edited));
+  const contentNavigation=await run(`(()=>{
+    const dialog=document.querySelector('#area-details-dialog');
+    const picker=document.querySelector('#selected-neighbor-area');
+    const initial=document.querySelector('#selected-id').textContent;
+    const filter=document.querySelector('#area-content-filter');
+    const options=[...picker.options].map(option=>option.value).filter(Boolean);
+    filter.value='dungeon';filter.dispatchEvent(new Event('change'));
+    const emptyFilter=document.querySelector('#selected-contents .empty-links')?.textContent.includes('catégorie');
+    filter.value='all';filter.dispatchEvent(new Event('change'));
+    document.querySelector('#open-neighbor-area').click();
+    const neighbor=document.querySelector('#selected-id').textContent;
+    const back=document.querySelector('#selected-portals .portal-open-area');
+    back?.click();
+    const restored=document.querySelector('#selected-id').textContent;
+    return {open:dialog.open,options,initial,neighbor,restored,emptyFilter,
+      uniqueFilter:document.querySelectorAll('#area-content-filter').length===1};
+  })()`);
+  if(!contentNavigation.open||contentNavigation.options.length!==1||
+     contentNavigation.neighbor===contentNavigation.initial||
+     contentNavigation.restored!==contentNavigation.initial||
+     !contentNavigation.emptyFilter||!contentNavigation.uniqueFilter)
+    throw Error('Real Area contents filter / Portal navigation failed '+JSON.stringify(contentNavigation));
+  console.log('GREEN real Chromium: Area contents filter and Portal-only navigation '+JSON.stringify(contentNavigation));
   await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
   await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
   await sleep(120);

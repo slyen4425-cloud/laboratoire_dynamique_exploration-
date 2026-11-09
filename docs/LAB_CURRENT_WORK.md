@@ -1,3 +1,12 @@
+## 2026-11-09 — World Builder : navigation rapide des contenus et passages (lot isolé, CANDIDAT)
+- **START exact** : `main@ac563b2072b7518ff929db78d5f6fcdeb1493ba7` ; checkpoint START `checkpoint/exploration-area-content-navigation-start-2026-11-09` ; branche WORK `work/exploration-area-content-navigation-2026-11-09`.
+- **Motif** : PR #402 et #403 ont déjà livré déplacement graphique et unique fenêtre de zone. Complément strictement ergonomique : filtrer les objets affichés (bâtiments, arènes, salles, donjons, décors), ouvrir les zones reliées par les vrais Portal sans revenir au tableau, ouvrir une destination depuis la liste des passages, confirmation avant suppression manuelle.
+- **Autorités inchangées** : aucun nouveau WorldDocument, catalogue, modèle, Portal, source de sauvegarde ou coordonnées gameplay. Navigation calculée depuis `draft.portals` existants ; listes d'objets depuis `area.objects` et `objectDefinitionCatalogV1`. Pas de déduction de filiation depuis la position graphique.
+- **Fichiers concernés** : `world-assembler.html`, `src/builder/world-assembler-main.js`, `src/builder/world-assembler.css`, test ciblé, smoke Chromium du World Assembler et ce journal. Aucun asset, presét, V80, Combat, GenSRPG, publisher ou jeu modifié.
+- **Gate avant fusion** : `npm test`, `npm run check`, vrai Chromium clic / filtre / navigation / ESC / drag / rechargement, test des mondes/Portals préexistants, CI au SHA exact, budget Pages/V80 et checkpoint GREEN. Après fusion : CI + Pages sur le SHA `main` exact ; validation physique Android séparée. **Statut : NON GREEN avant preuves.**
+
+---
+
 ## 2026-11-09 — World Builder : une SEULE fenêtre « Modifier la zone » (lot isolé)
 - **Demande** : cliquer sur une carte WorldArea ou son bouton « Modifier » ouvre une fenêtre dédiée, désengorge le plan et rassemble les réglages NATIFS existants : niveaux mini/maxi, bâtiments/arènes décoratives, intérieurs/donjons, événements, passages, accès éditeur de carte.
 - **Pas de deuxième affichage** : déplacer les vrais formulaires et IDs DOM du panneau latéral dans le dialogue modal, supprimer le panneau droit originel ; garder une seule instance des formulaires de niveaux / passages / création d’Area. Le formulaire de création déjà existant rejoint aussi le dialogue, avec accès depuis « Nouvelle zone ».

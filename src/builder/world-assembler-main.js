@@ -213,7 +213,10 @@ function installWorldAssembler(){
   }
   function select(id){
     if(!draft.areas.some(a=>a.id===id))return;
-    if(id!==selectedId)requestedInteriorHostId=null;
+    if(id!==selectedId){
+      requestedInteriorHostId=null;
+      byId('area-content-filter').value='all';
+    }
     selectedId=id;render();
   }
   // One actual native dialog owns ALL existing Area controls.
@@ -351,8 +354,12 @@ function installWorldAssembler(){
       ' passage'+(draft.portals.length>1?'s':'');
   }
   function renderAreaContents(area){
+    // UI-only inventory: every object comes from WorldArea.objects; every
+    // connected instance comes from WorldDocument.portals. Filters NEVER write.
     const panel=byId('selected-contents');
     panel.replaceChildren();
+    const filter=byId('area-content-filter').value;
+    let visible=0;
     const placed=area.objects??[];
     const buildings=placed.map(item=>({
       placement:item,definition:objectDefinitionCatalogV1.get(item.objectDefinitionId)
@@ -363,8 +370,11 @@ function installWorldAssembler(){
       const target=draft.areas.find(a=>a.id===portal.targetAreaId);
       if(target?.kind==='interior'&&target.id!==area.id)interiors.set(target.id,target);
     }
-    const addRow=(symbol,title,subtitle,onOpen)=>{
+    const addRow=(category,symbol,title,subtitle,onOpen)=>{
+      if(filter!=='all'&&filter!==category)return;
+      visible++;
       const row=document.createElement('div');row.className='area-content-entry';
+      row.dataset.category=category;
       const icon=document.createElement('span');icon.className='content-icon';icon.textContent=symbol;
       const info=document.createElement('span');info.className='content-text';
       const name=document.createElement('strong');name.textContent=title;
@@ -372,34 +382,41 @@ function installWorldAssembler(){
       info.append(name,note);row.append(icon,info);
       if(onOpen){
         const button=document.createElement('button');button.type='button';
-        button.textContent='Ouvrir';button.addEventListener('click',onOpen);
+        button.textContent=(category==='interior'||category==='dungeon')
+          ?'Gérer':'Carte 2,5D';
+        button.addEventListener('click',onOpen);
         row.append(button);
       }
       panel.append(row);
     };
     for(const {placement,definition} of buildings){
       const arena=definition.library?.folderId?.includes('/arenas/');
-      addRow(arena?'🏟':'🏠',definition.label??placement.objectDefinitionId,
-        'Objet placé · '+placement.id,
+      addRow(arena?'arena':'building',arena?'🏟':'🏠',
+        definition.label??placement.objectDefinitionId,
+        'Objet de cette carte · '+placement.id,
         ()=>openAreaEditor(mapPanelUrl));
     }
     for(const inside of interiors.values()){
-      addRow(inside.siteKind==='dungeon'?'🗝':'🚪',
+      const dungeon=inside.siteKind==='dungeon';
+      addRow(dungeon?'dungeon':'interior',dungeon?'🗝':'🚪',
         areaLabel(inside),kindName(inside)+' · Portal existant',
-        ()=>select(inside.id));
+        ()=>openAreaDetails(inside.id));
     }
     const other=placed.length-buildings.length;
-    if(other>0)addRow('🌿',other+' autres objets',
+    if(other>0)addRow('other','🌿',other+' autres objets',
       'Décors, obstacles et éléments de la carte · ouvre Carte 2,5D',
       ()=>openAreaEditor(mapPanelUrl));
-    if(!placed.length&&!interiors.size){
+    if(!visible){
       const empty=document.createElement('p');empty.className='empty-links';
-      empty.textContent='Aucun bâtiment ou intérieur dans cette zone. Place des objets depuis la carte 2,5D.';
+      empty.textContent=filter==='all'
+        ?'Aucun bâtiment ou intérieur dans cette zone. Place des objets depuis la carte 2,5D.'
+        :'Aucun élément dans cette catégorie. Les autres éléments sont conservés.';
       panel.append(empty);
     }
     byId('selected-content-count').textContent=
       (placed.length+interiors.size)+' élément'+(placed.length+interiors.size>1?'s':'');
   }
+  on(byId('area-content-filter'),'change',()=>renderAreaContents(getSelected()));
   function renderAreaEvents(area){
     // Read-only inventory from the SAME WorldDocument events.
     // Event creation and trigger editing stay in the native map editor.
@@ -438,13 +455,26 @@ function installWorldAssembler(){
     const area=getSelected();if(!area)return;
     byId('selected-name').textContent=areaLabel(area);
     const host=area.kind==='interior'?draft.portals.find(p=>
-      p.targetAreaId===area.id&&draft.areas.some(parent=>
-        parent.id===p.sourceAreaId&&parent.kind==='exterior')):null;
+      p.targetAreaId===area.id&&p.sourceAreaId!==area.id&&
+      draft.areas.some(other=>other.id===p.sourceAreaId)):null;
     const hostArea=host?draft.areas.find(a=>a.id===host.sourceAreaId):null;
     byId('selected-host').textContent=hostArea
-      ?'📍 Situé dans : '+areaLabel(hostArea)+' · entrée via Portal'
-      :area.kind==='interior'?'Instance indépendante · relie-la à une autre zone pour y entrer.':
+      ?'🔗 Reliée à : '+areaLabel(hostArea)+' · Portal existant'
+      :area.kind==='interior'?'Instance sans passage entrant : relie-la pour y accéder.':
         'Cette région peut contenir des donjons, maisons et autres instances.';
+    // Only real Portal edges authorize zone-to-zone navigation.
+    const neighborIds=[...new Set(draft.portals.flatMap(portal=>
+      portal.sourceAreaId===area.id?[portal.targetAreaId]:
+      portal.targetAreaId===area.id?[portal.sourceAreaId]:[]
+    ))].filter(id=>id!==area.id&&draft.areas.some(a=>a.id===id));
+    const neighborPicker=byId('selected-neighbor-area');
+    const previous=neighborPicker.value;
+    neighborPicker.replaceChildren(...(neighborIds.length
+      ?neighborIds.map(id=>new Option(areaLabel(draft.areas.find(a=>a.id===id)),id))
+      :[new Option('Aucune zone reliée','')]));
+    if(neighborIds.includes(previous))neighborPicker.value=previous;
+    neighborPicker.disabled=!neighborIds.length;
+    byId('open-neighbor-area').disabled=!neighborIds.length;
     byId('selected-id').textContent='WorldArea · '+area.id;
     byId('selected-icon').textContent=kindIcon(area);
     byId('area-kind-badge').textContent=area.kind==='interior'?'INSTANCE':'RÉGION';
@@ -487,8 +517,16 @@ function installWorldAssembler(){
       text.append(title,subtitle);
       const remove=document.createElement('button');remove.type='button';
       remove.textContent='✕';remove.setAttribute('aria-label','Supprimer le passage '+portal.id);
-      remove.addEventListener('click',()=>apply(()=>deletePortal(draft,portal.id),'Passage supprimé.'));
-      row.append(text,remove);container.append(row);
+      remove.addEventListener('click',()=>{
+        if(!window.confirm('Supprimer ce passage existant ? Les cartes et les autres passages seront conservés.'))return;
+        apply(()=>deletePortal(draft,portal.id),'Passage supprimé.');
+      });
+      const linkedId=portal.sourceAreaId===area.id?portal.targetAreaId:portal.sourceAreaId;
+      const open=document.createElement('button');open.type='button';
+      open.className='portal-open-area';open.textContent='Voir zone';
+      open.setAttribute('aria-label','Ouvrir la zone '+pretty(linkedId));
+      open.addEventListener('click',()=>openAreaDetails(linkedId));
+      row.append(text,open,remove);container.append(row);
     }
   }
   function refreshMapPresets(){
@@ -681,6 +719,10 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);}
   }
   const mapPanelUrl='./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3&panels=world1';
+  on(byId('open-neighbor-area'),'click',()=>{
+    const target=byId('selected-neighbor-area').value;
+    if(target)openAreaDetails(target);
+  });
   on(byId('place-area-object'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('create-area-instance'),'click',()=>{
     requestedInteriorHostId=selectedId;
