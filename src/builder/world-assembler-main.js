@@ -1,7 +1,8 @@
 import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
-  initializeWorldPresetEncounters,serializeWorldBuilderDraft,importWorldBuilderDocument
+  initializeWorldPresetEncounters,setAreaEncounterLevelRange,
+  serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {
   saveWorldAssemblerHandoff,readWorldAssemblerHandoff,
@@ -130,6 +131,14 @@ function installWorldAssembler(){
       return library.save(draft,{replace:true});
     }
   }
+  on(byId('world-area-encounter-levels'),'submit',event=>{
+    event.preventDefault();
+    const minLevel=Number(byId('area-encounter-min-level').value);
+    const maxLevel=Number(byId('area-encounter-max-level').value);
+    const area=getSelected();
+    apply(()=>setAreaEncounterLevelRange(draft,area.id,{minLevel,maxLevel}),
+      'Zone '+areaLabel(area)+' : niveau sauvage aléatoire de '+minLevel+' à '+maxLevel+'.');
+  });
   on(byId('world-encounters-initialize'),'click',()=>{
     if(!encounterConfigNeedsExplicitInitialization(draft.encounterConfig)){
       libraryStatus('Rencontres déjà configurées : paramètres conservés.');
@@ -258,6 +267,13 @@ function installWorldAssembler(){
     byId('selected-icon').textContent=kindIcon(area);
     byId('area-kind-badge').textContent=area.kind==='interior'?'INSTANCE':'RÉGION';
     byId('selected-size').textContent=Math.round(area.width)+' × '+Math.round(area.height);
+    byId('area-encounter-min-level').value=String(area.encounters?.minLevel??1);
+    byId('area-encounter-max-level').value=String(area.encounters?.maxLevel??5);
+    byId('area-encounter-levels-status').textContent=
+      area.encounters?.minLevel===undefined
+        ?'Aucune plage personnalisée enregistrée pour cette zone.'
+        :'Niveaux '+area.encounters.minLevel+' à '+area.encounters.maxLevel+
+         ' · tirage uniforme après déclenchement de rencontre.';
     byId('selected-links').textContent=String(draft.portals.filter(p=>
       p.sourceAreaId===area.id||p.targetAreaId===area.id).length);
     const starting=area.id===draft.initialAreaId;
