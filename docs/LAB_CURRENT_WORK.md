@@ -1,3 +1,11 @@
+## 2026-11-08 — Embedded Capture fullscreen owner : préserver Sac/Équipe (candidat)
+- **START :** main Explorer `bb358ee38410f9590d5f80fa116e0286c23f6216`; checkpoint `checkpoint/exploration-start-capture-fullscreen-owner-2026-11-08`; branche `work/exploration-capture-fullscreen-owner-2026-11-08`. Pas de nouvelle autorité ni de modification au main public avant CI.
+- **Reproduction :** Capture Jeu charge Explorer en iframe ; le plein écran natif demandé depuis l'enfant masque l'HUD parent (Sac/Équipe). **Propriétaire :** Capture doit posséder le fullscreen parent ; Explorer conserve son unique renderer/caméra, n'affiche pas le bouton fullscreen éditeur et refuse de prendre le fullscreen natif en mode Aventure intégré. Tester autonome et outils Exploration restent inchangés.
+- **Contrôles :** test du garde, CI Exploration, revue paysage Android iframe (Sac cliquable au-dessus, retour titre, refus permission), CI site assemblé GenSRPG. Couplage avec le candidat Capture PR #344 ; aucune publication isolée de l'un sans validation de l'autre.
+- **Performance :** deux fortes saccades signalées sur carte ; diagnostic séparé de cette livraison (profil métriques rendu/calcul, transition, re-raster terrain, sauvegarde et décors), sans modifier aveuglément la boucle de jeu.
+
+---
+
 ## 2026-11-08 — Jouer natif : micro-freezes, écrans de transitions et warmup équipe sauvée (C3 / candidat)
 - **START main certifié :** `d30465b9653a1ad90730af0caae4ace21d16a23c`, checkpoint `checkpoint/exploration-start-play-transitions-stutter-2026-11-08`, branche `work/exploration-play-transitions-stutter-2026-11-08`. Seule autorité graphique et navigation : Exploration main ; source Capture `8f7bc6b` et publisher GenSRPG `8156b54` inchangés avant les gates.
 - **Régression observée dans le code :** `navHeight` re-projetait toutes les pentes `sculptTerrainRampProjections(terrain)` à chaque échantillonnage du déplacement sur escalier malgré le cache natif `resolvedSculptTerrainRamps`, désormais réutilisé. En Jouer Aventure, le warmup Combat lisait encore `party.preview.v1.json` (héros Tester au lieu de l'instance sauvegardée) ; il précharge désormais le combatant actif canonique, dont l'identité vient du grant AdventureSession GenSRPG, et une seule fois par paire combattant/adversaire.

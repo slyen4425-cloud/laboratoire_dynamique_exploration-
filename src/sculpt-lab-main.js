@@ -203,6 +203,11 @@ if(sculptCreatorCameraAngle!==null){
   $('navigation-camera-angle-value').textContent=sculptCreatorCameraAngle+'° · créateur';
 }
 const sculptPlayRequested=new URL(document.URL).searchParams.get('play')==='1';
+if(sculptPlayRequested&&window.frameElement){
+  // The host Capture document owns browser fullscreen and the Sac/Équipe HUD.
+  // Never allow its nested Exploration editor to replace this top layer.
+  $('fullscreen-toggle').hidden=true;
+}
 if(sculptPlayRequested){
   // Same camera and zoom slider as the native Tester. Apply a creator-chosen
   // starting distance without locking later player pinch/slider zoom.
@@ -1295,6 +1300,12 @@ function setImmersive(enabled){
   requestAnimationFrame(fit);
 }
 function toggleImmersive(){
+  // In the embedded game, Capture owns the fullscreen top layer. This must
+  // remain true after entering Combat and returning to the Exploration map.
+  if(sculptPlayRequested&&window.frameElement){
+    setImmersive(true);
+    return;
+  }
   const entering=!document.body.classList.contains('sculpt-immersive');
   setImmersive(entering);
   if(entering&&typeof document.documentElement.requestFullscreen==='function'){

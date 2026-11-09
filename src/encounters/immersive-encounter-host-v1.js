@@ -103,6 +103,10 @@ export function createImmersiveEncounterHostV1({
   windowRef.addEventListener('message', onCombatComplete);
 
   function enterFullscreenFromCombatClick() {
+    // In an embedded AdventureSession the host Capture owns fullscreen.
+    // Taking fullscreen on the nested Exploration document hides the parent's
+    // Sac/Équipe after the Combat overlay closes: preserve that top layer.
+    if(sessionId!==undefined&&windowRef.frameElement)return;
     // Called synchronously from the existing "Lancer le combat" tap.
     // A new page would lose the activation and the fullscreen document.
     const host = documentRef.documentElement;

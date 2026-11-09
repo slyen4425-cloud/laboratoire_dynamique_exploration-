@@ -166,3 +166,40 @@ test('a scoped battle waits for the asynchronous Core receipt and handles only o
  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
  host.dispose();
 });
+
+test('embedded Capture stays fullscreen owner through Combat completion; standalone Tester still can fullscreen',()=>{
+ const play=fakeDom(),store=storage();let requestCount=0;
+ play.win.frameElement={id:'capture-owned-adventure-play-frame'};
+ play.doc.documentElement.requestFullscreen=()=>{requestCount++;return Promise.resolve();};
+ const sessionId='session-game-1',scoped={...snapshot,player:{partyRef:'adventure-party:'+sessionId}};
+ const saved=saveCombatHandoff(store,{snapshot:scoped,returnState:{
+  areaId:'forest-exterior',x:45,y:67,returnUrl:origin+'/index.html?combatReturn=1'
+ }},{sessionId});
+ saveCombatHandoff(store,attachCombatResult(saved,{
+  encounterId:'e1',returnToken:'r1',outcome:'victory'
+ }),{sessionId});
+ const playHost=createImmersiveEncounterHostV1({
+  windowRef:play.win,documentRef:play.doc,storage:store,sessionId,
+  onCompleted:()=>({persisted:true,session:{sessionId,processedEncounterKeys:['e1:r1']}})
+ });
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ assert.equal(playHost.open({url,snapshot:scoped}),true);
+ assert.equal(play.nodes.length,1,'Combat still uses the official native iframe');
+ assert.equal(requestCount,0,'embedded battle must not take fullscreen away from Capture');
+ assert.equal(play.doc.fullscreenElement,null,'Capture parent remains sole fullscreen document');
+ const frame=play.nodes[0].children[0].contentWindow;
+ play.listeners.get('message')({source:frame,origin,data:{
+  type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'
+ }});
+ assert.equal(play.nodes.length,0,'Combat overlay is closed after the official Core receipt');
+ assert.equal(requestCount,0,'return to exploration must not trigger a new child fullscreen');
+ playHost.dispose();
+ const standalone=fakeDom();
+ const tester=createImmersiveEncounterHostV1({
+  windowRef:standalone.win,documentRef:standalone.doc,storage:storage(),onCompleted:()=>true
+ });
+ assert.equal(tester.open({url,snapshot}),true);
+ assert.equal(standalone.doc.fullscreenElement,standalone.doc.documentElement,
+  'standalone Tester preserves its native fullscreen behavior');
+ tester.dispose();
+});
