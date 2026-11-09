@@ -135,6 +135,52 @@ try{
   if(!recovered||recovered.left!==dragged.point.x||
      recovered.top!==dragged.point.y||recovered.portalCount!==2)
     throw Error('Saved WorldDocument layout not restored after reload '+JSON.stringify(recovered));
+  // The exact same WorldArea node now opens the SINGLE native modal.
+  const edited=await run(`(()=>{
+    const card=document.querySelector('.world-node[data-area-id="area-principale"]');
+    card.click();
+    const dialog=document.querySelector('#area-details-dialog');
+    const loaded=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const terrainBefore=JSON.stringify(loaded?.encounterConfig??null);
+    const oneId=id=>document.querySelectorAll('#'+id).length===1;
+    const oneForm=oneId('world-area-encounter-levels')&&oneId('connect-form')&&
+      oneId('area-add-form')&&oneId('selected-contents')&&oneId('selected-events');
+    document.querySelector('#area-encounter-min-level').value='4';
+    document.querySelector('#area-encounter-max-level').value='17';
+    document.querySelector('#world-area-encounter-levels').requestSubmit();
+    const updated=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const area=updated?.areas?.find(a=>a.id==='area-principale');
+    return {open:dialog.open,oneForm,
+      panelCount:document.querySelectorAll('.inspector').length,
+      oldRailCount:document.querySelectorAll('aside.inspector').length,
+      levels:[area?.encounters?.minLevel,area?.encounters?.maxLevel],
+      terrainUnchanged:JSON.stringify(updated?.encounterConfig??null)===terrainBefore,
+      portals:updated?.portals?.length,events:document.querySelector('#selected-event-count')?.textContent};
+  })()`);
+  if(!edited.open||!edited.oneForm||edited.panelCount!==1||edited.oldRailCount!==0||
+     edited.levels[0]!==4||edited.levels[1]!==17||
+     !edited.terrainUnchanged||edited.portals!==2||edited.events!=='0')
+    throw Error('Real Area modal, unique controls or terrain RNG isolation failed '+JSON.stringify(edited));
+  await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
+  await sleep(120);
+  const navigation=await run(`(()=>{
+    const dialog=document.querySelector('#area-details-dialog');
+    const escapeClosed=!dialog.open;
+    document.querySelector('#area-list button').click();
+    const reopened=dialog.open;
+    document.querySelector('#close-area-editor').click();
+    const closeWorked=!dialog.open;
+    document.querySelector('#new-world-area').click();
+    const createVisible=dialog.open&&document.querySelector('#area-creation-details').open&&
+      document.activeElement===document.querySelector('#area-name');
+    document.querySelector('#close-area-editor').click();
+    return {escapeClosed,reopened,closeWorked,createVisible};
+  })()`);
+  if(Object.values(navigation).some(v=>v!==true))
+    throw Error('Area modal Escape/list/new zone UI failed '+JSON.stringify(navigation));
+  console.log('GREEN real Chromium: single Area modal, native levels, texture odds unchanged, Escape/new area '+
+    JSON.stringify({edited,navigation}));
   console.log('GREEN real Chromium: draggable WorldArea, saved position and Portal preservation '+
     JSON.stringify({dragged:dragged.point,afterReload:{x:recovered.left,y:recovered.top},
       portals:recovered.portalCount}));
