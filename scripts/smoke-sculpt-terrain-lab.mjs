@@ -3470,11 +3470,18 @@ try{
     const linked=window.__worldAssemblerProbe();
     document.querySelector('#start-area').click();
     const started=window.__worldAssemblerProbe();
-    const panel=document.querySelector('.inspector').getBoundingClientRect();
+    // Old permanent right inspector was intentionally removed.
+    // Open the same actual native Area dialog and verify Pixel landscape geometry.
+    document.querySelector('#open-selected-area').click();
+    const dialog=document.querySelector('#area-details-dialog');
+    const panel=dialog.getBoundingClientRect();
     const header=document.querySelector('.app-header').getBoundingClientRect();
     const node=document.querySelector('.world-node.selected').getBoundingClientRect();
     return {before,linked,started,
-      panelInLandscape:panel.right<=innerWidth&&panel.width>120,
+      singleAreaEditor:dialog.open&&document.querySelectorAll('.inspector').length===1&&
+        document.querySelectorAll('aside.inspector').length===0,
+      panelInLandscape:dialog.open&&panel.left>=0&&panel.right<=innerWidth&&
+        panel.top>=0&&panel.bottom<=innerHeight&&panel.width>120,
       headerInLandscape:header.top>=0&&header.bottom<100,
       selectedGraphNodeVisible:node.width>150&&node.height>70,
       portalRows:document.querySelectorAll('.portal-row').length};
@@ -3483,7 +3490,8 @@ try{
      newWorldGraph.linked.portalCount!==2||
      newWorldGraph.linked.graphEdgeCount!==2||
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
-     newWorldGraph.portalRows<2||!newWorldGraph.panelInLandscape||
+     newWorldGraph.portalRows<2||!newWorldGraph.singleAreaEditor||
+     !newWorldGraph.panelInLandscape||
      !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
     throw Error('World Builder visual assembly or canonical links failed: '+
       JSON.stringify(newWorldGraph));
