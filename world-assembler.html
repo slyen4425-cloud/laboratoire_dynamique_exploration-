@@ -118,6 +118,12 @@
     <h2 id="selected-name">Zone principale</h2>
     <p id="selected-id" class="technical-id"></p>
     <p id="selected-host" class="help-note"></p>
+    <div class="area-neighbor-nav" aria-label="Navigation par passages réels">
+     <label class="field">Zone reliée par un passage
+      <select id="selected-neighbor-area" aria-label="Choisir une zone reliée"><option value="">Aucune zone reliée</option></select>
+     </label>
+     <button id="open-neighbor-area" class="secondary" type="button" disabled>↗ Ouvrir la zone</button>
+    </div>
     <div class="stat-row">
      <div><small>Dimensions</small><strong id="selected-size">—</strong></div>
      <div><small>Passages</small><strong id="selected-links">0</strong></div>
@@ -145,6 +151,16 @@
     <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
     <section class="area-contents-panel" aria-label="Contenu réel de la zone sélectionnée">
      <div class="section-head"><h3>Contenu de cette zone</h3><strong id="selected-content-count">0</strong></div>
+     <label class="field area-content-filter-field">Afficher
+      <select id="area-content-filter" aria-label="Filtrer les objets et instances de cette zone">
+       <option value="all">Tout le contenu</option>
+       <option value="building">Maisons et bâtiments</option>
+       <option value="arena">Arènes élémentaires</option>
+       <option value="interior">Intérieurs et salles</option>
+       <option value="dungeon">Donjons</option>
+       <option value="other">Autres objets et décors</option>
+      </select>
+     </label>
      <p class="help-note">Maisons, arènes et autres bâtiments proviennent de cette carte. Les intérieurs et donjons ci-dessous utilisent les passages existants.</p>
      <div id="selected-contents" class="area-contents-list" aria-live="polite"></div>
      <button id="place-area-object" class="accent block" type="button">＋ Placer maison / arène / décor sur la carte</button>

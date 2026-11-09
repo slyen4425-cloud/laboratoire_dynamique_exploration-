@@ -198,3 +198,19 @@ dialog.area-editor-dialog .inspector-bottom{margin-top:16px}
  dialog.area-editor-dialog{max-height:calc(100dvh - 12px)}
  .workspace{grid-template-rows:auto minmax(360px,60dvh)}
 }
+
+/* Area contents: optional view filters and Portal-derived navigation only. */
+dialog.area-editor-dialog .area-neighbor-nav{
+ display:flex;align-items:end;gap:10px;flex-wrap:wrap;
+ margin:10px 0 14px;padding:10px;background:#153641;
+ border:1px solid #456e75;border-radius:10px;
+}
+dialog.area-editor-dialog .area-neighbor-nav .field{flex:1 1 190px;min-width:0;margin:0}
+dialog.area-editor-dialog .area-neighbor-nav button{min-height:40px;flex:0 0 auto}
+dialog.area-editor-dialog .area-content-filter-field{margin:2px 0 7px}
+dialog.area-editor-dialog .area-content-filter-field select{width:100%;max-width:340px}
+dialog.area-editor-dialog .portal-row .portal-open-area{min-height:36px;padding:5px 9px;font-size:11px}
+@media(max-width:670px){
+ dialog.area-editor-dialog .area-neighbor-nav{gap:7px;padding:8px}
+ dialog.area-editor-dialog .area-neighbor-nav button{min-height:38px}
+}
