@@ -98,6 +98,10 @@ try{
  await send('Emulation.setDeviceMetricsOverride',
   {width:932,height:430,deviceScaleFactor:2,mobile:true});
  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+ // The initial CDP execution context may still be about:blank. Only import
+ // native site modules once the real same-origin page has loaded; retain
+ // the unchanged Portal traversal and persistence assertions.
+ await waitFor("(()=>location.pathname==='/sculpt-lab.html'&&document.readyState==='complete'&&document.baseURI.startsWith("+JSON.stringify(origin)+"))()",'same-origin native Explorer page');
 
  const fixture=await evaluate("(async()=>{\n const {createBlankWorldBuilderDraft,addWorldArea,connectWorldAreas,updateSpawn}\n  =await import('/src/builder/world-builder-draft.js');\n const {saveWorldAssemblerDraft}=await import('/src/builder/world-assembler-handoff.js');\n const {createNewExplorationPlay}=await import('/src/play/exploration-play-session.js');\n let world=createBlankWorldBuilderDraft({id:'native-linked-play',width:36*28,height:24*21});\n world=addWorldArea(world,{name:'Deuxième zone',kind:'exterior',width:36*28,height:24*21});\n const from=world.initialAreaId,to=world.areas[1].id;\n world=connectWorldAreas(world,{sourceAreaId:from,targetAreaId:to,returnPortal:true});\n const forward=world.portals.find(p=>p.sourceAreaId===from);\n const reverse=world.portals.find(p=>p.sourceAreaId===to);\n world=updateSpawn(world,from,world.initialSpawnId,{x:forward.trigger.x,y:forward.trigger.y});\n world=updateSpawn(world,to,forward.targetSpawnId,{x:reverse.trigger.x,y:reverse.trigger.y});\n saveWorldAssemblerDraft(localStorage,world);\n const sessionId='native-portal-'+crypto.randomUUID();\n const initial=createNewExplorationPlay(localStorage,world,{sessionId});\n return {sessionId,from,to,initial,portals:world.portals.length};\n})()");
  if(fixture.portals!==2||fixture.initial.currentAreaId!==fixture.from)
