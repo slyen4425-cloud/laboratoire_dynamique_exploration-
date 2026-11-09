@@ -70,6 +70,8 @@ jobs:
         run: node scripts/smoke-world-portal-scoped-play.mjs
       - name: Real Chromium Builder invalid-encounter navigation smoke
         run: node scripts/smoke-builder-encounter-validation.mjs
+      - name: Real Chromium World Assembler drag, save/reload and real Portals
+        run: node scripts/smoke-world-assembler-authoring-layout.mjs
       - name: Real Chromium interior floor material and brush smoke
         run: node scripts/smoke-interior-floor-brush.mjs
       - name: Real Chromium opt-in relief canyon Builder and SVG gate
