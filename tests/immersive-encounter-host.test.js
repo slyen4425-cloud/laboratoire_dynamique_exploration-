@@ -203,3 +203,43 @@ test('embedded Capture stays fullscreen owner through Combat completion; standal
   'standalone Tester preserves its native fullscreen behavior');
  tester.dispose();
 });
+
+test('the native embedded combat overlay reports only visibility to its exact Capture parent',()=>{
+ const h=fakeDom(),store=storage(),calls=[];
+ h.win.frameElement={id:'adventure-play-frame'};
+ h.win.parent={postMessage(payload,target){calls.push({payload,target});}};
+ const sessionId='adventure-session-1';
+ const host=createImmersiveEncounterHostV1({
+  windowRef:h.win,documentRef:h.doc,storage:store,sessionId,onCompleted:()=>true
+ });
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ assert.equal(host.open({url,snapshot}),true);
+ assert.deepEqual(calls,[{
+  payload:{schema:'gensrpg.exploration.combat.visibility.v1',
+   sessionId,encounterId:snapshot.encounterId,visible:true},
+  target:origin
+ }]);
+ assert.equal(host.open({url,snapshot}),false,'duplicate opens cannot repeat the signal');
+ assert.equal(calls.length,1);
+ assert.equal(host.close(),true,'explicitly cancelled battle restores Capture commands');
+ assert.deepEqual(calls[1],{
+  payload:{schema:'gensrpg.exploration.combat.visibility.v1',
+   sessionId,encounterId:snapshot.encounterId,visible:false},
+  target:origin
+ });
+ assert.equal(host.close(),false);
+ assert.equal(calls.length,2,'no signal on an already closed overlay');
+ host.dispose();
+ assert.equal(calls.length,2);
+});
+
+test('standalone editor combat never toggles Capture HUD',()=>{
+ const h=fakeDom(),calls=[],store=storage();
+ h.win.parent={postMessage(payload){calls.push(payload)}};
+ const host=createImmersiveEncounterHostV1({
+  windowRef:h.win,documentRef:h.doc,storage:store,onCompleted:()=>true
+ });
+ host.open({url:origin+'/combat-preview/examples/dom-demo/exploration-encounter.html',snapshot});
+ host.close();host.dispose();
+ assert.equal(calls.length,0);
+});
