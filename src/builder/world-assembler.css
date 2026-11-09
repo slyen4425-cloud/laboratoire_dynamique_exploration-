@@ -214,3 +214,54 @@ dialog.area-editor-dialog .portal-row .portal-open-area{min-height:36px;padding:
  dialog.area-editor-dialog .area-neighbor-nav{gap:7px;padding:8px}
  dialog.area-editor-dialog .area-neighbor-nav button{min-height:38px}
 }
+
+/* Compact landscape workspace: no duplicated controls or WorldDocument authority. */
+.world-file-actions,.world-canvas-tools{position:relative;flex:0 0 auto}
+.world-file-actions summary,.world-canvas-tools summary{list-style:none;cursor:pointer;user-select:none;
+ display:flex;align-items:center;justify-content:center;min-height:38px;
+ padding:7px 11px;border:1px solid #456473;border-radius:9px;background:#1b3442;
+ font-size:12px;font-weight:750;color:#e7f2f2;white-space:nowrap}
+.world-file-actions summary::-webkit-details-marker,.world-canvas-tools summary::-webkit-details-marker{display:none}
+.world-file-menu,.world-canvas-tools-menu{position:absolute;right:0;top:calc(100% + 6px);
+ z-index:12;display:grid;gap:6px;min-width:180px;max-width:min(290px,85vw);
+ padding:8px;background:#102c38;border:1px solid #537d84;border-radius:10px;
+ box-shadow:0 12px 28px #000b}
+.world-file-actions:not([open]) .world-file-menu,
+.world-canvas-tools:not([open]) .world-canvas-tools-menu{display:none}
+.world-file-menu>* ,.world-canvas-tools-menu>*{width:100%;white-space:normal;text-align:center}
+#toggle-world-structure{display:none}
+@media (orientation:landscape) and (max-height:700px){
+ .app-shell{min-height:0}
+ .app-header{height:48px;min-height:48px;padding:4px 9px;gap:8px}
+ .app-brand .eyebrow{display:none}
+ .app-header h1{font-size:14px;white-space:nowrap;line-height:1;margin:0}
+ .world-workspace-tabs{padding:2px;gap:2px}
+ .world-workspace-tabs button{min-height:34px;padding:5px 8px;font-size:11px}
+ .header-actions{gap:5px}
+ .header-actions .world-play-entry{min-height:34px;padding:5px 9px}
+ .world-file-actions summary{min-height:34px;padding:5px 8px;font-size:11px}
+ .save-state{display:none}
+ .workspace{position:relative;grid-template-columns:minmax(0,1fr)}
+ .left-rail{position:absolute;z-index:9;left:0;top:0;bottom:0;
+   width:min(300px,70vw);transform:translateX(-105%);
+   transition:transform .18s ease;box-shadow:12px 0 22px #0008}
+ .workspace.structure-open .left-rail{transform:translateX(0)}
+ #toggle-world-structure{display:block;min-height:34px;flex:0 0 auto;padding:5px 8px;font-size:11px}
+ #toggle-world-structure[aria-expanded=true]{border-color:#8ed8c6;background:#28504e}
+ .canvas-header{padding:5px 8px;gap:6px;min-height:44px;flex-wrap:nowrap}
+ .canvas-header>div:first-of-type{display:none}
+ .canvas-actions{flex-wrap:nowrap;gap:5px;margin-left:auto}
+ .canvas-actions button{min-height:34px;padding:5px 8px;font-size:11px}
+ .world-canvas-tools summary{min-height:34px;padding:5px 8px;font-size:11px}
+ .world-canvas-tools-menu button{min-height:36px}
+ .world-node{width:180px;min-height:87px;padding:9px;gap:3px}
+ .world-node strong{font-size:12px}
+ .world-node .node-type{font-size:17px}
+ .canvas-footer{padding:5px 9px;gap:9px}
+ .app-toast{padding:4px 9px;min-height:23px}
+}
+@media (orientation:landscape) and (max-height:700px) and (max-width:650px){
+ .app-header h1{display:none}
+ .world-workspace-tabs button{font-size:10px;padding:5px}
+ .world-node{width:160px}
+}

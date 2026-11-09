@@ -1,3 +1,11 @@
+## 2026-11-09 — World Builder : lot 1 compacité paysage (en validation)
+- START `main@73bf5e2d7538e785f35856ed106f87129ce09601` ; checkpoint `checkpoint/exploration-mobile-compact-start-2026-11-09` ; WORK `work/exploration-mobile-compact-2026-11-09`.
+- Objectif : priorité à la carte du monde sur smartphone paysage. Structure accessible par un volet réversible, import/export dans un menu Fichiers, actions secondaires du graphe dans un menu Outils, titre et hauteurs réduits. Aucun contrôle supprimé ; aucun modèle de monde, carte, asset, Portal ou sauvegarde modifié.
+- Le raccord « Événements → Sculpt 2,5D » est un **second lot séparé**, non réalisé ici. Le lien existant vers le Builder historique reste actif jusqu'à une migration réellement testée ; pas de nouvel EventStore ni de perte de fonctions.
+- Gate : CI Node, Chromium réel avec viewport paysage, vérification des menus et de l'export/import, préflight Pages, checkpoint GREEN et main exact. Aucun déploiement avant GREEN. Android physique à valider séparément.
+
+---
+
 ## 2026-11-09 — World Builder : navigation rapide des contenus et passages (lot isolé, CANDIDAT)
 - **START exact** : `main@ac563b2072b7518ff929db78d5f6fcdeb1493ba7` ; checkpoint START `checkpoint/exploration-area-content-navigation-start-2026-11-09` ; branche WORK `work/exploration-area-content-navigation-2026-11-09`.
 - **Motif** : PR #402 et #403 ont déjà livré déplacement graphique et unique fenêtre de zone. Complément strictement ergonomique : filtrer les objets affichés (bâtiments, arènes, salles, donjons, décors), ouvrir les zones reliées par les vrais Portal sans revenir au tableau, ouvrir une destination depuis la liste des passages, confirmation avant suppression manuelle.

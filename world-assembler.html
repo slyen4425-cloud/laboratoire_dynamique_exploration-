@@ -5,7 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
  <meta name="theme-color" content="#0b1822">
  <title>GenSrpG — Constructeur de mondes</title>
- <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-area-dialog-20261109-v1">
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-compact-mobile-20261109-v1">
 </head>
 <body>
  <div class="app-shell">
@@ -23,14 +23,19 @@
    <div class="header-actions">
     <a id="world-play-open" class="accent world-play-entry" href="./play.html" title="Jouer dans le monde enregistré">▶ Jouer</a>
     <span id="save-state" class="save-state" role="status">Monde local</span>
-    <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
-    <label class="import-btn" for="import-world">↑ Importer JSON
-     <input type="file" id="import-world" accept=".json,.world.json,application/json">
-    </label>
+    <details class="world-file-actions">
+     <summary aria-label="Ouvrir les options d'import et export">☰ Fichiers</summary>
+     <div class="world-file-menu">
+      <button id="export-world" class="accent" type="button">↓ Exporter le monde</button>
+      <label class="import-btn" for="import-world">↑ Importer JSON
+       <input type="file" id="import-world" accept=".json,.world.json,application/json">
+      </label>
+     </div>
+    </details>
    </div>
   </header>
   <div class="workspace">
-   <aside class="left-rail" aria-label="Bibliothèque de zones">
+   <aside id="world-structure-panel" class="left-rail" aria-label="Bibliothèque de zones">
     <div class="panel-heading"><span>STRUCTURE</span><strong id="world-area-count">1 zone</strong></div>
     <label class="field">Nom du monde
       <input id="world-name" type="text" maxlength="68" placeholder="Mon monde" autocomplete="off">
@@ -80,6 +85,7 @@
    </aside>
    <main class="center-panel" aria-label="Graphe de navigation du monde">
     <div class="canvas-header">
+     <button id="toggle-world-structure" type="button" aria-controls="world-structure-panel" aria-expanded="false" title="Afficher ou masquer la structure du monde">☰ Zones</button>
      <div><span class="eyebrow">PLAN DU MONDE</span>
       <h2>Carte des destinations</h2>
       <p>Déplace les zones sur le plan au doigt ou à la souris. La position est sauvegardée avec le monde, sans modifier les passages.</p>
@@ -87,10 +93,12 @@
      <div class="canvas-actions">
       <button id="open-selected-area" class="accent" type="button">✎ Modifier la zone</button>
       <button id="center-world" type="button">⌖ Recentrer</button>
+      <details class="world-canvas-tools"><summary>⚙ Outils</summary><div class="world-canvas-tools-menu">
       <button id="toggle-graph-links" type="button" aria-pressed="true">⇄ Masquer les flèches</button>
       <button id="reset-graph-layout" type="button" title="Revenir au placement automatique, sans toucher aux cartes ni passages">↺ Organisation auto</button>
       <button id="world-playable-route" type="button" title="Relier deux régions 2,5D sans modifier les anciennes zones">🔗 Relier zones jouables</button>
       <button id="reset-world" type="button">+ Nouveau monde</button>
+      </div></details>
      </div>
     </div>
     <div id="graph-scroll" class="graph-scroll" tabindex="0" aria-label="Faire défiler la carte des zones">
