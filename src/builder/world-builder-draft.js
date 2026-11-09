@@ -302,6 +302,36 @@ function nextWorldAreaId(areas, name) {
   return base+'-'+i;
 }
 
+/**
+ * Move an existing WorldArea icon on the authoring plan.
+ * It never changes game coordinates, Area ordering or Portals.
+ */
+export function setWorldAssemblerNodePosition(draft, areaId, {x,y} = {}) {
+  if (!Array.isArray(draft?.areas) || !draft.areas.some(a => a.id === areaId))
+    throw Error('WorldArea introuvable pour la disposition du plan');
+  if (typeof x !== 'number' || typeof y !== 'number' ||
+      !Number.isFinite(x) || !Number.isFinite(y) ||
+      x < 16 || y < 16 || x > 12000 || y > 12000)
+    throw Error('Position de zone invalide');
+  return createWorldBuilderDraft({
+    ...draft,
+    authoringLayout: {
+      positions: {
+        ...(draft.authoringLayout?.positions ?? {}),
+        [areaId]: {x: Math.round(x), y: Math.round(y)}
+      }
+    }
+  });
+}
+
+/** Return to the automatic schematic without touching any game data. */
+export function resetWorldAssemblerNodePositions(draft) {
+  if (!Array.isArray(draft?.areas)) throw Error('WorldDocument requis');
+  const next = {...draft};
+  delete next.authoringLayout;
+  return createWorldBuilderDraft(next);
+}
+
 export function addWorldArea(draft,{
   name='Nouvelle zone',kind='exterior',width,height
 }={}) {

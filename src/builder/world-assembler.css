@@ -103,3 +103,23 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 #world-encounters-initialize{font-size:11px;min-height:40px;background:#5d4632;
  border-color:#b38c61;color:#ffe6c8}
 #world-encounters-initialize[hidden]{display:none}
+
+
+/* World Assembler authoring-only drag: touch moves the graph icon, never the 2.5D map. */
+.world-node{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.world-node[data-dragging=true]{cursor:grabbing;z-index:5;box-shadow:0 12px 28px #000b,0 0 0 3px #71cbb7}
+#toggle-graph-links[aria-pressed=false]{border-color:#4c6e6b;color:#a9c7c3;background:#152f35}
+.area-contents-panel{display:grid;gap:8px;margin:15px 0;padding:12px 9px;border-radius:12px;
+ background:#142d37;border:1px solid #456977}
+.area-contents-panel .section-head{margin:0}
+.area-contents-panel .section-head strong{font-size:11px;color:#a9dfcd}
+.area-contents-panel .help-note{margin:0}
+.area-contents-list{display:grid;gap:6px;max-height:220px;overflow:auto}
+.area-content-entry{display:flex;align-items:center;gap:7px;min-width:0;
+ background:#1a3943;border:1px solid #365d6b;border-radius:9px;padding:7px}
+.area-content-entry .content-icon{font-size:18px;flex:0 0 24px;text-align:center}
+.area-content-entry .content-text{flex:1;min-width:0;font-size:11px;line-height:1.35}
+.area-content-entry .content-text strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.area-content-entry .content-text small{display:block;color:#97bbc0;overflow-wrap:anywhere}
+.area-content-entry button{padding:5px 8px;min-height:32px;font-size:10px;flex:0 0 auto}
+.area-contents-panel>button{font-size:11px;padding:8px;min-height:38px}

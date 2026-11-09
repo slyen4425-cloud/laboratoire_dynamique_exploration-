@@ -2,6 +2,7 @@ import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
   initializeWorldPresetEncounters,setAreaEncounterLevelRange,
+  setWorldAssemblerNodePosition,resetWorldAssemblerNodePositions,
   serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {
@@ -15,6 +16,7 @@ import {createExplorationWorldDocumentLibraryV1} from './exploration-world-docum
 import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
+import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
@@ -52,17 +54,23 @@ function graphLayout(doc){
     const row=rows.get(column)??0;rows.set(column,row+1);
     positions.set(area.id,{x:54+column*244,y:70+row*146});
   }
+  // Optional authoring-only positions travel with this SAME WorldDocument.
+  // The Portal graph, movement and map coordinates are never changed.
+  for(const area of doc.areas){
+    const authored=doc.authoringLayout?.positions?.[area.id];
+    if(authored)positions.set(area.id,{x:authored.x,y:authored.y});
+  }
   const maxX=Math.max(700,...[...positions.values()].map(p=>p.x+240));
   const maxY=Math.max(420,...[...positions.values()].map(p=>p.y+145));
   return {positions,width:maxX,height:maxY};
 }
-function nodeButton(area,position,doc,selectedId,onClick){
+function nodeButton(area,position,doc,selectedId,onClick,onPointerDown,onKeyDown){
   const el=document.createElement('button');
   el.type='button';el.className='world-node';
   if(area.id===selectedId)el.classList.add('selected');
   el.dataset.areaId=area.id;el.dataset.kind=area.kind;
   el.style.left=position.x+'px';el.style.top=position.y+'px';
-  el.setAttribute('aria-label',pretty(area.id)+', '+kindName(area));
+  el.setAttribute('aria-label',areaLabel(area)+', '+kindName(area)+'. Déplacer au doigt, à la souris ou avec Alt + flèches.');
   const top=document.createElement('span');top.className='node-top';
   const ico=document.createElement('span');ico.className='node-type';
   ico.textContent=kindIcon(area);top.append(ico);
@@ -76,7 +84,12 @@ function nodeButton(area,position,doc,selectedId,onClick){
   const n=doc.portals.filter(p=>p.sourceAreaId===area.id).length;
   count.textContent=n+' sortie'+(n>1?'s':'')+' · '+Math.round(area.width)+' × '+Math.round(area.height);
   el.append(top,label,type,count);
-  el.addEventListener('click',onClick);
+  el.addEventListener('click',()=>{
+    if(el.dataset.justDragged==='true'){delete el.dataset.justDragged;return;}
+    onClick();
+  });
+  el.addEventListener('pointerdown',onPointerDown);
+  el.addEventListener('keydown',onKeyDown);
   return el;
 }
 function lineForPortal(portal,positions){
@@ -106,6 +119,8 @@ function installWorldAssembler(){
     ??createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21});
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
+  let linksShown=true;
+  let requestedInteriorHostId=null;
   const library=createExplorationWorldDocumentLibraryV1({storage:window.localStorage});
   function refreshWorldLibrary(){
     const picker=byId('world-library-select');
@@ -193,6 +208,7 @@ function installWorldAssembler(){
   }
   function select(id){
     if(!draft.areas.some(a=>a.id===id))return;
+    if(id!==selectedId)requestedInteriorHostId=null;
     selectedId=id;render();
   }
   function apply(command,success){
@@ -226,6 +242,60 @@ function installWorldAssembler(){
     }
     byId('world-area-count').textContent=draft.areas.length+' zone'+(draft.areas.length>1?'s':'');
   }
+  function startGraphNodeDrag(event,area,node,origin){
+    if(event.pointerType==='mouse'&&event.button!==0)return;
+    if(typeof node.setPointerCapture!=='function')return;
+    const pointerId=event.pointerId,beginX=event.clientX,beginY=event.clientY;
+    let moved=false,current=origin;
+    const shift=next=>{
+      current={
+        x:Math.max(16,Math.min(12000,Math.round(origin.x+next.clientX-beginX))),
+        y:Math.max(16,Math.min(12000,Math.round(origin.y+next.clientY-beginY)))
+      };
+      node.style.left=current.x+'px';node.style.top=current.y+'px';
+    };
+    const onMove=next=>{
+      if(next.pointerId!==pointerId)return;
+      if(!moved&&Math.hypot(next.clientX-beginX,next.clientY-beginY)<7)return;
+      moved=true;next.preventDefault();node.dataset.dragging='true';shift(next);
+    };
+    const clean=()=>{
+      node.removeEventListener('pointermove',onMove);
+      node.removeEventListener('pointerup',onUp);
+      node.removeEventListener('pointercancel',onCancel);
+      if(node.hasPointerCapture?.(pointerId))node.releasePointerCapture(pointerId);
+    };
+    const onUp=next=>{
+      if(next.pointerId!==pointerId)return;
+      clean();
+      delete node.dataset.dragging;
+      if(!moved)return;
+      node.dataset.justDragged='true';
+      selectedId=area.id;
+      apply(()=>setWorldAssemblerNodePosition(draft,area.id,current),
+        'Position de '+areaLabel(area)+' enregistrée dans le monde · passages inchangés.');
+    };
+    const onCancel=next=>{
+      if(next.pointerId!==pointerId)return;
+      clean();renderGraph();
+    };
+    node.addEventListener('pointermove',onMove);
+    node.addEventListener('pointerup',onUp);
+    node.addEventListener('pointercancel',onCancel);
+    node.setPointerCapture(pointerId);
+  }
+  function moveGraphNodeByKeyboard(event,area,origin){
+    if(!event.altKey)return;
+    const shift={ArrowLeft:[-24,0],ArrowRight:[24,0],
+      ArrowUp:[0,-24],ArrowDown:[0,24]}[event.key];
+    if(!shift)return;
+    event.preventDefault();
+    selectedId=area.id;
+    apply(()=>setWorldAssemblerNodePosition(draft,area.id,{
+      x:Math.max(16,Math.min(12000,origin.x+shift[0])),
+      y:Math.max(16,Math.min(12000,origin.y+shift[1]))
+    }), 'Disposition de '+areaLabel(area)+' enregistrée.');
+  }
   function renderGraph(){
     const layout=graphLayout(draft);
     const stage=byId('graph-stage'),svg=byId('graph-links'),nodes=byId('graph-nodes');
@@ -240,17 +310,70 @@ function installWorldAssembler(){
     const arrow=document.createElementNS(svgNS,'path');
     arrow.setAttribute('d','M0 0 L6 3 L0 6 Z');arrow.setAttribute('fill','#77bdb0');
     marker.append(arrow);defs.append(marker);svg.append(defs);
-    for(const portal of draft.portals){
+    if(linksShown)for(const portal of draft.portals){
       const line=lineForPortal(portal,layout.positions);
       if(line)svg.append(line);
     }
     nodes.replaceChildren();
     for(const area of draft.areas){
       const pos=layout.positions.get(area.id);
-      if(pos)nodes.append(nodeButton(area,pos,draft,selectedId,()=>select(area.id)));
+      if(pos)nodes.append(nodeButton(area,pos,draft,selectedId,
+        ()=>select(area.id),
+        event=>startGraphNodeDrag(event,area,event.currentTarget,pos),
+        event=>moveGraphNodeByKeyboard(event,area,pos)));
     }
     byId('world-portal-count').textContent=draft.portals.length+
       ' passage'+(draft.portals.length>1?'s':'');
+  }
+  function renderAreaContents(area){
+    const panel=byId('selected-contents');
+    panel.replaceChildren();
+    const placed=area.objects??[];
+    const buildings=placed.map(item=>({
+      placement:item,definition:objectDefinitionCatalogV1.get(item.objectDefinitionId)
+    })).filter(item=>item.definition?.kind==='building');
+    const interiors=new Map();
+    for(const portal of draft.portals){
+      if(portal.sourceAreaId!==area.id)continue;
+      const target=draft.areas.find(a=>a.id===portal.targetAreaId);
+      if(target?.kind==='interior'&&target.id!==area.id)interiors.set(target.id,target);
+    }
+    const addRow=(symbol,title,subtitle,onOpen)=>{
+      const row=document.createElement('div');row.className='area-content-entry';
+      const icon=document.createElement('span');icon.className='content-icon';icon.textContent=symbol;
+      const info=document.createElement('span');info.className='content-text';
+      const name=document.createElement('strong');name.textContent=title;
+      const note=document.createElement('small');note.textContent=subtitle;
+      info.append(name,note);row.append(icon,info);
+      if(onOpen){
+        const button=document.createElement('button');button.type='button';
+        button.textContent='Ouvrir';button.addEventListener('click',onOpen);
+        row.append(button);
+      }
+      panel.append(row);
+    };
+    for(const {placement,definition} of buildings){
+      const arena=definition.library?.folderId?.includes('/arenas/');
+      addRow(arena?'🏟':'🏠',definition.label??placement.objectDefinitionId,
+        'Objet placé · '+placement.id,
+        ()=>openAreaEditor(mapPanelUrl));
+    }
+    for(const inside of interiors.values()){
+      addRow(inside.siteKind==='dungeon'?'🗝':'🚪',
+        areaLabel(inside),kindName(inside)+' · Portal existant',
+        ()=>select(inside.id));
+    }
+    const other=placed.length-buildings.length;
+    if(other>0)addRow('🌿',other+' autres objets',
+      'Décors, obstacles et éléments de la carte · ouvre Carte 2,5D',
+      ()=>openAreaEditor(mapPanelUrl));
+    if(!placed.length&&!interiors.size){
+      const empty=document.createElement('p');empty.className='empty-links';
+      empty.textContent='Aucun bâtiment ou intérieur dans cette zone. Place des objets depuis la carte 2,5D.';
+      panel.append(empty);
+    }
+    byId('selected-content-count').textContent=
+      (placed.length+interiors.size)+' élément'+(placed.length+interiors.size>1?'s':'');
   }
   function renderInspector(){
     const area=getSelected();if(!area)return;
@@ -267,6 +390,7 @@ function installWorldAssembler(){
     byId('selected-icon').textContent=kindIcon(area);
     byId('area-kind-badge').textContent=area.kind==='interior'?'INSTANCE':'RÉGION';
     byId('selected-size').textContent=Math.round(area.width)+' × '+Math.round(area.height);
+    renderAreaContents(area);
     byId('area-encounter-min-level').value=String(area.encounters?.minLevel??1);
     byId('area-encounter-max-level').value=String(area.encounters?.maxLevel??5);
     byId('area-encounter-levels-status').textContent=
@@ -410,22 +534,24 @@ function installWorldAssembler(){
     if(!name){status('Entre un nom pour la nouvelle zone.',true);return;}
     const before=new Set(draft.areas.map(a=>a.id));
     const kind=byId('area-kind').value;
-    const hostId=selectedId;
+    const hostId=requestedInteriorHostId??selectedId;
+    const shouldLinkInterior=kind==='interior'&&requestedInteriorHostId===hostId;
     const ok=apply(()=>{
       let next=addWorldArea(draft,{name,kind,
         ...worldAreaSizeFromTiles({width:byId('area-width').value,
           height:byId('area-height').value})});
       const added=next.areas.find(a=>!before.has(a.id));
-      if(kind==='dungeon'&&added){
+      if((kind==='dungeon'||shouldLinkInterior)&&added){
         next=connectWorldAreas(next,{
           sourceAreaId:hostId,targetAreaId:added.id,returnPortal:true
         });
       }
       return next;
-    },kind==='dungeon'
-        ?'Donjon créé dans cette Area · Portal aller/retour ajouté.'
+    },(kind==='dungeon'||shouldLinkInterior)
+        ?'Instance créée dans cette Area · Portals aller/retour ajoutés.'
         :'Nouvelle WorldArea ajoutée au monde.');
-    if(ok){selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
+    if(ok){requestedInteriorHostId=null;
+      selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
       byId('area-add-form').reset();areaSizeTouched=false;render();}
   });
   on(byId('area-kind'),'change',()=>{
@@ -494,6 +620,29 @@ function installWorldAssembler(){
     }catch(error){status(error.message,true);}
   }
   const mapPanelUrl='./sculpt-lab.html?worldAssembler=1&portalUi=compact1&marker=visible2&maps=presets3&panels=world1';
+  on(byId('place-area-object'),'click',()=>openAreaEditor(mapPanelUrl));
+  on(byId('create-area-instance'),'click',()=>{
+    requestedInteriorHostId=selectedId;
+    byId('area-kind').value='interior';
+    byId('area-kind').dispatchEvent(new Event('change'));
+    byId('area-name').value='';
+    byId('area-name').focus();
+    byId('area-add-form').scrollIntoView({behavior:'smooth',block:'center'});
+    status('Intérieur de '+areaLabel(getSelected())+
+      ' : donne un nom et valide. L’aller-retour sera créé dans le WorldDocument.');
+  });
+  on(byId('toggle-graph-links'),'click',()=>{
+    linksShown=!linksShown;
+    byId('toggle-graph-links').setAttribute('aria-pressed',String(linksShown));
+    byId('toggle-graph-links').textContent=linksShown?'⇄ Masquer les flèches':'⇄ Afficher les passages';
+    renderGraph();
+    status(linksShown?'Passages visibles sur le plan.':'Flèches masquées sur le plan ; vrais Portals conservés.');
+  });
+  on(byId('reset-graph-layout'),'click',()=>{
+    if(!draft.authoringLayout)return status('Les zones utilisent déjà la disposition automatique.');
+    if(!window.confirm('Réorganiser automatiquement les icônes ? Les cartes, bâtiments et passages resteront inchangés.'))return;
+    apply(()=>resetWorldAssemblerNodePositions(draft),'Disposition automatique rétablie · monde inchangé.');
+  });
   on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('edit-area'),'click',()=>{
