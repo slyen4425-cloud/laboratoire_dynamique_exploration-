@@ -5,7 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
  <meta name="theme-color" content="#0b1822">
  <title>GenSrpG — Constructeur de mondes</title>
- <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-zone-layout-content-20261109-v1">
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-area-dialog-20261109-v1">
 </head>
 <body>
  <div class="app-shell">
@@ -53,6 +53,115 @@
     </section>
     <div class="section-head"><h2>Zones et instances</h2></div>
     <div id="area-list" class="area-list" aria-label="Sélectionner une zone"></div>
+    <button id="new-world-area" class="accent block world-new-area-entry" type="button">＋ Nouvelle zone / instance</button>
+
+    <details class="world-preset-details">
+     <summary>🗺 Cartes présets (ouvrir pour créer)</summary>
+     <section class="add-panel" id="world-map-preset-library" aria-label="Bibliothèque de cartes présets">
+     <strong>🗺 Mes cartes présets</strong>
+     <label class="field">Carte enregistrée
+      <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
+     </label>
+     <label class="field">Nom de la nouvelle zone
+      <input id="world-map-preset-name" type="text" maxlength="64" placeholder="Ex. Clairière du village">
+     </label>
+     <label class="field">Type de la nouvelle zone
+      <select id="world-map-preset-kind">
+       <option value="exterior">🌲 Région extérieure</option>
+       <option value="interior">🏠 Instance / intérieur</option>
+       <option value="dungeon">🗝 Donjon dans la zone sélectionnée</option>
+      </select>
+     </label>
+     <button id="world-map-preset-create" class="accent block" type="button" disabled>+ Créer une zone depuis ce préset</button>
+     <p id="world-map-preset-info" class="help-note">Les nouvelles cartes seront reliées à la zone sélectionnée si elle est compatible avec le mode 2,5D. Sinon, tu pourras choisir cette carte comme nouveau départ sans modifier l’ancienne zone.</p>
+    </section>
+    </details>
+    <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
+   </aside>
+   <main class="center-panel" aria-label="Graphe de navigation du monde">
+    <div class="canvas-header">
+     <div><span class="eyebrow">PLAN DU MONDE</span>
+      <h2>Carte des destinations</h2>
+      <p>Déplace les zones sur le plan au doigt ou à la souris. La position est sauvegardée avec le monde, sans modifier les passages.</p>
+     </div>
+     <div class="canvas-actions">
+      <button id="open-selected-area" class="accent" type="button">✎ Modifier la zone</button>
+      <button id="center-world" type="button">⌖ Recentrer</button>
+      <button id="toggle-graph-links" type="button" aria-pressed="true">⇄ Masquer les flèches</button>
+      <button id="reset-graph-layout" type="button" title="Revenir au placement automatique, sans toucher aux cartes ni passages">↺ Organisation auto</button>
+      <button id="world-playable-route" type="button" title="Relier deux régions 2,5D sans modifier les anciennes zones">🔗 Relier zones jouables</button>
+      <button id="reset-world" type="button">+ Nouveau monde</button>
+     </div>
+    </div>
+    <div id="graph-scroll" class="graph-scroll" tabindex="0" aria-label="Faire défiler la carte des zones">
+     <div id="graph-stage" class="graph-stage">
+      <svg id="graph-links" class="graph-links" aria-label="Liaisons de passages" role="img"></svg>
+      <div id="graph-nodes" class="graph-nodes"></div>
+     </div>
+    </div>
+    <div class="canvas-footer">
+     <span><i class="legend-dot start"></i> Point de départ</span>
+     <span><i class="legend-dot region"></i> Région</span>
+     <span><i class="legend-dot instance"></i> Instance</span>
+     <span id="world-portal-count" class="footer-count">0 passage</span>
+    </div>
+   </main>
+
+  </div>
+  <dialog id="area-details-dialog" class="dialog area-editor-dialog inspector" aria-labelledby="selected-name">
+
+    <div class="area-editor-toolbar"><strong>✎ MODIFIER LA ZONE <span id="area-kind-badge">ZONE</span></strong>
+      <button id="close-area-editor" type="button" aria-label="Fermer les réglages de zone">✕ Fermer</button>
+     </div>
+     <output id="area-editor-feedback" class="area-editor-feedback" aria-live="polite" role="status"></output>
+    <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
+    <h2 id="selected-name">Zone principale</h2>
+    <p id="selected-id" class="technical-id"></p>
+    <p id="selected-host" class="help-note"></p>
+    <div class="stat-row">
+     <div><small>Dimensions</small><strong id="selected-size">—</strong></div>
+     <div><small>Passages</small><strong id="selected-links">0</strong></div>
+    </div>
+    <details class="area-editor-group" open>
+     <summary>🐾 Niveaux des créatures</summary>
+    <form id="world-area-encounter-levels" class="add-panel" aria-label="Niveaux des rencontres dans cette zone">
+     <strong>🐾 Rencontres sauvages dans cette zone</strong>
+     <p class="help-note">Le niveau des créatures rencontrées est tiré au hasard entre ces deux bornes. La chance qu'un combat se déclenche reste réglée séparément par famille de terrain.</p>
+     <div class="world-area-size-fields">
+      <label class="field">Niveau minimum
+       <input id="area-encounter-min-level" type="number" min="1" max="9999" step="1" value="1" required>
+      </label>
+      <label class="field">Niveau maximum
+       <input id="area-encounter-max-level" type="number" min="1" max="9999" step="1" value="5" required>
+      </label>
+     </div>
+     <button id="save-area-encounter-levels" class="accent block" type="submit">Enregistrer les niveaux de la zone</button>
+     <output id="area-encounter-levels-status" role="status" aria-live="polite"></output>
+    </form>
+     <p class="help-note terrain-chance-owner">Les chances de rencontre restent définies <strong>par texture de terrain</strong> dans l’éditeur : route sûre à 0 %, herbe et hautes herbes configurables indépendamment. Ces niveaux ne modifient pas les probabilités.</p>
+    </details>
+    <button id="edit-sculpt-area" class="accent block" type="button">🗺 Modifier cette carte (panneau 2,5D)</button>
+    <button id="edit-area" class="block secondary" type="button">🌿 Textures et chances de rencontre (éditeur 2D)</button>
+    <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
+    <section class="area-contents-panel" aria-label="Contenu réel de la zone sélectionnée">
+     <div class="section-head"><h3>Contenu de cette zone</h3><strong id="selected-content-count">0</strong></div>
+     <p class="help-note">Maisons, arènes et autres bâtiments proviennent de cette carte. Les intérieurs et donjons ci-dessous utilisent les passages existants.</p>
+     <div id="selected-contents" class="area-contents-list" aria-live="polite"></div>
+     <button id="place-area-object" class="accent block" type="button">＋ Placer maison / arène / décor sur la carte</button>
+     <button id="create-area-instance" class="block secondary" type="button">＋ Ajouter un intérieur / donjon lié</button>
+    </section>
+    <section class="area-editor-group area-events-panel" aria-label="Événements enregistrés dans cette zone">
+      <div class="section-head"><h3>🎬 Événements liés à cette zone</h3><strong id="selected-event-count">0</strong></div>
+      <div id="selected-events" class="area-contents-list" aria-live="polite"></div>
+      <p class="help-note">Les déclencheurs, messages et interactions restent modifiés dans l'éditeur détaillé officiel de cette même WorldArea.</p>
+      <button id="edit-area-events" type="button" class="block secondary">✎ Modifier les événements (éditeur existant)</button>
+     </section>
+     <section class="area-editor-group" aria-label="Cartes de combat">
+      <div class="section-head"><h3>🏟 Cartes de combat</h3></div>
+      <p class="help-note">Les arènes 2,5D placées sur cette carte apparaissent dans « Contenu de cette zone ». Le choix d’un fond de combat par zone ou bâtiment sera proposé après raccord au catalogue officiel du Labo Combat : aucun choix non fonctionnel ni second catalogue n’est créé ici.</p>
+     </section>
+    <details id="area-creation-details" class="area-editor-group area-create-details">
+     <summary>＋ Ajouter une destination ou un intérieur lié</summary>
     <form id="area-add-form" class="add-panel">
      <strong>Nouvelle destination</strong>
      <label class="field">Nom de la zone
@@ -76,87 +185,7 @@
      <p id="dungeon-host-info" class="help-note" hidden>Le donjon sera placé dans la zone actuellement sélectionnée. Un Portal aller/retour sera créé automatiquement ; sa position se règle dans l'éditeur 2,5D.</p>
      <button class="accent block" type="submit">+ Ajouter au monde</button>
     </form>
-    <section class="add-panel" id="world-map-preset-library" aria-label="Bibliothèque de cartes présets">
-     <strong>🗺 Mes cartes présets</strong>
-     <label class="field">Carte enregistrée
-      <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
-     </label>
-     <label class="field">Nom de la nouvelle zone
-      <input id="world-map-preset-name" type="text" maxlength="64" placeholder="Ex. Clairière du village">
-     </label>
-     <label class="field">Type de la nouvelle zone
-      <select id="world-map-preset-kind">
-       <option value="exterior">🌲 Région extérieure</option>
-       <option value="interior">🏠 Instance / intérieur</option>
-       <option value="dungeon">🗝 Donjon dans la zone sélectionnée</option>
-      </select>
-     </label>
-     <button id="world-map-preset-create" class="accent block" type="button" disabled>+ Créer une zone depuis ce préset</button>
-     <p id="world-map-preset-info" class="help-note">Les nouvelles cartes seront reliées à la zone sélectionnée si elle est compatible avec le mode 2,5D. Sinon, tu pourras choisir cette carte comme nouveau départ sans modifier l’ancienne zone.</p>
-    </section>
-    <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
-   </aside>
-   <main class="center-panel" aria-label="Graphe de navigation du monde">
-    <div class="canvas-header">
-     <div><span class="eyebrow">PLAN DU MONDE</span>
-      <h2>Carte des destinations</h2>
-      <p>Déplace les zones sur le plan au doigt ou à la souris. La position est sauvegardée avec le monde, sans modifier les passages.</p>
-     </div>
-     <div class="canvas-actions">
-      <button id="center-world" type="button">⌖ Recentrer</button>
-      <button id="toggle-graph-links" type="button" aria-pressed="true">⇄ Masquer les flèches</button>
-      <button id="reset-graph-layout" type="button" title="Revenir au placement automatique, sans toucher aux cartes ni passages">↺ Organisation auto</button>
-      <button id="world-playable-route" type="button" title="Relier deux régions 2,5D sans modifier les anciennes zones">🔗 Relier zones jouables</button>
-      <button id="reset-world" type="button">+ Nouveau monde</button>
-     </div>
-    </div>
-    <div id="graph-scroll" class="graph-scroll" tabindex="0" aria-label="Faire défiler la carte des zones">
-     <div id="graph-stage" class="graph-stage">
-      <svg id="graph-links" class="graph-links" aria-label="Liaisons de passages" role="img"></svg>
-      <div id="graph-nodes" class="graph-nodes"></div>
-     </div>
-    </div>
-    <div class="canvas-footer">
-     <span><i class="legend-dot start"></i> Point de départ</span>
-     <span><i class="legend-dot region"></i> Région</span>
-     <span><i class="legend-dot instance"></i> Instance</span>
-     <span id="world-portal-count" class="footer-count">0 passage</span>
-    </div>
-   </main>
-   <aside class="inspector" aria-label="Détails de la zone sélectionnée">
-    <div class="panel-heading"><span>INSPECTEUR</span><span id="area-kind-badge">ZONE</span></div>
-    <div class="selected-icon" id="selected-icon" aria-hidden="true">🌲</div>
-    <h2 id="selected-name">Zone principale</h2>
-    <p id="selected-id" class="technical-id"></p>
-    <p id="selected-host" class="help-note"></p>
-    <div class="stat-row">
-     <div><small>Dimensions</small><strong id="selected-size">—</strong></div>
-     <div><small>Passages</small><strong id="selected-links">0</strong></div>
-    </div>
-    <form id="world-area-encounter-levels" class="add-panel" aria-label="Niveaux des rencontres dans cette zone">
-     <strong>🐾 Rencontres sauvages dans cette zone</strong>
-     <p class="help-note">Le niveau des créatures rencontrées est tiré au hasard entre ces deux bornes. La chance qu'un combat se déclenche reste réglée séparément par famille de terrain.</p>
-     <div class="world-area-size-fields">
-      <label class="field">Niveau minimum
-       <input id="area-encounter-min-level" type="number" min="1" max="9999" step="1" value="1" required>
-      </label>
-      <label class="field">Niveau maximum
-       <input id="area-encounter-max-level" type="number" min="1" max="9999" step="1" value="5" required>
-      </label>
-     </div>
-     <button id="save-area-encounter-levels" class="accent block" type="submit">Enregistrer les niveaux de la zone</button>
-     <output id="area-encounter-levels-status" role="status" aria-live="polite"></output>
-    </form>
-    <button id="edit-sculpt-area" class="accent block" type="button">🗺 Modifier cette carte (panneau 2,5D)</button>
-    <button id="edit-area" class="block secondary" type="button">✎ Éditeur détaillé 2D</button>
-    <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
-    <section class="area-contents-panel" aria-label="Contenu réel de la zone sélectionnée">
-     <div class="section-head"><h3>Contenu de cette zone</h3><strong id="selected-content-count">0</strong></div>
-     <p class="help-note">Maisons, arènes et autres bâtiments proviennent de cette carte. Les intérieurs et donjons ci-dessous utilisent les passages existants.</p>
-     <div id="selected-contents" class="area-contents-list" aria-live="polite"></div>
-     <button id="place-area-object" class="accent block" type="button">＋ Placer maison / arène / décor sur la carte</button>
-     <button id="create-area-instance" class="block secondary" type="button">＋ Ajouter un intérieur / donjon lié</button>
-    </section>
+    </details>
     <div class="section-head"><h3>Relier des zones</h3></div>
     <form id="connect-form" class="link-form">
      <label class="field">Depuis
@@ -175,8 +204,8 @@
      <button id="remove-area" class="danger block" type="button">Supprimer cette zone</button>
      <p class="help-note">Un départ, une zone liée ou une zone référencée par un événement ne peut pas être supprimé.</p>
     </div>
-   </aside>
-  </div>
+
+   </dialog>
   <div class="app-toast" id="status-toast" role="status" aria-live="polite">Prêt pour l’assemblage.</div>
  </div>
  <dialog id="reset-dialog" class="dialog">
@@ -189,6 +218,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-zone-layout-20261109"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-area-modal-20261109"></script>
 </body>
 </html>

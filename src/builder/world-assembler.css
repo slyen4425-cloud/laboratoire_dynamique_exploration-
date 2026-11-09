@@ -31,7 +31,7 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 .header-actions{display:flex;align-items:center;gap:9px;white-space:nowrap}.world-play-entry{display:inline-flex;align-items:center;justify-content:center;min-height:38px;border:1px solid #88e2cf;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;white-space:nowrap}.header-actions button,.import-btn{min-height:38px;font-size:12px;padding:9px 12px}
 .save-state{font-size:11px;color:#96bdba;max-width:180px;white-space:normal;text-align:right}.import-btn{display:grid;place-items:center;border:1px solid #426878;border-radius:9px;background:#1d3745;color:#deeeee;font-weight:700}
 #import-world{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.workspace{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr) 284px;gap:0}
+.workspace{flex:1;min-height:0;display:grid;grid-template-columns:250px minmax(0,1fr);gap:0}
 .left-rail,.inspector{overflow:auto;overscroll-behavior:contain;padding:17px 14px 24px;background:#10232e}
 .left-rail{border-right:1px solid #36515e}.inspector{border-left:1px solid #36515e}
 .panel-heading,.section-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
@@ -81,8 +81,8 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 .dialog{border:1px solid #618c91;border-radius:16px;background:#1b303b;color:#e7f5f2;max-width:400px;width:calc(100vw - 32px);padding:21px;box-shadow:0 16px 50px #0009}
 .dialog::backdrop{background:#000b}.dialog h2{font-size:19px}.dialog p{font-size:13px;color:#b0c9ce;line-height:1.55}
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:19px}
-@media(max-width:1100px){.workspace{grid-template-columns:213px minmax(0,1fr) 237px}.left-rail,.inspector{padding:12px 10px 20px}.canvas-header{padding:11px 13px}.canvas-header h2{font-size:18px}.canvas-header p{display:none}}
-@media(max-width:780px){.app-header{height:61px;padding:7px 10px}.app-header h1{font-size:16px}.header-actions{gap:5px}.save-state{display:none}.header-actions button,.import-btn{font-size:10px;padding:8px}.workspace{grid-template-columns:175px minmax(0,1fr) 205px}.left-rail,.inspector{padding:9px 8px}.world-node{width:175px;min-height:91px}.canvas-header{padding:7px 9px}.canvas-header h2{font-size:15px}.canvas-actions button{font-size:10px;padding:6px}.stat-row{grid-template-columns:1fr 1fr}}
+@media(max-width:1100px){.workspace{grid-template-columns:213px minmax(0,1fr)}.left-rail,.inspector{padding:12px 10px 20px}.canvas-header{padding:11px 13px}.canvas-header h2{font-size:18px}.canvas-header p{display:none}}
+@media(max-width:780px){.app-header{height:61px;padding:7px 10px}.app-header h1{font-size:16px}.header-actions{gap:5px}.save-state{display:none}.header-actions button,.import-btn{font-size:10px;padding:8px}.workspace{grid-template-columns:175px minmax(0,1fr)}.left-rail,.inspector{padding:9px 8px}.world-node{width:175px;min-height:91px}.canvas-header{padding:7px 9px}.canvas-header h2{font-size:15px}.canvas-actions button{font-size:10px;padding:6px}.stat-row{grid-template-columns:1fr 1fr}}
 @media(orientation:portrait) and (max-width:640px){body{overflow:auto}.app-shell{min-height:100dvh;height:auto}.workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(360px,60dvh) auto}.left-rail{border-right:0;border-bottom:1px solid #36515e}.area-list{grid-template-columns:1fr 1fr;max-height:none}.inspector{border-left:0;border-top:1px solid #36515e}.header-actions{flex-wrap:wrap;justify-content:flex-end}.canvas-header p{display:block}.app-toast{position:sticky;bottom:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 
@@ -123,3 +123,78 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 .area-content-entry .content-text small{display:block;color:#97bbc0;overflow-wrap:anywhere}
 .area-content-entry button{padding:5px 8px;min-height:32px;font-size:10px;flex:0 0 auto}
 .area-contents-panel>button{font-size:11px;padding:8px;min-height:38px}
+
+
+/* Area inspector was MOVED, not copied: a single native modal controls the one
+   WorldDocument. Desktop & Pixel landscape get more canvas space without the rail. */
+dialog.area-editor-dialog{
+ position:fixed;inset:0;
+ width:min(760px,calc(100vw - 24px));
+ max-width:min(760px,calc(100vw - 24px));
+ max-height:calc(100dvh - 18px);
+ margin:auto;overflow-y:auto;overscroll-behavior:contain;
+ padding:14px 18px 22px;
+ background:#102732;color:#e7f5f2;
+ border:1px solid #588a89;border-radius:15px;
+ box-shadow:0 22px 70px #000c;
+}
+dialog.area-editor-dialog::backdrop{background:#020c15d9}
+.area-editor-toolbar{
+ position:sticky;top:-14px;z-index:2;display:flex;align-items:center;
+ justify-content:space-between;gap:12px;padding:10px 0;
+ background:#102732;border-bottom:1px solid #39626c;margin:-9px 0 12px;
+ font-size:12px;letter-spacing:.04em
+}
+.area-editor-toolbar button{min-height:39px;min-width:83px;flex:0 0 auto}
+.area-editor-toolbar strong{color:#b9e8dd}
+.area-editor-toolbar #area-kind-badge{
+ display:inline-block;border-radius:8px;background:#28484e;padding:4px 7px;
+ font-size:10px;color:#e2f5f1;margin-left:6px
+}
+.area-editor-feedback{
+ display:block;font-size:12px;line-height:1.45;color:#9cdbc9;
+ overflow-wrap:anywhere;margin:3px 0 12px;
+}
+.area-editor-feedback[data-error=true]{color:#ffd4c7}
+dialog.area-editor-dialog .selected-icon{width:45px;height:45px;font-size:25px;float:left;margin:0 11px 8px 0}
+dialog.area-editor-dialog h2{font-size:21px;min-height:40px}
+dialog.area-editor-dialog .technical-id{clear:both}
+dialog.area-editor-dialog .stat-row{grid-template-columns:1fr 1fr;max-width:460px}
+dialog.area-editor-dialog .area-editor-group{
+ display:block;min-width:0;margin:13px 0;
+ padding:12px;background:#142f3b;border-radius:11px;
+ border:1px solid #416777;
+}
+dialog.area-editor-dialog details.area-editor-group{padding:0}
+dialog.area-editor-dialog details.area-editor-group > summary{
+ cursor:pointer;padding:12px;min-height:40px;font-weight:800;
+ font-size:13px;color:#c1eadd;
+}
+dialog.area-editor-dialog details.area-editor-group > .add-panel{
+ margin:0 10px 10px;
+}
+dialog.area-editor-dialog .area-editor-group .section-head{margin:0 0 9px}
+dialog.area-editor-dialog .area-editor-group .help-note{margin:8px 0}
+dialog.area-editor-dialog .area-contents-panel{display:grid;gap:8px}
+dialog.area-editor-dialog .area-events-panel{display:grid;gap:8px}
+dialog.area-editor-dialog .area-events-panel>button{min-height:38px}
+dialog.area-editor-dialog #selected-contents,
+dialog.area-editor-dialog #selected-events{max-height:185px}
+dialog.area-editor-dialog .terrain-chance-owner{
+ margin:0 13px 13px!important;color:#a6d5c4;font-size:11px;line-height:1.6
+}
+dialog.area-editor-dialog .inspector-bottom{margin-top:16px}
+.world-new-area-entry{margin:10px 0 12px;min-height:42px}
+.world-preset-details{margin:15px 0;border:1px solid #466776;border-radius:12px;padding:0;background:#142c37}
+.world-preset-details>summary{cursor:pointer;padding:13px;font-size:12px;font-weight:750;color:#b9dacf}
+.world-preset-details>.add-panel{margin:0 8px 10px}
+@media (max-width:780px){
+ dialog.area-editor-dialog{padding:10px 12px 15px;width:calc(100vw - 14px);max-width:calc(100vw - 14px);max-height:calc(100dvh - 10px)}
+ .area-editor-toolbar{top:-10px;margin:-5px 0 8px}
+ dialog.area-editor-dialog .area-editor-group{padding:9px}
+ .world-new-area-entry{min-height:38px;font-size:11px}
+}
+@media (orientation:portrait) and (max-width:640px){
+ dialog.area-editor-dialog{max-height:calc(100dvh - 12px)}
+ .workspace{grid-template-rows:auto minmax(360px,60dvh)}
+}
