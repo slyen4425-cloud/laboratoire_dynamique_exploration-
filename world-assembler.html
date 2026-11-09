@@ -5,7 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
  <meta name="theme-color" content="#0b1822">
  <title>GenSrpG — Constructeur de mondes</title>
- <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-v1">
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-zone-layout-content-20261109-v1">
 </head>
 <body>
  <div class="app-shell">
@@ -100,10 +100,12 @@
     <div class="canvas-header">
      <div><span class="eyebrow">PLAN DU MONDE</span>
       <h2>Carte des destinations</h2>
-      <p>Sélectionne une zone. Les flèches représentent les passages réellement sauvegardés.</p>
+      <p>Déplace les zones sur le plan au doigt ou à la souris. La position est sauvegardée avec le monde, sans modifier les passages.</p>
      </div>
      <div class="canvas-actions">
       <button id="center-world" type="button">⌖ Recentrer</button>
+      <button id="toggle-graph-links" type="button" aria-pressed="true">⇄ Masquer les flèches</button>
+      <button id="reset-graph-layout" type="button" title="Revenir au placement automatique, sans toucher aux cartes ni passages">↺ Organisation auto</button>
       <button id="world-playable-route" type="button" title="Relier deux régions 2,5D sans modifier les anciennes zones">🔗 Relier zones jouables</button>
       <button id="reset-world" type="button">+ Nouveau monde</button>
      </div>
@@ -148,6 +150,13 @@
     <button id="edit-sculpt-area" class="accent block" type="button">🗺 Modifier cette carte (panneau 2,5D)</button>
     <button id="edit-area" class="block secondary" type="button">✎ Éditeur détaillé 2D</button>
     <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
+    <section class="area-contents-panel" aria-label="Contenu réel de la zone sélectionnée">
+     <div class="section-head"><h3>Contenu de cette zone</h3><strong id="selected-content-count">0</strong></div>
+     <p class="help-note">Maisons, arènes et autres bâtiments proviennent de cette carte. Les intérieurs et donjons ci-dessous utilisent les passages existants.</p>
+     <div id="selected-contents" class="area-contents-list" aria-live="polite"></div>
+     <button id="place-area-object" class="accent block" type="button">＋ Placer maison / arène / décor sur la carte</button>
+     <button id="create-area-instance" class="block secondary" type="button">＋ Ajouter un intérieur / donjon lié</button>
+    </section>
     <div class="section-head"><h3>Relier des zones</h3></div>
     <form id="connect-form" class="link-form">
      <label class="field">Depuis
@@ -180,6 +189,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-zone-layout-20261109"></script>
 </body>
 </html>
