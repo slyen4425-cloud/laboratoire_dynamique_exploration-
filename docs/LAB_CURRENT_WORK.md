@@ -1,3 +1,14 @@
+## 2026-11-09 — World Builder : une SEULE fenêtre « Modifier la zone » (lot isolé)
+- **Demande** : cliquer sur une carte WorldArea ou son bouton « Modifier » ouvre une fenêtre dédiée, désengorge le plan et rassemble les réglages NATIFS existants : niveaux mini/maxi, bâtiments/arènes décoratives, intérieurs/donjons, événements, passages, accès éditeur de carte.
+- **Pas de deuxième affichage** : déplacer les vrais formulaires et IDs DOM du panneau latéral dans le dialogue modal, supprimer le panneau droit originel ; garder une seule instance des formulaires de niveaux / passages / création d’Area. Le formulaire de création déjà existant rejoint aussi le dialogue, avec accès depuis « Nouvelle zone ».
+- **Textures = autorité des rencontres** : les probabilités et les familles de terrain restent exclusivement dans `WorldDocument.encounterConfig.families[].encounterChancePercent`, éditées dans le Builder natif ; le niveau `WorldArea.encounters.minLevel/maxLevel` ne change PAS le déclenchement. Une route peut rester 0 %, les herbes être dangereuses. Aucune deuxième table/chance par Area.
+- **Cartes de combat** : ne PAS inventer de liste d'arènes indépendante dans Exploration. La seule liste réelle actuelle de fonds de combat est `demoPresentationAssets.arenaOptions()` de Combat (forest/cave/snow/city/lava), séparée des 10 objets « arènes élémentaires » placés sur l'exploration. Raccord de sélection par zone/bâtiment = lot contrat Combat/GenSRPG distinct ; garder le panneau explicitement informatif et ne pas enregistrer un réglage mort.
+- **START immuable** : `main@4a4fc9ceece748cd0923840a11ba5c44ee959b12` ; checkpoint `checkpoint/exploration-area-editor-modal-start-2026-11-09` ; WORK `work/exploration-area-editor-modal-2026-11-09`. CI + Chromium + Pages exigés avant promotion ; état initial = première version officielle du drag-persistence GREEN.
+- **Protégés** : moteur/WorldDocument/Portals/spawns/encounters, cartes, maisons, arènes, événements, avatars, textures, presets, V80 figée, Combat et GenSRPG, PWA. Aucun fichier binaire, script assets ou sauvegarde supprimé. Une seule autorité pour chaque réglage, aucun UI bis.
+- **Recette** : click et bouton ouvrent un unique dialogue, fermeture ESC et bouton, édition min/max native, création d'intérieur existant, liste événements de la vraie WorldArea, accès réglages du terrain dans Builder, navigateur paysage/mobile, tests import/export et vérification d'un `main` réellement publié.
+
+---
+
 ## 2026-11-09 — World Builder : plan de zones déplaçables et contenu natif par Area (lot isolé)
 
 - **Départ certifié** : `main@9ae6a89c870cf001b540207e2dc7889ec930d518` ; checkpoint immuable `checkpoint/exploration-world-assembler-layout-contents-start-2026-11-09` ; travail `work/exploration-world-assembler-layout-contents-2026-11-09`.
