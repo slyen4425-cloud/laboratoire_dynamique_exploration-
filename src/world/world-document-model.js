@@ -28,6 +28,31 @@ function normalizedString(value) {
     : null;
 }
 
+/**
+ * Pure authoring-only coordinates for the World Assembler graph.
+ * Not a map position, collision coordinate, Portal route or game-state owner.
+ * Optional in legacy WorldDocuments; unknown/deleted Area IDs are discarded.
+ */
+function normalizeAuthoringLayout(raw, areas) {
+  const input = raw?.positions;
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  const positions = Object.create(null);
+  for (const area of areas) {
+    if (!Object.hasOwn(input, area.id)) continue;
+    const point = input[area.id];
+    if (!point || typeof point !== 'object' || Array.isArray(point)) continue;
+    if (typeof point.x !== 'number' || typeof point.y !== 'number') continue;
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
+    if (point.x < 16 || point.y < 16 || point.x > 12000 || point.y > 12000) continue;
+    positions[area.id] = Object.freeze({
+      x: Math.round(point.x), y: Math.round(point.y)
+    });
+  }
+  return Object.keys(positions).length
+    ? Object.freeze({ positions: Object.freeze(positions) })
+    : null;
+}
+
 export function normalizeWorldDocument(raw = {}) {
   const source =
     raw && typeof raw === 'object'
@@ -106,6 +131,8 @@ export function normalizeWorldDocument(raw = {}) {
         terrainFamilyIds
       ),
     areas,
+    ...(normalizeAuthoringLayout(source.authoringLayout, areas)
+      ? {authoringLayout: normalizeAuthoringLayout(source.authoringLayout, areas)} : {}),
     portals: Object.freeze(validPortals),
     events: Object.freeze(validEvents),
     initialAreaId:
