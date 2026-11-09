@@ -22,6 +22,20 @@ function validPosition(player) {
   );
 }
 
+// One uniform integer roll within a single authored WorldArea. No second
+// encounter probability: the existing terrain-family gate still decides if
+// an encounter starts, and official Combat projects the rolled creature stats.
+export function rollAreaEncounterOpponentLevel(area,random=Math.random){
+ const min=area?.encounters?.minLevel,max=area?.encounters?.maxLevel;
+ if(min===undefined&&max===undefined)return null; // Legacy worlds unchanged.
+ if(!Number.isSafeInteger(min)||!Number.isSafeInteger(max)||min<1||
+    max<min||max>9999)
+   throw new RangeError('Invalid authored WorldArea encounter level range');
+ const raw=Number(random());
+ const roll=Number.isFinite(raw)?Math.max(0,Math.min(0.999999999999,raw)):0;
+ return min+Math.floor(roll*(max-min+1));
+}
+
 export function createEncounterController({
   checkDistance = 160,
   createCorrelationIds
@@ -148,7 +162,9 @@ export function createEncounterController({
       areaId: current.areaId,
       terrainFamilyId: resolved.terrainFamilyId,
       elementId: resolved.elementId,
-      opponentCreatureId: resolved.creatureId
+      opponentCreatureId: resolved.creatureId,
+      ...(area.encounters?.minLevel===undefined&&area.encounters?.maxLevel===undefined
+        ?{}:{opponentLevel:rollAreaEncounterOpponentLevel(area,random)})
     });
   }
 
