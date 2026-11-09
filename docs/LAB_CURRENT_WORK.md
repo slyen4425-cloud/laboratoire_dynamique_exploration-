@@ -9,6 +9,15 @@
 
 ---
 
+## 2026-11-09 — Aventure : signal unique de visibilité Combat pour libérer les PV adverses
+- **START** : `main@9ae6a89c870cf001b540207e2dc7889ec930d518`, checkpoint `checkpoint/exploration-start-capture-combat-hud-2026-11-09`, lot `work/exploration-capture-combat-hud-2026-11-09` ; aucune autre branche de publication et aucun déplacement des autorités.
+- **Observation** : l'overlay Combat natif est dans l'iframe Exploration mais le HUD Capture parent (Sac, Personnage/Équipe, plein écran) reste au-dessus et cache la barre de vie des adversaires sur téléphone.
+- **Propriétés** : Exploration est seule propriétaire de l'ouverture/fermeture de `createImmersiveEncounterHostV1`; elle émet à son parent un **signal purement visuel** `gensrpg.exploration.combat.visibility.v1` (`sessionId`, `encounterId`, `visible`). Capture conserve l'autorité exclusive pour masquer puis réafficher son propre HUD. Aucun accès au DOM d'un autre moteur, aucune duplication de PV, aucun état combat ou sauvegarde muté.
+- **Cas couverts** : ouverture, annulation du chargement, retour normal après reçu CombatResult, défaite et remontage ; le standalone Tester n'envoie aucun signal de Capture. Tests ajoutés au `tests/immersive-encounter-host.test.js` natif.
+- **Gates** : tests locaux/CI, Chromium et contrôle Pages, checkpoint GREEN après CI avant promotion `main`, puis mise à jour du pin immuable Exploration dans la seule source Capture et le publisher GenSRPG. Aucune déclaration « disponible » tant que le SHA final n'est pas prouvé en HTTPS.
+
+---
+
 ## 2026-11-09 — Niveaux sauvages configurables par WorldArea (lot candidat)
 - **START immutable** : `main@6129365d8e31c8254305d3264bfa1bad8274b956`; checkpoint `checkpoint/exploration-start-worldarea-encounter-levels-2026-11-09` ; lot `work/exploration-worldarea-encounter-levels-2026-11-09`.
 - **Propriétaire** : World Builder crée `WorldArea.encounters.minLevel/maxLevel` optionnels, 1–9999, sur la zone sélectionnée. `normalizeWorldArea` conserve les documents anciens sans inventer des limites, refuse seulement un couple partiel/invalide. `Encounter Controller` garde son déclenchement par terrain et ses probabilités existantes ; après rencontre confirmée, il tire uniformément un entier min..max. Une plage 1–5 distribue donc 20 % par niveau **parmi les rencontres déclenchées**, indépendamment de leur taux de déclenchement.

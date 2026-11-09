@@ -27,11 +27,24 @@ export function createImmersiveEncounterHostV1({
   let active = null;
   let disposed = false;
 
+  // Presentation-only cross-frame contract: the Capture parent alone owns
+  // Sac/Equipe HUD visibility; Exploration alone owns combat overlay lifetime.
+  // Never send CombatResult, HP, movement or saved state through this event.
+  function notifyCaptureCombatVisibility(visible, encounterId) {
+    if (sessionId===undefined || !windowRef.frameElement ||
+        typeof windowRef.parent?.postMessage!=='function') return;
+    windowRef.parent.postMessage({
+      schema:'gensrpg.exploration.combat.visibility.v1',
+      sessionId, encounterId, visible
+    }, windowRef.location.origin);
+  }
+
   function close() {
     if (!active) return false;
     const old = active;
     active = null;
     old.overlay.remove();
+    notifyCaptureCombatVisibility(false, old.snapshot.encounterId);
     return true;
   }
 
@@ -173,6 +186,7 @@ export function createImmersiveEncounterHostV1({
       overlay.append(loading);
       documentRef.body.append(overlay);
       active = { overlay, frame, snapshot, loading, loadingMessage:message };
+      notifyCaptureCombatVisibility(true, snapshot.encounterId);
       frame.src = target.href;
       return true;
     },
