@@ -1300,9 +1300,9 @@ function setImmersive(enabled){
   requestAnimationFrame(fit);
 }
 function toggleImmersive(){
+  // In the embedded game, Capture owns the fullscreen top layer. This must
+  // remain true after entering Combat and returning to the Exploration map.
   if(sculptPlayRequested&&window.frameElement){
-    // After both battle startup and return, Explorer only owns CSS immersive.
-    // The parent Capture iframe and its Sac always remain in the visible layer.
     setImmersive(true);
     return;
   }
