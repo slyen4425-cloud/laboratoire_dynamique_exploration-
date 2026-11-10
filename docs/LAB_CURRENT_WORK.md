@@ -1,3 +1,13 @@
+## 2026-11-10 — PNJ marchands : sélecteur sans ID et ouverture dans Capture (C2, CANDIDAT)
+- **START** main `f0203b0787aaa2dd1272e58e9c9cf76b9efade2b` post-PNJ #409 ; checkpoint `checkpoint/exploration-npc-merchant-bridge-start-2026-11-10`, branche `work/exploration-npc-merchant-bridge-2026-11-10`.
+- **Propriétaire et périmètre** : Exploration maintient les instances `WorldArea.actors[].npc` et le rayon de proximité 65 unités. En mode éditeur GenSRPG, un message strictement same-origin vers son parent demande la liste **en lecture seule** des marchands nommés par Capture ; le créateur choisit un nom dans un menu, jamais un ID à recopier. L'ancien `npc.merchantId` reste stable et est conservé au renommage ; un lien disparu ne supprime ni la carte ni la donnée originale.
+- **Mode Jouer** : interaction native à proximité d'un PNJ marchand, même sans dialogue. Seul `merchantId`, l'ID interne d'acteur et la session corrélée partent par message au parent Aventure ; Capture est le SEUL module qui réalise et sauvegarde des achats, sous un verrou. Messages ACK/fermeture pour suspendre/reprendre la marche ; aucun commerce calculé dans Explorer.
+- **Invariants** : aucun autre PNJ, dialogue, WorldDocument, stat, Combat, catalogue d'objets ou runtime d'un autre module modifié ; pas de copie de marchandises, monnaie, fragments, inventaire ni sauvegarde. Labo V80 préservé. La page Exploration autonome sans parent GenSRPG n'invente pas de boutiques.
+- **Tests** : `tests/sculpt-npc-merchant-bridge-v1.test.js` pour normalisation, proximité et transport ; CI Exploration propriétaire, navigateur Sculpt et publication Pages exigés avant fusion. Dépend du candidat GenSRPG source `work/gensrpg-capture-npc-commerce-2026-11-10`; rollout des deux dépôts via SHA immuables.
+- **État** : CANDIDAT, non publié par ce lot avant GREEN et vérification HTTPS ; les erreurs GitHub Pages en amont restent à diagnostiquer sans suppressions.
+
+---
+
 ## 2026-11-10 — PNJ v2 : édition visuelle des équipes et monstres errants (CANDIDAT, NON GREEN)
 - **START :** `main@f4188ecb14b3cee60a011e950c0926793b30ced7`, lot `work/exploration-npc-visual-authoring-v2-2026-11-10`, checkpoint de départ `checkpoint/exploration-npc-v2-start-2026-11-10`.
 - **Demande :** retirer les champs d'identifiants techniques de l'UI, donner des menus visuels aux PNJ avec équipes et monstres errants, sans catalogues dupliqués.
