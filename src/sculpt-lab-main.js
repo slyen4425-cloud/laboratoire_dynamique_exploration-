@@ -4536,7 +4536,9 @@ sculptBootReady=true;fit();
 // The SAME canonical Portal action must be wired in both World Builder Tester
 // and native scoped Jouer. The former editor-only registration left an
 // enabled-looking door button inert in real play.
-$('world-portal-traverse').addEventListener('click',traverseSculptWorldPortal);
+// Frozen V80 does not include the WorldArea Portal button. Modern Sculpt
+// keeps its canonical action; the legacy editor must still boot completely.
+$('world-portal-traverse')?.addEventListener('click',traverseSculptWorldPortal);
 installSculptWorldAreaEditing();
 installSculptPlayMode();
 installSculptMapPresetPalette();
