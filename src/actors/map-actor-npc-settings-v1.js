@@ -60,7 +60,7 @@ export function nearestDialogNpcV1(actors,position,range=65){
      !Number.isFinite(position?.y))return null;
   let closest=null,distance=Infinity;
   for(const actor of actors){
-    if(!actor?.npc?.dialogue)continue;
+    if(!actor?.npc?.dialogue&&!(actor?.npc?.kind==='merchant'&&actor.npc.merchantId))continue;
     const d=Math.hypot(actor.x-position.x,actor.y-position.y);
     if(d<=range&&d<distance){closest=actor;distance=d;}
   }
