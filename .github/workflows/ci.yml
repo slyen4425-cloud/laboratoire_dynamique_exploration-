@@ -66,6 +66,8 @@ jobs:
           node scripts/combat-native-bridge-smoke.mjs
       - name: Real Chromium touch landscape — scoped official HeroDefinition in native Jouer, no fallback
         run: node scripts/smoke-hero-play-browser.mjs
+      - name: Real Chromium PNJ placement, select, dialogue and frozen V80
+        run: node scripts/smoke-sculpt-npc-v1.mjs
       - name: Real Chromium scoped native Jouer Portal traversal and checkpoint
         run: node scripts/smoke-world-portal-scoped-play.mjs
       - name: Real Chromium Builder invalid-encounter navigation smoke
@@ -78,8 +80,6 @@ jobs:
         run: node scripts/smoke-relief-canyon-pilot.mjs
       - name: Real Chromium sculptable terrain lab brush and material smoke
         run: node scripts/smoke-sculpt-terrain-lab.mjs
-      - name: Real Chromium PNJ placement, select, dialogue and frozen V80
-        run: node scripts/smoke-sculpt-npc-v1.mjs
       - name: Native Chromium Explorer music gesture and actual MP3 playback
         run: node scripts/smoke-exploration-music-playback.mjs
       - name: Real Chromium Encounter startup smoke
