@@ -4439,6 +4439,9 @@ function installSculptWorldAreaEditing(){
 // an alternative document de monde. Reusing them always enters the regular editor.
 function installSculptMapPresetPalette(){
   const select=$('sculpt-map-preset-select');
+  // The frozen V80 layout has no authored map-preset palette.
+  // Preserve its editor without a second interface or hidden DOM clones.
+  if(!select)return;
   const presetStatus=(message,error=false)=>{
     const label=$('sculpt-map-preset-status');
     label.textContent=message;label.style.color=error?'#ffccbb':'#b7f2d6';
