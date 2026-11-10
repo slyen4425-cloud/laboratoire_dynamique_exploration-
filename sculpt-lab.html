@@ -311,6 +311,13 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 #actor-controls button{min-height:34px}
 #actor-npc-settings{border:1px solid #568b85;border-radius:8px;padding:7px;display:grid;gap:7px}
 #actor-npc-settings label{display:grid;gap:3px}
+#npc-trainer-editor:not([hidden]),#npc-wild-editor:not([hidden]){display:grid;gap:8px;padding:8px;background:#12352f;border-radius:8px}
+#npc-team-list{display:grid;gap:6px}
+.npc-team-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px;border:1px solid #4d8679;border-radius:6px}
+.npc-team-row .npc-slot-title{flex:1;min-width:110px;font-size:.9em}
+.npc-team-row button{min-width:32px;min-height:32px}
+#npc-role-pending{margin:0;padding:8px;border:1px dashed #67998b;border-radius:6px}
+
 #actor-npc-settings input,#actor-npc-settings select,#actor-npc-settings textarea{width:100%;max-width:100%;box-sizing:border-box}
 #npc-talk:not([hidden]){display:block;position:absolute;z-index:24;bottom:calc(env(safe-area-inset-bottom,0px) + 105px);right:12px;min-height:42px;background:#174a43;color:white;border:1px solid #87d9bf;border-radius:8px}
 #npc-dialogue-overlay:not([hidden]){position:fixed;inset:0;z-index:90;display:grid;place-items:end center;background:#0008;padding:16px}
@@ -1131,10 +1138,27 @@ body.sculpt-play-unavailable #play-start-error{
    </select></label>
    <label>Rayon d'errance <input id="actor-npc-radius" type="number" min="16" max="600" value="90"></label>
    <label>Dialogue (une ligne par écran) <textarea id="actor-npc-dialogue" rows="3" maxlength="2000" placeholder="Bonjour, voyageur !"></textarea></label>
-   <label>Référence quête <input id="actor-npc-quest" type="text" maxlength="120" placeholder="Identifiant de quête"></label>
-   <label>Référence équipe dresseur <input id="actor-npc-team" type="text" maxlength="120" placeholder="Identifiant d'équipe"></label>
-   <label>Référence boutique <input id="actor-npc-merchant" type="text" maxlength="120" placeholder="Identifiant du marchand"></label>
-   <small>Quêtes, dresseurs et marchands : leurs références sont enregistrées, mais leurs actions seront raccordées plus tard. Les statistiques et compétences restent dans Capture/Combat.</small>
+   <section id="npc-trainer-editor" hidden aria-label="Composition du dresseur">
+    <strong>⚔ Équipe du dresseur</strong>
+    <p id="npc-team-summary">Sélectionne un PNJ sur la carte pour composer son équipe.</p>
+    <div id="npc-team-list" aria-live="polite"></div>
+    <label>Créature publiée <select id="npc-team-creature" aria-label="Choisir une créature pour le dresseur"><option value="">Chargement du bestiaire…</option></select></label>
+    <label>Niveau <input id="npc-team-level" type="number" min="1" max="9999" step="1" value="10"></label>
+    <button type="button" id="npc-team-add">＋ Ajouter à l'équipe</button>
+    <label>Réutiliser la composition d'un PNJ présent sur cette carte
+     <select id="npc-team-copy-source"><option value="">Choisir un autre dresseur…</option></select>
+    </label>
+    <button type="button" id="npc-team-copy">Copier cette composition</button>
+    <small>L'équipe est propre à ce PNJ. Le bestiaire et les compétences viennent du Labo Combat ; aucune nouvelle bibliothèque de créatures n'est créée.</small>
+   </section>
+   <section id="npc-wild-editor" hidden aria-label="Configuration du monstre errant">
+    <strong>🐾 Monstre errant</strong>
+    <label>Créature publiée <select id="npc-wild-creature" aria-label="Choisir le monstre errant"><option value="">Chargement du bestiaire…</option></select></label>
+    <label>Niveau <input id="npc-wild-level" type="number" min="1" max="9999" step="1" value="10"></label>
+    <small>Le choix et le niveau sont sauvegardés dans la fiche. Déclencher le combat depuis la carte sera raccordé dans le moteur de jeu.</small>
+   </section>
+   <p id="npc-role-pending" hidden>Les éditeurs de quêtes et de boutiques de GenSRPG ne sont pas encore raccordés. Les anciennes liaisons éventuelles sont conservées dans la sauvegarde, sans saisie d'identifiant technique.</p>
+   <small id="npc-catalog-status">Chargement des créatures publiées depuis le catalogue officiel Combat…</small>
   </details>
   <div class="object-actions">
    <button type="button" id="actor-undo" disabled>↶ Acteur</button>
@@ -1309,6 +1333,6 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2"></script>
 </body>
 </html>

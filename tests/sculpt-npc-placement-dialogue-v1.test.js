@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {normalizeWorldActorPlacement} from '../src/actors/world-actor-placement-model.js';
 import {normalizeWorldArea} from '../src/world/world-area-model.js';
-import {normalizeMapActorNpcSettingsV1,nearestDialogNpcV1} from '../src/actors/map-actor-npc-settings-v1.js';
+import {normalizeMapActorNpcSettingsV1,normalizeNpcTrainerRosterV1,nearestDialogNpcV1} from '../src/actors/map-actor-npc-settings-v1.js';
 import {appendSculptPreviewActor,updateSculptPreviewActor,
  serializeSculptPreviewScene,importSculptPreviewScene,
  createBlankSculptPreviewScene} from '../src/world/sculpt-scene-preview.js';
@@ -67,13 +67,48 @@ test('Native Sculpt editor wires NPC inputs and gameplay dialogue, not a second 
  const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
-  'actor-npc-dialogue','actor-npc-quest','actor-npc-team','actor-npc-merchant',
-  'npc-talk','npc-dialogue-overlay','npc-dialogue-next']){
+  'actor-npc-dialogue','npc-team-creature','npc-team-level','npc-team-add',
+  'npc-team-list','npc-team-copy-source','npc-wild-creature','npc-wild-level',
+  'npc-catalog-status','npc-talk','npc-dialogue-overlay','npc-dialogue-next']){
   assert.match(html,new RegExp('id="'+id+'"'));
  }
+ for(const legacyManualId of ['actor-npc-quest','actor-npc-team','actor-npc-merchant'])
+  assert.doesNotMatch(html,new RegExp('id="'+legacyManualId+'"'));
+ assert.match(main,/loadCaptureShowcaseEncounterSourceV1/);
+ assert.match(main,/npcApplyAuthoringPatch/);
  assert.match(main,/npcSettingsFromControls/);
  assert.match(main,/nearestDialogNpcV1/);
  assert.match(main,/updateSculptPreviewActor/);
  assert.match(main,/actorCommit/);
  assert.doesNotMatch(main,/new WorldDocument\(/);
+});
+
+test('NPC trainer roster remains a single instance-scoped, validated Combat reference list',()=>{
+ const roster=[{creatureId:'crea_nat_1',level:10},{creatureId:'crea_ailevent',level:18}];
+ const trainer=normalizeMapActorNpcSettingsV1(settings({kind:'trainer',trainerRoster:roster}));
+ assert.deepEqual(trainer.trainerRoster,roster);
+ assert.ok(Object.isFrozen(trainer.trainerRoster));
+ assert.equal('hp' in trainer.trainerRoster[0],false);
+ assert.throws(()=>normalizeNpcTrainerRosterV1(Array.from({length:7},
+  ()=>({creatureId:'crea_nat_1',level:10}))));
+ assert.throws(()=>normalizeNpcTrainerRosterV1([{creatureId:'crea_nat_1',level:0}]));
+ assert.throws(()=>normalizeNpcTrainerRosterV1([{creatureId:'<script>',level:10}]));
+ assert.throws(()=>normalizeNpcTrainerRosterV1([{creatureId:'crea_nat_1',level:10.2}]));
+});
+test('Visual wild selection and trainer order survive native Sculpt scene and WorldArea round-trip',()=>{
+ const roster=[{creatureId:'crea_ailevent',level:12},{creatureId:'crea_nat_1',level:8}];
+ const source=createBlankSculptPreviewScene({width:10,height:10});
+ const first=appendSculptPreviewActor(source.actors,{
+  definitionId:'exploration:npc:generic-v1',x:28,y:21,
+  npc:settings({kind:'trainer',trainerRoster:roster})});
+ const second=appendSculptPreviewActor(first,{
+  definitionId:'capture:creature:crea-loup',x:84,y:42,
+  npc:settings({kind:'wild',wildCreature:{creatureId:'crea_loup',level:17}})});
+ const loaded=importSculptPreviewScene(serializeSculptPreviewScene(
+  source.terrain,source.objects,source.surface,second));
+ const area=normalizeWorldArea({id:'area',width:280,height:210,actors:loaded.actors});
+ assert.deepEqual(area.actors[0].npc.trainerRoster,roster);
+ assert.equal(area.actors[1].npc.wildCreature.level,17);
+ assert.equal(area.actors[1].npc.wildCreature.creatureId,'crea_loup');
+ assert.equal('trainerRoster' in normalizeMapActorNpcSettingsV1(settings()),false);
 });
