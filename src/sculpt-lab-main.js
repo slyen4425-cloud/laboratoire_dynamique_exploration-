@@ -36,7 +36,7 @@ import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-act
 import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
-import {nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js';
+import {nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=npc-visual-v2';
 import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
