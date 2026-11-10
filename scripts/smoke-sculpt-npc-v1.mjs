@@ -102,10 +102,9 @@ try{
   const definition=document.querySelector('#actor-definition');
   definition.value='exploration:npc:generic-v1';
   definition.dispatchEvent(new Event('change',{bubbles:true}));
-  document.querySelector('#actor-npc-kind').value='quest';
+  document.querySelector('#actor-npc-kind').value='trainer';
   document.querySelector('#actor-npc-name').value='Gardienne de la clairière';
   document.querySelector('#actor-npc-dialogue').value='Bonjour voyageur !\\nTrouve la clé.';
-  document.querySelector('#actor-npc-quest').value='quest.test.01';
   document.querySelector('#actor-npc-movement').value='static';
   document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
   return {selection:definition.value,probe:window.__sculptActorsProbe()};
@@ -129,7 +128,7 @@ try{
   const actor=JSON.parse(document.querySelector('#json').value).actors?.[0];
   return {count:window.__sculptActorsProbe().count,actor};
  })()`);
- if(placed.count!==1||placed.actor?.npc?.questId!=='quest.test.01'||
+ if(placed.count!==1||placed.actor?.npc?.kind!=='trainer'||
      !placed.actor?.npc?.dialogue.includes('Bonjour voyageur !')||
      !placed.actor?.npc?.dialogue.includes('Trouve la clé.')||
      !placed.actor?.npc?.dialogue.includes(String.fromCharCode(10)))
@@ -138,6 +137,19 @@ try{
  // without requiring a mode switch or creating a duplicate Actor placement.
  for(const type of ['mouseMoved','mousePressed','mouseReleased'])
   await command('Input.dispatchMouseEvent',{type,x:point.x,y:point.y,button:'left',clickCount:1});
+ await until("document.querySelector('#npc-team-creature')?.options.length>1",'official Combat creature choices');
+ const configured=await run(`(()=>{
+   const selector=document.querySelector('#npc-team-creature');
+   selector.value=selector.options[1].value;
+   document.querySelector('#npc-team-level').value='12';
+   document.querySelector('#npc-team-add').click();
+   document.querySelector('#scene-export').click();
+   const actor=JSON.parse(document.querySelector('#json').value).actors[0];
+   return {member:actor.npc?.trainerRoster?.[0],rows:document.querySelectorAll('.npc-team-row').length};
+ })()`);
+ if(!configured.member?.creatureId||configured.member.level!==12||configured.rows!==1)
+  throw Error('Visual trainer team editor failed '+JSON.stringify(configured));
+ console.log('Native visual trainer roster:',JSON.stringify(configured));
  const updated=await run(`(()=>{
   const selected=window.__sculptActorsProbe().selectedId;
   document.querySelector('#actor-npc-kind').value='dialogue';
@@ -152,7 +164,8 @@ try{
  })()`);
  if(!updated.selected||updated.mode!=='select'||updated.count!==1||
     updated.actor?.npc?.name!=='Gardienne'||
-    updated.actor?.npc?.kind!=='dialogue')
+    updated.actor?.npc?.kind!=='dialogue'||
+    updated.actor?.npc?.trainerRoster?.[0]?.level!==12)
   throw Error('NPC select/edit failed '+JSON.stringify(updated));
  // Tester must show the SAME authored dialogue near the navigation Spawn.
  await run("document.querySelector('#navigation-toggle').click()");
