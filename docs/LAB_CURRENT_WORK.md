@@ -4,7 +4,8 @@
 - **Mode Jouer** : interaction native à proximité d'un PNJ marchand, même sans dialogue. Seul `merchantId`, l'ID interne d'acteur et la session corrélée partent par message au parent Aventure ; Capture est le SEUL module qui réalise et sauvegarde des achats, sous un verrou. Messages ACK/fermeture pour suspendre/reprendre la marche ; aucun commerce calculé dans Explorer.
 - **Invariants** : aucun autre PNJ, dialogue, WorldDocument, stat, Combat, catalogue d'objets ou runtime d'un autre module modifié ; pas de copie de marchandises, monnaie, fragments, inventaire ni sauvegarde. Labo V80 préservé. La page Exploration autonome sans parent GenSRPG n'invente pas de boutiques.
 - **Tests** : `tests/sculpt-npc-merchant-bridge-v1.test.js` pour normalisation, proximité et transport ; CI Exploration propriétaire, navigateur Sculpt et publication Pages exigés avant fusion. Dépend du candidat GenSRPG source `work/gensrpg-capture-npc-commerce-2026-11-10`; rollout des deux dépôts via SHA immuables.
-- **État** : CANDIDAT, non publié par ce lot avant GREEN et vérification HTTPS ; les erreurs GitHub Pages en amont restent à diagnostiquer sans suppressions.
+- **Contrôles vérifiés sur code `bb83a5cbb47036227f6b842e417cbb8c3972e0db`** : `core-tests`, `modern-combat-encounter`, `native-https-pixels`, `detect-upstream` et `verify-and-assemble` SUCCESS, `deploy` skipped normal pour une PR ; anciens jobs cancelled d'un essai supersédé, non considérés comme tests verts. Checkpoint GREEN sur le SHA final après contrôle de cette mise à jour documentaire.
+- **État** : source fonctionnellement validée pour la revue, mais non publiée ; fusion `main` puis Pages HTTPS et référence Capture immuable restent requises.
 
 ---
 
