@@ -1157,6 +1157,14 @@ body.sculpt-play-unavailable #play-start-error{
     <label>Niveau <input id="npc-wild-level" type="number" min="1" max="9999" step="1" value="10"></label>
     <small>Le choix et le niveau sont sauvegardés dans la fiche. Déclencher le combat depuis la carte sera raccordé dans le moteur de jeu.</small>
    </section>
+   <section id="npc-merchant-editor" hidden aria-label="Boutique du PNJ">
+    <strong>🛒 Marchand associé</strong>
+    <p>Choisis une boutique créée dans Monster Capture. Aucun identifiant à saisir.</p>
+    <label>Boutique <select id="npc-merchant-picker"><option value="">Chargement des marchands…</option></select></label>
+    <button type="button" id="npc-merchant-reload">Actualiser les marchands</button>
+    <button type="button" id="npc-merchant-clear">Retirer l'association</button>
+    <small id="npc-merchant-status">Marchands fournis par Monster Capture lorsque l'éditeur est ouvert dans GenSRPG.</small>
+   </section>
    <p id="npc-role-pending" hidden>Les éditeurs de quêtes et de boutiques de GenSRPG ne sont pas encore raccordés. Les anciennes liaisons éventuelles sont conservées dans la sauvegarde, sans saisie d'identifiant technique.</p>
    <small id="npc-catalog-status">Chargement des créatures publiées depuis le catalogue officiel Combat…</small>
   </details>
@@ -1239,6 +1247,7 @@ body.sculpt-play-unavailable #play-start-error{
     <p id="npc-dialogue-text"></p>
     <div class="object-actions">
       <button type="button" id="npc-dialogue-next">Suivant</button>
+      <button type="button" id="npc-dialogue-trade" hidden>🛒 Commercer</button>
       <button type="button" id="npc-dialogue-close">Fermer</button>
     </div>
   </div>
