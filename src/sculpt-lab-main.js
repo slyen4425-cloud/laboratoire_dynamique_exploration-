@@ -2557,7 +2557,7 @@ async function loadCaptureActorCatalog(){
       ...(generic?[demoActorAsset]:[])
     ]);
     const definitions=Object.freeze([
-      ...(generic?[generic]:[]),...(source?.listDefinitions()??[])
+      ...(source?.listDefinitions()??[]),...(generic?[generic]:[])
     ]);
     const provider=Object.freeze({
       listAssets:()=>assets,
