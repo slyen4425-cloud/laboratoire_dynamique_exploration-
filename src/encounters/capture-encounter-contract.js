@@ -1,3 +1,4 @@
+import {normalizeWorldEncounterStatProfileV1} from './wild-stat-profile-contract-v1.js';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA =
   'capture-encounter-snapshot-v1';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_VERSION = 1;
@@ -68,7 +69,8 @@ export function createCaptureEncounterSnapshot(raw = {}) {
       })
     ]),
     rules: Object.freeze({
-      rulesetId
+      rulesetId,
+      ...(raw.wildStatProfile===undefined?{}:{wildStatProfile:normalizeWorldEncounterStatProfileV1(raw.wildStatProfile)})
     }),
     context: Object.freeze({
       areaId,

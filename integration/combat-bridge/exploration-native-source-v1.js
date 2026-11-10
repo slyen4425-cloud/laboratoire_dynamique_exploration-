@@ -107,6 +107,8 @@ export function buildExplorationNativeCombatSourceV1({
       // Global real-game HP rule is applied by Combat's one authoritative
       // encounter builder, after official stat projection. No creature edits.
       ...options,hpMultiplier:adventureParty.combatHpMultiplier,
+      // Only an explicitly authored WorldArea level activates NPC growth.
+      ...(authoredEnemyLevel===undefined?{}:{wildStatProfile:snapshot.rules?.wildStatProfile??{}}),
       local:adventureParty.active,
       // Keep the saved order and identities. Combat alone builds the
       // rechargeable native bench, individual stats and KO rules.
