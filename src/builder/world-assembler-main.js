@@ -747,7 +747,23 @@ function installWorldAssembler(){
     if(!window.confirm('Réorganiser automatiquement les icônes ? Les cartes, bâtiments et passages resteront inchangés.'))return;
     apply(()=>resetWorldAssemblerNodePositions(draft),'Disposition automatique rétablie · monde inchangé.');
   });
-  on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
+  const structureToggle=byId('toggle-world-structure');
+  const structurePanel=byId('world-structure-panel');
+  const workspace=structurePanel.closest('.workspace');
+  const setStructureOpen=open=>{
+    workspace.classList.toggle('structure-open',open);
+    structureToggle.setAttribute('aria-expanded',String(open));
+  };
+  on(structureToggle,'click',()=>setStructureOpen(!workspace.classList.contains('structure-open')));
+  on(document,'keydown',event=>{
+    if(event.key==='Escape'&&workspace.classList.contains('structure-open'))
+      setStructureOpen(false);
+  });
+  on(byId('graph-scroll'),'pointerdown',()=>{
+    if(workspace.classList.contains('structure-open'))setStructureOpen(false);
+  });
+  on(byId('area-list'),'click',()=>setStructureOpen(false));
+    on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('edit-area'),'click',()=>{
     openAreaEditor('./builder.html?worldAssembler=1');
