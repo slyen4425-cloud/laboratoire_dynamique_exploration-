@@ -1,3 +1,14 @@
+## 2026-11-10 — PNJ v2 : édition visuelle des équipes et monstres errants (CANDIDAT, NON GREEN)
+- **START :** `main@f4188ecb14b3cee60a011e950c0926793b30ced7`, lot `work/exploration-npc-visual-authoring-v2-2026-11-10`, checkpoint de départ `checkpoint/exploration-npc-v2-start-2026-11-10`.
+- **Demande :** retirer les champs d'identifiants techniques de l'UI, donner des menus visuels aux PNJ avec équipes et monstres errants, sans catalogues dupliqués.
+- **Source de vérité :** `WorldArea.actors[].npc` existant reste l'unique fiche de scénario des instances PNJ. `npc.trainerRoster` (0 à 6 références `creatureId/level`) et `npc.wildCreature` (référence + niveau) sont facultatifs, versionnés, conservés à l'export/import ; **aucune copie** des caractéristiques, attaques, sprites, règles Combat, ou état du joueur. Les créatures proposées sont chargées depuis le **bundle de publication Combat officiel**, jamais depuis le catalogue historique local de septembre. Ni table d'équipes parallèle, ni faux catalogue GenSRPG.
+- **Interface :** type Dresseur → ajouter, retirer, réordonner et régler les niveaux, copier volontairement une composition d'un autre PNJ placé ; type Monstre errant → sélectionner espèce publiée et niveau ; aucune saisie d'identifiant technique. Les anciennes références `trainerTeamId`, `questId`, `merchantId` restent chargées et exportées sans changement des données ; le champ texte manuel est supprimé.
+- **Limites honnêtes :** ces compositions de PNJ sont des intentions de rencontres, **pas encore des équipes globales GenSRPG**. Le déclenchement des combats, la création/sélection de véritables équipes GenSRPG réutilisables, l'éditeur de quêtes et l'éditeur de boutiques restent dans les modules propriétaires et ne sont **pas** simulés. La marche errante effective reste hors de ce lot, sans libellé trompeur. Un catalogue Combat indisponible ferme le sélecteur sans inventer des espèces.
+- **Protection :** V80 immutable, cartes/objets/Portals, scènes historiques et anciennes références, moteur Combat/GenSRPG et assets, publisher unique. La présente PR ne modifie aucun autre dépôt.
+- **Gates :** test Node (normalisation, export/import et invariants), vrai Chromium (pose, sélection, édition d'équipe via boutons, dialogue, V80), `npm run check`, CI SHA exact, Pages budget et previews préservés ; checkpoint GREEN, fusion `main`, puis contrôle HTTPS et commit servi. **NON GREEN** avant ces preuves.
+
+---
+
 ## 2026-11-10 — PNJ de carte 2,5D : fiche d'instance et dialogue (CANDIDAT, NON GREEN)
 - **START immuable :** `main@448b6608c469238983ab9b330aa79d34016365ca`, branche `work/exploration-npc-placements-v1-2026-11-10`; lot isolé Exploration.
 - **Demande :** cliquer un acteur placé, définir sa catégorie (dialogue, quête, dresseur, créature errante, marchand), nom, comportement statique/errance et dialogue ; préparer les raccords ultérieurs.
