@@ -309,6 +309,13 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 #object-controls[hidden],#actor-controls[hidden]{display:none!important}
 #actor-controls #actor-source-status{color:#a6ebd6}
 #actor-controls button{min-height:34px}
+#actor-npc-settings{border:1px solid #568b85;border-radius:8px;padding:7px;display:grid;gap:7px}
+#actor-npc-settings label{display:grid;gap:3px}
+#actor-npc-settings input,#actor-npc-settings select,#actor-npc-settings textarea{width:100%;max-width:100%;box-sizing:border-box}
+#npc-talk:not([hidden]){display:block;position:absolute;z-index:24;bottom:calc(env(safe-area-inset-bottom,0px) + 105px);right:12px;min-height:42px;background:#174a43;color:white;border:1px solid #87d9bf;border-radius:8px}
+#npc-dialogue-overlay:not([hidden]){position:fixed;inset:0;z-index:90;display:grid;place-items:end center;background:#0008;padding:16px}
+.npc-dialogue-panel{width:min(680px,100%);box-sizing:border-box;background:#152d38;border:1px solid #86c8bd;border-radius:12px;padding:16px;display:grid;gap:12px;color:#f5f9f8}
+.npc-dialogue-panel p{white-space:pre-wrap;line-height:1.5;margin:0}
 /* V79: small area breadcrumb, not a replacement of the existing editor. */
 .interior-area-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;
  padding:6px 10px;border:1px solid #ab9070;border-radius:10px;
@@ -1111,6 +1118,24 @@ body.sculpt-play-unavailable #play-start-error{
     <input id="actor-scale" type="range" min="25" max="200" step="5" value="100" aria-label="Taille visuelle de l'acteur en pourcentage">
   </label>
   <output id="actor-selected">Aucun acteur sélectionné</output>
+  <details id="actor-npc-settings" open>
+   <summary>💬 Fiche PNJ / monstre errant</summary>
+   <label>Type <select id="actor-npc-kind">
+     <option value="dialogue">PNJ dialogue</option><option value="quest">PNJ de quête</option>
+     <option value="trainer">Dresseur</option><option value="wild">Monstre errant</option>
+     <option value="merchant">Marchand</option>
+   </select></label>
+   <label>Nom affiché <input id="actor-npc-name" type="text" maxlength="80" placeholder="Ex. Gardien de la forêt"></label>
+   <label>Comportement <select id="actor-npc-movement">
+     <option value="static">Statique</option><option value="wander">Errance (préparée, à raccorder)</option>
+   </select></label>
+   <label>Rayon d'errance <input id="actor-npc-radius" type="number" min="16" max="600" value="90"></label>
+   <label>Dialogue (une ligne par écran) <textarea id="actor-npc-dialogue" rows="3" maxlength="2000" placeholder="Bonjour, voyageur !"></textarea></label>
+   <label>Référence quête <input id="actor-npc-quest" type="text" maxlength="120" placeholder="Identifiant de quête"></label>
+   <label>Référence équipe dresseur <input id="actor-npc-team" type="text" maxlength="120" placeholder="Identifiant d'équipe"></label>
+   <label>Référence boutique <input id="actor-npc-merchant" type="text" maxlength="120" placeholder="Identifiant du marchand"></label>
+   <small>Quêtes, dresseurs et marchands : leurs références sont enregistrées, mais leurs actions seront raccordées plus tard. Les statistiques et compétences restent dans Capture/Combat.</small>
+  </details>
   <div class="object-actions">
    <button type="button" id="actor-undo" disabled>↶ Acteur</button>
    <button type="button" id="actor-redo" disabled>↷ Acteur</button>
@@ -1181,6 +1206,17 @@ body.sculpt-play-unavailable #play-start-error{
       <button id="sculpt-encounter-continue" type="button">Continuer l'exploration</button>
     </div>
     <small>Terrain et rareté issus des données Capture. Le déplacement est interrompu jusqu'à votre choix.</small>
+  </div>
+</section>
+<button type="button" id="npc-talk" hidden aria-label="Parler au PNJ proche">💬 Parler</button>
+<section id="npc-dialogue-overlay" role="dialog" aria-label="Dialogue de PNJ" aria-modal="true" hidden>
+  <div class="npc-dialogue-panel">
+    <strong id="npc-dialogue-speaker">Personnage</strong>
+    <p id="npc-dialogue-text"></p>
+    <div class="object-actions">
+      <button type="button" id="npc-dialogue-next">Suivant</button>
+      <button type="button" id="npc-dialogue-close">Fermer</button>
+    </div>
   </div>
 </section>
 <div id="navigation-stick" role="group" aria-label="Joystick tactile de navigation" hidden>
