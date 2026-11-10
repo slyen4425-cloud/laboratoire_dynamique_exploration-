@@ -183,8 +183,14 @@ try{
  console.log('Frozen V80 boots with shared actor engine unchanged:',JSON.stringify(legacy));
 }finally{
  socket?.close();
- browser?.kill('SIGTERM');
- await Promise.race([browser?once(browser,'exit').catch(()=>{}):Promise.resolve(),sleep(1300)]);
- await rm(profile,{recursive:true,force:true});
+ // Chromium can keep writing its profile for a moment after receiving
+ // SIGTERM. Wait for real process exit before deleting the test directory;
+ // a successful end-to-end browser test must never fail on an fs race.
+ if(browser&&browser.exitCode===null&&browser.signalCode===null){
+  const exited=once(browser,'exit').catch(()=>{});
+  browser.kill('SIGKILL');
+  await Promise.race([exited,sleep(4500)]);
+ }
+ await rm(profile,{recursive:true,force:true,maxRetries:8,retryDelay:150});
  await new Promise(ok=>server.close(ok));
 }
