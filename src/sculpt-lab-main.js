@@ -36,6 +36,7 @@ import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-act
 import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
+import {nearestDialogNpcV1} from './actors/map-actor-npc-settings-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
@@ -1956,8 +1957,46 @@ function navigationSpawn(){
   }
   return null;
 }
+let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0;
+function closeNpcDialogue(){
+  npcDialogueOpen=false;
+  if($('npc-dialogue-overlay'))$('npc-dialogue-overlay').hidden=true;
+  npcDialogueLines=[];npcDialogueIndex=0;
+}
+function nearbyNpcForDialogue(){
+  return navigationTesting&&!sculptPendingEncounter&&navActor
+    ?nearestDialogNpcV1(placedActors,navActor):null;
+}
+function updateNpcInteraction(){
+  // Legacy V80 does not expose the new dialogue overlay.
+  if(!$('npc-talk'))return;
+  const npc=nearbyNpcForDialogue();
+  $('npc-talk').hidden=!npc||npcDialogueOpen;
+  if(npc)$('npc-talk').textContent='💬 '+(npc.npc.name||'Parler');
+}
+$('npc-talk')?.addEventListener('click',()=>{
+  const npc=nearbyNpcForDialogue();if(!npc)return;
+  npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
+  if(!npcDialogueLines.length)return;
+  npcDialogueIndex=0;npcDialogueOpen=true;
+  $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
+  $('npc-dialogue-text').textContent=npcDialogueLines[0];
+  $('npc-dialogue-next').textContent=npcDialogueLines.length>1?'Suivant':'Terminer';
+  $('npc-dialogue-overlay').hidden=false;updateNpcInteraction();
+});
+$('npc-dialogue-next')?.addEventListener('click',()=>{
+  if(!npcDialogueOpen)return;
+  npcDialogueIndex+=1;
+  if(npcDialogueIndex>=npcDialogueLines.length){closeNpcDialogue();updateNpcInteraction();return;}
+  $('npc-dialogue-text').textContent=npcDialogueLines[npcDialogueIndex];
+  $('npc-dialogue-next').textContent=npcDialogueIndex===npcDialogueLines.length-1?'Terminer':'Suivant';
+});
+$('npc-dialogue-close')?.addEventListener('click',()=>{
+  closeNpcDialogue();updateNpcInteraction();
+});
 function updateNavigationInfo(forced=false){
   if(!navigationTesting||!navActor)return;
+  updateNpcInteraction();
   updateSculptDoorAction();
   updateSculptWorldPortalAction();
   const info=sculptNavigationSample(terrain,navActor.x,navActor.y,
@@ -1982,6 +2021,12 @@ function navigationInput(){
 }
 function navigationTick(time){
   if(!navigationTesting)return;
+  if(npcDialogueOpen){
+    navPreviousTime=time;
+    if(navActor)navActor.moving=false;
+    navFrame=requestAnimationFrame(navigationTick);
+    return;
+  }
   if(sculptPendingEncounter){
     navPreviousTime=time;
     navActor.moving=false;
@@ -2119,6 +2164,8 @@ function setNavigationTesting(on){
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
     navigationTesting=false;
+    closeNpcDialogue();
+    if($('npc-talk'))$('npc-talk').hidden=true;
     explorationSoundtrack.stop();
     cancelAnimationFrame(navFrame);navFrame=0;navPreviousTime=null;
     navStick?.dispose();navStick=null;navKeys.clear();
@@ -2496,8 +2543,31 @@ window.__sculptSurfaceProbe=()=>Object.freeze({
  // while this sculpt preview stores only native WorldActorPlacement references.
 async function loadCaptureActorCatalog(){
   try{
-    const provider=await createCaptureActorPreviewProviderV1();
-    const assets=provider.listAssets();
+    // Exploration owns only its generic preview definition; Capture artwork
+    // remains external and is never copied into authored WorldActorPlacements.
+    let source=null,sourceError=null;
+    try{source=await createCaptureActorPreviewProviderV1();}
+    catch(error){sourceError=error;}
+    const generic=demoActorAsset?Object.freeze({
+      id:'exploration:npc:generic-v1',displayName:'PNJ générique (voyageur)',
+      role:'npc',
+      mapVisual:normalizeMapActorVisual({
+        assetId:demoActorAsset.id,role:'npc',targetHeight:62
+      })
+    }):null;
+    const assets=Object.freeze([
+      ...(source?.listAssets()??[]),
+      ...(generic?[demoActorAsset]:[])
+    ]);
+    const definitions=Object.freeze([
+      ...(source?.listDefinitions()??[]),...(generic?[generic]:[])
+    ]);
+    const provider=Object.freeze({
+      listAssets:()=>assets,
+      listDefinitions:()=>definitions,
+      resolveDefinition:id=>id===generic?.id?generic:source?.resolveDefinition(id)??null,
+      resolveAsset:id=>id===generic?.mapVisual.assetId?demoActorAsset:source?.resolveAsset(id)??null
+    });
     const loader=createImageAssetLoader({resolveAsset:createMapActorAssetResolver(assets)});
     const results=await loader.load(assets.map(a=>a.id));
     if(results.ready!==assets.length||results.missing||results.errors)
@@ -2509,7 +2579,6 @@ async function loadCaptureActorCatalog(){
     captureActorProvider=provider;
     captureActorRenderer=createMapActorRenderer({preparedVisuals:preparer});
     captureActorImageLoader=loader;
-    const definitions=provider.listDefinitions();
     $('actor-definition').replaceChildren(...definitions.map(def=>{
       const opt=document.createElement('option');
       opt.value=def.id;opt.textContent=(def.displayName||def.id)+' · '+def.role;
@@ -2517,7 +2586,8 @@ async function loadCaptureActorCatalog(){
     }));
     $('actor-definition').disabled=!definitions.length;
     $('actor-source-status').textContent=definitions.length+
-      ' acteur(s) disponibles depuis Capture · vues natives';
+      ' visuel(s) disponibles (Capture + PNJ Exploration)'+
+      (sourceError?' · Capture indisponible : '+sourceError.message:'');
     syncActorViewAvailability();
     scheduleDraw();
   }catch(e){
@@ -2531,11 +2601,36 @@ function syncActorViewAvailability(){
   if(back)back.disabled=!definition?.mapVisualByView?.back;
   if(back?.disabled&&$('actor-view').value==='back')$('actor-view').value='front';
 }
+function npcSettingsFromControls(){
+  // The frozen V80 markup intentionally has no NPC controls.
+  // Its existing Actor placements keep their exact legacy shape.
+  if(!$('actor-npc-kind'))return null;
+  return {
+    kind:$('actor-npc-kind').value,name:$('actor-npc-name').value,
+    movement:{mode:$('actor-npc-movement').value,
+      radius:Number($('actor-npc-radius').value)},
+    dialogue:$('actor-npc-dialogue').value,
+    questId:$('actor-npc-quest').value,
+    trainerTeamId:$('actor-npc-team').value,
+    merchantId:$('actor-npc-merchant').value
+  };
+}
 function syncActorSelectedControls(){
   const selected=placedActors.find(actor=>actor.id===actorSelectedId);
   $('actor-selected').textContent=selected?
     'Acteur sélectionné : '+selected.id:'Aucun acteur sélectionné';
   if(!selected)return;
+  const npc=selected.npc;
+  if($('actor-npc-kind')){
+  $('actor-npc-kind').value=npc?.kind??'dialogue';
+  $('actor-npc-name').value=npc?.name??'';
+  $('actor-npc-movement').value=npc?.movement.mode??'static';
+  $('actor-npc-radius').value=String(npc?.movement.radius??90);
+  $('actor-npc-dialogue').value=npc?.dialogue??'';
+  $('actor-npc-quest').value=npc?.questId??'';
+  $('actor-npc-team').value=npc?.trainerTeamId??'';
+  $('actor-npc-merchant').value=npc?.merchantId??'';
+  }
   $('actor-definition').value=selected.actorDefinitionId;
   syncActorViewAvailability();
   $('actor-facing').value=String(selected.facingX);
@@ -2574,6 +2669,20 @@ function setActorSubmode(active){
 }
 function applyActorAtCell(cell){
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  // One natural touch opens the placed actor's details instead of duplicating
+  // it. WorldArea.actors remains the only placement authority.
+  if($('actor-action').value==='place'){
+    const existing=findSculptPreviewActorNear(placedActors,x,y);
+    if(existing){
+      actorSelectedId=existing.id;
+      $('actor-action').value='select';
+      syncActorSelectedControls();
+      $('actor-npc-settings')?.setAttribute('open','');
+      scheduleDraw();
+      status('Acteur sélectionné : modifier sa fiche ci-dessous');
+      return;
+    }
+  }
   if($('actor-action').value==='select'){
     const found=findSculptPreviewActorNear(placedActors,x,y);
     actorSelectedId=found?.id??null;
@@ -2596,10 +2705,19 @@ function applyActorAtCell(cell){
   if(actorCommit(appendSculptPreviewActor(placedActors,{
     definitionId,x,y,facingX:Number($('actor-facing').value),
     visualScale:Number($('actor-scale').value)/100,
-    visualView:$('actor-view').value
-  })))status('Acteur Capture placé · exporter la scène pour sauvegarder');
+    visualView:$('actor-view').value,
+    npc:npcSettingsFromControls()
+  })))status('Acteur / PNJ placé · exporter la scène pour sauvegarder');
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
+for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
+  'actor-npc-radius','actor-npc-dialogue','actor-npc-quest','actor-npc-team',
+  'actor-npc-merchant']){
+  $(id)?.addEventListener('change',()=>{
+    try{editSelectedActor({npc:npcSettingsFromControls()});}
+    catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
+  });
+}
 $('actor-action').addEventListener('change',()=>{
   if($('actor-action').value!=='select')actorSelectedId=null;
   syncActorSelectedControls();scheduleDraw();
@@ -3202,6 +3320,8 @@ function captureSculptArea(){
   return {terrain,objects:placedObjects,actors:placedActors,surface};
 }
 function mountSculptArea(snapshot){
+  closeNpcDialogue();
+  if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
   surface=snapshot.surface;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
@@ -4319,6 +4439,9 @@ function installSculptWorldAreaEditing(){
 // an alternative document de monde. Reusing them always enters the regular editor.
 function installSculptMapPresetPalette(){
   const select=$('sculpt-map-preset-select');
+  // The frozen V80 layout has no authored map-preset palette.
+  // Preserve its editor without a second interface or hidden DOM clones.
+  if(!select)return;
   const presetStatus=(message,error=false)=>{
     const label=$('sculpt-map-preset-status');
     label.textContent=message;label.style.color=error?'#ffccbb':'#b7f2d6';
@@ -4416,7 +4539,9 @@ sculptBootReady=true;fit();
 // The SAME canonical Portal action must be wired in both World Builder Tester
 // and native scoped Jouer. The former editor-only registration left an
 // enabled-looking door button inert in real play.
-$('world-portal-traverse').addEventListener('click',traverseSculptWorldPortal);
+// Frozen V80 does not include the WorldArea Portal button. Modern Sculpt
+// keeps its canonical action; the legacy editor must still boot completely.
+$('world-portal-traverse')?.addEventListener('click',traverseSculptWorldPortal);
 installSculptWorldAreaEditing();
 installSculptPlayMode();
 installSculptMapPresetPalette();

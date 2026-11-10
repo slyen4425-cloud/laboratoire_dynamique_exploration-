@@ -1,3 +1,5 @@
+import {normalizeMapActorNpcSettingsV1} from './map-actor-npc-settings-v1.js';
+
 export const WORLD_ACTOR_PLACEMENT_SCHEMA_VERSION = 1;
 
 function text(value) {
@@ -48,7 +50,10 @@ export function normalizeWorldActorPlacement(
        raw.visualScale <= 2
       ? { visualScale: raw.visualScale } : {}),
     ...(raw.visualView === 'front' || raw.visualView === 'back'
-      ? { visualView: raw.visualView } : {})
+      ? { visualView: raw.visualView } : {}),
+    // Instance-scoped interaction settings only. No Capture visual/stat copy.
+    ...(raw.npc===undefined||raw.npc===null
+      ? {} : {npc:normalizeMapActorNpcSettingsV1(raw.npc)})
   });
 }
 

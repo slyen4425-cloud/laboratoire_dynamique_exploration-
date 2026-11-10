@@ -109,7 +109,9 @@ try{
  await send('Page.navigate',{url:origin+'/sculpt-lab.html?play=1&adventureSession='+fixture.sessionId});
  const ready=await waitFor("(()=>{const p=window.__sculptPlayProbe?.();return p?.active&&p?.playing?p:document.body.classList.contains('sculpt-play-unavailable')?{error:document.getElementById('play-start-error-message')?.textContent}:null})()", 'scoped native Jouer');
  if(ready.error||ready.areaId!==fixture.from)throw Error('Play start invalid '+JSON.stringify(ready));
- const portalReady=()=> "(()=>{const b=document.querySelector('#world-portal-traverse');return b&&!b.hidden&&!b.disabled&&b.textContent.includes('Entrer')})()";
+ // A human cannot click through the loading cover. The smoke must obey
+ // that same visible readiness before attempting an immediate return Portal.
+ const portalReady=()=> "(()=>{const b=document.querySelector('#world-portal-traverse');const cover=document.querySelector('#play-area-loading');return b&&!b.hidden&&!b.disabled&&b.textContent.includes('Entrer')&&(!cover||cover.hidden)})()";
  await waitFor(portalReady(),'official clickable Portal at first position');
  await evaluate("document.querySelector('#world-portal-traverse').click()");
  const arrived=areaId=>"(()=>{const p=window.__sculptPlayProbe?.();const saved=JSON.parse(localStorage.getItem('gensrpg.exploration.play.navigation.v1:'+"
