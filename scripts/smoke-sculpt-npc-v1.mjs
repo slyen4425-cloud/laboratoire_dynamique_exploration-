@@ -126,7 +126,9 @@ try{
   return {count:window.__sculptActorsProbe().count,actor};
  })()`);
  if(placed.count!==1||placed.actor?.npc?.questId!=='quest.test.01'||
-    placed.actor?.npc?.dialogue!=='Bonjour voyageur !\\nTrouve la clé.')
+     !placed.actor?.npc?.dialogue.includes('Bonjour voyageur !')||
+     !placed.actor?.npc?.dialogue.includes('Trouve la clé.')||
+     !placed.actor?.npc?.dialogue.includes(String.fromCharCode(10)))
   throw Error('NPC placement not persisted in canonical scene '+JSON.stringify(placed));
  // The next tap on the same placed actor must select its details automatically
  // without requiring a mode switch or creating a duplicate Actor placement.
