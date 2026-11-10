@@ -179,7 +179,7 @@ export function normalizeSculptPreviewActors(raw=[]){
   return placements;
 }
 export function appendSculptPreviewActor(raw,{
-  definitionId,x,y,facingX=1,visualScale=1,visualView='front'
+  definitionId,x,y,facingX=1,visualScale=1,visualView='front',npc=null
 }={}){
   const actors=normalizeSculptPreviewActors(raw);
   if(actors.length>=SCULPT_ACTOR_LIMIT||!definitionId||
@@ -189,7 +189,8 @@ export function appendSculptPreviewActor(raw,{
   const placed=normalizeWorldActorPlacement({
     id:'sculpt-actor-'+serial,actorDefinitionId:definitionId,x,y,facingX,
     ...(visualScale===1?{}:{visualScale}),
-    ...(visualView==='front'?{}:{visualView})
+    ...(visualView==='front'?{}:{visualView}),
+    ...(npc===null?{}:{npc})
   },actors.length);
   return Object.freeze([...actors,placed]);
 }
@@ -209,7 +210,7 @@ export function findSculptPreviewActorNear(raw,x,y,threshold=28){
   return best;
 }
 export function updateSculptPreviewActor(raw,id,{
-  facingX,visualScale,visualView
+  facingX,visualScale,visualView,npc
 }={}){
   const actors=normalizeSculptPreviewActors(raw);
   if(!actors.some(actor=>actor.id===id))return actors;
@@ -219,7 +220,8 @@ export function updateSculptPreviewActor(raw,id,{
       ...actor,
       facingX:facingX===undefined?actor.facingX:facingX,
       visualScale:visualScale===undefined?(actor.visualScale??1):visualScale,
-      visualView:visualView===undefined?(actor.visualView??'front'):visualView
+      visualView:visualView===undefined?(actor.visualView??'front'):visualView,
+      ...(npc===undefined?{}:{npc})
     },index);
     return JSON.stringify(next)===JSON.stringify(actor)?actor:next;
   }));
