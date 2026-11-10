@@ -83,8 +83,12 @@ try{
  });
  socket.addEventListener('message',e=>{
   const r=JSON.parse(e.data);
-  if(r.method==='Runtime.exceptionThrown')
-   errors.push(r.params?.exceptionDetails?.text??'unknown JS error');
+  if(r.method==='Runtime.exceptionThrown'){
+   const issue=r.params?.exceptionDetails;
+   errors.push({text:issue?.text,description:issue?.exception?.description,
+     url:issue?.url,line:issue?.lineNumber,
+     source:issue?.stackTrace?.callFrames?.[0]?.url});
+  }
   const cb=pending.get(r.id);
   if(cb){pending.delete(r.id);cb(r);}
  });
