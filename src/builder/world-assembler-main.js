@@ -1,7 +1,7 @@
 import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
-  initializeWorldPresetEncounters,setAreaEncounterLevelRange,
+  initializeWorldPresetEncounters,setAreaEncounterLevelRange,setAreaEncounterWildStatProfile,
   setWorldAssemblerNodePosition,resetWorldAssemblerNodePositions,
   serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
@@ -14,6 +14,7 @@ import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
 import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
+import {DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
@@ -155,7 +156,22 @@ function installWorldAssembler(){
     apply(()=>setAreaEncounterLevelRange(draft,area.id,{minLevel,maxLevel}),
       'Zone '+areaLabel(area)+' : niveau sauvage aléatoire de '+minLevel+' à '+maxLevel+'.');
   });
-  on(byId('world-encounters-initialize'),'click',()=>{
+  on(byId('world-area-wild-stat-profile'),'submit',event=>{
+     event.preventDefault();
+     const area=getSelected();
+     const profile={
+       pointsPerLevel:Number(byId('wild-points-per-level').value),
+       healthMinimumPct:Number(byId('wild-health-minimum').value),
+       defenseMinimumPct:Number(byId('wild-defense-minimum').value),
+       speedMinimumPct:Number(byId('wild-speed-minimum').value),
+       specialtyMultiplier:Number(byId('wild-specialty-multiplier').value)
+     };
+     if(area.encounters?.minLevel===undefined)
+       return status('Configure d’abord les niveaux minimum et maximum de la zone.',true);
+     apply(()=>setAreaEncounterWildStatProfile(draft,area.id,profile),
+       'Profil sauvage de '+areaLabel(area)+' enregistré dans le WorldDocument.');
+   });
+   on(byId('world-encounters-initialize'),'click',()=>{
     if(!encounterConfigNeedsExplicitInitialization(draft.encounterConfig)){
       libraryStatus('Rencontres déjà configurées : paramètres conservés.');
       return;
@@ -483,7 +499,17 @@ function installWorldAssembler(){
     renderAreaEvents(area);
     byId('area-encounter-min-level').value=String(area.encounters?.minLevel??1);
     byId('area-encounter-max-level').value=String(area.encounters?.maxLevel??5);
-    byId('area-encounter-levels-status').textContent=
+    const wildProfile=area.encounters?.wildStatProfile??DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1;
+     for(const [id,value] of Object.entries({
+       'wild-points-per-level':wildProfile.pointsPerLevel,
+       'wild-health-minimum':wildProfile.healthMinimumPct,
+       'wild-defense-minimum':wildProfile.defenseMinimumPct,
+       'wild-speed-minimum':wildProfile.speedMinimumPct,
+       'wild-specialty-multiplier':wildProfile.specialtyMultiplier
+     }))byId(id).value=String(value);
+     byId('area-wild-stat-profile-status').textContent=area.encounters?.wildStatProfile
+       ?'✓ Profil sauvegardé pour cette zone.':'Profil par défaut : 20 points/niveau, minimum 15 % PV/Défense/Vitesse.';
+     byId('area-encounter-levels-status').textContent=
       area.encounters?.minLevel===undefined
         ?'Aucune plage personnalisée enregistrée pour cette zone.'
         :'Niveaux '+area.encounters.minLevel+' à '+area.encounters.maxLevel+

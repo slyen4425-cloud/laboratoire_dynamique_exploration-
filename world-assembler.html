@@ -154,7 +154,22 @@
     </form>
      <p class="help-note terrain-chance-owner">Les chances de rencontre restent définies <strong>par texture de terrain</strong> dans l’éditeur : route sûre à 0 %, herbe et hautes herbes configurables indépendamment. Ces niveaux ne modifient pas les probabilités.</p>
     </details>
-    <button id="edit-sculpt-area" class="accent block" type="button">🗺 Modifier cette carte (panneau 2,5D)</button>
+    <details class="area-editor-group">
+      <summary>⚖️ Répartition des statistiques des créatures sauvages</summary>
+      <form id="world-area-wild-stat-profile" class="add-panel" aria-label="Profil des statistiques des rencontres">
+       <p class="help-note">Les points gagnés après le niveau 1 renforcent les spécialités de la créature, avec un minimum garanti en PV, défense et vitesse. Définis aussi les niveaux de la zone ci-dessus.</p>
+       <div class="world-area-size-fields">
+        <label class="field">Points par niveau<input id="wild-points-per-level" type="number" min="0" max="1000" step="1" value="20" required></label>
+        <label class="field">Minimum PV (%)<input id="wild-health-minimum" type="number" min="0" max="100" step="1" value="15" required></label>
+        <label class="field">Minimum Défense (%)<input id="wild-defense-minimum" type="number" min="0" max="100" step="1" value="15" required></label>
+        <label class="field">Minimum Vitesse (%)<input id="wild-speed-minimum" type="number" min="0" max="100" step="1" value="15" required></label>
+        <label class="field">Priorité aux éléments (×)<input id="wild-specialty-multiplier" type="number" min="0" max="10" step="0.1" value="1" required></label>
+       </div>
+       <button id="save-area-wild-stat-profile" class="accent block" type="submit">Enregistrer le profil de cette zone</button>
+       <output id="area-wild-stat-profile-status" role="status" aria-live="polite"></output>
+      </form>
+     </details>
+     <button id="edit-sculpt-area" class="accent block" type="button">🗺 Modifier cette carte (panneau 2,5D)</button>
     <button id="edit-area" class="block secondary" type="button">🌿 Textures et chances de rencontre (éditeur 2D)</button>
     <button id="start-area" class="block secondary" type="button">★ Définir comme départ</button>
     <section class="area-contents-panel" aria-label="Contenu réel de la zone sélectionnée">
