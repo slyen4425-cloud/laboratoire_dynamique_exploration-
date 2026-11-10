@@ -1960,7 +1960,7 @@ function navigationSpawn(){
 let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0;
 function closeNpcDialogue(){
   npcDialogueOpen=false;
-  $('npc-dialogue-overlay').hidden=true;
+  if($('npc-dialogue-overlay'))$('npc-dialogue-overlay').hidden=true;
   npcDialogueLines=[];npcDialogueIndex=0;
 }
 function nearbyNpcForDialogue(){
@@ -1968,11 +1968,13 @@ function nearbyNpcForDialogue(){
     ?nearestDialogNpcV1(placedActors,navActor):null;
 }
 function updateNpcInteraction(){
+  // Legacy V80 does not expose the new dialogue overlay.
+  if(!$('npc-talk'))return;
   const npc=nearbyNpcForDialogue();
   $('npc-talk').hidden=!npc||npcDialogueOpen;
   if(npc)$('npc-talk').textContent='💬 '+(npc.npc.name||'Parler');
 }
-$('npc-talk').addEventListener('click',()=>{
+$('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
   if(!npcDialogueLines.length)return;
@@ -1982,14 +1984,14 @@ $('npc-talk').addEventListener('click',()=>{
   $('npc-dialogue-next').textContent=npcDialogueLines.length>1?'Suivant':'Terminer';
   $('npc-dialogue-overlay').hidden=false;updateNpcInteraction();
 });
-$('npc-dialogue-next').addEventListener('click',()=>{
+$('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
   npcDialogueIndex+=1;
   if(npcDialogueIndex>=npcDialogueLines.length){closeNpcDialogue();updateNpcInteraction();return;}
   $('npc-dialogue-text').textContent=npcDialogueLines[npcDialogueIndex];
   $('npc-dialogue-next').textContent=npcDialogueIndex===npcDialogueLines.length-1?'Terminer':'Suivant';
 });
-$('npc-dialogue-close').addEventListener('click',()=>{
+$('npc-dialogue-close')?.addEventListener('click',()=>{
   closeNpcDialogue();updateNpcInteraction();
 });
 function updateNavigationInfo(forced=false){
@@ -2162,7 +2164,8 @@ function setNavigationTesting(on){
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
     navigationTesting=false;
-    closeNpcDialogue();$('npc-talk').hidden=true;
+    closeNpcDialogue();
+    if($('npc-talk'))$('npc-talk').hidden=true;
     explorationSoundtrack.stop();
     cancelAnimationFrame(navFrame);navFrame=0;navPreviousTime=null;
     navStick?.dispose();navStick=null;navKeys.clear();
@@ -2599,6 +2602,9 @@ function syncActorViewAvailability(){
   if(back?.disabled&&$('actor-view').value==='back')$('actor-view').value='front';
 }
 function npcSettingsFromControls(){
+  // The frozen V80 markup intentionally has no NPC controls.
+  // Its existing Actor placements keep their exact legacy shape.
+  if(!$('actor-npc-kind'))return null;
   return {
     kind:$('actor-npc-kind').value,name:$('actor-npc-name').value,
     movement:{mode:$('actor-npc-movement').value,
@@ -2615,6 +2621,7 @@ function syncActorSelectedControls(){
     'Acteur sélectionné : '+selected.id:'Aucun acteur sélectionné';
   if(!selected)return;
   const npc=selected.npc;
+  if($('actor-npc-kind')){
   $('actor-npc-kind').value=npc?.kind??'dialogue';
   $('actor-npc-name').value=npc?.name??'';
   $('actor-npc-movement').value=npc?.movement.mode??'static';
@@ -2623,6 +2630,7 @@ function syncActorSelectedControls(){
   $('actor-npc-quest').value=npc?.questId??'';
   $('actor-npc-team').value=npc?.trainerTeamId??'';
   $('actor-npc-merchant').value=npc?.merchantId??'';
+  }
   $('actor-definition').value=selected.actorDefinitionId;
   syncActorViewAvailability();
   $('actor-facing').value=String(selected.facingX);
@@ -2691,7 +2699,7 @@ $('actor-definition').addEventListener('change',syncActorViewAvailability);
 for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
   'actor-npc-radius','actor-npc-dialogue','actor-npc-quest','actor-npc-team',
   'actor-npc-merchant']){
-  $(id).addEventListener('change',()=>{
+  $(id)?.addEventListener('change',()=>{
     try{editSelectedActor({npc:npcSettingsFromControls()});}
     catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
   });
@@ -3299,7 +3307,7 @@ function captureSculptArea(){
 }
 function mountSculptArea(snapshot){
   closeNpcDialogue();
-  $('npc-talk').hidden=true;
+  if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
   surface=snapshot.surface;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
