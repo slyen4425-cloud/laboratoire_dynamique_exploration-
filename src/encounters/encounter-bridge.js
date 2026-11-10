@@ -13,6 +13,7 @@ export function snapshotFromEncounterIntent(intent) {
     playerPartyRef: intent.playerPartyRef,
     opponentCreatureId: intent.opponentCreatureId,
     opponentLevel: intent.opponentLevel,
+    wildStatProfile: intent.wildStatProfile,
     rulesetId: intent.rulesetId,
     areaId: intent.areaId,
     terrainFamilyId: intent.terrainFamilyId,

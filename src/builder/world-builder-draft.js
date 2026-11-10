@@ -1,3 +1,4 @@
+import {normalizeWorldEncounterStatProfileV1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
@@ -719,6 +720,16 @@ export function setAreaEncounterLevelRange(draft,areaId,{minLevel,maxLevel}={}){
  area.encounters ??= {};
  area.encounters.minLevel=minLevel;
  area.encounters.maxLevel=maxLevel;
+ return next;
+}
+
+/** Only the WorldDocument Area owns its wild-encounter author profile. */
+export function setAreaEncounterWildStatProfile(draft,areaId,rawProfile){
+ const profile=normalizeWorldEncounterStatProfileV1(rawProfile);
+ const next=clone(draft),area=findArea(next,areaId);
+ if(!area)throw new RangeError('WorldArea inconnue pour le profil sauvage');
+ area.encounters??={};
+ area.encounters.wildStatProfile=profile;
  return next;
 }
 

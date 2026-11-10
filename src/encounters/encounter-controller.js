@@ -164,7 +164,9 @@ export function createEncounterController({
       elementId: resolved.elementId,
       opponentCreatureId: resolved.creatureId,
       ...(area.encounters?.minLevel===undefined&&area.encounters?.maxLevel===undefined
-        ?{}:{opponentLevel:rollAreaEncounterOpponentLevel(area,random)})
+        ?{}:{opponentLevel:rollAreaEncounterOpponentLevel(area,random)}),
+       ...(area.encounters?.wildStatProfile
+         ?{wildStatProfile:area.encounters.wildStatProfile}:{})
     });
   }
 
