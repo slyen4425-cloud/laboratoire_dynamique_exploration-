@@ -36,7 +36,8 @@ import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-act
 import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
-import {nearestDialogNpcV1} from './actors/map-actor-npc-settings-v1.js';
+import {nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js';
+import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
@@ -144,6 +145,7 @@ let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectR
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
+let npcOfficialCreatures=Object.freeze([]);
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
 // supports its existing WorldSurface authoring without a second control path.
@@ -2601,35 +2603,137 @@ function syncActorViewAvailability(){
   if(back)back.disabled=!definition?.mapVisualByView?.back;
   if(back?.disabled&&$('actor-view').value==='back')$('actor-view').value='front';
 }
+function npcSelectedActor(){
+  return placedActors.find(actor=>actor.id===actorSelectedId)??null;
+}
+function npcCreatureName(creatureId){
+  return npcOfficialCreatures.find(creature=>creature.id===creatureId)?.name??
+    'Créature non trouvée dans le bestiaire officiel';
+}
 function npcSettingsFromControls(){
-  // The frozen V80 markup intentionally has no NPC controls.
-  // Its existing Actor placements keep their exact legacy shape.
+  // Old V80 has no NPC editor. Legacy external references are preserved in
+  // exported WorldArea.actors, but never shown as editable technical IDs.
   if(!$('actor-npc-kind'))return null;
+  const current=npcSelectedActor()?.npc??null;
+  const chosenWild=$('npc-wild-creature')?.value||current?.wildCreature?.creatureId;
   return {
     kind:$('actor-npc-kind').value,name:$('actor-npc-name').value,
     movement:{mode:$('actor-npc-movement').value,
       radius:Number($('actor-npc-radius').value)},
     dialogue:$('actor-npc-dialogue').value,
-    questId:$('actor-npc-quest').value,
-    trainerTeamId:$('actor-npc-team').value,
-    merchantId:$('actor-npc-merchant').value
+    questId:current?.questId??'',
+    trainerTeamId:current?.trainerTeamId??'',
+    merchantId:current?.merchantId??'',
+    ...(current?.trainerRoster?{trainerRoster:current.trainerRoster}:{}),
+    ...(chosenWild?{wildCreature:{creatureId:chosenWild,
+      level:Number($('npc-wild-level')?.value??current?.wildCreature?.level??10)}}:{})
   };
 }
+function npcApplyAuthoringPatch(patch){
+  const selected=npcSelectedActor();
+  if(!selected||$('actor-action').value!=='select'){
+    status('Place un PNJ, puis touche-le pour modifier sa fiche.');return;
+  }
+  try{editSelectedActor({npc:{...npcSettingsFromControls(),...patch}});}
+  catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
+}
+function npcRoleEditorRefresh(){
+  // The shared Sculpt engine also boots on immutable V80.
+  if(!$('npc-trainer-editor'))return;
+  const kind=$('actor-npc-kind').value;
+  $('npc-trainer-editor').hidden=kind!=='trainer';
+  $('npc-wild-editor').hidden=kind!=='wild';
+  $('npc-role-pending').hidden=kind!=='quest'&&kind!=='merchant';
+  const selected=npcSelectedActor(),npc=selected?.npc;
+  const roster=npc?.trainerRoster??[];
+  $('npc-team-summary').textContent=selected
+    ?roster.length+' / '+NPC_TRAINER_ROSTER_LIMIT_V1+' créature(s) configurées'
+    :'Pose un PNJ sur la carte puis touche-le pour configurer son équipe.';
+  $('npc-team-add').disabled=!selected||!npcOfficialCreatures.length||
+    roster.length>=NPC_TRAINER_ROSTER_LIMIT_V1;
+  const list=$('npc-team-list');
+  list.replaceChildren();
+  roster.forEach((slot,index)=>{
+    const row=document.createElement('div');
+    row.className='npc-team-row';
+    const title=document.createElement('span');title.className='npc-slot-title';
+    title.textContent=(index+1)+'. '+npcCreatureName(slot.creatureId);
+    row.append(title);
+    const level=document.createElement('input');
+    level.type='number';level.min='1';level.max='9999';level.step='1';
+    level.value=String(slot.level);level.setAttribute('aria-label','Niveau de '+npcCreatureName(slot.creatureId));
+    level.style.width='74px';
+    level.addEventListener('change',()=>{
+      const changed=[...roster];changed[index]={...slot,level:Number(level.value)};
+      npcApplyAuthoringPatch({trainerRoster:changed});
+    });
+    row.append(level);
+    for(const [label,delta] of [['↑',-1],['↓',1]]){
+      const button=document.createElement('button');button.type='button';
+      button.textContent=label;
+      button.setAttribute('aria-label',label==='↑'?'Monter la créature':'Descendre la créature');
+      button.disabled=index+delta<0||index+delta>=roster.length;
+      button.addEventListener('click',()=>{
+        const changed=[...roster];
+        [changed[index],changed[index+delta]]=[changed[index+delta],changed[index]];
+        npcApplyAuthoringPatch({trainerRoster:changed});
+      });
+      row.append(button);
+    }
+    const remove=document.createElement('button');remove.type='button';
+    remove.textContent='✕';remove.setAttribute('aria-label','Retirer la créature');
+    remove.addEventListener('click',()=>npcApplyAuthoringPatch({
+      trainerRoster:roster.filter((_,i)=>i!==index)
+    }));
+    row.append(remove);list.append(row);
+  });
+  const copy=$('npc-team-copy-source'),oldChoice=copy.value;
+  copy.replaceChildren(new Option('Choisir un autre dresseur…',''),...placedActors
+    .filter(actor=>actor.id!==selected?.id&&actor.npc?.trainerRoster?.length)
+    .map(actor=>new Option(actor.npc.name||'Dresseur sans nom',actor.id)));
+  if([...copy.options].some(option=>option.value===oldChoice))copy.value=oldChoice;
+  $('npc-team-copy').disabled=!selected||!copy.value;
+  if($('npc-wild-creature')){
+    const wild=npc?.wildCreature;
+    if(wild)$('npc-wild-creature').value=wild.creatureId;
+    else if(!selected)$('npc-wild-creature').value='';
+    $('npc-wild-level').value=String(wild?.level??10);
+  }
+}
+async function loadNpcOfficialCreatureChoices(){
+  if(!$('npc-team-creature'))return;
+  try{
+    // Read the CURRENT published Combat transfers. Never use the old
+    // September preview or a local clone of GenSRPG's creature database.
+    const source=await loadCaptureShowcaseEncounterSourceV1();
+    npcOfficialCreatures=source.creatures;
+    for(const id of ['npc-team-creature','npc-wild-creature']){
+      const select=$(id),selected=select.value;
+      select.replaceChildren(new Option('Choisir une créature publiée…',''),
+        ...npcOfficialCreatures.map(creature=>new Option(
+          creature.name+' · '+creature.elements.join(' / '),creature.id)));
+      if(npcOfficialCreatures.some(creature=>creature.id===selected))select.value=selected;
+    }
+    $('npc-catalog-status').textContent=npcOfficialCreatures.length+
+      ' créature(s) du bestiaire officiel Combat disponibles.';
+    npcRoleEditorRefresh();
+  }catch(error){
+    $('npc-catalog-status').textContent='Bestiaire officiel indisponible : '+
+      error.message+'. Aucun identifiant manuel ou catalogue de secours.';
+  }
+}
 function syncActorSelectedControls(){
-  const selected=placedActors.find(actor=>actor.id===actorSelectedId);
+  const selected=npcSelectedActor();
   $('actor-selected').textContent=selected?
     'Acteur sélectionné : '+selected.id:'Aucun acteur sélectionné';
-  if(!selected)return;
+  if(!selected){npcRoleEditorRefresh();return;}
   const npc=selected.npc;
   if($('actor-npc-kind')){
-  $('actor-npc-kind').value=npc?.kind??'dialogue';
-  $('actor-npc-name').value=npc?.name??'';
-  $('actor-npc-movement').value=npc?.movement.mode??'static';
-  $('actor-npc-radius').value=String(npc?.movement.radius??90);
-  $('actor-npc-dialogue').value=npc?.dialogue??'';
-  $('actor-npc-quest').value=npc?.questId??'';
-  $('actor-npc-team').value=npc?.trainerTeamId??'';
-  $('actor-npc-merchant').value=npc?.merchantId??'';
+    $('actor-npc-kind').value=npc?.kind??'dialogue';
+    $('actor-npc-name').value=npc?.name??'';
+    $('actor-npc-movement').value=npc?.movement.mode??'static';
+    $('actor-npc-radius').value=String(npc?.movement.radius??90);
+    $('actor-npc-dialogue').value=npc?.dialogue??'';
   }
   $('actor-definition').value=selected.actorDefinitionId;
   syncActorViewAvailability();
@@ -2639,6 +2743,7 @@ function syncActorSelectedControls(){
     ?'back':'front';
   $('actor-scale').value=String(Math.round((selected.visualScale??1)*100));
   $('actor-scale-value').textContent=$('actor-scale').value+' %';
+  npcRoleEditorRefresh();
 }
 function editSelectedActor(patch){
   if(!actorSelectedId||$('actor-action').value!=='select')return;
@@ -2711,13 +2816,33 @@ function applyActorAtCell(cell){
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
 for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
-  'actor-npc-radius','actor-npc-dialogue','actor-npc-quest','actor-npc-team',
-  'actor-npc-merchant']){
+  'actor-npc-radius','actor-npc-dialogue','npc-wild-creature','npc-wild-level']){
   $(id)?.addEventListener('change',()=>{
     try{editSelectedActor({npc:npcSettingsFromControls()});}
     catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
+    npcRoleEditorRefresh();
   });
 }
+$('npc-team-add')?.addEventListener('click',()=>{
+  const species=$('npc-team-creature').value;
+  const level=Number($('npc-team-level').value);
+  if(!npcOfficialCreatures.some(creature=>creature.id===species)){
+    status('Sélectionne une créature dans le bestiaire officiel.');return;
+  }
+  const roster=npcSelectedActor()?.npc?.trainerRoster??[];
+  if(roster.length>=NPC_TRAINER_ROSTER_LIMIT_V1){
+    status('Équipe complète : six créatures maximum.');return;
+  }
+  npcApplyAuthoringPatch({trainerRoster:[...roster,{creatureId:species,level}]});
+});
+$('npc-team-copy-source')?.addEventListener('change',npcRoleEditorRefresh);
+$('npc-team-copy')?.addEventListener('click',()=>{
+  const source=placedActors.find(actor=>actor.id===$('npc-team-copy-source').value);
+  if(!source?.npc?.trainerRoster?.length)return;
+  npcApplyAuthoringPatch({trainerRoster:source.npc.trainerRoster.map(slot=>({
+    creatureId:slot.creatureId,level:slot.level
+  }))});
+});
 $('actor-action').addEventListener('change',()=>{
   if($('actor-action').value!=='select')actorSelectedId=null;
   syncActorSelectedControls();scheduleDraw();
@@ -2755,6 +2880,7 @@ window.__sculptActorsProbe=()=>Object.freeze({
   undoCount:actorHistory.length,redoCount:actorRedo.length
 });
 loadCaptureActorCatalog();
+loadNpcOfficialCreatureChoices();
 function setObjectEditing(active){
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
