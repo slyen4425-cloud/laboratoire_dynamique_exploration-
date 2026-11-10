@@ -1960,11 +1960,12 @@ function navigationSpawn(){
   }
   return null;
 }
-let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0;
+let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0,npcDialogueMerchant=null;
 function closeNpcDialogue(){
   npcDialogueOpen=false;
   if($('npc-dialogue-overlay'))$('npc-dialogue-overlay').hidden=true;
-  npcDialogueLines=[];npcDialogueIndex=0;
+  npcDialogueLines=[];npcDialogueIndex=0;npcDialogueMerchant=null;
+  if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=true;
 }
 function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
@@ -1978,27 +1979,38 @@ function updateNpcInteraction(){
   if(npc)$('npc-talk').textContent=(npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
     (npc.npc.name||'Parler');
 }
+function requestNpcMerchantShop(actor){
+  if(!actor?.npc?.merchantId)return;
+  if(!adventureSessionId||window.parent===window){
+    status('Cette boutique est utilisable depuis une partie Monster Capture.');
+    return;
+  }
+  window.parent.postMessage({
+    schema:'gensrpg.exploration.npc.merchant.open.v1',
+    sessionId:adventureSessionId,merchantId:actor.npc.merchantId,
+    actorId:actor.id
+  },window.location.origin);
+}
 $('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
-  if(npc.npc.kind==='merchant'&&npc.npc.merchantId){
-    if(!adventureSessionId||window.parent===window){
-      status('Cette boutique est utilisable dans une partie Monster Capture.');
-      return;
-    }
-    window.parent.postMessage({
-      schema:'gensrpg.exploration.npc.merchant.open.v1',
-      sessionId:adventureSessionId,merchantId:npc.npc.merchantId,
-      actorId:npc.id
-    },window.location.origin);
-    return;
+  const canShop=npc.npc.kind==='merchant'&&!!npc.npc.merchantId;
+  if(canShop&&!npc.npc.dialogue.trim()){
+    requestNpcMerchantShop(npc);return;
   }
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
   if(!npcDialogueLines.length)return;
+  npcDialogueMerchant=canShop?npc:null;
+  if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
   npcDialogueIndex=0;npcDialogueOpen=true;
   $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
   $('npc-dialogue-text').textContent=npcDialogueLines[0];
   $('npc-dialogue-next').textContent=npcDialogueLines.length>1?'Suivant':'Terminer';
   $('npc-dialogue-overlay').hidden=false;updateNpcInteraction();
+});
+$('npc-dialogue-trade')?.addEventListener('click',()=>{
+  const actor=npcDialogueMerchant;
+  if(!actor||!npcDialogueOpen)return;
+  closeNpcDialogue();requestNpcMerchantShop(actor);updateNpcInteraction();
 });
 $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
