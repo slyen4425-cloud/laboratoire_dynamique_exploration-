@@ -146,6 +146,7 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let npcOfficialCreatures=Object.freeze([]);
+let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
 // supports its existing WorldSurface authoring without a second control path.
@@ -1974,10 +1975,23 @@ function updateNpcInteraction(){
   if(!$('npc-talk'))return;
   const npc=nearbyNpcForDialogue();
   $('npc-talk').hidden=!npc||npcDialogueOpen;
-  if(npc)$('npc-talk').textContent='💬 '+(npc.npc.name||'Parler');
+  if(npc)$('npc-talk').textContent=(npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
+    (npc.npc.name||'Parler');
 }
 $('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
+  if(npc.npc.kind==='merchant'&&npc.npc.merchantId){
+    if(!adventureSessionId||window.parent===window){
+      status('Cette boutique est utilisable dans une partie Monster Capture.');
+      return;
+    }
+    window.parent.postMessage({
+      schema:'gensrpg.exploration.npc.merchant.open.v1',
+      sessionId:adventureSessionId,merchantId:npc.npc.merchantId,
+      actorId:npc.id
+    },window.location.origin);
+    return;
+  }
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
   if(!npcDialogueLines.length)return;
   npcDialogueIndex=0;npcDialogueOpen=true;
@@ -2610,6 +2624,57 @@ function npcCreatureName(creatureId){
   return npcOfficialCreatures.find(creature=>creature.id===creatureId)?.name??
     'Créature non trouvée dans le bestiaire officiel';
 }
+function npcMerchantPickerRefresh(){
+  const picker=$('npc-merchant-picker');if(!picker)return;
+  const npc=npcSelectedActor()?.npc,selected=npc?.merchantId??'';
+  const found=npcMerchantChoices.some(shop=>shop.id===selected);
+  picker.replaceChildren(new Option('Aucune boutique associée',''),
+    ...npcMerchantChoices.map(shop=>new Option(shop.name,shop.id)));
+  if(selected&&!found)
+    picker.append(new Option('Boutique précédente indisponible (liaison conservée)',selected));
+  picker.value=selected;
+  picker.disabled=!npcSelectedActor()||!npcMerchantChoices.length;
+  $('npc-merchant-clear').disabled=!npcSelectedActor()||!selected;
+}
+function requestNpcMerchantCatalog(){
+  if(!$('npc-merchant-picker'))return;
+  if(window.parent===window){
+    $('npc-merchant-status').textContent=
+      'Ouvre cet éditeur depuis Monster Capture dans GenSRPG pour choisir une boutique.';
+    return;
+  }
+  npcMerchantRequestId=crypto.randomUUID();
+  window.parent.postMessage({
+    schema:'gensrpg.exploration.npc.merchant.catalog.request.v1',
+    requestId:npcMerchantRequestId
+  },window.location.origin);
+  $('npc-merchant-status').textContent='Lecture des marchands depuis Monster Capture…';
+}
+window.addEventListener('message',event=>{
+  if(event.origin!==window.location.origin||event.source!==window.parent)return;
+  if(event.data?.schema==='gensrpg.capture.v2.npc.merchant.catalog.response.v1'&&
+     event.data.requestId===npcMerchantRequestId){
+    npcMerchantRequestId=null;
+    const incoming=event.data.merchants;
+    npcMerchantChoices=Object.freeze(Array.isArray(incoming)?
+      incoming.filter(shop=>typeof shop?.id==='string'&&
+        /^[a-z0-9][a-z0-9_:.-]{0,119}$/i.test(shop.id)&&
+        typeof shop.name==='string'&&shop.name.length>0&&shop.name.length<=80)
+        .map(shop=>Object.freeze({id:shop.id,name:shop.name})):[]);
+    $('npc-merchant-status').textContent=event.data.error
+      ?'Catalogue indisponible : '+String(event.data.error).slice(0,150)
+      :npcMerchantChoices.length+' marchand(s) disponibles depuis Monster Capture.';
+    npcMerchantPickerRefresh();
+  }
+  if(event.data?.schema==='gensrpg.capture.v2.npc.merchant.open-ack.v1'&&
+     event.data.sessionId===adventureSessionId){
+    npcDialogueOpen=true;updateNpcInteraction();
+  }
+  if(event.data?.schema==='gensrpg.capture.v2.npc.merchant.closed.v1'&&
+     event.data.sessionId===adventureSessionId){
+    npcDialogueOpen=false;updateNpcInteraction();
+  }
+});
 function npcSettingsFromControls(){
   // Old V80 has no NPC editor. Legacy external references are preserved in
   // exported WorldArea.actors, but never shown as editable technical IDs.
@@ -2643,8 +2708,10 @@ function npcRoleEditorRefresh(){
   const kind=$('actor-npc-kind').value;
   $('npc-trainer-editor').hidden=kind!=='trainer';
   $('npc-wild-editor').hidden=kind!=='wild';
-  $('npc-role-pending').hidden=kind!=='quest'&&kind!=='merchant';
+  if($('npc-merchant-editor'))$('npc-merchant-editor').hidden=kind!=='merchant';
+  $('npc-role-pending').hidden=kind!=='quest';
   const selected=npcSelectedActor(),npc=selected?.npc;
+  npcMerchantPickerRefresh();
   const roster=npc?.trainerRoster??[];
   $('npc-team-summary').textContent=selected
     ?roster.length+' / '+NPC_TRAINER_ROSTER_LIMIT_V1+' créature(s) configurées'
@@ -2817,6 +2884,13 @@ function applyActorAtCell(cell){
   })))status('Acteur / PNJ placé · exporter la scène pour sauvegarder');
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
+$('npc-merchant-reload')?.addEventListener('click',requestNpcMerchantCatalog);
+$('npc-merchant-picker')?.addEventListener('change',()=>{
+  npcApplyAuthoringPatch({merchantId:$('npc-merchant-picker').value});
+});
+$('npc-merchant-clear')?.addEventListener('click',()=>{
+  npcApplyAuthoringPatch({merchantId:''});
+});
 for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
   'actor-npc-radius','actor-npc-dialogue','npc-wild-creature','npc-wild-level']){
   $(id)?.addEventListener('change',()=>{
@@ -2883,6 +2957,7 @@ window.__sculptActorsProbe=()=>Object.freeze({
 });
 loadCaptureActorCatalog();
 loadNpcOfficialCreatureChoices();
+requestNpcMerchantCatalog();
 function setObjectEditing(active){
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
