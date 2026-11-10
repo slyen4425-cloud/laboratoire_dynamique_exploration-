@@ -128,8 +128,8 @@ try{
  if(placed.count!==1||placed.actor?.npc?.questId!=='quest.test.01'||
     placed.actor?.npc?.dialogue!=='Bonjour voyageur !\\nTrouve la clé.')
   throw Error('NPC placement not persisted in canonical scene '+JSON.stringify(placed));
- // Select via the same Canvas pointer, then edit the instance.
- await run("document.querySelector('#actor-action').value='select';document.querySelector('#actor-action').dispatchEvent(new Event('change',{bubbles:true}));");
+ // The next tap on the same placed actor must select its details automatically
+ // without requiring a mode switch or creating a duplicate Actor placement.
  for(const type of ['mouseMoved','mousePressed','mouseReleased'])
   await command('Input.dispatchMouseEvent',{type,x:point.x,y:point.y,button:'left',clickCount:1});
  const updated=await run(`(()=>{
@@ -140,9 +140,12 @@ try{
   const role=document.querySelector('#actor-npc-kind');
   role.dispatchEvent(new Event('change',{bubbles:true}));
   document.querySelector('#scene-export').click();
-  return {selected,actor:JSON.parse(document.querySelector('#json').value).actors?.[0]};
+  return {selected,mode:document.querySelector('#actor-action').value,
+    count:window.__sculptActorsProbe().count,
+    actor:JSON.parse(document.querySelector('#json').value).actors?.[0]};
  })()`);
- if(!updated.selected||updated.actor?.npc?.name!=='Gardienne'||
+ if(!updated.selected||updated.mode!=='select'||updated.count!==1||
+    updated.actor?.npc?.name!=='Gardienne'||
     updated.actor?.npc?.kind!=='dialogue')
   throw Error('NPC select/edit failed '+JSON.stringify(updated));
  // Tester must show the SAME authored dialogue near the navigation Spawn.
