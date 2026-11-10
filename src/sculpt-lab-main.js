@@ -2696,7 +2696,7 @@ function npcRoleEditorRefresh(){
   if($('npc-wild-creature')){
     const wild=npc?.wildCreature;
     if(wild)$('npc-wild-creature').value=wild.creatureId;
-    else if(!selected)$('npc-wild-creature').value='';
+    else $('npc-wild-creature').value='';
     $('npc-wild-level').value=String(wild?.level??10);
   }
 }
@@ -2725,7 +2725,9 @@ async function loadNpcOfficialCreatureChoices(){
 function syncActorSelectedControls(){
   const selected=npcSelectedActor();
   $('actor-selected').textContent=selected?
-    'Acteur sélectionné : '+selected.id:'Aucun acteur sélectionné';
+    'PNJ sélectionné : '+(selected.npc?.name||
+      captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.displayName||
+      'sans nom'):'Aucun acteur sélectionné';
   if(!selected){npcRoleEditorRefresh();return;}
   const npc=selected.npc;
   if($('actor-npc-kind')){
