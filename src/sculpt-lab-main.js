@@ -2669,6 +2669,20 @@ function setActorSubmode(active){
 }
 function applyActorAtCell(cell){
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  // One natural touch opens the placed actor's details instead of duplicating
+  // it. WorldArea.actors remains the only placement authority.
+  if($('actor-action').value==='place'){
+    const existing=findSculptPreviewActorNear(placedActors,x,y);
+    if(existing){
+      actorSelectedId=existing.id;
+      $('actor-action').value='select';
+      syncActorSelectedControls();
+      $('actor-npc-settings')?.setAttribute('open','');
+      scheduleDraw();
+      status('Acteur sélectionné : modifier sa fiche ci-dessous');
+      return;
+    }
+  }
   if($('actor-action').value==='select'){
     const found=findSculptPreviewActorNear(placedActors,x,y);
     actorSelectedId=found?.id??null;
