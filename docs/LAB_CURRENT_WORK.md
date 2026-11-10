@@ -1,3 +1,14 @@
+## 2026-11-10 — PNJ de carte 2,5D : fiche d'instance et dialogue (CANDIDAT, NON GREEN)
+- **START immuable :** `main@448b6608c469238983ab9b330aa79d34016365ca`, branche `work/exploration-npc-placements-v1-2026-11-10`; lot isolé Exploration.
+- **Demande :** cliquer un acteur placé, définir sa catégorie (dialogue, quête, dresseur, créature errante, marchand), nom, comportement statique/errance et dialogue ; préparer les raccords ultérieurs.
+- **Autorité :** `WorldArea.actors[]` conserve les placements ; champ optionnel `npc` versionné limité aux réglages *locaux à l'instance*. `actorDefinitionId` reste la seule référence visuelle ; tous les combats, créatures, équipes, quêtes, inventaires et boutiques restent dans leurs propriétaires. Aucun nouvel EventStore, WorldDocument, moteur de collision ou moteur de mouvement.
+- **Fonctionnel dans ce lot :** pose/sélection/édition via l'onglet Acteurs de Sculpt, nom + texte de PNJ, formulaire et références futures, conversation de proximité en mode Tester/Jouer (proximité 65 unités, texte multiligne, pause de déplacement). Visuel PNJ générique depuis l'asset Explorer existant, visuels Capture par référence.
+- **Non implémenté volontairement :** mouvement errant actif, quêtes et récompenses, équipes de dresseurs et combats scénarisés, marchandises, import de visuel personnel PNJ, combats de monstres errants. Ces paramètres restent des intentions et ne doivent pas être présentés comme gameplay actif.
+- **Protégés :** placements hérités sans champ npc identiques, héros, Monster Capture, collisions/Portals/sauvegardes, Sculpt V80, assets et previews ; aucun chemin binaire ou autorité externe modifiés.
+- **Gate :** `npm test` + `npm run check`, CI du SHA candidat, tests navigateur édition/interaction sur mobile/paysage, contrôle Pages et budget, checkpoint GREEN puis `main` uniquement après validation. Aucun statut publié annoncé avant les preuves.
+
+---
+
 ## 2026-11-09 — World Builder : lot 1 compacité paysage (en validation)
 - START `main@73bf5e2d7538e785f35856ed106f87129ce09601` ; checkpoint `checkpoint/exploration-mobile-compact-start-2026-11-09` ; WORK `work/exploration-mobile-compact-2026-11-09`.
 - Objectif : priorité à la carte du monde sur smartphone paysage. Structure accessible par un volet réversible, import/export dans un menu Fichiers, actions secondaires du graphe dans un menu Outils, titre et hauteurs réduits. Aucun contrôle supprimé ; aucun modèle de monde, carte, asset, Portal ou sauvegarde modifié.
