@@ -126,10 +126,23 @@ try{
     throw Error('Sculpt real encounter authoring failed '+JSON.stringify(authored));
   // Save through the real WorldArea transition, not direct state mutation.
   await run("document.querySelector('#world-area-return').click();'saved-through-WorldArea'");
-  const returned=await waitFor(`(()=>{const probe=window.__worldAssemblerProbe?.();
+  let returned;
+  try {
+  returned=await waitFor(`(()=>{const probe=window.__worldAssemblerProbe?.();
     const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
     return probe&&location.pathname==='/world-assembler.html'&&world
       ?{probe,path:location.pathname,world}:null;})()`,'2.5D -> same World Builder round trip');
+  } catch(error) {
+    const details=await run(`(()=>({
+      path:location.pathname,query:location.search,
+      bodyClass:document.body.className,returnedButton:!!document.querySelector('#world-area-return'),
+      feedback:document.querySelector('#world-portal-feedback')?.textContent,
+      footer:document.querySelector('#notice')?.textContent,
+      assembler:typeof window.__worldAssemblerProbe==='function',
+      saved:!!localStorage.getItem('gensrpg.world-assembler.document.v1')
+    }))()`);
+    throw Error(error.message+' diagnostics='+JSON.stringify(details));
+  }
   const savedArea=returned.world.areas.find(a=>a.id===authored.enabled.areaId);
   const savedFamily=returned.world.encounterConfig.families
     .find(f=>f.terrainFamilyId===authored.enabled.familyId);
