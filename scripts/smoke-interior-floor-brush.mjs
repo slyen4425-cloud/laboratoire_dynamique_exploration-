@@ -5,6 +5,7 @@ import {readFile,mkdtemp,rm} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
+import {once} from 'node:events';
 const root=process.cwd();
 const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css',
  '.json':'application/json','.webp':'image/webp','.png':'image/png'};
@@ -152,6 +153,13 @@ try{
  console.log('GREEN Chromium: native World Builder -> Sculpt 2.5D interior, five original floor materials, real pointer brush, undo/redo and one saved WorldDocument');
 }finally{
  try{socket?.close();}catch{}
- try{chrome?.kill('SIGKILL');}catch{}
- server.close();await rm(profile,{recursive:true,force:true});
+ if(chrome&&chrome.exitCode===null&&chrome.signalCode===null){
+  const exited=once(chrome,'exit');
+  chrome.kill('SIGKILL');
+  await exited;
+ }
+ server.close();
+ // Chromium occasionally finishes writing Cache_Data after SIGKILL; cleanup
+ // is synchronous and must not turn a passed real-browser test into a false RED.
+ await rm(profile,{recursive:true,force:true,maxRetries:10,retryDelay:150});
 }
