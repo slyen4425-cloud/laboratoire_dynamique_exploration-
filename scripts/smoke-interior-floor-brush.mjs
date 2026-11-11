@@ -12,9 +12,13 @@ const server=createServer(async(req,res)=>{
  try{
   const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
   if(!path.startsWith(root+sep)){res.writeHead(403).end();return;}
+  const bytes=await readFile(path);
   res.writeHead(200,{'Content-Type':mime[extname(path)]||'application/octet-stream',
-   'Cache-Control':'no-store'}).end(await readFile(path));
- }catch{res.writeHead(404).end('missing');}
+   'Cache-Control':'no-store'}).end(bytes);
+ }catch{
+  if(!res.headersSent)res.writeHead(404).end('missing');
+  else res.end();
+ }
 });
 const binary=[process.env.CHROME_PATH,'google-chrome','chromium','chromium-browser']
  .find(bin=>bin&&spawnSync('which',[bin]).status===0);
