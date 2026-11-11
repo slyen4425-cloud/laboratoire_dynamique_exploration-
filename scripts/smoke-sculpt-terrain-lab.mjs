@@ -3495,38 +3495,33 @@ try{
      !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
     throw Error('World Builder visual assembly or canonical links failed: '+
       JSON.stringify(newWorldGraph));
+  // The canonical Map tab opens only the official 2.5D editor.
   await run("document.querySelector('#edit-area').click();true");
   let detailed=null;
-  for(let i=0;i<90;i++){
-    await sleep(120);
+  for(let i=0;i<100;i++){
+    await sleep(110);
     try{detailed=await run(`(()=>{
-      const back=document.querySelector('#world-assembler-back');
-      const area=document.querySelector('#area-select');
-      return back&&area?.options.length===3 ? {
-        backVisible:!back.hidden,selectedAreaId:area.value,
-        width:document.querySelector('#area-width')?.value
-      }:null;
+      const probe=window.__sculptWorldProbe?.();
+      return probe?.editable ? {probe,path:location.pathname,
+        old2dVisible:!!document.querySelector('.world-entry-links a[href="./builder.html"]')} : null;
     })()`);}catch{}
     if(detailed)break;
   }
-  if(!detailed?.backVisible||detailed.selectedAreaId!==newWorldGraph.started.selectedAreaId)
-    throw Error('Existing detailed Builder did not load target WorldArea: '+JSON.stringify(detailed));
-  await run(`(()=>{
-    const input=document.querySelector('#area-width');
-    input.value='850';input.dispatchEvent(new Event('change',{bubbles:true}));
-    document.querySelector('#world-assembler-back').click();
-    return true;
-  })()`);
+  if(!detailed?.path.endsWith('/sculpt-lab.html')||
+     detailed.probe.areaId!==newWorldGraph.started.selectedAreaId||
+     detailed.old2dVisible)
+    throw Error('Official 2.5D Builder did not load the target WorldArea: '+JSON.stringify(detailed));
+  await run("document.querySelector('#world-workspace-world').click();true");
   let returned=null;
-  for(let i=0;i<90;i++){
+  for(let i=0;i<100;i++){
     await sleep(120);
     try{returned=await run("typeof window.__worldAssemblerProbe==='function' ? window.__worldAssemblerProbe():null");}
     catch{}
     if(returned)break;
   }
-  if(returned?.selectedWidth!==850||returned.areaIds.length!==3||
-     returned.portalCount!==2||!returned.saved)
-    throw Error('Detailed Builder failed to return canonical edited WorldDocument: '+
+  if(returned?.selectedWidth!==newWorldGraph.started.selectedWidth||
+     returned.areaIds.length!==3||returned.portalCount!==2||!returned.saved)
+    throw Error('2.5D Builder failed to preserve canonical WorldDocument on return: '+
       JSON.stringify(returned));
   await send('Page.reload',{ignoreCache:true});
   let recovered=null;
@@ -3536,9 +3531,9 @@ try{
     catch{}
     if(recovered)break;
   }
-  if(recovered?.selectedWidth!==850||recovered.portalCount!==2)
+  if(recovered?.selectedWidth!==newWorldGraph.started.selectedWidth||recovered.portalCount!==2)
     throw Error('World Builder lost canonical local save after reload: '+JSON.stringify(recovered));
-  console.log('World Builder graph -> detailed Builder -> graph + reload Chromium:',
+  console.log('World Builder graph -> 2.5D map -> graph + reload Chromium:',
     JSON.stringify({initial:assemblerBoot.areaIds.length,final:recovered.areaIds.length,
       portals:recovered.portalCount,editedArea:recovered.selectedAreaId,
       width:recovered.selectedWidth,mobileLandscape:true}));
