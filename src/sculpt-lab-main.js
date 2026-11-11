@@ -2893,12 +2893,21 @@ function applyActorAtCell(cell){
     status('Définition Capture non chargée : aucun acteur placé');return;
   }
   syncActorViewAvailability();
-  if(actorCommit(appendSculptPreviewActor(placedActors,{
+  const nextActors=appendSculptPreviewActor(placedActors,{
     definitionId,x,y,facingX:Number($('actor-facing').value),
     visualScale:Number($('actor-scale').value)/100,
     visualView:$('actor-view').value,
     npc:npcSettingsFromControls()
-  })))status('Acteur / PNJ placé · exporter la scène pour sauvegarder');
+  });
+  if(actorCommit(nextActors)){
+    // An author who just placed a trainer must be able to compose its team
+    // immediately. The newly created WorldArea actor remains the sole owner.
+    actorSelectedId=nextActors.at(-1)?.id??null;
+    $('actor-action').value='select';
+    syncActorSelectedControls();
+    $('actor-npc-settings')?.setAttribute('open','');
+    status('PNJ posé et sélectionné : configure son rôle et son équipe ci-dessous.');
+  }
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
 $('npc-merchant-reload')?.addEventListener('click',requestNpcMerchantCatalog);
