@@ -45,7 +45,7 @@ test('both zone card and list open same dialog, drag does not change gameplay da
   assert.match(js,/renderAreaEvents\(area\)/);
   assert.match(js,/draft\.events\?\?\[\]/);
   assert.match(js,/objectDefinitionCatalogV1\.get/);
-  assert.match(js,/openAreaEditor\('\.\/builder\.html\?worldAssembler=1'\)/);
+  assert.doesNotMatch(js,/openAreaEditor\('\.\/builder\.html\?worldAssembler=1'\)/);
 });
 
 test('encounter chance stays owned by texture; zone level authoring never changes it',()=>{
@@ -80,7 +80,7 @@ test('encounter chance stays owned by texture; zone level authoring never change
   }
   assert.match(html,/chances de rencontre restent définies/);
   assert.match(html,/par texture de terrain/);
-  assert.match(html,/Textures et chances de rencontre \(éditeur 2D\)/);
+  assert.match(html,/Textures et chances de rencontre \(carte 2,5D\)/);
   // No new WorldArea chance-per-texture object or second terrain encounter writer.
   assert.doesNotMatch(js,/setAreaEncounterChance|updateTerrainFamilyEncounterProfile/);
 });

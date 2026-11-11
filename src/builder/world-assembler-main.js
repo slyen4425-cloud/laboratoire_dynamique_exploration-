@@ -455,10 +455,8 @@ function installWorldAssembler(){
         (event.action?.text??event.id).slice(0,100);
       meta.append(title,detail);
       row.append(icon,meta);
-      const edit=document.createElement('button');edit.type='button';
-      edit.textContent='Éditer';edit.addEventListener('click',
-        ()=>openAreaEditor('./builder.html?worldAssembler=1'));
-      row.append(edit);host.append(row);
+      // Events remain visible but cannot reopen the retired 2D editor.
+      host.append(row);
     }
     if(!events.length){
       const empty=document.createElement('p');empty.className='empty-links';
@@ -710,6 +708,7 @@ function installWorldAssembler(){
   });
   function openAreaEditor(url){
     try{
+      if(!url.startsWith('./sculpt-lab.html?'))throw Error('Ancien éditeur 2D retiré : seule la carte 2,5D officielle est disponible.');
       let areaToOpen=selectedId;
       if(url.startsWith('./sculpt-lab.html?')){
         // The map panel never opens the unrelated demo and never shrinks a
@@ -791,12 +790,7 @@ function installWorldAssembler(){
   on(byId('area-list'),'click',()=>setStructureOpen(false));
     on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
-  on(byId('edit-area'),'click',()=>{
-    openAreaEditor('./builder.html?worldAssembler=1');
-  });
-  on(byId('edit-area-events'),'click',()=>{
-    openAreaEditor('./builder.html?worldAssembler=1');
-  });
+  on(byId('edit-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('export-world'),'click',()=>{
     try{
       const json=serializeWorldBuilderDraft(draft);

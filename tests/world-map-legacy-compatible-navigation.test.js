@@ -42,5 +42,5 @@ test('World Builder uses resolved Area in actual Sculpt handoff and asks before 
   assert.match(js,/window\.confirm\('La zone/);
   assert.match(js,/saveWorldAssemblerHandoff\(window\.sessionStorage,draft,areaToOpen\)/);
   assert.match(js,/encodeURIComponent\(areaToOpen\)/);
-  assert.match(js,/openAreaEditor\('\.\/builder\.html\?worldAssembler=1'\)/);
+  assert.doesNotMatch(js,/openAreaEditor\('\.\/builder\.html\?worldAssembler=1'\)/);
 });
