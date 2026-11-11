@@ -1,3 +1,15 @@
+## 2026-11-11 — PNJ : sélection immédiate après pose (C1, branche de préparation)
+
+- **Signalement** : après avoir posé un PNJ de type dresseur, « Ajouter à l'équipe » reste grisé ; la liste exige un acteur sélectionné, mais la pose laissait l'outil en mode « placer ».
+- **START** : Exploration `main@e514548025eb359edecdeef60bf455f78f599b3b`, checkpoint `checkpoint/exploration-start-npc-auto-select-2026-11-11`, branche temporaire `work/exploration-npc-auto-select-2026-11-11`. Publication et autorité uniques : `main`.
+- **Responsabilité** : Sculpt 2,5D gère exclusivement la sélection UI après insertion ; `WorldArea.actors` reste l'unique source des instances PNJ. Les créatures sont toujours lues du bestiaire Combat publié.
+- **Périmètre** : `src/sculpt-lab-main.js`, `tests/sculpt-npc-placement-dialogue-v1.test.js`, cette note. Après la pose, choisir l'acteur qui vient d'être créé, passer au mode sélection et ouvrir sa fiche ; aucune deuxième équipe ou catalogue.
+- **Protégés** : Sculpt V80 gelé, sauvegardes de scènes, comportement d'errance, PNJ marchands, dialogues, géométrie, combat, objets, Capture et GenSRPG, assets et versions historiques.
+- **Tests** : sentinelle du parcours réel « placement → sélection → édition équipe », unité PNJ existante, CI et test Chromium, vérification smartphone. Ne pas annoncer GREEN ni fusionner avant preuve de la CI sur SHA exact et HTTPS après `main`.
+- **Hors lot** : déclenchement combat dresseur, arènes par zone, système de loot, éditeur d'objets ; traitement séparé sous l'autorité de Capture/GenSRPG.
+
+---
+
 ## 2026-11-10 — PNJ marchands : sélecteur sans ID et ouverture dans Capture (C2, CANDIDAT)
 - **START** main `f0203b0787aaa2dd1272e58e9c9cf76b9efade2b` post-PNJ #409 ; checkpoint `checkpoint/exploration-npc-merchant-bridge-start-2026-11-10`, branche `work/exploration-npc-merchant-bridge-2026-11-10`.
 - **Propriétaire et périmètre** : Exploration maintient les instances `WorldArea.actors[].npc` et le rayon de proximité 65 unités. En mode éditeur GenSRPG, un message strictement same-origin vers son parent demande la liste **en lecture seule** des marchands nommés par Capture ; le créateur choisit un nom dans un menu, jamais un ID à recopier. L'ancien `npc.merchantId` reste stable et est conservé au renommage ; un lien disparu ne supprime ni la carte ni la donnée originale.

@@ -112,3 +112,19 @@ test('Visual wild selection and trainer order survive native Sculpt scene and Wo
  assert.equal(area.actors[1].npc.wildCreature.creatureId,'crea_loup');
  assert.equal('trainerRoster' in normalizeMapActorNpcSettingsV1(settings()),false);
 });
+
+test('A newly placed trainer is selected and editable before a second tap on the map',async()=>{
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const placement=main.match(/function applyActorAtCell\(cell\)\{([\s\S]*?)\n\}\n\$\('actor-definition'\)/)?.[1];
+ assert.ok(placement,'assert actual native Sculpt placement path, not a second authoring UI');
+ assert.match(placement,/const nextActors=appendSculptPreviewActor\(placedActors,/);
+ assert.match(placement,/if\(actorCommit\(nextActors\)\)\{/);
+ assert.match(placement,/actorSelectedId=nextActors\.at\(-1\)\?\.id\?\?null/);
+ assert.match(placement,/\$\('actor-action'\)\.value='select'/);
+ assert.match(placement,/syncActorSelectedControls\(\)/);
+ assert.match(placement,/\$\('actor-npc-settings'\)\?\.setAttribute\('open',''\)/);
+ // The authoring function must still guard its single official Combat catalog,
+ // not create IDs, creatures or a fallback database in the Builder.
+ assert.match(main,/\$\('npc-team-add'\)\.disabled=!selected\|\|!npcOfficialCreatures\.length/);
+ assert.match(main,/const source=await loadCaptureShowcaseEncounterSourceV1\(\)/);
+});
