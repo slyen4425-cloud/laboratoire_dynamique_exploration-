@@ -118,11 +118,17 @@ try{
     toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));
     const disabled=window.__sculptEncounterEditorProbe();
     toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));
+    // A nonzero encounter chance requires at least one *real* species element.
+    // Choose it through the official Sculpt checkbox, never inject WorldDocument.
+    const elements=[...document.querySelectorAll('#sculpt-encounter-elements input[data-element-id]')];
+    const first=elements.find(x=>!x.checked)??elements[0];
+    if(!first)throw Error('Official Encounter catalogue produced zero elements');
+    if(!first.checked){first.checked=true;first.dispatchEvent(new Event('change',{bubbles:true}));}
     const enabled=window.__sculptEncounterEditorProbe();
     document.querySelector('#sculpt-encounter-close').click();
     return {disabled,enabled,closed:document.querySelector('#sculpt-encounter-editor').hidden};})()`);
   if(authored.disabled.allowedInArea!==false||authored.enabled.allowedInArea!==true||
-     authored.enabled.chance!==67||!authored.closed)
+     authored.enabled.chance!==67||authored.enabled.enabledElementIds.length===0||!authored.closed)
     throw Error('Sculpt real encounter authoring failed '+JSON.stringify(authored));
   // Save through the real WorldArea transition, not direct state mutation.
   await run("document.querySelector('#world-area-return').click();'saved-through-WorldArea'");
