@@ -6,7 +6,15 @@
     name="viewport"
     content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
   />
-  <title>GenSrpG — World Builder Dynamique</title>
+  <title>GenSrpG — Accès au World Builder 2,5D</title>
+  <!-- Entrée historique : ne jamais présenter l'éditeur de carte 2D.
+       Son code reste archivé pour les imports/tests de compatibilité. -->
+  <meta http-equiv="refresh" content="0;url=./world-assembler.html" />
+  <script>
+    // Une seule entrée de création : le plan du World Builder actuel.
+    // Ne crée ni WorldDocument ni sauvegarde supplémentaire.
+    window.location.replace(new URL('./world-assembler.html', window.location.href));
+  </script>
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#071016" />
   <link rel="stylesheet" href="./src/builder/world-builder.css?rev=encounter-selected-elements-v1&relief=relief-canyon-pilot-v1" />
