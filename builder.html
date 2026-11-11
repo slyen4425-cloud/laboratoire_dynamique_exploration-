@@ -6,6 +6,12 @@
     name="viewport"
     content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"
   />
+  <!-- URL de compatibilité uniquement : l'ancien éditeur 2D n'est plus une entrée utilisateur. -->
+  <meta http-equiv="refresh" content="0; url=./world-assembler.html" />
+  <script>
+    // replace() évite de laisser le Builder historique dans l'historique navigateur.
+    window.location.replace(new URL('./world-assembler.html', window.location.href));
+  </script>
   <title>GenSrpG — World Builder Dynamique</title>
   <link rel="manifest" href="./manifest.webmanifest" />
   <meta name="theme-color" content="#071016" />

@@ -778,6 +778,11 @@ const themes=sculptGroundMaterials;
 const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
   meta.id.startsWith('floor.')).map(meta=>meta.id));
 const sculptWorldCurrentInterior=()=>sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)?.kind==='interior';
+// The two mutually exclusive views project ONE canonical material catalog.
+const worldInteriorFloorBase=$('world-interior-floor-base');
+// Frozen V80 ships the same Sculpt source without this new DOM node.
+if(worldInteriorFloorBase)worldInteriorFloorBase.replaceChildren(...[...$('interior-floor-base').options]
+  .map(option=>option.cloneNode(true)));
 const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
   $('interior-floor-base').value:$('material').value;
 function imageFor(materialId,kind='surface'){
@@ -3552,6 +3557,7 @@ function mountSculptArea(snapshot){
     const base=interiorFloorMaterials.includes(surface.baseMaterialId)?
       surface.baseMaterialId:'floor.wood.house';
     $('interior-floor-base').value=base;
+    if(worldInteriorFloorBase)worldInteriorFloorBase.value=base;
     $('surface-material').value=base;
   }else $('surface-material').value='road.dirt';
   setTheme();
@@ -3585,9 +3591,16 @@ function updateSculptAreaControls(){
     $('interior-layout-apply').disabled=kind==='custom';
   }
   $('new-map-toggle').disabled=!!entry;
+  const worldInterior=!entry&&sculptWorldCurrentInterior();
+  const worldInteriorFloorRow=$('world-interior-floor-base-row');
+  if(worldInteriorFloorRow)worldInteriorFloorRow.hidden=!worldInterior;
+  if(worldInterior&&worldInteriorFloorBase)worldInteriorFloorBase.value=
+    interiorFloorMaterials.includes(surface.baseMaterialId)
+      ?surface.baseMaterialId:'floor.wood.house';
   for(const option of $('surface-material').options)
-    option.disabled=entry?!option.value.startsWith('floor.'):
-      option.value.startsWith('floor.');
+    option.disabled=(entry||worldInterior)
+      ?!option.value.startsWith('floor.')
+      :option.value.startsWith('floor.');
   $('interior-template-apply').disabled=!entry||!$('interior-template-select').value;
   $('object-open-interior').hidden=!!entry||!objectSelectedId||
     objectDefinitionCatalogV1.get(placedObjects.find(o=>o.id===objectSelectedId)
@@ -3745,14 +3758,20 @@ $('interior-layout-apply').addEventListener('click',()=>{
   }catch(error){status(error.message);}
 });
 $('interior-template-select').addEventListener('change',refreshSculptTemplateSelector);
-$('interior-floor-base').addEventListener('change',()=>{
-  if(!activeInteriorId)return;
-  const materialId=$('interior-floor-base').value;
+function setCurrentInteriorBaseMaterial(materialId){
+  if(!activeInteriorId&&!sculptWorldCurrentInterior())return;
   if(!interiorFloorMaterials.includes(materialId))return;
+  // Single WorldSurface; the existing saveSculptWorldArea owner persists it.
   surface={...surface,baseMaterialId:materialId};
+  $('interior-floor-base').value=materialId;
+  if(worldInteriorFloorBase)worldInteriorFloorBase.value=materialId;
   loadSurfacePaintAssets();updateSurfaceCount();setTheme();
-  status('Sol intérieur choisi : '+materialId+' · conservé dans la scène JSON.');
-});
+  status('Sol intérieur choisi : '+materialId+' · conservé dans la WorldArea 2,5D.');
+}
+$('interior-floor-base').addEventListener('change',()=>
+  setCurrentInteriorBaseMaterial($('interior-floor-base').value));
+worldInteriorFloorBase?.addEventListener('change',()=>
+  setCurrentInteriorBaseMaterial(worldInteriorFloorBase.value));
 $('interior-template-save').addEventListener('click',()=>{
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
   if(!entry)return;
