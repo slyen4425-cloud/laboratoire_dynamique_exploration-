@@ -332,6 +332,12 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 #actor-npc-settings label{display:grid;gap:3px}
 #npc-trainer-editor:not([hidden]),#npc-wild-editor:not([hidden]){display:grid;gap:8px;padding:8px;background:#12352f;border-radius:8px}
 #npc-team-list{display:grid;gap:6px}
+#npc-trainer-reward-editor{display:grid;gap:8px;padding:10px;border:1px solid #5a9584;border-radius:9px;background:#1a3b36}
+#npc-trainer-reward-editor label{display:grid;gap:3px}
+#npc-reward-list{display:grid;gap:6px}
+.npc-reward-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:5px;border:1px solid #4f877a;border-radius:8px}
+.npc-reward-row span{flex:1;min-width:120px}
+#npc-reward-status{color:#b8e5d7}
 .npc-team-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px;border:1px solid #4d8679;border-radius:6px}
 .npc-team-row .npc-slot-title{flex:1;min-width:110px;font-size:.9em}
 .npc-team-row button{min-width:32px;min-height:32px}
@@ -1182,6 +1188,17 @@ body.sculpt-play-unavailable #play-start-error{
     </label>
     <button type="button" id="npc-team-copy">Copier cette composition</button>
     <small>L'équipe est propre à ce PNJ. Le bestiaire et les compétences viennent du Labo Combat ; aucune nouvelle bibliothèque de créatures n'est créée.</small>
+    <section id="npc-trainer-reward-editor" aria-label="Récompenses en cas de victoire">
+     <strong>🎁 Récompenses après victoire</strong>
+     <small>Ce PNJ ne donne ses récompenses qu'une fois, après une victoire sauvegardée dans GenSRPG.</small>
+     <label>Monnaie à gagner <input id="npc-reward-currency" type="number" min="0" max="100000000" step="1" value="0"></label>
+     <div id="npc-reward-list" aria-live="polite"></div>
+     <label>Objet existant <select id="npc-reward-item" aria-label="Objet offert par le dresseur"><option value="">Catalogue GenSRPG indisponible…</option></select></label>
+     <label>Quantité <input id="npc-reward-quantity" type="number" min="1" max="9999" step="1" value="1"></label>
+     <button id="npc-reward-add" type="button" disabled>＋ Ajouter cet objet en récompense</button>
+     <button id="npc-reward-reload" type="button">↻ Actualiser les objets officiels</button>
+     <small id="npc-reward-status" role="status">Les objets et la monnaie sont fournis en lecture seule par Monster Capture. Aucun identifiant manuel.</small>
+    </section>
    </section>
    <section id="npc-wild-editor" hidden aria-label="Configuration du monstre errant">
     <strong>🐾 Monstre errant</strong>
