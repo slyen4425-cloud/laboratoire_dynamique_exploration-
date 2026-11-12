@@ -1,3 +1,13 @@
+## 2026-11-12 — Récompenses de dresseur dans la fiche native Explorer (C2, candidat)
+- START sur `main@f8d670a838cb224660c9d5ca3f8508e8c34b2b93`, checkpoint `checkpoint/exploration-start-trainer-rewards-20261112`, branche `work/exploration-trainer-rewards-2026-11-12`. La fenêtre PNJ unique PR #422 est fusionnée avec checkpoint `checkpoint/exploration-npc-modal-green-20261112` ; la CI du main est verte (#43296071090).
+- L'instance `WorldArea.actors[].npc` garde seulement `trainerReward={currency,items:[{itemId,quantity}]}`, aucun inventaire, portefeuille ou catalogue : les objets sont sélectionnés par NOM via le pont read-only GenSRPG Capture officiel.
+- Le même `CaptureEncounterSnapshot.context` transporte facultativement ce réglage de la carte vers le résultat Combat ; la récompense et son anti-double restent la propriété exclusive de `AdventureSession` et `applyAdventureCombatResultV1` (source Capture candidate PR #410). Aucun gain dans Explorer ou dans Combat.
+- Jeu sans parent GenSRPG : les pièces configurées et le transport peuvent être testés, mais le sélecteur d'objets ne fabrique pas de catalogue de secours ni d'ID manuel. Les objets devenus indisponibles restent des références inertes dans les cartes.
+- Protégés : combats natifs, PNJ historiques, autres rôles (marchand/quête/monstre errant), V80, cartes, Portal, sauvegardes, contrôle du combat et menus, autres modules, médias.
+- Gates obligatoires : Node sérialisation/validation, Chromium vrai PNJ→Tester/Jouer, CI exacte C2 et source Capture, Pages de l'Exploration main, adoption d'un SHA immuable dans Capture et publisher GenSRPG unique, validation HTTPS et smartphone. **Aucune fusion avant GREEN.**
+
+---
+
 ## 2026-11-12 — Fenêtre native unique de configuration des PNJ (C1, candidat)
 - START : `main@0c0f12c37ff994fd9783b7170fe288e7513db3c6`, checkpoint `checkpoint/exploration-start-npc-modal-20261112`, branche `work/exploration-npc-modal-2026-11-12`.
 - Propriétaire : Labo Exploration / interface Sculpt 2,5D. Le formulaire `actor-npc-settings` est déplacé dans un SEUL `<dialog>` natif, pas cloné. La donnée reste `WorldArea.actors[].npc` ; équipes et bestiaire officiels, récompenses, moteur Combat et sauvegardes restent auprès de leurs propriétaires.
