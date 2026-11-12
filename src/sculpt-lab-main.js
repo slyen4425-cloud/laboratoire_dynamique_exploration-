@@ -36,7 +36,7 @@ import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-act
 import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
-import {nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=npc-visual-v2';
+import {nearestAggressiveTrainerV1,nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=trainer-engagement-v1';
 import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
@@ -2004,7 +2004,7 @@ function canChallengeSculptTrainer(actor){
     team.every(member=>sculptEncounterCatalog.resolveCreature(member.creatureId));
 }
 function startSculptTrainerBattle(actor){
-  if(sculptPendingEncounter||!navActor||!canChallengeSculptTrainer(actor))return;
+  if(sculptPendingEncounter||sculptPortalLoading||!navActor||!canChallengeSculptTrainer(actor))return false;
   const area=navigationEncounterArea();
   const opponents=actor.npc.trainerRoster;
   const creature=sculptEncounterCatalog.resolveCreature(opponents[0].creatureId);
@@ -2016,9 +2016,15 @@ function startSculptTrainerBattle(actor){
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
     combatArenaIds:sculptBattleArenaIds(area)
   });
-  if(!sculptEncounterController.restore(snapshot.encounterId))return;
+  if(!sculptEncounterController.restore(snapshot.encounterId))return false;
   presentSculptEncounter(snapshot);
   launchSculptEncounter();
+  return true;
+}
+function startNearbyAggressiveTrainer(previous){
+  if(!sculptPlayActive||!scopedEncounter?.armed||sculptPortalLoading)return false;
+  const trainer=nearestAggressiveTrainerV1(placedActors,previous,navActor,canChallengeSculptTrainer);
+  return trainer!==null&&startSculptTrainerBattle(trainer);
 }
 function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
@@ -2056,7 +2062,7 @@ $('npc-talk')?.addEventListener('click',()=>{
     requestNpcMerchantShop(npc);return;
   }
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
-  if(!npcDialogueLines.length){if(canChallenge)startSculptTrainerBattle(npc);return;}
+  if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
   if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
@@ -2071,9 +2077,14 @@ $('npc-dialogue-trade')?.addEventListener('click',()=>{
   closeNpcDialogue();requestNpcMerchantShop(actor);updateNpcInteraction();
 });
 function renderNpcDialogueStep(){
-  $('npc-dialogue-text').textContent=npcDialogueLines[npcDialogueIndex];
-  $('npc-dialogue-next').textContent=npcDialogueIndex<npcDialogueLines.length-1?'Suivant':
-    npcDialogueTrainer?'Combattre':'Terminer';
+  const line=npcDialogueLines[npcDialogueIndex]??'';
+  const hasNextLine=npcDialogueIndex<npcDialogueLines.length-1;
+  const offersDuel=!hasNextLine&&npcDialogueTrainer!==null;
+  $('npc-dialogue-text').textContent=line;
+  $('npc-dialogue-text').hidden=!line;
+  if($('npc-dialogue-duel-offer'))$('npc-dialogue-duel-offer').hidden=!offersDuel;
+  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':'Terminer';
+  $('npc-dialogue-close').textContent=offersDuel?'Refuser':'Fermer';
 }
 $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
@@ -2163,7 +2174,7 @@ function navigationTick(time){
       }
       // Trigger only from canonical post-collision hero coordinates.
       // No dice roll from materials, pixels, or pre-collision input.
-      sculptEncounterStep();
+      if(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY}))sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
     }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
@@ -2760,9 +2771,12 @@ function npcSettingsFromControls(){
   // exported WorldArea.actors, but never shown as editable technical IDs.
   if(!$('actor-npc-kind'))return null;
   const current=npcSelectedActor()?.npc??null;
+  const kind=$('actor-npc-kind').value;
+  const trainerEngagement=kind==='trainer'
+    ?$('npc-trainer-engagement')?.value||current?.trainerEngagement:current?.trainerEngagement;
   const chosenWild=$('npc-wild-creature')?.value||current?.wildCreature?.creatureId;
   return {
-    kind:$('actor-npc-kind').value,name:$('actor-npc-name').value,
+    kind,name:$('actor-npc-name').value,
     movement:{mode:$('actor-npc-movement').value,
       radius:Number($('actor-npc-radius').value)},
     dialogue:$('actor-npc-dialogue').value,
@@ -2770,6 +2784,7 @@ function npcSettingsFromControls(){
     trainerTeamId:current?.trainerTeamId??'',
     merchantId:current?.merchantId??'',
     ...(current?.trainerRoster?{trainerRoster:current.trainerRoster}:{}),
+    ...(trainerEngagement?{trainerEngagement}:{}),
     ...(chosenWild?{wildCreature:{creatureId:chosenWild,
       level:Number($('npc-wild-level')?.value??current?.wildCreature?.level??10)}}:{})
   };
@@ -2791,6 +2806,11 @@ function npcRoleEditorRefresh(){
   if($('npc-merchant-editor'))$('npc-merchant-editor').hidden=kind!=='merchant';
   $('npc-role-pending').hidden=kind!=='quest';
   const selected=npcSelectedActor(),npc=selected?.npc;
+  const engagement=$('npc-trainer-engagement');
+  if(engagement){
+    engagement.value=npc?.trainerEngagement??'offer';
+    engagement.disabled=!selected;
+  }
   npcMerchantPickerRefresh();
   const roster=npc?.trainerRoster??[];
   $('npc-team-summary').textContent=!selected
@@ -2997,7 +3017,7 @@ $('npc-merchant-clear')?.addEventListener('click',()=>{
   npcApplyAuthoringPatch({merchantId:''});
 });
 for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
-  'actor-npc-radius','actor-npc-dialogue','npc-wild-creature','npc-wild-level']){
+  'actor-npc-radius','actor-npc-dialogue','npc-trainer-engagement','npc-wild-creature','npc-wild-level']){
   $(id)?.addEventListener('change',()=>{
     try{editSelectedActor({npc:npcSettingsFromControls()});}
     catch(error){status('Fiche PNJ non enregistrée : '+error.message);}

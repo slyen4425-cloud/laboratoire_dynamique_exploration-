@@ -143,11 +143,17 @@ try{
    selector.value=selector.options[1].value;
    document.querySelector('#npc-team-level').value='12';
    document.querySelector('#npc-team-add').click();
+   const engagement=document.querySelector('#npc-trainer-engagement');
+   const defaultEngagement=engagement.value;
+   engagement.value='aggressive';
+   engagement.dispatchEvent(new Event('change',{bubbles:true}));
    document.querySelector('#scene-export').click();
    const actor=JSON.parse(document.querySelector('#json').value).actors[0];
-   return {member:actor.npc?.trainerRoster?.[0],rows:document.querySelectorAll('.npc-team-row').length};
+   return {member:actor.npc?.trainerRoster?.[0],rows:document.querySelectorAll('.npc-team-row').length,
+    defaultEngagement,engagement:actor.npc?.trainerEngagement};
  })()`);
- if(!configured.member?.creatureId||configured.member.level!==12||configured.rows!==1)
+ if(!configured.member?.creatureId||configured.member.level!==12||configured.rows!==1||
+    configured.defaultEngagement!=='offer'||configured.engagement!=='aggressive')
   throw Error('Visual trainer team editor failed '+JSON.stringify(configured));
  console.log('Native visual trainer roster:',JSON.stringify(configured));
  const updated=await run(`(()=>{

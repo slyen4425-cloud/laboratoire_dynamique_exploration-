@@ -1,3 +1,11 @@
+## 2026-11-12 — Choisir comment un dresseur déclenche son duel
+- START `checkpoint/exploration-start-trainer-engagement-2026-11-12` sur `main@48f90925a0b9ce051cbd2769c26fde2afda9932b`. Branche `work/exploration-trainer-engagement-2026-11-12`. CI `43234471581` et Pages `43234471518` sur la base.
+- Exploration enregistre le déclenchement dans la fiche du PNJ placé. La proposition laisse le joueur accepter ou refuser. Le comportement agressif se déclenche lorsque le joueur entre dans le rayon d'interaction.
+- Combat reçoit la même équipe et le même décor qu'auparavant. Aventure conserve l'autorité sur les résultats et les dresseurs déjà battus. Les mondes existants utilisent la proposition de duel par défaut.
+- Vérifier le choix en 2,5D, l'export et l'import, l'acceptation et le refus, le lancement en marchant, ainsi que la reprise après combat dans GenSRPG.
+
+---
+
 ## 2026-11-12 — Lancer les combats des PNJ dresseurs depuis Jouer
 
 - START `checkpoint/exploration-start-capture-trainer-encounters-2026-11-12` sur `main@02bb3844bdeb1277e615026617cdf6b41857f320`. Branche `work/exploration-capture-trainer-encounters-2026-11-12`.

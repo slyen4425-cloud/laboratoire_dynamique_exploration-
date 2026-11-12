@@ -5,6 +5,7 @@ export const MAP_ACTOR_NPC_KINDS=Object.freeze([
   'dialogue','quest','trainer','wild','merchant'
 ]);
 export const NPC_TRAINER_ROSTER_LIMIT_V1=6;
+const NPC_INTERACTION_RANGE_V1=65;
 function normalizeCreatureSlot(raw,label){
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||
      typeof raw.creatureId!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(raw.creatureId))
@@ -38,6 +39,9 @@ export function normalizeMapActorNpcSettingsV1(raw){
   const radius=raw.movement?.radius??90;
   if(!Number.isFinite(radius)||radius<16||radius>600)
     throw new RangeError('NPC wander radius must be 16–600 world units');
+  const hasTrainerEngagement=Object.hasOwn(raw,'trainerEngagement');
+  if(hasTrainerEngagement&&raw.trainerEngagement!=='offer'&&raw.trainerEngagement!=='aggressive')
+    throw new RangeError('NPC trainer engagement must be offer or aggressive');
   return Object.freeze({
     schema:MAP_ACTOR_NPC_SCHEMA_V1,version:1,kind:raw.kind,
     name:line(raw.name,80,'NPC name'),
@@ -51,21 +55,41 @@ export function normalizeMapActorNpcSettingsV1(raw){
     // team library. The canonical Combat bestiary owns all creature data.
     ...(Object.hasOwn(raw,'trainerRoster')?
       {trainerRoster:normalizeNpcTrainerRosterV1(raw.trainerRoster)}:{}),
+    ...(hasTrainerEngagement?{trainerEngagement:raw.trainerEngagement}:{}),
     ...(raw.wildCreature!=null?
       {wildCreature:normalizeCreatureSlot(raw.wildCreature,'Wild creature')}:{})
   });
 }
-export function nearestDialogNpcV1(actors,position,range=65,canChallengeTrainer){
-  if(!Array.isArray(actors)||!Number.isFinite(position?.x)||
-     !Number.isFinite(position?.y))return null;
+function isMapPosition(position){
+  return Number.isFinite(position?.x)&&Number.isFinite(position?.y);
+}
+function mapDistance(a,b){
+  return Math.hypot(a.x-b.x,a.y-b.y);
+}
+export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V1,canChallengeTrainer){
+  if(!Array.isArray(actors)||!isMapPosition(position))return null;
   let closest=null,distance=Infinity;
   for(const actor of actors){
     if(!actor?.npc)continue;
-    const d=Math.hypot(actor.x-position.x,actor.y-position.y);
+    const d=mapDistance(actor,position);
     if(!(d<=range&&d<distance))continue;
     const {npc}=actor;
-    if(!npc.dialogue&&!(npc.kind==='merchant'&&npc.merchantId)&&
-       !(npc.kind==='trainer'&&canChallengeTrainer?.(actor)))continue;
+    const canChallenge=npc.kind==='trainer'&&canChallengeTrainer?.(actor);
+    if(canChallenge&&npc.trainerEngagement==='aggressive')continue;
+    if(!npc.dialogue&&!(npc.kind==='merchant'&&npc.merchantId)&&!canChallenge)continue;
+    closest=actor;distance=d;
+  }
+  return closest;
+}
+export function nearestAggressiveTrainerV1(actors,previous,position,canChallengeTrainer){
+  if(!Array.isArray(actors)||!isMapPosition(previous)||!isMapPosition(position))return null;
+  let closest=null,distance=Infinity;
+  for(const actor of actors){
+    if(actor?.npc?.kind!=='trainer'||actor.npc.trainerEngagement!=='aggressive')continue;
+    const d=mapDistance(actor,position);
+    if(!(d<=NPC_INTERACTION_RANGE_V1&&d<distance&&
+         mapDistance(actor,previous)>NPC_INTERACTION_RANGE_V1))continue;
+    if(!canChallengeTrainer(actor))continue;
     closest=actor;distance=d;
   }
   return closest;
