@@ -1,3 +1,11 @@
+## 2026-11-12 — Déclencher les duels depuis les cartes du Builder
+
+- START `checkpoint/exploration-start-trainer-test-paths-2026-11-12` sur `main@e2e5b2861b41fc868412e2c7f06197e904f9cbf0`. Branche `work/exploration-trainer-test-paths-2026-11-12`. Base Exploration certifiée par la CI `43254533593` et Pages `43254533640`.
+- Le créateur peut ouvrir la carte par Tester ou par Jouer dans le World Builder. Exploration réutilise l’équipe officielle d’essai pour les duels de ces deux parcours. GenSRPG Aventure conserve son équipe et ses résultats persistants.
+- Sur la base, un dresseur créé depuis le formulaire affichait « Terminer » et « Fermer » en mode Tester. En Chromium paysage, la candidate propose le duel, ouvre la réserve native, puis revient à la carte après la fuite. Le bouton Jouer du World Builder lance aussi le combat direct au premier déplacement quand le départ est à portée.
+
+---
+
 ## 2026-11-12 — Choisir comment un dresseur déclenche son duel
 - START `checkpoint/exploration-start-trainer-engagement-2026-11-12` sur `main@48f90925a0b9ce051cbd2769c26fde2afda9932b`. Branche `work/exploration-trainer-engagement-2026-11-12`. CI `43234471581` et Pages `43234471518` sur la base.
 - Exploration enregistre le déclenchement dans la fiche du PNJ placé. La proposition laisse le joueur accepter ou refuser. Le comportement agressif se déclenche lorsque le joueur entre dans le rayon d'interaction.

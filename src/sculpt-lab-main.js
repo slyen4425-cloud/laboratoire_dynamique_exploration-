@@ -36,7 +36,7 @@ import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-act
 import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
-import {nearestAggressiveTrainerV1,nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=trainer-engagement-v1';
+import {nearestAggressiveTrainerV1,nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=trainer-test-paths-v1';
 import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
@@ -238,6 +238,7 @@ const adventureSessionId=new URL(document.URL).searchParams.get('adventureSessio
 const playOptions=adventureSessionId===null?undefined:{sessionId:adventureSessionId};
 const sculptCombatSessionId=sculptPlayRequested?playOptions?.sessionId:undefined;
 const sculptCombatStorage=sculptCombatSessionId===undefined?window.sessionStorage:window.localStorage;
+const sculptPreviewPartyRef='capture-party-player-v1';
 let sculptPlayActive=false,playLastCheckpointAt=0,playPositionWriter=null;
 
 const sculptEncounterDialog=$('sculpt-encounter-preview');
@@ -253,7 +254,7 @@ const sculptCombatWarmup=createCaptureCombatWarmupV1({
   saveData:window.navigator?.connection?.saveData===true
 });
 const sculptEncounterTest=!sculptPlayRequested&&new URL(document.URL).searchParams.get('encounterTest')==='1';
-const newAdventureEncounterIds=()=>({
+const newSculptEncounterIds=()=>({
   encounterId:'encounter-'+window.crypto.randomUUID(),
   returnToken:'return-'+window.crypto.randomUUID()
 });
@@ -263,7 +264,7 @@ const sculptEncounterController=sculptEncounterDialog?createEncounterController(
   // page reloads. The official Tester keeps deterministic sequential IDs.
   // This does not grant permission to spawn unpublished creatures in Jouer.
   createCorrelationIds:sculptPlayRequested&&adventureSessionId!==null
-    ?newAdventureEncounterIds
+    ?newSculptEncounterIds
     :undefined
 }):null;
 // Combat's official Showcase is required for encounters, NOT for drawing the
@@ -488,7 +489,7 @@ function sculptEncounterStep(){
     area,player:{currentAreaId:area.id,x:navActor.x,y:navActor.y},
     encounterConfig:sculptEncounterConfig,
     captureCatalog:sculptEncounterCatalog,
-    playerPartyRef:scopedEncounter?.party.partyRef??'capture-party-player-v1',rulesetId:'capture.standard.1v1',
+    playerPartyRef:scopedEncounter?.party.partyRef??sculptPreviewPartyRef,rulesetId:'capture.standard.1v1',
     random:sculptEncounterRandom
   });
   if(!intent)return null;
@@ -1989,19 +1990,30 @@ function navigationSpawn(){
   return null;
 }
 let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0,npcDialogueMerchant=null,npcDialogueTrainer=null;
+let npcDialogueTrainerNotice='',navTrainerArrivalPending=false;
 function closeNpcDialogue(){
   npcDialogueOpen=false;
   if($('npc-dialogue-overlay'))$('npc-dialogue-overlay').hidden=true;
   npcDialogueLines=[];npcDialogueIndex=0;npcDialogueMerchant=null;
-  npcDialogueTrainer=null;
+  npcDialogueTrainer=null;npcDialogueTrainerNotice='';
   if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=true;
 }
-function canChallengeSculptTrainer(actor){
-  const team=actor.npc?.kind==='trainer'?actor.npc.trainerRoster:null;
-  if(!sculptPlayActive||!scopedEncounter?.armed||scopedEncounter.party.active.hp===0||!team?.length)return false;
+function sculptTrainerChallengeNotice(actor){
+  const team=actor.npc.trainerRoster;
+  if(!team?.length)return 'Ce dresseur n’a pas encore d’équipe.';
+  if(sculptCombatSessionId!==undefined&&!scopedEncounter?.armed)
+    return 'Ouvre le monde depuis Aventure pour utiliser l’équipe de cette partie.';
+  if(scopedEncounter?.party.active.hp===0)return 'Ton combattant actif est K.O.';
   const areaId=activeInteriorId??sculptWorldAreaId;
-  return !scopedEncounter.party.trainerVictories?.some(entry=>entry.areaId===areaId&&entry.actorId===actor.id)&&
-    team.every(member=>sculptEncounterCatalog.resolveCreature(member.creatureId));
+  if(scopedEncounter?.party.trainerVictories?.some(entry=>entry.areaId===areaId&&entry.actorId===actor.id))
+    return 'Tu as déjà battu ce dresseur.';
+  if(!sculptEncounterCatalog)return 'Le bestiaire officiel est indisponible.';
+  if(team.some(member=>!sculptEncounterCatalog.resolveCreature(member.creatureId)))
+    return 'Une créature du dresseur est absente du bestiaire de cette partie.';
+  return '';
+}
+function canChallengeSculptTrainer(actor){
+  return actor.npc?.kind==='trainer'&&!sculptTrainerChallengeNotice(actor);
 }
 function startSculptTrainerBattle(actor){
   if(sculptPendingEncounter||sculptPortalLoading||!navActor||!canChallengeSculptTrainer(actor))return false;
@@ -2010,8 +2022,8 @@ function startSculptTrainerBattle(actor){
   const creature=sculptEncounterCatalog.resolveCreature(opponents[0].creatureId);
   const terrain=resolveTerrainFamilyAtPoint(area.surface,navActor.x,navActor.y);
   const snapshot=createCaptureEncounterSnapshot({
-    ...newAdventureEncounterIds(),source:'npc-trainer',trainerActorId:actor.id,opponents,
-    playerPartyRef:scopedEncounter.party.partyRef,areaId:area.id,
+    ...newSculptEncounterIds(),source:'npc-trainer',trainerActorId:actor.id,opponents,
+    playerPartyRef:scopedEncounter?.party.partyRef??sculptPreviewPartyRef,areaId:area.id,
     terrainFamilyId:terrain.terrainFamilyId??area.surface.baseTerrainFamilyId,
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
     combatArenaIds:sculptBattleArenaIds(area)
@@ -2022,8 +2034,11 @@ function startSculptTrainerBattle(actor){
   return true;
 }
 function startNearbyAggressiveTrainer(previous){
-  if(!sculptPlayActive||!scopedEncounter?.armed||sculptPortalLoading)return false;
-  const trainer=nearestAggressiveTrainerV1(placedActors,previous,navActor,canChallengeSculptTrainer);
+  if(sculptPortalLoading)return false;
+  // The first movement after a spawn can already be within the trainer's range.
+  const origin=navTrainerArrivalPending?null:previous;
+  navTrainerArrivalPending=false;
+  const trainer=nearestAggressiveTrainerV1(placedActors,origin,navActor,canChallengeSculptTrainer);
   return trainer!==null&&startSculptTrainerBattle(trainer);
 }
 function nearbyNpcForDialogue(){
@@ -2057,7 +2072,9 @@ function requestNpcMerchantShop(actor){
 $('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
   const canShop=npc.npc.kind==='merchant'&&!!npc.npc.merchantId;
-  const canChallenge=canChallengeSculptTrainer(npc);
+  const trainer=npc.npc.kind==='trainer';
+  npcDialogueTrainerNotice=trainer?sculptTrainerChallengeNotice(npc):'';
+  const canChallenge=trainer&&!npcDialogueTrainerNotice;
   if(canShop&&!npc.npc.dialogue.trim()){
     requestNpcMerchantShop(npc);return;
   }
@@ -2082,7 +2099,11 @@ function renderNpcDialogueStep(){
   const offersDuel=!hasNextLine&&npcDialogueTrainer!==null;
   $('npc-dialogue-text').textContent=line;
   $('npc-dialogue-text').hidden=!line;
-  if($('npc-dialogue-duel-offer'))$('npc-dialogue-duel-offer').hidden=!offersDuel;
+  const notice=$('npc-dialogue-duel-offer');
+  if(notice){
+    notice.textContent=offersDuel?'Ce dresseur te propose un duel.':npcDialogueTrainerNotice;
+    notice.hidden=hasNextLine||!notice.textContent;
+  }
   $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':'Terminer';
   $('npc-dialogue-close').textContent=offersDuel?'Refuser':'Fermer';
 }
@@ -2233,6 +2254,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    navTrainerArrivalPending=true;
     // The existing Tester tap is the trusted Android user gesture. The
     // browser may not start audio on page load, so do not add an audio button.
     explorationSoundtrack.start();
@@ -2336,6 +2358,7 @@ $('navigation-toggle').addEventListener('click',()=>{
 $('navigation-reset').addEventListener('click',()=>{
   if(!navigationTesting||sculptPendingEncounter)return;
   navActor=navigationSpawn();
+  navTrainerArrivalPending=true;
   navVisualLevel=navHeight();
   const mode=$('navigation-locomotion').value;
   navActor.locomotion={modes:mode==='fly'?['fly']:mode==='swim'?['ground','swim']:['ground']};

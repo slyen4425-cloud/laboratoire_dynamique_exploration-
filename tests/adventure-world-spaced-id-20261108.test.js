@@ -62,5 +62,5 @@ test('native Combat bounds a legacy saved 46 HP to the authoritative scaled maxi
  assert.throws(()=>projectAdventureInitialCombatHpV1({savedHp:20,maxHp:NaN}));
  const bridge=readFileSync(new URL('../integration/combat-bridge/exploration-encounter.js',import.meta.url),'utf8');
  assert.match(bridge,/projectAdventureInitialCombatHpV1/);
- assert.match(bridge,/fighter\.id==='local-1'\?initialAdventureHp:fighter\.maxHp/);
+ assert.match(bridge,/adventureParty&&fighter\.id==='local-1'\?initialAdventureHp:fighter\.maxHp/);
 });

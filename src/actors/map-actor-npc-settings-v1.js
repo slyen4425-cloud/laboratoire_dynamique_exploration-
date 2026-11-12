@@ -82,13 +82,14 @@ export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V
   return closest;
 }
 export function nearestAggressiveTrainerV1(actors,previous,position,canChallengeTrainer){
-  if(!Array.isArray(actors)||!isMapPosition(previous)||!isMapPosition(position))return null;
+  if(!Array.isArray(actors)||!isMapPosition(position)||
+     (previous!==null&&!isMapPosition(previous)))return null;
   let closest=null,distance=Infinity;
   for(const actor of actors){
     if(actor?.npc?.kind!=='trainer'||actor.npc.trainerEngagement!=='aggressive')continue;
     const d=mapDistance(actor,position);
     if(!(d<=NPC_INTERACTION_RANGE_V1&&d<distance&&
-         mapDistance(actor,previous)>NPC_INTERACTION_RANGE_V1))continue;
+         (previous===null||mapDistance(actor,previous)>NPC_INTERACTION_RANGE_V1)))continue;
     if(!canChallengeTrainer(actor))continue;
     closest=actor;distance=d;
   }
