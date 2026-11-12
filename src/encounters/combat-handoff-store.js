@@ -41,6 +41,8 @@ function normalizeSnapshot(raw) {
     opponentCreatureId:
       raw.opponents?.[0]?.creatureId,
     opponentLevel: raw.opponents?.[0]?.level,
+    opponents: raw.opponents,
+    trainerActorId: raw.context?.trainerActorId,
     wildStatProfile: raw.rules?.wildStatProfile,
     rulesetId: raw.rules?.rulesetId,
     areaId: raw.context?.areaId,

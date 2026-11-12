@@ -1,5 +1,6 @@
 import {normalizeWorldEncounterStatProfileV1} from './wild-stat-profile-contract-v1.js';
 import {normalizeCombatArenaIdsV1} from '../world/world-combat-arena-v1.js';
+import {normalizeNpcTrainerRosterV1} from '../actors/map-actor-npc-settings-v1.js';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA =
   'capture-encounter-snapshot-v1';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_VERSION = 1;
@@ -24,10 +25,7 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     raw.playerPartyRef,
     'playerPartyRef'
   );
-  const opponentCreatureId = requiredText(
-    raw.opponentCreatureId,
-    'opponentCreatureId'
-  );
+  const trainerActorId = source==='npc-trainer' ? requiredText(raw.trainerActorId,'trainerActorId') : null;
   const rulesetId = requiredText(
     raw.rulesetId,
     'rulesetId'
@@ -54,6 +52,13 @@ export function createCaptureEncounterSnapshot(raw = {}) {
      (!Number.isSafeInteger(raw.opponentLevel)||
       raw.opponentLevel<1||raw.opponentLevel>9999))
     throw new RangeError('Encounter opponentLevel must be a positive integer');
+  const opponents = trainerActorId ? normalizeNpcTrainerRosterV1(raw.opponents) : Object.freeze([
+    Object.freeze({
+      creatureId:requiredText(raw.opponentCreatureId,'opponentCreatureId'),
+      ...(raw.opponentLevel===undefined?{}:{level:raw.opponentLevel})
+    })
+  ]);
+  if(!opponents.length)throw new RangeError('Trainer encounter needs at least one published opponent');
   const combatArenaIds = normalizeCombatArenaIdsV1(raw.combatArenaIds);
 
   return Object.freeze({
@@ -64,12 +69,7 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     player: Object.freeze({
       partyRef: playerPartyRef
     }),
-    opponents: Object.freeze([
-      Object.freeze({
-        creatureId: opponentCreatureId,
-        ...(raw.opponentLevel===undefined?{}:{level:raw.opponentLevel})
-      })
-    ]),
+    opponents,
     rules: Object.freeze({
       rulesetId,
       ...(raw.wildStatProfile===undefined?{}:{wildStatProfile:normalizeWorldEncounterStatProfileV1(raw.wildStatProfile)})
@@ -78,6 +78,7 @@ export function createCaptureEncounterSnapshot(raw = {}) {
       areaId,
       terrainFamilyId,
       elementId,
+      ...(trainerActorId ? {trainerActorId} : {}),
       ...(combatArenaIds.length ? {combatArenaIds:Object.freeze(combatArenaIds)} : {})
     }),
     returnToken

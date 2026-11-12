@@ -23,22 +23,29 @@ export function buildExplorationNativeCombatSourceV1({
   nativeSkillCatalog, statRegistry, progressionRules, baseFighterRules,
   previewLevel = 20, arenaId = 'forest'
 }) {
+  const trainer=snapshot?.source==='npc-trainer';
   if(snapshot?.schema!=='capture-encounter-snapshot-v1'||snapshot.version!==1||
-     !Array.isArray(snapshot.opponents)||snapshot.opponents.length!==1)
+     !Array.isArray(snapshot.opponents)||snapshot.opponents.length<1||
+     snapshot.opponents.length>(trainer?6:1))
     throw new RangeError('Unsupported CaptureEncounterSnapshot contract');
   if(required(party?.id,'party.id')!==snapshot.player?.partyRef)
     throw new RangeError('Capture player partyRef not resolved');
   const playerId=required(party.activeCreatureId,'party.activeCreatureId');
   const scoped=party.id.startsWith('adventure-party:');
+  if(trainer&&!scoped)throw new RangeError('Un dresseur nécessite une partie Aventure');
   if(scoped&&(!adventureParty||adventureParty.partyRef!==party.id||adventureParty.active?.speciesId!==playerId))
     throw new RangeError('Aventure exige le combattant actif de la partie autorisée');
   if(!scoped&&adventureParty!==undefined)
     throw new RangeError('Aventure et Tester ont des équipes distinctes');
-  const enemyId=required(snapshot.opponents[0]?.creatureId,'opponent.creatureId');
-  const authoredEnemyLevel=snapshot.opponents[0]?.level;
-  if(authoredEnemyLevel!==undefined&&(!Number.isSafeInteger(authoredEnemyLevel)||
-     authoredEnemyLevel<1||authoredEnemyLevel>9999))
-    throw new RangeError('Encounter opponent.level must be a valid authored WorldArea level');
+  const rivals=snapshot.opponents.map(member=>{
+    const speciesId=required(member?.creatureId,'opponent.creatureId');
+    const level=member.level;
+    if((trainer||level!==undefined)&&(!Number.isSafeInteger(level)||level<1||level>9999))
+      throw new RangeError('Encounter opponent.level must be a valid authored WorldArea level');
+    return {speciesId,level};
+  });
+  const [{speciesId:enemyId,level:authoredEnemyLevel},...opponentReserve]=rivals;
+  const participants=new Set([playerId,...rivals.map(member=>member.speciesId)]);
   if(!Array.isArray(showcaseCreatureTransfers)||!showcaseCreatureTransfers.length)
     throw new TypeError('Official Capture author creature transfers required');
   if(!Array.isArray(showcaseSkillTransfers)||!showcaseSkillTransfers.length)
@@ -54,7 +61,7 @@ export function buildExplorationNativeCombatSourceV1({
     if(configuredCreatures.has(record.draft.id))throw new RangeError('Duplicate Capture creature '+record.draft.id);
     configuredCreatures.set(record.draft.id,record);
   }
-  for(const id of [playerId,enemyId]){
+  for(const id of participants){
     if(!configuredCreatures.has(id))
       throw new RangeError('Encounter creature not present in current official Showcase: '+id);
   }
@@ -81,7 +88,7 @@ export function buildExplorationNativeCombatSourceV1({
 
   // Validate complete author loadouts, rather than silently truncating an
   // unknown skill or replacing it with a historical ability.
-  for(const creatureId of [playerId,enemyId]){
+  for(const creatureId of participants){
     const record=configuredCreatures.get(creatureId);
     const ids=record.loadout.slots.map(slot=>slot.skillId).filter(Boolean);
     if(!ids.length)throw new RangeError('Creature has no authored abilities: '+creatureId);
@@ -113,12 +120,15 @@ export function buildExplorationNativeCombatSourceV1({
       // Keep the saved order and identities. Combat alone builds the
       // rechargeable native bench, individual stats and KO rules.
       localReserve:adventureParty.reserve??[],
-      opponent:{speciesId:enemyId,level:authoredEnemyLevel??configuredCreatures.get(enemyId).draft.level}
+      opponent:{speciesId:enemyId,level:authoredEnemyLevel??configuredCreatures.get(enemyId).draft.level},
+      ...(trainer?{opponentReserve}:{})
     });
     const expected=1+(adventureParty.reserve?.length??0);
     const bench=source.roster?.teams?.['local-1']?.members;
     if(!Array.isArray(bench)||bench.length!==expected)
       throw new Error('Official Combat did not register all Adventure party members');
+    if(trainer&&source.roster?.teams?.['opponent-1']?.members?.length!==rivals.length)
+      throw new Error('Official Combat did not register all trainer party members');
     return Object.freeze({...source,sourceCreatureIds});
   }
   const exported=buildCaptureEditorCombatTestV1({

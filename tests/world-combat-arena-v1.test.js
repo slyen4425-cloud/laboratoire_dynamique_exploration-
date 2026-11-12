@@ -10,6 +10,7 @@ import {
 } from '../src/builder/world-builder-draft.js';
 import {worldCombatArenaIdsV1} from '../src/world/world-combat-arena-v1.js';
 import {snapshotFromEncounterIntent} from '../src/encounters/encounter-bridge.js';
+import {createCaptureEncounterSnapshot} from '../src/encounters/capture-encounter-contract.js';
 import {createCombatHandoffEnvelope, readCombatHandoff, saveCombatHandoff} from '../src/encounters/combat-handoff-store.js';
 
 function worldWithBuilding() {
@@ -66,9 +67,11 @@ test('wild and trainer handoffs preserve the backdrop chain and legacy handoffs 
   assert.equal(Object.hasOwn(legacy.context, 'combatArenaIds'), false);
   for (const source of ['terrain-random','npc-trainer']) {
     data.clear();
-    const snapshot = snapshotFromEncounterIntent({...intent,source}, {
-      combatArenaIds:['unavailable-old-backdrop','city','city',null,'forest']
-    });
+    const combatArenaIds=['unavailable-old-backdrop','city','city',null,'forest'];
+    const snapshot = source==='npc-trainer' ? createCaptureEncounterSnapshot({
+      ...intent,source,trainerActorId:'trainer-1',combatArenaIds,
+      opponents:[{creatureId:intent.opponentCreatureId,level:intent.opponentLevel}]
+    }) : snapshotFromEncounterIntent({...intent,source}, {combatArenaIds});
     const envelope = createCombatHandoffEnvelope({snapshot,returnState:{
       areaId:'outside',x:100,y:150,returnUrl:'https://example.test/sculpt-lab.html'
     }});
@@ -76,4 +79,19 @@ test('wild and trainer handoffs preserve the backdrop chain and legacy handoffs 
     assert.deepEqual(readCombatHandoff(storage).snapshot, snapshot);
     assert.deepEqual(snapshot.context.combatArenaIds, ['unavailable-old-backdrop','city','forest']);
   }
+});
+
+test('the journal reopens all six authored trainer slots, including duplicate species', () => {
+  const opponents = Array.from({length:6}, (_, index) => ({creatureId:'crea_nat_1',level:index+1}));
+  const snapshot = createCaptureEncounterSnapshot({
+    encounterId:'encounter-trainer', returnToken:'return-trainer', playerPartyRef:'party',
+    source:'npc-trainer',trainerActorId:'dresseur-1',areaId:'inside',opponents,
+    terrainFamilyId:'plain',elementId:'nature',rulesetId:'capture.standard.1v1',combatArenaIds:['city']
+  });
+  const envelope = createCombatHandoffEnvelope({snapshot,returnState:{
+    areaId:'inside',x:100,y:150,returnUrl:'https://example.test/sculpt-lab.html'
+  }});
+  assert.equal(envelope.snapshot.context.trainerActorId,'dresseur-1');
+  assert.deepEqual(envelope.snapshot.opponents,opponents);
+  assert.deepEqual(envelope.snapshot.context.combatArenaIds,['city']);
 });
