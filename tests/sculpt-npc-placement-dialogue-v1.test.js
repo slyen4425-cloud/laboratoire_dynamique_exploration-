@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {normalizeWorldActorPlacement} from '../src/actors/world-actor-placement-model.js';
 import {normalizeWorldArea} from '../src/world/world-area-model.js';
-import {normalizeMapActorNpcSettingsV1,normalizeNpcTrainerRosterV1,nearestDialogNpcV1} from '../src/actors/map-actor-npc-settings-v1.js';
+import {normalizeMapActorNpcSettingsV1,normalizeNpcTrainerRosterV1,nearestDialogNpcV1,
+ nearestAggressiveTrainerV1} from '../src/actors/map-actor-npc-settings-v1.js';
 import {appendSculptPreviewActor,updateSculptPreviewActor,
  serializeSculptPreviewScene,importSculptPreviewScene,
  createBlankSculptPreviewScene} from '../src/world/sculpt-scene-preview.js';
@@ -69,6 +70,30 @@ test('a trainer with no dialogue is reachable only while the Adventure can chall
  assert.equal(nearestDialogNpcV1([null,trainer],{x:23,y:20}),null);
  assert.equal(nearestDialogNpcV1([trainer],{x:23,y:20},undefined,()=>true)?.id,'trainer');
  assert.equal(nearestDialogNpcV1([trainer],{x:250,y:20},undefined,()=>true),null);
+});
+test('trainer engagement is optional on legacy maps and survives scene export, import and WorldArea normalization',()=>{
+ assert.equal('trainerEngagement' in normalizeMapActorNpcSettingsV1(settings({kind:'trainer'})),false);
+ assert.throws(()=>normalizeMapActorNpcSettingsV1(settings({kind:'trainer',trainerEngagement:'unknown'})));
+ const scene=createBlankSculptPreviewScene({width:10,height:10});
+ const actors=appendSculptPreviewActor(scene.actors,{definitionId:'exploration:npc:generic-v1',
+  x:96,y:84,npc:settings({kind:'trainer',trainerEngagement:'aggressive'})});
+ const loaded=importSculptPreviewScene(serializeSculptPreviewScene(scene.terrain,scene.objects,scene.surface,actors));
+ const area=normalizeWorldArea({id:'area',width:280,height:210,actors:loaded.actors});
+ assert.equal(area.actors[0].npc.trainerEngagement,'aggressive');
+});
+test('only eligible aggressive trainers attack on entering interaction range',()=>{
+ const trainer=(id,x,trainerEngagement)=>normalizeWorldActorPlacement({
+  id,x,y:20,actorDefinitionId:'actor.1',npc:settings({kind:'trainer',trainerEngagement})});
+ const hostile=trainer('hostile',85,'aggressive');
+ const friendly=trainer('friendly',85,'offer');
+ const actors=[hostile,friendly];
+ const outside={x:19,y:20},inside={x:20,y:20},nearby={x:22,y:20};
+ assert.equal(nearestAggressiveTrainerV1(actors,outside,inside,()=>true),hostile);
+ assert.equal(nearestAggressiveTrainerV1(actors,inside,nearby,()=>true),null);
+ assert.equal(nearestAggressiveTrainerV1(actors,inside,outside,()=>true),null);
+ assert.equal(nearestAggressiveTrainerV1(actors,outside,inside,()=>false),null);
+ assert.equal(nearestDialogNpcV1(actors,inside,undefined,()=>true),friendly);
+ assert.equal(nearestDialogNpcV1([hostile],inside,undefined,()=>false),hostile);
 });
 test('Native Sculpt editor wires NPC inputs and gameplay dialogue, not a second world model',async()=>{
  const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
