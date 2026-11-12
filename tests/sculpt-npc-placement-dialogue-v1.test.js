@@ -128,3 +128,19 @@ test('A newly placed trainer is selected and editable before a second tap on the
  assert.match(main,/\$\('npc-team-add'\)\.disabled=!selected\|\|!npcOfficialCreatures\.length/);
  assert.match(main,/const source=await loadCaptureShowcaseEncounterSourceV1\(\)/);
 });
+
+
+test('Trainer roster editor explains a missing official catalog and provides manual retry',async()=>{
+ const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(html,/id="npc-catalog-retry"/);
+ assert.match(html,/id="npc-catalog-status" role="status" aria-live="polite"/);
+ assert.match(main,/npcCatalogLoading=true/);
+ assert.match(main,/npcCatalogLoading=false/);
+ assert.match(main,/!npcOfficialCreatures\.length\|\|roster\.length>=NPC_TRAINER_ROSTER_LIMIT_V1/);
+ assert.match(main,/npcOfficialCreatures=Object\.freeze\(\[\]\)/);
+ assert.match(main,/npcRoleEditorRefresh\(\);\s*\}\s*function syncActorSelectedControls/s);
+ assert.match(main,/\$\('npc-catalog-retry'\)\?\.addEventListener\('click',\(\)=>\{void loadNpcOfficialCreatureChoices\(\);\}\)/);
+ assert.match(main,/const source=await loadCaptureShowcaseEncounterSourceV1\(\)/);
+ assert.doesNotMatch(main,/npcBackupCatalog|legacyNpcSpeciesFallback/);
+});
