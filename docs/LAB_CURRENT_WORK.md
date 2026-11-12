@@ -1,3 +1,12 @@
+## 2026-11-12 — Décors de combat par monde, zone et bâtiment
+
+- START `checkpoint/exploration-start-combat-arena-overrides-2026-11-12` sur `main@393fa6371732b8c72faface7765ce027b6751af7`. Branche `work/exploration-combat-arena-overrides-2026-11-12`. Base publiée et certifiée par les runs Exploration CI `43201349450` et Pages `43201349264`.
+- Exploration enregistre les références sur le WorldDocument, la WorldArea et le bâtiment placé. Le passage ancré à sa porte identifie son intérieur. Le catalogue et le rendu du décor appartiennent au Labo Combat `main` (`9b8fe770b531abf4f8191a746e0fdcc43f7abbae`, CI `43103011400`).
+- Les anciens mondes et combats en attente conservent leur format. Les règles de rencontre, les sauvegardes Aventure et les arènes élémentaires placées restent protégées.
+- Vérifier la conservation à l’export/import, l’ordre de priorité et le parcours Chromium paysage World Builder → Jouer → décor natif. Publier depuis Exploration `main` après CI et preuve HTTPS, puis épingler le SHA certifié dans Capture V2.
+
+---
+
 ## START — 12 novembre 2026 · Catalogue officiel PNJ rechargé à la demande
 - Base `main` exacte : `373b104100bd4aecd5da1d457bac3b45f923237f`; checkpoint `checkpoint/exploration-start-npc-catalog-retry-20261112`.
 - Lot unique : interface de l'éditeur de PNJ 2,5D et recharge manuelle du catalogue publié Combat après erreur réseau. Aucune source de créatures alternative.

@@ -1,4 +1,5 @@
 import {normalizeWorldEncounterStatProfileV1} from '../encounters/wild-stat-profile-contract-v1.js';
+import {normalizeCombatArenaIdV1} from '../world/world-combat-arena-v1.js';
 import {
   normalizeWorldDocument
 } from '../world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
@@ -731,6 +732,28 @@ export function setAreaEncounterWildStatProfile(draft,areaId,rawProfile){
  area.encounters??={};
  area.encounters.wildStatProfile=profile;
  return next;
+}
+
+export function setWorldCombatArena(draft, {areaId, buildingId, arenaId} = {}) {
+  const next = clone(draft);
+  let settings = next;
+  let key = 'defaultCombatArenaId';
+  if (areaId !== undefined) {
+    const area = findArea(next, areaId);
+    if (!area) throw new RangeError('Zone introuvable pour ce décor de combat');
+    settings = area.encounters ??= {};
+    key = 'combatArenaId';
+  }
+  if (buildingId !== undefined) {
+    const building = buildingPlacementDefinition(next, areaId, buildingId, objectDefinitionCatalogV1);
+    if (!building?.definition.doorAnchors?.length)
+      throw new RangeError('Choisis un bâtiment avec une porte');
+    settings = building.placement.overrides ??= {};
+  }
+  const id = normalizeCombatArenaIdV1(arenaId);
+  if (id) settings[key] = id;
+  else delete settings[key];
+  return next;
 }
 
 export function updateAreaProperties(

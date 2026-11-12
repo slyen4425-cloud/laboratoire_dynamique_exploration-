@@ -19,6 +19,7 @@ import {
   normalizeWorldEvents,
   worldEventReferencesAreValid
 } from './world-event-model.js?rev=world-event-contract-v1';
+import {normalizeCombatArenaIdV1} from './world-combat-arena-v1.js';
 
 export const WORLD_DOCUMENT_SCHEMA_VERSION = 3;
 
@@ -118,6 +119,7 @@ export function normalizeWorldDocument(raw = {}) {
         )
       : null;
 
+  const defaultCombatArenaId = normalizeCombatArenaIdV1(source.defaultCombatArenaId);
   return Object.freeze({
     schemaVersion:
       WORLD_DOCUMENT_SCHEMA_VERSION,
@@ -125,6 +127,7 @@ export function normalizeWorldDocument(raw = {}) {
       normalizedString(source.id) ??
       'world-document',
     terrainFamilies,
+    ...(defaultCombatArenaId ? {defaultCombatArenaId} : {}),
     encounterConfig:
       normalizeTerrainFamilyEncounterConfig(
         source.encounterConfig,

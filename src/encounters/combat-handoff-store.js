@@ -47,6 +47,7 @@ function normalizeSnapshot(raw) {
     terrainFamilyId:
       raw.context?.terrainFamilyId,
     elementId: raw.context?.elementId,
+    combatArenaIds: raw.context?.combatArenaIds,
     returnToken: raw.returnToken
   });
 }

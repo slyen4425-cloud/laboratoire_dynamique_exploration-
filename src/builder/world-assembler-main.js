@@ -2,6 +2,7 @@ import {
   addWorldArea,removeWorldArea,connectWorldAreas,setWorldInitialArea,
   deletePortal,createBlankWorldBuilderDraft,createWorldBuilderDraft,
   initializeWorldPresetEncounters,setAreaEncounterLevelRange,setAreaEncounterWildStatProfile,
+  setWorldCombatArena,createBuildingInteriorLink,
   setWorldAssemblerNodePosition,resetWorldAssemblerNodePositions,
   serializeWorldBuilderDraft,importWorldBuilderDocument
 } from './world-builder-draft.js?rev=preset-travel-encounters-v2';
@@ -16,7 +17,8 @@ import {createExplorationWorldDocumentLibraryV1} from './exploration-world-docum
 import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
 import {DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
-import {sculptWorldAreaScene} from './sculpt-world-area-link.js';
+import {sculptWorldAreaScene,SCULPT_WORLD_TILE} from './sculpt-world-area-link.js';
+import {SCULPT_INTERIOR_SIZE} from '../world/sculpt-interior-area-link.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 
 const byId=id=>document.getElementById(id);
@@ -123,6 +125,9 @@ function installWorldAssembler(){
   let linksShown=true;
   let requestedInteriorHostId=null;
   const areaDialog=byId('area-details-dialog');
+  const arenaPanel = byId('area-combat-arenas');
+  let arenaOptions = null;
+  let loadingArenaOptions = false;
   const library=createExplorationWorldDocumentLibraryV1({storage:window.localStorage});
   function refreshWorldLibrary(){
     const picker=byId('world-library-select');
@@ -232,6 +237,7 @@ function installWorldAssembler(){
     if(id!==selectedId){
       requestedInteriorHostId=null;
       byId('area-content-filter').value='all';
+      byId('combat-arena-building').value='';
     }
     selectedId=id;render();
   }
@@ -465,6 +471,82 @@ function installWorldAssembler(){
     }
     byId('selected-event-count').textContent=String(events.length);
   }
+  function renderArenaSelect(id, selected, inherited) {
+    const select = byId(id);
+    const options = arenaOptions ?? [];
+    select.replaceChildren(new Option(inherited, ''), ...options.map(arena => new Option(arena.label, arena.id)));
+    if (selected && !options.some(arena => arena.id === selected)) {
+      const unavailable = new Option('Décor enregistré indisponible', selected);
+      unavailable.disabled = true;
+      select.add(unavailable);
+    }
+    select.value = selected ?? '';
+    select.disabled = !options.length;
+  }
+  function selectedArenaBuilding(area = getSelected()) {
+    return area.objects.find(object => object.id === byId('combat-arena-building').value);
+  }
+  function renderBuildingArena(area = getSelected()) {
+    const building = selectedArenaBuilding(area);
+    renderArenaSelect('building-combat-arena', building?.overrides?.combatArenaId, 'Hériter de la zone');
+    byId('building-combat-arena').disabled ||= !building;
+    byId('create-combat-arena-interior').hidden = !building || draft.portals.some(portal =>
+      portal.sourceAreaId === area.id && portal.trigger.kind === 'object-anchor' &&
+      portal.trigger.objectId === building.id);
+  }
+  function renderCombatArenas(area) {
+    renderArenaSelect('world-combat-arena', draft.defaultCombatArenaId, 'Selon le terrain');
+    renderArenaSelect('area-combat-arena', area.encounters.combatArenaId,
+      area.kind === 'interior' ? 'Hériter du bâtiment ou de la zone' : 'Hériter du monde');
+    const buildings = area.kind === 'exterior' ? area.objects.map(placement => ({
+      placement, definition: objectDefinitionCatalogV1.get(placement.objectDefinitionId)
+    })).filter(({definition}) => definition?.kind === 'building' && definition.doorAnchors?.length) : [];
+    const picker = byId('combat-arena-building');
+    const previous = picker.value;
+    picker.replaceChildren(...buildings.map(({placement, definition}, index) =>
+      new Option(`${definition.label} · ${index + 1}`, placement.id)));
+    if (buildings.some(({placement}) => placement.id === previous)) picker.value = previous;
+    byId('building-combat-arenas').hidden = !buildings.length;
+    renderBuildingArena(area);
+  }
+  on(arenaPanel, 'toggle', async () => {
+    if (!arenaPanel.open || arenaOptions || loadingArenaOptions) return;
+    loadingArenaOptions = true;
+    const output = byId('combat-arena-catalog-status');
+    output.textContent = 'Chargement du catalogue du Labo Combat…';
+    try {
+      const {demoPresentationAssets} = await import('../../combat-preview/examples/dom-demo/demo-assets.js');
+      arenaOptions = demoPresentationAssets.arenaOptions();
+      renderCombatArenas(getSelected());
+      output.textContent = '';
+    } catch {
+      output.textContent = 'Catalogue du Labo Combat indisponible. Recharge le World Builder pour réessayer.';
+    } finally {
+      loadingArenaOptions = false;
+    }
+  });
+  on(byId('combat-arena-building'), 'change', () => renderBuildingArena());
+  for (const [id, scope] of [
+    ['world-combat-arena', () => ({})],
+    ['area-combat-arena', () => ({areaId:selectedId})],
+    ['building-combat-arena', () => ({areaId:selectedId, buildingId:selectedArenaBuilding()?.id})]
+  ]) {
+    on(byId(id), 'change', event => {
+      const arenaId = event.target.value;
+      if (event.target.disabled || (arenaId && !arenaOptions?.some(arena => arena.id === arenaId))) return;
+      apply(() => setWorldCombatArena(draft, {...scope(), arenaId}), 'Décor de combat enregistré.');
+    });
+  }
+  on(byId('create-combat-arena-interior'), 'click', () => {
+    const building = selectedArenaBuilding();
+    const anchor = objectDefinitionCatalogV1.get(building?.objectDefinitionId)?.doorAnchors?.[0];
+    if (!anchor) return;
+    apply(() => createBuildingInteriorLink(draft, {
+      sourceAreaId:selectedId, buildingId:building.id, anchorId:anchor.id,
+      interiorSize:{width:SCULPT_INTERIOR_SIZE.width * SCULPT_WORLD_TILE.width,
+        height:SCULPT_INTERIOR_SIZE.height * SCULPT_WORLD_TILE.height}
+    }), 'Intérieur relié à la porte du bâtiment.');
+  });
   function renderInspector(){
     const area=getSelected();if(!area)return;
     byId('selected-name').textContent=areaLabel(area);
@@ -495,6 +577,7 @@ function installWorldAssembler(){
     byId('selected-size').textContent=Math.round(area.width)+' × '+Math.round(area.height);
     renderAreaContents(area);
     renderAreaEvents(area);
+    renderCombatArenas(area);
     byId('area-encounter-min-level').value=String(area.encounters?.minLevel??1);
     byId('area-encounter-max-level').value=String(area.encounters?.maxLevel??5);
     const wildProfile=area.encounters?.wildStatProfile??DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1;

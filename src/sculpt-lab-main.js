@@ -78,6 +78,7 @@ import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
+import {worldCombatArenaIdsV1} from './world/world-combat-arena-v1.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
@@ -489,7 +490,14 @@ function sculptEncounterStep(){
     random:sculptEncounterRandom
   });
   if(!intent)return null;
-  return presentSculptEncounter(snapshotFromEncounterIntent(intent));
+  const interior = activeInteriorId && sculptInteriors.find(entry => entry.area.id === area.id);
+  const host = interior ? {
+    building: outsideAreaSnapshot?.objects.find(object => object.id === interior.buildingId),
+    exteriorArea: {encounters:sculptExteriorEncounters}
+  } : undefined;
+  return presentSculptEncounter(snapshotFromEncounterIntent(intent, {
+    combatArenaIds: worldCombatArenaIdsV1(sculptWorldDraft, area, host)
+  }));
 }
 function presentSculptEncounter(snapshot,recovered=false){
   sculptPendingEncounter=snapshot;

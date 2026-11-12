@@ -1,4 +1,5 @@
 import {normalizeWorldEncounterStatProfileV1} from './wild-stat-profile-contract-v1.js';
+import {normalizeCombatArenaIdsV1} from '../world/world-combat-arena-v1.js';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA =
   'capture-encounter-snapshot-v1';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_VERSION = 1;
@@ -53,6 +54,7 @@ export function createCaptureEncounterSnapshot(raw = {}) {
      (!Number.isSafeInteger(raw.opponentLevel)||
       raw.opponentLevel<1||raw.opponentLevel>9999))
     throw new RangeError('Encounter opponentLevel must be a positive integer');
+  const combatArenaIds = normalizeCombatArenaIdsV1(raw.combatArenaIds);
 
   return Object.freeze({
     schema: CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA,
@@ -75,7 +77,8 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     context: Object.freeze({
       areaId,
       terrainFamilyId,
-      elementId
+      elementId,
+      ...(combatArenaIds.length ? {combatArenaIds:Object.freeze(combatArenaIds)} : {})
     }),
     returnToken
   });
