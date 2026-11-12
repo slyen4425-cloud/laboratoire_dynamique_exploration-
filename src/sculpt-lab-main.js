@@ -2820,6 +2820,16 @@ function npcApplyAuthoringPatch(patch){
   try{editSelectedActor({npc:{...npcSettingsFromControls(),...patch}});}
   catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
 }
+function closeNpcAuthoringDialog(){
+  const dialog=$('npc-authoring-dialog');
+  if(dialog?.open)dialog.close();
+}
+function openNpcAuthoringDialog(){
+  const dialog=$('npc-authoring-dialog');
+  if(!dialog||!npcSelectedActor()||$('actor-action').value!=='select')return;
+  $('actor-npc-settings')?.setAttribute('open','');
+  if(!dialog.open)dialog.showModal();
+}
 function npcRoleEditorRefresh(){
   // The shared Sculpt engine also boots on immutable V80.
   if(!$('npc-trainer-editor'))return;
@@ -2927,16 +2937,6 @@ async function loadNpcOfficialCreatureChoices(){
     if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=false;
     npcRoleEditorRefresh();
   }
-}
-function closeNpcAuthoringDialog(){
-  const dialog=$('npc-authoring-dialog');
-  if(dialog?.open)dialog.close();
-}
-function openNpcAuthoringDialog(){
-  const dialog=$('npc-authoring-dialog');
-  if(!dialog||!npcSelectedActor()||$('actor-action').value!=='select')return;
-  $('actor-npc-settings')?.setAttribute('open','');
-  if(!dialog.open)dialog.showModal();
 }
 function syncActorSelectedControls(){
   const selected=npcSelectedActor();
