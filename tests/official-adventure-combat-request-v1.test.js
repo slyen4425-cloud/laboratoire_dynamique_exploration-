@@ -21,7 +21,7 @@ test('every frozen preview already transports the single helper owner with its b
  const native=await readFile(new URL('exploration-native-source-v1.js',base),'utf8');
  const bridge=await readFile(new URL('exploration-encounter.js',base),'utf8');
  assert.match(native,/export function officialAdventureCombatRequestV1/);
- assert.match(bridge,/from '\.\/exploration-native-source-v1\.js'/);
+ assert.match(bridge,/from '\.\/exploration-native-source-v1\.js(?:\?rev=[\w-]+)?'/);
  assert.match(bridge,/const scopedReleaseLoadId=encounterSessionId===undefined\?null:window\.crypto\.randomUUID\(\)/);
  assert.match(bridge,/async function readJson\(url\)\s*\{\s*const request=scopedRequest\(url\);/);
  assert.match(bridge,/const templateRequest=scopedRequest\('\.\/capture-editor-v2\.html'\)/);

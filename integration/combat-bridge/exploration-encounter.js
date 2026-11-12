@@ -15,7 +15,7 @@ import {
   SOUNDTRACK_STARTER_CAPTURE_PROJECT_V1
 } from '../../src/assets/soundtrack-starter-catalog-v1.js';
 import { createCombatSoundtrackPreviewBridgeV1 } from '../../src/adapters/audio/combat-soundtrack-preview-bridge-v1.js';
-import { buildExplorationNativeCombatSourceV1,officialAdventureCombatRequestV1 } from './exploration-native-source-v1.js';
+import { buildExplorationNativeCombatSourceV1,officialAdventureCombatRequestV1 } from './exploration-native-source-v1.js?rev=trainer-test-paths-v1';
 import { readCombatHandoff, saveCombatHandoff } from '../../../src/encounters/combat-handoff-store.js';
 import { createCaptureCombatResult } from '../../../src/encounters/capture-combat-result-contract.js';
 import {createCombatOutcomeHoldV1} from '../../../src/encounters/combat-outcome-hold-v1.js';
@@ -275,6 +275,7 @@ async function launch() {
   const party=adventureParty
     ?{id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId}
     :testerParty;
+  const trainerPreview=!adventureParty&&handoff.snapshot.source==='npc-trainer';
   const creatureTransfers=authorBundle.creatureTransfers;
   const skillTransfers=authorBundle.skillTransfers;
   const {terrainFamilyId, combatArenaIds} = handoff.snapshot.context;
@@ -328,18 +329,18 @@ async function launch() {
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
-    ...(adventureParty?{embeddedBattle:{initialHpByActor:Object.fromEntries(
+    ...(adventureParty||trainerPreview?{embeddedBattle:{initialHpByActor:Object.fromEntries(
       nativeCombatSource.fighters.map(fighter=>[fighter.id,
-        fighter.id==='local-1'?initialAdventureHp:fighter.maxHp]))}}:{}),
+        adventureParty&&fighter.id==='local-1'?initialAdventureHp:fighter.maxHp]))}}:{}),
     presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
   });
-  if(adventureParty){
+  if(adventureParty||trainerPreview){
     fleeButton.hidden=false;
     fleeButton.addEventListener('click',()=>mountedCombat.flee(),{once:true});
     void mountedCombat.completion.then(({outcome,state,roster})=>{
       if(!mountedCombat)return;
       const resolved=outcome==='flee'?'fled':outcome;
-      const withReserve=(adventureParty.reserve?.length??0)>0;
+      const withReserve=(adventureParty?.reserve?.length??0)>0;
       // No second HP ledger: Combat's existing RosterSession supplies all
       // member HP after recalls and KO replacements, mapped to the immutable
       // instance IDs projected by the source builder.
@@ -358,7 +359,7 @@ async function launch() {
       // Persist the native result immediately. Closing during presentation
       // must leave a recoverable outcome, not a replayable completed battle.
       recordCombatResult(handoff,resolved,state.fighters['local-1'].hp,
-        adventureParty.active.instanceId,nativeMembers);
+        adventureParty?.active.instanceId,nativeMembers);
       fleeButton.hidden=true;
       showNativeCombatOutcome(resolved);
     }).catch(error=>message('Résultat de combat non enregistré : '+error.message,true));

@@ -1,5 +1,4 @@
-// Real Chromium gate: authored PNJ placement -> edit -> scene export -> speech
-// and frozen V80 boot. No alternate WorldDocument or mocked renderer.
+// Real Chromium gate for PNJ authoring, dialogue, both trainer triggers and frozen V80.
 import {createServer} from 'node:http';
 import {readFile,mkdtemp,rm} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
@@ -143,19 +142,27 @@ try{
    selector.value=selector.options[1].value;
    document.querySelector('#npc-team-level').value='12';
    document.querySelector('#npc-team-add').click();
+   selector.value=selector.options[2].value;
+   document.querySelector('#npc-team-level').value='7';
+   document.querySelector('#npc-team-add').click();
    const engagement=document.querySelector('#npc-trainer-engagement');
    const defaultEngagement=engagement.value;
    engagement.value='aggressive';
    engagement.dispatchEvent(new Event('change',{bubbles:true}));
    document.querySelector('#scene-export').click();
    const actor=JSON.parse(document.querySelector('#json').value).actors[0];
-   return {member:actor.npc?.trainerRoster?.[0],rows:document.querySelectorAll('.npc-team-row').length,
-    defaultEngagement,engagement:actor.npc?.trainerEngagement};
+   engagement.value='offer';
+   engagement.dispatchEvent(new Event('change',{bubbles:true}));
+   document.querySelector('#scene-export').click();
+   return {actor,offerScene:document.querySelector('#json').value,
+    rows:document.querySelectorAll('.npc-team-row').length,defaultEngagement};
  })()`);
- if(!configured.member?.creatureId||configured.member.level!==12||configured.rows!==1||
-    configured.defaultEngagement!=='offer'||configured.engagement!=='aggressive')
-  throw Error('Visual trainer team editor failed '+JSON.stringify(configured));
- console.log('Native visual trainer roster:',JSON.stringify(configured));
+ const roster=configured.actor?.npc?.trainerRoster;
+ if(!roster?.[0]?.creatureId||roster[0].level!==12||!roster[1]?.creatureId||roster[1].level!==7||
+    configured.rows!==2||configured.defaultEngagement!=='offer'||
+    configured.actor.npc.trainerEngagement!=='aggressive')
+  throw Error('Visual trainer team editor failed '+JSON.stringify(configured.actor));
+ console.log('Native visual trainer roster:',JSON.stringify(roster));
  const updated=await run(`(()=>{
   const selected=window.__sculptActorsProbe().selectedId;
   document.querySelector('#actor-npc-kind').value='dialogue';
@@ -190,6 +197,83 @@ try{
  console.log('PNJ genuine Chromium placement/select/export/dialogue:',JSON.stringify({
   id:placed.actor.id,kind:updated.actor.npc.kind,selected:updated.selected,...spoken
  }));
+
+ // Restore the scene authored above and use the Builder's real Tester button.
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#json').value=${JSON.stringify(configured.offerScene)};
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+ await until("document.querySelector('#npc-talk')?.hidden===false",'nearby trainer in Tester');
+ const offer=await run(`(()=>{
+  document.querySelector('#npc-talk').click();
+  document.querySelector('#npc-dialogue-next').click();
+  return {accept:document.querySelector('#npc-dialogue-next').textContent,
+    refuse:document.querySelector('#npc-dialogue-close').textContent};
+ })()`);
+ if(offer.accept!=='Accepter le duel'||offer.refuse!=='Refuser')
+  throw Error('Tester drops the authored trainer challenge: '+JSON.stringify(offer));
+ await run("document.querySelector('#npc-dialogue-close').click()");
+ if(await run("Boolean(document.querySelector('.combat-overlay__frame'))"))throw Error('Refusal launched a battle');
+ await run(`(()=>{
+  document.querySelector('#npc-talk').click();
+  document.querySelector('#npc-dialogue-next').click();
+  document.querySelector('#npc-dialogue-next').click();
+ })()`);
+ const combatDoc="document.querySelector('.combat-overlay__frame')?.contentDocument";
+ async function waitForNativeDuel(label){
+  try{
+   await until("Boolean("+combatDoc+"?.querySelector('[data-bridge-status][data-ready=true]'))",label);
+  }catch(error){
+   const status=await run(combatDoc+"?.querySelector('[data-bridge-status]')?.textContent");
+   throw new Error(error.message+'; combat status '+status,{cause:error});
+  }
+ }
+ await waitForNativeDuel('native Tester trainer fight');
+ if(await run(combatDoc+".querySelectorAll('[data-enemy-reserve-member-id]:not([hidden])').length")!==1)
+  throw Error('The authored second creature is missing from the Tester fight');
+ const journal=await run(`(async()=>{
+  const {readCombatHandoff}=await import('./src/encounters/combat-handoff-store.js');
+  const snapshot=readCombatHandoff(sessionStorage)?.snapshot;
+  return {source:snapshot?.source,partyRef:snapshot?.player.partyRef,
+   opponents:snapshot?.opponents,storedLocally:Boolean(readCombatHandoff(localStorage))};
+ })()`);
+ if(journal.source!=='npc-trainer'||journal.partyRef!=='capture-party-player-v1'||journal.storedLocally||
+    journal.opponents?.length!==roster.length||
+    journal.opponents?.some((slot,index)=>slot.creatureId!==roster[index]?.creatureId||slot.level!==roster[index]?.level))
+  throw Error('Tester must use the original preview party and authored trainer levels '+JSON.stringify(journal));
+ await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
+ await until("!document.querySelector('.combat-overlay__frame')",'Tester exploration after flee');
+
+ // Play the same authored dresseur in a saved WorldDocument via World Builder → Jouer.
+ await run(`(async()=>{
+  const [{createBlankWorldBuilderDraft},{saveWorldAssemblerDraft}]=await Promise.all([
+   import('./src/builder/world-builder-draft.js'),import('./src/builder/world-assembler-handoff.js')
+  ]);
+  const world=createBlankWorldBuilderDraft({id:'world-test-dresseur',width:36*28,height:24*21});
+  const area=world.areas.find(entry=>entry.id===world.initialAreaId);
+  const spawn=area.spawns.find(entry=>entry.id===world.initialSpawnId);
+  area.actors.push({...${JSON.stringify(configured.actor)},x:spawn.x+20,y:spawn.y});
+  saveWorldAssemblerDraft(localStorage,world);
+ })()`);
+ await command('Page.navigate',{url:new URL('/world-assembler.html',url).href});
+ await until("location.pathname.endsWith('/world-assembler.html') && document.querySelector('#world-play-open')",'World Builder play entry');
+ await run("document.querySelector('#world-play-open').click()");
+ await until("location.pathname.endsWith('/play.html') && document.querySelector('#play-new')?.disabled===false",'World Builder new game');
+ await run("document.querySelector('#play-new').click()");
+ await until("window.__sculptPlayProbe?.().active",'saved world loaded for play');
+ const right={key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39};
+ await command('Input.dispatchKeyEvent',{type:'keyDown',...right});
+ try{
+  await waitForNativeDuel('aggressive trainer on first movement within range');
+ }finally{await command('Input.dispatchKeyEvent',{type:'keyUp',...right});}
+ if(await run("document.querySelector('#npc-dialogue-overlay').hidden")!==true)
+  throw Error('Aggressive trainer opened dialogue before battle');
+ await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
+ await until("!document.querySelector('.combat-overlay__frame') && window.__sculptPlayProbe().active",'saved world after native trainer fight');
+ console.log('Native dresseur duels validated from Tester and World Builder play');
+
  await command('Page.navigate',{url:new URL('/sculpt-lab-v80.html',url).href});
  await until("typeof window.__sculptLabProbe==='function' && document.querySelector('#sculpt-canvas')?.width>0",'frozen V80 startup');
  const legacy=await run(`({

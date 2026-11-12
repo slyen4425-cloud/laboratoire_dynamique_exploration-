@@ -32,7 +32,6 @@ export function buildExplorationNativeCombatSourceV1({
     throw new RangeError('Capture player partyRef not resolved');
   const playerId=required(party.activeCreatureId,'party.activeCreatureId');
   const scoped=party.id.startsWith('adventure-party:');
-  if(trainer&&!scoped)throw new RangeError('Un dresseur nécessite une partie Aventure');
   if(scoped&&(!adventureParty||adventureParty.partyRef!==party.id||adventureParty.active?.speciesId!==playerId))
     throw new RangeError('Aventure exige le combattant actif de la partie autorisée');
   if(!scoped&&adventureParty!==undefined)
@@ -109,6 +108,14 @@ export function buildExplorationNativeCombatSourceV1({
     statRegistry,progressionRules,skillSpeedMultiplier:0.5
   };
   const sourceCreatureIds=Object.freeze({player:playerId,opponent:enemyId});
+  if(trainer&&!scoped){
+    const source=buildCaptureEncounterCombatSourceV1({
+      ...options,wildStatProfile:snapshot.rules?.wildStatProfile??{},
+      local:{speciesId:playerId,level:previewLevel,instanceId:party.id},
+      opponent:{speciesId:enemyId,level:authoredEnemyLevel},opponentReserve
+    });
+    return Object.freeze({...source,sourceCreatureIds});
+  }
   if(scoped){
     const source=buildCaptureEncounterCombatSourceV1({
       // Global real-game HP rule is applied by Combat's one authoritative

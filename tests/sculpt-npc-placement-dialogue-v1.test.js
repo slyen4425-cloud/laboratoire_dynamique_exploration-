@@ -89,6 +89,9 @@ test('only eligible aggressive trainers attack on entering interaction range',()
  const actors=[hostile,friendly];
  const outside={x:19,y:20},inside={x:20,y:20},nearby={x:22,y:20};
  assert.equal(nearestAggressiveTrainerV1(actors,outside,inside,()=>true),hostile);
+ assert.equal(nearestAggressiveTrainerV1(actors,null,inside,()=>true),hostile);
+ assert.equal(nearestAggressiveTrainerV1(actors,null,outside,()=>true),null);
+ assert.equal(nearestAggressiveTrainerV1(actors,undefined,inside,()=>true),null);
  assert.equal(nearestAggressiveTrainerV1(actors,inside,nearby,()=>true),null);
  assert.equal(nearestAggressiveTrainerV1(actors,inside,outside,()=>true),null);
  assert.equal(nearestAggressiveTrainerV1(actors,outside,inside,()=>false),null);
