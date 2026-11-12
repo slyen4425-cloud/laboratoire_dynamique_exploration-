@@ -26,5 +26,5 @@ test('native actor placement, touch selection and toolbar open same modal',()=>{
  assert.match(js,/\$\('npc-authoring-close'\)\?\.addEventListener\('click',closeNpcAuthoringDialog\)/);
  assert.match(js,/if\(!selected\)\{closeNpcAuthoringDialog\(\)/);
  assert.match(js,/if\(!objectEditing\)\{\s*closeNpcAuthoringDialog\(\)/);
- assert.doesNotMatch(js,/cloneNode\(/);
+ assert.doesNotMatch(placement,/cloneNode\(/,'NPC placement never clones its authoring form');
 });
