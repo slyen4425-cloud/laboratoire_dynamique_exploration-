@@ -3,6 +3,7 @@ import {importSculptTerrain} from './sculpt-height-model.js';
 import {interiorWallMaterialId} from './interior-material-catalog.js';
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
 import {normalizeWorldEncounterStatProfileV1} from '../encounters/wild-stat-profile-contract-v1.js';
+import {normalizeCombatArenaIdV1} from './world-combat-arena-v1.js';
 import {
   normalizeWorldAreaBoundary
 } from './world-area-geometry.js?rev=interior-geometry-authoring-v1-r2';
@@ -91,12 +92,14 @@ function normalizeWorldAreaEncounters(raw, kind) {
      encounters.minLevel<1||encounters.maxLevel<encounters.minLevel||
      encounters.maxLevel>9999))
     throw new RangeError('WorldArea encounter level range must be integers from 1 to 9999, min ≤ max');
+  const combatArenaId = normalizeCombatArenaIdV1(encounters.combatArenaId);
   return Object.freeze({
     randomEnabled:
       typeof encounters.randomEnabled === 'boolean'
         ? encounters.randomEnabled
         : kind !== 'interior',
     ...(hasMin?{minLevel:encounters.minLevel,maxLevel:encounters.maxLevel}:{}),
+    ...(combatArenaId ? {combatArenaId} : {}),
     ...(Object.hasOwn(encounters,'wildStatProfile')
       ?{wildStatProfile:normalizeWorldEncounterStatProfileV1(encounters.wildStatProfile)}:{})
   });

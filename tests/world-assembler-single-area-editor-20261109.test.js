@@ -85,8 +85,10 @@ test('encounter chance stays owned by texture; zone level authoring never change
   assert.doesNotMatch(js,/setAreaEncounterChance|updateTerrainFamilyEncounterProfile/);
 });
 
-test('registered Battle Setup choice is not falsely duplicated as an Exploration setting',()=>{
-  assert.match(html,/choix d’un fond de combat par zone ou bâtiment sera proposé après raccord/);
-  assert.doesNotMatch(html,/select id="area-combat-map"/);
-  assert.doesNotMatch(js,/arenaOptions\(/);
+test('battle backdrops use the staged Combat catalog alongside the placed building list',()=>{
+  assert.match(html,/select id="area-combat-arena"/);
+  assert.match(html,/select id="world-combat-arena"/);
+  assert.match(html,/select id="building-combat-arena"/);
+  assert.match(js,/import\('\.\.\/\.\.\/combat-preview\/examples\/dom-demo\/demo-assets\.js'\)/);
+  assert.match(js,/demoPresentationAssets\.arenaOptions\(\)/);
 });

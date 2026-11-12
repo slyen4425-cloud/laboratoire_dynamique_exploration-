@@ -2,7 +2,7 @@ import {
   createCaptureEncounterSnapshot
 } from './capture-encounter-contract.js?rev=phase7-snapshot-v1';
 
-export function snapshotFromEncounterIntent(intent) {
+export function snapshotFromEncounterIntent(intent, {combatArenaIds} = {}) {
   if (!intent || typeof intent !== 'object') {
     throw new TypeError('Encounter Intent is required');
   }
@@ -18,6 +18,7 @@ export function snapshotFromEncounterIntent(intent) {
     areaId: intent.areaId,
     terrainFamilyId: intent.terrainFamilyId,
     elementId: intent.elementId,
+    combatArenaIds,
     returnToken: intent.returnToken
   });
 }

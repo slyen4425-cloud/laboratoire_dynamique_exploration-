@@ -194,10 +194,27 @@
       <div id="selected-events" class="area-contents-list" aria-live="polite"></div>
       <p class="help-note">Les événements existants sont conservés. Leur édition se fera dans le nouvel éditeur 2,5D, sans accès à l'ancien éditeur.</p>
      </section>
-     <section class="area-editor-group" aria-label="Cartes de combat">
-      <div class="section-head"><h3>🏟 Cartes de combat</h3></div>
-      <p class="help-note">Les arènes 2,5D placées sur cette carte apparaissent dans « Contenu de cette zone ». Le choix d’un fond de combat par zone ou bâtiment sera proposé après raccord au catalogue officiel du Labo Combat : aucun choix non fonctionnel ni second catalogue n’est créé ici.</p>
-     </section>
+     <details id="area-combat-arenas" class="area-editor-group">
+      <summary>🏟 Décors de combat</summary>
+      <div class="add-panel">
+       <label class="field">Décor de cette zone ou de cet intérieur
+        <select id="area-combat-arena" disabled><option value="">Hériter</option></select>
+       </label>
+       <label class="field">Décor par défaut du monde
+        <select id="world-combat-arena" disabled><option value="">Selon le terrain</option></select>
+       </label>
+       <div id="building-combat-arenas" hidden>
+        <label class="field">Bâtiment
+         <select id="combat-arena-building"></select>
+        </label>
+        <label class="field">Décor de l’intérieur du bâtiment
+         <select id="building-combat-arena" disabled><option value="">Hériter</option></select>
+        </label>
+        <button id="create-combat-arena-interior" class="block secondary" type="button" hidden>Créer l’intérieur relié à la porte</button>
+       </div>
+       <output id="combat-arena-catalog-status" role="status" aria-live="polite"></output>
+      </div>
+     </details>
     <details id="area-creation-details" class="area-editor-group area-create-details">
      <summary>＋ Ajouter une destination ou un intérieur lié</summary>
     <form id="area-add-form" class="add-panel">
@@ -256,6 +273,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-2p5d-only-20261111-world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-area-modal-20261109"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-2p5d-only-20261111-world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-area-modal-20261109-combat-arena-v1"></script>
 </body>
 </html>

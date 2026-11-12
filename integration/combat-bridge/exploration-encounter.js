@@ -129,7 +129,7 @@ function presentationAssetsForSource(source, assetCatalog) {
     audioAsset: id=>native.audioAsset(id)??resolveOfficialAudioAsset(id)
   });
 }
-function showOfficialCombatTemplate(source, templateResponse) {
+function showOfficialCombatTemplate(source, templateResponse, arenaId) {
   return Promise.resolve(templateResponse).then(async response => {
     if (!response.ok) throw new Error('Template du Labo Combat indisponible');
     const page = new DOMParser().parseFromString(await response.text(), 'text/html');
@@ -146,11 +146,10 @@ function showOfficialCombatTemplate(source, templateResponse) {
       }
     }
     const arena = root.querySelector('[data-combat-arena]');
-    const family = readCombatHandoff(handoffStorage, handoffScope)?.snapshot.context.terrainFamilyId;
-    const arenaId = ({forest:'forest',snow:'snow',volcano:'lava',mountain:'cave'})[family] ?? 'forest';
     const preset = demoPresentationAssets.presentationForArena(arenaId);
     if (preset?.background?.url) {
       arena.dataset.arenaBackground = 'image';
+      arena.dataset.arenaTheme = arenaId;
       arena.style.setProperty('--arena-background-image', 'url("' + preset.background.url + '")');
       arena.style.setProperty('--arena-background-position', preset.backgroundPosition ?? 'center');
       arena.style.setProperty('--arena-background-size', preset.backgroundSize ?? 'cover');
@@ -278,8 +277,10 @@ async function launch() {
     :testerParty;
   const creatureTransfers=authorBundle.creatureTransfers;
   const skillTransfers=authorBundle.skillTransfers;
-  const terrain=handoff.snapshot.context.terrainFamilyId;
-  const arenaId=({forest:'forest',snow:'snow',volcano:'lava',mountain:'cave'})[terrain]??'forest';
+  const {terrainFamilyId, combatArenaIds} = handoff.snapshot.context;
+  const publishedArenas = new Set(demoPresentationAssets.arenaOptions().map(arena => arena.id));
+  const terrainArena = new Map([['snow','snow'], ['volcano','lava'], ['mountain','cave']]);
+  const arenaId = combatArenaIds?.find(id => publishedArenas.has(id)) ?? terrainArena.get(terrainFamilyId) ?? 'forest';
   const nativeCombatSource=buildExplorationNativeCombatSourceV1({
     snapshot:handoff.snapshot,party,adventureParty,showcaseCreatureTransfers:creatureTransfers,
     showcaseSkillTransfers:skillTransfers,nativeSkillCatalog,statRegistry,
@@ -323,7 +324,7 @@ async function launch() {
       img.src=assetUrlForFile(file);
     })));
   }
-  const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse);
+  const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse,nativeVisualSource.arenaId);
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
