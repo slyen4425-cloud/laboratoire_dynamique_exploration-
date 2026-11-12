@@ -309,7 +309,26 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 #object-controls[hidden],#actor-controls[hidden]{display:none!important}
 #actor-controls #actor-source-status{color:#a6ebd6}
 #actor-controls button{min-height:34px}
+/* One native, focus-trapped authoring window. Existing NPC form is moved, not cloned. */
+#npc-authoring-dialog{width:min(760px,calc(100vw - 24px));max-width:760px;
+ max-height:calc(100dvh - 24px);overflow:auto;padding:12px;background:#142b35;
+ color:#f3f9f6;border:1px solid #83cbbb;border-radius:12px;
+ box-shadow:0 16px 50px #000b}
+#npc-authoring-dialog[open]{display:grid;gap:10px;align-content:start}
+#npc-authoring-dialog::backdrop{background:rgba(4,15,19,.76)}
+.npc-authoring-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
+ position:sticky;top:-12px;z-index:2;padding:8px;background:#142b35;
+ border-bottom:1px solid #55877e}
+#npc-authoring-close{min-height:42px}
+#npc-authoring-open{width:100%;background:#20594f;border-color:#87cbbd;font-weight:700}
 #actor-npc-settings{border:1px solid #568b85;border-radius:8px;padding:7px;display:grid;gap:7px}
+@media(max-height:480px){
+ #npc-authoring-dialog{max-height:calc(100dvh - 8px);width:min(880px,calc(100vw - 12px));padding:8px}
+ .npc-authoring-head{top:-8px;padding:4px 6px}
+ #npc-authoring-dialog #actor-npc-settings{padding:6px;gap:5px}
+ #npc-authoring-dialog label{font-size:.83rem}
+ #npc-authoring-dialog button{min-height:38px}
+}
 #actor-npc-settings label{display:grid;gap:3px}
 #npc-trainer-editor:not([hidden]),#npc-wild-editor:not([hidden]){display:grid;gap:8px;padding:8px;background:#12352f;border-radius:8px}
 #npc-team-list{display:grid;gap:6px}
@@ -1128,6 +1147,12 @@ body.sculpt-play-unavailable #play-start-error{
     <input id="actor-scale" type="range" min="25" max="200" step="5" value="100" aria-label="Taille visuelle de l'acteur en pourcentage">
   </label>
   <output id="actor-selected">Aucun acteur sélectionné</output>
+  <button type="button" id="npc-authoring-open" disabled>⚙ Configurer ce PNJ</button>
+  <dialog id="npc-authoring-dialog" aria-label="Configuration du PNJ">
+   <div class="npc-authoring-head">
+    <strong>⚙ Fiche du PNJ sélectionné</strong>
+    <button type="button" id="npc-authoring-close">✕ Fermer</button>
+   </div>
   <details id="actor-npc-settings" open>
    <summary>💬 Fiche PNJ / monstre errant</summary>
    <label>Type <select id="actor-npc-kind">
@@ -1176,6 +1201,7 @@ body.sculpt-play-unavailable #play-start-error{
    <small id="npc-catalog-status" role="status" aria-live="polite">Chargement des créatures publiées depuis le catalogue officiel Combat…</small>
    <button type="button" id="npc-catalog-retry">↻ Recharger le bestiaire officiel Combat</button>
   </details>
+  </dialog>
   <div class="object-actions">
    <button type="button" id="actor-undo" disabled>↶ Acteur</button>
    <button type="button" id="actor-redo" disabled>↷ Acteur</button>
