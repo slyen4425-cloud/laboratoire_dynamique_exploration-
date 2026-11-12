@@ -21,6 +21,27 @@ export function normalizeNpcTrainerRosterV1(raw){
   return Object.freeze(raw.map((slot,index)=>
     normalizeCreatureSlot(slot,'Trainer slot '+(index+1))));
 }
+// Transport de scénario uniquement. L'inventaire officiel Capture
+// valide et attribue ces références au résultat du Combat.
+export function normalizeNpcTrainerRewardV1(raw){
+ if(!raw||typeof raw!=='object'||Array.isArray(raw)||
+    !Number.isSafeInteger(raw.currency)||raw.currency<0||raw.currency>100000000||
+    !Array.isArray(raw.items)||raw.items.length>24||
+    Object.keys(raw).some(key=>!['currency','items'].includes(key)))
+   throw new RangeError('NPC reward must contain currency and up to 24 canonical item references');
+ const ids=new Set();
+ const items=raw.items.map(entry=>{
+  if(!entry||typeof entry!=='object'||Array.isArray(entry)||
+     Object.keys(entry).some(key=>!['itemId','quantity'].includes(key))||
+     typeof entry.itemId!=='string'||!(/^[a-z0-9][a-z0-9_:.-]{0,129}$/i).test(entry.itemId)||
+     !Number.isSafeInteger(entry.quantity)||entry.quantity<1||entry.quantity>9999||
+     ids.has(entry.itemId))
+   throw new RangeError('Invalid or duplicate NPC reward item');
+  ids.add(entry.itemId);
+  return Object.freeze({itemId:entry.itemId,quantity:entry.quantity});
+ });
+ return Object.freeze({currency:raw.currency,items:Object.freeze(items)});
+}
 function line(value,max,label){
   if(value===undefined||value===null||value==='')return '';
   if(typeof value!=='string'||value.length>max)
@@ -56,6 +77,8 @@ export function normalizeMapActorNpcSettingsV1(raw){
     ...(Object.hasOwn(raw,'trainerRoster')?
       {trainerRoster:normalizeNpcTrainerRosterV1(raw.trainerRoster)}:{}),
     ...(hasTrainerEngagement?{trainerEngagement:raw.trainerEngagement}:{}),
+    ...(Object.hasOwn(raw,'trainerReward')?
+      {trainerReward:normalizeNpcTrainerRewardV1(raw.trainerReward)}:{}),
     ...(raw.wildCreature!=null?
       {wildCreature:normalizeCreatureSlot(raw.wildCreature,'Wild creature')}:{})
   });
