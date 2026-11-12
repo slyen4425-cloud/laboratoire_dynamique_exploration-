@@ -1,3 +1,13 @@
+## 2026-11-12 — Lancer les combats des PNJ dresseurs depuis Jouer
+
+- START `checkpoint/exploration-start-capture-trainer-encounters-2026-11-12` sur `main@02bb3844bdeb1277e615026617cdf6b41857f320`. Branche `work/exploration-capture-trainer-encounters-2026-11-12`.
+- Exploration transporte l’équipe du PNJ déjà enregistrée dans la WorldArea. Le dialogue précède le défi quand il est renseigné. La sélection de décor utilise la même règle que les rencontres sauvages.
+- Combat résout les participants via sa réserve native. GenSRPG Aventure enregistre la victoire et projette la liste des dresseurs battus. Les autres types de PNJ et la règle de rencontre sauvage restent protégés.
+- Combat PR #301 fusionnée sur `main@b700d477565fef69f79f5e36fcf16cb71a268c97`. En Chromium paysage, la candidate lance le vrai combat depuis le dialogue, montre la réserve et permet de gagner. Après recharge, la sauvegarde Aventure bloque un nouveau défi contre ce PNJ.
+- Vérifier la composition exacte, le journal à la reprise et la sortie vers l’exploration. Tester le dialogue et la véritable réserve adverse avant publication.
+
+---
+
 ## 2026-11-12 — Décors de combat par monde, zone et bâtiment
 
 - START `checkpoint/exploration-start-combat-arena-overrides-2026-11-12` sur `main@393fa6371732b8c72faface7765ce027b6751af7`. Branche `work/exploration-combat-arena-overrides-2026-11-12`. Base publiée et certifiée par les runs Exploration CI `43201349450` et Pages `43201349264`.

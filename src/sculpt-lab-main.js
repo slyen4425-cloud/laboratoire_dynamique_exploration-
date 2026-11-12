@@ -78,6 +78,7 @@ import {setAreaEncounterRandomEnabled,updateTerrainFamilyEncounterProfile,
   setTerrainFamilyEncounterElementEnabled} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounters/sculpt-encounter-area-adapter.js';
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
+import {createCaptureEncounterSnapshot} from './encounters/capture-encounter-contract.js';
 import {worldCombatArenaIdsV1} from './world/world-combat-arena-v1.js';
 import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
@@ -252,16 +253,17 @@ const sculptCombatWarmup=createCaptureCombatWarmupV1({
   saveData:window.navigator?.connection?.saveData===true
 });
 const sculptEncounterTest=!sculptPlayRequested&&new URL(document.URL).searchParams.get('encounterTest')==='1';
+const newAdventureEncounterIds=()=>({
+  encounterId:'encounter-'+window.crypto.randomUUID(),
+  returnToken:'return-'+window.crypto.randomUUID()
+});
 const sculptEncounterController=sculptEncounterDialog?createEncounterController({
   checkDistance:sculptEncounterTest?80:160,
   // Only a GenSRPG-owned AdventureSession needs stable uniqueness across
   // page reloads. The official Tester keeps deterministic sequential IDs.
   // This does not grant permission to spawn unpublished creatures in Jouer.
   createCorrelationIds:sculptPlayRequested&&adventureSessionId!==null
-    ?()=>({
-      encounterId:'encounter-'+window.crypto.randomUUID(),
-      returnToken:'return-'+window.crypto.randomUUID()
-    })
+    ?newAdventureEncounterIds
     :undefined
 }):null;
 // Combat's official Showcase is required for encounters, NOT for drawing the
@@ -490,14 +492,17 @@ function sculptEncounterStep(){
     random:sculptEncounterRandom
   });
   if(!intent)return null;
+  return presentSculptEncounter(snapshotFromEncounterIntent(intent, {
+    combatArenaIds:sculptBattleArenaIds(area)
+  }));
+}
+function sculptBattleArenaIds(area){
   const interior = activeInteriorId && sculptInteriors.find(entry => entry.area.id === area.id);
   const host = interior ? {
     building: outsideAreaSnapshot?.objects.find(object => object.id === interior.buildingId),
     exteriorArea: {encounters:sculptExteriorEncounters}
   } : undefined;
-  return presentSculptEncounter(snapshotFromEncounterIntent(intent, {
-    combatArenaIds: worldCombatArenaIdsV1(sculptWorldDraft, area, host)
-  }));
+  return worldCombatArenaIdsV1(sculptWorldDraft, area, host);
 }
 function presentSculptEncounter(snapshot,recovered=false){
   sculptPendingEncounter=snapshot;
@@ -509,9 +514,16 @@ function presentSculptEncounter(snapshot,recovered=false){
   // player reads the encounter dialog. No gameplay change or visual fallback.
   void sculptCombatWarmup.warmCreature(creatureId,scopedEncounter?.party?.active?.speciesId??null);
   const creature=sculptEncounterCatalog.resolveCreature(creatureId);
-  $('sculpt-encounter-summary').textContent=
-    (creature?.name??creatureId)+' · '+sculptPendingEncounter.context.terrainFamilyId+
-    ' · élément '+sculptPendingEncounter.context.elementId;
+  const trainerId=snapshot.context.trainerActorId;
+  const title=trainerId?'Combat de dresseur':'Rencontre sauvage !';
+  if($('sculpt-encounter-title'))$('sculpt-encounter-title').textContent=title;
+  sculptEncounterDialog.setAttribute('aria-label',title);
+  $('sculpt-encounter-summary').textContent=trainerId
+    ?(placedActors.find(actor=>actor.id===trainerId)?.npc?.name||'Dresseur')+
+      ' · '+snapshot.opponents.length+' créature(s)'
+    :(creature?.name??creatureId)+' · '+snapshot.context.terrainFamilyId+
+      ' · élément '+snapshot.context.elementId;
+  if($('sculpt-encounter-wild-hint'))$('sculpt-encounter-wild-hint').hidden=Boolean(trainerId);
   sculptEncounterDialog.hidden=false;
   scheduleDraw();
   return sculptPendingEncounter;
@@ -541,6 +553,7 @@ function restoreSculptEncounterPosition(envelope){
 }
 function finishSculptEncounter(envelope){
   if(!releaseSculptEncounter())return;
+  updateNpcInteraction();
   queueMicrotask(()=>{if(navigationTesting)explorationSoundtrack.resume();});
   status('Combat terminé : '+envelope.result.outcome+' · exploration reprise');
 }
@@ -573,26 +586,27 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
   onFailure(error){status('Combat conservé pour la reprise : '+error.message);}
 }):null;
 
+function launchSculptEncounter(){
+  if(!sculptPendingEncounter||sculptEncounterHost.active)return;
+  if(scopedEncounter&&!persistPlayNavigationCheckpoint())return;
+  explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
+  const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
+  try{
+    launchCombatHandoffNavigation({
+      snapshot:sculptPendingEncounter,player,
+      storage:sculptCombatStorage,documentUrl:document.URL,sessionId:sculptCombatSessionId,
+      navigate(url){
+        if(scopedEncounter)$('sculpt-encounter-continue').hidden=true;
+        sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});
+      }
+    });
+  }catch(error){
+    explorationSoundtrack.resume();
+    status('Combat indisponible : '+error.message);
+  }
+}
 if(sculptEncounterDialog){
-  $('sculpt-encounter-combat').addEventListener('click',()=>{
-    if(!sculptPendingEncounter||sculptEncounterHost.active)return;
-    if(scopedEncounter&&!persistPlayNavigationCheckpoint())return;
-    explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
-    const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
-    try{
-      launchCombatHandoffNavigation({
-        snapshot:sculptPendingEncounter,player,
-        storage:sculptCombatStorage,documentUrl:document.URL,sessionId:sculptCombatSessionId,
-        navigate(url){
-          if(scopedEncounter)$('sculpt-encounter-continue').hidden=true;
-          sculptEncounterHost.open({url,snapshot:sculptPendingEncounter});
-        }
-      });
-    }catch(error){
-      explorationSoundtrack.resume();
-      status('Combat indisponible : '+error.message);
-    }
-  });
+  $('sculpt-encounter-combat').addEventListener('click',launchSculptEncounter);
   $('sculpt-encounter-continue').addEventListener('click',()=>{
     if(!sculptEncounterHost.active&&!$('sculpt-encounter-continue').hidden)releaseSculptEncounter();
   });
@@ -1974,24 +1988,53 @@ function navigationSpawn(){
   }
   return null;
 }
-let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0,npcDialogueMerchant=null;
+let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0,npcDialogueMerchant=null,npcDialogueTrainer=null;
 function closeNpcDialogue(){
   npcDialogueOpen=false;
   if($('npc-dialogue-overlay'))$('npc-dialogue-overlay').hidden=true;
   npcDialogueLines=[];npcDialogueIndex=0;npcDialogueMerchant=null;
+  npcDialogueTrainer=null;
   if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=true;
+}
+function canChallengeSculptTrainer(actor){
+  const team=actor.npc?.kind==='trainer'?actor.npc.trainerRoster:null;
+  if(!sculptPlayActive||!scopedEncounter?.armed||scopedEncounter.party.active.hp===0||!team?.length)return false;
+  const areaId=activeInteriorId??sculptWorldAreaId;
+  return !scopedEncounter.party.trainerVictories?.some(entry=>entry.areaId===areaId&&entry.actorId===actor.id)&&
+    team.every(member=>sculptEncounterCatalog.resolveCreature(member.creatureId));
+}
+function startSculptTrainerBattle(actor){
+  if(sculptPendingEncounter||!navActor||!canChallengeSculptTrainer(actor))return;
+  const area=navigationEncounterArea();
+  const opponents=actor.npc.trainerRoster;
+  const creature=sculptEncounterCatalog.resolveCreature(opponents[0].creatureId);
+  const terrain=resolveTerrainFamilyAtPoint(area.surface,navActor.x,navActor.y);
+  const snapshot=createCaptureEncounterSnapshot({
+    ...newAdventureEncounterIds(),source:'npc-trainer',trainerActorId:actor.id,opponents,
+    playerPartyRef:scopedEncounter.party.partyRef,areaId:area.id,
+    terrainFamilyId:terrain.terrainFamilyId??area.surface.baseTerrainFamilyId,
+    elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
+    combatArenaIds:sculptBattleArenaIds(area)
+  });
+  if(!sculptEncounterController.restore(snapshot.encounterId))return;
+  presentSculptEncounter(snapshot);
+  launchSculptEncounter();
 }
 function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
-    ?nearestDialogNpcV1(placedActors,navActor):null;
+    ?nearestDialogNpcV1(placedActors,navActor,undefined,canChallengeSculptTrainer):null;
 }
 function updateNpcInteraction(){
   // Legacy V80 does not expose the new dialogue overlay.
   if(!$('npc-talk'))return;
   const npc=nearbyNpcForDialogue();
   $('npc-talk').hidden=!npc||npcDialogueOpen;
-  if(npc)$('npc-talk').textContent=(npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
-    (npc.npc.name||'Parler');
+  if(npc){
+    const challenge=canChallengeSculptTrainer(npc)&&!npc.npc.dialogue;
+    $('npc-talk').textContent=(challenge?'⚔ ':npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
+      (npc.npc.name||(challenge?'Défier':'Parler'));
+    $('npc-talk').setAttribute('aria-label',challenge?'Défier '+(npc.npc.name||'le dresseur'):'Parler au PNJ proche');
+  }
 }
 function requestNpcMerchantShop(actor){
   if(!actor?.npc?.merchantId)return;
@@ -2008,17 +2051,18 @@ function requestNpcMerchantShop(actor){
 $('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
   const canShop=npc.npc.kind==='merchant'&&!!npc.npc.merchantId;
+  const canChallenge=canChallengeSculptTrainer(npc);
   if(canShop&&!npc.npc.dialogue.trim()){
     requestNpcMerchantShop(npc);return;
   }
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
-  if(!npcDialogueLines.length)return;
+  if(!npcDialogueLines.length){if(canChallenge)startSculptTrainerBattle(npc);return;}
   npcDialogueMerchant=canShop?npc:null;
+  npcDialogueTrainer=canChallenge?npc:null;
   if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
   npcDialogueIndex=0;npcDialogueOpen=true;
   $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
-  $('npc-dialogue-text').textContent=npcDialogueLines[0];
-  $('npc-dialogue-next').textContent=npcDialogueLines.length>1?'Suivant':'Terminer';
+  renderNpcDialogueStep();
   $('npc-dialogue-overlay').hidden=false;updateNpcInteraction();
 });
 $('npc-dialogue-trade')?.addEventListener('click',()=>{
@@ -2026,12 +2070,22 @@ $('npc-dialogue-trade')?.addEventListener('click',()=>{
   if(!actor||!npcDialogueOpen)return;
   closeNpcDialogue();requestNpcMerchantShop(actor);updateNpcInteraction();
 });
+function renderNpcDialogueStep(){
+  $('npc-dialogue-text').textContent=npcDialogueLines[npcDialogueIndex];
+  $('npc-dialogue-next').textContent=npcDialogueIndex<npcDialogueLines.length-1?'Suivant':
+    npcDialogueTrainer?'Combattre':'Terminer';
+}
 $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
   npcDialogueIndex+=1;
-  if(npcDialogueIndex>=npcDialogueLines.length){closeNpcDialogue();updateNpcInteraction();return;}
-  $('npc-dialogue-text').textContent=npcDialogueLines[npcDialogueIndex];
-  $('npc-dialogue-next').textContent=npcDialogueIndex===npcDialogueLines.length-1?'Terminer':'Suivant';
+  if(npcDialogueIndex>=npcDialogueLines.length){
+    const trainer=npcDialogueTrainer;
+    closeNpcDialogue();
+    if(trainer)startSculptTrainerBattle(trainer);
+    updateNpcInteraction();
+    return;
+  }
+  renderNpcDialogueStep();
 });
 $('npc-dialogue-close')?.addEventListener('click',()=>{
   closeNpcDialogue();updateNpcInteraction();
@@ -4414,7 +4468,7 @@ async function recoverScopedSculptEncounter(pending){
   if(pending.snapshot.context.areaId!==navigationEncounterArea().id||
      pending.returnState.areaId!==navigationEncounterArea().id)
     throw Error('Zone du combat en attente différente de la sauvegarde');
-  if(!scopedEncounter.context.allowedCreatureIds.includes(pending.snapshot.opponents[0].creatureId))
+  if(pending.snapshot.opponents.some(member=>!scopedEncounter.context.allowedCreatureIds.includes(member.creatureId)))
     throw Error('Le combat en attente concerne un adversaire hors Bestiaire autorisé');
   if(pending.result){
     const receipt=await commitScopedSculptEncounter(pending);
@@ -4496,6 +4550,7 @@ async function installSculptPlayMode(){
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     if(pending)await recoverScopedSculptEncounter(pending);
     if(scopedEncounter)scopedEncounter.armed=true;
+    updateNpcInteraction();
     $('play-menu-button').hidden=false;
     $('play-location').hidden=false;
     $('play-location').textContent='🌍 '+(sculptWorldArea()?.label||sculptWorldAreaId);

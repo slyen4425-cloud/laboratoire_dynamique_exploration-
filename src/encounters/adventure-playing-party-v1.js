@@ -59,8 +59,10 @@ export function readScopedAdventurePlayingPartyV1({
  catch{throw new Error('Adventure playing party JSON illisible; preserved for diagnosis');}
  const hasHpPolicy=Object.hasOwn(value,'combatHpMultiplier');
  const hasReserve=Object.hasOwn(value,'reserve');
+ const hasTrainerVictories=Object.hasOwn(value,'trainerVictories');
  exactFields(value,['schema','version','sessionId','worldId','combatSha','partyRef','active',
-  ...(hasReserve?['reserve']:[]),...(hasHpPolicy?['combatHpMultiplier']:[])],
+  ...(hasReserve?['reserve']:[]),...(hasHpPolicy?['combatHpMultiplier']:[]),
+  ...(hasTrainerVictories?['trainerVictories']:[])],
   'Adventure playing party');
  // Legacy games without the field still use 100% HP; never infer game
  // rules from an author's species, level, or the standalone Tester.
@@ -103,10 +105,21 @@ export function readScopedAdventurePlayingPartyV1({
  const all=[active,...reserveMembers];
  if(new Set(all.map(member=>member.instanceId)).size!==all.length)
   throw new RangeError('Duplicate Adventure party instanceId');
+ let trainerVictories;
+ if(hasTrainerVictories){
+  if(!Array.isArray(value.trainerVictories))throw new TypeError('Adventure trainer victories must be an array');
+  trainerVictories=Object.freeze(value.trainerVictories.map(raw=>{
+   const entry=exactFields(raw,['areaId','actorId'],'Adventure trainer victory');
+   if(typeof entry.areaId!=='string'||!entry.areaId.trim()||typeof entry.actorId!=='string'||!entry.actorId.trim())
+    throw new TypeError('Adventure trainer victory requires an area and actor');
+   return Object.freeze({areaId:entry.areaId,actorId:entry.actorId});
+  }));
+ }
  return Object.freeze({
   schema:ADVENTURE_PLAYING_PARTY_SCHEMA_V1,version:1,
   sessionId,worldId,combatSha:value.combatSha,partyRef:value.partyRef,
   active,...(hasReserve?{reserve:Object.freeze(reserveMembers)}:{}),
+  ...(hasTrainerVictories?{trainerVictories}:{}),
   combatHpMultiplier
  });
 }

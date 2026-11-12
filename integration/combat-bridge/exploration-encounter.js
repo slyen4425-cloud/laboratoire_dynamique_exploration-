@@ -240,7 +240,7 @@ async function readAdventureCombatParty(handoff,bundle){
     authorSha:bundle.authorSha,engineSha:bundle.engineSha
   };
   const allowedCreatureIds=readScopedAdventurePublishedEncountersV1(context);
-  if(!allowedCreatureIds?.includes(handoff.snapshot.opponents[0].creatureId))
+  if(!allowedCreatureIds||handoff.snapshot.opponents.some(member=>!allowedCreatureIds.includes(member.creatureId)))
     throw new Error('Adversaire absent du Bestiaire autorisé pour cette partie');
   const party=readScopedAdventurePlayingPartyV1({...context,allowedCreatureIds});
   if(!party||party.partyRef!==handoff.snapshot.player.partyRef||party.active.hp===0)

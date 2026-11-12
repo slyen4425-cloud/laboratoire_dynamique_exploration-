@@ -63,6 +63,13 @@ test('Dialogue trigger chooses only nearest valid authored NPC and respects rang
  assert.equal(nearestDialogNpcV1(actors,{x:37,y:20})?.id,'two');
  assert.equal(nearestDialogNpcV1(actors,{x:900,y:900}),null);
 });
+test('a trainer with no dialogue is reachable only while the Adventure can challenge them',()=>{
+ const trainer=normalizeWorldActorPlacement({id:'trainer',actorDefinitionId:'actor.1',x:20,y:20,
+  npc:settings({kind:'trainer',dialogue:'',trainerRoster:[{creatureId:'crea_nat_1',level:2}]})});
+ assert.equal(nearestDialogNpcV1([null,trainer],{x:23,y:20}),null);
+ assert.equal(nearestDialogNpcV1([trainer],{x:23,y:20},undefined,()=>true)?.id,'trainer');
+ assert.equal(nearestDialogNpcV1([trainer],{x:250,y:20},undefined,()=>true),null);
+});
 test('Native Sculpt editor wires NPC inputs and gameplay dialogue, not a second world model',async()=>{
  const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');

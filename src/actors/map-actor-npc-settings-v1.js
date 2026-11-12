@@ -55,14 +55,18 @@ export function normalizeMapActorNpcSettingsV1(raw){
       {wildCreature:normalizeCreatureSlot(raw.wildCreature,'Wild creature')}:{})
   });
 }
-export function nearestDialogNpcV1(actors,position,range=65){
+export function nearestDialogNpcV1(actors,position,range=65,canChallengeTrainer){
   if(!Array.isArray(actors)||!Number.isFinite(position?.x)||
      !Number.isFinite(position?.y))return null;
   let closest=null,distance=Infinity;
   for(const actor of actors){
-    if(!actor?.npc?.dialogue&&!(actor?.npc?.kind==='merchant'&&actor.npc.merchantId))continue;
+    if(!actor?.npc)continue;
     const d=Math.hypot(actor.x-position.x,actor.y-position.y);
-    if(d<=range&&d<distance){closest=actor;distance=d;}
+    if(!(d<=range&&d<distance))continue;
+    const {npc}=actor;
+    if(!npc.dialogue&&!(npc.kind==='merchant'&&npc.merchantId)&&
+       !(npc.kind==='trainer'&&canChallengeTrainer?.(actor)))continue;
+    closest=actor;distance=d;
   }
   return closest;
 }
