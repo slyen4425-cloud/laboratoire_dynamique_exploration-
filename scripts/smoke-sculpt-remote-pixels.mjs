@@ -250,12 +250,17 @@ try{
  if(!resumedMenu?.continueEnabled)throw Error('First scoped session cannot resume');
  await read("document.querySelector('#play-continue').click()");
  let resumedScoped;
- for(let i=0;i<75;i++){
-   resumedScoped=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession')}))()");
-   if(resumedScoped?.play?.active)break;
+ // On a busy CI runner the Play page can finish loading AFTER the scoped
+ // menu has accepted Continue. Require the real active Sculpt engine rather
+ // than a menu transition, and retain diagnostic evidence if it never boots.
+ for(let i=0;i<160;i++){
+   resumedScoped=await read("(()=>({play:window.__sculptPlayProbe?.(),session:new URL(location.href).searchParams.get('adventureSession'),path:location.pathname,error:document.querySelector('#play-start-error-message')?.textContent,ready:document.readyState}))()");
+   if(resumedScoped?.play?.active&&resumedScoped.play.playing)break;
+   if(resumedScoped?.error?.trim())break;
    await sleep(250);
  }
- if(!resumedScoped?.play?.active||resumedScoped.session!=='ci-adventure-a')
+ if(!resumedScoped?.play?.active||!resumedScoped.play.playing||
+    resumedScoped.session!=='ci-adventure-a')
    throw Error('Real Sculpt engine did not resume the correct GenSRPG session: '+JSON.stringify(resumedScoped));
  console.log('GREEN scoped GenSRPG AdventureSession: native Canvas, isolated checkpoints, menu and resume');
  const savedDocument=await read(`localStorage.getItem(${JSON.stringify(WORLD_ASSEMBLER_DRAFT_KEY)})`);

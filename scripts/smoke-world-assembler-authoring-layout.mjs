@@ -209,7 +209,17 @@ try{
       portals:recovered.portalCount}));
 }finally{
   if(socket){try{socket.close();}catch{}}
-  if(chrome){try{chrome.kill('SIGKILL');}catch{}}
-  server.close();
-  await rm(profile,{recursive:true,force:true});
+  // Browser-profile files can still be written after kill() returns.
+  // Wait for the real Chromium exit before deleting its isolated directory;
+  // never mask actual browser assertions with a racing ENOTEMPTY cleanup.
+  if(chrome&&chrome.exitCode===null&&chrome.signalCode===null){
+    const exited=new Promise(ok=>chrome.once('exit',ok));
+    try{chrome.kill('SIGTERM');}catch{}
+    if(!await Promise.race([exited.then(()=>true),sleep(3500).then(()=>false)])){
+      try{chrome.kill('SIGKILL');}catch{}
+      await exited;
+    }
+  }
+  await new Promise(ok=>server.close(ok));
+  await rm(profile,{recursive:true,force:true,maxRetries:12,retryDelay:200});
 }

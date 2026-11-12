@@ -1,3 +1,12 @@
+## 2026-11-12 — Reprise CI après fusion récompenses PNJ, sans changer le gameplay
+- START : Exploration `main@2c22a2044af9218eb21a0904cfc25f6edb044894` (PR #423), checkpoint `checkpoint/exploration-start-ci-recovery-20261112`, branche `work/exploration-ci-recovery-2026-11-12`.
+- La CI main `43299342649` a échoué dans deux smokes Chromium, alors que la CI candidate récompenses `43297566524` était GREEN : `smoke-sculpt-remote-pixels.mjs` (reprise de session Aventure non active dans la fenêtre d'attente), `smoke-world-assembler-authoring-layout.mjs` (profil Chromium `ENOTEMPTY` avant arrêt réel du processus).
+- Lot limité aux scripts de test : attente bornée du vrai moteur Jouer après Continuer, diagnostic de page/erreur, fin effective du navigateur avant suppression du profil et retries uniquement sur cette suppression. Les assertions d'intégrité des sauvegardes, du Canvas et du World Builder ne sont pas assouplies.
+- Protégés : `WorldArea.actors[].npc`, Catalogues Combat, Capture et GenSRPG, sauvegardes, monnaie/objets, V80, assets, exports/imports, index, PWA, menus, quatre modes et gameplay.
+- Porte de sortie : `npm test`, Chromium, CI Exploration, assemblage Pages, SHA unique et checkpoint GREEN avant fusion. Aucun déploiement revendiqué par la seule présence d'une PR.
+
+---
+
 ## 2026-11-12 — Récompenses de dresseur dans la fiche native Explorer (C2, candidat)
 - START sur `main@f8d670a838cb224660c9d5ca3f8508e8c34b2b93`, checkpoint `checkpoint/exploration-start-trainer-rewards-20261112`, branche `work/exploration-trainer-rewards-2026-11-12`. La fenêtre PNJ unique PR #422 est fusionnée avec checkpoint `checkpoint/exploration-npc-modal-green-20261112` ; la CI du main est verte (#43296071090).
 - L'instance `WorldArea.actors[].npc` garde seulement `trainerReward={currency,items:[{itemId,quantity}]}`, aucun inventaire, portefeuille ou catalogue : les objets sont sélectionnés par NOM via le pont read-only GenSRPG Capture officiel.
