@@ -158,6 +158,9 @@ try{
    selector.value=selector.options[2].value;
    document.querySelector('#npc-team-level').value='7';
    document.querySelector('#npc-team-add').click();
+   const reward=document.querySelector('#npc-reward-currency');
+   reward.value='35';
+   reward.dispatchEvent(new Event('change',{bubbles:true}));
    const engagement=document.querySelector('#npc-trainer-engagement');
    const defaultEngagement=engagement.value;
    engagement.value='aggressive';
@@ -173,7 +176,8 @@ try{
  const roster=configured.actor?.npc?.trainerRoster;
  if(!roster?.[0]?.creatureId||roster[0].level!==12||!roster[1]?.creatureId||roster[1].level!==7||
     configured.rows!==2||configured.defaultEngagement!=='offer'||
-    configured.actor.npc.trainerEngagement!=='aggressive')
+    configured.actor.npc.trainerEngagement!=='aggressive'||
+    configured.actor.npc.trainerReward?.currency!==35)
   throw Error('Visual trainer team editor failed '+JSON.stringify(configured.actor));
  console.log('Native visual trainer roster:',JSON.stringify(roster));
  const updated=await run(`(()=>{
@@ -255,9 +259,11 @@ try{
   const {readCombatHandoff}=await import('./src/encounters/combat-handoff-store.js');
   const snapshot=readCombatHandoff(sessionStorage)?.snapshot;
   return {source:snapshot?.source,partyRef:snapshot?.player.partyRef,
-   opponents:snapshot?.opponents,storedLocally:Boolean(readCombatHandoff(localStorage))};
+   opponents:snapshot?.opponents,reward:snapshot?.context?.trainerReward,
+   storedLocally:Boolean(readCombatHandoff(localStorage))};
  })()`);
  if(journal.source!=='npc-trainer'||journal.partyRef!=='capture-party-player-v1'||journal.storedLocally||
+    journal.reward?.currency!==35||journal.reward?.items?.length!==0||
     journal.opponents?.length!==roster.length||
     journal.opponents?.some((slot,index)=>slot.creatureId!==roster[index]?.creatureId||slot.level!==roster[index]?.level))
   throw Error('Tester must use the original preview party and authored trainer levels '+JSON.stringify(journal));

@@ -1,6 +1,6 @@
 import {normalizeWorldEncounterStatProfileV1} from './wild-stat-profile-contract-v1.js';
 import {normalizeCombatArenaIdsV1} from '../world/world-combat-arena-v1.js';
-import {normalizeNpcTrainerRosterV1} from '../actors/map-actor-npc-settings-v1.js';
+import {normalizeNpcTrainerRosterV1,normalizeNpcTrainerRewardV1} from '../actors/map-actor-npc-settings-v1.js';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA =
   'capture-encounter-snapshot-v1';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_VERSION = 1;
@@ -79,6 +79,8 @@ export function createCaptureEncounterSnapshot(raw = {}) {
       terrainFamilyId,
       elementId,
       ...(trainerActorId ? {trainerActorId} : {}),
+      ...(trainerActorId&&raw.trainerReward!==undefined?
+        {trainerReward:normalizeNpcTrainerRewardV1(raw.trainerReward)}:{}),
       ...(combatArenaIds.length ? {combatArenaIds:Object.freeze(combatArenaIds)} : {})
     }),
     returnToken

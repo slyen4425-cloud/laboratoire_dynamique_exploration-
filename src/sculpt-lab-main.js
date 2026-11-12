@@ -150,6 +150,7 @@ let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=
 let npcOfficialCreatures=Object.freeze([]);
 let npcCatalogLoading=false;
 let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
+let npcRewardChoices=Object.freeze([]),npcRewardRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
 // supports its existing WorldSurface authoring without a second control path.
@@ -2023,6 +2024,7 @@ function startSculptTrainerBattle(actor){
   const terrain=resolveTerrainFamilyAtPoint(area.surface,navActor.x,navActor.y);
   const snapshot=createCaptureEncounterSnapshot({
     ...newSculptEncounterIds(),source:'npc-trainer',trainerActorId:actor.id,opponents,
+    ...(actor.npc.trainerReward?{trainerReward:actor.npc.trainerReward}:{}),
     playerPartyRef:scopedEncounter?.party.partyRef??sculptPreviewPartyRef,areaId:area.id,
     terrainFamilyId:terrain.terrainFamilyId??area.surface.baseTerrainFamilyId,
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
@@ -2750,6 +2752,53 @@ function npcMerchantPickerRefresh(){
   picker.disabled=!npcSelectedActor()||!npcMerchantChoices.length;
   $('npc-merchant-clear').disabled=!npcSelectedActor()||!selected;
 }
+function npcRewardCatalogRefresh(){
+ const picker=$('npc-reward-item');
+ if(!picker)return;
+ const selected=npcSelectedActor();
+ const reward=selected?.npc?.trainerReward??{currency:0,items:[]};
+ const kind=$('actor-npc-kind')?.value;
+ const former=picker.value;
+ picker.replaceChildren(new Option('Choisir un objet publié…',''),
+  ...npcRewardChoices.map(item=>new Option(item.name,item.id)));
+ if(npcRewardChoices.some(item=>item.id===former))picker.value=former;
+ picker.disabled=!selected||kind!=='trainer'||!npcRewardChoices.length;
+ $('npc-reward-add').disabled=picker.disabled;
+ $('npc-reward-currency').value=String(reward.currency);
+ $('npc-reward-currency').disabled=!selected||kind!=='trainer';
+ const list=$('npc-reward-list');
+ list.replaceChildren();
+ for(const entry of reward.items){
+  const found=npcRewardChoices.find(item=>item.id===entry.itemId);
+  const row=document.createElement('div');row.className='npc-reward-row';
+  const label=document.createElement('span');
+  label.textContent=(found?.name??'Objet indisponible — référence conservée')+' ×'+entry.quantity;
+  const remove=document.createElement('button');remove.type='button';
+  remove.textContent='✕';remove.setAttribute('aria-label','Retirer la récompense objet');
+  remove.disabled=!selected||kind!=='trainer';
+  remove.addEventListener('click',()=>npcApplyAuthoringPatch({trainerReward:{
+   currency:reward.currency,items:reward.items.filter(item=>item.itemId!==entry.itemId)
+  }}));
+  row.append(label,remove);list.append(row);
+ }
+ if(!reward.items.length){
+  const note=document.createElement('small');note.textContent='Aucun objet offert par ce PNJ.';
+  list.append(note);
+ }
+}
+function requestNpcRewardCatalog(){
+ if(!$('npc-reward-item'))return;
+ if(window.parent===window){
+  $('npc-reward-status').textContent='Ouvre cet éditeur depuis GenSRPG pour choisir un objet officiel.';
+  return;
+ }
+ npcRewardRequestId=crypto.randomUUID();
+ window.parent.postMessage({
+  schema:'gensrpg.exploration.npc.reward.catalog.request.v1',
+  requestId:npcRewardRequestId
+ },window.location.origin);
+ $('npc-reward-status').textContent='Lecture des objets depuis Monster Capture…';
+}
 function requestNpcMerchantCatalog(){
   if(!$('npc-merchant-picker'))return;
   if(window.parent===window){
@@ -2780,6 +2829,22 @@ window.addEventListener('message',event=>{
       :npcMerchantChoices.length+' marchand(s) disponibles depuis Monster Capture.';
     npcMerchantPickerRefresh();
   }
+  if(event.data?.schema==='gensrpg.capture.v2.npc.reward.catalog.response.v1'&&
+     npcRewardRequestId&&event.data.requestId===npcRewardRequestId){
+    npcRewardRequestId=null;
+    const incoming=event.data.items;
+    npcRewardChoices=Object.freeze(Array.isArray(incoming)?
+      incoming.filter(item=>typeof item?.id==='string'&&
+        /^[a-z0-9][a-z0-9_:.-]{0,129}$/i.test(item.id)&&
+        typeof item.name==='string'&&item.name.length>0&&item.name.length<=80)
+        .map(item=>Object.freeze({id:item.id,name:item.name})):[]);
+    const currency=typeof event.data.currencyLabel==='string'&&
+      event.data.currencyLabel.length<=40?event.data.currencyLabel:'pièces';
+    $('npc-reward-status').textContent=event.data.error
+      ?'Objets indisponibles : '+String(event.data.error).slice(0,150)
+      :npcRewardChoices.length+' objet(s) disponibles · monnaie : '+currency+'.';
+    npcRewardCatalogRefresh();
+  }
   if(event.data?.schema==='gensrpg.capture.v2.npc.merchant.open-ack.v1'&&
      event.data.sessionId===adventureSessionId){
     npcDialogueOpen=true;updateNpcInteraction();
@@ -2807,6 +2872,7 @@ function npcSettingsFromControls(){
     trainerTeamId:current?.trainerTeamId??'',
     merchantId:current?.merchantId??'',
     ...(current?.trainerRoster?{trainerRoster:current.trainerRoster}:{}),
+    ...(current?.trainerReward?{trainerReward:current.trainerReward}:{}),
     ...(trainerEngagement?{trainerEngagement}:{}),
     ...(chosenWild?{wildCreature:{creatureId:chosenWild,
       level:Number($('npc-wild-level')?.value??current?.wildCreature?.level??10)}}:{})
@@ -2845,6 +2911,7 @@ function npcRoleEditorRefresh(){
     engagement.disabled=!selected;
   }
   npcMerchantPickerRefresh();
+  npcRewardCatalogRefresh();
   const roster=npc?.trainerRoster??[];
   $('npc-team-summary').textContent=!selected
     ?'Pose un PNJ sur la carte pour configurer son équipe.'
@@ -3061,6 +3128,24 @@ for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
     npcRoleEditorRefresh();
   });
 }
+$('npc-reward-reload')?.addEventListener('click',requestNpcRewardCatalog);
+$('npc-reward-currency')?.addEventListener('change',()=>{
+ const amount=Number($('npc-reward-currency').value);
+ const previous=npcSelectedActor()?.npc?.trainerReward??{currency:0,items:[]};
+ npcApplyAuthoringPatch({trainerReward:{currency:amount,items:previous.items}});
+});
+$('npc-reward-add')?.addEventListener('click',()=>{
+ const itemId=$('npc-reward-item').value;
+ if(!npcRewardChoices.some(item=>item.id===itemId)){
+  status('Choisis un objet du catalogue officiel GenSRPG.');return;
+ }
+ const quantity=Number($('npc-reward-quantity').value);
+ const previous=npcSelectedActor()?.npc?.trainerReward??{currency:0,items:[]};
+ const matched=previous.items.find(item=>item.itemId===itemId);
+ const items=matched?previous.items.map(item=>
+  item.itemId===itemId?{itemId,quantity}:item):[...previous.items,{itemId,quantity}];
+ npcApplyAuthoringPatch({trainerReward:{currency:previous.currency,items}});
+});
 $('npc-team-add')?.addEventListener('click',()=>{
   const species=$('npc-team-creature').value;
   const level=Number($('npc-team-level').value);
@@ -3123,6 +3208,7 @@ loadCaptureActorCatalog();
 loadNpcOfficialCreatureChoices();
 $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatureChoices();});
 requestNpcMerchantCatalog();
+requestNpcRewardCatalog();
 function setObjectEditing(active){
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
