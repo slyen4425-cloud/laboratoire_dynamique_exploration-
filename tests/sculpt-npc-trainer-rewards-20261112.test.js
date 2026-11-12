@@ -5,6 +5,8 @@ import {
  normalizeNpcTrainerRewardV1,normalizeMapActorNpcSettingsV1
 } from '../src/actors/map-actor-npc-settings-v1.js';
 import {createCaptureEncounterSnapshot} from '../src/encounters/capture-encounter-contract.js';
+import {createCombatHandoffEnvelope,saveCombatHandoff,readCombatHandoff}
+ from '../src/encounters/combat-handoff-store.js';
 import {createBlankSculptPreviewScene,appendSculptPreviewActor,
  serializeSculptPreviewScene,importSculptPreviewScene}
  from '../src/world/sculpt-scene-preview.js';
@@ -44,6 +46,24 @@ const legacy={...trainer};delete legacy.trainerReward;
  assert.equal('trainerReward' in old,false);
  assert.equal('trainerReward' in snapshot(),false);
  assert.equal('trainerReward' in snapshot().context,false);
+});
+
+test('Combat handoff normalization, storage and reload never erase configured trainer rewards',()=>{
+ const first=snapshot(reward);
+ const state={areaId:'forest-1',x:30,y:45,returnUrl:'https://example.test/exploration'};
+ const wrapped=createCombatHandoffEnvelope({snapshot:first,returnState:state});
+ assert.deepEqual(wrapped.snapshot.context.trainerReward,reward);
+ const map=new Map();
+ const storage={getItem:key=>map.get(key)??null,
+  setItem:(key,v)=>map.set(key,v),
+  removeItem:key=>map.delete(key)};
+ saveCombatHandoff(storage,wrapped);
+ assert.deepEqual(readCombatHandoff(storage).snapshot.context.trainerReward,reward);
+ assert.equal(map.size,1,'the same official handoff storage is reused');
+ assert.deepEqual(createCombatHandoffEnvelope({
+  snapshot:snapshot(),returnState:state
+ }).snapshot.context.trainerReward,undefined,
+ 'old saved battles remain compatible and do not acquire rewards');
 });
 
 test('the single NPC in Sculpt WorldArea retains rewards through export and official snapshot',()=>{
