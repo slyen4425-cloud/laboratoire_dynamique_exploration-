@@ -132,11 +132,24 @@ try{
      !placed.actor?.npc?.dialogue.includes('Trouve la clé.')||
      !placed.actor?.npc?.dialogue.includes(String.fromCharCode(10)))
   throw Error('NPC placement not persisted in canonical scene '+JSON.stringify(placed));
+ const modalAtCreation=await run(`({
+  open:document.querySelector('#npc-authoring-dialog')?.open,
+  uniqueForm:document.querySelectorAll('#actor-npc-settings').length,
+  selected:window.__sculptActorsProbe().selectedId
+ })`);
+ if(!modalAtCreation.open||modalAtCreation.uniqueForm!==1||
+    modalAtCreation.selected!==placed.actor?.id)
+  throw Error('Native PNJ authoring window not opened after placement '+JSON.stringify(modalAtCreation));
+ await run("document.querySelector('#npc-authoring-close').click()");
+ if(await run("document.querySelector('#npc-authoring-dialog').open"))
+  throw Error('Native PNJ authoring window failed to close');
  // The next tap on the same placed actor must select its details automatically
  // without requiring a mode switch or creating a duplicate Actor placement.
  for(const type of ['mouseMoved','mousePressed','mouseReleased'])
   await command('Input.dispatchMouseEvent',{type,x:point.x,y:point.y,button:'left',clickCount:1});
  await until("document.querySelector('#npc-team-creature')?.options.length>1",'official Combat creature choices');
+ if(!await run("document.querySelector('#npc-authoring-dialog').open"))
+  throw Error('Selecting an existing PNJ did not reopen its original settings');
  const configured=await run(`(()=>{
    const selector=document.querySelector('#npc-team-creature');
    selector.value=selector.options[1].value;
@@ -180,6 +193,11 @@ try{
     updated.actor?.npc?.kind!=='dialogue'||
     updated.actor?.npc?.trainerRoster?.[0]?.level!==12)
   throw Error('NPC select/edit failed '+JSON.stringify(updated));
+ await run("document.querySelector('#npc-authoring-close').click()");
+ await run("document.querySelector('#npc-authoring-open').click()");
+ if(!await run("document.querySelector('#npc-authoring-dialog').open"))
+  throw Error('Reopening the selected PNJ from its toolbar failed');
+ await run("document.querySelector('#npc-authoring-close').click()");
  // Tester must show the SAME authored dialogue near the navigation Spawn.
  await run("document.querySelector('#navigation-toggle').click()");
  await until("document.querySelector('#npc-talk')?.hidden===false",'nearby PNJ talk button');
