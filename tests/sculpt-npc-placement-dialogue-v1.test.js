@@ -140,7 +140,7 @@ test('Trainer roster editor explains a missing official catalog and provides man
  assert.match(main,/npcCatalogLoading=false/);
  assert.match(main,/!npcOfficialCreatures\.length\|\|roster\.length>=NPC_TRAINER_ROSTER_LIMIT_V1/);
  assert.match(main,/npcOfficialCreatures=Object\.freeze\(\[\]\)/);
- assert.match(main,/npcRoleEditorRefresh\(\);\s*\}\s*function syncActorSelectedControls/s);
+ assert.match(main,/npcRoleEditorRefresh\(\);\s*\}\s*\}\s*function syncActorSelectedControls/s);
  assert.match(main,/\$\('npc-catalog-retry'\)\?\.addEventListener\('click',\(\)=>\{void loadNpcOfficialCreatureChoices\(\);\}\)/);
  assert.match(main,/const source=await loadCaptureShowcaseEncounterSourceV1\(\)/);
  assert.doesNotMatch(main,/npcBackupCatalog|legacyNpcSpeciesFallback/);
