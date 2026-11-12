@@ -125,7 +125,8 @@ test('A newly placed trainer is selected and editable before a second tap on the
  assert.match(placement,/\$\('actor-npc-settings'\)\?\.setAttribute\('open',''\)/);
  // The authoring function must still guard its single official Combat catalog,
  // not create IDs, creatures or a fallback database in the Builder.
- assert.match(main,/\$\('npc-team-add'\)\.disabled=!selected\|\|!npcOfficialCreatures\.length/);
+ assert.match(main,/\$\('npc-team-add'\)\.disabled=!selected\|\|kind!=='trainer'\|\|npcCatalogLoading\|\|/);
+ assert.match(main,/!npcOfficialCreatures\.length\|\|roster\.length>=NPC_TRAINER_ROSTER_LIMIT_V1/);
  assert.match(main,/const source=await loadCaptureShowcaseEncounterSourceV1\(\)/);
 });
 
