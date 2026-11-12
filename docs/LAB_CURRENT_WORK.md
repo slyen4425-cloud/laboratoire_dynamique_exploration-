@@ -1,3 +1,12 @@
+## 2026-11-12 — Fenêtre native unique de configuration des PNJ (C1, candidat)
+- START : `main@0c0f12c37ff994fd9783b7170fe288e7513db3c6`, checkpoint `checkpoint/exploration-start-npc-modal-20261112`, branche `work/exploration-npc-modal-2026-11-12`.
+- Propriétaire : Labo Exploration / interface Sculpt 2,5D. Le formulaire `actor-npc-settings` est déplacé dans un SEUL `<dialog>` natif, pas cloné. La donnée reste `WorldArea.actors[].npc` ; équipes et bestiaire officiels, récompenses, moteur Combat et sauvegardes restent auprès de leurs propriétaires.
+- Comportement : poser un acteur ou toucher un acteur déjà placé ouvre la même fiche, bouton « Configurer ce PNJ » pour la rouvrir, fermeture/ESC sans perdre de données. Fenêtre à défilement avec hauteur adaptée au paysage smartphone et retour à la carte. Aucun ancien éditeur ou ancien contenu V80 modifié.
+- Tests : sentinelle Node sur unicité des IDs et trois ouvertures ; vrai Chromium `scripts/smoke-sculpt-npc-v1.mjs` sur placement/édition/dialogue/duel Tester/Jouer ; `npm test`, `npm run check`, CI, budget Pages, provenance HTTPS, validation Android. Revenir au checkpoint START si régression.
+- Statut : branche candidate ; ne pas annoncer comme publié avant PR GREEN, merge main, CI Pages et SHA HTTPS.
+
+---
+
 ## 2026-11-12 — Déclencher les duels depuis les cartes du Builder
 
 - START `checkpoint/exploration-start-trainer-test-paths-2026-11-12` sur `main@e2e5b2861b41fc868412e2c7f06197e904f9cbf0`. Branche `work/exploration-trainer-test-paths-2026-11-12`. Base Exploration certifiée par la CI `43254533593` et Pages `43254533640`.

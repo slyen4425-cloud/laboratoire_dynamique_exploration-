@@ -2820,6 +2820,16 @@ function npcApplyAuthoringPatch(patch){
   try{editSelectedActor({npc:{...npcSettingsFromControls(),...patch}});}
   catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
 }
+function closeNpcAuthoringDialog(){
+  const dialog=$('npc-authoring-dialog');
+  if(dialog?.open)dialog.close();
+}
+function openNpcAuthoringDialog(){
+  const dialog=$('npc-authoring-dialog');
+  if(!dialog||!npcSelectedActor()||$('actor-action').value!=='select')return;
+  $('actor-npc-settings')?.setAttribute('open','');
+  if(!dialog.open)dialog.showModal();
+}
 function npcRoleEditorRefresh(){
   // The shared Sculpt engine also boots on immutable V80.
   if(!$('npc-trainer-editor'))return;
@@ -2934,7 +2944,8 @@ function syncActorSelectedControls(){
     'PNJ sélectionné : '+(selected.npc?.name||
       captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.displayName||
       'sans nom'):'Aucun acteur sélectionné';
-  if(!selected){npcRoleEditorRefresh();return;}
+  if($('npc-authoring-open'))$('npc-authoring-open').disabled=!selected;
+  if(!selected){closeNpcAuthoringDialog();npcRoleEditorRefresh();return;}
   const npc=selected.npc;
   if($('actor-npc-kind')){
     $('actor-npc-kind').value=npc?.kind??'dialogue';
@@ -2973,7 +2984,7 @@ function actorCommit(next){
 }
 function setActorSubmode(active){
   actorSubmode=!!active;
-  if(!actorSubmode)actorSelectedId=null;
+  if(!actorSubmode){closeNpcAuthoringDialog();actorSelectedId=null;}
   $('object-controls').hidden=actorSubmode;
   $('actor-controls').hidden=!actorSubmode;
   $('active-tool-label').textContent=actorSubmode?'Objets · Acteurs Capture':'Objets · toucher pour placer ou supprimer';
@@ -2991,6 +3002,7 @@ function applyActorAtCell(cell){
       $('actor-action').value='select';
       syncActorSelectedControls();
       $('actor-npc-settings')?.setAttribute('open','');
+      openNpcAuthoringDialog();
       scheduleDraw();
       status('Acteur sélectionné : modifier sa fiche ci-dessous');
       return;
@@ -3000,6 +3012,7 @@ function applyActorAtCell(cell){
     const found=findSculptPreviewActorNear(placedActors,x,y);
     actorSelectedId=found?.id??null;
     syncActorSelectedControls();scheduleDraw();
+    if(found)openNpcAuthoringDialog();
     status(found?'Acteur sélectionné : modifie taille, vue ou direction':
       'Aucun acteur proche à sélectionner');
     return;
@@ -3028,7 +3041,8 @@ function applyActorAtCell(cell){
     $('actor-action').value='select';
     syncActorSelectedControls();
     $('actor-npc-settings')?.setAttribute('open','');
-    status('PNJ posé et sélectionné : configure son rôle et son équipe ci-dessous.');
+    openNpcAuthoringDialog();
+    status('PNJ posé et sélectionné : configure son rôle et son équipe dans la fenêtre.');
   }
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
@@ -3080,6 +3094,8 @@ $('actor-facing').addEventListener('change',()=>
   editSelectedActor({facingX:Number($('actor-facing').value)}));
 $('actor-view').addEventListener('change',()=>
   editSelectedActor({visualView:$('actor-view').value}));
+$('npc-authoring-open')?.addEventListener('click',openNpcAuthoringDialog);
+$('npc-authoring-close')?.addEventListener('click',closeNpcAuthoringDialog);
 $('actor-open').addEventListener('click',()=>setActorSubmode(true));
 $('actor-back').addEventListener('click',()=>setActorSubmode(false));
 $('actor-undo').addEventListener('click',()=>{
@@ -3114,6 +3130,7 @@ function setObjectEditing(active){
   if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
   if(!objectEditing){
+    closeNpcAuthoringDialog();
     actorSubmode=false;$('object-controls').hidden=false;$('actor-controls').hidden=true;
   }
   document.body.classList.toggle('object-editing',objectEditing);
