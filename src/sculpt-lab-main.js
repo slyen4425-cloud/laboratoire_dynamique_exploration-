@@ -37,6 +37,7 @@ import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
 import {nearestAggressiveTrainerV1,nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=trainer-test-paths-v1';
+import {createNpcWanderRuntimeV1} from './actors/npc-wander-runtime-v1.js';
 import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
@@ -145,6 +146,12 @@ let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
+// A single transient runtime projection; WorldArea.actors is never advanced by gameplay.
+const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
+let npcWanderElapsed=0,npcWanderAggressiveNearId=null;
+function gameplayPlacedActors(){
+  return navigationTesting?npcWanderRuntime.project(placedActors):placedActors;
+}
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let npcOfficialCreatures=Object.freeze([]);
@@ -2040,12 +2047,12 @@ function startNearbyAggressiveTrainer(previous){
   // The first movement after a spawn can already be within the trainer's range.
   const origin=navTrainerArrivalPending?null:previous;
   navTrainerArrivalPending=false;
-  const trainer=nearestAggressiveTrainerV1(placedActors,origin,navActor,canChallengeSculptTrainer);
+  const trainer=nearestAggressiveTrainerV1(gameplayPlacedActors(),origin,navActor,canChallengeSculptTrainer);
   return trainer!==null&&startSculptTrainerBattle(trainer);
 }
 function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
-    ?nearestDialogNpcV1(placedActors,navActor,undefined,canChallengeSculptTrainer):null;
+    ?nearestDialogNpcV1(gameplayPlacedActors(),navActor,undefined,canChallengeSculptTrainer):null;
 }
 function updateNpcInteraction(){
   // Legacy V80 does not expose the new dialogue overlay.
@@ -2171,6 +2178,29 @@ function navigationTick(time){
     const intent=sculptCameraWorldInput(cameraView(),rawIntent.x,rawIntent.y);
     navMetricFrames++;
     navVisualTime+=Math.min(250,elapsed)/1000;
+    // Reuse the hero's existing RAF and Movement/Collision World. Only the
+    // transient projection moves; no interval, second physics or saved XY.
+    if(npcWanderRuntime.count){
+      npcWanderElapsed+=Math.min(250,elapsed)/1000;
+      if(npcWanderElapsed>=.085){
+        const npcChanged=npcWanderRuntime.step({
+          actors:placedActors,elapsedSeconds:npcWanderElapsed,
+          world:navigationWorld(),collisionContext:navigationContext(),player:navActor
+        });
+        npcWanderElapsed=0;
+        if(npcChanged){
+          updateNpcInteraction();scheduleDraw();
+          // A mobile aggressive trainer may enter the hero's radius even
+          // while the hero is standing still. Use the EXISTING trainer gate.
+          const mobile=gameplayPlacedActors().filter(a=>a.npc?.movement?.mode==='wander');
+          const near=nearestAggressiveTrainerV1(
+            mobile,null,navActor,canChallengeSculptTrainer);
+          if(near&&near.id!==npcWanderAggressiveNearId&&
+             startSculptTrainerBattle(near))npcWanderAggressiveNearId=near.id;
+          else if(!near)npcWanderAggressiveNearId=null;
+        }
+      }
+    }
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
       navInputElapsedMs+=elapsed;
       const previousX=navActor.x,previousY=navActor.y;
@@ -2256,6 +2286,8 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
+    npcWanderRuntime.reset(placedActors);npcWanderElapsed=0;
+    npcWanderAggressiveNearId=null;
     navTrainerArrivalPending=true;
     // The existing Tester tap is the trusted Android user gesture. The
     // browser may not start audio on page load, so do not add an audio button.
@@ -2295,6 +2327,8 @@ function setNavigationTesting(on){
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
     navigationTesting=false;
+    npcWanderRuntime.reset();npcWanderElapsed=0;
+    npcWanderAggressiveNearId=null;
     closeNpcDialogue();
     if($('npc-talk'))$('npc-talk').hidden=true;
     explorationSoundtrack.stop();
@@ -2416,8 +2450,11 @@ window.__sculptNavProbe=()=>Object.freeze({
    dimensions and collision semantics. Sculpt remains geometry-only. */
 function drawPlacedActors(maxY=Infinity,minY=-Infinity){
   if(!captureActorProvider||!captureActorRenderer||!placedActors.length)return;
-  const renderActors=placedActors.filter(p=>p.y<maxY&&p.y>=minY)
-    .map(p=>createPlacedMapActorView(p,captureActorProvider.resolveDefinition))
+  const renderActors=gameplayPlacedActors().filter(p=>p.y<maxY&&p.y>=minY)
+    .map(p=>{
+      const view=createPlacedMapActorView(p,captureActorProvider.resolveDefinition);
+      return view?{...view,moving:p.moving===true}:null;
+    })
     .filter(Boolean)
     .map(actor=>{
       const footY=actor.y-sculptHeightAt(terrain,
@@ -3192,6 +3229,11 @@ $('actor-redo').addEventListener('click',()=>{
   if(!actorRedo.length)return;
   actorHistory.push(placedActors);placedActors=actorRedo.pop();updateActorCount();
   syncActorSelectedControls();
+});
+// Read-only test probe: author anchors and transient NPC positions remain distinct.
+window.__sculptNpcWanderProbe=()=>Object.freeze({
+  active:navigationTesting,count:npcWanderRuntime.count,
+  runtime:npcWanderRuntime.snapshot()
 });
 window.__sculptActorsProbe=()=>Object.freeze({
   active:objectEditing&&actorSubmode,
