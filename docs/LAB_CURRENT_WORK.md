@@ -4,7 +4,8 @@
 - Le même `CaptureEncounterSnapshot.context` transporte facultativement ce réglage de la carte vers le résultat Combat ; la récompense et son anti-double restent la propriété exclusive de `AdventureSession` et `applyAdventureCombatResultV1` (source Capture candidate PR #410). Aucun gain dans Explorer ou dans Combat.
 - Jeu sans parent GenSRPG : les pièces configurées et le transport peuvent être testés, mais le sélecteur d'objets ne fabrique pas de catalogue de secours ni d'ID manuel. Les objets devenus indisponibles restent des références inertes dans les cartes.
 - Protégés : combats natifs, PNJ historiques, autres rôles (marchand/quête/monstre errant), V80, cartes, Portal, sauvegardes, contrôle du combat et menus, autres modules, médias.
-- Gates obligatoires : Node sérialisation/validation, Chromium vrai PNJ→Tester/Jouer, CI exacte C2 et source Capture, Pages de l'Exploration main, adoption d'un SHA immuable dans Capture et publisher GenSRPG unique, validation HTTPS et smartphone. **Aucune fusion avant GREEN.**
+- Tests du candidat C2 sur code `6b499542f9d26e16de099e34150bf029e01b880f` : Exploration CI #43297566524 **SUCCESS** (unités, rendu PNJ et Combat en vrai Chromium, intégrité des autres parcours) ; assemblage/contrôle de prépublication Pages #43297566634 **SUCCESS**. Le snapshot réel inclut la monnaie du PNJ après passage par le handoff officiel et sa relecture, sans nouvelle autorité. La première CI rouge a été corrigée sur l'adaptateur propriétaire avant validation.
+- Reste à fusionner PR #423 sur main, vérifier CI Pages/HTTPS sur SHA final, puis épingler ce SHA dans la source Capture et publisher GenSRPG. Le test utilisateur sur smartphone reste distinct des tests Chromium. Aucun octet de média ni moteur hors Exploration modifié.
 
 ---
 
@@ -13,7 +14,7 @@
 - Propriétaire : Labo Exploration / interface Sculpt 2,5D. Le formulaire `actor-npc-settings` est déplacé dans un SEUL `<dialog>` natif, pas cloné. La donnée reste `WorldArea.actors[].npc` ; équipes et bestiaire officiels, récompenses, moteur Combat et sauvegardes restent auprès de leurs propriétaires.
 - Comportement : poser un acteur ou toucher un acteur déjà placé ouvre la même fiche, bouton « Configurer ce PNJ » pour la rouvrir, fermeture/ESC sans perdre de données. Fenêtre à défilement avec hauteur adaptée au paysage smartphone et retour à la carte. Aucun ancien éditeur ou ancien contenu V80 modifié.
 - Tests : sentinelle Node sur unicité des IDs et trois ouvertures ; vrai Chromium `scripts/smoke-sculpt-npc-v1.mjs` sur placement/édition/dialogue/duel Tester/Jouer ; `npm test`, `npm run check`, CI, budget Pages, provenance HTTPS, validation Android. Revenir au checkpoint START si régression.
-- Statut : branche candidate ; ne pas annoncer comme publié avant PR GREEN, merge main, CI Pages et SHA HTTPS.
+- GREEN/fusion de la fenêtre PNJ : PR #422 fusionnée sur `main@f8d670a838cb224660c9d5ca3f8508e8c34b2b93`, checkpoint `checkpoint/exploration-npc-modal-green-20261112`, CI main #43296071090 et Pages #43296071086 **SUCCESS**. La fenêtre native conserve les contrôles uniques ; elle reste indépendante du lot de récompenses #423.
 
 ---
 
