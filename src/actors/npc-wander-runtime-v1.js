@@ -2,8 +2,6 @@
 // WorldArea.actors[] is author-owned and never updated by this runtime.
 // Every accepted step is delegated to the same core Movement/Collision World
 // that moves the hero. No independent map coordinates, collision or save.
-import {stepMovement} from '../core/movement.js';
-
 const WANDER_SPEED=38;
 const WANDER_RADIUS=5;
 const AVOID_HERO_DISTANCE=24;
@@ -33,7 +31,8 @@ function newState(actor){
     sculptBridgeId:null,sculptStairId:null,
     goal:null,leg:hashWord(actor.id)%23,pause:.2,blocked:0};
 }
-export function createNpcWanderRuntimeV1(){
+export function createNpcWanderRuntimeV1({move}={}){
+  if(typeof move!=='function')throw new TypeError('Official Exploration movement callback required');
   let entries=new Map();
   function sync(actors){
     const alive=new Set();
@@ -85,7 +84,7 @@ export function createNpcWanderRuntimeV1(){
       }
       const x=state.x,y=state.y;
       const bridgeId=state.sculptBridgeId,stairId=state.sculptStairId;
-      stepMovement(world,state,{x:dx,y:dy},
+      move(world,state,{x:dx,y:dy},
         Math.min(dt,remaining/WANDER_SPEED),{maxSpeed:WANDER_SPEED},
         undefined,collisionContext);
       const moved=Math.hypot(state.x-x,state.y-y);
