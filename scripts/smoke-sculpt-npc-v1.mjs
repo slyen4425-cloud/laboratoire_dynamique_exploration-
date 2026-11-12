@@ -270,6 +270,43 @@ try{
  await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
  await until("!document.querySelector('.combat-overlay__frame')",'Tester exploration after flee');
 
+ // Validate a WALKING NPC in the actual 2.5D editor/Tester. Never
+ // persist its runtime x/y: returning to editor must restore the anchor.
+ const roamingAuthored=await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#scene-export').click();
+  const scene=JSON.parse(document.querySelector('#json').value);
+  scene.actors[0].x=285;scene.actors[0].y=185;
+  scene.actors[0].npc.movement={mode:'wander',radius:85};
+  document.querySelector('#json').value=JSON.stringify(scene);
+  document.querySelector('#import').click();
+  document.querySelector('#scene-export').click();
+  return JSON.parse(document.querySelector('#json').value).actors[0];
+ })()`);
+ if(roamingAuthored.x!==285||roamingAuthored.y!==185||
+    roamingAuthored.npc.movement.mode!=='wander')
+  throw Error('Wandering NPC authoring lost the canonical anchor');
+ await run("document.querySelector('#navigation-toggle').click()");
+ await until("window.__sculptNpcWanderProbe?.().active && window.__sculptNpcWanderProbe().count===1",
+  'native NPC wandering runtime mounted in Tester');
+ const walking=await until(`(()=>{
+  const actor=window.__sculptNpcWanderProbe?.().runtime?.[0];
+  if(!actor||Math.hypot(actor.x-285,actor.y-185)<3)return null;
+  return actor;
+ })()`,'NPC physically walking on the native collision map');
+ if(Math.hypot(walking.x-285,walking.y-185)>85.01)
+  throw Error('Walking NPC exceeded the authored radius '+JSON.stringify(walking));
+ await run("document.querySelector('#navigation-toggle').click()");
+ const unchanged=await run(`(()=>{
+  document.querySelector('#scene-export').click();
+  return {actor:JSON.parse(document.querySelector('#json').value).actors[0],
+   running:window.__sculptNpcWanderProbe?.().count};
+ })()`);
+ if(unchanged.actor.x!==285||unchanged.actor.y!==185||
+    unchanged.actor.npc.movement.radius!==85||unchanged.running!==0)
+  throw Error('Tester wandering mutated the stored WorldArea '+JSON.stringify(unchanged));
+ console.log('GREEN native Chromium PNJ errance Tester: collision, radius, immutable author anchor');
+
  // Play the same authored dresseur in a saved WorldDocument via World Builder → Jouer.
  await run(`(async()=>{
   const [{createBlankWorldBuilderDraft},{saveWorldAssemblerDraft}]=await Promise.all([
