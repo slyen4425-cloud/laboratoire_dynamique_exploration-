@@ -146,6 +146,7 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let npcOfficialCreatures=Object.freeze([]);
+let npcCatalogLoading=false;
 let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
@@ -2730,11 +2731,15 @@ function npcRoleEditorRefresh(){
   const selected=npcSelectedActor(),npc=selected?.npc;
   npcMerchantPickerRefresh();
   const roster=npc?.trainerRoster??[];
-  $('npc-team-summary').textContent=selected
-    ?roster.length+' / '+NPC_TRAINER_ROSTER_LIMIT_V1+' créature(s) configurées'
-    :'Pose un PNJ sur la carte puis touche-le pour configurer son équipe.';
-  $('npc-team-add').disabled=!selected||!npcOfficialCreatures.length||
-    roster.length>=NPC_TRAINER_ROSTER_LIMIT_V1;
+  $('npc-team-summary').textContent=!selected
+    ?'Pose un PNJ sur la carte pour configurer son équipe.'
+    :!npcOfficialCreatures.length
+      ?'Aucune créature disponible : recharge le bestiaire officiel Combat ci-dessous.'
+      :roster.length>=NPC_TRAINER_ROSTER_LIMIT_V1
+        ?'Équipe complète : '+NPC_TRAINER_ROSTER_LIMIT_V1+' créatures.'
+        :roster.length+' / '+NPC_TRAINER_ROSTER_LIMIT_V1+' créature(s) configurées';
+  $('npc-team-add').disabled=!selected||kind!=='trainer'||npcCatalogLoading||
+    !npcOfficialCreatures.length||roster.length>=NPC_TRAINER_ROSTER_LIMIT_V1;
   const list=$('npc-team-list');
   list.replaceChildren();
   roster.forEach((slot,index)=>{
@@ -2785,11 +2790,16 @@ function npcRoleEditorRefresh(){
   }
 }
 async function loadNpcOfficialCreatureChoices(){
-  if(!$('npc-team-creature'))return;
+  if(!$('npc-team-creature')||npcCatalogLoading)return;
+  npcCatalogLoading=true;
+  if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=true;
+  $('npc-catalog-status').textContent='Chargement du bestiaire officiel Combat…';
+  npcRoleEditorRefresh();
   try{
-    // Read the CURRENT published Combat transfers. Never use the old
-    // September preview or a local clone of GenSRPG's creature database.
+    // Read CURRENT published Combat transfers; no fallback IDs or cloned bestiary.
     const source=await loadCaptureShowcaseEncounterSourceV1();
+    if(!Array.isArray(source.creatures)||!source.creatures.length)
+      throw new Error('aucune créature publiée dans la source officielle');
     npcOfficialCreatures=source.creatures;
     for(const id of ['npc-team-creature','npc-wild-creature']){
       const select=$(id),selected=select.value;
@@ -2800,10 +2810,17 @@ async function loadNpcOfficialCreatureChoices(){
     }
     $('npc-catalog-status').textContent=npcOfficialCreatures.length+
       ' créature(s) du bestiaire officiel Combat disponibles.';
-    npcRoleEditorRefresh();
   }catch(error){
+    npcOfficialCreatures=Object.freeze([]);
+    for(const id of ['npc-team-creature','npc-wild-creature']){
+      $(id)?.replaceChildren(new Option('Bestiaire indisponible — réessayer',''));
+    }
     $('npc-catalog-status').textContent='Bestiaire officiel indisponible : '+
-      error.message+'. Aucun identifiant manuel ou catalogue de secours.';
+      error.message+'. Réessaie avec le bouton ci-dessous ; aucun catalogue de secours.';
+  }finally{
+    npcCatalogLoading=false;
+    if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=false;
+    npcRoleEditorRefresh();
   }
 }
 function syncActorSelectedControls(){
@@ -2983,6 +3000,7 @@ window.__sculptActorsProbe=()=>Object.freeze({
 });
 loadCaptureActorCatalog();
 loadNpcOfficialCreatureChoices();
+$('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatureChoices();});
 requestNpcMerchantCatalog();
 function setObjectEditing(active){
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);

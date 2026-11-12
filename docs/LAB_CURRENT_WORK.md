@@ -1,3 +1,11 @@
+## START — 12 novembre 2026 · Catalogue officiel PNJ rechargé à la demande
+- Base `main` exacte : `373b104100bd4aecd5da1d457bac3b45f923237f`; checkpoint `checkpoint/exploration-start-npc-catalog-retry-20261112`.
+- Lot unique : interface de l'éditeur de PNJ 2,5D et recharge manuelle du catalogue publié Combat après erreur réseau. Aucune source de créatures alternative.
+- Propriétaire : Labo Exploration pour les interactions UI ; Bestiaire et publication toujours Labo Combat.
+- Protégés : sauvegardes, monde, combats, navigation, acteurs placés, URL V80, ressources et autres modes GenSRPG.
+- Validation : test de non-régression sélection/équipe, état désactivé en échec, CI Exploration, gate Pages, SHA HTTPS et test manuel mobile.
+- Pas d'intervalle de retry, d'identifiant saisi à la main, de copie d'assets ou de changement de données persistantes. Ne pas annoncer GREEN avant publication exacte.
+
 ## 2026-11-11 — PNJ : sélection immédiate après pose (C1, branche de préparation)
 
 - **Signalement** : après avoir posé un PNJ de type dresseur, « Ajouter à l'équipe » reste grisé ; la liste exige un acteur sélectionné, mais la pose laissait l'outil en mode « placer ».
