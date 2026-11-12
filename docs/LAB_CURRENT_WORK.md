@@ -1,3 +1,14 @@
+## 2026-11-12 — Errance native des PNJ sur les cartes 2,5D (lot isolé)
+- START `main@46e4e3559c17dfb6bd3d7afbdb1f3d8caed93048`, certifié CI `43301155708` et Pages `43301155674`; checkpoint `checkpoint/exploration-start-npc-wander-20261112`, branche `work/exploration-npc-wander-2026-11-12`.
+- Propriétaire : Labo Exploration, **une seule boucle RAF de navigation et un seul Core Movement/Collision World**, partagé avec le héros. Le composant `npc-wander-runtime-v1.js` est une projection **temporaire** de `WorldArea.actors[].npc.movement` (déjà enregistré dans la fiche PNJ unique) : rayon autour de l'ancre, repos, déplacement, orientation, obstacles et terrain natifs.
+- Aucun mouvement sauvegardé, aucun changement de modèle WorldArea, aucune copie de scène, aucun identifiant technique nouveau. Les modes statiques restent inchangés. L'éditeur retrouve les ancres exactes après Tester/Jouer ; Porter/Retirer des PNJ ou traverser un Portal réinitialise uniquement la projection.
+- Le renderer natif existant reçoit le drapeau `moving`, le dialogue et le dresseur agressif consomment la position temporaire ; un PNJ errant peut approcher un héros immobile. Pause pendant un dialogue ou un combat. Évitement simple du héros avant le déplacement ; la physique est seulement celle de Collision World.
+- Protection absolue : V80 figé, Combat, Spawn, sauvegardes, PNJ fixes, monstres, récompenses/objets et or, World Builder, éditeurs, PNJ marchands/quête/dresseur, publication du hub et quatre modes de jeu.
+- Tests : nouveau Node `tests/npc-wander-native-20261112.test.js` (leash, collisions, immutabilité, reset, pause et intégration), l'ensemble des tests, vrais parcours Chromium PNJ, Tester, Jouer, sauvegardes et combats, puis CI et Pages sur le SHA exact avant fusion. L'UI Android paysage mérite validation manuelle même après Chromium GREEN.
+- La publication vers le hub reste un lot séparé d'adoption d'un SHA Exploration certifié, et ne doit jamais dupliquer le moteur.
+
+---
+
 ## 2026-11-12 — Reprise CI après fusion récompenses PNJ, sans changer le gameplay
 - START : Exploration `main@2c22a2044af9218eb21a0904cfc25f6edb044894` (PR #423), checkpoint `checkpoint/exploration-start-ci-recovery-20261112`, branche `work/exploration-ci-recovery-2026-11-12`.
 - La CI main `43299342649` a échoué dans deux smokes Chromium, alors que la CI candidate récompenses `43297566524` était GREEN : `smoke-sculpt-remote-pixels.mjs` (reprise de session Aventure non active dans la fenêtre d'attente), `smoke-world-assembler-authoring-layout.mjs` (profil Chromium `ENOTEMPTY` avant arrêt réel du processus).
