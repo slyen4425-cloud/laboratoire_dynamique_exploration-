@@ -2023,6 +2023,7 @@ function startSculptTrainerBattle(actor){
   const terrain=resolveTerrainFamilyAtPoint(area.surface,navActor.x,navActor.y);
   const snapshot=createCaptureEncounterSnapshot({
     ...newSculptEncounterIds(),source:'npc-trainer',trainerActorId:actor.id,opponents,
+    ...(actor.npc.trainerReward?{trainerReward:actor.npc.trainerReward}:{}),
     playerPartyRef:scopedEncounter?.party.partyRef??sculptPreviewPartyRef,areaId:area.id,
     terrainFamilyId:terrain.terrainFamilyId??area.surface.baseTerrainFamilyId,
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
