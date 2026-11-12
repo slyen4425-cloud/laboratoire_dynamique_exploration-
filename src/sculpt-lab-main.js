@@ -147,7 +147,7 @@ let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 // A single transient runtime projection; WorldArea.actors is never advanced by gameplay.
-const npcWanderRuntime=createNpcWanderRuntimeV1();
+const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
 let npcWanderElapsed=0,npcWanderAggressiveNearId=null;
 function gameplayPlacedActors(){
   return navigationTesting?npcWanderRuntime.project(placedActors):placedActors;
