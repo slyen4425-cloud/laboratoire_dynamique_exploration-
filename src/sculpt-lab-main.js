@@ -680,6 +680,10 @@ cliffHDLoader.src=resolveSculptCliffHDUrl();
 // V1 preview owns only disposable visual options. Canonical WorldArea geometry,
 // encounters, collisions, and saves remain unchanged until separately validated.
 const sculptBorderPreviewByArea=new Map();
+const sculptBorderControlsAvailable=!!$('scenery-border-enabled')&&
+  !!$('scenery-border-biome')&&!!$('scenery-border-side')&&
+  !!$('scenery-border-style')&&!!$('scenery-border-density')&&
+  !!$('scenery-border-density-value')&&!!$('scenery-border-regenerate');
 let sculptBorderUiAreaKey=null;
 function sculptBorderAreaKey(){return sculptWorldAreaId??'unlinked-preview';}
 function sculptBorderConfig(){
@@ -699,6 +703,7 @@ function updateSculptBorderPreview(update){
   scheduleDraw();
 }
 function syncSculptBorderControls(){
+  if(!sculptBorderControlsAvailable)return;
   const key=sculptBorderAreaKey(),settings=sculptBorderPreviewByArea.get(key)??normalizeSculptBorderPreview();
   const side=$('scenery-border-side').value||'front';
   const selected=settings.sides[side]??settings.sides.front;
@@ -711,7 +716,7 @@ function syncSculptBorderControls(){
 }
 window.__sculptBorderPreviewProbe=()=>Object.freeze({
   areaKey:sculptBorderAreaKey(),config:sculptBorderConfig(),
-  editorOnly:true,visualOnly:true
+  editorOnly:true,visualOnly:true,available:sculptBorderControlsAvailable
 });
 // Background only. Cache by actual viewport + sky options, not by character
 // position or frame: stars/clouds never allocate a new canvas each movement.
@@ -721,7 +726,8 @@ function navigationSkyBackdrop(width,height){
   const mist=$('navigation-sky-mist').checked;
   const stars=$('navigation-sky-stars').checked;
   const border=sculptBorderConfig();
-  const isExterior=!activeInteriorId&&!sculptWorldCurrentInterior();
+  const isExterior=sculptBorderControlsAvailable&&
+    !activeInteriorId&&!sculptWorldCurrentInterior();
   const key=[Math.ceil(width),Math.ceil(height),time,clouds,mist,stars,
     isExterior,border.mapKey,JSON.stringify(border)].join('|');
   if(navSkyCache?.key===key)return navSkyCache;
@@ -974,7 +980,8 @@ function draw(){
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   // Draw OUTSIDE the existing terrain raster, and behind every playable tile.
   // In Tester its affine projection matches the ground's cached projection.
-  if(navigationTesting&&!activeInteriorId&&!sculptWorldCurrentInterior()){
+  if(sculptBorderControlsAvailable&&navigationTesting&&
+     !activeInteriorId&&!sculptWorldCurrentInterior()){
     const border=sculptBorderConfig();
     ctx.save();ctx.transform(1,view.shear,0,view.pitch,0,0);
     drawSculptBorderExtension(ctx,{terrain,tile:SCULPT_TILE,config:border,mapKey:border.mapKey});
@@ -2401,6 +2408,7 @@ function setNavigationTesting(on){
   }
   scheduleDraw();
 }
+if(sculptBorderControlsAvailable){
 for(const id of ['scenery-border-enabled','scenery-border-biome']){
   $(id).addEventListener('change',()=>{
     updateSculptBorderPreview(current=>({
@@ -2432,6 +2440,7 @@ $('scenery-border-regenerate').addEventListener('click',()=>{
   status('Nouvelle variante du décor '+side+' (test visuel, non sauvegardé).');
 });
 syncSculptBorderControls();
+}
 for(const id of ['navigation-sky-time','navigation-sky-clouds','navigation-sky-mist','navigation-sky-stars']){
   $(id).addEventListener('change',()=>{navSkyCache=null;scheduleDraw();});
 }
