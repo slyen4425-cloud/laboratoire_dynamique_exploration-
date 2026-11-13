@@ -3457,7 +3457,7 @@ try{
     await sleep(130);
     combatReady=await run(`(()=>{
       const doc=document.querySelector('.combat-overlay__frame')?.contentDocument;
-      return doc ? {status:doc.querySelector('[data-bridge-status]')?.textContent??'',
+      return doc?.documentElement ? {status:doc.querySelector('[data-bridge-status]')?.textContent??'',
         skills:doc.querySelectorAll('[data-combat-skill]').length,
         enemyHud:!!doc.querySelector('[data-combat-hp-value="opponent-1"]'),
         bootError:doc.documentElement.dataset.encounterBootstrapError??null}:null;
