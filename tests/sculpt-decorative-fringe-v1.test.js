@@ -25,8 +25,9 @@ test('decorative sculpt uses exactly the original terrain brush and cannot touch
   const after=paintSculptDecorativeFringeV1(fringe,original,
     {col:-2,row:6,mode:'raise',strength:3,radius:.5});
   assert.equal(after.schema,SCULPT_DECORATIVE_FRINGE_SCHEMA);
-  assert.equal(after.chunks.length,1);
-  const chunk=after.chunks[0];
+  assert.ok(after.chunks.length>=4,'four surrounding sides are prefilled');
+  const chunk=after.chunks.find(item=>item.col===-8&&item.row===0);
+  assert.ok(chunk);
   assert.equal(chunk.col,-8);
   assert.equal(chunk.row,0);
   assert.equal(chunk.terrain.levels[6*8+6],5);
