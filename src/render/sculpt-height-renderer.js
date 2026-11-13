@@ -737,6 +737,21 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   let waterCells=0,roadCells=0,faceRuns=0;
   // R14: square height tops do not use legacy roundness visual profiles.
   const drawPaint=sculptPaintByCell(ctx,terrain,tile,paintSurface,paintImages);
+  // The flat baseColor backing is visible BELOW raised tiles at the south
+  // boundary. In a snow-painted WorldSurface that formerly exposed forest
+  // green (#536247), even though every playable tile was covered in snow.
+  // Project the SAME authored surface zones onto the unchanged backing
+  // *before* raised tops and cliffs. Roads remain on their actual tops;
+  // no terrain height, material, collision, or saved WorldSurface is changed.
+  // This is the existing paint renderer, not a new surface/texture authority.
+  if(paintSurface?.zones?.length&&paintImages){
+    const paintBacking=sculptPaintByCell(ctx,terrain,tile,
+      {...paintSurface,zones:paintSurface.zones,routes:[]},paintImages);
+    for(let row=0;row<terrain.height;row++)
+      for(let col=0;col<terrain.width;col++)
+        if(terrain.levels[row*terrain.width+col]>0)
+          paintBacking(col,row,0,col*w,row*h);
+  }
   let paintedCells=0;
   for(let row=0;row<terrain.height;row++){
     // Draw all top surfaces of a row first, then contiguous wall runs.
