@@ -1,0 +1,23 @@
+name: Audit source heroes 12 (no deployment)
+on:
+  push:
+    branches: [work/exploration-heroes-12-assets-20261113]
+    paths:
+      - .github/workflows/audit-hero-source-packages.yml
+      - scripts/audit-hero-source-packages.py
+      - 'GenSRPG_heros_lot2_*.zip'
+      - 'gensrpg_monster_capture_lot_1_6_heros_decoupes.zip'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Audit original twelve-hero ZIPs without extraction or duplication
+        run: python scripts/audit-hero-source-packages.py
