@@ -1,3 +1,12 @@
+## 2026-11-13 — Frange décorative sculptable : modèle canonique initial, NON publiée
+- START `main@144d614ace99387cc77a995ed6459bde806a4189`, checkpoint `checkpoint/exploration-start-sculptable-fringe-20261113`, branche `work/exploration-sculptable-fringe-model-20261113`.
+- `WorldArea.decorativeFringe` est un champ facultatif, uniquement sur la WorldArea déjà autoritaire. Sa sculpture passe par les pinceaux `applySculptBrush` du **même** SculptTerrain, en fragments 8×8 (jusqu'à huit cases au-delà des quatre côtés). Les objets utilisent le modèle WorldObject existant, sans IDs manuels.
+- La limite originale `WorldArea.width/height/boundary` et `WorldArea.sculptTerrain` reste la SEULE référence Collision World, rencontres, Portals, Spawn et navigation. Aucune extension du monde jouable, aucun moteur parallèle, aucune migration des cartes historiques.
+- Ce lot ne raccorde pas encore les pinceaux, l'affichage des extensions et le placement d'objets à l'interface ; il prépare et teste le contrat de sauvegarde/chargement. **Ne pas annoncer la frange utilisable**, ni toucher au publisher global.
+- Étape suivante : une couche visuelle et des outils d'édition dédiés au pourtour, en réutilisant `drawSculptTerrain`, puis tests de bords, plein écran et Android. CI GREEN et validation visuelle indispensables avant fusion.
+
+---
+
 ## 2026-11-13 — Caméra 2,5D bornée aux vrais contours du terrain en Jouer
 - START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-native-camera-edge-clamp-20261113`, branche `work/exploration-native-camera-edge-clamp-20261113`.
 - Cause : les cartes montées en WorldArea activaients le suivi du héros sans borne, bien que le mode Tester simple borne déjà la caméra. Sur PC grand écran et plein écran, un bord du monde pouvait sortir du cadre et montrer le vide.
