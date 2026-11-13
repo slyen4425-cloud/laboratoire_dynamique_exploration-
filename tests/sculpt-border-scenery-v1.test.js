@@ -50,7 +50,7 @@ test('render is deterministic for one area and can regenerate each side independ
   const config={...normalizeSculptBorderPreview({biome:'forest'})};
   const first=canvasProbe(),second=canvasProbe(),other=canvasProbe();
   assert.deepEqual(drawSculptBorderExtension(first.ctx,{terrain,config,mapKey:'area-A'}),
-    {sides:4,features:58}); // density 55% => 15 + 10 + 10 + 15
+    {sides:4,features:50}); // density 55% => 15 + 10 + 10 + 15
   drawSculptBorderExtension(second.ctx,{terrain,config,mapKey:'area-A'});
   assert.deepEqual(first.calls,second.calls);
   drawSculptBorderExtension(other.ctx,{terrain,config,mapKey:'area-B'});
