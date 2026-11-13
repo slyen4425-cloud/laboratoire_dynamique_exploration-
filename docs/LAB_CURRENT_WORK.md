@@ -1,9 +1,9 @@
-## 2026-11-13 — Frange décorative sculptable : modèle canonique initial, NON publiée
+## 2026-11-13 — Frange décorative sculptable : intégration au seul Labo Exploration
 - START `main@144d614ace99387cc77a995ed6459bde806a4189`, checkpoint `checkpoint/exploration-start-sculptable-fringe-20261113`, branche `work/exploration-sculptable-fringe-model-20261113`.
 - `WorldArea.decorativeFringe` est un champ facultatif, uniquement sur la WorldArea déjà autoritaire. Sa sculpture passe par les pinceaux `applySculptBrush` du **même** SculptTerrain, en fragments 8×8 (jusqu'à huit cases au-delà des quatre côtés). Les objets utilisent le modèle WorldObject existant, sans IDs manuels.
 - La limite originale `WorldArea.width/height/boundary` et `WorldArea.sculptTerrain` reste la SEULE référence Collision World, rencontres, Portals, Spawn et navigation. Aucune extension du monde jouable, aucun moteur parallèle, aucune migration des cartes historiques.
 - La branche contient désormais l'affichage par le renderer natif `drawSculptTerrain`, une commande **Décor hors zone jouable** dans le Sculpt de la WorldArea et un pinceau tactile de relief/eau, avec placement/retrait d'objets du catalogue existant. Le noyau jouable conserve sa caméra, ses collisions, ses Portals et ses Spawns ; seule la vue éditeur affiche le pourtour en mode sculpture, tandis que Tester/Jouer le rendent en décor visible non franchissable.
-- **Non fusionné / non publié** : revue CI, examen visuel PC/Android, impact des limites de fragments 8×8, qualité des jonctions et test du rendu doivent être validés. Ce n'est pas la publication globale GenSRPG. Ne pas prétendre que les bâtiments à étages ou le scintillement Combat sont traités par ce lot.
+- Validation : CI de base, rendu Chromium et test navigateur spécifique de peinture hors des bords (quatre côtés / limites 36×24) ajoutés à la barrière du labo. Avant promotion sur `main`, requérir GREEN sur le SHA exact. Après livraison, vérifier sur le matériel cible les jonctions des fragments et les performances paysage. **Aucune publication GenSRPG globale**. Les bâtiments à étages et le scintillement Combat demeurent indépendants.
 
 ---
 
