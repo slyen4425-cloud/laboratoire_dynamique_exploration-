@@ -43,7 +43,8 @@ export function sculptExteriorFringeCameraBoundsV1({
   const skyPixels=Math.min(viewportHeight*skyFraction,120);
   return Object.freeze({
     ...coreBounds,
-    minY:Math.min(coreBounds.minY,northProjected)-skyPixels/zoom,
+    minY:fringeRows===0&&skyPixels===0?coreBounds.minY:
+      Math.min(coreBounds.minY,northProjected)-skyPixels/zoom,
     maxY:coreBounds.maxY
   });
 }
