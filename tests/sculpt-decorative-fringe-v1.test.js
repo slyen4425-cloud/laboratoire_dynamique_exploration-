@@ -6,7 +6,9 @@ import {
   placeSculptDecorativeFringeObjectV1,normalizeSculptDecorativeFringeV1
 } from '../src/world/sculpt-decorative-fringe-v1.js';
 import {normalizeWorldArea} from '../src/world/world-area-model.js';
-import {sculptWorldAreaScene} from '../src/builder/sculpt-world-area-link.js';
+import {sculptWorldAreaScene,saveSculptWorldArea} from '../src/builder/sculpt-world-area-link.js';
+import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument} from '../src/builder/world-builder-draft.js';
+import {readFileSync} from 'node:fs';
 
 const raw={id:'forest',kind:'exterior',width:36*28,height:24*21,
   spawns:[{id:'home',x:300,y:200}],objects:[],
@@ -50,4 +52,40 @@ test('decorative objects remain outside base world and are never copied into col
   assert.equal(sculptWorldAreaScene(world).decorativeFringe.objects.length,1);
   assert.throws(()=>placeSculptDecorativeFringeObjectV1(updated,original,
     {...outdoor,id:'illegal',transform:{x:300,y:200}}),/outside the playable area/);
+});
+
+test('WorldDocument round-trip retains decorative sculpt and objects with no new playable cells',()=>{
+  const draft=createBlankWorldBuilderDraft({id:'fringe-world',width:36*28,height:24*21});
+  const area=draft.areas[0],scene=sculptWorldAreaScene(area);
+  const painted=paintSculptDecorativeFringeV1(
+    createSculptDecorativeFringeV1(area),area,
+    {col:area.width/28,row:6,mode:'raise',strength:2,radius:.5});
+  const saved=saveSculptWorldArea(draft,area.id,{...scene,decorativeFringe:painted});
+  const restored=importWorldBuilderDocument(serializeWorldBuilderDraft(saved));
+  const final=restored.areas[0];
+  assert.equal(final.width,area.width);
+  assert.equal(final.height,area.height);
+  assert.deepEqual(final.spawns,area.spawns);
+  assert.deepEqual(final.boundary,area.boundary);
+  assert.deepEqual(final.encounters,area.encounters);
+  assert.deepEqual(sculptWorldAreaScene(final).terrain,scene.terrain);
+  assert.equal(final.decorativeFringe.chunks.length,painted.chunks.length);
+  assert.equal(final.decorativeFringe.schema,SCULPT_DECORATIVE_FRINGE_SCHEMA);
+});
+
+test('2.5D editor renders fringe in both modes but collision and camera use only the core area',()=>{
+  const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const first=source.indexOf('function navigationWorld(){');
+  const last=source.indexOf('function navigationMaxStep(){',first);
+  assert.ok(first>0&&last>first);
+  assert.doesNotMatch(source.slice(first,last),/decorativeFringe/);
+  assert.match(source,/if\(!decorativeFringe\|\|navigationTesting\|\|activeInteriorId\|\|sculptWorldCurrentInterior\(\)\)/);
+  assert.match(source,/drawDecorativeFringeTerrain\(\)/);
+  assert.match(source,/drawDecorativeFringeObjects\(\)/);
+  assert.match(source,/ctx\.clip\('evenodd'\)/);
+  assert.match(source,/screenToDecorativeFringeCell/);
+  assert.match(source,/paintSculptDecorativeFringeV1/);
+  assert.match(html,/id="scenery-fringe-toggle"/);
+  assert.match(html,/hors zone jouable/);
 });
