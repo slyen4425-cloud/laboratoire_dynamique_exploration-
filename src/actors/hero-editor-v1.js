@@ -6,12 +6,15 @@ import {createUserHeroStoreV1} from '../storage/user-hero-store-v1.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
+import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
+import {loadOfficialHeroCatalogV1,installOfficialHeroPresetV1} from './official-hero-presets-v1.js';
 
 const $=id=>document.getElementById(id);
 const status=$('hero-status');
 const canvas=$('hero-canvas'),ctx=canvas.getContext('2d');
 const store=createUserHeroStoreV1();
 let selected=null,preview=null,renderEpoch=0,previewMoving=false,disposed=false;
+let previewDirection='S';
 
 function notify(message,error=false){
  status.textContent=message;status.dataset.error=String(error);
@@ -22,10 +25,11 @@ function number(id){
  return Number(raw);
 }
 function updateMode(){
- const sprites=$('hero-mode').value==='frames';
- for(const id of ['hero-idle-label','hero-walk-label','hero-fps-label'])$(id).hidden=!sprites;
- $('hero-idle-amplitude').disabled=sprites;
- $('hero-walk-amplitude').disabled=sprites;
+ const mode=$('hero-mode').value,sprites=mode==='frames';
+ for(const id of ['hero-idle-label','hero-walk-label'])$(id).hidden=!sprites;
+ $('hero-fps-label').hidden=mode==='image';
+ $('hero-idle-amplitude').disabled=mode!=='image';
+ $('hero-walk-amplitude').disabled=mode!=='image';
 }
 function oldAsset(id){
  const entry=selected?.assets.find(value=>value.id===id);
@@ -87,7 +91,7 @@ async function startPreview(record){
   }
   if(loaded.ready!==ids.length)throw new Error('Visuels incomplets : '+loaded.ready+'/'+ids.length);
   preparer=createMapActorVisualPreparer({imageLoader:loader});
-  const spriteMode=record.mapVisual.animation.mode==='frames';
+  const spriteMode=record.mapVisual.animation.mode!=='image';
   const prepared=preparer.prepare(ids,{preserveCanvas:spriteMode});
   if(prepared.ready!==ids.length)
    throw new Error('Impossible de préparer tous les visuels du héros');
@@ -99,15 +103,19 @@ async function startPreview(record){
    ctx.clearRect(0,0,canvas.width,canvas.height);
    ctx.fillStyle='#274251';ctx.fillRect(0,0,canvas.width,canvas.height);
    ctx.fillStyle='#315947';ctx.fillRect(0,canvas.height-35,canvas.width,35);
+   const angle={E:0,SE:Math.PI/4,S:Math.PI/2,SW:3*Math.PI/4,
+     W:Math.PI,NW:-3*Math.PI/4,N:-Math.PI/2,NE:-Math.PI/4}[previewDirection];
    renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:time/1000,
-    actors:[{x:canvas.width/2,y:canvas.height-35,
-     facingX:1,moving:previewMoving,visualScale:2,mapVisual:record.mapVisual}]});
+    actors:[{x:canvas.width/2,y:canvas.height-35,facingX:1,
+     directionX:Math.cos(angle),directionY:Math.sin(angle),
+     moving:previewMoving,visualScale:2,mapVisual:record.mapVisual}]});
    active.raf=requestAnimationFrame(frame);
   }
   active.raf=requestAnimationFrame(frame);
-  notify(record.name+' · '+(spriteMode?
-   'Animation : '+record.mapVisual.animation.walk.length+' sprites de marche':
-   'Image fixe : mouvement simulé'));
+  notify(record.name+' · '+(record.mapVisual.animation.mode==='directions'
+    ?'8 directions × 6 sprites'
+    :spriteMode?'Animation : '+record.mapVisual.animation.walk.length+' sprites de marche'
+    :'Image fixe : mouvement simulé'));
  }catch(error){
   preparer?.dispose();
   loader.dispose();resolver.dispose();
@@ -149,9 +157,15 @@ async function saveHero(){
   ?await frames('hero-idle',previous?.mapVisual.animation.idle??[]):[];
  const walk=mode==='frames'
   ?await frames('hero-walk',previous?.mapVisual.animation.walk??[]):[];
+ const directions=mode==='directions'
+  ?Object.fromEntries(MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(dir=>{
+    if(previous?.mapVisual.animation.mode!=='directions')
+      throw new Error('Choisis un modèle officiel pour obtenir les huit directions');
+    return [dir,previous.mapVisual.animation.directions[dir].map(oldAsset)];
+  })):null;
  const record=createUserHeroDefinitionV1({
-  id,name:$('hero-name').value,base,mode,idle,walk,
-  framesPerSecond:mode==='frames'?number('hero-fps'):8,
+  id,name:$('hero-name').value,base,mode,idle,walk,directions,
+  framesPerSecond:mode==='image'?8:number('hero-fps'),
   targetHeight:number('hero-height'),
   sourceFacingX:Number($('hero-source-facing').value),
   motion:{idleAmplitude:number('hero-idle-amplitude'),
@@ -194,6 +208,39 @@ $('hero-preview-walk').addEventListener('click',()=>{
  previewMoving=true;
  notify('Prévisualisation : marche');
 });
+$('hero-preview-direction').addEventListener('change',()=>{
+ previewDirection=$('hero-preview-direction').value;
+ notify('Direction affichée : '+previewDirection);
+});
+async function installPresetGallery(){
+ const grid=$('hero-official-grid'),message=$('hero-official-status');
+ try{
+  const catalog=await loadOfficialHeroCatalogV1();
+  for(const hero of catalog.heroes){
+   const card=document.createElement('div');card.className='hero-preset';
+   const image=document.createElement('img');
+   image.loading='lazy';image.alt='Modèle '+hero.name;
+   image.src=new URL(hero.thumbnail,document.baseURI).href;
+   const label=document.createElement('strong');label.textContent=hero.name;
+   const button=document.createElement('button');button.type='button';
+   button.textContent='Utiliser ce modèle';
+   button.addEventListener('click',()=>run(async()=>{
+     button.disabled=true;message.textContent='Installation de '+hero.name+'…';
+     try{
+       const record=await installOfficialHeroPresetV1({hero,store});
+       await refreshCatalog(record.id);
+       message.textContent=record.name+' est disponible dans la sélection de héros.';
+     }finally{button.disabled=false;}
+   }));
+   card.append(image,label,button);grid.append(card);
+  }
+  message.textContent=catalog.heroes.length+' modèles officiels disponibles · bibliothèque unique';
+ }catch(error){
+  message.textContent='Modèles indisponibles : '+error.message;
+  console.error('Catalogue de héros officiel',error);
+ }
+}
+void installPresetGallery();
 window.addEventListener('pagehide',()=>{
  disposed=true;
  destroyPreview();
