@@ -87,7 +87,7 @@ test('2.5D editor renders north fringe only while collision remains on the core 
   assert.match(source,/drawDecorativeFringeObjects\(\)/);
   assert.match(source,/if\(chunk\.row>=0\|\|chunk\.col<0/);
   assert.match(source,/ctx\.clip\(\)/);
-  assert.match(source,/maxY:coreBounds\.maxY/);
+  assert.match(source,/return \{\.\.\.coreBounds,minY,height:coreBounds\.maxY-minY\}/);
   assert.match(source,/screenToDecorativeFringeCell/);
   assert.match(source,/paintSculptDecorativeFringeV1/);
   assert.match(html,/id="scenery-fringe-toggle"/);
