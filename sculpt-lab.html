@@ -1088,8 +1088,9 @@ body.sculpt-play-unavailable #play-start-error{
  </label>
  <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
   <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
+ <button id="surface-align-families" type="button">Aligner les rencontres sur les textures existantes</button>
  <output id="surface-count">Aucune zone peinte</output>
- <small>Trace une route ou recouvre l'herbe d'une autre texture. La famille pilote les rencontres, la texture reste visuelle. Les familles et les textures sont enregistrées dans « Exporter scène ». Fleurs et détails décoratifs viendront plus tard.</small>
+ <small>Choisir Neige, Route, Sable, etc. sélectionne automatiquement la famille de rencontres correspondante pour les nouveaux tracés, avec réglage manuel toujours possible. Pour une carte plus ancienne, « Aligner » corrige explicitement les familles enregistrées (annulable via ↶ Texture), sans changer la géométrie ni les objets. Les familles sont sauvegardées dans « Exporter scène ».</small>
 </section>
 <section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
  <div id="object-controls">
