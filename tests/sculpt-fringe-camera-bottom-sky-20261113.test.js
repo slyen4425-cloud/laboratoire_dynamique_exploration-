@@ -23,7 +23,7 @@ for(const [columns,rows] of [[36,24],[80,64],[64,80]]) {
       assert.equal(bounds.maxX,coreBounds.maxX);
       assert.equal(bounds.maxY,coreBounds.maxY);
       assert.ok(bounds.minY<coreBounds.minY);
-      assert.ok((coreBounds.minY-bounds.minY)*zoom>=64.8);
+      assert.ok((coreBounds.minY-bounds.minY)*zoom>=64.8-1e-6);
       const bottom=clampSculptNavigationCameraToTerrainV1({
         pan:{x:-100,y:-100000},bounds,zoom,width:viewportWidth,height:viewportHeight
       });
