@@ -20,10 +20,9 @@ export function clampSculptNavigationCameraToTerrainV1({
   });
 }
 
-// Presentation-only bounds for an exterior with the optional 8-cell
-// decorative fringe. Collision, playable WorldArea, and actor position
-// remain unchanged. South is clamped at the LAST decorative row; north
-// reserves a controlled piece of genuine sky (drawn by the existing renderer).
+// Presentation-only camera bounds for the NORTH decorative strip only.
+// Keep the original playable x/south limits. This does not change saved
+// decorative terrain, physics, portals, collisions or WorldArea dimensions.
 export function sculptExteriorFringeCameraBoundsV1({
   coreBounds,view,coreWidth,coreHeight,fringeRows=8,
   tileWidth=28,tileHeight=21,viewportHeight,zoom,skyFraction=.12
@@ -36,18 +35,15 @@ export function sculptExteriorFringeCameraBoundsV1({
      tileWidth<=0||tileHeight<=0||viewportHeight<=0||zoom<=0||
      skyFraction<0||skyFraction>.25)
     throw new TypeError('Valid exterior decorative camera bounds required');
-  // Project bottom corners including the surrounding decoration; only
-  // y is relaxed. The x clamp remains owned by the original playable map.
-  const marginX=fringeRows*tileWidth;
-  const lastRow=coreHeight+fringeRows*tileHeight;
-  const bottomY=Math.max(
-    view.pitch*lastRow+view.shear*(-marginX),
-    view.pitch*lastRow+view.shear*(coreWidth+marginX)
+  const northY=-fringeRows*tileHeight;
+  const northProjected=Math.min(
+    view.pitch*northY,
+    view.pitch*northY+view.shear*coreWidth
   );
   const skyPixels=Math.min(viewportHeight*skyFraction,120);
   return Object.freeze({
     ...coreBounds,
-    minY:coreBounds.minY-skyPixels/zoom,
-    maxY:Math.max(coreBounds.maxY,bottomY)
+    minY:Math.min(coreBounds.minY,northProjected)-skyPixels/zoom,
+    maxY:coreBounds.maxY
   });
 }
