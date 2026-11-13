@@ -8,7 +8,7 @@ const ci=read('.github/workflows/ci.yml');
 const stage=read('scripts/stage-capture-author-showcase.mjs');
 
 test('Explorer publisher only consumes Combat main engine + main author source',()=>{
-  assert.match(publish,/author_sha="\$main_sha"/);
+  assert.match(publish,/main_sha="\$\(git -C combat-source rev-parse HEAD\)"/);
   assert.match(publish,/ref: main\n\s+path: combat-source/);
   assert.match(publish,/ref: main\n\s+path: combat-author/);
   assert.doesNotMatch(publish,/ref: 4fd0821545eaa41ce1d3115e56f3574db6273426/);
