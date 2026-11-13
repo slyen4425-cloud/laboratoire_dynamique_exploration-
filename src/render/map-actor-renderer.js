@@ -26,7 +26,7 @@ function motionOffset(visual, actor, timeSeconds) {
 // Exactly one Map Actor Renderer controls both display modes. Frame assets
 // have already been registered/prepared by the same existing asset service.
 // Convert actual world movement intent to one of the eight authored views.
-// This is visual-only: navigation and collision retain their original owner.
+// Visual selection only; the actor's world motion stays external.
 export function mapActorCompassDirectionV1(actor={}){
  const x=Number(actor.directionX),y=Number(actor.directionY);
  if(!Number.isFinite(x)||!Number.isFinite(y)||Math.hypot(x,y)<.001)
