@@ -142,6 +142,11 @@ jobs:
           # hero frames are part of the browser runtime and Pages budget.
           find site -maxdepth 1 -type f \( -name 'GenSRPG_heros_*.zip' -o -name 'gensrpg_monster_capture_lot_*_heros_decoupes.zip' \) -delete
           test -s site/sculpt-lab.html
+          test -s site/assets/exploration/actors/official/catalog.json
+          test -s site/assets/exploration/actors/official/01_heros_bleu/frames/S/00.png
+          ! test -e site/GenSRPG_heros_lot2_A_heros_07_08_09.zip
+          ! test -e site/GenSRPG_heros_lot2_B_heros_10_11_12.zip
+          ! test -e site/gensrpg_monster_capture_lot_1_6_heros_decoupes.zip
           test -s site/preview/encounters-v80/sculpt-lab.html
           grep -Fq '../../sculpt-lab.html' site/preview/encounters-v80/sculpt-lab.html
           test -s site/release-provenance.v1.json
@@ -175,7 +180,9 @@ jobs:
           for path in sculpt-lab.html world-assembler.html play.html \
             src/sculpt-lab-main.js src/builder/world-assembler-main.js \
             combat-preview/examples/dom-demo/exploration-encounter.js \
-            capture-assets/data/assets/catalog/global-visual-assets.v1.json; do
+            capture-assets/data/assets/catalog/global-visual-assets.v1.json
+            assets/exploration/actors/official/catalog.json
+            assets/exploration/actors/official/01_heros_bleu/frames/S/00.png; do
             curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$base/$path?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-live-probe
             test -s /tmp/exploration-live-probe
           done
