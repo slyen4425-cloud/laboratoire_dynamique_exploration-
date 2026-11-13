@@ -18,18 +18,18 @@ concurrency:
   group: ${{ github.event_name == 'pull_request' && format('exploration-publisher-pr-{0}', github.head_ref) || 'exploration-pages' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
-  EXPLORATION_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }
+  EXPLORATION_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 jobs:
   detect-upstream:
     runs-on: ubuntu-latest
     outputs:
-      publish: ${{ steps.diff.outputs.publish }
+      publish: ${{ steps.diff.outputs.publish }}
     steps:
       - name: Publish when main changed or official Combat assets advanced
         id: diff
         shell: bash
         env:
-          EVENT_NAME: ${{ github.event_name }
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           if [[ "$EVENT_NAME" != "schedule" ]]; then echo "publish=true" >> "$GITHUB_OUTPUT"; exit 0; fi
@@ -54,12 +54,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     outputs:
-      exploration_sha: ${{ steps.provenance.outputs.exploration_sha }
+      exploration_sha: ${{ steps.provenance.outputs.exploration_sha }}
     steps:
       - name: Checkout ONLY official Exploration main source
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.EXPLORATION_SOURCE_SHA }
+          ref: ${{ env.EXPLORATION_SOURCE_SHA }}
           path: site
       - name: Checkout Combat main runtime
         uses: actions/checkout@v4
@@ -155,7 +155,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/configure-pages@v5
       - id: deployment
@@ -187,7 +187,7 @@ jobs:
           echo "LIVE GREEN: Exploration main only, verified SHA, old URLs redirected"
       - name: Record main release HTTPS verification status
         env:
-          GH_TOKEN: ${{ github.token }
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
