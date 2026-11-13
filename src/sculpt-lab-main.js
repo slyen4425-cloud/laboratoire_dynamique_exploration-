@@ -2621,7 +2621,7 @@ function setNavigationTesting(on){
       :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
     if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
-      !sculptWorldDraft||!!activeInteriorId||!!sculptWorldCurrentInterior();
+      !sculptWorldDraft||sculptPlayRequested||!!activeInteriorId||!!sculptWorldCurrentInterior();
     if(sculptEncounterHost?.active)return; // Combat owns the overlay until completion
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
@@ -3771,6 +3771,7 @@ $('scenery-fringe-toggle')?.addEventListener('change',()=>{
     return;
   }
   fringeEditing=$('scenery-fringe-toggle').checked;
+  if(fringeEditing&&surfaceEditing)setSurfaceEditing(false);
   if(fringeEditing&&!decorativeFringe){
     decorativeFringe=createSculptDecorativeFringeV1(decorativeFringeArea());
     fringeRasterCache.clear();
