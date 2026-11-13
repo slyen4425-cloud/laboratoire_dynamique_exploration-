@@ -11,6 +11,7 @@ import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1} from './render/sculpt-navigation-camera-clamp-v1.js';
+import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
   paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
@@ -1036,6 +1037,30 @@ function decorativeFringeRaster(chunk){
   fringeRasterCache.set(key,raster);
   return raster;
 }
+function drawEditorPlayableLimit(){
+  // Projection-only marker: no second boundary, no changes to saved terrain,
+  // encounter placement, hero collisions or runtime overlays.
+  if(navigationTesting||!decorativeFringe||activeInteriorId||
+     sculptWorldCurrentInterior())return;
+  const outline=sculptPlayableBoundaryOutlineV1(terrain,{
+    tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
+    rise:SCULPT_TILE.rise,heightAt:sculptHeightAt
+  });
+  ctx.save();
+  ctx.lineJoin='round';
+  ctx.lineCap='round';
+  ctx.beginPath();
+  outline.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.closePath();
+  // Strong dark underlay remains legible on snow and light textures.
+  ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(18,34,44,.92)';
+  ctx.lineWidth=5/Math.max(.32,zoom);ctx.stroke();
+  ctx.setLineDash([9/Math.max(.32,zoom),6/Math.max(.32,zoom)]);
+  ctx.strokeStyle='#ffe39c';
+  ctx.lineWidth=2.8/Math.max(.32,zoom);ctx.stroke();
+  ctx.restore();
+}
 function drawDecorativeFringeTerrain(){
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
   const view=cameraView(),margin=8;
@@ -1232,6 +1257,7 @@ function draw(){
     drawPreviewObjects();
     drawPlacedActors();
   }
+  drawEditorPlayableLimit();
   // A temporary stroke preview is visual only; WorldSurface is committed on
   // pointerup. No hidden draft geometry is persisted by the renderer.
   if(surfaceEditing){
