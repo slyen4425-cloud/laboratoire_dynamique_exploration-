@@ -1,3 +1,12 @@
+## 2026-11-13 — Types de rencontres issus du Bestiaire Combat publié (Builder)
+- START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-live-encounter-elements-20261113`, branche `work/exploration-live-encounter-elements-20261113`.
+- Cause vérifiée : `src/builder/world-builder-main.js` utilisait le catalogue historique `CAPTURE_CREATURE_CATALOG_PREVIEW_V1` figé sur un commit de septembre. L'éditeur 2,5D consommait déjà le bundle officiel Combat.
+- Correction : le World Builder lit le même bundle `capture-author-encounter-bundle-v1` produit depuis la source Combat `main` ; les types `ice` (Glace), `nature` et tous les futurs types publiés sont déduits des éléments réellement présents, sans liste secondaire. Lecture `no-store` en édition pour éviter les espèces anciennes en cache. En cas d'échec, expliquer la provenance manquante et ne pas masquer avec une vieille liste.
+- Aucun changement de probabilités, WorldSurface, gameplay, sauvegardes, moteur, IDs, captures ou assets. Tests ciblés `tests/world-builder-live-encounter-elements-20261113.test.js` ; CI/Pages/validation PC + Android nécessaires avant livraison.
+- Ce lot ne modifie ni les chances neige/route (PR distincte #429), ni les récompenses PNJ, ni la caméra/decor, ni le Combat. Publication GenSRPG distincte, pas automatique.
+
+---
+
 ## 2026-11-13 — Habillage extérieur 2,5D par biome (prototype visuel, lot isolé)
 - Départ : Exploration officiel `main@0c1727f86a62bd8dc428b50bf73d2a4163b30225`. Lot `feat/sculpt-decorative-map-edges-v1`, PR #426 ; uniquement le Labo Exploration. Aucune modification du Hub GenSRPG, du Combat ou de WorldDocument.
 - Objectif validé par le créateur : masquer l’effet de plateforme flottante sur les quatre bords, en priorité l’avant et les côtés, avec différentes variantes selon le biome et personnalisation indépendante.
