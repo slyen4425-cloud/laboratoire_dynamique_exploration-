@@ -152,8 +152,8 @@ import {
   createCaptureCreatureCatalogProvider
 } from '../capture/capture-creature-catalog-provider.js?rev=terrain-family-encounters-v1';
 import {
-  CAPTURE_CREATURE_CATALOG_PREVIEW_V1
-} from '../capture/capture-creature-catalog-preview-v1.js?rev=terrain-family-encounters-v1';
+  loadCaptureShowcaseEncounterSourceV1
+} from '../capture/capture-showcase-encounter-source-v1.js';
 import {
   createMaterialRegistry
 } from '../materials/material-registry.js?rev=terrain-family-perf-gatefix-v1';
@@ -311,10 +311,20 @@ async function rebuildMaterialPipeline() {
 await rebuildMaterialPipeline();
 const terrainCompositor = createBuilderTerrainCompositor();
 
-const captureCreatureCatalog =
-  createCaptureCreatureCatalogProvider(
-    CAPTURE_CREATURE_CATALOG_PREVIEW_V1
-  );
+// Read the same Combat-authored creature transfers as the 2.5D Encounter
+// Tester. A September snapshot must never gate recently published elements.
+// Failed fetches fail closed with an explicit status, not a stale roster.
+let captureCreatureCatalog = null;
+let captureCreatureCatalogError = null;
+try {
+  const captureSource = await loadCaptureShowcaseEncounterSourceV1({
+    fetchImpl: (url, options) => fetch(url, {...options, cache: 'no-store'})
+  });
+  captureCreatureCatalog = createCaptureCreatureCatalogProvider(captureSource);
+} catch (error) {
+  captureCreatureCatalogError = error;
+  console.error('Catalogue de rencontres Combat officiel indisponible', error);
+}
 
 let objectDefinitionCatalog =
   objectDefinitionCatalogV1;
@@ -2514,11 +2524,18 @@ function refreshFamilyEncounterControls() {
   $('family-encounter-chance-value').value =
     `${Math.round(profile.encounterChancePercent)} %`;
 
-  $('family-encounter-catalog-summary').textContent =
-    `Catalogue Capture · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} éléments · rareté propre conservée`;
-
   const container = $('family-encounter-elements');
   container.replaceChildren();
+  if (!captureCreatureCatalog) {
+    $('family-encounter-catalog-summary').textContent =
+      'Catalogue Combat officiel indisponible : ' +
+      (captureCreatureCatalogError?.message ?? 'recharge la page pour réessayer') +
+      '. Aucun ancien catalogue de créatures n’est utilisé.';
+    return;
+  }
+  $('family-encounter-catalog-summary').textContent =
+    `Bestiaire Combat publié · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} types · rareté propre conservée`;
+
   const checked = new Set(
     (profile.elementChances ?? [])
       .filter((entry) => entry.chancePercent > 0)
