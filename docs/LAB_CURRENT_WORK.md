@@ -1,3 +1,12 @@
+## 2026-11-13 — Caméra 2,5D bornée aux vrais contours du terrain en Jouer
+- START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-native-camera-edge-clamp-20261113`, branche `work/exploration-native-camera-edge-clamp-20261113`.
+- Cause : les cartes montées en WorldArea activaients le suivi du héros sans borne, bien que le mode Tester simple borne déjà la caméra. Sur PC grand écran et plein écran, un bord du monde pouvait sortir du cadre et montrer le vide.
+- Correction sans second moteur : `clampSculptNavigationCameraToTerrainV1` applique à la caméra existante les limites déjà calculées par `sculptCameraBounds`. Les intérieurs restent sur leur suivi natif ; les extérieurs montés et le Tester simple utilisent la même fonction de projection, sans affecter collision, hitboxes, mouvements, arènes ni sauvegardes.
+- Ce lot limite le cadrage ; il ne crée pas de nouvelle surface sculptable ni de zone non jouable. Si la carte est plus petite que le viewport à un zoom donné, la vue reste centrée sans agrandir artificiellement les textures. Tests bornes latérales/verticales/zoom et garde de la logique jeu.
+- CI GREEN et vérification visuelle PC plein écran et Android paysage requises. Ne pas déclarer le scintillement Combat global résolu par ce réglage.
+
+---
+
 ## 2026-11-13 — Habillage extérieur 2,5D par biome (prototype visuel, lot isolé)
 - Départ : Exploration officiel `main@0c1727f86a62bd8dc428b50bf73d2a4163b30225`. Lot `feat/sculpt-decorative-map-edges-v1`, PR #426 ; uniquement le Labo Exploration. Aucune modification du Hub GenSRPG, du Combat ou de WorldDocument.
 - Objectif validé par le créateur : masquer l’effet de plateforme flottante sur les quatre bords, en priorité l’avant et les côtés, avec différentes variantes selon le biome et personnalisation indépendante.
