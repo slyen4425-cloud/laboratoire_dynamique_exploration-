@@ -22,6 +22,9 @@ for name in packs:
         for member in files:
             entries.append(dict(path=member.filename, bytes=member.file_size,
                                 type=pathlib.PurePosixPath(member.filename).suffix.lower()))
+        for info in files:
+            if info.filename.endswith("/metadata.json"):
+                print("METADATA",info.filename,archive.read(info).decode("utf-8")[:2200])
         total=sum(e.file_size for e in files)
         by_type=dict(collections.Counter(e["type"] for e in entries))
         print("\nPACKAGE",name,"size",source.stat().st_size,"total_decompressed",total,
