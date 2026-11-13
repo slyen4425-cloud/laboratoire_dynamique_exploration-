@@ -73,7 +73,7 @@ test('WorldDocument round-trip retains decorative sculpt and objects with no new
   assert.equal(final.decorativeFringe.schema,SCULPT_DECORATIVE_FRINGE_SCHEMA);
 });
 
-test('2.5D editor renders fringe in both modes but collision and camera use only the core area',()=>{
+test('2.5D editor renders north fringe only while collision remains on the core area',()=>{
   const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const first=source.indexOf('function navigationWorld(){');
@@ -85,7 +85,9 @@ test('2.5D editor renders fringe in both modes but collision and camera use only
   assert.match(source,/skyFraction:\.12/);
   assert.match(source,/drawDecorativeFringeTerrain\(\)/);
   assert.match(source,/drawDecorativeFringeObjects\(\)/);
-  assert.match(source,/ctx\.clip\('evenodd'\)/);
+  assert.match(source,/if\(chunk\.row>=0\|\|chunk\.col<0/);
+  assert.match(source,/ctx\.clip\(\)/);
+  assert.match(source,/return \{\.\.\.coreBounds,minY,height:coreBounds\.maxY-minY\}/);
   assert.match(source,/screenToDecorativeFringeCell/);
   assert.match(source,/paintSculptDecorativeFringeV1/);
   assert.match(html,/id="scenery-fringe-toggle"/);
