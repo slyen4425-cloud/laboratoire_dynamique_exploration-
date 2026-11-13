@@ -24,7 +24,9 @@ export function normalizeSculptBorderPreview(raw={}){
     });
   }
   return Object.freeze({
-    enabled:raw?.enabled!==false,
+    // The old generated border experiment is retired by default. Only a
+    // deliberate opt-in may display it during migration to sculptable edges.
+    enabled:raw?.enabled===true,
     biome:raw?.biome==='auto'||SCULPT_BORDER_BIOMES.includes(raw?.biome)?raw.biome:'auto',
     sides:Object.freeze(sides)
   });

@@ -64,7 +64,7 @@ import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPre
   appendSculptPreviewActor,removeSculptPreviewActorAt,
   findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3-stairs-visible-r15-ramp-v77';
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
-  SCULPT_SURFACE_MATERIALS} from './world/sculpt-surface-paint.js';
+  SCULPT_SURFACE_MATERIALS,sculptEncounterFamilyForMaterial,alignSculptSurfaceEncounterFamilies} from './world/sculpt-surface-paint.js';
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
 
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
@@ -173,7 +173,7 @@ if(surfaceBaseFamilySelect){
   for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect])
     selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
   surfaceBaseFamilySelect.value=surface.baseTerrainFamilyId;
-  surfacePaintFamilySelect.value=surface.baseTerrainFamilyId;
+  surfacePaintFamilySelect.value=sculptEncounterFamilyForMaterial($('surface-material').value)??surface.baseTerrainFamilyId;
 }
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
@@ -2787,6 +2787,21 @@ function setSurfaceEditing(active){
 surfaceBaseFamilySelect?.addEventListener('change',()=>{
   surfaceCommit(normalizeSculptSurface({...surface,
     baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
+});
+$('surface-material').addEventListener('change',()=>{
+  // Authoring convenience, not a second runtime encounter rule: the selected
+  // texture picks the semantic family that is written into the one WorldSurface.
+  // The author can still override "Famille de terrain peinte" deliberately.
+  const family=sculptEncounterFamilyForMaterial($('surface-material').value);
+  if(family&&surfacePaintFamilySelect)surfacePaintFamilySelect.value=family;
+});
+$('surface-align-families')?.addEventListener('click',()=>{
+  // Legacy authored maps are never rewritten at import. The user chooses an
+  // undoable migration if visual snow/road and encounter family disagree.
+  const aligned=alignSculptSurfaceEncounterFamilies(surface);
+  if(surfaceCommit(aligned))
+    status('Familles de rencontres alignées sur les textures · ↶ Texture pour annuler');
+  else status('Les familles de rencontres correspondent déjà aux textures connues');
 });
 $('surface-width').addEventListener('input',()=>{
   $('surface-width-value').textContent=$('surface-width').value+' cases';
