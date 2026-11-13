@@ -745,6 +745,12 @@ body.sculpt-play-unavailable #play-start-error{
   color:#e8fff7;line-height:1.5;
 }
 #play-start-error a{color:#b2ffe0;border:1px solid #77bba7;padding:12px 18px;border-radius:10px;text-decoration:none}
+#navigation-hud .scenery-editor-v1{border:1px solid #547e7d;border-radius:9px;padding:7px;background:#17343b}
+#navigation-hud .scenery-editor-v1>summary{font-size:.8rem;cursor:pointer;padding:4px 0;min-height:30px}
+#navigation-hud .scenery-editor-fields{display:grid;gap:7px;margin-top:8px}
+#navigation-hud .scenery-editor-fields>label{display:grid;gap:4px;font-size:.77rem}
+#navigation-hud .scenery-editor-fields>label:first-child{display:flex;align-items:center}
+#navigation-hud .scenery-editor-fields button{min-height:40px}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
@@ -1250,6 +1256,47 @@ body.sculpt-play-unavailable #play-start-error{
   <label><input id="navigation-sky-clouds" type="checkbox" checked> Nuages</label>
   <label><input id="navigation-sky-mist" type="checkbox" checked> Brume lointaine</label>
   <label><input id="navigation-sky-stars" type="checkbox" checked> Étoiles (nuit seulement)</label>
+  <details class="scenery-editor-v1" aria-label="Habillage décoratif des bordures">
+    <summary>🌄 Habillage des bordures (prototype)</summary>
+    <div class="scenery-editor-fields">
+      <label><input id="scenery-border-enabled" type="checkbox" checked> Afficher le décor</label>
+      <label>Biome de la carte
+        <select id="scenery-border-biome">
+          <option value="auto">Automatique (terrain de la carte)</option>
+          <option value="plain">Plaine</option>
+          <option value="forest">Forêt</option>
+          <option value="snow">Neige</option>
+          <option value="sand">Désert</option>
+          <option value="mountain">Montagne</option>
+          <option value="volcano">Volcan</option>
+          <option value="sea">Mer / côte</option>
+        </select>
+      </label>
+      <label>Côté à modifier
+        <select id="scenery-border-side">
+          <option value="front">Avant · bas de l’écran</option>
+          <option value="left">Gauche</option>
+          <option value="right">Droite</option>
+          <option value="back">Arrière · horizon</option>
+        </select>
+      </label>
+      <label>Type de décor
+        <select id="scenery-border-style">
+          <option value="auto">Automatique selon le biome</option>
+          <option value="hills">Collines et prairies</option>
+          <option value="forest">Forêt dense</option>
+          <option value="cliffs">Falaises et rochers</option>
+          <option value="mountains">Montagnes</option>
+          <option value="coast">Côte et relief doux</option>
+        </select>
+      </label>
+      <label>Densité <output id="scenery-border-density-value">55 %</output>
+        <input id="scenery-border-density" type="range" min="0" max="100" step="5" value="55">
+      </label>
+      <button id="scenery-border-regenerate" type="button">🎲 Régénérer ce côté</button>
+      <small>Décor hors terrain jouable · essai visuel uniquement, non enregistré dans le monde.</small>
+    </div>
+  </details>
   <label for="navigation-camera-zoom">Distance de caméra
     <output id="navigation-camera-zoom-value" for="navigation-camera-zoom">175 %</output>
     <input id="navigation-camera-zoom" type="range" min="100" max="240" step="5" value="175"
