@@ -2,7 +2,7 @@
 // File bytes belong in its own IndexedDB store, not a WorldDocument or
 // GenSRPG AdventureSession. The existing MapActorVisual and renderer own
 // all scaling, mirror, motion and frame selection.
-import {normalizeMapActorVisual} from './map-actor-visual-model.js';
+import {normalizeMapActorVisual,MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
 
 export const USER_HERO_SCHEMA_V1='gensrpg-exploration-user-hero-v1';
 export const USER_HERO_MAX_IMAGE_BYTES=8*1024*1024;
@@ -39,7 +39,7 @@ function frames(input,base,label,required=false){
 }
 
 export function createUserHeroDefinitionV1({
- id,name,base,mode='image',walk,idle,framesPerSecond=8,
+ id,name,base,mode='image',walk,idle,directions,framesPerSecond=8,
  targetHeight=37,sourceFacingX=1,motion,now
 }={}){
  const prefix=safeId(id);
@@ -47,18 +47,32 @@ export function createUserHeroDefinitionV1({
   throw new TypeError('Hero display name must contain 1..80 characters');
  if(typeof now!=='string'||!Number.isFinite(Date.parse(now)))
   throw new TypeError('Hero createdAt must be ISO date');
- if(mode!=='image'&&mode!=='frames')throw new RangeError('Hero animation mode must be image or frames');
+ if(!['image','frames','directions'].includes(mode))throw new RangeError('Hero animation mode must be image, frames or directions');
  const image=media(base,'base hero');
  const walks=mode==='frames'?frames(walk,image,'walk',true):[];
  const idles=mode==='frames'?frames(idle,image,'idle'):[];
+ const directional=mode==='directions'
+  ?Object.fromEntries(MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(direction=>{
+    const list=frames(directions?.[direction],image,'direction '+direction,true);
+    if(list.length!==6)throw new RangeError('Direction '+direction+' requires six frames');
+    return [direction,list];
+  })):{};
 
  const assets=[{id:prefix+'.base',...image},
   ...idles.map((frame,i)=>({id:prefix+'.idle.'+i,...frame})),
-  ...walks.map((frame,i)=>({id:prefix+'.walk.'+i,...frame}))];
+  ...walks.map((frame,i)=>({id:prefix+'.walk.'+i,...frame})),
+  ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.flatMap(direction=>
+    (directional[direction]??[]).map((frame,i)=>({
+      id:prefix+'.dir.'+direction+'.'+i,...frame
+    }))
+  )];
  const animation=mode==='frames'
   ?{mode:'frames',framesPerSecond,idle:idles.map((_,i)=>prefix+'.idle.'+i),
     walk:walks.map((_,i)=>prefix+'.walk.'+i)}
-  :{mode:'image'};
+  :mode==='directions'?{mode:'directions',framesPerSecond,
+    directions:Object.fromEntries(MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(dir=>[
+      dir,directional[dir].map((_,i)=>prefix+'.dir.'+dir+'.'+i)
+    ]))}:{mode:'image'};
  const mapVisual=normalizeMapActorVisual({
   role:'hero',assetId:prefix+'.base',targetHeight,
   sourceFacingX,
@@ -93,7 +107,9 @@ export function validateUserHeroDefinitionV1(record){
   entries.set(asset.id,media(asset,'Hero asset '+asset.id));
  }
  const allowed=[visual.assetId,...(visual.animation.mode==='frames'
-  ?[...visual.animation.idle,...visual.animation.walk]:[])];
+  ?[...visual.animation.idle,...visual.animation.walk]
+  :visual.animation.mode==='directions'
+    ?MAP_ACTOR_COMPASS_DIRECTIONS_V1.flatMap(dir=>visual.animation.directions[dir]):[])];
  if(allowed.length!==record.assets.length||allowed.some(ref=>!entries.has(ref)))
   throw new RangeError('Hero asset references must be complete and exact');
  const base=entries.get(visual.assetId);
