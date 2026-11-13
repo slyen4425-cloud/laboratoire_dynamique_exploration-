@@ -763,7 +763,8 @@ function navigationBackground(){
     navTerrainCache.texture===currentTexture&&navTerrainCache.signature===signature&&
     navTerrainCache.waterTexture===ribbonTextures.water?.texture&&
     navTerrainCache.roadTexture===ribbonTextures.road?.texture&&
-    navTerrainCache.paintSurface===surface;
+    navTerrainCache.paintSurface===surface&&
+    navTerrainCache.fringePresent===Boolean(decorativeFringe);
   if(same)return navTerrainCache;
   const paddingX=18,paddingY=7*SCULPT_TILE.rise+18;
   const raster=document.createElement('canvas');
@@ -779,11 +780,12 @@ function navigationBackground(){
     cliffMoss:$('rock-moss')?.checked,
     overlays:ribbonTextures,
      sphereWallImages,
-    paintSurface:surface,paintImages:surfacePaintImages});
+    paintSurface:surface,paintImages:surfacePaintImages,
+    drawOuterSouthRim:!decorativeFringe});
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
-    paintSurface:surface,image:raster,scale,paddingX,paddingY,result};
+    paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
 }
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
@@ -1004,7 +1006,8 @@ function decorativeFringeRaster(chunk){
     texture:currentTexture,rockPalette:$('rock').value,
     cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
-    sphereWallImages,overlays:{},paintSurface:null,paintImages:null});
+    sphereWallImages,overlays:ribbonTextures,paintSurface:null,paintImages:null,
+    drawOuterSouthRim:false});
   const raster={terrain:chunk.terrain,texture:currentTexture,signature,
     image,scale,paddingX,paddingY};
   fringeRasterCache.set(key,raster);
@@ -1104,7 +1107,8 @@ function draw(){
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
-      sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
+      sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
+      drawOuterSouthRim:!decorativeFringe});
   }
   lastRenderStats=result;
   drawDecorativeFringeObjects();
