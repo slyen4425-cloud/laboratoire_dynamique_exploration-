@@ -1,3 +1,11 @@
+## 2026-11-13 — Rétractation du prototype de bordures automatiques (choix du créateur)
+- START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-retire-auto-borders-20261113`, branche `work/exploration-retire-auto-borders-20261113`.
+- L'ancien générateur décoratif 2,5D ne s'active plus par défaut. Son code source historique et ses réglages d'essai ne sont pas supprimés (pas de perte d'assets), mais les cartes n'affichent plus ces fausses bordures automatiquement.
+- Ce lot ne prétend **pas** fournir la nouvelle surface sculptable + limites jouables ; elle nécessite un contrat unique de WorldArea / Collision World et caméra, à valider séparément sur PC et téléphone. Aucun terrain, collision ou sauvegarde modifié ici.
+- Tests `tests/sculpt-border-scenery-v1.test.js` adaptés (désactivation par défaut, opt-in explicite), CI et Chromium requis avant validation.
+
+---
+
 ## 2026-11-13 — Habillage extérieur 2,5D par biome (prototype visuel, lot isolé)
 - Départ : Exploration officiel `main@0c1727f86a62bd8dc428b50bf73d2a4163b30225`. Lot `feat/sculpt-decorative-map-edges-v1`, PR #426 ; uniquement le Labo Exploration. Aucune modification du Hub GenSRPG, du Combat ou de WorldDocument.
 - Objectif validé par le créateur : masquer l’effet de plateforme flottante sur les quatre bords, en priorité l’avant et les côtés, avec différentes variantes selon le biome et personnalisation indépendante.
