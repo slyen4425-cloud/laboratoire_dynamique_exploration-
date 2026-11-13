@@ -1,3 +1,14 @@
+## 2026-11-13 — 12 héros officiels / 8 directions × 6 frames — raccord modèle et sélection
+- Base main `191b018476005b3802739566f30a5597da23b1c0` ; checkpoint `checkpoint/exploration-start-heroes12-20261113` ; branche `work/exploration-heroes-12-assets-20261113`.
+- Trois ZIP auteur conservés sans modification. Source unique publiée : `assets/exploration/actors/official/catalog.json` + 12 jeux de PNG individuels (576 frames et modèle face/dos). Aucun spritesheet dérivé ni copie de moteur Combat.
+- `MapActorVisual.animation.mode='directions'` est un mode additif de l'unique renderer et un déplacement XY du seul moteur Exploration. Huit orientations, six frames par orientation, pivot constant, fps 8 et repos sur frame 0.
+- `Hero Editor` affiche la galerie officielle ; clic « Utiliser ce modèle » installe une définition `hero.user.<UUID>` via le `UserHeroStore` existant (mêmes données que la sélection Aventure). Les anciens héros à image fixe ou animation simple restent compatibles.
+- Tests de bibliothèque (comptage, PNG RGBA 128×160, unicité des 576 assets), configuration/renderer directionnel, véritable Chromium sur éditeur et persistance IndexedDB. CI sur SHA exact et Pages main requis avant annonce d'une livraison.
+- Publisher : les ZIP auteur ne doivent jamais être inclus dans le dossier Pages. Cette politique ne supprime aucun ZIP de la source Git.
+- Aucun raccord direct vers Dungeon, Survie, moteur de combat ou sauvegardes existantes. Aucun nom/ID de héros à saisir manuellement.
+
+---
+
 ## 2026-11-13 — Caméra 2,5D bornée aux vrais contours du terrain en Jouer
 - START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-native-camera-edge-clamp-20261113`, branche `work/exploration-native-camera-edge-clamp-20261113`.
 - Cause : les cartes montées en WorldArea activaients le suivi du héros sans borne, bien que le mode Tester simple borne déjà la caméra. Sur PC grand écran et plein écran, un bord du monde pouvait sortir du cadre et montrer le vide.
