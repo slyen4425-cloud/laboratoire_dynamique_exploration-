@@ -33,9 +33,9 @@ export function alignSculptSurfaceEncounterFamilies(raw){
       ?{...feature,terrainFamilyId:family}
       :feature;
   });
-  const base=sculptEncounterFamilyForMaterial(surface.baseMaterialId);
+  // Never rewrite the area's base biome from its placeholder base image:
+  // snow world presets may legitimately use a legacy grass background material.
   return normalizeSculptSurface({...surface,
-    baseTerrainFamilyId:base??surface.baseTerrainFamilyId,
     routes:reconcile(surface.routes),zones:reconcile(surface.zones)
   });
 }
