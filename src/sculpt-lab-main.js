@@ -176,6 +176,8 @@ window.__sculptFringeProbe=()=>Object.freeze({
   editing:fringeEditing,active:!!decorativeFringe,
   chunks:decorativeFringe?.chunks.length??0,
   objects:decorativeFringe?.objects.length??0,
+  levelSum:decorativeFringe?.chunks.reduce((sum,c)=>
+    sum+c.terrain.levels.reduce((a,b)=>a+b,0),0)??0,
   initialWidth:terrain.width,initialHeight:terrain.height,
   margin:8,pan:{...pan},zoom,
   bounds:cameraBounds(),
