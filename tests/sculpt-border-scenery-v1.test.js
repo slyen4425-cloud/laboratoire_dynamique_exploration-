@@ -28,6 +28,8 @@ test('border defaults are independent and do not mutate source',()=>{
     right:{style:'forest',density:-30},left:{style:'invalid'}}};
   const snap=JSON.stringify(raw);
   const config=normalizeSculptBorderPreview(raw);
+  assert.equal(config.enabled,false,'no automatic scenery is painted over user maps');
+  assert.equal(normalizeSculptBorderPreview({enabled:true}).enabled,true);
   assert.equal(JSON.stringify(raw),snap);
   assert.equal(config.biome,'snow');
   assert.equal(config.sides.front.style,'cliffs');
@@ -47,7 +49,7 @@ test('biome chosen from author terrain family, with a safe fallback',()=>{
   assert.equal(sculptBorderStyle('forest','cliffs'),'cliffs');
 });
 test('render is deterministic for one area and can regenerate each side independently',()=>{
-  const config={...normalizeSculptBorderPreview({biome:'forest'})};
+  const config={...normalizeSculptBorderPreview({biome:'forest',enabled:true})};
   const first=canvasProbe(),second=canvasProbe(),other=canvasProbe();
   assert.deepEqual(drawSculptBorderExtension(first.ctx,{terrain,config,mapKey:'area-A'}),
     {sides:4,features:50}); // density 55% => 15 + 10 + 10 + 15
@@ -56,7 +58,7 @@ test('render is deterministic for one area and can regenerate each side independ
   drawSculptBorderExtension(other.ctx,{terrain,config,mapKey:'area-B'});
   assert.notDeepEqual(first.calls,other.calls);
   assert.notEqual(sculptBorderSeed('area-A'),sculptBorderSeed('area-B'));
-  const modified=normalizeSculptBorderPreview({biome:'forest',
+  const modified=normalizeSculptBorderPreview({biome:'forest',enabled:true,
     sides:{front:{revision:1}}});
   const regenerated=canvasProbe();
   drawSculptBorderExtension(regenerated.ctx,{terrain,config:modified,mapKey:'area-A'});
@@ -74,7 +76,7 @@ test('disabling scenery never touches the terrain model and paints nothing',()=>
 test('distant backdrop renders only decorative Canvas paths',()=>{
   const {ctx,calls}=canvasProbe();
   drawSculptDistantBorders(ctx,{width:1200,height:800,
-    config:{...normalizeSculptBorderPreview({biome:'snow'}),biome:'snow'},mapKey:'area-snow'});
+    config:{...normalizeSculptBorderPreview({biome:'snow',enabled:true}),biome:'snow'},mapKey:'area-snow'});
   assert.equal(calls.filter(x=>x[0]==='fill').length,2);
   assert.equal(calls[0][0],'save');
   assert.equal(calls.at(-1)[0],'restore');

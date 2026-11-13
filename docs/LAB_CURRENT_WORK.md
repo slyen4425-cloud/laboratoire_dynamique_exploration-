@@ -1,3 +1,11 @@
+## 2026-11-13 — Rétractation du prototype de bordures automatiques (choix du créateur)
+- START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-retire-auto-borders-20261113`, branche `work/exploration-retire-auto-borders-20261113`.
+- L'ancien générateur décoratif 2,5D ne s'active plus par défaut. Son code source historique et ses réglages d'essai ne sont pas supprimés (pas de perte d'assets), mais les cartes n'affichent plus ces fausses bordures automatiquement.
+- Ce lot ne prétend **pas** fournir la nouvelle surface sculptable + limites jouables ; elle nécessite un contrat unique de WorldArea / Collision World et caméra, à valider séparément sur PC et téléphone. Aucun terrain, collision ou sauvegarde modifié ici.
+- Tests `tests/sculpt-border-scenery-v1.test.js` adaptés (désactivation par défaut, opt-in explicite), CI et Chromium requis avant validation.
+
+---
+
 ## 2026-11-13 — Types de rencontres issus du Bestiaire Combat publié (Builder)
 - START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-live-encounter-elements-20261113`, branche `work/exploration-live-encounter-elements-20261113`.
 - Cause vérifiée : `src/builder/world-builder-main.js` utilisait le catalogue historique `CAPTURE_CREATURE_CATALOG_PREVIEW_V1` figé sur un commit de septembre. L'éditeur 2,5D consommait déjà le bundle officiel Combat.
