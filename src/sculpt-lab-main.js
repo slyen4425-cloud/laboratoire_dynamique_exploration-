@@ -962,9 +962,8 @@ function cameraView(){
 function cameraBounds(){
   const view=cameraView(),coreW=terrain.width*SCULPT_TILE.width,
     coreH=terrain.height*SCULPT_TILE.height;
-  // The same native camera follows the same playable hero. Only its
-  // PRESENTATION stops at the eighth decorative row in the south, and
-  // reveals a short sky strip in the north. Never extends Collision World.
+  // Camera follows the same playable hero. Decorative display is north-only;
+  // south and lateral camera limits remain at the playable terrain boundary.
   const coreBounds=sculptCameraBounds(view,coreW,coreH,16*SCULPT_TILE.rise);
   if(navigationTesting){
     return decorativeFringe&&!activeInteriorId&&!sculptWorldCurrentInterior()
@@ -977,16 +976,14 @@ function cameraBounds(){
   }
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
     return coreBounds;
-  const marginX=8*SCULPT_TILE.width,marginY=8*SCULPT_TILE.height;
-  const points=[
-    sculptCameraProject(view,-marginX,-marginY-16*SCULPT_TILE.rise),
-    sculptCameraProject(view,coreW+marginX,-marginY-16*SCULPT_TILE.rise),
-    sculptCameraProject(view,-marginX,coreH+marginY),
-    sculptCameraProject(view,coreW+marginX,coreH+marginY)
-  ];
-  const ys=points.map(p=>p.y),minX=-marginX,maxX=coreW+marginX;
-  const minY=Math.min(...ys),maxY=Math.max(...ys);
-  return {minX,maxX,minY,maxY,width:maxX-minX,height:maxY-minY};
+  // Editor can show the northern decoration, not side or southern padding.
+  const north=8*SCULPT_TILE.height;
+  const northY=Math.min(
+    sculptCameraProject(view,0,-north-16*SCULPT_TILE.rise).y,
+    sculptCameraProject(view,coreW,-north-16*SCULPT_TILE.rise).y
+  );
+  const minY=Math.min(coreBounds.minY,northY);
+  return {...coreBounds,minY,height:coreBounds.maxY-minY};
 }
 function fit(){
   // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
@@ -1065,16 +1062,15 @@ function drawDecorativeFringeTerrain(){
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
   const view=cameraView(),margin=8;
   ctx.save();
-  // Tester works in the unchanged projected camera; authoring already uses
-  // the V38 editor transform. Both draw from the same world coordinates.
+  // Draw only the north strip, clipped to the playable map's lateral width.
+  // Fringe data at other edges remains saved and untouched.
   if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   ctx.beginPath();
-  ctx.rect(-margin*SCULPT_TILE.width,-margin*SCULPT_TILE.height,
-    (terrain.width+2*margin)*SCULPT_TILE.width,
-    (terrain.height+2*margin)*SCULPT_TILE.height);
-  ctx.rect(0,0,terrain.width*SCULPT_TILE.width,terrain.height*SCULPT_TILE.height);
-  ctx.clip('evenodd');
+  ctx.rect(0,-margin*SCULPT_TILE.height,
+    terrain.width*SCULPT_TILE.width,margin*SCULPT_TILE.height);
+  ctx.clip();
   for(const chunk of decorativeFringe.chunks){
+    if(chunk.row>=0||chunk.col<0||chunk.col>=terrain.width)continue;
     const raster=decorativeFringeRaster(chunk);
     ctx.drawImage(raster.image,
       chunk.col*SCULPT_TILE.width-raster.paddingX,
@@ -1087,6 +1083,8 @@ function drawDecorativeFringeObjects(){
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
   const view=cameraView();
   const objects=resolveWorldObjectPlacements(decorativeFringe.objects,objectDefinitionCatalogV1)
+    .filter(o=>o.transform.y<0&&o.transform.x>=0&&
+      o.transform.x<terrain.width*SCULPT_TILE.width)
     .sort((a,b)=>a.transform.y-b.transform.y);
   for(const object of objects){
     const col=Math.floor(object.transform.x/SCULPT_TILE.width/8)*8;
