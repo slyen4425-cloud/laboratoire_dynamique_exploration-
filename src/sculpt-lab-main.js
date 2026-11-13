@@ -2021,6 +2021,7 @@ function drawNavigationActor(){
     navigationActorRenderer.draw(ctx,{
       camera:{x:0,y:0},
       actors:[{x:projected.x,y:projected.y,facingX:navActor.facingX,
+        directionX:navActor.directionX??0,directionY:navActor.directionY??1,
         moving:navActor.moving,mapVisual:navigationActorVisual,
          visualScale:sculptAltitudeVisualState(navVisualLevel??navHeight()).heroScale}],
       timeSeconds:navVisualTime
@@ -2035,7 +2036,7 @@ function navigationSpawn(){
       ?sculptWorldDraft.initialSpawnId:worldArea.spawns[0]?.id));
   if(worldSpawn&&Number.isFinite(worldSpawn.x)&&Number.isFinite(worldSpawn.y)){
     const candidate={x:worldSpawn.x,y:worldSpawn.y,radius:5,
-      locomotion:{modes:['ground']},facingX:1,moving:false};
+      locomotion:{modes:['ground']},facingX:1,directionX:0,directionY:1,moving:false};
     const level=sculptNavigationSample(terrain,candidate.x,candidate.y,
       {cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height});
     if(level?.waterDepth===0&&
@@ -2293,6 +2294,10 @@ function navigationTick(time){
       }
       navActor.moving=moved>.001;
       if(intent.x!==0)navActor.facingX=intent.x<0?-1:1;
+      if(navActor.moving){
+        navActor.directionX=intent.x;
+        navActor.directionY=intent.y;
+      }
       if(sculptPlayActive&&moved>.001&&time-playLastCheckpointAt>1500){
         persistPlayNavigationCheckpoint();playLastCheckpointAt=time;
       }
