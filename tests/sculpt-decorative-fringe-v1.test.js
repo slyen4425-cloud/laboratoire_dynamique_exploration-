@@ -80,7 +80,9 @@ test('2.5D editor renders fringe in both modes but collision and camera use only
   const last=source.indexOf('function navigationMaxStep(){',first);
   assert.ok(first>0&&last>first);
   assert.doesNotMatch(source.slice(first,last),/decorativeFringe/);
-  assert.match(source,/if\(!decorativeFringe\|\|navigationTesting\|\|activeInteriorId\|\|sculptWorldCurrentInterior\(\)\)/);
+  assert.match(source,/sculptExteriorFringeCameraBoundsV1/);
+  assert.match(source,/fringeRows:8/);
+  assert.match(source,/skyFraction:\.12/);
   assert.match(source,/drawDecorativeFringeTerrain\(\)/);
   assert.match(source,/drawDecorativeFringeObjects\(\)/);
   assert.match(source,/ctx\.clip\('evenodd'\)/);
@@ -88,4 +90,19 @@ test('2.5D editor renders fringe in both modes but collision and camera use only
   assert.match(source,/paintSculptDecorativeFringeV1/);
   assert.match(html,/id="scenery-fringe-toggle"/);
   assert.match(html,/hors zone jouable/);
+});
+
+test('80 by 64 allows eight exterior decorative cells on all sides',()=>{
+  const maximum={...raw,width:80*28,height:64*21};
+  const ring=createSculptDecorativeFringeV1(maximum);
+  assert.ok(ring.chunks.length>0&&ring.chunks.length<=80);
+  for(const [x,y] of [[-8,0],[87,10],[10,-8],[10,71]])
+    assert.equal(sculptDecorativeFringeCellIsOuterV1(maximum,x,y),true);
+  for(const [x,y] of [[-9,0],[88,0],[0,-9],[0,72],[0,0],[79,63]])
+    assert.equal(sculptDecorativeFringeCellIsOuterV1(maximum,x,y),false);
+  const painted=paintSculptDecorativeFringeV1(ring,maximum,
+    {col:80,row:63,mode:'raise',radius:.5,strength:1});
+  assert.equal(painted.schema,SCULPT_DECORATIVE_FRINGE_SCHEMA);
+  assert.equal(maximum.width,2240);
+  assert.equal(maximum.height,1344);
 });
