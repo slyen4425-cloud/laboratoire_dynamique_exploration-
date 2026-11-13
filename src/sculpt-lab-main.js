@@ -982,6 +982,78 @@ function center(){
   pan={x:Math.round((width-bounds.width*zoom)/2-bounds.minX*zoom),
     y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
 }
+// Render with the existing Sculpt terrain renderer. Chunk rasters cache static
+// background relief; no extra per-frame terrain engine or gameplay collision.
+function decorativeFringeRaster(chunk){
+  const key=chunk.col+':'+chunk.row;
+  const signature=[$('rock').value,displayedBaseMaterialId(),
+    cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked].join('|');
+  const previous=fringeRasterCache.get(key);
+  if(previous?.terrain===chunk.terrain&&previous.texture===currentTexture&&
+     previous.signature===signature)return previous;
+  const paddingX=18,paddingY=16*SCULPT_TILE.rise+18;
+  const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
+  const image=document.createElement('canvas');
+  image.width=Math.ceil((8*SCULPT_TILE.width+2*paddingX)*scale);
+  image.height=Math.ceil((8*SCULPT_TILE.height+paddingY+48)*scale);
+  const context=image.getContext('2d',{alpha:true});
+  context.setTransform(scale,0,0,scale,0,0);
+  context.translate(paddingX,paddingY);
+  drawSculptTerrain(context,{terrain:chunk.terrain,
+    material:registry.require(displayedBaseMaterialId(),'surface'),
+    texture:currentTexture,rockPalette:$('rock').value,
+    cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
+    cliffMoss:$('rock-moss')?.checked,
+    sphereWallImages,overlays:{},paintSurface:null,paintImages:null});
+  const raster={terrain:chunk.terrain,texture:currentTexture,signature,
+    image,scale,paddingX,paddingY};
+  fringeRasterCache.set(key,raster);
+  return raster;
+}
+function drawDecorativeFringeTerrain(){
+  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const view=cameraView(),margin=8;
+  ctx.save();
+  // Tester works in the unchanged projected camera; authoring already uses
+  // the V38 editor transform. Both draw from the same world coordinates.
+  if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+  ctx.beginPath();
+  ctx.rect(-margin*SCULPT_TILE.width,-margin*SCULPT_TILE.height,
+    (terrain.width+2*margin)*SCULPT_TILE.width,
+    (terrain.height+2*margin)*SCULPT_TILE.height);
+  ctx.rect(0,0,terrain.width*SCULPT_TILE.width,terrain.height*SCULPT_TILE.height);
+  ctx.clip('evenodd');
+  for(const chunk of decorativeFringe.chunks){
+    const raster=decorativeFringeRaster(chunk);
+    ctx.drawImage(raster.image,
+      chunk.col*SCULPT_TILE.width-raster.paddingX,
+      chunk.row*SCULPT_TILE.height-raster.paddingY,
+      raster.image.width/raster.scale,raster.image.height/raster.scale);
+  }
+  ctx.restore();
+}
+function drawDecorativeFringeObjects(){
+  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const view=cameraView();
+  const objects=resolveWorldObjectPlacements(decorativeFringe.objects,objectDefinitionCatalogV1)
+    .sort((a,b)=>a.transform.y-b.transform.y);
+  for(const object of objects){
+    const col=Math.floor(object.transform.x/SCULPT_TILE.width/8)*8;
+    const row=Math.floor(object.transform.y/SCULPT_TILE.height/8)*8;
+    const chunk=decorativeFringe.chunks.find(c=>c.col===col&&c.row===row);
+    if(!chunk)continue;
+    const x=col*SCULPT_TILE.width,y=row*SCULPT_TILE.height;
+    const local={...object,transform:{...object.transform,
+      x:object.transform.x-x,y:object.transform.y-y}};
+    ctx.save();
+    if(navigationTesting){
+      const point=sculptCameraProject(view,x,y);
+      ctx.translate(point.x,point.y);
+    }else ctx.translate(x,y);
+    drawPreviewObject(local,{visualTerrain:chunk.terrain,decorative:true});
+    ctx.restore();
+  }
+}
 function draw(){
   framePending=false;
   if(sculptBorderUiAreaKey!==sculptBorderAreaKey())syncSculptBorderControls();
@@ -1015,6 +1087,7 @@ function draw(){
   // Editor keeps the published V38 exact inverse pointer projection. In
   // Tester, project only the background texture, not standing actor sprites.
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+  drawDecorativeFringeTerrain();
   let result;
   if(navigationTesting||objectEditing||!drawing){
     // Reuse the EXISTING terrain-only raster while editing object placements.
@@ -1034,6 +1107,7 @@ function draw(){
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
   }
   lastRenderStats=result;
+  drawDecorativeFringeObjects();
   if(activeInteriorId||sculptWorldCurrentInterior()){
     // Draw rooms with the same single wall and doorway renderer.
     ctx.save();
@@ -2595,11 +2669,11 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
 }
-function drawPreviewObject(object,{foregroundRailOnly=false}={}){
+function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrain,decorative=false}={}){
   // V77: the ramp is terrain, not a bitmap billboard. Draw its quad in the
   // shared world projection, including its genuine rise from foot to head.
   if(object.kind==='ramp'){
-    drawSculptRamp(ctx,object,terrain,{
+    drawSculptRamp(ctx,object,visualTerrain,{
       view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       texture:currentTexture,
@@ -2610,7 +2684,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   const art=objectImage(object.visual?.assetId);
   if(!art||(art instanceof Image&&!art.complete)||
      !(art.naturalWidth??art.width))return;
-  const rect=sculptObjectVisualRect(object,terrain,{
+  const rect=sculptObjectVisualRect(object,visualTerrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
   const {width,height}=rect;
   const artShift=sculptBridgeDeckArtShift(rect,object);
@@ -2642,7 +2716,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
     drawWorldObjectSprite(ctx,art,waterfallArt,
       {x:-width/2,y:-height+artShift,width,height},performance.now()/1000);
   else ctx.drawImage(art,-width/2,-height+artShift,width,height);
-  if(!foregroundRailOnly&&objectEditing&&objectSelectedId===object.id){
+  if(!foregroundRailOnly&&objectEditing&&!decorative&&objectSelectedId===object.id){
     ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
     ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height+artShift,width,height);
   }
