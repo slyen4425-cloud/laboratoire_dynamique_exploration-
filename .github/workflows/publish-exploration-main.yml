@@ -180,8 +180,8 @@ jobs:
           for path in sculpt-lab.html world-assembler.html play.html \
             src/sculpt-lab-main.js src/builder/world-assembler-main.js \
             combat-preview/examples/dom-demo/exploration-encounter.js \
-            capture-assets/data/assets/catalog/global-visual-assets.v1.json
-            assets/exploration/actors/official/catalog.json
+            capture-assets/data/assets/catalog/global-visual-assets.v1.json \
+            assets/exploration/actors/official/catalog.json \
             assets/exploration/actors/official/01_heros_bleu/frames/S/00.png; do
             curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$base/$path?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-live-probe
             test -s /tmp/exploration-live-probe
