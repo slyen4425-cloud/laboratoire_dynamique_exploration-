@@ -1387,8 +1387,8 @@ function recordDecorativeFringe(previous){
 }
 function paintDecorativeFringeCell(cell){
   const mode=selectedMode;
-  if(!['raise','dig','flatten','smooth','plateau','cliff-round',
-        'water-fill','water-lower','water-erase'].includes(mode)){
+  if(!['raise','dig','flatten','smooth','plateau',
+        'water-fill','water-rise','water-lower','water-erase','water-smooth'].includes(mode)){
     status('Décor extérieur : choisis un pinceau Terre ou Eau, sans pente ni sphère pour le moment.');
     return false;
   }
