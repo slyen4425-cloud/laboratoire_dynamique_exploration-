@@ -11,6 +11,10 @@ import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1} from './render/sculpt-navigation-camera-clamp-v1.js';
+import {
+  createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
+  paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
+} from './world/sculpt-decorative-fringe-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {normalizeSculptBorderPreview,resolveSculptBorderBiome,
@@ -163,6 +167,10 @@ let npcCatalogLoading=false;
 let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
 let npcRewardChoices=Object.freeze([]),npcRewardRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
+// Same WorldArea authoring data; fringe cells are never passed to Collision World.
+let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
+let fringeHistory=[],fringeRedo=[];
+const fringeRasterCache=new Map();
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
 // supports its existing WorldSurface authoring without a second control path.
 const surfaceBaseFamilySelect=$('surface-base-family');
@@ -937,8 +945,22 @@ function cameraView(){
     :sculptCameraView($('camera-view').value);
 }
 function cameraBounds(){
-  return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
-    terrain.height*SCULPT_TILE.height,16*SCULPT_TILE.rise);
+  const view=cameraView(),coreW=terrain.width*SCULPT_TILE.width,
+    coreH=terrain.height*SCULPT_TILE.height;
+  // In Jouer always clamp to the ORIGINAL playable rectangle. The editor
+  // alone can zoom/fit the eight decorative cells surrounding it.
+  if(!decorativeFringe||navigationTesting||activeInteriorId||sculptWorldCurrentInterior())
+    return sculptCameraBounds(view,coreW,coreH,16*SCULPT_TILE.rise);
+  const marginX=8*SCULPT_TILE.width,marginY=8*SCULPT_TILE.height;
+  const points=[
+    sculptCameraProject(view,-marginX,-marginY-16*SCULPT_TILE.rise),
+    sculptCameraProject(view,coreW+marginX,-marginY-16*SCULPT_TILE.rise),
+    sculptCameraProject(view,-marginX,coreH+marginY),
+    sculptCameraProject(view,coreW+marginX,coreH+marginY)
+  ];
+  const ys=points.map(p=>p.y),minX=-marginX,maxX=coreW+marginX;
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  return {minX,maxX,minY,maxY,width:maxX-minX,height:maxY-minY};
 }
 function fit(){
   // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
@@ -957,7 +979,7 @@ function fit(){
 }
 function center(){
   const {width,height}=dimensions(),bounds=cameraBounds();
-  pan={x:Math.round((width-bounds.width*zoom)/2),
+  pan={x:Math.round((width-bounds.width*zoom)/2-bounds.minX*zoom),
     y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
 }
 function draw(){
@@ -3933,13 +3955,18 @@ $('interior-wall-redo').addEventListener('click',()=>{
 // V79 isolated, reversible area authoring. No reload, no alternative camera or
 // gameplay collision engine; portal links use WorldArea/Portal v1 throughout.
 function captureSculptArea(){
-  return {terrain,objects:placedObjects,actors:placedActors,surface};
+  return {terrain,objects:placedObjects,actors:placedActors,surface,
+    ...(decorativeFringe?{decorativeFringe}:{})};
 }
 function mountSculptArea(snapshot){
   closeNpcDialogue();
   if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
   surface=snapshot.surface;
+  decorativeFringe=snapshot.decorativeFringe??null;
+  fringeEditing=false;fringeGesture=null;fringeHistory=[];fringeRedo=[];
+  fringeRasterCache.clear();
+  if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
   actorHistory=[];actorRedo=[];surfaceHistory=[];surfaceRedo=[];
   objectSelectedId=null;actorSelectedId=null;
