@@ -18,13 +18,13 @@ test('Jouer has its own real menu rather than opening a Builder Tester',()=>{
  assert.match(read('sculpt-lab.html'),/body\.sculpt-play-mode \.editor-switch/);
 });
 
-test('Pages artifact must stage play menu, game module and first-party route',()=>{
- const flow=read('.github/workflows/publish-v81-main.yml');
- assert.match(flow,/cp encounter-source\/play\.html "\$preview\/"/);
- assert.match(flow,/test -s "\$preview\/src\/play\/exploration-play-session\.js"/);
- assert.match(flow,/name: Stage public Jouer entry alongside canonical world/);
- assert.match(flow,/site\/play\.html/);
- assert.match(flow,/name: Verify Jouer entry after Pages deployment/);
+test('Pages artifact stages the native Jouer menu directly at official main root',()=>{
+ const flow=read('.github/workflows/publish-exploration-main.yml');
+ assert.match(flow,/test -s site\/play\.html/);
+ assert.match(flow,/test -s site\/src\/sculpt-lab-main\.js/);
+ assert.match(flow,/name: Prove the exact main code, native play, Combat and legacy redirects over HTTPS/);
+ assert.match(flow,/curl -fsSL "\$base\/play\.html\?sha=/);
+ assert.match(flow,/id="play-new"/);
 });
 
 test('native Play menu and real Sculpt runtime retain GenSRPG scoped navigation across reload and return',()=>{
