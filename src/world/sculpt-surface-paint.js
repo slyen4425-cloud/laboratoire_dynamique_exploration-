@@ -3,12 +3,12 @@
 import {normalizeWorldSurface} from './surface-model.js';
 
 export const SCULPT_SURFACE_MATERIALS=Object.freeze([
-  Object.freeze({id:'road.dirt',kind:'route',label:'Route de terre',assetKind:'path'}),
-  Object.freeze({id:'grass.forest',kind:'zone',label:'Herbe',assetKind:'surface'}),
-  Object.freeze({id:'ground.forest_floor',kind:'zone',label:'Terre forestière',assetKind:'surface'}),
-  Object.freeze({id:'ground.sand',kind:'zone',label:'Sable',assetKind:'surface'}),
-  Object.freeze({id:'ground.snow',kind:'zone',label:'Neige',assetKind:'surface'}),
-  Object.freeze({id:'ground.mountain_rock',kind:'zone',label:'Sol rocheux',assetKind:'surface'}),
+  Object.freeze({id:'road.dirt',defaultTerrainFamilyId:'road',kind:'route',label:'Route de terre',assetKind:'path'}),
+  Object.freeze({id:'grass.forest',defaultTerrainFamilyId:'forest',kind:'zone',label:'Herbe',assetKind:'surface'}),
+  Object.freeze({id:'ground.forest_floor',defaultTerrainFamilyId:'forest',kind:'zone',label:'Terre forestière',assetKind:'surface'}),
+  Object.freeze({id:'ground.sand',defaultTerrainFamilyId:'sand',kind:'zone',label:'Sable',assetKind:'surface'}),
+  Object.freeze({id:'ground.snow',defaultTerrainFamilyId:'snow',kind:'zone',label:'Neige',assetKind:'surface'}),
+  Object.freeze({id:'ground.mountain_rock',defaultTerrainFamilyId:'mountain',kind:'zone',label:'Sol rocheux',assetKind:'surface'}),
   Object.freeze({id:'floor.wood.house',kind:'zone',label:'Parquet chêne',assetKind:'surface'}),
   Object.freeze({id:'floor.wood.dark',kind:'zone',label:'Bois foncé',assetKind:'surface'}),
   Object.freeze({id:'floor.tile.light',kind:'zone',label:'Carrelage clair',assetKind:'surface'}),
@@ -17,6 +17,29 @@ export const SCULPT_SURFACE_MATERIALS=Object.freeze([
 ]);
 export const SCULPT_SURFACE_LIMIT=80;
 const lookup=new Map(SCULPT_SURFACE_MATERIALS.map(x=>[x.id,x]));
+/* Painter-authoring default only: the persisted WorldSurface remains the
+   unique encounter authority. Unknown/indoor materials keep their author's
+   semantic family rather than guessing from their picture. */
+export function sculptEncounterFamilyForMaterial(materialId){
+  return lookup.get(materialId)?.defaultTerrainFamilyId??null;
+}
+// Explicit opt-in repair for older maps with a painted texture and mismatched
+// semantic family. Preserves IDs, original geometry, collisions and save format.
+export function alignSculptSurfaceEncounterFamilies(raw){
+  const surface=normalizeSculptSurface(raw);
+  const reconcile=(items)=>items.map(feature=>{
+    const family=sculptEncounterFamilyForMaterial(feature.materialId);
+    return family&&family!==feature.terrainFamilyId
+      ?{...feature,terrainFamilyId:family}
+      :feature;
+  });
+  // Never rewrite the area's base biome from its placeholder base image:
+  // snow world presets may legitimately use a legacy grass background material.
+  return normalizeSculptSurface({...surface,
+    routes:reconcile(surface.routes),zones:reconcile(surface.zones)
+  });
+}
+
 const cleanPoints=(points)=>Array.isArray(points)?points.filter(p=>
   Number.isFinite(p?.x)&&Number.isFinite(p?.y)&&p.x>=0&&p.y>=0).slice(0,512)
   .map(p=>({x:p.x,y:p.y})):[];
@@ -55,12 +78,13 @@ export function appendSculptSurfaceStroke(raw,{
   const feature={
     id:'sculpt-surface-'+serial,points:pts,
     materialId,width:Math.max(6,Math.min(480,Number(width)||50)),
-    // The terrain family is authored gameplay data, never derived from an image.
-    // When omitted by an older caller, inherit the WorldSurface's semantic
-    // base for zones or the canonical route family for route geometry.
+    // The final authored WorldSurface family remains the sole gameplay owner.
+    // New strokes default to the selected built-in terrain material's family;
+    // an explicit override remains possible for custom encounter biomes.
     terrainFamilyId:typeof terrainFamilyId==='string'&&terrainFamilyId.trim()
       ?terrainFamilyId.trim()
-      :(meta.kind==='route'?'road':surface.baseTerrainFamilyId)
+      :(sculptEncounterFamilyForMaterial(materialId)??
+        (meta.kind==='route'?'road':surface.baseTerrainFamilyId))
   };
   if(meta.kind==='route')feature.traversalRuleId='terrain.road';
   return normalizeSculptSurface({...surface,[kind]:[...surface[kind],feature]});
