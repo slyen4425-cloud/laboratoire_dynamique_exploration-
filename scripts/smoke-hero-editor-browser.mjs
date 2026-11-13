@@ -187,7 +187,30 @@ try{
    canvas.moving!=='Prévisualisation : marche'||
    Math.max(...canvas.pixel.slice(0,3))-Math.min(...canvas.pixel.slice(0,3))<18)
   throw Error('Real native Hero sprite canvas did not paint '+JSON.stringify(canvas));
+ // The same page offers all twelve built-in heroes. One click imports all
+ // 48 original directional frames into the ONE UserHeroStore and previews them.
+ await waitUntil("document.querySelectorAll('#hero-official-grid .hero-preset').length===12",'official hero gallery');
+ await read("document.querySelector('#hero-official-grid .hero-preset button').click()");
+ await waitUntil("document.querySelector('#hero-official-status')?.textContent.includes('disponible dans la sélection')",'published hero import');
+ const official=await read(`(async()=>{
+   const {createUserHeroStoreV1}=await import('/src/storage/user-hero-store-v1.js');
+   const rows=await createUserHeroStoreV1().list();
+   const preset=rows.find(x=>x.mapVisual.animation.mode==='directions');
+   return {count:rows.length,id:preset?.id,name:preset?.name,
+      mode:preset?.mapVisual.animation.mode,
+      north:preset?.mapVisual.animation.directions.N.length,
+      west:preset?.mapVisual.animation.directions.W.length,
+      assets:preset?.assets.length,
+      editorMode:document.querySelector('#hero-mode').value};
+ })()`);
+ if(official.count!==2||!official.id.startsWith('hero.user.')||
+    official.mode!=='directions'||official.assets!==49||official.north!==6||
+    official.west!==6||official.editorMode!=='directions')
+    throw Error('Official hero 8-way animation import failed '+JSON.stringify(official));
+ await read("document.querySelector('#hero-preview-direction').value='NW'; document.querySelector('#hero-preview-direction').dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#hero-preview-walk').click()");
+ await sleep(280);
  if(exceptions.length)throw Error('Unexpected page exception '+exceptions.join(' | '));
+ console.log('GREEN official 12 heroes gallery, one selected 8-direction 6-frame actor persisted in IndexedDB',JSON.stringify(official));
  console.log('GREEN real Chromium (932x430 landscape): PNG -> IndexedDB -> reload -> 3 walk sprites -> same hero -> native animated renderer',
   JSON.stringify({saved,canvas}));
 }finally{
