@@ -10,6 +10,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
+import {clampSculptNavigationCameraToTerrainV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {normalizeSculptBorderPreview,resolveSculptBorderBiome,
@@ -1961,17 +1962,23 @@ function centerNavigationCamera(){
       x:navActor.x,y:navActor.y,level:navVisualLevel??navHeight(),
       rise:SCULPT_TILE.rise
     },{width,height,zoom,anchorY:.54});
-    pan.x=follow.x;pan.y=follow.y;return;
+    // Official WorldArea exteriors previously had unbounded follow, while
+    // the simple Tester was clamped. One terrain projection now owns BOTH.
+    // Keep interiors free for doorway and staircase camera composition.
+    const next=activeInteriorId||sculptWorldCurrentInterior()
+      ?follow
+      :clampSculptNavigationCameraToTerrainV1({
+        pan:follow,bounds:cameraBounds(),zoom,width,height
+      });
+    pan.x=next.x;pan.y=next.y;return;
   }
   const bounds=cameraBounds(),point=sculptCameraProject(cameraView(),
     navActor.x,navActor.y-(navVisualLevel??navHeight())*SCULPT_TILE.rise);
-  const worldWidth=bounds.width*zoom,worldHeight=bounds.height*zoom;
-  const targetX=width*.5-point.x*zoom;
-  const targetY=height*.57-point.y*zoom;
-  pan.x=worldWidth<width?(width-worldWidth)*.5:
-    Math.max(width-bounds.maxX*zoom,Math.min(-bounds.minX*zoom,targetX));
-  pan.y=worldHeight<height?(height-worldHeight)*.5-bounds.minY*zoom:
-    Math.max(height-bounds.maxY*zoom,Math.min(-bounds.minY*zoom,targetY));
+  const next=clampSculptNavigationCameraToTerrainV1({
+    pan:{x:width*.5-point.x*zoom,y:height*.57-point.y*zoom},
+    bounds,zoom,width,height
+  });
+  pan.x=next.x;pan.y=next.y;
 }
 function drawNavigationBridgeCorridors(){
   // Diagnostics are presentation-only and read the exact resolved deck that
