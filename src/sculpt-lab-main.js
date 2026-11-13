@@ -171,6 +171,16 @@ let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
 let fringeHistory=[],fringeRedo=[];
 const fringeRasterCache=new Map();
+window.__sculptFringeProbe=()=>Object.freeze({
+  available:!!sculptWorldDraft&&sculptWorldAreaMounted&&!activeInteriorId,
+  editing:fringeEditing,active:!!decorativeFringe,
+  chunks:decorativeFringe?.chunks.length??0,
+  objects:decorativeFringe?.objects.length??0,
+  initialWidth:terrain.width,initialHeight:terrain.height,
+  margin:8,pan:{...pan},zoom,
+  bounds:cameraBounds(),
+  navigationTesting
+});
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
 // supports its existing WorldSurface authoring without a second control path.
 const surfaceBaseFamilySelect=$('surface-base-family');
