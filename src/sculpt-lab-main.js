@@ -973,20 +973,25 @@ function draw(){
   }else{
     ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   }
-  ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const view=cameraView();
-  // Editor keeps the published V38 exact inverse pointer projection. In
-  // Tester, project only the background texture, not standing actor sprites.
-  if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
-  // Draw OUTSIDE the existing terrain raster, and behind every playable tile.
-  // In Tester its affine projection matches the ground's cached projection.
+  // The upper strip is reserved for the actual sky/time-of-day renderer.
+  // Decorative land MUST NOT paint over the entire frame when the camera
+  // follows a hero close to a WorldArea edge or on a small landscape screen.
   if(sculptBorderControlsAvailable&&navigationTesting&&
      !activeInteriorId&&!sculptWorldCurrentInterior()){
     const border=sculptBorderConfig();
-    ctx.save();ctx.transform(1,view.shear,0,view.pitch,0,0);
+    ctx.save();
+    const skySafetyBand=Math.min(24,height*.05);
+    ctx.beginPath();ctx.rect(0,skySafetyBand,width,height-skySafetyBand);ctx.clip();
+    ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+    ctx.transform(1,view.shear,0,view.pitch,0,0);
     drawSculptBorderExtension(ctx,{terrain,tile:SCULPT_TILE,config:border,mapKey:border.mapKey});
     ctx.restore();
   }
+  ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+  // Editor keeps the published V38 exact inverse pointer projection. In
+  // Tester, project only the background texture, not standing actor sprites.
+  if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   let result;
   if(navigationTesting||objectEditing||!drawing){
     // Reuse the EXISTING terrain-only raster while editing object placements.
