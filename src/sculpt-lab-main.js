@@ -1350,6 +1350,79 @@ function screenToWorldPoint(event){
   return sculptCameraScreenToWorld(cameraView(),{
     screenX:event.clientX-rect.left,screenY:event.clientY-rect.top,pan,zoom});
 }
+function decorativeFringeArea(){
+  return {width:terrain.width*SCULPT_TILE.width,
+    height:terrain.height*SCULPT_TILE.height,sculptTerrain:terrain};
+}
+function decorativeFringeHeightAt(col,row){
+  const patch=decorativeFringe?.chunks.find(p=>p.col===Math.floor(col/8)*8&&
+    p.row===Math.floor(row/8)*8);
+  return patch?sculptHeightAt(patch.terrain,col-patch.col,row-patch.row):2;
+}
+function screenToDecorativeFringeCell(event){
+  if(!decorativeFringe||!fringeEditing)return null;
+  const {x,y}=screenToWorldPoint(event),col=Math.floor(x/SCULPT_TILE.width);
+  if(!Number.isFinite(col)||col< -8||col>=terrain.width+8)return null;
+  const area=decorativeFringeArea();
+  for(let row=terrain.height+7;row>=-8;row--){
+    if(!sculptDecorativeFringeCellIsOuterV1(area,col,row))continue;
+    const top=row*SCULPT_TILE.height-decorativeFringeHeightAt(col,row)*SCULPT_TILE.rise;
+    if(y>=top&&y<=top+SCULPT_TILE.height)return {x:col,y:row};
+  }
+  const row=Math.floor(y/SCULPT_TILE.height);
+  return sculptDecorativeFringeCellIsOuterV1(area,col,row)?{x:col,y:row}:null;
+}
+function recordDecorativeFringe(previous){
+  if(JSON.stringify(previous)===JSON.stringify(decorativeFringe))return false;
+  fringeHistory.push(previous);
+  if(fringeHistory.length>40)fringeHistory.shift();
+  fringeRedo=[];
+  fringeRasterCache.clear();
+  updateHistoryButtons();scheduleDraw();
+  return true;
+}
+function paintDecorativeFringeCell(cell){
+  const mode=selectedMode;
+  if(!['raise','dig','flatten','smooth','plateau','cliff-round',
+        'water-fill','water-lower','water-erase'].includes(mode)){
+    status('Décor extérieur : choisis un pinceau Terre ou Eau, sans pente ni sphère pour le moment.');
+    return false;
+  }
+  const old=decorativeFringe;
+  const target=mode.startsWith('water-')?Number($('water-target').value):
+    mode==='plateau'?Number($('target').value):decorativeFringeHeightAt(cell.x,cell.y);
+  decorativeFringe=paintSculptDecorativeFringeV1(old,decorativeFringeArea(),{
+    col:cell.x,row:cell.y,mode,target,
+    strength:Number($('strength').value),radius:Number($('radius').value),
+    edgeSoftness:Number($('edge').value)/100,shape:$('brush-shape').value});
+  fringeRasterCache.clear();scheduleDraw();
+  return true;
+}
+function handleDecorativeFringeObject(cell){
+  const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  const before=decorativeFringe,action=$('object-action').value;
+  if(action==='remove'){
+    const hit=findSculptPreviewObjectNear(before.objects,x,y);
+    if(hit)decorativeFringe=normalizeSculptDecorativeFringeV1({
+      ...before,objects:removeSculptPreviewObject(before.objects,hit.id)
+    },decorativeFringeArea());
+    else status('Aucun décor à retirer dans la frange');
+  }else if(action==='place'){
+    const definitionId=$('object-definition').value;
+    const candidate=appendSculptPreviewObject(before.objects,{
+      definitionId,x,y,scale:Number($('object-scale').value)/100,
+      rotationDeg:Number($('object-rotation').value),
+      variantId:$('object-variant-wrap').hidden?null:$('object-variant').value
+    });
+    if(candidate.length>before.objects.length){
+      decorativeFringe=normalizeSculptDecorativeFringeV1({
+        ...before,objects:candidate
+      },decorativeFringeArea());
+    }else status('Décor indisponible ou limite des objets atteinte');
+  }else status('Périphérie : passe en mode Poser ou Retirer pour ses décorations');
+  if(recordDecorativeFringe(before))
+    status('Décor hors carte mis à jour · la zone jouable reste inchangée');
+}
 function screenToCell(event){
   // Exact inverse of the same affine camera used to draw terrain/preview.
   const {x,y}=screenToWorldPoint(event);
@@ -1576,17 +1649,31 @@ function commitUndo(previous){
   redoHistory=[];updateHistoryButtons();
 }
 function updateHistoryButtons(){
-  $('undo').disabled=history.length===0;
-  $('redo').disabled=redoHistory.length===0;
-  $('undo').textContent='↶ Annuler ('+history.length+')';
-  $('redo').textContent='↷ Rétablir ('+redoHistory.length+')';
+  const past=fringeEditing?fringeHistory:history;
+  const future=fringeEditing?fringeRedo:redoHistory;
+  $('undo').disabled=past.length===0;
+  $('redo').disabled=future.length===0;
+  $('undo').textContent='↶ Annuler ('+past.length+')';
+  $('redo').textContent='↷ Rétablir ('+future.length+')';
 }
 function undo(){
+  if(fringeEditing){
+    if(!fringeHistory.length){status('Aucun décor extérieur à annuler');return;}
+    fringeRedo.push(decorativeFringe);
+    decorativeFringe=fringeHistory.pop();
+    fringeRasterCache.clear();updateHistoryButtons();scheduleDraw();return;
+  }
   if(!history.length){status('Aucune action à annuler');return;}
   redoHistory.push(terrain);terrain=history.pop();
   updateHistoryButtons();scheduleDraw();status('Dernière action annulée (sol / eau)');
 }
 function redo(){
+  if(fringeEditing){
+    if(!fringeRedo.length){status('Aucun décor extérieur à rétablir');return;}
+    fringeHistory.push(decorativeFringe);
+    decorativeFringe=fringeRedo.pop();
+    fringeRasterCache.clear();updateHistoryButtons();scheduleDraw();return;
+  }
   if(!redoHistory.length){status('Aucune action à rétablir');return;}
   history.push(terrain);terrain=redoHistory.pop();
   updateHistoryButtons();scheduleDraw();status('Action rétablie');
@@ -1594,6 +1681,15 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(fringeEditing){
+    const cell=screenToDecorativeFringeCell(event);
+    if(!cell)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    if(objectEditing){handleDecorativeFringeObject(cell);return;}
+    fringeGesture={pointerId:event.pointerId,last:cell.x+','+cell.y,before:decorativeFringe};
+    paintDecorativeFringeCell(cell);
+    return;
+  }
   if(sculptWorldPortalPlacement){
     event.preventDefault();
     const point=screenToWorldPoint(event);
@@ -1695,6 +1791,23 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(fringeEditing){
+    if(!fringeGesture||fringeGesture.pointerId!==event.pointerId)return;
+    const cell=screenToDecorativeFringeCell(event);
+    if(!cell)return;
+    const key=cell.x+','+cell.y;
+    if(key===fringeGesture.last)return;
+    const [previousX,previousY]=fringeGesture.last.split(',').map(Number);
+    const steps=Math.max(Math.abs(cell.x-previousX),Math.abs(cell.y-previousY));
+    for(let i=1;i<=steps;i++){
+      const next={x:Math.round(previousX+(cell.x-previousX)*i/steps),
+        y:Math.round(previousY+(cell.y-previousY)*i/steps)};
+      if(sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),next.x,next.y))
+        paintDecorativeFringeCell(next);
+    }
+    fringeGesture.last=key;
+    return;
+  }
   if(interiorConnectorMode){
     if(interiorConnectorGesture?.pointerId===event.pointerId){
       const point=screenToWorldPoint(event);
@@ -1854,6 +1967,16 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(fringeGesture){
+    if(event.pointerId!==fringeGesture.pointerId)return;
+    const before=fringeGesture.before;
+    const cancelled=event.type==='pointercancel'||event.type==='lostpointercapture';
+    fringeGesture=null;
+    if(cancelled){decorativeFringe=before;fringeRasterCache.clear();scheduleDraw();}
+    else if(recordDecorativeFringe(before))
+      status('Pourtour sculpté · la carte accessible au héros est inchangée');
+    return;
+  }
   if(interiorConnectorGesture){
     const gesture=interiorConnectorGesture;
     if(event.pointerId!==gesture.pointerId)return;
@@ -2445,6 +2568,9 @@ function setNavigationTesting(on){
     }
   }
   if(on){
+    fringeEditing=false;fringeGesture=null;
+    if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
+    if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=true;
     if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
     if(interiorDoorMoving)setInteriorDoorMoving(false);
@@ -2490,6 +2616,8 @@ function setNavigationTesting(on){
       ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
       :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
+    if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
+      !sculptWorldDraft||!!activeInteriorId||!!sculptWorldCurrentInterior();
     if(sculptEncounterHost?.active)return; // Combat owns the overlay until completion
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
@@ -3630,6 +3758,24 @@ $('quick-level-plus').addEventListener('click',()=>adjustQuickLevel(1));
 $('radius-minus').addEventListener('click',()=>adjustBrushSize(-.5));
 $('radius-plus').addEventListener('click',()=>adjustBrushSize(.5));
 
+$('scenery-fringe-toggle')?.addEventListener('change',()=>{
+  if(!sculptWorldDraft||!sculptWorldAreaMounted||activeInteriorId||
+     sculptWorldCurrentInterior()||navigationTesting){
+    $('scenery-fringe-toggle').checked=false;
+    fringeEditing=false;
+    status('Décor hors zone uniquement disponible dans une WorldArea extérieure en édition');
+    return;
+  }
+  fringeEditing=$('scenery-fringe-toggle').checked;
+  if(fringeEditing&&!decorativeFringe){
+    decorativeFringe=createSculptDecorativeFringeV1(decorativeFringeArea());
+    fringeRasterCache.clear();
+    status('Pourtour de 8 cases ajouté sur les quatre côtés · sculptable et décoratif uniquement');
+    fit();
+  }else status(fringeEditing?'Mode pourtour actif : sculpte ou pose des objets au-delà de la carte':
+    'Retour à la zone de base');
+  updateHistoryButtons();scheduleDraw();
+});
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
 $('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing));
@@ -4701,6 +4847,8 @@ function mountWorldSculptArea(areaId,validatedScene=null){
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
   mountSculptArea(scene);
+  if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
+    area.kind!=='exterior'||sculptPlayRequested;
   // The Encounter editor follows the selected Area's actual terrain family.
   // It edits the same single saved EncounterConfig, never a local duplicate.
   selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;
