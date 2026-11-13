@@ -1,4 +1,5 @@
 export const MAP_ACTOR_VISUAL_SCHEMA_VERSION = 1;
+export const MAP_ACTOR_COMPASS_DIRECTIONS_V1=Object.freeze(['N','NE','E','SE','S','SW','W','NW']);
 
 export const MAP_ACTOR_ROLE_DEFAULTS = Object.freeze({
   hero: Object.freeze({ targetHeight: 78 }),
@@ -46,6 +47,25 @@ function normalizeActorAnimation(raw){
  if(raw.mode==='image'){
   if(keys.some(k=>k!=='mode'))throw new TypeError('Image motion does not support sprite frames');
   return Object.freeze({mode:'image'});
+ }
+ if(raw.mode==='directions'){
+   if(keys.some(k=>!['mode','framesPerSecond','directions'].includes(k)))
+     throw new TypeError('Unknown Map Actor directional animation field');
+   if(typeof raw.framesPerSecond!=='number'||raw.framesPerSecond<1||
+      raw.framesPerSecond>30||!Number.isFinite(raw.framesPerSecond))
+     throw new RangeError('Directional hero animation FPS must be 1..30');
+   const source=raw.directions;
+   if(!source||typeof source!=='object'||Array.isArray(source)||
+      Object.keys(source).length!==MAP_ACTOR_COMPASS_DIRECTIONS_V1.length)
+     throw new RangeError('Directional hero requires exactly eight compass directions');
+   const directions={};
+   for(const direction of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
+     const frames=animationAssetIds(source[direction],direction,{required:true});
+     if(frames.length!==6)throw new RangeError(direction+' needs exactly six animation frames');
+     directions[direction]=frames;
+   }
+   return Object.freeze({mode:'directions',framesPerSecond:raw.framesPerSecond,
+     directions:Object.freeze(directions)});
  }
  if(raw.mode!=='frames')throw new RangeError('Unknown Map Actor animation mode');
  if(keys.some(k=>!['mode','framesPerSecond','idle','walk'].includes(k)))

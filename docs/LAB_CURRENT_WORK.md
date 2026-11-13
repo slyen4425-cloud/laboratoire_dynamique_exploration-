@@ -1,3 +1,14 @@
+## 2026-11-13 — 12 héros officiels / 8 directions × 6 frames — raccord modèle et sélection
+- Base main `191b018476005b3802739566f30a5597da23b1c0` ; checkpoint `checkpoint/exploration-start-heroes12-20261113` ; branche `work/exploration-heroes-12-assets-20261113`.
+- Trois ZIP auteur conservés sans modification. Source unique publiée : `assets/exploration/actors/official/catalog.json` + 12 jeux de PNG individuels (576 frames et modèle face/dos). Aucun spritesheet dérivé ni copie de moteur Combat.
+- `MapActorVisual.animation.mode='directions'` est un mode additif de l'unique renderer et un déplacement XY du seul moteur Exploration. Huit orientations, six frames par orientation, pivot constant, fps 8 et repos sur frame 0.
+- `Hero Editor` affiche la galerie officielle ; clic « Utiliser ce modèle » installe une définition `hero.user.<UUID>` via le `UserHeroStore` existant (mêmes données que la sélection Aventure). Les anciens héros à image fixe ou animation simple restent compatibles.
+- Tests de bibliothèque (comptage, PNG RGBA 128×160, unicité des 576 assets), configuration/renderer directionnel, véritable Chromium sur éditeur et persistance IndexedDB. CI sur SHA exact et Pages main requis avant annonce d'une livraison.
+- Publisher : les ZIP auteur ne doivent jamais être inclus dans le dossier Pages. Cette politique ne supprime aucun ZIP de la source Git.
+- Aucun raccord direct vers Dungeon, Survie, moteur de combat ou sauvegardes existantes. Aucun nom/ID de héros à saisir manuellement.
+
+---
+
 ## 2026-11-13 — Frange décorative sculptable : intégration au seul Labo Exploration
 - START `main@144d614ace99387cc77a995ed6459bde806a4189`, checkpoint `checkpoint/exploration-start-sculptable-fringe-20261113`, branche `work/exploration-sculptable-fringe-model-20261113`.
 - `WorldArea.decorativeFringe` est un champ facultatif, uniquement sur la WorldArea déjà autoritaire. Sa sculpture passe par les pinceaux `applySculptBrush` du **même** SculptTerrain, en fragments 8×8 (jusqu'à huit cases au-delà des quatre côtés). Les objets utilisent le modèle WorldObject existant, sans IDs manuels.

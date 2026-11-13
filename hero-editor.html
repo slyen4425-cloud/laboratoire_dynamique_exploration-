@@ -26,6 +26,11 @@ button:disabled{opacity:.5;cursor:default}
 #hero-canvas{display:block;max-width:100%;width:100%;height:auto;aspect-ratio:2/1;border-radius:9px;background:#243b4b}
 #hero-status{display:block;min-height:26px;color:#b9ebdf}
 #hero-status[data-error=true]{color:#ffc0b5}
+#hero-official-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(144px,1fr));gap:10px}
+.hero-preset{border:1px solid #426474;background:#1b3242;border-radius:10px;padding:9px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.hero-preset img{width:104px;height:116px;object-fit:contain;background:#294054;border-radius:8px}
+.hero-preset button{width:100%}
+#hero-official-status{display:block;min-height:20px;margin-top:7px;color:#b9ebdf}
 .hint{font-size:12px}
 [hidden]{display:none!important}
 @media(max-width:690px){main{grid-template-columns:1fr}body{padding:9px}.fields{gap:7px}.panel{padding:10px}}
@@ -44,7 +49,7 @@ button:disabled{opacity:.5;cursor:default}
 <label class="wide">Image principale PNG/WebP (obligatoire à la création)
 <input id="hero-image" type="file" accept="image/png,image/webp"></label>
 <label>Animation
-<select id="hero-mode"><option value="image">Image fixe · mouvement simulé</option><option value="frames">Sprites animés</option></select></label>
+<select id="hero-mode"><option value="image">Image fixe · mouvement simulé</option><option value="frames">Sprites animés</option><option value="directions">8 directions · sprites réels</option></select></label>
 <label>Taille du héros sur la carte
 <input id="hero-height" type="number" value="37" min="24" max="240"></label>
 <label id="hero-idle-label" class="wide" hidden>Sprites à l'arrêt (PNG/WebP, facultatifs)
@@ -69,9 +74,19 @@ button:disabled{opacity:.5;cursor:default}
 <section class="panel">
 <h2>Prévisualisation réelle</h2>
 <canvas id="hero-canvas" width="420" height="210" aria-label="Aperçu du héros sur la carte"></canvas>
-<div class="actions"><button id="hero-preview-idle" type="button">Repos</button><button id="hero-preview-walk" type="button">Marche</button></div>
+<div class="actions"><button id="hero-preview-idle" type="button">Repos</button><button id="hero-preview-walk" type="button">Marche</button>
+<label for="hero-preview-direction">Direction</label>
+<select id="hero-preview-direction" aria-label="Direction de déplacement du héros">
+<option>S</option><option>SE</option><option>E</option><option>NE</option>
+<option>N</option><option>NW</option><option>W</option><option>SW</option></select></div>
 <output id="hero-status" role="status" aria-live="polite">Choisis un héros ou importe une nouvelle image.</output>
 <p class="hint">Aperçu assuré par le même Map Actor Renderer que le jeu. Les frames conservent leur canevas et leur point de contact au sol pour empêcher les sauts.</p>
+</section>
+<section class="panel" id="hero-official-gallery" style="grid-column:1/-1">
+<h2>12 modèles officiels prêts à utiliser</h2>
+<p>Choisis un personnage pour l'ajouter à tes héros. Chaque modèle possède huit directions et six images de marche par direction, conservées avec ta sauvegarde locale.</p>
+<div id="hero-official-grid" aria-label="Galerie de modèles de héros"></div>
+<output id="hero-official-status" role="status" aria-live="polite"></output>
 </section>
 </main>
 <script type="module" src="./src/actors/hero-editor-v1.js"></script>

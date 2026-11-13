@@ -1,0 +1,33 @@
+name: Materialize official 12 hero presets on work branch
+on:
+  push:
+    branches: [work/exploration-heroes-12-assets-20261113]
+    paths:
+      - .github/workflows/materialize-hero-presets-work.yml
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/exploration-heroes-12-assets-20261113
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Extract unique official hero images from author ZIPs, verify count and dimensions
+        run: python scripts/materialize-official-heroes-12.py
+      - name: Commit ONLY the canonical usable assets to this work branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'gensrpg-hero-assets[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/exploration/actors/official/
+          test "$(python -c "import json; print(len(json.load(open('assets/exploration/actors/official/catalog.json'))['heroes']))")" = 12
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets(exploration): publier 12 héros officiels sans doublon de spritesheets'
+            git push origin HEAD:work/exploration-heroes-12-assets-20261113
+          fi
