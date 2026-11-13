@@ -1,3 +1,11 @@
+## 2026-11-13 — Correctif neige : soubassement de la sculpture 2,5D
+- Base canonique : main `fa8106f61643e7ff6a8c36c64d96e7d7dd94abd9` ; START `checkpoint/exploration-start-snow-underlay-20261113` ; branche `work/exploration-snow-sculpt-underlay-20261113`.
+- Reproduction Neige 1 : WorldSurface est de famille `plain` mais les zones peintes sont `ground.snow`. Le renderer commence par une plaque `baseColor=#536247`; quand le relief est relevé de 2 cases ou plus, des fenêtres en bas laissent voir cette herbe verte, surtout depuis la suppression de la frange sud.
+- Propriétaire unique : `src/render/sculpt-height-renderer.js`, pinceau natif `sculptPaintByCell` ; réutilisation des zones de neige sur le support visuel à hauteur zéro **avant** les toits/les falaises. Pas de seconde texture, terrain, collision, limite caméra ni sauvegarde.
+- Gel : frange nord seule, clamp caméra, original Neige 1, WorldArea/WorldSurface, Combat, Survie, Dungeon et héros intacts.
+- Gate : test `sculpt-snow-painted-underlay-20261113.test.js` + tests généraux + Chromium 2,5D, PR CI et Pages SHA HTTPS ; visuel PC/Android à confirmer par le créateur.
+- Ne pas annoncer une publication avant CI GREEN + vérification Pages.
+
 ## 2026-11-13 — 12 héros officiels / 8 directions × 6 frames — raccord modèle et sélection
 - Base main `191b018476005b3802739566f30a5597da23b1c0` ; checkpoint `checkpoint/exploration-start-heroes12-20261113` ; branche `work/exploration-heroes-12-assets-20261113`.
 - Trois ZIP auteur conservés sans modification. Source unique publiée : `assets/exploration/actors/official/catalog.json` + 12 jeux de PNG individuels (576 frames et modèle face/dos). Aucun spritesheet dérivé ni copie de moteur Combat.
