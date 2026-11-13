@@ -90,6 +90,45 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
    }));
   return Object.freeze({id:worldId,areaCount:verified.areas.length});
  }
+ // Explicit per-world removal. Never touch other WorldDocuments, presets,
+ // adventure saves or draft bytes. The chosen active world must first be
+ // replaced by a validated new blank WorldDocument, in this SAME handoff.
+ function remove(worldId,{confirmed=false,replacement=null}={}){
+  const checked=id(worldId);
+  if(confirmed!==true)throw new Error('Suppression du monde : confirmation obligatoire');
+  if(typeof storage.removeItem!=='function')
+   throw new Error('Stockage local ne permet pas la suppression de monde');
+  const selected=load(checked);
+  const oldActiveBytes=storage.getItem(WORLD_ASSEMBLER_DRAFT_KEY);
+  const active=readWorldAssemblerDraft(storage);
+  if(oldActiveBytes!==null&&!active)
+   throw new Error('Monde actif illisible : aucune suppression possible');
+  let next=null;
+  if(active?.id===checked){
+   if(!replacement)throw new Error('Le monde actif doit être remplacé par un monde vierge avant sa suppression');
+   const serialized=serializeWorldBuilderDraft(replacement);
+   next=importWorldBuilderDocument(serialized);
+   if(next.id===checked)throw new Error('Le nouveau monde doit avoir un identifiant différent');
+   saveWorldAssemblerDraft(storage,next);
+  }else if(replacement){
+   throw new Error('Le remplacement est réservé au monde actuellement actif');
+  }
+  const current=index();
+  // Change index before the archive bytes; if storage fails midway the
+  // remaining bytes are discovered by ids(), not silently lost.
+  const worldIds=current.worldIds.filter(x=>x!==checked);
+  try{
+   storage.setItem(EXPLORATION_WORLD_LIBRARY_INDEX_V1,JSON.stringify({
+    schema:SCHEMA,version:1,worldIds
+   }));
+   storage.removeItem(slotKey(checked));
+  }catch(error){
+   // A failed storage operation never justifies deleting or rewriting
+   // unrelated world slots or existing saved adventures.
+   throw new Error('Suppression non terminée : '+error.message);
+  }
+  return Object.freeze({id:selected.id,activeReplacement:next});
+ }
  function activate(worldId){
   const selected=load(worldId);
   // readWorldAssemblerDraft deliberately returns null for corrupted bytes;
@@ -109,5 +148,5 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
   saveWorldAssemblerDraft(storage,selected);
   return selected;
  }
- return Object.freeze({list,load,save,activate});
+ return Object.freeze({list,load,save,activate,remove});
 }

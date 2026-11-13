@@ -140,6 +140,7 @@ function installWorldAssembler(){
     else if(worlds.some(w=>w.id===draft.id))picker.value=draft.id;
     picker.disabled=!worlds.length;
     byId('world-library-open').disabled=!worlds.length;
+    byId('world-library-delete').disabled=!worlds.length;
   }
   function libraryStatus(message,error=false){
     const out=byId('world-library-status');
@@ -202,6 +203,32 @@ function installWorldAssembler(){
       draft=opened;selectedId=draft.initialAreaId;
       persist();render();refreshWorldLibrary();
       libraryStatus('✓ Monde '+opened.id+' chargé sans supprimer les autres.');
+    }catch(error){libraryStatus(error.message,true);}
+  });
+  on(byId('world-library-select'),'change',()=>{
+    byId('world-library-delete').disabled=!byId('world-library-select').value;
+  });
+  on(byId('world-library-delete'),'click',()=>{
+    const chosen=byId('world-library-select').value;
+    if(!chosen){libraryStatus('Choisis le monde à supprimer.',true);return;}
+    const active=chosen===draft.id;
+    const warning='Supprimer définitivement le monde « '+chosen+' » de Mes mondes ?'+
+      (active?' Il est actuellement ouvert : un nouveau monde vierge le remplacera. Ses modifications non archivées seront perdues.':'')+
+      ' Cette action ne touche pas aux autres mondes ni aux parties enregistrées.';
+    if(!window.confirm(warning))return;
+    try{
+      const blank=active?createBlankWorldBuilderDraft({
+        id:'nouveau-monde-'+crypto.randomUUID().slice(0,8),
+        width:36*28,height:24*21
+      }):null;
+      const deleted=library.remove(chosen,{confirmed:true,replacement:blank});
+      if(deleted.activeReplacement){
+        draft=deleted.activeReplacement;
+        selectedId=draft.initialAreaId;
+        render();
+      }
+      refreshWorldLibrary();
+      libraryStatus('✓ Monde « '+chosen+' » supprimé de Mes mondes. Les autres mondes et les parties restent conservés.');
     }catch(error){libraryStatus(error.message,true);}
   });
   function status(message,isError=false){
