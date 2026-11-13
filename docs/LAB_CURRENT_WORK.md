@@ -1,3 +1,14 @@
+## 2026-11-13 — Habillage extérieur 2,5D par biome (prototype visuel, lot isolé)
+- Départ : Exploration officiel `main@0c1727f86a62bd8dc428b50bf73d2a4163b30225`. Lot `feat/sculpt-decorative-map-edges-v1`, PR #426 ; uniquement le Labo Exploration. Aucune modification du Hub GenSRPG, du Combat ou de WorldDocument.
+- Objectif validé par le créateur : masquer l’effet de plateforme flottante sur les quatre bords, en priorité l’avant et les côtés, avec différentes variantes selon le biome et personnalisation indépendante.
+- Autorité : une **surcouche de rendu Canvas** dans `src/render/sculpt-border-scenery-v1.js`. Aucun terrain jouable supplémentaire, aucun objet, collision, Spawn, Portal, ID ni système de sauvegarde parallèle. La surface, le mouvement et le terrain sculpté restent natifs.
+- Éditeur de test : « Habillage des bordures » depuis les options de navigation de `sculpt-lab.html`, biome automatique ou choisi, côté avant/gauche/droite/arrière, style, densité et bouton de régénération. Les variantes utilisent une graine déterministe par aire/côté, avec protection de la bande supérieure du ciel. Les options ne persistent **pas** encore après rechargement ; première validation du rendu avant l’ajout de données pérennes.
+- Respect des versions anciennes : les commandes nouvelles sont optionnelles et ne s’initialisent pas dans `sculpt-lab-v80.html`. La suppression du publisher V80 est **un chantier indépendant**, et non une seconde source moteur pour l’habillage.
+- Tests : `tests/sculpt-border-scenery-v1.test.js` pour les invariants, `scripts/smoke-sculpt-terrain-lab.mjs` pour le vrai parcours Chromium des commandes, restauration éditeur et scène inchangée ; CI + assemblage Pages du commit exact avant fusion. Pas de publication avant GREEN.
+- Critère manuel : vérifier sur PC en mode Tester des cartes Plaine, Forêt, Neige, avec premiers plans naturels, météo/ciel intact, contours sans trou et performances mobiles. Ne jamais supprimer les cartes ou présélections d’essai dans ce lot.
+
+---
+
 ## 2026-11-12 — Errance native des PNJ sur les cartes 2,5D (lot isolé)
 - START `main@46e4e3559c17dfb6bd3d7afbdb1f3d8caed93048`, certifié CI `43301155708` et Pages `43301155674`; checkpoint `checkpoint/exploration-start-npc-wander-20261112`, branche `work/exploration-npc-wander-2026-11-12`.
 - Propriétaire : Labo Exploration, **une seule boucle RAF de navigation et un seul Core Movement/Collision World**, partagé avec le héros. Le composant `npc-wander-runtime-v1.js` est une projection **temporaire** de `WorldArea.actors[].npc.movement` (déjà enregistré dans la fiche PNJ unique) : rayon autour de l'ancre, repos, déplacement, orientation, obstacles et terrain natifs.

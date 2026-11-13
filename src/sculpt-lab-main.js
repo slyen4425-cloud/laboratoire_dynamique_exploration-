@@ -12,6 +12,9 @@ import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculp
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
+import {normalizeSculptBorderPreview,resolveSculptBorderBiome,
+  drawSculptBorderExtension,drawSculptDistantBorders
+} from './render/sculpt-border-scenery-v1.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
 import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
@@ -674,6 +677,47 @@ cliffHDLoader.onload=()=>{
 };
 cliffHDLoader.onerror=()=>status('Base HD absente : roches V48 conservées');
 cliffHDLoader.src=resolveSculptCliffHDUrl();
+// V1 preview owns only disposable visual options. Canonical WorldArea geometry,
+// encounters, collisions, and saves remain unchanged until separately validated.
+const sculptBorderPreviewByArea=new Map();
+const sculptBorderControlsAvailable=!!$('scenery-border-enabled')&&
+  !!$('scenery-border-biome')&&!!$('scenery-border-side')&&
+  !!$('scenery-border-style')&&!!$('scenery-border-density')&&
+  !!$('scenery-border-density-value')&&!!$('scenery-border-regenerate');
+let sculptBorderUiAreaKey=null;
+function sculptBorderAreaKey(){return sculptWorldAreaId??'unlinked-preview';}
+function sculptBorderConfig(){
+  const key=sculptBorderAreaKey();
+  if(!sculptBorderPreviewByArea.has(key))
+    sculptBorderPreviewByArea.set(key,normalizeSculptBorderPreview());
+  const settings=sculptBorderPreviewByArea.get(key);
+  const biome=resolveSculptBorderBiome(settings.biome,surface?.baseTerrainFamilyId);
+  const terrainSignature=terrain.width+'x'+terrain.height+'-'+terrain.levels.slice(0,8).join(',');
+  return {...settings,biome,mapKey:key==='unlinked-preview'?terrainSignature:key};
+}
+function updateSculptBorderPreview(update){
+  const key=sculptBorderAreaKey();
+  const original=sculptBorderPreviewByArea.get(key)??normalizeSculptBorderPreview();
+  sculptBorderPreviewByArea.set(key,normalizeSculptBorderPreview(update(original)));
+  navSkyCache=null;
+  scheduleDraw();
+}
+function syncSculptBorderControls(){
+  if(!sculptBorderControlsAvailable)return;
+  const key=sculptBorderAreaKey(),settings=sculptBorderPreviewByArea.get(key)??normalizeSculptBorderPreview();
+  const side=$('scenery-border-side').value||'front';
+  const selected=settings.sides[side]??settings.sides.front;
+  $('scenery-border-enabled').checked=settings.enabled;
+  $('scenery-border-biome').value=settings.biome;
+  $('scenery-border-style').value=selected.style;
+  $('scenery-border-density').value=String(selected.density);
+  $('scenery-border-density-value').textContent=selected.density+' %';
+  sculptBorderUiAreaKey=key;
+}
+window.__sculptBorderPreviewProbe=()=>Object.freeze({
+  areaKey:sculptBorderAreaKey(),config:sculptBorderConfig(),
+  editorOnly:true,visualOnly:true,available:sculptBorderControlsAvailable
+});
 // Background only. Cache by actual viewport + sky options, not by character
 // position or frame: stars/clouds never allocate a new canvas each movement.
 function navigationSkyBackdrop(width,height){
@@ -681,7 +725,11 @@ function navigationSkyBackdrop(width,height){
   const clouds=$('navigation-sky-clouds').checked;
   const mist=$('navigation-sky-mist').checked;
   const stars=$('navigation-sky-stars').checked;
-  const key=[Math.ceil(width),Math.ceil(height),time,clouds,mist,stars].join('|');
+  const border=sculptBorderConfig();
+  const isExterior=sculptBorderControlsAvailable&&
+    !activeInteriorId&&!sculptWorldCurrentInterior();
+  const key=[Math.ceil(width),Math.ceil(height),time,clouds,mist,stars,
+    isExterior,border.mapKey,JSON.stringify(border)].join('|');
   if(navSkyCache?.key===key)return navSkyCache;
   const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
   const image=document.createElement('canvas');
@@ -689,6 +737,7 @@ function navigationSkyBackdrop(width,height){
   const imageCtx=image.getContext('2d',{alpha:false});
   imageCtx.setTransform(scale,0,0,scale,0,0);
   const stats=drawSculptSkyBackdrop(imageCtx,{width,height,time,clouds,mist,stars});
+  if(isExterior)drawSculptDistantBorders(imageCtx,{width,height,config:border,mapKey:border.mapKey});
   return navSkyCache={key,image,stats};
 }
 function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigation-camera-zoom').value)/100||1.75));}
@@ -912,6 +961,7 @@ function center(){
 }
 function draw(){
   framePending=false;
+  if(sculptBorderUiAreaKey!==sculptBorderAreaKey())syncSculptBorderControls();
   const {width,height}=dimensions(),dpr=Math.min(2,window.devicePixelRatio||1);
   const desiredW=Math.max(1,Math.floor(width*dpr)),desiredH=Math.max(1,Math.floor(height*dpr));
   if(canvas.width!==desiredW)canvas.width=desiredW;
@@ -923,8 +973,22 @@ function draw(){
   }else{
     ctx.fillStyle='#17232b';ctx.fillRect(0,0,width,height);
   }
-  ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   const view=cameraView();
+  // The upper strip is reserved for the actual sky/time-of-day renderer.
+  // Decorative land MUST NOT paint over the entire frame when the camera
+  // follows a hero close to a WorldArea edge or on a small landscape screen.
+  if(sculptBorderControlsAvailable&&navigationTesting&&
+     !activeInteriorId&&!sculptWorldCurrentInterior()){
+    const border=sculptBorderConfig();
+    ctx.save();
+    const skySafetyBand=Math.min(24,height*.05);
+    ctx.beginPath();ctx.rect(0,skySafetyBand,width,height-skySafetyBand);ctx.clip();
+    ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+    ctx.transform(1,view.shear,0,view.pitch,0,0);
+    drawSculptBorderExtension(ctx,{terrain,tile:SCULPT_TILE,config:border,mapKey:border.mapKey});
+    ctx.restore();
+  }
+  ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
   // Editor keeps the published V38 exact inverse pointer projection. In
   // Tester, project only the background texture, not standing actor sprites.
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
@@ -2348,6 +2412,39 @@ function setNavigationTesting(on){
     status('Édition réactivée : le test de marche n’a modifié aucune donnée.');
   }
   scheduleDraw();
+}
+if(sculptBorderControlsAvailable){
+for(const id of ['scenery-border-enabled','scenery-border-biome']){
+  $(id).addEventListener('change',()=>{
+    updateSculptBorderPreview(current=>({
+      ...current,
+      enabled:$('scenery-border-enabled').checked,
+      biome:$('scenery-border-biome').value
+    }));
+  });
+}
+$('scenery-border-side').addEventListener('change',syncSculptBorderControls);
+for(const id of ['scenery-border-style','scenery-border-density']){
+  $(id).addEventListener(id==='scenery-border-density'?'input':'change',()=>{
+    const side=$('scenery-border-side').value;
+    updateSculptBorderPreview(current=>({...current,sides:{
+      ...current.sides,[side]:{
+        ...current.sides[side],style:$('scenery-border-style').value,
+        density:Number($('scenery-border-density').value)
+      }
+    }}));
+    syncSculptBorderControls();
+  });
+}
+$('scenery-border-regenerate').addEventListener('click',()=>{
+  const side=$('scenery-border-side').value;
+  updateSculptBorderPreview(current=>({...current,sides:{
+    ...current.sides,[side]:{...current.sides[side],
+      revision:current.sides[side].revision+1}
+  }}));
+  status('Nouvelle variante du décor '+side+' (test visuel, non sauvegardé).');
+});
+syncSculptBorderControls();
 }
 for(const id of ['navigation-sky-time','navigation-sky-clouds','navigation-sky-mist','navigation-sky-stars']){
   $(id).addEventListener('change',()=>{navSkyCache=null;scheduleDraw();});
