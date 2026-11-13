@@ -9,7 +9,7 @@ import {
 for(const [columns,rows] of [[36,24],[80,64],[64,80]]) {
   if(rows>64)continue; // 2.5D terrain authority currently supports max 64 rows
   for(const angle of [35,55,90]){
-    test('south camera stops at last decorative row and north keeps sky '+columns+'x'+rows+' @'+angle,()=>{
+    test('south camera stops at playable border and north keeps sky '+columns+'x'+rows+' @'+angle,()=>{
       const width=columns*28,height=rows*21;
       const zoom=2,viewportHeight=540,viewportWidth=950;
       const view=sculptCameraGameView(angle);
@@ -21,9 +21,9 @@ for(const [columns,rows] of [[36,24],[80,64],[64,80]]) {
       });
       assert.equal(bounds.minX,coreBounds.minX);
       assert.equal(bounds.maxX,coreBounds.maxX);
-      assert.ok(bounds.maxY>coreBounds.maxY);
+      assert.equal(bounds.maxY,coreBounds.maxY);
       assert.ok(bounds.minY<coreBounds.minY);
-      assert.ok(Math.abs((coreBounds.minY-bounds.minY)*zoom-64.8)<.00001);
+      assert.ok((coreBounds.minY-bounds.minY)*zoom>=64.8);
       const bottom=clampSculptNavigationCameraToTerrainV1({
         pan:{x:-100,y:-100000},bounds,zoom,width:viewportWidth,height:viewportHeight
       });
