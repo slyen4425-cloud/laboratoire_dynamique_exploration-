@@ -2104,6 +2104,53 @@ try{
     !v41Sky.editorRestored||!v41Sky.allOpaqueEditor||!v41Sky.originalData)
     throw Error('V41 real sky/time/night or editor separation failed: '+JSON.stringify(v41Sky));
   console.log('V41 Chromium four sky modes weather stars and editor unchanged:',JSON.stringify(v41Sky));
+  // Decorative map extensions are a visual overlay ONLY. Exercise the actual
+  // author-facing controls in Chromium; no synthetic state or game map mutation.
+  const borderProbe=await run(`(async()=>{
+    const el=id=>document.getElementById(id);
+    if(!el('scenery-border-enabled')||!window.__sculptBorderPreviewProbe)
+      return {error:'Habillage des bordures introuvable'};
+    const scene=()=>{el('scene-export').click();return el('json').value;};
+    const before=scene();
+    el('navigation-toggle').click();
+    const redraw=()=>new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
+    await redraw();
+    if(!window.__sculptLabProbe().navigationTesting)
+      return {error:'Test navigation indisponible'};
+    const change=(id,value,event='change')=>{
+      const input=el(id);input.value=value;
+      input.dispatchEvent(new Event(event,{bubbles:true}));
+    };
+    change('scenery-border-biome','snow');
+    change('scenery-border-side','front');
+    change('scenery-border-style','cliffs');
+    change('scenery-border-density','95','input');
+    const first=window.__sculptBorderPreviewProbe();
+    el('scenery-border-regenerate').click();
+    const next=window.__sculptBorderPreviewProbe();
+    change('scenery-border-side','right');
+    change('scenery-border-style','forest');
+    const other=window.__sculptBorderPreviewProbe();
+    el('scenery-border-enabled').checked=false;
+    el('scenery-border-enabled').dispatchEvent(new Event('change',{bubbles:true}));
+    const off=window.__sculptBorderPreviewProbe();
+    el('navigation-toggle').click();await redraw();
+    const after=scene();
+    return {
+      frontCliff:first.config.sides.front.style==='cliffs'&&first.config.sides.front.density===95,
+      biomeSnow:first.config.biome==='snow',
+      regenerated:next.config.sides.front.revision===first.config.sides.front.revision+1,
+      independent:other.config.sides.right.style==='forest'&&other.config.sides.front.style==='cliffs',
+      disabled:off.config.enabled===false,
+      noNewGameplayAuthority:off.visualOnly&&off.editorOnly,
+      originalScene:before===after,
+      returnedToEditor:!window.__sculptLabProbe().navigationTesting
+    };
+  })()`);
+  if(Object.values(borderProbe).some(value=>value!==true))
+    throw Error('V1 border authoring live Chromium validation failed: '+JSON.stringify(borderProbe));
+  console.log('V1 Chromium visual-only biome and per-side settings GREEN:',JSON.stringify(borderProbe));
+
   // V42: real Chromium/touch-equivalent click path through existing
   // Objects -> Capture Actors palette. Never fake the app's selection API.
   const v42Setup=await run(`(async()=>{
