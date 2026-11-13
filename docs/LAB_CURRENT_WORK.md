@@ -2,8 +2,8 @@
 - START `main@144d614ace99387cc77a995ed6459bde806a4189`, checkpoint `checkpoint/exploration-start-sculptable-fringe-20261113`, branche `work/exploration-sculptable-fringe-model-20261113`.
 - `WorldArea.decorativeFringe` est un champ facultatif, uniquement sur la WorldArea déjà autoritaire. Sa sculpture passe par les pinceaux `applySculptBrush` du **même** SculptTerrain, en fragments 8×8 (jusqu'à huit cases au-delà des quatre côtés). Les objets utilisent le modèle WorldObject existant, sans IDs manuels.
 - La limite originale `WorldArea.width/height/boundary` et `WorldArea.sculptTerrain` reste la SEULE référence Collision World, rencontres, Portals, Spawn et navigation. Aucune extension du monde jouable, aucun moteur parallèle, aucune migration des cartes historiques.
-- Ce lot ne raccorde pas encore les pinceaux, l'affichage des extensions et le placement d'objets à l'interface ; il prépare et teste le contrat de sauvegarde/chargement. **Ne pas annoncer la frange utilisable**, ni toucher au publisher global.
-- Étape suivante : une couche visuelle et des outils d'édition dédiés au pourtour, en réutilisant `drawSculptTerrain`, puis tests de bords, plein écran et Android. CI GREEN et validation visuelle indispensables avant fusion.
+- La branche contient désormais l'affichage par le renderer natif `drawSculptTerrain`, une commande **Décor hors zone jouable** dans le Sculpt de la WorldArea et un pinceau tactile de relief/eau, avec placement/retrait d'objets du catalogue existant. Le noyau jouable conserve sa caméra, ses collisions, ses Portals et ses Spawns ; seule la vue éditeur affiche le pourtour en mode sculpture, tandis que Tester/Jouer le rendent en décor visible non franchissable.
+- **Non fusionné / non publié** : revue CI, examen visuel PC/Android, impact des limites de fragments 8×8, qualité des jonctions et test du rendu doivent être validés. Ce n'est pas la publication globale GenSRPG. Ne pas prétendre que les bâtiments à étages ou le scintillement Combat sont traités par ce lot.
 
 ---
 
