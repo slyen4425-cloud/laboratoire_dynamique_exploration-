@@ -10,7 +10,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
-import {clampSculptNavigationCameraToTerrainV1} from './render/sculpt-navigation-camera-clamp-v1.js';
+import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
   paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
@@ -961,10 +961,21 @@ function cameraView(){
 function cameraBounds(){
   const view=cameraView(),coreW=terrain.width*SCULPT_TILE.width,
     coreH=terrain.height*SCULPT_TILE.height;
-  // In Jouer always clamp to the ORIGINAL playable rectangle. The editor
-  // alone can zoom/fit the eight decorative cells surrounding it.
-  if(!decorativeFringe||navigationTesting||activeInteriorId||sculptWorldCurrentInterior())
-    return sculptCameraBounds(view,coreW,coreH,16*SCULPT_TILE.rise);
+  // The same native camera follows the same playable hero. Only its
+  // PRESENTATION stops at the eighth decorative row in the south, and
+  // reveals a short sky strip in the north. Never extends Collision World.
+  const coreBounds=sculptCameraBounds(view,coreW,coreH,16*SCULPT_TILE.rise);
+  if(navigationTesting){
+    return decorativeFringe&&!activeInteriorId&&!sculptWorldCurrentInterior()
+      ?sculptExteriorFringeCameraBoundsV1({
+        coreBounds,view,coreWidth:coreW,coreHeight:coreH,
+        fringeRows:8,tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
+        viewportHeight:dimensions().height,zoom,skyFraction:.12
+      })
+      :coreBounds;
+  }
+  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
+    return coreBounds;
   const marginX=8*SCULPT_TILE.width,marginY=8*SCULPT_TILE.height;
   const points=[
     sculptCameraProject(view,-marginX,-marginY-16*SCULPT_TILE.rise),
