@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
-const publish=read('.github/workflows/publish-v81-main.yml');
+const publish=read('.github/workflows/publish-exploration-main.yml');
 const ci=read('.github/workflows/ci.yml');
 const stage=read('scripts/stage-capture-author-showcase.mjs');
 
