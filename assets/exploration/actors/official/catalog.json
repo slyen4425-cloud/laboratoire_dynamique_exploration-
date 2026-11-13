@@ -1,0 +1,931 @@
+{
+  "schema": "exploration-official-hero-catalog-v1",
+  "version": 1,
+  "source": "archives auteur conservées — trois lots, aucun moteur dupliqué",
+  "heroes": [
+    {
+      "id": "hero.official.01_heros_bleu",
+      "name": "Heros bleu",
+      "thumbnail": "assets/exploration/actors/official/01_heros_bleu/modele_face.png",
+      "back": "assets/exploration/actors/official/01_heros_bleu/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/N/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/N/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/N/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/N/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/N/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/NE/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NE/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NE/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NE/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NE/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/E/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/E/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/E/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/E/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/E/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/SE/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SE/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SE/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SE/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SE/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/S/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/S/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/S/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/S/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/S/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/SW/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SW/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SW/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SW/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SW/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/W/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/W/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/W/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/W/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/W/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/01_heros_bleu/frames/NW/00.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NW/01.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NW/02.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NW/03.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NW/04.png",
+          "assets/exploration/actors/official/01_heros_bleu/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.02_heros_vert",
+      "name": "Heros vert",
+      "thumbnail": "assets/exploration/actors/official/02_heros_vert/modele_face.png",
+      "back": "assets/exploration/actors/official/02_heros_vert/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/02_heros_vert/frames/N/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/N/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/N/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/N/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/N/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/02_heros_vert/frames/NE/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NE/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NE/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NE/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NE/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/02_heros_vert/frames/E/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/E/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/E/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/E/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/E/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/02_heros_vert/frames/SE/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SE/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SE/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SE/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SE/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/02_heros_vert/frames/S/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/S/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/S/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/S/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/S/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/02_heros_vert/frames/SW/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SW/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SW/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SW/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SW/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/02_heros_vert/frames/W/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/W/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/W/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/W/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/W/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/02_heros_vert/frames/NW/00.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NW/01.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NW/02.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NW/03.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NW/04.png",
+          "assets/exploration/actors/official/02_heros_vert/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.03_heroine_turquoise",
+      "name": "Heroine turquoise",
+      "thumbnail": "assets/exploration/actors/official/03_heroine_turquoise/modele_face.png",
+      "back": "assets/exploration/actors/official/03_heroine_turquoise/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/N/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/N/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/N/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/N/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/N/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NE/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NE/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NE/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NE/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NE/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/E/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/E/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/E/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/E/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/E/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SE/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SE/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SE/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SE/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SE/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/S/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/S/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/S/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/S/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/S/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SW/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SW/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SW/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SW/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SW/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/W/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/W/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/W/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/W/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/W/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NW/00.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NW/01.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NW/02.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NW/03.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NW/04.png",
+          "assets/exploration/actors/official/03_heroine_turquoise/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.04_heroine_violette",
+      "name": "Heroine violette",
+      "thumbnail": "assets/exploration/actors/official/04_heroine_violette/modele_face.png",
+      "back": "assets/exploration/actors/official/04_heroine_violette/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/N/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/N/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/N/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/N/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/N/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/NE/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NE/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NE/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NE/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NE/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/E/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/E/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/E/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/E/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/E/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/SE/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SE/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SE/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SE/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SE/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/S/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/S/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/S/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/S/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/S/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/SW/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SW/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SW/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SW/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SW/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/W/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/W/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/W/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/W/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/W/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/04_heroine_violette/frames/NW/00.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NW/01.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NW/02.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NW/03.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NW/04.png",
+          "assets/exploration/actors/official/04_heroine_violette/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.05_heros_casquette_rouge",
+      "name": "Heros casquette rouge",
+      "thumbnail": "assets/exploration/actors/official/05_heros_casquette_rouge/modele_face.png",
+      "back": "assets/exploration/actors/official/05_heros_casquette_rouge/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/N/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/N/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/N/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/N/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/N/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NE/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NE/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NE/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NE/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NE/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/E/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/E/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/E/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/E/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/E/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SE/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SE/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SE/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SE/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SE/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/S/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/S/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/S/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/S/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/S/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SW/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SW/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SW/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SW/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SW/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/W/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/W/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/W/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/W/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/W/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NW/00.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NW/01.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NW/02.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NW/03.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NW/04.png",
+          "assets/exploration/actors/official/05_heros_casquette_rouge/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.06_heroine_casquette_queue_haute",
+      "name": "Heroine casquette queue haute",
+      "thumbnail": "assets/exploration/actors/official/06_heroine_casquette_queue_haute/modele_face.png",
+      "back": "assets/exploration/actors/official/06_heroine_casquette_queue_haute/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/N/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/N/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/N/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/N/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/N/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NE/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NE/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NE/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NE/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NE/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/E/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/E/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/E/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/E/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/E/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SE/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SE/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SE/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SE/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SE/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/S/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/S/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/S/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/S/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/S/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SW/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SW/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SW/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SW/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SW/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/W/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/W/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/W/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/W/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/W/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NW/00.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NW/01.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NW/02.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NW/03.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NW/04.png",
+          "assets/exploration/actors/official/06_heroine_casquette_queue_haute/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.07_heros_rouge_sans_casquette",
+      "name": "Heros rouge sans casquette",
+      "thumbnail": "assets/exploration/actors/official/07_heros_rouge_sans_casquette/modele_face.png",
+      "back": "assets/exploration/actors/official/07_heros_rouge_sans_casquette/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/N/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/N/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/N/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/N/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/N/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NE/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NE/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NE/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NE/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NE/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/E/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/E/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/E/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/E/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/E/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SE/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SE/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SE/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SE/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SE/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/S/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/S/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/S/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/S/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/S/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SW/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SW/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SW/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SW/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SW/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/W/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/W/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/W/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/W/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/W/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NW/00.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NW/01.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NW/02.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NW/03.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NW/04.png",
+          "assets/exploration/actors/official/07_heros_rouge_sans_casquette/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.08_heroine_rouge_ponytail",
+      "name": "Heroine rouge ponytail",
+      "thumbnail": "assets/exploration/actors/official/08_heroine_rouge_ponytail/modele_face.png",
+      "back": "assets/exploration/actors/official/08_heroine_rouge_ponytail/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/N/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/N/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/N/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/N/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/N/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NE/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NE/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NE/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NE/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NE/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/E/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/E/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/E/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/E/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/E/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SE/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SE/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SE/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SE/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SE/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/S/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/S/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/S/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/S/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/S/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SW/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SW/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SW/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SW/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SW/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/W/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/W/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/W/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/W/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/W/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NW/00.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NW/01.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NW/02.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NW/03.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NW/04.png",
+          "assets/exploration/actors/official/08_heroine_rouge_ponytail/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.09_heros_rouge_noir_or",
+      "name": "Heros rouge noir or",
+      "thumbnail": "assets/exploration/actors/official/09_heros_rouge_noir_or/modele_face.png",
+      "back": "assets/exploration/actors/official/09_heros_rouge_noir_or/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/N/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/N/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/N/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/N/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/N/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NE/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NE/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NE/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NE/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NE/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/E/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/E/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/E/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/E/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/E/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SE/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SE/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SE/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SE/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SE/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/S/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/S/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/S/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/S/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/S/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SW/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SW/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SW/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SW/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SW/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/W/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/W/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/W/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/W/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/W/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NW/00.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NW/01.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NW/02.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NW/03.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NW/04.png",
+          "assets/exploration/actors/official/09_heros_rouge_noir_or/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.10_heros_rouge_sac_noir",
+      "name": "Heros rouge sac noir",
+      "thumbnail": "assets/exploration/actors/official/10_heros_rouge_sac_noir/modele_face.png",
+      "back": "assets/exploration/actors/official/10_heros_rouge_sac_noir/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/N/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/N/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/N/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/N/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/N/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NE/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NE/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NE/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NE/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NE/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/E/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/E/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/E/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/E/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/E/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SE/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SE/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SE/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SE/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SE/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/S/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/S/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/S/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/S/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/S/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SW/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SW/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SW/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SW/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SW/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/W/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/W/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/W/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/W/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/W/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NW/00.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NW/01.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NW/02.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NW/03.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NW/04.png",
+          "assets/exploration/actors/official/10_heros_rouge_sac_noir/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.11_heroine_violette_casquette",
+      "name": "Heroine violette casquette",
+      "thumbnail": "assets/exploration/actors/official/11_heroine_violette_casquette/modele_face.png",
+      "back": "assets/exploration/actors/official/11_heroine_violette_casquette/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/N/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/N/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/N/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/N/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/N/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NE/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NE/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NE/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NE/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NE/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/E/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/E/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/E/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/E/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/E/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SE/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SE/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SE/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SE/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SE/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/S/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/S/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/S/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/S/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/S/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SW/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SW/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SW/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SW/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SW/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/W/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/W/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/W/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/W/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/W/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NW/00.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NW/01.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NW/02.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NW/03.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NW/04.png",
+          "assets/exploration/actors/official/11_heroine_violette_casquette/frames/NW/05.png"
+        ]
+      }
+    },
+    {
+      "id": "hero.official.12_heroine_rose_casquette",
+      "name": "Heroine rose casquette",
+      "thumbnail": "assets/exploration/actors/official/12_heroine_rose_casquette/modele_face.png",
+      "back": "assets/exploration/actors/official/12_heroine_rose_casquette/modele_dos.png",
+      "fps": 8,
+      "frameSize": [
+        128,
+        160
+      ],
+      "directions": {
+        "N": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/N/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/N/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/N/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/N/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/N/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/N/05.png"
+        ],
+        "NE": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NE/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NE/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NE/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NE/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NE/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NE/05.png"
+        ],
+        "E": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/E/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/E/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/E/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/E/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/E/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/E/05.png"
+        ],
+        "SE": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SE/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SE/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SE/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SE/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SE/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SE/05.png"
+        ],
+        "S": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/S/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/S/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/S/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/S/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/S/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/S/05.png"
+        ],
+        "SW": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SW/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SW/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SW/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SW/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SW/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/SW/05.png"
+        ],
+        "W": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/W/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/W/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/W/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/W/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/W/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/W/05.png"
+        ],
+        "NW": [
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NW/00.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NW/01.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NW/02.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NW/03.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NW/04.png",
+          "assets/exploration/actors/official/12_heroine_rose_casquette/frames/NW/05.png"
+        ]
+      }
+    }
+  ]
+}
