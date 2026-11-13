@@ -172,7 +172,7 @@ if(surfaceBaseFamilySelect){
   for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect])
     selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
   surfaceBaseFamilySelect.value=surface.baseTerrainFamilyId;
-  surfacePaintFamilySelect.value=surface.baseTerrainFamilyId;
+  surfacePaintFamilySelect.value=sculptEncounterFamilyForMaterial($('surface-material').value)??surface.baseTerrainFamilyId;
 }
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
