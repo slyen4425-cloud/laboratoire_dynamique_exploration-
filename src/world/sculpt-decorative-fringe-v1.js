@@ -1,7 +1,7 @@
 // One optional WorldArea-owned decorative ring. All relief edits reuse the
 // native SculptTerrain brush. Gameplay continues to read WorldArea.width,
 // height, boundary and sculptTerrain exclusively.
-import {createSculptTerrain,importSculptTerrain,applySculptBrush} from './sculpt-height-model.js';
+import {createSculptTerrain,importSculptTerrain,applySculptBrush,applySculptWaterBrush} from './sculpt-height-model.js';
 import {normalizeWorldObjectPlacements} from './world-object-placement-model.js';
 
 export const SCULPT_DECORATIVE_FRINGE_SCHEMA='world-area-decorative-fringe-v1';
@@ -59,9 +59,29 @@ export function normalizeSculptDecorativeFringeV1(raw,area){
   });
 }
 export function createSculptDecorativeFringeV1(area){
-  coreGrid(area);
+  const {w,h}=coreGrid(area);
+  // First enable: reproduce each original edge's relief so the user sees
+  // contiguous land, not four unrelated flat cliffs. Core cells are NEVER edited.
+  const core=area.sculptTerrain?importSculptTerrain(area.sculptTerrain):
+    createSculptTerrain({width:w,height:h});
+  const chunks=[];
+  for(let row=-8;row<h+8;row+=8)for(let col=-8;col<w+8;col+=8){
+    if(!validChunkLocation(area,col,row))continue;
+    const levels=[],waterLevels=[],roundness=[];
+    for(let y=0;y<8;y++)for(let x=0;x<8;x++){
+      const cx=Math.max(0,Math.min(w-1,col+x));
+      const cy=Math.max(0,Math.min(h-1,row+y));
+      const index=cy*w+cx;
+      levels.push(core.levels[index]);
+      waterLevels.push(core.waterLevels[index]);
+      roundness.push(core.roundness[index]);
+    }
+    chunks.push({col,row,terrain:createSculptTerrain({
+      width:8,height:8,levels,waterLevels,roundness
+    })});
+  }
   return normalizeSculptDecorativeFringeV1({
-    schema:SCULPT_DECORATIVE_FRINGE_SCHEMA,chunks:[],objects:[]
+    schema:SCULPT_DECORATIVE_FRINGE_SCHEMA,chunks,objects:[]
   },area);
 }
 export function paintSculptDecorativeFringeV1(raw,area,{col,row,...brush}={}){
@@ -71,7 +91,8 @@ export function paintSculptDecorativeFringeV1(raw,area,{col,row,...brush}={}){
   const chunkCol=Math.floor(col/8)*8,chunkRow=Math.floor(row/8)*8;
   const index=fringe.chunks.findIndex(p=>p.col===chunkCol&&p.row===chunkRow);
   const former=index>=0?fringe.chunks[index].terrain:createSculptTerrain({width:8,height:8});
-  const terrain=applySculptBrush(former,{...brush,x:col-chunkCol+.5,y:row-chunkRow+.5});
+  const painter=String(brush.mode||'').startsWith('water-')?applySculptWaterBrush:applySculptBrush;
+  const terrain=painter(former,{...brush,x:col-chunkCol+.5,y:row-chunkRow+.5});
   if(terrain===former)return fringe;
   const chunks=[...fringe.chunks];
   const changed=Object.freeze({col:chunkCol,row:chunkRow,terrain});
