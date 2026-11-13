@@ -19,3 +19,35 @@ export function clampSculptNavigationCameraToTerrainV1({
     y:axis(pan.y,bounds.minY,bounds.maxY,height)
   });
 }
+
+// Presentation-only bounds for an exterior with the optional 8-cell
+// decorative fringe. Collision, playable WorldArea, and actor position
+// remain unchanged. South is clamped at the LAST decorative row; north
+// reserves a controlled piece of genuine sky (drawn by the existing renderer).
+export function sculptExteriorFringeCameraBoundsV1({
+  coreBounds,view,coreWidth,coreHeight,fringeRows=8,
+  tileWidth=28,tileHeight=21,viewportHeight,zoom,skyFraction=.12
+}={}){
+  if(!coreBounds||!view||
+     ![coreBounds.minX,coreBounds.maxX,coreBounds.minY,coreBounds.maxY,
+       view.pitch,view.shear,coreWidth,coreHeight,fringeRows,
+       tileWidth,tileHeight,viewportHeight,zoom,skyFraction].every(Number.isFinite)||
+     coreWidth<=0||coreHeight<=0||fringeRows<0||fringeRows>8||
+     tileWidth<=0||tileHeight<=0||viewportHeight<=0||zoom<=0||
+     skyFraction<0||skyFraction>.25)
+    throw new TypeError('Valid exterior decorative camera bounds required');
+  // Project bottom corners including the surrounding decoration; only
+  // y is relaxed. The x clamp remains owned by the original playable map.
+  const marginX=fringeRows*tileWidth;
+  const lastRow=coreHeight+fringeRows*tileHeight;
+  const bottomY=Math.max(
+    view.pitch*lastRow+view.shear*(-marginX),
+    view.pitch*lastRow+view.shear*(coreWidth+marginX)
+  );
+  const skyPixels=Math.min(viewportHeight*skyFraction,120);
+  return Object.freeze({
+    ...coreBounds,
+    minY:coreBounds.minY-skyPixels/zoom,
+    maxY:Math.max(coreBounds.maxY,bottomY)
+  });
+}

@@ -4,6 +4,7 @@
 // No independent "sculpt scene" or duplicate Portal graph is persisted.
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from '../world/sculpt-height-model.js';
 import {normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
+import {normalizeSculptDecorativeFringeV1} from '../world/sculpt-decorative-fringe-v1.js';
 import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from '../world/sculpt-scene-preview.js';
 import {updatePortal,updateSpawn,createWorldBuilderDraft,
   validateWorldBuilderDraft} from './world-builder-draft.js';
@@ -42,7 +43,9 @@ export function sculptWorldAreaScene(area){
     throw Error('Objets/acteurs incompatibles avec le laboratoire 2,5D : '+
       'ouverture refusée sans effacer les données du WorldDocument');
   return Object.freeze({
-    terrain,objects,actors,surface:normalizeSculptSurface(area.surface)
+    terrain,objects,actors,surface:normalizeSculptSurface(area.surface),
+    ...(area.decorativeFringe?{decorativeFringe:
+      normalizeSculptDecorativeFringeV1(area.decorativeFringe,area)}:{})
   });
 }
 export function saveSculptWorldArea(draft,areaId,scene){
@@ -58,7 +61,10 @@ export function saveSculptWorldArea(draft,areaId,scene){
   const next={...draft,areas:draft.areas.map(a=>a.id===areaId?{
     ...a,
     sculptTerrain:JSON.parse(serializeSculptTerrain(terrain)),
-    surface,objects,actors
+    surface,objects,actors,
+    ...(scene.decorativeFringe!==undefined?{
+      decorativeFringe:normalizeSculptDecorativeFringeV1(scene.decorativeFringe,a)
+    }:{})
   }:a)};
   const checked=validateWorldBuilderDraft(next);
   if(!checked.valid)throw Error('WorldArea invalide : '+checked.errors.join(', '));

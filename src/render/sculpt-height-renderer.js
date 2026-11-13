@@ -719,7 +719,8 @@ function sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,{capLeft=true,ca
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
-  overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE}={}){
+  overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE,
+  drawOuterSouthRim=true}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -788,7 +789,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
 
   // Outside-world front rim is a V50 HD cliff, not untextured baseColor.
   // Derive it from the final canonical dry row; no phantom gameplay faces.
-  const outerSouthRuns=sculptOuterSouthCliffRuns(terrain);
+  const outerSouthRuns=drawOuterSouthRim?sculptOuterSouthCliffRuns(terrain):[];
   for(const run of outerSouthRuns){
     rockFace(ctx,{x:run.start*w,y:totalHeight-run.level*rise,
       width:(run.end-run.start)*w,height:run.level*rise,

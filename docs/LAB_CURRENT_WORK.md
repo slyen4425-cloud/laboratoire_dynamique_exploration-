@@ -1,3 +1,13 @@
+## 2026-11-13 — Frange décorative sculptable : intégration au seul Labo Exploration
+- START `main@144d614ace99387cc77a995ed6459bde806a4189`, checkpoint `checkpoint/exploration-start-sculptable-fringe-20261113`, branche `work/exploration-sculptable-fringe-model-20261113`.
+- `WorldArea.decorativeFringe` est un champ facultatif, uniquement sur la WorldArea déjà autoritaire. Sa sculpture passe par les pinceaux `applySculptBrush` du **même** SculptTerrain, en fragments 8×8 (jusqu'à huit cases au-delà des quatre côtés). Les objets utilisent le modèle WorldObject existant, sans IDs manuels.
+- La limite originale `WorldArea.width/height/boundary` et `WorldArea.sculptTerrain` reste la SEULE référence Collision World, rencontres, Portals, Spawn et navigation. Aucune extension du monde jouable, aucun moteur parallèle, aucune migration des cartes historiques.
+- La branche contient désormais l'affichage par le renderer natif `drawSculptTerrain`, une commande **Décor hors zone jouable** dans le Sculpt de la WorldArea et un pinceau tactile de relief/eau, avec placement/retrait d'objets du catalogue existant. Le noyau jouable conserve sa caméra, ses collisions, ses Portals et ses Spawns ; seule la vue éditeur affiche le pourtour en mode sculpture, tandis que Tester/Jouer le rendent en décor visible non franchissable.
+- Décision utilisateur : garder **8 cases de frange**, même sur la limite canonique 80×64, sans option 16/24 pour ce lot. La caméra Jouer arrête son déplacement vers le bas à la huitième rangée décorative et peut garder une bande de **ciel naturel au nord** (12% de la hauteur de fenêtre, maximum 120 px). Présentation uniquement ; terrain, acteurs, collisions et passages ne changent pas.
+- Validation : CI de base, rendu Chromium et test navigateur spécifique de peinture hors des bords (quatre côtés / limites 36×24) ajoutés à la barrière du labo. Avant promotion sur `main`, requérir GREEN sur le SHA exact. Après livraison, vérifier sur le matériel cible les jonctions des fragments et les performances paysage. **Aucune publication GenSRPG globale**. Les bâtiments à étages et le scintillement Combat demeurent indépendants.
+
+---
+
 ## 2026-11-13 — Caméra 2,5D bornée aux vrais contours du terrain en Jouer
 - START `main@62c717c4f6a568733c50452a6c7c64a386afa31f`, checkpoint `checkpoint/exploration-start-native-camera-edge-clamp-20261113`, branche `work/exploration-native-camera-edge-clamp-20261113`.
 - Cause : les cartes montées en WorldArea activaients le suivi du héros sans borne, bien que le mode Tester simple borne déjà la caméra. Sur PC grand écran et plein écran, un bord du monde pouvait sortir du cadre et montrer le vide.

@@ -10,7 +10,11 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
-import {clampSculptNavigationCameraToTerrainV1} from './render/sculpt-navigation-camera-clamp-v1.js';
+import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1} from './render/sculpt-navigation-camera-clamp-v1.js';
+import {
+  createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
+  paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
+} from './world/sculpt-decorative-fringe-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {normalizeSculptBorderPreview,resolveSculptBorderBiome,
@@ -163,6 +167,22 @@ let npcCatalogLoading=false;
 let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
 let npcRewardChoices=Object.freeze([]),npcRewardRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
+// Same WorldArea authoring data; fringe cells are never passed to Collision World.
+let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
+let fringeHistory=[],fringeRedo=[];
+const fringeRasterCache=new Map();
+window.__sculptFringeProbe=()=>Object.freeze({
+  available:!!sculptWorldDraft&&sculptWorldAreaMounted&&!activeInteriorId,
+  editing:fringeEditing,active:!!decorativeFringe,
+  chunks:decorativeFringe?.chunks.length??0,
+  objects:decorativeFringe?.objects.length??0,
+  levelSum:decorativeFringe?.chunks.reduce((sum,c)=>
+    sum+c.terrain.levels.reduce((a,b)=>a+b,0),0)??0,
+  initialWidth:terrain.width,initialHeight:terrain.height,
+  margin:8,pan:{...pan},zoom,
+  bounds:cameraBounds(),
+  navigationTesting
+});
 // The frozen V80 HTML lacks the newer semantic palette. The shared module
 // supports its existing WorldSurface authoring without a second control path.
 const surfaceBaseFamilySelect=$('surface-base-family');
@@ -755,7 +775,8 @@ function navigationBackground(){
     navTerrainCache.texture===currentTexture&&navTerrainCache.signature===signature&&
     navTerrainCache.waterTexture===ribbonTextures.water?.texture&&
     navTerrainCache.roadTexture===ribbonTextures.road?.texture&&
-    navTerrainCache.paintSurface===surface;
+    navTerrainCache.paintSurface===surface&&
+    navTerrainCache.fringePresent===Boolean(decorativeFringe);
   if(same)return navTerrainCache;
   const paddingX=18,paddingY=7*SCULPT_TILE.rise+18;
   const raster=document.createElement('canvas');
@@ -771,11 +792,12 @@ function navigationBackground(){
     cliffMoss:$('rock-moss')?.checked,
     overlays:ribbonTextures,
      sphereWallImages,
-    paintSurface:surface,paintImages:surfacePaintImages});
+    paintSurface:surface,paintImages:surfacePaintImages,
+    drawOuterSouthRim:!decorativeFringe});
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
-    paintSurface:surface,image:raster,scale,paddingX,paddingY,result};
+    paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
 }
 const demoActorImage=new Image(),demoActorAsset=resolveMapActorAsset('actor.demo.hero.traveler.01');
@@ -937,8 +959,33 @@ function cameraView(){
     :sculptCameraView($('camera-view').value);
 }
 function cameraBounds(){
-  return sculptCameraBounds(cameraView(),terrain.width*SCULPT_TILE.width,
-    terrain.height*SCULPT_TILE.height,16*SCULPT_TILE.rise);
+  const view=cameraView(),coreW=terrain.width*SCULPT_TILE.width,
+    coreH=terrain.height*SCULPT_TILE.height;
+  // The same native camera follows the same playable hero. Only its
+  // PRESENTATION stops at the eighth decorative row in the south, and
+  // reveals a short sky strip in the north. Never extends Collision World.
+  const coreBounds=sculptCameraBounds(view,coreW,coreH,16*SCULPT_TILE.rise);
+  if(navigationTesting){
+    return decorativeFringe&&!activeInteriorId&&!sculptWorldCurrentInterior()
+      ?sculptExteriorFringeCameraBoundsV1({
+        coreBounds,view,coreWidth:coreW,coreHeight:coreH,
+        fringeRows:8,tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
+        viewportHeight:dimensions().height,zoom,skyFraction:.12
+      })
+      :coreBounds;
+  }
+  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
+    return coreBounds;
+  const marginX=8*SCULPT_TILE.width,marginY=8*SCULPT_TILE.height;
+  const points=[
+    sculptCameraProject(view,-marginX,-marginY-16*SCULPT_TILE.rise),
+    sculptCameraProject(view,coreW+marginX,-marginY-16*SCULPT_TILE.rise),
+    sculptCameraProject(view,-marginX,coreH+marginY),
+    sculptCameraProject(view,coreW+marginX,coreH+marginY)
+  ];
+  const ys=points.map(p=>p.y),minX=-marginX,maxX=coreW+marginX;
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  return {minX,maxX,minY,maxY,width:maxX-minX,height:maxY-minY};
 }
 function fit(){
   // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
@@ -957,8 +1004,81 @@ function fit(){
 }
 function center(){
   const {width,height}=dimensions(),bounds=cameraBounds();
-  pan={x:Math.round((width-bounds.width*zoom)/2),
+  pan={x:Math.round((width-bounds.width*zoom)/2-bounds.minX*zoom),
     y:Math.round((height-bounds.height*zoom)/2-bounds.minY*zoom)};
+}
+// Render with the existing Sculpt terrain renderer. Chunk rasters cache static
+// background relief; no extra per-frame terrain engine or gameplay collision.
+function decorativeFringeRaster(chunk){
+  const key=chunk.col+':'+chunk.row;
+  const signature=[$('rock').value,displayedBaseMaterialId(),
+    cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked].join('|');
+  const previous=fringeRasterCache.get(key);
+  if(previous?.terrain===chunk.terrain&&previous.texture===currentTexture&&
+     previous.signature===signature)return previous;
+  const paddingX=18,paddingY=16*SCULPT_TILE.rise+18;
+  const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
+  const image=document.createElement('canvas');
+  image.width=Math.ceil((8*SCULPT_TILE.width+2*paddingX)*scale);
+  image.height=Math.ceil((8*SCULPT_TILE.height+paddingY+48)*scale);
+  const context=image.getContext('2d',{alpha:true});
+  context.setTransform(scale,0,0,scale,0,0);
+  context.translate(paddingX,paddingY);
+  drawSculptTerrain(context,{terrain:chunk.terrain,
+    material:registry.require(displayedBaseMaterialId(),'surface'),
+    texture:currentTexture,rockPalette:$('rock').value,
+    cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
+    cliffMoss:$('rock-moss')?.checked,
+    sphereWallImages,overlays:ribbonTextures,paintSurface:null,paintImages:null,
+    drawOuterSouthRim:false});
+  const raster={terrain:chunk.terrain,texture:currentTexture,signature,
+    image,scale,paddingX,paddingY};
+  fringeRasterCache.set(key,raster);
+  return raster;
+}
+function drawDecorativeFringeTerrain(){
+  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const view=cameraView(),margin=8;
+  ctx.save();
+  // Tester works in the unchanged projected camera; authoring already uses
+  // the V38 editor transform. Both draw from the same world coordinates.
+  if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+  ctx.beginPath();
+  ctx.rect(-margin*SCULPT_TILE.width,-margin*SCULPT_TILE.height,
+    (terrain.width+2*margin)*SCULPT_TILE.width,
+    (terrain.height+2*margin)*SCULPT_TILE.height);
+  ctx.rect(0,0,terrain.width*SCULPT_TILE.width,terrain.height*SCULPT_TILE.height);
+  ctx.clip('evenodd');
+  for(const chunk of decorativeFringe.chunks){
+    const raster=decorativeFringeRaster(chunk);
+    ctx.drawImage(raster.image,
+      chunk.col*SCULPT_TILE.width-raster.paddingX,
+      chunk.row*SCULPT_TILE.height-raster.paddingY,
+      raster.image.width/raster.scale,raster.image.height/raster.scale);
+  }
+  ctx.restore();
+}
+function drawDecorativeFringeObjects(){
+  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const view=cameraView();
+  const objects=resolveWorldObjectPlacements(decorativeFringe.objects,objectDefinitionCatalogV1)
+    .sort((a,b)=>a.transform.y-b.transform.y);
+  for(const object of objects){
+    const col=Math.floor(object.transform.x/SCULPT_TILE.width/8)*8;
+    const row=Math.floor(object.transform.y/SCULPT_TILE.height/8)*8;
+    const chunk=decorativeFringe.chunks.find(c=>c.col===col&&c.row===row);
+    if(!chunk)continue;
+    const x=col*SCULPT_TILE.width,y=row*SCULPT_TILE.height;
+    const local={...object,transform:{...object.transform,
+      x:object.transform.x-x,y:object.transform.y-y}};
+    ctx.save();
+    if(navigationTesting){
+      const point=sculptCameraProject(view,x,y);
+      ctx.translate(point.x,point.y);
+    }else ctx.translate(x,y);
+    drawPreviewObject(local,{visualTerrain:chunk.terrain,decorative:true});
+    ctx.restore();
+  }
 }
 function draw(){
   framePending=false;
@@ -993,6 +1113,7 @@ function draw(){
   // Editor keeps the published V38 exact inverse pointer projection. In
   // Tester, project only the background texture, not standing actor sprites.
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+  drawDecorativeFringeTerrain();
   let result;
   if(navigationTesting||objectEditing||!drawing){
     // Reuse the EXISTING terrain-only raster while editing object placements.
@@ -1009,9 +1130,11 @@ function draw(){
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
-      sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages});
+      sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
+      drawOuterSouthRim:!decorativeFringe});
   }
   lastRenderStats=result;
+  drawDecorativeFringeObjects();
   if(activeInteriorId||sculptWorldCurrentInterior()){
     // Draw rooms with the same single wall and doorway renderer.
     ctx.save();
@@ -1254,6 +1377,79 @@ function screenToWorldPoint(event){
   return sculptCameraScreenToWorld(cameraView(),{
     screenX:event.clientX-rect.left,screenY:event.clientY-rect.top,pan,zoom});
 }
+function decorativeFringeArea(){
+  return {width:terrain.width*SCULPT_TILE.width,
+    height:terrain.height*SCULPT_TILE.height,sculptTerrain:terrain};
+}
+function decorativeFringeHeightAt(col,row){
+  const patch=decorativeFringe?.chunks.find(p=>p.col===Math.floor(col/8)*8&&
+    p.row===Math.floor(row/8)*8);
+  return patch?sculptHeightAt(patch.terrain,col-patch.col,row-patch.row):2;
+}
+function screenToDecorativeFringeCell(event){
+  if(!decorativeFringe||!fringeEditing)return null;
+  const {x,y}=screenToWorldPoint(event),col=Math.floor(x/SCULPT_TILE.width);
+  if(!Number.isFinite(col)||col< -8||col>=terrain.width+8)return null;
+  const area=decorativeFringeArea();
+  for(let row=terrain.height+7;row>=-8;row--){
+    if(!sculptDecorativeFringeCellIsOuterV1(area,col,row))continue;
+    const top=row*SCULPT_TILE.height-decorativeFringeHeightAt(col,row)*SCULPT_TILE.rise;
+    if(y>=top&&y<=top+SCULPT_TILE.height)return {x:col,y:row};
+  }
+  const row=Math.floor(y/SCULPT_TILE.height);
+  return sculptDecorativeFringeCellIsOuterV1(area,col,row)?{x:col,y:row}:null;
+}
+function recordDecorativeFringe(previous){
+  if(JSON.stringify(previous)===JSON.stringify(decorativeFringe))return false;
+  fringeHistory.push(previous);
+  if(fringeHistory.length>40)fringeHistory.shift();
+  fringeRedo=[];
+  fringeRasterCache.clear();
+  updateHistoryButtons();scheduleDraw();
+  return true;
+}
+function paintDecorativeFringeCell(cell){
+  const mode=selectedMode;
+  if(!['raise','dig','flatten','smooth','plateau',
+        'water-fill','water-rise','water-lower','water-erase','water-smooth'].includes(mode)){
+    status('Décor extérieur : choisis un pinceau Terre ou Eau, sans pente ni sphère pour le moment.');
+    return false;
+  }
+  const old=decorativeFringe;
+  const target=mode.startsWith('water-')?Number($('water-target').value):
+    mode==='plateau'?Number($('target').value):decorativeFringeHeightAt(cell.x,cell.y);
+  decorativeFringe=paintSculptDecorativeFringeV1(old,decorativeFringeArea(),{
+    col:cell.x,row:cell.y,mode,target,
+    strength:Number($('strength').value),radius:Number($('radius').value),
+    edgeSoftness:Number($('edge').value)/100,shape:$('brush-shape').value});
+  fringeRasterCache.clear();scheduleDraw();
+  return true;
+}
+function handleDecorativeFringeObject(cell){
+  const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
+  const before=decorativeFringe,action=$('object-action').value;
+  if(action==='remove'){
+    const hit=findSculptPreviewObjectNear(before.objects,x,y);
+    if(hit)decorativeFringe=normalizeSculptDecorativeFringeV1({
+      ...before,objects:removeSculptPreviewObject(before.objects,hit.id)
+    },decorativeFringeArea());
+    else status('Aucun décor à retirer dans la frange');
+  }else if(action==='place'){
+    const definitionId=$('object-definition').value;
+    const candidate=appendSculptPreviewObject(before.objects,{
+      definitionId,x,y,scale:Number($('object-scale').value)/100,
+      rotationDeg:Number($('object-rotation').value),
+      variantId:$('object-variant-wrap').hidden?null:$('object-variant').value
+    });
+    if(candidate.length>before.objects.length){
+      decorativeFringe=normalizeSculptDecorativeFringeV1({
+        ...before,objects:candidate
+      },decorativeFringeArea());
+    }else status('Décor indisponible ou limite des objets atteinte');
+  }else status('Périphérie : passe en mode Poser ou Retirer pour ses décorations');
+  if(recordDecorativeFringe(before))
+    status('Décor hors carte mis à jour · la zone jouable reste inchangée');
+}
 function screenToCell(event){
   // Exact inverse of the same affine camera used to draw terrain/preview.
   const {x,y}=screenToWorldPoint(event);
@@ -1480,17 +1676,31 @@ function commitUndo(previous){
   redoHistory=[];updateHistoryButtons();
 }
 function updateHistoryButtons(){
-  $('undo').disabled=history.length===0;
-  $('redo').disabled=redoHistory.length===0;
-  $('undo').textContent='↶ Annuler ('+history.length+')';
-  $('redo').textContent='↷ Rétablir ('+redoHistory.length+')';
+  const past=fringeEditing?fringeHistory:history;
+  const future=fringeEditing?fringeRedo:redoHistory;
+  $('undo').disabled=past.length===0;
+  $('redo').disabled=future.length===0;
+  $('undo').textContent='↶ Annuler ('+past.length+')';
+  $('redo').textContent='↷ Rétablir ('+future.length+')';
 }
 function undo(){
+  if(fringeEditing){
+    if(!fringeHistory.length){status('Aucun décor extérieur à annuler');return;}
+    fringeRedo.push(decorativeFringe);
+    decorativeFringe=fringeHistory.pop();
+    fringeRasterCache.clear();updateHistoryButtons();scheduleDraw();return;
+  }
   if(!history.length){status('Aucune action à annuler');return;}
   redoHistory.push(terrain);terrain=history.pop();
   updateHistoryButtons();scheduleDraw();status('Dernière action annulée (sol / eau)');
 }
 function redo(){
+  if(fringeEditing){
+    if(!fringeRedo.length){status('Aucun décor extérieur à rétablir');return;}
+    fringeHistory.push(decorativeFringe);
+    decorativeFringe=fringeRedo.pop();
+    fringeRasterCache.clear();updateHistoryButtons();scheduleDraw();return;
+  }
   if(!redoHistory.length){status('Aucune action à rétablir');return;}
   history.push(terrain);terrain=redoHistory.pop();
   updateHistoryButtons();scheduleDraw();status('Action rétablie');
@@ -1498,6 +1708,15 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(fringeEditing){
+    const cell=screenToDecorativeFringeCell(event);
+    if(!cell)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    if(objectEditing){handleDecorativeFringeObject(cell);return;}
+    fringeGesture={pointerId:event.pointerId,last:cell.x+','+cell.y,before:decorativeFringe};
+    paintDecorativeFringeCell(cell);
+    return;
+  }
   if(sculptWorldPortalPlacement){
     event.preventDefault();
     const point=screenToWorldPoint(event);
@@ -1599,6 +1818,23 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(fringeEditing){
+    if(!fringeGesture||fringeGesture.pointerId!==event.pointerId)return;
+    const cell=screenToDecorativeFringeCell(event);
+    if(!cell)return;
+    const key=cell.x+','+cell.y;
+    if(key===fringeGesture.last)return;
+    const [previousX,previousY]=fringeGesture.last.split(',').map(Number);
+    const steps=Math.max(Math.abs(cell.x-previousX),Math.abs(cell.y-previousY));
+    for(let i=1;i<=steps;i++){
+      const next={x:Math.round(previousX+(cell.x-previousX)*i/steps),
+        y:Math.round(previousY+(cell.y-previousY)*i/steps)};
+      if(sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),next.x,next.y))
+        paintDecorativeFringeCell(next);
+    }
+    fringeGesture.last=key;
+    return;
+  }
   if(interiorConnectorMode){
     if(interiorConnectorGesture?.pointerId===event.pointerId){
       const point=screenToWorldPoint(event);
@@ -1758,6 +1994,16 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(fringeGesture){
+    if(event.pointerId!==fringeGesture.pointerId)return;
+    const before=fringeGesture.before;
+    const cancelled=event.type==='pointercancel'||event.type==='lostpointercapture';
+    fringeGesture=null;
+    if(cancelled){decorativeFringe=before;fringeRasterCache.clear();scheduleDraw();}
+    else if(recordDecorativeFringe(before))
+      status('Pourtour sculpté · la carte accessible au héros est inchangée');
+    return;
+  }
   if(interiorConnectorGesture){
     const gesture=interiorConnectorGesture;
     if(event.pointerId!==gesture.pointerId)return;
@@ -2349,6 +2595,9 @@ function setNavigationTesting(on){
     }
   }
   if(on){
+    fringeEditing=false;fringeGesture=null;
+    if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
+    if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=true;
     if(interiorConnectorMode)setInteriorConnectorMode(false);
     if(interiorWallMode)setInteriorWallMode(null);
     if(interiorDoorMoving)setInteriorDoorMoving(false);
@@ -2394,6 +2643,8 @@ function setNavigationTesting(on){
       ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
       :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
+    if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
+      !sculptWorldDraft||sculptPlayRequested||!!activeInteriorId||!!sculptWorldCurrentInterior();
     if(sculptEncounterHost?.active)return; // Combat owns the overlay until completion
     releaseSculptEncounter();
     sculptEncounterController?.resetAnchor();
@@ -2573,11 +2824,11 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
 }
-function drawPreviewObject(object,{foregroundRailOnly=false}={}){
+function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrain,decorative=false}={}){
   // V77: the ramp is terrain, not a bitmap billboard. Draw its quad in the
   // shared world projection, including its genuine rise from foot to head.
   if(object.kind==='ramp'){
-    drawSculptRamp(ctx,object,terrain,{
+    drawSculptRamp(ctx,object,visualTerrain,{
       view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       texture:currentTexture,
@@ -2588,7 +2839,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
   const art=objectImage(object.visual?.assetId);
   if(!art||(art instanceof Image&&!art.complete)||
      !(art.naturalWidth??art.width))return;
-  const rect=sculptObjectVisualRect(object,terrain,{
+  const rect=sculptObjectVisualRect(object,visualTerrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise});
   const {width,height}=rect;
   const artShift=sculptBridgeDeckArtShift(rect,object);
@@ -2620,7 +2871,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false}={}){
     drawWorldObjectSprite(ctx,art,waterfallArt,
       {x:-width/2,y:-height+artShift,width,height},performance.now()/1000);
   else ctx.drawImage(art,-width/2,-height+artShift,width,height);
-  if(!foregroundRailOnly&&objectEditing&&objectSelectedId===object.id){
+  if(!foregroundRailOnly&&objectEditing&&!decorative&&objectSelectedId===object.id){
     ctx.strokeStyle='#bdffe4';ctx.lineWidth=Math.max(1,2/Math.max(.5,zoom));
     ctx.setLineDash([7,4]);ctx.strokeRect(-width/2,-height+artShift,width,height);
   }
@@ -3534,6 +3785,25 @@ $('quick-level-plus').addEventListener('click',()=>adjustQuickLevel(1));
 $('radius-minus').addEventListener('click',()=>adjustBrushSize(-.5));
 $('radius-plus').addEventListener('click',()=>adjustBrushSize(.5));
 
+$('scenery-fringe-toggle')?.addEventListener('change',()=>{
+  if(!sculptWorldDraft||!sculptWorldAreaMounted||activeInteriorId||
+     sculptWorldCurrentInterior()||navigationTesting){
+    $('scenery-fringe-toggle').checked=false;
+    fringeEditing=false;
+    status('Décor hors zone uniquement disponible dans une WorldArea extérieure en édition');
+    return;
+  }
+  fringeEditing=$('scenery-fringe-toggle').checked;
+  if(fringeEditing&&surfaceEditing)setSurfaceEditing(false);
+  if(fringeEditing&&!decorativeFringe){
+    decorativeFringe=createSculptDecorativeFringeV1(decorativeFringeArea());
+    fringeRasterCache.clear();
+    status('Pourtour de 8 cases ajouté sur les quatre côtés · sculptable et décoratif uniquement');
+    fit();
+  }else status(fringeEditing?'Mode pourtour actif : sculpte ou pose des objets au-delà de la carte':
+    'Retour à la zone de base');
+  updateHistoryButtons();scheduleDraw();
+});
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
 $('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing));
@@ -3933,13 +4203,18 @@ $('interior-wall-redo').addEventListener('click',()=>{
 // V79 isolated, reversible area authoring. No reload, no alternative camera or
 // gameplay collision engine; portal links use WorldArea/Portal v1 throughout.
 function captureSculptArea(){
-  return {terrain,objects:placedObjects,actors:placedActors,surface};
+  return {terrain,objects:placedObjects,actors:placedActors,surface,
+    ...(decorativeFringe?{decorativeFringe}:{})};
 }
 function mountSculptArea(snapshot){
   closeNpcDialogue();
   if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
   surface=snapshot.surface;
+  decorativeFringe=snapshot.decorativeFringe??null;
+  fringeEditing=false;fringeGesture=null;fringeHistory=[];fringeRedo=[];
+  fringeRasterCache.clear();
+  if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
   history=[];redoHistory=[];objectHistory=[];objectRedo=[];
   actorHistory=[];actorRedo=[];surfaceHistory=[];surfaceRedo=[];
   objectSelectedId=null;actorSelectedId=null;
@@ -4600,6 +4875,8 @@ function mountWorldSculptArea(areaId,validatedScene=null){
   activeInteriorId=null;sculptInteriors=Object.freeze([]);
   outsideAreaSnapshot=null;
   mountSculptArea(scene);
+  if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
+    area.kind!=='exterior'||sculptPlayRequested;
   // The Encounter editor follows the selected Area's actual terrain family.
   // It edits the same single saved EncounterConfig, never a local duplicate.
   selectedSculptEncounterFamilyId=surface.baseTerrainFamilyId;

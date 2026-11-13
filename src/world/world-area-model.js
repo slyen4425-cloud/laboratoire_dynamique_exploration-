@@ -1,4 +1,5 @@
 import {normalizeInteriorWalls} from './interior-wall-model.js';
+import {normalizeSculptDecorativeFringeV1} from './sculpt-decorative-fringe-v1.js';
 import {importSculptTerrain} from './sculpt-height-model.js';
 import {interiorWallMaterialId} from './interior-material-catalog.js';
 import { normalizeWorldSurface } from './surface-model.js?rev=terrain-family-encounters-v1';
@@ -166,6 +167,11 @@ export function normalizeWorldArea(raw, index = 0) {
     width: worldAreaWidth,
     height: worldAreaHeight,
     ...(sculptTerrain?{sculptTerrain}:{}),
+    // Additive presentation authoring. Never enlarges movement, portals or spawns.
+    ...(raw.decorativeFringe!==undefined?{
+      decorativeFringe:normalizeSculptDecorativeFringeV1(raw.decorativeFringe,
+        {width:worldAreaWidth,height:worldAreaHeight})
+    }:{}),
     boundary: normalizeWorldAreaBoundary(raw.boundary),
     encounters: normalizeWorldAreaEncounters(
       raw.encounters,
