@@ -19,7 +19,7 @@ test('Jouer has its own real menu rather than opening a Builder Tester',()=>{
 });
 
 test('Pages artifact must stage play menu, game module and first-party route',()=>{
- const flow=read('.github/workflows/publish-v81-main.yml');
+ const flow=read('.github/workflows/publish-exploration-main.yml');
  assert.match(flow,/cp encounter-source\/play\.html "\$preview\/"/);
  assert.match(flow,/test -s "\$preview\/src\/play\/exploration-play-session\.js"/);
  assert.match(flow,/name: Stage public Jouer entry alongside canonical world/);
