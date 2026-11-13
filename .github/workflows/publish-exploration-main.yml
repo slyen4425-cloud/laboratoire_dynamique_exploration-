@@ -138,6 +138,9 @@ jobs:
         run: |
           set -euo pipefail
           node site/scripts/prune-pages-duplicate-previews.mjs site
+          # Author ZIPs remain in the source repository; only decoded official
+          # hero frames are part of the browser runtime and Pages budget.
+          find site -maxdepth 1 -type f \( -name 'GenSRPG_heros_*.zip' -o -name 'gensrpg_monster_capture_lot_*_heros_decoupes.zip' \) -delete
           test -s site/sculpt-lab.html
           test -s site/preview/encounters-v80/sculpt-lab.html
           grep -Fq '../../sculpt-lab.html' site/preview/encounters-v80/sculpt-lab.html
