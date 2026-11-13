@@ -1,0 +1,205 @@
+# Single Pages owner. The ONLY runtime source is Exploration main (or the exact PR SHA for validation).
+# Historic preview URL redirects are generated from this one source, never frozen engine copies.
+name: Publish Exploration main — single canonical release
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  statuses: write
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('exploration-publisher-pr-{0}', github.head_ref) || 'exploration-pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+env:
+  EXPLORATION_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }
+jobs:
+  detect-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.diff.outputs.publish }
+    steps:
+      - name: Publish when main changed or official Combat assets advanced
+        id: diff
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "schedule" ]]; then echo "publish=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          remote="https://github.com/slyen4425-cloud/GenSrpg_labo_combat_dynamique.git"
+          main_sha="$(git ls-remote "$remote" refs/heads/main | cut -f1)"
+          assets_sha="$(git ls-remote "$remote" refs/heads/global-assets | cut -f1)"
+          test -n "$main_sha" && test -n "$assets_sha"
+          file="$(mktemp)"
+          base="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          if ! curl -fsSL --max-time 20 "$base/release-provenance.v1.json" -o "$file"; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif jq -e --arg main "$main_sha" --arg assets "$assets_sha" --arg exploration "$EXPLORATION_SOURCE_SHA" \
+            '.schema=="gensrpg-exploration-combat-release-v1" and .combatMain==$main and .authorShowcase==$main and .visualAssets==$assets and .exploration==$exploration' "$file" >/dev/null; then
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  verify-and-assemble:
+    needs: detect-upstream
+    if: needs.detect-upstream.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      exploration_sha: ${{ steps.provenance.outputs.exploration_sha }
+    steps:
+      - name: Checkout ONLY official Exploration main source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EXPLORATION_SOURCE_SHA }
+          path: site
+      - name: Checkout Combat main runtime
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: main
+          path: combat-source
+      - name: Checkout Combat main authored data
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: main
+          path: combat-author
+      - name: Checkout canonical Capture visual assets
+        uses: actions/checkout@v4
+        with:
+          repository: slyen4425-cloud/GenSrpg_labo_combat_dynamique
+          ref: global-assets
+          path: capture-source
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate main-only source ownership and all Exploration tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C site rev-parse HEAD)" = "$EXPLORATION_SOURCE_SHA"
+          test "$(git -C combat-author rev-parse HEAD)" = "$(git -C combat-source rev-parse HEAD)"
+          (cd site && npm test && npm run check)
+          (cd combat-source && npm run ci)
+      - name: Assemble one site root, not parallel versioned engines
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp site/integration/combat-bridge/exploration-encounter.html combat-source/examples/dom-demo/exploration-encounter.html
+          cp site/integration/combat-bridge/exploration-encounter.js combat-source/examples/dom-demo/exploration-encounter.js
+          cp site/integration/combat-bridge/exploration-native-source-v1.js combat-source/examples/dom-demo/exploration-native-source-v1.js
+          cp site/integration/combat-bridge/party.preview.v1.json combat-source/examples/dom-demo/party.preview.v1.json
+          node site/scripts/stage-capture-author-showcase.mjs combat-author combat-source
+          mkdir -p site/combat-preview site/capture-assets
+          rsync -a --exclude='.git' combat-source/ site/combat-preview/
+          rsync -a --exclude='.git' capture-source/ site/capture-assets/
+          test -s site/sculpt-lab.html
+          test -s site/world-assembler.html
+          test -s site/play.html
+          test -s site/src/sculpt-lab-main.js
+          test -s site/combat-preview/examples/dom-demo/exploration-encounter.js
+      - name: Real Chromium on canonical Exploration + Combat site
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd site && node scripts/smoke-sculpt-terrain-lab.mjs)
+          (cd site && node scripts/smoke-world-assembler-authoring-layout.mjs)
+          (cd site && node scripts/smoke-modern-combat-preview.mjs)
+      - name: Compact official Capture assets without losing authored sprites
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf site/capture-assets
+          node site/scripts/stage-pages-capture-assets.mjs capture-source site/capture-assets
+          test -s site/capture-assets/data/assets/catalog/global-visual-assets.v1.json
+          test -s site/combat-preview/data/capture/showcase/encounter-bundle.v1.json
+      - name: Record one immutable main release provenance
+        id: provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          main_sha="$(git -C combat-source rev-parse HEAD)"
+          assets_sha="$(git -C capture-source rev-parse HEAD)"
+          jq -n --arg main "$main_sha" --arg assets "$assets_sha" --arg exploration "$EXPLORATION_SOURCE_SHA" \
+            '{schema:"gensrpg-exploration-combat-release-v1",combatMain:$main,authorShowcase:$main,visualAssets:$assets,exploration:$exploration,channel:"main"}' \
+            > site/release-provenance.v1.json
+          echo "exploration_sha=$EXPLORATION_SOURCE_SHA" >> "$GITHUB_OUTPUT"
+      - name: Check single-release size and write lightweight historic redirects
+        shell: bash
+        run: |
+          set -euo pipefail
+          node site/scripts/prune-pages-duplicate-previews.mjs site
+          test -s site/sculpt-lab.html
+          test -s site/preview/encounters-v80/sculpt-lab.html
+          grep -Fq '../../sculpt-lab.html' site/preview/encounters-v80/sculpt-lab.html
+          test -s site/release-provenance.v1.json
+          ! test -d site/v81
+          ! test -d site/preview/encounters-v80/src
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: site
+
+  deploy:
+    needs: [detect-upstream, verify-and-assemble]
+    if: github.event_name != 'pull_request' && needs.detect-upstream.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }
+    steps:
+      - uses: actions/configure-pages@v5
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Prove the exact main code, native play, Combat and legacy redirects over HTTPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-"
+          curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$base/release-provenance.v1.json?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-main-provenance.json
+          jq -e --arg sha "$EXPLORATION_SOURCE_SHA" \
+            '.schema=="gensrpg-exploration-combat-release-v1" and .exploration==$sha and .channel=="main" and .combatMain==.authorShowcase' \
+            /tmp/exploration-main-provenance.json >/dev/null
+          for path in sculpt-lab.html world-assembler.html play.html \
+            src/sculpt-lab-main.js src/builder/world-assembler-main.js \
+            combat-preview/examples/dom-demo/exploration-encounter.js \
+            capture-assets/data/assets/catalog/global-visual-assets.v1.json; do
+            curl -fsSL --retry 16 --retry-all-errors --retry-delay 4 "$base/$path?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-live-probe
+            test -s /tmp/exploration-live-probe
+          done
+          curl -fsSL "$base/sculpt-lab.html?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-live-sculpt
+          grep -Fq 'id="mode-encounters"' /tmp/exploration-live-sculpt
+          curl -fsSL "$base/play.html?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-live-play
+          grep -Fq 'id="play-new"' /tmp/exploration-live-play
+          for old in encounters-v80 rich-presets-pr301 ramp-pr316 waterfall-height-pr320 unified-candidate; do
+            curl -fsSL "$base/preview/$old/sculpt-lab.html?sha=$EXPLORATION_SOURCE_SHA" -o /tmp/exploration-legacy-redirect
+            grep -Fq '../../sculpt-lab.html' /tmp/exploration-legacy-redirect
+          done
+          echo "LIVE GREEN: Exploration main only, verified SHA, old URLs redirected"
+      - name: Record main release HTTPS verification status
+        env:
+          GH_TOKEN: ${{ github.token }
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/exploration-pages-status.json <<'JSON'
+          {
+            "state":"success",
+            "context":"pages/exploration-main-live",
+            "description":"Canonical Exploration main, Combat and HTTPS verified",
+            "target_url":"https://slyen4425-cloud.github.io/laboratoire_dynamique_exploration-/world-assembler.html"
+          }
+          JSON
+          curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" -X POST \
+            --data-binary @/tmp/exploration-pages-status.json \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/statuses/$EXPLORATION_SOURCE_SHA" >/dev/null
