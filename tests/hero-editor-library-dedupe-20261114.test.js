@@ -41,3 +41,21 @@ test('editor explicitly exposes saved hero count and one-at-a-time deletion, nev
  assert.match(code,/await store\.delete\(selected\.id\)/);
  assert.doesNotMatch(code,/for\s*\([^)]*records[^)]*\)\s*await store\.delete/);
 });
+
+test('legacy 58px/8FPS installed model is reused, never overwritten by new defaults',async()=>{
+ const saved=[];let writes=0;
+ const store={async list(){return saved},async put(record){saved.push(record);writes++}};
+ const blob=new Blob([Uint8Array.of(137,80,78,71,55,1,2)],{type:'image/png'});
+ const args={hero:catalog.heroes[0],store,baseUrl:'https://example.test/',
+  fetchAsset:async()=>({ok:true,blob:async()=>blob}),
+  mintId:()=> '5a0914d2-0ce6-4cd2-b180-c95b22475fc8'};
+ const modern=await installOfficialHeroPresetV1(args);
+ const legacy=Object.freeze({...modern,mapVisual:Object.freeze({...modern.mapVisual,
+   targetHeight:58,animation:Object.freeze({...modern.mapVisual.animation,framesPerSecond:8})})});
+ saved[0]=legacy; // mock an existing historical saved definition, not a runtime migration
+ const found=await installOfficialHeroPresetV1({...args,mintId:()=>{throw Error('Duplicate installation')}});
+ assert.equal(found,legacy);
+ assert.equal(found.mapVisual.targetHeight,58);
+ assert.equal(found.mapVisual.animation.framesPerSecond,8);
+ assert.equal(writes,1,'customized/legacy record is untouched');
+});
