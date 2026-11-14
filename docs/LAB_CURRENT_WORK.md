@@ -1,3 +1,12 @@
+## 2026-11-14 — Nettoyage du HUD Jouer, un menu natif sans seconde autorité
+- Retour smartphone : bouton Menu Explorer, inventaire Capture, panneau Dernier combat et Plein écran, notification Arrivée et diagnostics réseau encombraient l'image de jeu.
+- START `main@3d773ecd9653700750d6de3f62d2255199490a17`, checkpoint `checkpoint/exploration-play-ui-clean-start-20261114`, branche `work/exploration-play-ui-clean-20261114`.
+- Le seul bouton Menu Explorer en mode Capture émet `gensrpg.exploration.play.open-menu.v1` avec le `sessionId` et l'origine de l'iframe ; seul Capture présentera les commandes existantes. Standalone Explorer conserve l'ancien retour direct. L'iframe ne possède ni plein écran, ni résultat de combat, ni inventaire.
+- La zone inscrite en haut et la notification de sauvegarde automatique disparaissent en jeu Capture, sans supprimer les erreurs de sauvegarde. Le passage garde son bouton Portal unique ; arrivée réussie sans deuxième bandeau persistant, erreurs de passage visibles.
+- Invariants : mêmes sauvegardes, mêmes Portal/Spawn, pas de calcul Gameplay ni nouveau titre/Menu ; vérification de liaison parent source Capture avant promotion, CI et test téléphone, aucun faux GREEN.
+
+---
+
 ## 2026-11-14 — Héros : taille 35, 16 images/s, oscillation 1 (retour test auteur)
 - START `main@d9d1840952b8ecb10f9baed162d167d62750c17c`, checkpoint `checkpoint/exploration-hero-defaults-start-20261114`, branche `work/exploration-hero-defaults-35-16-1-20261114`.
 - Source unique : `DEFAULT_HERO_VISUAL_SETTINGS_V1` dans `src/actors/map-actor-visual-model.js` ; `UserHeroDefinitionV1`, éditeur officiel et installation des 12 presets utilisent cette base : hauteur 35, 16 FPS, amplitudes repos/marche 1 dans les trois modes.
