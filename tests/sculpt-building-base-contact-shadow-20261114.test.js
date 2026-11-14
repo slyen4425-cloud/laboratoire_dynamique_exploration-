@@ -18,7 +18,7 @@ test('houses use their actual grounded outline along facade and side, never a fu
   };}
  })};
  const image={naturalWidth:width,naturalHeight:height,ownerDocument:document};
- const mask=worldObjectShadowMaskV1(image);
+ const mask=worldObjectShadowMaskV1(image,null,{groundContact:true});
  assert.ok(mask?.contactCanvas,'derived once from the official pixel source');
  assert.ok(mask.contactColumns>=20,'covers front and side base, not only center');
  const ctx={save(){},restore(){},translate(){},transform(){},
