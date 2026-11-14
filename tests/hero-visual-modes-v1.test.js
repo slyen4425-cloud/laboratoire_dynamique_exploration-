@@ -39,12 +39,14 @@ test('sprite option chooses actual idle and moving frames from prepared official
  assert.equal(mockDraw(v,{x:100,y:50,moving:true,facingX:1},.52).drawn[0].id,'hero.walk3');
  assert.equal(mockDraw(v,{x:100,y:50,moving:true,facingX:1},.77).drawn[0].id,'hero.walk1');
 });
-test('sprite mode does not add simulated bob, alter actor world coords or replace mirror policy',()=>{
+test('sprite mode applies configured oscillation without changing world coords or mirror policy',()=>{
  const v=animated();
  const actor={x:100,y:50,moving:true,facingX:-1};
  const before=JSON.stringify(actor);
  const d=mockDraw(v,actor,.3);
- assert.deepEqual(d.moves[0],[100,50]);
+ assert.equal(d.moves[0][0],100);
+ assert.ok(Math.abs(d.moves[0][1]-50)<=v.motion.walkAmplitude);
+ assert.notEqual(d.moves[0][1],50,'moving sprites follow the saved walkAmplitude');
  assert.ok(d.moves.some(x=>x[0]==='scale'&&x[1]===-1));
  assert.equal(JSON.stringify(actor),before);
 });
