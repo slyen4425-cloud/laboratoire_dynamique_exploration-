@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {adventureHeroSelectionStorageKeyV1,readScopedAdventureHeroSelectionV1,ADVENTURE_HERO_SELECTION_SCHEMA_V1} from '../src/actors/scoped-adventure-hero-v1.js';
+import {readFileSync} from 'node:fs';
+import {adventureHeroSelectionStorageKeyV1,readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1,ADVENTURE_HERO_SELECTION_SCHEMA_V1} from '../src/actors/scoped-adventure-hero-v1.js';
 
 const sessionId='session-a',worldId='world-forest';
 const heroDefinitionId='hero.user.00000000-0000-4000-8000-000000000001';
@@ -37,4 +38,18 @@ test('scope arguments cannot be corrupted or used to read another session key',(
  assert.throws(()=>readScopedAdventureHeroSelectionV1({
   sessionId,worldId
  }));
+});
+
+test('new Adventure name is an optional scoped projection, old hero grants remain readable',()=>{
+ const args=raw=>({storage:storage(JSON.stringify(raw)),sessionId,worldId});
+ assert.equal(readScopedAdventureHeroDisplayNameV1(args(grant())),null);
+ const named={...grant(),displayName:'Mira'};
+ assert.equal(readScopedAdventureHeroSelectionV1(args(named)),heroDefinitionId);
+ assert.equal(readScopedAdventureHeroDisplayNameV1(args(named)),'Mira');
+ for(const displayName of ['', ' ', 'A'.repeat(49), 'x\n<script>']){
+  assert.throws(()=>readScopedAdventureHeroSelectionV1(args({...grant(),displayName})));
+ }
+ const src=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(src,/sculptPlayHeroDisplayName=readScopedAdventureHeroDisplayNameV1/);
+ assert.match(src,/ctx\.fillText\(name,0,-3/);
 });
