@@ -33,7 +33,8 @@ export function readScopedAdventureHeroSelectionV1({
  let value;
  try{value=JSON.parse(raw);}
  catch{throw new Error('Adventure hero selection is not readable JSON');}
- exact(value,['schema','version','sessionId','worldId','heroDefinitionId']);
+ exact(value,['schema','version','sessionId','worldId','heroDefinitionId',
+  ...(Object.hasOwn(value,'displayName')?['displayName']:[])]);
  if(value.schema!==ADVENTURE_HERO_SELECTION_SCHEMA_V1||value.version!==1)
   throw new RangeError('Adventure hero selection schema/version incompatible');
  if(value.sessionId!==sessionId||value.worldId!==worldId)
@@ -41,5 +42,19 @@ export function readScopedAdventureHeroSelectionV1({
  if(typeof value.heroDefinitionId!=='string'||
   !/^hero\.user\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.heroDefinitionId))
   throw new RangeError('Adventure hero selection must use an authored HeroDefinition ID');
+ if(Object.hasOwn(value,'displayName')&&
+   (typeof value.displayName!=='string'||value.displayName.trim().length<1||
+    value.displayName.trim().length>48||/[\u0000-\u001f\u007f]/.test(value.displayName)))
+  throw new RangeError('Invalid scoped hero display name');
  return value.heroDefinitionId;
+}
+
+// A display-only view of the SAME validated grant, never a nickname database.
+// Older AdventureSession grants with no displayName remain readable.
+export function readScopedAdventureHeroDisplayNameV1(args={}){
+ const definitionId=readScopedAdventureHeroSelectionV1(args);
+ if(definitionId===null)return null;
+ const raw=args.storage.getItem(adventureHeroSelectionStorageKeyV1(args.sessionId));
+ const value=JSON.parse(raw);
+ return Object.hasOwn(value,'displayName')?value.displayName.trim():null;
 }
