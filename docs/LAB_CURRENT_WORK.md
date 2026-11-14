@@ -1,3 +1,12 @@
+## 2026-11-14 — Traits et traînées entre textures de route
+- Retour utilisateur : certaines textures de route laissent des traînées visibles aux jonctions des carreaux de la carte.
+- START `main@d9d1840952b8ecb10f9baed162d167d62750c17c`, checkpoint `checkpoint/exploration-road-seam-start-20261114`, branche `work/exploration-road-seam-continuity-20261114`.
+- Hypothèse reproductible dans le code : `sculptPaintByCell` redessine les mêmes coups WorldSurface semi-transparents en débordant de 0,65 px hors de chaque case ; le voisin tamponne une seconde fois ce bord, ce qui forme un trait.
+- Correction au seul propriétaire de rendu Exploration : clip commun exact des top-cells `sculptPaintCellClipV1` sans marge de chevauchement ; les matériaux, géométries WorldSurface v3, altitudes, collisions, captures et sauvegardes ne changent pas. Aucune couche pour cacher le défaut.
+- Tests RED `sculpt-road-cell-seams-20261114.test.js` avant correction, vérification Node/Chromium CI et rendu en navigation mobile réel obligatoires pour valider le résultat observé. Aucun double renderer ni nouveau stockage.
+
+---
+
 ## 2026-11-14 — Dialogue PNJ après fusion de l'étiquette nom de héros
 - START `main@8c7f11830aef7701d05881670df7942a00d8d76b`, branche `work/exploration-npc-dialog-after-nickname-20261114`.
 - La PR #445, testée GREEN sur sa branche empilée, a été reportée à périmètre identique après la fusion du nom de héros pour préserver le journal et les deux écrans. Son propriétaire est uniquement le placement des widgets NPC dans le moteur de projection existant.
