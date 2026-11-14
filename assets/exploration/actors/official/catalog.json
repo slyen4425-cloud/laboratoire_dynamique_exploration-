@@ -8,7 +8,7 @@
       "name": "Heros bleu",
       "thumbnail": "assets/exploration/actors/official/01_heros_bleu/modele_face.png",
       "back": "assets/exploration/actors/official/01_heros_bleu/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -85,7 +85,7 @@
       "name": "Heros vert",
       "thumbnail": "assets/exploration/actors/official/02_heros_vert/modele_face.png",
       "back": "assets/exploration/actors/official/02_heros_vert/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -162,7 +162,7 @@
       "name": "Heroine turquoise",
       "thumbnail": "assets/exploration/actors/official/03_heroine_turquoise/modele_face.png",
       "back": "assets/exploration/actors/official/03_heroine_turquoise/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -239,7 +239,7 @@
       "name": "Heroine violette",
       "thumbnail": "assets/exploration/actors/official/04_heroine_violette/modele_face.png",
       "back": "assets/exploration/actors/official/04_heroine_violette/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -316,7 +316,7 @@
       "name": "Heros casquette rouge",
       "thumbnail": "assets/exploration/actors/official/05_heros_casquette_rouge/modele_face.png",
       "back": "assets/exploration/actors/official/05_heros_casquette_rouge/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -393,7 +393,7 @@
       "name": "Heroine casquette queue haute",
       "thumbnail": "assets/exploration/actors/official/06_heroine_casquette_queue_haute/modele_face.png",
       "back": "assets/exploration/actors/official/06_heroine_casquette_queue_haute/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -470,7 +470,7 @@
       "name": "Heros rouge sans casquette",
       "thumbnail": "assets/exploration/actors/official/07_heros_rouge_sans_casquette/modele_face.png",
       "back": "assets/exploration/actors/official/07_heros_rouge_sans_casquette/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -547,7 +547,7 @@
       "name": "Heroine rouge ponytail",
       "thumbnail": "assets/exploration/actors/official/08_heroine_rouge_ponytail/modele_face.png",
       "back": "assets/exploration/actors/official/08_heroine_rouge_ponytail/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -624,7 +624,7 @@
       "name": "Heros rouge noir or",
       "thumbnail": "assets/exploration/actors/official/09_heros_rouge_noir_or/modele_face.png",
       "back": "assets/exploration/actors/official/09_heros_rouge_noir_or/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -701,7 +701,7 @@
       "name": "Heros rouge sac noir",
       "thumbnail": "assets/exploration/actors/official/10_heros_rouge_sac_noir/modele_face.png",
       "back": "assets/exploration/actors/official/10_heros_rouge_sac_noir/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -778,7 +778,7 @@
       "name": "Heroine violette casquette",
       "thumbnail": "assets/exploration/actors/official/11_heroine_violette_casquette/modele_face.png",
       "back": "assets/exploration/actors/official/11_heroine_violette_casquette/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160
@@ -855,7 +855,7 @@
       "name": "Heroine rose casquette",
       "thumbnail": "assets/exploration/actors/official/12_heroine_rose_casquette/modele_face.png",
       "back": "assets/exploration/actors/official/12_heroine_rose_casquette/modele_dos.png",
-      "fps": 8,
+      "fps": 16,
       "frameSize": [
         128,
         160

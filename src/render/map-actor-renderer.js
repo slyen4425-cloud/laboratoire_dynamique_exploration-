@@ -84,12 +84,8 @@ export function createMapActorRenderer({
         const worldWidth =
           worldHeight * prepared.aspectRatio;
         const anchor = actorAnchor(visual, prepared);
-        // Sprite walking already contains movement, so never add artificial
-        // walk bob. At rest the user-controlled idleAmplitude applies to
-        // image AND authored sprite modes (including 8 directions).
-        // Existing frames keep their exact full-canvas anchors.
-        const bob = actor.moving===true&&visual.animation?.mode!=='image'
-          ?0:motionOffset(visual,actor,timeSeconds);
+        // One renderer owns authored oscillation in image, frames and compass modes.
+         const bob = motionOffset(visual,actor,timeSeconds);
         const screenX = actor.x - camera.x;
         const screenY = actor.y - camera.y;
 

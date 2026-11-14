@@ -35,7 +35,7 @@ test('real official-style 49-asset definition can retain its id and edit size, i
  assert.equal(modified.assets.find(x=>x.id===id+'.base').blob,
    modified.assets.find(x=>x.id===id+'.dir.S.0').blob);
 });
-test('same native renderer applies user idle bob to compass sprites but never extra walking bob',()=>{
+test('same native renderer honors user oscillation at rest and in movement for compass sprites',()=>{
  const hero=createUserHeroDefinitionV1({
   id,name:'Héros de test',base:media(),mode:'directions',
   directions:allDirections(),targetHeight:25,
@@ -50,8 +50,8 @@ test('same native renderer applies user idle bob to compass sprites but never ex
  const actor={x:100,y:120,directionX:0,directionY:1,mapVisual:hero.mapVisual};
  renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:.25,actors:[{...actor,moving:false}]});
  assert.ok(translates.at(-1)[1]<120,'idle bob is visible for authored sprite heroes');
- renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:.25,actors:[{...actor,moving:true}]});
- assert.equal(translates.at(-1)[1],120,'walking sprite animation remains stable');
+ renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:.0625,actors:[{...actor,moving:true}]});
+ assert.equal(translates.at(-1)[1],115,'walking oscillation follows the authored amplitude and frequency');
 });
 test('native editor shows directional imports and a reversible size-25 preview while retaining a single DB',()=>{
  const html=readFileSync(new URL('../hero-editor.html',import.meta.url),'utf8');

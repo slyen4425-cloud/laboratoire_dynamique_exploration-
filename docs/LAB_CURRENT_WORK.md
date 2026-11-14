@@ -1,3 +1,13 @@
+## 2026-11-14 — Héros : taille 35, 16 images/s, oscillation 1 (retour test auteur)
+- START `main@d9d1840952b8ecb10f9baed162d167d62750c17c`, checkpoint `checkpoint/exploration-hero-defaults-start-20261114`, branche `work/exploration-hero-defaults-35-16-1-20261114`.
+- Source unique : `DEFAULT_HERO_VISUAL_SETTINGS_V1` dans `src/actors/map-actor-visual-model.js` ; `UserHeroDefinitionV1`, éditeur officiel et installation des 12 presets utilisent cette base : hauteur 35, 16 FPS, amplitudes repos/marche 1 dans les trois modes.
+- Les 576 PNG d'origine sont strictement conservés, comme les UserHeroDefinition déjà enregistrés (notamment ceux de taille 58/25). Aucun remplacement ni migration silencieuse de leurs paramètres.
+- Déduplication : le même preset reconnu par la signature de sa première image n'est plus réinstallé parce que sa taille/FPS d'origine diffèrent ; aucune suppression automatique.
+- Unique MapActorRenderer pour mouvement/oscillation, aucune deuxième animation et aucun masquage de l'original. Preview « Essayer 25 » réversible conservée.
+- Tests : `hero-authoring-defaults-35-16-1-20261114.test.js`, anciens tests héros/déduplication, CI et Chromium tactile ; publication Pages/HTTPS sur SHA exact avant livraison.
+
+---
+
 ## 2026-11-14 — Dialogue PNJ après fusion de l'étiquette nom de héros
 - START `main@8c7f11830aef7701d05881670df7942a00d8d76b`, branche `work/exploration-npc-dialog-after-nickname-20261114`.
 - La PR #445, testée GREEN sur sa branche empilée, a été reportée à périmètre identique après la fusion du nom de héros pour préserver le journal et les deux écrans. Son propriétaire est uniquement le placement des widgets NPC dans le moteur de projection existant.

@@ -1,7 +1,7 @@
 // Published hero presets are ONE immutable asset catalog, not new hero state.
 // Choosing one creates an ordinary UserHeroDefinition in its existing IndexedDB.
 // The same renderer, previews, saves and GenSRPG selection read this one store.
-import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
+import {MAP_ACTOR_COMPASS_DIRECTIONS_V1,DEFAULT_HERO_VISUAL_SETTINGS_V1} from './map-actor-visual-model.js';
 import {createUserHeroDefinitionV1} from './user-hero-definition-v1.js';
 
 export const OFFICIAL_HERO_CATALOG_URL_V1='assets/exploration/actors/official/catalog.json';
@@ -22,7 +22,7 @@ export function normalizeOfficialHeroCatalogV1(catalog){
        seen.has(entry.id)||!entry.id.includes(String(index+1).padStart(2,'0')+'_')||
        typeof entry.name!=='string'||!entry.name.trim()||
        !assetPath(entry.thumbnail)||!assetPath(entry.back)||
-       entry.fps!==8||JSON.stringify(entry.frameSize)!=='[128,160]'||
+       entry.fps!==DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond||JSON.stringify(entry.frameSize)!=='[128,160]'||
        !entry.directions||Object.keys(entry.directions).length!==8)
       throw new TypeError('Héros officiel invalide ou en double : '+index);
     seen.add(entry.id);
@@ -60,14 +60,14 @@ export async function installOfficialHeroPresetV1({
   // IndexedDB hero with a fresh UUID. The owner itself checks the saved
   // definitions; Capture and the editor share this one install contract.
   // Only compare the immutable published S/0 PNG and the unedited 49-image
-  // model signature. A renamed/modified hero remains a distinct user record.
+  // model signature. A renamed or re-sprited hero stays distinct; an installed
+  // original whose size/FPS was tuned remains intact and is NOT installed twice.
   if(typeof store.list==='function'){
     const saved=await store.list();
     const candidates=saved.filter(record=>record.name===hero.name&&
       record.mapVisual.animation.mode==='directions'&&
       record.assets.length===49&&
-      record.mapVisual.targetHeight===58&&
-      record.mapVisual.animation.framesPerSecond===(hero.fps??8));
+      record.mapVisual.assetId&&record.mapVisual.animation.directions.S?.length===6);
     if(candidates.length){
       const url=new URL(directions.S[0],baseUrl);
       if(url.origin!==new URL(baseUrl).origin)
@@ -111,8 +111,8 @@ export async function installOfficialHeroPresetV1({
   const id='hero.user.'+mintId();
   const record=createUserHeroDefinitionV1({
     id,name:hero.name,base:files.S[0],mode:'directions',
-    directions:files,framesPerSecond:hero.fps??8,
-    targetHeight:58,now:now()
+    directions:files,framesPerSecond:hero.fps,
+     targetHeight:DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight,now:now()
   });
   await store.put(record);
   return record;

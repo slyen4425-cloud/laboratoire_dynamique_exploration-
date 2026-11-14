@@ -2,7 +2,7 @@
 // File bytes belong in its own IndexedDB store, not a WorldDocument or
 // GenSRPG AdventureSession. The existing MapActorVisual and renderer own
 // all scaling, mirror, motion and frame selection.
-import {normalizeMapActorVisual,MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
+import {normalizeMapActorVisual,MAP_ACTOR_COMPASS_DIRECTIONS_V1,DEFAULT_HERO_VISUAL_SETTINGS_V1} from './map-actor-visual-model.js';
 
 export const USER_HERO_SCHEMA_V1='gensrpg-exploration-user-hero-v1';
 export const USER_HERO_MAX_IMAGE_BYTES=8*1024*1024;
@@ -39,8 +39,8 @@ function frames(input,base,label,required=false){
 }
 
 export function createUserHeroDefinitionV1({
- id,name,base,mode='image',walk,idle,directions,framesPerSecond=8,
- targetHeight=37,sourceFacingX=1,motion,now
+ id,name,base,mode='image',walk,idle,directions,framesPerSecond=DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond,
+ targetHeight=DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight,sourceFacingX=1,motion,now
 }={}){
  const prefix=safeId(id);
  if(typeof name!=='string'||!name.trim()||name.trim().length>80)
@@ -76,8 +76,8 @@ export function createUserHeroDefinitionV1({
  const mapVisual=normalizeMapActorVisual({
   role:'hero',assetId:prefix+'.base',targetHeight,
   sourceFacingX,
-  motion:motion??{idleAmplitude:.55,idleFrequency:.8,
-   walkAmplitude:2,walkFrequency:3.8},
+  motion:motion??{idleAmplitude:DEFAULT_HERO_VISUAL_SETTINGS_V1.idleAmplitude,idleFrequency:.8,
+    walkAmplitude:DEFAULT_HERO_VISUAL_SETTINGS_V1.walkAmplitude,walkFrequency:3.8},
   animation
  });
  return Object.freeze({
