@@ -109,6 +109,9 @@ import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDr
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {emitExplorationPlayNavigationCommittedV1
 } from './play/exploration-play-events-v1.js';
+import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
+ EXPLORATION_PEER_RECEIVER_READY_EVENT_V1
+} from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {createWorldBuilderDraft,initializeWorldPresetEncounters} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
@@ -815,6 +818,21 @@ const demoNavigationActorPreparer=createMapActorVisualPreparer({imageLoader:{
 let navigationActorPreparer=demoNavigationActorPreparer;
 let navigationActorRenderer=createMapActorRenderer({preparedVisuals:navigationActorPreparer});
 let authoredHeroMedia=null,sculptPlayHeroDefinitionId=null,sculptPlayHeroDisplayName=null;
+// Remote participants use the SAME official MapActorRenderer, purely in
+// memory. Their poses never enter local navigation, collisions or saves.
+const explorationPeerRenderer=createMapActorRenderer({
+ preparedVisuals:demoNavigationActorPreparer
+});
+const explorationPeerVisual=normalizeMapActorVisual({
+ assetId:demoActorAsset?.id??null,role:'hero',targetHeight:37,
+ motion:{idleAmplitude:.55,idleFrequency:.8,walkAmplitude:2,walkFrequency:3.8}
+});
+let sculptPeerProjection=null,explorationPeerPaints=0;
+function acceptExplorationPeerSnapshot(event){
+ if(!sculptPlayActive||!playOptions||!sculptPeerProjection)return;
+ if(sculptPeerProjection.apply(event?.detail))scheduleDraw();
+}
+
 
 // The canonical UserHeroStore owns all image bytes. This adapter only
 // switches the existing Map Actor Visual/Preparer/Renderer once every asset
@@ -1257,6 +1275,7 @@ function draw(){
       stair=>stair.id===navActor.sculptStairId):null;
     drawPreviewObjects(navActor?.y??Infinity,-Infinity,layeredBridge?.id,activeStair?.id);
     drawPlacedActors(navActor?.y??Infinity);
+    drawExplorationPeerActors(navActor?.y??Infinity);
     if(activeStair)drawPreviewObject(activeStair);
     if(deckBridge)drawPreviewObject(deckBridge);
     drawNavigationActor();
@@ -1267,6 +1286,7 @@ function draw(){
     if($('navigation-show-bridge-corridor')?.checked)drawNavigationBridgeCorridors();
     drawPreviewObjects(Infinity,navActor?.y??Infinity,layeredBridge?.id,activeStair?.id);
     drawPlacedActors(Infinity,navActor?.y??Infinity);
+    drawExplorationPeerActors(Infinity,navActor?.y??Infinity);
   }else{
     drawPreviewObjects();
     drawPlacedActors();
@@ -2332,6 +2352,29 @@ function drawNavigationActor(){
     ctx.fillStyle='#e9fff8';ctx.fillText(name,0,-3,320);
     ctx.restore();
   }
+}
+// Strictly a visual projection: never update navActor or the authored world.
+function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
+ if(!sculptPlayActive||!sculptPeerProjection||!demoActorAsset||
+    !demoNavigationActorPreparer.get(demoActorAsset.id))return;
+ const actors=sculptPeerProjection.forArea(sculptWorldAreaId)
+  .filter(peer=>peer.y<maxY&&peer.y>=minY)
+  .map(peer=>{
+   const level=sculptHeightAt(terrain,
+    Math.floor(peer.x/SCULPT_TILE.width),
+    Math.floor(peer.y/SCULPT_TILE.height));
+   const projected=sculptCameraProject(cameraView(),peer.x,
+    peer.y-level*SCULPT_TILE.rise+3);
+   return {x:projected.x,y:projected.y,facingX:1,moving:false,
+    mapVisual:explorationPeerVisual,
+    visualScale:sculptAltitudeVisualState(level).heroScale};
+  });
+ if(actors.length){
+  explorationPeerRenderer.draw(ctx,{
+   camera:{x:0,y:0},actors,timeSeconds:navVisualTime
+  });
+  explorationPeerPaints+=actors.length;
+ }
 }
 function navigationSpawn(){
   // WorldBuilder's Spawn, not a prototype test position, owns the entrance
@@ -5266,6 +5309,31 @@ async function installSculptPlayMode(){
     centerNavigationCamera();updateNavigationInfo(true);scheduleDraw();
     if(pending)await recoverScopedSculptEncounter(pending);
     if(scopedEncounter)scopedEncounter.armed=true;
+    // C4: only Exploration renders the guests. The Capture parent can
+    // notify this same-origin window of RLS-verified visual positions.
+    if(playOptions&&checkpoint.worldFingerprint){
+     sculptPeerProjection=createExplorationPeerVisualProjectionV1({
+      sessionId:playOptions.sessionId,
+      worldId:world.id,worldFingerprint:checkpoint.worldFingerprint
+     });
+     window.addEventListener(EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
+      acceptExplorationPeerSnapshot);
+     const peerReady=Object.freeze({
+      schema:EXPLORATION_PEER_RECEIVER_READY_EVENT_V1,version:1,
+      sessionId:playOptions.sessionId,worldId:world.id,
+      worldFingerprint:checkpoint.worldFingerprint
+     });
+     window.__sculptPeerReceiverReadyV1=peerReady;
+     window.dispatchEvent(new CustomEvent(
+      EXPLORATION_PEER_RECEIVER_READY_EVENT_V1,{detail:peerReady}
+     ));
+     window.addEventListener('pagehide',()=>{
+      window.removeEventListener(EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
+       acceptExplorationPeerSnapshot);
+      sculptPeerProjection?.dispose();sculptPeerProjection=null;
+      window.__sculptPeerReceiverReadyV1=null;
+     },{once:true});
+    }
     updateNpcInteraction();
     $('play-menu-button').hidden=false;
     // Capture already presents the selected world outside the playfield.
@@ -5318,6 +5386,8 @@ async function installSculptPlayMode(){
       creatorCameraAngle:sculptCreatorCameraAngle,
       zoomAdjustable:!$('navigation-camera-zoom').disabled,
       actor:navActor?{x:navActor.x,y:navActor.y}:null,
+      remoteActors:sculptPeerProjection?.forArea(sculptWorldAreaId).length??0,
+      remoteActorPaints:explorationPeerPaints,
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
