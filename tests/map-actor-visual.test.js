@@ -40,7 +40,9 @@ test('MapActorVisual simple mode needs only one assetId and automatic defaults',
   assert.equal(visual.schemaVersion, 1);
   assert.equal(visual.assetId, 'actor.user.hero.01');
   assert.equal(visual.role, 'hero');
-  assert.equal(visual.targetHeight, 78);
+  assert.equal(visual.targetHeight, 35);
+  assert.equal(visual.motion.idleAmplitude,1);
+  assert.equal(visual.motion.walkAmplitude,1);
   assert.equal(visual.mirrorHorizontal, true);
   assert.equal(visual.shadow.enabled, true);
   assert.equal(visual.anchorOverride.x, null);
