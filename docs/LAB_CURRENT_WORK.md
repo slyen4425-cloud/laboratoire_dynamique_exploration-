@@ -1,3 +1,9 @@
+## 2026-11-14 — Interaction et dialogues directement près du PNJ
+- START : code du lot nom de héros `work/exploration-scoped-hero-nameplate-20261114@f9e11bd`, lot indépendant `work/exploration-npc-anchored-dialog-20261114` dépendant du premier.
+- Le bouton Parler, le dialogue de PNJ, les propositions de duel et les échanges marchands partagent leur propriétaire actuel. Seul le placement DOM change depuis le même `sculptCameraProject` + pan + zoom, sans second acteur, état de caméra, collision ou dialogue.
+- L'interface est bornée à la taille de l'écran de jeu 2,5D : sur mobile paysage, les bulles se retournent sous le PNJ si nécessaire ; personne ne doit aller chercher un message en bas à droite.
+- Gate : test de projection et bords smartphone, vrai Chromium PNJ, tests de combat/portails, CI et Pages sur SHA publié. Aucun visuel ou sauvegarde détruit.
+
 ## 2026-11-14 — Étiquette du nom du héros au-dessus du sprite en mode Jouer
 - START `main@69d3780052cbea397e7edd5cc9e3bb78f6a2560a`; branche `work/exploration-scoped-hero-nameplate-20261114`.
 - Seul le grant officiel de héros Capture est lu : `gensrpg.capture.v2.hero-selection.v1` avec champ facultatif `displayName` vérifié, les vieux grants sans nom restent valides.
