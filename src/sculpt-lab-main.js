@@ -10,7 +10,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
-import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1} from './render/sculpt-navigation-camera-clamp-v1.js';
+import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -966,13 +966,18 @@ function cameraBounds(){
   // south and lateral camera limits remain at the playable terrain boundary.
   const coreBounds=sculptCameraBounds(view,coreW,coreH,16*SCULPT_TILE.rise);
   if(navigationTesting){
-    return decorativeFringe&&!activeInteriorId&&!sculptWorldCurrentInterior()
+    const followingExterior=!!navActor&&!activeInteriorId&&!sculptWorldCurrentInterior();
+    const visibleBounds=followingExterior?sculptExteriorSouthEdgeAtActorV1({
+      bounds:coreBounds,view,coreWidth:coreW,coreHeight:coreH,
+      actorX:navActor.x
+    }):coreBounds;
+    return decorativeFringe&&followingExterior
       ?sculptExteriorFringeCameraBoundsV1({
-        coreBounds,view,coreWidth:coreW,coreHeight:coreH,
+        coreBounds:visibleBounds,view,coreWidth:coreW,coreHeight:coreH,
         fringeRows:8,tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
         viewportHeight:dimensions().height,zoom,skyFraction:.12
       })
-      :coreBounds;
+      :visibleBounds;
   }
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
     return coreBounds;
@@ -984,6 +989,14 @@ function cameraBounds(){
   );
   const minY=Math.min(coreBounds.minY,northY);
   return {...coreBounds,minY,height:coreBounds.maxY-minY};
+}
+function clampSculptEditorCamera(){
+ if(navigationTesting||activeInteriorId||sculptWorldCurrentInterior())return;
+ const {width,height}=dimensions();
+ const next=clampSculptNavigationCameraToTerrainV1({
+   pan,bounds:cameraBounds(),zoom,width,height
+ });
+ pan.x=next.x;pan.y=next.y;
 }
 function fit(){
   // One viewport owner: fullscreenchange, requestAnimationFrame(fit),
@@ -3800,6 +3813,7 @@ canvas.addEventListener('wheel',event=>{
   pan.x=mouseX-(mouseX-pan.x)*zoom/previous;
   pan.y=mouseY-(mouseY-pan.y)*zoom/previous;
   if(navigationTesting)centerNavigationCamera();
+  else clampSculptEditorCamera();
   $('zoom').value=String(Math.round(zoom*100));scheduleDraw();
 },{passive:false});
 document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode)));
@@ -3969,6 +3983,7 @@ $('zoom').addEventListener('input',()=>{
  pan.x=width/2-(width/2-pan.x)*zoom/old;
  pan.y=height/2-(height/2-pan.y)*zoom/old;
  if(navigationTesting)centerNavigationCamera();
+ else clampSculptEditorCamera();
  scheduleDraw();
 });
 $('sphere-summit-ratio').addEventListener('input',()=>{
