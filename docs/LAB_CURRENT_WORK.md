@@ -1,3 +1,11 @@
+## 2026-11-14 — Fluidité des objets sur carte Aventure (cache de rendu dérivé)
+- START main@3d773ecd, checkpoint `checkpoint/exploration-object-frame-cache-start-20261114`, branche `work/exploration-object-frame-cache-20261114`.
+- Dans le chemin de rendu existant, `drawPreviewObjects` recalculait `resolveWorldObjectPlacements + filter + sort` à chaque dessin 2.5D, même sans changement de la liste immuable en Jouer. On conserve un seul ordre visuel trié en cache lecture seule pour l'identité courante de `placedObjects`. Le modèle WorldArea, les positions, Collisions, WorldSurface et le moteur de dessin restent propriétaires uniques ; l'éditeur recalcule toujours à chaque dessin.
+- Test dédié : la référence et le nombre d'appels au résolveur restent constants entre images de Jouer, changent après nouvelle zone/liste, et l'éditeur reste frais. CI + validation navigateur téléphone requises ; ne pas présenter cette optimisation seule comme une solution prouvée à toute la latence ou au chargement Combat.
+- Aucun changement de HP, combats, rencontres, sauvegardes, caméra, assets ou timers gameplay.
+
+---
+
 ## 2026-11-14 — Nettoyage du HUD Jouer, un menu natif sans seconde autorité
 - Retour smartphone : bouton Menu Explorer, inventaire Capture, panneau Dernier combat et Plein écran, notification Arrivée et diagnostics réseau encombraient l'image de jeu.
 - START `main@3d773ecd9653700750d6de3f62d2255199490a17`, checkpoint `checkpoint/exploration-play-ui-clean-start-20261114`, branche `work/exploration-play-ui-clean-20261114`.

@@ -57,6 +57,7 @@ import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
+import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {resolveWorldObjectPlacements} from './world/world-object-placement-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
@@ -2972,12 +2973,17 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   }
   ctx.restore();
 }
+// WorldArea / Sculpt scene is the ONLY object owner. Cache only derived
+// depth order during play, and always recalculate live editor placements.
+const sculptPlayObjectDrawCache=createSculptPlayObjectDrawCacheV1(
+  placements=>resolveWorldObjectPlacements(placements,objectDefinitionCatalogV1));
 function drawPreviewObjects(maxY=Infinity,minY=-Infinity,skipBridgeId=null,skipStairId=null){
-  const objects=resolveWorldObjectPlacements(placedObjects,objectDefinitionCatalogV1)
-    .filter(o=>o.transform.y<=maxY&&o.transform.y>minY&&
-      o.id!==skipBridgeId&&o.id!==skipStairId)
-    .sort((a,b)=>a.transform.y-b.transform.y);
-  for(const object of objects)drawPreviewObject(object);
+  const objects=sculptPlayObjectDrawCache.get(placedObjects,{playing:navigationTesting});
+  for(const object of objects){
+    if(object.transform.y>maxY||object.transform.y<=minY||
+       object.id===skipBridgeId||object.id===skipStairId)continue;
+    drawPreviewObject(object);
+  }
 }
 function refreshObjectOptions(){
   const current=$('object-definition').value;
