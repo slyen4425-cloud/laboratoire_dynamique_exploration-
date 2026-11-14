@@ -26,7 +26,10 @@ export function projectCaptureShowcaseEncounterSourceV1(transfers) {
     return Object.freeze({
       id,name:draft.displayName,
       elements:Object.freeze([...draft.elements]),
+      // Legacy chance remains parseable, but does NOT weight wild encounters.
       spawnChance: draft.capture?.capturable === false ? 0 : chance,
+      rarity: draft.capture?.rarity ?? 'rare',
+      capturable: draft.capture?.capturable !== false,
       presentation: draft.presentation ?? null
     });
   });
