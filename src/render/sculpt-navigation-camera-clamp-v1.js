@@ -48,3 +48,22 @@ export function sculptExteriorFringeCameraBoundsV1({
     maxY:coreBounds.maxY
   });
 }
+
+
+// The projected southern edge is oblique at 35°–80° (nonzero shear).
+// A global camera maxY derived from the LEFT corner can let the follower at
+// centre/right travel below its local visible map edge. Keep the same terrain
+// and the same pan clamp; only refine its southern presentation bound at the
+// hero's actual world X. The decorative north limit is untouched.
+export function sculptExteriorSouthEdgeAtActorV1({
+  bounds,view,coreWidth,coreHeight,actorX
+}={}){
+  if(!bounds||!view||![bounds.minX,bounds.maxX,bounds.minY,bounds.maxY,
+    view.pitch,view.shear,coreWidth,coreHeight,actorX].every(Number.isFinite)||
+    coreWidth<=0||coreHeight<=0||view.pitch<=0)
+    throw new TypeError('Valid terrain camera bounds and actor position required');
+  const x=Math.max(0,Math.min(coreWidth,actorX));
+  const southY=view.pitch*coreHeight+view.shear*x;
+  const maxY=Math.min(bounds.maxY,Math.max(bounds.minY,southY));
+  return Object.freeze({...bounds,maxY,height:maxY-bounds.minY});
+}
