@@ -575,6 +575,7 @@ body.sculpt-immersive #sculpt-map-preset-panel{
  top:calc(env(safe-area-inset-top,0px) + 57px);
  max-height:min(53dvh,calc(100% - 65px));
 }
+#sculpt-map-preset-loaded{display:block;white-space:normal;line-height:1.4;padding:9px;border-radius:8px;background:#1b3d45;border:1px solid #669993;color:#e1fff4;font-weight:650;font-size:.77rem}
 #sculpt-map-preset-panel summary{padding:8px 10px;min-height:38px;
  font-size:.76rem;font-weight:800;cursor:pointer;touch-action:manipulation}
 #sculpt-map-preset-panel .preset-controls{display:grid;gap:6px;padding:8px;
@@ -998,10 +999,11 @@ body.sculpt-play-unavailable #play-start-error{
    <input id="sculpt-map-preset-name" type="text" maxlength="64" placeholder="Ex. Forêt de départ">
   </label>
   <button id="sculpt-map-preset-save" type="button">💾 Enregistrer cette carte comme préset</button>
-  <label>Mes cartes enregistrées
-   <select id="sculpt-map-preset-select" aria-label="Sélectionner un préset de carte"></select>
+  <label>Modèle de carte à charger (ne change pas la carte affichée tant que tu ne cliques pas sur Charger)
+   <select id="sculpt-map-preset-select" aria-label="Choisir un modèle de carte à appliquer"></select>
   </label>
   <button id="sculpt-map-preset-apply" type="button">📍 Charger ce préset dans la carte</button>
+  <output id="sculpt-map-preset-loaded" role="status" aria-live="polite" class="sculpt-loaded-map-note">Carte actuellement affichée : zone en cours. Aucun modèle de la liste n’est appliqué automatiquement.</output>
   <button id="sculpt-map-preset-export" type="button">↓ Exporter le préset JSON</button>
   <label>↑ Importer un préset JSON
    <input id="sculpt-map-preset-import" type="file" accept=".json,.map-preset.json,application/json">
