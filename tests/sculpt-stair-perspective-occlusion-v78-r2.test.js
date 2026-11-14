@@ -28,7 +28,7 @@ test('V78 R2 the climbing hero is painted AFTER the stair and the active stair i
     'active stair must be drawn only before actor, not over the avatar');
   const before=main.slice(beginning,behind);
   assert.match(before,/drawPreviewObjects\(navActor\?\.y\?\?Infinity,-Infinity,layeredBridge\?\.id,activeStair\?\.id\)/);
-  assert.match(main,/o\.id!==skipBridgeId&&o\.id!==skipStairId/);
+  assert.match(main,/object\.id===skipBridgeId\|\|object\.id===skipStairId/);
   assert.match(main,/if\(deckBridge\)drawPreviewObject\(deckBridge,\{foregroundRailOnly:true\}\)/,
     'the independent bridge near-rail pass is preserved');
 });
