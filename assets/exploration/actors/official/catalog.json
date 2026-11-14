@@ -9,6 +9,7 @@
       "thumbnail": "assets/exploration/actors/official/01_heros_bleu/modele_face.png",
       "back": "assets/exploration/actors/official/01_heros_bleu/modele_dos.png",
       "fps": 16,
+      "targetHeight": 30,
       "frameSize": [
         128,
         160
