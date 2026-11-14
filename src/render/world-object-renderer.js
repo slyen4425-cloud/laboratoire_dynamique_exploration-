@@ -15,6 +15,30 @@ function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
 }
 
+// Contact shadow for native WorldObjects, drawn with the SAME canvas owner.
+// Actor shadows remain with MapActorRenderer, relief with SculptTerrain.
+// Never cast a second shadow for walkable terrain, bridges or waterfalls.
+export function worldObjectContactShadowV1({kind,width,height,footOffset=0,pitch=1}={}){
+ if(['bridge','stairs','ramp','waterfall','water','ground','portal'].includes(kind)||
+    !Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)
+  return null;
+ const projectedPitch=Number.isFinite(pitch)?Math.max(.25,Math.min(1,pitch)):1;
+ const radiusX=Math.max(3,Math.min(width*.38,120));
+ const radiusY=Math.max(2,Math.min(height*.052,13))*projectedPitch;
+ return Object.freeze({x:0,y:footOffset+1,radiusX,radiusY,opacity:.17});
+}
+export function drawWorldObjectContactShadowV1(ctx,args){
+ const shadow=worldObjectContactShadowV1(args);
+ if(!shadow)return false;
+ ctx.save();
+ ctx.beginPath();
+ ctx.ellipse(shadow.x,shadow.y,shadow.radiusX,shadow.radiusY,0,0,Math.PI*2);
+ ctx.fillStyle='rgba(0,0,0,'+shadow.opacity+')';
+ ctx.fill();
+ ctx.restore();
+ return true;
+}
+
 function cullRadius(width, height) {
   return Math.hypot(width, height) / 2;
 }
@@ -169,6 +193,7 @@ function drawStaticImage(
       asset.render.rotationOffsetDeg
     )
   );
+  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,
       width: renderWidth, height: renderHeight}, timeSeconds);
