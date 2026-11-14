@@ -5090,8 +5090,11 @@ async function traverseSculptWorldPortal(){
     sculptWorldStatus('Passage franchi : '+sculptWorldArea().label+
       ' · arrivée par Spawn '+portal.targetSpawnId);
     const feedback=$('world-portal-feedback');
+    // The native Portal button is the single persistent travel indicator.
+    // A completed arrival is already shown by the new world; avoid a second
+    // persistent success banner in Capture play. Errors remain visible.
     feedback.textContent='✓ Arrivée : '+(sculptWorldArea().label??sculptWorldAreaId);
-    feedback.dataset.error='false';feedback.hidden=false;
+    feedback.dataset.error='false';feedback.hidden=Boolean(sculptPlayActive);
   }catch(error){
     sculptWorldStatus('Passage indisponible : '+error.message,true);
     const feedback=$('world-portal-feedback');
@@ -5122,7 +5125,12 @@ function persistPlayNavigationCheckpoint(){
       console.warn('Navigation du joueur enregistrée, notification indisponible',error);
     }
     const output=$('play-save-status');
-    if(output){output.textContent='Partie enregistrée';output.dataset.error='false';}
+    if(output){
+      // A successful automatic checkpoint must not repeatedly toast over the map.
+      // Errors remain visible through the existing native status owner.
+      output.textContent=sculptPlayActive&&playOptions?'':'Partie enregistrée';
+      output.dataset.error='false';
+    }
     if($('play-location'))$('play-location').textContent='🌍 '+
       (sculptWorldArea()?.label||sculptWorldAreaId);
     return true;
@@ -5248,7 +5256,9 @@ async function installSculptPlayMode(){
     if(scopedEncounter)scopedEncounter.armed=true;
     updateNpcInteraction();
     $('play-menu-button').hidden=false;
-    $('play-location').hidden=false;
+    // Capture already presents the selected world outside the playfield.
+    // Keep the location read-only for standalone Explorer, not as a second HUD.
+    $('play-location').hidden=Boolean(playOptions);
     $('play-location').textContent='🌍 '+(sculptWorldArea()?.label||sculptWorldAreaId);
     const returnToTitle=()=>{
       if(!persistPlayNavigationCheckpoint())return false;
@@ -5262,7 +5272,17 @@ async function installSculptPlayMode(){
         './play.html');
       return true;
     };
-    $('play-menu-button').addEventListener('click',returnToTitle);
+    $('play-menu-button').addEventListener('click',()=>{
+      if(playOptions&&window.parent!==window){
+        // One native Explorer menu trigger. The Capture parent owns menu
+        // presentation, fullscreen, result UI and the existing return contract.
+        window.parent.postMessage({
+          schema:'gensrpg.exploration.play.open-menu.v1',
+          sessionId:playOptions.sessionId,
+          areaLabel:sculptWorldArea()?.label??sculptWorldAreaId
+        },window.location.origin);
+      }else returnToTitle();
+    });
     // Only this Exploration owner can commit the navigation position before
     // its Capture host closes the native iframe. No fake pagehide or direct DOM call.
     window.addEventListener('message',event=>{
