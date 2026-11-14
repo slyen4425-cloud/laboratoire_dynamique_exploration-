@@ -57,6 +57,7 @@ import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
+import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
@@ -2959,6 +2960,13 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
     for(const rail of regions)ctx.rect(rail.x,rail.y,rail.width,rail.height);
     ctx.clip();
   }
+  // Contact shadows are drawn at the grounded WorldObject foot by the same
+  // visual renderer, before the image. No phantom collision or second decal.
+  // Foreground rails must never stamp an extra shadow on top of the actor.
+  if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
+    kind:object.kind,width,height,footOffset:artShift,
+    pitch:navigationTesting?cameraView().pitch:1
+  });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
   // Preserve exact historic bridge/static draw and its regression-tested order.

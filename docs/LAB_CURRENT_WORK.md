@@ -1,3 +1,11 @@
+## 2026-11-14 — Ombres de contact pour les WorldObjects natifs
+- Retour test créateur : les objets sur la carte Aventure (arbres, maisons, rochers) paraissent sans ancrage au sol. Audit : le MapActorRenderer possède une ellipse d'ombre pour les acteurs, et SculptTerrain gère les falaises, mais le chemin natif `drawPreviewObject` n'avait aucun appel d'ombre sous les WorldObjects.
+- START main@3d773ecd, checkpoint `checkpoint/exploration-world-objects-shadow-start-20261114`, branche `work/exploration-world-objects-shadow-20261114`. Autorité de dessin : `src/render/world-object-renderer.js`, fonction unique appelée aussi par Sculpt pour la carte Aventure. Les ombres précèdent les sprites, sont ancrées aux pieds et suivent la perspective ; pas de shadow pour ponts, escaliers, rampes, eau ou passages.
+- Ne pas ajouter une couche de collisions, un WorldObject artificiel ni un second moteur de lumière ; ne pas modifier les PNG/WorldDocument/objets sauvegardés. Rendu léger : une ellipse alpha, sans flou ou texture supplémentaire, de façon à limiter l'impact FPS.
+- Critères GREEN : tests de formes et de non-duplication, CI Node/Chromium et vérification visuelle smartphone/PC (placement, opacité et relief). Le commit ne prouve pas encore la qualité du rendu réel.
+
+---
+
 ## 2026-11-14 — Fluidité des objets sur carte Aventure (cache de rendu dérivé)
 - START main@3d773ecd, checkpoint `checkpoint/exploration-object-frame-cache-start-20261114`, branche `work/exploration-object-frame-cache-20261114`.
 - Dans le chemin de rendu existant, `drawPreviewObjects` recalculait `resolveWorldObjectPlacements + filter + sort` à chaque dessin 2.5D, même sans changement de la liste immuable en Jouer. On conserve un seul ordre visuel trié en cache lecture seule pour l'identité courante de `placedObjects`. Le modèle WorldArea, les positions, Collisions, WorldSurface et le moteur de dessin restent propriétaires uniques ; l'éditeur recalcule toujours à chaque dessin.
