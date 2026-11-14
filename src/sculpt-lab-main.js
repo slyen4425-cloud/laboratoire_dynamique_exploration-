@@ -2963,14 +2963,14 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   // Contact shadows are drawn at the grounded WorldObject foot by the same
   // visual renderer, before the image. No phantom collision or second decal.
   // Foreground rails must never stamp an extra shadow on top of the actor.
+  const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
   if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
     kind:object.kind,width,height,footOffset:artShift,
-    pitch:navigationTesting?cameraView().pitch:1
+    pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt
   });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
   // Preserve exact historic bridge/static draw and its regression-tested order.
-  const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
   if(waterfallArt?.animation)
     drawWorldObjectSprite(ctx,art,waterfallArt,
       {x:-width/2,y:-height+artShift,width,height},performance.now()/1000);

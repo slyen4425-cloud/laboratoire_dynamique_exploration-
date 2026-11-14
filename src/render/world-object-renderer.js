@@ -10,6 +10,7 @@ import {
 } from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-waterfalls-v3';
 
 import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterfalls-v3';
+import {worldObjectShadowMaskV1} from './world-object-shadow-silhouette-v1.js';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
@@ -29,16 +30,45 @@ export function worldObjectContactShadowV1({kind,width,height,footOffset=0,pitch
 }
 export function drawWorldObjectContactShadowV1(ctx,args){
  const shadow=worldObjectContactShadowV1(args);
- if(!shadow||typeof ctx?.ellipse!=='function')return false;
- ctx.save();
- ctx.beginPath();
+ if(!shadow)return false;
+ if(args?.image){
+  const mask=worldObjectShadowMaskV1(args.image,args.asset);
+  const projection=worldObjectShadowProjectionV1(args);
+  if(!mask||!projection||typeof ctx?.transform!=='function')return false;
+  const {width,height}=args;
+  const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
+  // The alpha silhouette's lowest opaque pixel meets the exact WorldObject
+  // foot. Screen-space projection gives an elongated, directional cast.
+  ctx.save();
+  ctx.translate(0,projection.footY);
+  ctx.transform(1,0,projection.shear,projection.flatten,0,0);
+  ctx.globalAlpha=.25;
+  ctx.drawImage(mask.canvas,mask.left,mask.top,srcWidth,srcHeight,
+   width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
+   width*(srcWidth/mask.w),height*(srcHeight/mask.h));
+  ctx.restore();
+  return true;
+ }
+ // Compatibility for pure geometry callers that have no source image.
+ if(typeof ctx?.ellipse!=='function')return false;
+ ctx.save();ctx.beginPath();
  ctx.ellipse(shadow.x,shadow.y,shadow.radiusX,shadow.radiusY,0,0,Math.PI*2);
  ctx.fillStyle='rgba(0,0,0,'+shadow.opacity+')';
- ctx.fill();
- ctx.restore();
+ ctx.fill();ctx.restore();
  return true;
 }
 
+// Derived display-only alpha mask, cached per official image. Generating a
+// dark silhouette once prevents a new per-frame filter or decal authority.
+// In particular a tree projects its actual canopy and trunk, not an oval.
+export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1}={}){
+ if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return null;
+ return Object.freeze({
+  footY:footOffset+1,
+  shear:-.48,
+  flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)
+ });
+}
 function cullRadius(width, height) {
   return Math.hypot(width, height) / 2;
 }
@@ -193,7 +223,7 @@ function drawStaticImage(
       asset.render.rotationOffsetDeg
     )
   );
-  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight});
+  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,
       width: renderWidth, height: renderHeight}, timeSeconds);
