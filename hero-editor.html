@@ -32,8 +32,9 @@ button:disabled{opacity:.5;cursor:default}
 .hero-preset button{width:100%}
 #hero-official-status{display:block;min-height:20px;margin-top:7px;color:#b9ebdf}
 .hint{font-size:12px}
+.hero-directions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.hero-directions-grid label{border:1px solid #426474;border-radius:8px;padding:7px}.hero-directions-grid input{width:100%}#hero-edit-state{display:block;margin-top:10px;color:#b9ebdf}#hero-try-25{font-size:12px;padding:4px;min-height:32px}fieldset{border:1px solid #426474;border-radius:8px;padding:8px;min-width:0}legend{padding:0 6px}
 [hidden]{display:none!important}
-@media(max-width:690px){main{grid-template-columns:1fr}body{padding:9px}.fields{gap:7px}.panel{padding:10px}}
+@media(max-width:690px){main{grid-template-columns:1fr}body{padding:9px}.fields{gap:7px}.panel{padding:10px}.hero-directions-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -46,30 +47,33 @@ button:disabled{opacity:.5;cursor:default}
 <label class="wide">Héros enregistré
 <select id="hero-saved"><option value="">Nouveau héros…</option></select></label>
 <label class="wide">Nom du héros <input id="hero-name" maxlength="80" placeholder="Nom visible en jeu"></label>
-<label class="wide">Image principale PNG/WebP (obligatoire à la création)
+<label class="wide" id="hero-image-label">Image principale PNG/WebP (mode image fixe ou sprites)
 <input id="hero-image" type="file" accept="image/png,image/webp"></label>
 <label>Animation
 <select id="hero-mode"><option value="image">Image fixe · mouvement simulé</option><option value="frames">Sprites animés</option><option value="directions">8 directions · sprites réels</option></select></label>
-<label>Taille du héros sur la carte
-<input id="hero-height" type="number" value="37" min="24" max="240"></label>
+<label>Taille du héros sur la carte (24–240)
+<input id="hero-height" type="number" value="37" min="24" max="240" step="1">
+<span class="hint">Les modèles officiels existants gardent leur taille enregistrée. Essaie 25 sans modifier la partie tant que tu n’enregistres pas.</span><button id="hero-try-25" type="button">Essayer 25 dans l’aperçu</button></label>
 <label id="hero-idle-label" class="wide" hidden>Sprites à l'arrêt (PNG/WebP, facultatifs)
 <input id="hero-idle" type="file" multiple accept="image/png,image/webp"></label>
 <label id="hero-walk-label" class="wide" hidden>Sprites de déplacement (PNG/WebP, obligatoires en mode sprites)
 <input id="hero-walk" type="file" multiple accept="image/png,image/webp"></label>
+<fieldset id="hero-directions-inputs" class="wide" hidden><legend>Sprites 8 directions · 6 PNG/WebP par direction</legend><p class="hint">Pour modifier un modèle : remplace uniquement les directions souhaitées. Les autres restent conservées. Les canevas doivent avoir la même taille que l’image de base.</p><div id="hero-direction-files" class="hero-directions-grid"></div></fieldset>
 <label id="hero-fps-label" hidden>Images par seconde
 <input id="hero-fps" type="number" value="8" min="1" max="30" step="1"></label>
 <label>Orientation naturelle
 <select id="hero-source-facing"><option value="1">Droite</option><option value="-1">Gauche</option></select></label>
-<label>Oscillation à l'arrêt (image fixe)
+<label>Oscillation au repos (tous modes)
 <input id="hero-idle-amplitude" type="number" value="0.55" min="0" max="8" step=".1"></label>
 <label>Oscillation en marche (image fixe)
 <input id="hero-walk-amplitude" type="number" value="2" min="0" max="12" step=".1"></label>
 </div>
+<output id="hero-edit-state" role="status" aria-live="polite" class="hint">Aucune modification en attente.</output>
 <div class="actions">
 <button id="hero-save" type="button">Enregistrer le héros</button>
 <button id="hero-delete" type="button" disabled>Supprimer la définition</button>
 </div>
-<p class="hint">Les images et les sprites sont conservés en IndexedDB. Les références sont réutilisables par les cartes et les parties, sans copie dans le World Builder.</p>
+<p class="hint">Changer de carte ou de héros ne copie pas les sprites : les images et les sprites sont conservés en IndexedDB. Les références sont réutilisables par les cartes et les parties, sans copie dans le World Builder.</p>
 </section>
 <section class="panel">
 <h2>Prévisualisation réelle</h2>

@@ -4,6 +4,15 @@
 - UI seule, statut dérivé du chemin de chargement déjà canonique ; pas de nouvelle autorité, pas de changement de héros, terrain, objets, collisions ni portails.
 - Gate : test de chargeur + CI navigateur Exploration et vérification Pages SHA exact. Réserve à l'utilisateur les contrôles de compréhension et de cohérence visuelle.
 
+## 2026-11-14 — Éditeur Héros : modification des presets, sprites et oscillation
+- **START** : `main@e6c2cacbbae382cce2b95bd9a687843851b81314`, branche `checkpoint/exploration-hero-editor-repair-start-20261114`, travail `work/exploration-hero-editor-repair-20261114`.
+- **Propriétaire unique** : Exploration `HeroEditor` -> `UserHeroDefinitionV1` -> `UserHeroStoreV1` et `MapActorRenderer`. Le catalogue des 12 modèles et les 576 PNG restent intacts, aucun duplicata dans Capture/GenSRPG.
+- **Cause et correctifs** : les imports de directions 8×6 étaient absents de l'éditeur malgré les assets officiels. Les champs d'oscillation étaient désactivés pour les sprites et le renderer écartait toute oscillation en mode sprites, même au repos. Import partiel des six images d'une direction, conservation des autres, base canonique = S/0 ; lecture de vérification après `put` ; oscillation au repos uniquement, aucune oscillation artificielle lors des déplacements sprites. Prévisualisation interactive de taille 25 sans changer d'office les 12 tailles.
+- **Invariants gelés** : fichiers officiels, identifiants automatiques, stockages et sauvegardes, locomotion/collision/position, FPS/mouvements validés, animations de marche, WorldBuilder, Combat, Dungeon/Survie.
+- **Tests** : définition 49 assets, interpolation du renderer, test tactile Chromium de choix officiel -> modification -> import de six PNG -> sauvegarde -> reload IndexedDB ; CI, Pages et contrôle HTTPS avant validation.
+- **Autre lot à traiter séparément** : présentation des presets/cartes chargés (réglages WorldDocument indépendants) et audit alpha du pack 2, sans toucher les PNG sans preuve visuelle.
+- **État** : branche de travail, non publiée ; attendre CI GREEN, checkpoint et test visuel auteur.
+
 ## 2026-11-13 — Correctif neige : soubassement de la sculpture 2,5D
 - Base canonique : main `fa8106f61643e7ff6a8c36c64d96e7d7dd94abd9` ; START `checkpoint/exploration-start-snow-underlay-20261113` ; branche `work/exploration-snow-sculpt-underlay-20261113`.
 - Reproduction Neige 1 : WorldSurface est de famille `plain` mais les zones peintes sont `ground.snow`. Le renderer commence par une plaque `baseColor=#536247`; quand le relief est relevé de 2 cases ou plus, des fenêtres en bas laissent voir cette herbe verte, surtout depuis la suppression de la frange sud.
