@@ -6,7 +6,7 @@ import {createUserHeroStoreV1} from '../storage/user-hero-store-v1.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
-import {MAP_ACTOR_COMPASS_DIRECTIONS_V1,normalizeMapActorVisual} from './map-actor-visual-model.js';
+import {MAP_ACTOR_COMPASS_DIRECTIONS_V1,normalizeMapActorVisual,DEFAULT_HERO_VISUAL_SETTINGS_V1} from './map-actor-visual-model.js';
 import {loadOfficialHeroCatalogV1,installOfficialHeroPresetV1} from './official-hero-presets-v1.js';
 
 const $=id=>document.getElementById(id);
@@ -40,8 +40,8 @@ function updateMode(){
  $('hero-fps-label').hidden=mode==='image';
  $('hero-image-label').hidden=mode==='directions';
  $('hero-idle-amplitude').disabled=false;
- // Sprite walking already owns movement; artificial walk bob is image-only.
- $('hero-walk-amplitude').disabled=mode!=='image';
+ // All modes share the single native oscillation control.
+  $('hero-walk-amplitude').disabled=false;
 }
 function oldAsset(id){
  const entry=selected?.assets.find(value=>value.id===id);
@@ -167,11 +167,11 @@ function displayFields(record){
   :'Nouveau héros · aucune modification enregistrée.';
  $('hero-name').value=record?.name??'';
  $('hero-mode').value=record?.mapVisual.animation.mode??'image';
- $('hero-height').value=record?.mapVisual.targetHeight??37;
+ $('hero-height').value=record?.mapVisual.targetHeight??DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight;
  $('hero-source-facing').value=String(record?.mapVisual.sourceFacingX??1);
- $('hero-fps').value=record?.mapVisual.animation.framesPerSecond??8;
- $('hero-idle-amplitude').value=record?.mapVisual.motion.idleAmplitude??.55;
- $('hero-walk-amplitude').value=record?.mapVisual.motion.walkAmplitude??2;
+ $('hero-fps').value=record?.mapVisual.animation.framesPerSecond??DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond;
+ $('hero-idle-amplitude').value=record?.mapVisual.motion.idleAmplitude??DEFAULT_HERO_VISUAL_SETTINGS_V1.idleAmplitude;
+ $('hero-walk-amplitude').value=record?.mapVisual.motion.walkAmplitude??DEFAULT_HERO_VISUAL_SETTINGS_V1.walkAmplitude;
  for(const id of ['hero-image','hero-idle','hero-walk'])$(id).value='';
  for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1)$('hero-direction-'+dir).value='';
  $('hero-delete').disabled=!record;
@@ -223,7 +223,7 @@ async function saveHero(){
    ?await frames('hero-walk',previous?.mapVisual.animation.walk??[]):[];
   const record=createUserHeroDefinitionV1({
    id,name:$('hero-name').value,base,mode,idle,walk,directions,
-   framesPerSecond:mode==='image'?8:number('hero-fps'),
+   framesPerSecond:mode==='image'?DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond:number('hero-fps'),
    targetHeight:number('hero-height'),
    sourceFacingX:Number($('hero-source-facing').value),
    motion:{idleAmplitude:number('hero-idle-amplitude'),
