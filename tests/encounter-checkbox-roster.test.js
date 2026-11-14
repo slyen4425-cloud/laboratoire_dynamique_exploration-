@@ -28,15 +28,15 @@ test('selected elements filter one combined creature pool: no weighted element l
   const roll=resolveTerrainFamilyEncounter({terrainFamilyId:'forest',config:config(['fire','water']),
     captureCatalog:pool,random:((a)=>()=>a.shift())([0,0.99])});
   assert.equal(roll.triggered,true);
-  assert.equal(roll.creatureId,'rare-water'); // total rarity weight 41; 0.99 selects last 1
-  assert.equal(roll.spawnChance,1);
+  assert.equal(roll.creatureId,'rare-water'); // Equal chances within available Rare species; no individual percentage.
+  assert.equal(roll.rarity,'rare');
   assert.equal(roll.elementId,'water');
 });
 
 test('multielement creature is not counted twice when two matching elements selected',()=>{
   const roll=resolveTerrainFamilyEncounter({terrainFamilyId:'forest',config:config(['fire','water']),
-    captureCatalog:pool,random:((a)=>()=>a.shift())([0,0.80])});
-  // total rarity 41; at 0.80 the duplicated both would change the winner.
+    captureCatalog:pool,random:((a)=>()=>a.shift())([0,0.5])});
+  // One combined unique species list; the two-element creature appears once.
   assert.equal(roll.creatureId,'both');
 });
 
