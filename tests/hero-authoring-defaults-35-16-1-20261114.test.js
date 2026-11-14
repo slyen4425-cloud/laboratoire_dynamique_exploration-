@@ -36,7 +36,10 @@ test('the 12 official presets install with the new defaults, without editing aut
   baseUrl:'https://example.test/hero-editor.html',
   mintId:()=>id.slice(10),now:()=> '2026-11-14T07:00:00Z'});
  assert.equal(installed.length,1);
- assert.equal(record.mapVisual.targetHeight,35);
+ // Blue is a calibrated exception; authoring defaults and the other 11 stay 35.
+ assert.equal(record.mapVisual.targetHeight,official.heroes[0].targetHeight);
+ assert.equal(record.mapVisual.targetHeight,30);
+ assert.ok(official.heroes.slice(1).every(hero=>hero.targetHeight===undefined));
  assert.equal(record.mapVisual.animation.framesPerSecond,16);
  assert.equal(record.mapVisual.motion.idleAmplitude,1);
  assert.equal(record.mapVisual.motion.walkAmplitude,1);
