@@ -1,3 +1,9 @@
+## 2026-11-14 — Caméra : butée sud réellement alignée au héros en 2,5D
+- START `main@8dce5bc8b7b2c3a50494b260468a6125eaba5c0c` ; checkpoint `checkpoint/exploration-camera-south-follow-start-20261114` ; branche `work/exploration-camera-south-follow-20261114`.
+- Cause : en vue inclinée avec shear non nul, le `maxY` global du rectangle projeté se réfère au coin sud extrême, tandis que le héros voit le bord sud à son propre X. Le clamp global laissait du fond sous le bord local. En édition, le zoom autour de la souris/modification de zoom ne rappelait pas la limite.
+- Propriétaire unique : `sculpt-navigation-camera-clamp-v1`. Bornes nord, collisions, WorldArea, portail, sauvegardes et trames d'animations intacts. Le `maxY` gameplay est calculé depuis la projection sud au X du héros ; l'éditeur rappelle le même clamp après wheel/zoom.
+- Gate : test angles 35/55/75/90°, carte 80×64 et clamp pan extrême, CI moteur + Chromium et publication Pages vérifiée HTTPS. Contrôle visuel utilisateur PC/téléphone nécessaire.
+
 ## 2026-11-14 — Clarifier « préset choisi » vs carte vraiment chargée
 - START : `main@e6c2cacbbae382cce2b95bd9a687843851b81314` ; checkpoint `checkpoint/exploration-map-load-ux-start-20261114` ; branche `work/exploration-map-load-ux-20261114`.
 - Aucun changement de contrat WorldArea/WorldSurface ni à la sauvegarde : le modèle choisi dans la liste reste un candidat jusqu'au clic explicite « Charger ». La carte affichée possède un état lisible distinct ; après chargement, indiquer le nom du modèle vraiment appliqué et expliquer que passages/rencontres/héros liés au monde ou à la partie ne sont pas remplacés.
