@@ -56,6 +56,33 @@ export async function installOfficialHeroPresetV1({
      !Array.isArray(directions[dir])||directions[dir].length!==6||
      directions[dir].some(path=>!assetPath(path))))
     throw new TypeError('Les huit directions du héros sont incomplètes');
+  // A second tap on "Utiliser ce modèle" must not silently create another
+  // IndexedDB hero with a fresh UUID. The owner itself checks the saved
+  // definitions; Capture and the editor share this one install contract.
+  // Only compare the immutable published S/0 PNG and the unedited 49-image
+  // model signature. A renamed/modified hero remains a distinct user record.
+  if(typeof store.list==='function'){
+    const saved=await store.list();
+    const candidates=saved.filter(record=>record.name===hero.name&&
+      record.mapVisual.animation.mode==='directions'&&
+      record.assets.length===49&&
+      record.mapVisual.targetHeight===58&&
+      record.mapVisual.animation.framesPerSecond===(hero.fps??8));
+    if(candidates.length){
+      const url=new URL(directions.S[0],baseUrl);
+      if(url.origin!==new URL(baseUrl).origin)
+        throw new Error('Héros officiel hors domaine');
+      const response=await fetchAsset(url.href);
+      if(!response?.ok)throw new Error('Image du héros absente : '+directions.S[0]);
+      const bytes=new Uint8Array(await (await response.blob()).arrayBuffer());
+      for(const record of candidates){
+        const first=record.assets.find(asset=>asset.id===record.mapVisual.assetId)?.blob;
+        if(!first||first.size!==bytes.length)continue;
+        const current=new Uint8Array(await first.arrayBuffer());
+        if(current.every((byte,index)=>byte===bytes[index]))return record;
+      }
+    }
+  }
   const files={};
   const queue=MAP_ACTOR_COMPASS_DIRECTIONS_V1.flatMap(dir=>
     directions[dir].map((path,i)=>({dir,i,path})));
