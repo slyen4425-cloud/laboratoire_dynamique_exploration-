@@ -1,3 +1,11 @@
+## 2026-11-14 — Bibliothèque des héros : rendre les enregistrements visibles et éviter les doublons involontaires
+- START canonique `main@8dce5bc8b7b2c3a50494b260468a6125eaba5c0c` ; checkpoint `checkpoint/exploration-hero-library-start-20261114`, travail `work/exploration-hero-library-dedupe-20261114`.
+- Bug de lisibilité : `HeroEditor` initialisait systématiquement la liste sur `Nouveau héros…` malgré les `UserHeroDefinitionV1` enregistrés en IndexedDB. Afficher au chargement une définition existante, son nom/date, le nombre d'enregistrements et les noms répétés. Le choix explicite `+ Nouveau` existe toujours.
+- Doublon : la galerie officielle recréait un UUID et 49 PNG sur chaque clic. Le propriétaire natif `installOfficialHeroPresetV1` réutilise maintenant un modèle déjà installé si nom / signature du preset et premier PNG sont identiques ; ne touche ni aux autres héros ni aux modifications personnelles.
+- Suppression manuelle : confirmer nom et date de **ce seul enregistrement** et avertir qu'une partie référencée pourra perdre son apparence. Aucun nettoyage/déduplication automatique (sans consentement), aucune suppression de fichiers d'origine, branche, sauvegarde ou source d'autorité.
+- Gate : tests d'idempotence de l'installateur, contrôle UI, vrai navigateur/mobile, CI Exploration et Pages HTTPS avant verdict GREEN.
+- Autres lots isolés : clamp sud de caméra, nom de héros en aventure/multijoueur, dialogues près des PNJ, audit alpha du pack 2.
+
 ## 2026-11-14 — Clarifier « préset choisi » vs carte vraiment chargée
 - START : `main@e6c2cacbbae382cce2b95bd9a687843851b81314` ; checkpoint `checkpoint/exploration-map-load-ux-start-20261114` ; branche `work/exploration-map-load-ux-20261114`.
 - Aucun changement de contrat WorldArea/WorldSurface ni à la sauvegarde : le modèle choisi dans la liste reste un candidat jusqu'au clic explicite « Charger ». La carte affichée possède un état lisible distinct ; après chargement, indiquer le nom du modèle vraiment appliqué et expliquer que passages/rencontres/héros liés au monde ou à la partie ne sont pas remplacés.
