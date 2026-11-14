@@ -6,7 +6,7 @@ import {createUserHeroStoreV1} from '../storage/user-hero-store-v1.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
-import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
+import {MAP_ACTOR_COMPASS_DIRECTIONS_V1,normalizeMapActorVisual} from './map-actor-visual-model.js';
 import {loadOfficialHeroCatalogV1,installOfficialHeroPresetV1} from './official-hero-presets-v1.js';
 
 const $=id=>document.getElementById(id);
@@ -14,6 +14,15 @@ const status=$('hero-status');
 const canvas=$('hero-canvas'),ctx=canvas.getContext('2d');
 const store=createUserHeroStoreV1();
 let selected=null,preview=null,renderEpoch=0,previewMoving=false,disposed=false;
+let liveVisual=null,dirty=false,saving=false;
+for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
+ const label=document.createElement('label');
+ label.textContent=dir+' · six images ordonnées (0–5)';
+ const input=document.createElement('input');
+ input.id='hero-direction-'+dir;input.type='file';input.multiple=true;
+ input.accept='image/png,image/webp';input.setAttribute('aria-label','Sprites '+dir);
+ label.append(input);$('hero-direction-files').append(label);
+}
 let previewDirection='S';
 
 function notify(message,error=false){
@@ -27,8 +36,11 @@ function number(id){
 function updateMode(){
  const mode=$('hero-mode').value,sprites=mode==='frames';
  for(const id of ['hero-idle-label','hero-walk-label'])$(id).hidden=!sprites;
+ $('hero-directions-inputs').hidden=mode!=='directions';
  $('hero-fps-label').hidden=mode==='image';
- $('hero-idle-amplitude').disabled=mode!=='image';
+ $('hero-image-label').hidden=mode==='directions';
+ $('hero-idle-amplitude').disabled=false;
+ // Sprite walking already owns movement; artificial walk bob is image-only.
  $('hero-walk-amplitude').disabled=mode!=='image';
 }
 function oldAsset(id){
@@ -60,6 +72,31 @@ async function uploaded(file){
   throw new RangeError('Fichier vide ou supérieur à 8 Mo : '+file.name);
  const size=await decodedDimensions(file);
  return {blob:file,mimeType:file.type,...size};
+}
+async function directionFrames(dir,previous){
+ const files=[...$('hero-direction-'+dir).files];
+ if(files.length&&files.length!==6)
+  throw new RangeError('Direction '+dir+' : importe exactement six sprites, ordonnés de 0 à 5.');
+ if(files.length)return Promise.all(files.map(uploaded));
+ if(previous?.mapVisual.animation.mode==='directions')
+  return previous.mapVisual.animation.directions[dir].map(oldAsset);
+ throw new Error('Direction '+dir+' : ajoute six sprites avant d’enregistrer.');
+}
+function previewFromForm(record){
+ if(!record)return null;
+ try{
+  return normalizeMapActorVisual({...record.mapVisual,
+   targetHeight:number('hero-height'),
+   motion:{...record.mapVisual.motion,
+    idleAmplitude:number('hero-idle-amplitude'),
+    walkAmplitude:number('hero-walk-amplitude')}
+  });
+ }catch{return record.mapVisual;}
+}
+function markDirty(){
+ dirty=true;
+ liveVisual=previewFromForm(selected);
+ $('hero-edit-state').textContent='Modifications en aperçu uniquement · clique sur « Enregistrer le héros » pour les conserver.';
 }
 async function frames(field,oldRefs){
  const files=[...$(field).files];
@@ -108,7 +145,7 @@ async function startPreview(record){
    renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:time/1000,
     actors:[{x:canvas.width/2,y:canvas.height-35,facingX:1,
      directionX:Math.cos(angle),directionY:Math.sin(angle),
-     moving:previewMoving,visualScale:2,mapVisual:record.mapVisual}]});
+     moving:previewMoving,visualScale:1,mapVisual:liveVisual??record.mapVisual}]});
    active.raf=requestAnimationFrame(frame);
   }
   active.raf=requestAnimationFrame(frame);
@@ -124,6 +161,10 @@ async function startPreview(record){
 }
 function displayFields(record){
  selected=record;
+ dirty=false;
+ $('hero-edit-state').textContent=record
+  ?'Héros chargé : '+record.name+' · les réglages affichés appartiennent à ce héros.'
+  :'Nouveau héros · aucune modification enregistrée.';
  $('hero-name').value=record?.name??'';
  $('hero-mode').value=record?.mapVisual.animation.mode??'image';
  $('hero-height').value=record?.mapVisual.targetHeight??37;
@@ -132,8 +173,10 @@ function displayFields(record){
  $('hero-idle-amplitude').value=record?.mapVisual.motion.idleAmplitude??.55;
  $('hero-walk-amplitude').value=record?.mapVisual.motion.walkAmplitude??2;
  for(const id of ['hero-image','hero-idle','hero-walk'])$(id).value='';
+ for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1)$('hero-direction-'+dir).value='';
  $('hero-delete').disabled=!record;
  updateMode();
+ liveVisual=record?.mapVisual??null;
 }
 async function refreshCatalog(chosenId=null){
  const records=await store.list();
@@ -147,37 +190,50 @@ async function refreshCatalog(chosenId=null){
  else{destroyPreview();notify('Importe une image PNG ou WebP pour créer ton héros.');}
 }
 async function saveHero(){
- const previous=selected;
- const id=previous?.id??'hero.user.'+crypto.randomUUID();
- const mode=$('hero-mode').value;
- const base=await uploaded($('hero-image').files[0])||
-  (previous?oldAsset(previous.mapVisual.assetId):null);
- if(!base)throw new Error('Choisis une image principale PNG ou WebP.');
- const idle=mode==='frames'
-  ?await frames('hero-idle',previous?.mapVisual.animation.idle??[]):[];
- const walk=mode==='frames'
-  ?await frames('hero-walk',previous?.mapVisual.animation.walk??[]):[];
- const directions=mode==='directions'
-  ?Object.fromEntries(MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(dir=>{
-    if(previous?.mapVisual.animation.mode!=='directions')
-      throw new Error('Choisis un modèle officiel pour obtenir les huit directions');
-    return [dir,previous.mapVisual.animation.directions[dir].map(oldAsset)];
-  })):null;
- const record=createUserHeroDefinitionV1({
-  id,name:$('hero-name').value,base,mode,idle,walk,directions,
-  framesPerSecond:mode==='image'?8:number('hero-fps'),
-  targetHeight:number('hero-height'),
-  sourceFacingX:Number($('hero-source-facing').value),
-  motion:{idleAmplitude:number('hero-idle-amplitude'),
-   idleFrequency:previous?.mapVisual.motion.idleFrequency??.8,
-   walkAmplitude:number('hero-walk-amplitude'),
-   walkFrequency:previous?.mapVisual.motion.walkFrequency??3.8},
-  now:previous?.createdAt??new Date().toISOString()
- });
- await store.put(record);
- await refreshCatalog(record.id);
- notify('Héros enregistré durablement : '+record.name+'. Son visuel est prêt pour la sélection en jeu.');
+ if(saving)return;
+ saving=true;$('hero-save').disabled=true;
+ try{
+  const previous=selected;
+  const id=previous?.id??'hero.user.'+crypto.randomUUID();
+  const mode=$('hero-mode').value;
+  const directions=mode==='directions'
+   ?Object.fromEntries(await Promise.all(MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(async dir=>
+     [dir,await directionFrames(dir,previous)])))
+   :null;
+  // In the directional mode the S/0 frame is the single base reference.
+  // Never require a separate user image or silently discard an uploaded frame.
+  const base=mode==='directions'?directions.S[0]:
+   await uploaded($('hero-image').files[0])||
+   (previous?oldAsset(previous.mapVisual.assetId):null);
+  if(!base)throw new Error('Choisis une image principale PNG ou WebP.');
+  const idle=mode==='frames'
+   ?await frames('hero-idle',previous?.mapVisual.animation.idle??[]):[];
+  const walk=mode==='frames'
+   ?await frames('hero-walk',previous?.mapVisual.animation.walk??[]):[];
+  const record=createUserHeroDefinitionV1({
+   id,name:$('hero-name').value,base,mode,idle,walk,directions,
+   framesPerSecond:mode==='image'?8:number('hero-fps'),
+   targetHeight:number('hero-height'),
+   sourceFacingX:Number($('hero-source-facing').value),
+   motion:{idleAmplitude:number('hero-idle-amplitude'),
+    idleFrequency:previous?.mapVisual.motion.idleFrequency??.8,
+    walkAmplitude:number('hero-walk-amplitude'),
+    walkFrequency:previous?.mapVisual.motion.walkFrequency??3.8},
+   now:previous?.createdAt??new Date().toISOString()
+  });
+  await store.put(record);
+  const persisted=await store.get(record.id);
+  if(!persisted||persisted.mapVisual.targetHeight!==record.mapVisual.targetHeight||
+     persisted.assets.length!==record.assets.length)
+   throw new Error('Vérification de sauvegarde impossible : recharge le héros avant de quitter.');
+  await refreshCatalog(record.id);
+  notify('Héros enregistré et relu : '+record.name+'. '+record.assets.length+
+    ' image(s) conservées, taille '+record.mapVisual.targetHeight+'.');
+ }finally{
+  saving=false;$('hero-save').disabled=false;
+ }
 }
+
 async function deleteHero(){
  if(!selected)return;
  if(!confirm('Supprimer définitivement le héros « '+selected.name+' » et toutes ses images ?'))return;
@@ -194,7 +250,17 @@ async function run(callback){
   console.error('Éditeur Héros Exploration : ',error);
  }
 }
-$('hero-mode').addEventListener('change',updateMode);
+$('hero-mode').addEventListener('change',()=>{updateMode();markDirty();});
+for(const id of ['hero-name','hero-height','hero-fps','hero-source-facing',
+  'hero-idle-amplitude','hero-walk-amplitude','hero-image','hero-idle','hero-walk',
+  ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(dir=>'hero-direction-'+dir)]){
+ $(id).addEventListener('input',markDirty);
+ $(id).addEventListener('change',markDirty);
+}
+$('hero-try-25').addEventListener('click',()=>{
+ $('hero-height').value='25';markDirty();
+ notify('Taille 25 en aperçu · non enregistrée.');
+});
 $('hero-saved').addEventListener('change',()=>{
  run(()=>refreshCatalog($('hero-saved').value));
 });

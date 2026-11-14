@@ -99,6 +99,52 @@ try{
   {width:932,height:430,deviceScaleFactor:2,mobile:true});
  await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
  await waitFor("document.querySelector('#hero-name')!==null",'hero editor');
+ await waitFor("document.querySelectorAll('#hero-official-grid .hero-preset').length===12",
+  'twelve official heroes in native editor');
+ await evaluate("document.querySelector('#hero-official-grid .hero-preset button').click()");
+ await waitFor("document.querySelector('#hero-saved').value.startsWith('hero.user.')",
+  'official hero loaded from real 48-PNG catalog',180);
+ const edited=await evaluate("(async()=>{"
+  +"const id=document.querySelector('#hero-saved').value;"
+  +"const {createUserHeroStoreV1}=await import('/src/storage/user-hero-store-v1.js');"
+  +"const original=await createUserHeroStoreV1().get(id);"
+  +"if(original.mapVisual.animation.mode!=='directions'||original.assets.length!==49)throw Error('Preset not installed');"
+  +"document.querySelector('#hero-name').value='Modèle officiel modifié';"
+  +"const height=document.querySelector('#hero-height');height.value='25';height.dispatchEvent(new Event('input',{bubbles:true}));"
+  +"const idle=document.querySelector('#hero-idle-amplitude');"
+  +"if(idle.disabled)throw Error('Idle amplitude unavailable');"
+  +"idle.value='1.5';idle.dispatchEvent(new Event('input',{bubbles:true}));"
+  +"if(document.querySelector('#hero-directions-inputs').hidden)throw Error('Sprites uploader hidden');"
+  +"const canvas=document.createElement('canvas');canvas.width=128;canvas.height=160;"
+  +"const ctx=canvas.getContext('2d');ctx.fillStyle='#b03fbd';ctx.fillRect(34,24,52,121);"
+  +"const png=await new Promise(ok=>canvas.toBlob(ok,'image/png'));"
+  +"const batch=new DataTransfer();"
+  +"for(let i=0;i<6;i++)batch.items.add(new File([png],String(i).padStart(2,'0')+'.png',{type:'image/png'}));"
+  +"const input=document.querySelector('#hero-direction-S');input.files=batch.files;"
+  +"input.dispatchEvent(new Event('change',{bubbles:true}));"
+  +"document.querySelector('#hero-save').click();"
+  +"return {id,bytes:png.size};"
+  +"})()");
+ await waitFor("(async()=>{"
+  +"const {createUserHeroStoreV1}=await import('/src/storage/user-hero-store-v1.js');"
+  +"const record=await createUserHeroStoreV1().get("+JSON.stringify(edited.id)+");"
+  +"return record?.name==='Modèle officiel modifié'&&record.mapVisual.targetHeight===25&&"
+  +"record.mapVisual.motion.idleAmplitude===1.5&&record.assets.length===49&&"
+  +"record.assets.find(a=>a.id===record.id+'.dir.S.0')?.blob.size==="+edited.bytes+"&&"
+  +"document.querySelector('#hero-status').dataset.error!=='true';"
+  +"})()",'preset save and sprite replacement in native IndexedDB',180);
+ await send('Page.reload',{ignoreCache:true});
+ const reloaded=await evaluate("(async()=>{"
+  +"const {createUserHeroStoreV1}=await import('/src/storage/user-hero-store-v1.js');"
+  +"const record=await createUserHeroStoreV1().get("+JSON.stringify(edited.id)+");"
+  +"return record&&{name:record.name,height:record.mapVisual.targetHeight,"
+  +"idle:record.mapVisual.motion.idleAmplitude,assets:record.assets.length};"
+  +"})()");
+ if(reloaded?.name!=='Modèle officiel modifié'||reloaded.height!==25||
+    reloaded.idle!==1.5||reloaded.assets!==49)
+  throw Error('Edited hero lost persisted state after reload '+JSON.stringify(reloaded));
+ console.log('GREEN mobile Hero Editor: official preset saved, eight directions preserved and six S sprites replaced',JSON.stringify(reloaded));
+
  const generated=await evaluate(`(async()=>{
   const {createBlankWorldBuilderDraft}=await import('/src/builder/world-builder-draft.js');
   const {worldAreaSizeFromTiles}=await import('/src/builder/world-area-size-command.js');
