@@ -29,16 +29,78 @@ export function worldObjectContactShadowV1({kind,width,height,footOffset=0,pitch
 }
 export function drawWorldObjectContactShadowV1(ctx,args){
  const shadow=worldObjectContactShadowV1(args);
- if(!shadow||typeof ctx?.ellipse!=='function')return false;
- ctx.save();
- ctx.beginPath();
+ if(!shadow)return false;
+ if(args?.image){
+  const mask=worldObjectShadowMaskV1(args.image,args.asset);
+  const projection=worldObjectShadowProjectionV1(args);
+  if(!mask||!projection||typeof ctx?.transform!=='function')return false;
+  const {width,height}=args;
+  const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
+  // The alpha silhouette's lowest opaque pixel meets the exact WorldObject
+  // foot. Screen-space projection gives an elongated, directional cast.
+  ctx.save();
+  ctx.translate(0,projection.footY);
+  ctx.transform(1,0,projection.shear,projection.flatten,0,0);
+  ctx.globalAlpha=.25;
+  ctx.drawImage(mask.canvas,mask.left,mask.top,srcWidth,srcHeight,
+   width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
+   width*(srcWidth/mask.w),height*(srcHeight/mask.h));
+  ctx.restore();
+  return true;
+ }
+ // Compatibility for pure geometry callers that have no source image.
+ if(typeof ctx?.ellipse!=='function')return false;
+ ctx.save();ctx.beginPath();
  ctx.ellipse(shadow.x,shadow.y,shadow.radiusX,shadow.radiusY,0,0,Math.PI*2);
  ctx.fillStyle='rgba(0,0,0,'+shadow.opacity+')';
- ctx.fill();
- ctx.restore();
+ ctx.fill();ctx.restore();
  return true;
 }
 
+// Derived display-only alpha mask, cached per official image. Generating a
+// dark silhouette once prevents a new per-frame filter or decal authority.
+// In particular a tree projects its actual canopy and trunk, not an oval.
+const shadowSilhouettes=new WeakMap();
+export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1}={}){
+ if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return null;
+ return Object.freeze({
+  footY:footOffset+1,
+  shear:-.48,
+  flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)
+ });
+}
+function worldObjectShadowMaskV1(image,asset){
+ if(!image||typeof image!=='object')return null;
+ if(shadowSilhouettes.has(image))return shadowSilhouettes.get(image);
+ const doc=image.ownerDocument??globalThis.document;
+ if(typeof doc?.createElement!=='function')return null;
+ const frame=asset?.animation;
+ const srcW=Number.isFinite(frame?.frameWidth)?frame.frameWidth:(image.naturalWidth??image.width);
+ const srcH=Number.isFinite(frame?.frameHeight)?frame.frameHeight:(image.naturalHeight??image.height);
+ if(!(srcW>0&&srcH>0))return null;
+ const scale=Math.min(1,192/Math.max(srcW,srcH));
+ const w=Math.max(1,Math.round(srcW*scale)),h=Math.max(1,Math.round(srcH*scale));
+ const canvas=doc.createElement('canvas');
+ canvas.width=w;canvas.height=h;
+ const c=canvas.getContext('2d',{willReadFrequently:true});
+ if(!c)return null;
+ try{
+  drawWorldObjectSprite(c,image,asset,{x:0,y:0,width:w,height:h},0);
+  const rgba=c.getImageData(0,0,w,h).data;
+  let left=w,right=-1,top=h,bottom=-1;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(rgba[(y*w+x)*4+3]>18){
+   left=Math.min(left,x);right=Math.max(right,x);
+   top=Math.min(top,y);bottom=Math.max(bottom,y);
+  }
+  if(right<left)return null;
+  c.globalCompositeOperation='source-in';
+  c.fillStyle='#081116';c.fillRect(0,0,w,h);
+  c.globalCompositeOperation='source-over';
+  const mask=Object.freeze({canvas,w,h,left,top,right:1+right,bottom:1+bottom});
+  shadowSilhouettes.set(image,mask);
+  return mask;
+ }catch{return null;}
+}
 function cullRadius(width, height) {
   return Math.hypot(width, height) / 2;
 }
@@ -193,7 +255,7 @@ function drawStaticImage(
       asset.render.rotationOffsetDeg
     )
   );
-  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight});
+  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,
       width: renderWidth, height: renderHeight}, timeSeconds);
