@@ -29,7 +29,7 @@ export function worldObjectContactShadowV1({kind,width,height,footOffset=0,pitch
 }
 export function drawWorldObjectContactShadowV1(ctx,args){
  const shadow=worldObjectContactShadowV1(args);
- if(!shadow)return false;
+ if(!shadow||typeof ctx?.ellipse!=='function')return false;
  ctx.save();
  ctx.beginPath();
  ctx.ellipse(shadow.x,shadow.y,shadow.radiusX,shadow.radiusY,0,0,Math.PI*2);
