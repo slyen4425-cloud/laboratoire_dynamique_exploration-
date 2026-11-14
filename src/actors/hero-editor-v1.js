@@ -198,7 +198,7 @@ async function refreshCatalog(chosenId=null){
  if(chosen)await startPreview(chosen);
  else{destroyPreview();notify(records.length
   ?'Choisis un héros enregistré dans la liste pour voir ses réglages, ou crée un nouveau héros.'
-  :'Bibliothèque vide : importe une image PNG/WebP ou choisis un modèle officiel.');}
+  :'Importe une image PNG/WebP ou choisis un modèle officiel pour créer ton héros.');}
 }
 async function saveHero(){
  if(saving)return;
