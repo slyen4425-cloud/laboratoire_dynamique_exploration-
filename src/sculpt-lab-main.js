@@ -12,6 +12,7 @@ import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculp
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
+import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
   paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
@@ -2369,10 +2370,38 @@ function navigationSpawn(){
   return null;
 }
 let npcDialogueOpen=false,npcDialogueLines=[],npcDialogueIndex=0,npcDialogueMerchant=null,npcDialogueTrainer=null;
+let npcDialogueAnchor=null;
+// Every DOM widget follows the currently selected NPC via the EXISTING 2.5D
+// camera projection; it never receives a second actor coordinate authority.
+function placeNpcScreenUi(actor,element,{panel=false}={}){
+ if(!actor||!element||!navigationTesting)return;
+ const level=sculptNavigationSample(terrain,actor.x,actor.y,{
+  cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height
+ })?.level??0;
+ const view=cameraView();
+ const projected=sculptCameraProject(view,actor.x,
+  actor.y-level*SCULPT_TILE.rise);
+ const rect=element.getBoundingClientRect();
+ const at=sculptNpcScreenUiPositionV1({
+  projected,pan,zoom,canvasRect:canvas.getBoundingClientRect(),
+  viewportWidth:window.innerWidth,viewportHeight:window.innerHeight,
+  boxWidth:Math.max(1,rect.width||(panel?350:130)),
+  boxHeight:Math.max(1,rect.height||(panel?180:42)),
+  aboveGap:panel?22:50
+ });
+ element.style.left=at.left+'px';
+ element.style.top=at.top+'px';
+}
+function placeActiveNpcDialog(){
+ if(npcDialogueOpen&&npcDialogueAnchor)
+  placeNpcScreenUi(npcDialogueAnchor,document.querySelector('.npc-dialogue-panel'),{panel:true});
+}
+
 let npcDialogueTrainerNotice='',navTrainerArrivalPending=false;
 function closeNpcDialogue(){
   npcDialogueOpen=false;
   if($('npc-dialogue-overlay'))$('npc-dialogue-overlay').hidden=true;
+  npcDialogueAnchor=null;
   npcDialogueLines=[];npcDialogueIndex=0;npcDialogueMerchant=null;
   npcDialogueTrainer=null;npcDialogueTrainerNotice='';
   if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=true;
@@ -2435,6 +2464,7 @@ function updateNpcInteraction(){
     $('npc-talk').textContent=(challenge?'⚔ ':npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
       (npc.npc.name||(challenge?'Défier':'Parler'));
     $('npc-talk').setAttribute('aria-label',challenge?'Défier '+(npc.npc.name||'le dresseur'):'Parler au PNJ proche');
+    placeNpcScreenUi(npc,$('npc-talk'));
   }
 }
 function requestNpcMerchantShop(actor){
@@ -2463,10 +2493,11 @@ $('npc-talk')?.addEventListener('click',()=>{
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
   if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
-  npcDialogueIndex=0;npcDialogueOpen=true;
+  npcDialogueIndex=0;npcDialogueOpen=true;npcDialogueAnchor=npc;
   $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
   renderNpcDialogueStep();
-  $('npc-dialogue-overlay').hidden=false;updateNpcInteraction();
+  $('npc-dialogue-overlay').hidden=false;
+  placeActiveNpcDialog();updateNpcInteraction();
 });
 $('npc-dialogue-trade')?.addEventListener('click',()=>{
   const actor=npcDialogueMerchant;
@@ -2486,6 +2517,8 @@ function renderNpcDialogueStep(){
   }
   $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':'Terminer';
   $('npc-dialogue-close').textContent=offersDuel?'Refuser':'Fermer';
+  if(npcDialogueOpen&&!$('npc-dialogue-overlay').hidden)
+    requestAnimationFrame(placeActiveNpcDialog);
 }
 $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
@@ -2501,6 +2534,10 @@ $('npc-dialogue-next')?.addEventListener('click',()=>{
 });
 $('npc-dialogue-close')?.addEventListener('click',()=>{
   closeNpcDialogue();updateNpcInteraction();
+});
+window.addEventListener('resize',()=>{
+ if(npcDialogueOpen)placeActiveNpcDialog();
+ else if(navigationTesting)updateNpcInteraction();
 });
 function updateNavigationInfo(forced=false){
   if(!navigationTesting||!navActor)return;
