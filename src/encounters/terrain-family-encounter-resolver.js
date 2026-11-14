@@ -2,106 +2,66 @@ import {
   findTerrainFamilyEncounterProfile
 } from './terrain-family-encounter-config.js?rev=terrain-family-encounters-v1';
 
-function boundedRandom(random) {
-  const value = Number(random());
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.min(0.999999999999, value));
-}
-
-function weightedPick(items, chanceOf, random) {
-  const weighted = items
-    .map((item) => ({
-      item,
-      chance: Number(chanceOf(item))
-    }))
-    .filter(({ chance }) =>
-      Number.isFinite(chance) && chance > 0
-    );
-
-  const total = weighted.reduce(
-    (sum, entry) => sum + entry.chance,
-    0
-  );
-
-  if (total <= 0) return null;
-
-  const target = boundedRandom(random) * total;
-  let cursor = 0;
-
-  for (const entry of weighted) {
-    cursor += entry.chance;
-    if (target < cursor) return entry.item;
-  }
-
-  return weighted.at(-1)?.item ?? null;
+// One global rarity policy for wild encounters. The creature rank itself
+// belongs exclusively to the official Combat Capture creature definition.
+// 50/20/10 are author weights (not percentages summing to 100): normalize
+// within the available ranks to guarantee that a successful encounter
+// actually yields a creature, including when a rank is absent from a biome.
+export const GLOBAL_CREATURE_RARITY_WEIGHTS_V1=Object.freeze({
+  rare:50,mythic:20,legendary:10
+});
+function boundedRandom(random){
+ const value=Number(random());
+ if(!Number.isFinite(value))return 0;
+ return Math.max(0,Math.min(0.999999999999,value));
 }
 
 export function resolveTerrainFamilyEncounter({
-  terrainFamilyId,
-  config,
-  captureCatalog,
-  random = Math.random
-}) {
-  const profile = findTerrainFamilyEncounterProfile(
-    config,
-    terrainFamilyId
-  );
+  terrainFamilyId,config,captureCatalog,random=Math.random
+}){
+ const profile=findTerrainFamilyEncounterProfile(config,terrainFamilyId);
+ if(!profile)return Object.freeze({triggered:false,reason:'missing-family',terrainFamilyId});
 
-  if (!profile) {
-    return Object.freeze({
-      triggered: false,
-      reason: 'missing-family',
-      terrainFamilyId
-    });
+ // The texture's encounter probability is independent from the species rank.
+ if(boundedRandom(random)*100>=profile.encounterChancePercent)
+  return Object.freeze({triggered:false,reason:'chance',terrainFamilyId});
+
+ // Historical element percentages in WorldDocument v1 represent only ON/OFF
+ // checkboxes. A dual-element species appears once, never twice.
+ const enabled=new Set((profile.elementChances??[])
+  .filter(entry=>entry.chancePercent>0).map(entry=>entry.elementId));
+ const candidates=captureCatalog.listCreatures().filter(creature=>
+  creature.eligible!==false &&
+  creature.elements.some(id=>enabled.has(id))
+ );
+ if(!candidates.length)
+  return Object.freeze({triggered:false,reason:'no-element',terrainFamilyId});
+
+ const ranks=Object.entries(GLOBAL_CREATURE_RARITY_WEIGHTS_V1)
+  .map(([rarity,weight])=>({
+   rarity,weight,creatures:candidates.filter(creature=>
+    (creature.rarity??'rare')===rarity)
+  }))
+  .filter(entry=>entry.creatures.length>0);
+ if(!ranks.length)
+  return Object.freeze({triggered:false,reason:'no-rarity',terrainFamilyId});
+ const total=ranks.reduce((sum,rank)=>sum+rank.weight,0);
+ const roll=boundedRandom(random)*total;
+ let offset=0,chosen=null;
+ for(const rank of ranks){
+  if(roll<offset+rank.weight){
+   const relative=(roll-offset)/rank.weight;
+   const index=Math.min(rank.creatures.length-1,
+    Math.floor(relative*rank.creatures.length));
+   chosen={creature:rank.creatures[index],rarity:rank.rarity};
+   break;
   }
-
-  const encounterRoll = boundedRandom(random) * 100;
-
-  if (encounterRoll >= profile.encounterChancePercent) {
-    return Object.freeze({
-      triggered: false,
-      reason: 'chance',
-      terrainFamilyId
-    });
-  }
-
-  // Historical WorldDocument v1 elementChances are now just a set of
-  // enabled element IDs: their former percentages never weight the lottery.
-  // A creature with multiple enabled elements appears ONCE in this pool.
-  const enabled = new Set(
-    (profile.elementChances ?? [])
-      .filter((entry) => entry.chancePercent > 0)
-      .map((entry) => entry.elementId)
-  );
-  const candidates = captureCatalog.listCreatures().filter(
-    (creature) => creature.spawnChance > 0 &&
-      creature.elements.some((id) => enabled.has(id))
-  );
-
-  const creature = weightedPick(
-    candidates,
-    (entry) => entry.spawnChance,
-    random
-  );
-
-  if (!creature) {
-    return Object.freeze({
-      triggered: false,
-      reason: 'no-element',
-      terrainFamilyId
-    });
-  }
-
-  // EncounterSnapshot v1 expects a meaningful element context. Choose one
-  // of the winning creature's enabled elements; do not roll a second lottery.
-  const elementId = creature.elements.find((id) => enabled.has(id));
-
-  return Object.freeze({
-    triggered: true,
-    reason: 'selected',
-    terrainFamilyId,
-    elementId,
-    creatureId: creature.id,
-    spawnChance: creature.spawnChance
-  });
+  offset+=rank.weight;
+ }
+ if(!chosen)throw new Error('Invalid canonical encounter rarity selection');
+ const elementId=chosen.creature.elements.find(id=>enabled.has(id));
+ return Object.freeze({
+  triggered:true,reason:'selected',terrainFamilyId,
+  elementId,creatureId:chosen.creature.id,rarity:chosen.rarity
+ });
 }

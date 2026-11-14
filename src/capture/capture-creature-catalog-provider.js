@@ -47,9 +47,11 @@ function normalizeRecord(draft) {
     elements: Object.freeze(
       uniqueStrings(draft.elements)
     ),
-    spawnChance: finitePercent(
-      draft.capture?.spawnChance
-    ),
+    // Legacy field is retained only for loading existing author exports.
+    spawnChance: finitePercent(draft.capture?.spawnChance),
+    rarity: ['rare','mythic','legendary'].includes(draft.capture?.rarity)
+      ? draft.capture.rarity : 'rare',
+    eligible: draft.capture?.capturable !== false,
     presentation:
       draft.presentation &&
       typeof draft.presentation === 'object'
@@ -81,7 +83,9 @@ function recordsFromPreview(source) {
         displayName: entry?.name,
         elements: entry?.elements,
         capture: {
-          spawnChance: entry?.spawnChance
+          spawnChance: entry?.spawnChance,
+          rarity: entry?.rarity,
+          capturable: entry?.capturable
         },
         presentation: entry?.presentation ?? null
       })

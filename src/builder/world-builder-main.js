@@ -2534,7 +2534,7 @@ function refreshFamilyEncounterControls() {
     return;
   }
   $('family-encounter-catalog-summary').textContent =
-    `Bestiaire Combat publié · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} types · rareté propre conservée`;
+    `Bestiaire Combat publié · ${captureCreatureCatalog.listCreatures().length} créatures · ${captureCreatureCatalog.listElements().length} types · rangs mondiaux Rare 50 / Mythique 20 / Légendaire 10 (poids normalisés)`;
 
   const checked = new Set(
     (profile.elementChances ?? [])
@@ -2553,7 +2553,7 @@ function refreshFamilyEncounterControls() {
 
     const name = document.createElement('span');
     const eligible = captureCreatureCatalog.findByElement(element.id)
-      .filter((creature) => creature.spawnChance > 0).length;
+      .filter((creature) => creature.eligible !== false).length;
     name.textContent = `${element.label} · ${eligible} créature(s)`;
 
     input.addEventListener('change', () => {
