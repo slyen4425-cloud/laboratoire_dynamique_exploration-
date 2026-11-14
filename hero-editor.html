@@ -44,8 +44,9 @@ button:disabled{opacity:.5;cursor:default}
 <section class="panel">
 <h2>Créer ou modifier un héros</h2>
 <div class="fields">
-<label class="wide">Héros enregistré
-<select id="hero-saved"><option value="">Nouveau héros…</option></select></label>
+<label class="wide">Mes héros enregistrés <output id="hero-library-count" aria-live="polite" class="hint">Chargement de la bibliothèque…</output>
+<select id="hero-saved" aria-label="Choisir un héros enregistré ou créer un nouveau héros"><option value="">＋ Nouveau héros…</option></select>
+<span class="hint">Choisis ton héros ici pour le modifier ou le supprimer. Un modèle déjà installé est réutilisé lorsque tu le sélectionnes à nouveau.</span></label>
 <label class="wide">Nom du héros <input id="hero-name" maxlength="80" placeholder="Nom visible en jeu"></label>
 <label class="wide" id="hero-image-label">Image principale PNG/WebP (mode image fixe ou sprites)
 <input id="hero-image" type="file" accept="image/png,image/webp"></label>
@@ -71,7 +72,7 @@ button:disabled{opacity:.5;cursor:default}
 <output id="hero-edit-state" role="status" aria-live="polite" class="hint">Aucune modification en attente.</output>
 <div class="actions">
 <button id="hero-save" type="button">Enregistrer le héros</button>
-<button id="hero-delete" type="button" disabled>Supprimer la définition</button>
+<button id="hero-delete" type="button" disabled>Supprimer ce héros sélectionné</button>
 </div>
 <p class="hint">Changer de carte ou de héros ne copie pas les sprites : les images et les sprites sont conservés en IndexedDB. Les références sont réutilisables par les cartes et les parties, sans copie dans le World Builder.</p>
 </section>
