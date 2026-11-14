@@ -53,21 +53,21 @@ button:disabled{opacity:.5;cursor:default}
 <label>Animation
 <select id="hero-mode"><option value="image">Image fixe · mouvement simulé</option><option value="frames">Sprites animés</option><option value="directions">8 directions · sprites réels</option></select></label>
 <label>Taille du héros sur la carte (24–240)
-<input id="hero-height" type="number" value="37" min="24" max="240" step="1">
-<span class="hint">Les modèles officiels existants gardent leur taille enregistrée. Essaie 25 sans modifier la partie tant que tu n’enregistres pas.</span><button id="hero-try-25" type="button">Essayer 25 dans l’aperçu</button></label>
+<input id="hero-height" type="number" value="35" min="24" max="240" step="1">
+<span class="hint">Les héros déjà enregistrés gardent leur taille. Essaie 25 sans modifier la partie tant que tu n’enregistres pas.</span><button id="hero-try-25" type="button">Essayer 25 dans l’aperçu</button></label>
 <label id="hero-idle-label" class="wide" hidden>Sprites à l'arrêt (PNG/WebP, facultatifs)
 <input id="hero-idle" type="file" multiple accept="image/png,image/webp"></label>
 <label id="hero-walk-label" class="wide" hidden>Sprites de déplacement (PNG/WebP, obligatoires en mode sprites)
 <input id="hero-walk" type="file" multiple accept="image/png,image/webp"></label>
 <fieldset id="hero-directions-inputs" class="wide" hidden><legend>Sprites 8 directions · 6 PNG/WebP par direction</legend><p class="hint">Pour modifier un modèle : remplace uniquement les directions souhaitées. Les autres restent conservées. Les canevas doivent avoir la même taille que l’image de base.</p><div id="hero-direction-files" class="hero-directions-grid"></div></fieldset>
 <label id="hero-fps-label" hidden>Images par seconde
-<input id="hero-fps" type="number" value="8" min="1" max="30" step="1"></label>
+<input id="hero-fps" type="number" value="16" min="1" max="30" step="1"></label>
 <label>Orientation naturelle
 <select id="hero-source-facing"><option value="1">Droite</option><option value="-1">Gauche</option></select></label>
 <label>Oscillation au repos (tous modes)
-<input id="hero-idle-amplitude" type="number" value="0.55" min="0" max="8" step=".1"></label>
-<label>Oscillation en marche (image fixe)
-<input id="hero-walk-amplitude" type="number" value="2" min="0" max="12" step=".1"></label>
+<input id="hero-idle-amplitude" type="number" value="1" min="0" max="8" step=".1"></label>
+<label>Oscillation en marche (tous modes)
+<input id="hero-walk-amplitude" type="number" value="1" min="0" max="12" step=".1"></label>
 </div>
 <output id="hero-edit-state" role="status" aria-live="polite" class="hint">Aucune modification en attente.</output>
 <div class="actions">
