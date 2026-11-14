@@ -1,3 +1,10 @@
+## 2026-11-14 — Étiquette du nom du héros au-dessus du sprite en mode Jouer
+- START `main@69d3780052cbea397e7edd5cc9e3bb78f6a2560a`; branche `work/exploration-scoped-hero-nameplate-20261114`.
+- Seul le grant officiel de héros Capture est lu : `gensrpg.capture.v2.hero-selection.v1` avec champ facultatif `displayName` vérifié, les vieux grants sans nom restent valides.
+- Le nom du joueur est peint au-dessus du sprite par la caméra et le renderer natifs Exploration, sans toucher au modèle de héros partagé, au monde, aux collisions ni au moteur multijoueur.
+- Les autres avatars réseau ne sont pas encore émis par ce lot ; leur affichage réclame la source unique du peer renderer, à ne pas simuler.
+- Gate : tests de grant rétrocompatible, validation UI et navigateur tactile + publication SHA HTTPS.
+
 ## 2026-11-14 — Caméra : PR #442 reportée après la correction bibliothèque héros
 - Source du lot caméra vérifié : PR #442, START `checkpoint/exploration-camera-south-follow-start-20261114` et tests CI verts ; changement indépendant des assets/du Hero Editor.
 - Après fusion de la bibliothèque héros PR #441 sur `main@9a2c64b`, les deux PR ont ajouté des entrées en tête du même journal : conflit documentaire sans conflit des moteurs. Lot reporté sur `work/exploration-camera-south-after-hero-library-20261114` sans écraser la bibliothèque.
