@@ -227,7 +227,7 @@ async function saveHero(){
      persisted.assets.length!==record.assets.length)
    throw new Error('Vérification de sauvegarde impossible : recharge le héros avant de quitter.');
   await refreshCatalog(record.id);
-  notify('Enregistré et relu : '+record.name+'. '+record.assets.length+
+  notify('Héros enregistré et relu : '+record.name+'. '+record.assets.length+
     ' image(s) conservées, taille '+record.mapVisual.targetHeight+'.');
  }finally{
   saving=false;$('hero-save').disabled=false;
