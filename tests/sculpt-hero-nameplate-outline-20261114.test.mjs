@@ -10,7 +10,7 @@ test('play hero name stays above native actor with legible outline and no black 
  assert.ok(start>=0&&end>start);
  const scoped=source.slice(start,end);
  assert.match(scoped,/if\(sculptPlayHeroDisplayName\)/);
- assert.match(scoped,/sculptCameraProjectBridgeFoot/);
+ assert.match(scoped,/ctx\.translate\(projected\.x/);
  assert.match(scoped,/ctx\.strokeText\(name/);
  assert.match(scoped,/ctx\.fillText\(name/);
  assert.doesNotMatch(scoped,/ctx\.fillRect\(/);
