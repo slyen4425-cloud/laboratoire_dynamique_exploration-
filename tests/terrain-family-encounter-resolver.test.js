@@ -21,7 +21,7 @@ function provider() {
           id: 'common-fire',
           displayName: 'Commun Feu',
           elements: ['fire'],
-          capture: { spawnChance: 25 },
+          capture: { spawnChance: 25,rarity:'rare' },
           presentation: null
         }
       },
@@ -30,7 +30,7 @@ function provider() {
           id: 'legend-fire',
           displayName: 'Légendaire Feu',
           elements: ['fire'],
-          capture: { spawnChance: 0.5 },
+          capture: { spawnChance: 0.5,rarity:'legendary' },
           presentation: null
         }
       },
@@ -39,7 +39,7 @@ function provider() {
           id: 'water',
           displayName: 'Eau',
           elements: ['water'],
-          capture: { spawnChance: 10 },
+          capture: { spawnChance: 10,rarity:'mythic' },
           presentation: null
         }
       }
@@ -79,12 +79,12 @@ test('family encounter chance can reject before element/creature selection', () 
   assert.equal(result.reason, 'chance');
 });
 
-test('selected family elements feed one pool weighted by each creature rarity', () => {
+test('global rarity weights apply only after the terrain encounter probability', () => {
   const result = resolveTerrainFamilyEncounter({
     terrainFamilyId: 'forest',
     config: config(),
     captureCatalog: provider(),
-    random: sequence([0, 0.95])
+    random: sequence([0, 0.80])
   });
 
   assert.equal(result.triggered, true);
@@ -92,7 +92,7 @@ test('selected family elements feed one pool weighted by each creature rarity', 
   assert.equal(result.creatureId, 'water');
 });
 
-test('intrinsic Capture spawnChance remains the creature rarity authority', () => {
+test('legacy per-species spawnChance never replaces the global rank weights', () => {
   const result = resolveTerrainFamilyEncounter({
     terrainFamilyId: 'forest',
     config: normalizeTerrainFamilyEncounterConfig({
@@ -113,7 +113,7 @@ test('intrinsic Capture spawnChance remains the creature rarity authority', () =
   assert.equal(result.triggered, true);
   assert.equal(result.elementId, 'fire');
   assert.equal(result.creatureId, 'legend-fire');
-  assert.equal(result.spawnChance, 0.5);
+  assert.equal(result.rarity,'legendary');
 });
 
 test('configured element with no eligible Capture creature is ignored', () => {
@@ -140,7 +140,7 @@ test('configured element with no eligible Capture creature is ignored', () => {
   assert.equal(result.creatureId, 'water');
 });
 
-test('zero-spawn creatures are never selected', () => {
+test('legacy zero spawnChance does not disable a valid published Rare species', () => {
   const catalog = createCaptureCreatureCatalogProvider({
     schema: 'capture-database-v1',
     version: 1,
@@ -174,6 +174,7 @@ test('zero-spawn creatures are never selected', () => {
     random: sequence([0, 0, 0])
   });
 
-  assert.equal(result.triggered, false);
-  assert.equal(result.reason, 'no-element');
+  assert.equal(result.triggered, true);
+  assert.equal(result.creatureId,'disabled');
+  assert.equal(result.rarity,'rare');
 });
