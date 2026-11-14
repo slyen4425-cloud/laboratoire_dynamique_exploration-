@@ -2353,7 +2353,7 @@ function drawNavigationActor(){
     ctx.restore();
   }
 }
-// Strictly a visual projection: never update navActor or any WorldDocument.
+// Strictly a visual projection: never update navActor or the authored world.
 function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
  if(!sculptPlayActive||!sculptPeerProjection||!demoActorAsset||
     !demoNavigationActorPreparer.get(demoActorAsset.id))return;
