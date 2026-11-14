@@ -476,6 +476,13 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
   ctx.restore();
   return Object.freeze({cells:marks.length,centerHeight:after});
 }
+// A painted cell owns ONLY its exact top raster area. The former +0.65 px
+// clip overscan re-stamped semi-transparent road and zone strokes over
+// neighboring cells, leaving trails at tile joins. Adjacent clips share one
+// mathematical boundary even with camera zoom; height projection is unchanged.
+export function sculptPaintCellClipV1(ctx,x,y,w,h){
+  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+}
 // Canonical WorldSurface strokes are rasterized on top of sculpt terrain.
 function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   if(!surface||!paintImages)return ()=>0;
@@ -509,7 +516,7 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   return (col,row,level,x,y)=>{
     const items=buckets[row*terrain.width+col];
     if(!items?.length)return 0;
-    ctx.save();ctx.beginPath();ctx.rect(x,y,w+.65,h+.65);ctx.clip();
+    ctx.save();sculptPaintCellClipV1(ctx,x,y,w,h);
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);
       if(!pattern||feature.points.length<2)continue;
