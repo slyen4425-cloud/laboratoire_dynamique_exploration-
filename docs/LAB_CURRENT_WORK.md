@@ -1,3 +1,9 @@
+## 2026-11-14 — Caméra : PR #442 reportée après la correction bibliothèque héros
+- Source du lot caméra vérifié : PR #442, START `checkpoint/exploration-camera-south-follow-start-20261114` et tests CI verts ; changement indépendant des assets/du Hero Editor.
+- Après fusion de la bibliothèque héros PR #441 sur `main@9a2c64b`, les deux PR ont ajouté des entrées en tête du même journal : conflit documentaire sans conflit des moteurs. Lot reporté sur `work/exploration-camera-south-after-hero-library-20261114` sans écraser la bibliothèque.
+- La seule projection sud du suiveur de héros et les contrôles zoom/scroll éditeur réutilisent le clamp natif ; pas de modification des collisions, du terrain, de la frange nord ou des sauvegardes.
+- Gate : tests 35/55/75/90 degrés et tests navigateur canonique ; fusion, checkpoint GREEN et Pages HTTPS sur SHA exact uniquement.
+
 ## 2026-11-14 — Bibliothèque des héros : rendre les enregistrements visibles et éviter les doublons involontaires
 - START canonique `main@8dce5bc8b7b2c3a50494b260468a6125eaba5c0c` ; checkpoint `checkpoint/exploration-hero-library-start-20261114`, travail `work/exploration-hero-library-dedupe-20261114`.
 - Bug de lisibilité : `HeroEditor` initialisait systématiquement la liste sur `Nouveau héros…` malgré les `UserHeroDefinitionV1` enregistrés en IndexedDB. Afficher au chargement une définition existante, son nom/date, le nombre d'enregistrements et les noms répétés. Le choix explicite `+ Nouveau` existe toujours.
