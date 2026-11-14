@@ -63,4 +63,7 @@ test('editor uses new default values rather than legacy hardcoded 58, 37, 8 or 0
  assert.match(html,/id="hero-idle-amplitude"[^>]*value="1"/);
  assert.match(html,/id="hero-walk-amplitude"[^>]*value="1"/);
  assert.match(script,/DEFAULT_HERO_VISUAL_SETTINGS_V1/);
+ assert.match(html,/id="hero-apply-defaults"/);
+ assert.match(script,/hero-apply-defaults/);
+ assert.match(script,/markDirty\(\);/);
 });
