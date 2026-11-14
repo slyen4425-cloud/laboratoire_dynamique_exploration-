@@ -1,3 +1,9 @@
+## 2026-11-14 — Dialogue PNJ après fusion de l'étiquette nom de héros
+- START `main@8c7f11830aef7701d05881670df7942a00d8d76b`, branche `work/exploration-npc-dialog-after-nickname-20261114`.
+- La PR #445, testée GREEN sur sa branche empilée, a été reportée à périmètre identique après la fusion du nom de héros pour préserver le journal et les deux écrans. Son propriétaire est uniquement le placement des widgets NPC dans le moteur de projection existant.
+- « Parler », dialogues de PNJ, duel et commerce restent inchangés fonctionnellement ; leurs positions lisibles sont maintenant projetées près de l'acteur en 2,5D et bornées au viewport du téléphone.
+- Gate : test natif actor-screen, Chromium PNJ/dialogues, CI, Pages HTTPS SHA et vérification visuelle utilisateur. Aucun autre moteur ni sauvegarde modifié.
+
 ## 2026-11-14 — Étiquette du nom du héros au-dessus du sprite en mode Jouer
 - START `main@69d3780052cbea397e7edd5cc9e3bb78f6a2560a`; branche `work/exploration-scoped-hero-nameplate-20261114`.
 - Seul le grant officiel de héros Capture est lu : `gensrpg.capture.v2.hero-selection.v1` avec champ facultatif `displayName` vérifié, les vieux grants sans nom restent valides.
