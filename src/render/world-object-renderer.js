@@ -32,7 +32,8 @@ export function drawWorldObjectContactShadowV1(ctx,args){
  const shadow=worldObjectContactShadowV1(args);
  if(!shadow)return false;
  if(args?.image){
-  const mask=worldObjectShadowMaskV1(args.image,args.asset);
+  const mask=worldObjectShadowMaskV1(args.image,args.asset,
+   {groundContact:args.kind==='building'});
   const projection=worldObjectShadowProjectionV1(args);
   if(!mask||!projection||typeof ctx?.transform!=='function')return false;
   const {width,height}=args;
@@ -47,6 +48,15 @@ export function drawWorldObjectContactShadowV1(ctx,args){
    width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
    width*(srcWidth/mask.w),height*(srcHeight/mask.h));
   ctx.restore();
+  // Same native WorldObject draw pass: a grounded border along the real
+  // front AND lateral walls, never a new shadow layer or stored decal.
+  if(args.kind==='building'&&mask.contactCanvas){
+   ctx.save();
+   ctx.globalAlpha=.78;
+   ctx.drawImage(mask.contactCanvas,0,0,mask.w,mask.contactHeight,
+    -width/2,-height/2,width,height*(mask.contactHeight/mask.h));
+   ctx.restore();
+  }
   return true;
  }
  // Compatibility for pure geometry callers that have no source image.
