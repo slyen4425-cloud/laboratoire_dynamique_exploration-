@@ -2322,10 +2322,14 @@ function drawNavigationActor(){
     ctx.scale(1/Math.max(.32,zoom),1/Math.max(.32,zoom));
     ctx.font='bold 13px system-ui,sans-serif';
     ctx.textAlign='center';ctx.textBaseline='bottom';
-    const width=Math.min(360,ctx.measureText(name).width+16);
-    ctx.fillStyle='rgba(13,26,33,.87)';
-    ctx.fillRect(-width/2,-19,width,22);
-    ctx.fillStyle='#f5fff9';ctx.fillText(name,0,-3,Math.max(48,width-14));
+    // Readable above any biome without a gloomy opaque rectangle. The
+    // native actor canvas owns this text; no DOM overlay or second renderer.
+    ctx.lineJoin='round';ctx.lineWidth=3.5;
+    ctx.strokeStyle='rgba(10,22,33,.9)';
+    ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=3;
+    ctx.strokeText(name,0,-3,320);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#e9fff8';ctx.fillText(name,0,-3,320);
     ctx.restore();
   }
 }

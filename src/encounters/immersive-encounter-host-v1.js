@@ -26,6 +26,9 @@ export function createImmersiveEncounterHostV1({
 
   let active = null;
   let disposed = false;
+  // Diagnostic only: the existing native Combat overlay measures tap-to-ready.
+  // No parallel loader, retry or gameplay dependency is introduced.
+  const traceCombatReady=new URL(windowRef.location.href).searchParams.has('gensPerf');
 
   // Presentation-only cross-frame contract: the Capture parent alone owns
   // Sac/Equipe HUD visibility; Exploration alone owns combat overlay lifetime.
@@ -56,6 +59,11 @@ export function createImmersiveEncounterHostV1({
         event.data?.returnToken !== active.snapshot.returnToken) return;
     if(event.data.type==='gensrpg.capture.combat-ready.v1'){
       // Display only after the actual official Combat renderer finished mounting.
+      if(traceCombatReady&&active.startedAt!==null){
+        const now=windowRef.performance?.now?.()??Date.now();
+        console.info('[GenSRPG Exploration performance] Combat tap → renderer ready',
+          Math.round(now-active.startedAt)+'ms');
+      }
       active.frame.dataset.combatReady='true';
       active.frame.style.opacity='1';
       active.frame.style.pointerEvents='auto';
@@ -185,7 +193,8 @@ export function createImmersiveEncounterHostV1({
       loading.append(brand);loading.append(spinner);loading.append(message);loading.append(cancel);
       overlay.append(loading);
       documentRef.body.append(overlay);
-      active = { overlay, frame, snapshot, loading, loadingMessage:message };
+      active = { overlay, frame, snapshot, loading, loadingMessage:message,
+        startedAt:traceCombatReady?(windowRef.performance?.now?.()??Date.now()):null };
       notifyCaptureCombatVisibility(true, snapshot.encounterId);
       frame.src = target.href;
       return true;
