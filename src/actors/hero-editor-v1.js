@@ -270,6 +270,15 @@ for(const id of ['hero-name','hero-height','hero-fps','hero-source-facing',
  $(id).addEventListener('input',markDirty);
  $(id).addEventListener('change',markDirty);
 }
+// Opt-in author action only: never rewrite an existing UserHeroDefinition on open.
+$('hero-apply-defaults').addEventListener('click',()=>{
+ $('hero-height').value=String(DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight);
+ $('hero-fps').value=String(DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond);
+ $('hero-idle-amplitude').value=String(DEFAULT_HERO_VISUAL_SETTINGS_V1.idleAmplitude);
+ $('hero-walk-amplitude').value=String(DEFAULT_HERO_VISUAL_SETTINGS_V1.walkAmplitude);
+ markDirty();
+ notify('Réglages 35 / 16 images/s / oscillation 1 en aperçu. Clique sur Enregistrer pour les garder.');
+});
 $('hero-try-25').addEventListener('click',()=>{
  $('hero-height').value='25';markDirty();
  notify('Taille 25 en aperçu · non enregistrée.');
