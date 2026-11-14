@@ -1,8 +1,10 @@
 export const MAP_ACTOR_VISUAL_SCHEMA_VERSION = 1;
 export const MAP_ACTOR_COMPASS_DIRECTIONS_V1=Object.freeze(['N','NE','E','SE','S','SW','W','NW']);
 
+// One canonical authoring baseline for NEW heroes, without migrating saved models.
+export const DEFAULT_HERO_VISUAL_SETTINGS_V1 = Object.freeze({targetHeight:35,framesPerSecond:16,idleAmplitude:1,walkAmplitude:1});
 export const MAP_ACTOR_ROLE_DEFAULTS = Object.freeze({
-  hero: Object.freeze({ targetHeight: 78 }),
+  hero: Object.freeze({ targetHeight: DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight }),
   npc: Object.freeze({ targetHeight: 72 }),
   creature: Object.freeze({ targetHeight: 84 })
 });
@@ -133,12 +135,12 @@ export function normalizeMapActorVisual(raw = {}) {
     motion: Object.freeze({
       idleAmplitude: finiteNumber(
         source.motion?.idleAmplitude,
-        1.2,
+        role==='hero'?DEFAULT_HERO_VISUAL_SETTINGS_V1.idleAmplitude:1.2,
         { min: 0, max: 8 }
       ),
       walkAmplitude: finiteNumber(
         source.motion?.walkAmplitude,
-        3.2,
+        role==='hero'?DEFAULT_HERO_VISUAL_SETTINGS_V1.walkAmplitude:3.2,
         { min: 0, max: 12 }
       ),
       idleFrequency: finiteNumber(
