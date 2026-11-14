@@ -180,14 +180,25 @@ function displayFields(record){
 }
 async function refreshCatalog(chosenId=null){
  const records=await store.list();
- const picker=$('hero-saved');
- picker.replaceChildren(new Option('Nouveau héros…',''),
-  ...records.map(record=>new Option(record.name,record.id)));
+ const picker=$('hero-saved'),counts=new Map();
+ for(const record of records)counts.set(record.name,(counts.get(record.name)??0)+1);
+ picker.replaceChildren(new Option('＋ Nouveau héros…',''),
+  ...records.map(record=>{
+   const date=new Date(record.createdAt).toLocaleDateString('fr-FR');
+   const duplicate=counts.get(record.name)>1?' · même nom':'';
+   return new Option(record.name+' · '+date+duplicate,record.id);
+  }));
  const chosen=records.find(record=>record.id===chosenId)??null;
  picker.value=chosen?.id??'';
+ const repeated=[...counts.values()].filter(count=>count>1).length;
+ $('hero-library-count').textContent=records.length+' héros enregistrés'+
+  (repeated?' · '+repeated+' nom(s) répété(s) à vérifier':'')+
+  ' · chaque ligne correspond à un enregistrement distinct.';
  displayFields(chosen);
  if(chosen)await startPreview(chosen);
- else{destroyPreview();notify('Importe une image PNG ou WebP pour créer ton héros.');}
+ else{destroyPreview();notify(records.length
+  ?'Choisis un héros enregistré dans la liste pour voir ses réglages, ou crée un nouveau héros.'
+  :'Bibliothèque vide : importe une image PNG/WebP ou choisis un modèle officiel.');}
 }
 async function saveHero(){
  if(saving)return;
@@ -236,7 +247,9 @@ async function saveHero(){
 
 async function deleteHero(){
  if(!selected)return;
- if(!confirm('Supprimer définitivement le héros « '+selected.name+' » et toutes ses images ?'))return;
+ if(!confirm('Supprimer UNIQUEMENT « '+selected.name+' » (créé le '+
+  new Date(selected.createdAt).toLocaleDateString('fr-FR')+') ?\\n'+
+  'Ses sprites seront retirés de cette bibliothèque. Si une partie utilise ce héros, son apparence pourra devenir indisponible. Les autres héros et les parties ne seront pas supprimés.'))return;
  await store.delete(selected.id);
  await refreshCatalog();
  notify('Définition de héros supprimée de la bibliothèque locale.');
@@ -311,4 +324,9 @@ window.addEventListener('pagehide',()=>{
  disposed=true;
  destroyPreview();
 });
-run(()=>refreshCatalog());
+run(async()=>{
+ const records=await store.list();
+ // The editor used to start on "Nouveau" with an empty form while several
+ // playable heroes were already saved. Show a real record on entry.
+ await refreshCatalog(records.at(-1)?.id??null);
+});
