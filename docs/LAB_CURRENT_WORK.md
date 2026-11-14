@@ -1,3 +1,11 @@
+## 2026-11-14 — Fluidité des objets sur carte Aventure (cache de rendu dérivé)
+- START main@3d773ecd, checkpoint `checkpoint/exploration-object-frame-cache-start-20261114`, branche `work/exploration-object-frame-cache-20261114`.
+- Dans le chemin de rendu existant, `drawPreviewObjects` recalculait `resolveWorldObjectPlacements + filter + sort` à chaque dessin 2.5D, même sans changement de la liste immuable en Jouer. On conserve un seul ordre visuel trié en cache lecture seule pour l'identité courante de `placedObjects`. Le modèle WorldArea, les positions, Collisions, WorldSurface et le moteur de dessin restent propriétaires uniques ; l'éditeur recalcule toujours à chaque dessin.
+- Test dédié : la référence et le nombre d'appels au résolveur restent constants entre images de Jouer, changent après nouvelle zone/liste, et l'éditeur reste frais. CI + validation navigateur téléphone requises ; ne pas présenter cette optimisation seule comme une solution prouvée à toute la latence ou au chargement Combat.
+- Aucun changement de HP, combats, rencontres, sauvegardes, caméra, assets ou timers gameplay.
+
+---
+
 ## 2026-11-14 — Héros : taille 35, 16 images/s, oscillation 1 (retour test auteur)
 - START `main@d9d1840952b8ecb10f9baed162d167d62750c17c`, checkpoint `checkpoint/exploration-hero-defaults-start-20261114`, branche `work/exploration-hero-defaults-35-16-1-20261114`.
 - Source unique : `DEFAULT_HERO_VISUAL_SETTINGS_V1` dans `src/actors/map-actor-visual-model.js` ; `UserHeroDefinitionV1`, éditeur officiel et installation des 12 presets utilisent cette base : hauteur 35, 16 FPS, amplitudes repos/marche 1 dans les trois modes.
