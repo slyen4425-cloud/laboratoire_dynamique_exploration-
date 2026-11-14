@@ -4236,6 +4236,11 @@ function captureSculptArea(){
     ...(decorativeFringe?{decorativeFringe}:{})};
 }
 function mountSculptArea(snapshot){
+  // One read-only presentation label; WorldArea/WorldSurface remains sole
+  // source of the loaded map and gameplay settings.
+  if($('sculpt-map-preset-loaded'))
+   $('sculpt-map-preset-loaded').textContent=
+     'Carte affichée : zone active (relief, textures, objets). Les réglages de rencontres, passages et héros restent ceux du monde/de la partie.';
   closeNpcDialogue();
   if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
@@ -5399,7 +5404,13 @@ function installSculptMapPresetPalette(){
     }catch(error){presetStatus(error.message,true);return [];}
   }
   const selected=()=>listAvailableSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
-  select.addEventListener('change',()=>refresh(select.value));
+  select.addEventListener('change',()=>{
+    refresh(select.value);
+    const preset=selected();
+    presetStatus(preset
+      ?'Modèle « '+preset.name+' » sélectionné dans la liste, mais pas encore chargé sur la carte.'
+      :'Aucun modèle choisi. La carte affichée reste inchangée.');
+  });
   $('sculpt-map-preset-save').addEventListener('click',()=>{
     try{
       const name=$('sculpt-map-preset-name').value.trim();
@@ -5433,7 +5444,10 @@ function installSculptMapPresetPalette(){
       }
       sculptEncounterAreaCache=null;refreshSculptEncounterEditor();
       fit();
-      presetStatus('Préset « '+preset.name+' » appliqué · passages et arrivées inchangés.');
+      if($('sculpt-map-preset-loaded'))
+        $('sculpt-map-preset-loaded').textContent=
+          'Carte affichée : « '+preset.name+' » CHARGÉE · relief, textures et objets du modèle. Les passages, les rencontres et le héros de la partie restent indépendants.';
+      presetStatus('Carte « '+preset.name+' » chargée et affichée. Les réglages de la zone restent conservés séparément.');
     }catch(error){presetStatus(error.message,true);}
   });
   $('sculpt-map-preset-export').addEventListener('click',()=>{

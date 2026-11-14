@@ -1,3 +1,9 @@
+## 2026-11-14 — Clarifier « préset choisi » vs carte vraiment chargée
+- START : `main@e6c2cacbbae382cce2b95bd9a687843851b81314` ; checkpoint `checkpoint/exploration-map-load-ux-start-20261114` ; branche `work/exploration-map-load-ux-20261114`.
+- Aucun changement de contrat WorldArea/WorldSurface ni à la sauvegarde : le modèle choisi dans la liste reste un candidat jusqu'au clic explicite « Charger ». La carte affichée possède un état lisible distinct ; après chargement, indiquer le nom du modèle vraiment appliqué et expliquer que passages/rencontres/héros liés au monde ou à la partie ne sont pas remplacés.
+- UI seule, statut dérivé du chemin de chargement déjà canonique ; pas de nouvelle autorité, pas de changement de héros, terrain, objets, collisions ni portails.
+- Gate : test de chargeur + CI navigateur Exploration et vérification Pages SHA exact. Réserve à l'utilisateur les contrôles de compréhension et de cohérence visuelle.
+
 ## 2026-11-14 — Éditeur Héros : modification des presets, sprites et oscillation
 - **START** : `main@e6c2cacbbae382cce2b95bd9a687843851b81314`, branche `checkpoint/exploration-hero-editor-repair-start-20261114`, travail `work/exploration-hero-editor-repair-20261114`.
 - **Propriétaire unique** : Exploration `HeroEditor` -> `UserHeroDefinitionV1` -> `UserHeroStoreV1` et `MapActorRenderer`. Le catalogue des 12 modèles et les 576 PNG restent intacts, aucun duplicata dans Capture/GenSRPG.
