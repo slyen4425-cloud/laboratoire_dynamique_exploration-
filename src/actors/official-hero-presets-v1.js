@@ -60,7 +60,8 @@ export async function installOfficialHeroPresetV1({
   // IndexedDB hero with a fresh UUID. The owner itself checks the saved
   // definitions; Capture and the editor share this one install contract.
   // Only compare the immutable published S/0 PNG and the unedited 49-image
-  // model signature. A renamed/modified hero remains a distinct user record.
+  // model signature. A renamed or re-sprited hero stays distinct; an installed
+  // original whose size/FPS was tuned remains intact and is NOT installed twice.
   if(typeof store.list==='function'){
     const saved=await store.list();
     const candidates=saved.filter(record=>record.name===hero.name&&
