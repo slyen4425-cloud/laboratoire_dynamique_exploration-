@@ -53,7 +53,7 @@ import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {createUserHeroStoreV1} from './storage/user-hero-store-v1.js';
 import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js';
-import {readScopedAdventureHeroSelectionV1} from './actors/scoped-adventure-hero-v1.js';
+import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
@@ -811,7 +811,7 @@ const demoNavigationActorPreparer=createMapActorVisualPreparer({imageLoader:{
 }});
 let navigationActorPreparer=demoNavigationActorPreparer;
 let navigationActorRenderer=createMapActorRenderer({preparedVisuals:navigationActorPreparer});
-let authoredHeroMedia=null,sculptPlayHeroDefinitionId=null;
+let authoredHeroMedia=null,sculptPlayHeroDefinitionId=null,sculptPlayHeroDisplayName=null;
 
 // The canonical UserHeroStore owns all image bytes. This adapter only
 // switches the existing Map Actor Visual/Preparer/Renderer once every asset
@@ -2309,6 +2309,22 @@ function drawNavigationActor(){
          visualScale:sculptAltitudeVisualState(navVisualLevel??navHeight()).heroScale}],
       timeSeconds:navVisualTime
     });
+  // Display-only nameplate: the Exploration actor renderer still owns the
+  // sprite, camera and world coordinates. The label never changes collision.
+  if(sculptPlayHeroDisplayName){
+    const visualScale=sculptAltitudeVisualState(navVisualLevel??navHeight()).heroScale;
+    const name=sculptPlayHeroDisplayName;
+    ctx.save();
+    ctx.translate(projected.x,projected.y-navigationActorVisual.targetHeight*visualScale-7);
+    ctx.scale(1/Math.max(.32,zoom),1/Math.max(.32,zoom));
+    ctx.font='bold 13px system-ui,sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='bottom';
+    const width=Math.min(360,ctx.measureText(name).width+16);
+    ctx.fillStyle='rgba(13,26,33,.87)';
+    ctx.fillRect(-width/2,-19,width,22);
+    ctx.fillStyle='#f5fff9';ctx.fillText(name,0,-3,Math.max(48,width-14));
+    ctx.restore();
+  }
 }
 function navigationSpawn(){
   // WorldBuilder's Spawn, not a prototype test position, owns the entrance
@@ -5167,6 +5183,10 @@ async function installSculptPlayMode(){
         sessionId:playOptions.sessionId,worldId:world.id
       });
       if(selectedId)await installAuthoredHeroMapActor(selectedId);
+      sculptPlayHeroDisplayName=readScopedAdventureHeroDisplayNameV1({
+        storage:window.sessionStorage,
+        sessionId:playOptions.sessionId,worldId:world.id
+      });
     }
     playPositionWriter=createExplorationPlayProgressWriter(window.localStorage,world,playOptions);
     sculptPlayActive=true;
@@ -5217,6 +5237,7 @@ async function installSculptPlayMode(){
     window.__sculptPlayProbe=()=>Object.freeze({
       active:sculptPlayActive,worldId:sculptWorldDraft?.id??null,
       heroDefinitionId:sculptPlayHeroDefinitionId,
+      heroDisplayName:sculptPlayHeroDisplayName,
       heroVisualPrepared:!!navigationActorPreparer.get(navigationActorVisual.assetId),
       areaId:sculptWorldAreaId,playing:navigationTesting,
       creatorCameraAngle:sculptCreatorCameraAngle,
