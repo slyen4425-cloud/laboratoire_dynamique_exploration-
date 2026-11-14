@@ -69,7 +69,7 @@ export async function installOfficialHeroPresetV1({
     const saved=await store.list();
     const candidates=saved.filter(record=>record.name===hero.name&&
       record.mapVisual.animation.mode==='directions'&&
-      record.assets.length===49&&
+      (record.assets.length===49||record.assets.length===50)&&
       record.mapVisual.assetId&&record.mapVisual.animation.directions.S?.length===6);
     if(candidates.length){
       const url=new URL(directions.S[0],baseUrl);

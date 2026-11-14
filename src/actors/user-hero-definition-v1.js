@@ -39,7 +39,7 @@ function frames(input,base,label,required=false){
 }
 
 export function createUserHeroDefinitionV1({
- id,name,base,mode='image',walk,idle,directions,framesPerSecond=DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond,
+ id,name,base,portrait=null,mode='image',walk,idle,directions,framesPerSecond=DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond,
  targetHeight=DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight,sourceFacingX=1,motion,now
 }={}){
  const prefix=safeId(id);
@@ -49,6 +49,8 @@ export function createUserHeroDefinitionV1({
   throw new TypeError('Hero createdAt must be ISO date');
  if(!['image','frames','directions'].includes(mode))throw new RangeError('Hero animation mode must be image, frames or directions');
  const image=media(base,'base hero');
+ // The fiche illustration is an independent optional asset, not a movement frame.
+ const heroPortrait=portrait==null?null:media(portrait,'hero portrait');
  const walks=mode==='frames'?frames(walk,image,'walk',true):[];
  const idles=mode==='frames'?frames(idle,image,'idle'):[];
  const directional=mode==='directions'
@@ -59,6 +61,7 @@ export function createUserHeroDefinitionV1({
   })):{};
 
  const assets=[{id:prefix+'.base',...image},
+  ...(heroPortrait?[{id:prefix+'.portrait',...heroPortrait}]:[]),
   ...idles.map((frame,i)=>({id:prefix+'.idle.'+i,...frame})),
   ...walks.map((frame,i)=>({id:prefix+'.walk.'+i,...frame})),
   ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.flatMap(direction=>
@@ -106,14 +109,17 @@ export function validateUserHeroDefinitionV1(record){
    throw new RangeError('Hero asset identity invalid or duplicated');
   entries.set(asset.id,media(asset,'Hero asset '+asset.id));
  }
- const allowed=[visual.assetId,...(visual.animation.mode==='frames'
+ const portraitId=id+'.portrait';
+ const hasPortrait=entries.has(portraitId);
+ const allowed=[visual.assetId,...(hasPortrait?[portraitId]:[]),...(visual.animation.mode==='frames'
   ?[...visual.animation.idle,...visual.animation.walk]
   :visual.animation.mode==='directions'
     ?MAP_ACTOR_COMPASS_DIRECTIONS_V1.flatMap(dir=>visual.animation.directions[dir]):[])];
  if(allowed.length!==record.assets.length||allowed.some(ref=>!entries.has(ref)))
   throw new RangeError('Hero asset references must be complete and exact');
  const base=entries.get(visual.assetId);
- for(const value of entries.values())validateSize(value,base,'Hero frame');
+ for(const [assetId,value] of entries)
+  if(assetId!==portraitId)validateSize(value,base,'Hero frame');
  return record;
 }
 

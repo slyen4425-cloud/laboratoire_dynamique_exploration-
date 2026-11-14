@@ -14,7 +14,7 @@ const status=$('hero-status');
 const canvas=$('hero-canvas'),ctx=canvas.getContext('2d');
 const store=createUserHeroStoreV1();
 let selected=null,preview=null,renderEpoch=0,previewMoving=false,disposed=false;
-let liveVisual=null,dirty=false,saving=false;
+let liveVisual=null,dirty=false,saving=false,portraitPreviewUrl=null;
 for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
  const label=document.createElement('label');
  label.textContent=dir+' · six images ordonnées (0–5)';
@@ -42,6 +42,19 @@ function updateMode(){
  $('hero-idle-amplitude').disabled=false;
  // All modes share the single native oscillation control.
   $('hero-walk-amplitude').disabled=false;
+}
+function refreshPortraitPreview(){
+ if(portraitPreviewUrl){URL.revokeObjectURL(portraitPreviewUrl);portraitPreviewUrl=null;}
+ const uploadedPortrait=$('hero-portrait').files[0];
+ const existing=selected?.assets.find(asset=>asset.id===selected.id+'.portrait');
+ const blob=uploadedPortrait??existing?.blob;
+ const image=$('hero-portrait-preview');
+ image.hidden=!(blob instanceof Blob);
+ image.alt=blob?'Illustration de la fiche du héros':'Aucun portrait enregistré';
+ if(blob instanceof Blob){
+  portraitPreviewUrl=URL.createObjectURL(blob);
+  image.src=portraitPreviewUrl;
+ }else image.removeAttribute('src');
 }
 function oldAsset(id){
  const entry=selected?.assets.find(value=>value.id===id);
@@ -172,10 +185,11 @@ function displayFields(record){
  $('hero-fps').value=record?.mapVisual.animation.framesPerSecond??DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond;
  $('hero-idle-amplitude').value=record?.mapVisual.motion.idleAmplitude??DEFAULT_HERO_VISUAL_SETTINGS_V1.idleAmplitude;
  $('hero-walk-amplitude').value=record?.mapVisual.motion.walkAmplitude??DEFAULT_HERO_VISUAL_SETTINGS_V1.walkAmplitude;
- for(const id of ['hero-image','hero-idle','hero-walk'])$(id).value='';
+ for(const id of ['hero-image','hero-idle','hero-walk','hero-portrait'])$(id).value='';
  for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1)$('hero-direction-'+dir).value='';
  $('hero-delete').disabled=!record;
  updateMode();
+ refreshPortraitPreview();
  liveVisual=record?.mapVisual??null;
 }
 async function refreshCatalog(chosenId=null){
@@ -221,8 +235,11 @@ async function saveHero(){
    ?await frames('hero-idle',previous?.mapVisual.animation.idle??[]):[];
   const walk=mode==='frames'
    ?await frames('hero-walk',previous?.mapVisual.animation.walk??[]):[];
+  const portrait=await uploaded($('hero-portrait').files[0])??
+   (previous?.assets.some(asset=>asset.id===id+'.portrait')
+     ?oldAsset(id+'.portrait'):null);
   const record=createUserHeroDefinitionV1({
-   id,name:$('hero-name').value,base,mode,idle,walk,directions,
+   id,name:$('hero-name').value,base,portrait,mode,idle,walk,directions,
    framesPerSecond:mode==='image'?DEFAULT_HERO_VISUAL_SETTINGS_V1.framesPerSecond:number('hero-fps'),
    targetHeight:number('hero-height'),
    sourceFacingX:Number($('hero-source-facing').value),
@@ -265,11 +282,12 @@ async function run(callback){
 }
 $('hero-mode').addEventListener('change',()=>{updateMode();markDirty();});
 for(const id of ['hero-name','hero-height','hero-fps','hero-source-facing',
-  'hero-idle-amplitude','hero-walk-amplitude','hero-image','hero-idle','hero-walk',
+  'hero-idle-amplitude','hero-walk-amplitude','hero-image','hero-portrait','hero-idle','hero-walk',
   ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(dir=>'hero-direction-'+dir)]){
  $(id).addEventListener('input',markDirty);
  $(id).addEventListener('change',markDirty);
 }
+$('hero-portrait').addEventListener('change',refreshPortraitPreview);
 // Opt-in author action only: never rewrite an existing UserHeroDefinition on open.
 $('hero-apply-defaults').addEventListener('click',()=>{
  $('hero-height').value=String(DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight);
@@ -330,6 +348,7 @@ async function installPresetGallery(){
 }
 void installPresetGallery();
 window.addEventListener('pagehide',()=>{
+ if(portraitPreviewUrl)URL.revokeObjectURL(portraitPreviewUrl);
  disposed=true;
  destroyPreview();
 });

@@ -16,7 +16,7 @@ main{display:grid;grid-template-columns:minmax(290px,1fr) minmax(290px,1fr);gap:
 .panel{border:1px solid #36505d;border-radius:12px;background:#152734;padding:14px}
 .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 label{display:flex;flex-direction:column;gap:5px;color:#d0e4ec}
-label.wide{grid-column:1/-1}
+label.wide,.fields>.wide{grid-column:1/-1}
 input,select,button{font:inherit;color:#edf6fa;border:1px solid #51717e;border-radius:8px;background:#213746;min-height:38px;padding:6px 9px;max-width:100%}
 input[type=file]{padding:5px}
 button{cursor:pointer;background:#1b5161;font-weight:650}
@@ -32,7 +32,7 @@ button:disabled{opacity:.5;cursor:default}
 .hero-preset button{width:100%}
 #hero-official-status{display:block;min-height:20px;margin-top:7px;color:#b9ebdf}
 .hint{font-size:12px}
-.hero-directions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.hero-directions-grid label{border:1px solid #426474;border-radius:8px;padding:7px}.hero-directions-grid input{width:100%}#hero-edit-state{display:block;margin-top:10px;color:#b9ebdf}#hero-try-25{font-size:12px;padding:4px;min-height:32px}fieldset{border:1px solid #426474;border-radius:8px;padding:8px;min-width:0}legend{padding:0 6px}
+.hero-import-fold{border:1px solid #426474;border-radius:10px;padding:10px;min-width:0}.hero-import-fold>summary{cursor:pointer;font-weight:700;color:#b9ebdf;padding:5px;touch-action:manipulation}.hero-import-fold[open]>summary{margin-bottom:10px}.hero-portrait-thumb{width:94px;height:110px;object-fit:contain;background:#294054;border:1px solid #426474;border-radius:8px}.hero-portrait-layout{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.hero-directions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.hero-directions-grid label{border:1px solid #426474;border-radius:8px;padding:7px}.hero-directions-grid input{width:100%}#hero-edit-state{display:block;margin-top:10px;color:#b9ebdf}#hero-try-25{font-size:12px;padding:4px;min-height:32px}fieldset{border:1px solid #426474;border-radius:8px;padding:8px;min-width:0}legend{padding:0 6px}
 [hidden]{display:none!important}
 @media(max-width:690px){main{grid-template-columns:1fr}body{padding:9px}.fields{gap:7px}.panel{padding:10px}.hero-directions-grid{grid-template-columns:1fr}}
 </style>
@@ -50,11 +50,16 @@ button:disabled{opacity:.5;cursor:default}
 <label class="wide">Nom du héros <input id="hero-name" maxlength="80" placeholder="Nom visible en jeu"></label>
 <label class="wide" id="hero-image-label">Image principale PNG/WebP (mode image fixe ou sprites)
 <input id="hero-image" type="file" accept="image/png,image/webp"></label>
+<label class="wide" id="hero-portrait-label">Illustration de la fiche du héros (PNG/WebP, facultative)
+<span class="hero-portrait-layout"><input id="hero-portrait" type="file" accept="image/png,image/webp"><img id="hero-portrait-preview" class="hero-portrait-thumb" alt="Aucun portrait enregistré" hidden></span>
+<span class="hint">Distincte des sprites de déplacement. Conservée dans la même bibliothèque officielle de héros et utilisée dans la fiche en jeu.</span></label>
 <label>Animation
 <select id="hero-mode"><option value="image">Image fixe · mouvement simulé</option><option value="frames">Sprites animés</option><option value="directions">8 directions · sprites réels</option></select></label>
 <label>Taille du héros sur la carte (24–240)
 <input id="hero-height" type="number" value="35" min="24" max="240" step="1">
 <span class="hint">Les héros déjà enregistrés gardent leurs réglages jusqu’à un nouvel enregistrement.</span><button id="hero-apply-defaults" type="button">Appliquer 35 · 16 i/s · oscillation 1 (aperçu)</button><button id="hero-try-25" type="button">Essayer 25 dans l’aperçu</button></label>
+<details id="hero-sprite-settings" class="wide hero-import-fold"><summary>Importer et régler les sprites de déplacement</summary>
+<div class="fields">
 <label id="hero-idle-label" class="wide" hidden>Sprites à l'arrêt (PNG/WebP, facultatifs)
 <input id="hero-idle" type="file" multiple accept="image/png,image/webp"></label>
 <label id="hero-walk-label" class="wide" hidden>Sprites de déplacement (PNG/WebP, obligatoires en mode sprites)
@@ -62,6 +67,7 @@ button:disabled{opacity:.5;cursor:default}
 <fieldset id="hero-directions-inputs" class="wide" hidden><legend>Sprites 8 directions · 6 PNG/WebP par direction</legend><p class="hint">Pour modifier un modèle : remplace uniquement les directions souhaitées. Les autres restent conservées. Les canevas doivent avoir la même taille que l’image de base.</p><div id="hero-direction-files" class="hero-directions-grid"></div></fieldset>
 <label id="hero-fps-label" hidden>Images par seconde
 <input id="hero-fps" type="number" value="16" min="1" max="30" step="1"></label>
+</div></details>
 <label>Orientation naturelle
 <select id="hero-source-facing"><option value="1">Droite</option><option value="-1">Gauche</option></select></label>
 <label>Oscillation au repos (tous modes)
