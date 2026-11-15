@@ -1,6 +1,8 @@
 // Experimental heightfield. Isolated from WorldSurface/WorldDocument and Collision World.
 // Cells, heights and brush results are deterministic, immutable, JSON-compatible data.
 export const SCULPT_SCHEMA_VERSION=1;
+// Shared terrain authoring bound; water and brush radius have separate limits.
+export const SCULPT_TERRAIN_MAX_LEVEL=16;
 // V76: canonical continuous spherical relief; never inferred from painted pixels.
 export const SCULPT_SPHERE_LIMIT=24;
 export const SCULPT_TERRAIN_RAMP_LIMIT=64;

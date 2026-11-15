@@ -723,6 +723,29 @@ function sculptSouthCliffContinuousPath(ctx,faces,profiles,tile,{capLeft=true,ca
   else ctx.lineTo(start,bottom(first));
   ctx.closePath();
 }
+// Geometry-only presentation mask: a low-lying sprite must not be painted
+// through the visible native cliff face. The painter itself is not duplicated:
+// callers sample the already-rendered terrain raster through these rectangles.
+// No new heightfield, collision, WorldObject or persisted layer is created.
+export function sculptCliffOcclusionRectsV1(terrain,tile=SCULPT_TILE,{
+  includeOuterSouthRim=true
+}={}){
+  if(!terrain)return Object.freeze([]);
+  const {width:w,height:h,rise}=tile;
+  const rects=[];
+  for(const face of sculptFaces(terrain)){
+    const rect=face.orientation==='east'
+      ?sculptEastSeamBounds(tile,face.x,face.y,face.upper,face.lower)
+      :{x:face.x*w,y:face.y*h-face.upper*rise+h,
+        width:w,height:(face.upper-face.lower)*rise};
+    if(rect.width>0&&rect.height>0)rects.push(Object.freeze(rect));
+  }
+  if(includeOuterSouthRim)for(const run of sculptOuterSouthCliffRuns(terrain))
+    rects.push(Object.freeze({x:run.start*w,
+      y:terrain.height*h-run.level*rise,
+      width:(run.end-run.start)*w,height:run.level*rise}));
+  return Object.freeze(rects);
+}
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
