@@ -35,7 +35,7 @@ test('real official-style 49-asset definition can retain its id and edit size, i
  assert.equal(modified.assets.find(x=>x.id===id+'.base').blob,
    modified.assets.find(x=>x.id===id+'.dir.S.0').blob);
 });
-test('same native renderer honors user oscillation at rest and in movement for compass sprites',()=>{
+test('same native renderer honors user oscillation only at rest and keeps walking sprites grounded',()=>{
  const hero=createUserHeroDefinitionV1({
   id,name:'Héros de test',base:media(),mode:'directions',
   directions:allDirections(),targetHeight:25,
@@ -51,7 +51,7 @@ test('same native renderer honors user oscillation at rest and in movement for c
  renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:.25,actors:[{...actor,moving:false}]});
  assert.ok(translates.at(-1)[1]<120,'idle bob is visible for authored sprite heroes');
  renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:.0625,actors:[{...actor,moving:true}]});
- assert.equal(translates.at(-1)[1],115,'walking oscillation follows the authored amplitude and frequency');
+ assert.equal(translates.at(-1)[1],120,'saved walk oscillation is ignored while moving');
 });
 test('native editor shows directional imports and a reversible size-25 preview while retaining a single DB',()=>{
  const html=readFileSync(new URL('../hero-editor.html',import.meta.url),'utf8');

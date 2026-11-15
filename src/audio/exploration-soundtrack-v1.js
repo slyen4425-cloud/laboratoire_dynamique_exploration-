@@ -8,9 +8,39 @@ export const EXPLORATION_TRACKS_V1=Object.freeze([
   Object.freeze({id:'exploration-4',file:'exploration-04.mp3'})
 ]);
 
+// Read-only adapter to the official Combat SoundtrackProjectV1 Map scene.
+// Exploration retains the ONLY player and physical MP3 files. No cloned
+// playlist store, no external media URLs and no manually authored asset IDs.
+export function explorationSoundtrackSceneV1(scene,approved=EXPLORATION_TRACKS_V1){
+ if(scene===null||scene===undefined)return Object.freeze({
+  tracks:Object.freeze([...approved]),order:'shuffle',volume:.45,fadeMs:0,repeat:true
+ });
+ if(!scene||typeof scene!=='object'||Array.isArray(scene)||
+   Object.keys(scene).some(k=>!['tracks','order','volume','fadeMs','repeat'].includes(k)))
+   throw new TypeError('SoundtrackProject Map music scene invalid');
+ if(!Array.isArray(scene.tracks)||scene.tracks.length>4||
+    new Set(scene.tracks).size!==scene.tracks.length)
+   throw new RangeError('Map soundtrack must use 0..4 unique official tracks');
+ const tracks=scene.tracks.map(id=>{
+  if(typeof id!=='string'||!/^gensrpg:music:exploration:0[1-4]$/.test(id))
+   throw new TypeError('Unknown Exploration music asset ID');
+  const index=Number(id.slice(-2))-1;
+  if(!approved[index])throw new TypeError('Exploration track missing');
+  return approved[index];
+ });
+ if(!['sequence','shuffle'].includes(scene.order)||
+   !Number.isFinite(scene.volume)||scene.volume<0||scene.volume>1||
+   !Number.isInteger(scene.fadeMs)||scene.fadeMs<0||scene.fadeMs>10000||
+   typeof scene.repeat!=='boolean')
+   throw new TypeError('Invalid Map soundtrack options');
+ return Object.freeze({tracks:Object.freeze(tracks),order:scene.order,
+  volume:scene.volume,fadeMs:scene.fadeMs,repeat:scene.repeat});
+}
+
 export function createExplorationSoundtrackV1({
   AudioCtor=globalThis.Audio,
   tracks=EXPLORATION_TRACKS_V1,
+  sceneMusic=null,
   assetUrl=file=>new URL('../../assets/runtime/audio/exploration-v1/'+file,import.meta.url).href,
   random=Math.random,
   volume=0.45,
@@ -19,22 +49,25 @@ export function createExplorationSoundtrackV1({
   if(typeof AudioCtor!=='function'||!Array.isArray(tracks)||tracks.length!==4||
      typeof assetUrl!=='function'||typeof random!=='function')
     throw new TypeError('Exploration soundtrack requires the four approved tracks');
+  const settings=explorationSoundtrackSceneV1(sceneMusic,tracks);
+  const activeTracks=settings.tracks;
   const audio=new AudioCtor();
-  audio.volume=volume;
+  audio.volume=sceneMusic===null?volume:settings.volume;
   audio.preload='metadata';
   audio.loop=false;
   let state='stopped',current=-1,bag=[],disposed=false,sequence=0,lastError=null;
   function draw() {
     if(!bag.length) {
-      bag=tracks.map((_,i)=>i);
-      for(let i=bag.length-1;i>0;i--) {
+      if(current>=0&&!settings.repeat)return -1;
+      bag=activeTracks.map((_,i)=>i);
+      for(let i=bag.length-1;settings.order==='shuffle'&&i>0;i--) {
         const r=random();
         const j=Math.min(i,Math.max(0,Math.floor((Number.isFinite(r)?r:0)* (i+1))));
         [bag[i],bag[j]]=[bag[j],bag[i]];
       }
       if(bag.length>1&&bag[0]===current) [bag[0],bag[1]]=[bag[1],bag[0]];
     }
-    return bag.shift();
+    return bag.length?bag.shift():-1;
   }
   function failed(error,version) {
     if(disposed||sequence!==version||state!=='starting')return;
@@ -55,7 +88,8 @@ export function createExplorationSoundtrackV1({
   }
   function next() {
     current=draw();
-    audio.src=assetUrl(tracks[current].file);
+    if(current<0){state='stopped';return;}
+    audio.src=assetUrl(activeTracks[current].file);
     // Assigning src and play() is sufficient; load() would restart the
     // resource and can interrupt a pending mobile media play request.
     play();
@@ -72,7 +106,7 @@ export function createExplorationSoundtrackV1({
   audio.addEventListener('error',mediaError);
   return Object.freeze({
     start() {
-      if(disposed||state==='playing'||state==='starting')return false;
+      if(disposed||!activeTracks.length||state==='playing'||state==='starting')return false;
       if(current<0) next();
       else play();
       return true;
@@ -116,6 +150,6 @@ export function createExplorationSoundtrackV1({
     get lastError(){return lastError;},
     get mediaReadyState(){return audio.readyState??null;},
     get mediaCurrentTime(){return audio.currentTime??null;},
-    get currentTrackId(){return current<0?null:tracks[current].id;}
+    get currentTrackId(){return current<0?null:activeTracks[current].id;}
   });
 }

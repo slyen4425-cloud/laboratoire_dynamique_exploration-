@@ -26,9 +26,10 @@ test('only true Portal traversal shows loading BEFORE expensive map mount; hide 
  // Require its two-argument form rather than accidentally matching a second
  // projection. The loading veil must still cover the full native mount.
  const mount=main.indexOf('mountWorldSculptArea(transition.currentAreaId,destinationScene)',yieldFrame);
- const rendering=main.indexOf('requestAnimationFrame(()=>requestAnimationFrame(resolve))',mount);
- const hide=main.indexOf('overlay.hidden=true',rendering);
- assert.ok(entering>=0&&entering<yieldFrame&&yieldFrame<mount&&mount<rendering&&rendering<hide);
+ const readiness=main.indexOf('await awaitSculptPlayArtReady();',mount);
+ const hide=main.indexOf('overlay.hidden=true',readiness);
+ assert.ok(entering>=0&&entering<yieldFrame&&yieldFrame<mount&&mount<readiness&&readiness<hide,
+  'Portal must reveal only after decoded scene images and native canvas frame');
  assert.match(main,/applyPortalTransition\(document/);
  assert.match(main,/persistPlayNavigationCheckpoint\(\)/);
  assert.match(main,/sculptPortalLoading=false/);
