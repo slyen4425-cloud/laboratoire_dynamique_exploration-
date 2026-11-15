@@ -7,25 +7,35 @@ const shadowSilhouettes=new WeakMap();
 // the house front AND visible side, not a detached axis-aligned ellipse.
 function withBuildingBaseContact(mask,doc){
  if(mask.contactCanvas||typeof doc?.createElement!=='function')return mask;
- const extra=Math.max(5,Math.round(mask.h*.09));
+ // Native alpha pixels define the real facade + visible side footline. The
+ // previous mask used a full-height canvas and mapped it over the whole sprite,
+ // which painted an artificial sloping dark hill beneath the building.
+ const minGroundY=Math.max(mask.top,Math.floor(mask.bottom-mask.h*.30));
+ const points=[];
+ for(let x=mask.left;x<mask.right;x++){
+   const y=mask.bottomColumns[x];
+   if(y>=minGroundY)points.push({x,y});
+ }
+ if(!points.length)return mask;
+ const extra=Math.max(2,Math.round(mask.h*.035));
+ const top=Math.max(0,Math.min(...points.map(p=>p.y))-2);
+ const bottom=Math.max(...points.map(p=>p.y))+extra+2;
  const canvas=doc.createElement('canvas');
- canvas.width=mask.w;canvas.height=mask.h+extra;
+ canvas.width=mask.w;canvas.height=Math.max(1,bottom-top);
  const c=canvas.getContext('2d');
  if(!c)return mask;
- const minGroundY=Math.floor(mask.h*.56);
- let columns=0;
- for(let x=mask.left;x<mask.right;x++){
-  const y=mask.bottomColumns[x];
-  if(y<minGroundY)continue;
-  columns++;
-  c.fillStyle='rgba(5,15,19,.49)';
-  c.fillRect(x,y,1,Math.max(2,extra*.42));
-  c.fillStyle='rgba(5,15,19,.22)';
-  c.fillRect(x,y+2,1,extra);
+ for(const {x,y} of points){
+   c.fillStyle='rgba(5,15,19,.45)';
+   c.fillRect(x,y-top,1,Math.max(2,extra*.4));
+   c.fillStyle='rgba(5,15,19,.20)';
+   c.fillRect(x,y-top+1,1,extra);
  }
- if(!columns)return mask;
- return Object.freeze({...mask,contactCanvas:canvas,contactHeight:canvas.height,contactColumns:columns});
+ // Keep source alpha columns (including the walls' receding footlines) rather
+ // than creating a second shadow or altering the WorldObject dimensions.
+ return Object.freeze({...mask,contactCanvas:canvas,
+   contactTop:top,contactHeight:canvas.height,contactColumns:points.length});
 }
+
 export function worldObjectShadowMaskV1(image,asset,{groundContact=false}={}){
  if(!image||typeof image!=='object')return null;
  const doc=image.ownerDocument??globalThis.document;
