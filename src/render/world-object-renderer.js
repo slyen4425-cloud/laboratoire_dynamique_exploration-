@@ -37,9 +37,19 @@ export function drawWorldObjectContactShadowV1(ctx,args){
   const projection=worldObjectShadowProjectionV1(args);
   if(!mask||!projection||typeof ctx?.transform!=='function')return false;
   const {width,height}=args;
+  // Houses need continuous base contact along their front/side walls, not
+  // a second *full roof-shaped* cast projected onto the path below. The
+  // latter is the detached "hill" visible under large buildings.
+  if(args.kind==='building'&&mask.contactCanvas){
+    ctx.save();
+    ctx.globalAlpha=.84;
+    ctx.drawImage(mask.contactCanvas,0,0,mask.w,mask.contactHeight,
+      -width/2,-height/2,width,height*(mask.contactHeight/mask.h));
+    ctx.restore();
+    return true;
+  }
   const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
-  // The alpha silhouette's lowest opaque pixel meets the exact WorldObject
-  // foot. Screen-space projection gives an elongated, directional cast.
+  // Trees still need the full natural silhouette to cast directionally.
   ctx.save();
   ctx.translate(0,projection.footY);
   ctx.transform(1,0,projection.shear,projection.flatten,0,0);
@@ -48,15 +58,6 @@ export function drawWorldObjectContactShadowV1(ctx,args){
    width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
    width*(srcWidth/mask.w),height*(srcHeight/mask.h));
   ctx.restore();
-  // Same native WorldObject draw pass: a grounded border along the real
-  // front AND lateral walls, never a new shadow layer or stored decal.
-  if(args.kind==='building'&&mask.contactCanvas){
-   ctx.save();
-   ctx.globalAlpha=.78;
-   ctx.drawImage(mask.contactCanvas,0,0,mask.w,mask.contactHeight,
-    -width/2,-height/2,width,height*(mask.contactHeight/mask.h));
-   ctx.restore();
-  }
   return true;
  }
  // Compatibility for pure geometry callers that have no source image.
