@@ -1,3 +1,9 @@
+## 2026-11-15 — Simplifier les passages directement depuis la Carte 2,5D
+- Retour utilisateur : création des passages/arrivées trop complexe et doublonnée avec le World Builder malgré la PR #460 fusionnée. Audit : la Carte 2,5D impose encore de créer les liaisons dans World Builder, de manipuler coordonnées X/Y et deux listes de repères.
+- START : `main@6c80be9bfaf56fb607e049daaeb8741c70ab3308`, checkpoint `checkpoint/exploration-passages-simple-start-20261115`, branche `work/exploration-passages-simple-20261115`.
+- Périmètre : éditeur Carte 2,5D uniquement, connexion via `connectWorldAreas` officiel, `WorldDocument.portals` et `WorldArea.spawns` existants ; création d'un aller-retour depuis l'éditeur, placement tactile de sortie puis édition du Spawn d'arrivée réel dans la carte cible. Regrouper coordonnées/noms/Spawns experts sous un panneau avancé replié. Garder les vieilles données et outils. Aucun identifiant manuel, état persistant supplémentaire, double liaison ni modification Combat/Capture/Survie/Dungeon.
+- Gate : tests création/réutilisation des Portals, liens aller/retour, préservation de Spawns, sauvegarde/import, lancement tactile, navigateur PC/mobile, CI GREEN et contrôle Pages SHA exact avant fusion.
+
 ## 2026-11-15 — Révision de contrôle du détourage (14 vues conservées après inspection)
 - Précision de synchronisation : les 6 vues rondes non retouchées par ce lot suivent les WebP canoniques déjà publiés sur `main` ; les empreintes/taille ont été réalignées sur ces pixels existants (aucune réédition ou copie).
 - **Le traitement intermédiaire de 20 vues ci-dessous a été invalidé visuellement** : des pixels isolés / trous apparaissaient près des façades et lanternes des pagodes. Il ne doit PAS être présenté comme version finale, même si son audit SHA était vert.
