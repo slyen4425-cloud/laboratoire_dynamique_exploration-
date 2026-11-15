@@ -3,7 +3,7 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14';
+import {SCULPT_TILE,sculptCliffOcclusionRectsV1,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
@@ -825,8 +825,27 @@ function navigationBackground(){
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
     drawOuterSouthRim:true});
+  // Preserve exact pixels of the existing terrain raster; extract only
+  // canonical cliff faces in a cached alpha mask. No second cliff painter.
+  const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE);
+  let cliffOcclusionImage=null;
+  if(cliffRects.length){
+    cliffOcclusionImage=document.createElement('canvas');
+    cliffOcclusionImage.width=raster.width;
+    cliffOcclusionImage.height=raster.height;
+    const maskCtx=cliffOcclusionImage.getContext('2d',{alpha:true});
+    maskCtx.drawImage(raster,0,0);
+    maskCtx.globalCompositeOperation='destination-in';
+    maskCtx.scale(scale,scale);
+    maskCtx.translate(paddingX,paddingY);
+    maskCtx.beginPath();
+    for(const rect of cliffRects)
+      maskCtx.rect(rect.x,rect.y,rect.width,rect.height);
+    maskCtx.fillStyle='#fff';
+    maskCtx.fill();
+  }
   terrainRasterBuilds++;
-  navTerrainCache={terrain,texture:currentTexture,signature,
+  navTerrainCache={terrain,texture:currentTexture,signature,cliffOcclusionImage,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
     paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
@@ -1317,6 +1336,21 @@ function draw(){
   }else{
     drawPreviewObjects();
     drawPlacedActors();
+  }
+  // Restore terrain depth after low-level sprites/actors have been drawn.
+  // Sampling the already-composed raster prevents a second terrain renderer.
+  // The cliff silhouette is shared by editor and Jouer and never writes data.
+  if(navigationTesting||objectEditing||!drawing){
+    const cached=navigationBackground();
+    if(cached.cliffOcclusionImage){
+      ctx.save();
+      if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+      ctx.drawImage(cached.cliffOcclusionImage,
+        -cached.paddingX,-cached.paddingY,
+        cached.cliffOcclusionImage.width/cached.scale,
+        cached.cliffOcclusionImage.height/cached.scale);
+      ctx.restore();
+    }
   }
   drawEditorPlayableLimit();
   // A temporary stroke preview is visual only; WorldSurface is committed on
