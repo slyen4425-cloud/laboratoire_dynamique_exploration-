@@ -104,7 +104,7 @@ import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
-  ensureFreeWorldInitialSpawnV1} from './builder/sculpt-world-area-link.js';
+  ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
@@ -3267,12 +3267,18 @@ function syncObjectSelectedControls(){
   $('object-interior-link').hidden=!buildingSelected;
   $('interior-house-link-info').hidden=!buildingSelected;
   if(buildingSelected){
-    const linked=sculptInteriors.some(e=>e.buildingId===selected.id);
+    const linked=sculptWorldDraft
+      ?sculptWorldDraft.portals.some(p=>p.sourceAreaId===sculptWorldAreaId&&
+        p.trigger?.kind==='object-anchor'&&p.trigger.objectId===selected.id)
+      :sculptInteriors.some(e=>e.buildingId===selected.id);
     $('object-open-interior').textContent=linked?'🏠 Modifier son intérieur lié':
       '🏠 Créer et lier un intérieur à cette maison';
     $('interior-house-link-info').textContent=linked?
-      'Intérieur lié à cette maison et à sa porte extérieure.':
-      'Aucun intérieur : la liaison à la porte de cette maison sera créée automatiquement.';
+      'Intérieur lié à la porte : un seul passage World Builder, sans deuxième réglage.':
+      'Associe la porte sur cette carte : l’intérieur, le retour et les points d’arrivée seront enregistrés automatiquement dans World Builder.';
+    // Legacy scene templates are for standalone Sculpt only. Never insert
+    // their independent Portal graph into an authored WorldDocument.
+    $('object-interior-template').parentElement.hidden=!!sculptWorldDraft;
   }
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
   const def=selectedDef;
@@ -4665,6 +4671,27 @@ function openSelectedSculptInterior(){
   const resolved=resolveWorldObjectPlacements(selected?[selected]:[],
     objectDefinitionCatalogV1)[0];
   if(resolved?.kind!=='building'){status('Sélectionne une maison avant de modifier son intérieur.');return;}
+  if(sculptWorldDraft){
+    if(sculptPlayRequested||navigationTesting){status('Passe en édition 2,5D pour lier une maison.');return;}
+    try{
+      // Capture the *current* object placement before resolving its one real
+      // door. An unsaved preview must never create an orphan WorldBuilder link.
+      commitCurrentSculptWorldArea();
+      const link=linkSculptWorldBuildingInteriorV1(sculptWorldDraft,{
+        sourceAreaId:sculptWorldAreaId,buildingId:resolved.id
+      });
+      // Validate the destination BEFORE replacing the current displayed Area.
+      const target=link.document.areas.find(a=>a.id===link.targetAreaId);
+      const scene=sculptWorldAreaScene(target);
+      sculptWorldDraft=link.document;
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      mountWorldSculptArea(link.targetAreaId,scene);
+      $('world-area-portal-panel').open=true;
+      status((link.created?'Intérieur créé et lié':'Intérieur lié retrouvé')+
+        ' : porte extérieure, arrivée et sortie déjà enregistrées dans World Builder.');
+    }catch(error){status('Maison non liée : '+error.message);}
+    return;
+  }
   let entry=sculptInteriors.find(e=>e.buildingId===resolved.id&&e.floorIndex===0);
   const wanted=sculptInteriorTemplates.find(t=>t.id===$('object-interior-template').value);
   if(!entry){
@@ -4993,6 +5020,10 @@ function refreshSculptWorldPanel(){
     (area.label??area.id);
   $('world-area-current-kind').textContent=(area.kind==='interior'
     ?'Instance / donjon':'Région extérieure')+' · '+terrain.width+' × '+terrain.height+' cases';
+  const houseReturn=sculptWorldDraft.portals.find(p=>p.targetAreaId===area.id&&
+    p.trigger?.kind==='object-anchor'&&sculptWorldDraft.areas.some(a=>
+      a.id===p.sourceAreaId&&a.objects.some(o=>o.id===p.trigger.objectId)));
+  $('world-area-return-house').hidden=!houseReturn;
   const choices=worldOutboundPortals(),portalSelect=$('world-area-portal-select'),
         previous=portalSelect.value;
   portalSelect.replaceChildren(...choices.map(p=>{
@@ -5674,6 +5705,17 @@ function installSculptWorldAreaEditing(){
   $('world-area-unavailable-return').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-unavailable-create').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
   $('world-area-return').addEventListener('click',()=>saveAndReturnWorldArea());
+  $('world-area-return-house').addEventListener('click',()=>{
+    try{
+      const inbound=sculptWorldDraft.portals.find(p=>p.targetAreaId===sculptWorldAreaId&&
+        p.trigger?.kind==='object-anchor');
+      if(!inbound)throw Error('Cette zone ne possède pas de porte extérieure liée');
+      persistCurrentWorldSculpt();
+      mountWorldSculptArea(inbound.sourceAreaId);
+      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      status('Maison retrouvée sur la carte 2,5D ; passage World Builder conservé.');
+    }catch(error){sculptWorldStatus('Retour impossible : '+error.message,true);}
+  });
   $('world-workspace-world').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-workspace-return-float').addEventListener('click',()=>saveAndReturnWorldArea());
   $('world-area-create-another').addEventListener('click',()=>saveAndReturnWorldArea({newArea:true}));
