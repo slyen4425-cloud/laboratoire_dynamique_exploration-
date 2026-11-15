@@ -12,6 +12,9 @@ function actorAnchor(visual, prepared) {
 }
 
 function motionOffset(visual, actor, timeSeconds) {
+  // Heroes stand steady while walking: walking frames already portray steps.
+  // Do not mutate authored/saved amplitude or NPC behaviour.
+  if(visual.role==='hero'&&actor.moving===true)return 0;
   const moving = actor.moving === true;
   const amplitude = moving
     ? visual.motion.walkAmplitude
