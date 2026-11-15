@@ -4241,11 +4241,22 @@ $('object-variant').addEventListener('change',()=>editSelectedObject({
 // Native collapsed panel. Slider input redraws the preview with NO history;
 // each committed change enters the existing single undo/redo WorldObject path.
 if($('object-shadow-details')){
+$('object-shadow-scope').addEventListener('change',()=>{
+  refreshSelectedObjectShadowControlsV1(placedObjects.find(o=>o.id===objectSelectedId));
+  scheduleDraw();
+});
+function applySelectedShadowControl(){
+ const shadow=readSelectedObjectShadowControlsV1();
+ if($('object-shadow-scope').value==='model'){
+   if(commitShadowModelProfile(shadow))
+     status('Ombre du modèle enregistrée dans le monde · tous les objets identiques suivent ce réglage.');
+ }else editSelectedObject({shadow});
+ scheduleDraw();
+}
 $('object-shadow-mode').addEventListener('change',()=>{
  $('object-shadow-fields').hidden=$('object-shadow-mode').value!=='custom';
  $('object-shadow-summary').textContent=$('object-shadow-mode').value==='custom'?'Personnalisée':'Auto';
- editSelectedObject({shadow:readSelectedObjectShadowControlsV1()});
- scheduleDraw();
+ applySelectedShadowControl();
 });
 for(const id of ['width','height','x','y','opacity']){
  const input=$('object-shadow-'+id);
@@ -4253,15 +4264,29 @@ for(const id of ['width','height','x','y','opacity']){
   $('object-shadow-'+id+'-value').textContent=input.value+' %';
   scheduleDraw();
  });
- input.addEventListener('change',()=>editSelectedObject({
-  shadow:readSelectedObjectShadowControlsV1()
- }));
+ input.addEventListener('change',applySelectedShadowControl);
 }
 $('object-shadow-reset').addEventListener('click',()=>{
  $('object-shadow-mode').value='auto';
- editSelectedObject({shadow:null});
+ applySelectedShadowControl();
  syncObjectSelectedControls();
  scheduleDraw();
+});
+$('object-shadow-profile-undo').addEventListener('click',()=>{
+ if(!shadowProfileHistory.length)return;
+ const previous=shadowProfileHistory.pop();
+ shadowProfileRedo.push(currentWorldShadowProfiles());
+ changeWorldShadowProfiles(previous);
+ refreshSelectedObjectShadowControlsV1(placedObjects.find(o=>o.id===objectSelectedId));
+ status('Ombres de ce modèle : précédent réglage restauré.');
+});
+$('object-shadow-profile-redo').addEventListener('click',()=>{
+ if(!shadowProfileRedo.length)return;
+ const next=shadowProfileRedo.pop();
+ shadowProfileHistory.push(currentWorldShadowProfiles());
+ changeWorldShadowProfiles(next);
+ refreshSelectedObjectShadowControlsV1(placedObjects.find(o=>o.id===objectSelectedId));
+ status('Ombres de ce modèle : réglage réappliqué.');
 });
 }
 $('object-action').addEventListener('change',()=>{
@@ -4300,6 +4325,8 @@ refreshObjectOptions();updateObjectCount();
 window.__sculptObjectsProbe=()=>Object.freeze({
   active:objectEditing,count:placedObjects.length,selectedId:objectSelectedId,
   terrainRasterBuilds,cachedGround:!!navTerrainCache,
+  shadowModelCount:currentWorldShadowProfiles().length,
+  shadowModelHistoryCount:shadowProfileHistory.length,
   undoCount:objectHistory.length,redoCount:objectRedo.length,
   variantChoices:[...$('object-variant').options].map(o=>o.value),
   definitions:availableObjects.length,
