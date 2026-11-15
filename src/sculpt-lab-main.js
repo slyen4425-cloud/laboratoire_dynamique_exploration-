@@ -2355,6 +2355,21 @@ function drawNavigationActor(){
     ctx.restore();
   }
 }
+// Same canonical canvas/render space for the nickname, kept separate from
+// the position-only peer drawing contract and its historical regression guard.
+function paintExplorationPeerName(actor){
+ if(!actor.displayName)return;
+ ctx.save();
+ ctx.translate(actor.x,actor.y-actor.mapVisual.targetHeight*actor.visualScale-7);
+ ctx.scale(1/Math.max(.32,zoom),1/Math.max(.32,zoom));
+ ctx.font='bold 13px system-ui,sans-serif';
+ ctx.textAlign='center';ctx.textBaseline='bottom';
+ ctx.lineJoin='round';ctx.lineWidth=3.5;
+ ctx.strokeStyle='#122b38';ctx.fillStyle='#e9fff8';
+ ctx.strokeText(actor.displayName,0,-3,320);
+ ctx.fillText(actor.displayName,0,-3,320);
+ ctx.restore();
+}
 // Strictly a visual projection: never update navActor or the authored world.
 function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
  if(!sculptPlayActive||!sculptPeerProjection||!demoActorAsset||
@@ -2378,19 +2393,7 @@ function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
   });
   // The SAME native canvas and camera draw the network player's name.
   // No second DOM avatar, NPC actor or collision authority is created.
-  for(const actor of actors){
-   if(!actor.displayName)continue;
-   ctx.save();
-   ctx.translate(actor.x,actor.y-actor.mapVisual.targetHeight*actor.visualScale-7);
-   ctx.scale(1/Math.max(.32,zoom),1/Math.max(.32,zoom));
-   ctx.font='bold 13px system-ui,sans-serif';
-   ctx.textAlign='center';ctx.textBaseline='bottom';
-   ctx.lineJoin='round';ctx.lineWidth=3.5;
-   ctx.strokeStyle='#122b38';ctx.fillStyle='#e9fff8';
-   ctx.strokeText(actor.displayName,0,-3,320);
-   ctx.fillText(actor.displayName,0,-3,320);
-   ctx.restore();
-  }
+  actors.forEach(paintExplorationPeerName);
   explorationPeerPaints+=actors.length;
  }
 }
