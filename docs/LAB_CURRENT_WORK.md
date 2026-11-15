@@ -1,3 +1,9 @@
+## 2026-11-15 — Remplacement fidèle du détourage chalet alpin (asset canonique)
+- START `main@05ccc80874a27ab19f184897ac659c5b2abd1c4a`, branche `work/exploration-snow-house-clean-cutout-20261115` ; lot limité aux assets, aucune logique renderer, collision ou sauvegarde modifiée.
+- Source : WebP RGBA 384 × 384, 24 320 octets fourni et nettoyé par l'auteur. Remplacement strict à chemin et assetId constants de `building_house_snow_alpine_timber_2p5d_side_01.webp` (vue side) ; aucune régénération et aucune copie concurrente.
+- Intégrité : manifeste `manifest.snow-houses.v1.json` et `SHA256SUMS.snow-houses-v1.txt` synchronisés vers SHA-256 `a27851cd830ae9a7dba18ade9c6218bd218eceabbc34020d80a0ecdbd1f65467`. Les 29 autres vues conservent leurs sources et checksums.
+- Validation : vérifier CI, image affichée côté éditeur et Aventure sur PC/Pixel, puis Pages au SHA exact avant déclaration GREEN. Extension du nettoyage aux autres bâtiments exclusivement après inventaire visuel, sans correction automatique destructive.
+
 ## 2026-11-15 — Ombres d'objets : édition compacte repliable (retour utilisateur)
 - START certifié `main@4a8063e526ec7c00d41b4997eb8a758c4fd76f3a` (PR #464, ci et Pages GREEN), checkpoint `checkpoint/exploration-shadow-editor-start-2026-11-15`, branche `work/exploration-shadow-editor-collapsible-20261115`.
 - Problème : plusieurs images de maisons aux pixels transparents variables donnent encore une impression de flottement après correction de la projection du masque. Autoriser une correction légère et **par objet placé** sans modifier les PNG, collisions ni le propriétaire du rendu.
