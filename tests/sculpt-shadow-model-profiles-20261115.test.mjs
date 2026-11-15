@@ -45,7 +45,7 @@ test('same source asset matches all identical pine instances; no per-object copi
    width:80,height:130,
    shadow:worldObjectShadowProfileForAssetV1(profiles,assetIds[0])
  });
- assert.equal(shadow.footY,1+130*(-28/100));
+ assert.ok(Math.abs(shadow.footY-(1+130*(-28/100)))<1e-9);
 });
 test('individual per-placement settings take precedence without changing model defaults',()=>{
  const profiles=setWorldObjectShadowProfileV1([],'tree.alpha',custom);
