@@ -39,8 +39,10 @@ export function readScopedAdventureHeroSelectionV1({
   throw new RangeError('Adventure hero selection schema/version incompatible');
  if(value.sessionId!==sessionId||value.worldId!==worldId)
   throw new Error('Adventure hero selection does not match the current world/session');
- if(typeof value.heroDefinitionId!=='string'||
-  !/^hero\.user\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.heroDefinitionId))
+ if((value.heroDefinitionId===null&&!Object.hasOwn(value,'displayName'))||
+    (value.heroDefinitionId!==null&&
+     (typeof value.heroDefinitionId!=='string'||
+      !/^hero\.user\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.heroDefinitionId))))
   throw new RangeError('Adventure hero selection must use an authored HeroDefinition ID');
  if(Object.hasOwn(value,'displayName')&&
    (typeof value.displayName!=='string'||value.displayName.trim().length<1||
@@ -52,9 +54,12 @@ export function readScopedAdventureHeroSelectionV1({
 // A display-only view of the SAME validated grant, never a nickname database.
 // Older AdventureSession grants with no displayName remain readable.
 export function readScopedAdventureHeroDisplayNameV1(args={}){
- const definitionId=readScopedAdventureHeroSelectionV1(args);
- if(definitionId===null)return null;
+ // Validate the same grant even when a legacy save has no selected skin.
+ // A name-only legacy grant has null HeroDefinition; it is still a single
+ // scoped, read-only projection of the canonical AdventureSession.
+ readScopedAdventureHeroSelectionV1(args);
  const raw=args.storage.getItem(adventureHeroSelectionStorageKeyV1(args.sessionId));
+ if(raw===null)return null;
  const value=JSON.parse(raw);
  return Object.hasOwn(value,'displayName')?value.displayName.trim():null;
 }
