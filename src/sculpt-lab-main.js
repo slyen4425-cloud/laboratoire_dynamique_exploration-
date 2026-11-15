@@ -15,7 +15,8 @@ import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
-  paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
+  paintSculptDecorativeFringeV1,paintSculptDecorativeFringeSurfaceV1,
+  sculptDecorativeFringeCellIsOuterV1
 } from './world/sculpt-decorative-fringe-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
@@ -102,8 +103,9 @@ import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} fro
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
-  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
-import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
+  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
+  ensureFreeWorldInitialSpawnV1} from './builder/sculpt-world-area-link.js';
+import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
@@ -176,6 +178,7 @@ let npcRewardChoices=Object.freeze([]),npcRewardRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // Same WorldArea authoring data; fringe cells are never passed to Collision World.
 let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
+let fringeSurfaceGesture=null,fringeObjectDrag=null;
 let fringeHistory=[],fringeRedo=[];
 const fringeRasterCache=new Map();
 window.__sculptFringeProbe=()=>Object.freeze({
@@ -1048,8 +1051,8 @@ function decorativeFringeRaster(chunk){
   const signature=[$('rock').value,displayedBaseMaterialId(),
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked].join('|');
   const previous=fringeRasterCache.get(key);
-  if(previous?.terrain===chunk.terrain&&previous.texture===currentTexture&&
-     previous.signature===signature)return previous;
+  if(previous?.terrain===chunk.terrain&&previous.paintSurface===chunk.surface&&
+     previous.texture===currentTexture&&previous.signature===signature)return previous;
   const paddingX=18,paddingY=16*SCULPT_TILE.rise+18;
   const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
   const image=document.createElement('canvas');
@@ -1063,9 +1066,10 @@ function decorativeFringeRaster(chunk){
     texture:currentTexture,rockPalette:$('rock').value,
     cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
-    sphereWallImages,overlays:ribbonTextures,paintSurface:null,paintImages:null,
+    sphereWallImages,overlays:ribbonTextures,
+    paintSurface:chunk.surface??null,paintImages:surfacePaintImages,
     drawOuterSouthRim:false});
-  const raster={terrain:chunk.terrain,texture:currentTexture,signature,
+  const raster={terrain:chunk.terrain,paintSurface:chunk.surface,texture:currentTexture,signature,
     image,scale,paddingX,paddingY};
   fringeRasterCache.set(key,raster);
   return raster;
@@ -1073,7 +1077,7 @@ function decorativeFringeRaster(chunk){
 function drawEditorPlayableLimit(){
   // Projection-only marker: no second boundary, no changes to saved terrain,
   // encounter placement, hero collisions or runtime overlays.
-  if(navigationTesting||!decorativeFringe||activeInteriorId||
+  if(navigationTesting||!decorativeFringe||!fringeEditing||activeInteriorId||
      sculptWorldCurrentInterior())return;
   const outline=sculptPlayableBoundaryOutlineV1(terrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
@@ -3217,12 +3221,16 @@ function objectCommit(next){
 }
 // Surface authoring reuses WorldSurface v3; only this UI owns undo/redo.
 function loadSurfacePaintAssets(){
-  const used=new Set([...surface.routes,...surface.zones].map(f=>f.materialId));
+  const used=new Set([...surface.routes,...surface.zones,
+    ...(decorativeFringe?.chunks??[]).flatMap(chunk=>[
+      ...(chunk.surface?.routes??[]),...(chunk.surface?.zones??[])
+    ])].map(f=>f.materialId));
   for(const meta of SCULPT_SURFACE_MATERIALS){
     if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
     imageFor(meta.id,meta.assetKind).then(texture=>{
       if(!texture)return;
-      surfacePaintImages.set(meta.id,texture);navTerrainCache=null;scheduleDraw();
+      surfacePaintImages.set(meta.id,texture);navTerrainCache=null;
+      fringeRasterCache.clear();scheduleDraw();
     });
   }
 }
@@ -4026,13 +4034,12 @@ $('scenery-fringe-toggle')?.addEventListener('change',()=>{
     return;
   }
   fringeEditing=$('scenery-fringe-toggle').checked;
-  if(fringeEditing&&surfaceEditing)setSurfaceEditing(false);
   if(fringeEditing&&!decorativeFringe){
     decorativeFringe=createSculptDecorativeFringeV1(decorativeFringeArea());
     fringeRasterCache.clear();
     status('Pourtour de 8 cases ajouté sur les quatre côtés · sculptable et décoratif uniquement');
     fit();
-  }else status(fringeEditing?'Mode pourtour actif : sculpte ou pose des objets au-delà de la carte':
+  }else status(fringeEditing?'Mode pourtour actif : peins les textures ou déplace les objets au-delà de la carte':
     'Retour à la zone de base');
   updateHistoryButtons();scheduleDraw();
 });
