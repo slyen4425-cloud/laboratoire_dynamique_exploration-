@@ -1,3 +1,11 @@
+## 2026-11-15 — Jouer : oscillation repos, rendu chargé, et musique Aventure native
+- START `main@7bd60b8dfeeb4eb0ba37f35a5e5a4e5ba93d11fa`, checkpoint `checkpoint/exploration-start-play-visual-readiness-idle-only-20261115`, branche `work/exploration-play-visual-readiness-idle-only-20261115`.
+- Retour auteur : le héros ne doit plus osciller en marche (tous sprites), seulement au repos ; le masque de chargement ne doit se retirer qu'après textures, routes, décors et frame finale de la carte, y compris après Portal.
+- Le seul `MapActorRenderer` désactive le bob vertical du rôle hero quand `moving===true` sans modifier la géométrie, les animations directionnelles, les réglages de sauvegarde, ni les PNJ. L'ancienne amplitude de marche reste lisible pour compatibilité mais ignorée.
+- Le masque natif attend les Promises d'images déjà créées par Material Registry/Surface/ObjectRenderer, les images de roche (si disponibles), les rubans et la première peinture ; pas de cache ni de renderer bis. Erreurs d'images essentielles visibles, anciennes cartes/sauvegardes inchangées.
+- Le lecteur natif `createExplorationSoundtrackV1` accepte une configuration `capture:exploration:map.music` du seul `SoundtrackProjectV1` Combat, mais conserve ses quatre fichiers audio et le lecteur existant. L'entrée ne contient que des IDs officiels, aucun URL/MP3 personnel ni stockage local supplémentaire. Sans configuration valide, comportement actuel inchangé.
+- Garde-fous : V80, WorldDocument, collision, CPU mobile, Survie/Dungeon/PvP, Assets et Portal; tests Node+Chromium PC/Paysage, CI main exacte, Pages HTTPS, test auteur avant GREEN.
+
 ## 2026-11-15 — Régression ombres maisons : projection réelle rétablie
 - START `main@3844e82814d81d4486575153fdcbd6160b1eee4e`, checkpoint `checkpoint/exploration-start-house-silhouette-shadow-fix-20261115`, branche `work/exploration-house-silhouette-shadow-fix-20261115`.
 - Rapport utilisateur : après PR #461, la vraie ombre étirée des bâtiments a disparu et l'aplat au pied qui ressemble à une colline est resté. Cause vérifiée : `drawWorldObjectContactShadowV1` court-circuite la projection pour `building` en utilisant `contactCanvas`, bande artificielle indépendante du masque projeté.
