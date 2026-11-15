@@ -53,7 +53,8 @@ test('native cliff faces expose only their own render rectangles for depth maski
 });
 test('editor and play reuse ONE cached terrain image and compositing mask',()=>{
  const editor=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- assert.match(editor,/sculptCliffOcclusionRectsV1\(terrain,SCULPT_TILE\)/);
+ assert.match(editor,/sculptCliffOcclusionRectsV1\(terrain,SCULPT_TILE,\{/);
+ assert.match(editor,/includeOuterSouthRim:!visualDecorativeFringe\(\)/);
  assert.match(editor,/maskCtx\.globalCompositeOperation='destination-in'/);
  assert.match(editor,/cached\.cliffOcclusionImage/);
  assert.equal((editor.match(/drawOuterSouthRim:!visualDecorativeFringe\(\)/g)||[]).length,2,
