@@ -21,13 +21,15 @@ function mockDraw(visual,actor={moving:true,facingX:1,x:100,y:50},timeSeconds=0)
 const animated=()=>normalizeMapActorVisual({assetId:'hero.base',role:'hero',shadow:{enabled:false},
  animation:{mode:'frames',framesPerSecond:4,
  idle:['hero.idle1','hero.idle2'],walk:['hero.walk1','hero.walk2','hero.walk3']}});
-test('historic single image uses existing simulated idle/walk bob, without an animation catalog',()=>{
+test('historic hero keeps idle bob but moves without extra vertical oscillation',()=>{
  const v=normalizeMapActorVisual({assetId:'hero.base',role:'hero'});
  assert.equal(v.animation.mode,'image');
  const d=mockDraw(v);
  assert.equal(d.drawn[0].id,'hero.base');
  const move=mockDraw(v,{x:100,y:50,moving:true,facingX:1},.1);
- assert.notEqual(move.moves[0][1],50,'existing simulated walk bob remains visible');
+ assert.equal(move.moves[0][1],50,'moving hero stays grounded');
+ const idle=mockDraw(v,{x:100,y:50,moving:false,facingX:1},.1);
+ assert.notEqual(idle.moves[0][1],50,'idle breathing motion still visible');
 });
 test('sprite option chooses actual idle and moving frames from prepared official asset IDs',()=>{
  const v=animated();
@@ -39,14 +41,14 @@ test('sprite option chooses actual idle and moving frames from prepared official
  assert.equal(mockDraw(v,{x:100,y:50,moving:true,facingX:1},.52).drawn[0].id,'hero.walk3');
  assert.equal(mockDraw(v,{x:100,y:50,moving:true,facingX:1},.77).drawn[0].id,'hero.walk1');
 });
-test('sprite mode applies configured oscillation without changing world coords or mirror policy',()=>{
+test('sprite mode suppresses hero walk wobble without changing world coords or mirror policy',()=>{
  const v=animated();
  const actor={x:100,y:50,moving:true,facingX:-1};
  const before=JSON.stringify(actor);
  const d=mockDraw(v,actor,.3);
  assert.equal(d.moves[0][0],100);
  assert.ok(Math.abs(d.moves[0][1]-50)<=v.motion.walkAmplitude);
- assert.notEqual(d.moves[0][1],50,'moving sprites follow the saved walkAmplitude');
+ assert.equal(d.moves[0][1],50,'moving sprites ignore saved walkAmplitude');
  assert.ok(d.moves.some(x=>x[0]==='scale'&&x[1]===-1));
  assert.equal(JSON.stringify(actor),before);
 });
