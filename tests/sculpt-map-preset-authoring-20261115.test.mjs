@@ -72,7 +72,7 @@ test('marker touch selection is based only on official portal and spawn coordina
  w=connectWorldAreas(w,{sourceAreaId:w.initialAreaId,
   targetAreaId:w.areas[1].id,returnPortal:true});
  const marks=markersForSculptWorldArea(w,w.initialAreaId,{testing:false});
- const exit=marks.find(m=>m.kind==='exit'),start=marks.find(m=>m.kind==='start');
+ const exit=marks.find(m=>m.kind==='exit'),start=marks.find(m=>m.spawnId===w.initialSpawnId&&m.isInitial);
  assert.ok(exit);assert.ok(start);
  assert.equal(pickSculptWorldEditorMarkerV1(w,w.initialAreaId,{x:exit.x,y:exit.y}).portalId,exit.portalId);
  assert.equal(pickSculptWorldEditorMarkerV1(w,w.initialAreaId,{x:start.x,y:start.y}).spawnId,start.spawnId);
