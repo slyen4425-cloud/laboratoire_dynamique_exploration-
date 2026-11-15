@@ -77,3 +77,24 @@ test('official Sculpt owner uses one Map Actor Renderer and never mutates player
  assert.match(s,/window\.addEventListener\(EXPLORATION_PEER_SNAPSHOT_EVENT_V1/);
  assert.match(s,/window\.removeEventListener\(EXPLORATION_PEER_SNAPSHOT_EVENT_V1/);
 });
+
+test('native peer projection preserves trusted display names but not arbitrary metadata',()=>{
+ const p=make();
+ assert.equal(p.apply(packet([{...position(),displayName:'Mira'}])),true);
+ assert.equal(p.forArea('area-1')[0].displayName,'Mira');
+ assert.equal(p.apply(packet([{...position(host,2),displayName:'X\\nY'}],2)),false);
+ assert.equal(p.apply(packet([{...position(host,2),displayName:'a'.repeat(49)}],2)),false);
+ assert.equal(p.apply(packet([{...position(host,2),inventory:{gold:50}}],2)),false);
+ p.dispose();
+});
+test('peer greeting uses the one native scene and refuses unknown player actions',()=>{
+ const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ assert.match(sculpt,/strokeText\(actor\.displayName/);
+ assert.match(sculpt,/nearestExplorationPeerForGreeting/);
+ assert.match(sculpt,/Math\.hypot\(peer\.x-navActor\.x,peer\.y-navActor\.y\)<=70/);
+ assert.match(sculpt,/schema:'gensrpg\.exploration\.play\.peer-greet\.v1'/);
+ assert.match(sculpt,/event\.detail\?\.sessionId!==playOptions\?\.sessionId/);
+ assert.match(page,/id="peer-greet"/);
+ assert.match(page,/id="peer-greet-notice"/);
+});
