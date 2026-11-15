@@ -5,6 +5,13 @@
 - Anti-régression : tests maison liée → pièces, étages, murs, aller/retour, sauvegarde/import, anciens mondes, édition clavier/tactile, même WorldDocument, pas de suppression ou nouvelle sauvegarde. CI native/Chromium/Firefox, publication main et contrôle HTTPS avant raccordement dans GenSRPG. Ombres globales présentes et non modifiées.
 ---
 
+## 2026-11-15 — Découpe réelle des abords des maisons (retour auteur)
+- START `main@b44b7e25b67f647a85cf27fecc1c67feee3de65d`, branche `work/exploration-building-ground-props-removal-20261115`. Retour : retirer pierres, éléments extérieurs et fonds gris parasites derrière les lanternes, pas seulement adoucir l'alpha.
+- Révision par masques géométriques et zones grises opaques. **20 WebP enneigés remplacés** à chemin/ID et dimensions 384×384 identiques ; seuls les pixels d'alpha changent (RGB inchangé). Réfection des pieds neige/pierres autour des murs et suppression du fond foncé non architectural derrière les lanternes de la pagode.
+- **10 vues protégées**, dont le chalet corrigé par l'auteur et trois vues de chacun des types glace/cristaux/tente, pour ne pas détruire cristaux, cordages ni éléments distinctifs. Fichiers tempérés et végétation incrustée aux murs non modifiés : essai d'inpainting non satisfaisant refusé, besoin de reconstruction localisée ultérieure.
+- Script reproductible `scripts/cleanup-house-environment-pixels.py`, run unique réussi [43734052744](https://github.com/slyen4425-cloud/laboratoire_dynamique_exploration-/actions/runs/43734052744) ; les deux workflows temporaires supprimés après exécution. Manifestes SHA256 et octets synchronisés : sous-lot de 20 fichiers 2 188 586 → 2 188 334 octets (-252), aucune copie supplémentaire.
+- Garde-fous : aucun changement aux moteurs, au rendu, aux ombres, collisions, sauvegardes, V80, Capture/Combat/Dungeon/Survie. Critères GREEN : tests Node/Chromium, PR, publication Pages de main au SHA exact, HTTPS et essai visuel PC/Pixel.
+
 ## 2026-11-15 — Ombres par modèle visuel dans l'éditeur de carte 2.5D
 - Demande : régler l'ombre d'un modèle d'arbre une fois pour ses centaines d'instances, au lieu de déplacer les ombres arbre par arbre. Conserver les exceptions individuelles et la vue du panneau d'ombres repliable.
 - START `main@ce59c71d60d233ed3354fd945c96b31423f95c44`, checkpoint `checkpoint/exploration-start-shadow-model-profiles-20261115`, branche `work/exploration-shadow-model-profiles-20261115`.
