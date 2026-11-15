@@ -95,7 +95,11 @@ try{
   }
   throw Error('Timeout '+label);
  };
- await until('document.readyState==="complete"','initial page');
+ // A blank initial Chrome document can be "complete" while localStorage is
+ // forbidden. Require the actual HTTP world editor origin before seeding.
+ await until('location.href.startsWith("http://127.0.0.1:'+port+
+   '/world-assembler.html") && document.readyState==="complete"',
+   'initial HTTP world editor navigation');
  await run(`(()=>{
   localStorage.setItem('gensrpg.world-assembler.document.v1',${JSON.stringify(serialized)});
   sessionStorage.setItem('gensrpg.world-assembler.handoff.v1',
