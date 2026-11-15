@@ -144,16 +144,26 @@ export function linkSculptWorldBuildingInteriorV1(raw,{sourceAreaId,buildingId}=
   throw new Error('Cette maison n’est pas enregistrée dans la carte');
  const existing=draft.portals.find(p=>p.sourceAreaId===sourceAreaId&&
   p.trigger?.kind==='object-anchor'&&p.trigger.objectId===buildingId);
- const linked=createBuildingInteriorLink(draft,{
+ let linked=createBuildingInteriorLink(draft,{
   sourceAreaId,buildingId,
   // Whole-cell dimensions: the same native Sculpt terrain renderer and
   // collision world own both the exterior and the new interior.
   interiorSize:{width:18*28,height:14*21}
  });
- const portal=(existing
+ let portal=(existing
   ?linked.portals.find(p=>p.id===existing.id)
   :linked.portals.find(p=>p.sourceAreaId===sourceAreaId&&
     p.trigger?.kind==='object-anchor'&&p.trigger.objectId===buildingId));
+ // The native return Spawn stands 72 world units in front of the actual
+ // door so the character does not spawn inside house collision. The old
+ // radius=32 was INSIDE the blocking building footprint, making the
+ // author-created door impossible to reach from that safe arrival.
+ // Keep the trigger anchored to the exact same door and enlarge only its
+ // reachability radius (not its geometry, world position or target).
+ if(portal?.trigger?.kind==='object-anchor'&&portal.trigger.radius<84){
+   linked=updatePortal(linked,portal.id,p=>{p.trigger.radius=84;});
+   portal=linked.portals.find(p=>p.id===portal.id);
+ }
  if(!portal)throw new Error('Impossible de relier la porte : bâtiment sans ancrage valide');
  const target=linked.areas.find(a=>a.id===portal.targetAreaId);
  if(!target||target.kind!=='interior')
