@@ -3771,10 +3771,19 @@ try{
     if(document.querySelector('#world-area-portal-select').value!==gate.id)
       return {error:'selected Objets exit did not bind to the canonical Portal',gateId:gate.id};
     const spawn=window.__sculptWorldProbe().spawns[0];
-    document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
-    document.querySelector('#world-area-portal-y').value=String(spawn.y);
-    document.querySelector('#world-area-portal-save').click();
-    document.querySelector('#navigation-toggle').click();
+    const px=document.querySelector('#world-area-portal-x'),
+      py=document.querySelector('#world-area-portal-y'),
+      save=document.querySelector('#world-area-portal-save'),
+      tester=document.querySelector('#navigation-toggle');
+    if(!px||!py||!save||!tester)
+      return {error:'missing canonical authoring test fixture',url:location.href,
+        controls:{px:!!px,py:!!py,save:!!save,tester:!!tester},
+        ids:[...document.querySelectorAll('[id]')].filter(el=>
+          /portal|waypoint|navigation/.test(el.id)).map(el=>el.id).slice(0,40)};
+    px.value=String(spawn.x+12);
+    py.value=String(spawn.y);
+    save.click();
+    tester.click();
     return {gate,spawn,sculpt:window.__sculptWorldProbe(),
       inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none',
       nav:window.__sculptNavProbe()};
@@ -3826,10 +3835,19 @@ try{
     if(document.querySelector('#world-area-portal-select').value!==back.id)
       return {error:'return exit selection not reflected in Portal adapter'};
     const spawn=window.__sculptWorldProbe().spawns[0];
-    document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
-    document.querySelector('#world-area-portal-y').value=String(spawn.y);
-    document.querySelector('#world-area-portal-save').click();
-    document.querySelector('#navigation-toggle').click();
+    const px=document.querySelector('#world-area-portal-x'),
+      py=document.querySelector('#world-area-portal-y'),
+      save=document.querySelector('#world-area-portal-save'),
+      tester=document.querySelector('#navigation-toggle');
+    if(!px||!py||!save||!tester)
+      return {error:'missing canonical authoring test fixture',url:location.href,
+        controls:{px:!!px,py:!!py,save:!!save,tester:!!tester},
+        ids:[...document.querySelectorAll('[id]')].filter(el=>
+          /portal|waypoint|navigation/.test(el.id)).map(el=>el.id).slice(0,40)};
+    px.value=String(spawn.x+12);
+    py.value=String(spawn.y);
+    save.click();
+    tester.click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
   })()`);
   if(placedDungeonReturn.error||!placedDungeonReturn.sculpt.traverseVisible)
