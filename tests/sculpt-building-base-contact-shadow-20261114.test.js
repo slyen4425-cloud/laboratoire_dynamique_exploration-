@@ -26,7 +26,7 @@ test('building keeps a genuine projected silhouette anchored to the foot, never 
  assert.equal(draws[0][0],mask.canvas,'casts actual artwork silhouette');
  assert.deepEqual(translate,[[0,61]],'last visible silhouette pixel meets the ground foot');
  assert.ok(transforms[0][2]<0 && transforms[0][3]>0,'shadow remains directional');
- assert.equal(draws[0][4],mask.right-mask.left,'real alpha silhouette bounds');
+ assert.equal(draws[0][3],mask.right-mask.left,'real alpha silhouette bounds');
  assert.equal(drawWorldObjectContactShadowV1(ctx,
   {kind:'bridge',width:160,height:120,image}),false,'bridges remain excluded');
 });
