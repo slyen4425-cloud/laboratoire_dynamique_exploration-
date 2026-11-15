@@ -47,8 +47,9 @@ test('single click in 2.5D creates real linked WorldArea and two traversable nat
  const returnState=applyPortalTransition(link.document,{currentAreaId:target.id,
   x:back.trigger.x,y:back.trigger.y},back);
  assert.equal(returnState.currentAreaId,sourceAreaId);
- assert.deepEqual({x:returnState.x,y:returnState.y},
-  resolveWorldAreaSpawnPoint(link.document.areas.find(a=>a.id===sourceAreaId),back.targetSpawnId));
+ const arrival=resolveWorldAreaSpawnPoint(
+  link.document.areas.find(a=>a.id===sourceAreaId),back.targetSpawnId);
+ assert.deepEqual({x:returnState.x,y:returnState.y},{x:arrival.x,y:arrival.y});
 });
 
 test('relinking same house reuses exact IDs and never duplicates WorldAreas/Portals',()=>{
