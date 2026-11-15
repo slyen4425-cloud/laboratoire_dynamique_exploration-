@@ -1,3 +1,10 @@
+## 2026-11-15 — Régression : murs, étages et retour des intérieurs de maison
+- Cause prouvée : après maison → « Lier / modifier intérieur », une vraie WorldArea officielle est créée mais l'inspecteur masquait tous les outils lorsque `activeInteriorId` n'était pas un ID de l'ancien tableau `sculptInteriors`. Les murs et étages refusaient en conséquence tout ajout, et le retour était dans le panneau Passages.
+- START source `main@73996dd3e9a53c93766871a68ea916a2d4cf6e6b`, checkpoint `checkpoint/exploration-start-world-interior-ui-20261115`, lot isolé `work/exploration-restore-world-interior-tools-20261115`.
+- Réparation : même inspecteur 2.5D pour la carte WorldArea intérieure officielle ; murs, textures, forme validée, porte et retour vers extérieur ; niveaux associés aux WorldAreas via métadonnée facultative `interiorFloor`, vrais Portal/Spawn de montée/descente, sans deuxième autorité. L'ancienne voie autonome Sculpt conserve son code. Dimensions des cartes du World Builder restent verrouillées dans ce panneau pour protéger les anciens portails et placements, sans rescaling destructeur.
+- Anti-régression : tests maison liée → pièces, étages, murs, aller/retour, sauvegarde/import, anciens mondes, édition clavier/tactile, même WorldDocument, pas de suppression ou nouvelle sauvegarde. CI native/Chromium/Firefox, publication main et contrôle HTTPS avant raccordement dans GenSRPG. Ombres globales présentes et non modifiées.
+---
+
 ## 2026-11-15 — Ombres par modèle visuel dans l'éditeur de carte 2.5D
 - Demande : régler l'ombre d'un modèle d'arbre une fois pour ses centaines d'instances, au lieu de déplacer les ombres arbre par arbre. Conserver les exceptions individuelles et la vue du panneau d'ombres repliable.
 - START `main@ce59c71d60d233ed3354fd945c96b31423f95c44`, checkpoint `checkpoint/exploration-start-shadow-model-profiles-20261115`, branche `work/exploration-shadow-model-profiles-20261115`.
