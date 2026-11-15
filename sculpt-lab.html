@@ -590,6 +590,16 @@ body.sculpt-immersive #sculpt-map-preset-panel{
  width:100%;min-height:34px;padding:4px 6px}
 #sculpt-map-preset-panel button{min-height:35px;padding:5px;font-size:.72rem}
 #sculpt-map-preset-panel .preset-controls label{display:grid;gap:4px}
+/* In WorldArea editing, the preset library belongs inside the existing
+   right-hand inspector, never as a second floating window over the canvas. */
+body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel,
+body.world-area-editing.sculpt-immersive #world-area-portal-panel #sculpt-map-preset-panel{
+ position:static;inset:auto;display:block;width:100%;max-width:100%;
+ max-height:none;overflow:visible;box-shadow:none;margin:9px 0 0;
+ background:#17343b;border-color:#4c797b;
+}
+body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([open]){width:100%;max-width:100%}
+
 #sculpt-map-preset-import{max-width:100%}
 @media(max-width:720px){
  #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
@@ -947,7 +957,7 @@ body.sculpt-play-unavailable #play-start-error{
 <label id="scenery-fringe-panel" hidden style="gap:.55rem;align-items:center;padding:.42rem .7rem;flex-wrap:wrap">
   <input type="checkbox" id="scenery-fringe-toggle" aria-label="Sculpter et décorer les huit cases au-delà de la zone jouable">
   <strong>Décor hors zone jouable</strong>
-  <small>8 cases de plus sur les 4 côtés · pinceau de relief et pose d'objets existants · le héros reste bloqué à la carte d'origine · <strong style="color:#ffe39c">trait jaune : limite jouable</strong> (visible uniquement dans l'éditeur)</small>
+  <small>8 cases de décor autour de la carte · Terre, Eau, Textures et Objets dans les outils habituels. Le trait jaune indique la limite jouable <strong>uniquement pendant ce mode</strong> ; le héros ne peut pas sortir de la carte.</small>
 </label>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
@@ -965,20 +975,24 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
 <output id="world-portal-feedback" role="status" aria-live="polite" hidden></output>
 <details id="world-area-portal-panel" class="world-area-portal-panel" hidden>
- <summary aria-label="Afficher ou masquer les entrées et sorties">🚪 Passages</summary>
+ <summary aria-label="Afficher ou masquer les entrées, sorties et départs">🚪 Passages · Départ · Présets</summary>
  <div class="world-area-panel-content">
   <strong id="world-area-current-name">Zone</strong>
   <small id="world-area-current-kind">WorldArea 2,5D</small>
   <button id="world-area-return" type="button">💾 Enregistrer · Retour au World Builder</button>
+  <p style="margin:2px 0;font-size:.74rem;color:#bbebe2">🟡 Sortie : ici → autre zone. 🔵 Arrivée : point où le héros apparaît en revenant. 🟣 Départ : début d'aventure. Choisis un repère et touche la carte pour le déplacer.</p>
+  <button id="world-area-marker-pick" type="button">🎯 Sélectionner un repère sur la carte</button>
   <label>Passage à placer
    <select id="world-area-portal-select" aria-label="Choisir le passage"></select>
   </label>
+  <small id="world-area-portal-direction" role="status">Choisis une sortie pour voir la destination et son arrivée.</small>
   <div class="world-area-grid">
-   <label>Entrée X<input id="world-area-portal-x" type="number" step="1"></label>
-   <label>Entrée Y<input id="world-area-portal-y" type="number" step="1"></label>
+   <label>Sortie X<input id="world-area-portal-x" type="number" step="1"></label>
+   <label>Sortie Y<input id="world-area-portal-y" type="number" step="1"></label>
   </div>
-  <button id="world-area-portal-place" type="button">📍 Pointer l'entrée sur le terrain</button>
-  <button id="world-area-portal-save" type="button">✓ Enregistrer cette entrée</button>
+  <button id="world-area-portal-place" type="button">📍 Déplacer la sortie sur la carte</button>
+  <button id="world-area-portal-save" type="button">✓ Enregistrer la sortie</button>
+  <button id="world-area-edit-destination" type="button">↪ Modifier l’arrivée dans la zone cible</button>
   <label>Nom du repère de sortie (facultatif)
    <input id="world-area-portal-label" type="text" maxlength="80" placeholder="Ex. Porte de la crypte">
   </label>
@@ -986,14 +1000,15 @@ body.sculpt-play-unavailable #play-start-error{
   <label>Points de départ et d'arrivée dans cette zone
    <select id="world-area-spawn-select" aria-label="Choisir un point de départ ou d'arrivée"></select>
   </label>
+  <button id="world-area-spawn-select-start" type="button">★ Déplacer le départ initial du jeu</button>
   <small id="world-area-spawn-info" role="status" aria-live="polite">Les points attachés à une porte se règlent par le bâtiment propriétaire.</small>
   <div class="world-area-grid">
-   <label>Arrivée X<input id="world-area-spawn-x" type="number" step="1"></label>
-   <label>Arrivée Y<input id="world-area-spawn-y" type="number" step="1"></label>
+   <label>Position X<input id="world-area-spawn-x" type="number" step="1"></label>
+   <label>Position Y<input id="world-area-spawn-y" type="number" step="1"></label>
   </div>
-  <button id="world-area-spawn-place" type="button">📍 Pointer l'arrivée sur le terrain</button>
-  <button id="world-area-spawn-save" type="button">✓ Enregistrer l'arrivée</button>
-  <small>🟡 SORTIE : passage vers la zone reliée. 🔵 ARRIVÉE : position d'apparition dans cette zone. Les deux repères restent déplaçables.</small>
+  <button id="world-area-spawn-place" type="button">📍 Déplacer ce point sur la carte</button>
+  <button id="world-area-spawn-save" type="button">✓ Enregistrer ce point</button>
+  <small>Les repères libres se déplacent ici. Les arrivées liées à une porte restent contrôlées par leur bâtiment d'origine.</small>
   <small>En mode Tester, approche du cercle SORTIE et appuie sur « 🚪 Entrer » pour charger la zone suivante.</small>
   <small id="world-area-portal-status" role="status" aria-live="polite">Place l'entrée sur ta carte ; le héros passera à la zone reliée en jeu.</small>
  </div>
