@@ -139,3 +139,25 @@ test('passage UI offers creation and destination edits without exposing numeric 
  assert.match(source,/sculptWorldPortalPlacement='spawn'/);
  assert.match(source,/world-area-portal-panel'\)\.open=false/);
 });
+
+test('Objets owns one visible authoring UI for Depart / Entree / Sortie, without coordinates',()=>{
+ const start=html.indexOf('<details id="object-waypoints-panel"');
+ const objectEnd=html.indexOf('<button type="button" id="actor-open">',start);
+ assert.ok(start>0&&objectEnd>start);
+ const compact=html.slice(start,objectEnd);
+ assert.match(compact,/id="object-waypoint-select"/);
+ assert.match(compact,/id="object-waypoint-place"/);
+ assert.match(compact,/id="object-waypoint-target"/);
+ assert.match(compact,/id="object-waypoint-create-button"/);
+ assert.match(compact,/id="object-waypoint-destination"/);
+ assert.doesNotMatch(compact,/Sortie X|Position X|Position Y|Sortie Y|type="number"/);
+ assert.match(source,/panel\.hidden=true;/);
+ assert.match(source,/syncObjectWaypoints\(\)/);
+ assert.match(source,/selectedWaypointKey=waypointKey\(marker\)/);
+ assert.match(source,/function pickedVisibleWaypoint\(point\)/);
+ assert.match(source,/waypointDrag=\{pointerId:event\.pointerId/);
+ assert.match(source,/if\(waypointDrag\)\{/);
+ assert.match(source,/placeSculptWorldPortal\(\s*sculptWorldDraft,drag\.marker\.portalId,point\)/);
+ assert.match(source,/placeSculptWorldSpawn\(\s*sculptWorldDraft,sculptWorldAreaId,drag\.marker\.spawnId,point\)/);
+ assert.match(source,/event\.type!=='pointercancel'/);
+});
