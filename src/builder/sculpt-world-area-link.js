@@ -7,7 +7,7 @@ import {normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {normalizeSculptDecorativeFringeV1} from '../world/sculpt-decorative-fringe-v1.js';
 import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from '../world/sculpt-scene-preview.js';
 import {updatePortal,updateSpawn,addSpawn,createWorldBuilderDraft,
-  validateWorldBuilderDraft} from './world-builder-draft.js';
+  createBuildingInteriorLink,validateWorldBuilderDraft} from './world-builder-draft.js';
 import {resolveWorldAreaSpawnPoint} from '../world/world-area-model.js';
 
 export const SCULPT_WORLD_TILE=Object.freeze({width:28,height:21});
@@ -132,4 +132,47 @@ export function ensureFreeWorldInitialSpawnV1(draft){
  const checked=validateWorldBuilderDraft(updated);
  if(!checked.valid)throw Error('Départ invalide : '+checked.errors.join(', '));
  return createWorldBuilderDraft(checked.document);
+}
+
+// An interior created from the 2.5D object inspector is a REAL WorldArea,
+// with exactly the same Portal and Spawn owner as World Builder.
+// Never create a parallel sculptInteriors scene in a WorldDocument.
+export function linkSculptWorldBuildingInteriorV1(raw,{sourceAreaId,buildingId}={}){
+ const draft=createWorldBuilderDraft(raw);
+ const source=areaById(draft,sourceAreaId);
+ if(!source.objects.some(obj=>obj.id===buildingId))
+  throw new Error('Cette maison n’est pas enregistrée dans la carte');
+ const existing=draft.portals.find(p=>p.sourceAreaId===sourceAreaId&&
+  p.trigger?.kind==='object-anchor'&&p.trigger.objectId===buildingId);
+ let linked=createBuildingInteriorLink(draft,{
+  sourceAreaId,buildingId,
+  // Whole-cell dimensions: the same native Sculpt terrain renderer and
+  // collision world own both the exterior and the new interior.
+  interiorSize:{width:18*28,height:14*21}
+ });
+ let portal=(existing
+  ?linked.portals.find(p=>p.id===existing.id)
+  :linked.portals.find(p=>p.sourceAreaId===sourceAreaId&&
+    p.trigger?.kind==='object-anchor'&&p.trigger.objectId===buildingId));
+ // The native return Spawn stands 72 world units in front of the actual
+ // door so the character does not spawn inside house collision. The old
+ // radius=32 was INSIDE the blocking building footprint, making the
+ // author-created door impossible to reach from that safe arrival.
+ // Keep the trigger anchored to the exact same door and enlarge only its
+ // reachability radius (not its geometry, world position or target).
+ if(portal?.trigger?.kind==='object-anchor'&&portal.trigger.radius<84){
+   linked=updatePortal(linked,portal.id,p=>{p.trigger.radius=84;});
+   portal=linked.portals.find(p=>p.id===portal.id);
+ }
+ if(!portal)throw new Error('Impossible de relier la porte : bâtiment sans ancrage valide');
+ const target=linked.areas.find(a=>a.id===portal.targetAreaId);
+ if(!target||target.kind!=='interior')
+  throw new Error('La maison pointe vers une zone intérieure invalide');
+ if(!linked.portals.some(p=>p.sourceAreaId===target.id&&
+    p.targetAreaId===sourceAreaId&&p.targetSpawnId))
+  throw new Error('Il manque le passage de retour vers la maison');
+ const checked=validateWorldBuilderDraft(linked);
+ if(!checked.valid)throw new Error('Liaison non sauvegardée : '+checked.errors.join(', '));
+ return Object.freeze({document:createWorldBuilderDraft(checked.document),
+  portalId:portal.id,targetAreaId:target.id,created:!existing});
 }

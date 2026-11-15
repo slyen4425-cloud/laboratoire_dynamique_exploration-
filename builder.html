@@ -479,18 +479,27 @@
             <p id="building-interior-status" class="builder-hint">
               Entrée non reliée.
             </p>
-            <label>
-              Intérieur existant
-              <select id="building-interior-target-area"></select>
-            </label>
-            <div class="row">
-              <button id="building-interior-create" type="button">Créer un intérieur vide</button>
-              <button id="building-interior-link" type="button">Lier l’intérieur sélectionné</button>
-              <button id="building-interior-open" type="button">Ouvrir l’intérieur</button>
-            </div>
             <p class="builder-hint">
-              La zone d’entrée est résolue depuis le doorAnchor du bâtiment. La liaison réelle reste un Passage (Portal) vers une WorldArea intérieure, avec retour vers un Spawn extérieur ancré.
+              <strong>Configuration normale :</strong> ouvre la carte 2,5D, sélectionne
+              cette maison dans Objets puis « Lier / modifier l’intérieur ».
+              La porte, l’arrivée et la sortie sont inscrites ici automatiquement.
             </p>
+            <details id="building-interior-advanced">
+              <summary>⚙ Réglages avancés de liaison (anciennes cartes)</summary>
+              <label>
+                Intérieur existant
+                <select id="building-interior-target-area"></select>
+              </label>
+              <div class="row">
+                <button id="building-interior-create" type="button">Créer un intérieur vide</button>
+                <button id="building-interior-link" type="button">Lier l’intérieur sélectionné</button>
+                <button id="building-interior-open" type="button">Ouvrir l’intérieur</button>
+              </div>
+              <p class="builder-hint">
+                Compatibilité : cette liaison reste le même Portal officiel.
+                Aucun second intérieur ou réglage n’est nécessaire après l’édition 2,5D.
+              </p>
+            </details>
           </div>
         </div>
 

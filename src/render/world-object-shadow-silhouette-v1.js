@@ -7,21 +7,24 @@ const shadowSilhouettes=new WeakMap();
 // the house front AND visible side, not a detached axis-aligned ellipse.
 function withBuildingBaseContact(mask,doc){
  if(mask.contactCanvas||typeof doc?.createElement!=='function')return mask;
- const extra=Math.max(5,Math.round(mask.h*.09));
+ const extra=Math.max(2,Math.round(mask.h*.025));
  const canvas=doc.createElement('canvas');
  canvas.width=mask.w;canvas.height=mask.h+extra;
  const c=canvas.getContext('2d');
  if(!c)return mask;
- const minGroundY=Math.floor(mask.h*.56);
+ const minGroundY=Math.floor(mask.h*.50);
  let columns=0;
  for(let x=mask.left;x<mask.right;x++){
   const y=mask.bottomColumns[x];
   if(y<minGroundY)continue;
   columns++;
-  c.fillStyle='rgba(5,15,19,.49)';
-  c.fillRect(x,y,1,Math.max(2,extra*.42));
-  c.fillStyle='rgba(5,15,19,.22)';
-  c.fillRect(x,y+2,1,extra);
+  // Darken the actual last opaque pixel over the full lower facade/side,
+  // with only a tiny ground contact extension. The former 9% extra height
+  // looked like a detached artificial mound below large house sprites.
+  c.fillStyle='rgba(5,15,19,.46)';
+  c.fillRect(x,Math.max(minGroundY,y-1),1,Math.max(2,extra));
+  c.fillStyle='rgba(5,15,19,.28)';
+  c.fillRect(x,y+1,1,extra);
  }
  if(!columns)return mask;
  return Object.freeze({...mask,contactCanvas:canvas,contactHeight:canvas.height,contactColumns:columns});

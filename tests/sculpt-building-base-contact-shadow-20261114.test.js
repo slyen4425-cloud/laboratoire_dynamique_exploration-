@@ -25,8 +25,10 @@ test('houses use their actual grounded outline along facade and side, never a fu
    drawImage(...args){draws.push(args)},set globalAlpha(_){}};
  assert.equal(drawWorldObjectContactShadowV1(ctx,
   {kind:'building',width:160,height:120,footOffset:60,image}),true);
- assert.equal(draws.length,2,'directional silhouette plus continuous base contact');
- assert.equal(draws[1][0],mask.contactCanvas);
+ assert.equal(draws.length,1,'buildings use one silhouette-footprint contact, without detached roof shadow');
+ assert.equal(draws[0][0],mask.contactCanvas);
+ assert.ok(mask.contactHeight-mask.h<=Math.max(2,Math.round(mask.h*.025)),
+   'shadow extension stays near feet, never a large lower hill');
  assert.equal(drawWorldObjectContactShadowV1(ctx,
   {kind:'bridge',width:160,height:120,image}),false,'bridges stay excluded');
 });
