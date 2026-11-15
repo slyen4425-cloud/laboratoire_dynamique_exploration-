@@ -5425,7 +5425,7 @@ function sculptWorldArea(){
 function worldOutboundPortals(){
   return sculptWorldDraft?.portals.filter(p=>p.sourceAreaId===sculptWorldAreaId)??[];
 }
-// Editor-only target awaiting a tap. The WorldDocument is not changed until
+// Editor-only target awaiting a tap. The document du monde is not changed until
 // placement has passed the native terrain/collision checks.
 let sculptWorldPendingPassageTarget=null;
 function sculptWorldStatus(message,error=false){
@@ -6263,7 +6263,7 @@ function installSculptWorldAreaEditing(){
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
       // Read-only editor focus: the real destination remains the existing
-      // Portal.targetSpawnId in the WorldDocument, not a new arrival marker.
+      // Portal.targetSpawnId in the document du monde, not a new arrival marker.
       url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
       window.location.assign(url.href);
     }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
