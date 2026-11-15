@@ -1183,6 +1183,7 @@ function drawDecorativeFringeObjects(){
     ctx.restore();
   }
 }
+let previewObjectViewport=null;
 function draw(){
   framePending=false;
   if(sculptBorderUiAreaKey!==sculptBorderAreaKey())syncSculptBorderControls();
@@ -1213,6 +1214,10 @@ function draw(){
     ctx.restore();
   }
   ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+  // Conservative culling uses the presentation camera only. Saved placements,
+  // collisions, picking and WorldArea documents remain unchanged.
+  previewObjectViewport={minX:-pan.x/zoom,maxX:(width-pan.x)/zoom,
+    minY:-pan.y/zoom,maxY:(height-pan.y)/zoom};
   // Editor keeps the published V38 exact inverse pointer projection. In
   // Tester, project only the background texture, not standing actor sprites.
   if(!navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
@@ -3241,6 +3246,14 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   const {width,height}=rect;
   const artShift=sculptBridgeDeckArtShift(rect,object);
   const point=navigationTesting?sculptCameraProject(cameraView(),rect.x,rect.y):rect;
+  const projection=cameraView();
+  const visiblePoint=navigationTesting?point:{
+    x:rect.x,y:projection.shear*rect.x+projection.pitch*rect.y
+  };
+  const radius=Math.hypot(width,height)*(2+Math.abs(projection.shear))+Math.abs(artShift);
+  const viewport=previewObjectViewport;
+  if(viewport&&(visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
+    visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
   ctx.save();ctx.translate(point.x,point.y);
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
