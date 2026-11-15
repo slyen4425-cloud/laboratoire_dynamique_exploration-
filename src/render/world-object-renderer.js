@@ -11,6 +11,7 @@ import {
 
 import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterfalls-v3';
 import {worldObjectShadowMaskV1} from './world-object-shadow-silhouette-v1.js';
+import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1} from '../world/world-object-shadow-settings-v1.js';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
@@ -19,55 +20,65 @@ function degreesToRadians(value) {
 // Contact shadow for native WorldObjects, drawn with the SAME canvas owner.
 // Actor shadows remain with MapActorRenderer, relief with SculptTerrain.
 // Never cast a second shadow for walkable terrain, bridges or waterfalls.
-export function worldObjectContactShadowV1({kind,width,height,footOffset=0,pitch=1}={}){
+export function worldObjectContactShadowV1({kind,width,height,footOffset=0,pitch=1,shadow=null}={}){
  if(['bridge','stairs','ramp','waterfall','water','ground','portal'].includes(kind)||
     !Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)
   return null;
  const projectedPitch=Number.isFinite(pitch)?Math.max(.25,Math.min(1,pitch)):1;
- const radiusX=Math.max(3,Math.min(width*.38,120));
- const radiusY=Math.max(2,Math.min(height*.052,13))*projectedPitch;
- return Object.freeze({x:0,y:footOffset+1,radiusX,radiusY,opacity:.17});
+ const settings=normalizeWorldObjectShadowSettingsV1(shadow)??WORLD_OBJECT_SHADOW_DEFAULT_V1;
+ return Object.freeze({
+  x:width*settings.offsetXPct/100,
+  y:footOffset+1+height*settings.offsetYPct/100,
+  radiusX:Math.max(3,Math.min(width*.38,120))*settings.widthPct/100,
+  radiusY:Math.max(2,Math.min(height*.052,13))*projectedPitch*settings.heightPct/100,
+  opacity:.17*settings.opacityPct/25
+ });
 }
 export function drawWorldObjectContactShadowV1(ctx,args){
- const shadow=worldObjectContactShadowV1(args);
- if(!shadow)return false;
+ const contact=worldObjectContactShadowV1(args);
+ if(!contact)return false;
  if(args?.image){
   const mask=worldObjectShadowMaskV1(args.image,args.asset);
   const projection=worldObjectShadowProjectionV1(args);
-  if(!mask||!projection||typeof ctx?.transform!=='function')return false;
-  const {width,height}=args;
-  // One alpha-silhouette projection for buildings as for trees. The extra
-  // facade contact overlay was a separate visual artefact beneath houses.
-  const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
-  // The last nontransparent source pixel is anchored exactly to the foot.
-  ctx.save();
-  ctx.translate(0,projection.footY);
-  ctx.transform(1,0,projection.shear,projection.flatten,0,0);
-  ctx.globalAlpha=.25;
-  ctx.drawImage(mask.canvas,mask.left,mask.top,srcWidth,srcHeight,
-   width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
-   width*(srcWidth/mask.w),height*(srcHeight/mask.h));
-  ctx.restore();
-  return true;
+  if(mask&&projection&&typeof ctx?.transform==='function'){
+   const {width,height}=args;
+   // ONE silhouette and ONE renderer for buildings, trees and all other
+   // eligible image assets. Last visible pixel stays anchored at their foot.
+   const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
+   ctx.save();
+   ctx.translate(projection.x,projection.footY);
+   ctx.transform(projection.scaleX,0,projection.shear,projection.flatten,0,0);
+   ctx.globalAlpha=projection.opacity;
+   ctx.drawImage(mask.canvas,mask.left,mask.top,srcWidth,srcHeight,
+    width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
+    width*(srcWidth/mask.w),height*(srcHeight/mask.h));
+   ctx.restore();
+   return true;
+  }
  }
- // Compatibility for pure geometry callers that have no source image.
+ // Subtle foot contact ONLY when the image cannot supply an alpha mask;
+ // never stack a second oval/decal over a successful real silhouette.
  if(typeof ctx?.ellipse!=='function')return false;
  ctx.save();ctx.beginPath();
- ctx.ellipse(shadow.x,shadow.y,shadow.radiusX,shadow.radiusY,0,0,Math.PI*2);
- ctx.fillStyle='rgba(0,0,0,'+shadow.opacity+')';
+ ctx.ellipse(contact.x,contact.y,contact.radiusX,contact.radiusY,0,0,Math.PI*2);
+ ctx.fillStyle='rgba(0,0,0,'+contact.opacity+')';
  ctx.fill();ctx.restore();
  return true;
 }
-
 // Derived display-only alpha mask, cached per official image. Generating a
 // dark silhouette once prevents a new per-frame filter or decal authority.
 // In particular a tree projects its actual canopy and trunk, not an oval.
-export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1}={}){
+export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1,shadow=null}={}){
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return null;
+ const settings=normalizeWorldObjectShadowSettingsV1(shadow)??WORLD_OBJECT_SHADOW_DEFAULT_V1;
  return Object.freeze({
-  footY:footOffset+1,
+  x:width*settings.offsetXPct/100,
+  footY:footOffset+1+height*settings.offsetYPct/100,
+  scaleX:settings.widthPct/100,
+  opacity:settings.opacityPct/100,
   shear:-.48,
-  flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)
+  flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)*
+    settings.heightPct/100
  });
 }
 function cullRadius(width, height) {
@@ -224,7 +235,7 @@ function drawStaticImage(
       asset.render.rotationOffsetDeg
     )
   );
-  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset});
+  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,
       width: renderWidth, height: renderHeight}, timeSeconds);
