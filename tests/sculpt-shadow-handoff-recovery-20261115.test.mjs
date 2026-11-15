@@ -45,9 +45,9 @@ test('building contact is a cropped facade footline, never a full-height dark ps
  }),true);
  assert.equal(draws.length,2);
  assert.equal(draws[1][0],mask.contactCanvas);
- assert.equal(draws[1][6],160);
- assert.equal(draws[1][7],120*mask.contactHeight/mask.h);
- assert.ok(draws[1][5]>0,'contact starts near facade base, not at image top');
+ assert.equal(draws[1][7],160);
+ assert.equal(draws[1][8],120*mask.contactHeight/mask.h);
+ assert.ok(draws[1][6]>0,'contact starts near facade base, not at image top');
  assert.deepEqual(transforms[0].slice(0,4),[1,0,-.14,.105]);
  const building=worldObjectShadowProjectionV1({
   kind:'building',width:160,height:120,footOffset:60
