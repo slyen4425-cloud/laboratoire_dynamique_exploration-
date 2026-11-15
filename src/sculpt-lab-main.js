@@ -215,6 +215,7 @@ const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
 // draw until all canvas/WorldArea/camera dependencies have initialized.
 let framePending=false;
 let sculptBootReady=false;
+let initialRibbonImagesReady=Promise.resolve(),initialSphereImagesReady=Promise.resolve();
 const interiorVisualImages=new Map();
 for(const visual of [...INTERIOR_DOOR_ASSETS,...INTERIOR_CONNECTOR_ASSETS]){
   if(!visual.path)continue;
@@ -5327,7 +5328,7 @@ function mountWorldSculptArea(areaId,validatedScene=null){
 // One readiness gate for the existing Sculpt art/image promises, never a
 // second map loader. It is called only when the native gameplay cover is shown.
 async function awaitSculptPlayArtReady(){
-  await Promise.all([setTheme(),loadSurfacePaintAssets()]);
+  await Promise.all([setTheme(),loadSurfacePaintAssets(),initialRibbonImagesReady,initialSphereImagesReady]);
   const objects=[...placedObjects,...(decorativeFringe?.objects??[])];
   // objectImage is the official renderer's memoized asset source.
   await waitForSculptVisualSetV1(objects.map(o=>o.visual?.assetId)
@@ -6009,7 +6010,8 @@ if(window.matchMedia?.('(pointer: coarse)').matches){
   $('precision-mode').checked=true;
 }
 updatePrecisionActions();
-updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();setupRibbons();loadSphereWallImages();
+updateHistoryButtons();updateSurfaceCount();loadSculptTemplates();setTheme();
+initialRibbonImagesReady=setupRibbons();initialSphereImagesReady=loadSphereWallImages();
 // All synchronously declared renderer/world/camera owners now exist. Asynchronous
 // images arriving earlier will be included in this first canonical draw.
 sculptBootReady=true;fit();
