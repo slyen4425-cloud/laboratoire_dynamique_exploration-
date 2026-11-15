@@ -3304,7 +3304,7 @@ function syncObjectSelectedControls(){
       'Intérieur lié à la porte : un seul passage World Builder, sans deuxième réglage.':
       'Associe la porte sur cette carte : l’intérieur, le retour et les points d’arrivée seront enregistrés automatiquement dans World Builder.';
     // Legacy scene templates are for standalone Sculpt only. Never insert
-    // their independent Portal graph into an authored WorldDocument.
+    // their independent Portal graph into an authored world.
     $('object-interior-template').parentElement.hidden=!!sculptWorldDraft;
   }
   if(!selected){objectSelectedId=null;$('object-selected').textContent='Aucun objet sélectionné';return;}
@@ -4702,7 +4702,7 @@ function openSelectedSculptInterior(){
     if(sculptPlayRequested||navigationTesting){status('Passe en édition 2,5D pour lier une maison.');return;}
     try{
       // Capture the *current* object placement before resolving its one real
-      // door. An unsaved preview must never create an orphan WorldBuilder link.
+      // door. An unsaved preview must never create an orphan Builder link.
       commitCurrentSculptWorldArea();
       const link=linkSculptWorldBuildingInteriorV1(sculptWorldDraft,{
         sourceAreaId:sculptWorldAreaId,buildingId:resolved.id
