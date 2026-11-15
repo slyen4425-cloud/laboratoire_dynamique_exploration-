@@ -2541,6 +2541,28 @@ function updatePeerInteraction(){
   placeNpcScreenUi(peer,button);
  }
 }
+// Only this official Exploration frame can paint in-game greeting feedback.
+// No persistent notification, second chat history or shared save mutation.
+let peerGreetingNoticeTimer=null;
+function onCapturePeerGreetingReceived(event){
+ if(!sculptPlayActive||event?.detail?.sessionId!==playOptions?.sessionId)return;
+ const notice=$('peer-greet-notice');
+ if(!notice)return;
+ notice.textContent='👋 Un joueur te salue !';
+ notice.hidden=false;
+ if(peerGreetingNoticeTimer!==null)clearTimeout(peerGreetingNoticeTimer);
+ peerGreetingNoticeTimer=setTimeout(()=>{
+  notice.hidden=true;peerGreetingNoticeTimer=null;
+ },2400);
+}
+window.addEventListener('gensrpg.exploration.play.peer-greeting-received.v1',
+ onCapturePeerGreetingReceived);
+window.addEventListener('pagehide',()=>{
+ window.removeEventListener('gensrpg.exploration.play.peer-greeting-received.v1',
+  onCapturePeerGreetingReceived);
+ if(peerGreetingNoticeTimer!==null)clearTimeout(peerGreetingNoticeTimer);
+},{once:true});
+
 $('peer-greet')?.addEventListener('click',()=>{
  const peer=nearestExplorationPeerForGreeting();
  if(!peer||!playOptions?.sessionId||window.parent===window)return;
