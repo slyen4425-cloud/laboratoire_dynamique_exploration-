@@ -3331,7 +3331,10 @@ try{
   let encounterBoot=null;
   for(let i=0;i<110;i++){
     try{
-      encounterBoot=await run("typeof window.__sculptEncounterProbe==='function' && window.__sculptEncounterProbe().supported && typeof window.__sculptNavProbe==='function'");
+      // A departing V80 document may still expose these probes before
+      // Chromium commits Page.navigate. Confirm the *new* URL and native
+      // Encounter editor, not just shared JS symbols from the old page.
+      encounterBoot=await run("location.pathname.endsWith('/sculpt-lab.html') && new URLSearchParams(location.search).has('encounterTest') && !!document.querySelector('#sculpt-encounter-editor') && typeof window.__sculptEncounterProbe==='function' && window.__sculptEncounterProbe().supported && typeof window.__sculptNavProbe==='function'");
     }catch{/* transient navigation context */}
     if(encounterBoot)break;
     await sleep(110);
