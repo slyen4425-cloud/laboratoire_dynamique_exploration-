@@ -1,3 +1,9 @@
+## 2026-11-15 — Régression ombres maisons : projection réelle rétablie
+- START `main@3844e82814d81d4486575153fdcbd6160b1eee4e`, checkpoint `checkpoint/exploration-start-house-silhouette-shadow-fix-20261115`, branche `work/exploration-house-silhouette-shadow-fix-20261115`.
+- Rapport utilisateur : après PR #461, la vraie ombre étirée des bâtiments a disparu et l'aplat au pied qui ressemble à une colline est resté. Cause vérifiée : `drawWorldObjectContactShadowV1` court-circuite la projection pour `building` en utilisant `contactCanvas`, bande artificielle indépendante du masque projeté.
+- Correctif soustractif : bâtiments/arbres/rochers retrouvent la seule projection alpha existante, pied ancré à l'opacité basse du sprite; retirer le canvas de bande supplémentaire et sa génération, sans toucher au terrain, aux sprites, au WorldDocument, aux portails, au cache des images ni aux ombres des acteurs. Une seule autorité WorldObject. V80 et autres modes protégés.
+- Tests : vraie silhouette et pied, absence de bande, exclusion pont/eau, tests Node et navigateur/CI, puis Pages sur `main` et contrôle utilisateur PC/Pixel. Pas de GREEN avant validations.
+
 ## 2026-11-15 — Illustration Monster InvoC dans les transitions Capture (aucune copie asset)
 - START `main@cd5778f2e2480a16966841530aad0eade9ffa706`, checkpoint `checkpoint/exploration-start-capture-loading-art-20261115`, branche `work/exploration-capture-loading-art-20261115`.
 - Périmètre : les **deux overlays existants** `#sculpt-play-boot-mask` et `#play-area-loading` reçoivent, uniquement si l'hôte officiel Capture fournit le paramètre `loadingArt`, son URI SVG de marque. L'image est servie par le dépôt propriétaire GenSRPG Capture sur la même origine, sous `assets/gensrpg/capture-v2/branding/` ; l'ancien mode standalone sans paramètre reste inchangé.
