@@ -5520,6 +5520,9 @@ function syncObjectWaypoints(){
   targetSelect.replaceChildren(...targets.map(a=>new Option(a.label??a.id,a.id)));
   if(targets.some(a=>a.id===former))targetSelect.value=former;
   $('object-waypoint-create-button').disabled=!targets.length;
+  $('object-waypoint-place').textContent=sculptWorldPortalPlacement===
+    (current?.kind==='exit'?'portal':'spawn')
+      ?'✕ Annuler le placement':'📍 Placer le repère sur la carte';
   $('object-waypoint-place').disabled=!current||
     (current.kind==='exit'
       ?sculptWorldDraft.portals.find(p=>p.id===current.portalId)?.trigger?.kind!=='point'
@@ -6237,10 +6240,9 @@ function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
   $('world-workspace-tabs').hidden=false;
-  // Move, never copy, the existing map preset controls into the right-hand
-  // inspector, leaving the top-left canvas fully available for painting.
-  $('world-area-portal-panel').querySelector('.world-area-panel-content')
-    .appendChild($('sculpt-map-preset-panel'));
+  // Preserve the single canonical preset library after moving the waypoint
+  // inspector to Objets. A hidden legacy panel must never hide card presets.
+  $('object-controls').appendChild($('sculpt-map-preset-panel'));
   $('sculpt-map-preset-panel').open=false;
   $('world-area-portal-panel').open=false;
   const requestedAreaId=new URLSearchParams(window.location.search).get('areaId');
@@ -6324,10 +6326,13 @@ function installSculptWorldAreaEditing(){
   $('object-waypoint-place').addEventListener('click',()=>{
     const key=selectedWaypointKey;
     if(!key)return;
-    sculptWorldPortalPlacement=key.startsWith('portal:')?'portal':'spawn';
-    if(key.startsWith('portal:'))$('world-area-portal-select').value=key.slice(7);
-    else $('world-area-spawn-select').value=key.slice(6);
-    sculptWorldStatus('Touche le sol pour placer ce repère. Aucun X/Y à saisir.');
+    const mode=key.startsWith('portal:')?'portal':'spawn';
+    sculptWorldPortalPlacement=sculptWorldPortalPlacement===mode?null:mode;
+    if(sculptWorldPortalPlacement){
+      if(mode==='portal')$('world-area-portal-select').value=key.slice(7);
+      else $('world-area-spawn-select').value=key.slice(6);
+      sculptWorldStatus('Touche le sol pour placer ce repère. Aucun X/Y à saisir.');
+    }else sculptWorldStatus('Placement annulé, rien n’a été déplacé.');
     refreshSculptWorldPanel();
   });
   $('object-waypoint-create-button').addEventListener('click',()=>{
