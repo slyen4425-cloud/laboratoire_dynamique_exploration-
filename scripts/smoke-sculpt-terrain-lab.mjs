@@ -3544,7 +3544,8 @@ try{
   })()`);
   if(newWorldGraph.before.areaIds.length!==3||
      newWorldGraph.linked.portalCount!==2||
-     newWorldGraph.linked.graphEdgeCount!==2||
+     // An interior Portal is real data but never an edge on the regions-only board.
+     newWorldGraph.linked.graphEdgeCount!==0||
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
      newWorldGraph.portalRows<2||!newWorldGraph.singleAreaEditor||
      !newWorldGraph.panelInLandscape||
