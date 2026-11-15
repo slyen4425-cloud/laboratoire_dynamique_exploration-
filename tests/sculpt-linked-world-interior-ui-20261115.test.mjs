@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {addWorldObject,createBlankWorldBuilderDraft,
+import {addWorldObject,createBlankWorldBuilderDraft,createWorldBuilderDraft,
   serializeWorldBuilderDraft,importWorldBuilderDocument,validateWorldBuilderDraft}
   from '../src/builder/world-builder-draft.js';
 import {linkSculptWorldBuildingInteriorV1,sculptWorldAreaScene,saveSculptWorldArea}
