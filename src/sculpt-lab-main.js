@@ -182,7 +182,7 @@ let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
  // A standalone Sculpt preview can export the same official profile format;
- // the WorldBuilder path instead edits its ONE canonical WorldDocument.
+ // the WorldBuilder path instead edits its ONE canonical world record.
  let sculptStandaloneShadowProfiles=Object.freeze([]);
  let shadowProfileHistory=[],shadowProfileRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
@@ -3281,25 +3281,23 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   // visual renderer, before the image. No phantom collision or second decal.
   // Foreground rails must never stamp an extra shadow on top of the actor.
   const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
-  if(!foregroundRailOnly){
-    const visualAssetId=object.visual?.assetId;
-    const modelShadow=worldObjectShadowProfileForAssetV1(currentWorldShadowProfiles(),visualAssetId);
-    const inspecting=objectEditing&&$('object-shadow-details')&&objectSelectedId;
-    const sameModel=inspecting&&$('object-shadow-scope').value==='model'&&
-      visualAssetId===selectedShadowVisualAssetId();
-    const inspectIndividual=inspecting&&$('object-shadow-scope').value==='object'&&
-      objectSelectedId===object.id;
-    // The live form is a transient visual preview. Once committed, both
-    // scopes flow back through the one WorldObject renderer and canonical data.
-    const visualShadow=inspectIndividual?readSelectedObjectShadowControlsV1():
-      (sameModel&&!object.shadow?readSelectedObjectShadowControlsV1():
-        object.shadow??modelShadow);
-    drawWorldObjectContactShadowV1(ctx,{
-      kind:object.kind,width,height,footOffset:artShift,
-      pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
-      shadow:visualShadow
-    });
-  }
+  const visualAssetId=object.visual?.assetId;
+  const modelShadow=worldObjectShadowProfileForAssetV1(currentWorldShadowProfiles(),visualAssetId);
+  const inspecting=objectEditing&&$('object-shadow-details')&&objectSelectedId;
+  const sameModel=inspecting&&$('object-shadow-scope').value==='model'&&
+    visualAssetId===selectedShadowVisualAssetId();
+  // The unsaved model form previews immediately across identical assets
+  // while pre-existing individual exceptions remain visually authoritative.
+  const sharedShadow=sameModel&&!object.shadow?readSelectedObjectShadowControlsV1():
+    object.shadow??modelShadow;
+  // The old selected-object path remains the sole explicit visual override.
+  if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
+    kind:object.kind,width,height,footOffset:artShift,
+    pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
+    shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
+      ($('object-shadow-scope').value==='object'?
+        readSelectedObjectShadowControlsV1():sharedShadow):sharedShadow
+  });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
   // Preserve exact historic bridge/static draw and its regression-tested order.
@@ -3383,7 +3381,7 @@ function selectedShadowVisualAssetId(){
 }
 function changeWorldShadowProfiles(next){
  if(sculptWorldDraft){
-   // The editor draft is the SAME WorldDocument written by the existing
+   // The editor draft is the SAME world record written by the existing
    // WorldBuilder handoff. No per-map shadow table or storage key is created.
    sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
      objectShadowProfiles:next});
