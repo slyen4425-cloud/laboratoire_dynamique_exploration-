@@ -14,6 +14,7 @@ import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
+import {worldAssemblerRegionOverview} from './world-assembler-region-overview.js';
 import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
 import {DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
@@ -28,16 +29,16 @@ const kindName=area=>area.siteKind==='dungeon'?'Donjon / instance':area.kind==='
 const areaLabel=area=>area.label||pretty(area.id);
 const svgNS='http://www.w3.org/2000/svg';
 
-function graphLayout(doc){
+function graphLayout(doc,overview){
   // Presentation only. Portal edges come from WorldDocument, and the graph
   // layout is never persisted into an alternative WorldGraph format.
   const depth=new Map();
-  const adjacency=new Map(doc.areas.map(a=>[a.id,new Set()]));
-  for(const p of doc.portals){
+  const adjacency=new Map(overview.regions.map(a=>[a.id,new Set()]));
+  for(const p of overview.passages){
     adjacency.get(p.sourceAreaId)?.add(p.targetAreaId);
     adjacency.get(p.targetAreaId)?.add(p.sourceAreaId);
   }
-  const roots=[doc.initialAreaId,...doc.areas.map(a=>a.id)];
+  const roots=[doc.initialAreaId,...overview.regions.map(a=>a.id)];
   let nextDepth=0;
   for(const root of roots){
     if(depth.has(root)||!adjacency.has(root))continue;
@@ -52,14 +53,14 @@ function graphLayout(doc){
     nextDepth=Math.max(...depth.values())+1;
   }
   const rows=new Map(),positions=new Map();
-  for(const area of doc.areas){
+  for(const area of overview.regions){
     const column=depth.get(area.id)??0;
     const row=rows.get(column)??0;rows.set(column,row+1);
     positions.set(area.id,{x:54+column*244,y:70+row*146});
   }
   // Optional authoring-only positions travel with this SAME WorldDocument.
   // The Portal graph, movement and map coordinates are never changed.
-  for(const area of doc.areas){
+  for(const area of overview.regions){
     const authored=doc.authoringLayout?.positions?.[area.id];
     if(authored)positions.set(area.id,{x:authored.x,y:authored.y});
   }
@@ -67,7 +68,7 @@ function graphLayout(doc){
   const maxY=Math.max(420,...[...positions.values()].map(p=>p.y+145));
   return {positions,width:maxX,height:maxY};
 }
-function nodeButton(area,position,doc,selectedId,onClick,onPointerDown,onKeyDown){
+function nodeButton(area,position,doc,selectedId,visiblePassages,onClick,onPointerDown,onKeyDown){
   const el=document.createElement('button');
   el.type='button';el.className='world-node';
   if(area.id===selectedId)el.classList.add('selected');
@@ -84,8 +85,8 @@ function nodeButton(area,position,doc,selectedId,onClick,onPointerDown,onKeyDown
   const label=document.createElement('strong');label.textContent=areaLabel(area);
   const type=document.createElement('small');type.textContent=kindName(area);
   const count=document.createElement('span');count.className='node-count';
-  const n=doc.portals.filter(p=>p.sourceAreaId===area.id).length;
-  count.textContent=n+' sortie'+(n>1?'s':'')+' · '+Math.round(area.width)+' × '+Math.round(area.height);
+  const n=visiblePassages.filter(p=>p.sourceAreaId===area.id).length;
+  count.textContent=n+' passage'+(n>1?'s':'')+' vers régions · '+Math.round(area.width)+' × '+Math.round(area.height);
   el.append(top,label,type,count);
   el.addEventListener('click',()=>{
     if(el.dataset.justDragged==='true'){delete el.dataset.justDragged;return;}
@@ -304,8 +305,9 @@ function installWorldAssembler(){
     if(areas.some(a=>a.id===current))select.value=current;
   }
   function renderAreaList(){
+    const overview=worldAssemblerRegionOverview(draft);
     const list=byId('area-list');list.replaceChildren();
-    for(const area of draft.areas){
+    for(const area of overview.regions){
       const button=document.createElement('button');
       button.type='button';
       if(area.id===selectedId)button.classList.add('active');
@@ -317,7 +319,26 @@ function installWorldAssembler(){
       copy.append(title,note);button.append(icon,copy);
       button.addEventListener('click',()=>openAreaDetails(area.id));list.append(button);
     }
-    byId('world-area-count').textContent=draft.areas.length+' zone'+(draft.areas.length>1?'s':'');
+    // Disconnected interiors cannot be reached through a region's contents.
+    // Keep a collapsed repair route, never a second world-map node.
+    if(overview.orphanInstances.length){
+      const details=document.createElement('details');
+      details.className='world-unlinked-instances';
+      const summary=document.createElement('summary');
+      summary.textContent='⚠ '+overview.orphanInstances.length+' instance(s) sans accès';
+      details.append(summary);
+      for(const area of overview.orphanInstances){
+        const button=document.createElement('button');
+        button.type='button';
+        button.textContent=kindIcon(area)+' '+areaLabel(area)+' · À relier';
+        button.addEventListener('click',()=>openAreaDetails(area.id));
+        details.append(button);
+      }
+      list.append(details);
+    }
+    const instanceCount=draft.areas.length-overview.regions.length;
+    byId('world-area-count').textContent=overview.regions.length+' régions'+
+      (instanceCount?' · '+instanceCount+' instances':'');
   }
   function startGraphNodeDrag(event,area,node,origin){
     if(event.pointerType==='mouse'&&event.button!==0)return;
@@ -374,7 +395,8 @@ function installWorldAssembler(){
     }), 'Disposition de '+areaLabel(area)+' enregistrée.');
   }
   function renderGraph(){
-    const layout=graphLayout(draft);
+    const overview=worldAssemblerRegionOverview(draft);
+    const layout=graphLayout(draft,overview);
     const stage=byId('graph-stage'),svg=byId('graph-links'),nodes=byId('graph-nodes');
     stage.style.width=layout.width+'px';stage.style.height=layout.height+'px';
     svg.setAttribute('width',String(layout.width));svg.setAttribute('height',String(layout.height));
@@ -387,20 +409,22 @@ function installWorldAssembler(){
     const arrow=document.createElementNS(svgNS,'path');
     arrow.setAttribute('d','M0 0 L6 3 L0 6 Z');arrow.setAttribute('fill','#77bdb0');
     marker.append(arrow);defs.append(marker);svg.append(defs);
-    if(linksShown)for(const portal of draft.portals){
+    if(linksShown)for(const portal of overview.passages){
       const line=lineForPortal(portal,layout.positions);
       if(line)svg.append(line);
     }
     nodes.replaceChildren();
-    for(const area of draft.areas){
+    for(const area of overview.regions){
       const pos=layout.positions.get(area.id);
-      if(pos)nodes.append(nodeButton(area,pos,draft,selectedId,
+      if(pos)nodes.append(nodeButton(area,pos,draft,selectedId,overview.passages,
         ()=>openAreaDetails(area.id),
         event=>startGraphNodeDrag(event,area,event.currentTarget,pos),
         event=>moveGraphNodeByKeyboard(event,area,pos)));
     }
-    byId('world-portal-count').textContent=draft.portals.length+
-      ' passage'+(draft.portals.length>1?'s':'');
+    byId('world-portal-count').textContent=overview.passages.length+
+      ' passage'+(overview.passages.length>1?'s':'')+' entre régions';
+    byId('world-portal-count').title=draft.portals.length+
+      ' passages réels conservés, y compris les accès aux intérieurs';
   }
   function renderAreaContents(area){
     // UI-only inventory: every object comes from WorldArea.objects; every

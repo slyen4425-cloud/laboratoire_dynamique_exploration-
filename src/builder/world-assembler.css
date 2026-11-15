@@ -265,3 +265,8 @@ dialog.area-editor-dialog .portal-row .portal-open-area{min-height:36px;padding:
  .world-workspace-tabs button{font-size:10px;padding:5px}
  .world-node{width:160px}
 }
+
+/* Maintenance-only access to orphan interiors; never display them as graph nodes. */
+.world-unlinked-instances{border:1px solid #926f40;border-radius:9px;padding:7px;background:#302b26}
+.world-unlinked-instances summary{cursor:pointer;font-size:11px;color:#f5d49e;font-weight:700}
+.world-unlinked-instances button{margin-top:7px;max-width:100%}
