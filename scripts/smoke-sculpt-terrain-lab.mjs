@@ -3526,14 +3526,20 @@ try{
     const dialog=document.querySelector('#area-details-dialog');
     const panel=dialog.getBoundingClientRect();
     const header=document.querySelector('.app-header').getBoundingClientRect();
-    const node=document.querySelector('.world-node.selected').getBoundingClientRect();
+    // Region-only World Builder intentionally has NO selected graph node when
+    // its inspector is showing an interior/dungeon. Inspect the originating
+    // exterior graph node, not an optional selected CSS marker.
+    const nodes=[...document.querySelectorAll('.world-node')];
+    const node=nodes.find(el=>el.dataset.areaId===source);
+    const nodeRect=node?.getBoundingClientRect();
     return {before,linked,started,
+      regionsOnly:nodes.length===2&&nodes.every(el=>el.dataset.kind==='exterior'),
       singleAreaEditor:dialog.open&&document.querySelectorAll('.inspector').length===1&&
         document.querySelectorAll('aside.inspector').length===0,
       panelInLandscape:dialog.open&&panel.left>=0&&panel.right<=innerWidth&&
         panel.top>=0&&panel.bottom<=innerHeight&&panel.width>120,
       headerInLandscape:header.top>=0&&header.bottom<100,
-      selectedGraphNodeVisible:node.width>150&&node.height>70,
+      selectedGraphNodeVisible:!!nodeRect&&nodeRect.width>150&&nodeRect.height>70,
       portalRows:document.querySelectorAll('.portal-row').length};
   })()`);
   if(newWorldGraph.before.areaIds.length!==3||
@@ -3542,7 +3548,8 @@ try{
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
      newWorldGraph.portalRows<2||!newWorldGraph.singleAreaEditor||
      !newWorldGraph.panelInLandscape||
-     !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
+     !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible||
+     !newWorldGraph.regionsOnly)
     throw Error('World Builder visual assembly or canonical links failed: '+
       JSON.stringify(newWorldGraph));
   // The canonical Map tab opens only the official 2.5D editor.
