@@ -205,6 +205,9 @@ let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // Same WorldArea authoring data; fringe cells are never passed to Collision World.
 let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
 let fringeSurfaceGesture=null,fringeObjectDrag=null;
+// Unsaved visual fallback is derived from the authoritative WorldArea terrain;
+// painting the ring explicitly still creates the only persistent fringe.
+let visualFringeTerrain=null,visualFringeAreaId=null,visualFringeCache=null;
 let fringeHistory=[],fringeRedo=[];
 const fringeRasterCache=new Map();
 window.__sculptFringeProbe=()=>Object.freeze({
@@ -831,7 +834,7 @@ function navigationBackground(){
     overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
-    drawOuterSouthRim:true});
+    drawOuterSouthRim:!visualDecorativeFringe()});
   // Preserve exact pixels of the existing terrain raster; extract only
   // canonical cliff faces in a cached alpha mask. No second cliff painter.
   const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE);
@@ -1052,7 +1055,7 @@ function cameraBounds(){
       })
       :visibleBounds;
   }
-  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
+  if(!visualDecorativeFringe()||activeInteriorId||sculptWorldCurrentInterior())
     return coreBounds;
   // Editor frames BOTH editable vertical skirts. They are WorldArea-owned
   // decorative cells, not an enlargement of gameplay, Spawn or collision.
@@ -1152,7 +1155,8 @@ function drawEditorPlayableLimit(){
   ctx.restore();
 }
 function drawDecorativeFringeTerrain(){
-  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const fringe=visualDecorativeFringe();
+  if(!fringe)return;
   const view=cameraView(),margin=8;
   ctx.save();
   // Show both north and south skirts, using the SAME saved decorative chunks.
@@ -1165,7 +1169,7 @@ function drawDecorativeFringeTerrain(){
   ctx.rect(0,terrain.height*SCULPT_TILE.height,
     terrain.width*SCULPT_TILE.width,margin*SCULPT_TILE.height);
   ctx.clip();
-  for(const chunk of decorativeFringe.chunks){
+  for(const chunk of fringe.chunks){
     if(chunk.col<0||chunk.col>=terrain.width||
        !(chunk.row<0||chunk.row+8>terrain.height))continue;
     const raster=decorativeFringeRaster(chunk);
@@ -1177,9 +1181,10 @@ function drawDecorativeFringeTerrain(){
   ctx.restore();
 }
 function drawDecorativeFringeObjects(){
-  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const fringe=visualDecorativeFringe();
+  if(!fringe)return;
   const view=cameraView();
-  const objects=resolveWorldObjectPlacements(decorativeFringe.objects,objectDefinitionCatalogV1)
+  const objects=resolveWorldObjectPlacements(fringe.objects,objectDefinitionCatalogV1)
     .filter(o=>(o.transform.y<0||
       o.transform.y>=terrain.height*SCULPT_TILE.height)&&
       o.transform.x>=0&&o.transform.x<terrain.width*SCULPT_TILE.width)
@@ -1187,7 +1192,7 @@ function drawDecorativeFringeObjects(){
   for(const object of objects){
     const col=Math.floor(object.transform.x/SCULPT_TILE.width/8)*8;
     const row=Math.floor(object.transform.y/SCULPT_TILE.height/8)*8;
-    const chunk=decorativeFringe.chunks.find(c=>c.col===col&&c.row===row);
+    const chunk=fringe.chunks.find(c=>c.col===col&&c.row===row);
     if(!chunk)continue;
     const x=col*SCULPT_TILE.width,y=row*SCULPT_TILE.height;
     const local={...object,transform:{...object.transform,
@@ -1257,7 +1262,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
-      drawOuterSouthRim:true});
+      drawOuterSouthRim:!visualDecorativeFringe()});
   }
   lastRenderStats=result;
   drawDecorativeFringeObjects();
@@ -1523,6 +1528,17 @@ function screenToWorldPoint(event){
 function decorativeFringeArea(){
   return {width:terrain.width*SCULPT_TILE.width,
     height:terrain.height*SCULPT_TILE.height,sculptTerrain:terrain};
+}
+function visualDecorativeFringe(){
+  if(activeInteriorId||sculptWorldCurrentInterior())return null;
+  if(decorativeFringe)return decorativeFringe;
+  if(!sculptWorldDraft||!sculptWorldAreaMounted)return null;
+  if(visualFringeTerrain!==terrain||visualFringeAreaId!==sculptWorldAreaId){
+    visualFringeCache=createSculptDecorativeFringeV1(decorativeFringeArea());
+    visualFringeTerrain=terrain;visualFringeAreaId=sculptWorldAreaId;
+    fringeRasterCache.clear();
+  }
+  return visualFringeCache;
 }
 function decorativeFringeHeightAt(col,row){
   const patch=decorativeFringe?.chunks.find(p=>p.col===Math.floor(col/8)*8&&
