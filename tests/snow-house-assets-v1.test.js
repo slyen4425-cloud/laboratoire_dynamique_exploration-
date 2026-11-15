@@ -72,20 +72,38 @@ test('10 native winter houses resolve uniquely under Bâtiments > Maisons Neige 
   assert.equal(ids.size,30);
 });
 
-test('approved ZIP WebPs are exactly the 30 transparent 384x384 RGBA assets, with matching SHA256',async()=>{
+test('30 canonical winter-house WebPs preserve RGBA alpha, dimensions, live checksums and artist original',async()=>{
  const m=JSON.parse(await readFile(manifestUrl,'utf8'));
+ const checksums=await readFile(new URL('../assets/exploration/objects/buildings/SHA256SUMS.snow-houses-v1.txt',import.meta.url),'utf8');
  for(const entry of m.files){
    const raw=await readFile(new URL('../'+entry.path,import.meta.url));
    assert.equal(raw.length,entry.bytes,entry.assetId+': bytes');
    assert.equal(createHash('sha256').update(raw).digest('hex'),entry.sha256,entry.assetId+': hash');
+   assert.ok(checksums.includes(entry.sha256+'  '+entry.path),entry.assetId+': checksum ledger');
    assert.equal(raw.toString('ascii',0,4),'RIFF');
    assert.equal(raw.toString('ascii',8,12),'WEBP');
-   assert.equal(raw.toString('ascii',12,16),'VP8X');
    assert.equal(raw.readUInt32LE(4)+8,raw.length);
-   assert.equal((raw[20]&0x10)!==0,true,entry.assetId+': transparency');
-   assert.equal(raw.readUIntLE(24,3)+1,384,entry.assetId+': width');
-   assert.equal(raw.readUIntLE(27,3)+1,384,entry.assetId+': height');
+   const format=raw.toString('ascii',12,16);
+   assert.ok(['VP8X','VP8L'].includes(format),entry.assetId+': WebP container');
+   if(format==='VP8X'){
+     assert.equal((raw[20]&0x10)!==0,true,entry.assetId+': alpha VP8X');
+     assert.equal(raw.readUIntLE(24,3)+1,384,entry.assetId+': width VP8X');
+     assert.equal(raw.readUIntLE(27,3)+1,384,entry.assetId+': height VP8X');
+   }else{
+     // Native WebP lossless (VP8L): 0x2f signature, 14-bit width/height,
+     // and the alpha-is-used bit in the packed lossless header.
+     assert.equal(raw[20],0x2f,entry.assetId+': VP8L signature');
+     const packed=raw.readUInt32LE(21);
+     assert.equal((packed&0x3fff)+1,384,entry.assetId+': width VP8L');
+     assert.equal(((packed>>>14)&0x3fff)+1,384,entry.assetId+': height VP8L');
+     assert.equal((packed>>>28)&1,1,entry.assetId+': VP8L alpha');
+     assert.equal(packed>>>29,0,entry.assetId+': VP8L codec version');
+   }
  }
+ const author=m.files.find(e=>e.assetId==='object.building.house.snow_alpine_timber_2p5d.side.01');
+ assert.ok(author);
+ assert.equal(author.bytes,24320,'author cleaned art stays byte-identical');
+ assert.equal(author.sha256,'a27851cd830ae9a7dba18ade9c6218bd218eceabbc34020d80a0ecdbd1f65467','author art SHA');
 });
 
 test('existing temperate houses and multi-view 2.5D definitions are preserved',()=>{
