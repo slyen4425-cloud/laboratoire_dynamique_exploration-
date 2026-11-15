@@ -30,11 +30,12 @@ export function markersForSculptWorldArea(document,areaId,{
     if(!testing&&portal.targetAreaId===areaId){
       const spawn=area.spawns?.find(s=>s.id===portal.targetSpawnId);
       if(!finitePoint(spawn)||incoming.has(spawn.id))continue;
+      const isInitial=area.id===document.initialAreaId&&
+        spawn.id===document.initialSpawnId;
       incoming.set(spawn.id,{
-        kind:'arrival',spawnId:spawn.id,x:spawn.x,y:spawn.y,
-        radius:16,label:nameFor(areaFor(document,portal.sourceAreaId)),
-        isInitial:area.id===document.initialAreaId&&
-          spawn.id===document.initialSpawnId
+        kind:isInitial?'start':'arrival',spawnId:spawn.id,x:spawn.x,y:spawn.y,
+        radius:16,label:isInitial?'Départ du monde':nameFor(areaFor(document,portal.sourceAreaId)),
+        isInitial
       });
     }
   }
