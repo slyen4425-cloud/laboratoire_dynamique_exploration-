@@ -121,8 +121,12 @@ def run(*,apply,preview,report):
             state="cleaned"
         m0=np.asarray(src)[:,:,3]; m1=np.asarray(dst)[:,:,3]
         mass=float(m1.sum()/max(1,m0.sum()))
-        if mass<.963 or np.sum(m1[m0>=240]<236)>max(20,int(np.sum(m0>=240)*.003)):
-            raise ValueError(f"destructive alpha edit: {filename}")
+        # The physical foot fade is intentional; painted opaque body above it must not change.
+        foot_top=int(np.where(m0>=24)[0].max())-43
+        y_grid=np.arange(m0.shape[0])[:,None]
+        body_damage=int(np.sum((m0>=240)&(m1<236)&(y_grid<foot_top)))
+        if mass<.963 or body_damage>20:
+            raise ValueError(f"destructive alpha edit: {filename}, alpha={mass:.5f}, body_damage={body_damage}")
         digest=hashlib.sha256(after).hexdigest()
         total_before+=len(data)
         total_after+=len(after)
