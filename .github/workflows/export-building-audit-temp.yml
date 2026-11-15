@@ -1,0 +1,22 @@
+name: TEMP — Export canonical building images for exact visual audit
+on:
+  push:
+    branches:
+      - work/exploration-building-ground-props-removal-20261115
+permissions:
+  contents: read
+jobs:
+  audit-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-buildings-source-for-audit
+          path: |
+            assets/exploration/objects/buildings/**/*.webp
+            assets/exploration/objects/buildings/*.webp
+            assets/exploration/objects/buildings/*.json
+            assets/exploration/objects/buildings/*.txt
+          if-no-files-found: error
+          retention-days: 2
