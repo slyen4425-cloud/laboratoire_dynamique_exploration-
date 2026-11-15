@@ -6221,6 +6221,13 @@ function installSculptWorldAreaEditing(){
     if(!sculptWorldDraft.areas.some(a=>a.id===target&&a.kind==='exterior'&&a.spawns?.length)){
       sculptWorldStatus('Choisis une destination jouable avec un point d’arrivée.',true);return;
     }
+    // A decorative-brush gesture otherwise captures the tap first.
+    // Leave authored fringe and its undo stack untouched.
+    if(fringeEditing){
+      fringeEditing=false;
+      $('scenery-fringe-toggle').checked=false;
+      updateHistoryButtons();
+    }
     sculptWorldPendingPassageTarget=target;
     sculptWorldPortalPlacement='new-portal';
     $('world-area-portal-panel').open=false;
