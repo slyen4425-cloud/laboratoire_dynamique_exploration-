@@ -82,7 +82,7 @@ test('native peer projection preserves trusted display names but not arbitrary m
  const p=make();
  assert.equal(p.apply(packet([{...position(),displayName:'Mira'}])),true);
  assert.equal(p.forArea('area-1')[0].displayName,'Mira');
- assert.equal(p.apply(packet([{...position(host,2),displayName:'X\\nY'}],2)),false);
+ assert.equal(p.apply(packet([{...position(host,2),displayName:'X'+String.fromCharCode(10)+'Y'}],2)),false);
  assert.equal(p.apply(packet([{...position(host,2),displayName:'a'.repeat(49)}],2)),false);
  assert.equal(p.apply(packet([{...position(host,2),inventory:{gold:50}}],2)),false);
  p.dispose();
@@ -94,7 +94,7 @@ test('peer greeting uses the one native scene and refuses unknown player actions
  assert.match(sculpt,/nearestExplorationPeerForGreeting/);
  assert.match(sculpt,/Math\.hypot\(peer\.x-navActor\.x,peer\.y-navActor\.y\)<=70/);
  assert.match(sculpt,/schema:'gensrpg\.exploration\.play\.peer-greet\.v1'/);
- assert.match(sculpt,/event\.detail\?\.sessionId!==playOptions\?\.sessionId/);
+ assert.match(sculpt,/event\?\.detail\?\.sessionId!==playOptions\?\.sessionId/);
  assert.match(page,/id="peer-greet"/);
  assert.match(page,/id="peer-greet-notice"/);
 });
