@@ -7,7 +7,7 @@ import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-famil
 import {TERRAIN_FAMILY_IDS} from './terrain-family-registry.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js?rev=waterfalls-v3-ramp-v77';
-import {normalizeWorldObjectShadowSettingsV1,worldObjectShadowSettingsEqualV1} from './world-object-shadow-settings-v1.js';
+import {normalizeWorldObjectShadowSettingsV1,worldObjectShadowSettingsEqualV1,normalizeWorldObjectShadowProfilesV1} from './world-object-shadow-settings-v1.js';
 
 
 /*
@@ -238,13 +238,15 @@ export function removeSculptPreviewActorAt(raw,x,y,threshold=24){
   const found=findSculptPreviewActorNear(actors,x,y,threshold);
   return found?Object.freeze(actors.filter(a=>a.id!==found.id)):actors;
 }
-export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null){
+export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null,objectShadowProfiles=[]){
   const paint=normalizeSculptSurface(surface);
   const settings=encounterSettings===null?null:sculptEncounterSceneSettings(encounterSettings);
   return JSON.stringify({kind:SCULPT_SCENE_PREVIEW_KIND,
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
     objects:normalizeSculptPreviewObjects(objects),
+    ...(normalizeWorldObjectShadowProfilesV1(objectShadowProfiles).length?
+      {objectShadowProfiles:normalizeWorldObjectShadowProfilesV1(objectShadowProfiles)}:{}),
     ...(paint.routes.length||paint.zones.length||
       paint.baseTerrainFamilyId!==createSculptSurface().baseTerrainFamilyId||
       paint.baseMaterialId!==createSculptSurface().baseMaterialId
@@ -299,5 +301,6 @@ export function importSculptPreviewScene(raw){
   }
   const settings=sculptEncounterSceneSettings(source);
   return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,
+    ...(source.objectShadowProfiles?.length?{objectShadowProfiles:normalizeWorldObjectShadowProfilesV1(source.objectShadowProfiles)}:{}),
     ...settings,isScene:true});
 }

@@ -1201,6 +1201,13 @@ body.sculpt-play-unavailable #play-start-error{
  <output id="object-selected">Aucun objet sélectionné</output>
  <details id="object-shadow-details" hidden>
   <summary>🌘 Ombre <small id="object-shadow-summary">Auto</small></summary>
+  <label>Portée
+   <select id="object-shadow-scope" aria-label="Régler cette ombre ou tous les objets ayant le même visuel">
+    <option value="object">Cet objet uniquement</option>
+    <option value="model">Tous les objets du même visuel</option>
+   </select>
+  </label>
+  <small id="object-shadow-scope-info">Réglage individuel conservé avec l'objet.</small>
   <label>Mode
    <select id="object-shadow-mode" aria-label="Mode d'ombre de l'objet sélectionné">
     <option value="auto">Automatique</option>
@@ -1220,7 +1227,11 @@ body.sculpt-play-unavailable #play-start-error{
     <input id="object-shadow-opacity" type="range" min="5" max="65" step="5" value="25"></label>
   </div>
   <button type="button" id="object-shadow-reset">↶ Réinitialiser l'ombre</button>
-  <small>Aperçu en direct sur la carte. Sauvegardé avec l'objet.</small>
+  <div class="object-actions">
+    <button type="button" id="object-shadow-profile-undo" hidden disabled>↶ Ombres modèle</button>
+    <button type="button" id="object-shadow-profile-redo" hidden disabled>↷ Ombres modèle</button>
+  </div>
+  <small>Aperçu en direct. Le modèle s’applique aux objets identiques, même placés plus tard. Un réglage individuel reste prioritaire.</small>
  </details>
  <section id="object-interior-link" hidden>
   <strong>🏠 Intérieur de la maison — une seule liaison</strong>
@@ -1537,6 +1548,6 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles"></script>
 </body>
 </html>

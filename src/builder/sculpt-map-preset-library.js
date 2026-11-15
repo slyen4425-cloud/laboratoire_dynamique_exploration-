@@ -27,14 +27,16 @@ export function importSculptMapPreset(raw){
   const name=nameOf(value.name);
   const validated=importSculptPreviewScene(value.scene);
   const scene=JSON.parse(serializeSculptPreviewScene(validated.terrain,
-    validated.objects,validated.surface,validated.actors));
+    validated.objects,validated.surface,validated.actors,null,
+    validated.objectShadowProfiles??[]));
   const id=typeof value.id==='string'&&/^map-preset-[0-9]+$/.test(value.id)?
     value.id:'map-preset-1';
   return Object.freeze({kind:SCULPT_MAP_PRESET_KIND,version:1,id,name,scene});
 }
 export function createSculptMapPreset(scene,{name='Ma carte',id='map-preset-1'}={}){
   const source=JSON.parse(serializeSculptPreviewScene(
-    scene?.terrain,scene?.objects??[],scene?.surface,scene?.actors??[]));
+    scene?.terrain,scene?.objects??[],scene?.surface,scene?.actors??[],null,
+    scene?.objectShadowProfiles??[]));
   return importSculptMapPreset({kind:SCULPT_MAP_PRESET_KIND,version:1,
     id,name:nameOf(name),scene:source});
 }

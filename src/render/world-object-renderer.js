@@ -11,7 +11,7 @@ import {
 
 import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterfalls-v3';
 import {worldObjectShadowMaskV1} from './world-object-shadow-silhouette-v1.js';
-import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1} from '../world/world-object-shadow-settings-v1.js';
+import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,worldObjectShadowProfileForAssetV1} from '../world/world-object-shadow-settings-v1.js';
 
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
@@ -174,7 +174,8 @@ function drawStaticImage(
   viewport,
   image,
   asset,
-  timeSeconds = 0
+  timeSeconds = 0,
+  objectShadowProfiles = []
 ) {
   const rect =
     worldObjectVisualRect(object);
@@ -235,7 +236,7 @@ function drawStaticImage(
       asset.render.rotationOffsetDeg
     )
   );
-  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow});
+  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow??worldObjectShadowProfileForAssetV1(objectShadowProfiles,object.visual?.assetId)});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,
       width: renderWidth, height: renderHeight}, timeSeconds);
@@ -249,7 +250,7 @@ export function createWorldObjectRenderer({
     objectDefinitionCatalogV1
 } = {}) {
   return Object.freeze({
-    draw(ctx, { camera, viewport, objects, timeSeconds = 0 }) {
+    draw(ctx, { camera, viewport, objects, timeSeconds = 0, objectShadowProfiles = [] }) {
       for (
         const object of
           resolveWorldObjectPlacements(
@@ -287,7 +288,8 @@ export function createWorldObjectRenderer({
           viewport,
           visual.image,
           visual.asset,
-          timeSeconds
+          timeSeconds,
+          objectShadowProfiles
         );
       }
     }
