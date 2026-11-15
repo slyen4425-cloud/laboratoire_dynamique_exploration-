@@ -95,8 +95,11 @@ test('the editor offers one CLOSED shadow group with five sliders and native res
  assert.match(main,/shadow:objectEditing&&objectSelectedId===object\.id&&\$\('object-shadow-details'\)/);
  assert.match(main,/if\(!details\)return;/,'frozen V80 no longer crashes on optional editor controls');
  assert.match(main,/if\(\$\('object-shadow-details'\)\)\{/,'only the modern editor binds new listeners');
- assert.match(main,/editSelectedObject\(\{shadow:null\}\)/);
- assert.match(main,/editSelectedObject\(\{\s*shadow:readSelectedObjectShadowControlsV1\(\)/);
+ assert.match(main,/function applySelectedShadowControl\(\)/);
+ assert.match(main,/if\(\$\('object-shadow-scope'\)\.value==='model'\)/);
+ assert.match(main,/commitShadowModelProfile\(shadow\)/);
+ assert.match(main,/else editSelectedObject\(\{shadow\}\)/);
+ assert.match(main,/object-shadow-reset'\)\.addEventListener\('click',[\s\S]*applySelectedShadowControl\(\)/);
  assert.match(main,/input\.addEventListener\('input',[\s\S]*scheduleDraw\(\)/);
  assert.match(main,/objectHistory\.push\(placedObjects\)/);
 });
