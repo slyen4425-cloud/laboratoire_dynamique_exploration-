@@ -1054,14 +1054,20 @@ function cameraBounds(){
   }
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
     return coreBounds;
-  // Editor can show the northern decoration, not side or southern padding.
-  const north=8*SCULPT_TILE.height;
+  // Editor frames BOTH editable vertical skirts. They are WorldArea-owned
+  // decorative cells, not an enlargement of gameplay, Spawn or collision.
+  const skirt=8*SCULPT_TILE.height;
   const northY=Math.min(
-    sculptCameraProject(view,0,-north-16*SCULPT_TILE.rise).y,
-    sculptCameraProject(view,coreW,-north-16*SCULPT_TILE.rise).y
+    sculptCameraProject(view,0,-skirt-16*SCULPT_TILE.rise).y,
+    sculptCameraProject(view,coreW,-skirt-16*SCULPT_TILE.rise).y
+  );
+  const southY=Math.max(
+    sculptCameraProject(view,0,coreH+skirt).y,
+    sculptCameraProject(view,coreW,coreH+skirt).y
   );
   const minY=Math.min(coreBounds.minY,northY);
-  return {...coreBounds,minY,height:coreBounds.maxY-minY};
+  const maxY=Math.max(coreBounds.maxY,southY);
+  return {...coreBounds,minY,maxY,height:maxY-minY};
 }
 function clampSculptEditorCamera(){
  if(navigationTesting||activeInteriorId||sculptWorldCurrentInterior())return;
@@ -1149,15 +1155,19 @@ function drawDecorativeFringeTerrain(){
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
   const view=cameraView(),margin=8;
   ctx.save();
-  // Draw only the north strip, clipped to the playable map's lateral width.
-  // Fringe data at other edges remains saved and untouched.
+  // Show both north and south skirts, using the SAME saved decorative chunks.
+  // Clip before rendering: side chunks and overlap with playable terrain
+  // never paint over the canonical ground, even on non-8-aligned maps.
   if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   ctx.beginPath();
   ctx.rect(0,-margin*SCULPT_TILE.height,
     terrain.width*SCULPT_TILE.width,margin*SCULPT_TILE.height);
+  ctx.rect(0,terrain.height*SCULPT_TILE.height,
+    terrain.width*SCULPT_TILE.width,margin*SCULPT_TILE.height);
   ctx.clip();
   for(const chunk of decorativeFringe.chunks){
-    if(chunk.row>=0||chunk.col<0||chunk.col>=terrain.width)continue;
+    if(chunk.col<0||chunk.col>=terrain.width||
+       !(chunk.row<0||chunk.row+8>terrain.height))continue;
     const raster=decorativeFringeRaster(chunk);
     ctx.drawImage(raster.image,
       chunk.col*SCULPT_TILE.width-raster.paddingX,
@@ -1170,8 +1180,9 @@ function drawDecorativeFringeObjects(){
   if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
   const view=cameraView();
   const objects=resolveWorldObjectPlacements(decorativeFringe.objects,objectDefinitionCatalogV1)
-    .filter(o=>o.transform.y<0&&o.transform.x>=0&&
-      o.transform.x<terrain.width*SCULPT_TILE.width)
+    .filter(o=>(o.transform.y<0||
+      o.transform.y>=terrain.height*SCULPT_TILE.height)&&
+      o.transform.x>=0&&o.transform.x<terrain.width*SCULPT_TILE.width)
     .sort((a,b)=>a.transform.y-b.transform.y);
   for(const object of objects){
     const col=Math.floor(object.transform.x/SCULPT_TILE.width/8)*8;
