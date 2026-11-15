@@ -58,7 +58,7 @@
      <p class="help-note">Confirmation obligatoire. Seul ce monde est retiré de Mes mondes et du choix des nouvelles aventures. Les autres mondes et sauvegardes ne sont pas supprimés.</p>
      <output id="world-library-status" role="status" aria-live="polite"></output>
     </section>
-    <div class="section-head"><h2>Zones et instances</h2></div>
+    <div class="section-head"><h2>Régions extérieures</h2></div>
     <div id="area-list" class="area-list" aria-label="Sélectionner une zone"></div>
     <button id="new-world-area" class="accent block world-new-area-entry" type="button">＋ Nouvelle zone / instance</button>
 
@@ -83,14 +83,14 @@
      <p id="world-map-preset-info" class="help-note">Les nouvelles cartes seront reliées à la zone sélectionnée si elle est compatible avec le mode 2,5D. Sinon, tu pourras choisir cette carte comme nouveau départ sans modifier l’ancienne zone.</p>
     </section>
     </details>
-    <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les zones n'ont pas de placement de gameplay sur ce schéma : elles sont reliées par des passages.</div>
+    <div class="help-note">Chaque carte correspond à une <b>WorldArea</b> réelle. Les intérieurs et donjons sont accessibles dans le contenu de leur région, sans nœud supplémentaire sur le schéma.</div>
    </aside>
    <main class="center-panel" aria-label="Graphe de navigation du monde">
     <div class="canvas-header">
      <button id="toggle-world-structure" type="button" aria-controls="world-structure-panel" aria-expanded="false" title="Afficher ou masquer la structure du monde">☰ Zones</button>
      <div><span class="eyebrow">PLAN DU MONDE</span>
       <h2>Carte des destinations</h2>
-      <p>Déplace les zones sur le plan au doigt ou à la souris. La position est sauvegardée avec le monde, sans modifier les passages.</p>
+      <p>Déplace les régions sur le plan. Les maisons, intérieurs et donjons se gèrent dans chaque région ; aucun passage de jeu n’est modifié.</p>
      </div>
      <div class="canvas-actions">
       <button id="open-selected-area" class="accent" type="button">✎ Modifier la zone</button>
@@ -112,7 +112,6 @@
     <div class="canvas-footer">
      <span><i class="legend-dot start"></i> Point de départ</span>
      <span><i class="legend-dot region"></i> Région</span>
-     <span><i class="legend-dot instance"></i> Instance</span>
      <span id="world-portal-count" class="footer-count">0 passage</span>
     </div>
    </main>
