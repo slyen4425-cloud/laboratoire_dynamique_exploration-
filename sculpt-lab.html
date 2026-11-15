@@ -541,6 +541,13 @@ body.sculpt-immersive #sculpt-encounter-editor{
 .combat-overlay__frame{display:block;width:100%;height:100%;border:0;
   background:#071016;touch-action:manipulation}
 .world-entry-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.world-entry-links a{padding:8px 11px;border:1px solid #528f90;border-radius:9px;background:#16313b;color:#def5eb;font-size:.77rem;text-decoration:none;white-space:nowrap}@media(max-width:600px){.world-entry-links{gap:4px}.world-entry-links a{padding:6px;font-size:.67rem}}
+#object-waypoints-panel{padding:7px;border:1px solid #658e8d;border-radius:10px}
+#object-waypoints-panel>summary{cursor:pointer;font-weight:800;min-height:34px}
+#object-waypoints-panel label{display:grid;gap:4px;font-size:.78rem}
+#object-waypoints-panel select,#object-waypoints-panel button{width:100%;min-height:37px}
+#object-waypoints-panel small{display:block;line-height:1.4;color:#c1e5df}
+#object-waypoint-create{padding:6px;border:1px solid #456773;border-radius:8px}
+#object-waypoint-create>summary{cursor:pointer}
 /* World Builder 2,5D: the map, not the Portal tool panel, owns the screen.
    Portal/Spawn gameplay still belongs exclusively to WorldDocument. */
 body.world-area-editing .world-area-portal-panel{
@@ -1198,7 +1205,22 @@ body.sculpt-play-unavailable #play-start-error{
 </section>
 <section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
  <div id="object-controls">
- <strong>🌳 Placer un objet sur le relief</strong>
+ <strong>🌳 Objets et repères de carte</strong>
+ <details id="object-waypoints-panel" hidden>
+  <summary>📍 Départ · Entrées · Sorties</summary>
+  <small>Choisis un repère ou touche son cercle sur la carte, puis glisse-le comme un objet. Aucune coordonnée à saisir.</small>
+  <label>Repère à déplacer
+   <select id="object-waypoint-select" aria-label="Choisir un point de départ, d’arrivée ou de sortie"></select>
+  </label>
+  <button id="object-waypoint-place" type="button">📍 Placer le repère sur la carte</button>
+  <details id="object-waypoint-create">
+   <summary>＋ Ajouter un passage vers une autre carte</summary>
+   <label>Destination <select id="object-waypoint-target"></select></label>
+   <button id="object-waypoint-create-button" type="button">Créer la sortie et le retour</button>
+  </details>
+  <button id="object-waypoint-destination" type="button">↪ Modifier l’arrivée sur la carte cible</button>
+  <small id="object-waypoint-feedback" role="status" aria-live="polite"></small>
+ </details>
  <button type="button" id="actor-open">👥 Acteurs de map</button>
  <label>Catégorie
   <select id="object-category" aria-label="Catégorie d’objets">
