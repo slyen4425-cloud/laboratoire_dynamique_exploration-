@@ -6,8 +6,7 @@ import {resolve,extname,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
 import {once} from 'node:events';
-import {demoWorldDocument} from '../src/world/demo-world.js';
-import {createWorldBuilderDraft,addWorldObject,serializeWorldBuilderDraft}
+import {createBlankWorldBuilderDraft,addWorldObject,serializeWorldBuilderDraft}
  from '../src/builder/world-builder-draft.js';
 import {linkSculptWorldBuildingInteriorV1}
  from '../src/builder/sculpt-world-area-link.js';
@@ -28,11 +27,11 @@ const binary=[process.env.CHROME_PATH,'google-chrome','chromium','chromium-brows
  .find(v=>v&&spawnSync('which',[v]).status===0);
 if(!binary)throw Error('A real Chromium binary is required');
 const sleep=ms=>new Promise(ok=>setTimeout(ok,ms));
-let world=createWorldBuilderDraft(demoWorldDocument);
+let world=createBlankWorldBuilderDraft({width:36*28,height:24*21});
 const outside=world.areas.find(a=>a.kind==='exterior')??world.areas[0];
 world=addWorldObject(world,outside.id,{
  id:'browser-real-house',objectDefinitionId:'objectdef.building.house.blue_cottage.01',
- transform:{x:980,y:620,rotationDeg:0,scaleX:1,scaleY:1}
+ transform:{x:510,y:305,rotationDeg:0,scaleX:1,scaleY:1}
 });
 const linked=linkSculptWorldBuildingInteriorV1(world,{
  sourceAreaId:outside.id,buildingId:'browser-real-house'});
