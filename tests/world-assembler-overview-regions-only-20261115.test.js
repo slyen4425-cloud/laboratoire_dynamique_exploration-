@@ -51,6 +51,19 @@ test('linked nested interiors and dungeons stay accessible; only orphan instance
   assert.deepEqual(worldAssemblerRegionOverview(restored).passages,view.passages);
 });
 
+test('a one-way return Portal does not hide an instance that cannot be entered',()=>{
+  let doc=createBlankWorldBuilderDraft({id:'return-only'});
+  doc=addWorldArea(doc,{name:'Maison sans entrée',kind:'interior'});
+  const [region,inside]=doc.areas;
+  doc=connectWorldAreas(doc,{
+    sourceAreaId:inside.id,targetAreaId:region.id,returnPortal:false
+  });
+  const view=worldAssemblerRegionOverview(doc);
+  assert.deepEqual(view.orphanInstances.map(a=>a.id),[inside.id]);
+  assert.equal(view.passages.length,0);
+  assert.equal(doc.portals.length,1);
+});
+
 test('screen uses region-only projection for graph, list, and edges without deleting Portal data',()=>{
   const root=new URL('../',import.meta.url);
   const js=readFileSync(new URL('src/builder/world-assembler-main.js',root),'utf8');
