@@ -1,3 +1,12 @@
+## 2026-11-15 — Exploration: afficher les noms des autres joueurs et leur saluer (lot C6 visuel)
+- START: main `b323abb7ce10cb271f2836ffbfc49485e02fdf30`; checkpoint `checkpoint/exploration-start-multiplayer-peer-identity-20261115`; branche `work/exploration-multiplayer-peer-identity-20261115`.
+- Propriétaire unique: Explorer MapActorRenderer dessine les sprites et noms; la projection réseau ne peut accepter que les positions/identités en lecture seule et le salon Capture authentifie l'identité réseau.
+- Périmètre: nom des pairs depuis `displayName` du salon Supabase, affichage natif sur canvas; « Saluer » à proximité (70 unités monde), notification transitoire limitée à la partie, réception du nom sur anciennes sauvegardes sans skin sélectionné. Aucun nouveau déplacement, collision, WorldDocument, combat ou Save.
+- Tests: `scoped-adventure-hero-v1.test.js`, `exploration-play-peer-visual-projection-v1.test.js`, tests navigateurs réels, non-interférence NPC et portails, CI+Pages SHA et version pin GenSRPG vérifiés. Joueur distant conserve son sprite démo tant que l'image personnalisée n'est pas partagée officiellement (chantier distinct).
+- Protections: pas de duplication de ressources, pas de modification des 576 sprites, V80 et source unique maintenues, aucune suppression, aucune copie Lab vers Capture. Exiger GREEN + test appareil avant clôture.
+
+---
+
 ## 2026-11-14 — Ombres de contact pour les WorldObjects natifs
 - Retour test créateur : les objets sur la carte Aventure (arbres, maisons, rochers) paraissent sans ancrage au sol. Audit : le MapActorRenderer possède une ellipse d'ombre pour les acteurs, et SculptTerrain gère les falaises, mais le chemin natif `drawPreviewObject` n'avait aucun appel d'ombre sous les WorldObjects.
 - START main@3d773ecd, checkpoint `checkpoint/exploration-world-objects-shadow-start-20261114`, branche `work/exploration-world-objects-shadow-20261114`. Autorité de dessin : `src/render/world-object-renderer.js`, fonction unique appelée aussi par Sculpt pour la carte Aventure. Les ombres précèdent les sprites, sont ancrées aux pieds et suivent la perspective ; pas de shadow pour ponts, escaliers, rampes, eau ou passages.
