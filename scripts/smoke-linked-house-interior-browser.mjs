@@ -139,10 +139,23 @@ try{
   await call('Input.dispatchMouseEvent',{type:'mouseMoved',x:x2,y:y2,button:'left',buttons:1});
   await call('Input.dispatchMouseEvent',{type:'mouseReleased',x:x2,y:y2,button:'left',clickCount:1});
   await sleep(160);
-  drawn=await run('window.__sculptWorldProbe?.()?.interiorWallCount>0');
+  drawn=await run('window.__sculptLabProbe?.()?.interiorWallCount>0');
   if(drawn)break;
  }
- if(!drawn)throw Error('Real canvas gesture never built a wall on linked house');
+ if(!drawn){
+  const diagnostic=await run(`(()=>{
+   const canvas=document.querySelector('#sculpt-canvas');
+   const r=canvas.getBoundingClientRect();
+   const element=document.elementFromPoint(r.left+r.width*.5,r.top+r.height*.5);
+   return {wallCount:window.__sculptLabProbe?.()?.interiorWallCount,
+     status:document.querySelector('#notice')?.textContent,
+     wallInfo:document.querySelector('#interior-wall-info')?.textContent,
+     wallMode:document.querySelector('#interior-wall-toggle')?.getAttribute('aria-pressed'),
+     centerElement:element?.id||element?.className,
+     canvas:{left:r.left,top:r.top,width:r.width,height:r.height}};
+  })()`);
+  throw Error('Real canvas gesture never built a wall on linked house '+JSON.stringify(diagnostic));
+ }
  const changed=await run(`(()=>{
   document.querySelector('#interior-controls-details').open=true;
   const material=document.querySelector('#interior-wall-material');
