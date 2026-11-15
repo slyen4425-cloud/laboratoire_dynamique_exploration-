@@ -39,9 +39,10 @@ export function readScopedAdventureHeroSelectionV1({
   throw new RangeError('Adventure hero selection schema/version incompatible');
  if(value.sessionId!==sessionId||value.worldId!==worldId)
   throw new Error('Adventure hero selection does not match the current world/session');
- if(value.heroDefinitionId!==null&&
-    (typeof value.heroDefinitionId!=='string'||
-     !/^hero\.user\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.heroDefinitionId)))
+ if((value.heroDefinitionId===null&&!Object.hasOwn(value,'displayName'))||
+    (value.heroDefinitionId!==null&&
+     (typeof value.heroDefinitionId!=='string'||
+      !/^hero\.user\.[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.heroDefinitionId))))
   throw new RangeError('Adventure hero selection must use an authored HeroDefinition ID');
  if(Object.hasOwn(value,'displayName')&&
    (typeof value.displayName!=='string'||value.displayName.trim().length<1||
