@@ -266,7 +266,7 @@ export function resolveWorldObjectPlacement(
     collision:
       definition.collision ?? null,
     // Display-only override travels with the one authoritative placement.
-    ...(placement.overrides.shadow ? {shadow:placement.overrides.shadow} : {})
+    ...(placement.overrides?.shadow ? {shadow:placement.overrides.shadow} : {})
   };
 
   if (definition.kind === 'bridge') {
