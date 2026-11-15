@@ -4944,9 +4944,9 @@ function updateSculptAreaControls(){
     $('interior-height').value=String(terrain.height);
     $('interior-width').disabled=true;
     $('interior-height').disabled=true;
-    $('interior-layout-apply').disabled=false;
     $('interior-layout-apply').textContent='Appliquer la forme';
     const shape=sculptInteriorShapeId(sculptWorldArea());
+    $('interior-layout-apply').disabled=shape==='custom';
     $('interior-shape').value=shape==='custom'?'rectangle':shape;
     $('interior-shape').disabled=shape==='custom';
     $('interior-shape-hint').textContent=shape==='custom'?
