@@ -121,7 +121,19 @@ import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playa
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);
-const explorationSoundtrack=createExplorationSoundtrackV1();
+// Only the official Capture host may supply a SoundtrackProject Map scene;
+ // the native Explorer still owns all decoding and playback.
+let captureMapMusicScene=null;
+const soundtrackParam=new URLSearchParams(window.location.search).get('soundtrackMusic');
+if(soundtrackParam!==null){
+  try {
+    if(soundtrackParam.length>2000)throw new Error('Map soundtrack config too large');
+    captureMapMusicScene=JSON.parse(soundtrackParam);
+  }catch(error){
+    console.warn('Configuration musicale Capture ignorée :',error);
+  }
+}
+const explorationSoundtrack=createExplorationSoundtrackV1({sceneMusic:captureMapMusicScene});
 window.__sculptExplorationSoundProbe=()=>Object.freeze({
   state:explorationSoundtrack.state,track:explorationSoundtrack.currentTrackId,
   lastError:explorationSoundtrack.lastError,
