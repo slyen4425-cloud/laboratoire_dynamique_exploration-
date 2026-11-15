@@ -19,6 +19,7 @@ import {
   sculptDecorativeFringeCellIsOuterV1
 } from './world/sculpt-decorative-fringe-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
+import {waitForSculptVisualImageV1,waitForSculptVisualSetV1} from './play/sculpt-play-visual-readiness-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
 import {normalizeSculptBorderPreview,resolveSculptBorderBiome,
   drawSculptBorderExtension,drawSculptDistantBorders
@@ -3350,14 +3351,18 @@ function loadSurfacePaintAssets(){
     ...(decorativeFringe?.chunks??[]).flatMap(chunk=>[
       ...(chunk.surface?.routes??[]),...(chunk.surface?.zones??[])
     ])].map(f=>f.materialId));
+  const pending=[];
   for(const meta of SCULPT_SURFACE_MATERIALS){
     if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
-    imageFor(meta.id,meta.assetKind).then(texture=>{
+    pending.push(imageFor(meta.id,meta.assetKind).then(texture=>{
       if(!texture)return;
       surfacePaintImages.set(meta.id,texture);navTerrainCache=null;
       fringeRasterCache.clear();scheduleDraw();
-    });
+    }));
   }
+  // The map launch may await the exact existing surface image promises;
+  // edits still use the same asynchronous image registry and cache.
+  return Promise.all(pending);
 }
 function updateSurfaceCount(){
   // UI reads the same WorldSurface as the painter, undo and scene import.
@@ -5319,6 +5324,28 @@ function mountWorldSculptArea(areaId,validatedScene=null){
   }
   fit();
 }
+// One readiness gate for the existing Sculpt art/image promises, never a
+// second map loader. It is called only when the native gameplay cover is shown.
+async function awaitSculptPlayArtReady(){
+  await Promise.all([setTheme(),loadSurfacePaintAssets()]);
+  const objects=[...placedObjects,...(decorativeFringe?.objects??[])];
+  // objectImage is the official renderer's memoized asset source.
+  await waitForSculptVisualSetV1(objects.map(o=>o.visual?.assetId)
+    .filter(Boolean).map(id=>objectImage(id)));
+  const visibleDoors=[...placedObjects].map(o=>
+    interiorVisualImages.get(o.visual?.assetId)).filter(Boolean);
+  await waitForSculptVisualSetV1(visibleDoors);
+  // Atlas images are optional visual enhancements; if unavailable,
+  // fall back to the same existing terrain renderer after they settle.
+  await Promise.all([
+    waitForSculptVisualImageV1(cliffAtlasLoader,{optional:true}),
+    waitForSculptVisualImageV1(cliffHDLoader,{optional:true})
+  ]);
+  navTerrainCache=null;
+  scheduleDraw();
+  // First final paint is after decoded assets, not before their load callbacks.
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+}
 let sculptPortalLoading=false;
 async function traverseSculptWorldPortal(){
   if(sculptPortalLoading)return;
@@ -5414,8 +5441,14 @@ async function traverseSculptWorldPortal(){
     feedback.dataset.error='true';feedback.hidden=false;
   }finally{
     if(overlay){
-      // One renderer stays authoritative. Reveal only after its first paint.
-      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      // On successful Portal navigation, retain the SAME cover until the
+      // destination's native texture and object images have decoded.
+      try{await awaitSculptPlayArtReady();}
+      catch(error){
+        const feedback=$('world-portal-feedback');
+        feedback.textContent='Texture de destination indisponible : '+error.message;
+        feedback.dataset.error='true';feedback.hidden=false;
+      }
       overlay.hidden=true;
       sculptPortalLoading=false;
     }
@@ -5648,8 +5681,9 @@ async function installSculptPlayMode(){
       editorHidden:$('mode-ground').getClientRects().length===0,
       menuVisible:!$('play-menu-button').hidden
     });
-    // The canonical canvas is actually painted before the host exposes it.
-    // Loading is a presentation state, not another map or game simulation.
+    // The same native image/cache owner controls readiness. Do not send
+    // "play.ready" while terrain, routes or visible object art can still pop in.
+    await awaitSculptPlayArtReady();
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
       const cover=$('sculpt-play-boot-mask');
       if(cover)cover.hidden=true;
