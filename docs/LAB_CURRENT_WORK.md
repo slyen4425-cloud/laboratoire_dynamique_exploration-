@@ -1,3 +1,10 @@
+## 2026-11-15 — Reprise utilisateur : reliefs tronqués aux bordures nord/sud (lot isolé)
+- Retour auteur : la carte enneigée montre encore une coupure franche des reliefs en haut et en bas malgré le lot « profondeur du relief » déjà fusionné.
+- START : `main@6c80be9bfaf56fb607e049daaeb8741c70ab3308`, checkpoint `checkpoint/exploration-north-south-edge-start-20261115`, branche `work/exploration-north-south-edge-20261115`.
+- Diagnostic : `WorldArea.decorativeFringe` stocke déjà 8 cases sur quatre côtés, mais `drawDecorativeFringeTerrain` et `drawDecorativeFringeObjects` filtrent exclusivement le nord ; les bornes du cadrage édition ne prennent pas le sud en compte. Un simple `paddingY=16*rise` ne corrige pas les bords.
+- Périmètre : réutiliser uniquement les chunks du WorldDocument et le renderer de terrain natif pour rendre et éditer les bandes nord/sud ; aucun nouveau terrain jouable, sauvegarde, collision, Spawn/Portal, moteur ni copie d'assets. Les extensions latérales restent hors lot.
+- Gate : tests de rendu au nord/sud pour dimensions multiples de 8 et irrégulières, compatibilité anciens WorldDocuments, non-régression Tester/caméra, suite Node et navigateur mobile, contrôle du déploiement HTTPS au SHA exact. PR isolée, aucune fusion avant GREEN et revue visuelle.
+
 ## 2026-11-15 — Révision de contrôle du détourage (14 vues conservées après inspection)
 - Précision de synchronisation : les 6 vues rondes non retouchées par ce lot suivent les WebP canoniques déjà publiés sur `main` ; les empreintes/taille ont été réalignées sur ces pixels existants (aucune réédition ou copie).
 - **Le traitement intermédiaire de 20 vues ci-dessous a été invalidé visuellement** : des pixels isolés / trous apparaissaient près des façades et lanternes des pagodes. Il ne doit PAS être présenté comme version finale, même si son audit SHA était vert.
