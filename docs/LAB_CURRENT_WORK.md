@@ -1,3 +1,13 @@
+## 2026-11-15 — Cartes présets : extérieur texturable, panneaux dégagés, Portals/Spawn éditables (retour auteur)
+- START vérifié : `main@b02523be8871013e26340cddd419e0957e798913` (CI + Pages GREEN), checkpoint `checkpoint/exploration-map-preset-authoring-start-20261115`, branche `work/exploration-map-preset-authoring-20261115`.
+- Diagnostic : la ligne jaune est l'ancien repère de limite jouable ; les huit cases extérieures `decorativeFringe` autorisaient relief/objets mais aucun `WorldSurface` dessiné, ce qui empêchait les textures au nord. Le panneau `Mes cartes présets` flottait en haut à gauche du canvas et masquait les outils.
+- Correction : réutiliser les features `SculptSurface` du moteur existant dans les chunks `WorldArea.decorativeFringe` (optionnel, migration additive) ; elles ne deviennent jamais collisions, rencontres ou `WorldArea.surface`. Les images sont résolues par le cache texture existant ; choix Terre/Eau/Texture/Objet dans le même mode hors carte. Masquer la ligne jaune en édition normale, l'afficher seulement lors de l'édition décorative.
+- Confort : déplacer physiquement (sans copier le DOM) les commandes de présets dans le seul inspecteur de droite en mode World Builder. Sorties, arrivées et départs sélectionnables sur les repères officiels ; coordonnées validées via terrain, navigation vers la zone cible avec sauvegarde de la carte courante. Si départ historique ancré à une porte, conserver le Spawn de la porte et créer un Spawn libre à ID automatique, puis définir `initialSpawnId` dans le seul WorldDocument.
+- Invariants : aucune duplication de document, terrain, portail, renderer ou sauvegarde ; ne pas supprimer de présets, objets, portes, WorldAreas ; pas de changement du runtime Combat, Dungeon, Survival, PvP, progression ni des règles de rencontre. Un même fichier source par propriétaire `main`, pas de V80 historique modifiée.
+- Gate : tests décor/collisions, coordonnées Portals/Spawn, CLI Node, CI/Chromium, publication main Pages et test tactile réel à effectuer après GREEN ; aucun statut de livraison tant que HTTPS SHA et essai téléphone/PC ne sont pas certifiés.
+
+---
+
 ## 2026-11-15 — Exploration: afficher les noms des autres joueurs et leur saluer (lot C6 visuel)
 - START: main `b323abb7ce10cb271f2836ffbfc49485e02fdf30`; checkpoint `checkpoint/exploration-start-multiplayer-peer-identity-20261115`; branche `work/exploration-multiplayer-peer-identity-20261115`.
 - Propriétaire unique: Explorer MapActorRenderer dessine les sprites et noms; la projection réseau ne peut accepter que les positions/identités en lecture seule et le salon Capture authentifie l'identité réseau.
