@@ -8,6 +8,7 @@ export const EXPLORATION_PEER_RECEIVER_READY_EVENT_V1=
 const PACKET_KEYS=['schema','version','sessionId','worldId',
  'worldFingerprint','revision','actors'];
 const ACTOR_KEYS=['actorId','areaId','x','y','seq'];
+const NAME_LIMIT=48;
 const ID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const proper=(obj,fields)=>obj!==null&&typeof obj==='object'&&
  !Array.isArray(obj)&&Object.keys(obj).length===fields.length&&
@@ -18,7 +19,11 @@ const number=value=>typeof value==='number'&&Number.isFinite(value)&&
  value>=0&&value<=1000000;
 const positiveSeq=value=>Number.isSafeInteger(value)&&value>=1;
 function validateActor(actor,ownActorId){
- return proper(actor,ACTOR_KEYS)&&
+ return proper(actor,[...ACTOR_KEYS,
+  ...(Object.hasOwn(actor??{},'displayName')?['displayName']:[])])&&
+  (actor.displayName===undefined||(typeof actor.displayName==='string'&&
+   !!actor.displayName.trim()&&actor.displayName.trim().length<=NAME_LIMIT&&
+   !/[\u0000-\u001f\u007f]/.test(actor.displayName)))&&
   typeof actor.actorId==='string'&&ID.test(actor.actorId)&&
   actor.actorId!==ownActorId&&
   scoped(actor.areaId)&&number(actor.x)&&number(actor.y)&&
@@ -52,7 +57,8 @@ export function createExplorationPeerVisualProjectionV1({
    const old=current.get(raw.actorId);
    // An old actor seq can never roll back its displayed location.
    const actor=old&&old.seq>=raw.seq?old:Object.freeze({
-    actorId:raw.actorId,areaId:raw.areaId,x:raw.x,y:raw.y,seq:raw.seq
+    actorId:raw.actorId,areaId:raw.areaId,x:raw.x,y:raw.y,seq:raw.seq,
+    ...(raw.displayName===undefined?{}:{displayName:raw.displayName.trim()})
    });
    received.set(raw.actorId,actor);
   }
