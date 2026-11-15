@@ -67,10 +67,10 @@ def make_contact_sheet(samples,out_path):
     thumb=166; between=20; rowheight=208
     sheet=Image.new("RGB",(thumb*6+between*3+12,rowheight*10),"#20262d")
     d=ImageDraw.Draw(sheet)
-    variants=list(dict.fromkeys(x[0] for x in samples))
+    variants=list(samples.keys())
     for row,variant in enumerate(variants):
         d.text((6,row*rowheight+2),variant,fill="#f4f5f8")
-        entries=[x for x in samples[variant]]
+        entries=samples[variant]
         for col,(_,before,after) in enumerate(entries):
             for side,src in enumerate((before,after)):
                 canvas=Image.new("RGBA",src.size,"#697883")
