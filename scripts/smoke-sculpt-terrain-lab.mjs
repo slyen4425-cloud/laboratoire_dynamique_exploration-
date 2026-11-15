@@ -3523,19 +3523,27 @@ try{
     const dialog=document.querySelector('#area-details-dialog');
     const panel=dialog.getBoundingClientRect();
     const header=document.querySelector('.app-header').getBoundingClientRect();
-    const node=document.querySelector('.world-node.selected').getBoundingClientRect();
+    // Interior Areas stay in the same WorldDocument but never have overview nodes.
+    const regionNode=document.querySelector('.world-node[data-area-id="'+source+'"]');
+    const node=regionNode?.getBoundingClientRect();
+    const regionOnlyGraph=linked.graphNodeCount===2&&
+      !document.querySelector('.world-node[data-area-id="'+instance+'"]')&&
+      linked.graphEdgeCount===0;
     return {before,linked,started,
       singleAreaEditor:dialog.open&&document.querySelectorAll('.inspector').length===1&&
         document.querySelectorAll('aside.inspector').length===0,
       panelInLandscape:dialog.open&&panel.left>=0&&panel.right<=innerWidth&&
         panel.top>=0&&panel.bottom<=innerHeight&&panel.width>120,
       headerInLandscape:header.top>=0&&header.bottom<100,
-      selectedGraphNodeVisible:node.width>150&&node.height>70,
+      selectedGraphNodeVisible:node?.width>150&&node?.height>70,
+      regionOnlyGraph,
       portalRows:document.querySelectorAll('.portal-row').length};
   })()`);
   if(newWorldGraph.before.areaIds.length!==3||
      newWorldGraph.linked.portalCount!==2||
-     newWorldGraph.linked.graphEdgeCount!==2||
+     newWorldGraph.linked.graphEdgeCount!==0||
+     newWorldGraph.linked.graphNodeCount!==2||
+     !newWorldGraph.regionOnlyGraph||
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
      newWorldGraph.portalRows<2||!newWorldGraph.singleAreaEditor||
      !newWorldGraph.panelInLandscape||
