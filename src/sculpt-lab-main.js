@@ -3374,7 +3374,7 @@ function refreshObjectVariants(preferred=null){
   }
 }
 function currentWorldShadowProfiles(){
- return sculptWorldDraft?.objectShadowProfiles??sculptStandaloneShadowProfiles;
+ return sculptWorldDraft?(sculptWorldDraft.objectShadowProfiles??[]):sculptStandaloneShadowProfiles;
 }
 function selectedShadowVisualAssetId(){
  const selected=placedObjects.find(item=>item.id===objectSelectedId);
@@ -4816,7 +4816,7 @@ function mountSculptArea(snapshot){
   if(!sculptWorldDraft&&(!activeInteriorId||snapshot.objectShadowProfiles!==undefined))
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
       snapshot.objectShadowProfiles);
-  shadowProfileHistory=[];shadowProfileRedo=[];
+  if(!sculptWorldDraft){shadowProfileHistory=[];shadowProfileRedo=[];}
   decorativeFringe=snapshot.decorativeFringe??null;
   fringeEditing=false;fringeGesture=null;fringeHistory=[];fringeRedo=[];
   fringeRasterCache.clear();
