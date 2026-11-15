@@ -3753,8 +3753,12 @@ try{
     const gate=window.__sculptWorldProbe().outgoing.find(p=>
       p.targetAreaId==='grotte-du-nord');
     if(!gate) return {error:'no dungeon entry'};
-    const list=document.querySelector('#world-area-portal-select');
-    list.value=gate.id;list.dispatchEvent(new Event('change'));
+    // Objets is now the only author-facing selection. The legacy hidden
+    // select is a downstream adapter, never a second selection authority.
+    const list=document.querySelector('#object-waypoint-select');
+    list.value='portal:'+gate.id;list.dispatchEvent(new Event('change'));
+    if(document.querySelector('#world-area-portal-select').value!==gate.id)
+      return {error:'selected Objets exit did not bind to the canonical Portal',gateId:gate.id};
     const spawn=window.__sculptWorldProbe().spawns[0];
     document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
     document.querySelector('#world-area-portal-y').value=String(spawn.y);
@@ -3806,8 +3810,10 @@ try{
     const current=window.__sculptWorldProbe();
     const back=current.outgoing.find(p=>p.targetAreaId==='area-principale');
     if(!back)return {error:'no return portal'};
-    const list=document.querySelector('#world-area-portal-select');
-    list.value=back.id;list.dispatchEvent(new Event('change'));
+    const list=document.querySelector('#object-waypoint-select');
+    list.value='portal:'+back.id;list.dispatchEvent(new Event('change'));
+    if(document.querySelector('#world-area-portal-select').value!==back.id)
+      return {error:'return exit selection not reflected in Portal adapter'};
     const spawn=window.__sculptWorldProbe().spawns[0];
     document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
     document.querySelector('#world-area-portal-y').value=String(spawn.y);
