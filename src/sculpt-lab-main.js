@@ -133,7 +133,12 @@ if(soundtrackParam!==null){
     console.warn('Configuration musicale Capture ignorée :',error);
   }
 }
-const explorationSoundtrack=createExplorationSoundtrackV1({sceneMusic:captureMapMusicScene});
+let explorationSoundtrack;
+try{explorationSoundtrack=createExplorationSoundtrackV1({sceneMusic:captureMapMusicScene});}
+catch(error){
+ console.warn('Configuration Map non reconnue : lecture Exploration historique maintenue',error);
+ explorationSoundtrack=createExplorationSoundtrackV1();
+}
 window.__sculptExplorationSoundProbe=()=>Object.freeze({
   state:explorationSoundtrack.state,track:explorationSoundtrack.currentTrackId,
   lastError:explorationSoundtrack.lastError,
