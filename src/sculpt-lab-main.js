@@ -830,7 +830,9 @@ const explorationPeerVisual=normalizeMapActorVisual({
 let sculptPeerProjection=null,explorationPeerPaints=0;
 function acceptExplorationPeerSnapshot(event){
  if(!sculptPlayActive||!playOptions||!sculptPeerProjection)return;
- if(sculptPeerProjection.apply(event?.detail))scheduleDraw();
+ if(sculptPeerProjection.apply(event?.detail)){
+  updatePeerInteraction();scheduleDraw();
+ }
 }
 
 
@@ -2367,12 +2369,28 @@ function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
     peer.y-level*SCULPT_TILE.rise+3);
    return {x:projected.x,y:projected.y,facingX:1,moving:false,
     mapVisual:explorationPeerVisual,
-    visualScale:sculptAltitudeVisualState(level).heroScale};
+    visualScale:sculptAltitudeVisualState(level).heroScale,
+    displayName:peer.displayName??null};
   });
  if(actors.length){
   explorationPeerRenderer.draw(ctx,{
    camera:{x:0,y:0},actors,timeSeconds:navVisualTime
   });
+  // The SAME native canvas and camera draw the network player's name.
+  // No second DOM avatar, NPC actor or collision authority is created.
+  for(const actor of actors){
+   if(!actor.displayName)continue;
+   ctx.save();
+   ctx.translate(actor.x,actor.y-actor.mapVisual.targetHeight*actor.visualScale-7);
+   ctx.scale(1/Math.max(.32,zoom),1/Math.max(.32,zoom));
+   ctx.font='bold 13px system-ui,sans-serif';
+   ctx.textAlign='center';ctx.textBaseline='bottom';
+   ctx.lineJoin='round';ctx.lineWidth=3.5;
+   ctx.strokeStyle='#122b38';ctx.fillStyle='#e9fff8';
+   ctx.strokeText(actor.displayName,0,-3,320);
+   ctx.fillText(actor.displayName,0,-3,320);
+   ctx.restore();
+  }
   explorationPeerPaints+=actors.length;
  }
 }
@@ -2503,6 +2521,37 @@ function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
     ?nearestDialogNpcV1(gameplayPlacedActors(),navActor,undefined,canChallengeSculptTrainer):null;
 }
+// Scoped player greeting. Official Navigation is the ONLY position authority.
+// This is a cosmetic interaction, not a duel, reward or world-state mutation.
+function nearestExplorationPeerForGreeting(){
+ if(!sculptPlayActive||!sculptPeerProjection||!navActor)return null;
+ return sculptPeerProjection.forArea(sculptWorldAreaId)
+  .filter(peer=>Math.hypot(peer.x-navActor.x,peer.y-navActor.y)<=70)
+  .sort((a,b)=>Math.hypot(a.x-navActor.x,a.y-navActor.y)-
+    Math.hypot(b.x-navActor.x,b.y-navActor.y))[0]??null;
+}
+function updatePeerInteraction(){
+ const button=$('peer-greet');
+ if(!button)return;
+ const peer=nearestExplorationPeerForGreeting();
+ button.hidden=!peer||npcDialogueOpen;
+ if(!button.hidden){
+  button.textContent='👋 Saluer '+(peer.displayName??'le joueur');
+  button.setAttribute('aria-label','Saluer le joueur '+(peer.displayName??'proche'));
+  placeNpcScreenUi(peer,button);
+ }
+}
+$('peer-greet')?.addEventListener('click',()=>{
+ const peer=nearestExplorationPeerForGreeting();
+ if(!peer||!playOptions?.sessionId||window.parent===window)return;
+ // The parent Capture network owner will independently verify the room,
+ // membership and target against its authenticated room transport.
+ window.parent.postMessage({
+  schema:'gensrpg.exploration.play.peer-greet.v1',
+  sessionId:playOptions.sessionId,targetActorId:peer.actorId
+ },window.location.origin);
+});
+
 function updateNpcInteraction(){
   // Legacy V80 does not expose the new dialogue overlay.
   if(!$('npc-talk'))return;
@@ -2591,6 +2640,7 @@ window.addEventListener('resize',()=>{
 function updateNavigationInfo(forced=false){
   if(!navigationTesting||!navActor)return;
   updateNpcInteraction();
+  updatePeerInteraction();
   updateSculptDoorAction();
   updateSculptWorldPortalAction();
   const info=sculptNavigationSample(terrain,navActor.x,navActor.y,
