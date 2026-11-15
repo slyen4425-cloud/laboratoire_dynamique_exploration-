@@ -12,6 +12,7 @@ import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculp
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
+import {sculptObjectInFrontOfCliffV1} from './render/sculpt-cliff-object-depth-v1.js';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -837,7 +838,11 @@ function navigationBackground(){
     drawOuterSouthRim:!visualDecorativeFringe()});
   // Preserve exact pixels of the existing terrain raster; extract only
   // canonical cliff faces in a cached alpha mask. No second cliff painter.
-  const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE);
+  // The official 2.5D WorldArea continues outside its south edge. Its
+  // former fake closing wall must not become an alpha mask over the trees.
+  const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE,{
+    includeOuterSouthRim:!visualDecorativeFringe()
+  });
   let cliffOcclusionImage=null;
   if(cliffRects.length){
     cliffOcclusionImage=document.createElement('canvas');
@@ -856,6 +861,7 @@ function navigationBackground(){
   }
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,cliffOcclusionImage,
+    depthFaces:sculptFaces(terrain),
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
     paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
@@ -1377,6 +1383,39 @@ function draw(){
         cached.cliffOcclusionImage.width/cached.scale,
         cached.cliffOcclusionImage.height/cached.scale);
       ctx.restore();
+      // An object planted on the near side of the wall must be restored
+      // AFTER the cliff-mask layer. Only visual feet determine this decision;
+      // the wall may still cover an object whose foot is behind it.
+      const nearObjects=sculptPlayObjectDrawCache.get(placedObjects,{
+        playing:navigationTesting
+      }).filter(object=>object.kind!=='bridge'&&object.kind!=='stairs'&&
+        object.kind!=='ramp'&&sculptObjectInFrontOfCliffV1(terrain,
+          sculptObjectVisualRect(object,terrain,{
+            tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
+            rise:SCULPT_TILE.rise
+          }),object.transform,{tileWidth:SCULPT_TILE.width,
+            tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
+            faces:cached.depthFaces}));
+      if(!navigationTesting){
+        for(const object of nearObjects)drawPreviewObject(object);
+      }else if(nearObjects.length){
+        // Preserve the existing actor painter order in play mode. A distant
+        // tree remains behind the hero; a closer one remains in front.
+        const heroY=navActor?.y??Infinity;
+        for(const object of nearObjects)
+          if(object.transform.y<=heroY)drawPreviewObject(object);
+        if(navActor&&nearObjects.some(object=>object.transform.y<=heroY)){
+          const footLevel=navVisualLevel??navHeight();
+          if(sculptObjectInFrontOfCliffV1(terrain,{
+            x:navActor.x,y:navActor.y-footLevel*SCULPT_TILE.rise,
+            width:44,height:90
+          },navActor,{tileWidth:SCULPT_TILE.width,
+            tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
+            faces:cached.depthFaces}))drawNavigationActor();
+        }
+        for(const object of nearObjects)
+          if(object.transform.y>heroY)drawPreviewObject(object);
+      }
     }
   }
   drawEditorPlayableLimit();
