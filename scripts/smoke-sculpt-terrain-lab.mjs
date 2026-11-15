@@ -4079,7 +4079,19 @@ try{
       p.trigger?.kind==='object-anchor');
     const room=doc?.areas.find(a=>a.id===door?.targetAreaId);
     if(!outside||!door||!room)return {error:'house interior or link absent',areas:doc?.areas.length};
-    document.querySelector('#graph-nodes [data-area-id="'+room.id+'"]').click();
+    // A linked house is managed INSIDE its exterior region; it is
+    // deliberately absent from the global region-only graph.
+    const regionNode=document.querySelector('#graph-nodes [data-area-id="'+outside.id+'"]');
+    if(!regionNode||document.querySelector('#graph-nodes [data-area-id="'+room.id+'"]'))
+      return {error:'region graph incorrectly includes house interior',areas:doc.areas.length};
+    regionNode.click();
+    const interiorRow=[...document.querySelectorAll(
+      '#selected-contents .area-content-entry[data-category="interior"]')]
+      .find(row=>row.querySelector('strong')?.textContent===room.label);
+    if(!interiorRow)return {error:'linked interior missing from region contents',areas:doc.areas.length};
+    interiorRow.querySelector('button').click();
+    if(window.__worldAssemblerProbe().selectedAreaId!==room.id)
+      return {error:'interior not selected from its region',areas:doc.areas.length};
     document.querySelector('#world-workspace-map').click();
     return {outsideId:outside.id,roomId:room.id,
       areas:doc.areas.length,roomWalls:room.walls.length,
