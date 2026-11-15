@@ -541,6 +541,13 @@ body.sculpt-immersive #sculpt-encounter-editor{
 .combat-overlay__frame{display:block;width:100%;height:100%;border:0;
   background:#071016;touch-action:manipulation}
 .world-entry-links{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.world-entry-links a{padding:8px 11px;border:1px solid #528f90;border-radius:9px;background:#16313b;color:#def5eb;font-size:.77rem;text-decoration:none;white-space:nowrap}@media(max-width:600px){.world-entry-links{gap:4px}.world-entry-links a{padding:6px;font-size:.67rem}}
+#object-waypoints-panel{padding:7px;border:1px solid #658e8d;border-radius:10px}
+#object-waypoints-panel>summary{cursor:pointer;font-weight:800;min-height:34px}
+#object-waypoints-panel label{display:grid;gap:4px;font-size:.78rem}
+#object-waypoints-panel select,#object-waypoints-panel button{width:100%;min-height:37px}
+#object-waypoints-panel small{display:block;line-height:1.4;color:#c1e5df}
+#object-waypoint-create{padding:6px;border:1px solid #456773;border-radius:8px}
+#object-waypoint-create>summary{cursor:pointer}
 /* World Builder 2,5D: the map, not the Portal tool panel, owns the screen.
    Portal/Spawn gameplay still belongs exclusively to WorldDocument. */
 body.world-area-editing .world-area-portal-panel{
@@ -571,6 +578,11 @@ body.world-area-editing .world-area-portal-panel:not([open]){
  border-top:1px solid #426a72;
 }
 .world-area-panel-content>strong{font-size:.81rem}
+.world-area-passages-advanced{border:1px solid #426a72;border-radius:9px;padding:5px}
+.world-area-passages-advanced>summary{cursor:pointer;white-space:normal;font-size:.74rem}
+.world-area-passages-advanced .world-area-panel-content{padding:8px 2px 2px}
+#world-area-passages-create{background:#21564a;border:1px solid #81c9a3;font-weight:800}
+
 .world-area-panel-content label{display:grid;gap:3px;font-size:.71rem}
 .world-area-panel-content select,.world-area-panel-content input{
  min-width:0;width:100%;padding:5px 6px;min-height:34px;
@@ -623,7 +635,9 @@ body.sculpt-immersive #sculpt-map-preset-panel{
 /* In WorldArea editing, the preset library belongs inside the existing
    right-hand inspector, never as a second floating window over the canvas. */
 body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel,
-body.world-area-editing.sculpt-immersive #world-area-portal-panel #sculpt-map-preset-panel{
+body.world-area-editing.sculpt-immersive #world-area-portal-panel #sculpt-map-preset-panel,
+body.world-area-editing #object-controls #sculpt-map-preset-panel,
+body.world-area-editing.sculpt-immersive #object-controls #sculpt-map-preset-panel{
  position:static;inset:auto;display:block;width:100%;max-width:100%;
  max-height:none;overflow:visible;box-shadow:none;margin:9px 0 0;
  background:#17343b;border-color:#4c797b;
@@ -1037,43 +1051,51 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="world-portal-traverse" class="in-game-door-action" type="button" hidden>🚪 Traverser le passage</button>
 <output id="world-portal-feedback" role="status" aria-live="polite" hidden></output>
 <details id="world-area-portal-panel" class="world-area-portal-panel" hidden>
- <summary aria-label="Afficher ou masquer les entrées, sorties et départs">🚪 Passages · Départ · Présets</summary>
+ <summary aria-label="Afficher ou masquer les passages et points de départ">🚪 Passages · Départ · Présets</summary>
  <div class="world-area-panel-content">
   <strong id="world-area-current-name">Zone</strong>
   <small id="world-area-current-kind">WorldArea 2,5D</small>
   <button id="world-area-return" type="button">💾 Enregistrer · Retour au World Builder</button>
   <button id="world-area-return-house" type="button" hidden>🏠 Retour à la maison sur la carte 2,5D</button>
-  <p style="margin:2px 0;font-size:.74rem;color:#bbebe2">🟡 Sortie : ici → autre zone. 🔵 Arrivée : point où le héros apparaît en revenant. 🟣 Départ : début d'aventure. Choisis un repère et touche la carte pour le déplacer.</p>
-  <button id="world-area-marker-pick" type="button">🎯 Sélectionner un repère sur la carte</button>
-  <label>Passage à placer
+  <label>1. Vers quelle carte ?
+   <select id="world-area-passages-target" aria-label="Choisir la zone de destination"></select>
+  </label>
+  <button id="world-area-passages-create" type="button">＋ Créer un passage aller-retour</button>
+  <small>2. Touche le terrain pour placer la sortie. Le lien et le retour sont enregistrés dans le monde existant.</small>
+  <label>Passage à modifier
    <select id="world-area-portal-select" aria-label="Choisir le passage"></select>
   </label>
-  <small id="world-area-portal-direction" role="status">Choisis une sortie pour voir la destination et son arrivée.</small>
-  <div class="world-area-grid">
-   <label>Sortie X<input id="world-area-portal-x" type="number" step="1"></label>
-   <label>Sortie Y<input id="world-area-portal-y" type="number" step="1"></label>
-  </div>
   <button id="world-area-portal-place" type="button">📍 Déplacer la sortie sur la carte</button>
-  <button id="world-area-portal-save" type="button">✓ Enregistrer la sortie</button>
-  <button id="world-area-edit-destination" type="button">↪ Modifier l’arrivée dans la zone cible</button>
-  <label>Nom du repère de sortie (facultatif)
-   <input id="world-area-portal-label" type="text" maxlength="80" placeholder="Ex. Porte de la crypte">
-  </label>
-  <button id="world-area-portal-label-save" type="button">🏷 Enregistrer le nom du repère</button>
-  <label>Points de départ et d'arrivée dans cette zone
-   <select id="world-area-spawn-select" aria-label="Choisir un point de départ ou d'arrivée"></select>
-  </label>
+  <button id="world-area-edit-destination" type="button">↪ Ouvrir la destination et placer l'arrivée</button>
+  <button id="world-area-marker-pick" type="button">🎯 Sélectionner un repère sur la carte</button>
   <button id="world-area-spawn-select-start" type="button">★ Déplacer le départ initial du jeu</button>
-  <small id="world-area-spawn-info" role="status" aria-live="polite">Les points attachés à une porte se règlent par le bâtiment propriétaire.</small>
-  <div class="world-area-grid">
-   <label>Position X<input id="world-area-spawn-x" type="number" step="1"></label>
-   <label>Position Y<input id="world-area-spawn-y" type="number" step="1"></label>
-  </div>
-  <button id="world-area-spawn-place" type="button">📍 Déplacer ce point sur la carte</button>
-  <button id="world-area-spawn-save" type="button">✓ Enregistrer ce point</button>
-  <small>Les repères libres se déplacent ici. Les arrivées liées à une porte restent contrôlées par leur bâtiment d'origine.</small>
-  <small>En mode Tester, approche du cercle SORTIE et appuie sur « 🚪 Entrer » pour charger la zone suivante.</small>
-  <small id="world-area-portal-status" role="status" aria-live="polite">Place l'entrée sur ta carte ; le héros passera à la zone reliée en jeu.</small>
+  <details id="world-area-passages-advanced" class="world-area-passages-advanced">
+   <summary>⚙ Réglages avancés (facultatifs)</summary>
+   <div class="world-area-panel-content">
+    <small id="world-area-portal-direction" role="status">Choisis une sortie pour voir la destination et son arrivée.</small>
+    <div class="world-area-grid">
+     <label>Sortie X<input id="world-area-portal-x" type="number" step="1"></label>
+     <label>Sortie Y<input id="world-area-portal-y" type="number" step="1"></label>
+    </div>
+    <button id="world-area-portal-save" type="button">✓ Enregistrer la sortie par coordonnées</button>
+    <label>Nom du repère de sortie (facultatif)
+     <input id="world-area-portal-label" type="text" maxlength="80" placeholder="Ex. Porte de la crypte">
+    </label>
+    <button id="world-area-portal-label-save" type="button">🏷 Enregistrer le nom</button>
+    <label>Points de départ et d'arrivée dans cette zone
+     <select id="world-area-spawn-select" aria-label="Choisir un point de départ ou d'arrivée"></select>
+    </label>
+    <small id="world-area-spawn-info" role="status" aria-live="polite">Les points attachés à une porte se règlent par le bâtiment propriétaire.</small>
+    <div class="world-area-grid">
+     <label>Position X<input id="world-area-spawn-x" type="number" step="1"></label>
+     <label>Position Y<input id="world-area-spawn-y" type="number" step="1"></label>
+    </div>
+    <button id="world-area-spawn-place" type="button">📍 Déplacer le point sélectionné sur la carte</button>
+    <button id="world-area-spawn-save" type="button">✓ Enregistrer le point par coordonnées</button>
+    <small>Les arrivées attachées à une porte se règlent sur le bâtiment. Les autres points sont modifiables sur la carte.</small>
+   </div>
+  </details>
+  <small id="world-area-portal-status" role="status" aria-live="polite">Crée un passage, touche le terrain, puis ouvre la destination pour placer l'arrivée.</small>
  </div>
 </details>
 <details id="sculpt-map-preset-panel" aria-label="Bibliothèque de cartes">
@@ -1185,7 +1207,22 @@ body.sculpt-play-unavailable #play-start-error{
 </section>
 <section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
  <div id="object-controls">
- <strong>🌳 Placer un objet sur le relief</strong>
+ <strong>🌳 Objets et repères de carte</strong>
+ <details id="object-waypoints-panel" hidden>
+  <summary>📍 Départ · Entrées · Sorties</summary>
+  <small>Choisis un repère ou touche son cercle sur la carte, puis glisse-le comme un objet. Aucune coordonnée à saisir.</small>
+  <label>Repère à déplacer
+   <select id="object-waypoint-select" aria-label="Choisir un point de départ, d’arrivée ou de sortie"></select>
+  </label>
+  <button id="object-waypoint-place" type="button">📍 Placer le repère sur la carte</button>
+  <details id="object-waypoint-create">
+   <summary>＋ Ajouter un passage vers une autre carte</summary>
+   <label>Destination <select id="object-waypoint-target"></select></label>
+   <button id="object-waypoint-create-button" type="button">Créer la sortie et le retour</button>
+  </details>
+  <button id="object-waypoint-destination" type="button">↪ Modifier l’arrivée sur la carte cible</button>
+  <small id="object-waypoint-feedback" role="status" aria-live="polite"></small>
+ </details>
  <button type="button" id="actor-open">👥 Acteurs de map</button>
  <label>Catégorie
   <select id="object-category" aria-label="Catégorie d’objets">

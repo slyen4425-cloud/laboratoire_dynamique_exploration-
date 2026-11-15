@@ -3331,7 +3331,10 @@ try{
   let encounterBoot=null;
   for(let i=0;i<110;i++){
     try{
-      encounterBoot=await run("typeof window.__sculptEncounterProbe==='function' && window.__sculptEncounterProbe().supported && typeof window.__sculptNavProbe==='function'");
+      // A departing V80 document may still expose these probes before
+      // Chromium commits Page.navigate. Confirm the *new* URL and native
+      // Encounter editor, not just shared JS symbols from the old page.
+      encounterBoot=await run("location.pathname.endsWith('/sculpt-lab.html') && new URLSearchParams(location.search).has('encounterTest') && !!document.querySelector('#sculpt-encounter-editor') && typeof window.__sculptEncounterProbe==='function' && window.__sculptEncounterProbe().supported && typeof window.__sculptNavProbe==='function'");
     }catch{/* transient navigation context */}
     if(encounterBoot)break;
     await sleep(110);
@@ -3523,31 +3526,31 @@ try{
     const dialog=document.querySelector('#area-details-dialog');
     const panel=dialog.getBoundingClientRect();
     const header=document.querySelector('.app-header').getBoundingClientRect();
-    // Interior Areas stay in the same WorldDocument but never have overview nodes.
-    const regionNode=document.querySelector('.world-node[data-area-id="'+source+'"]');
-    const node=regionNode?.getBoundingClientRect();
-    const regionOnlyGraph=linked.graphNodeCount===2&&
-      !document.querySelector('.world-node[data-area-id="'+instance+'"]')&&
-      linked.graphEdgeCount===0;
+    // Region-only World Builder intentionally has NO selected graph node when
+    // its inspector is showing an interior/dungeon. Inspect the originating
+    // exterior graph node, not an optional selected CSS marker.
+    const nodes=[...document.querySelectorAll('.world-node')];
+    const node=nodes.find(el=>el.dataset.areaId===source);
+    const nodeRect=node?.getBoundingClientRect();
     return {before,linked,started,
+      regionsOnly:nodes.length===2&&nodes.every(el=>el.dataset.kind==='exterior'),
       singleAreaEditor:dialog.open&&document.querySelectorAll('.inspector').length===1&&
         document.querySelectorAll('aside.inspector').length===0,
       panelInLandscape:dialog.open&&panel.left>=0&&panel.right<=innerWidth&&
         panel.top>=0&&panel.bottom<=innerHeight&&panel.width>120,
       headerInLandscape:header.top>=0&&header.bottom<100,
-      selectedGraphNodeVisible:node?.width>150&&node?.height>70,
-      regionOnlyGraph,
+      selectedGraphNodeVisible:!!nodeRect&&nodeRect.width>150&&nodeRect.height>70,
       portalRows:document.querySelectorAll('.portal-row').length};
   })()`);
   if(newWorldGraph.before.areaIds.length!==3||
      newWorldGraph.linked.portalCount!==2||
+     // An interior Portal is real data but never an edge on the regions-only board.
      newWorldGraph.linked.graphEdgeCount!==0||
-     newWorldGraph.linked.graphNodeCount!==2||
-     !newWorldGraph.regionOnlyGraph||
      newWorldGraph.started.initialAreaId!==newWorldGraph.started.selectedAreaId||
      newWorldGraph.portalRows<2||!newWorldGraph.singleAreaEditor||
      !newWorldGraph.panelInLandscape||
-     !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible)
+     !newWorldGraph.headerInLandscape||!newWorldGraph.selectedGraphNodeVisible||
+     !newWorldGraph.regionsOnly)
     throw Error('World Builder visual assembly or canonical links failed: '+
       JSON.stringify(newWorldGraph));
   // The canonical Map tab opens only the official 2.5D editor.
@@ -3674,52 +3677,73 @@ try{
      uxFullscreen.paletteHeight>47)
     throw Error('WorldArea fullscreen cannot reveal whole 2.5D map: '+
       JSON.stringify(uxFullscreen));
-  const detailsPoint=await run(`(()=>{
-    const summary=document.querySelector('#world-area-portal-panel summary');
-    const r=summary.getBoundingClientRect();
+  // The point editor now belongs to Objets, never to a floating Portal
+  // badge. Verify its ACTUAL touch path on a 960x540 mobile viewport.
+  const objectModePoint=await run(`(()=>{
+    const button=document.querySelector('#mode-objects'),r=button.getBoundingClientRect();
     const x=r.left+r.width/2,y=r.top+r.height/2;
     const hit=document.elementFromPoint(x,y);
-    return {x,y,hittable:hit===summary||summary.contains(hit)};
+    return {x,y,hittable:hit===button||button.contains(hit)};
   })()`);
-  if(!detailsPoint.hittable)
-    throw Error('Collapsed Portal badge is not touchable in fullscreen: '+
-      JSON.stringify(detailsPoint));
+  if(!objectModePoint.hittable)
+    throw Error('Objets tab must be touchable in fullscreen: '+JSON.stringify(objectModePoint));
   await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
-    {x:detailsPoint.x,y:detailsPoint.y,id:32,radiusX:5,radiusY:5,force:1}
+    {x:objectModePoint.x,y:objectModePoint.y,id:32,radiusX:5,radiusY:5,force:1}
   ]});
   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(120);
   const uxOpened=await run(`(()=>{
-    const panel=document.querySelector('#world-area-portal-panel');
-    const rect=panel.getBoundingClientRect();
-    const full=document.querySelector('#fullscreen-toggle');
-    const f=full.getBoundingClientRect();
-    const hit=document.elementFromPoint(f.left+f.width/2,f.top+f.height/2);
-    return {open:panel.open,width:rect.width,height:rect.height,
-      viewportWidth:innerWidth,viewportHeight:innerHeight,
-      scrollable:panel.scrollHeight>panel.clientHeight,
+    const panel=document.querySelector('#object-waypoints-panel');
+    const select=document.querySelector('#object-waypoint-select');
+    const rect=panel.getBoundingClientRect(),full=document.querySelector('#fullscreen-toggle');
+    const f=full.getBoundingClientRect(),hit=document.elementFromPoint(f.left+f.width/2,f.top+f.height/2);
+    const presets=document.querySelector('#sculpt-map-preset-panel');
+    const inspector=document.querySelector('#world-area-portal-panel');
+    return {open:panel.open,hidden:panel.hidden,
+      width:rect.width,height:rect.height,
+      count:select.options.length,
+      inspectorHidden:getComputedStyle(inspector).display==='none',
+      presetsKept:presets.parentElement.id==='object-controls',
       fullscreenStillHit:hit===full||full.contains(hit)};
   })()`);
-  if(!uxOpened.open||uxOpened.width>258||
-     uxOpened.height>uxOpened.viewportHeight*.56||
-     !uxOpened.scrollable||!uxOpened.fullscreenStillHit)
-    throw Error('Expanded Portal inspector too large or obstructs fullscreen: '+
+  if(!uxOpened.open||uxOpened.hidden||uxOpened.width<=100||
+     uxOpened.count===0||!uxOpened.inspectorHidden||
+     !uxOpened.presetsKept||!uxOpened.fullscreenStillHit)
+    throw Error('Objets waypoint editor is missing or obscures fullscreen: '+
       JSON.stringify(uxOpened));
-  const uxPlacement=await run(`(()=>{
-    document.querySelector('#world-area-portal-place').click();
-    return window.__sculptWorldProbe();
+  const placePoint=await run(`(()=>{
+    const gate=window.__sculptWorldProbe().outgoing.find(p=>p.trigger.kind==='point');
+    if(!gate)return {error:'no free exit'};
+    const list=document.querySelector('#object-waypoint-select');
+    list.value='portal:'+gate.id;
+    list.dispatchEvent(new Event('change'));
+    const button=document.querySelector('#object-waypoint-place');
+    button.scrollIntoView({block:'nearest'});
+    const r=button.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+    const hit=document.elementFromPoint(x,y);
+    return {x,y,hittable:hit===button||button.contains(hit),gateId:gate.id,
+      forbiddenNumbers:document.querySelector('#object-waypoints-panel').querySelectorAll('input[type=number]').length};
   })()`);
-  if(uxPlacement.inspectorOpen||uxPlacement.placementMode!=='portal')
-    throw Error('Portal pointer placement must immediately expose terrain: '+
+  if(placePoint.error||!placePoint.hittable||placePoint.forbiddenNumbers)
+    throw Error('Waypoint placement control inaccessible or still exposes X/Y: '+
+      JSON.stringify(placePoint));
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:placePoint.x,y:placePoint.y,id:34,radiusX:5,radiusY:5,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  const uxPlacement=await run("window.__sculptWorldProbe()");
+  if(uxPlacement.placementMode!=='portal')
+    throw Error('Objets waypoint touch did not enable canonical Portal placement: '+
       JSON.stringify(uxPlacement));
-  await run(`(()=>{
-    const panel=document.querySelector('#world-area-portal-panel');
-    panel.open=true;
-    document.querySelector('#world-area-portal-place').click();
-    return true;
-  })()`);
+  // Same button cancels without creating any duplicate Portal/Spawn.
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:placePoint.x,y:placePoint.y,id:35,radiusX:5,radiusY:5,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   const uxCanceled=await run("window.__sculptWorldProbe()");
-  if(uxCanceled.placementMode!==null)
-    throw Error('Portal authoring mode not cancellable from compact panel');
+  if(uxCanceled.placementMode!==null||
+     uxCanceled.portalCount!==uxPlacement.portalCount)
+    throw Error('Touch cancel must leave all existing world links unchanged');
   const closingPoint=await run(`(()=>{
     const full=document.querySelector('#fullscreen-toggle'),r=full.getBoundingClientRect();
     return {x:r.left+r.width/2,y:r.top+r.height/2};
@@ -3731,31 +3755,97 @@ try{
   await sleep(150);
   if((await run("document.body.classList.contains('sculpt-immersive')"))!==false)
     throw Error('Original fullscreen action cannot return to normal WorldArea editing');
-  console.log('WorldArea Portal compact/touch/fullscreen mobile Chromium:',
-    JSON.stringify({collapsed:uxInitial.panelHeight,
-      expanded:uxOpened.height,fullCanvas:uxFullscreen.canvasHeight,
-      touchFullscreen:true,scrollable:uxOpened.scrollable}));
+  console.log('WorldArea waypoint Objets/touch/fullscreen mobile Chromium:',
+    JSON.stringify({open:uxOpened.open,available:uxOpened.count,
+      fullCanvas:uxFullscreen.canvasHeight,
+      touchFullscreen:true,cancelSafe:true,presetsKept:uxOpened.presetsKept}));
 
+  // Exercise the visible Objets editor, not the retired X/Y authoring path.
+  // Real canvas pointer coordinates derive from the same existing camera projection.
+  const placePortalAtSpawnViaObjects=async(targetAreaId)=>{
+    const prep=await run(`(()=>{
+      const desired=${JSON.stringify(targetAreaId)};
+      const probe=window.__sculptWorldProbe(),
+        gate=probe.outgoing.find(p=>p.targetAreaId===desired);
+      if(!gate||gate.trigger.kind!=='point')return {error:'free exit unavailable',desired,probe};
+      // Transitioning into a dungeon keeps the actor in Tester. The editor
+      // intentionally refuses touch editing while Tester is active. Return
+      // through the public Éditer button before authoring the return Portal.
+      if(window.__sculptNavProbe()?.enabled)
+        document.querySelector('#navigation-toggle')?.click();
+      if(window.__sculptNavProbe()?.enabled)
+        return {error:'Cannot switch from Tester to Éditer',areaId:probe.areaId};
+      const tab=document.querySelector('#mode-objects');
+      if(!window.__sculptLabProbe().objectEditing)tab?.click();
+      const select=document.querySelector('#object-waypoint-select'),
+        button=document.querySelector('#object-waypoint-place'),
+        spawn=probe.spawns[0],canvas=document.querySelector('#sculpt-canvas');
+      if(!select||!button||!spawn||!canvas)return {error:'Objs controls not ready',
+        controls:[!!select,!!button,!!spawn,!!canvas],url:location.href};
+      select.value='portal:'+gate.id;
+      select.dispatchEvent(new Event('change'));
+      if(document.querySelector('#world-area-portal-select')?.value!==gate.id)
+        return {error:'Objets did not select the correct canonical portal',gateId:gate.id};
+      button.click();
+      if(window.__sculptWorldProbe().placementMode!=='portal')
+        return {error:'Objets placement mode not armed',gateId:gate.id};
+      // Native mobile layout can place the canvas below the visible viewport
+      // after the Objets palette opens. Scroll it into view before calculating
+      // a REAL CDP touch; a point on a clipped canvas is not a valid tap.
+      canvas.scrollIntoView({block:'center',inline:'nearest'});
+      const cam=window.__sculptLabProbe(),rect=canvas.getBoundingClientRect();
+      const pitch=cam.liveCameraPitch,
+        shear=probe.areaKind==='interior'?0:cam.cameraView==='classic'?0:-.1;
+      const x=spawn.x+12,y=spawn.y;
+      const screenX=rect.left+cam.cameraPan.x+x*cam.zoom;
+      const col=Math.floor(x/28),row=Math.floor(y/21);
+      let touch=null;
+      for(let level=16;level>=0;level--){
+        const screenY=rect.top+cam.cameraPan.y+
+          (pitch*(y-level*18)+shear*x)*cam.zoom;
+        const cell=window.__sculptLabProbe({x:screenX,y:screenY}).probedCell;
+        const visible=screenX>=0&&screenY>=0&&
+          screenX<innerWidth&&screenY<innerHeight;
+        const hit=visible?document.elementFromPoint(screenX,screenY):null;
+        if(cell?.x===col&&cell?.y===row&&screenX>=rect.left&&
+          screenX<=rect.right&&screenY>=rect.top&&screenY<=rect.bottom&&
+          visible&&(hit===canvas||canvas.contains(hit))){
+          touch={x:screenX,y:screenY};break;
+        }
+      }
+      return {gate,spawn,touch,areaId:probe.areaId,camera:cam.cameraView,
+        pitch,zoom:cam.zoom,viewport:{width:innerWidth,height:innerHeight},
+        canvas:{width:rect.width,height:rect.height,top:rect.top,bottom:rect.bottom}};
+    })()`);
+    if(prep.error||!prep.touch)
+      throw Error('Objets waypoint must be tappable on an exposed terrain cell: '+JSON.stringify(prep));
+    await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+      {x:prep.touch.x,y:prep.touch.y,id:58,radiusX:5,radiusY:5,force:1}
+    ]});
+    await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    const placed=await run(`(()=>{
+      const p=window.__sculptWorldProbe();
+      return {probe:p,portal:p.outgoing.find(x=>x.id===${JSON.stringify(prep.gate.id)})};
+    })()`);
+    const distance=placed.portal?.trigger.kind==='point'?
+      Math.hypot(placed.portal.trigger.x-prep.spawn.x,
+        placed.portal.trigger.y-prep.spawn.y):Infinity;
+    if(distance>Math.max(20,placed.portal?.trigger.radius??0)||
+       placed.probe.placementMode!==null)
+      throw Error('Actual Objets touch did not move the portal beside Spawn: '+
+        JSON.stringify({prep,placed,distance}));
+    return {gate:prep.gate,spawn:prep.spawn,portal:placed.portal};
+  };
+  const stagedWorldPortal=await placePortalAtSpawnViaObjects('grotte-du-nord');
   const placedWorldPortal=await run(`(()=>{
-    const gate=window.__sculptWorldProbe().outgoing.find(p=>
-      p.targetAreaId==='grotte-du-nord');
-    if(!gate) return {error:'no dungeon entry'};
-    const list=document.querySelector('#world-area-portal-select');
-    list.value=gate.id;list.dispatchEvent(new Event('change'));
-    const spawn=window.__sculptWorldProbe().spawns[0];
-    document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
-    document.querySelector('#world-area-portal-y').value=String(spawn.y);
-    document.querySelector('#world-area-portal-save').click();
     document.querySelector('#navigation-toggle').click();
-    return {gate,spawn,sculpt:window.__sculptWorldProbe(),
-      inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none',
-      nav:window.__sculptNavProbe()};
+    return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe(),
+      inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none'};
   })()`);
-  if(!placedWorldPortal.inspectorHidden)throw Error('Portal inspector overlaps the playable hero during testing');
-  if(placedWorldPortal.error||!placedWorldPortal.nav.enabled||
+  if(!placedWorldPortal.inspectorHidden||!placedWorldPortal.nav.enabled||
      !placedWorldPortal.sculpt.traverseVisible)
-    throw Error('Host 2.5D portal not reachable in actual gameplay: '+
-      JSON.stringify(placedWorldPortal));
+    throw Error('Host 2.5D Portal not reachable after Objets touch: '+
+      JSON.stringify({stagedWorldPortal,placedWorldPortal}));
   // Real mobile CSS layout: previously the button was in normal document
   // flow, so the code saw it but the user never saw/could touch it.
   const visibleTraverse=await run(`(()=>{
@@ -3788,22 +3878,14 @@ try{
      enteredDungeon.nav.player===null)
     throw Error('Canonical Portal did not load live 2.5D dungeon Area: '+
       JSON.stringify(enteredDungeon));
+  const stagedDungeonReturn=await placePortalAtSpawnViaObjects('area-principale');
   const placedDungeonReturn=await run(`(()=>{
-    document.querySelector('#navigation-toggle').click();
-    const current=window.__sculptWorldProbe();
-    const back=current.outgoing.find(p=>p.targetAreaId==='area-principale');
-    if(!back)return {error:'no return portal'};
-    const list=document.querySelector('#world-area-portal-select');
-    list.value=back.id;list.dispatchEvent(new Event('change'));
-    const spawn=window.__sculptWorldProbe().spawns[0];
-    document.querySelector('#world-area-portal-x').value=String(spawn.x+12);
-    document.querySelector('#world-area-portal-y').value=String(spawn.y);
-    document.querySelector('#world-area-portal-save').click();
     document.querySelector('#navigation-toggle').click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
   })()`);
-  if(placedDungeonReturn.error||!placedDungeonReturn.sculpt.traverseVisible)
-    throw Error('Dungeon return Portal not reachable: '+JSON.stringify(placedDungeonReturn));
+  if(!placedDungeonReturn.nav.enabled||!placedDungeonReturn.sculpt.traverseVisible)
+    throw Error('Dungeon return Portal not reachable after Objets touch: '+
+      JSON.stringify({stagedDungeonReturn,placedDungeonReturn}));
   const backOutside=await run(`(()=>{
     document.querySelector('#world-portal-traverse').click();
     return window.__sculptWorldProbe();
@@ -4079,19 +4161,21 @@ try{
       p.trigger?.kind==='object-anchor');
     const room=doc?.areas.find(a=>a.id===door?.targetAreaId);
     if(!outside||!door||!room)return {error:'house interior or link absent',areas:doc?.areas.length};
-    // A linked house is managed INSIDE its exterior region; it is
-    // deliberately absent from the global region-only graph.
-    const regionNode=document.querySelector('#graph-nodes [data-area-id="'+outside.id+'"]');
-    if(!regionNode||document.querySelector('#graph-nodes [data-area-id="'+room.id+'"]'))
-      return {error:'region graph incorrectly includes house interior',areas:doc.areas.length};
-    regionNode.click();
-    const interiorRow=[...document.querySelectorAll(
-      '#selected-contents .area-content-entry[data-category="interior"]')]
-      .find(row=>row.querySelector('strong')?.textContent===room.label);
-    if(!interiorRow)return {error:'linked interior missing from region contents',areas:doc.areas.length};
-    interiorRow.querySelector('button').click();
-    if(window.__worldAssemblerProbe().selectedAreaId!==room.id)
-      return {error:'interior not selected from its region',areas:doc.areas.length};
+    // The World Builder graph owns REGIONS only. Open a connected room
+    // through its real host region's "Contenu de cette zone" instead.
+    const host=document.querySelector('#graph-nodes [data-area-id="'+outside.id+'"]');
+    if(!host)return {error:'prefab host region missing from the visible graph'};
+    host.click();
+    const rows=[...document.querySelectorAll('#selected-contents .area-content-entry')];
+    const entry=rows.find(row=>['interior','dungeon'].includes(row.dataset.category)&&
+      row.querySelector('.content-text strong')?.textContent.includes(room.label));
+    const manage=entry?.querySelector('button');
+    if(!manage)return {error:'linked prefab interior not listed in region contents',
+      roomId:room.id,roomLabel:room.label,visible:rows.map(row=>row.textContent.slice(0,100))};
+    manage.click();
+    const selected=window.__worldAssemblerProbe().selectedAreaId;
+    if(selected!==room.id)return {error:'contents opened wrong interior',selected,expected:room.id};
+    document.querySelector('#close-area-editor').click();
     document.querySelector('#world-workspace-map').click();
     return {outsideId:outside.id,roomId:room.id,
       areas:doc.areas.length,roomWalls:room.walls.length,

@@ -9,7 +9,7 @@ import {createBlankWorldBuilderDraft,addWorldArea,connectWorldAreas,
  serializeWorldBuilderDraft,importWorldBuilderDocument}
  from '../src/builder/world-builder-draft.js';
 import {sculptWorldAreaScene,saveSculptWorldArea,
- ensureFreeWorldInitialSpawnV1,placeSculptWorldSpawn}
+ ensureFreeWorldInitialSpawnV1,placeSculptWorldSpawn,placeSculptWorldPortal}
  from '../src/builder/sculpt-world-area-link.js';
 import {pickSculptWorldEditorMarkerV1,markersForSculptWorldArea}
  from '../src/builder/sculpt-world-portal-markers.js';
@@ -93,4 +93,71 @@ test('editor keeps one native map renderer, moves presets away from top-left and
  assert.match(source,/worldAssembler','1'/);
  assert.doesNotMatch(source.slice(source.indexOf('function drawEditorPlayableLimit('),
    source.indexOf('function drawDecorativeFringeTerrain(')),/localStorage|setItem/);
+});
+
+test('a two-tap passage uses ONLY official Portals and Spawns and survives reload',()=>{
+ const source=draft();
+ const withTarget=addWorldArea(source,{name:'Plaine',width:36*28,height:24*21});
+ const target=withTarget.areas.find(a=>a.id!==withTarget.initialAreaId);
+ const position={x:5*28,y:9*21};
+ let linked=connectWorldAreas(withTarget,{
+  sourceAreaId:withTarget.initialAreaId,targetAreaId:target.id,returnPortal:true
+ });
+ assert.equal(linked.portals.length,2,'forward and return use the canonical link helper');
+ const portal=linked.portals.find(p=>p.sourceAreaId===withTarget.initialAreaId&&
+   p.targetAreaId===target.id);
+ assert.ok(portal);
+ linked=placeSculptWorldPortal(linked,portal.id,position);
+ const after=linked.portals.find(p=>p.id===portal.id);
+ assert.equal(after.trigger.x,position.x);
+ assert.equal(after.trigger.y,position.y);
+ const oldArrival=target.spawns[0];
+ linked=placeSculptWorldSpawn(linked,target.id,oldArrival.id,{x:10*28,y:12*21});
+ const unchangedId=linked.portals.find(p=>p.id===portal.id).targetSpawnId;
+ assert.equal(unchangedId,oldArrival.id,'the destination owns the SAME arrival');
+ const relinked=connectWorldAreas(linked,{
+  sourceAreaId:withTarget.initialAreaId,targetAreaId:target.id,returnPortal:true
+ });
+ assert.equal(relinked.portals.length,2,'recreating cannot duplicate portals');
+ const saved=importWorldBuilderDocument(serializeWorldBuilderDraft(relinked));
+ assert.equal(saved.portals.length,2);
+ assert.equal(saved.areas.find(a=>a.id===target.id).spawns.find(p=>p.id===oldArrival.id).x,280);
+ assert.equal(saved.portals.find(p=>p.id===portal.id).trigger.y,position.y);
+});
+
+test('passage UI offers creation and destination edits without exposing numeric controls by default',()=>{
+ assert.match(html,/id="world-area-passages-target"/);
+ assert.match(html,/id="world-area-passages-create"/);
+ assert.match(html,/<details id="world-area-passages-advanced"/);
+ const start=html.indexOf('<details id="world-area-passages-advanced"');
+ const pos=html.indexOf('id="world-area-portal-x"');
+ assert.ok(start>=0&&pos>start);
+ assert.match(source,/sculptWorldPortalPlacement='new-portal'/);
+ assert.match(source,/connectWorldAreas\(sculptWorldDraft,/);
+ assert.match(source,/placeSculptWorldPortal\(next,portal\.id,position\)/);
+ assert.match(source,/searchParams\.set\('arrivalSpawnId',portal\.targetSpawnId\)/);
+ assert.match(source,/sculptWorldPortalPlacement='spawn'/);
+ assert.match(source,/world-area-portal-panel'\)\.open=false/);
+});
+
+test('Objets owns one visible authoring UI for Depart / Entree / Sortie, without coordinates',()=>{
+ const start=html.indexOf('<details id="object-waypoints-panel"');
+ const objectEnd=html.indexOf('<button type="button" id="actor-open">',start);
+ assert.ok(start>0&&objectEnd>start);
+ const compact=html.slice(start,objectEnd);
+ assert.match(compact,/id="object-waypoint-select"/);
+ assert.match(compact,/id="object-waypoint-place"/);
+ assert.match(compact,/id="object-waypoint-target"/);
+ assert.match(compact,/id="object-waypoint-create-button"/);
+ assert.match(compact,/id="object-waypoint-destination"/);
+ assert.doesNotMatch(compact,/Sortie X|Position X|Position Y|Sortie Y|type="number"/);
+ assert.match(source,/panel\.hidden=true;/);
+ assert.match(source,/syncObjectWaypoints\(\)/);
+ assert.match(source,/selectedWaypointKey=waypointKey\(marker\)/);
+ assert.match(source,/function pickedVisibleWaypoint\(point\)/);
+ assert.match(source,/waypointDrag=\{pointerId:event\.pointerId/);
+ assert.match(source,/if\(waypointDrag\)\{/);
+ assert.match(source,/placeSculptWorldPortal\(\s*sculptWorldDraft,drag\.marker\.portalId,point\)/);
+ assert.match(source,/placeSculptWorldSpawn\(\s*sculptWorldDraft,sculptWorldAreaId,drag\.marker\.spawnId,point\)/);
+ assert.match(source,/event\.type!=='pointercancel'/);
 });
