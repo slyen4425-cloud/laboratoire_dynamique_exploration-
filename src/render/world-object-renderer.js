@@ -43,18 +43,19 @@ export function drawWorldObjectContactShadowV1(ctx,args){
   ctx.save();
   ctx.translate(0,projection.footY);
   ctx.transform(1,0,projection.shear,projection.flatten,0,0);
-  ctx.globalAlpha=.25;
+  ctx.globalAlpha=args.kind==='building'?.18:.25;
   ctx.drawImage(mask.canvas,mask.left,mask.top,srcWidth,srcHeight,
    width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
    width*(srcWidth/mask.w),height*(srcHeight/mask.h));
   ctx.restore();
-  // Same native WorldObject draw pass: a grounded border along the real
-  // front AND lateral walls, never a new shadow layer or stored decal.
+  // Reproject only the TIGHT lower alpha band onto its original sprite Y.
+  // The former full-height draw caused a second silhouette shaped like a hill.
   if(args.kind==='building'&&mask.contactCanvas){
    ctx.save();
    ctx.globalAlpha=.78;
    ctx.drawImage(mask.contactCanvas,0,0,mask.w,mask.contactHeight,
-    -width/2,-height/2,width,height*(mask.contactHeight/mask.h));
+    -width/2,-height/2+height*(mask.contactTop/mask.h),
+    width,height*(mask.contactHeight/mask.h));
    ctx.restore();
   }
   return true;
@@ -71,12 +72,15 @@ export function drawWorldObjectContactShadowV1(ctx,args){
 // Derived display-only alpha mask, cached per official image. Generating a
 // dark silhouette once prevents a new per-frame filter or decal authority.
 // In particular a tree projects its actual canopy and trunk, not an oval.
-export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1}={}){
+export function worldObjectShadowProjectionV1({kind,width,height,footOffset=0,pitch=1}={}){
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return null;
  return Object.freeze({
   footY:footOffset+1,
-  shear:-.48,
-  flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)
+  // Buildings receive a low, near-ground footprint, not an oversized roof
+  // silhouette stretching across the walkable tiles like extra terrain.
+  shear:kind==='building'?-.14:-.48,
+  flatten:(kind==='building'?.105:.38)*
+    (Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)
  });
 }
 function cullRadius(width, height) {
