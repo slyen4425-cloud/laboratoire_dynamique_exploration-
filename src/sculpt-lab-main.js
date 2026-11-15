@@ -2892,18 +2892,20 @@ function setNavigationTesting(on){
     updatePrecisionActions();updateNavigationInfo(true);
     sculptEncounterController?.resetAnchor();
     sculptTesterCombatRecoveryBlocked=false;
+    let recoveredTesterCombat=false;
     try{
-      const recovered=recoverStandaloneSculptEncounter();
-      if(!recovered)sculptEncounterStep(); // seed only if no old combat
+      recoveredTesterCombat=recoverStandaloneSculptEncounter();
+      if(!recoveredTesterCombat)sculptEncounterStep(); // seed only if no old combat
     }catch(error){
       sculptTesterCombatRecoveryBlocked=true;
       console.warn('Combat Tester en attente conservé:',error);
       status('Reprise du combat bloquée : '+error.message);
     }
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
-    status(sculptWorldDraft
-      ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
-      :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
+    if(!recoveredTesterCombat&&!sculptTesterCombatRecoveryBlocked)
+      status(sculptWorldDraft
+        ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
+        :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
     if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
       !sculptWorldDraft||sculptPlayRequested||!!activeInteriorId||!!sculptWorldCurrentInterior();
