@@ -33,7 +33,7 @@ export function markersForSculptWorldArea(document,areaId,{
       const isInitial=area.id===document.initialAreaId&&
         spawn.id===document.initialSpawnId;
       incoming.set(spawn.id,{
-        kind:isInitial?'start':'arrival',spawnId:spawn.id,x:spawn.x,y:spawn.y,
+        kind:'arrival',spawnId:spawn.id,x:spawn.x,y:spawn.y,
         radius:16,label:isInitial?'Départ du monde':nameFor(areaFor(document,portal.sourceAreaId)),
         isInitial
       });
