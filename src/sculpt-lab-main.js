@@ -4954,7 +4954,7 @@ function updateSculptAreaControls(){
       'Forme du sol modifiable ici. Dimensions verrouillées dans la WorldArea pour protéger les portes, murs et points d’arrivée.';
     $('interior-wall-material').value=sculptWorldArea()?.wallMaterialId??'plaster';
     // Historical templates are tied to standalone interiors, never copied
-    // into the playable WorldDocument behind a user's back.
+    // into the playable world save behind a user's back.
     $('interior-template-save').disabled=true;
     $('interior-template-apply').disabled=true;
     $('interior-template-save').title='Les modèles de pièce sont réservés au Labo isolé';
