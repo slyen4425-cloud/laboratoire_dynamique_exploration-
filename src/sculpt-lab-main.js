@@ -1491,9 +1491,48 @@ function paintDecorativeFringeCell(cell){
   fringeRasterCache.clear();scheduleDraw();
   return true;
 }
-function handleDecorativeFringeObject(cell){
+
+function fringeSurfacePoint(cell){
+ return {x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
+}
+function appendFringeSurfacePoint(cell){
+ const gesture=fringeSurfaceGesture;
+ if(!gesture||gesture.points.length>=512)return;
+ const key=cell.x+','+cell.y;
+ if(gesture.last===key)return;
+ const [x,y]=gesture.last.split(',').map(Number);
+ const steps=Math.max(1,Math.abs(cell.x-x),Math.abs(cell.y-y));
+ for(let i=1;i<=steps&&gesture.points.length<512;i++){
+   const candidate={x:Math.round(x+(cell.x-x)*i/steps),
+     y:Math.round(y+(cell.y-y)*i/steps)};
+   if(sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),candidate.x,candidate.y))
+     gesture.points.push(fringeSurfacePoint(candidate));
+ }
+ gesture.last=key;
+}
+function commitFringeSurface(points,erase=false){
+ const before=decorativeFringe;
+ const next=paintSculptDecorativeFringeSurfaceV1(before,decorativeFringeArea(),{
+   points,materialId:$('surface-material').value,
+   terrainFamilyId:surfacePaintFamilySelect?.value,
+   width:Number($('surface-width').value)*SCULPT_TILE.width,erase
+ });
+ decorativeFringe=next;fringeRasterCache.clear();loadSurfacePaintAssets();
+ if(recordDecorativeFringe(before))
+   status('Texture décorative enregistrée hors zone jouable (aucune rencontre ou collision ajoutée)');
+}
+function handleDecorativeFringeObject(cell,event){
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
   const before=decorativeFringe,action=$('object-action').value;
+  if(action==='select'){
+    const hit=findSculptPreviewObjectNear(before.objects,x,y);
+    fringeObjectDrag=hit?{pointerId:event.pointerId,id:hit.id,
+      start:screenToWorldPoint(event),origin:{...hit.transform},
+      before,client:{x:event.clientX,y:event.clientY},active:false}:null;
+    status(hit?'Objet décoratif sélectionné : glisse le doigt pour le déplacer':
+      'Aucun objet décoratif à cet endroit');
+    return;
+  }
   if(action==='remove'){
     const hit=findSculptPreviewObjectNear(before.objects,x,y);
     if(hit)decorativeFringe=normalizeSculptDecorativeFringeV1({
@@ -1778,7 +1817,15 @@ function begin(event){
     const cell=screenToDecorativeFringeCell(event);
     if(!cell)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
-    if(objectEditing){handleDecorativeFringeObject(cell);return;}
+    if(objectEditing){handleDecorativeFringeObject(cell,event);return;}
+    if(surfaceEditing){
+      if($('surface-action').value==='erase'){
+        try{commitFringeSurface([fringeSurfacePoint(cell)],true)}
+        catch(error){status(error.message)}
+      }else fringeSurfaceGesture={pointerId:event.pointerId,
+        points:[fringeSurfacePoint(cell)],last:cell.x+','+cell.y};
+      return;
+    }
     fringeGesture={pointerId:event.pointerId,last:cell.x+','+cell.y,before:decorativeFringe};
     paintDecorativeFringeCell(cell);
     return;
@@ -1885,6 +1932,30 @@ function begin(event){
 function stroke(event){
   if(navigationTesting)return;
   if(fringeEditing){
+    if(fringeSurfaceGesture){
+      if(fringeSurfaceGesture.pointerId!==event.pointerId)return;
+      const cell=screenToDecorativeFringeCell(event);
+      if(cell)appendFringeSurfacePoint(cell);
+      return;
+    }
+    if(fringeObjectDrag){
+      if(fringeObjectDrag.pointerId!==event.pointerId)return;
+      const world=screenToWorldPoint(event),drag=fringeObjectDrag;
+      if(!Number.isFinite(world.x)||!Number.isFinite(world.y))return;
+      if(!drag.active&&Math.hypot(event.clientX-drag.client.x,
+        event.clientY-drag.client.y)<4)return;
+      const x=drag.origin.x+world.x-drag.start.x;
+      const y=drag.origin.y+world.y-drag.start.y;
+      if(!sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),
+        Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height)))return;
+      try{
+        const objects=updateSculptPreviewObject(decorativeFringe.objects,drag.id,{x,y});
+        decorativeFringe=normalizeSculptDecorativeFringeV1({...decorativeFringe,objects},
+          decorativeFringeArea());
+        drag.active=true;scheduleDraw();
+      }catch{ /* Invalid drag never moves a gameplay object. */ }
+      return;
+    }
     if(!fringeGesture||fringeGesture.pointerId!==event.pointerId)return;
     const cell=screenToDecorativeFringeCell(event);
     if(!cell)return;
@@ -2060,6 +2131,23 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(fringeSurfaceGesture){
+    if(event.pointerId!==fringeSurfaceGesture.pointerId)return;
+    const gesture=fringeSurfaceGesture;fringeSurfaceGesture=null;
+    if(event.type!=='pointercancel'&&event.type!=='lostpointercapture'){
+      try{commitFringeSurface(gesture.points)}catch(error){status(error.message)}
+    }
+    return;
+  }
+  if(fringeObjectDrag){
+    if(event.pointerId!==fringeObjectDrag.pointerId)return;
+    const drag=fringeObjectDrag;fringeObjectDrag=null;
+    if(event.type==='pointercancel'||event.type==='lostpointercapture'){
+      decorativeFringe=drag.before;fringeRasterCache.clear();scheduleDraw();
+    }else if(drag.active&&recordDecorativeFringe(drag.before))
+      status('Objet décoratif déplacé hors zone jouable');
+    return;
+  }
   if(fringeGesture){
     if(event.pointerId!==fringeGesture.pointerId)return;
     const before=fringeGesture.before;
