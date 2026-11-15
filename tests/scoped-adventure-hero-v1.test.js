@@ -53,3 +53,17 @@ test('new Adventure name is an optional scoped projection, old hero grants remai
  assert.match(src,/sculptPlayHeroDisplayName=readScopedAdventureHeroDisplayNameV1/);
  assert.match(src,/ctx\.fillText\(name,0,-3/);
 });
+
+test('name-only legacy grant paints the real saved nickname without inventing a HeroDefinition',()=>{
+ const named={...grant(),heroDefinitionId:null,displayName:'Luna'};
+ assert.equal(readScopedAdventureHeroSelectionV1({
+  storage:storage(JSON.stringify(named)),sessionId,worldId
+ }),null);
+ assert.equal(readScopedAdventureHeroDisplayNameV1({
+  storage:storage(JSON.stringify(named)),sessionId,worldId
+ }),'Luna');
+ assert.throws(()=>readScopedAdventureHeroSelectionV1({
+  storage:storage(JSON.stringify({...named,image:'any-asset.png'})),
+  sessionId,worldId
+ }));
+});
