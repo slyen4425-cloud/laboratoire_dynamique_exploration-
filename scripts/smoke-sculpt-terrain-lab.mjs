@@ -3768,6 +3768,13 @@ try{
       const probe=window.__sculptWorldProbe(),
         gate=probe.outgoing.find(p=>p.targetAreaId===desired);
       if(!gate||gate.trigger.kind!=='point')return {error:'free exit unavailable',desired,probe};
+      // Transitioning into a dungeon keeps the actor in Tester. The editor
+      // intentionally refuses touch editing while Tester is active. Return
+      // through the public Éditer button before authoring the return Portal.
+      if(window.__sculptNavProbe()?.enabled)
+        document.querySelector('#navigation-toggle')?.click();
+      if(window.__sculptNavProbe()?.enabled)
+        return {error:'Cannot switch from Tester to Éditer',areaId:probe.areaId};
       const tab=document.querySelector('#mode-objects');
       if(!window.__sculptLabProbe().objectEditing)tab?.click();
       const select=document.querySelector('#object-waypoint-select'),
