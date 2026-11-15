@@ -755,6 +755,22 @@ html.sculpt-play-booting #sculpt-play-boot-mask{display:grid!important}
  border-top-color:#92e3c3;border-radius:50%;animation:play-area-spin 1s linear infinite}
 @keyframes play-area-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.play-loading-spinner{animation:none}}
+/* Optional same-origin Capture artwork. No copy of an asset into this lab,
+   no new transition owner and no change to its standalone previews. */
+html.capture-loading-art #sculpt-play-boot-mask,
+html.capture-loading-art #play-area-loading{
+ background:#07151d var(--capture-loading-art) center 45% / cover no-repeat;
+ align-items:end;justify-items:center;padding:clamp(12px,3vh,26px);
+}
+html.capture-loading-art .play-loading-brand{display:none}
+html.capture-loading-art .play-loading-inner{
+ width:min(460px,96vw);max-width:96vw;gap:8px;padding:12px 18px;
+ border:1px solid #537c84;border-radius:15px;
+ background:rgba(7,15,28,.80);box-shadow:0 10px 38px #0009;
+ backdrop-filter:blur(3px);margin-bottom:0;
+}
+html.capture-loading-art .play-loading-inner strong{font-size:clamp(16px,3vw,23px)}
+html.capture-loading-art .play-loading-inner p{font-size:13px}
 body.sculpt-play-unavailable .canvas-wrap{visibility:hidden}
 body.sculpt-play-unavailable #play-start-error{
   display:grid;place-content:center;gap:14px;position:fixed;inset:0;
@@ -774,6 +790,17 @@ body.sculpt-play-unavailable #play-start-error{
  // editor paint. It is never shown when opening the standalone Sculpt editor.
  if(new URLSearchParams(location.search).get('play')==='1')
    document.documentElement.classList.add('sculpt-play-booting');
+ // The owning Capture page supplies one versioned art URI on this origin.
+ // No cross-site image load, duplicated assets or independent overlay state.
+ const artPath=new URLSearchParams(location.search).get('loadingArt');
+ if(artPath){
+   const art=new URL(artPath,location.href);
+   if(art.origin===location.origin&&
+      art.pathname.endsWith('/assets/gensrpg/capture-v2/branding/monster-invoc-loading-v1.svg')){
+     document.documentElement.classList.add('capture-loading-art');
+     document.documentElement.style.setProperty('--capture-loading-art','url("'+art.href+'")');
+   }
+ }
 </script>
 </head>
 <body>
