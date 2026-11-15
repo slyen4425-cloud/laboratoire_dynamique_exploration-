@@ -73,7 +73,7 @@ test('WorldDocument round-trip retains decorative sculpt and objects with no new
   assert.equal(final.decorativeFringe.schema,SCULPT_DECORATIVE_FRINGE_SCHEMA);
 });
 
-test('2.5D editor renders north fringe only while collision remains on the core area',()=>{
+test('2.5D editor renders BOTH vertical fringes while collision remains on the core area',()=>{
   const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
   const first=source.indexOf('function navigationWorld(){');
@@ -85,9 +85,12 @@ test('2.5D editor renders north fringe only while collision remains on the core 
   assert.match(source,/skyFraction:\.12/);
   assert.match(source,/drawDecorativeFringeTerrain\(\)/);
   assert.match(source,/drawDecorativeFringeObjects\(\)/);
-  assert.match(source,/if\(chunk\.row>=0\|\|chunk\.col<0/);
+  assert.match(source,/chunk\.row<0\|\|chunk\.row\+8>terrain\.height/);
+  assert.match(source,/ctx\.rect\(0,terrain\.height\*SCULPT_TILE\.height/);
+  assert.match(source,/o\.transform\.y>=terrain\.height\*SCULPT_TILE\.height/);
   assert.match(source,/ctx\.clip\(\)/);
-  assert.match(source,/return \{\.\.\.coreBounds,minY,height:coreBounds\.maxY-minY\}/);
+  assert.match(source,/const maxY=Math\.max\(coreBounds\.maxY,southY\)/);
+  assert.match(source,/return \{\.\.\.coreBounds,minY,maxY,height:maxY-minY\}/);
   assert.match(source,/screenToDecorativeFringeCell/);
   assert.match(source,/paintSculptDecorativeFringeV1/);
   assert.match(html,/id="scenery-fringe-toggle"/);
@@ -107,4 +110,21 @@ test('80 by 64 allows eight exterior decorative cells on all sides',()=>{
   assert.equal(painted.schema,SCULPT_DECORATIVE_FRINGE_SCHEMA);
   assert.equal(maximum.width,2240);
   assert.equal(maximum.height,1344);
+});
+
+// The southern 8-cell strip may begin inside the final chunk when row count
+// is not a multiple of 8. Rendering clips that chunk to the exterior only.
+test('south fringe remains sculptable on a non-aligned 26-row WorldArea',()=>{
+  const area={...raw,height:26*21};
+  const ring=createSculptDecorativeFringeV1(area);
+  const south=ring.chunks.find(c=>c.row===24&&c.col===0);
+  assert.ok(south,'last chunk straddles the exterior boundary');
+  const edited=paintSculptDecorativeFringeV1(ring,area,{
+    col:2,row:26,mode:'raise',radius:.5,strength:2
+  });
+  assert.equal(edited.chunks.find(c=>c.row===24&&c.col===0).terrain.levels[2*8+2],
+    south.terrain.levels[2*8+2]+2);
+  assert.equal(area.height,26*21,'playable height never changes');
+  assert.equal(sculptDecorativeFringeCellIsOuterV1(area,2,25),false);
+  assert.equal(sculptDecorativeFringeCellIsOuterV1(area,2,26),true);
 });

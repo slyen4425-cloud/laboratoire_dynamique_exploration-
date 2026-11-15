@@ -12,6 +12,7 @@ import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculp
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
+import {sculptObjectInFrontOfCliffV1} from './render/sculpt-cliff-object-depth-v1.js';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -205,6 +206,9 @@ let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // Same WorldArea authoring data; fringe cells are never passed to Collision World.
 let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
 let fringeSurfaceGesture=null,fringeObjectDrag=null;
+// Unsaved visual fallback is derived from the authoritative WorldArea terrain;
+// painting the ring explicitly still creates the only persistent fringe.
+let visualFringeTerrain=null,visualFringeAreaId=null,visualFringeCache=null;
 let fringeHistory=[],fringeRedo=[];
 const fringeRasterCache=new Map();
 window.__sculptFringeProbe=()=>Object.freeze({
@@ -831,10 +835,14 @@ function navigationBackground(){
     overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
-    drawOuterSouthRim:true});
+    drawOuterSouthRim:!visualDecorativeFringe()});
   // Preserve exact pixels of the existing terrain raster; extract only
   // canonical cliff faces in a cached alpha mask. No second cliff painter.
-  const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE);
+  // The official 2.5D WorldArea continues outside its south edge. Its
+  // former fake closing wall must not become an alpha mask over the trees.
+  const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE,{
+    includeOuterSouthRim:!visualDecorativeFringe()
+  });
   let cliffOcclusionImage=null;
   if(cliffRects.length){
     cliffOcclusionImage=document.createElement('canvas');
@@ -853,6 +861,7 @@ function navigationBackground(){
   }
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,cliffOcclusionImage,
+    depthFaces:sculptFaces(terrain),
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
     paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
@@ -1052,16 +1061,22 @@ function cameraBounds(){
       })
       :visibleBounds;
   }
-  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())
+  if(!visualDecorativeFringe()||activeInteriorId||sculptWorldCurrentInterior())
     return coreBounds;
-  // Editor can show the northern decoration, not side or southern padding.
-  const north=8*SCULPT_TILE.height;
+  // Editor frames BOTH editable vertical skirts. They are WorldArea-owned
+  // decorative cells, not an enlargement of gameplay, Spawn or collision.
+  const skirt=8*SCULPT_TILE.height;
   const northY=Math.min(
-    sculptCameraProject(view,0,-north-16*SCULPT_TILE.rise).y,
-    sculptCameraProject(view,coreW,-north-16*SCULPT_TILE.rise).y
+    sculptCameraProject(view,0,-skirt-16*SCULPT_TILE.rise).y,
+    sculptCameraProject(view,coreW,-skirt-16*SCULPT_TILE.rise).y
+  );
+  const southY=Math.max(
+    sculptCameraProject(view,0,coreH+skirt).y,
+    sculptCameraProject(view,coreW,coreH+skirt).y
   );
   const minY=Math.min(coreBounds.minY,northY);
-  return {...coreBounds,minY,height:coreBounds.maxY-minY};
+  const maxY=Math.max(coreBounds.maxY,southY);
+  return {...coreBounds,minY,maxY,height:maxY-minY};
 }
 function clampSculptEditorCamera(){
  if(navigationTesting||activeInteriorId||sculptWorldCurrentInterior())return;
@@ -1146,18 +1161,23 @@ function drawEditorPlayableLimit(){
   ctx.restore();
 }
 function drawDecorativeFringeTerrain(){
-  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const fringe=visualDecorativeFringe();
+  if(!fringe)return;
   const view=cameraView(),margin=8;
   ctx.save();
-  // Draw only the north strip, clipped to the playable map's lateral width.
-  // Fringe data at other edges remains saved and untouched.
+  // Show both north and south skirts, using the SAME saved decorative chunks.
+  // Clip before rendering: side chunks and overlap with playable terrain
+  // never paint over the canonical ground, even on non-8-aligned maps.
   if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
   ctx.beginPath();
   ctx.rect(0,-margin*SCULPT_TILE.height,
     terrain.width*SCULPT_TILE.width,margin*SCULPT_TILE.height);
+  ctx.rect(0,terrain.height*SCULPT_TILE.height,
+    terrain.width*SCULPT_TILE.width,margin*SCULPT_TILE.height);
   ctx.clip();
-  for(const chunk of decorativeFringe.chunks){
-    if(chunk.row>=0||chunk.col<0||chunk.col>=terrain.width)continue;
+  for(const chunk of fringe.chunks){
+    if(chunk.col<0||chunk.col>=terrain.width||
+       !(chunk.row<0||chunk.row+8>terrain.height))continue;
     const raster=decorativeFringeRaster(chunk);
     ctx.drawImage(raster.image,
       chunk.col*SCULPT_TILE.width-raster.paddingX,
@@ -1167,16 +1187,18 @@ function drawDecorativeFringeTerrain(){
   ctx.restore();
 }
 function drawDecorativeFringeObjects(){
-  if(!decorativeFringe||activeInteriorId||sculptWorldCurrentInterior())return;
+  const fringe=visualDecorativeFringe();
+  if(!fringe)return;
   const view=cameraView();
-  const objects=resolveWorldObjectPlacements(decorativeFringe.objects,objectDefinitionCatalogV1)
-    .filter(o=>o.transform.y<0&&o.transform.x>=0&&
-      o.transform.x<terrain.width*SCULPT_TILE.width)
+  const objects=resolveWorldObjectPlacements(fringe.objects,objectDefinitionCatalogV1)
+    .filter(o=>(o.transform.y<0||
+      o.transform.y>=terrain.height*SCULPT_TILE.height)&&
+      o.transform.x>=0&&o.transform.x<terrain.width*SCULPT_TILE.width)
     .sort((a,b)=>a.transform.y-b.transform.y);
   for(const object of objects){
     const col=Math.floor(object.transform.x/SCULPT_TILE.width/8)*8;
     const row=Math.floor(object.transform.y/SCULPT_TILE.height/8)*8;
-    const chunk=decorativeFringe.chunks.find(c=>c.col===col&&c.row===row);
+    const chunk=fringe.chunks.find(c=>c.col===col&&c.row===row);
     if(!chunk)continue;
     const x=col*SCULPT_TILE.width,y=row*SCULPT_TILE.height;
     const local={...object,transform:{...object.transform,
@@ -1246,7 +1268,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
-      drawOuterSouthRim:true});
+      drawOuterSouthRim:!visualDecorativeFringe()});
   }
   lastRenderStats=result;
   drawDecorativeFringeObjects();
@@ -1361,6 +1383,39 @@ function draw(){
         cached.cliffOcclusionImage.width/cached.scale,
         cached.cliffOcclusionImage.height/cached.scale);
       ctx.restore();
+      // An object planted on the near side of the wall must be restored
+      // AFTER the cliff-mask layer. Only visual feet determine this decision;
+      // the wall may still cover an object whose foot is behind it.
+      const nearObjects=sculptPlayObjectDrawCache.get(placedObjects,{
+        playing:navigationTesting
+      }).filter(object=>object.kind!=='bridge'&&object.kind!=='stairs'&&
+        object.kind!=='ramp'&&sculptObjectInFrontOfCliffV1(terrain,
+          sculptObjectVisualRect(object,terrain,{
+            tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
+            rise:SCULPT_TILE.rise
+          }),object.transform,{tileWidth:SCULPT_TILE.width,
+            tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
+            faces:cached.depthFaces}));
+      if(!navigationTesting){
+        for(const object of nearObjects)drawPreviewObject(object);
+      }else if(nearObjects.length){
+        // Preserve the existing actor painter order in play mode. A distant
+        // tree remains behind the hero; a closer one remains in front.
+        const heroY=navActor?.y??Infinity;
+        for(const object of nearObjects)
+          if(object.transform.y<=heroY)drawPreviewObject(object);
+        if(navActor&&nearObjects.some(object=>object.transform.y<=heroY)){
+          const footLevel=navVisualLevel??navHeight();
+          if(sculptObjectInFrontOfCliffV1(terrain,{
+            x:navActor.x,y:navActor.y-footLevel*SCULPT_TILE.rise,
+            width:44,height:90
+          },navActor,{tileWidth:SCULPT_TILE.width,
+            tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
+            faces:cached.depthFaces}))drawNavigationActor();
+        }
+        for(const object of nearObjects)
+          if(object.transform.y>heroY)drawPreviewObject(object);
+      }
     }
   }
   drawEditorPlayableLimit();
@@ -1512,6 +1567,17 @@ function screenToWorldPoint(event){
 function decorativeFringeArea(){
   return {width:terrain.width*SCULPT_TILE.width,
     height:terrain.height*SCULPT_TILE.height,sculptTerrain:terrain};
+}
+function visualDecorativeFringe(){
+  if(activeInteriorId||sculptWorldCurrentInterior())return null;
+  if(decorativeFringe)return decorativeFringe;
+  if(!sculptWorldDraft||!sculptWorldAreaMounted)return null;
+  if(visualFringeTerrain!==terrain||visualFringeAreaId!==sculptWorldAreaId){
+    visualFringeCache=createSculptDecorativeFringeV1(decorativeFringeArea());
+    visualFringeTerrain=terrain;visualFringeAreaId=sculptWorldAreaId;
+    fringeRasterCache.clear();
+  }
+  return visualFringeCache;
 }
 function decorativeFringeHeightAt(col,row){
   const patch=decorativeFringe?.chunks.find(p=>p.col===Math.floor(col/8)*8&&
