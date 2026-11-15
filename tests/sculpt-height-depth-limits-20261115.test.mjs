@@ -56,11 +56,11 @@ test('editor and play reuse ONE cached terrain image and compositing mask',()=>{
  assert.match(editor,/sculptCliffOcclusionRectsV1\(terrain,SCULPT_TILE\)/);
  assert.match(editor,/maskCtx\.globalCompositeOperation='destination-in'/);
  assert.match(editor,/cached\.cliffOcclusionImage/);
- assert.equal((editor.match(/drawOuterSouthRim:!visualDecorativeFringe\\(\\)/g)||[]).length,2,
+ assert.equal((editor.match(/drawOuterSouthRim:!visualDecorativeFringe\(\)/g)||[]).length,2,
   'cached and direct height rendering close the south wall only without visual continuation');
- assert.match(editor,/function visualDecorativeFringe\\(\\)/);
- assert.match(editor,/visualFringeCache=createSculptDecorativeFringeV1\\(decorativeFringeArea\\(\\)\\)/);
- assert.match(editor,/if\\(!sculptWorldDraft\\|\\|!sculptWorldAreaMounted\\)return null/);
- assert.match(editor,/fringeRasterCache\\.clear\\(\\)/);
+ assert.match(editor,/function visualDecorativeFringe\(\)/);
+ assert.match(editor,/visualFringeCache=createSculptDecorativeFringeV1\(decorativeFringeArea\(\)\)/);
+ assert.match(editor,/if\(!sculptWorldDraft\|\|!sculptWorldAreaMounted\)return null/);
+ assert.match(editor,/fringeRasterCache\.clear\(\)/);
  assert.doesNotMatch(editor,/paddingY=7\*SCULPT_TILE/);
 });
