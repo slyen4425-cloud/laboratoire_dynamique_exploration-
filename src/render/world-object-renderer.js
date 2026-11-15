@@ -32,24 +32,14 @@ export function drawWorldObjectContactShadowV1(ctx,args){
  const shadow=worldObjectContactShadowV1(args);
  if(!shadow)return false;
  if(args?.image){
-  const mask=worldObjectShadowMaskV1(args.image,args.asset,
-   {groundContact:args.kind==='building'});
+  const mask=worldObjectShadowMaskV1(args.image,args.asset);
   const projection=worldObjectShadowProjectionV1(args);
   if(!mask||!projection||typeof ctx?.transform!=='function')return false;
   const {width,height}=args;
-  // Houses need continuous base contact along their front/side walls, not
-  // a second *full roof-shaped* cast projected onto the path below. The
-  // latter is the detached "hill" visible under large buildings.
-  if(args.kind==='building'&&mask.contactCanvas){
-    ctx.save();
-    ctx.globalAlpha=.84;
-    ctx.drawImage(mask.contactCanvas,0,0,mask.w,mask.contactHeight,
-      -width/2,-height/2,width,height*(mask.contactHeight/mask.h));
-    ctx.restore();
-    return true;
-  }
+  // One alpha-silhouette projection for buildings as for trees. The extra
+  // facade contact overlay was a separate visual artefact beneath houses.
   const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
-  // Trees still need the full natural silhouette to cast directionally.
+  // The last nontransparent source pixel is anchored exactly to the foot.
   ctx.save();
   ctx.translate(0,projection.footY);
   ctx.transform(1,0,projection.shear,projection.flatten,0,0);
