@@ -3451,11 +3451,11 @@ function refreshSelectedObjectShadowControlsV1(selected){
   ['y','offsetYPct'],['opacity','opacityPct']
  ]){
   const input=$('object-shadow-'+control);
-  input.value=String((shadow??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]);
+  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]);
   $('object-shadow-'+control+'-value').textContent=input.value+' %';
  }
  $('object-shadow-fields').hidden=!shadow;
- $('object-shadow-summary').textContent=(model?'Modèle · ':'')+(shadow?'Personnalisée':'Auto');
+ $('object-shadow-summary').textContent=(model?'Modèle · ':'')+(shadow?'Personnalisée':(!model&&modelValue?'Héritée du modèle':'Auto'));
  updateShadowModelHistoryButtons();
 }
 function syncObjectSelectedControls(){
