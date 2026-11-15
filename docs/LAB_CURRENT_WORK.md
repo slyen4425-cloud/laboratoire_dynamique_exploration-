@@ -1,3 +1,10 @@
+## 2026-11-15 — Reprise utilisateur : reliefs tronqués aux bordures nord/sud (lot isolé)
+- Retour auteur : la carte enneigée montre encore une coupure franche des reliefs en haut et en bas malgré le lot « profondeur du relief » déjà fusionné.
+- START : `main@6c80be9bfaf56fb607e049daaeb8741c70ab3308`, checkpoint `checkpoint/exploration-north-south-edge-start-20261115`, branche `work/exploration-north-south-edge-20261115`.
+- Diagnostic : `WorldArea.decorativeFringe` stocke déjà 8 cases sur quatre côtés, mais `drawDecorativeFringeTerrain` et `drawDecorativeFringeObjects` filtrent exclusivement le nord ; les bornes du cadrage édition ne prennent pas le sud en compte. Un simple `paddingY=16*rise` ne corrige pas les bords.
+- Périmètre : réutiliser uniquement les chunks du WorldDocument et le renderer de terrain natif pour rendre et éditer les bandes nord/sud ; aucun nouveau terrain jouable, sauvegarde, collision, Spawn/Portal, moteur ni copie d'assets. Les extensions latérales restent hors lot.
+- Gate : tests de rendu au nord/sud pour dimensions multiples de 8 et irrégulières, compatibilité anciens WorldDocuments, non-régression Tester/caméra, suite Node et navigateur mobile, contrôle du déploiement HTTPS au SHA exact. PR isolée, aucune fusion avant GREEN et revue visuelle.
+
 ## 2026-11-15 — Remplacement fidèle des 7 bâtiments nettoyés par l'auteur
 - START `main@f09038257e529b2756d2a343bd89a0cb61b62c87`, branche `work/exploration-user-clean-house-webp-20261115`, périmètre exclusivement images canoniques enneigées et leurs index. Validation explicite auteur : remplacer les modèles déjà nommés, sans redessiner, détourer à nouveau, créer un assetId ou modifier le moteur.
 - 7 WebP fournis, **6 remplacements stricts des octets utilisateur** et 1 fichier `building_house_snow_alpine_timber_2p5d_side_01.webp` **déjà strictement identique**, conservé sans changement. Toutes les vues 384×384 RGBA avec transparence contrôlées. Conformité des blobs Git à la signature SHA-1 de chaque image vérifiée lors de l'import et des SHA-256 inscrits dans le catalogue.
