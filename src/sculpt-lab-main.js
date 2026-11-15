@@ -2951,8 +2951,35 @@ function setNavigationTesting(on){
     $('navigation-metrics').textContent='Mesure de fluidité en cours…';
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
-    sculptEncounterController?.resetAnchor();
-    sculptEncounterStep(); // seed the cadence anchor at the actual spawn
+    // Legacy Tester has no Adventure Core receipt. Recover its exact
+    // single pending handoff instead of overwriting it with a new encounter;
+    // in Aventure, ONLY GenSRPG Core may acknowledge a persisted result.
+    let testerHandoffRecovered=false;
+    if(!sculptPlayRequested&&sculptEncounterController){
+      try{
+        const pending=readCombatHandoff(sculptCombatStorage);
+        if(pending?.result){
+          if(!consumeCombatResult(sculptCombatStorage))
+            throw Error('Résultat du test non acquittable');
+          status('Résultat du précédent test retrouvé et acquitté (sans récompense Aventure).');
+        }else if(pending){
+          if(pending.snapshot.context.areaId===navigationEncounterArea().id&&
+             sculptEncounterController.restore(pending.snapshot.encounterId)){
+            presentSculptEncounter(pending.snapshot,true);
+            testerHandoffRecovered=true;
+            status('Combat interrompu retrouvé : relance le même combat, aucune donnée effacée.');
+          }else{
+            testerHandoffRecovered=true;
+            status('Combat interrompu dans une autre zone. Rouvre sa carte pour le reprendre.');
+          }
+        }
+      }catch(error){
+        testerHandoffRecovered=true;
+        status('Journal Combat conservé, reprise nécessaire : '+error.message);
+      }
+    }
+    if(!testerHandoffRecovered)sculptEncounterController?.resetAnchor();
+    if(!testerHandoffRecovered)sculptEncounterStep(); // seed only after recovery
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
     status(sculptWorldDraft
       ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
