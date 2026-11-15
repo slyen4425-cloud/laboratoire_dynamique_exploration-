@@ -3,6 +3,8 @@
 // height, boundary and sculptTerrain exclusively.
 import {createSculptTerrain,importSculptTerrain,applySculptBrush,applySculptWaterBrush} from './sculpt-height-model.js';
 import {normalizeWorldObjectPlacements} from './world-object-placement-model.js';
+import {normalizeSculptSurface,createSculptSurface,appendSculptSurfaceStroke,
+ removeSculptSurfaceAt} from './sculpt-surface-paint.js';
 
 export const SCULPT_DECORATIVE_FRINGE_SCHEMA='world-area-decorative-fringe-v1';
 export const SCULPT_DECORATIVE_FRINGE_CHUNK=8;
@@ -48,7 +50,9 @@ export function normalizeSculptDecorativeFringeV1(raw,area){
     const terrain=importSculptTerrain(entry.terrain);
     if(terrain.width!==8||terrain.height!==8)
       throw new Error('Decorative fringe chunks must reuse 8x8 native terrain');
-    return Object.freeze({col,row,terrain});
+    return Object.freeze({col,row,terrain,
+      ...(entry.surface!==undefined?{surface:normalizeSculptSurface(entry.surface)}:{})
+    });
   });
   const objects=normalizeWorldObjectPlacements(raw.objects);
   if(objects.length!==raw.objects.length||objects.some(p=>!decorativeObjectIsOuter(area,p)))
@@ -105,4 +109,40 @@ export function placeSculptDecorativeFringeObjectV1(raw,area,placement){
   if(next.length!==fringe.objects.length+1)
     throw new Error('Decorative object is invalid or duplicated');
   return normalizeSculptDecorativeFringeV1({...fringe,objects:next},area);
+}
+
+// Decorative paint is stored ONLY inside WorldArea.decorativeFringe chunks.
+// These are the existing SculptSurface/WorldSurface brush features, scoped to
+// the 8x8 outside-the-map raster; NEVER part of the playable WorldArea.surface.
+export function paintSculptDecorativeFringeSurfaceV1(raw,area,{
+ points,materialId,terrainFamilyId=null,width=28,erase=false
+}={}){
+ if(!Array.isArray(points)||!points.length||points.length>512||
+    points.some(p=>!Number.isFinite(p?.x)||!Number.isFinite(p?.y)||
+      !sculptDecorativeFringeCellIsOuterV1(area,Math.floor(p.x/TILE_W),Math.floor(p.y/TILE_H))))
+   throw new RangeError('Decorative surface points must be in the outside ring');
+ const fringe=normalizeSculptDecorativeFringeV1(raw,area)??createSculptDecorativeFringeV1(area);
+ const grouped=new Map();
+ for(const point of points){
+   const col=Math.floor(point.x/TILE_W/8)*8;
+   const row=Math.floor(point.y/TILE_H/8)*8;
+   const key=col+':'+row;
+   if(!grouped.has(key))grouped.set(key,{col,row,points:[]});
+   grouped.get(key).points.push({x:point.x-col*TILE_W,y:point.y-row*TILE_H});
+ }
+ const chunks=[...fringe.chunks];
+ for(const item of grouped.values()){
+   const index=chunks.findIndex(chunk=>chunk.col===item.col&&chunk.row===item.row);
+   if(index<0)throw new Error('Decorative surface chunk absent');
+   const former=chunks[index],original=former.surface??createSculptSurface();
+   // Reuse the SAME native painter/remover, not an alternative texture format.
+   let surface=original;
+   if(erase){
+     for(const point of item.points)surface=removeSculptSurfaceAt(surface,point);
+   }else surface=appendSculptSurfaceStroke(surface,{
+     materialId,terrainFamilyId,points:item.points,width
+   });
+   chunks[index]={...former,surface};
+ }
+ return normalizeSculptDecorativeFringeV1({...fringe,chunks},area);
 }

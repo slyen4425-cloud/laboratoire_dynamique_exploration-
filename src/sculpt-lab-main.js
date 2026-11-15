@@ -15,7 +15,8 @@ import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
-  paintSculptDecorativeFringeV1,sculptDecorativeFringeCellIsOuterV1
+  paintSculptDecorativeFringeV1,paintSculptDecorativeFringeSurfaceV1,
+  sculptDecorativeFringeCellIsOuterV1
 } from './world/sculpt-decorative-fringe-v1.js';
 import {createSculptPlaySceneReadinessCacheV1} from './play/sculpt-play-scene-readiness-cache-v1.js';
 import {drawSculptSkyBackdrop} from './render/sculpt-sky-backdrop.js';
@@ -102,8 +103,9 @@ import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} fro
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
-  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel} from './builder/sculpt-world-area-link.js';
-import {markersForSculptWorldArea} from './builder/sculpt-world-portal-markers.js';
+  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
+  ensureFreeWorldInitialSpawnV1} from './builder/sculpt-world-area-link.js';
+import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
@@ -176,6 +178,7 @@ let npcRewardChoices=Object.freeze([]),npcRewardRequestId=null;
 let surface=createSculptSurface(),surfaceEditing=false,surfaceDrawing=false;
 // Same WorldArea authoring data; fringe cells are never passed to Collision World.
 let decorativeFringe=null,fringeEditing=false,fringeGesture=null;
+let fringeSurfaceGesture=null,fringeObjectDrag=null;
 let fringeHistory=[],fringeRedo=[];
 const fringeRasterCache=new Map();
 window.__sculptFringeProbe=()=>Object.freeze({
@@ -1048,8 +1051,8 @@ function decorativeFringeRaster(chunk){
   const signature=[$('rock').value,displayedBaseMaterialId(),
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked].join('|');
   const previous=fringeRasterCache.get(key);
-  if(previous?.terrain===chunk.terrain&&previous.texture===currentTexture&&
-     previous.signature===signature)return previous;
+  if(previous?.terrain===chunk.terrain&&previous.paintSurface===chunk.surface&&
+     previous.texture===currentTexture&&previous.signature===signature)return previous;
   const paddingX=18,paddingY=16*SCULPT_TILE.rise+18;
   const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
   const image=document.createElement('canvas');
@@ -1063,9 +1066,10 @@ function decorativeFringeRaster(chunk){
     texture:currentTexture,rockPalette:$('rock').value,
     cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
-    sphereWallImages,overlays:ribbonTextures,paintSurface:null,paintImages:null,
+    sphereWallImages,overlays:ribbonTextures,
+    paintSurface:chunk.surface??null,paintImages:surfacePaintImages,
     drawOuterSouthRim:false});
-  const raster={terrain:chunk.terrain,texture:currentTexture,signature,
+  const raster={terrain:chunk.terrain,paintSurface:chunk.surface,texture:currentTexture,signature,
     image,scale,paddingX,paddingY};
   fringeRasterCache.set(key,raster);
   return raster;
@@ -1073,7 +1077,7 @@ function decorativeFringeRaster(chunk){
 function drawEditorPlayableLimit(){
   // Projection-only marker: no second boundary, no changes to saved terrain,
   // encounter placement, hero collisions or runtime overlays.
-  if(navigationTesting||!decorativeFringe||activeInteriorId||
+  if(navigationTesting||!decorativeFringe||!fringeEditing||activeInteriorId||
      sculptWorldCurrentInterior())return;
   const outline=sculptPlayableBoundaryOutlineV1(terrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
@@ -1487,9 +1491,48 @@ function paintDecorativeFringeCell(cell){
   fringeRasterCache.clear();scheduleDraw();
   return true;
 }
-function handleDecorativeFringeObject(cell){
+
+function fringeSurfacePoint(cell){
+ return {x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
+}
+function appendFringeSurfacePoint(cell){
+ const gesture=fringeSurfaceGesture;
+ if(!gesture||gesture.points.length>=512)return;
+ const key=cell.x+','+cell.y;
+ if(gesture.last===key)return;
+ const [x,y]=gesture.last.split(',').map(Number);
+ const steps=Math.max(1,Math.abs(cell.x-x),Math.abs(cell.y-y));
+ for(let i=1;i<=steps&&gesture.points.length<512;i++){
+   const candidate={x:Math.round(x+(cell.x-x)*i/steps),
+     y:Math.round(y+(cell.y-y)*i/steps)};
+   if(sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),candidate.x,candidate.y))
+     gesture.points.push(fringeSurfacePoint(candidate));
+ }
+ gesture.last=key;
+}
+function commitFringeSurface(points,erase=false){
+ const before=decorativeFringe;
+ const next=paintSculptDecorativeFringeSurfaceV1(before,decorativeFringeArea(),{
+   points,materialId:$('surface-material').value,
+   terrainFamilyId:surfacePaintFamilySelect?.value,
+   width:Number($('surface-width').value)*SCULPT_TILE.width,erase
+ });
+ decorativeFringe=next;fringeRasterCache.clear();loadSurfacePaintAssets();
+ if(recordDecorativeFringe(before))
+   status('Texture décorative enregistrée hors zone jouable (aucune rencontre ou collision ajoutée)');
+}
+function handleDecorativeFringeObject(cell,event){
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
   const before=decorativeFringe,action=$('object-action').value;
+  if(action==='select'){
+    const hit=findSculptPreviewObjectNear(before.objects,x,y);
+    fringeObjectDrag=hit?{pointerId:event.pointerId,id:hit.id,
+      start:screenToWorldPoint(event),origin:{...hit.transform},
+      before,client:{x:event.clientX,y:event.clientY},active:false}:null;
+    status(hit?'Objet décoratif sélectionné : glisse le doigt pour le déplacer':
+      'Aucun objet décoratif à cet endroit');
+    return;
+  }
   if(action==='remove'){
     const hit=findSculptPreviewObjectNear(before.objects,x,y);
     if(hit)decorativeFringe=normalizeSculptDecorativeFringeV1({
@@ -1774,15 +1817,27 @@ function begin(event){
     const cell=screenToDecorativeFringeCell(event);
     if(!cell)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
-    if(objectEditing){handleDecorativeFringeObject(cell);return;}
+    if(objectEditing){handleDecorativeFringeObject(cell,event);return;}
+    if(surfaceEditing){
+      if($('surface-action').value==='erase'){
+        try{commitFringeSurface([fringeSurfacePoint(cell)],true)}
+        catch(error){status(error.message)}
+      }else fringeSurfaceGesture={pointerId:event.pointerId,
+        points:[fringeSurfacePoint(cell)],last:cell.x+','+cell.y};
+      return;
+    }
     fringeGesture={pointerId:event.pointerId,last:cell.x+','+cell.y,before:decorativeFringe};
     paintDecorativeFringeCell(cell);
     return;
   }
   if(sculptWorldPortalPlacement){
     event.preventDefault();
-    const point=screenToWorldPoint(event);
-    applySculptWorldPointerPlacement(point);
+    // Pick the exposed native terrain face, not the raw projected Y value:
+    // high terrain would otherwise shift Spawn/Portal markers after touch.
+    const cell=screenToCell(event);
+    if(!cell){sculptWorldStatus('Touche un sol de la carte jouable.',true);return;}
+    applySculptWorldPointerPlacement({x:(cell.x+.5)*SCULPT_TILE.width,
+      y:(cell.y+.5)*SCULPT_TILE.height});
     return;
   }
   if(activeInteriorId&&interiorConnectorMode){
@@ -1881,6 +1936,30 @@ function begin(event){
 function stroke(event){
   if(navigationTesting)return;
   if(fringeEditing){
+    if(fringeSurfaceGesture){
+      if(fringeSurfaceGesture.pointerId!==event.pointerId)return;
+      const cell=screenToDecorativeFringeCell(event);
+      if(cell)appendFringeSurfacePoint(cell);
+      return;
+    }
+    if(fringeObjectDrag){
+      if(fringeObjectDrag.pointerId!==event.pointerId)return;
+      const world=screenToWorldPoint(event),drag=fringeObjectDrag;
+      if(!Number.isFinite(world.x)||!Number.isFinite(world.y))return;
+      if(!drag.active&&Math.hypot(event.clientX-drag.client.x,
+        event.clientY-drag.client.y)<4)return;
+      const x=drag.origin.x+world.x-drag.start.x;
+      const y=drag.origin.y+world.y-drag.start.y;
+      if(!sculptDecorativeFringeCellIsOuterV1(decorativeFringeArea(),
+        Math.floor(x/SCULPT_TILE.width),Math.floor(y/SCULPT_TILE.height)))return;
+      try{
+        const objects=updateSculptPreviewObject(decorativeFringe.objects,drag.id,{x,y});
+        decorativeFringe=normalizeSculptDecorativeFringeV1({...decorativeFringe,objects},
+          decorativeFringeArea());
+        drag.active=true;scheduleDraw();
+      }catch{ /* Invalid drag never moves a gameplay object. */ }
+      return;
+    }
     if(!fringeGesture||fringeGesture.pointerId!==event.pointerId)return;
     const cell=screenToDecorativeFringeCell(event);
     if(!cell)return;
@@ -2056,6 +2135,23 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(fringeSurfaceGesture){
+    if(event.pointerId!==fringeSurfaceGesture.pointerId)return;
+    const gesture=fringeSurfaceGesture;fringeSurfaceGesture=null;
+    if(event.type!=='pointercancel'&&event.type!=='lostpointercapture'){
+      try{commitFringeSurface(gesture.points)}catch(error){status(error.message)}
+    }
+    return;
+  }
+  if(fringeObjectDrag){
+    if(event.pointerId!==fringeObjectDrag.pointerId)return;
+    const drag=fringeObjectDrag;fringeObjectDrag=null;
+    if(event.type==='pointercancel'||event.type==='lostpointercapture'){
+      decorativeFringe=drag.before;fringeRasterCache.clear();scheduleDraw();
+    }else if(drag.active&&recordDecorativeFringe(drag.before))
+      status('Objet décoratif déplacé hors zone jouable');
+    return;
+  }
   if(fringeGesture){
     if(event.pointerId!==fringeGesture.pointerId)return;
     const before=fringeGesture.before;
@@ -3217,12 +3313,16 @@ function objectCommit(next){
 }
 // Surface authoring reuses WorldSurface v3; only this UI owns undo/redo.
 function loadSurfacePaintAssets(){
-  const used=new Set([...surface.routes,...surface.zones].map(f=>f.materialId));
+  const used=new Set([...surface.routes,...surface.zones,
+    ...(decorativeFringe?.chunks??[]).flatMap(chunk=>[
+      ...(chunk.surface?.routes??[]),...(chunk.surface?.zones??[])
+    ])].map(f=>f.materialId));
   for(const meta of SCULPT_SURFACE_MATERIALS){
     if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
     imageFor(meta.id,meta.assetKind).then(texture=>{
       if(!texture)return;
-      surfacePaintImages.set(meta.id,texture);navTerrainCache=null;scheduleDraw();
+      surfacePaintImages.set(meta.id,texture);navTerrainCache=null;
+      fringeRasterCache.clear();scheduleDraw();
     });
   }
 }
@@ -4026,13 +4126,12 @@ $('scenery-fringe-toggle')?.addEventListener('change',()=>{
     return;
   }
   fringeEditing=$('scenery-fringe-toggle').checked;
-  if(fringeEditing&&surfaceEditing)setSurfaceEditing(false);
   if(fringeEditing&&!decorativeFringe){
     decorativeFringe=createSculptDecorativeFringeV1(decorativeFringeArea());
     fringeRasterCache.clear();
     status('Pourtour de 8 cases ajouté sur les quatre côtés · sculptable et décoratif uniquement');
     fit();
-  }else status(fringeEditing?'Mode pourtour actif : sculpte ou pose des objets au-delà de la carte':
+  }else status(fringeEditing?'Mode pourtour actif : peins les textures ou déplace les objets au-delà de la carte':
     'Retour à la zone de base');
   updateHistoryButtons();scheduleDraw();
 });
@@ -4902,10 +5001,20 @@ function refreshSculptWorldPanel(){
   }));
   if(choices.some(p=>p.id===previous))portalSelect.value=previous;
   const portal=currentWorldPortal(),hasPortal=!!portal;
+  const portalIsFree=hasPortal&&portal.trigger.kind==='point';
   for(const id of ['world-area-portal-place','world-area-portal-save',
-    'world-area-portal-label','world-area-portal-label-save',
-    'world-area-portal-x','world-area-portal-y'])
+    'world-area-portal-x','world-area-portal-y'])$(id).disabled=!portalIsFree;
+  for(const id of ['world-area-portal-label','world-area-portal-label-save'])
     $(id).disabled=!hasPortal;
+  const destination=portal&&sculptWorldDraft.areas.find(a=>a.id===portal.targetAreaId);
+  const targetSpawn=destination?.spawns.find(s=>s.id===portal.targetSpawnId);
+  $('world-area-portal-direction').textContent=portal
+    ?'🟡 SORTIE depuis '+(area.label??area.id)+' → '+
+      (destination?.label??destination?.id??'zone indisponible')+
+      ' · 🔵 ARRIVÉE : '+(targetSpawn?.id??'point introuvable')+
+      (portalIsFree?' · position libre':' · passage attaché à une porte')
+    :'Aucun passage dans cette zone. Crée la liaison dans le World Builder.';
+  $('world-area-edit-destination').disabled=!destination;
   $('world-area-portal-x').value=portal?.trigger.kind==='point'?
     String(Math.round(portal.trigger.x)):'';
   $('world-area-portal-y').value=portal?.trigger.kind==='point'?
@@ -4921,6 +5030,7 @@ function refreshSculptWorldPanel(){
     'world-area-spawn-x','world-area-spawn-y'])$(id).disabled=!spawnEditable;
   $('world-area-spawn-x').value=spawnOption?.point?String(Math.round(spawnOption.point.x)):'';
   $('world-area-spawn-y').value=spawnOption?.point?String(Math.round(spawnOption.point.y)):'';
+  $('world-area-spawn-select-start').disabled=area.id!==sculptWorldDraft.initialAreaId;
   $('world-area-spawn-info').textContent=!spawnOption
     ?'Aucun point de départ ou d’arrivée défini pour cette zone.'
     :!spawnOption.editable
@@ -4929,11 +5039,14 @@ function refreshSculptWorldPanel(){
         ?'★ Départ principal du monde : déplace-le ici ou directement sur le terrain.'
         :'Point d’arrivée libre : position modifiable sur le terrain.';
   $('world-area-portal-place').textContent=
-    sculptWorldPortalPlacement==='portal'?'✕ Annuler la pose de l’entrée':
-      '📍 Pointer l’entrée sur le terrain';
+    sculptWorldPortalPlacement==='portal'?'✕ Annuler le déplacement de sortie':
+      '📍 Déplacer la sortie sur la carte';
   $('world-area-spawn-place').textContent=
-    sculptWorldPortalPlacement==='spawn'?'✕ Annuler la pose de l’arrivée':
-      '📍 Pointer l’arrivée sur le terrain';
+    sculptWorldPortalPlacement==='spawn'?'✕ Annuler le déplacement du point':
+      (spawnOption?.initial?'📍 Déplacer le départ sur la carte':'📍 Déplacer ce point sur la carte');
+  $('world-area-marker-pick').textContent=
+    sculptWorldPortalPlacement==='select'?'✕ Annuler la sélection':
+      '🎯 Sélectionner un repère sur la carte';
   updateSculptWorldPortalAction();
   scheduleDraw();
 }
@@ -4960,8 +5073,8 @@ function commitSculptWorldPortal(point){
   const position=validSculptWorldAuthoringPoint(point);
   sculptWorldDraft=placeSculptWorldPortal(sculptWorldDraft,portal.id,position);
   refreshSculptWorldPanel();
-  sculptWorldStatus('Entrée du Portal enregistrée à X '+position.x+', Y '+position.y+
-    ' · repère SORTIE visible sur la carte.');
+  sculptWorldStatus('Sortie enregistrée à X '+position.x+', Y '+position.y+
+    ' · destination et arrivée inchangées.');
 }
 function commitSculptWorldSpawn(point){
   const spawn=selectedWorldSpawn();
@@ -4971,8 +5084,9 @@ function commitSculptWorldSpawn(point){
   sculptWorldDraft=placeSculptWorldSpawn(
     sculptWorldDraft,sculptWorldAreaId,spawn.id,position);
   refreshSculptWorldPanel();
-  sculptWorldStatus('Point d’arrivée enregistré à X '+position.x+', Y '+position.y+
-    ' · repère ARRIVÉE visible sur la carte.');
+  sculptWorldStatus((spawn.id===sculptWorldDraft.initialSpawnId&&
+    sculptWorldAreaId===sculptWorldDraft.initialAreaId?'Départ initial':'Arrivée')+
+    ' enregistré à X '+position.x+', Y '+position.y+'.');
 }
 function applySculptWorldPointerPlacement(point){
   if(!sculptWorldPortalPlacement)return;
@@ -4980,7 +5094,17 @@ function applySculptWorldPointerPlacement(point){
   sculptWorldPortalPlacement=null;
   try{
     if(mode==='portal')commitSculptWorldPortal(point);
-    else commitSculptWorldSpawn(point);
+    else if(mode==='spawn')commitSculptWorldSpawn(point);
+    else if(mode==='select'){
+      const marker=pickSculptWorldEditorMarkerV1(sculptWorldDraft,
+        sculptWorldAreaId,point,{radius:36});
+      if(!marker)throw Error('Aucun repère proche de ce point. Zoome sur un cercle SORTIE / ARRIVÉE / DÉPART.');
+      if(marker.kind==='exit')$('world-area-portal-select').value=marker.portalId;
+      else $('world-area-spawn-select').value=marker.spawnId;
+      $('world-area-portal-panel').open=true;
+      sculptWorldStatus('Repère '+(marker.kind==='exit'?'SORTIE':marker.isInitial?'DÉPART':'ARRIVÉE')+
+        ' sélectionné. Choisis Déplacer pour repositionner.');
+    }
   }catch(error){sculptWorldStatus(error.message,true);}
   refreshSculptWorldPanel();
 }
@@ -5058,7 +5182,7 @@ function drawSculptWorldPortalMarkers(){
     const level=sculptHeightAt(terrain,Math.floor(x/SCULPT_TILE.width),
       Math.floor(y/SCULPT_TILE.height));
     const viewY=y-level*SCULPT_TILE.rise;
-    const exit=marker.kind==='exit',arrival=marker.kind==='arrival';
+    const exit=marker.kind==='exit',arrival=marker.kind==='arrival'&&!marker.isInitial;
     const color=exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
     const title=exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
     const name=(marker.label??'').slice(0,35);
@@ -5489,6 +5613,11 @@ function installSculptWorldAreaEditing(){
   if(new URLSearchParams(window.location.search).get('worldAssembler')!=='1')return;
   document.body.classList.add('world-area-editing');
   $('world-workspace-tabs').hidden=false;
+  // Move, never copy, the existing map preset controls into the right-hand
+  // inspector, leaving the top-left canvas fully available for painting.
+  $('world-area-portal-panel').querySelector('.world-area-panel-content')
+    .appendChild($('sculpt-map-preset-panel'));
+  $('sculpt-map-preset-panel').open=false;
   $('world-area-portal-panel').open=false;
   const requestedAreaId=new URLSearchParams(window.location.search).get('areaId');
   // The handoff is intentionally consumed once. On a page refresh we
@@ -5556,6 +5685,44 @@ function installSculptWorldAreaEditing(){
     });
   $('world-area-portal-select').addEventListener('change',refreshSculptWorldPanel);
   $('world-area-spawn-select').addEventListener('change',refreshSculptWorldPanel);
+  $('world-area-marker-pick').addEventListener('click',()=>{
+    if(navigationTesting){sculptWorldStatus('Quitte Tester avant de sélectionner un repère.',true);return;}
+    sculptWorldPortalPlacement=sculptWorldPortalPlacement==='select'?null:'select';
+    if(sculptWorldPortalPlacement)$('world-area-portal-panel').open=false;
+    refreshSculptWorldPanel();
+    sculptWorldStatus(sculptWorldPortalPlacement
+      ?'Touche un cercle SORTIE, ARRIVÉE ou DÉPART pour le sélectionner.':'Sélection annulée.');
+  });
+  $('world-area-spawn-select-start').addEventListener('click',()=>{
+    if(sculptWorldAreaId!==sculptWorldDraft.initialAreaId){
+      sculptWorldStatus('Ouvre d’abord la zone marquée ★ Départ dans le World Builder.',true);return;
+    }
+    try{
+      // A door-linked old start remains intact; add an automatically-ID'd
+      // movable initial Spawn rather than detaching the building's doorway.
+      sculptWorldDraft=ensureFreeWorldInitialSpawnV1(sculptWorldDraft);
+      refreshSculptWorldPanel();
+      $('world-area-spawn-select').value=sculptWorldDraft.initialSpawnId;
+      sculptWorldPortalPlacement='spawn';
+      $('world-area-portal-panel').open=false;
+      refreshSculptWorldPanel();
+      sculptWorldStatus('★ Touche le nouveau départ sur la carte jouable (terrain sec).');
+    }catch(error){sculptWorldStatus(error.message,true);}
+  });
+  $('world-area-edit-destination').addEventListener('click',()=>{
+    const portal=currentWorldPortal();
+    if(!portal){sculptWorldStatus('Sélectionne d’abord une sortie.',true);return;}
+    try{
+      persistCurrentWorldSculpt();
+      const target=portal.targetAreaId;
+      if(!sculptWorldDraft.areas.some(a=>a.id===target))throw Error('Zone cible indisponible');
+      saveWorldAssemblerHandoff(window.sessionStorage,sculptWorldDraft,target);
+      const url=new URL(window.location.href);
+      url.searchParams.set('worldAssembler','1');
+      url.searchParams.set('areaId',target);
+      window.location.assign(url.href);
+    }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
+  });
   for(const [id,mode] of [
     ['world-area-portal-place','portal'],['world-area-spawn-place','spawn']]){
     $(id).addEventListener('click',()=>{
