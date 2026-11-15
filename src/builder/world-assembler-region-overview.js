@@ -8,6 +8,7 @@ export function worldAssemblerRegionOverview(doc){
     regionIds.has(portal.sourceAreaId)&&regionIds.has(portal.targetAreaId));
   // Only completely disconnected instances need a maintenance entry:
   // nested instances reachable through another interior are not orphans.
+  // Follow entry direction: a return-only Portal cannot enter an interior.
   const reachable=new Set(regionIds);
   let changed=true;
   while(changed){
@@ -15,9 +16,6 @@ export function worldAssemblerRegionOverview(doc){
     for(const portal of doc.portals){
       if(reachable.has(portal.sourceAreaId)&&!reachable.has(portal.targetAreaId)){
         reachable.add(portal.targetAreaId);changed=true;
-      }
-      if(reachable.has(portal.targetAreaId)&&!reachable.has(portal.sourceAreaId)){
-        reachable.add(portal.sourceAreaId);changed=true;
       }
     }
   }
