@@ -1,0 +1,59 @@
+name: Export original unretouched building sprites (snapshot only)
+on:
+  push:
+    branches:
+      - export/maisons-originales-avant-detourage-20261115
+permissions:
+  contents: read
+jobs:
+  export-original-buildings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 05ccc80874a27ab19f184897ac659c5b2abd1c4a
+          persist-credentials: false
+      - name: Confirm 30 original winter-house files and build downloadable ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib, json, zipfile
+          from pathlib import Path
+          base=Path("assets/exploration/objects/buildings")
+          assert base.is_dir(), "original building assets missing"
+          manifest=json.loads((base/"manifest.snow-houses.v1.json").read_text("utf-8"))
+          assert len(manifest["files"])==30, "original winter-house inventory mismatch"
+          assert len(manifest["models"])==10, "original snow-house model count mismatch"
+          for row in manifest["files"]:
+              p=Path(row["path"]);data=p.read_bytes()
+              assert len(data)==row["bytes"],f"size mismatch {p}"
+              assert hashlib.sha256(data).hexdigest()==row["sha256"],f"sha mismatch {p}"
+          author=next(x for x in manifest["files"] if x["path"].endswith("building_house_snow_alpine_timber_2p5d_side_01.webp"))
+          assert author["sha256"]=="fbf2219711dae5e3a0f99a250eafe3058f3fc44b503f512d36b0b127cc54f4f6", "snapshot was edited"
+          files=sorted(p for p in base.rglob("*") if p.is_file())
+          assert sum(p.suffix.lower()==".webp" for p in files)>=65, "incomplete building pack"
+          name=Path("batiments_originaux_labo_exploration_avant_detourage.zip")
+          readme=("BÂTIMENTS ORIGINAUX — LABO EXPLORATION\\n"
+                  "====================================\\n"
+                  "Instantané GitHub exact : 05ccc80874a27ab19f184897ac659c5b2abd1c4a\\n"
+                  "Ces fichiers sont ceux du dépôt AVANT le remplacement manuel du chalet et les nettoyages effectués par ChatGPT.\\n"
+                  "Contenu : dossier canonique assets/exploration/objects/buildings (maisons enneigées, autres bâtiments, arènes et manifestes présents).\\n"
+                  "Images WebP d'origine inchangées, noms et chemins conservés.\\n"
+                  "Manifestes et sommes SHA-256 inclus pour vérifier l'intégrité.\\n"
+                  "La vue chalet_alpine_timber_side dans ce ZIP est donc l'ANCIENNE version, pas celle nettoyée par le créateur.\\n")
+          readme=readme.replace("\\n","\n")
+          with zipfile.ZipFile(name,"w",compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
+              z.writestr("LIRE_AVANT_UTILISATION.txt",readme)
+              for p in files:
+                  z.write(p,p.as_posix())
+          print(json.dumps({"archive":str(name),"webp_count":sum(p.suffix.lower()==".webp" for p in files),
+              "files":len(files),"size_bytes":name.stat().st_size,"source_commit":"05ccc80874a27ab19f184897ac659c5b2abd1c4a"}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: batiments-originaux-avant-detourage
+          path: batiments_originaux_labo_exploration_avant_detourage.zip
+          if-no-files-found: error
+          retention-days: 10
