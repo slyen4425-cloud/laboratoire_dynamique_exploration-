@@ -31,7 +31,7 @@ import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain
 import {normalizeWorldArea} from './world/world-area-model.js?rev=interior-r3c-wall-materials';
 import {INTERIOR_DOOR_ASSETS,INTERIOR_CONNECTOR_ASSETS} from './world/interior-material-catalog.js';
 import {worldAreaBoundaryPoints,pointInWorldAreaBoundary} from './world/world-area-geometry.js';
-import {sculptInteriorShapeId,resizeSculptInterior} from './world/sculpt-interior-layout.js?rev=interior-r3c-shapes';
+import {sculptInteriorShapeId,sculptInteriorBoundary,resizeSculptInterior} from './world/sculpt-interior-layout.js?rev=interior-r3c-shapes';
 import {appendInteriorWall,removeInteriorWallNear,INTERIOR_WALL_LIMIT,snapInteriorWallPoint} from './world/interior-wall-model.js';
 import {drawSculptInteriorWalls} from './render/sculpt-interior-walls.js?rev=interior-v79-r3e-no-stair-marker';
 import {SCULPT_EXTERIOR_AREA_ID,SCULPT_INTERIOR_LIMIT,
@@ -4868,11 +4868,17 @@ function mountSculptArea(snapshot){
 }
 function updateSculptAreaControls(){
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
-  $('interior-area-bar').hidden=!entry;
-  document.body.classList.toggle('sculpt-interior-area',!!entry);
+  const worldInterior=!entry&&sculptWorldCurrentInterior();
+  const inInterior=!!entry||worldInterior;
+  $('interior-area-bar').hidden=!inInterior;
+  document.body.classList.toggle('sculpt-interior-area',inInterior);
+  const worldFloors=worldInterior?worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId):[];
+  const worldFloor=worldFloors.find(f=>f.areaId===sculptWorldAreaId);
   $('interior-area-label').textContent=entry?
     '🏠 '+(entry.floorIndex===0?'Rez-de-chaussée':'Étage '+entry.floorIndex)+
-      ' · '+entry.buildingId:'🏞 Extérieur';
+      ' · '+entry.buildingId:worldInterior?
+    '🏠 '+(worldFloor?.label??'Intérieur')+' · '+(sculptWorldArea()?.label??'Maison'):
+    '🏞 Extérieur';
   if(entry){
     const floors=sculptInteriors.filter(e=>e.buildingId===entry.buildingId)
       .sort((a,b)=>a.floorIndex-b.floorIndex);
@@ -4894,8 +4900,43 @@ function updateSculptAreaControls(){
     $('interior-shape').value=kind==='custom'?'rectangle':kind;
     $('interior-layout-apply').disabled=kind==='custom';
   }
+  if(worldInterior){
+    // Expose the EXISTING native inspector for a linked WorldArea.
+    const selector=$('interior-level-select'),old=selector.value;
+    selector.replaceChildren(...worldFloors.map(f=>new Option(f.label,f.areaId)));
+    selector.value=worldFloors.some(f=>f.areaId===sculptWorldAreaId)?
+      sculptWorldAreaId:(worldFloors[0]?.areaId??'');
+    const level=worldFloor?.level??0;
+    $('interior-level-add').disabled=worldFloors.length>=SCULPT_INTERIOR_FLOOR_LIMIT||
+      level!==worldFloors.length-1||!worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId);
+    $('interior-width').value=String(terrain.width);
+    $('interior-height').value=String(terrain.height);
+    $('interior-width').disabled=true;
+    $('interior-height').disabled=true;
+    $('interior-layout-apply').disabled=false;
+    $('interior-layout-apply').textContent='Appliquer la forme';
+    const shape=sculptInteriorShapeId(sculptWorldArea());
+    $('interior-shape').value=shape==='custom'?'rectangle':shape;
+    $('interior-shape').disabled=shape==='custom';
+    $('interior-shape-hint').textContent=shape==='custom'?
+      'Forme personnalisée déjà enregistrée. Modifie-la depuis World Builder sans l’écraser.':
+      'Forme du sol modifiable ici. Dimensions verrouillées dans la WorldArea pour protéger les portes, murs et points d’arrivée.';
+    $('interior-wall-material').value=sculptWorldArea()?.wallMaterialId??'plaster';
+    // Historical templates are tied to standalone interiors, never copied
+    // into the playable WorldDocument behind a user's back.
+    $('interior-template-save').disabled=true;
+    $('interior-template-apply').disabled=true;
+    $('interior-template-save').title='Les modèles de pièce sont réservés au Labo isolé';
+  }else{
+    $('interior-width').disabled=false;
+    $('interior-height').disabled=false;
+    $('interior-shape').disabled=false;
+    $('interior-layout-apply').textContent='Appliquer forme et taille';
+    $('interior-shape-hint').textContent=
+      "Choisir une forme l'applique directement. Pour la taille, utilise Appliquer.";
+    $('interior-template-save').disabled=false;
+  }
   $('new-map-toggle').disabled=!!entry;
-  const worldInterior=!entry&&sculptWorldCurrentInterior();
   const worldInteriorFloorRow=$('world-interior-floor-base-row');
   if(worldInteriorFloorRow)worldInteriorFloorRow.hidden=!worldInterior;
   if(worldInterior&&worldInteriorFloorBase)worldInteriorFloorBase.value=
@@ -4911,8 +4952,10 @@ function updateSculptAreaControls(){
       ?.objectDefinitionId)?.kind!=='building';
   updateSculptDoorAction();
   updateInteriorWallControls();updateInteriorDoorControls();updateInteriorConnectorControls();
-  if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';updateInteriorConnectorControls();
   if(entry)$('interior-wall-material').value=entry.area.wallMaterialId??'plaster';
+  updateInteriorConnectorControls();
+  $('interior-door-move').closest('.interior-door-tools').hidden=worldInterior&&
+    worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId)?.rootAreaId!==sculptWorldAreaId;
 }
 function changeSculptArea(nextAreaId,{spawn=null}={}){
   if(activeInteriorId===nextAreaId||(!activeInteriorId&&
