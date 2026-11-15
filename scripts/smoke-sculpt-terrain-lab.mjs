@@ -3760,39 +3760,76 @@ try{
       fullCanvas:uxFullscreen.canvasHeight,
       touchFullscreen:true,cancelSafe:true,presetsKept:uxOpened.presetsKept}));
 
+  // Exercise the visible Objets editor, not the retired X/Y authoring path.
+  // Real canvas pointer coordinates derive from the same existing camera projection.
+  const placePortalAtSpawnViaObjects=async(targetAreaId)=>{
+    const prep=await run(`(()=>{
+      const desired=${JSON.stringify(targetAreaId)};
+      const probe=window.__sculptWorldProbe(),
+        gate=probe.outgoing.find(p=>p.targetAreaId===desired);
+      if(!gate||gate.trigger.kind!=='point')return {error:'free exit unavailable',desired,probe};
+      const tab=document.querySelector('#mode-objects');
+      if(!window.__sculptLabProbe().objectEditing)tab?.click();
+      const select=document.querySelector('#object-waypoint-select'),
+        button=document.querySelector('#object-waypoint-place'),
+        spawn=probe.spawns[0],canvas=document.querySelector('#sculpt-canvas');
+      if(!select||!button||!spawn||!canvas)return {error:'Objs controls not ready',
+        controls:[!!select,!!button,!!spawn,!!canvas],url:location.href};
+      select.value='portal:'+gate.id;
+      select.dispatchEvent(new Event('change'));
+      if(document.querySelector('#world-area-portal-select')?.value!==gate.id)
+        return {error:'Objets did not select the correct canonical portal',gateId:gate.id};
+      button.click();
+      if(window.__sculptWorldProbe().placementMode!=='portal')
+        return {error:'Objets placement mode not armed',gateId:gate.id};
+      const cam=window.__sculptLabProbe(),rect=canvas.getBoundingClientRect();
+      const pitch=cam.liveCameraPitch,
+        shear=probe.areaKind==='interior'?0:cam.cameraView==='classic'?0:-.1;
+      const x=spawn.x+12,y=spawn.y;
+      const screenX=rect.left+cam.cameraPan.x+x*cam.zoom;
+      const col=Math.floor(x/28),row=Math.floor(y/21);
+      let touch=null;
+      for(let level=16;level>=0;level--){
+        const screenY=rect.top+cam.cameraPan.y+
+          (pitch*(y-level*18)+shear*x)*cam.zoom;
+        const cell=window.__sculptLabProbe({x:screenX,y:screenY}).probedCell;
+        if(cell?.x===col&&cell?.y===row&&screenX>=rect.left&&
+          screenX<=rect.right&&screenY>=rect.top&&screenY<=rect.bottom){
+          touch={x:screenX,y:screenY};break;
+        }
+      }
+      return {gate,spawn,touch,areaId:probe.areaId,camera:cam.cameraView,
+        pitch,zoom:cam.zoom,canvas:{width:rect.width,height:rect.height}};
+    })()`);
+    if(prep.error||!prep.touch)
+      throw Error('Objets waypoint must be tappable on an exposed terrain cell: '+JSON.stringify(prep));
+    await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+      {x:prep.touch.x,y:prep.touch.y,id:58,radiusX:5,radiusY:5,force:1}
+    ]});
+    await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+    const placed=await run(`(()=>{
+      const p=window.__sculptWorldProbe();
+      return {probe:p,portal:p.outgoing.find(x=>x.id===${JSON.stringify(prep.gate.id)})};
+    })()`);
+    const distance=placed.portal?.trigger.kind==='point'?
+      Math.hypot(placed.portal.trigger.x-prep.spawn.x,
+        placed.portal.trigger.y-prep.spawn.y):Infinity;
+    if(distance>Math.max(20,placed.portal?.trigger.radius??0)||
+       placed.probe.placementMode!==null)
+      throw Error('Actual Objets touch did not move the portal beside Spawn: '+
+        JSON.stringify({prep,placed,distance}));
+    return {gate:prep.gate,spawn:prep.spawn,portal:placed.portal};
+  };
+  const stagedWorldPortal=await placePortalAtSpawnViaObjects('grotte-du-nord');
   const placedWorldPortal=await run(`(()=>{
-    const gate=window.__sculptWorldProbe().outgoing.find(p=>
-      p.targetAreaId==='grotte-du-nord');
-    if(!gate) return {error:'no dungeon entry'};
-    // Objets is now the only author-facing selection. The legacy hidden
-    // select is a downstream adapter, never a second selection authority.
-    const list=document.querySelector('#object-waypoint-select');
-    list.value='portal:'+gate.id;list.dispatchEvent(new Event('change'));
-    if(document.querySelector('#world-area-portal-select').value!==gate.id)
-      return {error:'selected Objets exit did not bind to the canonical Portal',gateId:gate.id};
-    const spawn=window.__sculptWorldProbe().spawns[0];
-    const px=document.querySelector('#world-area-portal-x'),
-      py=document.querySelector('#world-area-portal-y'),
-      save=document.querySelector('#world-area-portal-save'),
-      tester=document.querySelector('#navigation-toggle');
-    if(!px||!py||!save||!tester)
-      return {error:'missing canonical authoring test fixture',url:location.href,
-        controls:{px:!!px,py:!!py,save:!!save,tester:!!tester},
-        ids:[...document.querySelectorAll('[id]')].filter(el=>
-          /portal|waypoint|navigation/.test(el.id)).map(el=>el.id).slice(0,40)};
-    px.value=String(spawn.x+12);
-    py.value=String(spawn.y);
-    save.click();
-    tester.click();
-    return {gate,spawn,sculpt:window.__sculptWorldProbe(),
-      inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none',
-      nav:window.__sculptNavProbe()};
+    document.querySelector('#navigation-toggle').click();
+    return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe(),
+      inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none'};
   })()`);
-  if(!placedWorldPortal.inspectorHidden)throw Error('Portal inspector overlaps the playable hero during testing');
-  if(placedWorldPortal.error||!placedWorldPortal.nav.enabled||
+  if(!placedWorldPortal.inspectorHidden||!placedWorldPortal.nav.enabled||
      !placedWorldPortal.sculpt.traverseVisible)
-    throw Error('Host 2.5D portal not reachable in actual gameplay: '+
-      JSON.stringify(placedWorldPortal));
+    throw Error('Host 2.5D Portal not reachable after Objets touch: '+
+      JSON.stringify({stagedWorldPortal,placedWorldPortal}));
   // Real mobile CSS layout: previously the button was in normal document
   // flow, so the code saw it but the user never saw/could touch it.
   const visibleTraverse=await run(`(()=>{
@@ -3825,33 +3862,14 @@ try{
      enteredDungeon.nav.player===null)
     throw Error('Canonical Portal did not load live 2.5D dungeon Area: '+
       JSON.stringify(enteredDungeon));
+  const stagedDungeonReturn=await placePortalAtSpawnViaObjects('area-principale');
   const placedDungeonReturn=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
-    const current=window.__sculptWorldProbe();
-    const back=current.outgoing.find(p=>p.targetAreaId==='area-principale');
-    if(!back)return {error:'no return portal'};
-    const list=document.querySelector('#object-waypoint-select');
-    list.value='portal:'+back.id;list.dispatchEvent(new Event('change'));
-    if(document.querySelector('#world-area-portal-select').value!==back.id)
-      return {error:'return exit selection not reflected in Portal adapter'};
-    const spawn=window.__sculptWorldProbe().spawns[0];
-    const px=document.querySelector('#world-area-portal-x'),
-      py=document.querySelector('#world-area-portal-y'),
-      save=document.querySelector('#world-area-portal-save'),
-      tester=document.querySelector('#navigation-toggle');
-    if(!px||!py||!save||!tester)
-      return {error:'missing canonical authoring test fixture',url:location.href,
-        controls:{px:!!px,py:!!py,save:!!save,tester:!!tester},
-        ids:[...document.querySelectorAll('[id]')].filter(el=>
-          /portal|waypoint|navigation/.test(el.id)).map(el=>el.id).slice(0,40)};
-    px.value=String(spawn.x+12);
-    py.value=String(spawn.y);
-    save.click();
-    tester.click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
   })()`);
-  if(placedDungeonReturn.error||!placedDungeonReturn.sculpt.traverseVisible)
-    throw Error('Dungeon return Portal not reachable: '+JSON.stringify(placedDungeonReturn));
+  if(!placedDungeonReturn.nav.enabled||!placedDungeonReturn.sculpt.traverseVisible)
+    throw Error('Dungeon return Portal not reachable after Objets touch: '+
+      JSON.stringify({stagedDungeonReturn,placedDungeonReturn}));
   const backOutside=await run(`(()=>{
     document.querySelector('#world-portal-traverse').click();
     return window.__sculptWorldProbe();
