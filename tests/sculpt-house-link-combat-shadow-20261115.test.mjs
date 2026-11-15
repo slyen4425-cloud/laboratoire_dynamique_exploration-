@@ -39,6 +39,7 @@ test('single click in 2.5D creates real linked WorldArea and two traversable nat
  assert.equal(sculptWorldAreaScene(target).terrain.width,18);
  assert.equal(sculptWorldAreaScene(target).terrain.height,14);
  const doorPoint=resolvePortalTriggerPoint(link.document.areas,door);
+ assert.ok(door.trigger.radius>=84,'safe physical approach must reach the door without penetrating collision');
  assert.equal(findTriggeredPortal(link.document,sourceAreaId,doorPoint).id,door.id);
  const entry=applyPortalTransition(link.document,{currentAreaId:sourceAreaId,...doorPoint},door);
  assert.equal(entry.currentAreaId,target.id);
@@ -50,6 +51,8 @@ test('single click in 2.5D creates real linked WorldArea and two traversable nat
  const arrival=resolveWorldAreaSpawnPoint(
   link.document.areas.find(a=>a.id===sourceAreaId),back.targetSpawnId);
  assert.deepEqual({x:returnState.x,y:returnState.y},{x:arrival.x,y:arrival.y});
+ assert.ok(Math.hypot(arrival.x-doorPoint.x,arrival.y-doorPoint.y)<=door.trigger.radius,
+  'door remains reachable from its canonical collision-safe return Spawn');
 });
 
 test('relinking same house reuses exact IDs and never duplicates WorldAreas/Portals',()=>{
