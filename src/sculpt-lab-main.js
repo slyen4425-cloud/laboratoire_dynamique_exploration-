@@ -5102,7 +5102,7 @@ function applySculptWorldPointerPlacement(point){
       if(marker.kind==='exit')$('world-area-portal-select').value=marker.portalId;
       else $('world-area-spawn-select').value=marker.spawnId;
       $('world-area-portal-panel').open=true;
-      sculptWorldStatus('Repère '+(marker.kind==='exit'?'SORTIE':marker.kind==='start'?'DÉPART':'ARRIVÉE')+
+      sculptWorldStatus('Repère '+(marker.kind==='exit'?'SORTIE':marker.isInitial?'DÉPART':'ARRIVÉE')+
         ' sélectionné. Choisis Déplacer pour repositionner.');
     }
   }catch(error){sculptWorldStatus(error.message,true);}
@@ -5182,7 +5182,7 @@ function drawSculptWorldPortalMarkers(){
     const level=sculptHeightAt(terrain,Math.floor(x/SCULPT_TILE.width),
       Math.floor(y/SCULPT_TILE.height));
     const viewY=y-level*SCULPT_TILE.rise;
-    const exit=marker.kind==='exit',arrival=marker.kind==='arrival';
+    const exit=marker.kind==='exit',arrival=marker.kind==='arrival'&&!marker.isInitial;
     const color=exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
     const title=exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
     const name=(marker.label??'').slice(0,35);
