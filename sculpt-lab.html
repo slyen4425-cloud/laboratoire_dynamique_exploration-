@@ -373,6 +373,22 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
  padding:6px 10px;border:1px solid #ab9070;border-radius:10px;
  background:#352f29;color:#f4e5d3;font-size:.85rem}
 .interior-area-bar[hidden]{display:none!important}
+.interior-controls-details{flex:1 1 100%;min-width:0;border:1px solid #766b56;
+ border-radius:8px;background:#272a2a;box-sizing:border-box}
+.interior-controls-details>summary{cursor:pointer;list-style:revert;padding:9px 12px;
+ font-size:.82rem;font-weight:800;color:#f7e4be}
+.interior-controls-details:not([open])>.interior-controls-fields{display:none!important}
+.interior-controls-fields{display:flex;flex-wrap:wrap;gap:8px;padding:8px;
+ max-height:min(58dvh,570px);overflow-y:auto;overscroll-behavior:contain}
+.interior-controls-fields>.interior-floor-tools,
+.interior-controls-fields>.interior-wall-tools,
+.interior-controls-fields>.interior-layout-tools,
+.interior-controls-fields>.interior-door-tools{width:100%;flex:1 1 100%}
+.interior-controls-fields>label{display:grid;gap:4px;flex:1 1 155px;min-width:0}
+@media(max-width:700px){
+ .interior-controls-details>summary{padding:8px;font-size:.75rem}
+ .interior-controls-fields{max-height:min(50dvh,320px);padding:6px}
+}
 .interior-area-bar>label{display:flex;align-items:center;gap:8px;flex:1 1 180px}
 .interior-area-bar input{flex:1;min-width:70px;max-width:190px}
 .interior-area-bar button,#object-open-interior{min-height:40px;font-weight:750}
@@ -892,6 +908,9 @@ body.sculpt-play-unavailable #play-start-error{
 <section id="interior-area-bar" class="interior-area-bar" aria-label="Éditeur d'intérieur 2,5D" hidden>
  <strong id="interior-area-label">🏠 Intérieur 2,5D</strong>
  <button id="interior-area-return" type="button">← Retour extérieur</button>
+ <details id="interior-controls-details" class="interior-controls-details">
+  <summary>🧱 Aménager l’intérieur · murs, étages, porte et sol</summary>
+  <div class="interior-controls-fields">
  <section class="interior-floor-tools" aria-label="Étages du bâtiment">
   <strong>🪜 Étages liés</strong>
   <label>Étage actif <select id="interior-level-select"><option value="0">Rez-de-chaussée</option></select></label>
@@ -992,6 +1011,8 @@ body.sculpt-play-unavailable #play-start-error{
  <label>Réutiliser <select id="interior-template-select" aria-label="Modèle de pièce à réutiliser"><option value="">Édition libre (aucun modèle)</option></select></label>
  <button id="interior-template-apply" type="button" disabled>Appliquer le modèle choisi</button>
  <small>Tu peux toujours personnaliser la pièce sans modèle. Appliquer remplace son contenu, sans modifier sa porte extérieure.</small>
+  </div>
+ </details>
 </section>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
@@ -1548,6 +1569,6 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115"></script>
 </body>
 </html>

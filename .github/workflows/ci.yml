@@ -76,6 +76,8 @@ jobs:
         run: node scripts/smoke-world-assembler-authoring-layout.mjs
       - name: Real Chromium interior floor material and brush smoke
         run: node scripts/smoke-interior-floor-brush.mjs
+      - name: Real Chromium linked house walls, floors, return and saved WorldArea
+        run: node scripts/smoke-linked-house-interior-browser.mjs
       - name: Real Chromium opt-in relief canyon Builder and SVG gate
         run: node scripts/smoke-relief-canyon-pilot.mjs
       - name: Real Chromium sculptable terrain lab brush and material smoke
