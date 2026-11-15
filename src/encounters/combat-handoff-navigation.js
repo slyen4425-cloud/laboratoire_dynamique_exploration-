@@ -1,5 +1,5 @@
 import {
-  saveCombatHandoff
+  saveCombatHandoff,readCombatHandoff
 } from './combat-handoff-store.js?rev=phase7-combat-handoff-v1';
 
 export const DEFAULT_COMBAT_PREVIEW_PAGE =
@@ -72,4 +72,28 @@ export function launchCombatHandoffNavigation({
   );
 
   return true;
+}
+
+// Resume the EXACT unsettled encounter. Never overwrite the stored snapshot,
+// its return coordinates or a CombatResult that has not been acknowledged.
+// The official fixed packaged page remains the only permitted destination.
+export function resumePendingCombatHandoffNavigation({
+ snapshot,storage,documentUrl,sessionId,
+ combatPage=DEFAULT_COMBAT_PREVIEW_PAGE,
+ navigate=(url)=>globalThis.location.assign(url)
+}={}){
+ const pending=readCombatHandoff(storage,{sessionId});
+ if(!pending||pending.result||
+    JSON.stringify(pending.snapshot)!==JSON.stringify(snapshot))
+   throw Error('Le combat précédent doit être récupéré avant de continuer');
+ const current=new URL(documentUrl);
+ const origin=new URL(pending.returnState.returnUrl);
+ if(current.origin!==origin.origin||current.pathname!==origin.pathname)
+   throw Error('La page de retour du combat précédent ne correspond pas');
+ if(sessionId!==undefined&&current.searchParams.get('adventureSession')!==sessionId)
+   throw Error('La session Aventure du combat précédent ne correspond pas');
+ const target=new URL(normalizeLocalCombatPreviewPage(combatPage),current);
+ if(sessionId!==undefined)target.searchParams.set('adventureSession',sessionId);
+ navigate(target.href);
+ return true;
 }
