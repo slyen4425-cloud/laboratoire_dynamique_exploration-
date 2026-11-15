@@ -1,3 +1,10 @@
+## 2026-11-15 — Régression : murs, étages et retour des intérieurs de maison
+- Cause prouvée : après maison → « Lier / modifier intérieur », une vraie WorldArea officielle est créée mais l'inspecteur masquait tous les outils lorsque `activeInteriorId` n'était pas un ID de l'ancien tableau `sculptInteriors`. Les murs et étages refusaient en conséquence tout ajout, et le retour était dans le panneau Passages.
+- START source `main@73996dd3e9a53c93766871a68ea916a2d4cf6e6b`, checkpoint `checkpoint/exploration-start-world-interior-ui-20261115`, lot isolé `work/exploration-restore-world-interior-tools-20261115`.
+- Réparation : même inspecteur 2.5D pour la carte WorldArea intérieure officielle ; murs, textures, forme validée, porte et retour vers extérieur ; niveaux associés aux WorldAreas via métadonnée facultative `interiorFloor`, vrais Portal/Spawn de montée/descente, sans deuxième autorité. L'ancienne voie autonome Sculpt conserve son code. Dimensions des cartes du World Builder restent verrouillées dans ce panneau pour protéger les anciens portails et placements, sans rescaling destructeur.
+- Anti-régression : tests maison liée → pièces, étages, murs, aller/retour, sauvegarde/import, anciens mondes, édition clavier/tactile, même WorldDocument, pas de suppression ou nouvelle sauvegarde. CI native/Chromium/Firefox, publication main et contrôle HTTPS avant raccordement dans GenSRPG. Ombres globales présentes et non modifiées.
+---
+
 ## 2026-11-15 — Découpe réelle des abords des maisons (retour auteur)
 - START `main@b44b7e25b67f647a85cf27fecc1c67feee3de65d`, branche `work/exploration-building-ground-props-removal-20261115`. Retour : retirer pierres, éléments extérieurs et fonds gris parasites derrière les lanternes, pas seulement adoucir l'alpha.
 - Révision par masques géométriques et zones grises opaques. **20 WebP enneigés remplacés** à chemin/ID et dimensions 384×384 identiques ; seuls les pixels d'alpha changent (RGB inchangé). Réfection des pieds neige/pierres autour des murs et suppression du fond foncé non architectural derrière les lanternes de la pagode.

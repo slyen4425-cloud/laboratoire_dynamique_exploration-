@@ -164,6 +164,15 @@ export function normalizeWorldArea(raw, index = 0) {
       ?{label:raw.label.trim().slice(0,80)}:{}),
     ...(kind==='interior'&&['dungeon','building','arena','instance'].includes(raw.siteKind)
       ?{siteKind:raw.siteKind}:{}),
+    // Read-only floor grouping metadata for the existing WorldArea+Portal graph:
+    // the root/level are NOT a second source of geometry or transitions.
+    ...(kind==='interior'&&raw.interiorFloor&&
+        typeof raw.interiorFloor.rootAreaId==='string'&&
+        raw.interiorFloor.rootAreaId.trim()&&
+        Number.isInteger(raw.interiorFloor.level)&&
+        raw.interiorFloor.level>=1&&raw.interiorFloor.level<=3
+      ?{interiorFloor:Object.freeze({rootAreaId:raw.interiorFloor.rootAreaId.trim(),
+        level:raw.interiorFloor.level})}:{}),
     width: worldAreaWidth,
     height: worldAreaHeight,
     ...(sculptTerrain?{sculptTerrain}:{}),

@@ -100,5 +100,6 @@ test('R3A : game action is an actual canvas overlay, never a testing option',()=
   assert.match(html,/id="interior-house-link-info"/);
   assert.match(js,/cameraView\(\)[\s\S]{0,160}sculptCameraInteriorView/);
   assert.match(js,/walls:current\?\.area\.walls\?\?\[\]/);
-  assert.match(js,/appendInteriorWall\(currentSculptInterior\(\)\.area\.walls/);
+  assert.match(js,/appendInteriorWall\(currentInteriorArea\(\)\.walls/);
+  assert.match(js,/if\(sculptWorldCurrentInterior\(\)\)commitWorldInteriorAreaPatch\(\{walls\}\)/);
 });
