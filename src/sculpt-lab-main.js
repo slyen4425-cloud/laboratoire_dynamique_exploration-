@@ -93,7 +93,8 @@ import {createSculptEncounterArea,sculptPreviewEncounterConfig} from './encounte
 import {snapshotFromEncounterIntent} from './encounters/encounter-bridge.js';
 import {createCaptureEncounterSnapshot} from './encounters/capture-encounter-contract.js';
 import {worldCombatArenaIdsV1} from './world/world-combat-arena-v1.js';
-import {launchCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
+import {launchCombatHandoffNavigation,
+  resumePendingCombatHandoffNavigation} from './encounters/combat-handoff-navigation.js';
 import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
@@ -329,6 +330,8 @@ if(sculptEncounterController){
 }
 const sculptEncounterRandom=sculptEncounterTest?()=>0:Math.random;
 let sculptPendingEncounter=null;
+// Display gate only. Storage remains the ONE authority for an unsettled battle.
+let sculptTesterCombatRecoveryBlocked=false;
 let sculptEncounterSetupOffered=false;
 let sculptEncounterAreaCache=null;
 
@@ -521,7 +524,8 @@ function navigationEncounterArea(){
 function sculptEncounterStep(){
   // Jouer may only spawn from the scoped Bestiary with an active Core host.
   if(sculptPlayRequested&&(!scopedEncounter?.armed||scopedEncounter.party.active.hp===0))return null;
-  if(!sculptEncounterController||!sculptEncounterCatalog||!navigationTesting||!navActor||sculptPendingEncounter)
+  if(!sculptEncounterController||!sculptEncounterCatalog||!navigationTesting||!navActor||
+     sculptPendingEncounter||sculptTesterCombatRecoveryBlocked)
     return null;
   const area=navigationEncounterArea();
   const intent=sculptEncounterController.step({
@@ -626,13 +630,43 @@ const sculptEncounterHost=sculptEncounterController?createImmersiveEncounterHost
   onFailure(error){status('Combat conservé pour la reprise : '+error.message);}
 }):null;
 
+
+// Standalone Tester previously never read sessionStorage on re-entry after
+// editing an arena. The unacknowledged handoff then blocked every new fight.
+// Recover the OLD combat first; never remove pending saves to unstick a button.
+function recoverStandaloneSculptEncounter(){
+ if(sculptCombatSessionId!==undefined||!sculptEncounterController||
+    !navigationTesting)return false;
+ const pending=readCombatHandoff(sculptCombatStorage);
+ if(!pending)return false;
+ const area=navigationEncounterArea();
+ if(pending.snapshot.player.partyRef!==sculptPreviewPartyRef||
+    pending.snapshot.context.areaId!==area.id||
+    pending.returnState.areaId!==area.id)
+   throw Error('Combat précédent sur une autre carte : retourne sur cette carte pour le reprendre.');
+ if(!sculptEncounterController.restore(pending.snapshot.encounterId))
+   throw Error('Impossible de restaurer la rencontre précédente');
+ presentSculptEncounter(pending.snapshot,true);
+ if(pending.result){
+   // Explicit read -> validate area -> restore -> consume in that order.
+   // No published Adventure reward is consumed by this Tester branch.
+   restoreSculptEncounterPosition(pending);
+   if(!consumeCombatResult(sculptCombatStorage))
+     throw Error('Résultat précédent conservé : acquittement refusé');
+   finishSculptEncounter(pending);
+   status('Combat précédent récupéré et terminé · nouveau test possible');
+ }else status('Combat précédent retrouvé · lance-le pour reprendre la rencontre sans perdre son journal');
+ return true;
+}
 function launchSculptEncounter(){
   if(!sculptPendingEncounter||sculptEncounterHost.active)return;
   if(scopedEncounter&&!persistPlayNavigationCheckpoint())return;
   explorationSoundtrack.pause(); // Battle owns the music while its iframe is active.
   const player={currentAreaId:navigationEncounterArea().id,x:navActor.x,y:navActor.y};
   try{
-    launchCombatHandoffNavigation({
+    const previous=readCombatHandoff(sculptCombatStorage,{sessionId:sculptCombatSessionId});
+    const launch=previous?resumePendingCombatHandoffNavigation:launchCombatHandoffNavigation;
+    launch({
       snapshot:sculptPendingEncounter,player,
       storage:sculptCombatStorage,documentUrl:document.URL,sessionId:sculptCombatSessionId,
       navigate(url){
@@ -666,7 +700,8 @@ window.__sculptEncounterProbe=()=>Object.freeze({
   creatureId:sculptPendingEncounter?.opponents[0]?.creatureId??null,
   elementId:sculptPendingEncounter?.context.elementId??null,
   overlayVisible:sculptEncounterDialog?!sculptEncounterDialog.hidden:false,
-  combatActive:sculptEncounterHost?.active??false
+  combatActive:sculptEncounterHost?.active??false,
+  testerRecoveryBlocked:sculptTesterCombatRecoveryBlocked
 });
 
 let navHeroRenderTransform=null; // diagnostic only: actual Canvas matrix at sprite draw
@@ -2856,7 +2891,15 @@ function setNavigationTesting(on){
     centerNavigationCamera();
     updatePrecisionActions();updateNavigationInfo(true);
     sculptEncounterController?.resetAnchor();
-    sculptEncounterStep(); // seed the cadence anchor at the actual spawn
+    sculptTesterCombatRecoveryBlocked=false;
+    try{
+      const recovered=recoverStandaloneSculptEncounter();
+      if(!recovered)sculptEncounterStep(); // seed only if no old combat
+    }catch(error){
+      sculptTesterCombatRecoveryBlocked=true;
+      console.warn('Combat Tester en attente conservé:',error);
+      status('Reprise du combat bloquée : '+error.message);
+    }
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
     status(sculptWorldDraft
       ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
@@ -2866,6 +2909,7 @@ function setNavigationTesting(on){
       !sculptWorldDraft||sculptPlayRequested||!!activeInteriorId||!!sculptWorldCurrentInterior();
     if(sculptEncounterHost?.active)return; // Combat owns the overlay until completion
     releaseSculptEncounter();
+    sculptTesterCombatRecoveryBlocked=false;
     sculptEncounterController?.resetAnchor();
     navigationTesting=false;
     npcWanderRuntime.reset();npcWanderElapsed=0;
