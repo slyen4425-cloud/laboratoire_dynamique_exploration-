@@ -5,7 +5,7 @@ import {createBlankSculptPreviewScene,SCULPT_OBJECT_LIMIT,
   appendSculptPreviewObject,normalizeSculptPreviewObjects,
   serializeSculptPreviewScene,importSculptPreviewScene}
   from '../src/world/sculpt-scene-preview.js';
-import {importSculptMapPreset,serializeSculptMapPresetForShare}
+import {importSculptMapPreset}
   from '../src/builder/sculpt-map-preset-library.js';
 import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument}
   from '../src/builder/world-builder-draft.js';
@@ -41,7 +41,7 @@ test('an 80x60 forest can place tree 129 and preserve a dense 513-tree scene',()
   assert.equal(loaded.objects.at(-1).id,'sculpt-object-513');
   const preset={kind:'gensrpg-sculpt-map-preset',version:1,
     id:'map-preset-1',name:'foret_1',scene:JSON.parse(json)};
-  const shared=serializeSculptMapPresetForShare(preset);
+  const shared=JSON.stringify(preset);
   const restored=importSculptMapPreset(shared);
   assert.equal(restored.scene.objects.length,513,
     'the map preset export must not silently drop trees');
