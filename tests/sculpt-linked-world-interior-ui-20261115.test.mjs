@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {demoWorldDocument} from '../src/world/demo-world.js';
-import {addWorldObject,createWorldBuilderDraft,
+import {addWorldObject,createBlankWorldBuilderDraft,
   serializeWorldBuilderDraft,importWorldBuilderDocument,validateWorldBuilderDraft}
   from '../src/builder/world-builder-draft.js';
 import {linkSculptWorldBuildingInteriorV1,sculptWorldAreaScene,saveSculptWorldArea}
@@ -17,12 +16,12 @@ import {
 } from '../src/builder/sculpt-world-interior-floors-v1.js';
 
 function linkedHouse(){
- let world=createWorldBuilderDraft(demoWorldDocument);
+ let world=createBlankWorldBuilderDraft({width:36*28,height:24*21});
  const outside=world.areas.find(a=>a.kind==='exterior');
  world=addWorldObject(world,outside.id,{
    objectDefinitionId:'objectdef.building.house.blue_cottage.01',
    id:'linked-house-ui-regression',
-   transform:{x:980,y:620,rotationDeg:0,scaleX:1,scaleY:1}
+   transform:{x:510,y:305,rotationDeg:0,scaleX:1,scaleY:1}
  });
  const link=linkSculptWorldBuildingInteriorV1(world,{
    sourceAreaId:outside.id,buildingId:'linked-house-ui-regression'});
