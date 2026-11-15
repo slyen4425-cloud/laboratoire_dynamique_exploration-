@@ -60,7 +60,7 @@ import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1}
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
-import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1} from './world/world-object-shadow-settings-v1.js';
+import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,normalizeWorldObjectShadowProfilesV1,worldObjectShadowProfileForAssetV1,setWorldObjectShadowProfileV1} from './world/world-object-shadow-settings-v1.js?rev=shadow-model-profiles-20261115';
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
@@ -181,6 +181,10 @@ let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+ // A standalone Sculpt preview can export the same official profile format;
+ // the WorldBuilder path instead edits its ONE canonical WorldDocument.
+ let sculptStandaloneShadowProfiles=Object.freeze([]);
+ let shadowProfileHistory=[],shadowProfileRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 // A single transient runtime projection; WorldArea.actors is never advanced by gameplay.
 const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
@@ -3277,13 +3281,25 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   // visual renderer, before the image. No phantom collision or second decal.
   // Foreground rails must never stamp an extra shadow on top of the actor.
   const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
-  if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
-    kind:object.kind,width,height,footOffset:artShift,
-    pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
-    // Editing only reads live controls. Gameplay reads the same saved object.
-    shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
-      readSelectedObjectShadowControlsV1():object.shadow
-  });
+  if(!foregroundRailOnly){
+    const visualAssetId=object.visual?.assetId;
+    const modelShadow=worldObjectShadowProfileForAssetV1(currentWorldShadowProfiles(),visualAssetId);
+    const inspecting=objectEditing&&$('object-shadow-details')&&objectSelectedId;
+    const sameModel=inspecting&&$('object-shadow-scope').value==='model'&&
+      visualAssetId===selectedShadowVisualAssetId();
+    const inspectIndividual=inspecting&&$('object-shadow-scope').value==='object'&&
+      objectSelectedId===object.id;
+    // The live form is a transient visual preview. Once committed, both
+    // scopes flow back through the one WorldObject renderer and canonical data.
+    const visualShadow=inspectIndividual?readSelectedObjectShadowControlsV1():
+      (sameModel&&!object.shadow?readSelectedObjectShadowControlsV1():
+        object.shadow??modelShadow);
+    drawWorldObjectContactShadowV1(ctx,{
+      kind:object.kind,width,height,footOffset:artShift,
+      pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
+      shadow:visualShadow
+    });
+  }
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
   // Preserve exact historic bridge/static draw and its regression-tested order.
@@ -3357,6 +3373,43 @@ function refreshObjectVariants(preferred=null){
     $('object-variant').value=wanted;
   }
 }
+function currentWorldShadowProfiles(){
+ return sculptWorldDraft?.objectShadowProfiles??sculptStandaloneShadowProfiles;
+}
+function selectedShadowVisualAssetId(){
+ const selected=placedObjects.find(item=>item.id===objectSelectedId);
+ if(!selected)return null;
+ return resolveWorldObjectPlacements([selected],objectDefinitionCatalogV1)[0]?.visual?.assetId??null;
+}
+function changeWorldShadowProfiles(next){
+ if(sculptWorldDraft){
+   // The editor draft is the SAME WorldDocument written by the existing
+   // WorldBuilder handoff. No per-map shadow table or storage key is created.
+   sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,
+     objectShadowProfiles:next});
+ }else sculptStandaloneShadowProfiles=next;
+ scheduleDraw();
+}
+function commitShadowModelProfile(rawShadow){
+ const assetId=selectedShadowVisualAssetId();
+ if(!assetId)return false;
+ const before=currentWorldShadowProfiles();
+ const next=setWorldObjectShadowProfileV1(before,assetId,rawShadow);
+ if(JSON.stringify(next)===JSON.stringify(before))return false;
+ shadowProfileHistory.push(before);
+ if(shadowProfileHistory.length>40)shadowProfileHistory.shift();
+ shadowProfileRedo=[];
+ changeWorldShadowProfiles(next);
+ refreshSelectedObjectShadowControlsV1(placedObjects.find(o=>o.id===objectSelectedId));
+ return true;
+}
+function updateShadowModelHistoryButtons(){
+ const model=$('object-shadow-scope')?.value==='model';
+ $('object-shadow-profile-undo').hidden=!model;
+ $('object-shadow-profile-redo').hidden=!model;
+ $('object-shadow-profile-undo').disabled=!shadowProfileHistory.length;
+ $('object-shadow-profile-redo').disabled=!shadowProfileRedo.length;
+}
 function readSelectedObjectShadowControlsV1(){
  if(!$('object-shadow-details')||$('object-shadow-mode').value!=='custom')return null;
  return normalizeWorldObjectShadowSettingsV1({
@@ -3378,8 +3431,20 @@ function refreshSelectedObjectShadowControlsV1(selected){
  if(shadowControlsOwnerId!==selected?.id){
   details.open=false; // Collapse again on a different selected object.
   shadowControlsOwnerId=selected?.id??null;
+  $('object-shadow-scope').value='object';
  }
- const shadow=normalizeWorldObjectShadowSettingsV1(selected?.overrides?.shadow);
+ const model=$('object-shadow-scope').value==='model';
+ const assetId=selectedShadowVisualAssetId();
+ const modelValue=worldObjectShadowProfileForAssetV1(currentWorldShadowProfiles(),assetId);
+ const shadow=model?modelValue:normalizeWorldObjectShadowSettingsV1(selected?.overrides?.shadow);
+ const matches=assetId?placedObjects.filter(o=>
+  resolveWorldObjectPlacements([o],objectDefinitionCatalogV1)[0]?.visual?.assetId===assetId):[];
+ const exceptions=matches.filter(o=>!!o.overrides?.shadow).length;
+ $('object-shadow-scope-info').textContent=model
+  ?'Tous les objets de ce visuel dans le monde ('+matches.length+
+    ' sur cette carte). '+(exceptions?exceptions+' exception(s) individuelles conservées.':
+    'Les nouveaux objets identiques suivront aussi ce réglage.')
+  :'Ce réglage reste propre à l’objet sélectionné. Le profil du modèle sert de valeur par défaut.';
  $('object-shadow-mode').value=shadow?'custom':'auto';
  for(const [control,key] of [
   ['width','widthPct'],['height','heightPct'],['x','offsetXPct'],
@@ -3390,7 +3455,8 @@ function refreshSelectedObjectShadowControlsV1(selected){
   $('object-shadow-'+control+'-value').textContent=input.value+' %';
  }
  $('object-shadow-fields').hidden=!shadow;
- $('object-shadow-summary').textContent=shadow?'Personnalisée':'Auto';
+ $('object-shadow-summary').textContent=(model?'Modèle · ':'')+(shadow?'Personnalisée':'Auto');
+ updateShadowModelHistoryButtons();
 }
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
@@ -4706,6 +4772,8 @@ $('interior-wall-redo').addEventListener('click',()=>{
 // gameplay collision engine; portal links use WorldArea/Portal v1 throughout.
 function captureSculptArea(){
   return {terrain,objects:placedObjects,actors:placedActors,surface,
+    ...(!sculptWorldDraft&&sculptStandaloneShadowProfiles.length
+      ?{objectShadowProfiles:sculptStandaloneShadowProfiles}:{}),
     ...(decorativeFringe?{decorativeFringe}:{})};
 }
 function mountSculptArea(snapshot){
@@ -4718,6 +4786,10 @@ function mountSculptArea(snapshot){
   if($('npc-talk'))$('npc-talk').hidden=true;
   terrain=snapshot.terrain;placedObjects=snapshot.objects;placedActors=snapshot.actors;
   surface=snapshot.surface;
+  if(!sculptWorldDraft&&(!activeInteriorId||snapshot.objectShadowProfiles!==undefined))
+    sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
+      snapshot.objectShadowProfiles);
+  shadowProfileHistory=[];shadowProfileRedo=[];
   decorativeFringe=snapshot.decorativeFringe??null;
   fringeEditing=false;fringeGesture=null;fringeHistory=[];fringeRedo=[];
   fringeRasterCache.clear();
@@ -5031,7 +5103,7 @@ $('scene-export').addEventListener('click',()=>{
       outdoors.objects,outdoors.surface,outdoors.actors,{
         encounterConfig:sculptEncounterConfig,
         exteriorEncounters:sculptExteriorEncounters
-      }));
+      },currentWorldShadowProfiles()));
   }catch(error){
     status('Export bloqué : '+error.message);
     return;
@@ -5062,7 +5134,12 @@ $('import').addEventListener('click',()=>{
   const old=terrain;terrain=imported.terrain;commitUndo(old);
   exampleRoadEnabled=false;$('show-road').checked=false;$('show-road').disabled=true;
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
-  placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;updateObjectCount();syncObjectSelectedControls();
+  placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;
+  if(!sculptWorldDraft){
+    sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(imported.objectShadowProfiles);
+    shadowProfileHistory=[];shadowProfileRedo=[];
+  }
+  updateObjectCount();syncObjectSelectedControls();
   placedActors=imported.actors;actorSelectedId=null;actorHistory=[];actorRedo=[];
   updateActorCount();syncActorSelectedControls();
   surface=imported.surface;surfaceHistory=[];surfaceRedo=[];surfaceDrawing=false;
