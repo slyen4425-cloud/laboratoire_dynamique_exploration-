@@ -3782,6 +3782,10 @@ try{
       button.click();
       if(window.__sculptWorldProbe().placementMode!=='portal')
         return {error:'Objets placement mode not armed',gateId:gate.id};
+      // Native mobile layout can place the canvas below the visible viewport
+      // after the Objets palette opens. Scroll it into view before calculating
+      // a REAL CDP touch; a point on a clipped canvas is not a valid tap.
+      canvas.scrollIntoView({block:'center',inline:'nearest'});
       const cam=window.__sculptLabProbe(),rect=canvas.getBoundingClientRect();
       const pitch=cam.liveCameraPitch,
         shear=probe.areaKind==='interior'?0:cam.cameraView==='classic'?0:-.1;
@@ -3793,13 +3797,18 @@ try{
         const screenY=rect.top+cam.cameraPan.y+
           (pitch*(y-level*18)+shear*x)*cam.zoom;
         const cell=window.__sculptLabProbe({x:screenX,y:screenY}).probedCell;
+        const visible=screenX>=0&&screenY>=0&&
+          screenX<innerWidth&&screenY<innerHeight;
+        const hit=visible?document.elementFromPoint(screenX,screenY):null;
         if(cell?.x===col&&cell?.y===row&&screenX>=rect.left&&
-          screenX<=rect.right&&screenY>=rect.top&&screenY<=rect.bottom){
+          screenX<=rect.right&&screenY>=rect.top&&screenY<=rect.bottom&&
+          visible&&(hit===canvas||canvas.contains(hit))){
           touch={x:screenX,y:screenY};break;
         }
       }
       return {gate,spawn,touch,areaId:probe.areaId,camera:cam.cameraView,
-        pitch,zoom:cam.zoom,canvas:{width:rect.width,height:rect.height}};
+        pitch,zoom:cam.zoom,viewport:{width:innerWidth,height:innerHeight},
+        canvas:{width:rect.width,height:rect.height,top:rect.top,bottom:rect.bottom}};
     })()`);
     if(prep.error||!prep.touch)
       throw Error('Objets waypoint must be tappable on an exposed terrain cell: '+JSON.stringify(prep));
