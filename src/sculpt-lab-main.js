@@ -117,7 +117,7 @@ import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_
  EXPLORATION_PEER_RECEIVER_READY_EVENT_V1
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
-import {createWorldBuilderDraft,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,connectWorldAreas,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {worldInteriorFloors,worldInteriorFloorPortals,worldInteriorHouseExit,
   addWorldInteriorFloor,changeWorldInteriorConnector,changeWorldInteriorDoor}
   from './builder/sculpt-world-interior-floors-v1.js?rev=restore-world-interior-tools-20261115';
@@ -5425,6 +5425,9 @@ function sculptWorldArea(){
 function worldOutboundPortals(){
   return sculptWorldDraft?.portals.filter(p=>p.sourceAreaId===sculptWorldAreaId)??[];
 }
+// Editor-only target awaiting a tap. The WorldDocument is not changed until
+// placement has passed the native terrain/collision checks.
+let sculptWorldPendingPassageTarget=null;
 function sculptWorldStatus(message,error=false){
   const output=$('world-area-portal-status');
   if(output){output.textContent=message;output.style.color=error?'#ffd1bd':'#b2ece2';}
@@ -5449,6 +5452,17 @@ function refreshSculptWorldPanel(){
     ?'Instance / donjon':'Région extérieure')+' · '+terrain.width+' × '+terrain.height+' cases';
   const houseReturn=worldInteriorHouseExit(sculptWorldDraft,area.id);
   $('world-area-return-house').hidden=!houseReturn;
+  const targetSelect=$('world-area-passages-target'),
+        priorTarget=targetSelect.value,
+        targetAreas=sculptWorldDraft.areas.filter(other=>other.id!==area.id&&
+          other.kind==='exterior'&&other.spawns?.length);
+  targetSelect.replaceChildren(...targetAreas.map(other=>
+    new Option(other.label??other.id,other.id)));
+  if(targetAreas.some(other=>other.id===priorTarget))targetSelect.value=priorTarget;
+  $('world-area-passages-create').disabled=!targetAreas.length;
+  $('world-area-passages-create').textContent=
+    sculptWorldPortalPlacement==='new-portal'?'✕ Annuler la création du passage':
+      '＋ Créer un passage aller-retour';
   const choices=worldOutboundPortals(),portalSelect=$('world-area-portal-select'),
         previous=portalSelect.value;
   portalSelect.replaceChildren(...choices.map(p=>{
@@ -5469,7 +5483,7 @@ function refreshSculptWorldPanel(){
       (destination?.label??destination?.id??'zone indisponible')+
       ' · 🔵 ARRIVÉE : '+(targetSpawn?.id??'point introuvable')+
       (portalIsFree?' · position libre':' · passage attaché à une porte')
-    :'Aucun passage dans cette zone. Crée la liaison dans le World Builder.';
+    :'Aucun passage ici. Choisis une carte de destination, puis place la sortie sur le terrain.';
   $('world-area-edit-destination').disabled=!destination;
   $('world-area-portal-x').value=portal?.trigger.kind==='point'?
     String(Math.round(portal.trigger.x)):'';
@@ -5549,7 +5563,24 @@ function applySculptWorldPointerPlacement(point){
   const mode=sculptWorldPortalPlacement;
   sculptWorldPortalPlacement=null;
   try{
-    if(mode==='portal')commitSculptWorldPortal(point);
+    if(mode==='new-portal'){
+      // One atomic authoring action: no orphan Portal if the tap is invalid.
+      const target=sculptWorldPendingPassageTarget;
+      sculptWorldPendingPassageTarget=null;
+      if(!target)throw Error('Choisis une carte de destination');
+      const position=validSculptWorldAuthoringPoint(point);
+      let next=connectWorldAreas(sculptWorldDraft,{
+        sourceAreaId:sculptWorldAreaId,targetAreaId:target,returnPortal:true
+      });
+      const portal=next.portals.find(p=>p.sourceAreaId===sculptWorldAreaId&&
+        p.targetAreaId===target&&p.trigger.kind==='point');
+      if(!portal)throw Error('Passage déjà lié à une porte : ouvre le bâtiment associé');
+      next=placeSculptWorldPortal(next,portal.id,position);
+      sculptWorldDraft=next;
+      refreshSculptWorldPanel();
+      $('world-area-portal-select').value=portal.id;
+      sculptWorldStatus('Passage aller-retour créé sur la carte. Ouvre la destination pour placer l’arrivée.');
+    }else if(mode==='portal')commitSculptWorldPortal(point);
     else if(mode==='spawn')commitSculptWorldSpawn(point);
     else if(mode==='select'){
       const marker=pickSculptWorldEditorMarkerV1(sculptWorldDraft,
@@ -6180,6 +6211,22 @@ function installSculptWorldAreaEditing(){
     });
   $('world-area-portal-select').addEventListener('change',refreshSculptWorldPanel);
   $('world-area-spawn-select').addEventListener('change',refreshSculptWorldPanel);
+  $('world-area-passages-create').addEventListener('click',()=>{
+    if(navigationTesting){sculptWorldStatus('Quitte Tester pour créer un passage.',true);return;}
+    if(sculptWorldPortalPlacement==='new-portal'){
+      sculptWorldPortalPlacement=null;sculptWorldPendingPassageTarget=null;
+      refreshSculptWorldPanel();sculptWorldStatus('Création annulée. Aucun passage ajouté.');return;
+    }
+    const target=$('world-area-passages-target').value;
+    if(!sculptWorldDraft.areas.some(a=>a.id===target&&a.kind==='exterior'&&a.spawns?.length)){
+      sculptWorldStatus('Choisis une destination jouable avec un point d’arrivée.',true);return;
+    }
+    sculptWorldPendingPassageTarget=target;
+    sculptWorldPortalPlacement='new-portal';
+    $('world-area-portal-panel').open=false;
+    refreshSculptWorldPanel();
+    sculptWorldStatus('Touche le sol à l’endroit où placer la sortie vers la carte choisie.');
+  });
   $('world-area-marker-pick').addEventListener('click',()=>{
     if(navigationTesting){sculptWorldStatus('Quitte Tester avant de sélectionner un repère.',true);return;}
     sculptWorldPortalPlacement=sculptWorldPortalPlacement==='select'?null:'select';
@@ -6215,6 +6262,9 @@ function installSculptWorldAreaEditing(){
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
+      // Read-only editor focus: the real destination remains the existing
+      // Portal.targetSpawnId in the WorldDocument, not a new arrival marker.
+      url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
       window.location.assign(url.href);
     }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
   });
@@ -6260,7 +6310,17 @@ function installSculptWorldAreaEditing(){
   },{once:true});
   try{
     mountWorldSculptArea(transfer.areaId);
-    sculptWorldStatus('WorldArea '+sculptWorldArea().label+
+    const arrivalId=new URL(window.location.href).searchParams.get('arrivalSpawnId');
+    const selectedArrival=sculptWorldArea().spawns.find(p=>p.id===arrivalId);
+    if(selectedArrival&&!selectedArrival.anchor){
+      $('world-area-spawn-select').value=selectedArrival.id;
+      sculptWorldPortalPlacement='spawn';
+      $('world-area-portal-panel').open=false;
+      refreshSculptWorldPanel();
+      sculptWorldStatus('Touche le terrain pour placer l’arrivée de ce passage. La destination est déjà reliée.');
+    }else if(selectedArrival?.anchor){
+      sculptWorldStatus('Arrivée liée à une porte : modifie sa position sur le bâtiment.',true);
+    }else sculptWorldStatus('WorldArea '+sculptWorldArea().label+
       ' chargée : place ses passages, teste-les, puis enregistre le monde.');
   }catch(error){
     // A legacy/oversized Area must not display the separate demo terrain as if
