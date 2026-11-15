@@ -3234,7 +3234,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
     kind:object.kind,width,height,footOffset:artShift,
     pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
     // Editing only reads live controls. Gameplay reads the same saved object.
-    shadow:objectEditing&&objectSelectedId===object.id?
+    shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
       readSelectedObjectShadowControlsV1():object.shadow
   });
   // Artwork's wooden deck is aligned to the canonical corridor center.
@@ -3311,7 +3311,7 @@ function refreshObjectVariants(preferred=null){
   }
 }
 function readSelectedObjectShadowControlsV1(){
- if($('object-shadow-mode').value!=='custom')return null;
+ if(!$('object-shadow-details')||$('object-shadow-mode').value!=='custom')return null;
  return normalizeWorldObjectShadowSettingsV1({
   mode:'custom',
   widthPct:Number($('object-shadow-width').value),
@@ -3323,6 +3323,8 @@ function readSelectedObjectShadowControlsV1(){
 }
 function refreshSelectedObjectShadowControlsV1(selected){
  const details=$('object-shadow-details');
+ // V80 is a frozen legacy editor which intentionally has no new panel.
+ if(!details)return;
  const kind=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind:null;
  const allowed=!!selected&&!['bridge','stairs','ramp','waterfall','water','ground','portal'].includes(kind);
  details.hidden=!allowed;
@@ -4125,6 +4127,7 @@ $('object-variant').addEventListener('change',()=>editSelectedObject({
 }));
 // Native collapsed panel. Slider input redraws the preview with NO history;
 // each committed change enters the existing single undo/redo WorldObject path.
+if($('object-shadow-details')){
 $('object-shadow-mode').addEventListener('change',()=>{
  $('object-shadow-fields').hidden=$('object-shadow-mode').value!=='custom';
  $('object-shadow-summary').textContent=$('object-shadow-mode').value==='custom'?'Personnalisée':'Auto';
@@ -4147,6 +4150,7 @@ $('object-shadow-reset').addEventListener('click',()=>{
  syncObjectSelectedControls();
  scheduleDraw();
 });
+}
 $('object-action').addEventListener('change',()=>{
   if($('object-action').value!=='select'){objectSelectedId=null;syncObjectSelectedControls();scheduleDraw();}
 });
