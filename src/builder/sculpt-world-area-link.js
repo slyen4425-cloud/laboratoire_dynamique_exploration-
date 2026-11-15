@@ -6,8 +6,9 @@ import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain} from '..
 import {normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {normalizeSculptDecorativeFringeV1} from '../world/sculpt-decorative-fringe-v1.js';
 import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from '../world/sculpt-scene-preview.js';
-import {updatePortal,updateSpawn,createWorldBuilderDraft,
+import {updatePortal,updateSpawn,addSpawn,createWorldBuilderDraft,
   validateWorldBuilderDraft} from './world-builder-draft.js';
+import {resolveWorldAreaSpawnPoint} from '../world/world-area-model.js';
 
 export const SCULPT_WORLD_TILE=Object.freeze({width:28,height:21});
 export const SCULPT_WORLD_LIMIT=Object.freeze({width:80,height:64});
@@ -110,4 +111,25 @@ export function placeSculptWorldSpawn(draft,areaId,spawnId,{x,y}={}){
   const checked=validateWorldBuilderDraft(next);
   if(!checked.valid)throw Error('Spawn invalide : '+checked.errors.join(', '));
   return createWorldBuilderDraft(checked.document);
+}
+
+// Some historical starting points are anchored to building doors. Do not
+// mutate the door's ownership or unlink any incoming Portal: explicitly add
+// one automatically ID'd free Spawn and select it as the existing initialSpawnId.
+export function ensureFreeWorldInitialSpawnV1(draft){
+ const area=areaById(draft,draft?.initialAreaId);
+ const existing=area.spawns.find(s=>s.id===draft.initialSpawnId);
+ if(!existing)throw Error('Départ officiel introuvable');
+ if(!existing.anchor)return createWorldBuilderDraft(draft);
+ const source=resolveWorldAreaSpawnPoint(area,existing.id);
+ const position={x:Math.max(10,Math.min(area.width-10,source?.x??area.width/2)),
+   y:Math.max(10,Math.min(area.height-10,source?.y??area.height/2))};
+ const next=addSpawn(draft,area.id,position);
+ const ids=new Set(area.spawns.map(s=>s.id));
+ const free=next.areas.find(a=>a.id===area.id).spawns.find(s=>!ids.has(s.id));
+ if(!free||free.anchor)throw Error('Impossible de créer un départ libre');
+ const updated=createWorldBuilderDraft({...next,initialSpawnId:free.id});
+ const checked=validateWorldBuilderDraft(updated);
+ if(!checked.valid)throw Error('Départ invalide : '+checked.errors.join(', '));
+ return createWorldBuilderDraft(checked.document);
 }
