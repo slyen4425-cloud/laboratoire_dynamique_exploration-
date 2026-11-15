@@ -72,8 +72,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 96866,
-      "sha256": "5e5343c93481860855986a8f9425810775360464d1eb3755290a28812154937b"
+      "bytes": 21816,
+      "sha256": "7a113aef411d0ecbbdb7b67bab11d415360dede93aad9b4e9981487292f23f25"
     },
     {
       "assetId": "object.building.house.snow_alpine_timber_2p5d.side.01",
@@ -116,8 +116,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 91014,
-      "sha256": "bbffa929dc7b9216181464a8d1303976d5ab08f9b9403ca1444308dd40977d66"
+      "bytes": 20770,
+      "sha256": "47fa36781c5ada5546e293760feb6aafdb6a43afaebcb4852a8546029993cb29"
     },
     {
       "assetId": "object.building.house.snow_stone_cottage_2p5d.front.01",
@@ -204,8 +204,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 90614,
-      "sha256": "1439334fd4cd1591502cc0940d26e1a9e12434bb6d8c5a9f79644634d65fcf4d"
+      "bytes": 21540,
+      "sha256": "2c0b5357d00e6a622d44edb23aaed5a06739f9642f94406bd12d62fdce09f169"
     },
     {
       "assetId": "object.building.house.snow_banner_lodge_2p5d.side.01",
@@ -226,8 +226,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 99286,
-      "sha256": "95e705eaac6e38d4c6306c5872e6b799231e7d6dcabdce26dbe8a20dd6737b27"
+      "bytes": 22612,
+      "sha256": "52235a43ae39af004933a16a3442b750c288ae93c385f9917417154b2944ca91"
     },
     {
       "assetId": "object.building.house.snow_banner_lodge_2p5d.back.01",
@@ -248,8 +248,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 100260,
-      "sha256": "1b183af8950ef5553906deadb04c3452cd938c3ac2014b5dcc3b4cdd7e873a74"
+      "bytes": 22408,
+      "sha256": "6415ba68469e028f500e9f2830a5907857d802860f248625e583de81acf438ce"
     },
     {
       "assetId": "object.building.house.snow_round_earth_2p5d.front.01",
@@ -512,8 +512,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 99522,
-      "sha256": "4be8c36ad1fb39e059251b397c8b766e7173692bd453cd83ed5e1f4e3d7461f9"
+      "bytes": 22924,
+      "sha256": "8675c01fa5afeed25d84f2ad430da0ce294e522adcb73d0fe4501905c6fbf46c"
     },
     {
       "assetId": "object.building.house.snow_watchtower_2p5d.front.01",
