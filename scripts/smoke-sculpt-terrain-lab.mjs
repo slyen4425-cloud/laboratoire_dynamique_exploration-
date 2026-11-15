@@ -4161,7 +4161,21 @@ try{
       p.trigger?.kind==='object-anchor');
     const room=doc?.areas.find(a=>a.id===door?.targetAreaId);
     if(!outside||!door||!room)return {error:'house interior or link absent',areas:doc?.areas.length};
-    document.querySelector('#graph-nodes [data-area-id="'+room.id+'"]').click();
+    // The World Builder graph owns REGIONS only. Open a connected room
+    // through its real host region's "Contenu de cette zone" instead.
+    const host=document.querySelector('#graph-nodes [data-area-id="'+outside.id+'"]');
+    if(!host)return {error:'prefab host region missing from the visible graph'};
+    host.click();
+    const rows=[...document.querySelectorAll('#selected-contents .area-content-entry')];
+    const entry=rows.find(row=>['interior','dungeon'].includes(row.dataset.category)&&
+      row.querySelector('.content-text strong')?.textContent.includes(room.label));
+    const manage=entry?.querySelector('button');
+    if(!manage)return {error:'linked prefab interior not listed in region contents',
+      roomId:room.id,roomLabel:room.label,visible:rows.map(row=>row.textContent.slice(0,100))};
+    manage.click();
+    const selected=window.__worldAssemblerProbe().selectedAreaId;
+    if(selected!==room.id)return {error:'contents opened wrong interior',selected,expected:room.id};
+    document.querySelector('#close-area-editor').click();
     document.querySelector('#world-workspace-map').click();
     return {outsideId:outside.id,roomId:room.id,
       areas:doc.areas.length,roomWalls:room.walls.length,
