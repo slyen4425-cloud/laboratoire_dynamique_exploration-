@@ -4618,6 +4618,7 @@ function setInteriorDoorMoving(on){
     if(objectEditing)setObjectEditing(false);
     if(surfaceEditing)setSurfaceEditing(false);
   }
+  if(on&&$('interior-controls-details'))$('interior-controls-details').open=false;
   interiorDoorMoving=!!on;interiorDoorGesture=null;interiorDoorPreview=null;
   document.body.classList.toggle('interior-door-authoring',interiorDoorMoving);
   updateInteriorDoorControls();scheduleDraw();
@@ -4692,6 +4693,7 @@ function setInteriorConnectorMode(on){
     if(objectEditing)setObjectEditing(false);
     if(surfaceEditing)setSurfaceEditing(false);
   }
+  if(on&&$('interior-controls-details'))$('interior-controls-details').open=false;
   interiorConnectorMode=!!on;interiorConnectorGesture=null;interiorConnectorPreview=null;
   document.body.classList.toggle('interior-connector-authoring',interiorConnectorMode);
   updateInteriorConnectorControls();scheduleDraw();
@@ -4804,6 +4806,7 @@ function setInteriorWallMode(mode){
     if(objectEditing)setObjectEditing(false);
     if(surfaceEditing)setSurfaceEditing(false);
   }
+  if(mode&&$('interior-controls-details'))$('interior-controls-details').open=false;
   interiorWallMode=mode;interiorWallStart=null;interiorWallPreview=null;
   interiorWallGesture=null;
   document.body.classList.toggle('interior-wall-authoring',!!mode);
@@ -4902,6 +4905,9 @@ function updateSculptAreaControls(){
   const worldInterior=!entry&&sculptWorldCurrentInterior();
   const inInterior=!!entry||worldInterior;
   $('interior-area-bar').hidden=!inInterior;
+  $('interior-area-return').textContent=worldInterior&&
+    !worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId)
+      ?'🌍 Retour au Monde':'← Retour extérieur';
   document.body.classList.toggle('sculpt-interior-area',inInterior);
   const worldFloors=worldInterior?worldInteriorFloors(sculptWorldDraft,sculptWorldAreaId):[];
   const worldFloor=worldFloors.find(f=>f.areaId===sculptWorldAreaId);
@@ -5252,7 +5258,11 @@ $('interior-template-apply').addEventListener('click',()=>{
 });
 $('object-open-interior').addEventListener('click',openSelectedSculptInterior);
 $('interior-area-return').addEventListener('click',()=>{
-  if(sculptWorldCurrentInterior())$('world-area-return-house').click();
+  if(sculptWorldCurrentInterior()){
+    if(worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId))
+      $('world-area-return-house').click();
+    else $('world-area-return').click();
+  }
   else changeSculptArea(SCULPT_EXTERIOR_AREA_ID);
 });
 $('interior-camera-angle').addEventListener('input',()=>{
