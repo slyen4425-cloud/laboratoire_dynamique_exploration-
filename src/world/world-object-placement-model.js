@@ -2,6 +2,7 @@ import {
   objectDefinitionCatalogV1
 } from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1&bridge-axis-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
 import {normalizeCombatArenaIdV1} from './world-combat-arena-v1.js';
+import {normalizeWorldObjectShadowSettingsV1} from './world-object-shadow-settings-v1.js';
 
 export const WORLD_OBJECT_PLACEMENT_SCHEMA_VERSION = 1;
 
@@ -109,7 +110,10 @@ function normalizeOverrides(raw) {
       normalizedString(
         source.visualVariantId
       ),
-    ...(combatArenaId ? {combatArenaId} : {})
+    ...(combatArenaId ? {combatArenaId} : {}),
+    // Absent by default: older WorldDocuments keep their exact save shape.
+    ...(normalizeWorldObjectShadowSettingsV1(source.shadow)
+      ? {shadow:normalizeWorldObjectShadowSettingsV1(source.shadow)} : {})
   });
 }
 
@@ -260,7 +264,9 @@ export function resolveWorldObjectPlacement(
       ),
     baseSize: definition.baseSize,
     collision:
-      definition.collision ?? null
+      definition.collision ?? null,
+    // Display-only override travels with the one authoritative placement.
+    ...(placement.overrides?.shadow ? {shadow:placement.overrides.shadow} : {})
   };
 
   if (definition.kind === 'bridge') {

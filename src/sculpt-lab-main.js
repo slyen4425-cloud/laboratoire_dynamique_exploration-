@@ -60,6 +60,7 @@ import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1}
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
+import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1} from './world/world-object-shadow-settings-v1.js';
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
 import {objectDefinitionCatalogV1} from './objects/object-definition-catalog.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71-waterfalls-v3-ramp-v77';
@@ -226,6 +227,7 @@ if(surfaceBaseFamilySelect){
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
 let objectSelectedId=null,objectDrag=null;
+let shadowControlsOwnerId=null; // UI identity only; WorldObject owns the settings.
 const objectImages=new Map(),availableObjects=listSculptPlaceableDefinitions();
 // Frame state is owned once before image callbacks register. Decoding can
 // finish while this ES module is suspended at top-level await; never queue a
@@ -3230,7 +3232,10 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   const waterfallArt=resolveWorldObjectAsset(object.visual?.assetId);
   if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
     kind:object.kind,width,height,footOffset:artShift,
-    pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt
+    pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
+    // Editing only reads live controls. Gameplay reads the same saved object.
+    shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
+      readSelectedObjectShadowControlsV1():object.shadow
   });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
@@ -3305,8 +3310,44 @@ function refreshObjectVariants(preferred=null){
     $('object-variant').value=wanted;
   }
 }
+function readSelectedObjectShadowControlsV1(){
+ if(!$('object-shadow-details')||$('object-shadow-mode').value!=='custom')return null;
+ return normalizeWorldObjectShadowSettingsV1({
+  mode:'custom',
+  widthPct:Number($('object-shadow-width').value),
+  heightPct:Number($('object-shadow-height').value),
+  offsetXPct:Number($('object-shadow-x').value),
+  offsetYPct:Number($('object-shadow-y').value),
+  opacityPct:Number($('object-shadow-opacity').value)
+ });
+}
+function refreshSelectedObjectShadowControlsV1(selected){
+ const details=$('object-shadow-details');
+ // V80 is a frozen legacy editor which intentionally has no new panel.
+ if(!details)return;
+ const kind=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind:null;
+ const allowed=!!selected&&!['bridge','stairs','ramp','waterfall','water','ground','portal'].includes(kind);
+ details.hidden=!allowed;
+ if(shadowControlsOwnerId!==selected?.id){
+  details.open=false; // Collapse again on a different selected object.
+  shadowControlsOwnerId=selected?.id??null;
+ }
+ const shadow=normalizeWorldObjectShadowSettingsV1(selected?.overrides?.shadow);
+ $('object-shadow-mode').value=shadow?'custom':'auto';
+ for(const [control,key] of [
+  ['width','widthPct'],['height','heightPct'],['x','offsetXPct'],
+  ['y','offsetYPct'],['opacity','opacityPct']
+ ]){
+  const input=$('object-shadow-'+control);
+  input.value=String((shadow??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]);
+  $('object-shadow-'+control+'-value').textContent=input.value+' %';
+ }
+ $('object-shadow-fields').hidden=!shadow;
+ $('object-shadow-summary').textContent=shadow?'Personnalisée':'Auto';
+}
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
+  refreshSelectedObjectShadowControlsV1(selected);
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
   const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
   $('object-open-interior').hidden=!buildingSelected;
@@ -4084,6 +4125,32 @@ $('object-definition').addEventListener('change',()=>{objectSelectedId=null;
 $('object-variant').addEventListener('change',()=>editSelectedObject({
   variantId:$('object-variant').value
 }));
+// Native collapsed panel. Slider input redraws the preview with NO history;
+// each committed change enters the existing single undo/redo WorldObject path.
+if($('object-shadow-details')){
+$('object-shadow-mode').addEventListener('change',()=>{
+ $('object-shadow-fields').hidden=$('object-shadow-mode').value!=='custom';
+ $('object-shadow-summary').textContent=$('object-shadow-mode').value==='custom'?'Personnalisée':'Auto';
+ editSelectedObject({shadow:readSelectedObjectShadowControlsV1()});
+ scheduleDraw();
+});
+for(const id of ['width','height','x','y','opacity']){
+ const input=$('object-shadow-'+id);
+ input.addEventListener('input',()=>{
+  $('object-shadow-'+id+'-value').textContent=input.value+' %';
+  scheduleDraw();
+ });
+ input.addEventListener('change',()=>editSelectedObject({
+  shadow:readSelectedObjectShadowControlsV1()
+ }));
+}
+$('object-shadow-reset').addEventListener('click',()=>{
+ $('object-shadow-mode').value='auto';
+ editSelectedObject({shadow:null});
+ syncObjectSelectedControls();
+ scheduleDraw();
+});
+}
 $('object-action').addEventListener('change',()=>{
   if($('object-action').value!=='select'){objectSelectedId=null;syncObjectSelectedControls();scheduleDraw();}
 });

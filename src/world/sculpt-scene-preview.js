@@ -7,6 +7,7 @@ import {normalizeTerrainFamilyEncounterConfig} from '../encounters/terrain-famil
 import {TERRAIN_FAMILY_IDS} from './terrain-family-registry.js';
 import {normalizeWorldActorPlacement,normalizeWorldActorPlacements} from '../actors/world-actor-placement-model.js';
 import {normalizeWorldObjectPlacement,normalizeWorldObjectPlacements} from './world-object-placement-model.js?rev=waterfalls-v3-ramp-v77';
+import {normalizeWorldObjectShadowSettingsV1,worldObjectShadowSettingsEqualV1} from './world-object-shadow-settings-v1.js';
 
 
 /*
@@ -115,7 +116,7 @@ export function appendSculptPreviewObject(objects,{
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y}={}){
+export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow}={}){
   const items=normalizeSculptPreviewObjects(objects);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
@@ -137,13 +138,16 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
     if(Number.isFinite(rotationDeg))nextTransform.rotationDeg=rotationDeg;
     const nextVariant=variantId===undefined?item.overrides.visualVariantId:
       validVariant(item.objectDefinitionId,variantId);
+    const nextShadow=shadow===undefined?item.overrides.shadow??null:
+      normalizeWorldObjectShadowSettingsV1(shadow);
     if(nextTransform.scaleX===item.transform.scaleX&&
        nextTransform.scaleY===item.transform.scaleY&&
        nextTransform.x===item.transform.x&&nextTransform.y===item.transform.y&&
        nextTransform.rotationDeg===item.transform.rotationDeg&&
-       nextVariant===item.overrides.visualVariantId)return item;
+       nextVariant===item.overrides.visualVariantId&&
+       worldObjectShadowSettingsEqualV1(nextShadow,item.overrides.shadow))return item;
     return normalizeWorldObjectPlacement({...item,transform:nextTransform,
-      overrides:{...item.overrides,visualVariantId:nextVariant}},
+      overrides:{...item.overrides,visualVariantId:nextVariant,shadow:nextShadow}},
       i,objectDefinitionCatalogV1);
   }));
 }
