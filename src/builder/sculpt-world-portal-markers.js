@@ -51,3 +51,17 @@ export function markersForSculptWorldArea(document,areaId,{
   }
   return Object.freeze(markers.map(marker=>Object.freeze(marker)));
 }
+
+// UI picking only: the original WorldDocument remains the sole authority.
+// Touch selection uses the same exact source Portal.trigger and Area.spawns
+// that render the rings; it never creates or repositions a marker by itself.
+export function pickSculptWorldEditorMarkerV1(document,areaId,point,{radius=33}={}){
+ if(!finitePoint(point)||!Number.isFinite(radius)||radius<=0)return null;
+ const candidates=markersForSculptWorldArea(document,areaId,{testing:false});
+ const scored=candidates.map(marker=>({
+   marker,distance:Math.hypot(point.x-marker.x,point.y-marker.y)
+ })).filter(item=>item.distance<=Math.max(radius,item.marker.radius));
+ scored.sort((a,b)=>a.distance-b.distance||
+   Number(b.marker.kind==='start')-Number(a.marker.kind==='start'));
+ return scored[0]?.marker??null;
+}
