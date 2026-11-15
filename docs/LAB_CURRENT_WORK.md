@@ -1,3 +1,12 @@
+## 2026-11-15 — Ombres par modèle visuel dans l'éditeur de carte 2.5D
+- Demande : régler l'ombre d'un modèle d'arbre une fois pour ses centaines d'instances, au lieu de déplacer les ombres arbre par arbre. Conserver les exceptions individuelles et la vue du panneau d'ombres repliable.
+- START `main@ce59c71d60d233ed3354fd945c96b31423f95c44`, checkpoint `checkpoint/exploration-start-shadow-model-profiles-20261115`, branche `work/exploration-shadow-model-profiles-20261115`.
+- Source unique : profils optionnels `WorldDocument.objectShadowProfiles` indexés par `assetId` officiel résolu, normalisés dans `world-object-shadow-settings-v1` ; aucun ID manuel, aucune duplication du catalogue d'objets, de `WorldObjectPlacement`, du renderer alpha ni de sauvegarde locale. Le standalone Sculpt conserve le même format uniquement en import/export scène et préset ; WorldBuilder reste seul propriétaire des mondes jouables.
+- Panneau `Objet > Ombre` déjà repliable : portée Cet objet / Tous les objets du même visuel ; les curseurs sont partagés, aperçu temporaire, appliquer en une fois à toutes les instances identiques, ancien objet personnalisé prioritaire ; annuler/rétablir global dédiés dans ce panneau. Les futures instances du même visuel suivent aussi le profil.
+- Tests : rétrocompatibilité monde sans profil, sauvegarde WorldDocument, une seule entrée par modèle et 400+ instances, import/export scène et préset, priorité overrides individuels, undo, styles PC/tactile, aucune modification collision/Portals/Monster InvoC/Dungeon. CHARTE : pas de deuxième système ni de suppression, checkpoint avant merge, CI Chromium/Firefox + Pages green exact SHA, preuve HTTPS de source puis raccordement pin GenSRPG dans PR distincte. Contrôle visuel créateur requis.
+
+---
+
 ## 2026-11-15 — Réparer les plafonds et la profondeur du relief (retour auteur)
 - START officiel : `main@f90ef6abe7aad6fba689820fdd78e71f6b05a3f6`, checkpoint `checkpoint/exploration-start-relief-limits-occlusion-20261115`, branche `work/exploration-relief-limits-occlusion-20261115`. CI source et Pages de départ `43729541863` / `43729541834` GREEN.
 - Périmètre propriétaire : Sculpt World model/Scene Preview existants, UI 2,5D, raster du renderer natif ; aucune édition des moteurs Combat/Capture, Survie, Dungeon, PvP ou du gel V80. Pas de seconde source d'objets, pas d'identifiants manuels, pas de suppression de carte. Rollback par le SHA de départ.
