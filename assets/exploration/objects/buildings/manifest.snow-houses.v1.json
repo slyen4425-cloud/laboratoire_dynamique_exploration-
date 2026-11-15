@@ -72,8 +72,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 21044,
-      "sha256": "da0339e243a176e336ecc882fdae7d320818cc4472cd015415d494e346a2f4a5"
+      "bytes": 107760,
+      "sha256": "01d5f7b12c8260a80484268995b9cc2c0a0b99af953287e13430b5320dcac1bd"
     },
     {
       "assetId": "object.building.house.snow_alpine_timber_2p5d.side.01",
@@ -116,8 +116,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19882,
-      "sha256": "627a0bc39ff5d18591eb535fb8a237c7fc71495b86bd8fa430639dd2918263b6"
+      "bytes": 103446,
+      "sha256": "8f1e694539c00ceaaf85b8061bf6a6c3faefd81bc120fd2bd045e7c23ea84bac"
     },
     {
       "assetId": "object.building.house.snow_stone_cottage_2p5d.front.01",
@@ -138,8 +138,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20080,
-      "sha256": "474038fcfac81177dea16365a4708e5322432be77a67ffc3e6fd9840fd36596d"
+      "bytes": 102448,
+      "sha256": "cba7ea46b7809442c5a7e3fbacc04ac2fcfa4146082a322af2b2a47ae3fd2f74"
     },
     {
       "assetId": "object.building.house.snow_stone_cottage_2p5d.side.01",
@@ -160,8 +160,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 17712,
-      "sha256": "333f31fa2f38f1213d5d8675a710242cb14b67403f2632d04efabe1372b2657a"
+      "bytes": 106252,
+      "sha256": "2776ddf0a3dce646a0d78795b95dc24bb465ac59ddee82b72baa1a358bbacb48"
     },
     {
       "assetId": "object.building.house.snow_stone_cottage_2p5d.back.01",
@@ -182,8 +182,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20542,
-      "sha256": "8db467a24df749b5136f162b7b8d888ff23bc007f21138877dc55d42b99e01f3"
+      "bytes": 108368,
+      "sha256": "49acb5e293196dedb8fb3233dcdf445c133a8d6631347c35c12247dcd0b3b523"
     },
     {
       "assetId": "object.building.house.snow_banner_lodge_2p5d.front.01",
@@ -204,8 +204,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19820,
-      "sha256": "e583546f3cde3de21ddea40db5324417672485d1d43806f8de50e7c8d76b1763"
+      "bytes": 107694,
+      "sha256": "43866608d1edc0840fdf1af04f7234566465acf2f4ef6ae6421484bccd29013f"
     },
     {
       "assetId": "object.building.house.snow_banner_lodge_2p5d.side.01",
@@ -226,8 +226,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20512,
-      "sha256": "970459e2e4a1f710fd35eac29cc2554ac673da6540aa463cd83e1f7eed544c73"
+      "bytes": 113254,
+      "sha256": "2e8a09258e058cff60c52b46ff406f708ccf911b19148ac7ca8433cc5fdee9f0"
     },
     {
       "assetId": "object.building.house.snow_banner_lodge_2p5d.back.01",
@@ -248,8 +248,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20478,
-      "sha256": "9ca43b7b79eda7b0bb61bbb77cd4bb9965a331bcc0a74701e492eebe8d7b75a9"
+      "bytes": 113366,
+      "sha256": "a949cb0f9f5d868a22bec8a635920b3c67d530f1b9672e786e6d9c9fd0e594d8"
     },
     {
       "assetId": "object.building.house.snow_round_earth_2p5d.front.01",
@@ -270,8 +270,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19370,
-      "sha256": "08291c90748627e0f6f73876cb3125746552440ed2436409845ff9cd2075dae2"
+      "bytes": 99454,
+      "sha256": "68e8f62818087f6dc32fcdb22f39f7b756818fdde8c7410dc764121fc4307b7b"
     },
     {
       "assetId": "object.building.house.snow_round_earth_2p5d.side.01",
@@ -292,8 +292,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20982,
-      "sha256": "faa9aac37c1255a1376266fc607d06cb1bd55657ba5aee18eff021c4f0272e4e"
+      "bytes": 112152,
+      "sha256": "1b90d91a7303acf311ee6ba3d01d671a26a4eb6bea723fd8ea0e39fa1f7d99dc"
     },
     {
       "assetId": "object.building.house.snow_round_earth_2p5d.back.01",
@@ -314,8 +314,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 18562,
-      "sha256": "c9d7fdaf9f7abb405b182a7955c05b3c205449322e49ad5dabadcca1d5c21069"
+      "bytes": 99860,
+      "sha256": "cf2c519c0636d5c0eb3da6099be88fc25792d782ab3ab9bf3f6a31c2ece31a77"
     },
     {
       "assetId": "object.building.house.snow_ice_crystal_2p5d.front.01",
@@ -336,8 +336,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20338,
-      "sha256": "478e3f02000ce9d0c06bfc7981db60d8c3305f0e4841fe92e0bc1190cfd9b196"
+      "bytes": 100294,
+      "sha256": "0526b15f88f0104bf1ed3ab79dcbf04e57be3a2636370c3de058374bd005edd3"
     },
     {
       "assetId": "object.building.house.snow_ice_crystal_2p5d.side.01",
@@ -358,8 +358,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20994,
-      "sha256": "c6664e3853fc4fdc2a14b84f8b32820a6ac65cde7264637a5259551bfd349335"
+      "bytes": 111554,
+      "sha256": "178d9e3b3508872c6b996b2d595f393311cd04059e4159343f0d65f16b833e45"
     },
     {
       "assetId": "object.building.house.snow_ice_crystal_2p5d.back.01",
@@ -380,8 +380,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 21112,
-      "sha256": "dddc8b0351f2ce2e33b9e15e10510ebcc1a7405b19b6d3d4bca0f8f2f03dc93a"
+      "bytes": 105702,
+      "sha256": "5aff398939388644b02a61a9b981ca51e77b912fe7030042177a0443b3d0b25d"
     },
     {
       "assetId": "object.building.house.snow_mushroom_round_2p5d.front.01",
@@ -402,8 +402,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 21352,
-      "sha256": "057860eb29ebbb3b932b56127aa43f1413f4c72ffd5f32f1f4d20c9b5c692295"
+      "bytes": 114794,
+      "sha256": "cc332b50f2aa643c0f17812af13369b288c5c15a22d2f0baf0f4683cfd2001fe"
     },
     {
       "assetId": "object.building.house.snow_mushroom_round_2p5d.side.01",
@@ -424,8 +424,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20724,
-      "sha256": "82167eafeddec20761035a1b7294fc1c2b4dd14e932abab26618897d60d6ae4f"
+      "bytes": 110924,
+      "sha256": "89f9a875f25e04ac4d8f0b3b0e92502147afadf2155adfc376f5583df407f505"
     },
     {
       "assetId": "object.building.house.snow_mushroom_round_2p5d.back.01",
@@ -446,8 +446,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19802,
-      "sha256": "59a34615b0bf91f07e30c03784805bc8fcf5b1269ddb0c43ffaa880050869e74"
+      "bytes": 105692,
+      "sha256": "20e7ecc391dfa0423ed800586d9dc0fe9e1b4bc801f6e76eadcd7b4927687bbe"
     },
     {
       "assetId": "object.building.house.snow_east_pagoda_2p5d.front.01",
@@ -468,8 +468,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20668,
-      "sha256": "a19780fd742d23a350b0ea7a229a2b885639716d61da5812dfef8a5f7693a63a"
+      "bytes": 116054,
+      "sha256": "41ff0aea2fb5fd1ecb38f6c1c2b206e5e9b018e4ea18fa84e9461ffc86deb819"
     },
     {
       "assetId": "object.building.house.snow_east_pagoda_2p5d.side.01",
@@ -490,8 +490,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 21520,
-      "sha256": "7e38cf49f247c81188e9d8e3930678286e84bfc8908a9d41f0150572e9ad22ef"
+      "bytes": 120446,
+      "sha256": "a7e2303113966ef95402d339857e5f4dedf5e9b1958174e9ce5eda4a289cd642"
     },
     {
       "assetId": "object.building.house.snow_east_pagoda_2p5d.back.01",
@@ -512,8 +512,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20140,
-      "sha256": "37a4a6e572e9149ea055e2f4652749e658182fbccdefc30997d746bfbdd11be0"
+      "bytes": 116002,
+      "sha256": "3999d6354326d340c163782738189ab93ea77b66f51d7372035a191d96cfc947"
     },
     {
       "assetId": "object.building.house.snow_watchtower_2p5d.front.01",
@@ -534,8 +534,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20568,
-      "sha256": "d1f08b4e678eacc8b8b13e11b8c5100b8b10b5c6dc6fe6c67c70e34b693c4eca"
+      "bytes": 108890,
+      "sha256": "20d7404a70f70e1d6cca2154f9906772964bda10effc64d80f3f903d4cbf3a66"
     },
     {
       "assetId": "object.building.house.snow_watchtower_2p5d.side.01",
@@ -556,8 +556,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 21954,
-      "sha256": "6c1609adf0114b00e7de4209f9b53251c12d043d079d436a6b9a32cd89860bbb"
+      "bytes": 111274,
+      "sha256": "7718807cb0082f6bdf4aa312e70e5b795e0bc1269274e849da8220fd9942ac9b"
     },
     {
       "assetId": "object.building.house.snow_watchtower_2p5d.back.01",
@@ -578,8 +578,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20746,
-      "sha256": "72fbe85bbfccbb6bdf9938cc8583a0b26d9dc252260598409eded492f1fd6098"
+      "bytes": 110456,
+      "sha256": "959a1135a15ed46a99b7e5bc0852deb07216b9d9f8fb41785cac2dbe3835be04"
     },
     {
       "assetId": "object.building.house.snow_nordic_tent_2p5d.front.01",
@@ -600,8 +600,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19534,
-      "sha256": "cb6e5e3c0c9f8ec2cd021460c3224e0c7c42297c4b0e570b5d45e0a027cfc886"
+      "bytes": 101668,
+      "sha256": "64d72e598aab691f509b0018f8f70d8ba9701e30435dfe91acf6d486d2a2d53e"
     },
     {
       "assetId": "object.building.house.snow_nordic_tent_2p5d.side.01",
@@ -622,8 +622,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19372,
-      "sha256": "ff114caa91eda123bd5898426ee10ea56e32997274544c2451c4f9ab287c2509"
+      "bytes": 102112,
+      "sha256": "c09820ba59c55787e8e0110a506f74f701e07110917413239fe5c90853c053e8"
     },
     {
       "assetId": "object.building.house.snow_nordic_tent_2p5d.back.01",
@@ -644,8 +644,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 19466,
-      "sha256": "b0cc39fac4379faab9676546d81680577be40b8335e13b989f61a0818ad568ce"
+      "bytes": 99856,
+      "sha256": "faad1afd451ce99d7d4d8245627ebf62d84ea1881cc3e90b315941783614903c"
     },
     {
       "assetId": "object.building.house.snow_elven_crystal_2p5d.front.01",
@@ -666,8 +666,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 22218,
-      "sha256": "4c5890af6097ee03dd5ae4cfdea238b35972182028d527524a7596c6b07c0249"
+      "bytes": 126622,
+      "sha256": "7335a39cb3e0d3004c13446b6e02da80c7286c86cc46f4d65fa4d22562628da5"
     },
     {
       "assetId": "object.building.house.snow_elven_crystal_2p5d.side.01",
@@ -688,8 +688,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 22060,
-      "sha256": "33e4b507e62bde42647c0b3e66fae3836219e11355596b6fb6c6290cc5ad53a9"
+      "bytes": 116422,
+      "sha256": "0fcf0a7d7f9c43751151506e340918dd3bb46ae99ae5183b457ec95b2f6f5474"
     },
     {
       "assetId": "object.building.house.snow_elven_crystal_2p5d.back.01",
@@ -710,8 +710,8 @@
       "width": 384,
       "height": 384,
       "quality": 82,
-      "bytes": 20814,
-      "sha256": "95b726eb77350ef23658e61ccc0da7dd5a97c977ef2e3c1ce31bc0f7bb692e8f"
+      "bytes": 116256,
+      "sha256": "3d58016b451d4187536427c749c62e8f235643e9aa454b33fbd4c2bb83900583"
     }
   ]
 }
