@@ -45,7 +45,7 @@ test('the 12 official presets install with the new defaults, without editing aut
  assert.equal(record.mapVisual.motion.walkAmplitude,1);
  assert.equal(record.assets.length,49);
 });
-test('same native renderer applies authored oscillation to both idle and walking sprites',()=>{
+test('same native renderer keeps idle oscillation and disables extra hero walking bob',()=>{
  const visual=createUserHeroDefinitionV1({id,name:'Hero',base:media(),mode:'directions',
   directions:directions(),now:'2026-11-14T07:00:00Z'}).mapVisual;
  const ys=[];
@@ -56,7 +56,7 @@ test('same native renderer applies authored oscillation to both idle and walking
  renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:1/(4*visual.motion.idleFrequency),actors:[{...actor,moving:false}]});
  assert.ok(ys.at(-1)<100,'idle oscillation remains enabled');
  renderer.draw(ctx,{camera:{x:0,y:0},timeSeconds:1/(4*visual.motion.walkFrequency),actors:[{...actor,moving:true}]});
- assert.ok(ys.at(-1)<100,'moving sprites also receive user-configured oscillation');
+ assert.equal(ys.at(-1),100,'no vertical oscillation while hero walks');
 });
 test('editor uses new default values rather than legacy hardcoded 58, 37, 8 or 0.55',()=>{
  const html=readFileSync(new URL('../hero-editor.html',import.meta.url),'utf8');
