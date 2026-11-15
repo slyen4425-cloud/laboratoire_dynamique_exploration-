@@ -347,6 +347,8 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 /* Actor screen positions come from the one canonical Sculpt camera projection.
    The mobile dialog stays beside the speaking actor, not in a HUD corner. */
 #npc-talk:not([hidden]){display:block;position:fixed;z-index:24;min-height:42px;max-width:min(260px,calc(100vw - 16px));background:#174a43;color:white;border:1px solid #87d9bf;border-radius:9px;padding:6px 10px}
+#peer-greet:not([hidden]){display:block;position:fixed;z-index:24;min-height:42px;max-width:min(250px,calc(100vw - 16px));background:#204769;color:white;border:1px solid #a5dbff;border-radius:9px;padding:6px 10px}
+
 #npc-dialogue-overlay:not([hidden]){position:fixed;inset:0;z-index:90;display:block;background:rgba(0,0,0,.18);padding:0}
 .npc-dialogue-panel{position:fixed;width:min(380px,calc(100vw - 16px));max-height:calc(100dvh - 16px);overflow-y:auto;box-sizing:border-box;background:#152d38;border:1px solid #86c8bd;border-radius:12px;padding:12px;display:grid;gap:9px;color:#f5f9f8;box-shadow:0 8px 25px #0009}
 .npc-dialogue-panel p{white-space:pre-wrap;line-height:1.5;margin:0}
@@ -1349,6 +1351,7 @@ body.sculpt-play-unavailable #play-start-error{
   </div>
 </section>
 <button type="button" id="npc-talk" hidden aria-label="Parler au PNJ proche">💬 Parler</button>
+<button type="button" id="peer-greet" hidden aria-label="Saluer un autre joueur proche">👋 Saluer</button>
 <section id="npc-dialogue-overlay" role="dialog" aria-label="Dialogue de PNJ" aria-modal="true" hidden>
   <div class="npc-dialogue-panel">
     <strong id="npc-dialogue-speaker">Personnage</strong>
