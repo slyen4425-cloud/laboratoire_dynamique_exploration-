@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1';
+import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -68,12 +68,12 @@ import {resolveWorldObjectPlacements} from './world/world-object-placement-model
 import {sculptObjectVisualRect,findSculptVisualObjectAtPoint} from './render/sculpt-object-picking.js?rev=sculpt-bridge-deck-anchor-v67-deck-v70-rails-v71-directions-v72-stairs-dynamic-v78-ramp-v77';
 import {sculptBridgeForegroundRegions,sculptBridgeVisualFootLift,sculptBridgeDeckArtShift} from './render/sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-vertical-v73';
 import {isBlocked} from './core/collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78';
-import {sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
+import {SCULPT_OBJECT_LIMIT,sculptObjectCanOccupyCell,listSculptPlaceableDefinitions,appendSculptPreviewObject,
   updateSculptPreviewObject,sculptPreviewVariants,
   removeSculptPreviewObject,findSculptPreviewObjectNear,serializeSculptPreviewScene,
   importSculptPreviewScene,createBlankSculptPreviewScene,
   appendSculptPreviewActor,removeSculptPreviewActorAt,
-  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3-stairs-visible-r15-ramp-v77';
+  findSculptPreviewActorNear,updateSculptPreviewActor} from './world/sculpt-scene-preview.js?rev=sculpt-bridge-tactile-v64-deck-v70-rails-v71-axes-v72-waterfalls-v3-stairs-visible-r15-ramp-v77-dense-forest-20261115';
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS,sculptEncounterFamilyForMaterial,alignSculptSurfaceEncounterFamilies} from './world/sculpt-surface-paint.js';
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
@@ -809,7 +809,7 @@ function navigationBackground(){
     navTerrainCache.paintSurface===surface&&
     navTerrainCache.fringePresent===Boolean(decorativeFringe);
   if(same)return navTerrainCache;
-  const paddingX=18,paddingY=7*SCULPT_TILE.rise+18;
+  const paddingX=18,paddingY=SCULPT_TERRAIN_MAX_LEVEL*SCULPT_TILE.rise+18;
   const raster=document.createElement('canvas');
   const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
   raster.width=Math.ceil((terrain.width*SCULPT_TILE.width+paddingX*2)*scale);
@@ -824,7 +824,7 @@ function navigationBackground(){
     overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
-    drawOuterSouthRim:!decorativeFringe});
+    drawOuterSouthRim:true});
   terrainRasterBuilds++;
   navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
@@ -1215,7 +1215,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
-      drawOuterSouthRim:!decorativeFringe});
+      drawOuterSouthRim:true});
   }
   lastRenderStats=result;
   drawDecorativeFringeObjects();
@@ -1709,7 +1709,7 @@ function syncQuickToolbar(){
 }
 function adjustQuickLevel(delta){
   const el=editorKind==='water' ? $('water-target') : $('target');
-  const limit=editorKind==='water'?10:7;
+  const limit=editorKind==='water'?10:SCULPT_TERRAIN_MAX_LEVEL;
   const minimum=editorKind==='ground'&&
     (selectedMode==='sphere-hill'||selectedMode==='sphere-basin')?1:0;
   el.value=String(Math.max(minimum,Math.min(limit,Number(el.value)+delta)));
@@ -3392,7 +3392,7 @@ function editSelectedObject(patch){
   }
 }
 function updateObjectCount(){
-  $('object-count').textContent=placedObjects.length+' objet(s) sur le relief';
+  $('object-count').textContent=placedObjects.length+' / '+SCULPT_OBJECT_LIMIT+' objet(s) sur le relief';
   $('object-undo').disabled=objectHistory.length===0;
   $('object-redo').disabled=objectRedo.length===0;
   if(objectSelectedId&&!placedObjects.some(o=>o.id===objectSelectedId))objectSelectedId=null;
@@ -4116,7 +4116,7 @@ function applyObjectAtCell(cell){
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
-  else status('Limite de 128 objets atteinte');
+  else status('Limite de '+SCULPT_OBJECT_LIMIT+' objets atteinte');
 }
 $('object-category').addEventListener('change',()=>{objectSelectedId=null;
   syncObjectSelectedControls();refreshObjectOptions();});
@@ -4416,7 +4416,7 @@ $('water-target').addEventListener('input',()=>{
 });
 function changeTarget(level){
  const value=Math.max(selectedMode==='sphere-hill'||selectedMode==='sphere-basin'?1:0,
-    Math.min(16,Number(level)));
+    Math.min(SCULPT_TERRAIN_MAX_LEVEL,Number(level)));
  $('target').value=String(value);$('target-value').textContent=String(value);
  syncQuickToolbar();status(selectedMode==='sphere-basin'?'Profondeur sphérique : −'+value+' niveaux':
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':
