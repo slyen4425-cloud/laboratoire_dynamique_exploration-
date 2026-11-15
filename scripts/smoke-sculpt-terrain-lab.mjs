@@ -3666,52 +3666,73 @@ try{
      uxFullscreen.paletteHeight>47)
     throw Error('WorldArea fullscreen cannot reveal whole 2.5D map: '+
       JSON.stringify(uxFullscreen));
-  const detailsPoint=await run(`(()=>{
-    const summary=document.querySelector('#world-area-portal-panel summary');
-    const r=summary.getBoundingClientRect();
+  // The point editor now belongs to Objets, never to a floating Portal
+  // badge. Verify its ACTUAL touch path on a 960x540 mobile viewport.
+  const objectModePoint=await run(`(()=>{
+    const button=document.querySelector('#mode-objects'),r=button.getBoundingClientRect();
     const x=r.left+r.width/2,y=r.top+r.height/2;
     const hit=document.elementFromPoint(x,y);
-    return {x,y,hittable:hit===summary||summary.contains(hit)};
+    return {x,y,hittable:hit===button||button.contains(hit)};
   })()`);
-  if(!detailsPoint.hittable)
-    throw Error('Collapsed Portal badge is not touchable in fullscreen: '+
-      JSON.stringify(detailsPoint));
+  if(!objectModePoint.hittable)
+    throw Error('Objets tab must be touchable in fullscreen: '+JSON.stringify(objectModePoint));
   await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
-    {x:detailsPoint.x,y:detailsPoint.y,id:32,radiusX:5,radiusY:5,force:1}
+    {x:objectModePoint.x,y:objectModePoint.y,id:32,radiusX:5,radiusY:5,force:1}
   ]});
   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await sleep(120);
   const uxOpened=await run(`(()=>{
-    const panel=document.querySelector('#world-area-portal-panel');
-    const rect=panel.getBoundingClientRect();
-    const full=document.querySelector('#fullscreen-toggle');
-    const f=full.getBoundingClientRect();
-    const hit=document.elementFromPoint(f.left+f.width/2,f.top+f.height/2);
-    return {open:panel.open,width:rect.width,height:rect.height,
-      viewportWidth:innerWidth,viewportHeight:innerHeight,
-      scrollable:panel.scrollHeight>panel.clientHeight,
+    const panel=document.querySelector('#object-waypoints-panel');
+    const select=document.querySelector('#object-waypoint-select');
+    const rect=panel.getBoundingClientRect(),full=document.querySelector('#fullscreen-toggle');
+    const f=full.getBoundingClientRect(),hit=document.elementFromPoint(f.left+f.width/2,f.top+f.height/2);
+    const presets=document.querySelector('#sculpt-map-preset-panel');
+    const inspector=document.querySelector('#world-area-portal-panel');
+    return {open:panel.open,hidden:panel.hidden,
+      width:rect.width,height:rect.height,
+      count:select.options.length,
+      inspectorHidden:getComputedStyle(inspector).display==='none',
+      presetsKept:presets.parentElement.id==='object-controls',
       fullscreenStillHit:hit===full||full.contains(hit)};
   })()`);
-  if(!uxOpened.open||uxOpened.width>258||
-     uxOpened.height>uxOpened.viewportHeight*.56||
-     !uxOpened.scrollable||!uxOpened.fullscreenStillHit)
-    throw Error('Expanded Portal inspector too large or obstructs fullscreen: '+
+  if(!uxOpened.open||uxOpened.hidden||uxOpened.width<=100||
+     uxOpened.count===0||!uxOpened.inspectorHidden||
+     !uxOpened.presetsKept||!uxOpened.fullscreenStillHit)
+    throw Error('Objets waypoint editor is missing or obscures fullscreen: '+
       JSON.stringify(uxOpened));
-  const uxPlacement=await run(`(()=>{
-    document.querySelector('#world-area-portal-place').click();
-    return window.__sculptWorldProbe();
+  const placePoint=await run(`(()=>{
+    const gate=window.__sculptWorldProbe().outgoing.find(p=>p.trigger.kind==='point');
+    if(!gate)return {error:'no free exit'};
+    const list=document.querySelector('#object-waypoint-select');
+    list.value='portal:'+gate.id;
+    list.dispatchEvent(new Event('change'));
+    const button=document.querySelector('#object-waypoint-place');
+    button.scrollIntoView({block:'nearest'});
+    const r=button.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+    const hit=document.elementFromPoint(x,y);
+    return {x,y,hittable:hit===button||button.contains(hit),gateId:gate.id,
+      forbiddenNumbers:document.querySelector('#object-waypoints-panel').querySelectorAll('input[type=number]').length};
   })()`);
-  if(uxPlacement.inspectorOpen||uxPlacement.placementMode!=='portal')
-    throw Error('Portal pointer placement must immediately expose terrain: '+
+  if(placePoint.error||!placePoint.hittable||placePoint.forbiddenNumbers)
+    throw Error('Waypoint placement control inaccessible or still exposes X/Y: '+
+      JSON.stringify(placePoint));
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:placePoint.x,y:placePoint.y,id:34,radiusX:5,radiusY:5,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  const uxPlacement=await run("window.__sculptWorldProbe()");
+  if(uxPlacement.placementMode!=='portal')
+    throw Error('Objets waypoint touch did not enable canonical Portal placement: '+
       JSON.stringify(uxPlacement));
-  await run(`(()=>{
-    const panel=document.querySelector('#world-area-portal-panel');
-    panel.open=true;
-    document.querySelector('#world-area-portal-place').click();
-    return true;
-  })()`);
+  // Same button cancels without creating any duplicate Portal/Spawn.
+  await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
+    {x:placePoint.x,y:placePoint.y,id:35,radiusX:5,radiusY:5,force:1}
+  ]});
+  await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   const uxCanceled=await run("window.__sculptWorldProbe()");
-  if(uxCanceled.placementMode!==null)
-    throw Error('Portal authoring mode not cancellable from compact panel');
+  if(uxCanceled.placementMode!==null||
+     uxCanceled.portalCount!==uxPlacement.portalCount)
+    throw Error('Touch cancel must leave all existing world links unchanged');
   const closingPoint=await run(`(()=>{
     const full=document.querySelector('#fullscreen-toggle'),r=full.getBoundingClientRect();
     return {x:r.left+r.width/2,y:r.top+r.height/2};
@@ -3723,10 +3744,10 @@ try{
   await sleep(150);
   if((await run("document.body.classList.contains('sculpt-immersive')"))!==false)
     throw Error('Original fullscreen action cannot return to normal WorldArea editing');
-  console.log('WorldArea Portal compact/touch/fullscreen mobile Chromium:',
-    JSON.stringify({collapsed:uxInitial.panelHeight,
-      expanded:uxOpened.height,fullCanvas:uxFullscreen.canvasHeight,
-      touchFullscreen:true,scrollable:uxOpened.scrollable}));
+  console.log('WorldArea waypoint Objets/touch/fullscreen mobile Chromium:',
+    JSON.stringify({open:uxOpened.open,available:uxOpened.count,
+      fullCanvas:uxFullscreen.canvasHeight,
+      touchFullscreen:true,cancelSafe:true,presetsKept:uxOpened.presetsKept}));
 
   const placedWorldPortal=await run(`(()=>{
     const gate=window.__sculptWorldProbe().outgoing.find(p=>
