@@ -382,11 +382,19 @@ function dispose() {
   document.removeEventListener('pointerdown',startMusicWhenTouched,{capture:true});
   document.removeEventListener('keydown',startMusicWhenTouched,{capture:true});
   soundtrack?.dispose(); soundtrack=null;
+  window.removeEventListener('message',stopSoundtrackAfterResult);
   outcomeHold.dispose();
   if (watchId !== null) { cancelAnimationFrame(watchId); watchId = null; }
   mountedCombat?.dispose(); mountedCombat = null;
   mountedVisuals?.dispose(); mountedVisuals = null;
 }
+// The parent Aventure result dialog is the only owner of its dismissal.
+function stopSoundtrackAfterResult(event) {
+ if(event.origin!==window.location.origin||event.source!==window.parent||
+    event.data?.type!=='gensrpg.capture.combat-stop-audio.v1'||!completed)return;
+ soundtrack?.dispose();soundtrack=null;
+}
+window.addEventListener('message',stopSoundtrackAfterResult);
 window.addEventListener('pagehide', dispose, {once:true});
 launch().catch(error => {
  dispose();message('Combat indisponible : '+error.message,true);
