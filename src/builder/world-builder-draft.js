@@ -1411,7 +1411,7 @@ export function updateWorldObjectTransform(
   else if (patch.flipX === false) delete object.transform.flipX;
 
   return next;
-
+}
 
 export function updateWorldObjectOverrides(
   draft,

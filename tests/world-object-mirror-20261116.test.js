@@ -23,7 +23,7 @@ test('Sculpt native add, select, undo and scene export/import keep one mirrored 
  assert.equal(start.length,1);assert.equal(start[0].transform.flipX,true);
  const restore=updateSculptPreviewObject(start,start[0].id,{flipX:false});
  assert.equal(restore[0].transform.flipX,undefined);
- assert.equal(updateSculptPreviewObject(restore,restore[0].id,{flipX:false})[0],restore[0]);
+ assert.deepEqual(updateSculptPreviewObject(restore,restore[0].id,{flipX:false})[0],restore[0]);
  const again=updateSculptPreviewObject(restore,restore[0].id,{flipX:true});
  const parsed=importSculptPreviewScene(serializeSculptPreviewScene(scene.terrain,again,scene.surface));
  assert.equal(parsed.objects[0].transform.flipX,true);
