@@ -1279,7 +1279,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
-      drawOuterSouthRim:!visualDecorativeFringe()});
+      drawOuterSouthRim:false});
   }
   lastRenderStats=result;
   drawDecorativeFringeObjects();

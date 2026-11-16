@@ -24,7 +24,7 @@ test('south snow follows canonical painted WorldSurface without saving fringe pa
 test('forest paint, mixed snow/grass and independent north edge use the same owner',()=>{
   let mixed=createSculptSurface();
   mixed=appendSculptSurfaceStroke(mixed,{materialId:'ground.snow',
-    points:[{x:5*28,y:23*21},{x:10*28,y:23*21}],width:45});
+    points:[{x:12*28,y:23*21},{x:15*28,y:23*21}],width:45});
   const left=preview(mixed,0);
   const middle=preview(mixed,8);
   const north=sculptFringeVisualSurfaceV1(mixed,{
