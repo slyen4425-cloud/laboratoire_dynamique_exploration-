@@ -270,3 +270,38 @@ test('creator artwork rotates only for the native Combat loading cover',()=>{
  assert.match(h.nodes[0].children[1].style.backgroundImage,/second/);
  host.dispose();
 });
+
+
+test('closing rewards before a delayed Core receipt stops music without consuming an uncommitted result',async()=>{
+ const h=fakeDom(),store=storage(),sessionId='pending-audio-1';
+ const scoped={...snapshot,player:{partyRef:'adventure-party:'+sessionId}};
+ const initial=saveCombatHandoff(store,{snapshot:scoped,returnState:{
+  areaId:'forest-exterior',x:45,y:67,returnUrl:origin+'/index.html?combatReturn=1'
+ }},{sessionId});
+ saveCombatHandoff(store,attachCombatResult(initial,{
+  encounterId:'e1',returnToken:'r1',outcome:'victory'
+ }),{sessionId});
+ let settle;
+ const pending=new Promise(resolve=>settle=resolve);
+ const host=createImmersiveEncounterHostV1({
+  windowRef:h.win,documentRef:h.doc,storage:store,sessionId,
+  onCompleted:()=>pending
+ });
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ host.open({url,snapshot:scoped});
+ const frame=h.nodes[0].children[0].contentWindow;
+ h.listeners.get('message')({source:frame,origin,data:{
+  type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'
+ }});
+ h.win.parent={id:'capture-parent'};
+ h.listeners.get('message')({source:h.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(h.nodes.length,1,'closing early does not fake a Core result');
+ assert.notEqual(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ settle({persisted:true,session:{sessionId,processedEncounterKeys:['e1:r1']}});
+ await pending;
+ assert.equal(h.nodes.length,0,'pending reward dismissal releases iframe at real Core receipt');
+ assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ host.dispose();
+});
