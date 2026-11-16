@@ -1407,9 +1407,11 @@ export function updateWorldObjectTransform(
       object.transform[key] ?? (key.startsWith('scale') ? 1 : 0)
     );
   }
+  if (patch.flipX === true) object.transform.flipX = true;
+  else if (patch.flipX === false) delete object.transform.flipX;
 
   return next;
-}
+
 
 export function updateWorldObjectOverrides(
   draft,
@@ -1574,7 +1576,8 @@ export function addWorldObject(
       scaleY: finite(
         transform.scaleY,
         1
-      )
+      ),
+      ...(transform.flipX === true ? {flipX:true} : {})
     },
     overrides: {
       visualVariantId:

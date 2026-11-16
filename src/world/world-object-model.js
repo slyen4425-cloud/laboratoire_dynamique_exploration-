@@ -119,15 +119,17 @@ function localPointToWorld(
     worldObjectRotationRadians(object);
   const cos = Math.cos(rotation);
   const sin = Math.sin(rotation);
+  // Same placement mirrors asymmetric obstacle offsets and door anchors.
+  const placedX = object.transform?.flipX === true ? -localX : localX;
 
   return Object.freeze({
     x:
       object.transform.x +
-      localX * cos -
+      placedX * cos -
       localY * sin,
     y:
       object.transform.y +
-      localX * sin +
+      placedX * sin +
       localY * cos
   });
 }

@@ -104,7 +104,7 @@ export function normalizeSculptPreviewObjects(raw=[]){
   return normalizeWorldObjectPlacements(valid,objectDefinitionCatalogV1);
 }
 export function appendSculptPreviewObject(objects,{
-  definitionId,x,y,scale=.38,scaleX=scale,scaleY=scale,rotationDeg=0,variantId=null
+  definitionId,x,y,scale=.38,scaleX=scale,scaleY=scale,rotationDeg=0,variantId=null,flipX=false
 }={}){
   const list=normalizeSculptPreviewObjects(objects);
   if(list.length>=SCULPT_OBJECT_LIMIT||!allowable.has(definitionId)||
@@ -114,12 +114,12 @@ export function appendSculptPreviewObject(objects,{
   while(used.has('sculpt-object-'+suffix))suffix++;
   const placement=normalizeWorldObjectPlacement({
     id:'sculpt-object-'+suffix,objectDefinitionId:definitionId,
-    transform:{x,y,scaleX,scaleY,rotationDeg},
+    transform:{x,y,scaleX,scaleY,rotationDeg,...(flipX===true?{flipX:true}:{})},
     overrides:{visualVariantId:validVariant(definitionId,variantId)}
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow}={}){
+export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX}={}){
   const items=normalizeSculptPreviewObjects(objects);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
@@ -139,6 +139,8 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
     if(Number.isFinite(scaleY)&&scaleY>=.25&&scaleY<=maxScale)
       nextTransform.scaleY=scaleY;
     if(Number.isFinite(rotationDeg))nextTransform.rotationDeg=rotationDeg;
+    if(flipX===true)nextTransform.flipX=true;
+    else if(flipX===false)delete nextTransform.flipX;
     const nextVariant=variantId===undefined?item.overrides.visualVariantId:
       validVariant(item.objectDefinitionId,variantId);
     const nextShadow=shadow===undefined?item.overrides.shadow??null:
@@ -147,6 +149,7 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
        nextTransform.scaleY===item.transform.scaleY&&
        nextTransform.x===item.transform.x&&nextTransform.y===item.transform.y&&
        nextTransform.rotationDeg===item.transform.rotationDeg&&
+       (nextTransform.flipX===true)===(item.transform.flipX===true)&&
        nextVariant===item.overrides.visualVariantId&&
        worldObjectShadowSettingsEqualV1(nextShadow,item.overrides.shadow))return item;
     return normalizeWorldObjectPlacement({...item,transform:nextTransform,

@@ -3329,6 +3329,8 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
     ctx.transform(1,view.shear,0,view.pitch,0,0);
   }
   ctx.rotate(rect.angle);
+  // Same mirror affects the existing image and silhouette shadow.
+  ctx.scale(object.transform?.flipX===true?-1:1,1);
   if(foregroundRailOnly){
     if(object.kind!=='bridge'){ctx.restore();return;}
     const regions=sculptBridgeForegroundRegions(rect,artShift,object);
@@ -3553,6 +3555,7 @@ function syncObjectSelectedControls(){
   $('object-bridge-width-value').textContent=$('object-bridge-width').value+' %';
   $('object-rotation').value=String(Math.round(selected.transform.rotationDeg));
   $('object-rotation-value').textContent=$('object-rotation').value+'°';
+  $('object-flip-x').checked=selected.transform.flipX===true;
   $('object-selected').textContent='Sélection : '+def.label+' ('+selected.id+')';
 }
 function editSelectedObject(patch){
@@ -4296,6 +4299,7 @@ function applyObjectAtCell(cell){
     scaleY:bridgeMode?Number($('object-bridge-width').value)/100:
       stairMode?Number($('object-bridge-length').value)/100:undefined,
     rotationDeg:Number($('object-rotation').value),
+    flipX:$('object-flip-x').checked,
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
@@ -4308,6 +4312,10 @@ $('object-definition').addEventListener('change',()=>{objectSelectedId=null;
 $('object-variant').addEventListener('change',()=>editSelectedObject({
   variantId:$('object-variant').value
 }));
+$('object-flip-x').addEventListener('change',()=>{
+  if(objectSelectedId)editSelectedObject({flipX:$('object-flip-x').checked});
+  else scheduleDraw();
+});
 // Native collapsed panel. Slider input redraws the preview with NO history;
 // each committed change enters the existing single undo/redo WorldObject path.
 if($('object-shadow-details')){
