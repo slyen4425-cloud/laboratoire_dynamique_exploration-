@@ -129,7 +129,13 @@ test('real AdventureSession CombatResult stays pending until the GenSRPG Core re
  receipt={persisted:true,applied:true,
   session:{sessionId:'session-game-1',processedEncounterKeys:['e1:r1']}};
  finish();
- assert.equal(h.nodes.length,0,'only a correlated Core receipt closes the battle');
+ assert.equal(h.nodes.length,1,'the native result dialog retains its audio context until dismissal');
+ assert.equal(h.nodes[0].style.display,'none','completed combat cannot cover the adventure UI');
+ h.win.parent={id:'capture-parent'};
+ h.listeners.get('message')({source:h.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(h.nodes.length,0,'closing rewards releases finished combat iframe');
  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1'),null);
  assert.equal(calls,8);
  host.dispose();
@@ -191,7 +197,13 @@ test('embedded Capture stays fullscreen owner through Combat completion; standal
  play.listeners.get('message')({source:frame,origin,data:{
   type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'
  }});
- assert.equal(play.nodes.length,0,'Combat overlay is closed after the official Core receipt');
+ assert.equal(play.nodes.length,1,'result overlay waits hidden until Capture closes its reward sheet');
+ assert.equal(play.nodes[0].style.display,'none');
+ play.win.parent={id:'capture-parent'};
+ play.listeners.get('message')({source:play.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(play.nodes.length,0,'dismissed result unloads the Combat iframe');
  assert.equal(requestCount,0,'return to exploration must not trigger a new child fullscreen');
  playHost.dispose();
  const standalone=fakeDom();
@@ -242,4 +254,19 @@ test('standalone editor combat never toggles Capture HUD',()=>{
  host.open({url:origin+'/combat-preview/examples/dom-demo/exploration-encounter.html',snapshot});
  host.close();host.dispose();
  assert.equal(calls.length,0);
+});
+
+
+test('creator artwork rotates only for the native Combat loading cover',()=>{
+ const h=fakeDom(),store=storage();save(store);
+ const first='blob:'+origin+'/first',second='blob:'+origin+'/second';
+ h.win.location.href=origin+'/sculpt-lab.html?loadingArtCombat='+encodeURIComponent(JSON.stringify([first,second]));
+ const host=createImmersiveEncounterHostV1({windowRef:h.win,documentRef:h.doc,storage:store,onCompleted:()=>true});
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ host.open({url,snapshot});
+ assert.match(h.nodes[0].children[1].style.backgroundImage,/first/);
+ host.close();
+ host.open({url,snapshot});
+ assert.match(h.nodes[0].children[1].style.backgroundImage,/second/);
+ host.dispose();
 });
