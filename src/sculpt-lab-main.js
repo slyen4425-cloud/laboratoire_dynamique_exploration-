@@ -1398,13 +1398,14 @@ function draw(){
             faces:cached.depthFaces}));
       if(!navigationTesting){
         for(const object of nearObjects)drawPreviewObject(object);
-      }else if(nearObjects.length){
-        // Preserve the existing actor painter order in play mode. A distant
-        // tree remains behind the hero; a closer one remains in front.
+      }else{
+        // The hero is evaluated independently of nearObjects: on an empty
+        // map its foot can still be IN FRONT of the cached cliff wall.
+        // Terrain, collision and actor rendering retain their single owners.
         const heroY=navActor?.y??Infinity;
         for(const object of nearObjects)
           if(object.transform.y<=heroY)drawPreviewObject(object);
-        if(navActor&&nearObjects.some(object=>object.transform.y<=heroY)){
+        if(navActor){
           const footLevel=navVisualLevel??navHeight();
           if(sculptObjectInFrontOfCliffV1(terrain,{
             x:navActor.x,y:navActor.y-footLevel*SCULPT_TILE.rise,
