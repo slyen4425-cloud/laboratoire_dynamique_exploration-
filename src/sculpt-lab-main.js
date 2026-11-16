@@ -13,7 +13,8 @@ import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV
 import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from './play/exploration-loading-art-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
-import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-mixed-depth-c3-20261116';
+import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2,
+  sculptObjectRaisedCapOcclusionV1} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-cap-object-c4-20261116';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -1413,7 +1414,7 @@ function draw(){
             width:44,height:90
           },navActor,{tileWidth:SCULPT_TILE.width,
             tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-            faces:cached.depthFaces});
+            faces:cached.depthFaces,footRadius:navActor.radius});
           if(cliffPlan.redraw){
             // Draw the native hero ONCE in front of the walls below/behind
             // its foot, even when a different, nearer wall also overlaps
@@ -3370,6 +3371,24 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
 }
+// Clip ONLY the current WorldObject sprite against existing upper ground.
+// Nonzero winding makes overlapping projected tile caps one continuous hole.
+function clipPreviewObjectByUpperCaps(caps){
+  if(!caps.length)return;
+  const view=navigationTesting?cameraView():null;
+  const point=(x,y)=>view?sculptCameraProject(view,x,y):{x,y};
+  ctx.beginPath();
+  ctx.rect(-32768,-32768,65536,65536);
+  for(const cap of caps){
+    const a=point(cap.x,cap.y);
+    const b=point(cap.x,cap.y+cap.height);
+    const c=point(cap.x+cap.width,cap.y+cap.height);
+    const d=point(cap.x+cap.width,cap.y);
+    ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);
+    ctx.lineTo(d.x,d.y);ctx.closePath();
+  }
+  ctx.clip();
+}
 function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrain,decorative=false}={}){
   // V77: the ramp is terrain, not a bitmap billboard. Draw its quad in the
   // shared world projection, including its genuine rise from foot to head.
@@ -3398,7 +3417,16 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   const viewport=previewObjectViewport;
   if(viewport&&(visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
     visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
-  ctx.save();ctx.translate(point.x,point.y);
+  // No change to gameplay, bridge deck, ramp ground, terrain or hero painter.
+  // This one clip persists on every native draw, including C3 object replays.
+  const upperCaps=decorative||object.kind==='bridge'||object.kind==='stairs'||
+    object.kind==='ramp'?[]:
+    sculptObjectRaisedCapOcclusionV1(visualTerrain,rect,object.transform,{
+      tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise
+    });
+  ctx.save();
+  clipPreviewObjectByUpperCaps(upperCaps);
+  ctx.translate(point.x,point.y);
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
   // locally in Tester while leaving bridges, rails and buildings untouched.
