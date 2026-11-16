@@ -828,6 +828,21 @@ body.sculpt-play-unavailable #play-start-error{
 #navigation-hud .scenery-editor-fields>label{display:grid;gap:4px;font-size:.77rem}
 #navigation-hud .scenery-editor-fields>label:first-child{display:flex;align-items:center}
 #navigation-hud .scenery-editor-fields button{min-height:40px}
+/* Official Capture art is reused for Combat warm-up; fallback is the existing mask. */
+.combat-overlay__loading--art {
+  background-image:linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),var(--capture-loading-art);
+  background-position:center;background-size:cover;background-repeat:no-repeat;
+  justify-content:flex-end;padding-bottom:clamp(18px,5vh,38px);
+}
+.combat-overlay__loading--art .combat-overlay__brand {display:none}
+.combat-overlay__loading--art p,
+.combat-overlay__loading--art button {
+  max-width:min(92vw,590px);
+  text-shadow:0 1px 8px #000;
+}
+@media(prefers-reduced-motion:reduce){
+  .combat-overlay__loading--art .combat-overlay__spinner{animation:none}
+}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
