@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
-import {sculptObjectRaisedCapOcclusionV1,sculptActorCliffDepthPlanV2}
+import {sculptObjectRaisedCapOcclusionV1,sculptActorCliffDepthPlanV2,sculptCapUnionRectsV1}
   from '../src/render/sculpt-cliff-object-depth-v1.js';
 const W=12,H=16,w=28,h=21,rise=18;
 const terrainWith=cells=>{const levels=Array(W*H).fill(2);
@@ -35,6 +35,13 @@ test('C4: both overlapping upper caps remain excluded, without evenodd holes',()
  const t=terrainWith([[4,5,8],[4,6,8]]),foot=p(4,8);
  const caps=sculptObjectRaisedCapOcclusionV1(t,rect(foot),foot,options);
  assert.deepEqual(caps.map(cap=>cap.row),[5,6]);
+ const disjoint=sculptCapUnionRectsV1(caps);
+ assert.ok(disjoint.length>=2);
+ const overlap=(a,b)=>Math.max(0,Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x))*
+   Math.max(0,Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y));
+ for(let i=0;i<disjoint.length;i++)for(let j=i+1;j<disjoint.length;j++)
+   assert.ok(overlap(disjoint[i],disjoint[j])<1e-7,
+     'union bands must never overlap, otherwise the Canvas clip reopens tree pixels');
  const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const body=source.slice(source.indexOf('function clipPreviewObjectByUpperCaps('),
    source.indexOf('function drawPreviewObject(',source.indexOf('function clipPreviewObjectByUpperCaps(')));

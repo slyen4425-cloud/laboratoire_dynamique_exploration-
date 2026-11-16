@@ -105,3 +105,29 @@ export function sculptObjectRaisedCapOcclusionV1(terrain,rect,foot,{
   }
   return Object.freeze(caps);
 }
+
+  
+// Union of possibly overlapping raised top rectangles, split into strictly
+// disjoint horizontal bands. Canvas winding / evenodd paths otherwise let a
+// tree reappear at the intersections of two higher tiles. This is still only
+// read-only visual geometry computed from the canonical terrain.
+export function sculptCapUnionRectsV1(caps=[]){
+  if(!caps?.length)return Object.freeze([]);
+  const ys=[...new Set(caps.flatMap(r=>[r.y,r.y+r.height]))].sort((a,b)=>a-b);
+  const union=[];
+  for(let i=0;i<ys.length-1;i++){
+    const y=ys[i],next=ys[i+1];
+    if(next-y<=1e-9)continue;
+    const intervals=caps.filter(r=>r.y<next-1e-9&&r.y+r.height>y+1e-9)
+      .map(r=>[r.x,r.x+r.width]).sort((a,b)=>a[0]-b[0]);
+    if(!intervals.length)continue;
+    let [left,right]=intervals[0];
+    const emit=()=>union.push(Object.freeze({x:left,y,width:right-left,height:next-y}));
+    for(const [a,b] of intervals.slice(1)){
+      if(a<=right+1e-9)right=Math.max(right,b);
+      else{emit();left=a;right=b;}
+    }
+    emit();
+  }
+  return Object.freeze(union);
+}

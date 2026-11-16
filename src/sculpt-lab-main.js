@@ -14,7 +14,7 @@ import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from './pla
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
 import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2,
-  sculptObjectRaisedCapOcclusionV1} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-cap-object-c4-20261116';
+  sculptObjectRaisedCapOcclusionV1,sculptCapUnionRectsV1} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-cap-object-c4-20261116-r2';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -3371,15 +3371,17 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
 }
-// Clip ONLY the current WorldObject sprite against existing upper ground.
-// Nonzero winding makes overlapping projected tile caps one continuous hole.
+// Clip ONLY this WorldObject sprite against pre-existing upper ground.
+// Merge caps to NONOVERLAPPING rectangles first: overlapping same-direction
+// holes would otherwise cancel under BOTH nonzero and evenodd Canvas rules.
 function clipPreviewObjectByUpperCaps(caps){
   if(!caps.length)return;
+  const disjoint=sculptCapUnionRectsV1(caps);
   const view=navigationTesting?cameraView():null;
   const point=(x,y)=>view?sculptCameraProject(view,x,y):{x,y};
   ctx.beginPath();
   ctx.rect(-32768,-32768,65536,65536);
-  for(const cap of caps){
+  for(const cap of disjoint){
     const a=point(cap.x,cap.y);
     const b=point(cap.x,cap.y+cap.height);
     const c=point(cap.x+cap.width,cap.y+cap.height);

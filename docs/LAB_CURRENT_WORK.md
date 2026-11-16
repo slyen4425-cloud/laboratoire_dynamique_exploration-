@@ -1,3 +1,8 @@
+## 2026-11-16 — C4 complément de validation : union sans trous + test C1 rebasé
+- La première série C4 était verte sur ses nouveaux tests, mais le test statique C1 attendait la syntaxe `faces:cached.depthFaces}` alors que le C4 passe désormais le rayon réel `footRadius:navActor.radius` à C3 : actualisation stricte du contrat de test en conservant la condition de replay et sa source unique, sans neutraliser de test.
+- Le clip Canvas ne peut **pas** utiliser directement plusieurs trous chevauchants, que le fill-rule soit evenodd ou nonzero : ces chemins réouvrent des pixels à l'intersection. `sculptCapUnionRectsV1` produit une union en bandes sans recouvrement avant clip, avec test explicite d'absence de recouvrement. La géométrie reste tirée des mêmes caps du même monde, aucune copie terrain.
+- Les prérequis restent CI Node, Chromium/Firefox, Pages SHA exact et test auteur. Aucun statut de publication anticipé.
+
 ## 2026-11-16 — Relief : objet à l'altitude basse masqué par le sol supérieur, héros au bord (C4, NON PUBLIÉ)
 - Retest utilisateur Pixel : C3 résout presque l'occlusion du héros, mais un petit morceau dépasse la lèvre rocheuse ; un arbre traverse un plateau supérieur en neige. Le cache C3 contient uniquement la **face verticale**, pas le capot de terrain élevé. Un WorldObject dessiné après ce capot reste par-dessus celui-ci, quelle que soit l'altitude de son pied.
 - START officiel Labo Exploration `main@2b318c1462d9723c8f9e5386aaecccec8c5e3c2f`, checkpoint `checkpoint/exploration-start-cap-object-occlusion-20261116`, branche unique `work/exploration-cap-object-occlusion-20261116`. Nouveau lot de rendu : pas de changement des données, sauvegardes, collision, Atlas, décor, Ombres, Combat, Capture, Audio ou autres modes.
