@@ -58,7 +58,16 @@ export function createImmersiveEncounterHostV1({
        event.source!==windowRef.parent||
        event.data?.schema!=='gensrpg.capture.combat.result-dismissed.v1'||
        event.data.sessionId!==sessionId)return;
-    releaseResultOverlay();
+    if(!releaseResultOverlay()&&active?.finishing){
+      // Reward closure may race the pending Core receipt: silence the real
+      // soundtrack immediately without consuming any uncommitted result.
+      active.dismissResultRequested=true;
+      try{
+        active.frame.contentWindow?.postMessage({
+          type:'gensrpg.capture.combat-stop-audio.v1'
+        },windowRef.location.origin);
+      }catch{/* frame may have unloaded */}
+    }
   }
   // Diagnostic only: the existing native Combat overlay measures tap-to-ready.
   // No parallel loader, retry or gameplay dependency is introduced.
@@ -151,7 +160,7 @@ export function createImmersiveEncounterHostV1({
       if(active!==battle||disposed)return;
       battle.finishing=false;
       if(receipt===false||!consumeCombatResult(storage,{sessionId,receipt}))return;
-      if(sessionId!==undefined)holdFinishedOverlay();
+      if(sessionId!==undefined&&!battle.dismissResultRequested)holdFinishedOverlay();
       else close();
       onAcknowledged?.(envelope);
     };
