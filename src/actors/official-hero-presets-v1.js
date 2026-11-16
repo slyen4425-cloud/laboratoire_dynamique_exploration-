@@ -5,6 +5,22 @@ import {MAP_ACTOR_COMPASS_DIRECTIONS_V1,DEFAULT_HERO_VISUAL_SETTINGS_V1,normaliz
 import {createUserHeroDefinitionV1} from './user-hero-definition-v1.js';
 
 export const OFFICIAL_HERO_CATALOG_URL_V1='assets/exploration/actors/official/catalog.json';
+
+// Green hero is the official 35px reference; blue is already the published
+// 30px exception. Read the ONE catalog instead of keeping a second size list.
+export function officialHeroRecommendedTargetHeightV1(name,catalog){
+ const hero=Array.isArray(catalog?.heroes)?catalog.heroes.find(item=>item.name===name):null;
+ return hero?.targetHeight??DEFAULT_HERO_VISUAL_SETTINGS_V1.targetHeight;
+}
+export function officialHeroVisualSizeAuditV1(records,catalog){
+ if(!Array.isArray(records))throw new TypeError('Hero records required');
+ return Object.freeze(records.map(record=>{
+  const current=record.mapVisual.targetHeight;
+  const expected=officialHeroRecommendedTargetHeightV1(record.name,catalog);
+  return Object.freeze({id:record.id,name:record.name,current,expected,
+   tooLarge:current>expected+1});
+ }));
+}
 const ROOT='assets/exploration/actors/official/';
 const EXPECTED_HEROES=12;
 const assetPath=value=>typeof value==='string'&&value.startsWith(ROOT)&&
