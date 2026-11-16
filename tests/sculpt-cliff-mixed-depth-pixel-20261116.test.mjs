@@ -42,12 +42,14 @@ test('east-facing side uses the lower-right foot, not the south-row test',()=>{
  const far=foot(1.5*w,6*h+10);
  assert.equal(sculptActorCliffDepthPlanV2(t,sprite(far.x,far.y),far).redraw,false);
 });
-test('Tester composites one cached wall mask, one hero replay, and front clip only',()=>{
- const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- const fragment=source.slice(source.indexOf('const cliffPlan=sculptActorCliffDepthPlanV2'),
-  source.indexOf('for(const object of nearObjects)\n          if(object.transform.y>heroY)'));
- assert.match(fragment,/if\(cliffPlan\.redraw\)\{[\s\S]*drawNavigationActor\(\)/);
- assert.match(fragment,/for\(const rect of cliffPlan\.frontRects\)[\s\S]*ctx\.clip\(\)/);
- assert.match(fragment,/ctx\.drawImage\(cached\.cliffOcclusionImage/);
- assert.doesNotMatch(fragment,/drawSculptTerrain\(/);
+test('rollback: Tester draws one native hero with no separate cliff replay',()=>{
+  const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  const begin=source.indexOf('  if(navigationTesting){\n    // V57:');
+  const end=source.indexOf('  drawEditorPlayableLimit();',begin);
+  assert.ok(begin>0&&end>begin);
+  const painter=source.slice(begin,end);
+  assert.equal((painter.match(/drawNavigationActor\(\)/g)||[]).length,1);
+  assert.doesNotMatch(painter,/cliffOcclusionImage|cliffPlan|frontRects|sculptActorCliffDepthPlanV2/);
+  assert.match(painter,/drawPreviewObjects\(Infinity,navActor\?\.y\?\?Infinity/);
+  assert.doesNotMatch(painter,/drawSculptTerrain\(/);
 });
