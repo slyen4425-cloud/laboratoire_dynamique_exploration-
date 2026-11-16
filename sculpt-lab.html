@@ -855,7 +855,7 @@ body.sculpt-play-unavailable #play-start-error{
  if(artPath){
    const art=new URL(artPath,location.href);
    if(art.origin===location.origin&&
-      art.pathname.endsWith('/assets/gensrpg/capture-v2/branding/monster-invoc-loading-v1.svg')){
+      (art.pathname.endsWith('/assets/gensrpg/capture-v2/branding/monster-invoc-loading-v1.svg')||art.protocol==='blob:')){
      document.documentElement.classList.add('capture-loading-art');
      document.documentElement.style.setProperty('--capture-loading-art','url("'+art.href+'")');
    }
