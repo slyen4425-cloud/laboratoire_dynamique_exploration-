@@ -12,7 +12,7 @@ import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculp
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
-import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2} from './render/sculpt-cliff-object-depth-v1.js';
+import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-mixed-depth-c3-20261116';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
