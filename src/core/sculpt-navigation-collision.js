@@ -1,7 +1,7 @@
 // Optional sculpt laboratory collision adapter. The Collision World remains the
 // authority: it calls this pure geometry check through collisionContext only.
 // Never persist this preview adapter in WorldDocument or a gameplay save.
-import {sculptHeightAt,sculptWaterAt,sculptSphereAt,
+import {SCULPT_TERRAIN_MAX_LEVEL,sculptHeightAt,sculptWaterAt,sculptSphereAt,
   sculptSphereDisplacementAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
 import {bridgeTraversalRect} from '../world/world-object-model.js?rev=sculpt-bridge-crossing-v55-deck-v70-rails-v71';
 import {circleFitsOrientedRect,orientedLocalPoint} from './geometry.js';
@@ -48,7 +48,8 @@ export function sculptNorthCliffProjectionBlock(terrain,x,y,{
   const here=sculptNavigationSample(terrain,x,y,{cellWidth:w,cellHeight:h});
   if(!here)return null;
   const rad=Math.max(0,Number(radius)||0);
-  const reach=7*rise+rad;
+  // Levels may reach 16; a seven-level lookahead missed tall Pixel walls.
+  const reach=SCULPT_TERRAIN_MAX_LEVEL*rise+rad;
   const lastRow=Math.min(terrain.height-1,Math.floor((y+reach)/h)+1);
   const fromCol=Math.max(0,Math.floor((x-rad)/w));
   const toCol=Math.min(terrain.width-1,Math.floor((x+rad)/w));
@@ -65,6 +66,88 @@ export function sculptNorthCliffProjectionBlock(terrain,x,y,{
       if(y+rad>=visibleStart-1e-6 && y-rad<bankY)
         return Object.freeze({kind:'cliff-projection',col,row,
           from:here.level,to:upper,delta:upper-here.level,limit:0});
+    }
+  }
+  return null;
+}
+
+// Physical cliff edges are solid for the hero's entire CIRCLE, not only its
+// centre. The continuous world-X/Y footprint comes from canonical height cells
+// and the existing Collision World; there is no sprite-alpha collision or
+// secondary hitbox in the renderer. Used only outside approved bridge/stair
+// corridors and never for flying locomotion.
+export function sculptCliffEdgeFootprintBlock(terrain,x,y,{
+  cellWidth=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellWidth,
+  cellHeight=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellHeight,
+  radius=0,maxStepUp=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp,
+  maxStepDown=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepDown
+}={}){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const w=finitePositive(cellWidth,28),h=finitePositive(cellHeight,21);
+  const rad=Math.max(0,Number(radius)||0);
+  if(rad<=0)return null;
+  const here=sculptNavigationSample(terrain,x,y,{cellWidth:w,cellHeight:h});
+  if(!here)return null;
+  const up=Math.max(0,Number(maxStepUp)||0),down=Math.max(0,Number(maxStepDown)||0);
+  const fromCol=Math.max(0,Math.floor((x-rad)/w));
+  const toCol=Math.min(terrain.width-1,Math.floor((x+rad)/w));
+  const fromRow=Math.max(0,Math.floor((y-rad)/h));
+  const toRow=Math.min(terrain.height-1,Math.floor((y+rad)/h));
+  let result=null;
+  for(let row=fromRow;row<=toRow;row++)for(let col=fromCol;col<=toCol;col++){
+    if(col===here.col&&row===here.row)continue;
+    const level=sculptHeightAt(terrain,col,row),delta=level-here.level;
+    if((delta>=0&&delta<=up)||(delta<=0&&-delta<=down))continue;
+    const left=col*w,right=(col+1)*w,top=row*h,bottom=(row+1)*h;
+    const dx=Math.max(left-x,0,x-right),dy=Math.max(top-y,0,y-bottom);
+    const penetration=rad-Math.hypot(dx,dy);
+    if(penetration<=1e-6)continue; // tangency is walkable
+    if(!result||penetration>result.penetration)
+      result=Object.freeze({kind:'cliff-edge',col,row,from:here.level,to:level,
+        delta:Math.abs(delta),penetration,limit:delta>0?up:down});
+  }
+  return result;
+}
+
+// East-facing canonical cliff strips are only about three drawn pixels wide
+// but can extend many rows upscreen when the plateau reaches level 16. A
+// low-floor actor approaching from the right must not enter that visible rock
+// at its lateral endpoint. Test the projected FOOT against the actual
+// high/low height cells, bounded to nearby columns and the maximum 16-level
+// rise. This never modifies the world heightmap or saved positions.
+export function sculptEastCliffProjectionBlock(terrain,x,y,{
+  cellWidth=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellWidth,
+  cellHeight=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellHeight,
+  projectionRise=SCULPT_NAVIGATION_PROBE_DEFAULTS.projectionRise,
+  radius=0,maxStepUp=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp,
+  maxStepDown=SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepDown
+}={}){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return null;
+  const w=finitePositive(cellWidth,28),h=finitePositive(cellHeight,21);
+  const rise=Number.isFinite(projectionRise)&&projectionRise>0?projectionRise:0;
+  const rad=Math.max(0,Number(radius)||0);
+  if(!rise||!rad)return null;
+  const here=sculptNavigationSample(terrain,x,y,{cellWidth:w,cellHeight:h});
+  if(!here)return null;
+  const footY=y-here.level*rise;
+  const fromCol=Math.max(0,Math.floor((x-rad)/w)-1);
+  const toCol=Math.min(terrain.width-2,Math.floor((x+rad)/w));
+  const fromRow=Math.max(0,here.row-1);
+  const toRow=Math.min(terrain.height-1,
+    here.row+Math.ceil(SCULPT_TERRAIN_MAX_LEVEL*rise/h)+1);
+  const threshold=Math.max(0,Number(maxStepUp)||0,Number(maxStepDown)||0);
+  for(let col=fromCol;col<=toCol;col++){
+    const borderX=(col+1)*w;
+    if(x<borderX||x-rad>=borderX)continue;
+    for(let row=fromRow;row<=toRow;row++){
+      const upper=sculptHeightAt(terrain,col,row),lower=sculptHeightAt(terrain,col+1,row);
+      if(upper-lower<=threshold||here.level>lower)continue;
+      const top=(row+1)*h-upper*rise,bottom=(row+1)*h-lower*rise;
+      if(footY+rad<top||footY-rad>=bottom)continue;
+      const verticalDepth=Math.min(footY+rad-top,bottom-footY+rad);
+      return Object.freeze({kind:'cliff-projection',orientation:'east',col,row,
+        from:here.level,to:upper,delta:upper-lower,limit:0,
+        borderX,footY,top,bottom,verticalDepth});
     }
   }
   return null;
@@ -375,6 +458,31 @@ export function sculptNavigationRoute({
             Math.hypot(previousX-sphere.x,previousY-sphere.y)-1e-6))
           return reject(Object.freeze({kind:'sphere-wall',id:sphere.id,
             variant:sphere.kind,limit:0}));
+        // Radius-aware cliff edge and projected east wall use this very
+        // same swept Collision World route. Existing saves that already start
+        // inside the footprint may move away, never deeper into the cliff.
+        const edgeConfig={cellWidth,cellHeight,radius,maxStepUp,maxStepDown};
+        const edgeBlock=sculptCliffEdgeFootprintBlock(terrain,x,y,edgeConfig);
+        if(!dismounting&&edgeBlock){
+          const priorEdge=sculptCliffEdgeFootprintBlock(
+            terrain,previousX,previousY,edgeConfig);
+          const retreating=priorEdge?.col===edgeBlock.col&&
+            priorEdge?.row===edgeBlock.row&&
+            edgeBlock.penetration<=priorEdge.penetration+1e-6;
+          if(!retreating)return reject(edgeBlock);
+        }
+        const sideConfig={...edgeConfig,projectionRise};
+        const eastBlock=projectionRise>0&&!candidate&&!previousCarrier&&
+          sculptEastCliffProjectionBlock(terrain,x,y,sideConfig);
+        if(!dismounting&&eastBlock){
+          const previousEast=sculptEastCliffProjectionBlock(
+            terrain,previousX,previousY,sideConfig);
+          const retreating=previousEast?.col===eastBlock.col&&
+            previousEast?.row===eastBlock.row&&
+            (x>previousX+1e-6||
+              eastBlock.verticalDepth<previousEast.verticalDepth-1e-6);
+          if(!retreating)return reject(eastBlock);
+        }
         const projectedSphere=projectionRise>0&&!candidate&&!previousCarrier&&
           sculptSphereProjectionBlock(terrain,x,y,
             {cellWidth,cellHeight,projectionRise,radius});
