@@ -176,6 +176,9 @@ export function createImmersiveEncounterHostV1({
       overlay.append(frame);
       const loading=documentRef.createElement('div');
       loading.className='combat-overlay__loading';
+      // Reuse the same validated art selected by the official Capture boot mask.
+      if (documentRef.documentElement?.classList?.contains('capture-loading-art'))
+        loading.classList.add('combat-overlay__loading--art');
       loading.setAttribute('role','status');
       loading.setAttribute('aria-live','polite');
       const brand=documentRef.createElement('strong');
