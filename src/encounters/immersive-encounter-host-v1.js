@@ -60,7 +60,6 @@ export function createImmersiveEncounterHostV1({
        event.data.sessionId!==sessionId)return;
     releaseResultOverlay();
   }
-  windowRef.addEventListener('message',onResultDismissed);
   // Diagnostic only: the existing native Combat overlay measures tap-to-ready.
   // No parallel loader, retry or gameplay dependency is introduced.
   const traceCombatReady=new URL(windowRef.location.href).searchParams.has('gensPerf');
@@ -92,6 +91,11 @@ export function createImmersiveEncounterHostV1({
   }
 
   function onCombatComplete(event) {
+    // One listener handles both the official Combat completion and the
+    // Capture-owned result dismissal; no parallel bridge or global observer.
+    if(event.data?.schema==='gensrpg.capture.combat.result-dismissed.v1'){
+      onResultDismissed(event);return;
+    }
     if (!active || disposed ||
         event.origin !== windowRef.location.origin ||
         event.source !== active.frame.contentWindow ||
@@ -257,7 +261,6 @@ export function createImmersiveEncounterHostV1({
       if (disposed) return;
       close();
       windowRef.removeEventListener('message', onCombatComplete);
-      windowRef.removeEventListener('message', onResultDismissed);
       disposed = true;
     }
   });
