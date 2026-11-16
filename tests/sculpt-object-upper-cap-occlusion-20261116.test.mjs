@@ -54,13 +54,8 @@ test('C4: both overlapping upper caps remain excluded, without evenodd holes',()
  for(let i=0;i<disjoint.length;i++)for(let j=i+1;j<disjoint.length;j++)
    assert.ok(overlap(disjoint[i],disjoint[j])<1e-7,
      'union bands must never overlap, otherwise the Canvas clip reopens tree pixels');
- const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- const body=source.slice(source.indexOf('function clipPreviewObjectByUpperCaps('),
-   source.indexOf('function drawPreviewObject(',source.indexOf('function clipPreviewObjectByUpperCaps(')));
- assert.match(body,/ctx\.rect\(-32768,-32768,65536,65536\)/);
- assert.match(body,/ctx\.moveTo\(a\.x,a\.y\);ctx\.lineTo\(b\.x,b\.y\)/);
- assert.match(body,/ctx\.clip\(\)/);
- assert.doesNotMatch(body,/clip\('evenodd'\)|drawSculptTerrain\(/);
+ // Geometry of historic C4 stays testable, but its mask is no longer
+ // consumed by the user's native object painter after rollback.
 });
 test('C5: visual cap mask uses only forward rows and retains the real foot owner',()=>{
  const body=readFileSync(new URL('../src/render/sculpt-cliff-object-depth-v1.js',import.meta.url),'utf8');
@@ -68,16 +63,14 @@ test('C5: visual cap mask uses only forward rows and retains the real foot owner
  assert.match(body,/footRow=Math\.floor\(foot\.y\/tileHeight\)/);
  assert.doesNotMatch(body,/foot\.y\s*[+-]=|\bwindow\b|localStorage/);
 });
-test('C4: clip belongs ONLY to WorldObject painter, not hero/decks/stairs/ramps',()=>{
+test('rollback: terrain caps cannot clip trees, houses or shadows in active renderer',()=>{
  const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const body=source.slice(source.indexOf('function drawPreviewObject('),
    source.indexOf('function drawPreviewObjects(',source.indexOf('function drawPreviewObject(')));
- assert.match(body,/object\.kind==='bridge'\|\|object\.kind==='stairs'/);
- assert.match(body,/object\.kind==='ramp'\?\[\]/);
- assert.match(body,/clipPreviewObjectByUpperCaps\(upperCaps\)/);
- const hero=source.slice(source.indexOf('function drawNavigationActor('),
-   source.indexOf('function drawPlacedActors('));
- assert.doesNotMatch(hero,/clipPreviewObjectByUpperCaps/);
+ assert.match(body,/ctx\.save\(\);\s*ctx\.translate\(point\.x,point\.y\)/);
+ assert.match(body,/drawWorldObjectContactShadowV1\(ctx,/);
+ assert.doesNotMatch(body,/sculptObjectRaisedCapOcclusionV1|clipPreviewObjectByUpperCaps|upperCaps/);
+ assert.doesNotMatch(source,/cliffOcclusionImage|sculptActorCliffDepthPlanV2/);
 });
 test('C4: use the existing hero collision-foot radius near cliff lip',()=>{
  const t=terrainWith([[4,6,8],[4,8,8]]);
