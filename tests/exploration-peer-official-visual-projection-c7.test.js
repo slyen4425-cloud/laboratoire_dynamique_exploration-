@@ -60,3 +60,26 @@ test('C7 forged catalog cannot throw through a remote snapshot or mutate the vie
  assert.equal(projection.forArea('area').length,0);
  projection.dispose();
 });
+
+test('C7 mixed snapshot rejects one forged peer atomically and retains prior valid peers',()=>{
+ const first=randomUUID(),second=randomUUID();
+ const projection=createExplorationPeerVisualProjectionV1({
+  sessionId:'session',worldId:'world',worldFingerprint:'fingerprint',
+  officialHeroCatalog:catalog
+ });
+ const packet=(revision,actors)=>({
+  schema:EXPLORATION_PEER_SNAPSHOT_EVENT_V1,version:1,
+  sessionId:'session',worldId:'world',worldFingerprint:'fingerprint',revision,actors
+ });
+ const valid={actorId:first,areaId:'area',x:1,y:2,seq:1,
+  displayName:'Premier',officialPresetId:catalog.heroes[0].id};
+ assert.equal(projection.apply(packet(1,[valid])),true);
+ const invalid={actorId:second,areaId:'area',x:3,y:4,seq:1,
+  displayName:'Intrus',officialPresetId:'https://evil.example/hero.png'};
+ assert.equal(projection.apply(packet(2,[{...valid,x:100,seq:2},invalid])),false);
+ assert.deepEqual(projection.forArea('area').map(peer=>peer.actorId),[first]);
+ assert.equal(projection.forArea('area')[0].x,1);
+ assert.equal(projection.apply(packet(3,[{...valid,x:5,seq:3}])),true);
+ assert.equal(projection.forArea('area')[0].x,5);
+ projection.dispose();
+});
