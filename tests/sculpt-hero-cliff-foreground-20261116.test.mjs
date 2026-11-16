@@ -5,15 +5,13 @@ import {createSculptTerrain,sculptFaces} from '../src/world/sculpt-height-model.
 import {sculptObjectInFrontOfCliffV1} from '../src/render/sculpt-cliff-object-depth-v1.js';
 
 const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
-const begin=main.indexOf('const nearObjects=sculptPlayObjectDrawCache.get(');
-const foreground=main.slice(begin,main.indexOf('  drawEditorPlayableLimit();',begin));
-test('Tester redraws a cliff-front hero without requiring any nearby WorldObject',()=>{
- assert.ok(begin>0);
- assert.match(foreground,/\}else\{[\s\S]*?if\(navActor\)\{\s*const footLevel=navVisualLevel\?\?navHeight\(\)/);
- assert.doesNotMatch(foreground,/else if\(nearObjects\.length\)|if\(navActor&&nearObjects\.some/);
- assert.match(foreground,/const cliffPlan=sculptActorCliffDepthPlanV2\(terrain,[\s\S]*?faces:cached\.depthFaces,footRadius:navActor\.radius\}\);[\s\S]*?if\(cliffPlan\.redraw\)\{[\s\S]*?drawNavigationActor\(\)/);
- assert.match(foreground,/if\(cliffPlan\.frontRects\.length\)[\s\S]*?ctx\.clip\(\)/);
- assert.equal((foreground.match(/drawNavigationActor\(\)/g)||[]).length,1);
+test('pre-#468 hero path: one native painter, no cliff redraw over it',()=>{
+  const begin=main.indexOf('  if(navigationTesting){\n    // V57:');
+  const end=main.indexOf('  drawEditorPlayableLimit();',begin);
+  assert.ok(begin>0&&end>begin);
+  const foreground=main.slice(begin,end);
+  assert.equal((foreground.match(/drawNavigationActor\(\)/g)||[]).length,1);
+  assert.doesNotMatch(foreground,/nearObjects|cliffOcclusionImage|cliffPlan|ctx\.clip\(/);
 });
 test('foot-depth remains correct for a hero in front / behind a cliff',()=>{
  const levels=Array(64).fill(2);levels[2*8+3]=6;
