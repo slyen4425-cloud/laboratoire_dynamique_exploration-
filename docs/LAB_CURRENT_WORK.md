@@ -1,7 +1,8 @@
 ## 2026-11-16 — Calibration des 12 héros officiels sur silhouette verte (AUDIT, NON PUBLIÉ)
 - Demande auteur : héros bleu et un autre paraissent trop grands. Héros vert = taille de référence ; ne pas modifier les PNG, ne pas réécrire d'anciens profils personnalisés.
 - START main@`20228fdc2be728d52d02a6f37421f206d4849d0a`, checkpoint `checkpoint/exploration-start-hero-size-audit-20261116`, branche `work/exploration-hero-green-visual-calibration-20261116`. Autorité visuelle : catalogue officiel + MapActorVisual natif, aucun changement de mouvement/collision.
-- Audit objectif : silhouette réelle RGBA de chacune des 6 images S des 12 héros, étalon vert. Appliquer la hauteur d'affichage seulement aux écarts mesurés, tests du rendu et des profils installés. Aucun asset source réécrit.
+- Audit objectif : silhouette réelle RGBA de chacune des 6 images S des 12 héros, étalon vert. Les 12 silhouettes sont quasiment égales (145,67 à 150,33px vs vert 147,5px), mais l'ancien héros bleu peut rester installé à 35 alors que l'officiel est déjà à 30.
+- Correctif prudent : diagnostic des tailles persistantes de la bibliothèque réelle et bouton « Taille étalon » sur le héros sélectionné, qui utilise le catalogue unique (bleu 30, vert et autres 35) puis exige Enregistrer ; aucun héros édité ni sauvegarde réécrit silencieusement. Aucun asset source réécrit.
 - Invariants : sauvegardes des héros personnalisés, unique UserHeroStore, directions 8×6, V80, niveau 16, WorldObject, Combat, Dungeon, PWA.
 - Gate : Node/Chromium Pixel PC + CI, Pages SHA exact, validation auteur avant GREEN.
 

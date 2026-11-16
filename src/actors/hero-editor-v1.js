@@ -7,7 +7,7 @@ import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
 import {MAP_ACTOR_COMPASS_DIRECTIONS_V1,normalizeMapActorVisual,DEFAULT_HERO_VISUAL_SETTINGS_V1} from './map-actor-visual-model.js';
-import {loadOfficialHeroCatalogV1,installOfficialHeroPresetV1} from './official-hero-presets-v1.js';
+import {loadOfficialHeroCatalogV1,installOfficialHeroPresetV1,officialHeroRecommendedTargetHeightV1,officialHeroVisualSizeAuditV1} from './official-hero-presets-v1.js';
 
 const $=id=>document.getElementById(id);
 const status=$('hero-status');
@@ -15,6 +15,14 @@ const canvas=$('hero-canvas'),ctx=canvas.getContext('2d');
 const store=createUserHeroStoreV1();
 let selected=null,preview=null,renderEpoch=0,previewMoving=false,disposed=false;
 let liveVisual=null,dirty=false,saving=false,portraitPreviewUrl=null;
+let officialSizeCatalog=null;
+function renderHeroSizeAudit(records){
+ const flagged=officialHeroVisualSizeAuditV1(records,officialSizeCatalog).filter(item=>item.tooLarge);
+ $('hero-size-audit').textContent=flagged.length
+  ?'À vérifier (référence héros vert 35) : '+flagged.map(item=>item.name+' '+item.current+' → '+item.expected).join(' ; ')+
+    '. Sélectionne un héros, puis « Taille étalon » et Enregistrer.'
+  :'Tailles enregistrées : aucun héros plus grand que son gabarit officiel ou le vert (35).';
+}
 for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
  const label=document.createElement('label');
  label.textContent=dir+' · six images ordonnées (0–5)';
@@ -194,6 +202,7 @@ function displayFields(record){
 }
 async function refreshCatalog(chosenId=null){
  const records=await store.list();
+ renderHeroSizeAudit(records);
  const picker=$('hero-saved'),counts=new Map();
  for(const record of records)counts.set(record.name,(counts.get(record.name)??0)+1);
  picker.replaceChildren(new Option('＋ Nouveau héros…',''),
@@ -297,6 +306,13 @@ $('hero-apply-defaults').addEventListener('click',()=>{
  markDirty();
  notify('Réglages 35 / 16 images/s / oscillation 1 en aperçu. Clique sur Enregistrer pour les garder.');
 });
+$('hero-match-green').addEventListener('click',()=>{
+ const height=officialHeroRecommendedTargetHeightV1(selected?.name,officialSizeCatalog);
+ $('hero-height').value=String(height);
+ markDirty();
+ notify('Taille alignée sur '+(height===35?'le héros vert (35)':'le gabarit officiel de '+selected.name+' ('+height+')')+
+  ' en aperçu. Enregistrer pour appliquer à ce héros uniquement. Aucun sprite remplacé.');
+});
 $('hero-try-25').addEventListener('click',()=>{
  $('hero-height').value='25';markDirty();
  notify('Taille 25 en aperçu · non enregistrée.');
@@ -322,6 +338,8 @@ async function installPresetGallery(){
  const grid=$('hero-official-grid'),message=$('hero-official-status');
  try{
   const catalog=await loadOfficialHeroCatalogV1();
+  officialSizeCatalog=catalog;
+  renderHeroSizeAudit(await store.list());
   for(const hero of catalog.heroes){
    const card=document.createElement('div');card.className='hero-preset';
    const image=document.createElement('img');

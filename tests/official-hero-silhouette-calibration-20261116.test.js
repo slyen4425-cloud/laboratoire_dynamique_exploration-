@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {inflateSync} from 'node:zlib';
+import {officialHeroRecommendedTargetHeightV1,officialHeroVisualSizeAuditV1} from '../src/actors/official-hero-presets-v1.js';
 function bounds(path) {
  const png=readFileSync(new URL('../'+path,import.meta.url));
  assert.equal(png.toString('hex',0,8),'89504e470d0a1a0a');
@@ -49,4 +50,20 @@ test('audit official hero silhouette heights against published green model; do n
  });
  console.log('HERO_GREEN_SIZE_AUDIT='+JSON.stringify(data));
  for(const hero of data)assert.ok(hero.frames.every(f=>f.height>15&&f.height<=160));
+});
+
+test('saved outdated blue or oversized other hero can be diagnosed without touching any user definition',()=>{
+ const catalog=JSON.parse(readFileSync(new URL('../assets/exploration/actors/official/catalog.json',import.meta.url),'utf8'));
+ assert.equal(officialHeroRecommendedTargetHeightV1('Heros bleu',catalog),30);
+ assert.equal(officialHeroRecommendedTargetHeightV1('Heros vert',catalog),35);
+ const entries=[
+  {id:'blue',name:'Heros bleu',mapVisual:{targetHeight:35}},
+  {id:'green',name:'Heros vert',mapVisual:{targetHeight:35}},
+  {id:'other',name:'Personnage personnalisé',mapVisual:{targetHeight:60}}
+ ];
+ const original=JSON.stringify(entries);
+ const audit=officialHeroVisualSizeAuditV1(entries,catalog);
+ assert.deepEqual(audit.map(x=>x.tooLarge),[true,false,true]);
+ assert.deepEqual(audit.map(x=>x.expected),[30,35,35]);
+ assert.equal(JSON.stringify(entries),original,'no saved record is ever modified by inspection');
 });
