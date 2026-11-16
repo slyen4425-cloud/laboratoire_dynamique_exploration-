@@ -54,11 +54,11 @@ test('native cliff faces expose only their own render rectangles for depth maski
 test('editor and play reuse ONE cached terrain image and compositing mask',()=>{
  const editor=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  assert.match(editor,/sculptCliffOcclusionRectsV1\(terrain,SCULPT_TILE,\{/);
- assert.match(editor,/includeOuterSouthRim:!visualDecorativeFringe\(\)/);
+ assert.match(editor,/includeOuterSouthRim:false/);
  assert.match(editor,/maskCtx\.globalCompositeOperation='destination-in'/);
  assert.match(editor,/cached\.cliffOcclusionImage/);
- assert.equal((editor.match(/drawOuterSouthRim:!visualDecorativeFringe\(\)/g)||[]).length,2,
-  'cached and direct height rendering close the south wall only without visual continuation');
+ assert.equal((editor.match(/drawOuterSouthRim:false/g)||[]).length,3,
+  'cached, direct and decorative-fringe terrain draws never create a fake outer cliff; internal real faces still use the official mask');
  assert.match(editor,/function visualDecorativeFringe\(\)/);
  assert.match(editor,/visualFringeCache=createSculptDecorativeFringeV1\(decorativeFringeArea\(\)\)/);
  assert.match(editor,/if\(!sculptWorldDraft\|\|!sculptWorldAreaMounted\)return null/);

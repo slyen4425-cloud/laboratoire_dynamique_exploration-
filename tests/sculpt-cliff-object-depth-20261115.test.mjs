@@ -33,7 +33,8 @@ test('both live paths share the canonical wall raster and use foot priority',()=
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  assert.match(main,/sculptObjectInFrontOfCliffV1\(terrain,/);
  assert.match(main,/depthFaces:sculptFaces\(terrain\)/);
- assert.match(main,/includeOuterSouthRim:!visualDecorativeFringe\(\)/);
+ assert.match(main,/includeOuterSouthRim:false/);
+ assert.match(main,/sculptObjectInFrontOfCliffV1\(terrain,/);
  assert.match(main,/if\(!navigationTesting\)\{/);
  assert.match(main,/object\.transform\.y<=heroY/);
  assert.doesNotMatch(main,/drawOuterSouthRim:true/);
