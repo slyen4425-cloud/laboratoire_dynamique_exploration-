@@ -12,16 +12,28 @@ const p=(c,r)=>({x:(c+.5)*w,y:(r+.5)*h});
 const rect=(foot,level=2,height=180,width=70)=>({
  x:foot.x,y:foot.y-level*rise,width,height});
 const options={tileWidth:w,tileHeight:h,rise};
-test('C4: upper snow surface masks a tree anchored on the lower floor',()=>{
- const t=terrainWith([[4,5,8]]),foot=p(4,8);
+test('C4: upper snow surface IN FRONT masks a tree anchored on lower floor',()=>{
+ const t=terrainWith([[4,9,8]]),foot=p(4,8);
  const caps=sculptObjectRaisedCapOcclusionV1(t,rect(foot),foot,options);
  assert.equal(caps.length,1);
- assert.equal(caps[0].col,4);assert.equal(caps[0].row,5);
- assert.equal(caps[0].x,4*w);assert.equal(caps[0].y,5*h-8*rise);
+ assert.equal(caps[0].col,4);assert.equal(caps[0].row,9);
+ assert.equal(caps[0].x,4*w);assert.equal(caps[0].y,9*h-8*rise);
 });
 test('C4: object genuinely planted on the upper surface keeps its whole sprite',()=>{
  const t=terrainWith([[4,5,8]]),foot=p(4,5);
  assert.deepEqual(sculptObjectRaisedCapOcclusionV1(t,rect(foot,8),foot,options),[]);
+});
+test('C5: an object planted IN FRONT of a higher northern hill remains whole',()=>{
+ const high=terrainWith([[4,5,8],[5,6,12],[4,7,16]]);
+ const foot=p(4,8),image=rect(foot);
+ const caps=sculptObjectRaisedCapOcclusionV1(high,image,foot,options);
+ assert.deepEqual(caps,[],
+   'higher background caps must not cut trees/houses standing in foreground');
+ // A second higher terrace actually SOUTH of the grounded foot should still
+ // mask the object, without changing the same actor/collision coordinates.
+ const front=terrainWith([[4,5,8],[4,9,8]]);
+ assert.deepEqual(sculptObjectRaisedCapOcclusionV1(front,image,foot,options)
+   .map(cap=>cap.row),[9]);
 });
 test('C4: flat ground and unrelated high cells never clip visual objects',()=>{
  const foot=p(4,8),spr=rect(foot);
@@ -32,9 +44,9 @@ test('C4: flat ground and unrelated high cells never clip visual objects',()=>{
    {x:-99,y:foot.y},options),[]);
 });
 test('C4: both overlapping upper caps remain excluded, without evenodd holes',()=>{
- const t=terrainWith([[4,5,8],[4,6,8]]),foot=p(4,8);
+ const t=terrainWith([[4,9,8],[4,10,8]]),foot=p(4,8);
  const caps=sculptObjectRaisedCapOcclusionV1(t,rect(foot),foot,options);
- assert.deepEqual(caps.map(cap=>cap.row),[5,6]);
+ assert.deepEqual(caps.map(cap=>cap.row),[9,10]);
  const disjoint=sculptCapUnionRectsV1(caps);
  assert.ok(disjoint.length>=2);
  const overlap=(a,b)=>Math.max(0,Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x))*
@@ -49,6 +61,12 @@ test('C4: both overlapping upper caps remain excluded, without evenodd holes',()
  assert.match(body,/ctx\.moveTo\(a\.x,a\.y\);ctx\.lineTo\(b\.x,b\.y\)/);
  assert.match(body,/ctx\.clip\(\)/);
  assert.doesNotMatch(body,/clip\('evenodd'\)|drawSculptTerrain\(/);
+});
+test('C5: visual cap mask uses only forward rows and retains the real foot owner',()=>{
+ const body=readFileSync(new URL('../src/render/sculpt-cliff-object-depth-v1.js',import.meta.url),'utf8');
+ assert.match(body,/row=Math\.max\(fromRow,footRow\+1\)/);
+ assert.match(body,/footRow=Math\.floor\(foot\.y\/tileHeight\)/);
+ assert.doesNotMatch(body,/foot\.y\s*[+-]=|\bwindow\b|localStorage/);
 });
 test('C4: clip belongs ONLY to WorldObject painter, not hero/decks/stairs/ramps',()=>{
  const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');

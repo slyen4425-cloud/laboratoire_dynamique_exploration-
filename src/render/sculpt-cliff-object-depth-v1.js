@@ -94,7 +94,12 @@ export function sculptObjectRaisedCapOcclusionV1(terrain,rect,foot,{
   const toRow=Math.min(terrain.height-1,
     Math.ceil((bottom+SCULPT_TERRAIN_MAX_LEVEL*rise)/tileHeight));
   const caps=[];
-  for(let row=fromRow;row<=toRow;row++)for(let col=fromCol;col<=toCol;col++){
+  // Only a top lying IN FRONT of the grounded foot may cover a WorldObject.
+  // A northern (smaller-Y) hill is behind a tree planted south of it: clipping
+  // that tree by altitude alone caused the author's "trees vanish behind hills"
+  // regression. Cliff faces keep their own separate canonical depth painter.
+  // Compare saved WORLD rows, never screen Y/asset height or perspective.
+  for(let row=Math.max(fromRow,footRow+1);row<=toRow;row++)for(let col=fromCol;col<=toCol;col++){
     const upper=sculptHeightAt(terrain,col,row);
     if(upper<=level)continue;
     // Exact same top surface raster geometry as drawSculptTerrain.
