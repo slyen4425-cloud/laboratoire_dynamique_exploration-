@@ -41,3 +41,22 @@ test('C7 no catalog means no remote official appearance grant',()=>{
    officialPresetId:catalog.heroes[0].id}]
  }),false);
 });
+
+test('C7 forged catalog cannot throw through a remote snapshot or mutate the viewport',()=>{
+ const actorId=randomUUID();
+ const forged=structuredClone(catalog);
+ forged.heroes[0].thumbnail='https://evil.example/hero.png';
+ const projection=createExplorationPeerVisualProjectionV1({
+  sessionId:'session',worldId:'world',worldFingerprint:'fingerprint',
+  officialHeroCatalog:forged
+ });
+ const packet={
+  schema:EXPLORATION_PEER_SNAPSHOT_EVENT_V1,version:1,
+  sessionId:'session',worldId:'world',worldFingerprint:'fingerprint',
+  revision:1,actors:[{actorId,areaId:'area',x:1,y:2,seq:1,
+   officialPresetId:catalog.heroes[0].id}]
+ };
+ assert.doesNotThrow(()=>assert.equal(projection.apply(packet),false));
+ assert.equal(projection.forArea('area').length,0);
+ projection.dispose();
+});
