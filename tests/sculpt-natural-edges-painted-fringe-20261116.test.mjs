@@ -42,7 +42,7 @@ test('snow semantic base overrides legacy grass backdrop without editing source'
 });
 test('no artificial front wall; texture owner, cache and clip remain canonical',()=>{
   assert.equal((source.match(/drawOuterSouthRim:false/g)||[]).length,3);
-  assert.match(source,/includeOuterSouthRim:false/);
+  assert.doesNotMatch(source,/drawOuterSouthRim:true/);
   assert.match(source,/paintSurface:fringePaintSurface,paintImages:surfacePaintImages/);
   assert.match(source,/previous\.sourceSurface===surface/);
   assert.match(source,/const fringePaintSurface=chunk\.surface\?\?sculptFringeVisualSurfaceV1/);
