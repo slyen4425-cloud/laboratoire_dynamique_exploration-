@@ -1,3 +1,4 @@
+import {resolveOfficialPeerHeroV1} from './exploration-peer-official-hero-reference-v1.js';
 // Official Exploration visual-only guest projection. The host application
 // supplies RLS-protected, read-only peer poses. No navigation, collision,
 // checkpoint or avatar artwork is authoritative outside Exploration.
@@ -18,9 +19,12 @@ const scoped=value=>typeof value==='string'&&value.length>0&&value.length<=130&&
 const number=value=>typeof value==='number'&&Number.isFinite(value)&&
  value>=0&&value<=1000000;
 const positiveSeq=value=>Number.isSafeInteger(value)&&value>=1;
-function validateActor(actor,ownActorId){
+function validateActor(actor,ownActorId,catalog){
  return proper(actor,[...ACTOR_KEYS,
-  ...(Object.hasOwn(actor??{},'displayName')?['displayName']:[])])&&
+  ...(Object.hasOwn(actor??{},'displayName')?['displayName']:[]),
+  ...(Object.hasOwn(actor??{},'officialPresetId')?['officialPresetId']:[])])&&
+  (actor.officialPresetId===undefined||(
+   catalog!==undefined&&resolveOfficialPeerHeroV1({catalog,presetId:actor.officialPresetId})!==null))&&
   (actor.displayName===undefined||(typeof actor.displayName==='string'&&
    !!actor.displayName.trim()&&actor.displayName.trim().length<=NAME_LIMIT&&
    !/[\u0000-\u001f\u007f]/.test(actor.displayName)))&&
@@ -33,7 +37,7 @@ function validateActor(actor,ownActorId){
 // A full snapshot replaces the previous visible set. The server-owned
 // monotonic actor seq and client-snapshot revision block stale arrivals.
 export function createExplorationPeerVisualProjectionV1({
- sessionId,worldId,worldFingerprint,ownActorId,maxActors=31
+ sessionId,worldId,worldFingerprint,ownActorId,maxActors=31,officialHeroCatalog
 }={}){
  if(!scoped(sessionId)||!scoped(worldId)||!scoped(worldFingerprint)||
   (ownActorId!==undefined&&(!ID.test(ownActorId)))||
@@ -52,13 +56,14 @@ export function createExplorationPeerVisualProjectionV1({
    return false;
   const received=new Map();
   for(const raw of packet.actors){
-   if(!validateActor(raw,ownActorId)||received.has(raw.actorId))
+   if(!validateActor(raw,ownActorId,officialHeroCatalog)||received.has(raw.actorId))
     return false;
    const old=current.get(raw.actorId);
    // An old actor seq can never roll back its displayed location.
    const actor=old&&old.seq>=raw.seq?old:Object.freeze({
     actorId:raw.actorId,areaId:raw.areaId,x:raw.x,y:raw.y,seq:raw.seq,
-    ...(raw.displayName===undefined?{}:{displayName:raw.displayName.trim()})
+    ...(raw.displayName===undefined?{}:{displayName:raw.displayName.trim()}),
+    ...(raw.officialPresetId===undefined?{}:{officialPresetId:raw.officialPresetId})
    });
    received.set(raw.actorId,actor);
   }
