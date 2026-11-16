@@ -2,6 +2,7 @@ import {
   readCombatHandoff,
   consumeCombatResult
 } from './combat-handoff-store.js?rev=phase7-combat-handoff-v1';
+import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from '../play/exploration-loading-art-v1.js';
 
 export const IMMERSIVE_COMBAT_COMPLETE_TYPE_V1 =
   'gensrpg.capture.combat-complete.v1';
@@ -29,6 +30,9 @@ export function createImmersiveEncounterHostV1({
   // Diagnostic only: the existing native Combat overlay measures tap-to-ready.
   // No parallel loader, retry or gameplay dependency is introduced.
   const traceCombatReady=new URL(windowRef.location.href).searchParams.has('gensPerf');
+  const combatImageCycle=createCaptureLoadingArtCycleV1(readCaptureLoadingArtSceneV1({
+    href:windowRef.location.href,scene:'combat',origin:windowRef.location.origin
+  }));
 
   // Presentation-only cross-frame contract: the Capture parent alone owns
   // Sac/Equipe HUD visibility; Exploration alone owns combat overlay lifetime.
@@ -177,8 +181,15 @@ export function createImmersiveEncounterHostV1({
       const loading=documentRef.createElement('div');
       loading.className='combat-overlay__loading';
       // Reuse the same validated art selected by the official Capture boot mask.
-      if (documentRef.documentElement?.classList?.contains('capture-loading-art'))
-        loading.classList.add('combat-overlay__loading--art');
+      const customCombatImage=combatImageCycle.next();
+      if (customCombatImage) {
+        loading.className+=' combat-overlay__loading--art';
+        loading.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+customCombatImage+'")';
+        loading.style.backgroundPosition='center';
+        loading.style.backgroundSize='cover';
+      } else if (documentRef.documentElement?.classList?.contains('capture-loading-art')) {
+        loading.className+=' combat-overlay__loading--art';
+      }
       loading.setAttribute('role','status');
       loading.setAttribute('aria-live','polite');
       const brand=documentRef.createElement('strong');
