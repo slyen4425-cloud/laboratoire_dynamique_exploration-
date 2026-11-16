@@ -353,6 +353,10 @@ export function sculptNavigationRoute({
   const dx=targetX-entity.x,dy=targetY-entity.y;
   const stride=Math.max(1,Math.ceil(Math.hypot(dx,dy)/
     (Math.min(finitePositive(cellWidth,28),finitePositive(cellHeight,21))*.4)));
+  // Preserve the historical height-up/down diagnosis when the requested
+  // route eventually crosses a real step; the radius gate still blocks
+  // entirely same-level movements that graze a wall or corner.
+  let pendingCliffReason=null;
   for(let step=1;step<=stride;step++){
     const t=step/stride,x=entity.x+dx*t,y=entity.y+dy*t;
     const sample=sculptNavigationSample(terrain,x,y,options);
@@ -469,7 +473,7 @@ export function sculptNavigationRoute({
           const retreating=priorEdge?.col===edgeBlock.col&&
             priorEdge?.row===edgeBlock.row&&
             edgeBlock.penetration<=priorEdge.penetration+1e-6;
-          if(!retreating)return reject(edgeBlock);
+          if(!retreating)pendingCliffReason??=edgeBlock;
         }
         const sideConfig={...edgeConfig,projectionRise};
         const eastBlock=projectionRise>0&&!candidate&&!previousCarrier&&
@@ -481,7 +485,7 @@ export function sculptNavigationRoute({
             previousEast?.row===eastBlock.row&&
             (x>previousX+1e-6||
               eastBlock.verticalDepth<previousEast.verticalDepth-1e-6);
-          if(!retreating)return reject(eastBlock);
+          if(!retreating)pendingCliffReason??=eastBlock;
         }
         const projectedSphere=projectionRise>0&&!candidate&&!previousCarrier&&
           sculptSphereProjectionBlock(terrain,x,y,
@@ -523,6 +527,7 @@ export function sculptNavigationRoute({
     }
     previous=sample;previousX=x;previousY=y;previousCarrier=candidate;
   }
+  if(pendingCliffReason)return reject(pendingCliffReason);
   return Object.freeze({reason:null,bridgeId:flying?null:bridgeId,stairId:flying?null:stairId});
 }
 export function sculptNavigationBlockDetail(config,entity,targetX,targetY){

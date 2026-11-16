@@ -59,8 +59,8 @@ test('east projected rock face blocks lateral entry BEFORE the logical height ro
  const target={x:boundary+3,y:at.y};
  assert.equal(sculptCliffEdgeFootprintBlock(t,target.x,target.y,opt),null,
   'the tall rock billboard is far from the HIGH cell in the saved X/Y grid');
- assert.equal(sculptNorthCliffProjectionBlock(t,target.x,target.y,opt),null,
-  'the old north-only gate misses the right edge completely');
+ // The radius-aware northern test can also see this cell at the edge.
+ // Regardless, the east face must be handled by its own true lateral contour.
  assert.equal(sculptEastCliffProjectionBlock(t,target.x,target.y,opt)?.kind,'cliff-projection');
  assert.equal(sculptNavigationRoute(cfg(t),at,target.x,target.y).reason?.kind,'cliff-projection');
  assert.equal(sculptNavigationRoute(cfg(t),at,boundary+8,at.y).reason,null,
