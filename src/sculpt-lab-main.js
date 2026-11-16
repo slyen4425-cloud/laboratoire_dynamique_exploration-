@@ -3,7 +3,7 @@ import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
 import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
-import {SCULPT_TILE,sculptCliffOcclusionRectsV1,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
+import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
@@ -14,8 +14,6 @@ import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from './pla
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
 import {sculptFringeVisualSurfaceV1} from './render/sculpt-fringe-visual-surface-v1.js';
-import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2,
-  sculptObjectRaisedCapOcclusionV1,sculptCapUnionRectsV1} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-cap-object-c4-20261116-r2';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -839,32 +837,10 @@ function navigationBackground(){
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
     drawOuterSouthRim:false});
-  // Preserve exact pixels of the existing terrain raster; extract only
-  // canonical cliff faces in a cached alpha mask. No second cliff painter.
-  // The official 2.5D WorldArea continues outside its south edge. Its
-  // former fake closing wall must not become an alpha mask over the trees.
-  const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE,{
-    includeOuterSouthRim:false
-  });
-  let cliffOcclusionImage=null;
-  if(cliffRects.length){
-    cliffOcclusionImage=document.createElement('canvas');
-    cliffOcclusionImage.width=raster.width;
-    cliffOcclusionImage.height=raster.height;
-    const maskCtx=cliffOcclusionImage.getContext('2d',{alpha:true});
-    maskCtx.drawImage(raster,0,0);
-    maskCtx.globalCompositeOperation='destination-in';
-    maskCtx.scale(scale,scale);
-    maskCtx.translate(paddingX,paddingY);
-    maskCtx.beginPath();
-    for(const rect of cliffRects)
-      maskCtx.rect(rect.x,rect.y,rect.width,rect.height);
-    maskCtx.fillStyle='#fff';
-    maskCtx.fill();
-  }
+  // Pre-#468 paint order: cache one native terrain raster, then draw
+  // objects/actors normally. Never build an extra cliff alpha overlay.
   terrainRasterBuilds++;
-  navTerrainCache={terrain,texture:currentTexture,signature,cliffOcclusionImage,
-    depthFaces:sculptFaces(terrain),
+  navTerrainCache={terrain,texture:currentTexture,signature,
     waterTexture:ribbonTextures.water?.texture,roadTexture:ribbonTextures.road?.texture,
     paintSurface:surface,fringePresent:Boolean(decorativeFringe),image:raster,scale,paddingX,paddingY,result};
   return navTerrainCache;
@@ -1381,75 +1357,9 @@ function draw(){
     drawPreviewObjects();
     drawPlacedActors();
   }
-  // Restore terrain depth after low-level sprites/actors have been drawn.
-  // Sampling the already-composed raster prevents a second terrain renderer.
-  // The cliff silhouette is shared by editor and Jouer and never writes data.
-  if(navigationTesting||objectEditing||!drawing){
-    const cached=navigationBackground();
-    if(cached.cliffOcclusionImage){
-      ctx.save();
-      if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
-      ctx.drawImage(cached.cliffOcclusionImage,
-        -cached.paddingX,-cached.paddingY,
-        cached.cliffOcclusionImage.width/cached.scale,
-        cached.cliffOcclusionImage.height/cached.scale);
-      ctx.restore();
-      // An object planted on the near side of the wall must be restored
-      // AFTER the cliff-mask layer. Only visual feet determine this decision;
-      // the wall may still cover an object whose foot is behind it.
-      const nearObjects=sculptPlayObjectDrawCache.get(placedObjects,{
-        playing:navigationTesting
-      }).filter(object=>object.kind!=='bridge'&&object.kind!=='stairs'&&
-        object.kind!=='ramp'&&sculptObjectInFrontOfCliffV1(terrain,
-          sculptObjectVisualRect(object,terrain,{
-            tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,
-            rise:SCULPT_TILE.rise
-          }),object.transform,{tileWidth:SCULPT_TILE.width,
-            tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-            faces:cached.depthFaces}));
-      if(!navigationTesting){
-        for(const object of nearObjects)drawPreviewObject(object);
-      }else{
-        // The hero is evaluated independently of nearObjects: on an empty
-        // map its foot can still be IN FRONT of the cached cliff wall.
-        // Terrain, collision and actor rendering retain their single owners.
-        const heroY=navActor?.y??Infinity;
-        for(const object of nearObjects)
-          if(object.transform.y<=heroY)drawPreviewObject(object);
-        if(navActor){
-          const footLevel=navVisualLevel??navHeight();
-          const cliffPlan=sculptActorCliffDepthPlanV2(terrain,{
-            x:navActor.x,y:navActor.y-footLevel*SCULPT_TILE.rise,
-            width:44,height:90
-          },navActor,{tileWidth:SCULPT_TILE.width,
-            tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-            faces:cached.depthFaces,footRadius:navActor.radius});
-          if(cliffPlan.redraw){
-            // Draw the native hero ONCE in front of the walls below/behind
-            // its foot, even when a different, nearer wall also overlaps
-            // the sprite. Then restore ONLY the actual front-wall clips
-            // from the same cached raster (no second rock renderer).
-            drawNavigationActor();
-            if(cliffPlan.frontRects.length){
-              ctx.save();
-              ctx.transform(1,view.shear,0,view.pitch,0,0);
-              ctx.beginPath();
-              for(const rect of cliffPlan.frontRects)
-                ctx.rect(rect.x,rect.y,rect.width,rect.height);
-              ctx.clip();
-              ctx.drawImage(cached.cliffOcclusionImage,
-                -cached.paddingX,-cached.paddingY,
-                cached.cliffOcclusionImage.width/cached.scale,
-                cached.cliffOcclusionImage.height/cached.scale);
-              ctx.restore();
-            }
-          }
-        }
-        for(const object of nearObjects)
-          if(object.transform.y>heroY)drawPreviewObject(object);
-      }
-    }
-  }
+  // Author-approved rollback: the terrain has already been fully painted.
+  // Keep the original object/actor Y-order above it (before PR #468).
+  // No later cliff-mask replay may cut a tree, building or the hero.
   drawEditorPlayableLimit();
   // A temporary stroke preview is visual only; WorldSurface is committed on
   // pointerup. No hidden draft geometry is persisted by the renderer.
@@ -3380,26 +3290,6 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
     captureActorRenderer.draw(ctx,{camera:{x:0,y:0},
       actors:renderActors,timeSeconds:navVisualTime});
 }
-// Clip ONLY this WorldObject sprite against pre-existing upper ground.
-// Merge caps to NONOVERLAPPING rectangles first: overlapping same-direction
-// holes would otherwise cancel under BOTH nonzero and evenodd Canvas rules.
-function clipPreviewObjectByUpperCaps(caps){
-  if(!caps.length)return;
-  const disjoint=sculptCapUnionRectsV1(caps);
-  const view=navigationTesting?cameraView():null;
-  const point=(x,y)=>view?sculptCameraProject(view,x,y):{x,y};
-  ctx.beginPath();
-  ctx.rect(-32768,-32768,65536,65536);
-  for(const cap of disjoint){
-    const a=point(cap.x,cap.y);
-    const b=point(cap.x,cap.y+cap.height);
-    const c=point(cap.x+cap.width,cap.y+cap.height);
-    const d=point(cap.x+cap.width,cap.y);
-    ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);
-    ctx.lineTo(d.x,d.y);ctx.closePath();
-  }
-  ctx.clip();
-}
 function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrain,decorative=false}={}){
   // V77: the ramp is terrain, not a bitmap billboard. Draw its quad in the
   // shared world projection, including its genuine rise from foot to head.
@@ -3428,15 +3318,8 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   const viewport=previewObjectViewport;
   if(viewport&&(visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
     visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
-  // No change to gameplay, bridge deck, ramp ground, terrain or hero painter.
-  // This one clip persists on every native draw, including C3 object replays.
-  const upperCaps=decorative||object.kind==='bridge'||object.kind==='stairs'||
-    object.kind==='ramp'?[]:
-    sculptObjectRaisedCapOcclusionV1(visualTerrain,rect,object.transform,{
-      tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise
-    });
+  // Native drawing (pre-#468): no upper-cap clipping of WorldObjects.
   ctx.save();
-  clipPreviewObjectByUpperCaps(upperCaps);
   ctx.translate(point.x,point.y);
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
