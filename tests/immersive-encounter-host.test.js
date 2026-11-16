@@ -129,7 +129,7 @@ test('real AdventureSession CombatResult stays pending until the GenSRPG Core re
  receipt={persisted:true,applied:true,
   session:{sessionId:'session-game-1',processedEncounterKeys:['e1:r1']}};
  finish();
- assert.equal(h.nodes.length,0,'only a correlated Core receipt closes the battle');
+ assert.equal(h.nodes.length,0,'unscoped legacy combat still unloads after receipt');
  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1'),null);
  assert.equal(calls,8);
  host.dispose();
@@ -162,8 +162,14 @@ test('a scoped battle waits for the asynchronous Core receipt and handles only o
  resolveReceipt({persisted:true,session:{sessionId,processedEncounterKeys:['e1:r1']}});
  await pending;
  assert.equal(acknowledged,1);
- assert.equal(h.nodes.length,0);
+ assert.equal(h.nodes.length,1,'scoped outcome waits invisibly for its reward dialog');
+ assert.equal(h.nodes[0].style.display,'none');
  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ h.win.parent={id:'capture-parent'};
+ h.listeners.get('message')({source:h.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(h.nodes.length,0,'closing persisted rewards unloads the official combat audio');
  host.dispose();
 });
 
@@ -191,7 +197,13 @@ test('embedded Capture stays fullscreen owner through Combat completion; standal
  play.listeners.get('message')({source:frame,origin,data:{
   type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'
  }});
- assert.equal(play.nodes.length,0,'Combat overlay is closed after the official Core receipt');
+ assert.equal(play.nodes.length,1,'result overlay waits hidden until Capture closes its reward sheet');
+ assert.equal(play.nodes[0].style.display,'none');
+ play.win.parent={id:'capture-parent'};
+ play.listeners.get('message')({source:play.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(play.nodes.length,0,'dismissed result unloads the Combat iframe');
  assert.equal(requestCount,0,'return to exploration must not trigger a new child fullscreen');
  playHost.dispose();
  const standalone=fakeDom();
@@ -242,4 +254,54 @@ test('standalone editor combat never toggles Capture HUD',()=>{
  host.open({url:origin+'/combat-preview/examples/dom-demo/exploration-encounter.html',snapshot});
  host.close();host.dispose();
  assert.equal(calls.length,0);
+});
+
+
+test('creator artwork rotates only for the native Combat loading cover',()=>{
+ const h=fakeDom(),store=storage();save(store);
+ const first='blob:'+origin+'/first',second='blob:'+origin+'/second';
+ h.win.location.href=origin+'/sculpt-lab.html?loadingArtCombat='+encodeURIComponent(JSON.stringify([first,second]));
+ const host=createImmersiveEncounterHostV1({windowRef:h.win,documentRef:h.doc,storage:store,onCompleted:()=>true});
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ host.open({url,snapshot});
+ assert.match(h.nodes[0].children[1].style.backgroundImage,/first/);
+ host.close();
+ host.open({url,snapshot});
+ assert.match(h.nodes[0].children[1].style.backgroundImage,/second/);
+ host.dispose();
+});
+
+
+test('closing rewards before a delayed Core receipt stops music without consuming an uncommitted result',async()=>{
+ const h=fakeDom(),store=storage(),sessionId='pending-audio-1';
+ const scoped={...snapshot,player:{partyRef:'adventure-party:'+sessionId}};
+ const initial=saveCombatHandoff(store,{snapshot:scoped,returnState:{
+  areaId:'forest-exterior',x:45,y:67,returnUrl:origin+'/index.html?combatReturn=1'
+ }},{sessionId});
+ saveCombatHandoff(store,attachCombatResult(initial,{
+  encounterId:'e1',returnToken:'r1',outcome:'victory'
+ }),{sessionId});
+ let settle;
+ const pending=new Promise(resolve=>settle=resolve);
+ const host=createImmersiveEncounterHostV1({
+  windowRef:h.win,documentRef:h.doc,storage:store,sessionId,
+  onCompleted:()=>pending
+ });
+ const url=origin+'/combat-preview/examples/dom-demo/exploration-encounter.html';
+ host.open({url,snapshot:scoped});
+ const frame=h.nodes[0].children[0].contentWindow;
+ h.listeners.get('message')({source:frame,origin,data:{
+  type:'gensrpg.capture.combat-complete.v1',encounterId:'e1',returnToken:'r1'
+ }});
+ h.win.parent={id:'capture-parent'};
+ h.listeners.get('message')({source:h.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(h.nodes.length,1,'closing early does not fake a Core result');
+ assert.notEqual(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ settle({persisted:true,session:{sessionId,processedEncounterKeys:['e1:r1']}});
+ await pending;
+ assert.equal(h.nodes.length,0,'pending reward dismissal releases iframe at real Core receipt');
+ assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ host.dispose();
 });

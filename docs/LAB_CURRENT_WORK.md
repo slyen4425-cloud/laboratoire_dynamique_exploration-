@@ -1,3 +1,9 @@
+## 2026-11-16 — Combat : art de chargement personnalisé et libération audio sur résumé (EN VALIDATION)
+- START `main@5d5d39b35afc8f9794866f1ad0a3008916219846`, checkpoint `checkpoint/exploration-start-combat-loading-art-20261116`, branche `work/exploration-combat-loading-art-20261116`. Dernier GREEN = base main, nouveau lot non certifié.
+- Propriétaire Explorateur : affichage du même art Monster InvoC reçu de Capture par l'overlay natif de combat, plus rotation des URL Blob validées et autorisées de la bibliothèque locale Capture pour combats et Portals ; aucune source d'art dupliquée.
+- À la réception du CombatResult Core persistant, garder uniquement l'iframe *terminée* cachée jusqu'à la fermeture du dialogue XP/récompenses Capture ; message versionné de fermeture validé même origine/session, disposal `SoundtrackSession` officiel et déchargement de l'iframe, nettoyage pagehide/cancel et refus de signaux non corrélés. Aucun calcul ni état de combat modifié.
+- Tests : contrat URL same-origin, rotation, Combat overlay, fenêtre du résultat (victoire, défaite, fuite, cancel), sécurité inter-frame, Play Android/PC ; CI/Pages/HTTPS SHA exact + poids <=900 Mio. Capture et son publisher ne seront mis à jour qu'après GREEN. Aucun changement falaise C3, carte/collision, Hero, audio moteur, sauvegarde, Survie, Dungeon ou PWA.
+
 ## 2026-11-16 — C3 falaises Pixel : héros encore caché malgré C1/C2 (EN VALIDATION)
 - Capture Pixel du 16 novembre après publication de GenSRPG `main@e587bdc57fd27a7ee6ec80fe9c9853ef12247940` : jambes visibles, torse masqué par une falaise. Preuve utilisateur que le lot C2 sur Collision World ne suffit PAS. Ne pas accuser le cache PWA sans preuve.
 - START propriétaire Exploration `main@297cb5fd4db08fd84ed3cbc5ebdc1cfef6080ead`, checkpoint `checkpoint/exploration-start-cliff-mixed-depth-20261116`, branche `work/exploration-cliff-mixed-depth-20261116` ; aucun changement au moteur de collision canonique C2 (déjà publié).

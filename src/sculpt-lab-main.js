@@ -10,6 +10,7 @@ import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
 import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
+import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from './play/exploration-loading-art-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
 import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-mixed-depth-c3-20261116';
@@ -5968,6 +5969,9 @@ async function awaitSculptPlayArtReady(){
   // First final paint is after decoded assets, not before their load callbacks.
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 }
+const zoneLoadingArtCycle=createCaptureLoadingArtCycleV1(readCaptureLoadingArtSceneV1({
+ href:location.href,scene:'zone',origin:location.origin
+}));
 let sculptPortalLoading=false;
 async function traverseSculptWorldPortal(){
   if(sculptPortalLoading)return;
@@ -5995,6 +5999,11 @@ async function traverseSculptWorldPortal(){
   if(overlay){
     sculptPortalLoading=true;
     overlay.hidden=false;
+    const sceneArt=zoneLoadingArtCycle.next();
+    if(sceneArt){
+      overlay.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+sceneArt+'")';
+      overlay.style.backgroundPosition='center';overlay.style.backgroundSize='cover';
+    }
     // Yield a real painted frame BEFORE the expensive destination mount.
     await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
   }
