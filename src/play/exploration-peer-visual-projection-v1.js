@@ -56,8 +56,10 @@ export function createExplorationPeerVisualProjectionV1({
    return false;
   const received=new Map();
   for(const raw of packet.actors){
-   if(!validateActor(raw,ownActorId,officialHeroCatalog)||received.has(raw.actorId))
-    return false;
+   let valid=false;
+   try { valid=validateActor(raw,ownActorId,officialHeroCatalog); }
+   catch { return false; } // A malformed catalog or peer payload cannot crash the scene.
+   if(!valid||received.has(raw.actorId))return false;
    const old=current.get(raw.actorId);
    // An old actor seq can never roll back its displayed location.
    const actor=old&&old.seq>=raw.seq?old:Object.freeze({
