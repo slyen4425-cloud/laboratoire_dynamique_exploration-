@@ -29,13 +29,9 @@ test('object far from the wall is not redrawn; size alone cannot force foregroun
   {x:210,y:55,width:40,height:170},{x:210,y:95},{faces}),false);
  assert.equal(sculptObjectInFrontOfCliffV1(null,tree(98,90),{x:98,y:90}),false);
 });
-test('both live paths share the canonical wall raster and use foot priority',()=>{
- const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
- assert.match(main,/sculptObjectInFrontOfCliffV1\(terrain,/);
- assert.match(main,/depthFaces:sculptFaces\(terrain\)/);
- assert.match(main,/includeOuterSouthRim:false/);
- assert.match(main,/sculptObjectInFrontOfCliffV1\(terrain,/);
- assert.match(main,/if\(!navigationTesting\)\{/);
- assert.match(main,/object\.transform\.y<=heroY/);
- assert.doesNotMatch(main,/drawOuterSouthRim:true/);
+test('pre-#468 native painter no longer consumes the optional cliff depth helper',()=>{
+  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.doesNotMatch(main,/sculptObjectInFrontOfCliffV1|cliffOcclusionImage|depthFaces/);
+  assert.match(main,/drawPreviewObjects\(\);\s*drawPlacedActors\(\);/);
+  assert.doesNotMatch(main,/drawOuterSouthRim:true/);
 });
