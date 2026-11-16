@@ -129,13 +129,7 @@ test('real AdventureSession CombatResult stays pending until the GenSRPG Core re
  receipt={persisted:true,applied:true,
   session:{sessionId:'session-game-1',processedEncounterKeys:['e1:r1']}};
  finish();
- assert.equal(h.nodes.length,1,'the native result dialog retains its audio context until dismissal');
- assert.equal(h.nodes[0].style.display,'none','completed combat cannot cover the adventure UI');
- h.win.parent={id:'capture-parent'};
- h.listeners.get('message')({source:h.win.parent,origin,data:{
-  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
- }});
- assert.equal(h.nodes.length,0,'closing rewards releases finished combat iframe');
+ assert.equal(h.nodes.length,0,'unscoped legacy combat still unloads after receipt');
  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1'),null);
  assert.equal(calls,8);
  host.dispose();
@@ -168,8 +162,14 @@ test('a scoped battle waits for the asynchronous Core receipt and handles only o
  resolveReceipt({persisted:true,session:{sessionId,processedEncounterKeys:['e1:r1']}});
  await pending;
  assert.equal(acknowledged,1);
- assert.equal(h.nodes.length,0);
+ assert.equal(h.nodes.length,1,'scoped outcome waits invisibly for its reward dialog');
+ assert.equal(h.nodes[0].style.display,'none');
  assert.equal(store.getItem('gensrpg.capture.combat-handoff.v1:'+sessionId),null);
+ h.win.parent={id:'capture-parent'};
+ h.listeners.get('message')({source:h.win.parent,origin,data:{
+  schema:'gensrpg.capture.combat.result-dismissed.v1',sessionId
+ }});
+ assert.equal(h.nodes.length,0,'closing persisted rewards unloads the official combat audio');
  host.dispose();
 });
 
