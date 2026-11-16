@@ -3555,7 +3555,7 @@ function syncObjectSelectedControls(){
   $('object-bridge-width-value').textContent=$('object-bridge-width').value+' %';
   $('object-rotation').value=String(Math.round(selected.transform.rotationDeg));
   $('object-rotation-value').textContent=$('object-rotation').value+'°';
-  $('object-flip-x').checked=selected.transform.flipX===true;
+  if($('object-flip-x'))$('object-flip-x').checked=selected.transform.flipX===true;
   $('object-selected').textContent='Sélection : '+def.label+' ('+selected.id+')';
 }
 function editSelectedObject(patch){
@@ -4299,7 +4299,7 @@ function applyObjectAtCell(cell){
     scaleY:bridgeMode?Number($('object-bridge-width').value)/100:
       stairMode?Number($('object-bridge-length').value)/100:undefined,
     rotationDeg:Number($('object-rotation').value),
-    flipX:$('object-flip-x').checked,
+    flipX:$('object-flip-x')?.checked===true,
     variantId:$('object-variant-wrap').hidden?null:$('object-variant').value});
   if(objectCommit(next))status('Objet placé : '+objectDefinitionCatalogV1.get(definitionId)?.label+
     ' · Exporter scène pour conserver le décor');
@@ -4312,7 +4312,7 @@ $('object-definition').addEventListener('change',()=>{objectSelectedId=null;
 $('object-variant').addEventListener('change',()=>editSelectedObject({
   variantId:$('object-variant').value
 }));
-$('object-flip-x').addEventListener('change',()=>{
+if($('object-flip-x'))$('object-flip-x').addEventListener('change',()=>{
   if(objectSelectedId)editSelectedObject({flipX:$('object-flip-x').checked});
   else scheduleDraw();
 });

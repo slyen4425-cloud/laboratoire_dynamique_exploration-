@@ -157,7 +157,7 @@ function drawBridgeImage(
     rect.rotation +
     degreesToRadians(asset.render.rotationOffsetDeg)
   );
-  ctx.scale(bridge.transform?.flipX === true ? -1 : 1, 1);
+  if(bridge.transform?.flipX === true) ctx.scale(-1, 1);
   ctx.drawImage(
     image,
     -renderWidth / 2,
@@ -238,7 +238,7 @@ function drawStaticImage(
     )
   );
   // One canvas transform mirrors both the silhouette shadow and the sprite.
-  ctx.scale(object.transform?.flipX === true ? -1 : 1, 1);
+  if(object.transform?.flipX === true) ctx.scale(-1, 1);
   drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow??worldObjectShadowProfileForAssetV1(objectShadowProfiles,object.visual?.assetId)});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,

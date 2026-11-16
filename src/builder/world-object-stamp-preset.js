@@ -14,7 +14,7 @@ export function copyWorldObjectAsStamp(source) {
     rotationDeg: finite(source.transform?.rotationDeg, 0),
     scaleX: finite(source.transform?.scaleX, 1),
     scaleY: finite(source.transform?.scaleY, 1),
-    flipX: source.transform?.flipX === true,
+    ...(source.transform?.flipX === true ? {flipX:true} : {}),
     visualVariantId: typeof variant === 'string' && variant.trim()
       ? variant.trim() : null
   });
