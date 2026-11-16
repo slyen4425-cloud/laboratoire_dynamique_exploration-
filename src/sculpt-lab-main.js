@@ -13,6 +13,7 @@ import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV
 import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from './play/exploration-loading-art-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
+import {sculptFringeVisualSurfaceV1} from './render/sculpt-fringe-visual-surface-v1.js';
 import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2,
   sculptObjectRaisedCapOcclusionV1,sculptCapUnionRectsV1} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-cap-object-c4-20261116-r2';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
@@ -837,13 +838,13 @@ function navigationBackground(){
     overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
-    drawOuterSouthRim:!visualDecorativeFringe()});
+    drawOuterSouthRim:false});
   // Preserve exact pixels of the existing terrain raster; extract only
   // canonical cliff faces in a cached alpha mask. No second cliff painter.
   // The official 2.5D WorldArea continues outside its south edge. Its
   // former fake closing wall must not become an alpha mask over the trees.
   const cliffRects=sculptCliffOcclusionRectsV1(terrain,SCULPT_TILE,{
-    includeOuterSouthRim:!visualDecorativeFringe()
+    includeOuterSouthRim:false
   });
   let cliffOcclusionImage=null;
   if(cliffRects.length){
@@ -1116,7 +1117,14 @@ function decorativeFringeRaster(chunk){
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked].join('|');
   const previous=fringeRasterCache.get(key);
   if(previous?.terrain===chunk.terrain&&previous.paintSurface===chunk.surface&&
-     previous.texture===currentTexture&&previous.signature===signature)return previous;
+     previous.sourceSurface===surface&&previous.texture===currentTexture&&
+     previous.signature===signature)return previous;
+  // Only an unpainted decorative chunk inherits the nearest saved WorldSurface
+  // texture visually. Explicit authored fringe texture is never overwritten.
+  const fringePaintSurface=chunk.surface??sculptFringeVisualSurfaceV1(surface,{
+    col:chunk.col,row:chunk.row,columns:terrain.width,rows:terrain.height,
+    tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height
+  });
   const paddingX=18,paddingY=16*SCULPT_TILE.rise+18;
   const scale=Math.min(1.5,Math.max(1,window.devicePixelRatio||1));
   const image=document.createElement('canvas');
@@ -1131,9 +1139,10 @@ function decorativeFringeRaster(chunk){
     cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
     sphereWallImages,overlays:ribbonTextures,
-    paintSurface:chunk.surface??null,paintImages:surfacePaintImages,
+    paintSurface:fringePaintSurface,paintImages:surfacePaintImages,
     drawOuterSouthRim:false});
-  const raster={terrain:chunk.terrain,paintSurface:chunk.surface,texture:currentTexture,signature,
+  const raster={terrain:chunk.terrain,paintSurface:chunk.surface,sourceSurface:surface,
+    texture:currentTexture,signature,
     image,scale,paddingX,paddingY};
   fringeRasterCache.set(key,raster);
   return raster;
@@ -3691,6 +3700,12 @@ function loadSurfacePaintAssets(){
     ...(decorativeFringe?.chunks??[]).flatMap(chunk=>[
       ...(chunk.surface?.routes??[]),...(chunk.surface?.zones??[])
     ])].map(f=>f.materialId));
+  // The outside rendering is visual only, but snow (or another semantic base)
+  // needs the SAME existing texture even on legacy grass-backed WorldAreas.
+  const edgeMaterials={snow:'ground.snow',sand:'ground.sand',
+    mountain:'ground.mountain_rock',forest:'grass.forest',plain:'grass.forest'};
+  if(edgeMaterials[surface.baseTerrainFamilyId])
+    used.add(edgeMaterials[surface.baseTerrainFamilyId]);
   const pending=[];
   for(const meta of SCULPT_SURFACE_MATERIALS){
     if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
