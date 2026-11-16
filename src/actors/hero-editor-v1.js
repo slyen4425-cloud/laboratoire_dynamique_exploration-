@@ -306,13 +306,15 @@ $('hero-apply-defaults').addEventListener('click',()=>{
  markDirty();
  notify('Réglages 35 / 16 images/s / oscillation 1 en aperçu. Clique sur Enregistrer pour les garder.');
 });
-$('hero-match-green').addEventListener('click',()=>{
+$('hero-match-green').addEventListener('click',()=>run(async()=>{
+ // Never guess the blue official 30px exception before catalog loading.
+ if(!officialSizeCatalog)officialSizeCatalog=await loadOfficialHeroCatalogV1();
  const height=officialHeroRecommendedTargetHeightV1(selected?.name,officialSizeCatalog);
  $('hero-height').value=String(height);
  markDirty();
  notify('Taille alignée sur '+(height===35?'le héros vert (35)':'le gabarit officiel de '+selected.name+' ('+height+')')+
   ' en aperçu. Enregistrer pour appliquer à ce héros uniquement. Aucun sprite remplacé.');
-});
+}));
 $('hero-try-25').addEventListener('click',()=>{
  $('hero-height').value='25';markDirty();
  notify('Taille 25 en aperçu · non enregistrée.');
