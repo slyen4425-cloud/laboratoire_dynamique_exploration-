@@ -6,6 +6,15 @@
 - Invariants : sauvegardes des héros personnalisés, unique UserHeroStore, directions 8×6, V80, niveau 16, WorldObject, Combat, Dungeon, PWA.
 - Gate : Node/Chromium Pixel PC + CI, Pages SHA exact, validation auteur avant GREEN.
 
+
+## 2026-11-16 — Miroir horizontal WorldObject et ombre (CANDIDAT, NON PUBLIÉ)
+- Demande auteur : inverser horizontalement les images dans Carte 2,5D/World Builder, l'ombre officielle suit la même transformation.
+- START main@`20228fdc2be728d52d02a6f37421f206d4849d0a`, checkpoint `checkpoint/exploration-start-object-mirror-20261116`, branche `work/exploration-object-mirror-shadows-20261116` ; aucune écriture sur main avant gates.
+- Propriétaire unique : `WorldObject.transform.flipX` optionnel, absent des anciennes sauvegardes ; Canvas silhouette+sprite dans le même contexte, sans nouveau moteur ni duplication d'images.
+- Contrôles de sélection dans les deux éditeurs ; pose, édition, copie, export/import ; les décalages collision et les ancres de portes suivent le visuel.
+- Gel : ordre de dessin des arbres/falaises restauré pré-#468, géométrie et collisions C2, niveau 16, 2048 objets, V80, Combat, Dungeon, Survie, PWA.
+- Tests : contrat, rendu, scènes, copie, suite Node, navigateur PC/Pixel, budget 900 Mio, CI/Pages/HTTPS sur SHA exact et recette auteur avant GREEN.
+
 ## 2026-11-16 — Retour ciblé au rendu pré-#468 des arbres/falaises (EN COURS, NON LIVE)
 - Demande auteur du 16 novembre : les ajouts successifs de masquage des arbres/acteurs par les reliefs ont dégradé le rendu. Retrouver le chemin de dessin stable **avant le premier masque**, sans revenir sur tous les changements d'éditeur des 15-16 novembre.
 - Référence historique vérifiée : Exploration `main@f90ef6abe7aad6fba689820fdd78e71f6b05a3f6` (15 novembre, avant PR #468). Depuis #468 : masque alpha après objets; #474 : replay selon pied; #477/#479 : replay du héros; #482/#484 : découpe des objets sous les plateaux. Le retour vise **ces seuls composites visuels** et non une régression générale de main.
