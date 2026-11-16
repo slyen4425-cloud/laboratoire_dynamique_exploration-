@@ -65,7 +65,7 @@ test('C4: both overlapping upper caps remain excluded, without evenodd holes',()
 test('C5: visual cap mask uses only forward rows and retains the real foot owner',()=>{
  const body=readFileSync(new URL('../src/render/sculpt-cliff-object-depth-v1.js',import.meta.url),'utf8');
  assert.match(body,/row=Math\.max\(fromRow,footRow\+1\)/);
- assert.match(body,/const footRow=Math\.floor\(foot\.y\/tileHeight\)/);
+ assert.match(body,/footRow=Math\.floor\(foot\.y\/tileHeight\)/);
  assert.doesNotMatch(body,/foot\.y\s*[+-]=|\bwindow\b|localStorage/);
 });
 test('C4: clip belongs ONLY to WorldObject painter, not hero/decks/stairs/ramps',()=>{
