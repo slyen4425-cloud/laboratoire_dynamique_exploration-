@@ -26,7 +26,41 @@ export function createImmersiveEncounterHostV1({
   }
 
   let active = null;
+  let pendingResultOverlay = null;
   let disposed = false;
+  // Only the existing Capture reward dialog may retain its finished iframe.
+  // The overlay is hidden, not re-implemented; closing results disposes sound.
+  function releaseResultOverlay() {
+    if(!pendingResultOverlay)return false;
+    const old=pendingResultOverlay;
+    pendingResultOverlay=null;
+    try {
+      old.frame.contentWindow?.postMessage({
+        type:'gensrpg.capture.combat-stop-audio.v1'
+      },windowRef.location.origin);
+    }catch{/* iframe may already have unloaded */}
+    old.frame.src='about:blank'; // unload even when the detached audio context persists
+    old.overlay.remove();
+    return true;
+  }
+  function holdFinishedOverlay() {
+    if(!active)return false;
+    releaseResultOverlay();
+    const old=active;active=null;
+    old.overlay.style.display='none';old.overlay.setAttribute('aria-hidden','true');
+    pendingResultOverlay=old;
+    notifyCaptureCombatVisibility(false,old.snapshot.encounterId);
+    return true;
+  }
+  function onResultDismissed(event) {
+    if(disposed||sessionId===undefined||
+       event.origin!==windowRef.location.origin||
+       event.source!==windowRef.parent||
+       event.data?.schema!=='gensrpg.capture.combat.result-dismissed.v1'||
+       event.data.sessionId!==sessionId)return;
+    releaseResultOverlay();
+  }
+  windowRef.addEventListener('message',onResultDismissed);
   // Diagnostic only: the existing native Combat overlay measures tap-to-ready.
   // No parallel loader, retry or gameplay dependency is introduced.
   const traceCombatReady=new URL(windowRef.location.href).searchParams.has('gensPerf');
@@ -47,9 +81,11 @@ export function createImmersiveEncounterHostV1({
   }
 
   function close() {
-    if (!active) return false;
+    const released=releaseResultOverlay();
+    if (!active) return released;
     const old = active;
     active = null;
+    old.frame.src='about:blank';
     old.overlay.remove();
     notifyCaptureCombatVisibility(false, old.snapshot.encounterId);
     return true;
@@ -111,7 +147,8 @@ export function createImmersiveEncounterHostV1({
       if(active!==battle||disposed)return;
       battle.finishing=false;
       if(receipt===false||!consumeCombatResult(storage,{sessionId,receipt}))return;
-      close();
+      if(sessionId!==undefined)holdFinishedOverlay();
+      else close();
       onAcknowledged?.(envelope);
     };
     try{
@@ -155,6 +192,7 @@ export function createImmersiveEncounterHostV1({
     open({ url, snapshot }) {
       if (disposed) throw new Error('immersive Encounter host disposed');
       if (active) return false;
+      releaseResultOverlay();
       if (!snapshot?.encounterId || !snapshot?.returnToken) {
         throw new TypeError('Combat Encounter correlation is required');
       }
@@ -219,6 +257,7 @@ export function createImmersiveEncounterHostV1({
       if (disposed) return;
       close();
       windowRef.removeEventListener('message', onCombatComplete);
+      windowRef.removeEventListener('message', onResultDismissed);
       disposed = true;
     }
   });
