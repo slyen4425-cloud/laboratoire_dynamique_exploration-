@@ -12,7 +12,7 @@ import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculp
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
-import {sculptObjectInFrontOfCliffV1} from './render/sculpt-cliff-object-depth-v1.js';
+import {sculptObjectInFrontOfCliffV1,sculptActorCliffDepthPlanV2} from './render/sculpt-cliff-object-depth-v1.js?rev=hero-cliff-mixed-depth-c3-20261116';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -1407,12 +1407,32 @@ function draw(){
           if(object.transform.y<=heroY)drawPreviewObject(object);
         if(navActor){
           const footLevel=navVisualLevel??navHeight();
-          if(sculptObjectInFrontOfCliffV1(terrain,{
+          const cliffPlan=sculptActorCliffDepthPlanV2(terrain,{
             x:navActor.x,y:navActor.y-footLevel*SCULPT_TILE.rise,
             width:44,height:90
           },navActor,{tileWidth:SCULPT_TILE.width,
             tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-            faces:cached.depthFaces}))drawNavigationActor();
+            faces:cached.depthFaces});
+          if(cliffPlan.redraw){
+            // Draw the native hero ONCE in front of the walls below/behind
+            // its foot, even when a different, nearer wall also overlaps
+            // the sprite. Then restore ONLY the actual front-wall clips
+            // from the same cached raster (no second rock renderer).
+            drawNavigationActor();
+            if(cliffPlan.frontRects.length){
+              ctx.save();
+              ctx.transform(1,view.shear,0,view.pitch,0,0);
+              ctx.beginPath();
+              for(const rect of cliffPlan.frontRects)
+                ctx.rect(rect.x,rect.y,rect.width,rect.height);
+              ctx.clip();
+              ctx.drawImage(cached.cliffOcclusionImage,
+                -cached.paddingX,-cached.paddingY,
+                cached.cliffOcclusionImage.width/cached.scale,
+                cached.cliffOcclusionImage.height/cached.scale);
+              ctx.restore();
+            }
+          }
         }
         for(const object of nearObjects)
           if(object.transform.y>heroY)drawPreviewObject(object);

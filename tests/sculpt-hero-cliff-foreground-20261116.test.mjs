@@ -11,7 +11,8 @@ test('Tester redraws a cliff-front hero without requiring any nearby WorldObject
  assert.ok(begin>0);
  assert.match(foreground,/\}else\{[\s\S]*?if\(navActor\)\{\s*const footLevel=navVisualLevel\?\?navHeight\(\)/);
  assert.doesNotMatch(foreground,/else if\(nearObjects\.length\)|if\(navActor&&nearObjects\.some/);
- assert.match(foreground,/if\(sculptObjectInFrontOfCliffV1\(terrain,[\s\S]*?faces:cached\.depthFaces\}\)\)drawNavigationActor\(\)/);
+ assert.match(foreground,/const cliffPlan=sculptActorCliffDepthPlanV2\(terrain,[\s\S]*?faces:cached\.depthFaces\}\);[\s\S]*?if\(cliffPlan\.redraw\)\{[\s\S]*?drawNavigationActor\(\)/);
+ assert.match(foreground,/if\(cliffPlan\.frontRects\.length\)[\s\S]*?ctx\.clip\(\)/);
  assert.equal((foreground.match(/drawNavigationActor\(\)/g)||[]).length,1);
 });
 test('foot-depth remains correct for a hero in front / behind a cliff',()=>{
