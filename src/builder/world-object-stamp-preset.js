@@ -14,6 +14,7 @@ export function copyWorldObjectAsStamp(source) {
     rotationDeg: finite(source.transform?.rotationDeg, 0),
     scaleX: finite(source.transform?.scaleX, 1),
     scaleY: finite(source.transform?.scaleY, 1),
+    ...(source.transform?.flipX === true ? {flipX:true} : {}),
     visualVariantId: typeof variant === 'string' && variant.trim()
       ? variant.trim() : null
   });
@@ -33,7 +34,8 @@ export function worldObjectStampInput({
       y: Math.max(0, Math.min(finite(area.height, 0), finite(point.y, 0))),
       rotationDeg: copied?.rotationDeg ?? 0,
       scaleX: copied?.scaleX ?? 1,
-      scaleY: copied?.scaleY ?? 1
+      scaleY: copied?.scaleY ?? 1,
+      ...(copied?.flipX === true ? {flipX:true} : {})
     },
     overrides: {
       ...(copied?.visualVariantId

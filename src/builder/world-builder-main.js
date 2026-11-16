@@ -3009,7 +3009,8 @@ function refreshObjectControls() {
     'object-y',
     'object-rotation',
     'object-scale-x',
-    'object-scale-y'
+    'object-scale-y',
+    'object-flip-x'
   ]) {
     $(id).disabled = disabled;
   }
@@ -3082,6 +3083,7 @@ function refreshObjectControls() {
     $('object-rotation').value = '';
     $('object-scale-x').value = '';
     $('object-scale-y').value = '';
+    $('object-flip-x').checked = false;
     $('bridge-obstacles').value = '';
     $('object-source-status').textContent =
       'Sélectionner une définition puis placer l’objet.';
@@ -3099,6 +3101,7 @@ function refreshObjectControls() {
     placement.transform?.scaleX ?? 1;
   $('object-scale-y').value =
     placement.transform?.scaleY ?? 1;
+  $('object-flip-x').checked = placement.transform?.flipX === true;
 
   if (object.kind === 'bridge') {
     $('bridge-obstacles').value =
@@ -4537,7 +4540,8 @@ function applyTransformInputs() {
       y: numberValue($('object-y')),
       rotationDeg: numberValue($('object-rotation')),
       scaleX: numberValue($('object-scale-x'), 1),
-      scaleY: numberValue($('object-scale-y'), 1)
+      scaleY: numberValue($('object-scale-y'), 1),
+      flipX: $('object-flip-x').checked
     }
   );
   refreshJson();
@@ -5899,7 +5903,8 @@ for (const id of [
   'object-y',
   'object-rotation',
   'object-scale-x',
-  'object-scale-y'
+  'object-scale-y',
+  'object-flip-x'
 ]) {
   $(id).addEventListener(
     'change',

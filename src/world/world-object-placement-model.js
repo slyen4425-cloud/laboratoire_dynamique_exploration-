@@ -72,7 +72,9 @@ function normalizeTransform(raw) {
         min: WORLD_OBJECT_PLACEMENT_LIMITS.minScale,
         max: WORLD_OBJECT_PLACEMENT_LIMITS.maxScale
       }
-    )
+    ),
+    // Legacy placements remain unchanged; only mirrored ones set this.
+    ...(source.flipX === true ? {flipX: true} : {})
   });
 }
 
