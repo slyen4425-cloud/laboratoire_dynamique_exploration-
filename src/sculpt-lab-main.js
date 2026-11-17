@@ -57,6 +57,8 @@ import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.j
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {createUserHeroStoreV1} from './storage/user-hero-store-v1.js';
+import {createExplorationUniverseWorkspaceStorageV1} from './storage/exploration-universe-workspace-storage-v1.js';
+import {createExplorationUniverseWorldProjectsV1} from './builder/exploration-universe-world-projects-v1.js';
 import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js';
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
@@ -127,6 +129,16 @@ import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playa
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);
+const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
+const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
+ storage:window.localStorage,makeId:()=>crypto.randomUUID()
+});
+if(universeWorldProjects&&universeWorldProjects.list(sculptUniverseId).length===0)
+ throw new Error('Univers sans WorldDocument natif : aucune scène historique ouverte');
+const worldStorage=sculptUniverseId===null?window.localStorage:
+ createExplorationUniverseWorkspaceStorageV1(window.localStorage,sculptUniverseId);
+const worldSessionStorage=sculptUniverseId===null?window.sessionStorage:
+ createExplorationUniverseWorkspaceStorageV1(window.sessionStorage,sculptUniverseId);
 // Only the official Capture host may supply a SoundtrackProject Map scene;
  // the native Explorer still owns all decoding and playback.
 let captureMapMusicScene=null;
@@ -5127,7 +5139,7 @@ function openSelectedSculptInterior(){
       const target=link.document.areas.find(a=>a.id===link.targetAreaId);
       const scene=sculptWorldAreaScene(target);
       sculptWorldDraft=link.document;
-      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       mountWorldSculptArea(link.targetAreaId,scene);
       $('world-area-portal-panel').open=false;
       status((link.created?'Intérieur créé et lié':'Intérieur lié retrouvé')+
@@ -5181,13 +5193,13 @@ function refreshSculptTemplateSelector(){
   $('interior-template-apply').disabled=!activeInteriorId||!select.value;
 }
 function persistSculptTemplates(){
-  try{localStorage.setItem(SCULPT_INTERIOR_TEMPLATE_STORAGE,
+  try{worldStorage.setItem(SCULPT_INTERIOR_TEMPLATE_STORAGE,
     JSON.stringify(sculptInteriorTemplates));return true;}
   catch{return false;}
 }
 function loadSculptTemplates(){
   try{sculptInteriorTemplates=normalizeSculptInteriorTemplates(
-    JSON.parse(localStorage.getItem(SCULPT_INTERIOR_TEMPLATE_STORAGE)||'[]'));}
+    JSON.parse(worldStorage.getItem(SCULPT_INTERIOR_TEMPLATE_STORAGE)||'[]'));}
   catch{sculptInteriorTemplates=Object.freeze([]);}
   refreshSculptTemplateSelector();
 }
@@ -5199,7 +5211,7 @@ $('interior-level-select').addEventListener('change',()=>{
          .some(f=>f.areaId===destination))throw Error('Étage inexistant');
       commitCurrentSculptWorldArea();
       mountWorldSculptArea(destination);
-      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       status('Étage '+(worldInteriorFloors(sculptWorldDraft,destination)
         .find(f=>f.areaId===destination)?.label??'lié')+' ouvert et sauvegardé.');
     }catch(error){status('Impossible de changer d’étage : '+error.message);
@@ -5218,7 +5230,7 @@ $('interior-level-add').addEventListener('click',()=>{
       commitCurrentSculptWorldArea();
       const newFloor=addWorldInteriorFloor(sculptWorldDraft,sculptWorldAreaId);
       sculptWorldDraft=newFloor.document;
-      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       mountWorldSculptArea(newFloor.areaId);
       status('Étage créé et relié par vrais passages aller-retour. Place un escalier/une échelle dans le panneau.');
     }catch(error){status('Étage non créé : '+error.message);}
@@ -6109,9 +6121,9 @@ async function installSculptPlayMode(){
     console.error('Lancement Jouer refusé :',error);
   };
   try{
-    const world=readWorldAssemblerDraft(window.localStorage);
+    const world=readWorldAssemblerDraft(worldStorage);
     if(!world)throw Error('Aucun monde enregistré : crée-le dans World Builder avant de jouer.');
-    const checkpoint=readExplorationPlay(window.localStorage,world,playOptions);
+    const checkpoint=readExplorationPlay(worldStorage,world,playOptions);
     if(!checkpoint)throw Error('Aucune partie : reviens à Nouvelle partie.');
     // GenSRPG sends ONLY a short-lived projection of the true Combat
     // Bestiary. The native Exploration provider retains every actual
@@ -6151,7 +6163,7 @@ async function installSculptPlayMode(){
         sessionId:playOptions.sessionId,worldId:world.id
       });
     }
-    playPositionWriter=createExplorationPlayProgressWriter(window.localStorage,world,playOptions);
+    playPositionWriter=createExplorationPlayProgressWriter(worldStorage,world,playOptions);
     sculptPlayActive=true;
     setImmersive(true);
     setNavigationTesting(true);
@@ -6281,8 +6293,8 @@ function installSculptWorldAreaEditing(){
   // The handoff is intentionally consumed once. On a page refresh we
   // restore from the SAME canonical world document saved by World Builder,
   // never from an independent Sculpt scene or parallel WorldGraph.
-  const transfer=readWorldAssemblerHandoff(window.sessionStorage)??(()=>{
-    const document=readWorldAssemblerDraft(window.localStorage);
+  const transfer=readWorldAssemblerHandoff(worldSessionStorage)??(()=>{
+    const document=readWorldAssemblerDraft(worldStorage);
     return document&&requestedAreaId&&
       document.areas.some(a=>a.id===requestedAreaId)
       ?{document,areaId:requestedAreaId}:null;
@@ -6293,9 +6305,9 @@ function installSculptWorldAreaEditing(){
     $('world-area-unavailable-message').textContent=
       'Le contexte World Builder est absent. Reviens au panneau Monde pour sélectionner une carte.';
     $('world-area-unavailable-return').addEventListener('click',()=>
-      window.location.assign('./world-assembler.html'));
+      window.location.assign('./world-assembler.html'+(sculptUniverseId?'?universe='+encodeURIComponent(sculptUniverseId):'')));
     $('world-area-unavailable-create').addEventListener('click',()=>
-      window.location.assign('./world-assembler.html?createArea=1'));
+      window.location.assign('./world-assembler.html?createArea=1'+(sculptUniverseId?'&universe='+encodeURIComponent(sculptUniverseId):'')));
     document.body.classList.add('world-area-unavailable');
     sculptWorldStatus('Session World Builder absente. Retourne au constructeur de mondes.',true);
     return;
@@ -6312,16 +6324,16 @@ function installSculptWorldAreaEditing(){
     if(sculptWorldAreaMounted)commitCurrentSculptWorldArea();
     // The single world document is written into its canonical storage key.
     // No independent map/scene key or duplicate portal owner is introduced.
-    saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+    saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
     return sculptWorldDraft;
   }
   function saveAndReturnWorldArea({newArea=false}={}){
     try{
       persistCurrentWorldSculpt();
       saveWorldAssemblerHandoff(
-        window.sessionStorage,sculptWorldDraft,sculptWorldAreaId);
+        worldSessionStorage,sculptWorldDraft,sculptWorldAreaId);
       window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
-        (newArea?'&createArea=1':''));
+        (newArea?'&createArea=1':'')+(sculptUniverseId?'&universe='+encodeURIComponent(sculptUniverseId):''));
     }catch(error){
       sculptWorldStatus('Enregistrement bloqué : '+error.message,true);
       const feedback=$('world-portal-feedback');
@@ -6338,7 +6350,7 @@ function installSculptWorldAreaEditing(){
       if(!house)throw Error('Cette zone ne possède pas de porte extérieure liée');
       persistCurrentWorldSculpt();
       mountWorldSculptArea(house.outsideAreaId);
-      saveWorldAssemblerDraft(window.localStorage,sculptWorldDraft);
+      saveWorldAssemblerDraft(worldStorage,sculptWorldDraft);
       status('Retour extérieur : carte maison retrouvée, portes et étages conservés.');
     }catch(error){sculptWorldStatus('Retour impossible : '+error.message,true);}
   });
@@ -6434,7 +6446,7 @@ function installSculptWorldAreaEditing(){
       persistCurrentWorldSculpt();
       const target=portal.targetAreaId;
       if(!sculptWorldDraft.areas.some(a=>a.id===target))throw Error('Zone cible indisponible');
-      saveWorldAssemblerHandoff(window.sessionStorage,sculptWorldDraft,target);
+      saveWorldAssemblerHandoff(worldSessionStorage,sculptWorldDraft,target);
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
@@ -6545,7 +6557,7 @@ function installSculptMapPresetPalette(){
   };
   function refresh(selectedId){
     try{
-      const library=listAvailableSculptMapPresets(window.localStorage);
+      const library=listAvailableSculptMapPresets(worldStorage);
       const previous=selectedId??select.value;
       select.replaceChildren(new Option('Choisir une carte enregistrée',''),
         ...library.map(p=>new Option(p.name+' · '+p.scene.terrain.width+
@@ -6557,7 +6569,7 @@ function installSculptMapPresetPalette(){
       return library;
     }catch(error){presetStatus(error.message,true);return [];}
   }
-  const selected=()=>listAvailableSculptMapPresets(window.localStorage).find(p=>p.id===select.value);
+  const selected=()=>listAvailableSculptMapPresets(worldStorage).find(p=>p.id===select.value);
   select.addEventListener('change',()=>{
     refresh(select.value);
     const preset=selected();
@@ -6570,10 +6582,10 @@ function installSculptMapPresetPalette(){
       const name=$('sculpt-map-preset-name').value.trim();
       if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr')))
         throw Error('Ce nom appartient à un modèle fourni : choisis un nouveau nom pour ta copie.');
-      const existing=readSculptMapPresets(window.localStorage)
+      const existing=readSculptMapPresets(worldStorage)
         .find(p=>p.name.toLocaleLowerCase('fr')===name.toLocaleLowerCase('fr'));
       if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
-      const preset=saveSculptMapPreset(window.localStorage,captureSculptArea(),name);
+      const preset=saveSculptMapPreset(worldStorage,captureSculptArea(),name);
       refresh(preset.id);
       presetStatus('Carte « '+preset.name+' » enregistrée. Réutilisable dans le World Builder.');
     }catch(error){presetStatus(error.message,true);}
@@ -6618,12 +6630,12 @@ function installSculptMapPresetPalette(){
     const input=event.currentTarget,file=input.files?.[0];if(!file)return;
     try{
       const imported=importSculptMapPreset(await file.text());
-      const existing=readSculptMapPresets(window.localStorage).find(p=>
+      const existing=readSculptMapPresets(worldStorage).find(p=>
         p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr'));
       if(existing&&!window.confirm('Remplacer le préset « '+existing.name+' » ?'))return;
       if(builtinSculptMapPresets().some(p=>p.name.toLocaleLowerCase('fr')===imported.name.toLocaleLowerCase('fr')))
         throw Error('Le nom de ce préset est réservé à une carte fournie : renomme le préset avant import.');
-      const saved=addImportedSculptMapPreset(window.localStorage,imported);
+      const saved=addImportedSculptMapPreset(worldStorage,imported);
       refresh(saved.id);presetStatus('Préset « '+saved.name+' » importé.');
     }catch(error){presetStatus('Import refusé : '+error.message,true);}
     finally{input.value='';}
