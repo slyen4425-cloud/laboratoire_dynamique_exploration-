@@ -1,3 +1,4 @@
+import {createUserHeroDefinitionV1} from '../actors/user-hero-definition-v1.js';
 // Exploration owns both the HeroDefinition + image blobs (its one IndexedDB)
 // and the project membership table. This table stores IDs only, never media,
 // never mutates or deletes historical hero records to switch universes.
@@ -69,5 +70,43 @@ export function createExplorationUniverseHeroProjectsV1({storage,heroStore}={}){
   if(!p)throw new Error('Bibliothèque de héros de cet univers non initialisée');
   return Object.freeze({id:p.id,heroIds:Object.freeze([...p.heroIds])});
  }
- return Object.freeze({createEmpty,list,add,requireReady});
+ // An explicit clone is the only way to put a hero into another universe:
+ // new stable ID and new native HeroDefinition, including its images. No
+ // rewiring an existing saved hero or sharing a mutable record between games.
+ async function copy({sourceHeroId,toProjectId,confirmed=false,makeId,now}={}){
+  if(confirmed!==true||typeof makeId!=='function'||typeof now!=='string')
+   throw new Error('Copie de héros : confirmation et ID natif généré requis');
+  requireReady(toProjectId);
+  const existing=await heroStore.get(sourceHeroId);
+  if(!existing)throw new Error('Héros source introuvable dans IndexedDB natif');
+  const id='hero.user.'+makeId();
+  if(await heroStore.get(id))throw new Error('ID du nouveau héros déjà utilisé');
+  const assets=new Map(existing.assets.map(item=>[item.id,item]));
+  const visual=existing.mapVisual;
+  const image=assetId=>{
+   const asset=assets.get(assetId);
+   if(!asset)throw new Error('Image native du héros source manquante');
+   return asset;
+  };
+  const mode=visual.animation.mode;
+  const directional=mode==='directions'
+   ?Object.fromEntries(Object.entries(visual.animation.directions)
+      .map(([dir,ids])=>[dir,ids.map(image)])):null;
+  const record=createUserHeroDefinitionV1({
+   id,name:existing.name,now,
+   base:image(visual.assetId),
+   portrait:assets.get(sourceHeroId+'.portrait')??null,
+   mode,
+   idle:mode==='frames'?visual.animation.idle.map(image):[],
+   walk:mode==='frames'?visual.animation.walk.map(image):[],
+   directions:directional,
+   framesPerSecond:visual.animation.framesPerSecond,
+   targetHeight:visual.targetHeight,sourceFacingX:visual.sourceFacingX,
+   motion:visual.motion
+  });
+  await heroStore.put(record);
+  await add(toProjectId,record.id);
+  return record;
+ }
+ return Object.freeze({createEmpty,list,add,copy,requireReady});
 }
