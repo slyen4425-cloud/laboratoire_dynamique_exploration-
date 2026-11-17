@@ -14,6 +14,9 @@ import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
+import {createExplorationUniverseWorldProjectsV1} from './exploration-universe-world-projects-v1.js';
+import {createExplorationUniverseWorkspaceStorageV1} from '../storage/exploration-universe-workspace-storage-v1.js';
+import {WORLD_ASSEMBLER_DRAFT_KEY} from './world-assembler-handoff.js';
 import {worldAssemblerRegionOverview} from './world-assembler-region-overview.js';
 import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-defaults.js';
 import {DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1} from '../encounters/wild-stat-profile-contract-v1.js';
@@ -117,10 +120,28 @@ function installWorldAssembler(){
     el.addEventListener(event,callback,options);
     listenerCleanups.push(()=>el.removeEventListener(event,callback,options));
   };
-  const transfer=new URLSearchParams(window.location.search).get('return')==='1'
-    ?readWorldAssemblerHandoff(window.sessionStorage):null;
-  let draft=transfer?.document??readWorldAssemblerDraft(window.localStorage)
-    ??createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21});
+  const params=new URLSearchParams(window.location.search);
+  const universeId=params.get('universe');
+  const worldProjects=universeId===null?null:createExplorationUniverseWorldProjectsV1({
+    storage:window.localStorage,makeId:()=>crypto.randomUUID()
+  });
+  const worldStorage=universeId===null?window.localStorage:
+    createExplorationUniverseWorkspaceStorageV1(window.localStorage,universeId);
+  const worldSessionStorage=universeId===null?window.sessionStorage:
+    createExplorationUniverseWorkspaceStorageV1(window.sessionStorage,universeId);
+  const allowed=worldProjects?.list(universeId)??null;
+  if(worldProjects&&!allowed.length)
+    throw new Error('Univers sans WorldDocument natif : aucune carte historique ouverte');
+  const transfer=params.get('return')==='1'
+    ?readWorldAssemblerHandoff(worldSessionStorage):null;
+  const savedDraft=readWorldAssemblerDraft(worldStorage);
+  if(worldProjects&&worldStorage.getItem(WORLD_ASSEMBLER_DRAFT_KEY)!==null&&!savedDraft)
+    throw new Error('Brouillon de cet univers illisible : aucune récupération destructive');
+  let draft=transfer?.document??savedDraft
+    ??(worldProjects?worldProjects.load(universeId,allowed[0].id):
+      createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}));
+  if(worldProjects&&!allowed.some(w=>w.id===draft.id))
+    throw new Error('WorldDocument étranger à cet univers : aucune ouverture');
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
   let linksShown=true;
@@ -130,10 +151,11 @@ function installWorldAssembler(){
   let arenaOptions = null;
   let loadingArenaOptions = false;
   const library=createExplorationWorldDocumentLibraryV1({storage:window.localStorage});
+  if(worldProjects)byId('world-name').readOnly=true;
   function refreshWorldLibrary(){
     const picker=byId('world-library-select');
     const selected=picker.value;
-    const worlds=library.list();
+    const worlds=worldProjects?worldProjects.list(universeId):library.list();
     picker.replaceChildren(...(worlds.length?worlds.map(w=>
       new Option(w.id+' · '+w.areaCount+' zone(s)',w.id))
       :[new Option('Aucun monde enregistré','')]));
@@ -141,13 +163,14 @@ function installWorldAssembler(){
     else if(worlds.some(w=>w.id===draft.id))picker.value=draft.id;
     picker.disabled=!worlds.length;
     byId('world-library-open').disabled=!worlds.length;
-    byId('world-library-delete').disabled=!worlds.length;
+    byId('world-library-delete').disabled=Boolean(worldProjects)||!worlds.length;
   }
   function libraryStatus(message,error=false){
     const out=byId('world-library-status');
     out.textContent=message;out.dataset.error=String(error);
   }
   function archiveCurrentWorld(){
+    if(worldProjects)return worldProjects.save(universeId,draft);
     try{return library.save(draft);}
     catch(error){
       if(!/existe déjà/.test(error.message))throw error;
@@ -200,16 +223,17 @@ function installWorldAssembler(){
     const id=byId('world-library-select').value;
     if(!id){libraryStatus('Choisis un monde enregistré.',true);return;}
     try{
-      const opened=library.activate(id);
+      const opened=worldProjects?worldProjects.activate(universeId,id):library.activate(id);
       draft=opened;selectedId=draft.initialAreaId;
       persist();render();refreshWorldLibrary();
       libraryStatus('✓ Monde '+opened.id+' chargé sans supprimer les autres.');
     }catch(error){libraryStatus(error.message,true);}
   });
   on(byId('world-library-select'),'change',()=>{
-    byId('world-library-delete').disabled=!byId('world-library-select').value;
+    byId('world-library-delete').disabled=Boolean(worldProjects)||!byId('world-library-select').value;
   });
   on(byId('world-library-delete'),'click',()=>{
+    if(worldProjects){libraryStatus('Suppression de carte interdite tant que ses sauvegardes ne sont pas vérifiées.',true);return;}
     const chosen=byId('world-library-select').value;
     if(!chosen){libraryStatus('Choisis le monde à supprimer.',true);return;}
     const active=chosen===draft.id;
@@ -241,7 +265,7 @@ function installWorldAssembler(){
   }
   function persist(){
     try{
-      saveWorldAssemblerDraft(window.localStorage,draft);
+      saveWorldAssemblerDraft(worldStorage,draft);
       autosaveAvailable=true;
       byId('save-state').textContent='✓ Monde sauvegardé localement';
     }catch(error){
@@ -690,7 +714,7 @@ function installWorldAssembler(){
   function refreshMapPresets(){
     const select=byId('world-map-preset-select'),previous=select.value;
     try{
-      const presets=listAvailableSculptMapPresets(window.localStorage);
+      const presets=listAvailableSculptMapPresets(worldStorage);
       select.replaceChildren(new Option('Choisir une carte enregistrée',''),
         ...presets.map(p=>new Option(p.name+' · '+p.scene.terrain.width+' × '+
           p.scene.terrain.height,p.id)));
@@ -717,7 +741,7 @@ function installWorldAssembler(){
   on(byId('world-map-preset-select'),'change',()=>{
     byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
     try{
-      const preset=listAvailableSculptMapPresets(window.localStorage)
+      const preset=listAvailableSculptMapPresets(worldStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
       if(preset&&!byId('world-map-preset-name').value.trim())
         byId('world-map-preset-name').value=preset.name;
@@ -725,7 +749,7 @@ function installWorldAssembler(){
   });
   on(byId('world-map-preset-create'),'click',()=>{
     try{
-      const preset=listAvailableSculptMapPresets(window.localStorage)
+      const preset=listAvailableSculptMapPresets(worldStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
       if(!preset){status('Choisis d’abord un préset de carte.',true);return;}
       const before=new Set(draft.areas.map(a=>a.id));
@@ -836,6 +860,7 @@ function installWorldAssembler(){
     apply(()=>removeWorldArea(draft,selectedId),'Zone supprimée.');
   });
   on(byId('world-name'),'change',()=>{
+    if(worldProjects){status('Identifiant WorldDocument immuable : personnalise le nom affiché dans l’univers.',true);byId('world-name').value=draft.id;return;}
     const name=byId('world-name').value.trim();
     if(!name){byId('world-name').value=draft.id;return;}
     apply(()=>createWorldBuilderDraft({...draft,id:name}),'Nom du monde enregistré.');
@@ -868,12 +893,12 @@ function installWorldAssembler(){
           areaToOpen=to.id;
         }
       }
-      saveWorldAssemblerHandoff(window.sessionStorage,draft,areaToOpen);
+      saveWorldAssemblerHandoff(worldSessionStorage,draft,areaToOpen);
       persist();
       // Selection is an ephemeral UI choice, never a second WorldDocument.
       if(areaToOpen!==selectedId){selectedId=areaToOpen;render();}
       const next=url.startsWith('./sculpt-lab.html?')
-        ?url+'&areaId='+encodeURIComponent(areaToOpen):url;
+        ?url+'&areaId='+encodeURIComponent(areaToOpen)+(universeId?'&universe='+encodeURIComponent(universeId):''):url;
       window.location.assign(next);
     }catch(error){status(error.message,true);}
   }
@@ -940,6 +965,7 @@ function installWorldAssembler(){
     const input=event.currentTarget,file=input.files?.[0];
     if(!file)return;
     try{
+      if(worldProjects)throw new Error('Importe une carte via la fonction de copie validée du projet, sans écraser la carte courante');
       const imported=importWorldBuilderDocument(await file.text());
       apply(()=>imported,'Monde importé et validé. Les passages et zones sont conservés.');
       selectedId=draft.initialAreaId;render();
@@ -957,10 +983,15 @@ function installWorldAssembler(){
     try{
       const archived=archiveCurrentWorld();
       if(!archived){libraryStatus('Nouveau monde annulé : modifications du monde actif conservées.');return;}
-      apply(()=>createBlankWorldBuilderDraft({
-        id:'nouveau-monde-'+crypto.randomUUID().slice(0,8),
-        width:36*28,height:24*21
-      }), 'Nouveau monde vierge prêt à assembler. L’ancien est archivé.');
+      if(worldProjects){
+        const blank=worldProjects.addBlank(universeId,{width:36*28,height:24*21});
+        apply(()=>blank,'Nouveau WorldDocument de cet univers prêt à assembler.');
+      }else{
+        apply(()=>createBlankWorldBuilderDraft({
+          id:'nouveau-monde-'+crypto.randomUUID().slice(0,8),
+          width:36*28,height:24*21
+        }), 'Nouveau monde vierge prêt à assembler. L’ancien est archivé.');
+      }
       selectedId=draft.initialAreaId;render();refreshWorldLibrary();
     }catch(error){libraryStatus(error.message,true);}
   });
