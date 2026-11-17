@@ -1,3 +1,10 @@
+## 2026-11-17 — Cadrage sans recadrage des chargements Monster InvoC (EN TEST)
+- START propriétaire Exploration `main@a339764834921a2f388b31a78bcc99e8794b26d5`, checkpoint `checkpoint/exploration-start-loading-art-safe-frame-20261117`, branche `work/exploration-loading-art-safe-frame-20261117`.
+- Retour Pixel : le bord supérieur de l'illustration de chargement est coupé ; le titre fait partie de l'image source. Cause : `background-size:cover` dans les trois chemins natifs de chargement (entrée Carte, transition Portal, overlay Combat).
+- Correction pure présentation : `contain` sur fond sombre, dégradé couvrant toute la surface sur le seul overlay Combat ; conserver le même asset, la rotation, le message, le spinner, Annuler, les erreurs et la libération de l'audio officiel. Aucun overlay supplémentaire, aucun changement de gameplay, Hero, WorldDocument, terrain, collision, sauvegardes, V80, Combat ni PWA.
+- TDD : test `tests/exploration-loading-art-safe-frame-20261117.test.js` vérifiant les trois consommateurs et le contraste. Gates : suite Node, Chromium paysage/PC, CI et Pages SHA exact, budget ≤900 Mio, preuve HTTPS et recette visuelle auteur avant promotion Capture/GenSRPG.
+- Dernier GREEN confirmé avant chantier : `main@a339764834921a2f388b31a78bcc99e8794b26d5` ; aucun déploiement GenSRPG implicite.
+
 ## 2026-11-16 — Calibration des 12 héros officiels sur silhouette verte (AUDIT, NON PUBLIÉ)
 - Demande auteur : héros bleu et un autre paraissent trop grands. Héros vert = taille de référence ; ne pas modifier les PNG, ne pas réécrire d'anciens profils personnalisés.
 - START main@`20228fdc2be728d52d02a6f37421f206d4849d0a`, checkpoint `checkpoint/exploration-start-hero-size-audit-20261116`, branche `work/exploration-hero-green-visual-calibration-20261116`. Autorité visuelle : catalogue officiel + MapActorVisual natif, aucun changement de mouvement/collision.
