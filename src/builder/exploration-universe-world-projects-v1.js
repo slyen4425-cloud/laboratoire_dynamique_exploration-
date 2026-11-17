@@ -2,8 +2,12 @@
 // WorldDocuments. WorldBuilder archive + serializer remain the ONLY content
 // authority. The per-universe table stores REFERENCES, never copied maps.
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
-import {createBlankWorldBuilderDraft,createWorldBuilderDraft}
+import {createBlankWorldBuilderDraft,createWorldBuilderDraft,serializeWorldBuilderDraft}
  from './world-builder-draft.js';
+import {saveWorldAssemblerDraft,readWorldAssemblerDraft,WORLD_ASSEMBLER_DRAFT_KEY}
+ from './world-assembler-handoff.js';
+import {createExplorationUniverseWorkspaceStorageV1}
+ from '../storage/exploration-universe-workspace-storage-v1.js';
 const INDEX='gensrpg.exploration.universe-worlds.index.v1';
 const SCHEMA=INDEX;
 const project=/^unv_[a-z0-9-]{8,80}$/;
@@ -51,27 +55,34 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
   if(document.id!==world)throw new Error('Document de monde incohérent');
   return document;
  };
- function register(id,world){
+ function register(id,world,{extend=false}={}){
   const index=read(),p=entry(id,index);
-  if(p)throw new Error('Projet WorldDocument déjà alloué');
+  if(p&&!extend)throw new Error('Projet WorldDocument déjà alloué');
   if(index.projects.some(x=>x.worldIds.includes(world)))
    throw new Error('WorldDocument déjà attribué');
   const document=archive.load(world);
   if(document.id!==world)throw new Error('WorldDocument manquant');
-  write({...index,projects:[...index.projects,{id,worldIds:[world]}]});
+  write({...index,projects:p
+    ?index.projects.map(x=>x.id===id?{...x,worldIds:[...x.worldIds,world]}:x)
+    :[...index.projects,{id,worldIds:[world]}]});
   return document;
  }
- function createBlank(id,{width=2400,height=1600}={}){
-  if(entry(id))throw new Error('Projet déjà initialisé');
+ function addBlank(id,{width=2400,height=1600}={}){
+  const existing=entry(id);
   const identifier='world-'+String(makeId()).toLowerCase();
   if(!worldId.test(identifier))
    throw new TypeError('ID de WorldDocument généré invalide');
   if(archive.list().some(w=>w.id===identifier))
    throw new Error('Collision de WorldDocument : aucun écrasement');
   const document=createBlankWorldBuilderDraft({id:identifier,width,height});
-  archive.save(document); // Canonical only, no saved Adventure or Hero bytes.
-  register(id,identifier);
+  archive.save(document); // Canonical WorldDocument serializer only.
+  register(id,identifier,{extend:Boolean(existing)});
+  activate(id,identifier);
   return document;
+ }
+ function createBlank(id,options={}){
+  if(entry(id))throw new Error('Projet déjà initialisé');
+  return addBlank(id,options);
  }
  function copy({fromWorldId,toProjectId,confirmed=false}={}){
   if(confirmed!==true)throw new Error('Copie WorldDocument uniquement après confirmation explicite');
@@ -83,6 +94,7 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
   const cloned=createWorldBuilderDraft({...source,id:identifier});
   archive.save(cloned);
   register(toProjectId,identifier);
+  activate(toProjectId,identifier);
   return cloned;
  }
  function list(id){
@@ -98,11 +110,23 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
  }
  function activate(id,world){
   const document=owned(id,world);
-  // The native owner enforces the one unsaved-draft check and uses the one
-  // active WorldAssembler handoff. Never bypass it via a second writer.
-  archive.activate(document.id);
+  const scoped=createExplorationUniverseWorkspaceStorageV1(storage,id);
+  const bytes=scoped.getItem(WORLD_ASSEMBLER_DRAFT_KEY);
+  const active=readWorldAssemblerDraft(scoped);
+  if(bytes!==null&&!active)
+   throw new Error('Document actif du projet illisible : aucune activation destructive');
+  if(active){
+   let archived;
+   try{archived=archive.load(active.id);}
+   catch{throw new Error('Enregistre d’abord le monde actif de cet univers');}
+   if(serializeWorldBuilderDraft(active)!==serializeWorldBuilderDraft(archived))
+    throw new Error('Enregistre d’abord le monde actif de cet univers');
+  }
+  // The same ONE native WorldAssembler serializer, but a project-owned
+  // workspace key. Never overwrite the old globally active draft.
+  saveWorldAssemblerDraft(scoped,document);
   const index=read();write({...index,activeWorldId:world});
   return document;
  }
- return Object.freeze({list,load:owned,createBlank,copy,activate,save});
+ return Object.freeze({list,load:owned,createBlank,addBlank,copy,activate,save});
 }
