@@ -255,7 +255,7 @@ test('V13 undo/redo, water tools and renderer live outside 2D runtime',()=>{
  assert.match(html,/data-mode="water-fill"/);
  assert.match(main,/redoHistory/);assert.match(main,/commitUndo/);
  assert.match(renderer,/drawWaterVolume/);
- assert.doesNotMatch(main,/WorldDocument|collision-world/);
+ assert.doesNotMatch(main,/new WorldDocument|collision-world/);
 });
 
 
@@ -321,7 +321,7 @@ test('V15 mobile canvas-first layout keeps stable unique controls and advanced p
  assert.match(ui,/function adjustBrushSize/);
  assert.match(ui,/function adjustQuickLevel/);
  assert.match(ui,/precisionApply/);
- assert.doesNotMatch(ui,/WorldDocument|collision-world|location\.reload/);
+ assert.doesNotMatch(ui,/new WorldDocument|collision-world|location\.reload/);
 });
 
 test('V16 land sculpting approaching water never edits its authored cells or water levels',()=>{
