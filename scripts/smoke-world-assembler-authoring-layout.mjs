@@ -236,5 +236,8 @@ try{
     if(process.platform!=='win32')killTree('SIGKILL');
   }
   await new Promise(ok=>server.close(ok));
-  await rm(profile,{recursive:true,force:true,maxRetries:12,retryDelay:200});
+  // Chromium cache workers may still flush short-lived profile entries after
+  // the browser process group exits. Wait for actual recursive removal,
+  // keeping this independent smoke red on persistent cleanup errors.
+  await rm(profile,{recursive:true,force:true,maxRetries:60,retryDelay:250});
 }
