@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptSurface,appendSculptSurfaceStroke}
   from '../src/world/sculpt-surface-paint.js';
-import {sculptFringeVisualSurfaceV1}
+import {sculptFringeVisualSurfaceV1,sculptFringeResolvedPaintSurfaceV1}
   from '../src/render/sculpt-fringe-visual-surface-v1.js';
 
 const source=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
@@ -45,9 +45,28 @@ test('no artificial front wall; texture owner, cache and clip remain canonical',
   assert.doesNotMatch(source,/drawOuterSouthRim:true/);
   assert.match(source,/paintSurface:fringePaintSurface,paintImages:surfacePaintImages/);
   assert.match(source,/previous\.sourceSurface===surface/);
-  assert.match(source,/const fringePaintSurface=chunk\.surface\?\?sculptFringeVisualSurfaceV1/);
+  assert.match(source,/const fringePaintSurface=sculptFringeResolvedPaintSurfaceV1\(chunk\.surface,surface/);
   assert.match(source,/ctx\.rect\(0,terrain\.height\*SCULPT_TILE\.height/);
-  assert.match(source,/sculptFringeVisualSurfaceV1/);
+  assert.match(source,/sculptFringeResolvedPaintSurfaceV1/);
   assert.doesNotMatch(source.slice(source.indexOf('function decorativeFringeRaster('),
     source.indexOf('function drawEditorPlayableLimit(')),/localStorage|saveSculptWorldArea/);
+});
+
+test('erased decorative fringe inherits the actual snow edge without modifying saves',()=>{
+  let snow=createSculptSurface();
+  snow=appendSculptSurfaceStroke(snow,{materialId:'ground.snow',
+    points:[{x:0,y:23.5*21},{x:36*28,y:23.5*21}],width:105});
+  const erased=createSculptSurface();
+  const unchanged=JSON.stringify({snow,erased});
+  const resolved=sculptFringeResolvedPaintSurfaceV1(erased,snow,{
+    col:0,row:24,columns:36,rows:24
+  });
+  assert.ok(resolved?.zones?.length);
+  assert.ok(resolved.zones.every(z=>z.materialId==='ground.snow'));
+  assert.equal(JSON.stringify({snow,erased}),unchanged);
+  const painted=appendSculptSurfaceStroke(erased,{materialId:'ground.sand',
+    points:[{x:0,y:20},{x:160,y:20}],width:30});
+  assert.equal(sculptFringeResolvedPaintSurfaceV1(painted,snow,{
+    col:0,row:24,columns:36,rows:24
+  }),painted,'explicit decorative painting retains sole authority');
 });

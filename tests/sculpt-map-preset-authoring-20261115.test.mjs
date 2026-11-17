@@ -89,7 +89,7 @@ test('editor keeps one native map renderer, moves presets away from top-left and
  assert.match(source,/pickSculptWorldEditorMarkerV1/);
  assert.match(source,/paintSculptDecorativeFringeSurfaceV1/);
  assert.match(source,/paintSurface:fringePaintSurface,paintImages:surfacePaintImages/);
- assert.match(source,/const fringePaintSurface=chunk\.surface\?\?sculptFringeVisualSurfaceV1/);
+ assert.match(source,/const fringePaintSurface=sculptFringeResolvedPaintSurfaceV1\(chunk\.surface,surface/);
  assert.match(source,/if\(navigationTesting\|\|!decorativeFringe\|\|!fringeEditing/);
  assert.match(source,/worldAssembler','1'/);
  assert.doesNotMatch(source.slice(source.indexOf('function drawEditorPlayableLimit('),

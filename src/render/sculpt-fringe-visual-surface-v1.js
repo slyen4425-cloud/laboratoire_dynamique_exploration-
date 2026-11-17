@@ -61,3 +61,13 @@ export function sculptFringeVisualSurfaceV1(surface,{
   }
   return hasPaint?visual:null;
 }
+
+// A saved-but-empty decorative surface is not authored paint. Erasing a
+// fringe stroke must restore the nearest canonical WorldSurface projection,
+// not expose the old green placeholder beneath a snow/forest world.
+// Existing painted decorative chunks continue to win unchanged.
+export function sculptFringeResolvedPaintSurfaceV1(chunkSurface,worldSurface,options){
+  if((chunkSurface?.zones?.length??0)+(chunkSurface?.routes?.length??0)>0)
+    return chunkSurface;
+  return sculptFringeVisualSurfaceV1(worldSurface,options);
+}
