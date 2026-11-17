@@ -6,6 +6,7 @@ const PREFIX='gensrpg.exploration.universe.workspace.v1:';
 const isWorkspaceKey=k=>typeof k==='string'&&(
  k.startsWith('gensrpg.world-assembler.')||
  k==='gensrpg.exploration.map-presets.v1'||
+ k==='gensrpg-exploration-sculpt-room-templates-v1'||
  k.startsWith('gensrpg.exploration.play.')||
  k.startsWith('gensrpg.exploration.sculpt.')||
  k.startsWith('gensrpg.exploration.interior.')
