@@ -20,14 +20,16 @@ test('World Builder offers a compatible 2.5D Area, refuses false demo handoff wh
  assert.match(main,/if\(!resolution\)\{/);
  assert.match(main,/area-name'\)\.focus\(\)/);
  assert.match(main,/window\.confirm\('La zone/);
- assert.match(main,/saveWorldAssemblerHandoff\(window\.sessionStorage,draft,areaToOpen\)/);
+ assert.match(main,/saveWorldAssemblerHandoff\(worldSessionStorage,draft,areaToOpen\)/);
+  assert.match(main,/const worldSessionStorage=universeId===null\?window\.sessionStorage/);
 });
 
 test('legacy map handoff always allows return without committing the unrelated demo canvas',()=>{
  const main=read('src/sculpt-lab-main.js'),html=read('sculpt-lab.html');
  assert.match(main,/sculptWorldAreaMounted=false/);
  assert.match(main,/if\(sculptWorldAreaMounted\)commitCurrentSculptWorldArea\(\)/);
- assert.match(main,/saveWorldAssemblerDraft\(window\.localStorage,sculptWorldDraft\)/);
+ assert.match(main,/saveWorldAssemblerDraft\(worldStorage,sculptWorldDraft\)/);
+  assert.match(main,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
  assert.match(main,/world-area-unavailable'\)\.hidden=false/);
  assert.match(html,/id="world-area-unavailable"/);
  assert.match(html,/id="world-area-unavailable-return"/);
