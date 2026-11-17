@@ -481,6 +481,26 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
 // neighboring cells, leaving trails at tile joins. Adjacent clips share one
 // mathematical boundary even with camera zoom; height projection is unchanged.
 export function sculptPaintCellClipV1(ctx,x,y,w,h){
+  // Exact non-overlapping clips fixed the previous double-stamped translucent
+  // road seams. However, on cached canvases scaled by DPR=1.5 a logical
+  // boundary such as y=21 lands at device y=31.5. Two individually antialiased
+  // clips leave a one-pixel underpaint gap. Snap both neighbors to the SAME
+  // device-pixel boundary, never grow either rectangle into its neighbor.
+  // For sheared/rotated views retain the existing exact logical clip path.
+  const transform=typeof ctx.getTransform==='function'?ctx.getTransform():null;
+  if(transform&&Number.isFinite(transform.a)&&Number.isFinite(transform.d)&&
+     Number.isFinite(transform.e)&&Number.isFinite(transform.f)&&
+     Math.abs(transform.b)<1e-9&&Math.abs(transform.c)<1e-9&&
+     transform.a>0&&transform.d>0){
+    const x0=Math.round(transform.a*x+transform.e);
+    const x1=Math.round(transform.a*(x+w)+transform.e);
+    const y0=Math.round(transform.d*y+transform.f);
+    const y1=Math.round(transform.d*(y+h)+transform.f);
+    ctx.beginPath();
+    ctx.rect((x0-transform.e)/transform.a,(y0-transform.f)/transform.d,
+      (x1-x0)/transform.a,(y1-y0)/transform.d);
+    ctx.clip();return;
+  }
   ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
 }
 // Canonical WorldSurface strokes are rasterized on top of sculpt terrain.
