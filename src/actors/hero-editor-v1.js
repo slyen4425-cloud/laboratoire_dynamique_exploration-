@@ -3,6 +3,7 @@
 // same ImageAssetLoader + MapActorVisualPreparer + MapActorRenderer as the map.
 import {createUserHeroDefinitionV1,createUserHeroAssetResolverV1} from './user-hero-definition-v1.js';
 import {createUserHeroStoreV1} from '../storage/user-hero-store-v1.js';
+import {createExplorationUniverseHeroProjectsV1} from '../storage/exploration-universe-hero-projects-v1.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
@@ -13,6 +14,11 @@ const $=id=>document.getElementById(id);
 const status=$('hero-status');
 const canvas=$('hero-canvas'),ctx=canvas.getContext('2d');
 const store=createUserHeroStoreV1();
+const universeId=new URLSearchParams(window.location.search).get('universe');
+const universeHeroes=universeId===null?null:createExplorationUniverseHeroProjectsV1({
+ storage:window.localStorage,heroStore:store
+});
+if(universeHeroes)universeHeroes.requireReady(universeId);
 let selected=null,preview=null,renderEpoch=0,previewMoving=false,disposed=false;
 let liveVisual=null,dirty=false,saving=false,portraitPreviewUrl=null;
 let officialSizeCatalog=null;
@@ -201,7 +207,7 @@ function displayFields(record){
  liveVisual=record?.mapVisual??null;
 }
 async function refreshCatalog(chosenId=null){
- const records=await store.list();
+ const records=universeHeroes?await universeHeroes.list(universeId):await store.list();
  renderHeroSizeAudit(records);
  const picker=$('hero-saved'),counts=new Map();
  for(const record of records)counts.set(record.name,(counts.get(record.name)??0)+1);
@@ -258,7 +264,9 @@ async function saveHero(){
     walkFrequency:previous?.mapVisual.motion.walkFrequency??3.8},
    now:previous?.createdAt??new Date().toISOString()
   });
+  if(universeHeroes)universeHeroes.requireReady(universeId);
   await store.put(record);
+  if(universeHeroes&&!previous)await universeHeroes.add(universeId,record.id);
   const persisted=await store.get(record.id);
   if(!persisted||persisted.mapVisual.targetHeight!==record.mapVisual.targetHeight||
      persisted.assets.length!==record.assets.length)
@@ -273,6 +281,7 @@ async function saveHero(){
 
 async function deleteHero(){
  if(!selected)return;
+ if(universeHeroes)throw new Error('Retrait de héros désactivé tant que la partie liée n’est pas vérifiée');
  if(!confirm('Supprimer UNIQUEMENT « '+selected.name+' » (créé le '+
   new Date(selected.createdAt).toLocaleDateString('fr-FR')+') ?\\n'+
   'Ses sprites seront retirés de cette bibliothèque. Si une partie utilise ce héros, son apparence pourra devenir indisponible. Les autres héros et les parties ne seront pas supprimés.'))return;
@@ -341,7 +350,7 @@ async function installPresetGallery(){
  try{
   const catalog=await loadOfficialHeroCatalogV1();
   officialSizeCatalog=catalog;
-  renderHeroSizeAudit(await store.list());
+  renderHeroSizeAudit(universeHeroes?await universeHeroes.list(universeId):await store.list());
   for(const hero of catalog.heroes){
    const card=document.createElement('div');card.className='hero-preset';
    const image=document.createElement('img');
@@ -353,6 +362,8 @@ async function installPresetGallery(){
    button.addEventListener('click',()=>run(async()=>{
      button.disabled=true;message.textContent='Installation de '+hero.name+'…';
      try{
+       if(universeHeroes)
+        throw new Error('Copie indépendante du modèle officiel à raccorder avant utilisation');
        const record=await installOfficialHeroPresetV1({hero,store});
        await refreshCatalog(record.id);
        message.textContent=record.name+' est disponible dans la sélection de héros.';

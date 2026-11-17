@@ -30,7 +30,10 @@ try{
   chrome=spawn(binary,['--headless=new','--no-sandbox','--disable-gpu',
     '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
     '--window-size=1400,850','--remote-debugging-port=0',
-    '--user-data-dir='+profile,pageUrl],{stdio:['ignore','ignore','pipe']});
+    '--user-data-dir='+profile,pageUrl],{stdio:['ignore','ignore','pipe'],
+    // Isolate the real Chromium process tree, including helpers writing its
+    // profile. Closing the parent alone is not enough on Linux runners.
+    detached:process.platform!=='win32'});
   const port=await new Promise((ok,fail)=>{
     let stderr='';const watchdog=setTimeout(()=>fail(Error('No DevTools port: '+stderr.slice(-400))),45000);
     chrome.stderr.on('data',chunk=>{
@@ -212,13 +215,25 @@ try{
   // Browser-profile files can still be written after kill() returns.
   // Wait for the real Chromium exit before deleting its isolated directory;
   // never mask actual browser assertions with a racing ENOTEMPTY cleanup.
-  if(chrome&&chrome.exitCode===null&&chrome.signalCode===null){
-    const exited=new Promise(ok=>chrome.once('exit',ok));
-    try{chrome.kill('SIGTERM');}catch{}
-    if(!await Promise.race([exited.then(()=>true),sleep(3500).then(()=>false)])){
-      try{chrome.kill('SIGKILL');}catch{}
-      await exited;
+  if(chrome){
+    const killTree=signal=>{
+      try{
+        if(process.platform!=='win32'&&Number.isInteger(chrome.pid))
+          process.kill(-chrome.pid,signal);
+        else chrome.kill(signal);
+      }catch(error){if(error?.code!=='ESRCH')throw error;}
+    };
+    if(chrome.exitCode===null&&chrome.signalCode===null){
+      const exited=new Promise(ok=>chrome.once('exit',ok));
+      killTree('SIGTERM');
+      if(!await Promise.race([exited.then(()=>true),sleep(3500).then(()=>false)])){
+        killTree('SIGKILL');
+        await exited;
+      }
     }
+    // Parent exit does not imply Chromium child helpers have exited.
+    // Kill only the dedicated Chrome process group, not unrelated tests.
+    if(process.platform!=='win32')killTree('SIGKILL');
   }
   await new Promise(ok=>server.close(ok));
   await rm(profile,{recursive:true,force:true,maxRetries:12,retryDelay:200});
