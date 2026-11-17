@@ -5938,7 +5938,7 @@ async function traverseSculptWorldPortal(){
     const sceneArt=zoneLoadingArtCycle.next();
     if(sceneArt){
       overlay.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+sceneArt+'")';
-      overlay.style.backgroundPosition='center';overlay.style.backgroundSize='cover';
+      overlay.style.backgroundPosition='center';overlay.style.backgroundSize='100% 100%, contain';
     }
     // Yield a real painted frame BEFORE the expensive destination mount.
     await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
