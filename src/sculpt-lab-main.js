@@ -13,7 +13,7 @@ import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV
 import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from './play/exploration-loading-art-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
 import {sculptPlayableBoundaryOutlineV1} from './render/sculpt-playable-boundary-outline-v1.js';
-import {sculptFringeVisualSurfaceV1} from './render/sculpt-fringe-visual-surface-v1.js';
+import {sculptFringeResolvedPaintSurfaceV1} from './render/sculpt-fringe-visual-surface-v1.js';
 import {sculptNpcScreenUiPositionV1} from './render/sculpt-npc-screen-ui-position-v1.js';
 import {
   createSculptDecorativeFringeV1,normalizeSculptDecorativeFringeV1,
@@ -1097,7 +1097,7 @@ function decorativeFringeRaster(chunk){
      previous.signature===signature)return previous;
   // Only an unpainted decorative chunk inherits the nearest saved WorldSurface
   // texture visually. Explicit authored fringe texture is never overwritten.
-  const fringePaintSurface=chunk.surface??sculptFringeVisualSurfaceV1(surface,{
+  const fringePaintSurface=sculptFringeResolvedPaintSurfaceV1(chunk.surface,surface,{
     col:chunk.col,row:chunk.row,columns:terrain.width,rows:terrain.height,
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height
   });
