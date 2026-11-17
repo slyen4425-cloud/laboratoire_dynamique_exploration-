@@ -36,8 +36,9 @@ test('native Play menu and real Sculpt runtime retain GenSRPG scoped navigation 
  assert.match(entry,/createNewExplorationPlay\(window\.localStorage,world,playOptions\)/);
  assert.match(entry,/readExplorationPlay\(window\.localStorage,world,playOptions\)/);
  assert.match(sculpt,/searchParams\.get\('adventureSession'\)/);
- assert.match(sculpt,/readExplorationPlay\(window\.localStorage,world,playOptions\)/);
- assert.match(sculpt,/createExplorationPlayProgressWriter\(window\.localStorage,world,playOptions\)/);
+ assert.match(sculpt,/readExplorationPlay\(worldStorage,world,playOptions\)/);
+  assert.match(sculpt,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
+ assert.match(sculpt,/createExplorationPlayProgressWriter\(worldStorage,world,playOptions\)/);
  assert.match(sculpt,/gensrpg\.exploration\.play\.return-title\.v1/);
  assert.match(sculpt,/persistPlayNavigationCheckpoint\(\)/);
 });
