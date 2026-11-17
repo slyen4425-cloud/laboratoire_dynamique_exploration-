@@ -47,10 +47,12 @@ test('World return survives fullscreen and refresh without a parallel world-stat
  assert.match(html,/#world-workspace-return-float\s*\{[^}]*position:absolute/);
  assert.match(html,/body\.world-area-editing\.sculpt-immersive\s+#world-workspace-return-float/);
  assert.match(main,/world-workspace-return-float'\)\.addEventListener\('click'/);
- assert.match(main,/readWorldAssemblerDraft\(window\.localStorage\)/);
- assert.match(main,/saveWorldAssemblerDraft\(window\.localStorage,sculptWorldDraft\)/);
+ assert.match(main,/readWorldAssemblerDraft\(worldStorage\)/);
+  assert.match(main,/const worldStorage=sculptUniverseId===null\?window\.localStorage/);
+ assert.match(main,/saveWorldAssemblerDraft\(worldStorage,sculptWorldDraft\)/);
  assert.match(assembler,/areaId=\s*'\+encodeURIComponent\(areaToOpen\)/);
- assert.match(assembler,/saveWorldAssemblerHandoff\(window\.sessionStorage,draft,areaToOpen\)/);
+ assert.match(assembler,/saveWorldAssemblerHandoff\(worldSessionStorage,draft,areaToOpen\)/);
+  assert.match(assembler,/const worldSessionStorage=universeId===null\?window\.sessionStorage/);
  assert.match(html,/id="sculpt-map-preset-select"/);
  assert.match(assembler,/listAvailableSculptMapPresets/);
 });
