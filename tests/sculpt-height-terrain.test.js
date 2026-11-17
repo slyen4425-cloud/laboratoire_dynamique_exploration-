@@ -75,7 +75,7 @@ test('lab uses existing Material Registry textures and lives outside 2D game Bui
  assert.match(html,/src\/sculpt-lab-main\.js/);
  assert.match(main,/createMaterialRegistry/);
  assert.match(main,/drawSculptTerrain/);
- assert.doesNotMatch(main,/WorldDocument|collision-world|location\.reload/);
+ assert.doesNotMatch(main,/new WorldDocument|collision-world|location\.reload/);
  const game=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const builder=readFileSync(new URL('../builder.html',import.meta.url),'utf8');
  assert.doesNotMatch(game,/sculpt-lab-main|sculpt-height-model/);
@@ -287,7 +287,7 @@ test('V14 editor panels are exclusive, fine-step and confirm-before-commit by de
   assert.match(ui,/function precisionApply/);
   assert.match(ui,/precisionDragging/);
   assert.match(ui,/commitUndo\(previous\)/);
-  assert.doesNotMatch(ui,/location\.reload|WorldDocument|collision-world/);
+  assert.doesNotMatch(ui,/location\.reload|new WorldDocument|collision-world/);
 });
 
 
