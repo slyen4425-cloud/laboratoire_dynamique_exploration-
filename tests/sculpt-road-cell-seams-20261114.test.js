@@ -30,3 +30,32 @@ test('the one native 2.5D WorldSurface painter clips routes to exact raster cell
  // No substitute geometry, no second WorldSurface or collision ownership.
  assert.doesNotMatch(painter,/new WorldSurface|new WorldDocument|localStorage/);
 });
+
+// The native raster cache uses integer cells with fractional DPR. Adjacent
+// clips must meet at one physical pixel boundary without old .65 px overlaps.
+test('painted dirt texture clips align on device pixels at 150% scale',()=>{
+ const rects=[];
+ const ctx={
+   beginPath(){},clip(){},
+   getTransform(){return {a:1.5,b:0,c:0,d:1.5,e:27,f:24};},
+   rect(x,y,width,height){rects.push({x,y,width,height});}
+ };
+ const {width:w,height:h}=SCULPT_TILE;
+ sculptPaintCellClipV1(ctx,0,0,w,h);
+ sculptPaintCellClipV1(ctx,w,0,w,h);
+ sculptPaintCellClipV1(ctx,0,h,w,h);
+ const px=rect=>({left:Math.round(rect.x*1.5+27),right:Math.round((rect.x+rect.width)*1.5+27),
+   top:Math.round(rect.y*1.5+24),bottom:Math.round((rect.y+rect.height)*1.5+24)});
+ const [a,b,c]=rects.map(px);
+ assert.equal(a.right,b.left);
+ assert.equal(a.bottom,c.top);
+ assert.ok(rects.every(rect=>Number.isInteger(rect.width*1.5)));
+ assert.ok(rects.every(rect=>Number.isInteger(rect.height*1.5)));
+});
+test('skewed camera retains unmodified logical clipping bounds',()=>{
+ const rects=[];
+ const ctx={beginPath(){},clip(){},rect(...v){rects.push(v)},
+   getTransform(){return {a:1.5,b:0.4,c:0,d:1,e:0,f:0}}};
+ sculptPaintCellClipV1(ctx,0,0,SCULPT_TILE.width,SCULPT_TILE.height);
+ assert.deepEqual(rects,[[0,0,SCULPT_TILE.width,SCULPT_TILE.height]]);
+});
