@@ -64,5 +64,10 @@ export function createExplorationUniverseHeroProjectsV1({storage,heroStore}={}){
    {...row,heroIds:[...row.heroIds,heroId]}:row)});
   return hero;
  }
- return Object.freeze({createEmpty,list,add});
+ function requireReady(id){
+  const p=get(id);
+  if(!p)throw new Error('Bibliothèque de héros de cet univers non initialisée');
+  return Object.freeze({id:p.id,heroIds:Object.freeze([...p.heroIds])});
+ }
+ return Object.freeze({createEmpty,list,add,requireReady});
 }
