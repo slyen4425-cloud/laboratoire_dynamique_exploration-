@@ -100,9 +100,10 @@ export function createExplorationUniverseWorldProjectsV1({storage,makeId}={}){
  function list(id){
   const p=entry(id);
   if(!p)return Object.freeze([]);
-  return Object.freeze(p.worldIds.map(world=>Object.freeze({
-   id:owned(id,world).id,projectId:id
-  })));
+  return Object.freeze(p.worldIds.map(world=>{
+   const document=owned(id,world);
+   return Object.freeze({id:document.id,areaCount:document.areas.length,projectId:id});
+  }));
  }
  function save(id,document){
   owned(id,document?.id);
