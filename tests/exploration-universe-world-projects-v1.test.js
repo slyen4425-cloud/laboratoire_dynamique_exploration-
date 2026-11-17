@@ -32,8 +32,10 @@ test('unsaved original world handoff is protected and no project overwrites it',
  const original=s.getItem('gensrpg.world-assembler.document.v1');
  const A=p.createBlank(a);
  assert.equal(s.getItem('gensrpg.world-assembler.document.v1'),original);
- assert.throws(()=>p.activate(a,A.id),/illisible|actif|monde/i);
+ assert.equal(p.activate(a,A.id).id,A.id,'scoped project activation succeeds');
  assert.equal(s.getItem('gensrpg.world-assembler.document.v1'),original);
+ const scopedKey='gensrpg.exploration.universe.workspace.v1:'+a+':gensrpg.world-assembler.document.v1';
+ assert.match(s.getItem(scopedKey),/world-00000001/);
 });
 test('copy is confirmed, uses canonical WorldDocument owner and different IDs',()=>{
  const s=store();s.removeItem('gensrpg.world-assembler.document.v1');
@@ -44,4 +46,22 @@ test('copy is confirmed, uses canonical WorldDocument owner and different IDs',(
  const B=p.copy({fromWorldId:A.id,toProjectId:b,confirmed:true});
  assert.notEqual(A.id,B.id);assert.equal(B.areas.length,A.areas.length);
  assert.equal(p.list(a)[0].id,A.id);assert.equal(p.list(b)[0].id,B.id);
+});
+
+test('two projects use separate native WorldAssembler drafts and can add maps without crossing worlds',()=>{
+ const s=store();s.removeItem('gensrpg.world-assembler.document.v1');
+ let i=0;const p=createExplorationUniverseWorldProjectsV1({storage:s,
+  makeId:()=>String(++i).padStart(8,'0')});
+ const A=p.createBlank(a),B=p.createBlank(b);
+ const extra=p.addBlank(a);
+ assert.equal(p.list(a).length,2);
+ assert.equal(p.list(b).length,1);
+ assert.equal(p.list(b)[0].id,B.id);
+ assert.notEqual(extra.id,A.id);
+ p.activate(a,A.id);
+ const scopeA='gensrpg.exploration.universe.workspace.v1:'+a+':gensrpg.world-assembler.document.v1';
+ const scopeB='gensrpg.exploration.universe.workspace.v1:'+b+':gensrpg.world-assembler.document.v1';
+ assert.equal(JSON.parse(s.getItem(scopeA)).id,A.id);
+ assert.equal(JSON.parse(s.getItem(scopeB)).id,B.id);
+ assert.equal(s.getItem('gensrpg.world-assembler.document.v1'),null);
 });
