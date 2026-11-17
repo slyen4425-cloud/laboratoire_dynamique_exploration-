@@ -237,7 +237,7 @@ export function createImmersiveEncounterHostV1({
         loading.className+=' combat-overlay__loading--art';
         loading.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+customCombatImage+'")';
         loading.style.backgroundPosition='center';
-        loading.style.backgroundSize='cover';
+        loading.style.backgroundSize='100% 100%, contain';
       } else if (documentRef.documentElement?.classList?.contains('capture-loading-art')) {
         loading.className+=' combat-overlay__loading--art';
       }
