@@ -1001,10 +1001,19 @@ try{
       await run(`(()=>{const variant=document.querySelector('#object-variant');
         variant.value='${view}';variant.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);
     }
-    await sleep(320);
-    const loaded=await run(`(()=>performance.getEntriesByType('resource').some(r=>
-       r.name.includes('building_house_snow_alpine_timber_2p5d_${view}_01.webp')&&r.responseEnd>0))()`);
-    if(!loaded)throw Error('Winter building WebP not loaded in real Chromium: '+view);
+    // Do not equate a fixed 320ms sleep with decoded remote WebP readiness.
+    // The real pixel/asset requirement is unchanged: a successful browser
+    // resource load is mandatory for EACH view. Slow hosted runners may load
+    // the same immutable author asset after a variable delay.
+    const fileName='building_house_snow_alpine_timber_2p5d_'+view+'_01.webp';
+    const assetReady=async()=>await run(`(()=>performance.getEntriesByType('resource').some(r=>
+      r.name.includes('${fileName}')&&r.responseEnd>0))()`);
+    let loaded=await assetReady();
+    for(let attempt=0;!loaded&&attempt<40;attempt++){
+      await sleep(150);
+      loaded=await assetReady();
+    }
+    if(!loaded)throw Error('Winter building WebP not loaded in real Chromium after 6s: '+view);
   }
   const snowScene=await run(`(()=>{
     document.querySelector('#scene-export').click();
