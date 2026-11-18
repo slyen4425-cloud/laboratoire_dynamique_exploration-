@@ -79,6 +79,26 @@ export function addImportedSculptMapPreset(storage,raw){
   const scene=importSculptPreviewScene(preset.scene);
   return saveSculptMapPreset(storage,scene,preset.name);
 }
+// Remove only user-owned local templates. Official bundled showcase candidates
+// live in source-controlled snapshots and cannot be deleted from browser storage.
+// WorldDocuments, saves and imported scenes live under independent keys.
+export function deleteSculptMapPreset(storage,id){
+  if(!storage||typeof storage.setItem!=='function')
+    throw Error('Stockage local indisponible');
+  const list=readSculptMapPresets(storage);
+  const next=list.filter(p=>p.id!==id);
+  if(next.length===list.length)throw Error('Carte personnelle introuvable');
+  if(next.length)storage.setItem(SCULPT_MAP_PRESET_KEY,JSON.stringify(next));
+  else storage.removeItem?.(SCULPT_MAP_PRESET_KEY);
+  return Object.freeze({removed:1,remaining:next.length});
+}
+export function clearPersonalSculptMapPresets(storage){
+  if(!storage||typeof storage.removeItem!=='function')
+    throw Error('Stockage local indisponible');
+  const count=readSculptMapPresets(storage).length;
+  storage.removeItem(SCULPT_MAP_PRESET_KEY);
+  return count;
+}
 // Gate placement is a projection of the existing Sculpt route, not a new
 // persisted Portal geometry or template topology. The WorldDocument is owner.
 export function mapEdgePoint(scene,side){
