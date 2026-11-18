@@ -653,7 +653,15 @@ body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([o
 .map-preset-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px}
 .map-preset-card{display:grid;gap:4px;text-align:left;padding:10px;min-height:57px;
  border-radius:9px;border:1px solid #54767b;background:#22404b;color:#ebfff7;touch-action:manipulation}
-.map-preset-card strong{font-size:.79rem;line-height:1.2}
+.map-preset-card strong{font-size:.79rem;line-height:1.2;overflow-wrap:anywhere}
+.map-preset-card-art{display:grid;place-items:center;min-height:49px;font-size:1.7rem;
+ border:1px solid #618987;border-radius:7px;background:linear-gradient(150deg,#396458,#122f44)}
+.map-preset-card[data-family="snow"] .map-preset-card-art{background:linear-gradient(150deg,#aac8d5,#35556d)}
+.map-preset-card[data-family="sand"] .map-preset-card-art{background:linear-gradient(150deg,#c69b64,#644a36)}
+.map-preset-card[data-family="plain"] .map-preset-card-art{background:linear-gradient(150deg,#75a47a,#2c5752)}
+.map-preset-card[data-family="mountain"] .map-preset-card-art{background:linear-gradient(150deg,#8f98a5,#394859)}
+.map-preset-card[data-family="sea"] .map-preset-card-art{background:linear-gradient(150deg,#4aadb8,#23526e)}
+.map-preset-card-badge{letter-spacing:.09em;font-weight:850;color:#bfeee1!important;font-size:.61rem!important}
 .map-preset-card small{font-size:.7rem;color:#b5d4d1}
 .map-preset-card[aria-pressed="true"]{border-color:#7fe7c4;background:#245c56;box-shadow:inset 0 0 0 1px #7fe7c4}
 .map-preset-card:focus-visible{outline:3px solid #aaf8e1;outline-offset:2px}
