@@ -107,7 +107,8 @@ import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1
 import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
 import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
-  addImportedSculptMapPreset,importSculptMapPreset} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
+  addImportedSculptMapPreset,importSculptMapPreset,
+  deleteSculptMapPreset,clearPersonalSculptMapPresets} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
@@ -121,6 +122,7 @@ import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_
  EXPLORATION_PEER_RECEIVER_READY_EVENT_V1
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
+import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js';
 import {createWorldBuilderDraft,connectWorldAreas,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {worldInteriorFloors,worldInteriorFloorPortals,worldInteriorHouseExit,
   addWorldInteriorFloor,changeWorldInteriorConnector,changeWorldInteriorDoor}
@@ -6557,15 +6559,20 @@ function installSculptMapPresetPalette(){
   };
   function refresh(selectedId){
     try{
-      const library=listAvailableSculptMapPresets(worldStorage);
+      const official=builtinSculptMapPresets(),personal=readSculptMapPresets(worldStorage);
+      const library=[...official,...personal];
       const previous=selectedId??select.value;
-      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
-        ...library.map(p=>new Option(p.name+' · '+p.scene.terrain.width+
-          ' × '+p.scene.terrain.height,p.id)));
-      if(library.some(p=>p.id===previous))select.value=previous;
+      renderSculptMapPresetChoicesV1({
+        select,gallery:$('sculpt-map-preset-gallery'),official,personal,
+        selectedId:previous
+      });
       const available=!!select.value;
       $('sculpt-map-preset-apply').disabled=!available;
       $('sculpt-map-preset-export').disabled=!available;
+      const local=personal.some(p=>p.id===select.value);
+      $('sculpt-map-preset-delete').disabled=!local;
+      $('sculpt-map-presets-clear').disabled=personal.length===0;
+      $('sculpt-map-preset-count').textContent=personal.length+' carte(s) personnelle(s)';
       return library;
     }catch(error){presetStatus(error.message,true);return [];}
   }
@@ -6588,6 +6595,29 @@ function installSculptMapPresetPalette(){
       const preset=saveSculptMapPreset(worldStorage,captureSculptArea(),name);
       refresh(preset.id);
       presetStatus('Carte « '+preset.name+' » enregistrée. Réutilisable dans le World Builder.');
+    }catch(error){presetStatus(error.message,true);}
+  });
+  $('sculpt-map-preset-delete').addEventListener('click',()=>{
+    try{
+      const personal=readSculptMapPresets(worldStorage);
+      const preset=personal.find(p=>p.id===select.value);
+      if(!preset)throw Error('Choisis une carte personnelle : les cartes fournies sont protégées.');
+      if(!window.confirm('Supprimer uniquement ta carte locale « '+preset.name+
+        ' » de cet appareil ? Aucun monde ou sauvegarde ne sera effacé.'))return;
+      deleteSculptMapPreset(worldStorage,preset.id);
+      refresh('');
+      presetStatus('Carte personnelle « '+preset.name+' » supprimée de cet appareil.');
+    }catch(error){presetStatus(error.message,true);}
+  });
+  $('sculpt-map-presets-clear').addEventListener('click',()=>{
+    try{
+      const personal=readSculptMapPresets(worldStorage);
+      if(!personal.length){presetStatus('Aucune carte personnelle à retirer.');return;}
+      if(!window.confirm('Supprimer les '+personal.length+
+        ' cartes personnelles enregistrées sur CET appareil ? Cela ne touche ni aux cartes fournies, ni à tes mondes, ni à tes sauvegardes. Exporte au besoin tes modèles avant de continuer.'))return;
+      const count=clearPersonalSculptMapPresets(worldStorage);
+      refresh('');
+      presetStatus(count+' carte(s) personnelle(s) supprimée(s). Les cartes fournies sont intactes.');
     }catch(error){presetStatus(error.message,true);}
   });
   $('sculpt-map-preset-apply').addEventListener('click',()=>{
