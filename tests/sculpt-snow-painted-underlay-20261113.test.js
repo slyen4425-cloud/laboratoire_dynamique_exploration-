@@ -15,10 +15,14 @@ test('Neige 1 reuses its official snow WorldSurface on the visual base below rai
     'south edge is raised, leaving a backing gap in the projected raster');
   const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
   const start=renderer.indexOf('export function drawSculptTerrain');
-  const base=renderer.indexOf('ctx.fillStyle=baseColor;ctx.fillRect(0,0,totalWidth,totalHeight)',start);
-  const underpaint=renderer.indexOf('const paintBacking=sculptPaintByCell',base);
+  // The native south backing is now textured when the artificial rim is
+  // disabled. Preserve the critical paint order without asserting the old
+  // solid baseColor leak under lifted snow/grass cells.
+  const base=renderer.indexOf('ctx.fillStyle=!drawOuterSouthRim&&pattern?pattern:baseColor;',start);
+  const backingRect=renderer.indexOf('ctx.fillRect(0,0,totalWidth,totalHeight)',base);
+  const underpaint=renderer.indexOf('const paintBacking=sculptPaintByCell',backingRect);
   const tops=renderer.indexOf('for(let row=0;row<terrain.height;row++){',underpaint);
-  assert.ok(start>=0&&base>start&&underpaint>base&&tops>underpaint,
+  assert.ok(start>=0&&base>start&&backingRect>base&&underpaint>backingRect&&tops>underpaint,
     'native snow-zone backing must paint before the existing raised terrain tops');
   assert.match(renderer.slice(underpaint,tops),/routes:\[\]/,
     'backing must not project dirt roads under cliffs');
