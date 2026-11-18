@@ -83,6 +83,11 @@ try{
     if(ready)break;await sleep(150);
   }
   if(!ready)throw Error('World Assembler failed to boot in browser');
+  const mapCardSelection=await run("(()=>{const cards=[...document.querySelectorAll('#world-map-preset-gallery .map-preset-card[data-source=official]')];const personal=document.querySelectorAll('#world-map-preset-gallery .map-preset-card[data-source=personal]');if(cards.length!==3)return {official:cards.length,personal:personal.length};cards[1].click();const select=document.querySelector('#world-map-preset-select');const create=document.querySelector('#world-map-preset-create');return {official:cards.length,personal:personal.length,chosen:select.value,card:document.querySelector('#world-map-preset-gallery .map-preset-card[aria-pressed=true]')?.dataset.presetId,ready:!create.disabled};})()");
+  if(mapCardSelection.official!==3||mapCardSelection.personal!==0||
+    !mapCardSelection.chosen||mapCardSelection.chosen!==mapCardSelection.card||
+    !mapCardSelection.ready)
+    throw Error('World Builder map cards not connected to real WorldArea create action '+JSON.stringify(mapCardSelection));
   const setup=await run(`(()=>{
     const add=document.querySelector('#area-add-form');
     document.querySelector('#area-name').value='Zone annexe';
