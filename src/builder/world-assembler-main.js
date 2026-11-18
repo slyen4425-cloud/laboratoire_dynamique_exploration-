@@ -743,7 +743,13 @@ function installWorldAssembler(){
     byId('world-encounters-initialize').hidden=!dormant;
   }
   on(byId('world-map-preset-select'),'change',()=>{
-    byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
+    const selectedId=byId('world-map-preset-select').value;
+    byId('world-map-preset-create').disabled=!selectedId;
+    // Selection is UI-only: keep the source cards marked without recreating
+    // the gallery (which would lose keyboard focus after a card tap).
+    for(const card of byId('world-map-preset-gallery')
+      .querySelectorAll('.map-preset-card'))
+      card.setAttribute('aria-pressed',String(card.dataset.presetId===selectedId));
     try{
       const preset=listAvailableSculptMapPresets(worldStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);
