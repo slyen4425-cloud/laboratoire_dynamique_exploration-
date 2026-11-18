@@ -14,7 +14,10 @@ test('landscape layout retains one authoritative control per action',()=>{
   assert.match(css,/@media \(orientation:landscape\) and \(max-height:700px\)/);
   assert.match(css,/\.workspace\.structure-open \.left-rail/);
   assert.match(js,/structureToggle\.setAttribute\('aria-expanded'/);
-  assert.match(js,/on\(byId\('area-list'\),'click',\(\)=>setStructureOpen\(false\)\)/);
+  assert.doesNotMatch(html,/id="area-list"/);
+  assert.doesNotMatch(js,/byId\('area-list'\)/);
+  assert.match(js,/nodes.append\(nodeButton\(/);
+  assert.match(html,/<details class="world-library-controls"/);
 });
 test('World Builder no longer presents retired 2D editor or event button',()=>{
   assert.doesNotMatch(js,/openAreaEditor\('\.\/builder\.html\?worldAssembler=1'\)/);
