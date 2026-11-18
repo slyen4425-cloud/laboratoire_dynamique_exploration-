@@ -1709,6 +1709,11 @@ function setEditorKind(kind){
   editorKind=kind;
   $('ground-tools').hidden=kind!=='ground';
   $('water-tools').hidden=kind!=='water';
+  // Opening the corresponding workshop is purely presentational. The quick
+  // toolbar and native terrain tools remain the ONLY command owners.
+  const activeToolGroup=$(kind==='ground'?'ground-tools':'water-tools')
+    .closest('.sculpt-tool-group');
+  if(activeToolGroup)activeToolGroup.open=true;
   document.querySelectorAll('[data-panel="ground"]').forEach(element=>{
     element.hidden=kind!=='ground';
   });
