@@ -11,8 +11,10 @@ export function renderSculptMapPresetChoicesV1({
     {label:'Mes cartes enregistrées sur cet appareil',type:'personal',presets:personal}
   ];
   const all=[...official,...personal];
-  const previous=selectedId===null?(gallery.dataset.selectedId??''):selectedId;
+  const formerSelection=gallery.dataset.selectedId??'';
+  const previous=selectedId===null?formerSelection:selectedId;
   gallery.dataset.selectedId=all.some(p=>p.id===previous)?previous:'';
+  const selectionChanged=gallery.dataset.selectedId!==formerSelection;
   const expanded=new Set([...gallery.querySelectorAll('.map-preset-shelf[open]')]
     .map(item=>item.dataset.source));
   const shelves=[];
@@ -22,7 +24,9 @@ export function renderSculptMapPresetChoicesV1({
     shelf.dataset.source=group.type;
     shelf.setAttribute('aria-label',group.label);
     const containsSelected=group.presets.some(p=>p.id===gallery.dataset.selectedId);
-    shelf.open=expanded.has(group.type)||containsSelected;
+    // Keep the user's own folded state during graph/scene refresh.
+    // Open a shelf automatically only when Save explicitly chooses a NEW card.
+    shelf.open=expanded.has(group.type)||(selectionChanged&&containsSelected);
     const summary=document.createElement('summary');
     summary.className='map-preset-shelf-title';
     summary.textContent=group.label+' · '+group.presets.length;
