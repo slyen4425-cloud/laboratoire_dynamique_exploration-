@@ -122,7 +122,7 @@ import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_
  EXPLORATION_PEER_RECEIVER_READY_EVENT_V1
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
-import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js';
+import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
 import {createWorldBuilderDraft,connectWorldAreas,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {worldInteriorFloors,worldInteriorFloorPortals,worldInteriorHouseExit,
   addWorldInteriorFloor,changeWorldInteriorConnector,changeWorldInteriorDoor}
