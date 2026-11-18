@@ -780,7 +780,15 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   if(pattern?.setTransform&&typeof DOMMatrix!=='undefined')
     pattern.setTransform(new DOMMatrix().scale(.55));
   const totalWidth=terrain.width*w,totalHeight=terrain.height*h;
-  ctx.fillStyle=baseColor;ctx.fillRect(0,0,totalWidth,totalHeight);
+  // The outer cliff is deliberately disabled in the canonical 2.5D editor
+  // and its Tester, including the decorative south fringe. Raised last-row
+  // tops end BEFORE the bottom of this backing rectangle; a solid baseColor
+  // leaked through as the broad grey/green slanted strip on Android. Carry
+  // the EXACT same Material Registry texture underneath the raised tops.
+  // Keep the original backing for callers that explicitly draw a cliff rim.
+  // This is visual-only: no new cells, heights, collisions or saved paint.
+  ctx.fillStyle=!drawOuterSouthRim&&pattern?pattern:baseColor;
+  ctx.fillRect(0,0,totalWidth,totalHeight);
   const faces=sculptFaces(terrain);
   const south=new Map(),east=new Map();
   for(const face of faces)(face.orientation==='south'?south:east).set(face.y*terrain.width+face.x,face);

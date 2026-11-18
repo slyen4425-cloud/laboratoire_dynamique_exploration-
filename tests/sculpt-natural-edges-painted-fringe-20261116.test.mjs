@@ -70,3 +70,61 @@ test('erased decorative fringe inherits the actual snow edge without modifying s
     col:0,row:24,columns:36,rows:24
   }),painted,'explicit decorative painting retains sole authority');
 });
+
+import {drawSculptTerrain} from '../src/render/sculpt-height-renderer.js';
+import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
+
+function southBackingCanvas(pattern){
+  const fills=[];
+  const context={
+    fillStyle:null,
+    createPattern(){return pattern;},
+    fillRect(x,y,width,height){
+      fills.push({x,y,width,height,style:this.fillStyle});
+    },
+    createLinearGradient(){return {addColorStop(){}};},
+    save(){},restore(){},beginPath(){},closePath(){},rect(){},clip(){},
+    moveTo(){},lineTo(){},quadraticCurveTo(){},bezierCurveTo(){},
+    fill(){},stroke(){},drawImage(){},translate(){},scale(){}
+  };
+  return {context,fills};
+}
+test('the SAME authored ground texture reaches the raised south backing (grass, snow, dirt)',()=>{
+  const terrain=createSculptTerrain({width:8,height:8});
+  const unchanged=JSON.stringify(terrain);
+  for(const [materialId,baseColor] of [
+    ['grass.forest','#536247'],['ground.snow','#d4e5e9'],
+    ['ground.forest_floor','#5c4930']
+  ]){
+    const nativeTexture={id:materialId};
+    const nativePattern={owner:materialId};
+    const {context,fills}=southBackingCanvas(nativePattern);
+    const result=drawSculptTerrain(context,{
+      terrain,material:{render:{baseColor}},texture:nativeTexture,
+      drawOuterSouthRim:false
+    });
+    assert.equal(fills[0]?.style,nativePattern,
+      'untextured south backing: '+materialId);
+    assert.deepEqual(fills[0]&&[fills[0].x,fills[0].y,
+      fills[0].width,fills[0].height],[0,0,8*28,8*21]);
+    assert.equal(result.outerCliffRuns,0);
+    assert.equal(JSON.stringify(terrain),unchanged,'never alter native heightfield');
+  }
+});
+test('rim-owning renderer and missing-image fallback retain their previous backing color',()=>{
+  const baseColor='#536247',pattern={owner:'native'};
+  const flat=createSculptTerrain({width:8,height:8,levels:Array(64).fill(0)});
+  const old=southBackingCanvas(pattern);
+  const oldResult=drawSculptTerrain(old.context,{
+    terrain:flat,material:{render:{baseColor}},texture:{id:'grass'},
+    drawOuterSouthRim:true
+  });
+  assert.equal(old.fills[0]?.style,baseColor,'legacy cliff rim background unchanged');
+  assert.equal(oldResult.outerCliffRuns,0);
+  const missing=southBackingCanvas(null);
+  drawSculptTerrain(missing.context,{
+    terrain:flat,material:{render:{baseColor}},texture:null,
+    drawOuterSouthRim:false
+  });
+  assert.equal(missing.fills[0]?.style,baseColor,'image not loaded still degrades safely');
+});
