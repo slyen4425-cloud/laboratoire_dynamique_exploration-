@@ -649,7 +649,9 @@ body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([o
 .map-preset-intro{margin:2px 0;font-size:.76rem;line-height:1.4;color:#d3eee9}
 .map-preset-shelf{border:1px solid #4c7377;border-radius:11px;padding:7px;background:#0e2933}
 .map-preset-shelf[data-source="official"]{border-color:#728e9c;background:#192e3d}
-.map-preset-shelf-title{display:block;color:#d9f6f2;font-size:.77rem;padding:3px 3px 7px}
+.map-preset-shelf-title{display:list-item;cursor:pointer;touch-action:manipulation;
+ min-height:42px;align-content:center;color:#d9f6f2;font-size:.77rem;font-weight:800;padding:9px 6px}
+.map-preset-shelf[open]>.map-preset-shelf-title{border-bottom:1px solid #497275;margin-bottom:7px}
 .map-preset-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px}
 .map-preset-card{display:grid;gap:4px;text-align:left;padding:10px;min-height:57px;
  border-radius:9px;border:1px solid #54767b;background:#22404b;color:#ebfff7;touch-action:manipulation}
