@@ -6574,7 +6574,8 @@ function installSculptMapPresetPalette(){
       const available=!!select.value;
       $('sculpt-map-preset-apply').disabled=!available;
       $('sculpt-map-preset-export').disabled=!available;
-      const local=personal.some(p=>p.id===select.value);
+      const local=personal.some(p=>p.id===select.value)&&
+        !official.some(p=>p.id===select.value);
       $('sculpt-map-preset-delete').disabled=!local;
       $('sculpt-map-presets-clear').disabled=personal.length===0;
       $('sculpt-map-preset-count').textContent=personal.length+' carte(s) personnelle(s)';
@@ -6583,7 +6584,16 @@ function installSculptMapPresetPalette(){
   }
   const selected=()=>listAvailableSculptMapPresets(worldStorage).find(p=>p.id===select.value);
   select.addEventListener('change',()=>{
-    refresh(select.value);
+    // Preserve card focus while reflecting the chosen template. Rebuilding
+    // all buttons on every tap hides keyboard focus on mobile/desktop.
+    for(const card of $('sculpt-map-preset-gallery').querySelectorAll('.map-preset-card'))
+      card.setAttribute('aria-pressed',String(card.dataset.presetId===select.value));
+    const available=!!select.value;
+    $('sculpt-map-preset-apply').disabled=!available;
+    $('sculpt-map-preset-export').disabled=!available;
+    const official=builtinSculptMapPresets();
+    $('sculpt-map-preset-delete').disabled=!readSculptMapPresets(worldStorage)
+      .some(p=>p.id===select.value)||official.some(p=>p.id===select.value);
     const preset=selected();
     presetStatus(preset
       ?'Modèle « '+preset.name+' » sélectionné dans la liste, mais pas encore chargé sur la carte.'
