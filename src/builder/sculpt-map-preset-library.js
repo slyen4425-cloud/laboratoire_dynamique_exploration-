@@ -83,13 +83,14 @@ export function addImportedSculptMapPreset(storage,raw){
 // live in source-controlled snapshots and cannot be deleted from browser storage.
 // WorldDocuments, saves and imported scenes live under independent keys.
 export function deleteSculptMapPreset(storage,id){
-  if(!storage||typeof storage.setItem!=='function')
+  if(!storage||typeof storage.setItem!=='function'||
+     typeof storage.removeItem!=='function')
     throw Error('Stockage local indisponible');
   const list=readSculptMapPresets(storage);
   const next=list.filter(p=>p.id!==id);
   if(next.length===list.length)throw Error('Carte personnelle introuvable');
   if(next.length)storage.setItem(SCULPT_MAP_PRESET_KEY,JSON.stringify(next));
-  else storage.removeItem?.(SCULPT_MAP_PRESET_KEY);
+  else storage.removeItem(SCULPT_MAP_PRESET_KEY);
   return Object.freeze({removed:1,remaining:next.length});
 }
 export function clearPersonalSculptMapPresets(storage){
