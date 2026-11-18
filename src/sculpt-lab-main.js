@@ -6553,10 +6553,10 @@ function installSculptWorldAreaEditing(){
 // Local templates are versioned snapshots of the existing Sculpt scene, not
 // an alternative document de monde. Reusing them always enters the regular editor.
 function installSculptMapPresetPalette(){
-  const select=$('sculpt-map-preset-select');
+  const gallery=$('sculpt-map-preset-gallery');
   // The frozen V80 layout has no authored map-preset palette.
   // Preserve its editor without a second interface or hidden DOM clones.
-  if(!select)return;
+  if(!gallery)return;
   const presetStatus=(message,error=false)=>{
     const label=$('sculpt-map-preset-status');
     label.textContent=message;label.style.color=error?'#ffccbb':'#b7f2d6';
@@ -6566,37 +6566,37 @@ function installSculptMapPresetPalette(){
     try{
       const official=builtinSculptMapPresets(),personal=readSculptMapPresets(worldStorage);
       const library=[...official,...personal];
-      const previous=selectedId??select.value;
+      const previous=selectedId??gallery.dataset.selectedId;
       renderSculptMapPresetChoicesV1({
-        select,gallery:$('sculpt-map-preset-gallery'),official,personal,
+        gallery,official,personal,
         selectedId:previous
       });
-      const available=!!select.value;
+      const available=!!gallery.dataset.selectedId;
       $('sculpt-map-preset-apply').disabled=!available;
       $('sculpt-map-preset-export').disabled=!available;
-      const local=personal.some(p=>p.id===select.value)&&
-        !official.some(p=>p.id===select.value);
+      const local=personal.some(p=>p.id===gallery.dataset.selectedId)&&
+        !official.some(p=>p.id===gallery.dataset.selectedId);
       $('sculpt-map-preset-delete').disabled=!local;
       $('sculpt-map-presets-clear').disabled=personal.length===0;
       $('sculpt-map-preset-count').textContent=personal.length+' carte(s) personnelle(s)';
       return library;
     }catch(error){presetStatus(error.message,true);return [];}
   }
-  const selected=()=>listAvailableSculptMapPresets(worldStorage).find(p=>p.id===select.value);
-  select.addEventListener('change',()=>{
+  const selected=()=>listAvailableSculptMapPresets(worldStorage).find(p=>p.id===gallery.dataset.selectedId);
+  gallery.addEventListener('change',()=>{
     // Preserve card focus while reflecting the chosen template. Rebuilding
     // all buttons on every tap hides keyboard focus on mobile/desktop.
-    for(const card of $('sculpt-map-preset-gallery').querySelectorAll('.map-preset-card'))
-      card.setAttribute('aria-pressed',String(card.dataset.presetId===select.value));
-    const available=!!select.value;
+    for(const card of gallery.querySelectorAll('.map-preset-card'))
+      card.setAttribute('aria-pressed',String(card.dataset.presetId===gallery.dataset.selectedId));
+    const available=!!gallery.dataset.selectedId;
     $('sculpt-map-preset-apply').disabled=!available;
     $('sculpt-map-preset-export').disabled=!available;
     const official=builtinSculptMapPresets();
     $('sculpt-map-preset-delete').disabled=!readSculptMapPresets(worldStorage)
-      .some(p=>p.id===select.value)||official.some(p=>p.id===select.value);
+      .some(p=>p.id===gallery.dataset.selectedId)||official.some(p=>p.id===gallery.dataset.selectedId);
     const preset=selected();
     presetStatus(preset
-      ?'Modèle « '+preset.name+' » sélectionné dans la liste, mais pas encore chargé sur la carte.'
+      ?'Modèle « '+preset.name+' » sélectionné, mais pas encore chargé sur la carte.'
       :'Aucun modèle choisi. La carte affichée reste inchangée.');
   });
   $('sculpt-map-preset-save').addEventListener('click',()=>{
@@ -6615,7 +6615,7 @@ function installSculptMapPresetPalette(){
   $('sculpt-map-preset-delete').addEventListener('click',()=>{
     try{
       const personal=readSculptMapPresets(worldStorage);
-      const preset=personal.find(p=>p.id===select.value);
+      const preset=personal.find(p=>p.id===gallery.dataset.selectedId);
       if(!preset)throw Error('Choisis une carte personnelle : les cartes fournies sont protégées.');
       if(!window.confirm('Supprimer uniquement ta carte locale « '+preset.name+
         ' » de cet appareil ? Aucun monde ou sauvegarde ne sera effacé.'))return;
