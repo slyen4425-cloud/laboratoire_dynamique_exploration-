@@ -47,12 +47,26 @@ export function renderSculptMapPresetChoicesV1({
       card.setAttribute('aria-pressed',String(preset.id===selectedId));
       card.setAttribute('aria-label',(group.type==='official'
         ?'Carte fournie : ':'Ma création : ')+preset.name);
+      // Decorative landscape marker, never a forged preview screenshot or
+      // saved thumbnail. The source terrain family is already in the preset.
+      const family=preset.scene.surface?.baseTerrainFamilyId;
+      const themes={snow:'❄️',forest:'🌲',plain:'🌾',sand:'🏜️',
+        mountain:'⛰️',volcano:'🌋',sea:'🌊'};
+      const safeFamily=Object.hasOwn(themes,family)?family:'plain';
+      card.dataset.family=safeFamily;
+      const art=document.createElement('span');
+      art.className='map-preset-card-art';
+      art.setAttribute('aria-hidden','true');
+      art.textContent=themes[safeFamily];
+      const badge=document.createElement('small');
+      badge.className='map-preset-card-badge';
+      badge.textContent=group.type==='official'?'CARTE FOURNIE':'MA CRÉATION';
       const name=document.createElement('strong');
       name.textContent=preset.name;
       const size=document.createElement('small');
       size.textContent=preset.scene.terrain.width+' × '+
         preset.scene.terrain.height+' cases';
-      card.append(name,size);
+      card.append(art,badge,name,size);
       card.addEventListener('click',()=>{
         select.value=preset.id;
         select.dispatchEvent(new Event('change',{bubbles:true}));
