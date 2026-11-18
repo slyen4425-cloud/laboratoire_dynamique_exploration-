@@ -71,8 +71,8 @@ test('both editors show the native official and personal card shelves, with guar
   const gallery=readFileSync(new URL('../src/builder/sculpt-map-preset-choices-ui-v1.js',import.meta.url),'utf8');
   assert.match(ui,/id="sculpt-map-preset-gallery"/);
   assert.match(world,/id="world-map-preset-gallery"/);
-  assert.match(gallery,/Cartes fournies · vitrine du projet/);
-  assert.match(gallery,/Mes créations · sur cet appareil/);
+  assert.match(gallery,/Cartes proposées par l’éditeur/);
+  assert.match(gallery,/Mes cartes enregistrées sur cet appareil/);
   assert.match(mapJS,/renderSculptMapPresetChoicesV1/);
   assert.match(worldJS,/renderSculptMapPresetChoicesV1/);
   assert.match(mapJS,/clearPersonalSculptMapPresets/);
