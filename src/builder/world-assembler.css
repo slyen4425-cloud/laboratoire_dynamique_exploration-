@@ -40,10 +40,6 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 .field{display:grid;gap:6px;font-size:12px;font-weight:650;color:#bdd3d7;margin-bottom:11px}
 .field input,.field select{width:100%;min-width:0;padding:10px;background:#0d1d27;color:#edf5f4;border:1px solid #42616b;border-radius:8px;min-height:40px}
 .field input::placeholder{color:#829aa1}.section-head{margin:18px 0 10px}.section-head h2{font-size:13px;margin:0}
-.area-list{display:grid;gap:7px;max-height:31vh;overflow:auto;padding:2px 3px 2px 0}
-.area-list button{text-align:left;display:flex;align-items:center;gap:10px;width:100%;min-height:51px;background:#142c38;border:1px solid #335867}
-.area-list button.active{border-color:#89dac5;background:#1b454a}.area-list .mini-icon{font-size:18px}.area-list small{display:block;font-size:10px;color:#8eacb4;font-weight:500;margin-top:3px}
-.area-list .mini-copy{min-width:0;overflow:hidden;text-overflow:ellipsis}.area-list .mini-copy strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 .add-panel{margin-top:16px;display:grid;gap:5px;padding:13px 10px;background:#172f39;border:1px solid #375765;border-radius:13px}
 .add-panel>strong{font-size:12px;margin-bottom:4px}.add-panel .field{margin-bottom:4px}
 .help-note{color:#8da7ae;font-size:11px;line-height:1.5;margin:15px 2px}.help-note b{color:#c8e7e2}
@@ -83,13 +79,17 @@ h1{font-size:21px;line-height:1.15;margin:4px 0 0;font-weight:850;letter-spacing
 .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:19px}
 @media(max-width:1100px){.workspace{grid-template-columns:213px minmax(0,1fr)}.left-rail,.inspector{padding:12px 10px 20px}.canvas-header{padding:11px 13px}.canvas-header h2{font-size:18px}.canvas-header p{display:none}}
 @media(max-width:780px){.app-header{height:61px;padding:7px 10px}.app-header h1{font-size:16px}.header-actions{gap:5px}.save-state{display:none}.header-actions button,.import-btn{font-size:10px;padding:8px}.workspace{grid-template-columns:175px minmax(0,1fr)}.left-rail,.inspector{padding:9px 8px}.world-node{width:175px;min-height:91px}.canvas-header{padding:7px 9px}.canvas-header h2{font-size:15px}.canvas-actions button{font-size:10px;padding:6px}.stat-row{grid-template-columns:1fr 1fr}}
-@media(orientation:portrait) and (max-width:640px){body{overflow:auto}.app-shell{min-height:100dvh;height:auto}.workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(360px,60dvh) auto}.left-rail{border-right:0;border-bottom:1px solid #36515e}.area-list{grid-template-columns:1fr 1fr;max-height:none}.inspector{border-left:0;border-top:1px solid #36515e}.header-actions{flex-wrap:wrap;justify-content:flex-end}.canvas-header p{display:block}.app-toast{position:sticky;bottom:0}}
+@media(orientation:portrait) and (max-width:640px){body{overflow:auto}.app-shell{min-height:100dvh;height:auto}.workspace{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(360px,60dvh) auto}.left-rail{border-right:0;border-bottom:1px solid #36515e}.inspector{border-left:0;border-top:1px solid #36515e}.header-actions{flex-wrap:wrap;justify-content:flex-end}.canvas-header p{display:block}.app-toast{position:sticky;bottom:0}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 
 /* One official WorldDocument archive, not a second map editor. */
-.world-library-controls{display:grid;gap:7px;margin:13px 0 15px;padding:10px;
- border:1px solid #345b65;border-radius:11px;background:#142e36}
-.world-library-controls h2{font-size:14px;margin:0;color:#c6f2e5}
+.world-library-controls{margin:13px 0 15px;border:1px solid #345b65;
+ border-radius:11px;background:#142e36}
+.world-library-controls>summary{cursor:pointer;touch-action:manipulation;
+ padding:12px 11px;min-height:44px;font-size:13px;font-weight:800;
+ color:#c6f2e5}
+.world-library-controls[open]>summary{border-bottom:1px solid #345b65}
+.world-library-content{display:grid;gap:7px;padding:10px}
 .world-library-controls p{font-size:11px;line-height:1.4;color:#a9c6c8;margin:0}
 .world-library-controls .field{margin:4px 0 0}
 .world-library-controls button{min-height:40px;padding:7px 9px;font-size:12px}
@@ -276,7 +276,10 @@ dialog.area-editor-dialog .portal-row .portal-open-area{min-height:36px;padding:
 #world-map-preset-library .map-preset-gallery{display:grid;gap:8px;max-height:33dvh;overflow:auto;overscroll-behavior:contain}
 #world-map-preset-library .map-preset-shelf{padding:7px;background:#112a34;border:1px solid #4f7880;border-radius:10px}
 #world-map-preset-library .map-preset-shelf[data-source="official"]{background:#1c2e3c;border-color:#7992a2}
-#world-map-preset-library .map-preset-shelf-title{display:block;font-size:12px;color:#e4fff4;margin:0 0 8px}
+#world-map-preset-library .map-preset-shelf-title{display:list-item;cursor:pointer;touch-action:manipulation;
+ min-height:42px;align-content:center;padding:9px 6px;font-size:12px;font-weight:800;color:#e4fff4}
+#world-map-preset-library .map-preset-shelf[open]>.map-preset-shelf-title{margin-bottom:8px;
+ border-bottom:1px solid #456b76}
 #world-map-preset-library .map-preset-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
 #world-map-preset-library .map-preset-card{display:grid;align-content:center;gap:5px;
  text-align:left;min-height:62px;min-width:0;padding:8px;border:1px solid #5d8991;
@@ -294,8 +297,6 @@ dialog.area-editor-dialog .portal-row .portal-open-area{min-height:36px;padding:
 #world-map-preset-library .map-preset-card[aria-pressed="true"]{background:#265b52;border-color:#93efd3;box-shadow:inset 0 0 0 1px #93efd3}
 #world-map-preset-library .map-preset-card:focus-visible{outline:3px solid #acf9e6;outline-offset:2px}
 #world-map-preset-library .map-preset-shelf-empty{padding:7px;display:block}
-#world-map-preset-library .world-preset-list-fallback{border:1px solid #4b717d;border-radius:8px;padding:7px}
-#world-map-preset-library .world-preset-list-fallback summary{cursor:pointer;min-height:38px;display:flex;align-items:center;font-size:11px}
 @media(max-width:410px){
  #world-map-preset-library .map-preset-card-grid{grid-template-columns:minmax(0,1fr)}
 }
