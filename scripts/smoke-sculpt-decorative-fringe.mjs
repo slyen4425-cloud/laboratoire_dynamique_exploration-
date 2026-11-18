@@ -83,6 +83,16 @@ try{
   await command('Runtime.enable');
   await command('Page.enable');
   await until("typeof window.__sculptLabProbe==='function' && document.querySelector('#sculpt-canvas')?.width>0",'Sculpt lab');
+  // A creator must see source-labeled card shelves without reading a dropdown.
+  const gallery=await until("document.querySelectorAll('#sculpt-map-preset-gallery [data-source=official].map-preset-card').length===3 && ({official:document.querySelectorAll('#sculpt-map-preset-gallery [data-source=official].map-preset-card').length,personal:document.querySelectorAll('#sculpt-map-preset-gallery [data-source=personal].map-preset-card').length})",'source-owned map cards');
+  if(gallery.official!==3||gallery.personal!==0)
+    throw Error('Unexpected bundled/personal map cards '+JSON.stringify(gallery));
+  // UI-driven local template lifecycle: one delete, then purge all. Never
+  // touch WorldArea documents or the bundled three source snapshots.
+  const libraryUi=await run("(()=>{ const name=document.querySelector('#sculpt-map-preset-name');const save=document.querySelector('#sculpt-map-preset-save');const select=document.querySelector('#sculpt-map-preset-select');window.confirm=()=>true;name.value='Essai tactile 1';save.click();const card=document.querySelector('#sculpt-map-preset-gallery [data-source=personal].map-preset-card');if(!card)return {error:'No personal saved card'};card.click();if(select.value!==card.dataset.presetId)return {error:'Card did not select'};const count1=document.querySelectorAll('#sculpt-map-preset-gallery [data-source=personal].map-preset-card').length;document.querySelector('#sculpt-map-preset-delete').click();const count2=document.querySelectorAll('#sculpt-map-preset-gallery [data-source=personal].map-preset-card').length;name.value='Essai tactile 2';save.click();name.value='Essai tactile 3';save.click();const count3=document.querySelectorAll('#sculpt-map-preset-gallery [data-source=personal].map-preset-card').length;document.querySelector('#sculpt-map-presets-clear').click();return {count1,count2,count3,final:document.querySelectorAll('#sculpt-map-preset-gallery [data-source=personal].map-preset-card').length,official:document.querySelectorAll('#sculpt-map-preset-gallery [data-source=official].map-preset-card').length,local:localStorage.getItem('gensrpg.exploration.map-presets.v1')};})()");
+  if(libraryUi.error||libraryUi.count1!==1||libraryUi.count2!==0||libraryUi.count3!==2||
+    libraryUi.final!==0||libraryUi.official!==3||libraryUi.local!==null)
+    throw Error('Local map library UI regression '+JSON.stringify(libraryUi));
   const areaId=await run("(async()=>{ const [{createBlankWorldBuilderDraft},{saveWorldAssemblerDraft}]=await Promise.all([import('./src/builder/world-builder-draft.js'),import('./src/builder/world-assembler-handoff.js')]); const world=createBlankWorldBuilderDraft({id:'border-check',width:1008,height:504});saveWorldAssemblerDraft(localStorage,world);return world.initialAreaId;})()");
   if(!areaId)throw Error('Cannot create map');
   await command('Page.navigate',{url:url+'/sculpt-lab.html?worldAssembler=1&areaId='+encodeURIComponent(areaId)});

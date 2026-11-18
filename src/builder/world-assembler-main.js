@@ -12,6 +12,9 @@ import {
 } from './world-assembler-handoff.js';
 import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
+import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
+import {readSculptMapPresets} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
+import {renderSculptMapPresetChoicesV1} from './sculpt-map-preset-choices-ui-v1.js';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
 import {createExplorationUniverseWorldProjectsV1} from './exploration-universe-world-projects-v1.js';
@@ -714,11 +717,12 @@ function installWorldAssembler(){
   function refreshMapPresets(){
     const select=byId('world-map-preset-select'),previous=select.value;
     try{
-      const presets=listAvailableSculptMapPresets(worldStorage);
-      select.replaceChildren(new Option('Choisir une carte enregistrée',''),
-        ...presets.map(p=>new Option(p.name+' · '+p.scene.terrain.width+' × '+
-          p.scene.terrain.height,p.id)));
-      if(presets.some(p=>p.id===previous))select.value=previous;
+      const official=builtinSculptMapPresets(),personal=readSculptMapPresets(worldStorage);
+      const presets=[...official,...personal];
+      renderSculptMapPresetChoicesV1({
+        select,gallery:byId('world-map-preset-gallery'),official,personal,
+        selectedId:previous
+      });
       byId('world-map-preset-create').disabled=!select.value;
       byId('world-map-preset-info').textContent=presets.length
         ?'Chaque préset crée une WorldArea indépendante. Un donjon sera relié à la zone sélectionnée.'
@@ -739,7 +743,13 @@ function installWorldAssembler(){
     byId('world-encounters-initialize').hidden=!dormant;
   }
   on(byId('world-map-preset-select'),'change',()=>{
-    byId('world-map-preset-create').disabled=!byId('world-map-preset-select').value;
+    const selectedId=byId('world-map-preset-select').value;
+    byId('world-map-preset-create').disabled=!selectedId;
+    // Selection is UI-only: keep the source cards marked without recreating
+    // the gallery (which would lose keyboard focus after a card tap).
+    for(const card of byId('world-map-preset-gallery')
+      .querySelectorAll('.map-preset-card'))
+      card.setAttribute('aria-pressed',String(card.dataset.presetId===selectedId));
     try{
       const preset=listAvailableSculptMapPresets(worldStorage)
         .find(p=>p.id===byId('world-map-preset-select').value);

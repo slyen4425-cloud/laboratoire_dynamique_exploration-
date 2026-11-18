@@ -65,10 +65,14 @@
     <details class="world-preset-details">
      <summary>🗺 Cartes présets (ouvrir pour créer)</summary>
      <section class="add-panel" id="world-map-preset-library" aria-label="Bibliothèque de cartes présets">
-     <strong>🗺 Mes cartes présets</strong>
-     <label class="field">Carte enregistrée
-      <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
-     </label>
+     <strong>🗺 Choisir une carte</strong>
+     <p class="help-note">Cartes fournies pour le projet d'un côté, créations personnelles de cet appareil de l'autre. Aucune carte personnelle ne devient officielle sans publication validée.</p>
+     <div id="world-map-preset-gallery" class="map-preset-gallery" aria-label="Cartes fournies et personnelles"></div>
+     <details class="world-preset-list-fallback"><summary>Choisir dans une liste</summary>
+      <label class="field">Carte enregistrée
+       <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
+      </label>
+     </details>
      <label class="field">Nom de la nouvelle zone
       <input id="world-map-preset-name" type="text" maxlength="64" placeholder="Ex. Clairière du village">
      </label>

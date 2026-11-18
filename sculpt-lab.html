@@ -644,6 +644,50 @@ body.world-area-editing.sculpt-immersive #object-controls #sculpt-map-preset-pan
 }
 body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([open]){width:100%;max-width:100%}
 
+/* Game-like card gallery, with identical core controls and one storage owner. */
+.map-preset-gallery{display:grid;gap:9px;max-height:28dvh;overflow:auto;overscroll-behavior:contain}
+.map-preset-intro{margin:2px 0;font-size:.76rem;line-height:1.4;color:#d3eee9}
+.map-preset-shelf{border:1px solid #4c7377;border-radius:11px;padding:7px;background:#0e2933}
+.map-preset-shelf[data-source="official"]{border-color:#728e9c;background:#192e3d}
+.map-preset-shelf-title{display:block;color:#d9f6f2;font-size:.77rem;padding:3px 3px 7px}
+.map-preset-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px}
+.map-preset-card{display:grid;gap:4px;text-align:left;padding:10px;min-height:57px;
+ border-radius:9px;border:1px solid #54767b;background:#22404b;color:#ebfff7;touch-action:manipulation}
+.map-preset-card strong{font-size:.79rem;line-height:1.2;overflow-wrap:anywhere}
+.map-preset-card-art{display:grid;place-items:center;min-height:49px;font-size:1.7rem;
+ border:1px solid #618987;border-radius:7px;background:linear-gradient(150deg,#396458,#122f44)}
+.map-preset-card[data-family="snow"] .map-preset-card-art{background:linear-gradient(150deg,#aac8d5,#35556d)}
+.map-preset-card[data-family="sand"] .map-preset-card-art{background:linear-gradient(150deg,#c69b64,#644a36)}
+.map-preset-card[data-family="plain"] .map-preset-card-art{background:linear-gradient(150deg,#75a47a,#2c5752)}
+.map-preset-card[data-family="mountain"] .map-preset-card-art{background:linear-gradient(150deg,#8f98a5,#394859)}
+.map-preset-card[data-family="sea"] .map-preset-card-art{background:linear-gradient(150deg,#4aadb8,#23526e)}
+.map-preset-card-badge{letter-spacing:.09em;font-weight:850;color:#bfeee1!important;font-size:.61rem!important}
+.map-preset-card small{font-size:.7rem;color:#b5d4d1}
+.map-preset-card[aria-pressed="true"]{border-color:#7fe7c4;background:#245c56;box-shadow:inset 0 0 0 1px #7fe7c4}
+.map-preset-card:focus-visible{outline:3px solid #aaf8e1;outline-offset:2px}
+.map-preset-shelf-empty{display:block;padding:6px;font-size:.73rem}
+.map-preset-primary{background:#29695f;border:1px solid #8de6cf;font-weight:750}
+.map-preset-create-group{border:1px solid #4c7377;border-radius:9px;background:#152f38}
+.map-preset-create-group>summary{padding:9px;cursor:pointer;min-height:40px;font-weight:750}
+.map-preset-manage-fields{display:grid;gap:7px;padding:7px}
+.map-preset-danger{border-color:#b2787b;background:#4a2b36;color:#ffe7e7}
+.map-preset-danger:disabled{opacity:.4}
+.map-preset-select-fallback{font-size:.7rem;color:#b7d0d3}
+/* Advanced editor tools are progressive panels, not a wall of select menus. */
+#sculpt-settings .settings-interior{gap:7px}
+.sculpt-tool-group{border:1px solid #456e71;border-radius:11px;background:#132d38;min-width:0}
+.sculpt-tool-group>summary{display:flex;gap:8px;align-items:center;justify-content:space-between;
+ min-height:44px;padding:9px 11px;font-weight:800;cursor:pointer;touch-action:manipulation}
+.sculpt-tool-group>summary small{font-weight:500;font-size:.72rem;color:#a5cbc4;text-align:right}
+.sculpt-tool-group[open]>summary{border-bottom:1px solid #3c6669;color:#abefdd}
+.sculpt-tool-group-content{padding:7px;display:grid;gap:6px;min-width:0}
+.sculpt-tool-group .controls{min-width:0}
+@media(max-width:720px){
+ .map-preset-gallery{max-height:26dvh}
+ .map-preset-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sculpt-tool-group>summary small{font-size:.66rem}
+}
+
 #sculpt-map-preset-import{max-width:100%}
 @media(max-width:720px){
  #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
@@ -1115,23 +1159,44 @@ body.sculpt-play-unavailable #play-start-error{
  </div>
 </details>
 <details id="sculpt-map-preset-panel" aria-label="Bibliothèque de cartes">
- <summary>🗺 Mes cartes présets</summary>
+ <summary>🗺 Bibliothèque de cartes</summary>
  <div class="preset-controls">
-  <label>Nom de la carte
-   <input id="sculpt-map-preset-name" type="text" maxlength="64" placeholder="Ex. Forêt de départ">
-  </label>
-  <button id="sculpt-map-preset-save" type="button">💾 Enregistrer cette carte comme préset</button>
-  <label>Modèle de carte à charger (ne change pas la carte affichée tant que tu ne cliques pas sur Charger)
-   <select id="sculpt-map-preset-select" aria-label="Choisir un modèle de carte à appliquer"></select>
-  </label>
-  <button id="sculpt-map-preset-apply" type="button">📍 Charger ce préset dans la carte</button>
+  <p class="map-preset-intro">Choisis une carte fournie ou une de tes créations. La carte affichée ne change qu'en appuyant sur « Charger ».</p>
+  <div id="sculpt-map-preset-gallery" class="map-preset-gallery" aria-label="Cartes disponibles"></div>
+  <details class="map-preset-create-group">
+   <summary>Liste classique · option d'accessibilité</summary>
+   <div class="map-preset-manage-fields">
+    <label class="map-preset-select-fallback">Carte
+     <select id="sculpt-map-preset-select" aria-label="Choisir un modèle de carte à appliquer"></select>
+    </label>
+   </div>
+  </details>
+  <button id="sculpt-map-preset-apply" type="button" class="map-preset-primary">📍 Charger la carte choisie</button>
   <output id="sculpt-map-preset-loaded" role="status" aria-live="polite" class="sculpt-loaded-map-note">Carte actuellement affichée : zone en cours. Aucun modèle de la liste n’est appliqué automatiquement.</output>
-  <button id="sculpt-map-preset-export" type="button">↓ Exporter le préset JSON</button>
-  <label>↑ Importer un préset JSON
-   <input id="sculpt-map-preset-import" type="file" accept=".json,.map-preset.json,application/json">
-  </label>
-  <small>Un préset conserve le relief, les textures et les assets, sans déplacer les passages ni leurs arrivées. En World Builder, les dimensions de la zone restent inchangées.</small>
-  <small id="sculpt-map-preset-status" role="status"></small>
+  <details class="map-preset-create-group" open>
+   <summary>✏️ Enregistrer ma carte</summary>
+   <div class="map-preset-manage-fields">
+    <label>Nom de la carte
+     <input id="sculpt-map-preset-name" type="text" maxlength="64" placeholder="Ex. Forêt de départ">
+    </label>
+    <button id="sculpt-map-preset-save" type="button">💾 Enregistrer dans Mes créations</button>
+    <small>Une carte personnelle reste sur cet appareil. Elle ne rejoint jamais automatiquement les cartes officielles.</small>
+   </div>
+  </details>
+  <details class="map-preset-create-group">
+   <summary>⚙️ Gérer mes créations · <span id="sculpt-map-preset-count">0 carte personnelle</span></summary>
+   <div class="map-preset-manage-fields">
+    <button id="sculpt-map-preset-export" type="button">↓ Exporter la carte choisie en JSON</button>
+    <label>↑ Importer un modèle JSON
+     <input id="sculpt-map-preset-import" type="file" accept=".json,.map-preset.json,application/json">
+    </label>
+    <button id="sculpt-map-preset-delete" type="button" class="map-preset-danger" disabled>🗑 Supprimer la création sélectionnée</button>
+    <button id="sculpt-map-presets-clear" type="button" class="map-preset-danger" disabled>🧹 Supprimer toutes mes créations locales</button>
+    <small>Seules les cartes personnelles enregistrées dans ce navigateur sont concernées. Les cartes fournies, les mondes et les sauvegardes ne sont jamais supprimés. Confirmation obligatoire.</small>
+   </div>
+  </details>
+  <small>Les cartes présets conservent le relief, les textures et les objets. Les passages et les personnages de la partie restent indépendants.</small>
+  <small id="sculpt-map-preset-status" role="status" aria-live="polite"></small>
  </div>
 </details>
 <section id="new-map-panel" role="dialog" aria-modal="true" aria-label="Créer une carte vierge" hidden>
@@ -1545,8 +1610,12 @@ body.sculpt-play-unavailable #play-start-error{
 <button type="button" id="apply-precision" disabled>✓ Appliquer ici</button>
 </section>
 </div>
-<details id="sculpt-settings"><summary>⚙ Outils détaillés, force, bord, matériaux et réglages</summary>
-<div class="settings-interior"><section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
+<details id="sculpt-settings"><summary>⚙ Atelier · Réglages et outils avancés</summary>
+<div class="settings-interior">
+<details class="sculpt-tool-group" open>
+ <summary>⛰ Sculpter le relief <small>Creuser, monter, pentes</small></summary>
+ <div class="sculpt-tool-group-content">
+ <section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
 <button data-mode="raise">Surélever +</button>
 <button data-mode="flatten">Aplanir</button>
@@ -1564,6 +1633,11 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
 </div>
 </section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>💧 Sculpter l’eau <small>Niveau et débit</small></summary>
+ <div class="sculpt-tool-group-content">
 <section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
 <strong>💧 Sculpter l’eau</strong>
 <button data-mode="water-fill">Remplir au niveau</button>
@@ -1574,6 +1648,11 @@ body.sculpt-play-unavailable #play-start-error{
 <label class="control">Niveau d’eau <b id="water-target-value">3</b>
 <input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
 </section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>🖌 Précision du pinceau <small>Force et douceur</small></summary>
+ <div class="sculpt-tool-group-content">
 <section class="controls" aria-label="Paramètres communs des pinceaux">
 
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
@@ -1583,6 +1662,11 @@ body.sculpt-play-unavailable #play-start-error{
 
 <button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button>
 </section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>🎨 Matériaux et caméra <small>Sol, roche et affichage</small></summary>
+ <div class="sculpt-tool-group-content">
 <section class="controls">
 <span data-panel="ground"><label class="control">Sol réel
 <select id="material"><option value="grass.forest">Herbe</option>
@@ -1614,6 +1698,8 @@ body.sculpt-play-unavailable #play-start-error{
 <label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route exemple (visuel seul)</label>
 <label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
 </section>
+ </div>
+</details>
 </div></details>
 
 
