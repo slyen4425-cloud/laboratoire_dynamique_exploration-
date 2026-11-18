@@ -281,7 +281,15 @@ dialog.area-editor-dialog .portal-row .portal-open-area{min-height:36px;padding:
 #world-map-preset-library .map-preset-card{display:grid;align-content:center;gap:5px;
  text-align:left;min-height:62px;min-width:0;padding:8px;border:1px solid #5d8991;
  border-radius:9px;background:#254451;color:#f2fff7;cursor:pointer}
-#world-map-preset-library .map-preset-card strong{font-size:12px;line-height:1.2}
+#world-map-preset-library .map-preset-card strong{font-size:12px;line-height:1.2;overflow-wrap:anywhere}
+#world-map-preset-library .map-preset-card-art{display:grid;place-items:center;min-height:45px;
+ font-size:25px;background:linear-gradient(150deg,#356858,#173647);border-radius:7px}
+#world-map-preset-library .map-preset-card[data-family="snow"] .map-preset-card-art{background:linear-gradient(150deg,#aac8d5,#35556d)}
+#world-map-preset-library .map-preset-card[data-family="sand"] .map-preset-card-art{background:linear-gradient(150deg,#c69b64,#644a36)}
+#world-map-preset-library .map-preset-card[data-family="plain"] .map-preset-card-art{background:linear-gradient(150deg,#75a47a,#2c5752)}
+#world-map-preset-library .map-preset-card[data-family="mountain"] .map-preset-card-art{background:linear-gradient(150deg,#8f98a5,#394859)}
+#world-map-preset-library .map-preset-card[data-family="sea"] .map-preset-card-art{background:linear-gradient(150deg,#4aadb8,#23526e)}
+#world-map-preset-library .map-preset-card-badge{letter-spacing:.08em;font-weight:850;font-size:9px!important;color:#bfeee1!important}
 #world-map-preset-library .map-preset-card small{font-size:11px;color:#b9d8d5}
 #world-map-preset-library .map-preset-card[aria-pressed="true"]{background:#265b52;border-color:#93efd3;box-shadow:inset 0 0 0 1px #93efd3}
 #world-map-preset-library .map-preset-card:focus-visible{outline:3px solid #acf9e6;outline-offset:2px}
