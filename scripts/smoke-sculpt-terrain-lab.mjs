@@ -4161,8 +4161,11 @@ try{
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
   const prefabHouse=await run(`(()=>{
-    const select=document.querySelector('#world-map-preset-select');
-    select.value='map-preset-109';select.dispatchEvent(new Event('change'));
+    const gallery=document.querySelector('#world-map-preset-gallery');
+    const card=gallery?.querySelector('.map-preset-card[data-preset-id="map-preset-109"]');
+    if(!card)return {error:'official preset gallery card missing'};
+    document.querySelector('.world-preset-details').open=true;
+    card.closest('.map-preset-shelf').open=true;card.click();
     document.querySelector('#world-map-preset-create').click();
     const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
     const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');

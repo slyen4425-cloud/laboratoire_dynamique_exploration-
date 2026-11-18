@@ -5,7 +5,7 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
  <meta name="theme-color" content="#0b1822">
  <title>GenSrpG — Constructeur de mondes</title>
- <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-compact-mobile-20261109-v1-region-only-20261115">
+ <link rel="stylesheet" href="./src/builder/world-assembler.css?rev=world-assembler-compact-mobile-20261109-v1-region-only-20261115-library-ux-20261118">
 </head>
 <body>
  <div class="app-shell">
@@ -44,8 +44,9 @@
      <output id="world-encounters-status" role="status" aria-live="polite">Vérification des rencontres du monde…</output>
      <button id="world-encounters-initialize" type="button">🐾 Initialiser les rencontres de ce monde</button>
     </section>
-    <section class="world-library-controls" aria-labelledby="world-library-title">
-     <h2 id="world-library-title">Mes mondes sauvegardés</h2>
+    <details class="world-library-controls" aria-labelledby="world-library-title">
+     <summary id="world-library-title">📂 Charger</summary>
+     <div class="world-library-content">
      <p>Enregistre ce monde sous son nom avant d'en ouvrir un autre. Les mondes précédents restent dans ta bibliothèque.</p>
      <button id="world-library-save" type="button">💾 Enregistrer ce monde</button>
      <label class="field">Choisir un monde
@@ -57,9 +58,9 @@
      <button id="world-library-delete" class="danger" type="button" disabled>🗑️ Supprimer le monde choisi</button>
      <p class="help-note">Confirmation obligatoire. Seul ce monde est retiré de Mes mondes et du choix des nouvelles aventures. Les autres mondes et sauvegardes ne sont pas supprimés.</p>
      <output id="world-library-status" role="status" aria-live="polite"></output>
-    </section>
-    <div class="section-head"><h2>Régions extérieures</h2></div>
-    <div id="area-list" class="area-list" aria-label="Sélectionner une zone"></div>
+     </div>
+    </details>
+    <div id="world-orphan-instances" aria-live="polite"></div>
     <button id="new-world-area" class="accent block world-new-area-entry" type="button">＋ Nouvelle zone / instance</button>
 
     <details class="world-preset-details">
@@ -68,11 +69,6 @@
      <strong>🗺 Choisir une carte</strong>
      <p class="help-note">Cartes fournies pour le projet d'un côté, créations personnelles de cet appareil de l'autre. Aucune carte personnelle ne devient officielle sans publication validée.</p>
      <div id="world-map-preset-gallery" class="map-preset-gallery" aria-label="Cartes fournies et personnelles"></div>
-     <details class="world-preset-list-fallback"><summary>Choisir dans une liste</summary>
-      <label class="field">Carte enregistrée
-       <select id="world-map-preset-select" aria-label="Préset de carte"><option value="">Aucun préset</option></select>
-      </label>
-     </details>
      <label class="field">Nom de la nouvelle zone
       <input id="world-map-preset-name" type="text" maxlength="64" placeholder="Ex. Clairière du village">
      </label>
@@ -278,6 +274,6 @@
    </div>
   </form>
  </dialog>
- <script type="module" src="./src/builder/world-assembler-main.js?rev=world-2p5d-only-20261111-world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-area-modal-20261109-combat-arena-v1-region-only-20261115"></script>
+ <script type="module" src="./src/builder/world-assembler-main.js?rev=world-2p5d-only-20261111-world-assembler-2p5d-portal-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-author-maps-three-v1-area-modal-20261109-combat-arena-v1-region-only-20261115-library-ux-20261118"></script>
 </body>
 </html>

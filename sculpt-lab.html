@@ -649,7 +649,9 @@ body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([o
 .map-preset-intro{margin:2px 0;font-size:.76rem;line-height:1.4;color:#d3eee9}
 .map-preset-shelf{border:1px solid #4c7377;border-radius:11px;padding:7px;background:#0e2933}
 .map-preset-shelf[data-source="official"]{border-color:#728e9c;background:#192e3d}
-.map-preset-shelf-title{display:block;color:#d9f6f2;font-size:.77rem;padding:3px 3px 7px}
+.map-preset-shelf-title{display:list-item;cursor:pointer;touch-action:manipulation;
+ min-height:42px;align-content:center;color:#d9f6f2;font-size:.77rem;font-weight:800;padding:9px 6px}
+.map-preset-shelf[open]>.map-preset-shelf-title{border-bottom:1px solid #497275;margin-bottom:7px}
 .map-preset-card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:7px}
 .map-preset-card{display:grid;gap:4px;text-align:left;padding:10px;min-height:57px;
  border-radius:9px;border:1px solid #54767b;background:#22404b;color:#ebfff7;touch-action:manipulation}
@@ -1163,14 +1165,6 @@ body.sculpt-play-unavailable #play-start-error{
  <div class="preset-controls">
   <p class="map-preset-intro">Choisis une carte fournie ou une de tes créations. La carte affichée ne change qu'en appuyant sur « Charger ».</p>
   <div id="sculpt-map-preset-gallery" class="map-preset-gallery" aria-label="Cartes disponibles"></div>
-  <details class="map-preset-create-group">
-   <summary>Liste classique · option d'accessibilité</summary>
-   <div class="map-preset-manage-fields">
-    <label class="map-preset-select-fallback">Carte
-     <select id="sculpt-map-preset-select" aria-label="Choisir un modèle de carte à appliquer"></select>
-    </label>
-   </div>
-  </details>
   <button id="sculpt-map-preset-apply" type="button" class="map-preset-primary">📍 Charger la carte choisie</button>
   <output id="sculpt-map-preset-loaded" role="status" aria-live="polite" class="sculpt-loaded-map-note">Carte actuellement affichée : zone en cours. Aucun modèle de la liste n’est appliqué automatiquement.</output>
   <details class="map-preset-create-group" open>
@@ -1709,6 +1703,6 @@ body.sculpt-play-unavailable #play-start-error{
 <button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
 <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118"></script>
 </body>
 </html>

@@ -66,5 +66,6 @@ test('mobile test has a genuinely positioned passage action and linked new-map k
   assert.doesNotMatch(main,/\$\('new-map-toggle'\)\.disabled=true; \/\/ never alter Area/);
   assert.match(html,/id="sculpt-map-preset-save"/);
   assert.match(html,/id="sculpt-map-preset-apply"/);
-  assert.match(assembler,/id="world-map-preset-select"/);
+  assert.match(assembler,/id="world-map-preset-gallery"/);
+  assert.doesNotMatch(assembler,/id="world-map-preset-select"/);
 });

@@ -83,10 +83,11 @@ try{
     if(ready)break;await sleep(150);
   }
   if(!ready)throw Error('World Assembler failed to boot in browser');
-  const mapCardSelection=await run("(()=>{const cards=[...document.querySelectorAll('#world-map-preset-gallery .map-preset-card[data-source=official]')];const personal=document.querySelectorAll('#world-map-preset-gallery .map-preset-card[data-source=personal]');if(cards.length!==3)return {official:cards.length,personal:personal.length};cards[1].click();const select=document.querySelector('#world-map-preset-select');const create=document.querySelector('#world-map-preset-create');return {official:cards.length,personal:personal.length,chosen:select.value,card:document.querySelector('#world-map-preset-gallery .map-preset-card[aria-pressed=true]')?.dataset.presetId,ready:!create.disabled};})()");
+  const mapCardSelection=await run("(()=>{const gallery=document.querySelector('#world-map-preset-gallery'),official=gallery.querySelector('.map-preset-shelf[data-source=official]'),personal=gallery.querySelector('.map-preset-shelf[data-source=personal]'),library=document.querySelector('.world-library-controls');const folded=!official.open&&!personal.open&&!library.open;library.querySelector('summary').click();const loadOpened=library.open;library.querySelector('summary').click();official.querySelector('summary').click();const cards=[...gallery.querySelectorAll('.map-preset-card[data-source=official]')],player=gallery.querySelectorAll('.map-preset-card[data-source=personal]');if(cards.length!==3)return {official:cards.length,personal:player.length};cards[1].click();const create=document.querySelector('#world-map-preset-create');return {official:cards.length,personal:player.length,chosen:gallery.dataset.selectedId,card:gallery.querySelector('.map-preset-card[aria-pressed=true]')?.dataset.presetId,ready:!create.disabled,folded,loadOpened,opened:official.open&&!personal.open,noDup:!document.querySelector('#world-map-preset-select,#area-list')};})()");
   if(mapCardSelection.official!==3||mapCardSelection.personal!==0||
     !mapCardSelection.chosen||mapCardSelection.chosen!==mapCardSelection.card||
-    !mapCardSelection.ready)
+    !mapCardSelection.ready||!mapCardSelection.folded||!mapCardSelection.loadOpened||
+    !mapCardSelection.opened||!mapCardSelection.noDup)
     throw Error('World Builder map cards not connected to real WorldArea create action '+JSON.stringify(mapCardSelection));
   const setup=await run(`(()=>{
     const add=document.querySelector('#area-add-form');
@@ -198,7 +199,7 @@ try{
   const navigation=await run(`(()=>{
     const dialog=document.querySelector('#area-details-dialog');
     const escapeClosed=!dialog.open;
-    document.querySelector('#area-list button').click();
+    document.querySelector('#graph-nodes .world-node').click();
     const reopened=dialog.open;
     document.querySelector('#close-area-editor').click();
     const closeWorked=!dialog.open;
@@ -209,7 +210,7 @@ try{
     return {escapeClosed,reopened,closeWorked,createVisible};
   })()`);
   if(Object.values(navigation).some(v=>v!==true))
-    throw Error('Area modal Escape/list/new zone UI failed '+JSON.stringify(navigation));
+    throw Error('Area modal Escape/graph/new zone UI failed '+JSON.stringify(navigation));
   console.log('GREEN real Chromium: single Area modal, native levels, texture odds unchanged, Escape/new area '+
     JSON.stringify({edited,navigation}));
   console.log('GREEN real Chromium: draggable WorldArea, saved position and Portal preservation '+

@@ -14,7 +14,7 @@ import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {readSculptMapPresets} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
-import {renderSculptMapPresetChoicesV1} from './sculpt-map-preset-choices-ui-v1.js';
+import {renderSculptMapPresetChoicesV1} from './sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
 import {createExplorationUniverseWorldProjectsV1} from './exploration-universe-world-projects-v1.js';
@@ -331,23 +331,13 @@ function installWorldAssembler(){
     select.replaceChildren(...areas.map(a=>new Option(areaLabel(a),a.id)));
     if(areas.some(a=>a.id===current))select.value=current;
   }
-  function renderAreaList(){
+  // The central graph is the sole visible catalogue of regions. Only orphan
+  // instances need a separate, folded repair entry because they have no
+  // reachable region on that graph. Never duplicate visible region buttons.
+  function renderAreaSummary(){
     const overview=worldAssemblerRegionOverview(draft);
-    const list=byId('area-list');list.replaceChildren();
-    for(const area of overview.regions){
-      const button=document.createElement('button');
-      button.type='button';
-      if(area.id===selectedId)button.classList.add('active');
-      const icon=document.createElement('span');icon.className='mini-icon';icon.textContent=kindIcon(area);
-      const copy=document.createElement('span');copy.className='mini-copy';
-      const title=document.createElement('strong');title.textContent=areaLabel(area);
-      const note=document.createElement('small');note.textContent=
-        (area.id===draft.initialAreaId?'★ Départ · ':'')+kindName(area);
-      copy.append(title,note);button.append(icon,copy);
-      button.addEventListener('click',()=>openAreaDetails(area.id));list.append(button);
-    }
-    // Disconnected interiors cannot be reached through a region's contents.
-    // Keep a collapsed repair route, never a second world-map node.
+    const repairs=byId('world-orphan-instances');
+    repairs.replaceChildren();
     if(overview.orphanInstances.length){
       const details=document.createElement('details');
       details.className='world-unlinked-instances';
@@ -361,7 +351,7 @@ function installWorldAssembler(){
         button.addEventListener('click',()=>openAreaDetails(area.id));
         details.append(button);
       }
-      list.append(details);
+      repairs.append(details);
     }
     const instanceCount=draft.areas.length-overview.regions.length;
     byId('world-area-count').textContent=overview.regions.length+' régions'+
@@ -715,15 +705,15 @@ function installWorldAssembler(){
     }
   }
   function refreshMapPresets(){
-    const select=byId('world-map-preset-select'),previous=select.value;
+    const gallery=byId('world-map-preset-gallery'),previous=gallery.dataset.selectedId??'';
     try{
       const official=builtinSculptMapPresets(),personal=readSculptMapPresets(worldStorage);
       const presets=[...official,...personal];
       renderSculptMapPresetChoicesV1({
-        select,gallery:byId('world-map-preset-gallery'),official,personal,
+        gallery,official,personal,
         selectedId:previous
       });
-      byId('world-map-preset-create').disabled=!select.value;
+      byId('world-map-preset-create').disabled=!gallery.dataset.selectedId;
       byId('world-map-preset-info').textContent=presets.length
         ?'Chaque préset crée une WorldArea indépendante. Un donjon sera relié à la zone sélectionnée.'
         :'Enregistre une carte dans Exploration 2,5D → « Mes cartes présets » pour pouvoir la placer ici.';
@@ -735,15 +725,15 @@ function installWorldAssembler(){
   function render(){
     if(!draft.areas.some(a=>a.id===selectedId))selectedId=draft.initialAreaId;
     if(document.activeElement!==byId('world-name'))byId('world-name').value=draft.id;
-    renderAreaList();renderGraph();renderInspector();refreshMapPresets();
+    renderAreaSummary();renderGraph();renderInspector();refreshMapPresets();
     const dormant=encounterConfigNeedsExplicitInitialization(draft.encounterConfig);
     byId('world-encounters-status').textContent=dormant
       ?'⚠ Rencontres à 0 % : aucune créature sauvage ne peut apparaître sur cette carte tant que tu ne les configures pas.'
       :'✓ Rencontres configurées dans ce monde ; les apparitions dépendent des chances et du Bestiaire officiel.';
     byId('world-encounters-initialize').hidden=!dormant;
   }
-  on(byId('world-map-preset-select'),'change',()=>{
-    const selectedId=byId('world-map-preset-select').value;
+  on(byId('world-map-preset-gallery'),'change',()=>{
+    const selectedId=byId('world-map-preset-gallery').dataset.selectedId;
     byId('world-map-preset-create').disabled=!selectedId;
     // Selection is UI-only: keep the source cards marked without recreating
     // the gallery (which would lose keyboard focus after a card tap).
@@ -752,7 +742,7 @@ function installWorldAssembler(){
       card.setAttribute('aria-pressed',String(card.dataset.presetId===selectedId));
     try{
       const preset=listAvailableSculptMapPresets(worldStorage)
-        .find(p=>p.id===byId('world-map-preset-select').value);
+        .find(p=>p.id===byId('world-map-preset-gallery').dataset.selectedId);
       if(preset&&!byId('world-map-preset-name').value.trim())
         byId('world-map-preset-name').value=preset.name;
     }catch(error){status(error.message,true);}
@@ -760,7 +750,7 @@ function installWorldAssembler(){
   on(byId('world-map-preset-create'),'click',()=>{
     try{
       const preset=listAvailableSculptMapPresets(worldStorage)
-        .find(p=>p.id===byId('world-map-preset-select').value);
+        .find(p=>p.id===byId('world-map-preset-gallery').dataset.selectedId);
       if(!preset){status('Choisis d’abord un préset de carte.',true);return;}
       const before=new Set(draft.areas.map(a=>a.id));
       const name=byId('world-map-preset-name').value.trim()||preset.name;
@@ -956,7 +946,6 @@ function installWorldAssembler(){
   on(byId('graph-scroll'),'pointerdown',()=>{
     if(workspace.classList.contains('structure-open'))setStructureOpen(false);
   });
-  on(byId('area-list'),'click',()=>setStructureOpen(false));
     on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('edit-area'),'click',()=>openAreaEditor(mapPanelUrl));

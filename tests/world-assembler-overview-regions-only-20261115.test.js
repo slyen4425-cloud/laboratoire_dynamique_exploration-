@@ -64,7 +64,7 @@ test('a one-way return Portal does not hide an instance that cannot be entered',
   assert.equal(doc.portals.length,1);
 });
 
-test('screen uses region-only projection for graph, list, and edges without deleting Portal data',()=>{
+test('screen uses graph-only region projection and orphan repair without deleting Portal data',()=>{
   const root=new URL('../',import.meta.url);
   const js=readFileSync(new URL('src/builder/world-assembler-main.js',root),'utf8');
   const html=readFileSync(new URL('world-assembler.html',root),'utf8');
@@ -75,6 +75,8 @@ test('screen uses region-only projection for graph, list, and edges without dele
   assert.match(js,/renderAreaContents\(area\)/);
   assert.match(js,/target\?\.kind==='interior'/);
   assert.match(js,/orphanInstances/);
-  assert.match(html,/Régions extérieures/);
+  assert.doesNotMatch(html,/id="area-list"/);
+  assert.match(html,/id="world-orphan-instances"/);
+  assert.match(js,/function renderAreaSummary\(/);
   assert.doesNotMatch(html,/legend-dot instance/);
 });
