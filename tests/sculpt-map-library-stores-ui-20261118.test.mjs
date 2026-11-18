@@ -88,3 +88,34 @@ test('both editors show the native official and personal card shelves, with guar
   assert.match(ui,/id="object-shadow-details"/);
   assert.match(mapJS,/closest\('\.sculpt-tool-group'\)/);
 });
+
+
+test('one visible card picker, two independently foldable shelves, and a folded Charger panel',()=>{
+  const world=readFileSync(new URL('../world-assembler.html',import.meta.url),'utf8');
+  const map=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+  const builder=readFileSync(new URL('../src/builder/world-assembler-main.js',import.meta.url),'utf8');
+  const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  const gallery=readFileSync(new URL('../src/builder/sculpt-map-preset-choices-ui-v1.js',import.meta.url),'utf8');
+  assert.match(world,/<details class="world-library-controls" aria-labelledby="world-library-title">/);
+  assert.match(world,/<summary id="world-library-title">📂 Charger<\/summary>/);
+  assert.match(world,/id="world-library-open"/);
+  assert.match(world,/id="world-library-save"/);
+  assert.match(world,/id="world-library-delete"/);
+  assert.doesNotMatch(world,/id="area-list"/);
+  assert.doesNotMatch(world,/id="world-map-preset-select"/);
+  assert.doesNotMatch(map,/id="sculpt-map-preset-select"/);
+  assert.equal((world.match(/id="world-map-preset-gallery"/g)||[]).length,1);
+  assert.equal((map.match(/id="sculpt-map-preset-gallery"/g)||[]).length,1);
+  assert.match(builder,/function renderAreaSummary\(/);
+  assert.doesNotMatch(builder,/function renderAreaList\(|byId\('area-list'\)/);
+  assert.match(builder,/world-orphan-instances/);
+  assert.match(builder,/gallery\.dataset\.selectedId/);
+  assert.match(sculpt,/gallery\.dataset\.selectedId/);
+  assert.match(gallery,/document\.createElement\('details'\)/);
+  assert.match(gallery,/document\.createElement\('summary'\)/);
+  assert.match(gallery,/gallery\.dataset\.selectedId=preset\.id/);
+  assert.match(gallery,/gallery\.dispatchEvent\(new Event\('change'/);
+  assert.doesNotMatch(gallery,/new Option\(|\.createElement\('select'\)/);
+  assert.match(gallery,/Cartes proposées par l’éditeur/);
+  assert.match(gallery,/Mes cartes enregistrées sur cet appareil/);
+});
