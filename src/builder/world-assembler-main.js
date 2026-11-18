@@ -14,7 +14,7 @@ import {createWorldAreaFromSculptMapPreset} from './sculpt-map-preset-library.js
 import {listAvailableSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {builtinSculptMapPresets} from './sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {readSculptMapPresets} from './sculpt-map-preset-library.js?rev=author-maps-three-v1';
-import {renderSculptMapPresetChoicesV1} from './sculpt-map-preset-choices-ui-v1.js';
+import {renderSculptMapPresetChoicesV1} from './sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
 import {worldAreaSizeFromTiles} from './world-area-size-command.js';
 import {createExplorationWorldDocumentLibraryV1} from './exploration-world-document-library-v1.js';
 import {createExplorationUniverseWorldProjectsV1} from './exploration-universe-world-projects-v1.js';
