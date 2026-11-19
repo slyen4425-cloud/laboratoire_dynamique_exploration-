@@ -268,7 +268,7 @@ export function createImmersiveEncounterHostV1({
       // removes the existing veil. No change to combat or the result contract.
       const start=combatImages.indexOf(customCombatImage);
       const ordered=start<0?[]:[...combatImages.slice(start),...combatImages.slice(0,start)];
-      const crossfade=ordered.length>1?mountCaptureLoadingArtCrossfadeV1({
+      const crossfade=ordered.length>1&&typeof loading.prepend==='function'?mountCaptureLoadingArtCrossfadeV1({
         host:loading,images:ordered,documentRef,windowRef
       }):null;
       active = { overlay, frame, snapshot, loading, loadingMessage:message,crossfade,
