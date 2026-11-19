@@ -12,6 +12,16 @@ export function sculptCameraView(key='threeQuarter'){
 // inverse and camera bounds as the published V38 editorial comparison.
 // 90 degrees looks straight down; lower angles emphasize depth.
 export const SCULPT_GAME_CAMERA_ANGLE=Object.freeze({min:35,max:90,default:55});
+// In the playable Showcase/Adventure only, 200% maximum zoom-out means the
+// native map can be displayed at no less than half its 100% reference scale.
+// This is a CAMERA presentation bound, not a WorldArea or editor zoom rule.
+export const SCULPT_PLAY_CAMERA_ZOOM=Object.freeze({min:.5,max:2.4,default:1.75});
+export function sculptPlayableCameraZoom(value){
+  const requested=Number(value);
+  return Math.max(SCULPT_PLAY_CAMERA_ZOOM.min,
+    Math.min(SCULPT_PLAY_CAMERA_ZOOM.max,
+      Number.isFinite(requested)?requested:SCULPT_PLAY_CAMERA_ZOOM.default));
+}
 export function sculptCameraGameView(angle=SCULPT_GAME_CAMERA_ANGLE.default){
   const requested=Number(angle);
   const degrees=Math.max(SCULPT_GAME_CAMERA_ANGLE.min,

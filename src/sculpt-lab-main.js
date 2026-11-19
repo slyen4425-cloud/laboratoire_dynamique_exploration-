@@ -8,7 +8,7 @@ import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-sp
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
 import {shouldPaintSculptNavigationFrame} from './render/sculpt-navigation-frame-pacing.js';
-import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
+import {sculptCameraView,sculptCameraProject,sculptCameraProjectBridgeFoot,sculptCameraProjectBridgeCorridor,sculptCameraWorldInput,sculptCameraBounds,sculptCameraScreenToWorld,sculptCameraGameView,sculptCameraInteriorView,sculptCameraFollowActor,sculptPlayableCameraZoom} from './render/sculpt-camera-projection.js?rev=interior-v79-r3d-actor-follow';
 import {cameraAngleFromAdventurePlayUrlV1,cameraInitialZoomFromAdventurePlayUrlV1} from './play/exploration-creator-camera-v1.js';
 import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1,mountCaptureLoadingArtCrossfadeV1} from './play/exploration-loading-art-v1.js';
 import {clampSculptNavigationCameraToTerrainV1,sculptExteriorFringeCameraBoundsV1,sculptExteriorSouthEdgeAtActorV1} from './render/sculpt-navigation-camera-clamp-v1.js';
@@ -4463,7 +4463,11 @@ canvas.addEventListener('lostpointercapture',stop);
 canvas.addEventListener('wheel',event=>{
   event.preventDefault();
   const previous=zoom;
-  zoom=Math.max(.32,Math.min(2.4,zoom*(event.deltaY>0?.90:1.1)));
+  // Gameplay zoom-out is bounded to 200% (minimum native scale .5).
+  // The editor retains its independent .32 scale for authoring large maps.
+  const requestedZoom=zoom*(event.deltaY>0?.90:1.1);
+  zoom=navigationTesting?sculptPlayableCameraZoom(requestedZoom):
+    Math.max(.32,Math.min(2.4,requestedZoom));
   const rect=canvas.getBoundingClientRect();
   const mouseX=event.clientX-rect.left,mouseY=event.clientY-rect.top;
   pan.x=mouseX-(mouseX-pan.x)*zoom/previous;
@@ -4633,7 +4637,10 @@ $('show-water').addEventListener('change',()=>toggleRibbon('water'));
 $('show-road').addEventListener('change',()=>toggleRibbon('road'));
 $('preview-cursor').addEventListener('change',scheduleDraw);
 $('zoom').addEventListener('input',()=>{
- const old=zoom;zoom=Number($('zoom').value)/100;
+ const old=zoom;
+ const desiredZoom=Number($('zoom').value)/100;
+ zoom=navigationTesting?sculptPlayableCameraZoom(desiredZoom):desiredZoom;
+ if(navigationTesting)$('zoom').value=String(Math.round(zoom*100));
  const {width,height}=dimensions();
  pan.x=width/2-(width/2-pan.x)*zoom/old;
  pan.y=height/2-(height/2-pan.y)*zoom/old;
