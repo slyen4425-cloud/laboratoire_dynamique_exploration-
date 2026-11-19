@@ -49,7 +49,11 @@ export function sculptWorldAreaScene(area){
       normalizeSculptDecorativeFringeV1(area.decorativeFringe,area)}:{})
   });
 }
-export function saveSculptWorldArea(draft,areaId,scene){
+// Read-only recovery snapshot of the SAME WorldDocument. If a Portal/Spawn
+// reference makes final validation fail, the author can download ALL current
+// edits without changing persistent storage or silently deleting links.
+// The sole canonical save still goes through validateWorldBuilderDraft.
+export function snapshotSculptWorldAreaForRecovery(draft,areaId,scene){
   const area=areaById(draft,areaId),grid=gridForArea(area);
   const terrain=importSculptTerrain(scene?.terrain);
   if(terrain.width!==grid.width||terrain.height!==grid.height)
@@ -67,6 +71,10 @@ export function saveSculptWorldArea(draft,areaId,scene){
       decorativeFringe:normalizeSculptDecorativeFringeV1(scene.decorativeFringe,a)
     }:{})
   }:a)};
+  return next;
+}
+export function saveSculptWorldArea(draft,areaId,scene){
+  const next=snapshotSculptWorldAreaForRecovery(draft,areaId,scene);
   const checked=validateWorldBuilderDraft(next);
   if(!checked.valid)throw Error('WorldArea invalide : '+checked.errors.join(', '));
   // Return a draft of the SAME WorldDocument, no second persisted scene.
