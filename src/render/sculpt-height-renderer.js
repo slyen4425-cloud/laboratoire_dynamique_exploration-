@@ -542,7 +542,15 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
     // the existing semi-transparent edge/feather is still clipped EXACTLY once.
     // This is not the former overlapping translucent +.65px clip regression.
     ctx.save();
-    ctx.beginPath();ctx.rect(x-.75,y-.75,w+1.5,h+1.5);ctx.clip();
+    // Restrict opaque paint to subpixel JOIN STRIPS, never the full authored
+    // road/zone interior (which must retain its exact original transparency).
+    const seam=.75;
+    ctx.beginPath();
+    ctx.rect(x-seam,y-seam,w+2*seam,2*seam);
+    ctx.rect(x-seam,y+h-seam,w+2*seam,2*seam);
+    ctx.rect(x-seam,y+seam,2*seam,h-2*seam);
+    ctx.rect(x+w-seam,y+seam,2*seam,h-2*seam);
+    ctx.clip();
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);
       if(!pattern||feature.points.length<2)continue;
