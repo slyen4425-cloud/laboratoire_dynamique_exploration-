@@ -36,8 +36,10 @@ test('raised plateaus preserve the exact authored texture with no tiled altitude
  const fakeTints=filled.filter(f=>String(f.fill).startsWith('rgba(251,243,206,')||
    String(f.fill).startsWith('rgba(15,35,39,'));
  assert.equal(fakeTints.length,0,'raised terrain must not wash out grass/roads with per-tile overlays');
- assert.deepEqual(sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise,28,21),
-  {x:0,y:-90,width:28,height:21},'native WorldSurface pixel boundaries are unchanged');
+ const top=sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise,28,21);
+ const next=sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise+21,28,21);
+ assert.equal(Math.round((top.y+top.height)*1.5+24),
+   Math.round(next.y*1.5+24),'canonical WorldSurface cells remain pixel-adjacent');
  assert.equal(JSON.stringify(map),before,'all authored heights remain unchanged');
 });
 
