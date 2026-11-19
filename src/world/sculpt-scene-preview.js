@@ -116,7 +116,7 @@ export function appendSculptPreviewObject(objects,{
   const placement=normalizeWorldObjectPlacement({
     id:'sculpt-object-'+suffix,objectDefinitionId:definitionId,
     transform:{x,y,scaleX,scaleY,rotationDeg,
-      ...(worldObjectSupportsHorizontalTurnV1(objectDefinitionCatalogV1.get(definitionId)?.kind)?
+      ...(rotationDeg%360!==0&&worldObjectSupportsHorizontalTurnV1(objectDefinitionCatalogV1.get(definitionId)?.kind)?
         {rotationAxis:'horizontal'}:{}),
       ...(flipX===true?{flipX:true}:{})},
     overrides:{visualVariantId:validVariant(definitionId,variantId)}
