@@ -4432,7 +4432,8 @@ window.__sculptObjectsProbe=()=>Object.freeze({
   objects:placedObjects.map(o=>{
     // Read the SAME cached Image the native object painter actually consumes;
     // PerformanceResourceTiming can be absent for already cached WebPs.
-    const art=objectImage(o.visual?.assetId);
+    const placement=resolveWorldObjectPlacements([o],objectDefinitionCatalogV1)[0];
+    const art=objectImage(placement?.visual?.assetId);
     return {id:o.id,definition:o.objectDefinitionId,
       x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
       scaleX:o.transform.scaleX,scaleY:o.transform.scaleY,
