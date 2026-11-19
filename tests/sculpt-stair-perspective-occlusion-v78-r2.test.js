@@ -34,7 +34,8 @@ test('V78 R2 the climbing hero is painted AFTER the stair and the active stair i
 });
 
 test('V78 R2 stairs use the SAME affine camera matrix as the terrain in Tester, not a fixed-size billboard',()=>{
-  assert.match(main,/if\(navigationTesting&&object\.kind==='stairs'\)\{\s*const view=cameraView\(\);\s*ctx\.transform\(1,view\.shear,0,view\.pitch,0,0\);/);
+  assert.match(main,/if\(navigationTesting&&object\.kind==='stairs'&&!perspectiveStairArt\)\{\s*const view=cameraView\(\);\s*ctx\.transform\(1,view\.shear,0,view\.pitch,0,0\);/,
+    'V78 front stair still uses the canonical affine terrain pitch; perspective side and oblique art does not');
   assert.match(main,/ctx\.translate\(point\.x,point\.y\);/);
   assert.match(main,/ctx\.rotate\(rect\.angle\);/);
   assert.match(html,/stairs-dynamic-v78-stairs-depth-perspective-r2/);
