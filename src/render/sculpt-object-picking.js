@@ -37,11 +37,20 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
   // projected altitude, read from the same corridor as Collision World.
   const stair=terrain&&(object.kind==='stairs'||object.kind==='ramp')
     ?sculptStairCorridor(terrain,object,{cellWidth:tileWidth,cellHeight:tileHeight}):null;
-  const stairLift=stair?(stair.topLevel-stair.bottomLevel)*rise:0;
+  // The oblique staircase WEBP is already painted in 2.5D perspective.
+  // Applying the terrain rise again to its image stretches it abruptly as
+  // soon as its physical corridor becomes valid. Keep its authored proportions.
+  // The V78 front/side presentation remains unchanged.
+  const obliqueStairArt=object.kind==='stairs'&&object.visual?.variantId==='oblique';
+  const stairLift=stair&&!obliqueStairArt?(stair.topLevel-stair.bottomLevel)*rise:0;
+  const width=verticalBridgeArt?(base?.height??80)*t.scaleY:(base?.width??80)*t.scaleX;
+  const height=(verticalBridgeArt?(base?.width??80)*t.scaleX:(base?.height??80)*t.scaleY)+stairLift;
   return Object.freeze({
-    x:t.x,y:t.y-level*rise,
-    width:verticalBridgeArt?(base?.height??80)*t.scaleY:(base?.width??80)*t.scaleX,
-    height:(verticalBridgeArt?(base?.width??80)*t.scaleX:(base?.height??80)*t.scaleY)+stairLift,
+    x:t.x,y:t.y-level*rise,width,height,
+    // Optical step-foot center in the source 384px oblique art. Anchor
+    // stays at the authored WorldObject position for movement/collision.
+    ...(obliqueStairArt?{obliqueArtFootOffsetX:width*.19,
+      obliqueArtFootOffsetY:height*.09}:{}),
     angle:(t.rotationDeg??0)*Math.PI/180
   });
 }
@@ -62,8 +71,12 @@ export function findSculptVisualObjectAtPoint(placements,terrain,{x,y},{
     // adapter, not centered in the PNG bounds; selection must use exactly
     // that same visible anchor, without changing any WorldObject transform.
     const deckShift=sculptBridgeDeckArtShift(rect,object);
-    const localCenterY=deckShift>0?deckShift-rect.height*.5:0;
-    if(Math.abs(localX)>rect.width/2+padding||
+    const oblique=Number.isFinite(rect.obliqueArtFootOffsetX);
+    const localCenterX=oblique?(object.transform.flipX===true?1:-1)*
+      rect.obliqueArtFootOffsetX:0;
+    const localCenterY=oblique?-rect.height*.5+rect.obliqueArtFootOffsetY:
+      deckShift>0?deckShift-rect.height*.5:0;
+    if(Math.abs(localX-localCenterX)>rect.width/2+padding||
        Math.abs(localY-localCenterY)>rect.height/2+padding)continue;
     if(object.transform.y>=depth){found=object;depth=object.transform.y;}
   }
