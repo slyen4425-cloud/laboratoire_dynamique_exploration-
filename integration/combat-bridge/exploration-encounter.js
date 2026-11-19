@@ -339,6 +339,10 @@ async function launch() {
       img.src=assetUrlForFile(file);
     })));
   }
+  // The battle Session must not start its timers before the arena backdrop
+  // exists. Load it before mounting Combat, not merely before removing the veil.
+  message('Chargement de l’image de l’arène…');
+  await waitForNativeCombatArenaArtV1(nativeVisualSource.arenaId);
   const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse,nativeVisualSource.arenaId);
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
@@ -383,8 +387,6 @@ async function launch() {
   // CSS arena art can finish after the fighters appear on slow mobile networks.
   // Keep Exploration's ONE existing veil until the official arena is decoded
   // and the mounted Combat canvas has completed actual browser paint frames.
-  message('Chargement de l’image de l’arène…');
-  await waitForNativeCombatArenaArtV1(nativeVisualSource.arenaId);
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   message('Combat réel · textures et capacités prêtes');
   // The actual native Combat renderer alone certifies mounted first-frame
