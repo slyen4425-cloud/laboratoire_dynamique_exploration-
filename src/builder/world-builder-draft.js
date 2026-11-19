@@ -1583,7 +1583,7 @@ export function addWorldObject(
         transform.scaleY,
         1
       ),
-      ...(worldObjectSupportsHorizontalTurnV1(definition.kind) ? {rotationAxis:'horizontal'} : {}),
+      ...(Number(transform.rotationDeg)%360!==0&&worldObjectSupportsHorizontalTurnV1(definition.kind) ? {rotationAxis:'horizontal'} : {}),
       ...(transform.flipX === true ? {flipX:true} : {})
     },
     overrides: {
