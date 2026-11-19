@@ -5928,6 +5928,15 @@ const zoneLoadingArtCycle=createCaptureLoadingArtCycleV1(readCaptureLoadingArtSc
  href:location.href,scene:'zone',origin:location.origin
 }));
 let sculptPortalLoading=false;
+// The native Portal remains the sole loading owner. Capture only receives a
+// validated presentation signal to hide its own HUD and parent Shell return.
+function reportScopedPlayZoneLoadingV1(visible){
+  if(!sculptPlayActive||!playOptions?.sessionId||window.parent===window)return;
+  window.parent.postMessage({
+    schema:'gensrpg.exploration.play.loading.v1',
+    sessionId:playOptions.sessionId,visible
+  },window.location.origin);
+}
 async function traverseSculptWorldPortal(){
   if(sculptPortalLoading)return;
   let portal=sculptWorldPortalAtHero();
@@ -5954,10 +5963,14 @@ async function traverseSculptWorldPortal(){
   if(overlay){
     sculptPortalLoading=true;
     overlay.hidden=false;
+    reportScopedPlayZoneLoadingV1(true);
     const sceneArt=zoneLoadingArtCycle.next();
     if(sceneArt){
-      overlay.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+sceneArt+'")';
-      overlay.style.backgroundPosition='center';overlay.style.backgroundSize='100% 100%, contain';
+      // A complete, uncropped foreground on top of the same artwork filling
+      // the margins; neither author title nor creature silhouette is cut.
+      overlay.style.backgroundImage='url("'+sceneArt+'"),linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+sceneArt+'")';
+      overlay.style.backgroundPosition='center';
+      overlay.style.backgroundSize='contain, 100% 100%, cover';
     }
     // Yield a real painted frame BEFORE the expensive destination mount.
     await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
@@ -6036,6 +6049,7 @@ async function traverseSculptWorldPortal(){
         feedback.dataset.error='true';feedback.hidden=false;
       }
       overlay.hidden=true;
+      reportScopedPlayZoneLoadingV1(false);
       sculptPortalLoading=false;
     }
   }
