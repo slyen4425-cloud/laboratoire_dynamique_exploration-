@@ -43,7 +43,7 @@ test('raised plateaus shade roads without a 28x21 checkerboard at 1.5 DPR',()=>{
  assert.equal(a.right,b.left,'no vertical paint seam');
  assert.equal(a.bottom,south.top,'no horizontal paint seam');
  assert.deepEqual(
-  sculptPaintCellBoundsV1(ctx,0,0,SCULPT_TILE.width,SCULPT_TILE.height),
+  sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise,SCULPT_TILE.width,SCULPT_TILE.height),
   {x:toneRects[0].x,y:toneRects[0].y,width:toneRects[0].width,height:toneRects[0].height},
   'tint and the native painter share one pixel-snap formula'
  );
