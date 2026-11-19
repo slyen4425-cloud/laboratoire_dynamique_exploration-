@@ -658,6 +658,23 @@ try{
   // V18: existing on-disk Material Registry visuals must change actual pixels
   // without writing a single authored height or water cell.
   const visualsV18=await run(`(async()=>{
+    // Explicitly decode the FOUR official authored materials before measuring
+    // their pixels. ResourceTiming is a network side effect, not proof that
+    // an async image is ready (or present after a browser cache hit).
+    // This gate still checks actual canvas differences + immutable map data.
+    const officialMaterialNames=[
+      'forest_floor_stylized_01.webp','mountain_rock_stylized_01.webp',
+      'water_turquoise_stylized_01.webp','water_swamp_stylized_01.webp'
+    ];
+    const officialMaterialPaths=officialMaterialNames.map((name,index)=>
+      './assets/exploration/materials/forest/'+
+      (index<2?'surfaces/':'water/')+name);
+    const decoded=await Promise.all(officialMaterialPaths.map(async path=>{
+      const image=new Image();
+      image.src=new URL(path,document.baseURI).href;
+      try{await image.decode();}catch{return false;}
+      return image.naturalWidth>0&&image.naturalHeight>0;
+    }));
     document.querySelector('#reset').click();
     const wait=async()=>{await new Promise(ok=>setTimeout(ok,180));
       await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));};
@@ -686,14 +703,11 @@ try{
     water.value='water.swamp';
     water.dispatchEvent(new Event('change',{bubbles:true}));
     await wait();const swamp=pixels();
-    const resourcePaths=performance.getEntriesByType('resource').map(e=>e.name);
     return {forestPixels:diff(initial,forest),mountainPixels:diff(forest,mountain),
       turquoisePixels:diff(mountain,turquoise),swampPixels:diff(turquoise,swamp),
       mapUnchanged:original===snap(),
-      forestLoaded:resourcePaths.some(s=>s.includes('forest_floor_stylized_01.webp')),
-      mountainLoaded:resourcePaths.some(s=>s.includes('mountain_rock_stylized_01.webp')),
-      turquoiseLoaded:resourcePaths.some(s=>s.includes('water_turquoise_stylized_01.webp')),
-      swampLoaded:resourcePaths.some(s=>s.includes('water_swamp_stylized_01.webp')),
+      forestLoaded:decoded[0],mountainLoaded:decoded[1],
+      turquoiseLoaded:decoded[2],swampLoaded:decoded[3],
       selected:window.__sculptLabProbe().waterMaterialId};
   })()`);
   if(visualsV18.forestPixels<30||visualsV18.mountainPixels<30||
