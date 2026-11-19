@@ -29,7 +29,12 @@ export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={
   if(bottomLevel===null||topLevel===null||topLevel<=bottomLevel)return null;
   // A short authored incline cannot bridge a huge vertical cliff. Stretching it
   // increases the maximum ascent, but the TWO REAL terrain heights decide it.
-  if(topLevel-bottomLevel>Math.max(1,Math.floor(length/Math.max(w,h))))return null;
+  // Oblique art already encodes its perspective. Its shorter authored footprint
+  // may reach the next valid whole height cell without requiring an oversized
+  // bitmap. Face/side and all other stair rules retain their V78 limit.
+  const oblique=stair.kind==='stairs'&&stair.visual?.variantId==='oblique';
+  const supportedRise=Math.max(1,(oblique?Math.ceil:Math.floor)(length/Math.max(w,h)));
+  if(topLevel-bottomLevel>supportedRise)return null;
   return Object.freeze({id:stair.id,kind:stair.kind,foot:Object.freeze(foot),head:Object.freeze(head),
     ux,uy,length,width,bottomLevel,topLevel});
 }
