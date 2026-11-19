@@ -849,7 +849,13 @@ html.sculpt-play-booting #sculpt-play-boot-mask{display:grid!important}
    no new transition owner and no change to its standalone previews. */
 html.capture-loading-art #sculpt-play-boot-mask,
 html.capture-loading-art #play-area-loading{
- background:#07151d var(--capture-loading-art) center center / contain no-repeat;
+ /* Same artwork twice: complete (contain) center, filled (cover) side bands.
+    The full Monster InvoC title is never cropped or stretched. */
+ background-color:#07151d;
+ background-image:var(--capture-loading-art),var(--capture-loading-art);
+ background-position:center,center;
+ background-size:contain,cover;
+ background-repeat:no-repeat;
  align-items:end;justify-items:center;padding:clamp(12px,3vh,26px);
 }
 html.capture-loading-art .play-loading-brand{display:none}
@@ -876,9 +882,10 @@ body.sculpt-play-unavailable #play-start-error{
 #navigation-hud .scenery-editor-fields button{min-height:40px}
 /* Official Capture art is reused for Combat warm-up; fallback is the existing mask. */
 .combat-overlay__loading--art {
-  background-image:linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),var(--capture-loading-art);
+  background-image:linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),var(--capture-loading-art),var(--capture-loading-art);
   background-color:#07151d;
-  background-position:center,center;background-size:100% 100%,contain;background-repeat:no-repeat;
+  background-position:center,center,center;
+  background-size:100% 100%,contain,cover;background-repeat:no-repeat;
   justify-content:flex-end;padding-bottom:clamp(18px,5vh,38px);
 }
 .combat-overlay__loading--art .combat-overlay__brand {display:none}

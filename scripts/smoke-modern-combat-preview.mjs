@@ -2,9 +2,9 @@
 // not a mocked Combat UI or invented win/loss. Run only against a pinned artifact.
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { resolve, extname, sep } from 'node:path';
-import { once } from 'node:events';
 
 const root = process.cwd();
 const route = '/combat-preview/examples/dom-demo/exploration-encounter.html';
@@ -98,6 +98,10 @@ const server = createServer(async(req,res)=>{
               }
               return;
             }
+            // The bridge now awaits its official arena backdrop. Evaluate the
+            // real final layout only after its existing loading banner closes.
+            // A missing READY still fails through the finite existing bound.
+            if (getComputedStyle(banner).display !== 'none' && attempts++ < 240) return;
             const r = arena.getBoundingClientRect();
             const h = local.getBoundingClientRect();
             const c = controls.getBoundingClientRect();
@@ -140,23 +144,87 @@ function browserBinary() {
   throw new Error('Chrome/Chromium unavailable');
 }
 
+// Real-time CDP checks the native decoded arena and session, not Chromium's
+// virtual clock. A simulated-timer DOM snapshot can expire while a valid
+// local image is loading, spuriously declaring Combat unavailable.
 async function dumpDom(url) {
-  const command=spawn(browserBinary(),[
-    '--headless=new','--no-sandbox','--disable-gpu',
-    '--window-size=1600,900',
-    '--disable-dev-shm-usage','--no-first-run','--disable-extensions',
-    '--virtual-time-budget=42000','--dump-dom',url
-  ],{stdio:['ignore','pipe','pipe']});
-  const chunks=[],errors=[];
-  command.stdout.on('data',chunk=>chunks.push(chunk));
-  command.stderr.on('data',chunk=>errors.push(chunk));
-  const timeout=setTimeout(()=>command.kill('SIGKILL'),110000);
+  const profile=await mkdtemp(resolve(tmpdir(),'gensrpg-real-combat-smoke-'));
+  let command=null,socket=null;
   try {
-    const [code]=await once(command,'close');
-    if(code!==0)throw Error('Chromium exit='+code+' '+Buffer.concat(errors).toString().slice(-1000));
-    return Buffer.concat(chunks).toString();
+    command=spawn(browserBinary(),[
+      '--headless=new','--no-sandbox','--disable-gpu',
+      '--window-size=1600,900','--disable-dev-shm-usage',
+      '--no-first-run','--disable-extensions',
+      '--remote-debugging-port=0','--user-data-dir='+profile,url
+    ],{stdio:['ignore','ignore','pipe']});
+    const port=await new Promise((done,fail)=>{
+      let stderr='';
+      const watchdog=setTimeout(()=>fail(Error('Chromium debug port unavailable '+stderr.slice(-300))),45000);
+      command.stderr.on('data',bytes=>{
+        stderr+=bytes.toString();
+        const match=/DevTools listening on ws:\/\/127\.0\.0\.1:(\d+)\//.exec(stderr);
+        if(match){clearTimeout(watchdog);done(Number(match[1]));}
+      });
+      command.once('error',error=>{clearTimeout(watchdog);fail(error);});
+      command.once('exit',code=>{clearTimeout(watchdog);fail(Error('Chromium exited '+code));});
+    });
+    let target=null;
+    for(let i=0;i<50;i++){
+      const tabs=await (await fetch('http://127.0.0.1:'+port+'/json')).json();
+      target=tabs.find(t=>t.type==='page'&&t.url.startsWith(url));
+      if(target)break;
+      await new Promise(done=>setTimeout(done,150));
+    }
+    if(!target)throw Error('Native Combat real Chromium tab missing');
+    socket=new WebSocket(target.webSocketDebuggerUrl);
+    await new Promise((done,fail)=>{
+      socket.addEventListener('open',done,{once:true});
+      socket.addEventListener('error',fail,{once:true});
+    });
+    let seq=0;
+    const pending=new Map();
+    socket.addEventListener('message',event=>{
+      const result=JSON.parse(event.data);
+      const callback=pending.get(result.id);
+      if(callback){pending.delete(result.id);callback(result);}
+    });
+    const evaluate=expression=>new Promise((done,fail)=>{
+      const id=++seq;
+      const watchdog=setTimeout(()=>{
+        pending.delete(id);
+        fail(Error('CDP evaluation stalled: '+expression.slice(0,180)));
+      },30000);
+      pending.set(id,result=>{
+        clearTimeout(watchdog);
+        if(result.error||result.result?.exceptionDetails)
+          fail(Error('CDP evaluation error '+JSON.stringify(result).slice(0,700)));
+        else done(result.result?.result?.value);
+      });
+      socket.send(JSON.stringify({id,method:'Runtime.evaluate',
+        params:{expression,returnByValue:true,awaitPromise:true}}));
+    });
+    let evidence;
+    const probe="(()=>({status:document.querySelector('[data-bridge-status]')?.textContent?.trim()??'',"+
+      "error:document.documentElement.dataset.encounterBootstrapError??'',"+
+      "layout:document.documentElement.dataset.nativeLayoutProof??'',"+
+      "skill:document.documentElement.dataset.encounterSkillProof??'',"+
+      "audio:document.documentElement.dataset.encounterAudioProof??'',"+
+      "fullscreen:document.documentElement.dataset.encounterFullscreenProof??''}))()";
+    for(let i=0;i<200;i++){
+      evidence=await evaluate(probe);
+      if(evidence?.error||
+         (evidence?.status?.includes('Combat réel')&&evidence.layout&&evidence.skill&&
+          evidence.audio&&evidence.fullscreen))break;
+      await new Promise(done=>setTimeout(done,150));
+    }
+    // An unfinished render still fails via the unchanged native assertions.
+    const html=await evaluate('document.documentElement.outerHTML');
+    if(typeof html!=='string')throw Error('Native Combat DOM could not be inspected');
+    return html;
   } finally {
-    clearTimeout(timeout);
+    if(socket)try{socket.close();}catch{}
+    if(command)command.kill('SIGKILL');
+    await rm(profile,{recursive:true,force:true});
   }
 }
 

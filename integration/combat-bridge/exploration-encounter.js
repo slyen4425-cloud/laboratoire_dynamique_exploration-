@@ -120,7 +120,17 @@ function presentationAssetsForSource(source, assetCatalog) {
   });
   return Object.freeze({
     asset:resolveAsset,
-    presentationForArena: id=>demoPresentationAssets.presentationForArena(id),
+    presentationForArena(id) {
+      // The existing Combat arena binding owns the choice/position/scale;
+      // resolve ONLY its media ID through the same certified, already staged
+      // Global Visual Catalog as every creature. Never fetch a moving remote
+      // global-assets branch while the offline-capable PWA is starting.
+      const preset=demoPresentationAssets.presentationForArena(id);
+      if(!preset?.background?.assetId)return preset;
+      const background=resolveAsset(preset.background.assetId);
+      if(!background)throw new Error('Arène absente du catalogue officiel : '+preset.background.assetId);
+      return Object.freeze({...preset,background});
+    },
     presentationForSkill(id,context={}) {
       return native.presentationForSkill(id,context) ??
         demoPresentationAssets.presentationForSkill(id,context);
@@ -129,7 +139,23 @@ function presentationAssetsForSource(source, assetCatalog) {
     audioAsset: id=>native.audioAsset(id)??resolveOfficialAudioAsset(id)
   });
 }
-function showOfficialCombatTemplate(source, templateResponse, arenaId) {
+// The native Combat arena uses a CSS background, which is not covered by the
+// creature <img> load signals. It must decode before Combat emits READY.
+async function waitForNativeCombatArenaArtV1(preset) {
+  const uri=preset?.background?.url;
+  if(!uri)return; // Official CSS fallback is a complete, non-image arena.
+  if(new URL(uri,import.meta.url).origin!==window.location.origin)
+    throw new Error('Arène doit être chargée depuis les médias certifiés de la PWA');
+  const image=await new Promise((resolve,reject)=>{
+    const asset=new Image();
+    asset.decoding='async';
+    asset.onload=()=>resolve(asset);
+    asset.onerror=()=>reject(new Error('Arène officielle indisponible : '+uri));
+    asset.src=uri;
+  });
+  if(typeof image.decode==='function')await image.decode();
+}
+function showOfficialCombatTemplate(source, templateResponse, arenaId, preset) {
   return Promise.resolve(templateResponse).then(async response => {
     if (!response.ok) throw new Error('Template du Labo Combat indisponible');
     const page = new DOMParser().parseFromString(await response.text(), 'text/html');
@@ -146,7 +172,6 @@ function showOfficialCombatTemplate(source, templateResponse, arenaId) {
       }
     }
     const arena = root.querySelector('[data-combat-arena]');
-    const preset = demoPresentationAssets.presentationForArena(arenaId);
     if (preset?.background?.url) {
       arena.dataset.arenaBackground = 'image';
       arena.dataset.arenaTheme = arenaId;
@@ -299,6 +324,8 @@ async function launch() {
   const nativeVisualSource=adaptCaptureExportToNativeVisualSourceV1({
     exported:nativeCombatSource.exported,assetCatalog,profiles,assetUrlForFile
   });
+  const nativePresentationAssets=presentationAssetsForSource(nativeCombatSource,assetCatalog);
+  const nativeArenaPresentation=nativePresentationAssets.presentationForArena(nativeVisualSource.arenaId);
   // Real decoded image readiness, not an arbitrary delay or a fake sprite.
   // No battle HUD appears while its own creatures and equipped ability icons
   // are still downloading/decoding. Uses the exact authored catalog and IDs.
@@ -325,14 +352,19 @@ async function launch() {
       img.src=assetUrlForFile(file);
     })));
   }
-  const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse,nativeVisualSource.arenaId);
+  // The battle Session must not start its timers before the arena backdrop
+  // exists. Load it before mounting Combat, not merely before removing the veil.
+  message('Chargement de l’image de l’arène…');
+  await waitForNativeCombatArenaArtV1(nativeArenaPresentation);
+  const root=await showOfficialCombatTemplate(nativeCombatSource,templateResponse,
+    nativeVisualSource.arenaId,nativeArenaPresentation);
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
     ...(adventureParty||trainerPreview?{embeddedBattle:{initialHpByActor:Object.fromEntries(
       nativeCombatSource.fighters.map(fighter=>[fighter.id,
         adventureParty&&fighter.id==='local-1'?initialAdventureHp:fighter.maxHp]))}}:{}),
-    presentationAssets:presentationAssetsForSource(nativeCombatSource,assetCatalog)
+    presentationAssets:nativePresentationAssets
   });
   if(adventureParty||trainerPreview){
     fleeButton.hidden=false;
@@ -366,6 +398,10 @@ async function launch() {
   }else{
     observeNativeBattleResult(mountedCombat,showNativeCombatOutcome);
   }
+  // CSS arena art can finish after the fighters appear on slow mobile networks.
+  // Keep Exploration's ONE existing veil until the official arena is decoded
+  // and the mounted Combat canvas has completed actual browser paint frames.
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   message('Combat réel · textures et capacités prêtes');
   // The actual native Combat renderer alone certifies mounted first-frame
   // readiness. Exploration owns the veil and never infers this from iframe load.

@@ -536,6 +536,33 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
   return (col,row,level,x,y)=>{
     const items=buckets[row*terrain.width+col];
     if(!items?.length)return 0;
+    // On fractional mobile DPR/zoom, the independently anti-aliased clips
+    // can expose one physical pixel of the green base below a snow/road zone.
+    // Underpaint ONLY with the same canonical opaque Material Registry pattern;
+    // the existing semi-transparent edge/feather is still clipped EXACTLY once.
+    // This is not the former overlapping translucent +.65px clip regression.
+    ctx.save();
+    // Restrict opaque paint to subpixel JOIN STRIPS, never the full authored
+    // road/zone interior (which must retain its exact original transparency).
+    const seam=.75;
+    ctx.beginPath();
+    ctx.rect(x-seam,y-seam,w+2*seam,2*seam);
+    ctx.rect(x-seam,y+h-seam,w+2*seam,2*seam);
+    ctx.rect(x-seam,y+seam,2*seam,h-2*seam);
+    ctx.rect(x+w-seam,y+seam,2*seam,h-2*seam);
+    ctx.clip();
+    for(const feature of items){
+      const pattern=patterns.get(feature.materialId);
+      if(!pattern||feature.points.length<2)continue;
+      ctx.beginPath();
+      ctx.moveTo(feature.points[0].x,feature.points[0].y-level*rise);
+      for(let i=1;i<feature.points.length;i++)
+        ctx.lineTo(feature.points[i].x,feature.points[i].y-level*rise);
+      ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.globalAlpha=1;ctx.strokeStyle=pattern;
+      ctx.lineWidth=feature.width;ctx.stroke();
+    }
+    ctx.restore();
     ctx.save();sculptPaintCellClipV1(ctx,x,y,w,h);
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);

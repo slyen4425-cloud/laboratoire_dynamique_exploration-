@@ -1,0 +1,53 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+
+const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+
+test('official CSS arena image decoded before native Combat READY postMessage',()=>{
+ const code=read('integration/combat-bridge/exploration-encounter.js');
+ const mounted=code.indexOf('mountedCombat=await mountCoop2v2Test(');
+ const decoded=code.indexOf('await waitForNativeCombatArenaArtV1(nativeArenaPresentation)');
+ const ready=code.indexOf("type:'gensrpg.capture.combat-ready.v1'",decoded);
+ assert.ok(decoded>0&&mounted>decoded&&ready>mounted,'arena must decode before battle Session mounts');
+ assert.match(code,/asset\.onerror=\(\)=>reject\(new Error\('Arène officielle indisponible/);
+ assert.match(code,/const background=resolveAsset\(preset\.background\.assetId\)/);
+ assert.match(code,/new URL\(uri,import\.meta\.url\)\.origin!==window\.location\.origin/);
+ assert.match(code,/presentationAssets:nativePresentationAssets/);
+ assert.match(code,/await new Promise\(resolve=>requestAnimationFrame\(\(\)=>requestAnimationFrame\(resolve\)\)\)/);
+});
+
+test('one native Portal cover emits only scoped HUD-visibility events',()=>{
+ const code=read('src/sculpt-lab-main.js');
+ assert.match(code,/schema:'gensrpg.exploration.play.loading.v1'/);
+ assert.match(code,/sessionId:playOptions.sessionId,visible/);
+ assert.match(code,/overlay.hidden=false;\s*reportScopedPlayZoneLoadingV1\(true\)/);
+ assert.match(code,/overlay.hidden=true;\s*reportScopedPlayZoneLoadingV1\(false\)/);
+ assert.doesNotMatch(code.slice(code.indexOf('function reportScopedPlayZoneLoadingV1'),code.indexOf('async function traverseSculptWorldPortal')),/CombatResult|localStorage|setInterval/);
+});
+
+test('mobile fractional-DPR seams get opaque underpaint in the same native painter',()=>{
+ const code=read('src/render/sculpt-height-renderer.js');
+ const from=code.indexOf('function sculptPaintByCell');
+ const until=code.indexOf('export function sculptHillTopProfile',from);
+ const painter=code.slice(from,until);
+ assert.ok(from>0&&until>from);
+ const underlay=painter.indexOf('ctx.rect(x-seam,y-seam,w+2*seam,2*seam)');
+ const exactClip=painter.indexOf('sculptPaintCellClipV1(ctx,x,y,w,h)');
+ assert.ok(underlay>0&&exactClip>underlay);
+ assert.match(painter.slice(underlay,exactClip),/ctx\.rect\(x\+w-seam,y\+seam,2\*seam,h-2\*seam\)/);
+ assert.match(painter.slice(underlay,exactClip),/ctx.globalAlpha=1;ctx.strokeStyle=pattern/);
+ assert.doesNotMatch(painter.slice(underlay,exactClip),/\.95|\.20/);
+ assert.match(painter.slice(exactClip),/ctx.globalAlpha=\.20;ctx.stroke\(\)/);
+});
+
+test('CI browser gates observe canonical actual image state, never synthetic time or Resource Timing',()=>{
+ const sculpt=read('src/sculpt-lab-main.js');
+ const snow=read('scripts/smoke-sculpt-terrain-lab.mjs');
+ const encounter=read('scripts/smoke-modern-combat-preview.mjs');
+ assert.match(sculpt,/visualAssetReady:Boolean\(art\?\.complete&&\(art\?\.naturalWidth\?\?art\?\.width\)>0\)/);
+ assert.match(snow,/object\.visualAssetReady===true/);
+ assert.match(encounter,/--remote-debugging-port=0/);
+ assert.match(encounter,/document\.documentElement\.outerHTML/);
+ assert.doesNotMatch(encounter,/--virtual-time-budget/);
+});
