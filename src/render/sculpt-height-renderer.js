@@ -58,18 +58,12 @@ export function sculptGroundReliefLighting(terrain,col,row){
 }
 function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
   const info=sculptGroundReliefLighting(terrain,col,row);
-  if(info.tone!==0){
-    // Raised ground receives translucent altitude tone. Pixel-antialiased
-    // per-cell fillRect made roads on plateaus look like a 28x21 tile grid,
-    // especially at 1.5 DPR. Use the SAME pixel-aligned mathematical
-    // boundaries as the native WorldSurface painter, but paint a rectangle
-    // directly: no extra clip/save/restore on thousands of terrain cells.
-    const rect=sculptPaintCellBoundsV1(ctx,x,y,w,h);
-    ctx.fillStyle=info.tone>0
-      ?'rgba(251,243,206,'+info.tone+')'
-      :'rgba(15,35,39,'+(-info.tone)+')';
-    ctx.fillRect(rect.x,rect.y,rect.width,rect.height);
-  }
+  // The elevation tint is available as read-only metadata, but deliberately
+  // NOT re-painted in 28x21 translucent rectangles on the final texture.
+  // Even pixel-snapped rectangles make washed-out plateaus and visible tiles
+  // when textured grass/roads cross hill edges at fractional DPR or zoom.
+  // Keep authored WorldSurface material colors intact at EVERY elevation;
+  // cliffs, actual ledge lips and contact shadows still communicate relief.
   for(const {side,opacity} of info.contactShadows){
     const horizontal=side==='west'||side==='east';
     const band=horizontal?w*.30:h*.31;
