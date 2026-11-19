@@ -235,9 +235,9 @@ export function createImmersiveEncounterHostV1({
       const customCombatImage=combatImageCycle.next();
       if (customCombatImage) {
         loading.className+=' combat-overlay__loading--art';
-        loading.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+customCombatImage+'")';
+        loading.style.backgroundImage='linear-gradient(180deg,#07151d40 20%,#07151ddc 100%),url("'+customCombatImage+'"),url("'+customCombatImage+'")';
         loading.style.backgroundPosition='center';
-        loading.style.backgroundSize='100% 100%, contain';
+        loading.style.backgroundSize='100% 100%, contain, cover';
       } else if (documentRef.documentElement?.classList?.contains('capture-loading-art')) {
         loading.className+=' combat-overlay__loading--art';
       }
