@@ -40,3 +40,14 @@ test('mobile fractional-DPR seams get opaque underpaint in the same native paint
  assert.doesNotMatch(painter.slice(underlay,exactClip),/\.95|\.20/);
  assert.match(painter.slice(exactClip),/ctx.globalAlpha=\.20;ctx.stroke\(\)/);
 });
+
+test('CI browser gates observe canonical actual image state, never synthetic time or Resource Timing',()=>{
+ const sculpt=read('src/sculpt-lab-main.js');
+ const snow=read('scripts/smoke-sculpt-terrain-lab.mjs');
+ const encounter=read('scripts/smoke-modern-combat-preview.mjs');
+ assert.match(sculpt,/visualAssetReady:Boolean\(art\?\.complete&&\(art\?\.naturalWidth\?\?art\?\.width\)>0\)/);
+ assert.match(snow,/object\.visualAssetReady===true/);
+ assert.match(encounter,/--remote-debugging-port=0/);
+ assert.match(encounter,/document\.documentElement\.outerHTML/);
+ assert.doesNotMatch(encounter,/--virtual-time-budget/);
+});
