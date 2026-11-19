@@ -9,7 +9,7 @@ test('official CSS arena image decoded before native Combat READY postMessage',(
  const mounted=code.indexOf('mountedCombat=await mountCoop2v2Test(');
  const decoded=code.indexOf('await waitForNativeCombatArenaArtV1(nativeVisualSource.arenaId)',mounted);
  const ready=code.indexOf("type:'gensrpg.capture.combat-ready.v1'",decoded);
- assert.ok(mounted>0&&decoded>mounted&&ready>decoded);
+ assert.ok(decoded>0&&mounted>decoded&&ready>mounted,'arena must decode before battle Session mounts');
  assert.match(code,/asset\.onerror=\(\)=>reject\(new Error\('Arène officielle indisponible/);
  assert.match(code,/await new Promise\(resolve=>requestAnimationFrame\(\(\)=>requestAnimationFrame\(resolve\)\)\)/);
 });
