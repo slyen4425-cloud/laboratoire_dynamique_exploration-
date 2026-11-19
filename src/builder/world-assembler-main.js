@@ -25,6 +25,7 @@ import {encounterConfigNeedsExplicitInitialization} from './preset-encounter-def
 import {DEFAULT_WORLD_ENCOUNTER_STAT_PROFILE_V1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {makePlayableZoneRoute,resolveSculptAreaForEditor} from './sculpt-playable-zone-route.js?rev=preset-travel-encounters-v2';
 import {sculptWorldAreaScene,SCULPT_WORLD_TILE} from './sculpt-world-area-link.js';
+import {exportWorldAreaAsMapPresetV1} from './world-assembler-map-preset-export-v1.js';
 import {SCULPT_INTERIOR_SIZE} from '../world/sculpt-interior-area-link.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 
@@ -949,6 +950,22 @@ function installWorldAssembler(){
     on(byId('edit-sculpt-area'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('world-workspace-map'),'click',()=>openAreaEditor(mapPanelUrl));
   on(byId('edit-area'),'click',()=>openAreaEditor(mapPanelUrl));
+  on(byId('export-selected-map-preset'),'click',()=>{
+    try{
+      // Export only; never replace a WorldArea, an existing personal preset,
+      // a Spawn, Portal, encounter rule or a saved WorldDocument.
+      const file=exportWorldAreaAsMapPresetV1(draft,selectedId);
+      const blob=new Blob([file.json],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement('a');
+      link.href=url;link.download=file.fileName;
+      document.body.append(link);link.click();link.remove();
+      URL.revokeObjectURL(url);
+      status('Carte «'+file.preset.name+'» exportée en un seul fichier JSON prêt pour les présets officiels.');
+    }catch(error){
+      status('Export de carte impossible : '+error.message+' · utilise « Exporter le monde complet » pour conserver toutes les zones et passages.',true);
+    }
+  });
   on(byId('export-world'),'click',()=>{
     try{
       const json=serializeWorldBuilderDraft(draft);
