@@ -98,6 +98,10 @@ const server = createServer(async(req,res)=>{
               }
               return;
             }
+            // The bridge now awaits its official arena backdrop. Evaluate the
+            // real final layout only after its existing loading banner closes.
+            // A missing READY still fails through the finite existing bound.
+            if (getComputedStyle(banner).display !== 'none' && attempts++ < 240) return;
             const r = arena.getBoundingClientRect();
             const h = local.getBoundingClientRect();
             const c = controls.getBoundingClientRect();
