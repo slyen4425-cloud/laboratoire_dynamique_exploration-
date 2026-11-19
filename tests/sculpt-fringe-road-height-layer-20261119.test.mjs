@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain} from '../src/world/sculpt-height-model.js';
-import {drawSculptTerrain,SCULPT_TILE} from '../src/render/sculpt-height-renderer.js';
+import {drawSculptTerrain,SCULPT_TILE,sculptPaintCellBoundsV1} from '../src/render/sculpt-height-renderer.js';
 
 const src=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
 const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
@@ -32,15 +32,21 @@ test('raised plateaus shade roads without a 28x21 checkerboard at 1.5 DPR',()=>{
   texture:{id:'existing-grass'},drawOuterSouthRim:false
  });
  assert.ok(output.worldWidth===8*SCULPT_TILE.width);
- assert.equal(clipped.length,64,'one pixel-snapped tint clip per raised tile');
+ assert.equal(clipped.length,0,'the tint adds no extra clip/save/restore operations');
+ const toneRects=filled.filter(f=>String(f.fill).startsWith('rgba(251,243,206,'));
+ assert.equal(toneRects.length,64,'one shared-color tint rect per raised tile');
  const device=rect=>({
   left:Math.round(rect.x*1.5+27),right:Math.round((rect.x+rect.width)*1.5+27),
   top:Math.round(rect.y*1.5+24),bottom:Math.round((rect.y+rect.height)*1.5+24)
  });
- const [a,b,south]=[clipped[0],clipped[1],clipped[8]].map(device);
+ const [a,b,south]=[toneRects[0],toneRects[1],toneRects[8]].map(device);
  assert.equal(a.right,b.left,'no vertical paint seam');
  assert.equal(a.bottom,south.top,'no horizontal paint seam');
- assert.ok(filled.filter(f=>String(f.fill).startsWith('rgba(251,243,206,')).length===64);
+ assert.deepEqual(
+  sculptPaintCellBoundsV1(ctx,0,0,SCULPT_TILE.width,SCULPT_TILE.height),
+  {x:toneRects[0].x,y:toneRects[0].y,width:toneRects[0].width,height:toneRects[0].height},
+  'tint and the native painter share one pixel-snap formula'
+ );
  assert.equal(JSON.stringify(map),before,'the elevation model remains unchanged');
 });
 
@@ -75,8 +81,9 @@ test('raised road fix reuses canonical cell clip and never adds new paint author
  const last=renderer.indexOf('export function sculptEastSeamBounds(',first);
  const lighting=renderer.slice(first,last);
  assert.ok(first>0&&last>first);
- assert.match(lighting,/sculptPaintCellClipV1\(ctx,x,y,w,h\)/);
- assert.match(lighting,/ctx\.fillRect\(x-1,y-1,w\+2,h\+2\)/);
+ assert.match(lighting,/sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
+ assert.match(lighting,/ctx\.fillRect\(rect\.x,rect\.y,rect\.width,rect\.height\)/);
+ assert.doesNotMatch(lighting,/ctx\.save\(\)|ctx\.clip\(\)/);
  assert.doesNotMatch(lighting,/new WorldSurface|localStorage|setItem/);
  const painter=renderer.slice(renderer.indexOf('function sculptPaintByCell('),
   renderer.indexOf('export function sculptHillTopProfile'));

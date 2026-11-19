@@ -59,18 +59,16 @@ export function sculptGroundReliefLighting(terrain,col,row){
 function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
   const info=sculptGroundReliefLighting(terrain,col,row);
   if(info.tone!==0){
-    // Higher plateaus have a translucent altitude tint. At fractional mobile
-    // DPR, an independently antialiased 28x21 fillRect exposes a dark 1-pixel
-    // checkerboard at every road/zone cell join. Use the existing native
-    // pixel-snapped cell clip, and fully cover its interior, exactly once.
-    // The opacity, painter order, terrain height and collisions stay intact.
-    ctx.save();
-    sculptPaintCellClipV1(ctx,x,y,w,h);
+    // Raised ground receives translucent altitude tone. Pixel-antialiased
+    // per-cell fillRect made roads on plateaus look like a 28x21 tile grid,
+    // especially at 1.5 DPR. Use the SAME pixel-aligned mathematical
+    // boundaries as the native WorldSurface painter, but paint a rectangle
+    // directly: no extra clip/save/restore on thousands of terrain cells.
+    const rect=sculptPaintCellBoundsV1(ctx,x,y,w,h);
     ctx.fillStyle=info.tone>0
       ?'rgba(251,243,206,'+info.tone+')'
       :'rgba(15,35,39,'+(-info.tone)+')';
-    ctx.fillRect(x-1,y-1,w+2,h+2);
-    ctx.restore();
+    ctx.fillRect(rect.x,rect.y,rect.width,rect.height);
   }
   for(const {side,opacity} of info.contactShadows){
     const horizontal=side==='west'||side==='east';
@@ -488,13 +486,13 @@ export function drawSculptBrushPreview(ctx,{terrain,points=[],radius=3,edgeSoftn
 // clip overscan re-stamped semi-transparent road and zone strokes over
 // neighboring cells, leaving trails at tile joins. Adjacent clips share one
 // mathematical boundary even with camera zoom; height projection is unchanged.
-export function sculptPaintCellClipV1(ctx,x,y,w,h){
-  // Exact non-overlapping clips fixed the previous double-stamped translucent
-  // road seams. However, on cached canvases scaled by DPR=1.5 a logical
-  // boundary such as y=21 lands at device y=31.5. Two individually antialiased
-  // clips leave a one-pixel underpaint gap. Snap both neighbors to the SAME
-  // device-pixel boundary, never grow either rectangle into its neighbor.
-  // For sheared/rotated views retain the existing exact logical clip path.
+// A single read-only pixel boundary for BOTH authored WorldSurface clipping
+// and translucent raised-ground altitude lighting. It never changes geometry
+// or applies the same opacity twice on neighboring cells.
+export function sculptPaintCellBoundsV1(ctx,x,y,w,h){
+  // At DPR=1.5, for example, a logical y=21 is between device pixels.
+  // Rounding both neighboring edges once closes seams without any overscan.
+  // Sheared editor views retain the historic logical-coordinate fallback.
   const transform=typeof ctx.getTransform==='function'?ctx.getTransform():null;
   if(transform&&Number.isFinite(transform.a)&&Number.isFinite(transform.d)&&
      Number.isFinite(transform.e)&&Number.isFinite(transform.f)&&
@@ -504,12 +502,17 @@ export function sculptPaintCellClipV1(ctx,x,y,w,h){
     const x1=Math.round(transform.a*(x+w)+transform.e);
     const y0=Math.round(transform.d*y+transform.f);
     const y1=Math.round(transform.d*(y+h)+transform.f);
-    ctx.beginPath();
-    ctx.rect((x0-transform.e)/transform.a,(y0-transform.f)/transform.d,
-      (x1-x0)/transform.a,(y1-y0)/transform.d);
-    ctx.clip();return;
+    return {x:(x0-transform.e)/transform.a,
+      y:(y0-transform.f)/transform.d,
+      width:(x1-x0)/transform.a,height:(y1-y0)/transform.d};
   }
-  ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+  return {x,y,width:w,height:h};
+}
+export function sculptPaintCellClipV1(ctx,x,y,w,h){
+  const bounds=sculptPaintCellBoundsV1(ctx,x,y,w,h);
+  ctx.beginPath();
+  ctx.rect(bounds.x,bounds.y,bounds.width,bounds.height);
+  ctx.clip();
 }
 // Canonical WorldSurface strokes are rasterized on top of sculpt terrain.
 function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
