@@ -3,7 +3,7 @@
 import {sculptHeightAt} from '../world/sculpt-height-model.js';
 import {worldObjectBaseDimensions} from '../world/world-object-model.js?rev=sculpt-bridge-dimensions-v63-deck-v70-rails-v71';
 import {sculptBridgeDeckHeight} from '../core/sculpt-navigation-collision.js?rev=sculpt-bridge-crossing-v60-deck-v70-rails-v71';
-import {sculptStairCorridor} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
+import {sculptStairCorridor,sculptStairArtFrame} from '../core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {resolveWorldObjectPlacements} from '../world/world-object-placement-model.js?rev=deck-v70-rails-v71-ramp-v77';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=deck-v70-rails-v71-ramp-v77';
 import {sculptBridgeDeckArtShift} from './sculpt-bridge-deck-layers.js?rev=sculpt-bridge-deck-anchor-v67';
@@ -41,16 +41,17 @@ export function sculptObjectVisualRect(object,terrain,{tileWidth=28,tileHeight=2
   // Applying the terrain rise again to its image stretches it abruptly as
   // soon as its physical corridor becomes valid. Keep its authored proportions.
   // The V78 front/side presentation remains unchanged.
-  const obliqueStairArt=object.kind==='stairs'&&object.visual?.variantId==='oblique';
-  const stairLift=stair&&!obliqueStairArt?(stair.topLevel-stair.bottomLevel)*rise:0;
+  const artFrame=sculptStairArtFrame(object);
+  const stairLift=stair&&!artFrame?(stair.topLevel-stair.bottomLevel)*rise:0;
   const width=verticalBridgeArt?(base?.height??80)*t.scaleY:(base?.width??80)*t.scaleX;
   const height=(verticalBridgeArt?(base?.width??80)*t.scaleX:(base?.height??80)*t.scaleY)+stairLift;
   return Object.freeze({
     x:t.x,y:t.y-level*rise,width,height,
-    // Optical step-foot center in the source 384px oblique art. Anchor
-    // stays at the authored WorldObject position for movement/collision.
-    ...(obliqueStairArt?{obliqueArtFootOffsetX:width*.19,
-      obliqueArtFootOffsetY:height*.09}:{}),
+    // Use the very same foot anchor as the canonical staircase corridor.
+    // No independent visual or navigation axis is reconstructed here.
+    ...(artFrame?{stairArtVariant:artFrame.variant,
+      stairArtFootOffsetX:artFrame.footOffsetX,
+      stairArtFootOffsetY:artFrame.footOffsetY}:{}),
     angle:(t.rotationDeg??0)*Math.PI/180
   });
 }
@@ -71,10 +72,10 @@ export function findSculptVisualObjectAtPoint(placements,terrain,{x,y},{
     // adapter, not centered in the PNG bounds; selection must use exactly
     // that same visible anchor, without changing any WorldObject transform.
     const deckShift=sculptBridgeDeckArtShift(rect,object);
-    const oblique=Number.isFinite(rect.obliqueArtFootOffsetX);
-    const localCenterX=oblique?(object.transform.flipX===true?1:-1)*
-      rect.obliqueArtFootOffsetX:0;
-    const localCenterY=oblique?-rect.height*.5+rect.obliqueArtFootOffsetY:
+    const perspectiveStair=Number.isFinite(rect.stairArtFootOffsetX);
+    const localCenterX=perspectiveStair?(object.transform.flipX===true?1:-1)*
+      rect.stairArtFootOffsetX:0;
+    const localCenterY=perspectiveStair?-rect.height*.5+rect.stairArtFootOffsetY:
       deckShift>0?deckShift-rect.height*.5:0;
     if(Math.abs(localX-localCenterX)>rect.width/2+padding||
        Math.abs(localY-localCenterY)>rect.height/2+padding)continue;
