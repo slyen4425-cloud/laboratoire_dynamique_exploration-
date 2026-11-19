@@ -26,6 +26,7 @@ const host = $('[data-capture-preview-host]');
 const status = $('[data-bridge-status]');
 let mountedVisuals = null, mountedCombat = null, watchId = null, completed = false;
 let soundtrack = null;
+let announcedResultSoundtrack = null;
 const fullButton = $('[data-encounter-fullscreen]');
 const fleeButton = $('[data-encounter-flee]');
 const displayMode = createCapturePreviewDisplayModeV1({
@@ -73,7 +74,7 @@ function resolveOfficialAudioAsset(assetId) {
 // The first real battle touch/keyboard action authorizes music on Android.
 // No second "Activer le son" button: the official Combat SoundtrackSession
 // owns music, while DomCombatAudio continues to own each SFX.
-function startSoundtrackOnGesture() {
+function startSoundtrackOnGesture(sceneId='capture:combat:normal') {
   if(soundtrack)return;
   try {
     const bridge=createCombatSoundtrackPreviewBridgeV1({
@@ -90,13 +91,25 @@ function startSoundtrackOnGesture() {
         }
       }
     });
-    const result=bridge.transitionTo('capture:combat:normal');
+    const result=bridge.transitionTo(sceneId);
     if(result.status!=='playing') {
       bridge.dispose();
       return;
     }
     soundtrack=bridge;
   }catch(error){console.warn('Lecture musique impossible',error);}
+}
+// Presentation-only callback: Combat decides the outcome and owns its clock.
+// The same SoundtrackSession used by the editor switches to the result scene.
+// Do not start another music player or infer the winner from DOM state.
+function playOfficialCombatResultSoundtrack(outcome) {
+  if(!['victory','defeat'].includes(outcome) || announcedResultSoundtrack!==null)return;
+  announcedResultSoundtrack=outcome;
+  const sceneId='capture:combat:'+outcome;
+  try{
+    if(soundtrack)soundtrack.transitionTo(sceneId);
+    else startSoundtrackOnGesture(sceneId);
+  }catch(error){console.warn('Jingle Combat indisponible',error);}
 }
 function startMusicWhenTouched(event){
   if(event.isTrusted===false)return;
@@ -203,6 +216,8 @@ function observeNativeBattleResult(combat, onResult) {
 const outcomeHold=createCombatOutcomeHoldV1({onRelease:completeBattle});
 function showNativeCombatOutcome(outcome) {
   if(!outcomeHold.start(outcome))return;
+  // Tester also uses this hold when no embedded Combat completion is present.
+  playOfficialCombatResultSoundtrack(outcome);
   status.dataset.ending='true';
   message(outcome==='victory'?'Victoire ! · fin du combat':
     outcome==='defeat'?'Défaite · fin du combat':'Fuite · retour en exploration');
@@ -361,6 +376,7 @@ async function launch() {
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
+    onBattleOutcome:playOfficialCombatResultSoundtrack,
     ...(adventureParty||trainerPreview?{embeddedBattle:{initialHpByActor:Object.fromEntries(
       nativeCombatSource.fighters.map(fighter=>[fighter.id,
         adventureParty&&fighter.id==='local-1'?initialAdventureHp:fighter.maxHp]))}}:{}),
