@@ -777,11 +777,15 @@ try{
   })()`);
   if(reimport.probe.count!==1||!reimport.status.includes('Scène complète'))
     throw Error('V20 scene import lost object: '+JSON.stringify(reimport));
-  const nativeArt=await run(`(()=>{
-    const urls=performance.getEntriesByType('resource').map(r=>r.name);
-    return urls.some(u=>u.includes('building_house_')&&u.endsWith('.webp'));
-  })()`);
-  if(!nativeArt)throw Error('V20 building visual never requested from native asset adapter');
+  // The native object probe reads the SAME cached Image consumed by the
+  // real canvas painter. ResourceTiming is not reliable across cache hits.
+  let nativeArt=false;
+  for(let i=0;i<40;i++){
+    nativeArt=await run("window.__sculptObjectsProbe().objects.some(o=>o.definition==='objectdef.building.house.blue_cottage.01'&&o.visualAssetReady)");
+    if(nativeArt)break;
+    await sleep(100);
+  }
+  if(!nativeArt)throw Error('V20 building visual not decoded by native object painter');
   const touchStart=await run(`(()=>{
     document.querySelector('#object-category').value='tree';
     document.querySelector('#object-category').dispatchEvent(new Event('change',{bubbles:true}));
@@ -808,10 +812,14 @@ try{
   if(!touchStart.snowAvailable||!touchStart.snowSelected||
      !afterObjectTouch.objects.some(o=>o.definition==='objectdef.tree.snow.spruce_dense_01'))
     throw Error('Snow tree is not selectable or placeable in real Chromium: '+JSON.stringify({touchStart,afterObjectTouch}));
-  await sleep(550);
-  const snowResource=await run("performance.getEntriesByType('resource').some(r=>r.name.includes('tree_snow_spruce_dense_01.webp')&&r.responseEnd>0)");
+  let snowResource=false;
+  for(let i=0;i<40;i++){
+    snowResource=await run("window.__sculptObjectsProbe().objects.some(o=>o.definition==='objectdef.tree.snow.spruce_dense_01'&&o.visualAssetReady)");
+    if(snowResource)break;
+    await sleep(100);
+  }
   if(!snowResource)
-    throw Error('Snow tree native WebP was not loaded by real Chromium 2.5D renderer');
+    throw Error('Snow tree native WebP was not decoded by real 2.5D object painter');
   await run("document.querySelector('#navigation-toggle').click()");
   const walkingWithObjects=await run(`(()=>({
     walking:window.__sculptNavProbe().enabled,
