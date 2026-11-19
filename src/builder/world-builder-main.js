@@ -4539,6 +4539,8 @@ function applyTransformInputs() {
       x: numberValue($('object-x')),
       y: numberValue($('object-y')),
       rotationDeg: numberValue($('object-rotation')),
+      ...(numberValue($('object-rotation')) !== currentObjectRaw()?.transform?.rotationDeg
+        ? {rotationAxis:'horizontal'} : {}),
       scaleX: numberValue($('object-scale-x'), 1),
       scaleY: numberValue($('object-scale-y'), 1),
       flipX: $('object-flip-x').checked
@@ -7145,7 +7147,7 @@ canvas.addEventListener('pointermove', (event) => {
       draft,
       selectedAreaId,
       selectedObjectId,
-      { rotationDeg: degrees }
+      { rotationDeg: degrees, rotationAxis: 'horizontal' }
     );
 
     $('object-rotation').value =
