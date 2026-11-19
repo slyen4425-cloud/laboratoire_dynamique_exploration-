@@ -63,6 +63,7 @@ import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js
 import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1} from './actors/scoped-adventure-hero-v1.js';
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
+import {worldObjectHorizontalTurnEnabledV1,worldObjectHorizontalTurnScaleXV1} from './world/world-object-horizontal-turn-v1.js';
 import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
 import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,normalizeWorldObjectShadowProfilesV1,worldObjectShadowProfileForAssetV1,setWorldObjectShadowProfileV1} from './world/world-object-shadow-settings-v1.js?rev=shadow-model-profiles-20261115';
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
@@ -3357,7 +3358,11 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
     const view=cameraView();
     ctx.transform(1,view.shear,0,view.pitch,0,0);
   }
-  ctx.rotate(rect.angle);
+  // Existing bridges, stairs and old worlds keep their planar rotation.
+  // Newly placed/touched 2D art turns horizontally around the screen Y axis.
+  if(worldObjectHorizontalTurnEnabledV1(object))
+    ctx.scale(worldObjectHorizontalTurnScaleXV1(object.transform.rotationDeg),1);
+  else ctx.rotate(rect.angle);
   // Same mirror affects the existing image and silhouette shadow.
   ctx.scale(object.transform?.flipX===true?-1:1,1);
   if(foregroundRailOnly){
