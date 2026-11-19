@@ -10,17 +10,47 @@ const readLevel=(terrain,x,y,w,h)=>{
   if(sculptSphereAt(terrain,x,y,0))return null;
   return sculptHeightAt(terrain,col,row);
 };
+// These two native WebPs already contain a painted 2.5D perspective.
+// Keep their observable step-foot and landing on the same geometry consumed
+// by Collision World AND the image renderer; the front V78 axis is untouched.
+const stairArtLandmarks=Object.freeze({
+  oblique:Object.freeze({footX:.72,footY:.92,headX:.48,headY:.13}),
+  side:Object.freeze({footX:.78,footY:.85,headX:.16,headY:.13})
+});
+export function sculptStairArtFrame(stair){
+  const art=stair?.kind==='stairs'?stairArtLandmarks[stair.visual?.variantId]:null;
+  if(!art||!stair.transform||!stair.baseSize)return null;
+  const t=stair.transform;
+  const width=stair.baseSize.width*t.scaleX;
+  const height=stair.baseSize.height*t.scaleY;
+  const a=(t.rotationDeg||0)*Math.PI/180;
+  const flip=t.flipX===true?-1:1;
+  // The canvas scales X for mirror *before* rotating the authored sprite.
+  const localX=(art.headX-art.footX)*width*flip;
+  const localY=(art.headY-art.footY)*height;
+  const dx=localX*Math.cos(a)-localY*Math.sin(a);
+  const dy=localX*Math.sin(a)+localY*Math.cos(a);
+  return Object.freeze({
+    variant:stair.visual.variantId,
+    footOffsetX:(art.footX-.5)*width,
+    footOffsetY:(1-art.footY)*height,
+    dx,dy,length:Math.hypot(dx,dy),authorHeight:height
+  });
+}
 export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={}){
   if(!terrain||!['stairs','ramp'].includes(stair?.kind)||
     !stair.transform||!stair.baseSize)return null;
   const t=stair.transform,w=Number(cellWidth)||28,h=Number(cellHeight)||21;
-  const length=stair.baseSize.height*t.scaleY;
+  const artFrame=sculptStairArtFrame(stair);
+  const length=artFrame?.length??stair.baseSize.height*t.scaleY;
   const width=stair.baseSize.width*t.scaleX*.68;
   if(!(length>=h*1.2&&width>0))return null;
-  // The artwork's anchor is its BOTTOM FOOT, pointing toward the top edge.
-  // WorldObject rotation rotates this canonical up-axis without visual alpha.
+  // Face uses the historical up-axis. Side and oblique art use the real
+  // painted step direction, including user rotation/mirror, not an assumed
+  // north-facing vector unrelated to the visible steps.
   const angle=(t.rotationDeg||0)*Math.PI/180;
-  const ux=Math.sin(angle),uy=-Math.cos(angle);
+  const ux=artFrame?artFrame.dx/length:Math.sin(angle);
+  const uy=artFrame?artFrame.dy/length:-Math.cos(angle);
   const foot={x:t.x,y:t.y};
   const head={x:foot.x+ux*length,y:foot.y+uy*length};
   const endProbe=Math.max(3,Math.min(7,h*.24));
@@ -29,11 +59,12 @@ export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={
   if(bottomLevel===null||topLevel===null||topLevel<=bottomLevel)return null;
   // A short authored incline cannot bridge a huge vertical cliff. Stretching it
   // increases the maximum ascent, but the TWO REAL terrain heights decide it.
-  // Oblique art already encodes its perspective. Its shorter authored footprint
-  // may reach the next valid whole height cell without requiring an oversized
-  // bitmap. Face/side and all other stair rules retain their V78 limit.
-  const oblique=stair.kind==='stairs'&&stair.visual?.variantId==='oblique';
-  const supportedRise=Math.max(1,(oblique?Math.ceil:Math.floor)(length/Math.max(w,h)));
+  // The painted perspective stair's footprint is shorter than its authored
+  // vertical run. Do not force oversized artwork merely to reach the next
+  // full-height cell. Front and ordinary ramp V78 behaviour stays unchanged.
+  const supportedRise=Math.max(1,artFrame?
+    Math.ceil(artFrame.authorHeight/Math.max(w,h)):
+    Math.floor(length/Math.max(w,h)));
   if(topLevel-bottomLevel>supportedRise)return null;
   return Object.freeze({id:stair.id,kind:stair.kind,foot:Object.freeze(foot),head:Object.freeze(head),
     ux,uy,length,width,bottomLevel,topLevel});
