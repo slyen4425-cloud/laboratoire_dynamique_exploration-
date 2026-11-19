@@ -777,11 +777,15 @@ try{
   })()`);
   if(reimport.probe.count!==1||!reimport.status.includes('Scène complète'))
     throw Error('V20 scene import lost object: '+JSON.stringify(reimport));
-  const nativeArt=await run(`(()=>{
-    const urls=performance.getEntriesByType('resource').map(r=>r.name);
-    return urls.some(u=>u.includes('building_house_')&&u.endsWith('.webp'));
-  })()`);
-  if(!nativeArt)throw Error('V20 building visual never requested from native asset adapter');
+  // The native object probe reads the SAME cached Image consumed by the
+  // real canvas painter. ResourceTiming is not reliable across cache hits.
+  let nativeArt=false;
+  for(let i=0;i<40;i++){
+    nativeArt=await run("window.__sculptObjectsProbe().objects.some(o=>o.definition==='objectdef.building.house.blue_cottage.01'&&o.visualAssetReady)");
+    if(nativeArt)break;
+    await sleep(100);
+  }
+  if(!nativeArt)throw Error('V20 building visual not decoded by native object painter');
   const touchStart=await run(`(()=>{
     document.querySelector('#object-category').value='tree';
     document.querySelector('#object-category').dispatchEvent(new Event('change',{bubbles:true}));
@@ -808,10 +812,14 @@ try{
   if(!touchStart.snowAvailable||!touchStart.snowSelected||
      !afterObjectTouch.objects.some(o=>o.definition==='objectdef.tree.snow.spruce_dense_01'))
     throw Error('Snow tree is not selectable or placeable in real Chromium: '+JSON.stringify({touchStart,afterObjectTouch}));
-  await sleep(550);
-  const snowResource=await run("performance.getEntriesByType('resource').some(r=>r.name.includes('tree_snow_spruce_dense_01.webp')&&r.responseEnd>0)");
+  let snowResource=false;
+  for(let i=0;i<40;i++){
+    snowResource=await run("window.__sculptObjectsProbe().objects.some(o=>o.definition==='objectdef.tree.snow.spruce_dense_01'&&o.visualAssetReady)");
+    if(snowResource)break;
+    await sleep(100);
+  }
   if(!snowResource)
-    throw Error('Snow tree native WebP was not loaded by real Chromium 2.5D renderer');
+    throw Error('Snow tree native WebP was not decoded by real 2.5D object painter');
   await run("document.querySelector('#navigation-toggle').click()");
   const walkingWithObjects=await run(`(()=>({
     walking:window.__sculptNavProbe().enabled,
@@ -877,12 +885,13 @@ try{
   if(!updated||updated.visualVariantId!=='back'||updated.rotationDeg!==137||
      edited.scene.objects.find(o=>o.id===updated.id)?.overrides.visualVariantId!=='back')
     throw Error('V23 house edit/rotation/export failed: '+JSON.stringify(edited));
-  await sleep(220);
-  const rearLoaded=await run(`(()=>{
-    const urls=performance.getEntriesByType('resource').map(r=>r.name);
-    return urls.some(u=>u.includes('building_house_blue_cottage_back_01.webp'));
-  })()`);
-  if(!rearLoaded)throw Error('V23 rear house WebP was not loaded from the official catalog');
+  let rearLoaded=false;
+  for(let i=0;i<40;i++){
+    rearLoaded=await run("window.__sculptObjectsProbe().objects.some(o=>o.id==="+JSON.stringify(updated.id)+"&&o.visualVariantId==='back'&&o.visualAssetReady)");
+    if(rearLoaded)break;
+    await sleep(100);
+  }
+  if(!rearLoaded)throw Error('V23 official rear house WebP was not decoded by native painter');
   await run(`(()=>{
     document.querySelector('#json').value=window.__v23Scene;
     document.querySelector('#import').click();
@@ -918,14 +927,18 @@ try{
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:windPt.x,y:windPt.y});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:windPt.x,y:windPt.y,button:'left',clickCount:1});
-  await sleep(700);
-  const windLive=await run(`(()=>({
-    objects:window.__sculptObjectsProbe().objects,
-    loaded:performance.getEntriesByType('resource').some(r=>
-      r.name.includes('/animated/windmill/three_quarters_left/sheet.webp')&&r.responseEnd>0)
-  }))()`);
-  if(!windLive.objects.some(o=>o.definition==='objectdef.building.windmill.01'&&o.visualVariantId==='three_quarters_left')||!windLive.loaded)
-    throw Error('Windmill atlas not placed/loaded in native Canvas: '+JSON.stringify(windLive));
+  // A cached atlas need not emit a new ResourceTiming row. Require
+  // native Image readiness for the 3/4-left animated windmill instead.
+  let windLive=null;
+  for(let i=0;i<40;i++){
+    windLive=await run("window.__sculptObjectsProbe()");
+    if(windLive.objects.some(o=>o.definition==='objectdef.building.windmill.01'&&
+       o.visualVariantId==='three_quarters_left'&&o.visualAssetReady))break;
+    await sleep(100);
+  }
+  if(!windLive?.objects.some(o=>o.definition==='objectdef.building.windmill.01'&&
+      o.visualVariantId==='three_quarters_left'&&o.visualAssetReady))
+    throw Error('Windmill native atlas not ready in real Canvas: '+JSON.stringify(windLive));
   await run(`(()=>{document.querySelector('#json').value=window.__v23Scene;
     document.querySelector('#import').click();return true;})()`);
   // Elemental arena: actual native building selection + place + image load.
@@ -947,14 +960,14 @@ try{
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:arenaPt.x,y:arenaPt.y});
   await send('Input.dispatchMouseEvent',{type:'mousePressed',x:arenaPt.x,y:arenaPt.y,button:'left',clickCount:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:arenaPt.x,y:arenaPt.y,button:'left',clickCount:1});
-  await sleep(700);
-  const arenaPlacement=await run(`(()=>({
-    objects:window.__sculptObjectsProbe().objects,
-    downloaded:performance.getEntriesByType('resource').some(r=>
-      r.name.includes('arenas/arene_glace_2p5d.webp')&&r.responseEnd>0)
-  }))()`);
-  if(!arenaPlacement.objects.some(o=>o.definition==='objectdef.building.arena.element.glace.01')||!arenaPlacement.downloaded)
-    throw Error('Arène élémentaire non affichée en vrai Canvas: '+JSON.stringify(arenaPlacement));
+  let arenaPlacement=null;
+  for(let i=0;i<40;i++){
+    arenaPlacement=await run("window.__sculptObjectsProbe()");
+    if(arenaPlacement.objects.some(o=>o.definition==='objectdef.building.arena.element.glace.01'&&o.visualAssetReady))break;
+    await sleep(100);
+  }
+  if(!arenaPlacement?.objects.some(o=>o.definition==='objectdef.building.arena.element.glace.01'&&o.visualAssetReady))
+    throw Error('Arène élémentaire native non décodée en vrai Canvas: '+JSON.stringify(arenaPlacement));
   await run(`(()=>{document.querySelector('#json').value=window.__v23Scene;
     document.querySelector('#import').click();return true;})()`);
   await run("document.querySelector('#mode-ground').click()");
