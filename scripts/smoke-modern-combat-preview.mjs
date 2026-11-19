@@ -5,7 +5,6 @@ import { createServer } from 'node:http';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, extname, sep } from 'node:path';
-import { once } from 'node:events';
 
 const root = process.cwd();
 const route = '/combat-preview/examples/dom-demo/exploration-encounter.html';
@@ -146,7 +145,7 @@ function browserBinary() {
 }
 
 // Real-time CDP checks the native decoded arena and session, not Chromium's
-// virtual clock. A --virtual-time-budget snapshot can expire while a valid
+// virtual clock. A simulated-timer DOM snapshot can expire while a valid
 // local image is loading, spuriously declaring Combat unavailable.
 async function dumpDom(url) {
   const profile=await mkdtemp(resolve(tmpdir(),'gensrpg-real-combat-smoke-'));
