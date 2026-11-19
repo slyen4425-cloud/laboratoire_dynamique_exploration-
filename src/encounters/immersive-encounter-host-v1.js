@@ -2,7 +2,7 @@ import {
   readCombatHandoff,
   consumeCombatResult
 } from './combat-handoff-store.js?rev=phase7-combat-handoff-v1';
-import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1} from '../play/exploration-loading-art-v1.js';
+import {readCaptureLoadingArtSceneV1,createCaptureLoadingArtCycleV1,mountCaptureLoadingArtCrossfadeV1} from '../play/exploration-loading-art-v1.js';
 
 export const IMMERSIVE_COMBAT_COMPLETE_TYPE_V1 =
   'gensrpg.capture.combat-complete.v1';
@@ -39,6 +39,7 @@ export function createImmersiveEncounterHostV1({
         type:'gensrpg.capture.combat-stop-audio.v1'
       },windowRef.location.origin);
     }catch{/* iframe may already have unloaded */}
+    old.crossfade?.dispose();
     old.frame.src='about:blank'; // unload even when the detached audio context persists
     old.overlay.remove();
     return true;
@@ -47,6 +48,7 @@ export function createImmersiveEncounterHostV1({
     if(!active)return false;
     releaseResultOverlay();
     const old=active;active=null;
+    old.crossfade?.dispose();
     old.overlay.style.display='none';old.overlay.setAttribute('aria-hidden','true');
     pendingResultOverlay=old;
     notifyCaptureCombatVisibility(false,old.snapshot.encounterId);
@@ -72,9 +74,10 @@ export function createImmersiveEncounterHostV1({
   // Diagnostic only: the existing native Combat overlay measures tap-to-ready.
   // No parallel loader, retry or gameplay dependency is introduced.
   const traceCombatReady=new URL(windowRef.location.href).searchParams.has('gensPerf');
-  const combatImageCycle=createCaptureLoadingArtCycleV1(readCaptureLoadingArtSceneV1({
+  const combatImages=readCaptureLoadingArtSceneV1({
     href:windowRef.location.href,scene:'combat',origin:windowRef.location.origin
-  }));
+  });
+  const combatImageCycle=createCaptureLoadingArtCycleV1(combatImages);
 
   // Presentation-only cross-frame contract: the Capture parent alone owns
   // Sac/Equipe HUD visibility; Exploration alone owns combat overlay lifetime.
@@ -93,6 +96,7 @@ export function createImmersiveEncounterHostV1({
     if (!active) return released;
     const old = active;
     active = null;
+    old.crossfade?.dispose();
     old.frame.src='about:blank';
     old.overlay.remove();
     notifyCaptureCombatVisibility(false, old.snapshot.encounterId);
@@ -120,6 +124,8 @@ export function createImmersiveEncounterHostV1({
       active.frame.dataset.combatReady='true';
       active.frame.style.opacity='1';
       active.frame.style.pointerEvents='auto';
+      active.crossfade?.dispose();
+      active.crossfade=null;
       active.loading?.remove();
       return;
     }
@@ -258,7 +264,14 @@ export function createImmersiveEncounterHostV1({
       loading.append(brand);loading.append(spinner);loading.append(message);loading.append(cancel);
       overlay.append(loading);
       documentRef.body.append(overlay);
-      active = { overlay, frame, snapshot, loading, loadingMessage:message,
+      // A long real Combat boot may rotate author artwork; only Combat READY
+      // removes the existing veil. No change to combat or the result contract.
+      const start=combatImages.indexOf(customCombatImage);
+      const ordered=start<0?[]:[...combatImages.slice(start),...combatImages.slice(0,start)];
+      const crossfade=ordered.length>1&&typeof loading.prepend==='function'?mountCaptureLoadingArtCrossfadeV1({
+        host:loading,images:ordered,documentRef,windowRef
+      }):null;
+      active = { overlay, frame, snapshot, loading, loadingMessage:message,crossfade,
         startedAt:traceCombatReady?(windowRef.performance?.now?.()??Date.now()):null };
       notifyCaptureCombatVisibility(true, snapshot.encounterId);
       frame.src = target.href;
