@@ -29,9 +29,10 @@ test('mobile fractional-DPR seams get opaque underpaint in the same native paint
  const until=code.indexOf('export function sculptHillTopProfile',from);
  const painter=code.slice(from,until);
  assert.ok(from>0&&until>from);
- const underlay=painter.indexOf('ctx.rect(x-.75,y-.75,w+1.5,h+1.5)');
+ const underlay=painter.indexOf('ctx.rect(x-seam,y-seam,w+2*seam,2*seam)');
  const exactClip=painter.indexOf('sculptPaintCellClipV1(ctx,x,y,w,h)');
  assert.ok(underlay>0&&exactClip>underlay);
+ assert.match(painter.slice(underlay,exactClip),/ctx\.rect\(x\+w-seam,y\+seam,2\*seam,h-2\*seam\)/);
  assert.match(painter.slice(underlay,exactClip),/ctx.globalAlpha=1;ctx.strokeStyle=pattern/);
  assert.doesNotMatch(painter.slice(underlay,exactClip),/\.95|\.20/);
  assert.match(painter.slice(exactClip),/ctx.globalAlpha=\.20;ctx.stroke\(\)/);
