@@ -7,10 +7,13 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('official CSS arena image decoded before native Combat READY postMessage',()=>{
  const code=read('integration/combat-bridge/exploration-encounter.js');
  const mounted=code.indexOf('mountedCombat=await mountCoop2v2Test(');
- const decoded=code.indexOf('await waitForNativeCombatArenaArtV1(nativeVisualSource.arenaId)');
+ const decoded=code.indexOf('await waitForNativeCombatArenaArtV1(nativeArenaPresentation)');
  const ready=code.indexOf("type:'gensrpg.capture.combat-ready.v1'",decoded);
  assert.ok(decoded>0&&mounted>decoded&&ready>mounted,'arena must decode before battle Session mounts');
  assert.match(code,/asset\.onerror=\(\)=>reject\(new Error\('Arène officielle indisponible/);
+ assert.match(code,/const background=resolveAsset\(preset\.background\.assetId\)/);
+ assert.match(code,/new URL\(uri,import\.meta\.url\)\.origin!==window\.location\.origin/);
+ assert.match(code,/presentationAssets:nativePresentationAssets/);
  assert.match(code,/await new Promise\(resolve=>requestAnimationFrame\(\(\)=>requestAnimationFrame\(resolve\)\)\)/);
 });
 
