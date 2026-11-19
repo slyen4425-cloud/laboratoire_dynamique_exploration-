@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {mountCaptureLoadingArtCrossfadeV1} from '../src/play/exploration-loading-art-v1.js';
+import {mountCaptureLoadingArtCrossfadeV1,readCaptureLoadingArtSceneV1} from '../src/play/exploration-loading-art-v1.js';
 
 function element(){
  const node={style:{position:'',zIndex:'',backgroundImage:'',isolation:''},dataset:{},children:[],parent:null,
@@ -65,4 +65,22 @@ test('the same native owners retain readiness/cancellation; only artwork changes
  assert.match(encounter,/event\.data\.type==='gensrpg\.capture\.combat-ready\.v1'/);
  assert.match(sculpt,/crossfade\?\.dispose\(\);\s*overlay\.hidden=true;/);
  assert.match(sculpt,/await awaitSculptPlayArtReady\(\)/);
+});
+
+test('standalone Exploration and Dungeon cannot inherit Capture artwork implicitly',()=>{
+ const origin='https://gensrpg.example';
+ const withoutCaptureContext=origin+'/sculpt-lab.html?play=1';
+ assert.deepEqual(readCaptureLoadingArtSceneV1({
+  href:withoutCaptureContext,scene:'zone',origin
+ }),[]);
+ assert.deepEqual(readCaptureLoadingArtSceneV1({
+  href:withoutCaptureContext,scene:'combat',origin
+ }),[]);
+ const foreign=origin+'/sculpt-lab.html?loadingArtCombat='+
+   encodeURIComponent(JSON.stringify(['https://example.net/dungeon-art.png']));
+ assert.deepEqual(readCaptureLoadingArtSceneV1({
+  href:foreign,scene:'combat',origin
+ }),[],'foreign/global media may not become a Capture loading image');
+ const source=readFileSync(new URL('../src/play/exploration-loading-art-v1.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/GensDungeon|dungeonLoading|document\.body\.append/);
 });
