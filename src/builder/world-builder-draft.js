@@ -1410,7 +1410,7 @@ export function updateWorldObjectTransform(
   }
   // Rotation authored now means horizontal facing for upright 2D objects.
   // Older saved objects retain their legacy planar drawing until edited.
-  if (patch.rotationDeg !== undefined &&
+  if (patch.rotationAxis === 'horizontal' && patch.rotationDeg !== undefined &&
       worldObjectSupportsHorizontalTurnV1(objectDefinitionCatalogV1.get(object.objectDefinitionId)?.kind))
     object.transform.rotationAxis = 'horizontal';
   if (patch.flipX === true) object.transform.flipX = true;
