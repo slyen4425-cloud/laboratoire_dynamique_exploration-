@@ -84,7 +84,14 @@ test('2.5D editor renders BOTH vertical fringes while collision remains on the c
   assert.match(source,/fringeRows:8/);
   assert.match(source,/skyFraction:\.12/);
   assert.match(source,/drawDecorativeFringeTerrain\(\)/);
-  assert.match(source,/drawDecorativeFringeObjects\(\)/);
+  // The same authored fringe has two DEPTH passes, not two authorities.
+  assert.match(source,/drawDecorativeFringeObjects\('back'\)/);
+  assert.match(source,/drawDecorativeFringeObjects\('front'\)/);
+  const north=source.indexOf("drawDecorativeFringeObjects('back');");
+  const hero=source.indexOf('drawNavigationActor();',north);
+  const south=source.indexOf("drawDecorativeFringeObjects('front');",hero);
+  assert.ok(north>=0&&hero>north&&south>hero,
+    'northern decoration is behind, southern is in front of the hero');
   assert.match(source,/chunk\.row<0\|\|chunk\.row\+8>terrain\.height/);
   assert.match(source,/ctx\.rect\(0,terrain\.height\*SCULPT_TILE\.height/);
   assert.match(source,/o\.transform\.y>=terrain\.height\*SCULPT_TILE\.height/);

@@ -1187,13 +1187,13 @@ function drawDecorativeFringeTerrain(){
   }
   ctx.restore();
 }
-function drawDecorativeFringeObjects(){
+function drawDecorativeFringeObjects(layer='back'){
   const fringe=visualDecorativeFringe();
   if(!fringe)return;
   const view=cameraView();
   const objects=resolveWorldObjectPlacements(fringe.objects,objectDefinitionCatalogV1)
-    .filter(o=>(o.transform.y<0||
-      o.transform.y>=terrain.height*SCULPT_TILE.height)&&
+    .filter(o=>(layer==='front'
+      ?o.transform.y>=terrain.height*SCULPT_TILE.height:o.transform.y<0)&&
       o.transform.x>=0&&o.transform.x<terrain.width*SCULPT_TILE.width)
     .sort((a,b)=>a.transform.y-b.transform.y);
   for(const object of objects){
@@ -1272,7 +1272,9 @@ function draw(){
       drawOuterSouthRim:false});
   }
   lastRenderStats=result;
-  drawDecorativeFringeObjects();
+  // North decoration belongs behind the playable scene. South trees have
+  // a foot below every playable hero and must be composited in front.
+  drawDecorativeFringeObjects('back');
   if(activeInteriorId||sculptWorldCurrentInterior()){
     // Draw rooms with the same single wall and doorway renderer.
     ctx.save();
@@ -1371,6 +1373,10 @@ function draw(){
     drawPreviewObjects();
     drawPlacedActors();
   }
+  // The southern NON-COLLIDING decoration is the foreground of the SAME
+  // WorldArea. Composite it after hero/objects so trees do not sink behind
+  // the playable scene. No saved Y position, mask or collision is changed.
+  drawDecorativeFringeObjects('front');
   // Author-approved rollback: the terrain has already been fully painted.
   // Keep the original object/actor Y-order above it (before PR #468).
   // No later cliff-mask replay may cut a tree, building or the hero.
@@ -3335,8 +3341,12 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   };
   const radius=Math.hypot(width,height)*(2+Math.abs(projection.shear))+Math.abs(artShift);
   const viewport=previewObjectViewport;
-  if(viewport&&(visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
-    visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
+  // Decorative placements are converted to chunk-local coordinates for
+  // their native terrain height. The viewport is WORLD-global: culling the
+  // local position here incorrectly removes valid border trees on mobile.
+  if(viewport&&!decorative&&
+    (visiblePoint.x+radius<viewport.minX||visiblePoint.x-radius>viewport.maxX||
+     visiblePoint.y+radius<viewport.minY||visiblePoint.y-radius>viewport.maxY))return;
   // Native drawing (pre-#468): no upper-cap clipping of WorldObjects.
   ctx.save();
   ctx.translate(point.x,point.y);
