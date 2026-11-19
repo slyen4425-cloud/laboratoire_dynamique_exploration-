@@ -1,3 +1,13 @@
+## 2026-11-19 — Orientation horizontale des objets 2,5D (en validation)
+- START Exploration `main@da4420cef7ff4666d93fb492f246518e0c6803f9`, checkpoint `checkpoint/exploration-start-object-horizontal-turn-20261119`, branche `work/exploration-object-horizontal-turn-20261119`. Aucune modification de main, du V80 figé, de GenSRPG ou du Labo Combat.
+- Diagnostic : l’éditeur nommait la commande « Rotation au sol », mais les portraits d’objets étaient réellement dessinés avec `ctx.rotate(rect.angle)` autour de l'axe de l’image. Demande auteur : changer horizontalement leur orientation sans les coucher.
+- Propriétaire : `WorldObject.transform.rotationDeg` reste le seul angle géométrique ; `rotationAxis:'horizontal'` est un indicateur de compatibilité uniquement pour les dessins 2D placés ou réorientés après ce lot. Les placements historiques sans cet indicateur conservent le rendu plan d'origine, tout comme les ponts, escaliers et rampes. Aucun objet ou sauvegarde supprimé. Ombre silhouette et sprite utilisent le même contexte Canvas.
+- Limite graphique : une vue 2D unique tournée autour de Y est seulement une projection de l'image (profil aminci à 90°, miroir à 180°) ; les vues réellement nouvelles nécessitent des images alternatives validées, jamais inventées. Les collisions et portails conservent leur autorité actuelle.
+- Fichiers autorisés : modèle de placement, ajout/mise à jour d’objets Sculpt, création World Builder, deux renderers natifs, deux labels HTML, helper pur, test dédié, cette note. Protégés : pinceaux terre/neige, limites/masques, collisions, sauvegardes historiques, ombres propriétaires, jeu, portail, carte V80.
+- Gates : test `tests/world-object-horizontal-turn-20261119.test.js`, suite CI Node, contrôles navigateur PC/mobile, sauvegarde/rechargement, test paysage et checkpoint GREEN sur SHA exact avant fusion/publication. Statut : NON GREEN en attente de preuves.
+
+---
+
 ## 2026-11-19 — Retour auteur : échec Save WorldArea + teinte artificielle en hauteur (C1 correctif isolé)
 - Signal réel : capture 19:25, après PR #502 pourtant GREEN, routes/sols de relief toujours décolorés, et « Enregistrement bloqué · WorldArea invalide : portal-invalid-or-duplicate » en quittant l'éditeur ; perte d'une heure de dessin. Ne pas décrire cela comme corrigé par l'ancienne livraison.
 - START Exploration officiel `main@0128e69c290b43014a5a899804c588d805e2b4b0`, checkpoint `checkpoint/gensrpg-before-world-save-textures-20261119`, branche unique `work/gensrpg-world-save-textures-20261119`. Gel des autres agents, Capture/PWA, Combat/Donjon, assets, WorldDocument persistant, Portals/Spawns existants et service worker.
