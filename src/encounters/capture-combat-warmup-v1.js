@@ -78,6 +78,10 @@ export function createCaptureCombatWarmupV1({
         for(const path of CAPTURE_COMBAT_WARMUP_PATHS_V1) {
           const url=new URL(path,root);
           try{Promise.resolve(fetchImpl(url,{cache:'force-cache',priority:'low'}))
+            // Drain the actual response so Chromium can retain the completed
+            // resource in HTTP cache. Headers alone do not certify a warm load.
+            .then(response=>response?.ok&&typeof response.arrayBuffer==='function'
+              ?response.arrayBuffer():undefined)
             .catch(()=>{});}catch{/* speculative load never blocks movement */}
         }
       });
