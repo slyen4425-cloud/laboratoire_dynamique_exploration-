@@ -156,7 +156,7 @@ async function dumpDom(url) {
       '--window-size=1600,900','--disable-dev-shm-usage',
       '--no-first-run','--disable-extensions',
       '--remote-debugging-port=0','--user-data-dir='+profile,url
-    ],{stdio:['ignore','ignore','pipe']});
+    ],{stdio:['ignore','ignore','pipe'],detached:process.platform!=='win32'});
     const port=await new Promise((done,fail)=>{
       let stderr='';
       const watchdog=setTimeout(()=>fail(Error('Chromium debug port unavailable '+stderr.slice(-300))),45000);
@@ -204,12 +204,14 @@ async function dumpDom(url) {
         params:{expression,returnByValue:true,awaitPromise:true}}));
     });
     let evidence;
+    // CDP can attach before the initial blank document gains documentElement.
+    // Keep the existing finite READY deadline and all final native assertions.
     const probe="(()=>({status:document.querySelector('[data-bridge-status]')?.textContent?.trim()??'',"+
-      "error:document.documentElement.dataset.encounterBootstrapError??'',"+
-      "layout:document.documentElement.dataset.nativeLayoutProof??'',"+
-      "skill:document.documentElement.dataset.encounterSkillProof??'',"+
-      "audio:document.documentElement.dataset.encounterAudioProof??'',"+
-      "fullscreen:document.documentElement.dataset.encounterFullscreenProof??''}))()";
+      "error:document.documentElement?.dataset?.encounterBootstrapError??'',"+
+      "layout:document.documentElement?.dataset?.nativeLayoutProof??'',"+
+      "skill:document.documentElement?.dataset?.encounterSkillProof??'',"+
+      "audio:document.documentElement?.dataset?.encounterAudioProof??'',"+
+      "fullscreen:document.documentElement?.dataset?.encounterFullscreenProof??''}))()";
     for(let i=0;i<200;i++){
       evidence=await evaluate(probe);
       if(evidence?.error||
@@ -223,7 +225,19 @@ async function dumpDom(url) {
     return html;
   } finally {
     if(socket)try{socket.close();}catch{}
-    if(command)command.kill('SIGKILL');
+    if(command){
+      // The browser may keep writing its profile from child processes after
+      // the parent PID is signalled. Own a dedicated process group and wait
+      // for its real exit before removing this test-only temporary directory.
+      const closed=command.exitCode===null&&command.signalCode===null
+        ?new Promise(resolve=>command.once('close',resolve))
+        :Promise.resolve();
+      if(process.platform!=='win32'&&Number.isSafeInteger(command.pid)){
+        try{process.kill(-command.pid,'SIGKILL');}
+        catch{command.kill('SIGKILL');}
+      }else command.kill('SIGKILL');
+      await closed;
+    }
     await rm(profile,{recursive:true,force:true});
   }
 }
