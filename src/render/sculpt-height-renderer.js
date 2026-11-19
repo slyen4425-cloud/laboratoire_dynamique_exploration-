@@ -59,10 +59,18 @@ export function sculptGroundReliefLighting(terrain,col,row){
 function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
   const info=sculptGroundReliefLighting(terrain,col,row);
   if(info.tone!==0){
+    // Higher plateaus have a translucent altitude tint. At fractional mobile
+    // DPR, an independently antialiased 28x21 fillRect exposes a dark 1-pixel
+    // checkerboard at every road/zone cell join. Use the existing native
+    // pixel-snapped cell clip, and fully cover its interior, exactly once.
+    // The opacity, painter order, terrain height and collisions stay intact.
+    ctx.save();
+    sculptPaintCellClipV1(ctx,x,y,w,h);
     ctx.fillStyle=info.tone>0
       ?'rgba(251,243,206,'+info.tone+')'
       :'rgba(15,35,39,'+(-info.tone)+')';
-    ctx.fillRect(x,y,w,h);
+    ctx.fillRect(x-1,y-1,w+2,h+2);
+    ctx.restore();
   }
   for(const {side,opacity} of info.contactShadows){
     const horizontal=side==='west'||side==='east';
