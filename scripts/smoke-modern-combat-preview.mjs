@@ -204,12 +204,14 @@ async function dumpDom(url) {
         params:{expression,returnByValue:true,awaitPromise:true}}));
     });
     let evidence;
+    // CDP can attach before the initial blank document gains documentElement.
+    // Keep the existing finite READY deadline and all final native assertions.
     const probe="(()=>({status:document.querySelector('[data-bridge-status]')?.textContent?.trim()??'',"+
-      "error:document.documentElement.dataset.encounterBootstrapError??'',"+
-      "layout:document.documentElement.dataset.nativeLayoutProof??'',"+
-      "skill:document.documentElement.dataset.encounterSkillProof??'',"+
-      "audio:document.documentElement.dataset.encounterAudioProof??'',"+
-      "fullscreen:document.documentElement.dataset.encounterFullscreenProof??''}))()";
+      "error:document.documentElement?.dataset?.encounterBootstrapError??'',"+
+      "layout:document.documentElement?.dataset?.nativeLayoutProof??'',"+
+      "skill:document.documentElement?.dataset?.encounterSkillProof??'',"+
+      "audio:document.documentElement?.dataset?.encounterAudioProof??'',"+
+      "fullscreen:document.documentElement?.dataset?.encounterFullscreenProof??''}))()";
     for(let i=0;i<200;i++){
       evidence=await evaluate(probe);
       if(evidence?.error||
