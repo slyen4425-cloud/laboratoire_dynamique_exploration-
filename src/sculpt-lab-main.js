@@ -3603,9 +3603,35 @@ function updateObjectCount(){
   if(objectSelectedId&&!placedObjects.some(o=>o.id===objectSelectedId))objectSelectedId=null;
   scheduleDraw();
 }
+// A linked house remains a single WorldArea object, referenced by its
+// canonical Portal trigger and possibly a destination Spawn. Removing it
+// in Object authoring must be refused NOW, not one hour later on Save.
+function worldLinkedBuildingWouldDisappear(next){
+  if(!sculptWorldDraft||!sculptWorldAreaId)return null;
+  const area=sculptWorldDraft.areas.find(a=>a.id===sculptWorldAreaId);
+  const linkedIds=new Set([
+    ...(sculptWorldDraft.portals??[])
+      .filter(p=>p.sourceAreaId===sculptWorldAreaId&&p.trigger?.kind==='object-anchor')
+      .map(p=>p.trigger.objectId),
+    ...(area?.spawns??[])
+      .filter(spawn=>spawn.anchor?.kind==='building-door')
+      .map(spawn=>spawn.anchor.objectId)
+  ]);
+  if(!linkedIds.size)return null;
+  const buildings=resolveWorldObjectPlacements(next,objectDefinitionCatalogV1)
+    .filter(object=>object.kind==='building');
+  return [...linkedIds].find(id=>!buildings.some(object=>object.id===id))??null;
+}
+function allowWorldLinkedObjects(next){
+  const id=worldLinkedBuildingWouldDisappear(next);
+  if(!id)return true;
+  status('Objet conservé : ce bâtiment possède un passage ou une arrivée liée. '+
+    'Supprime ou déplace d’abord le passage dans World Builder.');return false;
+}
 function objectCommit(next){
   if(next===placedObjects)return false;
   if(next.length===placedObjects.length&&next.every((o,i)=>o===placedObjects[i]))return false;
+  if(!allowWorldLinkedObjects(next))return false;
   objectHistory.push(placedObjects);if(objectHistory.length>40)objectHistory.shift();
   objectRedo=[];placedObjects=next;updateObjectCount();return true;
 }
@@ -4421,11 +4447,11 @@ for(const [id,direction] of [['object-turn-left',-45],['object-turn-right',45]])
   });
 }
 $('object-undo').addEventListener('click',()=>{
-  if(!objectHistory.length)return;
+  if(!objectHistory.length||!allowWorldLinkedObjects(objectHistory.at(-1)))return;
   objectRedo.push(placedObjects);placedObjects=objectHistory.pop();updateObjectCount();syncObjectSelectedControls();
 });
 $('object-redo').addEventListener('click',()=>{
-  if(!objectRedo.length)return;
+  if(!objectRedo.length||!allowWorldLinkedObjects(objectRedo.at(-1)))return;
   objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();syncObjectSelectedControls();
 });
 refreshObjectOptions();updateObjectCount();
