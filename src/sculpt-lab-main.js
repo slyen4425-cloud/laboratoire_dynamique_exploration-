@@ -4429,10 +4429,16 @@ window.__sculptObjectsProbe=()=>Object.freeze({
   definitions:availableObjects.length,
   categories:[...$('object-category').options].map(o=>o.value),
   filteredDefinitions:[...$('object-definition').options].map(o=>o.value),
-  objects:placedObjects.map(o=>({id:o.id,definition:o.objectDefinitionId,
-    x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
-    scaleX:o.transform.scaleX,scaleY:o.transform.scaleY,
-    visualVariantId:o.overrides.visualVariantId})),
+  objects:placedObjects.map(o=>{
+    // Read the SAME cached Image the native object painter actually consumes;
+    // PerformanceResourceTiming can be absent for already cached WebPs.
+    const art=objectImage(o.visual?.assetId);
+    return {id:o.id,definition:o.objectDefinitionId,
+      x:o.transform.x,y:o.transform.y,rotationDeg:o.transform.rotationDeg,
+      scaleX:o.transform.scaleX,scaleY:o.transform.scaleY,
+      visualVariantId:o.overrides.visualVariantId,
+      visualAssetReady:Boolean(art?.complete&&(art?.naturalWidth??art?.width)>0)};
+  }),
   bridgeDimensionsVisible:!$('object-bridge-length-wrap').hidden&&
     !$('object-bridge-width-wrap').hidden,
   bridgeLengthPercent:Number($('object-bridge-length').value),
