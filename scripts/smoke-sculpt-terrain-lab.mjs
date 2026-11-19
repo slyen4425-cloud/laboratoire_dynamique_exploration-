@@ -1001,19 +1001,20 @@ try{
       await run(`(()=>{const variant=document.querySelector('#object-variant');
         variant.value='${view}';variant.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`);
     }
-    // Do not equate a fixed 320ms sleep with decoded remote WebP readiness.
-    // The real pixel/asset requirement is unchanged: a successful browser
-    // resource load is mandatory for EACH view. Slow hosted runners may load
-    // the same immutable author asset after a variable delay.
-    const fileName='building_house_snow_alpine_timber_2p5d_'+view+'_01.webp';
-    const assetReady=async()=>await run(`(()=>performance.getEntriesByType('resource').some(r=>
-      r.name.includes('${fileName}')&&r.responseEnd>0))()`);
+    // Resource Timing can disappear for a preloaded/cached author WebP.
+    // Inspect the Image COMPLETE+naturalWidth of the ONE memoized native
+    // WorldObject renderer instead. Missing/failed images still fail CLOSED.
+    const assetReady=async()=>await run(`(()=>{
+      const object=window.__sculptObjectsProbe().objects
+        .find(o=>o.definition==='objectdef.building.house.snow_alpine_timber_2p5d.01');
+      return object?.visualVariantId==='${view}'&&object.visualAssetReady===true;
+    })()`);
     let loaded=await assetReady();
     for(let attempt=0;!loaded&&attempt<40;attempt++){
       await sleep(150);
       loaded=await assetReady();
     }
-    if(!loaded)throw Error('Winter building WebP not loaded in real Chromium after 6s: '+view);
+    if(!loaded)throw Error('Winter building official native Image not decoded in Chromium: '+view);
   }
   const snowScene=await run(`(()=>{
     document.querySelector('#scene-export').click();
