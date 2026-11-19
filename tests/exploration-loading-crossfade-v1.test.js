@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {mountCaptureLoadingArtCrossfadeV1} from '../src/play/exploration-loading-art-v1.js';
 
 function element(){
- const node={style:{},dataset:{},children:[],parent:null,
+ const node={style:{position:'',zIndex:'',backgroundImage:'',isolation:''},dataset:{},children:[],parent:null,
   setAttribute(name,value){this[name]=value;},
   append(...items){items.forEach(item=>{item.parent=this;this.children.push(item);});},
   prepend(item){item.parent=this;this.children.unshift(item);},
