@@ -8,6 +8,7 @@ import {createBlankSculptPreviewScene} from '../world/sculpt-scene-preview.js?re
 import {appendSculptSurfaceStroke,normalizeSculptSurface} from '../world/sculpt-surface-paint.js';
 import {appendInteriorWall} from '../world/interior-wall-model.js';
 import {sculptWaterAt} from '../world/sculpt-height-model.js?rev=author-maps-three-v1';
+import {normalizeSculptDecorativeFringeV1} from '../world/sculpt-decorative-fringe-v1.js';
 
 export const SCULPT_MAP_PRESET_KEY='gensrpg.exploration.map-presets.v1';
 export const SCULPT_MAP_PRESET_KIND='gensrpg-sculpt-map-preset';
@@ -29,6 +30,13 @@ export function importSculptMapPreset(raw){
   const scene=JSON.parse(serializeSculptPreviewScene(validated.terrain,
     validated.objects,validated.surface,validated.actors,null,
     validated.objectShadowProfiles??[]));
+  // The optional authored outside ring belongs to the SAME future WorldArea.
+  // Validate it against the actual native terrain dimensions; never persist
+  // a separate visual catalog or silently drop the creator's painted border.
+  if(value.scene.decorativeFringe!=null)
+    scene.decorativeFringe=normalizeSculptDecorativeFringeV1(
+      value.scene.decorativeFringe,
+      {width:validated.terrain.width*28,height:validated.terrain.height*21});
   const id=typeof value.id==='string'&&/^map-preset-[0-9]+$/.test(value.id)?
     value.id:'map-preset-1';
   return Object.freeze({kind:SCULPT_MAP_PRESET_KIND,version:1,id,name,scene});
@@ -37,6 +45,7 @@ export function createSculptMapPreset(scene,{name='Ma carte',id='map-preset-1'}=
   const source=JSON.parse(serializeSculptPreviewScene(
     scene?.terrain,scene?.objects??[],scene?.surface,scene?.actors??[],null,
     scene?.objectShadowProfiles??[]));
+  if(scene?.decorativeFringe!=null)source.decorativeFringe=scene.decorativeFringe;
   return importSculptMapPreset({kind:SCULPT_MAP_PRESET_KIND,version:1,
     id,name:nameOf(name),scene:source});
 }
@@ -127,6 +136,8 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
 }={}){
   const saved=importSculptMapPreset(preset);
   const source=importSculptPreviewScene(saved.scene);
+  const playableScene=saved.scene.decorativeFringe
+    ?{...source,decorativeFringe:saved.scene.decorativeFringe}:source;
   const before=new Set(draft.areas.map(area=>area.id));
   let next=addWorldArea(draft,{name:nameOf(name??saved.name),kind,
     width:source.terrain.width*28,height:source.terrain.height*21});
@@ -135,7 +146,7 @@ export function createWorldAreaFromSculptMapPreset(draft,preset,{
   // A PRESET instantiation explicitly offers populated Capture encounters;
   // a blank world stays blank. Existing customized profiles are untouched.
   if(initializeEncounters&&kind==='exterior')next=initializeWorldPresetEncounters(next);
-  next=saveSculptWorldArea(next,area.id,source);
+  next=saveSculptWorldArea(next,area.id,playableScene);
   // Position the REAL Spawn on the starting edge, even if the template
   // is used as a standalone map. Never add Spawn/Portal data to the preset.
   const entry=mapEdgePoint(source,'entry');
