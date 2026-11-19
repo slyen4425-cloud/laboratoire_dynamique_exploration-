@@ -16,6 +16,20 @@ test('warm the current official bundle, HUD and visual catalog at idle exactly o
   assert.ok(requests.every(([u,options])=>u.startsWith('https://example.org/preview/encounters-v80/')&&options.priority==='low'));
   assert.equal(requests.filter(([u])=>u.endsWith('encounter-bundle.v1.json')).length,1);
 });
+test('idle prefetch drains every official HTTP body before relying on browser cache',async()=>{
+  let scheduled,drained=0;
+  const warm=createCaptureCombatWarmupV1({
+    documentUrl:'https://example.org/sculpt-lab.html',
+    schedule:fn=>{scheduled=fn;},
+    fetchImpl:async()=>({ok:true,arrayBuffer:async()=>{drained++;return new ArrayBuffer(0);}})
+  });
+  assert.equal(warm.start(),true);
+  assert.equal(drained,0);
+  scheduled();
+  for(let tick=0;tick<5;tick++)await Promise.resolve();
+  assert.equal(drained,CAPTURE_COMBAT_WARMUP_PATHS_V1.length);
+});
+
 test('respect data saver and never make speculative fetch a Battle authority',()=>{
   let count=0;
   const save=createCaptureCombatWarmupV1({documentUrl:'https://example.org/map.html',saveData:true,
