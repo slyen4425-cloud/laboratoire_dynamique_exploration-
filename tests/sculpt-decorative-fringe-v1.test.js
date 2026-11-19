@@ -85,8 +85,8 @@ test('2.5D editor renders BOTH vertical fringes while collision remains on the c
   assert.match(source,/skyFraction:\.12/);
   assert.match(source,/drawDecorativeFringeTerrain\(\)/);
   // The same authored fringe has two DEPTH passes, not two authorities.
-  assert.match(source,/drawDecorativeFringeObjects\\('back'\\)/);
-  assert.match(source,/drawDecorativeFringeObjects\\('front'\\)/);
+  assert.match(source,/drawDecorativeFringeObjects\('back'\)/);
+  assert.match(source,/drawDecorativeFringeObjects\('front'\)/);
   const north=source.indexOf("drawDecorativeFringeObjects('back');");
   const hero=source.indexOf('drawNavigationActor();',north);
   const south=source.indexOf("drawDecorativeFringeObjects('front');",hero);
