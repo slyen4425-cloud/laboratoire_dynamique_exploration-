@@ -24,30 +24,23 @@ function recorder(){
  return {ctx,clipped,filled};
 }
 
-test('raised plateaus shade roads without a 28x21 checkerboard at 1.5 DPR',()=>{
+test('raised plateaus preserve the exact authored texture with no tiled altitude wash',()=>{
  const map=initial(),before=JSON.stringify(map);
  const {ctx,clipped,filled}=recorder();
  const output=drawSculptTerrain(ctx,{
   terrain:map,material:{render:{baseColor:'#536247'}},
   texture:{id:'existing-grass'},drawOuterSouthRim:false
  });
- assert.ok(output.worldWidth===8*SCULPT_TILE.width);
- assert.equal(clipped.length,0,'the tint adds no extra clip/save/restore operations');
- const toneRects=filled.filter(f=>String(f.fill).startsWith('rgba(251,243,206,'));
- assert.equal(toneRects.length,64,'one shared-color tint rect per raised tile');
- const device=rect=>({
-  left:Math.round(rect.x*1.5+27),right:Math.round((rect.x+rect.width)*1.5+27),
-  top:Math.round(rect.y*1.5+24),bottom:Math.round((rect.y+rect.height)*1.5+24)
- });
- const [a,b,south]=[toneRects[0],toneRects[1],toneRects[8]].map(device);
- assert.equal(a.right,b.left,'no vertical paint seam');
- assert.equal(a.bottom,south.top,'no horizontal paint seam');
- assert.deepEqual(
-  sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise,SCULPT_TILE.width,SCULPT_TILE.height),
-  {x:toneRects[0].x,y:toneRects[0].y,width:toneRects[0].width,height:toneRects[0].height},
-  'tint and the native painter share one pixel-snap formula'
- );
- assert.equal(JSON.stringify(map),before,'the elevation model remains unchanged');
+ assert.equal(output.worldWidth,8*SCULPT_TILE.width);
+ assert.equal(clipped.length,0,'no new clipping or duplicate paint authority');
+ const fakeTints=filled.filter(f=>String(f.fill).startsWith('rgba(251,243,206,')||
+   String(f.fill).startsWith('rgba(15,35,39,'));
+ assert.equal(fakeTints.length,0,'raised terrain must not wash out grass/roads with per-tile overlays');
+ const top=sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise,28,21);
+ const next=sculptPaintCellBoundsV1(ctx,0,-5*SCULPT_TILE.rise+21,28,21);
+ assert.equal(Math.round((top.y+top.height)*1.5+24),
+   Math.round(next.y*1.5+24),'canonical WorldSurface cells remain pixel-adjacent');
+ assert.equal(JSON.stringify(map),before,'all authored heights remain unchanged');
 });
 
 test('equal-height baseline keeps the original unshaded texture path',()=>{
@@ -76,13 +69,14 @@ test('north border trees remain backdrop, SOUTH border trees draw after the play
   'the global viewport must not cull chunk-local fringe object coordinates');
 });
 
-test('raised road fix reuses canonical cell clip and never adds new paint authority',()=>{
+test('raised roads no longer receive tile-wide translucent rectangles',()=>{
  const first=renderer.indexOf('function drawSculptGroundReliefLighting(');
  const last=renderer.indexOf('export function sculptEastSeamBounds(',first);
  const lighting=renderer.slice(first,last);
  assert.ok(first>0&&last>first);
- assert.match(lighting,/sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
- assert.match(lighting,/ctx\.fillRect\(rect\.x,rect\.y,rect\.width,rect\.height\)/);
+ assert.doesNotMatch(lighting,/ctx\.fillStyle=info\.tone/);
+ assert.doesNotMatch(lighting,/sculptPaintCellBoundsV1\(ctx,x,y,w,h\)/);
+ assert.match(lighting,/info\.contactShadows/,'real ledge shadows remain');
  assert.doesNotMatch(lighting,/ctx\.save\(\)|ctx\.clip\(\)/);
  assert.doesNotMatch(lighting,/new WorldSurface|localStorage|setItem/);
  const painter=renderer.slice(renderer.indexOf('function sculptPaintByCell('),

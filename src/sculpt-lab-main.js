@@ -109,7 +109,7 @@ import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} fro
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset,
   deleteSculptMapPreset,clearPersonalSculptMapPresets} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
-import {sculptWorldAreaScene,saveSculptWorldArea,
+import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecovery,
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
@@ -3603,9 +3603,35 @@ function updateObjectCount(){
   if(objectSelectedId&&!placedObjects.some(o=>o.id===objectSelectedId))objectSelectedId=null;
   scheduleDraw();
 }
+// A linked house remains a single WorldArea object, referenced by its
+// canonical Portal trigger and possibly a destination Spawn. Removing it
+// in Object authoring must be refused NOW, not one hour later on Save.
+function worldLinkedBuildingWouldDisappear(next){
+  if(!sculptWorldDraft||!sculptWorldAreaId)return null;
+  const area=sculptWorldDraft.areas.find(a=>a.id===sculptWorldAreaId);
+  const linkedIds=new Set([
+    ...(sculptWorldDraft.portals??[])
+      .filter(p=>p.sourceAreaId===sculptWorldAreaId&&p.trigger?.kind==='object-anchor')
+      .map(p=>p.trigger.objectId),
+    ...(area?.spawns??[])
+      .filter(spawn=>spawn.anchor?.kind==='building-door')
+      .map(spawn=>spawn.anchor.objectId)
+  ]);
+  if(!linkedIds.size)return null;
+  const buildings=resolveWorldObjectPlacements(next,objectDefinitionCatalogV1)
+    .filter(object=>object.kind==='building');
+  return [...linkedIds].find(id=>!buildings.some(object=>object.id===id))??null;
+}
+function allowWorldLinkedObjects(next){
+  const id=worldLinkedBuildingWouldDisappear(next);
+  if(!id)return true;
+  status('Objet conservé : ce bâtiment possède un passage ou une arrivée liée. '+
+    'Supprime ou déplace d’abord le passage dans World Builder.');return false;
+}
 function objectCommit(next){
   if(next===placedObjects)return false;
   if(next.length===placedObjects.length&&next.every((o,i)=>o===placedObjects[i]))return false;
+  if(!allowWorldLinkedObjects(next))return false;
   objectHistory.push(placedObjects);if(objectHistory.length>40)objectHistory.shift();
   objectRedo=[];placedObjects=next;updateObjectCount();return true;
 }
@@ -4421,11 +4447,11 @@ for(const [id,direction] of [['object-turn-left',-45],['object-turn-right',45]])
   });
 }
 $('object-undo').addEventListener('click',()=>{
-  if(!objectHistory.length)return;
+  if(!objectHistory.length||!allowWorldLinkedObjects(objectHistory.at(-1)))return;
   objectRedo.push(placedObjects);placedObjects=objectHistory.pop();updateObjectCount();syncObjectSelectedControls();
 });
 $('object-redo').addEventListener('click',()=>{
-  if(!objectRedo.length)return;
+  if(!objectRedo.length||!allowWorldLinkedObjects(objectRedo.at(-1)))return;
   objectHistory.push(placedObjects);placedObjects=objectRedo.pop();updateObjectCount();syncObjectSelectedControls();
 });
 refreshObjectOptions();updateObjectCount();
@@ -6370,6 +6396,30 @@ function installSculptWorldAreaEditing(){
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
   $('new-map-toggle').title='Créer une carte vierge de même taille sans supprimer les passages';
+  // This is a *download*, never a second saved world, autosave key or
+  // alternative Portal graph. Even an invalid Portal must not cost an hour
+  // of terrain editing. Preserve the raw identities and all other Areas.
+  function downloadWorldSculptRecovery(){
+    if(!sculptWorldAreaMounted)throw Error('Aucune WorldArea éditée à récupérer');
+    const snapshot=snapshotSculptWorldAreaForRecovery(
+      sculptWorldDraft,sculptWorldAreaId,captureSculptArea());
+    const recovery={...snapshot,
+      areas:snapshot.areas.map(a=>a.id===sculptWorldAreaId
+        ?{...a,encounters:sculptExteriorEncounters}:a),
+      encounterConfig:sculptEncounterConfig};
+    const json=JSON.stringify(recovery,null,2)+'\n';
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    const worldId=String(recovery.id??'monde').replace(/[^a-z0-9_-]+/gi,'-');
+    const name=worldId+'.world-recovery.json';
+    try{
+      link.href=url;link.download=name;document.body.append(link);link.click();
+    }finally{
+      link.remove();URL.revokeObjectURL(url);
+    }
+    return name;
+  }
   function persistCurrentWorldSculpt(){
     // A legacy WorldArea which could not be mounted is read-only. Its canonical
     // original world data is persisted intact; the independent demo canvas is NEVER
@@ -6388,9 +6438,18 @@ function installSculptWorldAreaEditing(){
       window.location.assign('./world-assembler.html?return=1&portalUi=compact1&marker=visible2&maps=presets3'+
         (newArea?'&createArea=1':'')+(sculptUniverseId?'&universe='+encodeURIComponent(sculptUniverseId):''));
     }catch(error){
-      sculptWorldStatus('Enregistrement bloqué : '+error.message,true);
+      let message='Enregistrement bloqué : '+error.message;
+      try{
+        const file=downloadWorldSculptRecovery();
+        message+=' · Copie de secours '+file+' téléchargée (NON validée). '+
+          'Conserve ce fichier et ne ferme pas la carte avant de le vérifier.';
+      }catch(recoveryError){
+        message+=' · Export de secours impossible : '+recoveryError.message+
+          '. Garde cette page ouverte et utilise Exporter scène JSON.';
+      }
+      sculptWorldStatus(message,true);
       const feedback=$('world-portal-feedback');
-      feedback.textContent='Enregistrement bloqué : '+error.message;
+      feedback.textContent=message;
       feedback.dataset.error='true';feedback.hidden=false;
     }
   }
