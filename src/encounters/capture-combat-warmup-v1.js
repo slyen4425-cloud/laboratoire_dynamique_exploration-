@@ -3,6 +3,12 @@
 export const CAPTURE_COMBAT_WARMUP_PATHS_V1=Object.freeze([
   'combat-preview/data/capture/showcase/encounter-bundle.v1.json',
   'combat-preview/examples/dom-demo/capture-editor-v2.html',
+  // Speculative only: warm the exact Combat UI modules before the first battle.
+  // They remain authored by Combat main and are never evaluated here.
+  'combat-preview/examples/dom-demo/exploration-encounter.html',
+  'combat-preview/examples/dom-demo/exploration-encounter.js',
+  'combat-preview/src/ui/combat-2v2-test-ui.js',
+  'combat-preview/src/ui/demo-app.js',
   'combat-preview/examples/dom-demo/demo.css',
   'combat-preview/examples/dom-demo/capture-editor-v2.css',
   'capture-assets/data/assets/catalog/global-visual-assets.v1.json'
