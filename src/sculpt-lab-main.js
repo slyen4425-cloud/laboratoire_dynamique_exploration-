@@ -3353,21 +3353,20 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
   // locally in Tester while leaving bridges, rails and buildings untouched.
-  // Only front/side art is a ground plane requiring the game's affine pitch.
-  // The oblique 2.5D artwork has its perspective baked in; pitching it once
-  // more made diagonal stairs unnaturally tall/flat relative to the cliff.
-  const obliqueStairArt=Number.isFinite(rect.obliqueArtFootOffsetX);
-  if(navigationTesting&&object.kind==='stairs'&&!obliqueStairArt){
+  // Face keeps its validated V78 terrain projection. Oblique and side
+  // variants are already drawn in perspective: applying another pitch makes
+  // their real step axis diverge from the authored collision corridor.
+  const perspectiveStairArt=Number.isFinite(rect.stairArtFootOffsetX);
+  if(navigationTesting&&object.kind==='stairs'&&!perspectiveStairArt){
     const view=cameraView();
     ctx.transform(1,view.shear,0,view.pitch,0,0);
   }
   ctx.rotate(rect.angle);
   // Same mirror affects the existing image and silhouette shadow.
   ctx.scale(object.transform?.flipX===true?-1:1,1);
-  // Move the painted STEP FOOT (not the image bounding box) onto the single
-  // authored WorldObject foot. Shadows, outlines and bitmap stay in register.
-  if(obliqueStairArt)ctx.translate(-rect.obliqueArtFootOffsetX,
-    rect.obliqueArtFootOffsetY);
+  // One WorldObject foot for image, shadows, hit testing and Collision World.
+  if(perspectiveStairArt)ctx.translate(-rect.stairArtFootOffsetX,
+    rect.stairArtFootOffsetY);
   if(foregroundRailOnly){
     if(object.kind!=='bridge'){ctx.restore();return;}
     const regions=sculptBridgeForegroundRegions(rect,artShift,object);
