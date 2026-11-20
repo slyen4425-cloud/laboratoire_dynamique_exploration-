@@ -1,7 +1,7 @@
 // Native Chromium contract: true persistent authored NPC -> Sculpt visual
 // library -> one WorldArea actorDefinitionId -> native NPC dialogue after reload.
 import {createServer} from 'node:http';
-import {readFile,mkdtemp,rm} from 'node:fs/promises';
+import {readFile,mkdtemp,rm,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
@@ -165,6 +165,10 @@ try{
  if(!talk.caption.includes('Messager de la forêt')||
     talk.spoken!=='Bienvenue dans la clairière !')
   throw Error('Linked PNJ did not talk through canonical dialogue '+JSON.stringify(talk));
+ // Screenshot is captured from the REAL Chromium page, never rendered by a mock.
+ await mkdir('artifacts',{recursive:true});
+ const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
+ await writeFile('artifacts/npc-worldbuilder-real-preview.png',Buffer.from(shot.result.data,'base64'));
  process.stdout.write('NPC WORLDBUILDER GREEN '+JSON.stringify({id,bytes:staged.bytes,
   placement:restore.actor,dialogue:talk})+'\n');
 }finally{
