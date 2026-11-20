@@ -43,14 +43,15 @@ export function createExplorationPeerVisualProjectionV1({
   throw new TypeError('Invalid scoped Exploration peer viewport');
  // Received rows stay canonical. Only these ephemeral in-memory segments
  // interpolate the pixels drawn by the existing official MapActorRenderer.
- const BLEND_MS=140,MAX_CONTINUOUS_STEP=240;
- let current=new Map(),segments=new Map(),revision=-1,disposed=false;
+ const MIN_BLEND_MS=140,MAX_BLEND_MS=340,MAX_CONTINUOUS_STEP=240;
+ let current=new Map(),segments=new Map(),lastReceivedAt=new Map();
+ let revision=-1,disposed=false;
  const validArea=areaId=>!disposed&&scoped(areaId);
  function visual(actor,at){
   const segment=segments.get(actor.actorId);
   if(!segment||segment.seq!==actor.seq||segment.areaId!==actor.areaId)
    return Object.freeze({...actor,moving:false,directionX:0,directionY:0,facingX:1});
-  const fraction=Math.max(0,Math.min(1,(at-segment.startedAt)/BLEND_MS));
+  const fraction=Math.max(0,Math.min(1,(at-segment.startedAt)/segment.durationMs));
   const x=segment.fromX+(actor.x-segment.fromX)*fraction;
   const y=segment.fromY+(actor.y-segment.fromY)*fraction;
   return Object.freeze({...actor,x,y,moving:fraction<1,
@@ -67,7 +68,7 @@ export function createExplorationPeerVisualProjectionV1({
    packet.revision<=revision||
    !Array.isArray(packet.actors)||packet.actors.length>maxActors)
    return false;
-  const received=new Map(),nextSegments=new Map(),at=clock();
+  const received=new Map(),nextSegments=new Map(),nextReceivedAt=new Map(),at=clock();
   for(const raw of packet.actors){
    if(!validateActor(raw,ownActorId)||received.has(raw.actorId))
     return false;
@@ -85,6 +86,8 @@ export function createExplorationPeerVisualProjectionV1({
     });
    }
    received.set(raw.actorId,actor);
+   nextReceivedAt.set(raw.actorId,old&&actor.seq===old.seq
+    ?lastReceivedAt.get(raw.actorId)??at:at);
    if(old&&actor.seq===old.seq){
     if(segments.has(actor.actorId))
      nextSegments.set(actor.actorId,segments.get(actor.actorId));
@@ -92,14 +95,20 @@ export function createExplorationPeerVisualProjectionV1({
     const previous=visual(old,at),dx=actor.x-previous.x,dy=actor.y-previous.y;
     const distance=Math.hypot(dx,dy);
     // A portal/respawn or a large network gap must not glide through terrain.
-    if(distance>.001&&distance<=MAX_CONTINUOUS_STEP)
+    if(distance>.001&&distance<=MAX_CONTINUOUS_STEP){
+     const gap=at-(lastReceivedAt.get(raw.actorId)??at);
+     // Adapt only the draw duration to the measured server delivery interval.
+     // No prediction/extrapolation: the authoritative accepted pose stays exact.
+     const durationMs=Math.min(MAX_BLEND_MS,Math.max(MIN_BLEND_MS,gap*1.1));
      nextSegments.set(actor.actorId,Object.freeze({
       areaId:actor.areaId,seq:actor.seq,fromX:previous.x,fromY:previous.y,
-      startedAt:at,dx,dy
+      startedAt:at,durationMs,dx,dy
      }));
+    }
    }
   }
-  current=received;segments=nextSegments;revision=packet.revision;
+  current=received;segments=nextSegments;lastReceivedAt=nextReceivedAt;
+  revision=packet.revision;
   return true;
  }
  function forArea(areaId){
@@ -119,9 +128,9 @@ export function createExplorationPeerVisualProjectionV1({
   return validArea(areaId)&&[...current.values()].some(actor=>{
    const segment=segments.get(actor.actorId);
    return actor.areaId===areaId&&segment?.seq===actor.seq&&
-    at>=segment.startedAt&&at<segment.startedAt+BLEND_MS;
+    at>=segment.startedAt&&at<segment.startedAt+segment.durationMs;
   });
  }
- function dispose(){disposed=true;revision=-1;current.clear();segments.clear();}
+ function dispose(){disposed=true;revision=-1;current.clear();segments.clear();lastReceivedAt.clear();}
  return Object.freeze({apply,forArea,sampleForArea,isAnimating,dispose});
 }
