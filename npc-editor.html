@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Monster InvoC — Éditeur de PNJ</title>
+<style>
+:root{color-scheme:dark;font:14px system-ui,sans-serif;background:#0b171c;color:#eff9f5}
+*{box-sizing:border-box}body{margin:0;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+header{max-width:1280px;margin:0 auto 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(21px,2.6vw,30px)}h2{margin:0 0 12px;font-size:18px}p{color:#bbd7ce;line-height:1.45}
+a{color:#a6f1d9}main{max-width:1280px;margin:auto;display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:14px;align-items:start}
+section.panel{padding:15px;border:1px solid #3b766b;border-radius:12px;background:#152b30;min-width:0}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}label{display:flex;flex-direction:column;gap:5px;color:#d4eae4;min-width:0}
+label.wide,.wide{grid-column:1/-1}
+input,textarea,select,button{font:inherit;color:#f4fcf8;border:1px solid #5c887c;background:#203d43;border-radius:8px;min-height:40px;padding:8px;max-width:100%}
+textarea{min-height:95px;resize:vertical}input[type=file]{width:100%}button{background:#166052;font-weight:650;cursor:pointer}button:hover{background:#1d7764}button:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.hint{font-size:12px;color:#b1c9c1}output{display:block;color:#b9eddd;min-height:20px}
+#npc-status[data-error=true]{color:#ffb8ac}
+#npc-canvas{width:100%;height:auto;aspect-ratio:2/1;background:#203e46;border-radius:9px}
+#npc-portrait-preview{width:110px;height:110px;object-fit:contain;border:1px solid #456f66;border-radius:8px;background:#28474b}
+#npc-direction-files{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#npc-direction-files label{border:1px solid #486d67;border-radius:8px;padding:7px}
+details{border:1px solid #466c62;padding:10px;border-radius:9px}summary{cursor:pointer;font-weight:700;padding:4px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:9px;max-height:480px;overflow:auto;margin-top:12px}
+.npc-card{background:#203c41;border:1px solid #476f67;border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;min-width:0}
+.npc-card img{height:100px;width:100%;object-fit:contain}.npc-card strong{overflow-wrap:anywhere}
+#npc-editor-hint{border-left:3px solid #62a78b;padding-left:10px}
+[hidden]{display:none!important}
+@media(max-width:770px){main{grid-template-columns:1fr}.fields{gap:8px}section.panel{padding:10px}}
+@media(max-width:460px){#npc-direction-files{grid-template-columns:1fr}}
+</style></head>
+<body><header><div><h1>👥 Éditeur de PNJ — Monster InvoC</h1>
+<p>Crée des personnages réutilisables, puis place-les sur tes cartes 2,5D.</p></div>
+<nav><a href="./sculpt-lab.html">← World Builder 2,5D</a></nav></header>
+<main>
+<section class="panel">
+<h2>Fiche du PNJ</h2>
+<div class="fields">
+<label class="wide">Mes PNJ <output id="npc-count" aria-live="polite">Lecture…</output>
+<select id="npc-saved"><option value="">＋ Nouveau PNJ</option></select></label>
+<label class="wide">Nom <input id="npc-name" maxlength="80" placeholder="Ex. Gardienne du village"></label>
+<label>Rôle <select id="npc-role">
+<option value="villager">Villageois</option><option value="merchant">Marchand</option>
+<option value="trainer-friendly">Dresseur amical</option><option value="trainer-aggressive">Dresseur agressif</option>
+<option value="adversary">Adversaire (raccord à venir)</option><option value="boss">Boss (scénario à venir)</option>
+<option value="quest">Personnage de quête</option><option value="wild">Créature errante</option>
+</select></label>
+<label>Comportement <select id="npc-movement"><option value="static">Immobile</option>
+<option value="wander">Errant (Collision World)</option></select></label>
+<label>Rayon d'errance (16–600)<input id="npc-radius" type="number" min="16" max="600" value="90"></label>
+<label>Hauteur sur la carte (24–240)<input id="npc-height" type="number" min="24" max="240" value="62"></label>
+<label class="wide">Dialogue (une ligne par écran)<textarea id="npc-dialogue" maxlength="2000" rows="3"></textarea></label>
+<label class="wide">Image principale PNG / WebP <input id="npc-image" type="file" accept="image/png,image/webp"></label>
+<label class="wide">Portrait indépendant PNG / WebP <input id="npc-portrait" type="file" accept="image/png,image/webp">
+<img id="npc-portrait-preview" hidden alt="Portrait du PNJ"></label>
+<label>Animation <select id="npc-mode"><option value="image">Image fixe</option>
+<option value="frames">Repos et marche animés</option><option value="directions">8 directions, 6 frames chacune</option></select></label>
+<label id="npc-fps-label">Images/seconde <input id="npc-fps" type="number" min="1" max="30" value="16"></label>
+<label>Orientation d'origine <select id="npc-facing"><option value="1">Droite</option><option value="-1">Gauche</option></select></label>
+<label>Symétrie automatique <select id="npc-mirror"><option value="yes">Activée</option><option value="no">Désactivée</option></select></label>
+<label>Oscillation repos <input id="npc-idle-amplitude" type="number" min="0" max="8" step=".1" value="1"></label>
+<label>Ombre <select id="npc-shadow"><option value="yes">Visible</option><option value="no">Masquée</option></select></label>
+<details class="wide"><summary>Importer les animations PNG/WebP</summary>
+<div class="fields">
+<label id="npc-idle-label" class="wide">Repos (facultatif, jusqu'à 32 frames)
+<input type="file" multiple accept="image/png,image/webp" id="npc-idle"></label>
+<label id="npc-walk-label" class="wide">Marche (1 à 32 frames)
+<input type="file" multiple accept="image/png,image/webp" id="npc-walk"></label>
+<div id="npc-direction-inputs" class="wide" hidden><p class="hint">8 directions, exactement 6 fichiers ordonnés dans chaque direction. Tous les canevas doivent avoir la même taille.</p><div id="npc-direction-files"></div></div>
+</div></details>
+</div>
+<p id="npc-editor-hint" class="hint">Les équipes, objets, boutiques et combats restent gérés par les autorités officielles. Les rôles adversaire/boss sont sélectionnables, mais leur scénario avancé n'est pas encore actif.</p>
+<output id="npc-edit-state" aria-live="polite">Aucune modification enregistrée.</output>
+<div class="actions">
+<button id="npc-save" type="button">Enregistrer ce PNJ</button>
+<button id="npc-duplicate" type="button" disabled>Dupliquer (nouvel ID)</button>
+<button id="npc-new" type="button">＋ Nouveau PNJ</button>
+<button id="npc-export" type="button" disabled>Exporter PNJ + images</button>
+<label>Importer un PNJ JSON <input id="npc-import" type="file" accept=".json,application/json"></label>
+</div>
+</section>
+<section class="panel">
+<h2>Prévisualisation réelle</h2>
+<canvas id="npc-canvas" width="440" height="220" aria-label="Prévisualisation animée par le moteur Map Actor officiel"></canvas>
+<div class="actions">
+<button id="npc-preview" type="button">Voir mes modifications</button>
+<button id="npc-preview-idle" type="button">Repos</button>
+<button id="npc-preview-walk" type="button">Marche</button>
+<label>Direction <select id="npc-preview-direction"><option>S</option><option>SE</option><option>E</option><option>NE</option><option>N</option><option>NW</option><option>W</option><option>SW</option></select></label>
+</div>
+<output id="npc-status" role="status" aria-live="polite">Choisis une fiche ou importe une image.</output>
+<p class="hint">Aperçu rendu par le vrai <code>MapActorRenderer</code>, avec les mêmes loaders, sprites et ancrages que sur la carte. Le changement de carte ne recopie pas l'image dans le WorldDocument.</p>
+<h2>Bibliothèque visuelle</h2>
+<div id="npc-gallery" class="gallery" aria-label="PNJ enregistrés"></div>
+</section>
+</main><script type="module" src="./src/actors/npc-editor-v1.js"></script></body></html>
