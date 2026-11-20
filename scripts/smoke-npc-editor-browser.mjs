@@ -1,7 +1,7 @@
 // Native Chromium gate for the actual NPC editor: PNG -> IndexedDB ->
 // same MapActorRenderer canvas -> reload and same stable actor definition ID.
 import {createServer} from 'node:http';
-import {readFile,mkdtemp,rm} from 'node:fs/promises';
+import {readFile,mkdtemp,rm,mkdir,writeFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawn,spawnSync} from 'node:child_process';
@@ -133,6 +133,19 @@ try{
  }
  if(persisted?.loaded!==created.id||persisted.dialogue!=='Bonjour depuis Chromium')
   throw Error('La fiche PNJ ne survit pas au rechargement : '+JSON.stringify(persisted));
+ // Screenshot is captured from the REAL Chromium page, never rendered by a mock.
+ await mkdir('artifacts',{recursive:true});
+ const shot=await new Promise((done,fail)=>{
+  const id=++seq,timer=setTimeout(()=>{pending.delete(id);fail(Error('Screenshot CDP timeout'));},20000);
+  pending.set(id,result=>{
+   clearTimeout(timer);
+   if(result.error)fail(Error(JSON.stringify(result.error)));
+   else done(result);
+  });
+  ws.send(JSON.stringify({id,method:'Page.captureScreenshot',
+   params:{format:'png',captureBeyondViewport:false}}));
+ });
+ await writeFile('artifacts/npc-editor-real-preview.png',Buffer.from(shot.result.data,'base64'));
  process.stdout.write('PNJ BROWSER GREEN : '+JSON.stringify({created,persisted})+'\n');
 }finally{
  ws?.close();
