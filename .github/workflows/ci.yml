@@ -113,3 +113,11 @@ jobs:
         env:
           EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/smoke-sculpt-remote-pixels.mjs
+      - name: Upload real Chromium PNJ previews for review before merge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gensrpg-npc-previews-${{ github.run_id }}
+          path: artifacts/npc-*-real-preview.png
+          if-no-files-found: warn
+          retention-days: 14
