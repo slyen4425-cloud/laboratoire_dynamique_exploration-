@@ -4170,9 +4170,9 @@ function syncActorSelectedControls(){
       captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.displayName||
       'sans nom'):'Aucun acteur sélectionné';
   if($('npc-authoring-open'))$('npc-authoring-open').disabled=!selected;
-  if(!selected){
+  if(!selected){closeNpcAuthoringDialog();
     if($('actor-npc-edit-definition'))$('actor-npc-edit-definition').hidden=true;
-    closeNpcAuthoringDialog();npcRoleEditorRefresh();return;
+    npcRoleEditorRefresh();return;
   }
   const linkedNpc=selected.actorDefinitionId.startsWith('npc.user.');
   $('npc-authoring-open').disabled=linkedNpc;
