@@ -7,12 +7,17 @@ import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
+import {loadCaptureShowcaseEncounterSourceV1} from '../capture/capture-showcase-encounter-source-v1.js';
+import {NPC_TRAINER_ROSTER_LIMIT_V1} from './map-actor-npc-settings-v1.js';
 
 const $=id=>document.getElementById(id),store=createUserNpcStoreV1();
 const canvas=$('npc-canvas'),ctx=canvas.getContext('2d');
 let selected=null,preview=null,epoch=0,disposed=false;
 let previewMoving=false,previewDirection='S',busy=false,dirty=false;
 let portraitUrl=null,galleryUrls=[];
+let officialCreatures=Object.freeze([]),merchantChoices=Object.freeze([]),rewardChoices=Object.freeze([]);
+let trainerRosterDraft=[],rewardItemsDraft=[],merchantIdDraft='',wildCreatureDraft=null;
+let merchantRequestId=null,rewardRequestId=null,npcCatalogLoading=false;
 const angles={E:0,SE:Math.PI/4,S:Math.PI/2,SW:3*Math.PI/4,
  W:Math.PI,NW:-3*Math.PI/4,N:-Math.PI/2,NE:-Math.PI/4};
 function notify(message,error=false){
@@ -43,6 +48,206 @@ for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
  input.accept='image/png,image/webp';
  label.append(input);$('npc-direction-files').append(label);
 }
+// The same official Capture bestiary projection and native Scenario NPC setting
+// contract supply selections here and in the historical Sculpt editor. No
+// second species, item, currency, merchant or combat authority is created.
+function roleSections(){
+ const role=$('npc-role').value,trainer=role.startsWith('trainer-');
+ $('npc-trainer-config').hidden=!trainer;
+ $('npc-merchant-config').hidden=role!=='merchant';
+ $('npc-wild-config').hidden=role!=='wild';
+ if(trainer)renderTrainerRows();
+ if(role==='merchant')renderMerchantChoices();
+ if(role==='wild')renderWildChoices();
+}
+function creatureName(id){
+ return officialCreatures.find(c=>c.id===id)?.name??'Créature non disponible dans le Bestiaire officiel';
+}
+function officialSelect(select,list,{empty='Choisir…',selectedId='',missingLabel='Référence antérieure (catalogue indisponible)'}={}){
+ select.replaceChildren(new Option(empty,''),
+  ...list.map(entry=>new Option(entry.name,entry.id)));
+ if(selectedId){
+  if(!list.some(entry=>entry.id===selectedId))
+   select.append(new Option(missingLabel,selectedId));
+  select.value=selectedId;
+ }
+}
+function renderCreatureChoices(){
+ officialSelect($('npc-creature-choice'),officialCreatures,
+  {empty:'Choisir une créature officielle…'});
+ $('npc-creature-add').disabled=!officialCreatures.length||
+  trainerRosterDraft.length>=NPC_TRAINER_ROSTER_LIMIT_V1;
+ renderWildChoices();renderTrainerRows();
+}
+function renderTrainerRows(){
+ const panel=$('npc-trainer-rows');panel.replaceChildren();
+ for(const [index,slot] of trainerRosterDraft.entries()){
+  const row=document.createElement('div');row.className='npc-reference-row';
+  const label=document.createElement('span');
+  label.textContent=(index+1)+'. '+creatureName(slot.creatureId)+' · niveau '+slot.level;
+  row.append(label);
+  for(const [title,diff] of [['↑',-1],['↓',1]]){
+   const move=document.createElement('button');move.type='button';
+   move.textContent=title;
+   move.disabled=index+diff<0||index+diff>=trainerRosterDraft.length;
+   move.addEventListener('click',()=>{
+    const next=[...trainerRosterDraft];
+    [next[index],next[index+diff]]=[next[index+diff],next[index]];
+    trainerRosterDraft=next;renderTrainerRows();markDirty();
+   });
+   row.append(move);
+  }
+  const del=document.createElement('button');del.type='button';
+  del.textContent='✕';del.setAttribute('aria-label','Retirer '+creatureName(slot.creatureId));
+  del.addEventListener('click',()=>{
+   trainerRosterDraft=trainerRosterDraft.filter((_,i)=>index!==i);
+   renderTrainerRows();markDirty();
+  });
+  row.append(del);panel.append(row);
+ }
+ if(!trainerRosterDraft.length)panel.textContent='Aucune créature : ajoute une espèce officielle.';
+ $('npc-creature-add').disabled=!officialCreatures.length||
+   trainerRosterDraft.length>=NPC_TRAINER_ROSTER_LIMIT_V1;
+}
+function renderRewardChoices(){
+ officialSelect($('npc-reward-choice'),rewardChoices,
+  {empty:'Choisir un objet officiel…'});
+ $('npc-reward-add').disabled=!rewardChoices.length;
+ const panel=$('npc-reward-rows');panel.replaceChildren();
+ for(const [index,item] of rewardItemsDraft.entries()){
+  const row=document.createElement('div');row.className='npc-reference-row';
+  const label=document.createElement('span');
+  label.textContent=(rewardChoices.find(x=>x.id===item.itemId)?.name??
+    'Objet officiel non disponible — référence conservée')+' ×'+item.quantity;
+  const del=document.createElement('button');
+  del.textContent='✕';del.type='button';del.setAttribute('aria-label','Retirer cette récompense');
+  del.addEventListener('click',()=>{
+   rewardItemsDraft=rewardItemsDraft.filter((_,i)=>index!==i);
+   renderRewardChoices();markDirty();
+  });
+  row.append(label,del);panel.append(row);
+ }
+ if(!rewardItemsDraft.length)panel.textContent='Aucun objet en récompense.';
+}
+function renderMerchantChoices(){
+ officialSelect($('npc-merchant-choice'),merchantChoices,{
+  empty:'Aucune boutique associée',selectedId:merchantIdDraft,
+  missingLabel:'Boutique précédemment liée — indisponible'
+ });
+}
+function renderWildChoices(){
+ officialSelect($('npc-wild-choice'),officialCreatures,{
+  empty:'Choisir une créature officielle…',selectedId:wildCreatureDraft?.creatureId??'',
+  missingLabel:'Espèce précédemment liée — indisponible'
+ });
+}
+function loadGameplayFields(record){
+ trainerRosterDraft=(record?.npc?.trainerRoster??[]).map(s=>({...s}));
+ rewardItemsDraft=(record?.npc?.trainerReward?.items??[]).map(i=>({...i}));
+ merchantIdDraft=record?.npc?.merchantId??'';
+ wildCreatureDraft=record?.npc?.wildCreature?{...record.npc.wildCreature}:null;
+ $('npc-reward-currency').value=String(record?.npc?.trainerReward?.currency??0);
+ $('npc-wild-level').value=String(wildCreatureDraft?.level??10);
+ renderCreatureChoices();renderRewardChoices();roleSections();
+}
+async function loadCreatureCatalog(){
+ if(npcCatalogLoading)return;
+ npcCatalogLoading=true;$('npc-creature-add').disabled=true;
+ $('npc-creature-status').textContent='Lecture du Bestiaire officiel Combat…';
+ try{
+  const source=await loadCaptureShowcaseEncounterSourceV1();
+  if(!Array.isArray(source.creatures)||!source.creatures.length)
+   throw new Error('aucune espèce publiée');
+  officialCreatures=Object.freeze(source.creatures);
+  $('npc-creature-status').textContent=officialCreatures.length+
+   ' créatures publiées, sans catalogue de secours.';
+ }catch(error){
+  officialCreatures=Object.freeze([]);
+  $('npc-creature-status').textContent='Bestiaire officiel indisponible : '+error.message+
+   '. Les anciennes références sont conservées.';
+ }finally{
+  npcCatalogLoading=false;renderCreatureChoices();
+ }
+}
+function requestNativeCatalog(kind){
+ const tag=kind==='merchant'?'npc-merchant-status':'npc-reward-status';
+ if(window.parent===window){
+  $(tag).textContent='Catalogue officiel disponible uniquement via la fenêtre Monster Capture (pas de catalogue parallèle).';
+  return;
+ }
+ const requestId=crypto.randomUUID();
+ const isShop=kind==='merchant';
+ if(isShop)merchantRequestId=requestId;else rewardRequestId=requestId;
+ $(tag).textContent='Interrogation du catalogue officiel Monster Capture…';
+ window.parent.postMessage({
+  schema:isShop?'gensrpg.exploration.npc.merchant.catalog.request.v1':
+   'gensrpg.exploration.npc.reward.catalog.request.v1',requestId
+ },window.location.origin);
+}
+window.addEventListener('message',event=>{
+ if(event.origin!==window.location.origin||event.source!==window.parent)return;
+ const data=event.data;
+ if(data?.schema==='gensrpg.capture.v2.npc.merchant.catalog.response.v1'&&
+   data.requestId===merchantRequestId){
+  merchantRequestId=null;
+  merchantChoices=Object.freeze(Array.isArray(data.merchants)?
+   data.merchants.filter(shop=>typeof shop?.id==='string'&&
+    /^[a-z0-9][a-z0-9_:.-]{0,119}$/i.test(shop.id)&&
+    typeof shop.name==='string'&&shop.name.length>0&&shop.name.length<=80)
+    .map(x=>({id:x.id,name:x.name})):[]);
+  $('npc-merchant-status').textContent=data.error?
+   'Boutiques indisponibles : '+String(data.error).slice(0,120):
+   merchantChoices.length+' boutiques officielles disponibles.';
+  renderMerchantChoices();
+ }
+ if(data?.schema==='gensrpg.capture.v2.npc.reward.catalog.response.v1'&&
+    data.requestId===rewardRequestId){
+  rewardRequestId=null;
+  rewardChoices=Object.freeze(Array.isArray(data.items)?
+   data.items.filter(item=>typeof item?.id==='string'&&
+    /^[a-z0-9][a-z0-9_:.-]{0,129}$/i.test(item.id)&&
+    typeof item.name==='string'&&item.name.length>0&&item.name.length<=80)
+    .map(x=>({id:x.id,name:x.name})):[]);
+  $('npc-reward-status').textContent=data.error?
+   'Objets officiels indisponibles : '+String(data.error).slice(0,120):
+   rewardChoices.length+' objets officiels disponibles.';
+  renderRewardChoices();
+ }
+});
+$('npc-role').addEventListener('change',roleSections);
+$('npc-creature-reload').addEventListener('click',()=>run(loadCreatureCatalog));
+$('npc-creature-add').addEventListener('click',()=>{
+ const creatureId=$('npc-creature-choice').value,level=number('npc-creature-level');
+ if(!officialCreatures.some(c=>c.id===creatureId)||
+    trainerRosterDraft.length>=NPC_TRAINER_ROSTER_LIMIT_V1)
+  return notify('Sélectionne une créature publiée ; 6 maximum.',true);
+ trainerRosterDraft.push({creatureId,level});
+ renderTrainerRows();markDirty();
+});
+$('npc-merchant-choice').addEventListener('change',()=>{
+ merchantIdDraft=$('npc-merchant-choice').value;markDirty();
+});
+$('npc-wild-choice').addEventListener('change',()=>{
+ const id=$('npc-wild-choice').value;
+ wildCreatureDraft=id?{creatureId:id,level:number('npc-wild-level')}:null;
+ markDirty();
+});
+$('npc-wild-level').addEventListener('change',()=>{
+ if(wildCreatureDraft)wildCreatureDraft.level=number('npc-wild-level');
+ markDirty();
+});
+$('npc-reward-add').addEventListener('click',()=>{
+ const itemId=$('npc-reward-choice').value,quantity=number('npc-reward-quantity');
+ if(!rewardChoices.some(entry=>entry.id===itemId))return;
+ const existing=rewardItemsDraft.find(entry=>entry.itemId===itemId);
+ if(existing)existing.quantity=quantity;
+ else if(rewardItemsDraft.length<24)rewardItemsDraft.push({itemId,quantity});
+ else return notify('Limite de 24 récompenses objet.',true);
+ renderRewardChoices();markDirty();
+});
+$('npc-reward-reload').addEventListener('click',()=>requestNativeCatalog('reward'));
+$('npc-merchant-reload').addEventListener('click',()=>requestNativeCatalog('merchant'));
+
 function clearInputs(){
  for(const id of ['npc-image','npc-portrait','npc-idle','npc-walk',
   ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(d=>'npc-dir-'+d)])$(id).value='';
@@ -65,6 +270,7 @@ function setFields(record){
  $('npc-edit-state').textContent=record
   ?'Définition chargée : '+record.name+' · toute modification visuelle s’appliquera aux futurs chargements de ses placements.'
   :'Nouveau PNJ : aucune définition enregistrée.';
+ loadGameplayFields(record);
  syncMode();updatePortrait();
 }
 function updatePortrait(){
@@ -125,10 +331,18 @@ async function draftFromForm({newId=false}={}){
  const portrait=await uploaded($('npc-portrait').files[0])||
   (selected?.assets.some(a=>a.id===selected.id+'.portrait')?
    oldAsset(selected.id+'.portrait'):null);
+ const role=$('npc-role').value;
  const npc={
   ...(selected?.npc??{}),
   dialogue:$('npc-dialogue').value,
-  movement:{mode:$('npc-movement').value,radius:number('npc-radius')}
+  movement:{mode:$('npc-movement').value,radius:number('npc-radius')},
+  ...(role.startsWith('trainer-')?{
+    trainerRoster:trainerRosterDraft.map(slot=>({...slot})),
+    trainerReward:{currency:number('npc-reward-currency'),
+      items:rewardItemsDraft.map(item=>({...item}))}
+  }:{}),
+  ...(role==='merchant'?{merchantId:merchantIdDraft}:{}),
+  ...(role==='wild'&&wildCreatureDraft?{wildCreature:{...wildCreatureDraft}}:{})
  };
  const shadow={...(prev?.shadow??{}),enabled:$('npc-shadow').value==='yes'};
  const motion={...(prev?.motion??{}),idleAmplitude:number('npc-idle-amplitude')};
@@ -271,3 +485,6 @@ window.addEventListener('pagehide',()=>{
  galleryUrls.forEach(url=>URL.revokeObjectURL(url));galleryUrls=[];
 },{once:true});
 run(()=>refresh(new URLSearchParams(window.location.search).get('edit')));
+void loadCreatureCatalog();
+requestNativeCatalog('merchant');
+requestNativeCatalog('reward');
