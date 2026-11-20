@@ -3773,7 +3773,6 @@ async function loadCaptureActorCatalog(){
  npcCatalogRefreshPending=true;
  let newResolver=null,newLoader=null,newPreparer=null;
  try{
-   const chosen=$('actor-definition').value;
    let source=null,sourceError=null;
    try{source=await createCaptureActorPreviewProviderV1();}
    catch(error){sourceError=error;}
@@ -3823,6 +3822,11 @@ async function loadCaptureActorCatalog(){
    authoredNpcRecords=Object.freeze(authored);
    newResolver=null;newLoader=null;newPreparer=null;
    prior.preparer?.dispose();prior.loader?.dispose();prior.resolver?.dispose();
+   // Selection is allowed to change while Capture/IndexedDB assets load.
+   // Read the chosen definition at COMMIT time, not before the await chain:
+   // otherwise a completed background refresh silently restores the generic
+   // actor after the user picked an authored NPC from the visual gallery.
+   const chosen=$('actor-definition').value;
    $('actor-definition').replaceChildren(...definitions.map(def=>{
      const opt=document.createElement('option');
      opt.value=def.id;opt.textContent=(def.displayName||def.id)+' · '+def.role;
