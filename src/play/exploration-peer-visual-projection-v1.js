@@ -33,13 +33,30 @@ function validateActor(actor,ownActorId){
 // A full snapshot replaces the previous visible set. The server-owned
 // monotonic actor seq and client-snapshot revision block stale arrivals.
 export function createExplorationPeerVisualProjectionV1({
- sessionId,worldId,worldFingerprint,ownActorId,maxActors=31
+ sessionId,worldId,worldFingerprint,ownActorId,maxActors=31,
+ clock=()=>performance.now()
 }={}){
  if(!scoped(sessionId)||!scoped(worldId)||!scoped(worldFingerprint)||
   (ownActorId!==undefined&&(!ID.test(ownActorId)))||
-  !Number.isInteger(maxActors)||maxActors<1||maxActors>31)
+  !Number.isInteger(maxActors)||maxActors<1||maxActors>31||
+  typeof clock!=='function')
   throw new TypeError('Invalid scoped Exploration peer viewport');
- let current=new Map(),revision=-1,disposed=false;
+ // Received rows stay canonical. Only these ephemeral in-memory segments
+ // interpolate the pixels drawn by the existing official MapActorRenderer.
+ const BLEND_MS=140,MAX_CONTINUOUS_STEP=240;
+ let current=new Map(),segments=new Map(),revision=-1,disposed=false;
+ const validArea=areaId=>!disposed&&scoped(areaId);
+ function visual(actor,at){
+  const segment=segments.get(actor.actorId);
+  if(!segment||segment.seq!==actor.seq||segment.areaId!==actor.areaId)
+   return Object.freeze({...actor,moving:false,directionX:0,directionY:0,facingX:1});
+  const fraction=Math.max(0,Math.min(1,(at-segment.startedAt)/BLEND_MS));
+  const x=segment.fromX+(actor.x-segment.fromX)*fraction;
+  const y=segment.fromY+(actor.y-segment.fromY)*fraction;
+  return Object.freeze({...actor,x,y,moving:fraction<1,
+   directionX:segment.dx,directionY:segment.dy,
+   facingX:segment.dx<0?-1:1});
+ }
  function apply(packet){
   if(disposed||!proper(packet,PACKET_KEYS)||
    packet.schema!==EXPLORATION_PEER_SNAPSHOT_EVENT_V1||
@@ -50,28 +67,61 @@ export function createExplorationPeerVisualProjectionV1({
    packet.revision<=revision||
    !Array.isArray(packet.actors)||packet.actors.length>maxActors)
    return false;
-  const received=new Map();
+  const received=new Map(),nextSegments=new Map(),at=clock();
   for(const raw of packet.actors){
    if(!validateActor(raw,ownActorId)||received.has(raw.actorId))
     return false;
    const old=current.get(raw.actorId);
-   // An old actor seq can never roll back its displayed location.
-   const actor=old&&old.seq>=raw.seq?old:Object.freeze({
-    actorId:raw.actorId,areaId:raw.areaId,x:raw.x,y:raw.y,seq:raw.seq,
-    ...(raw.displayName===undefined?{}:{displayName:raw.displayName.trim()})
-   });
+   let actor;
+   if(old&&old.seq>=raw.seq){
+    // A membership-verified name may change without a new pose revision.
+    const name=raw.displayName?.trim();
+    actor=old.seq===raw.seq&&name!==old.displayName
+     ?Object.freeze({...old,...(name===undefined?{}:{displayName:name})}):old;
+   }else{
+    actor=Object.freeze({
+     actorId:raw.actorId,areaId:raw.areaId,x:raw.x,y:raw.y,seq:raw.seq,
+     ...(raw.displayName===undefined?{}:{displayName:raw.displayName.trim()})
+    });
+   }
    received.set(raw.actorId,actor);
+   if(old&&actor.seq===old.seq){
+    if(segments.has(actor.actorId))
+     nextSegments.set(actor.actorId,segments.get(actor.actorId));
+   }else if(old&&old.areaId===actor.areaId){
+    const previous=visual(old,at),dx=actor.x-previous.x,dy=actor.y-previous.y;
+    const distance=Math.hypot(dx,dy);
+    // A portal/respawn or a large network gap must not glide through terrain.
+    if(distance>.001&&distance<=MAX_CONTINUOUS_STEP)
+     nextSegments.set(actor.actorId,Object.freeze({
+      areaId:actor.areaId,seq:actor.seq,fromX:previous.x,fromY:previous.y,
+      startedAt:at,dx,dy
+     }));
+   }
   }
-  current=received;
-  revision=packet.revision;
+  current=received;segments=nextSegments;revision=packet.revision;
   return true;
  }
  function forArea(areaId){
-  if(disposed||!scoped(areaId))return Object.freeze([]);
+  if(!validArea(areaId))return Object.freeze([]);
   return Object.freeze([...current.values()]
    .filter(actor=>actor.areaId===areaId)
    .sort((a,b)=>a.y-b.y||a.actorId.localeCompare(b.actorId)));
  }
- function dispose(){disposed=true;revision=-1;current.clear();}
- return Object.freeze({apply,forArea,dispose});
+ function sampleForArea(areaId,at=clock()){
+  if(!validArea(areaId))return Object.freeze([]);
+  return Object.freeze([...current.values()]
+   .filter(actor=>actor.areaId===areaId)
+   .map(actor=>visual(actor,at))
+   .sort((a,b)=>a.y-b.y||a.actorId.localeCompare(b.actorId)));
+ }
+ function isAnimating(areaId,at=clock()){
+  return validArea(areaId)&&[...current.values()].some(actor=>{
+   const segment=segments.get(actor.actorId);
+   return actor.areaId===areaId&&segment?.seq===actor.seq&&
+    at>=segment.startedAt&&at<segment.startedAt+BLEND_MS;
+  });
+ }
+ function dispose(){disposed=true;revision=-1;current.clear();segments.clear();}
+ return Object.freeze({apply,forArea,sampleForArea,isAnimating,dispose});
 }
