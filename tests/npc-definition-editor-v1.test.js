@@ -61,7 +61,7 @@ test('trainer, merchant and future boss roles only use known canonical interacti
  assert.throws(()=>createUserNpcDefinitionV1({...base(),role:'INVALID role'}));
 });
 test('user NPC asset paths are ephemeral URLs revoked after real image loader use',()=>{
- const npc=createUserNpcDefinitionV1({...base(),portrait:png(),mode:'frames',walk:[png()]});
+ const npc=createUserNpcDefinitionV1({...base(),portrait:png(),mode:'frames',idle:[png()],walk:[png()]});
  const created=[],revoked=[];
  const resolver=createUserNpcAssetResolverV1([npc],{urlApi:{
   createObjectURL(){const uri='blob:npc-'+created.length;created.push(uri);return uri;},
