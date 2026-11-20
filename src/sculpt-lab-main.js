@@ -3830,9 +3830,16 @@ async function loadCaptureActorCatalog(){
    }));
    $('actor-definition').disabled=!definitions.length;
    if(definitions.some(def=>def.id===chosen))$('actor-definition').value=chosen;
+   const missingNpcRefs=[...new Set(placedActors
+     .filter(actor=>actor.actorDefinitionId.startsWith('npc.user.')&&
+       !provider.resolveDefinition(actor.actorDefinitionId))
+     .map(actor=>actor.actorDefinitionId))];
    $('actor-source-status').textContent=definitions.length+
      ' visuel(s) disponibles (Capture + PNJ Exploration)'+
-     (sourceError?' · Capture indisponible : '+sourceError.message:'');
+     (sourceError?' · Capture indisponible : '+sourceError.message:'')+
+     (missingNpcRefs.length?' · ⚠ '+missingNpcRefs.length+
+      ' définition(s) PNJ absentes de cet appareil : importe leur fichier JSON depuis l’éditeur PNJ. Les placements restent conservés.':'');
+   if(missingNpcRefs.length)console.warn('PNJ référencés mais non importés sur cet appareil',missingNpcRefs);
    syncActorViewAvailability();
    renderNpcLibraryGallery();
    scheduleDraw();
