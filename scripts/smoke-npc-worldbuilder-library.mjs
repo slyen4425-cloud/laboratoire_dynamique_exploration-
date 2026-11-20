@@ -107,6 +107,18 @@ try{
  })()`);
  if(staged.id!==id||staged.bytes<50)throw Error('NPC seed invalid '+JSON.stringify(staged));
  await until(`window.__sculptActorsProbe().definitions.includes('${id}')`,'NPC definition appears from IndexedDB');
+ // The embedded workshop is the REAL editor in the same mounted WorldArea;
+ // loading and closing it must not discard the Sculpt source map or database.
+ await evalJs("document.querySelector('#actor-npc-workshop-open').click()");
+ await until("document.querySelector('#actor-npc-workshop-frame')?.contentDocument?.querySelector('#npc-saved')?.options.length>1",'embedded native NPC editor loaded');
+ const workshop=await evalJs(`({
+  open:document.querySelector('#actor-npc-workshop').open,
+  saved:[...document.querySelector('#actor-npc-workshop-frame').contentDocument.querySelector('#npc-saved').options].some(opt=>opt.textContent.includes('Messager de la forêt'))
+ })`);
+ if(!workshop.open||!workshop.saved)throw Error('Embedded workshop lost the shared NPC store '+JSON.stringify(workshop));
+ await evalJs("document.querySelector('#actor-npc-workshop-close').click()");
+ await until("!document.querySelector('#actor-npc-workshop').open",'workshop closed without losing the map');
+ await until(`window.__sculptActorsProbe().definitions.includes('${id}')`,'catalog preserved after workshop close');
  const gallery=await evalJs(`(()=>{
   document.querySelector('#actor-npc-library-open').click();
   const buttons=[...document.querySelectorAll('#actor-npc-gallery button')];
