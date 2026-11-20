@@ -3353,13 +3353,20 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   // V78 R2: a stair is sloping GROUND, not an upright billboard.
   // The preview terrain already uses this exact camera matrix; match it
   // locally in Tester while leaving bridges, rails and buildings untouched.
-  if(navigationTesting&&object.kind==='stairs'){
+  // Face keeps its validated V78 terrain projection. Oblique and side
+  // variants are already drawn in perspective: applying another pitch makes
+  // their real step axis diverge from the authored collision corridor.
+  const perspectiveStairArt=Number.isFinite(rect.stairArtFootOffsetX);
+  if(navigationTesting&&object.kind==='stairs'&&!perspectiveStairArt){
     const view=cameraView();
     ctx.transform(1,view.shear,0,view.pitch,0,0);
   }
   ctx.rotate(rect.angle);
   // Same mirror affects the existing image and silhouette shadow.
   ctx.scale(object.transform?.flipX===true?-1:1,1);
+  // One WorldObject foot for image, shadows, hit testing and Collision World.
+  if(perspectiveStairArt)ctx.translate(-rect.stairArtFootOffsetX,
+    rect.stairArtFootOffsetY);
   if(foregroundRailOnly){
     if(object.kind!=='bridge'){ctx.restore();return;}
     const regions=sculptBridgeForegroundRegions(rect,artShift,object);
