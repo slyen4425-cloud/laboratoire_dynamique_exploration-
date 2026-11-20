@@ -570,21 +570,24 @@ try{
     throw Error('V17 keyboard does not reach existing Exploration movement: '+JSON.stringify(afterKeyboard));
   // Force a 190ms main-thread freeze (simulates an overloaded Android device):
   // old 32ms frame clamp lost 158ms of real movement per dropped frame.
+  // Go BACK along the just-traversed, proven walkable corridor. Continuing
+  // right here collides with the legitimate V21 cliff/obstacle at x≈204,
+  // so a short move is not evidence of dropped frames.
   await send('Input.dispatchKeyEvent',
-    {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+    {type:'keyDown',key:'a',code:'KeyA',windowsVirtualKeyCode:65});
   await sleep(35);
   const preJank=await run('window.__sculptNavProbe()');
   await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
     return true;})()`);
   await sleep(60);
   await send('Input.dispatchKeyEvent',
-    {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
+    {type:'keyUp',key:'a',code:'KeyA',windowsVirtualKeyCode:65});
   const postJank=await run('window.__sculptNavProbe()');
-  if(postJank.player.x-preJank.player.x<35)
+  if(preJank.player.x-postJank.player.x<35)
     throw Error('V21 main-thread 190ms stall caused unrealistic player crawl: '+
-      JSON.stringify({distance:postJank.player.x-preJank.player.x,preJank,postJank}));
+      JSON.stringify({distance:preJank.player.x-postJank.player.x,preJank,postJank}));
   console.log('V21 throttled Android-style jank movement:',JSON.stringify({
-    moved:postJank.player.x-preJank.player.x,terrainCached:postJank.terrainCached,
+    moved:preJank.player.x-postJank.player.x,terrainCached:postJank.terrainCached,
     cameraZoom:postJank.zoom,fps:postJank.fps}));
   const stickCenter=await run(`(()=>{
     const r=document.querySelector('#navigation-stick').getBoundingClientRect();
@@ -599,7 +602,7 @@ try{
   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await send('Emulation.setTouchEmulationEnabled',{enabled:false});
   const afterStick=await run('window.__sculptNavProbe()');
-  if(afterStick.player.x-afterKeyboard.player.x<20)
+  if(afterStick.player.x-postJank.player.x<20)
     throw Error('V17 actual touch stick failed: '+JSON.stringify(afterStick));
   // The original keyboard + V21 jank + joystick route has now proved
   // genuine player movement. Measure the Canvas FPS from that same session
