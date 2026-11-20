@@ -77,3 +77,24 @@ test('issue #553: native engine emits official checkpoints more frequently onlin
  assert.match(source,/navigationActorRenderer=createMapActorRenderer/);
  assert.match(source,/explorationPeerRenderer=createMapActorRenderer/);
 });
+
+test('issue #553: uneven Android packets blend until latest exact server point without dead reckoning',()=>{
+ let now=0;
+ const p=createExplorationPeerVisualProjectionV1({
+  sessionId:'session-local',worldId:'forest',worldFingerprint:'123:test',
+  ownActorId:guest,clock:()=>now
+ });
+ p.apply(packet(1,1,10));
+ now=320;p.apply(packet(2,2,110));
+ now=500;
+ assert.ok(p.isAnimating(area));
+ const between=p.sampleForArea(area)[0];
+ assert.ok(between.x>10&&between.x<110,'320ms packet spacing cannot force 140ms teleport/stop');
+ assert.equal(p.forArea(area)[0].x,110,'read model keeps exact trusted server pose');
+ now=670;
+ assert.equal(p.sampleForArea(area)[0].x,110);
+ assert.equal(p.isAnimating(area),false,'no ghost movement after packet loss');
+ now=700;p.apply(packet(3,3,900));
+ assert.equal(p.sampleForArea(area)[0].x,900,'large respawns snap rather than crossing obstacles');
+ p.dispose();
+});
