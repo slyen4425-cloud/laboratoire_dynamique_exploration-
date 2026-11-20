@@ -2629,7 +2629,7 @@ function paintExplorationPeerName(actor){
 function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
  if(!sculptPlayActive||!sculptPeerProjection||!demoActorAsset||
     !demoNavigationActorPreparer.get(demoActorAsset.id))return;
- const actors=sculptPeerProjection.forArea(sculptWorldAreaId)
+ const actors=sculptPeerProjection.sampleForArea(sculptWorldAreaId)
   .filter(peer=>peer.y<maxY&&peer.y>=minY)
   .map(peer=>{
    const level=sculptHeightAt(terrain,
@@ -2637,7 +2637,8 @@ function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
     Math.floor(peer.y/SCULPT_TILE.height));
    const projected=sculptCameraProject(cameraView(),peer.x,
     peer.y-level*SCULPT_TILE.rise+3);
-   return {x:projected.x,y:projected.y,facingX:1,moving:false,
+   return {x:projected.x,y:projected.y,facingX:peer.facingX,moving:peer.moving,
+    directionX:peer.directionX,directionY:peer.directionY,
     mapVisual:explorationPeerVisual,
     visualScale:sculptAltitudeVisualState(level).heroScale,
     displayName:peer.displayName??null};
@@ -3013,7 +3014,7 @@ function navigationTick(time){
         navActor.directionX=intent.x;
         navActor.directionY=intent.y;
       }
-      if(sculptPlayActive&&moved>.001&&time-playLastCheckpointAt>1500){
+      if(sculptPlayActive&&moved>.001&&time-playLastCheckpointAt>(playOptions?.sessionId?120:1500)){
         persistPlayNavigationCheckpoint();playLastCheckpointAt=time;
       }
       // Trigger only from canonical post-collision hero coordinates.
@@ -3021,7 +3022,13 @@ function navigationTick(time){
       if(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY}))sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
-    }else if(navActor.moving){navActor.moving=false;scheduleDraw();}
+    }else if(navActor.moving){
+      navActor.moving=false;
+      // Persist final official post-collision pose when controls are released.
+      if(sculptPlayActive&&playOptions?.sessionId&&persistPlayNavigationCheckpoint())
+       playLastCheckpointAt=time;
+      scheduleDraw();
+    }
     const previousVisualLevel=navVisualLevel;
     navVisualLevel=sculptVisualHeightStep(navVisualLevel,navHeight(),elapsed);
     // Smooth only the pictured elevation and vertical follow, never collision.
@@ -3035,7 +3042,7 @@ function navigationTick(time){
       moving:navActor.moving,
       altitudeChanging:Math.abs(navVisualLevel-previousVisualLevel)>.0001,
       elapsedSincePaintMs:time-navLastVisualPaint
-    })){
+    })||sculptPeerProjection?.isAnimating(sculptWorldAreaId,time)){
       navLastVisualPaint=time;scheduleDraw();
     }
     if(!navMetricLast)navMetricLast=time;

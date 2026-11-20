@@ -239,6 +239,17 @@ try{
     movement.event.navigation.worldFingerprint!==movement.saved.worldFingerprint)
   throw Error('Real navigation event did not follow native Play checkpoint: '+JSON.stringify(movement));
  console.log('GREEN real browser: collision-checked native Play movement emits a scoped event without another save authority');
+ // In online mode the canonical producer publishes every 120 ms AND once
+ // at key release. Ensure the REAL local actor's final checkpoint has
+ // settled before testing that REMOTE visuals never write to it.
+ await sleep(200);
+ await waitFor(`(()=>{
+  const actor=window.__sculptPlayProbe?.()?.actor;
+  const saved=JSON.parse(localStorage.getItem(
+   'gensrpg.exploration.play.navigation.v1:session-hero-real-play')||'null');
+  return actor&&saved&&Math.hypot(actor.x-saved.x,actor.y-saved.y)<.01
+   ?{x:actor.x,y:actor.y}:null;
+ })()`,'local native hero checkpoint committed after key release');
 
  // C4: the SAME REAL Chrome+native canvas must paint a REMOTE avatar supplied
  // only as a scoped visual snapshot. Its pose must NEVER overwrite the
