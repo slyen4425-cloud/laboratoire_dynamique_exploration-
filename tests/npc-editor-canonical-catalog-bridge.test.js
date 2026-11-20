@@ -60,3 +60,17 @@ test('Sculpt embedded workshop relays catalogs to existing Capture parent and sa
  assert.match(main,/PNJ référencés mais non importés/);
  assert.doesNotMatch(main,/new WorldDocument\(|npcPrivateCaptureCatalog/);
 });
+
+test('async Catalog refresh commits the latest user selection, not the value captured before awaits',async()=>{
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const fn=main.split('async function loadCaptureActorCatalog(){')[1]?.split('function renderNpcLibraryGallery(){')[0];
+ assert.ok(fn,'must inspect the real canonical Sculpt catalog loader');
+ const load=fn.indexOf('const authored=await authoredNpcStore.list()');
+ const current=fn.indexOf("const chosen=$('actor-definition').value");
+ const replace=fn.indexOf("$('actor-definition').replaceChildren(");
+ assert.ok(load>=0&&current>load&&replace>current,
+  'selection must be read AFTER async assets load, immediately before DOM commit');
+ assert.equal(fn.indexOf("const chosen=$('actor-definition').value"),fn.lastIndexOf("const chosen=$('actor-definition').value"),
+  'do not keep an earlier stale snapshot of the selected definition');
+ assert.match(fn,/if\(definitions\.some\(def=>def\.id===chosen\)\)\$\('actor-definition'\)\.value=chosen/);
+});
