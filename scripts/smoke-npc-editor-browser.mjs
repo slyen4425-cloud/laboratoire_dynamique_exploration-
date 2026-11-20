@@ -75,7 +75,7 @@ try{
  });
  let ready=false;
  for(let i=0;i<90;i++){
-  ready=await evaluate("!!document.getElementById('npc-name') && !!document.getElementById('npc-canvas')");
+  ready=await evaluate("!!document.getElementById('npc-name') && !!document.getElementById('npc-canvas') && document.getElementById('npc-count')?.textContent!=='Lecture…' && document.getElementById('npc-status')?.textContent.startsWith('Crée un PNJ')");
   if(ready)break;await sleep(150);
  }
  if(!ready)throw Error('Éditeur PNJ DOM indisponible');
@@ -100,7 +100,7 @@ try{
    if(option&&document.querySelector('#npc-status').textContent.includes('enregistré'))break;
    await delay(150);
   }
-  if(!option)throw Error('Le PNJ n’a pas été enregistré dans IndexedDB');
+  if(!option)throw Error('Le PNJ n’a pas été enregistré dans IndexedDB : '+JSON.stringify({status:document.querySelector('#npc-status').textContent,count:document.querySelector('#npc-count').textContent,form:document.querySelector('#npc-name').value,files:document.querySelector('#npc-image').files.length,options:[...document.querySelector('#npc-saved').options].map(o=>o.textContent)}));
   for(let i=0;i<90;i++){
    const p=document.querySelector('#npc-canvas').getContext('2d',{willReadFrequently:true})
     .getImageData(0,0,440,220).data;
