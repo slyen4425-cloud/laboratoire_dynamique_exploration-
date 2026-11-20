@@ -103,9 +103,21 @@ jobs:
           node-version: '22'
       - name: Install screenshot decoder for black-frame regression proof
         run: npm install --no-save --no-package-lock pngjs@7.0.0
+      - name: Real Chromium NPC library to native WorldArea and dialogue without duplicate definitions
+        run: node scripts/smoke-npc-worldbuilder-library.mjs
+      - name: Real Chromium 932x430 NPC Editor — imported PNG, IndexedDB round-trip, real actor pixels
+        run: node scripts/smoke-npc-editor-browser.mjs
       - name: Real Chromium 932x430 Hero Editor PNG, IndexedDB save/reload, animated sprites and canvas
         run: node scripts/smoke-hero-editor-browser.mjs
       - name: Prove pinned source paints native 2.5D pixels and visible World Builder entry
         env:
           EXPLORATION_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: node scripts/smoke-sculpt-remote-pixels.mjs
+      - name: Upload real Chromium PNJ previews for review before merge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gensrpg-npc-previews-${{ github.run_id }}
+          path: artifacts/npc-*-real-preview.png
+          if-no-files-found: warn
+          retention-days: 14
