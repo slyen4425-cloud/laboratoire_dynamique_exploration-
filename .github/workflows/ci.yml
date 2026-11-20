@@ -103,6 +103,8 @@ jobs:
           node-version: '22'
       - name: Install screenshot decoder for black-frame regression proof
         run: npm install --no-save --no-package-lock pngjs@7.0.0
+      - name: Real Chromium NPC library to native WorldArea and dialogue without duplicate definitions
+        run: node scripts/smoke-npc-worldbuilder-library.mjs
       - name: Real Chromium 932x430 NPC Editor — imported PNG, IndexedDB round-trip, real actor pixels
         run: node scripts/smoke-npc-editor-browser.mjs
       - name: Real Chromium 932x430 Hero Editor PNG, IndexedDB save/reload, animated sprites and canvas
