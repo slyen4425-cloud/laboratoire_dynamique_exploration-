@@ -19,7 +19,13 @@ textarea{min-height:95px;resize:vertical}input[type=file]{width:100%}button{back
 #npc-portrait-preview{width:110px;height:110px;object-fit:contain;border:1px solid #456f66;border-radius:8px;background:#28474b}
 #npc-direction-files{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #npc-direction-files label{border:1px solid #486d67;border-radius:8px;padding:7px}
-details{border:1px solid #466c62;padding:10px;border-radius:9px}summary{cursor:pointer;font-weight:700;padding:4px}
+details{border:1px solid #466c62;padding:10px;border-radius:9px}
+#npc-trainer-rows,#npc-reward-rows{display:grid;gap:7px;margin:8px 0}
+.npc-reference-row{display:flex;flex-wrap:wrap;gap:8px;padding:6px;border:1px solid #456c62;border-radius:7px;align-items:center}
+.npc-reference-row span{flex:1;min-width:115px;overflow-wrap:anywhere}
+.npc-reference-row button{min-width:38px}
+#npc-trainer-config[hidden],#npc-merchant-config[hidden],#npc-wild-config[hidden]{display:none!important}
+.npc-catalog-status{font-size:12px;min-height:20px}summary{cursor:pointer;font-weight:700;padding:4px}
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:9px;max-height:480px;overflow:auto;margin-top:12px}
 .npc-card{background:#203c41;border:1px solid #476f67;border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;min-width:0}
 .npc-card img{height:100px;width:100%;object-fit:contain}.npc-card strong{overflow-wrap:anywhere}
@@ -49,6 +55,37 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}summary{cursor:p
 <label>Rayon d'errance (16–600)<input id="npc-radius" type="number" min="16" max="600" value="90"></label>
 <label>Hauteur sur la carte (24–240)<input id="npc-height" type="number" min="24" max="240" value="62"></label>
 <label class="wide">Dialogue (une ligne par écran)<textarea id="npc-dialogue" maxlength="2000" rows="3"></textarea></label>
+<details id="npc-trainer-config" class="wide" hidden>
+<summary>⚔ Équipe et récompenses du dresseur</summary>
+<p class="hint">Créatures et objets tirés des catalogues officiels. Aucune créature, boutique ou statistique n'est créée ici.</p>
+<output id="npc-creature-status" class="npc-catalog-status" role="status">Lecture du Bestiaire officiel…</output>
+<div class="fields">
+<label>Créature publiée <select id="npc-creature-choice"><option value="">Catalogue en lecture…</option></select></label>
+<label>Niveau <input id="npc-creature-level" type="number" min="1" max="9999" value="10"></label>
+<button type="button" id="npc-creature-add" disabled>＋ Ajouter à l’équipe (maximum 6)</button>
+<button type="button" id="npc-creature-reload">↻ Recharger le Bestiaire</button>
+</div><div id="npc-trainer-rows" aria-live="polite"></div>
+<label>Monnaie accordée après victoire <input id="npc-reward-currency" type="number" min="0" max="100000000" step="1" value="0"></label>
+<output id="npc-reward-status" class="npc-catalog-status" role="status">Objets officiels disponibles uniquement depuis Monster Capture.</output>
+<div class="fields">
+<label>Objet publié <select id="npc-reward-choice"><option value="">Catalogue non chargé</option></select></label>
+<label>Quantité <input id="npc-reward-quantity" type="number" min="1" max="9999" value="1"></label>
+<button type="button" id="npc-reward-add" disabled>＋ Ajouter la récompense</button>
+<button type="button" id="npc-reward-reload">↻ Actualiser les objets</button>
+</div><div id="npc-reward-rows" aria-live="polite"></div>
+</details>
+<details id="npc-merchant-config" class="wide" hidden>
+<summary>🛒 Boutique officielle</summary>
+<p class="hint">Associe une boutique existante de Monster Capture, sans la recopier.</p>
+<label>Marchand <select id="npc-merchant-choice"><option value="">Catalogue non chargé</option></select></label>
+<output id="npc-merchant-status" class="npc-catalog-status" role="status">Boutiques officielles disponibles depuis Monster Capture.</output>
+<button type="button" id="npc-merchant-reload">↻ Actualiser les boutiques</button>
+</details>
+<details id="npc-wild-config" class="wide" hidden>
+<summary>🐾 Créature errante officielle</summary>
+<label>Espèce publiée <select id="npc-wild-choice"><option value="">Lecture du Bestiaire…</option></select></label>
+<label>Niveau <input id="npc-wild-level" type="number" min="1" max="9999" value="10"></label>
+</details>
 <label class="wide">Image principale PNG / WebP <input id="npc-image" type="file" accept="image/png,image/webp"></label>
 <label class="wide">Portrait indépendant PNG / WebP <input id="npc-portrait" type="file" accept="image/png,image/webp">
 <img id="npc-portrait-preview" hidden alt="Portrait du PNJ"></label>
@@ -68,7 +105,7 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}summary{cursor:p
 <div id="npc-direction-inputs" class="wide" hidden><p class="hint">8 directions, exactement 6 fichiers ordonnés dans chaque direction. Tous les canevas doivent avoir la même taille.</p><div id="npc-direction-files"></div></div>
 </div></details>
 </div>
-<p id="npc-editor-hint" class="hint">Les équipes, objets, boutiques et combats restent gérés par les autorités officielles. Les rôles adversaire/boss sont sélectionnables, mais leur scénario avancé n'est pas encore actif.</p>
+<p id="npc-editor-hint" class="hint">Les équipes, objets et boutiques ne sont que des références aux catalogues officiels. Le combat et les récompenses restent gérés par Monster Capture. Les scénarios avancés adversaire/boss ne sont pas encore actifs.</p>
 <output id="npc-edit-state" aria-live="polite">Aucune modification enregistrée.</output>
 <div class="actions">
 <button id="npc-save" type="button">Enregistrer ce PNJ</button>
