@@ -57,6 +57,8 @@ import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.j
 import {createMapActorRenderer} from './render/map-actor-renderer.js';
 import {normalizeMapActorVisual} from './actors/map-actor-visual-model.js';
 import {createUserHeroStoreV1} from './storage/user-hero-store-v1.js';
+import {createUserNpcStoreV1} from './storage/user-npc-store-v1.js';
+import {createUserNpcAssetResolverV1,resolvePlacedNpcDefinitionsV1} from './actors/user-npc-definition-v1.js';
 import {createExplorationUniverseWorkspaceStorageV1} from './storage/exploration-universe-workspace-storage-v1.js';
 import {createExplorationUniverseWorldProjectsV1} from './builder/exploration-universe-world-projects-v1.js';
 import {createUserHeroAssetResolverV1} from './actors/user-hero-definition-v1.js';
@@ -208,11 +210,19 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 // A single transient runtime projection; WorldArea.actors is never advanced by gameplay.
 const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
 let npcWanderElapsed=0,npcWanderAggressiveNearId=null;
+function npcActorsWithDefinitions(){
+  return resolvePlacedNpcDefinitionsV1(placedActors,
+    captureActorProvider?.resolveDefinition??(()=>null));
+}
 function gameplayPlacedActors(){
-  return navigationTesting?npcWanderRuntime.project(placedActors):placedActors;
+  const actors=npcActorsWithDefinitions();
+  return navigationTesting?npcWanderRuntime.project(actors):actors;
 }
 let actorSelectedId=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
+let captureActorPreparer=null,npcMediaResolver=null;
+const authoredNpcStore=createUserNpcStoreV1();
+let authoredNpcRecords=Object.freeze([]),npcCatalogRefreshPending=false;
 let npcOfficialCreatures=Object.freeze([]);
 let npcCatalogLoading=false;
 let npcMerchantChoices=Object.freeze([]),npcMerchantRequestId=null;
@@ -2961,7 +2971,7 @@ function navigationTick(time){
       npcWanderElapsed+=Math.min(250,elapsed)/1000;
       if(npcWanderElapsed>=.085){
         const npcChanged=npcWanderRuntime.step({
-          actors:placedActors,elapsedSeconds:npcWanderElapsed,
+          actors:npcActorsWithDefinitions(),elapsedSeconds:npcWanderElapsed,
           world:navigationWorld(),collisionContext:navigationContext(),player:navActor
         });
         npcWanderElapsed=0;
@@ -3070,7 +3080,7 @@ function setNavigationTesting(on){
     navActor=navigationSpawn();
     if(!navActor){status('Aucune case sèche disponible pour le test');return;}
     navigationTesting=true;
-    npcWanderRuntime.reset(placedActors);npcWanderElapsed=0;
+    npcWanderRuntime.reset(npcActorsWithDefinitions());npcWanderElapsed=0;
     npcWanderAggressiveNearId=null;
     navTrainerArrivalPending=true;
     // The existing Tester tap is the trusted Android user gesture. The
@@ -3752,60 +3762,129 @@ window.__sculptSurfaceProbe=()=>Object.freeze({
 
 // Actor definitions, visuals and asset paths are owned by Capture,
  // while this sculpt preview stores only native WorldActorPlacement references.
-async function loadCaptureActorCatalog(){
-  try{
-    // Exploration owns only its generic preview definition; Capture artwork
-    // remains external and is never copied into authored WorldActorPlacements.
-    let source=null,sourceError=null;
-    try{source=await createCaptureActorPreviewProviderV1();}
-    catch(error){sourceError=error;}
-    const generic=demoActorAsset?Object.freeze({
-      id:'exploration:npc:generic-v1',displayName:'PNJ générique (voyageur)',
-      role:'npc',
-      mapVisual:normalizeMapActorVisual({
-        assetId:demoActorAsset.id,role:'npc',targetHeight:62
-      })
-    }):null;
-    const assets=Object.freeze([
-      ...(source?.listAssets()??[]),
-      ...(generic?[demoActorAsset]:[])
-    ]);
-    const definitions=Object.freeze([
-      ...(source?.listDefinitions()??[]),...(generic?[generic]:[])
-    ]);
-    const provider=Object.freeze({
-      listAssets:()=>assets,
-      listDefinitions:()=>definitions,
-      resolveDefinition:id=>id===generic?.id?generic:source?.resolveDefinition(id)??null,
-      resolveAsset:id=>id===generic?.mapVisual.assetId?demoActorAsset:source?.resolveAsset(id)??null
-    });
-    const loader=createImageAssetLoader({resolveAsset:createMapActorAssetResolver(assets)});
-    const results=await loader.load(assets.map(a=>a.id));
-    if(results.ready!==assets.length||results.missing||results.errors)
-      throw Error('Visuels Capture indisponibles : '+JSON.stringify(results));
-    const preparer=createMapActorVisualPreparer({imageLoader:loader});
-    const prepared=preparer.prepare(assets.map(a=>a.id));
-    if(prepared.ready!==assets.length||prepared.errors)
-      throw Error('Préparation visuelle Capture impossible');
-    captureActorProvider=provider;
-    captureActorRenderer=createMapActorRenderer({preparedVisuals:preparer});
-    captureActorImageLoader=loader;
-    $('actor-definition').replaceChildren(...definitions.map(def=>{
-      const opt=document.createElement('option');
-      opt.value=def.id;opt.textContent=(def.displayName||def.id)+' · '+def.role;
-      return opt;
-    }));
-    $('actor-definition').disabled=!definitions.length;
-    $('actor-source-status').textContent=definitions.length+
-      ' visuel(s) disponibles (Capture + PNJ Exploration)'+
-      (sourceError?' · Capture indisponible : '+sourceError.message:'');
-    syncActorViewAvailability();
-    scheduleDraw();
-  }catch(e){
-    $('actor-definition').disabled=true;
-    $('actor-source-status').textContent='Catalogue Capture indisponible : '+e.message;
-  }
+// NPCs and Capture assets share the existing renderer, never their databases.
+function npcFrameReferences(def){
+ const a=def.mapVisual.animation;
+ return [def.mapVisual.assetId,...(a.mode==='frames'?[...a.idle,...a.walk]:
+  a.mode==='directions'?Object.values(a.directions).flat():[])];
 }
+async function loadCaptureActorCatalog(){
+ if(npcCatalogRefreshPending)return;
+ npcCatalogRefreshPending=true;
+ let newResolver=null,newLoader=null,newPreparer=null;
+ try{
+   const chosen=$('actor-definition').value;
+   let source=null,sourceError=null;
+   try{source=await createCaptureActorPreviewProviderV1();}
+   catch(error){sourceError=error;}
+   const generic=demoActorAsset?Object.freeze({
+     id:'exploration:npc:generic-v1',displayName:'PNJ générique (voyageur)',
+     role:'npc',mapVisual:normalizeMapActorVisual({
+       assetId:demoActorAsset.id,role:'npc',targetHeight:62})
+   }):null;
+   const authored=await authoredNpcStore.list();
+   newResolver=createUserNpcAssetResolverV1(authored);
+   const originalAssets=[...(source?.listAssets()??[]),...(generic?[demoActorAsset]:[])];
+   const assets=Object.freeze([...originalAssets,...newResolver.list()]);
+   const definitions=Object.freeze([...(source?.listDefinitions()??[]),
+     ...(generic?[generic]:[]),...authored.map(record=>Object.freeze({
+       ...record,displayName:record.name
+     }))]);
+   const byId=new Map(definitions.map(def=>[def.id,def]));
+   const assetById=new Map(assets.map(asset=>[asset.id,asset]));
+   const provider=Object.freeze({
+     listAssets:()=>assets,listDefinitions:()=>definitions,
+     resolveDefinition:id=>byId.get(id)??null,
+     resolveAsset:id=>assetById.get(id)??null
+   });
+   newLoader=createImageAssetLoader({resolveAsset:createMapActorAssetResolver(assets)});
+   const loaded=await newLoader.load(assets.map(asset=>asset.id));
+   if(loaded.ready!==assets.length||loaded.missing||loaded.errors)
+     throw Error('Images Capture/PNJ indisponibles : '+JSON.stringify(loaded));
+   newPreparer=createMapActorVisualPreparer({imageLoader:newLoader});
+   const prepared=newPreparer.prepare(originalAssets.map(a=>a.id));
+   if(prepared.ready!==originalAssets.length||prepared.errors)
+     throw Error('Préparation visuelle Capture impossible');
+   for(const record of authored){
+     const ids=npcFrameReferences(record);
+     const result=newPreparer.prepare(ids,{
+       preserveCanvas:record.mapVisual.animation.mode!=='image'
+     });
+     if(result.ready!==ids.length||result.errors)
+       throw Error('Sprites du PNJ '+record.name+' non préparés');
+   }
+   const prior={resolver:npcMediaResolver,loader:captureActorImageLoader,
+     preparer:captureActorPreparer};
+   captureActorProvider=provider;
+   captureActorRenderer=createMapActorRenderer({preparedVisuals:newPreparer});
+   captureActorImageLoader=newLoader;
+   captureActorPreparer=newPreparer;
+   npcMediaResolver=newResolver;
+   authoredNpcRecords=Object.freeze(authored);
+   newResolver=null;newLoader=null;newPreparer=null;
+   prior.preparer?.dispose();prior.loader?.dispose();prior.resolver?.dispose();
+   $('actor-definition').replaceChildren(...definitions.map(def=>{
+     const opt=document.createElement('option');
+     opt.value=def.id;opt.textContent=(def.displayName||def.id)+' · '+def.role;
+     return opt;
+   }));
+   $('actor-definition').disabled=!definitions.length;
+   if(definitions.some(def=>def.id===chosen))$('actor-definition').value=chosen;
+   $('actor-source-status').textContent=definitions.length+
+     ' visuel(s) disponibles (Capture + PNJ Exploration)'+
+     (sourceError?' · Capture indisponible : '+sourceError.message:'');
+   syncActorViewAvailability();
+   renderNpcLibraryGallery();
+   scheduleDraw();
+ }catch(error){
+   $('actor-source-status').textContent='Catalogue indisponible : '+error.message;
+   if(!captureActorProvider)$('actor-definition').disabled=true;
+ }finally{
+   newPreparer?.dispose();newLoader?.dispose();newResolver?.dispose();
+   npcCatalogRefreshPending=false;
+ }
+}
+function renderNpcLibraryGallery(){
+ const grid=$('actor-npc-gallery');if(!grid)return;
+ const filter=($('actor-npc-filter')?.value??'').toLocaleLowerCase('fr');
+ grid.replaceChildren();
+ const records=authoredNpcRecords.filter(def=>
+   (def.name+' '+def.role).toLocaleLowerCase('fr').includes(filter));
+ for(const def of records){
+   const button=document.createElement('button');button.type='button';
+   button.className='actor-npc-card';
+   const image=document.createElement('img');
+   image.src=npcMediaResolver.resolve(def.mapVisual.assetId).path;
+   image.alt='Sprite de '+def.name;
+   const title=document.createElement('strong');title.textContent=def.name;
+   const caption=document.createElement('small');caption.textContent=def.role;
+   button.append(image,title,caption);
+   button.addEventListener('click',()=>{
+     $('actor-definition').value=def.id;
+     $('actor-action').value='place';
+     actorSelectedId=null;
+     syncActorViewAvailability();syncActorSelectedControls();
+     $('actor-npc-library').close();
+     status('PNJ '+def.name+' sélectionné. Touche la carte pour le placer.');
+   });
+   grid.append(button);
+ }
+ if(!records.length){
+   const hint=document.createElement('p');
+   hint.textContent=authoredNpcRecords.length?'Aucun PNJ correspondant.':
+    'Bibliothèque vide : crée un PNJ dans l’éditeur dédié.';
+   grid.append(hint);
+ }
+}
+$('actor-npc-library-open')?.addEventListener('click',()=>{
+ renderNpcLibraryGallery();$('actor-npc-library').showModal();
+});
+$('actor-npc-library-close')?.addEventListener('click',()=>$('actor-npc-library').close());
+$('actor-npc-library-reload')?.addEventListener('click',()=>{void loadCaptureActorCatalog();});
+$('actor-npc-filter')?.addEventListener('input',renderNpcLibraryGallery);
+window.addEventListener('focus',()=>{
+ if(actorSubmode&&!navigationTesting)void loadCaptureActorCatalog();
+});
 function syncActorViewAvailability(){
   const definition=captureActorProvider?.resolveDefinition($('actor-definition').value);
   const back=$('actor-view').querySelector('option[value="back"]');
@@ -4091,8 +4170,17 @@ function syncActorSelectedControls(){
       captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.displayName||
       'sans nom'):'Aucun acteur sélectionné';
   if($('npc-authoring-open'))$('npc-authoring-open').disabled=!selected;
-  if(!selected){closeNpcAuthoringDialog();npcRoleEditorRefresh();return;}
-  const npc=selected.npc;
+  if(!selected){
+    if($('actor-npc-edit-definition'))$('actor-npc-edit-definition').hidden=true;
+    closeNpcAuthoringDialog();npcRoleEditorRefresh();return;
+  }
+  const linkedNpc=selected.actorDefinitionId.startsWith('npc.user.');
+  $('npc-authoring-open').disabled=linkedNpc;
+  if($('actor-npc-edit-definition')){
+    $('actor-npc-edit-definition').hidden=!linkedNpc;
+    $('actor-npc-edit-definition').href='./npc-editor.html?edit='+encodeURIComponent(selected.actorDefinitionId);
+  }
+  const npc=selected.npc??captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.npc;
   if($('actor-npc-kind')){
     $('actor-npc-kind').value=npc?.kind??'dialogue';
     $('actor-npc-name').value=npc?.name??'';
@@ -4148,7 +4236,7 @@ function applyActorAtCell(cell){
       $('actor-action').value='select';
       syncActorSelectedControls();
       $('actor-npc-settings')?.setAttribute('open','');
-      openNpcAuthoringDialog();
+      if(!existing.actorDefinitionId.startsWith('npc.user.'))openNpcAuthoringDialog();
       scheduleDraw();
       status('Acteur sélectionné : modifier sa fiche ci-dessous');
       return;
@@ -4158,7 +4246,7 @@ function applyActorAtCell(cell){
     const found=findSculptPreviewActorNear(placedActors,x,y);
     actorSelectedId=found?.id??null;
     syncActorSelectedControls();scheduleDraw();
-    if(found)openNpcAuthoringDialog();
+    if(found&&!found.actorDefinitionId.startsWith('npc.user.'))openNpcAuthoringDialog();
     status(found?'Acteur sélectionné : modifie taille, vue ou direction':
       'Aucun acteur proche à sélectionner');
     return;
@@ -4174,11 +4262,12 @@ function applyActorAtCell(cell){
     status('Définition Capture non chargée : aucun acteur placé');return;
   }
   syncActorViewAvailability();
+  const linkedNpc=definitionId.startsWith('npc.user.');
   const nextActors=appendSculptPreviewActor(placedActors,{
     definitionId,x,y,facingX:Number($('actor-facing').value),
     visualScale:Number($('actor-scale').value)/100,
     visualView:$('actor-view').value,
-    npc:npcSettingsFromControls()
+    npc:linkedNpc?null:npcSettingsFromControls()
   });
   if(actorCommit(nextActors)){
     // An author who just placed a trainer must be able to compose its team
@@ -4186,9 +4275,12 @@ function applyActorAtCell(cell){
     actorSelectedId=nextActors.at(-1)?.id??null;
     $('actor-action').value='select';
     syncActorSelectedControls();
-    $('actor-npc-settings')?.setAttribute('open','');
-    openNpcAuthoringDialog();
-    status('PNJ posé et sélectionné : configure son rôle et son équipe dans la fenêtre.');
+    if(!linkedNpc){
+      $('actor-npc-settings')?.setAttribute('open','');
+      openNpcAuthoringDialog();
+    }
+    status(linkedNpc?'PNJ réutilisable placé : définition conservée dans la bibliothèque.':
+      'PNJ posé et sélectionné : configure son rôle et son équipe dans la fenêtre.');
   }
 }
 $('actor-definition').addEventListener('change',syncActorViewAvailability);
