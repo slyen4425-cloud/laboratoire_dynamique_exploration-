@@ -270,4 +270,4 @@ window.addEventListener('pagehide',()=>{
  if(portraitUrl)URL.revokeObjectURL(portraitUrl);
  galleryUrls.forEach(url=>URL.revokeObjectURL(url));galleryUrls=[];
 },{once:true});
-run(()=>refresh());
+run(()=>refresh(new URLSearchParams(window.location.search).get('edit')));
