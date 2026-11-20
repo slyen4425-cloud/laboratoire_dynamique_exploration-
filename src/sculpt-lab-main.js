@@ -3876,6 +3876,60 @@ function renderNpcLibraryGallery(){
    grid.append(hint);
  }
 }
+// Native embedded authoring view keeps the current WorldArea mounted. The
+// iframe can request official catalog data only through the EXISTING Capture
+// parent bridge; this handler is a narrow relay, never a catalog/store.
+const npcWorkshopFrame=$('actor-npc-workshop-frame');
+const npcWorkshop=$('actor-npc-workshop');
+const npcWorkshopPending=new Map();
+function openNpcWorkshop(id=null){
+ npcWorkshopPending.clear();
+ npcWorkshopFrame.src='./npc-editor.html'+(id?'?edit='+encodeURIComponent(id):'');
+ if(!npcWorkshop.open)npcWorkshop.showModal();
+}
+function closeNpcWorkshop(){
+ if(npcWorkshop.open)npcWorkshop.close();
+ npcWorkshopPending.clear();
+ npcWorkshopFrame.removeAttribute('src');
+ void loadCaptureActorCatalog();
+}
+$('actor-npc-workshop-open')?.addEventListener('click',()=>openNpcWorkshop());
+$('actor-npc-workshop-close')?.addEventListener('click',closeNpcWorkshop);
+$('actor-npc-workshop')?.addEventListener('close',()=>{
+ npcWorkshopPending.clear();
+ npcWorkshopFrame.removeAttribute('src');
+ void loadCaptureActorCatalog();
+});
+$('actor-npc-edit-definition')?.addEventListener('click',event=>{
+ const selected=npcSelectedActor();
+ if(selected?.actorDefinitionId.startsWith('npc.user.')){
+  event.preventDefault();
+  openNpcWorkshop(selected.actorDefinitionId);
+ }
+});
+window.addEventListener('message',event=>{
+ if(event.origin!==window.location.origin)return;
+ const requestSchemas={
+  'gensrpg.exploration.npc.merchant.catalog.request.v1':
+    'gensrpg.capture.v2.npc.merchant.catalog.response.v1',
+  'gensrpg.exploration.npc.reward.catalog.request.v1':
+    'gensrpg.capture.v2.npc.reward.catalog.response.v1'
+ };
+ const id=event.data?.requestId;
+ if(event.source===npcWorkshopFrame?.contentWindow){
+  if(window.parent===window||!npcWorkshop.open||
+    typeof id!=='string'||!/^[a-f0-9-]{36}$/.test(id))return;
+  const reply=requestSchemas[event.data?.schema];
+  if(!reply)return;
+  npcWorkshopPending.set(id,reply);
+  window.parent.postMessage(event.data,window.location.origin);
+ }else if(event.source===window.parent&&window.parent!==window){
+  if(typeof id!=='string'||npcWorkshopPending.get(id)!==event.data?.schema)return;
+  npcWorkshopPending.delete(id);
+  if(npcWorkshop.open)npcWorkshopFrame.contentWindow?.postMessage(event.data,window.location.origin);
+ }
+});
+
 $('actor-npc-library-open')?.addEventListener('click',()=>{
  renderNpcLibraryGallery();$('actor-npc-library').showModal();
 });
