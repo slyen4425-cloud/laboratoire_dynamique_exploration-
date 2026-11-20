@@ -331,6 +331,10 @@ body.sculpt-immersive #surface-palette{top:calc(env(safe-area-inset-top,0px) + 5
 .actor-npc-card strong{overflow-wrap:anywhere}
 #actor-npc-filter{width:100%;box-sizing:border-box;min-height:40px}
 #actor-npc-edit-definition{display:block;color:#b8f3e2;text-align:center;padding:9px;border:1px solid #639d8c;border-radius:8px}
+#actor-npc-workshop{width:min(1120px,calc(100vw - 12px));height:min(900px,calc(100dvh - 10px));max-width:none;max-height:none;overflow:hidden;padding:0;background:#102a30;color:#edf9f5;border:1px solid #68a797;border-radius:12px}
+#actor-npc-workshop::backdrop{background:#031316cf}
+#actor-npc-workshop .npc-workshop-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 12px;min-height:45px}
+#actor-npc-workshop iframe{width:100%;height:calc(100% - 52px);display:block;border:0;background:#0b171c}
 @media(max-height:480px){#actor-npc-library{max-height:calc(100dvh - 8px)}}
 /* One native, focus-trapped authoring window. Existing NPC form is moved, not cloned. */
 #npc-authoring-dialog{width:min(760px,calc(100vw - 24px));max-width:760px;
@@ -1406,7 +1410,12 @@ body.sculpt-play-unavailable #play-start-error{
    <select id="actor-definition" aria-label="Définition d’acteur Capture ou PNJ" disabled></select>
   </label>
   <button type="button" id="actor-npc-library-open">📚 Choisir un PNJ dans la bibliothèque visuelle</button>
-  <a href="./npc-editor.html" target="_blank" rel="noopener" style="color:#a6f1d9">＋ Créer / modifier mes PNJ (éditeur dédié)</a>
+  <button type="button" id="actor-npc-workshop-open">✏️ Ouvrir l’éditeur de PNJ dédié</button>
+  <a href="./npc-editor.html" target="_blank" rel="noopener" style="color:#a6f1d9">Ouvrir l’éditeur dans un autre onglet</a>
+  <dialog id="actor-npc-workshop" aria-label="Éditeur de PNJ dédié">
+   <div class="npc-workshop-head"><strong>✏️ Éditeur de PNJ — bibliothèque commune</strong><button id="actor-npc-workshop-close" type="button">✕ Terminer et revenir à la carte</button></div>
+   <iframe id="actor-npc-workshop-frame" title="Éditeur de PNJ dédié"></iframe>
+  </dialog>
   <dialog id="actor-npc-library" aria-label="Bibliothèque visuelle des PNJ">
    <h2>Mes PNJ enregistrés</h2>
    <p>Choisis une fiche réutilisable. La carte enregistre uniquement sa référence, pas ses images.</p>
