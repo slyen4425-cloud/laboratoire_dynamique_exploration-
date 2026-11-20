@@ -9,6 +9,7 @@ import {
   objectDefinitionCatalogV1
 } from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1-waterfalls-v3';
 
+import {worldObjectHorizontalTurnEnabledV1,worldObjectHorizontalTurnScaleXV1} from '../world/world-object-horizontal-turn-v1.js';
 import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterfalls-v3';
 import {worldObjectShadowMaskV1} from './world-object-shadow-silhouette-v1.js';
 import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,worldObjectShadowProfileForAssetV1} from '../world/world-object-shadow-settings-v1.js';
@@ -231,12 +232,14 @@ function drawStaticImage(
     screenX,
     screenY
   );
-  ctx.rotate(
-    rect.rotation +
-    degreesToRadians(
-      asset.render.rotationOffsetDeg
-    )
-  );
+  if (worldObjectHorizontalTurnEnabledV1(object)) {
+    // Turn the standing illustration around the vertical axis. The shadow
+    // is rendered in the same context and follows the same projection.
+    ctx.scale(worldObjectHorizontalTurnScaleXV1(object.transform.rotationDeg), 1);
+    ctx.rotate(degreesToRadians(asset.render.rotationOffsetDeg));
+  } else {
+    ctx.rotate(rect.rotation + degreesToRadians(asset.render.rotationOffsetDeg));
+  }
   // One canvas transform mirrors both the silhouette shadow and the sprite.
   if(object.transform?.flipX === true) ctx.scale(-1, 1);
   drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow??worldObjectShadowProfileForAssetV1(objectShadowProfiles,object.visual?.assetId)});

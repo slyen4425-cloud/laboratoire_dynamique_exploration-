@@ -1,3 +1,4 @@
+import {worldObjectSupportsHorizontalTurnV1} from '../world/world-object-horizontal-turn-v1.js';
 import {normalizeWorldEncounterStatProfileV1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {normalizeCombatArenaIdV1} from '../world/world-combat-arena-v1.js';
 import {
@@ -1407,6 +1408,11 @@ export function updateWorldObjectTransform(
       object.transform[key] ?? (key.startsWith('scale') ? 1 : 0)
     );
   }
+  // Rotation authored now means horizontal facing for upright 2D objects.
+  // Older saved objects retain their legacy planar drawing until edited.
+  if (patch.rotationAxis === 'horizontal' && patch.rotationDeg !== undefined &&
+      worldObjectSupportsHorizontalTurnV1(objectDefinitionCatalogV1.get(object.objectDefinitionId)?.kind))
+    object.transform.rotationAxis = 'horizontal';
   if (patch.flipX === true) object.transform.flipX = true;
   else if (patch.flipX === false) delete object.transform.flipX;
 
@@ -1577,6 +1583,7 @@ export function addWorldObject(
         transform.scaleY,
         1
       ),
+      ...(Number(transform.rotationDeg)%360!==0&&worldObjectSupportsHorizontalTurnV1(definition.kind) ? {rotationAxis:'horizontal'} : {}),
       ...(transform.flipX === true ? {flipX:true} : {})
     },
     overrides: {
