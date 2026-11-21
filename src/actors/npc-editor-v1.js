@@ -3,6 +3,7 @@
 import {createUserNpcDefinitionV1,createUserNpcAssetResolverV1,
  exportUserNpcBundleV1,importUserNpcBundleV1,mintUserNpcIdV1} from './user-npc-definition-v1.js';
 import {createUserNpcStoreV1} from '../storage/user-npc-store-v1.js';
+import {mountNpcVisualLibraryV1} from './npc-visual-library-v1.js';
 import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
@@ -14,6 +15,7 @@ const $=id=>document.getElementById(id),store=createUserNpcStoreV1();
 const canvas=$('npc-canvas'),ctx=canvas.getContext('2d');
 let selected=null,preview=null,epoch=0,disposed=false;
 let previewMoving=false,previewDirection='S',busy=false,dirty=false;
+let chosenLibraryImage=null;
 let portraitUrl=null,galleryUrls=[];
 let officialCreatures=Object.freeze([]),merchantChoices=Object.freeze([]),rewardChoices=Object.freeze([]);
 let trainerRosterDraft=[],rewardItemsDraft=[],merchantIdDraft='',wildCreatureDraft=null;
@@ -249,6 +251,7 @@ $('npc-reward-reload').addEventListener('click',()=>requestNativeCatalog('reward
 $('npc-merchant-reload').addEventListener('click',()=>requestNativeCatalog('merchant'));
 
 function clearInputs(){
+ chosenLibraryImage=null;
  for(const id of ['npc-image','npc-portrait','npc-idle','npc-walk',
   ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(d=>'npc-dir-'+d)])$(id).value='';
 }
@@ -326,6 +329,7 @@ async function draftFromForm({newId=false}={}){
   }))):null;
  const base=mode==='directions'?dirs.S[0]:
   await uploaded($('npc-image').files[0])||
+  await uploaded(chosenLibraryImage)||
   (selected?oldAsset(prev.assetId):null);
  if(!base)throw new Error('Importe une image principale PNG ou WebP');
  const portrait=await uploaded($('npc-portrait').files[0])||
@@ -455,6 +459,21 @@ async function run(fn){
  try{await fn();}
  catch(error){notify(error.message,true);console.error('Éditeur PNJ',error);}
 }
+// One visual picker for the existing PNJ authoring form, never another editor.
+mountNpcVisualLibraryV1({
+ root:$('npc-visual-library'),npcStore:store,
+ onChoose:async (file,source)=>{
+  chosenLibraryImage=file;
+  $('npc-image').value='';
+  $('npc-mode').value='image';
+  if(!$('npc-name').value.trim())$('npc-name').value=source.name;
+  syncMode();markDirty();
+  await showPreview(await draftFromForm());
+ }
+});
+$('npc-image').addEventListener('change',()=>{
+ if($('npc-image').files.length)chosenLibraryImage=null;
+});
 $('npc-saved').addEventListener('change',()=>run(()=>refresh($('npc-saved').value)));
 $('npc-new').addEventListener('click',()=>run(()=>refresh()));
 $('npc-save').addEventListener('click',()=>run(()=>save()));
