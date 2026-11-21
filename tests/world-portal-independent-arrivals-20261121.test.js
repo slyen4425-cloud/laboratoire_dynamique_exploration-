@@ -8,6 +8,7 @@ import {
 } from '../src/builder/world-builder-draft.js';
 import {applyPortalTransition,portalReferencesAreValid}
  from '../src/world/portal-model.js';
+import {placeSculptWorldSpawn} from '../src/builder/sculpt-world-area-link.js';
 import {describeWorldAreaIncomingPortalsForEditorV1}
  from '../src/builder/sculpt-world-spawn-controls-v1.js';
 import {markersForSculptWorldArea} from '../src/builder/sculpt-world-portal-markers.js';
@@ -38,9 +39,11 @@ test('Lac01 → Lac02 south; Lac02 → Montagne north; Montagne → Lac02 north'
  const lakeFrom01=through(doc,lac01,lac02);
  const lakeTo01=through(doc,lac02,lac01);
  const southId=lakeFrom01.targetSpawnId;
- const south=doc.areas.find(a=>a.id===lac02).spawns.find(s=>s.id===southId);
- // The author positions this existing arrival in the south of Lac02.
- assert.ok(south);
+ // The author drags the Lac01 arrival to the south of Lac02 using the
+ // existing native Spawn edit command, without moving Lac02's other Spawns.
+ doc=placeSculptWorldSpawn(doc,lac02,southId,{x:500,y:430});
+ assert.deepEqual(coord(doc,through(doc,lac01,lac02)),
+  {areaId:lac02,x:500,y:430,portalId:lakeFrom01.id});
  assert.notEqual(southId,doc.areas.find(a=>a.id===lac02).spawns[0].id);
  const northExit={x:480,y:36},northArrival={x:480,y:88};
  doc=connectWorldAreas(doc,{sourceAreaId:lac02,targetAreaId:montagne,
