@@ -4105,6 +4105,8 @@ function npcSettingsFromControls(){
     ...(current?.trainerRoster?{trainerRoster:current.trainerRoster}:{}),
     ...(current?.trainerReward?{trainerReward:current.trainerReward}:{}),
     ...(trainerEngagement?{trainerEngagement}:{}),
+    ...(kind==='trainer'?{allowFlee:$('npc-trainer-allow-flee')?.checked!==false}:
+      current&&Object.hasOwn(current,'allowFlee')?{allowFlee:current.allowFlee}:{}),
     ...(chosenWild?{wildCreature:{creatureId:chosenWild,
       level:Number($('npc-wild-level')?.value??current?.wildCreature?.level??10)}}:{})
   };
@@ -4141,6 +4143,8 @@ function npcRoleEditorRefresh(){
     engagement.value=npc?.trainerEngagement??'offer';
     engagement.disabled=!selected;
   }
+  const flee=$('npc-trainer-allow-flee');
+  if(flee){flee.checked=npc?.allowFlee!==false;flee.disabled=!selected;}
   npcMerchantPickerRefresh();
   npcRewardCatalogRefresh();
   const roster=npc?.trainerRoster??[];
@@ -4365,7 +4369,7 @@ $('npc-merchant-clear')?.addEventListener('click',()=>{
   npcApplyAuthoringPatch({merchantId:''});
 });
 for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
-  'actor-npc-radius','actor-npc-dialogue','npc-trainer-engagement','npc-wild-creature','npc-wild-level']){
+  'actor-npc-radius','actor-npc-dialogue','npc-trainer-engagement','npc-trainer-allow-flee','npc-wild-creature','npc-wild-level']){
   $(id)?.addEventListener('change',()=>{
     try{editSelectedActor({npc:npcSettingsFromControls()});}
     catch(error){status('Fiche PNJ non enregistrée : '+error.message);}
