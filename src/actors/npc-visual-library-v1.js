@@ -9,13 +9,21 @@ import {createUserHeroStoreV1} from '../storage/user-hero-store-v1.js';
 const KINDS=Object.freeze(['creature','hero','npc']);
 const $=(root,selector)=>root.querySelector(selector);
 const unique=items=>[...new Set(items)].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));
+export function filterNpcVisualEntriesV1(entries,{search='',category=''}={}){
+ if(!Array.isArray(entries))throw new TypeError('Liste de visuels attendue');
+ const query=String(search).trim().toLocaleLowerCase('fr');
+ return entries.filter(item=>
+  (!query||item.name.toLocaleLowerCase('fr').includes(query))&&
+  (!category||item.tags.includes(category)));
+}
+
 function officialUrl(path){
  const value=new URL(path,document.baseURI);
  if(value.origin!==window.location.origin||!/\/[^/?]+\.(png|webp)$/i.test(value.pathname))
   throw new Error('Visuel officiel hors du catalogue autorisé');
  return value.href;
 }
-function styleOfHero(name){
+export function npcVisualHeroStyleV1(name){
  if(/^h[eé]ro[iï]ne\b/i.test(name))return 'Femme';
  if(/^h[eé]ros\b/i.test(name))return 'Homme';
  return 'Créations personnelles';
@@ -39,15 +47,11 @@ export function mountNpcVisualLibraryV1({
  const filter=$(root,'#npc-visual-subcategory');
  const search=$(root,'#npc-visual-search');
  let tab='creature',seq=0,rows=[],objectUrls=[],disposed=false;
- const cache=new Map();
  function disposeThumbs(){
   for(const url of objectUrls)URL.revokeObjectURL(url);
   objectUrls=[];
  }
  function labelFor(kind){return {creature:'Créatures',hero:'Héros',npc:'PNJ'}[kind];}
- function entriesFor(kind){
-  return cache.get(kind)??[];
- }
  async function sourceRows(kind){
   if(kind==='creature'){
    const [provider,catalog]=await Promise.all([
@@ -67,7 +71,7 @@ export function mountNpcVisualLibraryV1({
    return [
     ...catalog.heroes.map(hero=>{
      const file=hero.directions.S[0];
-     return {id:hero.id,name:hero.name,tags:[styleOfHero(hero.name)],
+     return {id:hero.id,name:hero.name,tags:[npcVisualHeroStyleV1(hero.name)],
       kind,thumbUrl:officialUrl(hero.thumbnail),sourceUrl:officialUrl(file)};
     }),
     ...saved.map(hero=>({id:hero.id,name:hero.name,kind,
@@ -89,8 +93,7 @@ export function mountNpcVisualLibraryV1({
   if(disposed)return;
   clear();
   const q=search.value.trim().toLocaleLowerCase('fr'),category=filter.value;
-  const visible=rows.filter(item=>(!q||item.name.toLocaleLowerCase('fr').includes(q))&&
-    (!category||item.tags.includes(category)));
+  const visible=filterNpcVisualEntriesV1(rows,{search:q,category});
   status.textContent=visible.length+' visuel(s) · '+labelFor(tab)+
    ' · choisir une image ne modifie jamais le modèle original';
   for(const item of visible){
