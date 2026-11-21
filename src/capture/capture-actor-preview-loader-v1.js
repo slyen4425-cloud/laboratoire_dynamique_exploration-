@@ -1,6 +1,7 @@
 import {
   createCaptureActorDefinitionProviderV1
 } from './capture-actor-definition-provider-v1.js?rev=actor-opponent-view-v1';
+import {loadCaptureAuthorEncounterBundleV1} from './capture-showcase-encounter-source-v1.js';
 
 const LOUP_TRANSFER_URL =
   new URL(
@@ -63,4 +64,20 @@ export async function createCaptureActorPreviewProviderV1({
         GLOBAL_VISUAL_ASSET_ROOT.href
     })
   );
+}
+
+
+// Full official creature visual projection for the NPC image picker.
+// Reuses the already-authoritative Capture Actor provider and the same
+// physical global-assets release; no second list of creature image paths.
+export async function createCaptureActorLibraryProviderV1({fetchImpl=fetch}={}){
+ const [bundle,visualAssetCatalog]=await Promise.all([
+  loadCaptureAuthorEncounterBundleV1({fetchImpl}),
+  fetchJson(GLOBAL_VISUAL_CATALOG_URL,fetchImpl)
+ ]);
+ return createCaptureActorDefinitionProviderV1({
+  creatureTransfers:bundle.creatureTransfers,
+  visualAssetCatalog,
+  assetRoot:GLOBAL_VISUAL_ASSET_ROOT.href
+ });
 }
