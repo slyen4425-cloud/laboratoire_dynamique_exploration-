@@ -75,6 +75,10 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 <label class="wide">Dialogue (une ligne par écran)<textarea id="npc-dialogue" maxlength="2000" rows="3"></textarea></label>
 <details id="npc-trainer-config" class="wide" hidden>
 <summary>⚔ Équipe et récompenses du dresseur</summary>
+<label class="wide">Autoriser la fuite en combat
+<input type="checkbox" id="npc-allow-flee" checked>
+</label>
+<p class="hint">Désactive pour un dresseur ou un boss qui impose un combat jusqu’à la victoire ou la défaite. Les rencontres sauvages gardent leur fuite normale.</p>
 <p class="hint">Créatures et objets du catalogue officiel. Bonus de stats et choix des capacités enregistrés par adversaire, sans modifier le Bestiaire.</p>
 <output id="npc-creature-status" class="npc-catalog-status" role="status">Lecture du Bestiaire officiel…</output>
 <div class="fields">
