@@ -2758,6 +2758,7 @@ function startSculptTrainerBattle(actor){
   const snapshot=createCaptureEncounterSnapshot({
     ...newSculptEncounterIds(),source:'npc-trainer',trainerActorId:actor.id,opponents,
     ...(actor.npc.trainerReward?{trainerReward:actor.npc.trainerReward}:{}),
+    ...(actor.npc.allowFlee===false?{fleeAllowed:false}:{}),
     playerPartyRef:scopedEncounter?.party.partyRef??sculptPreviewPartyRef,areaId:area.id,
     terrainFamilyId:terrain.terrainFamilyId??area.surface.baseTerrainFamilyId,
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
