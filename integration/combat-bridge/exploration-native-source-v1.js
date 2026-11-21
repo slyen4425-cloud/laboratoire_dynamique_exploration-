@@ -115,7 +115,7 @@ export function buildExplorationNativeCombatSourceV1({
     const source=buildCaptureEncounterCombatSourceV1({
       ...options,wildStatProfile:snapshot.rules?.wildStatProfile??{},
       local:{speciesId:playerId,level:previewLevel,instanceId:party.id},
-      opponent:{speciesId:enemyId,level:authoredEnemyLevel},opponentReserve
+      opponent:rivals[0],opponentReserve
     });
     return Object.freeze({...source,sourceCreatureIds});
   }
@@ -130,7 +130,7 @@ export function buildExplorationNativeCombatSourceV1({
       // Keep the saved order and identities. Combat alone builds the
       // rechargeable native bench, individual stats and KO rules.
       localReserve:adventureParty.reserve??[],
-      opponent:{speciesId:enemyId,level:authoredEnemyLevel??configuredCreatures.get(enemyId).draft.level},
+      opponent:{...rivals[0],level:authoredEnemyLevel??configuredCreatures.get(enemyId).draft.level},
       ...(trainer?{opponentReserve}:{})
     });
     const expected=1+(adventureParty.reserve?.length??0);
