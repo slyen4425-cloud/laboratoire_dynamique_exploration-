@@ -6731,6 +6731,13 @@ function installSculptWorldAreaEditing(){
       const targetPortal=next.portals.find(portal=>portal.id===id);
       if(!targetPortal||targetPortal.targetAreaId!==sculptWorldAreaId)
         throw Error('Cette arrivée ne correspond plus au passage sélectionné');
+      // The decorative fringe captures pointer taps ahead of waypoint placement.
+      // Leave its brush mode cleanly before asking for an arrival location.
+      if(fringeEditing){
+        fringeEditing=false;
+        $('scenery-fringe-toggle').checked=false;
+        updateHistoryButtons();
+      }
       sculptWorldDraft=next;
       $('world-area-spawn-select').value=targetPortal.targetSpawnId;
       selectedWaypointKey='spawn:'+targetPortal.targetSpawnId;
