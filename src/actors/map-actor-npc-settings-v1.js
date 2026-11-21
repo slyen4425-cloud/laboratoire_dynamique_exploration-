@@ -65,6 +65,9 @@ export function normalizeMapActorNpcSettingsV1(raw){
   const radius=raw.movement?.radius??90;
   if(!Number.isFinite(radius)||radius<16||radius>600)
     throw new RangeError('NPC wander radius must be 16–600 world units');
+  const hasAllowFlee=Object.hasOwn(raw,'allowFlee');
+  if(hasAllowFlee&&typeof raw.allowFlee!=='boolean')
+    throw new TypeError('NPC allowFlee must be a boolean');
   const hasTrainerEngagement=Object.hasOwn(raw,'trainerEngagement');
   if(hasTrainerEngagement&&raw.trainerEngagement!=='offer'&&raw.trainerEngagement!=='aggressive')
     throw new RangeError('NPC trainer engagement must be offer or aggressive');
@@ -82,6 +85,7 @@ export function normalizeMapActorNpcSettingsV1(raw){
     ...(Object.hasOwn(raw,'trainerRoster')?
       {trainerRoster:normalizeNpcTrainerRosterV1(raw.trainerRoster)}:{}),
     ...(hasTrainerEngagement?{trainerEngagement:raw.trainerEngagement}:{}),
+    ...(hasAllowFlee?{allowFlee:raw.allowFlee}:{}),
     ...(Object.hasOwn(raw,'trainerReward')?
       {trainerReward:normalizeNpcTrainerRewardV1(raw.trainerReward)}:{}),
     ...(raw.wildCreature!=null?
