@@ -393,31 +393,111 @@ export function setWorldInitialArea(draft,areaId) {
   return createWorldBuilderDraft(next);
 }
 
+// Pure WorldDocument authoring: an inbound Portal points to exactly one
+// canonical target Spawn. A new outdoor arrival is a new Spawn, never a
+// second set of coordinates hidden in the renderer or in navigation state.
+function worldAreaArrivalNearExit(area,point){
+ const margin=20,centerX=area.width/2,centerY=area.height/2;
+ if(!Number.isFinite(point?.x)||!Number.isFinite(point?.y))
+  return {x:centerX,y:centerY};
+ return {
+  x:Math.max(margin,Math.min(area.width-margin,
+   point.x+Math.sign(centerX-point.x)*Math.min(56,Math.abs(centerX-point.x)))),
+  y:Math.max(margin,Math.min(area.height-margin,
+   point.y+Math.sign(centerY-point.y)*Math.min(56,Math.abs(centerY-point.y))))
+ };
+}
+function worldAreaArrivalFromDefault(area){
+ const spawn=area.spawns?.[0];
+ return {x:Number.isFinite(spawn?.x)?spawn.x:area.width/2,
+  y:Number.isFinite(spawn?.y)?spawn.y:area.height/2};
+}
+function addWorldPortalDedicatedSpawn(input,targetArea,point){
+ const existing=new Set(targetArea.spawns.map(item=>item.id));
+ const next=addSpawn(input,targetArea.id,point);
+ const target=next.areas.find(area=>area.id===targetArea.id);
+ const spawn=target.spawns.find(item=>!existing.has(item.id));
+ if(!spawn||spawn.anchor)throw Error('Arrivée libre impossible pour ce passage');
+ return {draft:next,spawnId:spawn.id};
+}
+// Explicit repair of an old WorldDocument: split ONLY this selected link when
+// several incoming Portals refer to the same Spawn (or the world start does).
+// No mass migration, no rewriting of existing routes on document open.
+export function ensureWorldPortalIndependentArrivalV1(draft,portalId){
+ const portal=draft?.portals?.find(p=>p.id===portalId);
+ const area=draft?.areas?.find(a=>a.id===portal?.targetAreaId);
+ const spawn=area?.spawns?.find(s=>s.id===portal?.targetSpawnId);
+ if(!portal||!area||!spawn)throw Error('Passage ou arrivée introuvable');
+ if(spawn.anchor)throw Error('Arrivée liée à une porte : régler la porte propriétaire');
+ const references=draft.portals.filter(p=>p.targetAreaId===area.id&&
+  p.targetSpawnId===spawn.id);
+ const isStart=area.id===draft.initialAreaId&&spawn.id===draft.initialSpawnId;
+ if(references.length<=1&&!isStart)return createWorldBuilderDraft(draft);
+ const created=addWorldPortalDedicatedSpawn(draft,area,
+  {x:spawn.x,y:spawn.y});
+ const relinked=updatePortal(created.draft,portalId,p=>{
+  p.targetSpawnId=created.spawnId;
+ });
+ const result=validateWorldBuilderDraft(relinked);
+ if(!result.valid)throw Error('Arrivée indépendante invalide : '+result.errors.join(', '));
+ return createWorldBuilderDraft(result.document);
+}
+
 export function connectWorldAreas(draft,{
-  sourceAreaId,targetAreaId,returnPortal=false
+  sourceAreaId,targetAreaId,returnPortal=false,
+  sourceExitPoint=null,returnArrivalPoint=null
 }={}) {
-  const source=draft?.areas?.find(x=>x.id===sourceAreaId);
-  const target=draft?.areas?.find(x=>x.id===targetAreaId);
-  if(!source||!target||source.id===target.id)
-    throw Error('Choisir deux WorldAreas distinctes');
-  if(!target.spawns?.length|| (returnPortal&&!source.spawns?.length))
-    throw Error('Un Spawn de destination est requis');
-  // Existing Portal constructor and normalizer are the only link owners.
-  function connectOne(input,from,to){
-    if(input.portals?.some(p=>p.sourceAreaId===from.id&&p.targetAreaId===to.id))
-      return input;
-    const n=input.portals?.filter(p=>p.sourceAreaId===from.id).length??0;
-    const y=Math.max(35,Math.min(from.height-35,from.height*(.27+((n%4)*.15))));
-    const trigger={kind:'point',x:Math.max(32,from.width-46),y,radius:20};
-    return addPortal(input,{
-      sourceAreaId:from.id,targetAreaId:to.id,
-      targetSpawnId:to.spawns[0].id,trigger,
-      enabled:true,visual:{visible:true,marker:'exit',label:to.id}
-    });
+ const source=draft?.areas?.find(a=>a.id===sourceAreaId);
+ const target=draft?.areas?.find(a=>a.id===targetAreaId);
+ if(!source||!target||source.id===target.id)
+  throw Error('Choisir deux WorldAreas distinctes');
+ if(!target.spawns?.length||(returnPortal&&!source.spawns?.length))
+  throw Error('Un Spawn de destination est requis');
+ if(sourceExitPoint!==null&&(!Number.isFinite(sourceExitPoint.x)||
+    !Number.isFinite(sourceExitPoint.y)||sourceExitPoint.x<10||
+    sourceExitPoint.y<10||sourceExitPoint.x>source.width-10||
+    sourceExitPoint.y>source.height-10))
+  throw new RangeError('Position de sortie invalide');
+ if(returnArrivalPoint!==null&&(!Number.isFinite(returnArrivalPoint.x)||
+    !Number.isFinite(returnArrivalPoint.y)||returnArrivalPoint.x<10||
+    returnArrivalPoint.y<10||returnArrivalPoint.x>source.width-10||
+    returnArrivalPoint.y>source.height-10))
+  throw new RangeError('Position de retour invalide');
+ // The canonical graph owns its directions. Existing links are left intact;
+ // only a NEW link allocates an independent landing Spawn in its target.
+ function connectOne(input,from,to,{exitPoint=null,arrivalPoint=null}={}){
+  if(input.portals?.some(p=>p.sourceAreaId===from.id&&p.targetAreaId===to.id))
+   return input;
+  const n=input.portals?.filter(p=>p.sourceAreaId===from.id).length??0;
+  const y=Math.max(35,Math.min(from.height-35,from.height*(.27+((n%4)*.15))));
+  const trigger={kind:'point',x:exitPoint?.x??Math.max(32,from.width-46),
+   y:exitPoint?.y??y,radius:20};
+  let next=input,targetSpawnId=to.spawns[0].id;
+  // Keep actual building-door / interior anchors unchanged. For every new
+  // arrival into an exterior, mint a distinct Spawn ID automatically.
+  if(to.kind==='exterior'){
+   let point=arrivalPoint;
+   if(!point){
+    const opposite=input.portals?.find(p=>p.sourceAreaId===to.id&&
+     p.targetAreaId===from.id&&p.trigger?.kind==='point');
+    point=opposite
+     ?worldAreaArrivalNearExit(to,opposite.trigger)
+     :worldAreaArrivalFromDefault(to);
+   }
+   const fresh=addWorldPortalDedicatedSpawn(next,to,point);
+   next=fresh.draft;targetSpawnId=fresh.spawnId;
   }
-  let next=connectOne(draft,source,target);
-  if(returnPortal)next=connectOne(next,target,source);
-  return createWorldBuilderDraft(next);
+  return addPortal(next,{sourceAreaId:from.id,targetAreaId:to.id,
+   targetSpawnId,trigger,enabled:true,
+   visual:{visible:true,marker:'exit',label:to.id}});
+ }
+ let next=connectOne(draft,source,target,{exitPoint:sourceExitPoint});
+ if(returnPortal)next=connectOne(next,target,source,{
+  arrivalPoint:returnArrivalPoint
+ });
+ const result=validateWorldBuilderDraft(next);
+ if(!result.valid)throw Error('Passages invalides : '+result.errors.join(', '));
+ return createWorldBuilderDraft(result.document);
 }
 
 export function validateWorldBuilderDraft(
