@@ -60,7 +60,7 @@ test('Lac01 → Lac02 south; Lac02 → Montagne north; Montagne → Lac02 north'
  assert.equal(coord(doc,lakeTo01).areaId,lac01);
  assert.equal(coord(doc,toMountain).areaId,montagne);
  const inbound=describeWorldAreaIncomingPortalsForEditorV1(doc,lac02);
- assert.deepEqual(inbound.map(x=>x.label).sort(),['Depuis Montagne','Depuis '+doc.areas[0].label].sort());
+ assert.deepEqual(inbound.map(x=>x.label).sort(),['Depuis Montagne','Depuis '+(doc.areas[0].label??doc.areas[0].id)].sort());
  assert.equal(inbound.length,2);
  assert.ok(inbound.every(x=>x.editable&&!x.shared));
  assert.equal(markersForSculptWorldArea(doc,lac02).filter(x=>x.kind==='arrival').length,2);
