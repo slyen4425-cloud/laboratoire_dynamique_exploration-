@@ -223,6 +223,8 @@ function showNativeCombatOutcome(outcome) {
     outcome==='defeat'?'Défaite · fin du combat':'Fuite · retour en exploration');
 }
 function recordCombatResult(handoff, outcome, hp, instanceId, nativePartyMembers=null) {
+  if(outcome==='fled'&&handoff.snapshot.context?.fleeAllowed===false)
+    throw new Error('La fuite est interdite pour ce PNJ');
   const result = createCaptureCombatResult({
     encounterId: handoff.snapshot.encounterId,
     returnToken: handoff.snapshot.returnToken,
@@ -383,8 +385,9 @@ async function launch() {
     presentationAssets:nativePresentationAssets
   });
   if(adventureParty||trainerPreview){
-    fleeButton.hidden=false;
-    fleeButton.addEventListener('click',()=>mountedCombat.flee(),{once:true});
+    const fleeAllowed=handoff.snapshot.context?.fleeAllowed!==false;
+    fleeButton.hidden=!fleeAllowed;
+    if(fleeAllowed)fleeButton.addEventListener('click',()=>mountedCombat.flee(),{once:true});
     void mountedCombat.completion.then(({outcome,state,roster})=>{
       if(!mountedCombat)return;
       const resolved=outcome==='flee'?'fled':outcome;

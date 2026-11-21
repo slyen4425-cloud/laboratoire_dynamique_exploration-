@@ -34,6 +34,15 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 .npc-visual-card img{width:100%;height:100px;object-fit:contain}
 .npc-visual-card strong{overflow-wrap:anywhere}.npc-visual-card small{color:#b7d5cb}
 .npc-visual-card button{margin-top:auto;min-height:38px}
+.npc-combat-instance-editor{margin:5px 0 12px;padding:8px;border:1px solid #54756c;border-radius:9px}
+.npc-combat-instance-editor summary{cursor:pointer;font-weight:700}
+.npc-combat-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:6px;margin:10px 0}
+.npc-combat-stats label{font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:7px}
+.npc-combat-stats input{width:75px}
+.npc-combat-skills{display:flex;flex-wrap:wrap;gap:6px}
+.npc-combat-skills p{flex-basis:100%;margin:2px 0}
+.npc-combat-skill{display:flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid #47685e;border-radius:7px;font-size:12px}
+
 
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:9px;max-height:480px;overflow:auto;margin-top:12px}
 .npc-card{background:#203c41;border:1px solid #476f67;border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;min-width:0}
@@ -66,14 +75,20 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 <label class="wide">Dialogue (une ligne par écran)<textarea id="npc-dialogue" maxlength="2000" rows="3"></textarea></label>
 <details id="npc-trainer-config" class="wide" hidden>
 <summary>⚔ Équipe et récompenses du dresseur</summary>
-<p class="hint">Créatures et objets tirés des catalogues officiels. Aucune créature, boutique ou statistique n'est créée ici.</p>
+<label class="wide">Autoriser la fuite en combat
+<input type="checkbox" id="npc-allow-flee" checked>
+</label>
+<p class="hint">Désactive pour un dresseur ou un boss qui impose un combat jusqu’à la victoire ou la défaite. Les rencontres sauvages gardent leur fuite normale.</p>
+<p class="hint">Créatures et objets du catalogue officiel. Bonus de stats et choix des capacités enregistrés par adversaire, sans modifier le Bestiaire.</p>
 <output id="npc-creature-status" class="npc-catalog-status" role="status">Lecture du Bestiaire officiel…</output>
 <div class="fields">
 <label>Créature publiée <select id="npc-creature-choice"><option value="">Catalogue en lecture…</option></select></label>
 <label>Niveau <input id="npc-creature-level" type="number" min="1" max="9999" value="10"></label>
 <button type="button" id="npc-creature-add" disabled>＋ Ajouter à l’équipe (maximum 6)</button>
 <button type="button" id="npc-creature-reload">↻ Recharger le Bestiaire</button>
-</div><div id="npc-trainer-rows" aria-live="polite"></div>
+</div><output id="npc-combat-catalog-status" class="npc-catalog-status" role="status">Chargement des statistiques et compétences officielles…</output>
+<p class="hint">Chaque membre de l’équipe possède un volet Statistiques et compétences. Bonus et capacités sont propres à ce PNJ, validés par Combat. Le PNG reste son apparence sur la carte ; le visuel en combat reste pour l’instant celui de l’espèce sélectionnée.</p>
+<div id="npc-trainer-rows" aria-live="polite"></div>
 <label>Monnaie accordée après victoire <input id="npc-reward-currency" type="number" min="0" max="100000000" step="1" value="0"></label>
 <output id="npc-reward-status" class="npc-catalog-status" role="status">Objets officiels disponibles uniquement depuis Monster Capture.</output>
 <div class="fields">

@@ -43,6 +43,8 @@ function normalizeSnapshot(raw) {
     opponentLevel: raw.opponents?.[0]?.level,
     opponents: raw.opponents,
     trainerActorId: raw.context?.trainerActorId,
+    ...(raw.context&&Object.hasOwn(raw.context,'fleeAllowed')?
+      {fleeAllowed:raw.context.fleeAllowed}:{}),
     ...(raw.context&&Object.hasOwn(raw.context,'trainerReward')?
       {trainerReward:raw.context.trainerReward}:{}),
     wildStatProfile: raw.rules?.wildStatProfile,

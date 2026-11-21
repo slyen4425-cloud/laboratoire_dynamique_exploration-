@@ -26,6 +26,8 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     'playerPartyRef'
   );
   const trainerActorId = source==='npc-trainer' ? requiredText(raw.trainerActorId,'trainerActorId') : null;
+  if(raw.fleeAllowed!==undefined&&(!trainerActorId||typeof raw.fleeAllowed!=='boolean'))
+    throw new TypeError('Only a trainer may define boolean fleeAllowed');
   const rulesetId = requiredText(
     raw.rulesetId,
     'rulesetId'
@@ -79,6 +81,7 @@ export function createCaptureEncounterSnapshot(raw = {}) {
       terrainFamilyId,
       elementId,
       ...(trainerActorId ? {trainerActorId} : {}),
+      ...(trainerActorId&&raw.fleeAllowed!==undefined?{fleeAllowed:raw.fleeAllowed}:{}),
       ...(trainerActorId&&raw.trainerReward!==undefined?
         {trainerReward:normalizeNpcTrainerRewardV1(raw.trainerReward)}:{}),
       ...(combatArenaIds.length ? {combatArenaIds:Object.freeze(combatArenaIds)} : {})

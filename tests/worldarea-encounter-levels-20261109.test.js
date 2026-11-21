@@ -51,7 +51,9 @@ test('optional level reaches persisted Combat snapshot without changing legacy v
 });
 test('the native Combat adapter consumes the author level, without a second stats engine',()=>{
  const bridge=readFileSync(new URL('../integration/combat-bridge/exploration-native-source-v1.js',import.meta.url),'utf8');
- assert.match(bridge,/opponent:\{speciesId:enemyId,level:authoredEnemyLevel\?\?/);
+ assert.match(bridge,/opponent:\{\.\.\.rivals\[0\],level:authoredEnemyLevel\?\?/);
+ assert.match(bridge,/opponent:rivals\[0\],opponentReserve/);
+ assert.match(bridge,/npcInstance:member\.npcInstance/);
  assert.match(bridge,/buildCaptureEncounterCombatSourceV1/);
  assert.doesNotMatch(bridge,/Math\.random\(/);
  const html=readFileSync(new URL('../world-assembler.html',import.meta.url),'utf8');
