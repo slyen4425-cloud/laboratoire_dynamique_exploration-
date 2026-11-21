@@ -1,5 +1,6 @@
 // A placed NPC's local interaction policy. Creature stats, drops, equipment,
 // quests, merchant inventory and combat state remain in their own modules.
+import {normalizeNpcCombatInstanceTransportV1} from './npc-combat-instance-transport-v1.js';
 export const MAP_ACTOR_NPC_SCHEMA_V1='gensrpg.map-actor-npc.v1';
 export const MAP_ACTOR_NPC_KINDS=Object.freeze([
   'dialogue','quest','trainer','wild','merchant'
@@ -12,8 +13,12 @@ function normalizeCreatureSlot(raw,label){
     throw new TypeError(label+' needs a valid canonical Capture creature reference');
   if(!Number.isSafeInteger(raw.level)||raw.level<1||raw.level>9999)
     throw new RangeError(label+' level must be an integer from 1 to 9999');
-  // Do not copy any creature stats, abilities, visuals or species definitions.
-  return Object.freeze({creatureId:raw.creatureId,level:raw.level});
+  // The snapshot carries a scoped override contract only. Combat validates
+  // all registry IDs, actually unlocked skills and effects at encounter time.
+  const npcInstance=raw.npcInstance==null?null:
+    normalizeNpcCombatInstanceTransportV1(raw.npcInstance);
+  return Object.freeze({creatureId:raw.creatureId,level:raw.level,
+    ...(npcInstance?{npcInstance}:{})});
 }
 export function normalizeNpcTrainerRosterV1(raw){
   if(!Array.isArray(raw)||raw.length>NPC_TRAINER_ROSTER_LIMIT_V1)
