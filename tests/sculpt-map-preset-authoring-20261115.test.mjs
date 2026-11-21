@@ -112,17 +112,24 @@ test('a two-tap passage uses ONLY official Portals and Spawns and survives reloa
  const after=linked.portals.find(p=>p.id===portal.id);
  assert.equal(after.trigger.x,position.x);
  assert.equal(after.trigger.y,position.y);
- const oldArrival=target.spawns[0];
- linked=placeSculptWorldSpawn(linked,target.id,oldArrival.id,{x:10*28,y:12*21});
+ const originalStart=target.spawns[0];
+ const linkedArrivalId=portal.targetSpawnId;
+ assert.notEqual(linkedArrivalId,originalStart.id,
+   'new portals now own separate arrival Spawns');
+ linked=placeSculptWorldSpawn(linked,target.id,linkedArrivalId,{x:10*28,y:12*21});
  const unchangedId=linked.portals.find(p=>p.id===portal.id).targetSpawnId;
- assert.equal(unchangedId,oldArrival.id,'the destination owns the SAME arrival');
+ assert.equal(unchangedId,linkedArrivalId,'the Portal keeps its own landing Spawn');
+ assert.deepEqual(target.spawns[0],originalStart,
+   'the old map Spawn must remain untouched');
  const relinked=connectWorldAreas(linked,{
   sourceAreaId:withTarget.initialAreaId,targetAreaId:target.id,returnPortal:true
  });
  assert.equal(relinked.portals.length,2,'recreating cannot duplicate portals');
  const saved=importWorldBuilderDocument(serializeWorldBuilderDraft(relinked));
  assert.equal(saved.portals.length,2);
- assert.equal(saved.areas.find(a=>a.id===target.id).spawns.find(p=>p.id===oldArrival.id).x,280);
+ assert.equal(saved.areas.find(a=>a.id===target.id).spawns.find(p=>p.id===linkedArrivalId).x,280);
+ assert.deepEqual(saved.areas.find(a=>a.id===target.id).spawns.find(p=>p.id===originalStart.id),
+   originalStart,'legacy default Spawn remains unchanged');
  assert.equal(saved.portals.find(p=>p.id===portal.id).trigger.y,position.y);
 });
 
