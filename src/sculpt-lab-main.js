@@ -115,7 +115,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecov
   placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
-import {describeWorldAreaSpawnsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
+import {describeWorldAreaSpawnsForEditorV1,describeWorldAreaIncomingPortalsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {emitExplorationPlayNavigationCommittedV1
@@ -125,7 +125,7 @@ import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
-import {createWorldBuilderDraft,connectWorldAreas,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,connectWorldAreas,ensureWorldPortalIndependentArrivalV1,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {worldInteriorFloors,worldInteriorFloorPortals,worldInteriorHouseExit,
   addWorldInteriorFloor,changeWorldInteriorConnector,changeWorldInteriorDoor}
   from './builder/sculpt-world-interior-floors-v1.js?rev=restore-world-interior-tools-20261115';
@@ -5797,6 +5797,22 @@ function syncObjectWaypoints(){
       ?sculptWorldDraft.portals.find(p=>p.id===current.portalId)?.trigger?.kind!=='point'
       :!!sculptWorldArea()?.spawns.find(p=>p.id===current.spawnId)?.anchor);
   $('object-waypoint-destination').disabled=current?.kind!=='exit';
+  // Every incoming Portal is selectable, even when historical maps reused
+  // the same Spawn and therefore painted only one arrival ring.
+  const arrivals=describeWorldAreaIncomingPortalsForEditorV1(
+    sculptWorldDraft,sculptWorldAreaId);
+  const arrivalsPanel=$('object-waypoint-arrivals');
+  arrivalsPanel.hidden=!arrivals.length;
+  const arrivalSelect=$('object-waypoint-arrival-select'),prior=arrivalSelect.value;
+  arrivalSelect.replaceChildren(...arrivals.map(link=>
+    new Option(link.label+(link.shared?' · arrivée partagée':''),link.portalId)));
+  if(arrivals.some(link=>link.portalId===prior))arrivalSelect.value=prior;
+  const arrival=arrivals.find(link=>link.portalId===arrivalSelect.value);
+  $('object-waypoint-arrival-place').disabled=!arrival?.editable;
+  $('object-waypoint-arrival-info').textContent=!arrival?'Aucune entrée reliée à cette carte.':
+    !arrival.editable?'Cette arrivée est liée à une porte : modifie la porte propriétaire.':
+    arrival.shared?'Ce point est partagé avec une autre entrée ou le départ du monde : une arrivée indépendante sera créée pour ce chemin.':
+    'Cette arrivée appartient à ce chemin : place-la au bord de la carte où le héros doit apparaître.';
   $('object-waypoint-feedback').textContent=!current?'Aucun repère ici : crée un passage.':
     $('object-waypoint-place').disabled?'Ce point est attaché à un bâtiment : règle sa porte.':
     'Touche son cercle sur la carte puis glisse-le, ou utilise « Placer ».';
@@ -5934,6 +5950,22 @@ function commitSculptWorldSpawn(point){
     sculptWorldAreaId===sculptWorldDraft.initialAreaId?'Départ initial':'Arrivée')+
     ' enregistré à X '+position.x+', Y '+position.y+'.');
 }
+// A return into the current map should start just INSIDE its source exit,
+// not at the first Spawn or in the exit trigger. Validate with the one native
+// collision owner. If no offset is safe, keep the already-validated exit point
+// and allow the editor to move its own arrival afterwards.
+function suggestedSculptReturnArrivalPoint(point){
+  const area=sculptWorldArea();
+  if(!area)return point;
+  const towards=(value,center,distance)=>
+    value+Math.sign(center-value)*Math.min(distance,Math.abs(center-value));
+  for(const offset of [66,48,30,0]){
+    const candidate={x:towards(point.x,area.width/2,offset),
+      y:towards(point.y,area.height/2,offset)};
+    try{return validSculptWorldAuthoringPoint(candidate);}catch{ /* next candidate */ }
+  }
+  return validSculptWorldAuthoringPoint(point);
+}
 function applySculptWorldPointerPlacement(point){
   if(!sculptWorldPortalPlacement)return;
   const mode=sculptWorldPortalPlacement;
@@ -5946,7 +5978,9 @@ function applySculptWorldPointerPlacement(point){
       if(!target)throw Error('Choisis une carte de destination');
       const position=validSculptWorldAuthoringPoint(point);
       let next=connectWorldAreas(sculptWorldDraft,{
-        sourceAreaId:sculptWorldAreaId,targetAreaId:target,returnPortal:true
+        sourceAreaId:sculptWorldAreaId,targetAreaId:target,returnPortal:true,
+        sourceExitPoint:position,
+        returnArrivalPoint:suggestedSculptReturnArrivalPoint(position)
       });
       const portal=next.portals.find(p=>p.sourceAreaId===sculptWorldAreaId&&
         p.targetAreaId===target&&p.trigger.kind==='point');
@@ -5957,7 +5991,7 @@ function applySculptWorldPointerPlacement(point){
       $('world-area-portal-select').value=portal.id;
       selectedWaypointKey='portal:'+portal.id;
       syncObjectWaypoints();
-      sculptWorldStatus('Passage aller-retour créé sur la carte. Ouvre la destination pour placer l’arrivée.');
+      sculptWorldStatus('Passage aller-retour créé : chaque entrée possède son point d’arrivée. Le retour est placé près de cette sortie ; ouvre la carte cible pour placer l’autre arrivée.');
     }else if(mode==='portal')commitSculptWorldPortal(point);
     else if(mode==='spawn')commitSculptWorldSpawn(point);
     else if(mode==='select'){
@@ -6677,6 +6711,41 @@ function installSculptWorldAreaEditing(){
     if(!selectedWaypointKey?.startsWith('portal:'))return;
     $('world-area-portal-select').value=selectedWaypointKey.slice(7);
     $('world-area-edit-destination').click();
+  });
+  $('object-waypoint-arrival-select').addEventListener('change',syncObjectWaypoints);
+  $('object-waypoint-arrival-place').addEventListener('click',()=>{
+    if(navigationTesting){
+      sculptWorldStatus('Quitte Tester avant de déplacer une arrivée.',true);return;
+    }
+    const id=$('object-waypoint-arrival-select').value;
+    const arrival=describeWorldAreaIncomingPortalsForEditorV1(
+      sculptWorldDraft,sculptWorldAreaId).find(link=>link.portalId===id);
+    if(!arrival||!arrival.editable){
+      sculptWorldStatus('Arrivée non déplaçable : choisis un passage libre.',true);return;
+    }
+    try{
+      // Split a legacy shared Spawn ONLY on explicit authoring action.
+      // No other incoming Portal, saved world-start or building door is moved.
+      const next=arrival.shared?
+        ensureWorldPortalIndependentArrivalV1(sculptWorldDraft,id):sculptWorldDraft;
+      const targetPortal=next.portals.find(portal=>portal.id===id);
+      if(!targetPortal||targetPortal.targetAreaId!==sculptWorldAreaId)
+        throw Error('Cette arrivée ne correspond plus au passage sélectionné');
+      // The decorative fringe captures pointer taps ahead of waypoint placement.
+      // Leave its brush mode cleanly before asking for an arrival location.
+      if(fringeEditing){
+        fringeEditing=false;
+        $('scenery-fringe-toggle').checked=false;
+        updateHistoryButtons();
+      }
+      sculptWorldDraft=next;
+      $('world-area-spawn-select').value=targetPortal.targetSpawnId;
+      selectedWaypointKey='spawn:'+targetPortal.targetSpawnId;
+      sculptWorldPortalPlacement='spawn';
+      refreshSculptWorldPanel();
+      sculptWorldStatus('🔵 Arrivée depuis '+arrival.label.slice(7)+
+        ' : touche le sol à l’endroit où le héros doit apparaître. Les autres arrivées restent inchangées.');
+    }catch(error){sculptWorldStatus(error.message,true);}
   });
   $('world-area-portal-select').addEventListener('change',refreshSculptWorldPanel);
   $('world-area-spawn-select').addEventListener('change',refreshSculptWorldPanel);

@@ -1316,6 +1316,15 @@ body.sculpt-play-unavailable #play-start-error{
    <button id="object-waypoint-create-button" type="button">Créer la sortie et le retour</button>
   </details>
   <button id="object-waypoint-destination" type="button">↪ Modifier l’arrivée sur la carte cible</button>
+  <details id="object-waypoint-arrivals">
+   <summary>🔵 Arrivées depuis les autres cartes</summary>
+   <small>Chaque chemin a sa propre arrivée. Choisis la carte d’origine puis place le point directement sur ce terrain. Les passages déjà enregistrés ne sont pas déplacés automatiquement.</small>
+   <label>Arrivée liée au passage
+    <select id="object-waypoint-arrival-select" aria-label="Choisir la carte d'origine de cette arrivée"></select>
+   </label>
+   <button type="button" id="object-waypoint-arrival-place">📍 Placer cette arrivée sur la carte</button>
+   <small id="object-waypoint-arrival-info" role="status"></small>
+  </details>
   <small id="object-waypoint-feedback" role="status" aria-live="polite"></small>
  </details>
  <button type="button" id="actor-open">👥 Acteurs de map</button>

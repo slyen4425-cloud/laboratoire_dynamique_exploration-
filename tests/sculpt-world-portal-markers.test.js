@@ -28,10 +28,13 @@ test('markers expose exact exit Portal trigger AND incoming destination Spawn wi
   assert.equal(exit.label,dungeon.label);
   assert.equal(exit.selected,true);
   const arrival=markers.find(m=>m.kind==='arrival'&&m.spawnId===incoming.targetSpawnId);
-  assert.deepEqual({x:arrival.x,y:arrival.y},
-    {x:host.spawns[0].x,y:host.spawns[0].y});
+  const own=host.spawns.find(s=>s.id===incoming.targetSpawnId);
+  assert.deepEqual({x:arrival.x,y:arrival.y},{x:own.x,y:own.y});
+  assert.notEqual(arrival.spawnId,world.initialSpawnId,
+    'a return portal keeps its own arrival instead of moving the main world start');
   assert.equal(markers.filter(m=>m.kind==='arrival').length,1);
-  assert.equal(arrival.isInitial,true,'initial Spawn is marked without duplicating the same location');
+  assert.equal(markers.filter(m=>m.kind==='start').length,1);
+  assert.equal(arrival.isInitial,false);
   const testing=markersForSculptWorldArea(world,host.id,{testing:true});
   assert.equal(testing.some(m=>m.kind==='arrival'||m.kind==='start'),false);
   assert.equal(testing.filter(m=>m.kind==='exit').length,1);
@@ -54,13 +57,13 @@ test('editing the visible exit label updates only Portal.visual.label and surviv
     currentAreaId:persisted.areas[0].id
   },crossed).currentAreaId,persisted.areas[1].id);
 });
-test('several arrivals to the same canonical Spawn paint one marker; hidden/disabled exits do not paint',()=>{
+test('new routes get distinct arrival markers; legacy shared Spawn still paints one marker',()=>{
   let world=linkedWorld();
   world=addWorldArea(world,{name:'Colline',kind:'exterior'});
   world=connectWorldAreas(world,{sourceAreaId:world.areas[2].id,
     targetAreaId:world.areas[0].id});
   const host=world.areas[0];
-  assert.equal(markersForSculptWorldArea(world,host.id).filter(m=>m.kind==='arrival').length,1);
+  assert.equal(markersForSculptWorldArea(world,host.id).filter(m=>m.kind==='arrival').length,2);
   const out=world.portals.find(p=>p.sourceAreaId===host.id);
   world=updatePortal(world,out.id,p=>{p.visual.visible=false;});
   assert.equal(markersForSculptWorldArea(world,host.id).filter(m=>m.kind==='exit').length,0);
