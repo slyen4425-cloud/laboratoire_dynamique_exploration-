@@ -26,6 +26,15 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 .npc-reference-row button{min-width:38px}
 #npc-trainer-config[hidden],#npc-merchant-config[hidden],#npc-wild-config[hidden]{display:none!important}
 .npc-catalog-status{font-size:12px;min-height:20px}summary{cursor:pointer;font-weight:700;padding:4px}
+.npc-visual-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}
+.npc-visual-tabs button{flex:1;min-width:95px}
+.npc-visual-tabs button[aria-selected="true"]{background:#28796b;outline:2px solid #a0e7cf}
+#npc-visual-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:8px;max-height:390px;overflow:auto;margin-top:10px}
+.npc-visual-card{padding:8px;border:1px solid #486d67;border-radius:9px;background:#223e42;display:flex;flex-direction:column;gap:6px;min-width:0;text-align:center}
+.npc-visual-card img{width:100%;height:100px;object-fit:contain}
+.npc-visual-card strong{overflow-wrap:anywhere}.npc-visual-card small{color:#b7d5cb}
+.npc-visual-card button{margin-top:auto;min-height:38px}
+
 .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:9px;max-height:480px;overflow:auto;margin-top:12px}
 .npc-card{background:#203c41;border:1px solid #476f67;border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;min-width:0}
 .npc-card img{height:100px;width:100%;object-fit:contain}.npc-card strong{overflow-wrap:anywhere}
@@ -85,6 +94,21 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 <summary>🐾 Créature errante officielle</summary>
 <label>Espèce publiée <select id="npc-wild-choice"><option value="">Lecture du Bestiaire…</option></select></label>
 <label>Niveau <input id="npc-wild-level" type="number" min="1" max="9999" value="10"></label>
+</details>
+<details id="npc-visual-library" class="wide">
+<summary>🖼 Bibliothèque de visuels · Créatures / Héros / PNJ</summary>
+<p class="hint">Choisis une apparence existante. Le modèle original ne sera pas modifié : ton PNJ garde son nom, son rôle, ses dialogues et ses récompenses. L'image choisie est une image fixe ; pour des animations complètes, utilise l'import directionnel.</p>
+<div class="npc-visual-tabs" role="tablist" aria-label="Origine des visuels">
+<button type="button" data-npc-visual-tab="creature" role="tab" aria-selected="true">Créatures</button>
+<button type="button" data-npc-visual-tab="hero" role="tab" aria-selected="false">Héros</button>
+<button type="button" data-npc-visual-tab="npc" role="tab" aria-selected="false">PNJ</button>
+</div>
+<div class="fields">
+<label>Rechercher un visuel<input type="search" id="npc-visual-search" placeholder="Nom du personnage ou de la créature"></label>
+<label>Catégorie<select id="npc-visual-subcategory"><option value="">Toutes les catégories</option></select></label>
+</div>
+<output id="npc-visual-library-status" role="status" aria-live="polite">Ouvre pour consulter les catalogues officiels.</output>
+<div id="npc-visual-cards" aria-label="Visuels réutilisables"></div>
 </details>
 <label class="wide">Image principale PNG / WebP <input id="npc-image" type="file" accept="image/png,image/webp"></label>
 <label class="wide">Portrait indépendant PNG / WebP <input id="npc-portrait" type="file" accept="image/png,image/webp">
