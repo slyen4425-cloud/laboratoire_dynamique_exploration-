@@ -25,7 +25,7 @@ function packZip(entries,{compression=0,damageCrc=false}={}){
   central.writeUInt32LE(0x02014b50,0);
   central.writeUInt16LE(20,4);central.writeUInt16LE(20,6);
   central.writeUInt16LE(compression,10);
-  central.writeUInt32LE(damageCrc?crc^1:crc,16);
+  central.writeUInt32LE(damageCrc?(crc^1)>>>0:crc,16);
   central.writeUInt32LE(packed.length,20);central.writeUInt32LE(raw.length,24);
   central.writeUInt16LE(title.length,28);central.writeUInt32LE(offset,42);
   sections.push(local,title,packed);table.push(central,title);
