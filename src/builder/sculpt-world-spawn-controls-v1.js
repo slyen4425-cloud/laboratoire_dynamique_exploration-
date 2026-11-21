@@ -15,3 +15,28 @@ export function describeWorldAreaSpawnsForEditorV1(document,areaId){
   });
  }));
 }
+
+// Compact editor projection by INCOMING Portal rather than by Spawn. An older
+// map can have several Portals sharing one Spawn; show every source separately
+// so the author can repair one direction without moving the others.
+export function describeWorldAreaIncomingPortalsForEditorV1(document,areaId){
+ const area=document?.areas?.find(item=>item.id===areaId);
+ if(!area)return Object.freeze([]);
+ const incoming=(document.portals??[]).filter(portal=>
+  portal.targetAreaId===areaId&&portal.enabled!==false);
+ return Object.freeze(incoming.map(portal=>{
+  const spawn=area.spawns?.find(item=>item.id===portal.targetSpawnId);
+  const source=document.areas.find(item=>item.id===portal.sourceAreaId);
+  const same=incoming.filter(other=>other.targetSpawnId===portal.targetSpawnId);
+  const isStart=areaId===document.initialAreaId&&
+   spawn?.id===document.initialSpawnId;
+  return Object.freeze({
+   portalId:portal.id,sourceAreaId:portal.sourceAreaId,
+   label:'Depuis '+(source?.label??source?.id??'carte inconnue'),
+   spawnId:portal.targetSpawnId,
+   shared:same.length>1||isStart,
+   editable:!!spawn&&!spawn.anchor,
+   point:spawn?resolveWorldAreaSpawnPoint(area,spawn.id):null
+  });
+ }));
+}
