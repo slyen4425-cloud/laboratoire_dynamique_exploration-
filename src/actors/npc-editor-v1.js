@@ -368,6 +368,7 @@ function setFields(record){
  $('npc-movement').value=record?.npc.movement.mode??'static';
  $('npc-radius').value=String(record?.npc.movement.radius??90);
  $('npc-dialogue').value=record?.npc.dialogue??'';
+ $('npc-allow-flee').checked=record?.npc?.allowFlee!==false;
  $('npc-height').value=String(record?.mapVisual.targetHeight??62);
  $('npc-mode').value=record?.mapVisual.animation.mode??'image';
  $('npc-fps').value=String(record?.mapVisual.animation.framesPerSecond??16);
@@ -447,6 +448,7 @@ async function draftFromForm({newId=false}={}){
   dialogue:$('npc-dialogue').value,
   movement:{mode:$('npc-movement').value,radius:number('npc-radius')},
   ...(role.startsWith('trainer-')?{
+    allowFlee:$('npc-allow-flee').checked,
     trainerRoster:trainerRosterDraft.map(slot=>({...slot})),
     trainerReward:{currency:number('npc-reward-currency'),
       items:rewardItemsDraft.map(item=>({...item}))}
