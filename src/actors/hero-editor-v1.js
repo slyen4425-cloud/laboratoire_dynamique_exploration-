@@ -3,6 +3,7 @@
 // same ImageAssetLoader + MapActorVisualPreparer + MapActorRenderer as the map.
 import {createUserHeroDefinitionV1,createUserHeroAssetResolverV1} from './user-hero-definition-v1.js';
 import {createUserHeroStoreV1} from '../storage/user-hero-store-v1.js';
+import {readActorAnimationZipV1} from './actor-animation-zip-import-v1.js';
 import {createExplorationUniverseHeroProjectsV1} from '../storage/exploration-universe-hero-projects-v1.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
@@ -35,7 +36,25 @@ for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
  const input=document.createElement('input');
  input.id='hero-direction-'+dir;input.type='file';input.multiple=true;
  input.accept='image/png,image/webp';input.setAttribute('aria-label','Sprites '+dir);
- label.append(input);$('hero-direction-files').append(label);
+ const zip=document.createElement('input');
+ zip.id='hero-direction-zip-'+dir;zip.type='file';zip.accept='.zip,application/zip';
+ zip.setAttribute('aria-label','ZIP de la direction '+dir);
+ const caption=document.createElement('small');
+ caption.textContent='Ou un ZIP contenant 6 PNG/WebP numérotés (00 à 05)';
+ const status=document.createElement('output');status.id='hero-zip-status-'+dir;
+ zip.addEventListener('change',()=>{
+  markDirty();
+  if(!zip.files[0]){status.textContent='';return;}
+  input.value='';
+  readActorAnimationZipV1(zip.files[0]).then(frames=>{
+   if(zip.files[0])status.textContent=frames.length+' images vérifiées · direction '+dir;
+  }).catch(error=>{status.textContent=error.message;notify(error.message,true);});
+ });
+ input.addEventListener('change',()=>{
+  if(input.files.length){zip.value='';status.textContent='';}
+  markDirty();
+ });
+ label.append(input,caption,zip,status);$('hero-direction-files').append(label);
 }
 let previewDirection='S';
 
@@ -101,6 +120,8 @@ async function uploaded(file){
  return {blob:file,mimeType:file.type,...size};
 }
 async function directionFrames(dir,previous){
+ const archive=$('hero-direction-zip-'+dir).files[0];
+ if(archive)return Promise.all((await readActorAnimationZipV1(archive)).map(uploaded));
  const files=[...$('hero-direction-'+dir).files];
  if(files.length&&files.length!==6)
   throw new RangeError('Direction '+dir+' : importe exactement six sprites, ordonnés de 0 à 5.');
@@ -200,7 +221,11 @@ function displayFields(record){
  $('hero-idle-amplitude').value=record?.mapVisual.motion.idleAmplitude??DEFAULT_HERO_VISUAL_SETTINGS_V1.idleAmplitude;
  $('hero-walk-amplitude').value=record?.mapVisual.motion.walkAmplitude??DEFAULT_HERO_VISUAL_SETTINGS_V1.walkAmplitude;
  for(const id of ['hero-image','hero-idle','hero-walk','hero-portrait'])$(id).value='';
- for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1)$('hero-direction-'+dir).value='';
+ for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
+  $('hero-direction-'+dir).value='';
+  $('hero-direction-zip-'+dir).value='';
+  $('hero-zip-status-'+dir).textContent='';
+ }
  $('hero-delete').disabled=!record;
  updateMode();
  refreshPortraitPreview();

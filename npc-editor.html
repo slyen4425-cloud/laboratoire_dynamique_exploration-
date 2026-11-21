@@ -135,13 +135,13 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 <label>Symétrie automatique <select id="npc-mirror"><option value="yes">Activée</option><option value="no">Désactivée</option></select></label>
 <label>Oscillation repos <input id="npc-idle-amplitude" type="number" min="0" max="8" step=".1" value="1"></label>
 <label>Ombre <select id="npc-shadow"><option value="yes">Visible</option><option value="no">Masquée</option></select></label>
-<details class="wide"><summary>Importer les animations PNG/WebP</summary>
+<details class="wide"><summary>Importer les animations (ZIP par direction ou PNG/WebP)</summary>
 <div class="fields">
 <label id="npc-idle-label" class="wide">Repos (facultatif, jusqu'à 32 frames)
 <input type="file" multiple accept="image/png,image/webp" id="npc-idle"></label>
 <label id="npc-walk-label" class="wide">Marche (1 à 32 frames)
 <input type="file" multiple accept="image/png,image/webp" id="npc-walk"></label>
-<div id="npc-direction-inputs" class="wide" hidden><p class="hint">8 directions, exactement 6 fichiers ordonnés dans chaque direction. Tous les canevas doivent avoir la même taille.</p><div id="npc-direction-files"></div></div>
+<div id="npc-direction-inputs" class="wide" hidden><p class="hint">8 directions : un ZIP de 6 PNG/WebP numérotés par direction, ou les 6 images directement. Une direction importée ne remplace pas les autres. Tous les canevas doivent avoir la même taille.</p><div id="npc-direction-files"></div></div>
 </div></details>
 </div>
 <p id="npc-editor-hint" class="hint">Les équipes, objets et boutiques ne sont que des références aux catalogues officiels. Le combat et les récompenses restent gérés par Monster Capture. Les scénarios avancés adversaire/boss ne sont pas encore actifs.</p>

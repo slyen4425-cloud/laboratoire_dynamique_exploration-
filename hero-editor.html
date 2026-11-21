@@ -66,7 +66,7 @@ button:disabled{opacity:.5;cursor:default}
 <input id="hero-idle" type="file" multiple accept="image/png,image/webp"></label>
 <label id="hero-walk-label" class="wide" hidden>Sprites de déplacement (PNG/WebP, obligatoires en mode sprites)
 <input id="hero-walk" type="file" multiple accept="image/png,image/webp"></label>
-<fieldset id="hero-directions-inputs" class="wide" hidden><legend>Sprites 8 directions · 6 PNG/WebP par direction</legend><p class="hint">Pour modifier un modèle : remplace uniquement les directions souhaitées. Les autres restent conservées. Les canevas doivent avoir la même taille que l’image de base.</p><div id="hero-direction-files" class="hero-directions-grid"></div></fieldset>
+<fieldset id="hero-directions-inputs" class="wide" hidden><legend>Animations directionnelles · ZIP conseillé</legend><p class="hint">Pour chaque direction, choisis un ZIP contenant 6 PNG/WebP numérotés (ou sélectionne les 6 PNG/WebP directement). Tu peux remplacer une seule direction : les autres restent enregistrées. Le ZIP est vérifié sans extraction manuelle. Les canevas doivent avoir la même taille.</p><div id="hero-direction-files" class="hero-directions-grid"></div></fieldset>
 <label id="hero-fps-label" hidden>Images par seconde
 <input id="hero-fps" type="number" value="16" min="1" max="30" step="1"></label>
 </div></details>
