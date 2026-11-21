@@ -5,6 +5,7 @@ import {createUserNpcDefinitionV1,createUserNpcAssetResolverV1,
 import {createUserNpcStoreV1} from '../storage/user-npc-store-v1.js';
 import {mountNpcVisualLibraryV1} from './npc-visual-library-v1.js';
 import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
+import {readActorAnimationZipV1} from './actor-animation-zip-import-v1.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
@@ -51,7 +52,25 @@ for(const dir of MAP_ACTOR_COMPASS_DIRECTIONS_V1){
  const input=document.createElement('input');
  input.id='npc-dir-'+dir;input.type='file';input.multiple=true;
  input.accept='image/png,image/webp';
- label.append(input);$('npc-direction-files').append(label);
+ const zip=document.createElement('input');
+ zip.id='npc-zip-'+dir;zip.type='file';zip.accept='.zip,application/zip';
+ zip.setAttribute('aria-label','ZIP de la direction '+dir);
+ const caption=document.createElement('small');
+ caption.textContent='Ou ZIP : 6 images PNG/WebP numérotées';
+ const status=document.createElement('output');status.id='npc-zip-status-'+dir;
+ zip.addEventListener('change',()=>{
+  markDirty();
+  if(!zip.files[0]){status.textContent='';return;}
+  input.value='';
+  readActorAnimationZipV1(zip.files[0]).then(frames=>{
+   if(zip.files[0])status.textContent=frames.length+' images vérifiées · '+dir;
+  }).catch(error=>{status.textContent=error.message;notify(error.message,true);});
+ });
+ input.addEventListener('change',()=>{
+  if(input.files.length){zip.value='';status.textContent='';}
+  markDirty();
+ });
+ label.append(input,caption,zip,status);$('npc-direction-files').append(label);
 }
 // The same official Capture bestiary projection and native Scenario NPC setting
 // contract supply selections here and in the historical Sculpt editor. No
@@ -359,7 +378,9 @@ $('npc-merchant-reload').addEventListener('click',()=>requestNativeCatalog('merc
 function clearInputs(){
  chosenLibraryImage=null;
  for(const id of ['npc-image','npc-portrait','npc-idle','npc-walk',
-  ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(d=>'npc-dir-'+d)])$(id).value='';
+  ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(d=>'npc-dir-'+d),
+  ...MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(d=>'npc-zip-'+d)])$(id).value='';
+ for(const d of MAP_ACTOR_COMPASS_DIRECTIONS_V1)$('npc-zip-status-'+d).textContent='';
 }
 function setFields(record){
  selected=record;dirty=false;clearInputs();
@@ -429,6 +450,8 @@ async function draftFromForm({newId=false}={}){
  const dirs=mode==='directions'?Object.fromEntries(await Promise.all(
   MAP_ACTOR_COMPASS_DIRECTIONS_V1.map(async d=>{
    const files=[...$('npc-dir-'+d).files];
+   const archive=$('npc-zip-'+d).files[0];
+   if(archive)return [d,await Promise.all((await readActorAnimationZipV1(archive)).map(uploaded))];
    if(files.length&&files.length!==6)
     throw new RangeError(d+' : exactement 6 images par direction');
    return [d,files.length?await Promise.all(files.map(uploaded)):
