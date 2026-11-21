@@ -8,7 +8,9 @@ import {MAP_ACTOR_COMPASS_DIRECTIONS_V1} from './map-actor-visual-model.js';
 import {createImageAssetLoader} from '../assets/image-asset-loader.js';
 import {createMapActorVisualPreparer} from '../assets/map-actor-visual-preparer.js';
 import {createMapActorRenderer} from '../render/map-actor-renderer.js';
-import {loadCaptureShowcaseEncounterSourceV1} from '../capture/capture-showcase-encounter-source-v1.js';
+import {loadCaptureShowcaseEncounterSourceV1,loadCaptureAuthorEncounterBundleV1} from '../capture/capture-showcase-encounter-source-v1.js';
+import {normalizeNpcCombatInstanceTransportV1} from './npc-combat-instance-transport-v1.js';
+import {projectNpcCombatAuthoringCatalogV1} from './npc-combat-authoring-catalog-v1.js';
 import {NPC_TRAINER_ROSTER_LIMIT_V1} from './map-actor-npc-settings-v1.js';
 
 const $=id=>document.getElementById(id),store=createUserNpcStoreV1();
@@ -20,6 +22,7 @@ let portraitUrl=null,galleryUrls=[];
 let officialCreatures=Object.freeze([]),merchantChoices=Object.freeze([]),rewardChoices=Object.freeze([]);
 let trainerRosterDraft=[],rewardItemsDraft=[],merchantIdDraft='',wildCreatureDraft=null;
 let merchantRequestId=null,rewardRequestId=null,npcCatalogLoading=false;
+let combatTemplates=new Map(),combatCatalogLoading=false;
 const angles={E:0,SE:Math.PI/4,S:Math.PI/2,SW:3*Math.PI/4,
  W:Math.PI,NW:-3*Math.PI/4,N:-Math.PI/2,NE:-Math.PI/4};
 function notify(message,error=false){
@@ -81,6 +84,109 @@ function renderCreatureChoices(){
   trainerRosterDraft.length>=NPC_TRAINER_ROSTER_LIMIT_V1;
  renderWildChoices();renderTrainerRows();
 }
+async function loadNpcCombatCatalog(){
+ if(combatCatalogLoading)return;
+ combatCatalogLoading=true;
+ const status=$('npc-combat-catalog-status');
+ if(status)status.textContent='Lecture des caractéristiques et compétences officielles…';
+ try{
+  const source=await loadCaptureAuthorEncounterBundleV1();
+  combatTemplates=projectNpcCombatAuthoringCatalogV1(source);
+  if(status)status.textContent=combatTemplates.size+
+   ' modèles Combat disponibles. Les statistiques et compétences sont propres à chaque instance.';
+ }catch(error){
+  combatTemplates=new Map();
+  if(status)status.textContent='Catalogue Combat indisponible : '+error.message+
+   ' · les réglages précédents restent conservés.';
+ }finally{combatCatalogLoading=false;renderTrainerRows();}
+}
+function editNpcCombatInstance(index,changes){
+ const slot=trainerRosterDraft[index];
+ if(!slot)return;
+ const old=slot.npcInstance??{schema:'capture-npc-opponent-instance-v1'};
+ const raw={...old,...changes};
+ for(const key of ['displayName','statAllocations','skillIds']){
+  if(raw[key]===undefined||raw[key]===null||raw[key]==='')delete raw[key];
+ }
+ const edited={...slot};
+ if(Object.keys(raw).length===1)delete edited.npcInstance;
+ else edited.npcInstance=normalizeNpcCombatInstanceTransportV1(raw);
+ trainerRosterDraft=trainerRosterDraft.map((row,i)=>i===index?edited:row);
+ markDirty();
+}
+function renderNpcCombatInstanceEditor(index,slot){
+ const details=document.createElement('details');
+ details.className='npc-combat-instance-editor';
+ const title=document.createElement('summary');
+ title.textContent='Statistiques et compétences personnalisées · '+creatureName(slot.creatureId);
+ details.append(title);
+ const template=combatTemplates.get(slot.creatureId);
+ if(!template){
+  const message=document.createElement('p');
+  message.className='hint';
+  message.textContent='Charge le Bestiaire Combat pour modifier cet adversaire. '+
+    'Ses réglages précédents sont conservés.';
+  details.append(message);return details;
+ }
+ const info=document.createElement('p');info.className='hint';
+ info.textContent='Bonus d’instance ajoutés aux valeurs officielles, uniquement pour ce PNJ. '+
+  'Les compétences possibles viennent du modèle Combat et doivent être débloquées au niveau choisi.';
+ details.append(info);
+ const name=document.createElement('label');
+ name.textContent='Nom de ce combattant ';
+ const nameInput=document.createElement('input');nameInput.type='text';
+ nameInput.maxLength=80;
+ nameInput.placeholder=template.name+' (nom officiel)';
+ nameInput.value=slot.npcInstance?.displayName??'';
+ nameInput.addEventListener('change',()=>editNpcCombatInstance(index,{
+  displayName:nameInput.value.trim()||undefined
+ }));
+ name.append(nameInput);details.append(name);
+ const stats=document.createElement('div');stats.className='npc-combat-stats';
+ for(const stat of template.stats){
+  const label=document.createElement('label');label.textContent=stat.label+' · base '+stat.base+' · bonus ';
+  const input=document.createElement('input');input.type='number';
+  input.min='0';input.max='100000';input.step='1';
+  input.setAttribute('aria-label','Bonus '+stat.label+' pour '+template.name);
+  input.value=String(slot.npcInstance?.statAllocations?.[stat.id]??0);
+  input.addEventListener('change',()=>{
+   const previous=trainerRosterDraft[index]?.npcInstance?.statAllocations??{};
+   const bonus={...previous};
+   if(!Number.isSafeInteger(Number(input.value))||Number(input.value)<0||
+      Number(input.value)>100000){notify('Bonus invalide : '+stat.label,true);return;}
+   if(Number(input.value)===0)delete bonus[stat.id];else bonus[stat.id]=Number(input.value);
+   try{editNpcCombatInstance(index,{statAllocations:Object.keys(bonus).length?bonus:undefined});}
+   catch(error){notify(error.message,true);}
+  });
+  label.append(input);stats.append(label);
+ }
+ details.append(stats);
+ const skills=document.createElement('div');skills.className='npc-combat-skills';
+ const head=document.createElement('p');head.textContent='Compétences autorisées (au moins une) :';
+ skills.append(head);
+ const selected=new Set(slot.npcInstance?.skillIds??template.skills.map(s=>s.id));
+ for(const ability of template.skills){
+  const label=document.createElement('label');label.className='npc-combat-skill';
+  const check=document.createElement('input');check.type='checkbox';
+  check.value=ability.id;check.checked=selected.has(ability.id);
+  check.addEventListener('change',()=>{
+   const ids=[...skills.querySelectorAll('input:checked')].map(el=>el.value);
+   if(!ids.length){check.checked=true;notify('Conserve au moins une capacité en combat',true);return;}
+   const all=template.skills.map(s=>s.id);
+   const custom=ids.length===all.length&&ids.every((id,i)=>id===all[i])?undefined:ids;
+   try{editNpcCombatInstance(index,{skillIds:custom});}
+   catch(error){notify(error.message,true);}
+  });
+  label.append(check,document.createTextNode(ability.name));skills.append(label);
+ }
+ if(!template.skills.length){
+  const unavailable=document.createElement('small');
+  unavailable.textContent='Aucune capacité officielle proposée pour ce modèle.';
+  skills.append(unavailable);
+ }
+ details.append(skills);
+ return details;
+}
 function renderTrainerRows(){
  const panel=$('npc-trainer-rows');panel.replaceChildren();
  for(const [index,slot] of trainerRosterDraft.entries()){
@@ -105,7 +211,7 @@ function renderTrainerRows(){
    trainerRosterDraft=trainerRosterDraft.filter((_,i)=>index!==i);
    renderTrainerRows();markDirty();
   });
-  row.append(del);panel.append(row);
+  row.append(del);panel.append(row,renderNpcCombatInstanceEditor(index,slot));
  }
  if(!trainerRosterDraft.length)panel.textContent='Aucune créature : ajoute une espèce officielle.';
  $('npc-creature-add').disabled=!officialCreatures.length||
@@ -505,5 +611,6 @@ window.addEventListener('pagehide',()=>{
 },{once:true});
 run(()=>refresh(new URLSearchParams(window.location.search).get('edit')));
 void loadCreatureCatalog();
+void loadNpcCombatCatalog();
 requestNativeCatalog('merchant');
 requestNativeCatalog('reward');
