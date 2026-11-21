@@ -41,7 +41,10 @@ export function buildExplorationNativeCombatSourceV1({
     const level=member.level;
     if((trainer||level!==undefined)&&(!Number.isSafeInteger(level)||level<1||level>9999))
       throw new RangeError('Encounter opponent.level must be a valid authored WorldArea level');
-    return {speciesId,level};
+    // Original source NPC schema was already validated before handoff.
+    // Forward only the optional instance contract; Combat owns all effects.
+    return {speciesId,level,
+      ...(trainer&&member.npcInstance?{npcInstance:member.npcInstance}:{})};
   });
   const [{speciesId:enemyId,level:authoredEnemyLevel},...opponentReserve]=rivals;
   const participants=new Set([playerId,...rivals.map(member=>member.speciesId)]);
