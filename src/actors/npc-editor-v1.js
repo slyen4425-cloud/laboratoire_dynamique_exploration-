@@ -23,6 +23,7 @@ let portraitUrl=null,galleryUrls=[];
 let officialCreatures=Object.freeze([]),merchantChoices=Object.freeze([]),rewardChoices=Object.freeze([]);
 let trainerRosterDraft=[],rewardItemsDraft=[],merchantIdDraft='',wildCreatureDraft=null;
 let merchantRequestId=null,rewardRequestId=null,npcCatalogLoading=false;
+let inlineMerchantNonce=null;
 let combatTemplates=new Map(),combatCatalogLoading=false;
 const angles={E:0,SE:Math.PI/4,S:Math.PI/2,SW:3*Math.PI/4,
  W:Math.PI,NW:-3*Math.PI/4,N:-Math.PI/2,NE:-Math.PI/4};
@@ -269,6 +270,7 @@ function renderWildChoices(){
  });
 }
 function loadGameplayFields(record){
+ closeInlineMerchantEditor();
  trainerRosterDraft=(record?.npc?.trainerRoster??[]).map(s=>({...s}));
  rewardItemsDraft=(record?.npc?.trainerReward?.items??[]).map(i=>({...i}));
  merchantIdDraft=record?.npc?.merchantId??'';
@@ -296,6 +298,12 @@ async function loadCreatureCatalog(){
   npcCatalogLoading=false;renderCreatureChoices();
  }
 }
+function closeInlineMerchantEditor(){
+ inlineMerchantNonce=null;
+ const holder=$('npc-merchant-inline'),frame=$('npc-merchant-frame');
+ holder.hidden=true;
+ if(frame.getAttribute('src'))frame.src='about:blank';
+}
 function requestNativeCatalog(kind){
  const tag=kind==='merchant'?'npc-merchant-status':'npc-reward-status';
  if(window.parent===window){
@@ -312,8 +320,42 @@ function requestNativeCatalog(kind){
  },window.location.origin);
 }
 window.addEventListener('message',event=>{
- if(event.origin!==window.location.origin||event.source!==window.parent)return;
+ if(event.origin!==window.location.origin)return;
  const data=event.data;
+ // Only the actual same-origin nested Capture-owned editor may report a
+ // committed merchant. Exploration never receives stock or price fields.
+ if(event.source===$('npc-merchant-frame').contentWindow){
+  if(data?.schema!=='gensrpg.capture.v2.npc.merchant.saved.v1'||
+     !inlineMerchantNonce||data.nonce!==inlineMerchantNonce||
+     !selected||data.npcId!==selected.id||
+     typeof data.merchantId!=='string'||
+     !/^[a-z0-9][a-z0-9_:.-]{0,129}$/i.test(data.merchantId))return;
+  // Link ONLY the stable reference after Capture has saved its canonical
+  // merchant. Never create another store, catalog, item or exchange rule.
+  void run(async()=>{
+   const id=data.merchantId,npcId=selected.id;
+   merchantIdDraft=id;
+   if(dirty){
+    markDirty();
+    notify('Boutique enregistrée. Enregistre ton PNJ pour conserver sa liaison et les autres modifications.',true);
+    return;
+   }
+   const existing=await store.get(npcId);
+   if(!existing||existing.role!=='merchant')
+    throw new Error('PNJ marchand introuvable : aucune liaison écrite.');
+   const updated={...existing,npc:{...existing.npc,merchantId:id},
+    updatedAt:new Date().toISOString()};
+   await store.put(updated);
+   const check=await store.get(npcId);
+   if(check?.npc?.merchantId!==id)
+    throw new Error('Boutique enregistrée, mais liaison PNJ non vérifiable.');
+   await refresh(npcId);
+   requestNativeCatalog('merchant');
+   notify('Boutique enregistrée et liée au PNJ '+updated.name+'.');
+  });
+  return;
+ }
+ if(event.source!==window.parent)return;
  if(data?.schema==='gensrpg.capture.v2.npc.merchant.catalog.response.v1'&&
    data.requestId===merchantRequestId){
   merchantRequestId=null;
@@ -351,26 +393,32 @@ $('npc-creature-add').addEventListener('click',()=>{
  trainerRosterDraft.push({creatureId,level});
  renderTrainerRows();markDirty();
 });
-// Only the parent Capture Shell can open its native merchant editor.
- // Exploration never edits/duplicates AdventureRules or the merchant stock.
+// Existing merchant role + one embedded Capture-owned shop editor.
+// The iframe is a VIEW of AdventureRules; this PNJ stores only merchantId.
 $('npc-merchant-configure').addEventListener('click',()=>{
- if(window.parent===window){
-  notify('Ouvre cet éditeur depuis Monster InvoC pour configurer la boutique.',true);
-  return;
- }
- if(dirty){
-  notify('Enregistre d’abord ton PNJ avant de modifier sa boutique.',true);
-  return;
- }
- // Transport only references, not the shop or the NPC draft.
- // The Capture editor can now preselect this PNJ's existing merchant and
- // return to this same saved definition after saving its canonical rules.
- window.parent.postMessage({
-  schema:'gensrpg.exploration.npc.merchant.configure.v1',
-  npcId:selected?.id??null,
-  merchantId:merchantIdDraft||null
- },window.location.origin);
+ if(window.parent===window)
+  return notify('Ouvre cet éditeur depuis Monster InvoC pour accéder au catalogue officiel.',true);
+ if(!selected||dirty)
+  return notify('Enregistre d’abord la fiche de ce PNJ. Tu pourras ensuite lui attribuer des objets à vendre ici.',true);
+ const url=new URL('../../assets/gensrpg/capture-v2/adventure.html',window.location.href);
+ if(url.origin!==window.location.origin)
+  return notify('Éditeur de boutique hors origine refusé.',true);
+ const universe=new URLSearchParams(window.location.search).get('universe');
+ if(universe)url.searchParams.set('universe',universe);
+ inlineMerchantNonce=crypto.randomUUID();
+ url.searchParams.set('editor','merchant');
+ url.searchParams.set('embed','npc');
+ url.searchParams.set('npcBridgeNonce',inlineMerchantNonce);
+ url.searchParams.set('npcId',selected.id);
+ url.searchParams.set('npcName',$('npc-name').value.trim().slice(0,80));
+ if(merchantIdDraft)url.searchParams.set('merchantId',merchantIdDraft);
+ $('npc-merchant-frame').src=url.href;
+ $('npc-merchant-inline').hidden=false;
+ $('npc-merchant-inline-status').textContent=
+  'Choisis les objets proposés et les tarifs. Enregistrer la boutique lie automatiquement ce PNJ.';
+ $('npc-merchant-config').open=true;
 });
+$('npc-merchant-close').addEventListener('click',closeInlineMerchantEditor);
 $('npc-merchant-choice').addEventListener('change',()=>{
  merchantIdDraft=$('npc-merchant-choice').value;markDirty();
 });
