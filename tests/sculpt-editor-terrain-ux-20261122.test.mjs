@@ -48,7 +48,9 @@ test('mobile editor groups controls without duplicating IDs or exposing manual f
                    'scene-export','json','sculpt-canvas']){
     assert.equal(ids.filter(value=>value===id).length,1,id);
   }
-  assert.ok(html.indexOf('id="sculpt-settings"')<html.indexOf('id="sculpt-canvas"'));
+  assert.ok(html.indexOf('id="sculpt-canvas"')<html.indexOf('id="sculpt-settings"'));
+  assert.match(html,/id="sculpt-settings-toggle"/);
+  assert.match(script,/sculptSettingsToggle\.addEventListener\('click'/);
   assert.match(html,/<optgroup label="🌿 Herbe et forêt">/);
   assert.match(html,/<details id="sculpt-family-create-details"/);
   assert.match(html,/body\.sculpt-immersive #sculpt-settings/);
