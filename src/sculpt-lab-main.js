@@ -133,6 +133,23 @@ import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playa
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);
+// One visible toolbar entry opens the EXISTING atelier accordion; no duplicate
+// controls or secondary settings state is stored outside the HTML details.
+const sculptSettingsPanel=$('sculpt-settings');
+const sculptSettingsToggle=$('sculpt-settings-toggle');
+if(sculptSettingsPanel&&sculptSettingsToggle){
+  const syncSculptSettingsToggle=()=>{
+    const open=sculptSettingsPanel.open;
+    sculptSettingsToggle.setAttribute('aria-expanded',String(open));
+    sculptSettingsToggle.textContent=open?'✕ Réglages':'⚙ Réglages';
+  };
+  sculptSettingsToggle.addEventListener('click',()=>{
+    sculptSettingsPanel.open=!sculptSettingsPanel.open;
+    syncSculptSettingsToggle();
+  });
+  sculptSettingsPanel.addEventListener('toggle',syncSculptSettingsToggle);
+  syncSculptSettingsToggle();
+}
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
 const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
  storage:window.localStorage,makeId:()=>crypto.randomUUID()
