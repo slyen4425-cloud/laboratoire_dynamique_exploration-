@@ -62,7 +62,7 @@ test('28 committed transparent 512-square WebPs match updated SHA-256 and VP8L/V
       const dimensions=b.readUInt32LE(21);
       width=1+(dimensions&0x3fff);
       height=1+((dimensions>>>14)&0x3fff);
-      assert.equal(item.runtimeProfile,'mobile-webp-512x512-lossless-v74',
+      assert.equal(item.runtimeProfile,['wood_rustic','castle'].includes(item.family)?'mobile-webp-512x512-lossless-v75':'mobile-webp-512x512-lossless-v74',
         'cleaned lossless-source manifest profile must match');
     }
     assert.deepEqual([width,height],[512,512],item.assetId+' dimensions');

@@ -1279,6 +1279,12 @@ const WORLD_OBJECT_ASSETS = Object.freeze({
     path: './assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_side_01.webp',
     render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
   }),
+  'object.stairs.earth_log_path_2p5d.side_alt.01': Object.freeze({
+    id: 'object.stairs.earth_log_path_2p5d.side_alt.01',
+    kind: 'stairs-visual',
+    path: './assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_side_alt_01.webp',
+    render: Object.freeze({ rotationOffsetDeg: 0, widthScale: 1, heightScale: 1 })
+  }),
   'object.stairs.stone_cobble_town_2p5d.front.01': Object.freeze({
     id: 'object.stairs.stone_cobble_town_2p5d.front.01',
     kind: 'stairs-visual',

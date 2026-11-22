@@ -1658,7 +1658,8 @@ const DEFINITIONS = frozen([
       variants: [
         { id: 'front', label: 'Face', assetId: 'object.stairs.earth_log_path_2p5d.front.01' },
         { id: 'oblique', label: 'Trois-quarts', assetId: 'object.stairs.earth_log_path_2p5d.oblique.01' },
-        { id: 'side', label: 'Côté', assetId: 'object.stairs.earth_log_path_2p5d.side.01' }
+        { id: 'side', label: 'Côté · Profil B', assetId: 'object.stairs.earth_log_path_2p5d.side.01' },
+        { id: 'side_alt', label: 'Côté · Profil A', assetId: 'object.stairs.earth_log_path_2p5d.side_alt.01' }
       ]
     },
     baseSize: { width: 210, height: 190 }

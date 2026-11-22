@@ -75,11 +75,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "horizontal",
-      "sha256": "f734bae209ff24b3ee69b6b1e5686a5ac77f050a67d0cb4c8598ff1ed2d55c45",
-      "bytes": 109256,
-      "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
-      "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "1f5ec92eca3321b24a00b51959472fb3fa75cffae6f88777fe87a1987ebf163d",
+      "bytes": 101866,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "d8fde5128c7ccbbf9dfee937bbbc99a290502adbba2ba9be467610e9796ab3b4",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.wood_rustic_2p5d.vertical.01",
@@ -88,11 +88,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "vertical",
-      "sha256": "9c65f94d6f1fd4395e958382a02acd7cfd4af5d08b4e54b4d9b44727e1da3eda",
-      "bytes": 125228,
-      "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
-      "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "21ff04b3bbac859ad833d4255e73cc843319c975e532e39cbea467017228325d",
+      "bytes": 117150,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "573b41b494bde5936f203ec0a39528d5b63df51a86cec3520953471a02fb4d13",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.wood_rustic_2p5d.diagonal_left.01",
@@ -101,11 +101,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "diagonal_left",
-      "sha256": "5de26e895a427150e35a5c4ca732b07155b17919fb614197b5d7095cf5d5948f",
-      "bytes": 132694,
-      "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
-      "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "c05e27fc5c82f9f4278888809d04456073b82068b9ce65862fe69f79382cb215",
+      "bytes": 121918,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "bbdf541ad632a2be4aaff59457ff1c55fec7e3dad3ae183583bd78c4e1aac2fe",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.wood_rustic_2p5d.diagonal_right.01",
@@ -114,11 +114,11 @@
       "family": "wood_rustic",
       "variant": "wood_rustic",
       "view": "diagonal_right",
-      "sha256": "2702f62a36b0b54071f6cb3794674604d81cc4b972dbd99d8226c348e59f2421",
-      "bytes": 141462,
-      "sourceFile": "planche_d_assets_ponts_en_bois_rustiques_isométr.png",
-      "sourceSha256": "30ce07661aa9c7532147b4dd1061ec8a09234af16d9c55969f28fe9f82c6e254",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "b25bf3a8abd15e766c268f59cf431775f460f5fb1a810fe07b4a081f03dc5789",
+      "bytes": 130798,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "c0fde41a7cfbbb4c561c1c269d37d4617cebeb6b395715f1fa9e57ae9d1e7680",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.stone_arch_2p5d.horizontal.01",
@@ -283,11 +283,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "horizontal",
-      "sha256": "2ed800d1257b9902d44c8ff3f3efa6c206c5174891b30f9049e30be6990d7161",
-      "bytes": 95306,
-      "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
-      "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "411797065ac94a5b0d1d484476d7d67de38d73f09b55175219af4536e4b6cd51",
+      "bytes": 91946,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "9aeefcf321723f1901d5fb78bc8998ac43b0af08f3725b0a40dbf2fdc1d07c43",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.castle_2p5d.vertical.01",
@@ -296,11 +296,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "vertical",
-      "sha256": "02a1ebadac797290f36839daab1bbf1d9d57f4ad1d1ae2603426a525433aba69",
-      "bytes": 126582,
-      "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
-      "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "b4d6d04032fc4071dba1594ba994ae6bed2df006a625b1dead0921b64366edd0",
+      "bytes": 123276,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "6c1dc1baf788d72ef2e6548584b877a0089fb8d0626f3d90c9d0800225bb5fbe",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.castle_2p5d.diagonal_left.01",
@@ -309,11 +309,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "diagonal_left",
-      "sha256": "9be588286af68d1e2b650334775fa115b39a7f2d25349dee9f125d4d43d42921",
-      "bytes": 126240,
-      "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
-      "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "1d80855c5f4306567828083c567473d878bf22f7977103cc320b3ad653e263d6",
+      "bytes": 123226,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "2bafd739deda526aaab2c81e925730005066cf38705f2961486fe03300f46d41",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.castle_2p5d.diagonal_right.01",
@@ -322,11 +322,11 @@
       "family": "castle",
       "variant": "castle",
       "view": "diagonal_right",
-      "sha256": "8f9df828e4cb29bf5161350c37e899483ee272c38bc0076e732cbfbf08f082d0",
-      "bytes": 129336,
-      "sourceFile": "planche_de_pont_médiéval_en_pierre.png",
-      "sourceSha256": "94b7673e4a1ddb9c6802712f32c6507c5787d8f4439012c6c4cd9e74fd87e100",
-      "runtimeProfile": "mobile-webp-512x512-lossless-v74"
+      "sha256": "fa875c9ca876a1860d73f185f28301fd928c69767411688502f508ef06b0aef2",
+      "bytes": 120408,
+      "sourceFile": "User-cleaned 2026-11-22",
+      "sourceSha256": "190626d50ca6e84af873610016ca9cdb324239d557dbcd88ab5c27437d7ac65e",
+      "runtimeProfile": "mobile-webp-512x512-lossless-v75"
     },
     {
       "assetId": "object.bridge.cobblestone_2p5d.horizontal.01",
@@ -435,9 +435,9 @@
   ],
   "additionalRuntimeProfile": "mobile-webp-512x512-q84 for 2.5D multidirectional variants",
   "assetCleanup": {
-    "revision": "v74",
+    "revision": "v75",
     "format": "WebP lossless RGBA",
-    "scope": "28 native 2.5D bridges only",
+    "scope": "8 wood_rustic and castle assets replaced in place",
     "legacyFilesUnchanged": 4
   }
 }

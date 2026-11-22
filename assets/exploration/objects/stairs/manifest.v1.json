@@ -269,8 +269,10 @@
       "family": "earth_log_path",
       "variant": "front",
       "view": "front-2.5d",
-      "sha256": "b5b367d6a51d14ba3c319f2c9d05bf0352ce8bec04d52c1412cb38ed4dcd9f26",
-      "bytes": 29318
+      "sha256": "e7cfec74ad20880ec897f96ea322ce1ccd50c478aa5d7c7bebc3b0ecd7b72139",
+      "bytes": 33494,
+      "sourceFile": "User-cleaned stairs_earth_log_path_2p5d_front_01.webp",
+      "runtimeProfile": "webp-rgba-384x384-20261122"
     },
     {
       "assetId": "object.stairs.earth_log_path_2p5d.oblique.01",
@@ -279,8 +281,10 @@
       "family": "earth_log_path",
       "variant": "oblique",
       "view": "three-quarter-2.5d",
-      "sha256": "cd59402c9302afa6c18982cdaa4465b2f8927c48635c8da886c60fe716898b21",
-      "bytes": 28788
+      "sha256": "4b531695a6851d85b4ece739be93d4c7da019b4c96c8b7668ecc06c07a114db9",
+      "bytes": 33268,
+      "sourceFile": "User-cleaned stairs_earth_log_path_2p5d_oblique_01.webp",
+      "runtimeProfile": "webp-rgba-384x384-20261122"
     },
     {
       "assetId": "object.stairs.earth_log_path_2p5d.side.01",
@@ -289,8 +293,10 @@
       "family": "earth_log_path",
       "variant": "side",
       "view": "side-2.5d",
-      "sha256": "65c473cc5e6082fc6664811b6fb19dc0554215c39a161c95d7ea5aa9630e4af4",
-      "bytes": 21374
+      "sha256": "36c764a7c8732e0918188e4565ad66aa9eb196ab8fd869698c8d10204fb970b4",
+      "bytes": 146994,
+      "sourceFile": "escalier_terre_bois_profil_B_preview_512.webp",
+      "runtimeProfile": "webp-512x512-lossless-20261122"
     },
     {
       "assetId": "object.stairs.stone_cobble_town_2p5d.front.01",
@@ -351,6 +357,18 @@
       "view": "side-2.5d",
       "sha256": "6c3b86170985340dad3001494234a2f5b3c0bee408d69e29c91876cc97ef7af5",
       "bytes": 17822
+    },
+    {
+      "assetId": "object.stairs.earth_log_path_2p5d.side_alt.01",
+      "path": "assets/exploration/objects/stairs/stairs_earth_log_path_2p5d_side_alt_01.webp",
+      "role": "stairs-visual",
+      "family": "earth_log_path",
+      "variant": "side_alt",
+      "view": "side-2.5d",
+      "sha256": "f35d70783c4af5300fe47b371c3ff01c4dbb9f6abe2e987f1abd48a92b8a6d64",
+      "bytes": 121158,
+      "sourceFile": "escalier_terre_bois_profil_A_preview_512.webp",
+      "runtimeProfile": "webp-512x512-lossless-20261122"
     }
   ],
   "generatedAdditions2p5d": {

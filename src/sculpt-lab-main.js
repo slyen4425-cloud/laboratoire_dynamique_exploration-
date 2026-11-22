@@ -295,7 +295,7 @@ function objectImage(assetId){
   };
   picture.onerror=()=>status('Impossible de charger le visuel '+assetId);
   // Image-cache revision ONLY; the asset resolver and IDs remain unchanged.
-  picture.src=sourceCleaned2p5d?resolved.path+'?source-clean-v74':resolved.path;
+  picture.src=sourceCleaned2p5d?resolved.path+'?source-clean-v75':resolved.path;
   objectImages.set(assetId,picture);
   return picture;
 }

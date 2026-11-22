@@ -26,7 +26,7 @@ test('R15: all ten native stair designs appear as placeable Sculpt WorldObjects'
     assert.equal(definition.kind,'stairs');
     assert.equal(definition.library.folderId,'stairs/general');
     const variants=sculptPreviewVariants(id);
-    assert.deepEqual(variants.map(v=>v.id),['front','oblique','side']);
+    assert.deepEqual(variants.map(v=>v.id),family==='earth_log_path'?['front','oblique','side','side_alt']:['front','oblique','side']);
     for(const view of variants)
       assert.equal(resolveWorldObjectAsset(view.assetId)?.kind,'stairs-visual');
     assert.equal(sculptObjectCanOccupyCell(terrain,id,3,3),true);
