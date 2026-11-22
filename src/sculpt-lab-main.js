@@ -126,7 +126,7 @@ import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
-import {createWorldBuilderDraft,connectWorldAreas,ensureWorldPortalIndependentArrivalV1,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,addTerrainFamilyDefinition,updateTerrainFamilyElementChance,connectWorldAreas,ensureWorldPortalIndependentArrivalV1,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {worldInteriorFloors,worldInteriorFloorPortals,worldInteriorHouseExit,
   addWorldInteriorFloor,changeWorldInteriorConnector,changeWorldInteriorDoor}
   from './builder/sculpt-world-interior-floors-v1.js?rev=restore-world-interior-tools-20261115';
@@ -134,6 +134,23 @@ import {makePlayableZoneRoute,playableExteriorArea} from './builder/sculpt-playa
 import {encounterConfigNeedsExplicitInitialization} from './builder/preset-encounter-defaults.js';
 
 const $=id=>document.getElementById(id);
+// One visible toolbar entry opens the EXISTING atelier accordion; no duplicate
+// controls or secondary settings state is stored outside the HTML details.
+const sculptSettingsPanel=$('sculpt-settings');
+const sculptSettingsToggle=$('sculpt-settings-toggle');
+if(sculptSettingsPanel&&sculptSettingsToggle){
+  const syncSculptSettingsToggle=()=>{
+    const open=sculptSettingsPanel.open;
+    sculptSettingsToggle.setAttribute('aria-expanded',String(open));
+    sculptSettingsToggle.textContent=open?'✕ Réglages':'⚙ Réglages';
+  };
+  sculptSettingsToggle.addEventListener('click',()=>{
+    sculptSettingsPanel.open=!sculptSettingsPanel.open;
+    syncSculptSettingsToggle();
+  });
+  sculptSettingsPanel.addEventListener('toggle',syncSculptSettingsToggle);
+  syncSculptSettingsToggle();
+}
 const sculptUniverseId=new URLSearchParams(window.location.search).get('universe');
 const universeWorldProjects=sculptUniverseId===null?null:createExplorationUniverseWorldProjectsV1({
  storage:window.localStorage,makeId:()=>crypto.randomUUID()
@@ -255,11 +272,28 @@ const surfaceBaseFamilySelect=$('surface-base-family');
 const surfacePaintFamilySelect=$('surface-family');
 if(Boolean(surfaceBaseFamilySelect)!==Boolean(surfacePaintFamilySelect))
   throw Error('Incomplete terrain family palette in sculpt editor HTML');
+// In World Builder, the canonical WorldDocument defines custom families.
+// Standalone Sculpt / V80 continue to use the historical defaults.
+const sculptTerrainFamilies=()=>sculptWorldDraft?.terrainFamilies?.length
+  ?sculptWorldDraft.terrainFamilies:terrainFamilyRegistry.list();
+let sculptPaintFamilyManuallyChosen=false;
+function refreshSculptTerrainFamilySelectors(){
+  if(!surfaceBaseFamilySelect)return;
+  const families=sculptTerrainFamilies();
+  const ids=new Set(families.map(f=>f.id));
+  const preferredPaint=surfacePaintFamilySelect.value;
+  for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect]){
+    const desired=selector===surfaceBaseFamilySelect
+      ?surface.baseTerrainFamilyId:preferredPaint;
+    selector.replaceChildren(...families.map(f=>new Option(f.label,f.id)));
+    selector.value=ids.has(desired)?desired:
+      (ids.has(surface.baseTerrainFamilyId)?surface.baseTerrainFamilyId:families[0]?.id??'');
+  }
+}
 if(surfaceBaseFamilySelect){
-  for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect])
-    selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
-  surfaceBaseFamilySelect.value=surface.baseTerrainFamilyId;
+  refreshSculptTerrainFamilySelectors();
   surfacePaintFamilySelect.value=sculptEncounterFamilyForMaterial($('surface-material').value)??surface.baseTerrainFamilyId;
+  surfacePaintFamilySelect.addEventListener('change',()=>{sculptPaintFamilyManuallyChosen=true;});
 }
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
@@ -425,15 +459,30 @@ function refreshSculptEncounterAuthoringStatus(){
 }
 function refreshSculptEncounterEditor(){
   if(!sculptEncounterEditor)return;
-  const families=terrainFamilyRegistry.list();
+  const families=sculptTerrainFamilies();
   const ids=new Set(families.map(x=>x.id));
   if(!ids.has(selectedSculptEncounterFamilyId))
     selectedSculptEncounterFamilyId=ids.has(surface.baseTerrainFamilyId)
       ?surface.baseTerrainFamilyId:families[0]?.id??'';
   const select=$('sculpt-encounter-family');
-  if(select.options.length!==families.length)
+  // Labels can change in the official World Builder; do not rely only on length.
+  if(select.options.length!==families.length||
+      [...select.options].some((option,i)=>option.value!==families[i].id||option.text!==families[i].label))
     select.replaceChildren(...families.map(x=>new Option(x.label,x.id)));
   select.value=selectedSculptEncounterFamilyId;
+  const familyTemplate=$('sculpt-family-template');
+  if(familyTemplate){
+    const before=familyTemplate.value||'forest';
+    familyTemplate.replaceChildren(...families.map(x=>new Option(x.label,x.id)));
+    familyTemplate.value=ids.has(before)?before:(ids.has('forest')?'forest':families[0]?.id??'');
+    const createButton=$('sculpt-family-create');
+    if(createButton)createButton.disabled=!sculptWorldDraft||!sculptWorldAreaMounted;
+    $('sculpt-family-create-status').textContent=!sculptWorldDraft
+      ?'Crée ou ouvre une carte dans World Builder pour enregistrer une nouvelle famille.'
+      :!sculptWorldAreaMounted
+        ?'Aucune carte 2,5D chargée : création indisponible.'
+        :'Les familles appartiennent au monde actuel, pas à une image.';
+  }
   const enabled=sculptEncounterAreaEnabled();
   $('sculpt-encounter-area-enabled').checked=enabled;
   $('sculpt-encounter-area-status').textContent=
@@ -475,7 +524,7 @@ function refreshSculptEncounterEditor(){
         {encounterConfig:sculptEncounterConfig},
         selectedSculptEncounterFamilyId,element.id,input.checked
       );
-      sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig);
+      sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig,sculptTerrainFamilies().map(f=>f.id));
       refreshSculptEncounterAuthoringStatus();
     });
     line.append(input,name);container.append(line);
@@ -488,6 +537,7 @@ function refreshSculptEncounterEditor(){
 }
 function setSculptEncounterEditorOpen(on){
   if(!sculptEncounterEditor)return;
+  if(on&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(on&&sculptPendingEncounter)return;
   if(on){
     if(navigationTesting)setNavigationTesting(false);
@@ -501,6 +551,56 @@ function setSculptEncounterEditorOpen(on){
   if(on)refreshSculptEncounterEditor();
 }
 if(sculptEncounterEditor){
+  $('sculpt-family-create')?.addEventListener('click',()=>{
+    if(!sculptWorldDraft||!sculptWorldAreaMounted){
+      status('Ouvre d’abord une carte 2,5D dans le World Builder.');return;
+    }
+    const name=$('sculpt-family-name').value.trim();
+    const feedback=$('sculpt-family-create-status');
+    if(!name){feedback.textContent='Indique un nom de famille.';return;}
+    if(sculptTerrainFamilies().some(f=>f.label.toLocaleLowerCase()===name.toLocaleLowerCase())){
+      feedback.textContent='Cette famille existe déjà. Sélectionne-la dans la liste.';return;
+    }
+    if(sculptTerrainFamilies().length>=64){
+      feedback.textContent='Limite de 64 familles dans ce monde.';return;
+    }
+    const oldIds=new Set(sculptTerrainFamilies().map(f=>f.id));
+    const sourceId=$('sculpt-family-template').value;
+    const source=sculptEncounterConfig.families.find(f=>f.terrainFamilyId===sourceId);
+    const chance=Math.max(0,Math.min(100,Number($('sculpt-family-chance').value)||0));
+    // The encounter pane may contain unsaved edits to existing families.
+    // Apply the Builder command to the current canonical encounter draft,
+    // never overwrite those edits with sculptWorldDraft's older snapshot.
+    let next=addTerrainFamilyDefinition({
+      ...sculptWorldDraft,encounterConfig:sculptEncounterConfig
+    },{label:name,paintKind:$('sculpt-family-kind').value});
+    const created=next.terrainFamilies.find(f=>!oldIds.has(f.id));
+    if(!created){feedback.textContent='Création impossible, aucune famille ajoutée.';return;}
+    // Reuse the canonical Builder commands: no parallel encounter table.
+    for(const element of source?.elementChances??[])
+      next=updateTerrainFamilyElementChance(next,created.id,element.elementId,element.chancePercent);
+    // Preserve the entered percentage. Without elements, the existing
+    // validator asks for a selection instead of silently setting it to 0.
+    next=updateTerrainFamilyEncounterProfile(next,created.id,{
+      encounterChancePercent:chance
+    });
+    sculptWorldDraft=next;
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(
+      next.encounterConfig,next.terrainFamilies.map(f=>f.id));
+    selectedSculptEncounterFamilyId=created.id;
+    refreshSculptTerrainFamilySelectors();
+    if(surfacePaintFamilySelect){
+      surfacePaintFamilySelect.value=created.id;
+      sculptPaintFamilyManuallyChosen=true;
+    }
+    refreshSculptEncounterEditor();
+    $('sculpt-family-name').value='';
+    feedback.textContent='Famille « '+created.label+' » ajoutée.'+
+      (source?.elementChances?.some(e=>e.chancePercent>0)
+        ?' Éléments du modèle repris.':' Choisis au moins un élément pour activer les rencontres.')+
+      ' Elle est disponible dans le monde actuel.';
+    status('Famille '+created.label+' ajoutée au World Builder · configure les rencontres puis enregistre le monde.');
+  });
   $('mode-encounters').addEventListener('click',
     ()=>setSculptEncounterEditorOpen(sculptEncounterEditor.hidden));
   $('sculpt-encounter-close').addEventListener('click',
@@ -518,7 +618,7 @@ if(sculptEncounterEditor){
       {encounterConfig:sculptEncounterConfig},selectedSculptEncounterFamilyId,
       {encounterChancePercent:chance}
     );
-    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig);
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig,sculptTerrainFamilies().map(f=>f.id));
     $('sculpt-encounter-chance-value').textContent=Math.round(chance)+' %';
     refreshSculptEncounterAuthoringStatus();
   });
@@ -960,7 +1060,7 @@ let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
 let sphereTexturesLoaded=0;
-const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
+const sculptGroundMaterials=Object.freeze(['grass.forest','grass.forest.alt','ground.forest_floor',
   'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
@@ -975,7 +1075,7 @@ const worldInteriorFloorBase=$('world-interior-floor-base');
 if(worldInteriorFloorBase)worldInteriorFloorBase.replaceChildren(...[...$('interior-floor-base').options]
   .map(option=>option.cloneNode(true)));
 const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
-  $('interior-floor-base').value:$('material').value;
+  $('interior-floor-base').value:surface.baseMaterialId;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
@@ -3709,6 +3809,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
@@ -3736,11 +3837,14 @@ surfaceBaseFamilySelect?.addEventListener('change',()=>{
     baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
 });
 $('surface-material').addEventListener('change',()=>{
-  // Authoring convenience, not a second runtime encounter rule: the selected
-  // texture picks the semantic family that is written into the one WorldSurface.
-  // The author can still override "Famille de terrain peinte" deliberately.
+  // Suggest a family only before the author deliberately selects one.
+  // Example: painting another grass texture must NOT erase "Haute herbe".
   const family=sculptEncounterFamilyForMaterial($('surface-material').value);
-  if(family&&surfacePaintFamilySelect)surfacePaintFamilySelect.value=family;
+  if(!sculptPaintFamilyManuallyChosen&&family&&surfacePaintFamilySelect)
+    surfacePaintFamilySelect.value=family;
+});
+$('surface-configure-encounters')?.addEventListener('click',()=>{
+  setSculptEncounterEditorOpen(true);
 });
 $('surface-align-families')?.addEventListener('click',()=>{
   // Legacy authored maps are never rewritten at import. The user chooses an
@@ -4475,6 +4579,7 @@ $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatu
 requestNpcMerchantCatalog();
 requestNpcRewardCatalog();
 function setObjectEditing(active){
+  if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
@@ -4853,7 +4958,12 @@ $('camera-view').addEventListener('change',()=>{
     ?'Vue trois-quarts pilote : caméra inclinée ; les hauteurs, collisions et coups de pinceau restent identiques.'
     :'Vue précédente restaurée : aucun changement des données de terrain.');
 });
-$('material').addEventListener('change',setTheme);
+$('material').addEventListener('change',()=>{
+  const next=$('material').value;
+  if(!themes.includes(next))return;
+  surfaceCommit(normalizeSculptSurface({...surface,baseMaterialId:next}));
+  setTheme();
+});
 $('water-material').addEventListener('change',setWaterMaterial);
 $('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
@@ -4897,8 +5007,10 @@ function changeTarget(level){
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':
       'Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
 $('target').addEventListener('input',()=>changeTarget($('target').value));
-$('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
-$('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
+// Frozen V80 retains its historical buttons; the main editor uses the
+// quickbar +/- pair and this single exact-value slider instead.
+$('level-down')?.addEventListener('click',()=>changeTarget(Number($('target').value)-1));
+$('level-up')?.addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 
 // Point projection/inverse is already owned by Camera: snap only the
 // authoring input. The snapped endpoints are stored by the ONE WorldArea model.
@@ -5221,6 +5333,9 @@ function mountSculptArea(snapshot){
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   updateHistoryButtons();updateObjectCount();updateActorCount();
   updateSurfaceCount();loadSurfacePaintAssets();syncObjectSelectedControls();
+  if(!activeInteriorId&&!sculptWorldCurrentInterior()&&
+      [...$('material').options].some(option=>option.value===surface.baseMaterialId))
+    $('material').value=surface.baseMaterialId;
   if(activeInteriorId||sculptWorldCurrentInterior()){
     const base=interiorFloorMaterials.includes(surface.baseMaterialId)?
       surface.baseMaterialId:'floor.wood.house';
@@ -6128,7 +6243,13 @@ function drawSculptWorldPortalMarkers(){
 function commitCurrentSculptWorldArea(){
   if(!sculptWorldDraft||!sculptWorldAreaId)return null;
   if(!sculptWorldAreaMounted)throw Error('Zone 2,5D non chargée : aucune scène démo ne doit remplacer la WorldArea');
-  const updated=saveSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,captureSculptArea());
+  // Scene-saving validates the WorldDocument before it returns. Always feed
+  // the latest family encounter edits into that FIRST validation, otherwise a
+  // just-created family can still appear with stale, empty elements and block
+  // the save even though the editor shows the author-selected elements.
+  const updated=saveSculptWorldArea({
+    ...sculptWorldDraft,encounterConfig:sculptEncounterConfig
+  },sculptWorldAreaId,captureSculptArea());
   const areas=updated.areas.map(a=>a.id===sculptWorldAreaId
     ?{...a,encounters:sculptExteriorEncounters}:a);
   // One EncounterConfig on the whole document, same Builder commands.
@@ -6158,6 +6279,8 @@ function mountWorldSculptArea(areaId,validatedScene=null){
   sculptWorldAreaMounted=true;
   sculptExteriorEncounters=area.encounters;
   sculptEncounterConfig=sculptWorldDraft.encounterConfig;
+  sculptPaintFamilyManuallyChosen=false;
+  refreshSculptTerrainFamilySelectors();
   sculptEncounterAreaCache=null;
   if(area.kind==='exterior'){
     if([...$('material').options].some(o=>o.value===area.surface.baseMaterialId))

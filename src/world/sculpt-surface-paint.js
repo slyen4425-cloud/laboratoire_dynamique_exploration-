@@ -5,6 +5,7 @@ import {normalizeWorldSurface} from './surface-model.js';
 export const SCULPT_SURFACE_MATERIALS=Object.freeze([
   Object.freeze({id:'road.dirt',defaultTerrainFamilyId:'road',kind:'route',label:'Route de terre',assetKind:'path'}),
   Object.freeze({id:'grass.forest',defaultTerrainFamilyId:'forest',kind:'zone',label:'Herbe',assetKind:'surface'}),
+  Object.freeze({id:'grass.forest.alt',defaultTerrainFamilyId:'forest',kind:'zone',label:'Herbe variante 2',assetKind:'surface'}),
   Object.freeze({id:'ground.forest_floor',defaultTerrainFamilyId:'forest',kind:'zone',label:'Terre forestière',assetKind:'surface'}),
   Object.freeze({id:'ground.sand',defaultTerrainFamilyId:'sand',kind:'zone',label:'Sable',assetKind:'surface'}),
   Object.freeze({id:'ground.snow',defaultTerrainFamilyId:'snow',kind:'zone',label:'Neige',assetKind:'surface'}),

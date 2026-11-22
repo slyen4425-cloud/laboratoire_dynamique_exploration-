@@ -910,6 +910,85 @@ body.sculpt-play-unavailable #play-start-error{
 @media(prefers-reduced-motion:reduce){
   .combat-overlay__loading--art .combat-overlay__spinner{animation:none}
 }
+
+/* Terrain palette: progressive disclosure, legible landscape touch targets. */
+.surface-settings-group{border:1px solid #4b777c;border-radius:9px;background:#16333e;min-width:0}
+.surface-settings-group>summary{cursor:pointer;padding:9px 10px;font-weight:750;min-height:38px;touch-action:manipulation}
+.surface-settings-body{display:grid;gap:8px;padding:9px;min-width:0}
+.surface-settings-body label{display:grid;gap:5px}
+.surface-settings-body input,.surface-settings-body select{max-width:100%;min-width:0;box-sizing:border-box}
+.surface-settings-body button{min-height:39px}
+#surface-palette{width:min(300px,calc(100vw - 20px));max-height:min(76dvh,90%);gap:8px;overscroll-behavior:contain}
+#surface-palette button{min-height:40px}
+#surface-palette [hidden]{display:none!important}
+#sculpt-encounter-editor{width:min(345px,calc(100vw - 20px))}
+#sculpt-family-create-details{min-width:0}
+#sculpt-family-create-status{font-size:.75rem}
+#sculpt-settings .sculpt-export-tools{display:flex;flex-wrap:wrap;gap:7px}
+#sculpt-settings .sculpt-export-tools button{flex:1 1 170px}
+#sculpt-settings #json:not([hidden]){width:100%;min-height:130px;box-sizing:border-box}
+body.sculpt-immersive #sculpt-settings{
+ display:block!important;position:absolute;z-index:15;
+ top:calc(env(safe-area-inset-top,0px) + 54px);left:calc(env(safe-area-inset-left,0px) + 7px);
+ width:min(350px,calc(100vw - 22px));max-height:72dvh;overflow:auto;
+ box-shadow:0 10px 28px #0009;
+}
+body.sculpt-immersive #sculpt-settings:not([open]){width:max-content;max-width:45vw}
+body.sculpt-immersive.surface-editing #sculpt-settings,
+body.sculpt-immersive.sculpt-encounter-editing #sculpt-settings,
+body.sculpt-immersive.navigation-testing #sculpt-settings{display:none!important}
+@media(max-width:600px){
+ #surface-palette{width:min(250px,53vw);max-height:74dvh;padding:7px}
+ #sculpt-encounter-editor{width:min(270px,56vw);max-height:75dvh;padding:9px}
+ body.sculpt-immersive #sculpt-settings{width:min(320px,62vw)}
+ .surface-settings-body{padding:6px;gap:6px}
+}
+
+/* Keep canvas-first DOM for mobile performance and historical editor tests.
+   A persistent toolbar toggle opens the SAME canonical settings accordion in
+   a viewport-contained overlay, so it is never stranded below the canvas. */
+#sculpt-settings-toggle{flex:0 0 auto;min-width:0;padding:5px 8px;font-size:.8rem}
+#sculpt-settings[open]{
+ position:fixed;z-index:250;
+ top:calc(env(safe-area-inset-top,0px) + 56px);
+ left:calc(env(safe-area-inset-left,0px) + 8px);
+ width:min(375px,calc(100vw - 24px));
+ max-height:calc(100dvh - env(safe-area-inset-top,0px) - 64px);
+ overflow-y:auto;overscroll-behavior:contain;
+ box-shadow:0 10px 30px #000c;
+}
+body.sculpt-immersive #sculpt-settings[open]{
+ display:block!important;position:absolute;z-index:130;
+ top:calc(env(safe-area-inset-top,0px) + 54px);
+ width:min(365px,calc(100vw - 20px));
+ max-height:calc(100dvh - 62px);
+}
+body.sculpt-immersive #sculpt-settings:not([open]){display:none!important}
+body.surface-editing #sculpt-settings-toggle,
+body.sculpt-encounter-editing #sculpt-settings-toggle,
+body.navigation-testing #sculpt-settings-toggle{display:none!important}
+@media(max-width:600px){
+ #sculpt-settings-toggle{font-size:0!important;padding:5px 8px!important}
+ #sculpt-settings-toggle::before{content:"⚙";font-size:1.2rem}
+ #sculpt-settings[open]{width:min(325px,72vw);max-height:78dvh}
+ body.sculpt-immersive #sculpt-settings[open]{width:min(320px,72vw);max-height:75dvh}
+}
+
+/* Single access to the atelier; the closed duplicate under the canvas disappears. */
+#sculpt-settings:not([open]){display:none!important}
+.editor-switch #sculpt-settings-toggle{order:-9;position:sticky;left:48px;z-index:17;flex:0 0 auto;min-width:43px;white-space:nowrap;background:#214b53;border-color:#8bc7bd}
+body.sculpt-immersive .editor-switch #sculpt-settings-toggle{flex:0 0 43px;font-size:0!important}
+body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"⚙";font-size:1.13rem}
+#sculpt-settings .sculpt-tool-group-content label{min-width:0;max-width:100%}
+#sculpt-settings .sculpt-tool-group-content select{max-width:100%}
+#surface-palette .surface-settings-body #material{width:100%;min-width:0}
+#scenery-fringe-panel:not([hidden]){display:flex!important;flex-wrap:wrap}
+@media(max-width:600px){
+ #surface-palette{width:min(184px,49vw);max-height:64dvh;padding:6px}
+ #surface-palette .surface-settings-body{padding:6px;gap:6px}
+ #surface-palette .surface-settings-group>summary{padding:7px}
+ #sculpt-encounter-editor{width:min(245px,58vw);max-height:70dvh}
+}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
@@ -936,7 +1015,7 @@ body.sculpt-play-unavailable #play-start-error{
  <strong>Préparation de l’aventure…</strong><p>Chargement du monde et des décors.</p></div>
 </div>
 <header><div><h1>Terrain sculptable · Prototype expérimental</h1>
-<p>Terrain visible en priorité · outils avancés sous la carte.</p></div>
+<p>Réglages rangés dans l’Atelier · panneaux simples et repliables.</p></div>
 <nav class="world-workspace-tabs" id="world-workspace-tabs" aria-label="Panneaux du même éditeur de monde" hidden>
  <button id="world-workspace-world" type="button">🌍 Monde</button>
  <button id="world-workspace-map-active" type="button" class="selected" aria-current="page">🗺 Carte 2,5D</button>
@@ -967,6 +1046,7 @@ body.sculpt-play-unavailable #play-start-error{
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
 <button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
+<button type="button" id="sculpt-settings-toggle" aria-controls="sculpt-settings" aria-expanded="false" title="Ouvrir les réglages et outils" aria-label="Ouvrir les réglages et outils">⚙ Réglages</button>
 <button type="button" id="palette-toggle" aria-label="Réduire la palette d'outils" aria-expanded="true" hidden>▴</button>
 <button type="button" id="fullscreen-toggle" aria-label="Passer en plein écran" aria-pressed="false">⛶ Plein écran</button>
 </nav>
@@ -1112,11 +1192,7 @@ body.sculpt-play-unavailable #play-start-error{
 </section>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
-<label id="scenery-fringe-panel" hidden style="gap:.55rem;align-items:center;padding:.42rem .7rem;flex-wrap:wrap">
-  <input type="checkbox" id="scenery-fringe-toggle" aria-label="Sculpter et décorer les huit cases au-delà de la zone jouable">
-  <strong>Décor hors zone jouable</strong>
-  <small>8 cases de décor visibles et sculptables en haut et en bas de la carte · Terre, Eau, Textures et Objets dans les outils habituels. <strong style="color:#ffe39c">trait jaune : limite jouable</strong> (uniquement pendant ce mode) ; le héros ne peut pas sortir de la carte.</small>
-</label>
+
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
  <div class="unavailable-card">
@@ -1249,6 +1325,18 @@ body.sculpt-play-unavailable #play-start-error{
   <select id="sculpt-encounter-family" aria-label="Famille de terrain pour les rencontres"></select>
  </label>
  <output id="sculpt-encounter-family-hint" aria-live="polite"></output>
+ <details id="sculpt-family-create-details" class="surface-settings-group">
+  <summary>＋ Créer une famille personnalisée</summary>
+  <div class="surface-settings-body">
+   <label>Nom <input id="sculpt-family-name" type="text" maxlength="55" placeholder="Ex. Marais, Ruines, Haute herbe…"></label>
+   <label>Type de famille <select id="sculpt-family-kind" aria-label="Type de terrain de cette famille"><option value="terrain">Sol / zone</option><option value="route">Route / chemin</option><option value="river">Eau / rivière</option></select></label>
+   <label>Reprendre les éléments de <select id="sculpt-family-template" aria-label="Famille dont reprendre les éléments"></select></label>
+   <label>Chance de rencontre (%) <input id="sculpt-family-chance" type="number" min="0" max="100" step="1" value="50"></label>
+   <button id="sculpt-family-create" type="button">＋ Ajouter au monde</button>
+   <output id="sculpt-family-create-status" role="status" aria-live="polite"></output>
+   <small>Nomme librement ta famille : marais, grotte, haute herbe… Elle est ajoutée au monde existant sans ID technique. Les familles Eau utilisent les rivières du World Builder.</small>
+  </div>
+ </details>
  <label>Chance de rencontre
   <span class="sculpt-encounter-editor__chance">
    <input id="sculpt-encounter-chance" type="range" min="0" max="100" step="1" value="0">
@@ -1264,41 +1352,79 @@ body.sculpt-play-unavailable #play-start-error{
  <small>Comme dans le Builder 2D : une chance par famille, un choix d'éléments et la rareté propre des créatures Capture. Les rencontres se vérifient après déplacement, environ tous les 160 points (80 en mode test rapide). La texture ne modifie jamais ces règles. « Exporter scène » conserve tous les réglages.</small>
 </section>
 <section id="surface-palette" aria-label="Peindre des routes et des zones" hidden>
- <strong>🎨 Pinceau de textures</strong>
- <label id="world-interior-floor-base-row" hidden>Sol de base de cette zone intérieure
-  <select id="world-interior-floor-base" aria-label="Sol de base de la WorldArea intérieure"></select>
- </label>
- <label>Famille de terrain du sol de base
-  <select id="surface-base-family" aria-label="Famille de terrain du sol de base"></select>
- </label>
- <label>Texture <select id="surface-material">
-  <option value="road.dirt">Route de terre</option>
-  <option value="grass.forest">Herbe</option>
-  <option value="ground.forest_floor">Terre forestière</option>
-  <option value="ground.sand">Sable</option>
-  <option value="ground.snow">Neige</option>
-  <option value="ground.mountain_rock">Sol rocheux</option>
-   <option value="floor.wood.house" data-indoor-floor disabled>Parquet chêne</option>
-   <option value="floor.wood.dark" data-indoor-floor disabled>Bois foncé</option>
-   <option value="floor.tile.light" data-indoor-floor disabled>Carrelage clair</option>
-   <option value="floor.tile.sandstone" data-indoor-floor disabled>Pierre sable</option>
-   <option value="floor.concrete.gray" data-indoor-floor disabled>Béton gris</option>
- </select></label>
- <label>Famille de terrain peinte (rencontres)
-  <select id="surface-family" aria-label="Famille de terrain peinte"></select>
- </label>
- <label>Action <select id="surface-action">
-  <option value="paint">Peindre une route / une zone</option>
-  <option value="erase">Effacer une route / une zone au toucher</option>
- </select></label>
- <label>Largeur <output id="surface-width-value">3 cases</output>
-  <input type="range" id="surface-width" min="1" max="12" step="0.5" value="3">
- </label>
- <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
-  <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
- <button id="surface-align-families" type="button">Aligner les rencontres sur les textures existantes</button>
+ <strong>🎨 Textures du terrain</strong>
+ <small>Choisis un visuel et peins sur la carte. La famille contrôle les rencontres, pas l’image.</small>
+ <details class="surface-settings-group" open>
+  <summary>🖌 Peindre le terrain</summary>
+  <div class="surface-settings-body">
+   <label>Texture à peindre
+    <select id="surface-material">
+     <optgroup label="🌿 Herbe et forêt">
+      <option value="grass.forest">Herbe · classique</option>
+      <option value="grass.forest.alt">Herbe · variante 2</option>
+      <option value="ground.forest_floor">Terre forestière</option>
+     </optgroup>
+     <optgroup label="🏞 Autres sols">
+      <option value="ground.sand">Sable</option>
+      <option value="ground.snow">Neige</option>
+      <option value="ground.mountain_rock">Sol rocheux</option>
+     </optgroup>
+     <optgroup label="🛤 Routes">
+      <option value="road.dirt">Route de terre</option>
+     </optgroup>
+     <optgroup label="🏠 Sols intérieurs">
+      <option value="floor.wood.house" data-indoor-floor disabled>Parquet chêne</option>
+      <option value="floor.wood.dark" data-indoor-floor disabled>Bois foncé</option>
+      <option value="floor.tile.light" data-indoor-floor disabled>Carrelage clair</option>
+      <option value="floor.tile.sandstone" data-indoor-floor disabled>Pierre sable</option>
+      <option value="floor.concrete.gray" data-indoor-floor disabled>Béton gris</option>
+     </optgroup>
+    </select>
+   </label>
+   <label>Famille de rencontres sur la zone peinte
+    <select id="surface-family" aria-label="Famille de terrain peinte"></select>
+   </label>
+   <small>Exemple : utilise l’herbe classique ou la variante 2 et choisis « Haute herbe » pour augmenter les rencontres sans changer le visuel.</small>
+   <label>Action <select id="surface-action">
+    <option value="paint">Peindre une route / une zone</option>
+    <option value="erase">Effacer au toucher</option>
+   </select></label>
+   <label>Largeur <output id="surface-width-value">3 cases</output>
+    <input type="range" id="surface-width" min="1" max="12" step="0.5" value="3">
+   </label>
+  </div>
+ </details>
+ <details class="surface-settings-group">
+  <summary>🌍 Sol de base de la carte</summary>
+  <div class="surface-settings-body">
+   <label id="world-interior-floor-base-row" hidden>Sol de cette pièce
+    <select id="world-interior-floor-base" aria-label="Sol de base de la WorldArea intérieure"></select>
+   </label>
+   <label>Texture du sol de base
+    <select id="material"><option value="grass.forest">Herbe · classique</option>
+<option value="grass.forest.alt">Herbe · variante 2</option>
+<option value="ground.forest_floor">Sol de forêt</option>
+<option value="ground.mountain_rock">Roche de montagne</option>
+<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
+<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select>
+   </label>
+   <label>Famille du sol de base
+    <select id="surface-base-family" aria-label="Famille de terrain du sol de base"></select>
+   </label>
+   <small>Ce choix s’applique aux parties non peintes de la carte. Il n’efface aucune texture.</small>
+  </div>
+ </details>
+ <button id="surface-configure-encounters" type="button">🐾 Créer une famille / régler les rencontres</button>
+ <details class="surface-settings-group">
+  <summary>↶ Historique et entretien</summary>
+  <div class="surface-settings-body">
+   <div class="object-actions"><button id="surface-undo" type="button" disabled>↶ Texture</button>
+    <button id="surface-redo" type="button" disabled>↷ Texture</button></div>
+   <button id="surface-align-families" type="button">Aligner les rencontres sur les anciennes textures</button>
+   <small>Action facultative et annulable, réservée aux cartes anciennes. Elle peut modifier les familles associées aux zones déjà peintes.</small>
+  </div>
+ </details>
  <output id="surface-count">Aucune zone peinte</output>
- <small>Choisir Neige, Route, Sable, etc. sélectionne automatiquement la famille de rencontres correspondante pour les nouveaux tracés, avec réglage manuel toujours possible. Pour une carte plus ancienne, « Aligner » corrige explicitement les familles enregistrées (annulable via ↶ Texture), sans changer la géométrie ni les objets. Les familles sont sauvegardées dans « Exporter scène ».</small>
 </section>
 <section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
  <div id="object-controls">
@@ -1650,6 +1776,9 @@ body.sculpt-play-unavailable #play-start-error{
 <button type="button" id="apply-precision" disabled>✓ Appliquer ici</button>
 </section>
 </div>
+
+
+
 <details id="sculpt-settings"><summary>⚙ Atelier · Réglages et outils avancés</summary>
 <div class="settings-interior">
 <details class="sculpt-tool-group" open>
@@ -1667,11 +1796,14 @@ body.sculpt-play-unavailable #play-start-error{
 
 <button data-mode="plateau">Plateau · hauteur exacte</button>
 <div class="levels" aria-label="Hauteur exacte du plateau">
-<label id="height-label" for="target">Hauteur du plateau</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
+<label id="height-label" for="target">Hauteur du plateau</label>
 <output id="target-value" for="target">3</output>
 <input id="target" type="range" min="0" max="16" value="3" step="1" aria-label="Niveau exact 0 à 16">
-<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
 </div>
+<details class="surface-settings-group">
+ <summary>⚠ Réinitialiser le terrain</summary>
+ <div class="surface-settings-body"><button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button></div>
+</details>
 </section>
  </div>
 </details>
@@ -1694,26 +1826,17 @@ body.sculpt-play-unavailable #play-start-error{
  <summary>🖌 Précision du pinceau <small>Force et douceur</small></summary>
  <div class="sculpt-tool-group-content">
 <section class="controls" aria-label="Paramètres communs des pinceaux">
-
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
 <label class="control">Bord doux <b id="edge-value">0 %</b>
 <input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
-
-
-<button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button>
 </section>
  </div>
 </details>
 <details class="sculpt-tool-group">
- <summary>🎨 Matériaux et caméra <small>Sol, roche et affichage</small></summary>
+ <summary>🖥 Caméra, roche et affichage <small>Flancs, zoom et aperçu</small></summary>
  <div class="sculpt-tool-group-content">
 <section class="controls">
-<span data-panel="ground"><label class="control">Sol réel
-<select id="material"><option value="grass.forest">Herbe</option>
-<option value="ground.forest_floor">Sol de forêt</option>
-<option value="ground.mountain_rock">Roche de montagne</option>
-<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
-<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
+
 <span data-panel="ground"><label class="control">Roche
 <select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
 <option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option>
@@ -1740,14 +1863,31 @@ body.sculpt-play-unavailable #play-start-error{
 </section>
  </div>
 </details>
+<details class="sculpt-tool-group">
+ <summary>🌳 Bordures décoratives <small>Zone hors jeu</small></summary>
+ <div class="sculpt-tool-group-content"><label id="scenery-fringe-panel" hidden style="gap:.55rem;align-items:center;padding:.42rem .7rem;flex-wrap:wrap">
+  <input type="checkbox" id="scenery-fringe-toggle" aria-label="Sculpter et décorer les huit cases au-delà de la zone jouable">
+  <strong>Décor hors zone jouable</strong>
+  <small>8 cases de décor visibles et sculptables en haut et en bas de la carte · Terre, Eau, Textures et Objets dans les outils habituels. <strong style="color:#ffe39c">trait jaune : limite jouable</strong> (uniquement pendant ce mode) ; le héros ne peut pas sortir de la carte.</small>
+</label></div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>💾 Sauvegarde et fichiers <small>Scène, hauteurs et JSON</small></summary>
+ <div class="sculpt-tool-group-content">
+  <section class="controls sculpt-export-tools" aria-label="Importer et exporter le terrain">
+   <button id="scene-export" type="button">Exporter scène (terrain + objets)</button>
+   <button id="export" type="button">Exporter hauteurs JSON</button>
+   <button id="json-toggle" type="button">Afficher / masquer JSON</button>
+   <button id="import" type="button">Importer ce JSON</button>
+   <small>« Exporter scène » conserve aussi les textures, familles et rencontres. En mode Monde, l’enregistrement reste celui du World Builder.</small>
+  </section>
+  <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
+ </div>
+</details>
 </div></details>
 
-
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
-<section class="controls"><button id="scene-export">Exporter scène (terrain + objets)</button>
-<button id="export">Exporter hauteurs JSON</button><button id="json-toggle">Afficher / masquer JSON</button>
-<button id="import">Importer ce JSON</button><small>L’eau conserve son niveau absolu. En mode Terre, les cellules occupées par l’eau sont protégées ; utilisez Eau pour modifier l’eau. La route reste illustrative ; aucune collision gameplay.</small></section>
-<textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
+
 </main>
 <script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118"></script>
 </body>
