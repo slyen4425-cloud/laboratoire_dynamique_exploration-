@@ -6237,7 +6237,13 @@ function drawSculptWorldPortalMarkers(){
 function commitCurrentSculptWorldArea(){
   if(!sculptWorldDraft||!sculptWorldAreaId)return null;
   if(!sculptWorldAreaMounted)throw Error('Zone 2,5D non chargée : aucune scène démo ne doit remplacer la WorldArea');
-  const updated=saveSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,captureSculptArea());
+  // Scene-saving validates the WorldDocument before it returns. Always feed
+  // the latest family encounter edits into that FIRST validation, otherwise a
+  // just-created family can still appear with stale, empty elements and block
+  // the save even though the editor shows the author-selected elements.
+  const updated=saveSculptWorldArea({
+    ...sculptWorldDraft,encounterConfig:sculptEncounterConfig
+  },sculptWorldAreaId,captureSculptArea());
   const areas=updated.areas.map(a=>a.id===sculptWorldAreaId
     ?{...a,encounters:sculptExteriorEncounters}:a);
   // One EncounterConfig on the whole document, same Builder commands.
