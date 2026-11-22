@@ -12,7 +12,7 @@ Propriétaire : éditeur Sculpt 2,5D et commandes existantes de World Builder.
 - World Builder sait créer des familles personnalisées, mais la palette 2,5D n'affichait que les familles préprogrammées.
 
 ## Périmètre
-1. Avancer l'accordéon Atelier avant la carte, l'exposer en plein écran, ranger l'import/export à l'intérieur et améliorer les palettes mobiles.
+1. Conserver la carte avant les outils dans le DOM (contrat canvas-first mobile), mais ouvrir l’accordéon Atelier par un bouton permanent de la barre d’outils et l’exposer comme panneau contenu dans le viewport, y compris en plein écran ; ranger l'import/export à l'intérieur et améliorer les palettes mobiles.
 2. Peinture : sections repliables « Peindre », « Sol de base » et « Historique » ; matériaux existants groupés par nature.
 3. Donner un choix explicite entre les deux textures d'herbe **déjà présentes** ; conserver `forest` comme famille sémantique pour les deux. Aucune image de fleurs n'est inventée.
 4. Dans le panneau Rencontres, créer une famille avec nom lisible et profil issu des commandes canoniques du World Builder ; aucun ID manuel. Le choix d'une famille personnalisée ne doit pas être écrasé lorsqu'on change seulement de texture.
