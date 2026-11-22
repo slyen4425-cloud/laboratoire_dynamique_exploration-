@@ -14,3 +14,11 @@ test('NPC merchant presents a direct configuration action but never saves mercha
  assert.match(js,/merchantIdDraft/);
  assert.doesNotMatch(npc,/merchantOffers|purchasePrice|resalePercent|merchantStock/);
 });
+
+test('configuration request sends ONLY the saved NPC identity and linked merchant reference',()=>{
+ assert.match(js,/npcId:selected\?\.id\?\?null/);
+ assert.match(js,/merchantId:merchantIdDraft\|\|null/);
+ assert.match(js,/if\(dirty\)/);
+ assert.doesNotMatch(js,/merchantOffers\s*:/);
+ assert.doesNotMatch(js,/merchantStocks\s*:/);
+});
