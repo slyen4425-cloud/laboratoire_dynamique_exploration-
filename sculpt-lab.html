@@ -943,6 +943,36 @@ body.sculpt-immersive.navigation-testing #sculpt-settings{display:none!important
  body.sculpt-immersive #sculpt-settings{width:min(320px,62vw)}
  .surface-settings-body{padding:6px;gap:6px}
 }
+
+/* Keep canvas-first DOM for mobile performance and historical editor tests.
+   A persistent toolbar toggle opens the SAME canonical settings accordion in
+   a viewport-contained overlay, so it is never stranded below the canvas. */
+#sculpt-settings-toggle{flex:0 0 auto;min-width:0;padding:5px 8px;font-size:.8rem}
+#sculpt-settings[open]{
+ position:fixed;z-index:250;
+ top:calc(env(safe-area-inset-top,0px) + 56px);
+ left:calc(env(safe-area-inset-left,0px) + 8px);
+ width:min(375px,calc(100vw - 24px));
+ max-height:calc(100dvh - env(safe-area-inset-top,0px) - 64px);
+ overflow-y:auto;overscroll-behavior:contain;
+ box-shadow:0 10px 30px #000c;
+}
+body.sculpt-immersive #sculpt-settings[open]{
+ display:block!important;position:absolute;z-index:130;
+ top:calc(env(safe-area-inset-top,0px) + 54px);
+ width:min(365px,calc(100vw - 20px));
+ max-height:calc(100dvh - 62px);
+}
+body.sculpt-immersive #sculpt-settings:not([open]){display:none!important}
+body.surface-editing #sculpt-settings-toggle,
+body.sculpt-encounter-editing #sculpt-settings-toggle,
+body.navigation-testing #sculpt-settings-toggle{display:none!important}
+@media(max-width:600px){
+ #sculpt-settings-toggle{font-size:0!important;padding:5px 8px!important}
+ #sculpt-settings-toggle::before{content:"⚙";font-size:1.2rem}
+ #sculpt-settings[open]{width:min(325px,72vw);max-height:78dvh}
+ body.sculpt-immersive #sculpt-settings[open]{width:min(320px,72vw);max-height:75dvh}
+}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
@@ -1000,6 +1030,7 @@ body.sculpt-immersive.navigation-testing #sculpt-settings{display:none!important
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
 <button type="button" id="new-map-toggle" aria-expanded="false" aria-controls="new-map-panel">🗺 Nouvelle carte</button>
 <span id="active-tool-label" role="status">Terre · Creuser</span>
+<button type="button" id="sculpt-settings-toggle" aria-controls="sculpt-settings" aria-expanded="false" title="Ouvrir les réglages et outils" aria-label="Ouvrir les réglages et outils">⚙ Réglages</button>
 <button type="button" id="palette-toggle" aria-label="Réduire la palette d'outils" aria-expanded="true" hidden>▴</button>
 <button type="button" id="fullscreen-toggle" aria-label="Passer en plein écran" aria-pressed="false">⛶ Plein écran</button>
 </nav>
@@ -1150,111 +1181,6 @@ body.sculpt-immersive.navigation-testing #sculpt-settings{display:none!important
   <strong>Décor hors zone jouable</strong>
   <small>8 cases de décor visibles et sculptables en haut et en bas de la carte · Terre, Eau, Textures et Objets dans les outils habituels. <strong style="color:#ffe39c">trait jaune : limite jouable</strong> (uniquement pendant ce mode) ; le héros ne peut pas sortir de la carte.</small>
 </label>
-<details id="sculpt-settings"><summary>⚙ Atelier · Réglages et outils avancés</summary>
-<div class="settings-interior">
-<details class="sculpt-tool-group" open>
- <summary>⛰ Sculpter le relief <small>Creuser, monter, pentes</small></summary>
- <div class="sculpt-tool-group-content">
- <section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
-<button data-mode="dig" aria-pressed="true">Creuser −</button>
-<button data-mode="raise">Surélever +</button>
-<button data-mode="flatten">Aplanir</button>
-<button data-mode="sphere-hill">🟢 V76 · Colline sphérique réelle</button>
-<button data-mode="sphere-basin">🔵 V76 · Trou sphérique réel</button>
-<button data-mode="sphere-erase">⌫ Effacer relief sphérique</button>
-<button data-mode="terrain-ramp">🌿 Créer une pente dans le terrain</button>
-<button data-mode="terrain-ramp-erase">⌫ Effacer une pente</button>
-
-<button data-mode="plateau">Plateau · hauteur exacte</button>
-<div class="levels" aria-label="Hauteur exacte du plateau">
-<label id="height-label" for="target">Hauteur du plateau</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
-<output id="target-value" for="target">3</output>
-<input id="target" type="range" min="0" max="16" value="3" step="1" aria-label="Niveau exact 0 à 16">
-<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
-</div>
-</section>
- </div>
-</details>
-<details class="sculpt-tool-group">
- <summary>💧 Sculpter l’eau <small>Niveau et débit</small></summary>
- <div class="sculpt-tool-group-content">
-<section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
-<strong>💧 Sculpter l’eau</strong>
-<button data-mode="water-fill">Remplir au niveau</button>
-<button data-mode="water-rise">Monter l’eau +</button>
-<button data-mode="water-lower">Baisser l’eau −</button>
-<button data-mode="water-erase">Effacer l’eau</button>
-<button data-mode="water-smooth">Lisser l’eau</button>
-<label class="control">Niveau d’eau <b id="water-target-value">3</b>
-<input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
-</section>
- </div>
-</details>
-<details class="sculpt-tool-group">
- <summary>🖌 Précision du pinceau <small>Force et douceur</small></summary>
- <div class="sculpt-tool-group-content">
-<section class="controls" aria-label="Paramètres communs des pinceaux">
-
-<span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
-<label class="control">Bord doux <b id="edge-value">0 %</b>
-<input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
-
-
-<button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button>
-</section>
- </div>
-</details>
-<details class="sculpt-tool-group">
- <summary>🎨 Matériaux et caméra <small>Sol, roche et affichage</small></summary>
- <div class="sculpt-tool-group-content">
-<section class="controls">
-<span data-panel="ground"><label class="control">Sol réel
-<select id="material"><option value="grass.forest">Herbe · classique</option>
-<option value="grass.forest.alt">Herbe · variante 2</option>
-<option value="ground.forest_floor">Sol de forêt</option>
-<option value="ground.mountain_rock">Roche de montagne</option>
-<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
-<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
-<span data-panel="ground"><label class="control">Roche
-<select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
-<option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option>
-<option value="granite">Granite gris</option><option value="ochre">Roche dorée</option></select></label></span>
-<span data-panel="ground"><label class="control" for="rock-moss"><input type="checkbox" id="rock-moss"> Mousse sur les falaises (test)</label></span>
-<label class="control">Angle de vue
-<select id="camera-view" aria-label="Angle de la caméra du Labo Sculpture">
-<option value="classic" selected>Vue classique (édition simple)</option>
-<option value="threeQuarter">Vue trois-quarts (comparaison)</option>
-</select></label>
-<label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
-
-<button id="fit">Ajuster la vue</button>
-<label class="control">Aspect de l’eau
-<select id="water-material" aria-label="Matériau visuel de l’eau">
-<option value="water.clear_blue">Bleue claire</option>
-<option value="water.turquoise">Turquoise</option>
-<option value="water.forest_stream">Rivière forestière</option>
-<option value="water.swamp">Eau sombre / marais</option>
-</select></label>
-<label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
-<label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route exemple (visuel seul)</label>
-<label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
-</section>
- </div>
-</details>
-<details class="sculpt-tool-group">
- <summary>💾 Sauvegarde et fichiers <small>Scène, hauteurs et JSON</small></summary>
- <div class="sculpt-tool-group-content">
-  <section class="controls sculpt-export-tools" aria-label="Importer et exporter le terrain">
-   <button id="scene-export" type="button">Exporter scène (terrain + objets)</button>
-   <button id="export" type="button">Exporter hauteurs JSON</button>
-   <button id="json-toggle" type="button">Afficher / masquer JSON</button>
-   <button id="import" type="button">Importer ce JSON</button>
-   <small>« Exporter scène » conserve aussi les textures, familles et rencontres. En mode Monde, l’enregistrement reste celui du World Builder.</small>
-  </section>
-  <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
- </div>
-</details>
-</div></details>
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
  <div class="unavailable-card">
@@ -1831,6 +1757,112 @@ body.sculpt-immersive.navigation-testing #sculpt-settings{display:none!important
 </div>
 
 
+
+<details id="sculpt-settings"><summary>⚙ Atelier · Réglages et outils avancés</summary>
+<div class="settings-interior">
+<details class="sculpt-tool-group" open>
+ <summary>⛰ Sculpter le relief <small>Creuser, monter, pentes</small></summary>
+ <div class="sculpt-tool-group-content">
+ <section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
+<button data-mode="dig" aria-pressed="true">Creuser −</button>
+<button data-mode="raise">Surélever +</button>
+<button data-mode="flatten">Aplanir</button>
+<button data-mode="sphere-hill">🟢 V76 · Colline sphérique réelle</button>
+<button data-mode="sphere-basin">🔵 V76 · Trou sphérique réel</button>
+<button data-mode="sphere-erase">⌫ Effacer relief sphérique</button>
+<button data-mode="terrain-ramp">🌿 Créer une pente dans le terrain</button>
+<button data-mode="terrain-ramp-erase">⌫ Effacer une pente</button>
+
+<button data-mode="plateau">Plateau · hauteur exacte</button>
+<div class="levels" aria-label="Hauteur exacte du plateau">
+<label id="height-label" for="target">Hauteur du plateau</label><button id="level-down" aria-label="Diminuer la hauteur cible">−</button>
+<output id="target-value" for="target">3</output>
+<input id="target" type="range" min="0" max="16" value="3" step="1" aria-label="Niveau exact 0 à 16">
+<button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
+</div>
+</section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>💧 Sculpter l’eau <small>Niveau et débit</small></summary>
+ <div class="sculpt-tool-group-content">
+<section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
+<strong>💧 Sculpter l’eau</strong>
+<button data-mode="water-fill">Remplir au niveau</button>
+<button data-mode="water-rise">Monter l’eau +</button>
+<button data-mode="water-lower">Baisser l’eau −</button>
+<button data-mode="water-erase">Effacer l’eau</button>
+<button data-mode="water-smooth">Lisser l’eau</button>
+<label class="control">Niveau d’eau <b id="water-target-value">3</b>
+<input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
+</section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>🖌 Précision du pinceau <small>Force et douceur</small></summary>
+ <div class="sculpt-tool-group-content">
+<section class="controls" aria-label="Paramètres communs des pinceaux">
+
+<span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
+<label class="control">Bord doux <b id="edge-value">0 %</b>
+<input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
+
+
+<button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button>
+</section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>🎨 Matériaux et caméra <small>Sol, roche et affichage</small></summary>
+ <div class="sculpt-tool-group-content">
+<section class="controls">
+<span data-panel="ground"><label class="control">Sol réel
+<select id="material"><option value="grass.forest">Herbe · classique</option>
+<option value="grass.forest.alt">Herbe · variante 2</option>
+<option value="ground.forest_floor">Sol de forêt</option>
+<option value="ground.mountain_rock">Roche de montagne</option>
+<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
+<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
+<span data-panel="ground"><label class="control">Roche
+<select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
+<option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option>
+<option value="granite">Granite gris</option><option value="ochre">Roche dorée</option></select></label></span>
+<span data-panel="ground"><label class="control" for="rock-moss"><input type="checkbox" id="rock-moss"> Mousse sur les falaises (test)</label></span>
+<label class="control">Angle de vue
+<select id="camera-view" aria-label="Angle de la caméra du Labo Sculpture">
+<option value="classic" selected>Vue classique (édition simple)</option>
+<option value="threeQuarter">Vue trois-quarts (comparaison)</option>
+</select></label>
+<label class="control">Zoom <input id="zoom" type="range" min="32" max="240" value="90"></label>
+
+<button id="fit">Ajuster la vue</button>
+<label class="control">Aspect de l’eau
+<select id="water-material" aria-label="Matériau visuel de l’eau">
+<option value="water.clear_blue">Bleue claire</option>
+<option value="water.turquoise">Turquoise</option>
+<option value="water.forest_stream">Rivière forestière</option>
+<option value="water.swamp">Eau sombre / marais</option>
+</select></label>
+<label class="control checkbox-control" for="show-water"><input id="show-water" type="checkbox" checked> Eau</label>
+<label class="control checkbox-control" for="show-road"><input id="show-road" type="checkbox" checked> Route exemple (visuel seul)</label>
+<label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
+</section>
+ </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>💾 Sauvegarde et fichiers <small>Scène, hauteurs et JSON</small></summary>
+ <div class="sculpt-tool-group-content">
+  <section class="controls sculpt-export-tools" aria-label="Importer et exporter le terrain">
+   <button id="scene-export" type="button">Exporter scène (terrain + objets)</button>
+   <button id="export" type="button">Exporter hauteurs JSON</button>
+   <button id="json-toggle" type="button">Afficher / masquer JSON</button>
+   <button id="import" type="button">Importer ce JSON</button>
+   <small>« Exporter scène » conserve aussi les textures, familles et rencontres. En mode Monde, l’enregistrement reste celui du World Builder.</small>
+  </section>
+  <textarea id="json" hidden aria-label="Carte de hauteurs JSON à importer ou copier"></textarea>
+ </div>
+</details>
+</div></details>
 
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
