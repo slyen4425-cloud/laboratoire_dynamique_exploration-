@@ -1061,6 +1061,13 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <button type="button" id="radius-minus" aria-label="Réduire la taille du pinceau">−</button>
 <span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="16" value="3" step="0.5"></span>
 <button type="button" id="radius-plus" aria-label="Agrandir le pinceau">+</button></div>
+<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
+  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
+    <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
+  <label class="control" for="sphere-wall-material">Flancs
+    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
+  <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
+</div>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
 <div id="ramp-guide" role="status" aria-live="polite" hidden>
@@ -1819,13 +1826,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <option value="square">▦ Carré plein</option>
 <option value="cross">✚ Croix</option>
 </select></label>
-<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
-  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
-    <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
-  <label class="control" for="sphere-wall-material">Flancs
-    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
-  <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
-</div>
+
 <label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 
 
