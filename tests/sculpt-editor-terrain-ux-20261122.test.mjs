@@ -59,6 +59,48 @@ test('mobile editor groups controls without duplicating IDs or exposing manual f
   assert.match(script,/sculptPaintFamilyManuallyChosen/);
 });
 
+
+test('freely named terrain, route and river families remain distinct after WorldDocument serialization',()=>{
+  let draft=createBlankWorldBuilderDraft();
+  const examples=[
+    {label:'Marais luminescent',paintKind:'terrain',elementId:'nature',chance:65},
+    {label:'Route des bandits',paintKind:'route',elementId:'fire',chance:30},
+    {label:'Rivière enchantée',paintKind:'river',elementId:'water',chance:20}
+  ];
+  const ids=[];
+  for(const example of examples){
+    const before=new Set(draft.terrainFamilies.map(f=>f.id));
+    draft=addTerrainFamilyDefinition(draft,{label:example.label,paintKind:example.paintKind});
+    const family=draft.terrainFamilies.find(f=>!before.has(f.id));
+    assert.ok(family?.id,example.label);
+    ids.push(family.id);
+    draft=updateTerrainFamilyElementChance(draft,family.id,example.elementId,100);
+    draft=updateTerrainFamilyEncounterProfile(draft,family.id,{encounterChancePercent:example.chance});
+  }
+  assert.equal(new Set(ids).size,3,'no reused or manually assigned family identifiers');
+  const restored=importWorldBuilderDocument(serializeWorldBuilderDraft(draft));
+  for(let i=0;i<examples.length;i++){
+    const family=restored.terrainFamilies.find(f=>f.id===ids[i]);
+    const profile=restored.encounterConfig.families.find(f=>f.terrainFamilyId===ids[i]);
+    assert.equal(family?.label,examples[i].label);
+    assert.equal(family?.paintKind,examples[i].paintKind);
+    assert.equal(profile?.encounterChancePercent,examples[i].chance);
+    assert.deepEqual(profile?.elementChances,[{elementId:examples[i].elementId,chancePercent:100}]);
+  }
+});
+
+test('one level button pair in current editor, V80 compatibility preserved',()=>{
+  const v80=readFileSync(new URL('../sculpt-lab-v80.html',import.meta.url),'utf8');
+  for(const id of ['quick-level-plus','quick-level-minus'])
+    assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1,id);
+  assert.doesNotMatch(html,/id="level-(up|down)"/);
+  assert.match(html,/id="target"/);
+  assert.match(v80,/id="level-up"/);
+  assert.match(v80,/id="level-down"/);
+  assert.match(script,/\$\('level-up'\)\?\.addEventListener/);
+  assert.match(script,/\$\('level-down'\)\?\.addEventListener/);
+});
+
 test('custom family type and sole base material control are saved canonically',()=>{
   assert.match(html,/id="sculpt-family-name"[^>]+placeholder="Ex\. Marais/);
   for(const kind of ['terrain','route','river'])assert.match(html,new RegExp('<option value="'+kind+'">'));
