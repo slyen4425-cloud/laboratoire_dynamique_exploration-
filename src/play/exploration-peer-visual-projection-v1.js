@@ -134,3 +134,25 @@ export function createExplorationPeerVisualProjectionV1({
  function dispose(){disposed=true;revision=-1;current.clear();segments.clear();lastReceivedAt.clear();}
  return Object.freeze({apply,forArea,sampleForArea,isAnimating,dispose});
 }
+
+// A second player can arrive at the EXACT same canonical World Spawn.
+// Never move their saved/network coordinates to make them visible: give
+// overlapping *rendered pixels* a small stable displacement only. It fades
+// continuously as the authoritative world positions separate. Stable UUID
+// lanes avoid assigning two clients inconsistent aliases or changing physics.
+export function explorationPeerOverlapVisualOffsetV1({
+ actorId,remoteX,remoteY,localX,localY
+}={}){
+ if(typeof actorId!=='string'||!ID.test(actorId)||
+  ![remoteX,remoteY,localX,localY].every(Number.isFinite))
+  return Object.freeze({x:0,y:0});
+ const distance=Math.hypot(remoteX-localX,remoteY-localY);
+ const factor=Math.max(0,Math.min(1,(24-distance)/24));
+ if(factor===0)return Object.freeze({x:0,y:0});
+ let hash=0;
+ for(const char of actorId)hash=(Math.imul(hash,33)+char.charCodeAt(0))>>>0;
+ const lane=hash%6;
+ const x=[-32,32,-27,27,-38,38][lane];
+ const y=[-4,-4,-16,-16,-9,-9][lane];
+ return Object.freeze({x:x*factor,y:y*factor});
+}

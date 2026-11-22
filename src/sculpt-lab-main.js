@@ -121,7 +121,8 @@ import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/ex
 import {emitExplorationPlayNavigationCommittedV1
 } from './play/exploration-play-events-v1.js';
 import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_V1,
- EXPLORATION_PEER_RECEIVER_READY_EVENT_V1
+ EXPLORATION_PEER_RECEIVER_READY_EVENT_V1,
+ explorationPeerOverlapVisualOffsetV1
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
@@ -2637,7 +2638,12 @@ function drawExplorationPeerActors(maxY=Infinity,minY=-Infinity){
     Math.floor(peer.y/SCULPT_TILE.height));
    const projected=sculptCameraProject(cameraView(),peer.x,
     peer.y-level*SCULPT_TILE.rise+3);
-   return {x:projected.x,y:projected.y,facingX:peer.facingX,moving:peer.moving,
+   const drawOffset=explorationPeerOverlapVisualOffsetV1({
+    actorId:peer.actorId,remoteX:peer.x,remoteY:peer.y,
+    localX:navActor?.x,localY:navActor?.y
+   });
+   return {x:projected.x+drawOffset.x,y:projected.y+drawOffset.y,
+    facingX:peer.facingX,moving:peer.moving,
     directionX:peer.directionX,directionY:peer.directionY,
     mapVisual:explorationPeerVisual,
     visualScale:sculptAltitudeVisualState(level).heroScale,

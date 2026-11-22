@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createExplorationPeerVisualProjectionV1,
- EXPLORATION_PEER_SNAPSHOT_EVENT_V1
+ EXPLORATION_PEER_SNAPSHOT_EVENT_V1,explorationPeerOverlapVisualOffsetV1
 } from '../src/play/exploration-peer-visual-projection-v1.js';
 
 const host='93b5ba2f-07b4-4b01-9b94-5fbd0215e02a';
@@ -97,4 +97,36 @@ test('issue #553: uneven Android packets blend until latest exact server point w
  now=700;p.apply(packet(3,3,900));
  assert.equal(p.sampleForArea(area)[0].x,900,'large respawns snap rather than crossing obstacles');
  p.dispose();
+});
+
+test('issue #584: two different remote heroes at the same official spawn cannot cover local hero pixels',()=>{
+ const ids=[host,guest],draw=ids.map(actorId=>explorationPeerOverlapVisualOffsetV1({
+  actorId,remoteX:100,remoteY:100,localX:100,localY:100
+ }));
+ assert.ok(draw.every(p=>Math.abs(p.x)>=25));
+ assert.notDeepEqual(draw[0],draw[1],'stable separate actor IDs should render in separate lanes');
+ for(const actorId of ids){
+  const again=explorationPeerOverlapVisualOffsetV1({
+   actorId,remoteX:100,remoteY:100,localX:100,localY:100
+  });
+  assert.deepEqual(again,explorationPeerOverlapVisualOffsetV1({
+   actorId,remoteX:100,remoteY:100,localX:100,localY:100
+  }));
+  const half=explorationPeerOverlapVisualOffsetV1({
+   actorId,remoteX:112,remoteY:100,localX:100,localY:100
+  });
+  assert.ok(Math.abs(half.x)<Math.abs(again.x),'offset fades smoothly on separation');
+  assert.deepEqual(explorationPeerOverlapVisualOffsetV1({
+   actorId,remoteX:124,remoteY:100,localX:100,localY:100
+  }),{x:0,y:0},'normal remote navigation is not displaced');
+ }
+});
+test('issue #584: native peer renderer applies only visual overlap offset; canonical poses stay unmodified',()=>{
+ const s=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(s,/explorationPeerOverlapVisualOffsetV1\(\{/);
+ assert.match(s,/remoteX:peer\.x,remoteY:peer\.y/);
+ assert.match(s,/localX:navActor\?\.x,localY:navActor\?\.y/);
+ assert.match(s,/x:projected\.x\+drawOffset\.x,y:projected\.y\+drawOffset\.y/);
+ assert.doesNotMatch(s.slice(s.indexOf('function drawExplorationPeerActors('),
+  s.indexOf('function navigationSpawn(')),/persistPlayNavigationCheckpoint\(|\.save\(|navActor\.x\s*=/);
 });
