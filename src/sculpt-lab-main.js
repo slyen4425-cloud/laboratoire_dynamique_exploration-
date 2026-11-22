@@ -1060,8 +1060,12 @@ let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
 let sphereTexturesLoaded=0;
-const sculptGroundMaterials=Object.freeze(['grass.forest','grass.forest.alt','ground.forest_floor',
-  'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
+// Ground theme choices are projected from the authoritative Material Registry.
+// Keep all historical textured terrain (including volcanic ash) alongside new variants.
+const sculptGroundMaterials=Object.freeze(registry.list()
+  .filter(material=>material.kind==='surface'&&material.assets?.base
+    &&!material.id.startsWith('floor.')&&!['ground.sea','ground.road'].includes(material.id))
+  .map(material=>material.id));
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
 const images=new Map();

@@ -9,6 +9,26 @@ const MATERIAL_ASSETS = Object.freeze({
     kind: 'texture',
     path: './assets/exploration/materials/forest/surfaces/grass_forest_base_02.webp'
   }),
+  'texture.grass.forest.tall.01': Object.freeze({
+    id:'texture.grass.forest.tall.01',kind:'texture',
+    path:'./assets/exploration/materials/forest/surfaces/terrain_haute_herbe_01.webp'
+  }),
+  'texture.grass.forest.flowers.01': Object.freeze({
+    id:'texture.grass.forest.flowers.01',kind:'texture',
+    path:'./assets/exploration/materials/forest/surfaces/terrain_herbe_fleurie_01.webp'
+  }),
+  'texture.ground.snow.rocky.01': Object.freeze({
+    id:'texture.ground.snow.rocky.01',kind:'texture',
+    path:'./assets/exploration/materials/forest/surfaces/terrain_neige_rocheuse_01.webp'
+  }),
+  'texture.ground.dirt.textured.01': Object.freeze({
+    id:'texture.ground.dirt.textured.01',kind:'texture',
+    path:'./assets/exploration/materials/forest/surfaces/terrain_sol_terre_01.webp'
+  }),
+  'texture.ground.volcanic.rocky.01': Object.freeze({
+    id:'texture.ground.volcanic.rocky.01',kind:'texture',
+    path:'./assets/exploration/materials/forest/surfaces/terrain_sol_volcanique_01.webp'
+  }),
   'texture.ground.forest_floor.stylized.01': Object.freeze({
     id: 'texture.ground.forest_floor.stylized.01',
     kind: 'texture',

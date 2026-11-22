@@ -18,6 +18,16 @@ const EXPECTED = Object.freeze({
     './assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp',
   'texture.grass.forest.base.02':
     './assets/exploration/materials/forest/surfaces/grass_forest_base_02.webp',
+  'texture.grass.forest.tall.01':
+    './assets/exploration/materials/forest/surfaces/terrain_haute_herbe_01.webp',
+  'texture.grass.forest.flowers.01':
+    './assets/exploration/materials/forest/surfaces/terrain_herbe_fleurie_01.webp',
+  'texture.ground.snow.rocky.01':
+    './assets/exploration/materials/forest/surfaces/terrain_neige_rocheuse_01.webp',
+  'texture.ground.dirt.textured.01':
+    './assets/exploration/materials/forest/surfaces/terrain_sol_terre_01.webp',
+  'texture.ground.volcanic.rocky.01':
+    './assets/exploration/materials/forest/surfaces/terrain_sol_volcanique_01.webp',
   'texture.ground.forest_floor.stylized.01':
     './assets/exploration/materials/forest/surfaces/forest_floor_stylized_01.webp',
   'texture.ground.snow.stylized.01':
@@ -67,7 +77,7 @@ const EXPECTED = Object.freeze({
 test('Material Asset Adapter exposes the pilot assets plus stylized terrain surfaces', () => {
   const assets = listMaterialAssets();
 
-  assert.equal(assets.length, 24);
+  assert.equal(assets.length, 29);
 
   for (const [id, path] of Object.entries(EXPECTED)) {
     const asset = resolveMaterialAsset(id);
@@ -95,7 +105,7 @@ test('Material Pack v1 references every generated pilot asset semantically', () 
   const unusedCenter = 'texture.water.canyon.turquoise.01';
   assert.deepEqual(new Set(ids),
     new Set(Object.keys(EXPECTED).filter((id) => id !== retired && id !== unusedCenter)));
-  assert.equal(ids.length, 22);
+  assert.equal(ids.length, 27);
   assert.ok(resolveMaterialAsset(retired), 'historical asset can still be resolved');
   assert.ok(resolveMaterialAsset(unusedCenter), 'previous texture kept for legacy references');
 });

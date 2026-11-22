@@ -222,6 +222,41 @@ export const materialPackV1 = Object.freeze({
       })
     }),
     Object.freeze({
+      id: 'grass.forest.tall', kind: 'surface', terrainFamilyId: 'forest',
+      label: 'Haute herbe',
+      assets: Object.freeze({base: 'texture.grass.forest.tall.01', variants: Object.freeze([]), edge: null, decals: Object.freeze([])}),
+      render: Object.freeze({baseColor: '#44842e',variationColors:Object.freeze([]),
+        detailSpacing:0,decalSpacing:0,decalDensity:0,decalMinSize:0,decalMaxSize:0,decalOpacity:0})
+    }),
+    Object.freeze({
+      id: 'grass.forest.flowers', kind: 'surface', terrainFamilyId: 'forest',
+      label: 'Herbe fleurie',
+      assets: Object.freeze({base: 'texture.grass.forest.flowers.01', variants: Object.freeze([]), edge: null, decals: Object.freeze([])}),
+      render: Object.freeze({baseColor: '#538b35',variationColors:Object.freeze([]),
+        detailSpacing:0,decalSpacing:0,decalDensity:0,decalMinSize:0,decalMaxSize:0,decalOpacity:0})
+    }),
+    Object.freeze({
+      id: 'ground.snow.rocky', kind: 'surface', terrainFamilyId: 'snow',
+      label: 'Neige rocheuse',
+      assets: Object.freeze({base: 'texture.ground.snow.rocky.01', variants: Object.freeze([]), edge: null, decals: Object.freeze([])}),
+      render: Object.freeze({baseColor: '#cbdbe8',variationColors:Object.freeze([]),
+        detailSpacing:0,decalSpacing:0,decalDensity:0,decalMinSize:0,decalMaxSize:0,decalOpacity:0})
+    }),
+    Object.freeze({
+      id: 'ground.dirt.textured', kind: 'surface', terrainFamilyId: 'plain',
+      label: 'Terre naturelle',
+      assets: Object.freeze({base: 'texture.ground.dirt.textured.01', variants: Object.freeze([]), edge: null, decals: Object.freeze([])}),
+      render: Object.freeze({baseColor: '#7f4827',variationColors:Object.freeze([]),
+        detailSpacing:0,decalSpacing:0,decalDensity:0,decalMinSize:0,decalMaxSize:0,decalOpacity:0})
+    }),
+    Object.freeze({
+      id: 'ground.volcanic.rocky', kind: 'surface', terrainFamilyId: 'volcano',
+      label: 'Sol volcanique rocheux',
+      assets: Object.freeze({base: 'texture.ground.volcanic.rocky.01', variants: Object.freeze([]), edge: null, decals: Object.freeze([])}),
+      render: Object.freeze({baseColor: '#352b2a',variationColors:Object.freeze([]),
+        detailSpacing:0,decalSpacing:0,decalDensity:0,decalMinSize:0,decalMaxSize:0,decalOpacity:0})
+    }),
+    Object.freeze({
       id: 'ground.sea',
       kind: 'surface',
       label: 'Mer bleue',
