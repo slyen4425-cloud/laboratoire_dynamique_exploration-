@@ -137,8 +137,12 @@ try{
   // The real Tester asks for explicit consent before initializing its
   // canonical EncounterConfig. Without handling that native confirmation,
   // awaited Runtime.evaluate remains blocked and the browser gate hangs.
-  // Only this exact legacy-encounter consent is accepted automatically by
-  // this TEST; other confirmations remain under their own explicit gates.
+  // This test intentionally keeps the initial movement-only WorldDocument
+  // at 0% encounters. An automatic "accept" here enables random battles and
+  // makes Android jank assertions fail when a legitimate encounter pauses Play.
+  // The dedicated later encounter test explicitly opts in to preset chances.
+  // No gameplay code or author's saved world is modified.
+  let acceptEncounterPresetInitialization=false;
   let legacyEncounterConsentCount=0;
   let legacyEncounterConsentError=null;
   socket.addEventListener('message',event=>{
@@ -148,9 +152,9 @@ try{
        !packet.params?.message?.startsWith('Ce monde ne peut déclencher aucune rencontre (0 % sur tous les terrains).'))
       return;
     legacyEncounterConsentCount++;
-    void send('Page.handleJavaScriptDialog',{accept:true})
+    void send('Page.handleJavaScriptDialog',{accept:acceptEncounterPresetInitialization})
       .then(reply=>{
-        if(reply.error)legacyEncounterConsentError='CDP refused legacy encounter consent: '+JSON.stringify(reply.error);
+        if(reply.error)legacyEncounterConsentError='CDP rejected legacy encounter choice: '+JSON.stringify(reply.error);
       })
       .catch(error=>{legacyEncounterConsentError='CDP legacy encounter consent: '+error.message;});
   });
@@ -596,13 +600,22 @@ try{
   // Now return RIGHT along the same physically traversed corridor.
   // Going further right than the former x≈204 edge would correctly collide.
   await sleep(140); // let touch release and old pointer capture settle
+  // A touch-emulated browser can momentarily drop keyboard focus. Require
+  // actual WALK on the native actor before simulating a stalled main thread,
+  // otherwise zero motion tests input focus rather than frame-time integration.
+  await run('(()=>{window.focus();return true;})()');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(35);
+  await sleep(90);
   const preJank=await run('window.__sculptNavProbe()');
+  if(preJank.actorMotion!=='walk'||preJank.player.x<=afterStick.player.x)
+    throw Error('V21 jank prerequisite: real native keyboard walk must be active after touch emulation: '+
+      JSON.stringify({afterStick,preJank}));
   await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
     return true;})()`);
-  await sleep(60);
+  // Keep the same real key held for more than one RAF after the freeze;
+  // a 190 ms freeze must not be mistaken for a key-up on a slow mobile CPU.
+  await sleep(180);
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   const postJank=await run('window.__sculptNavProbe()');
@@ -3372,6 +3385,9 @@ try{
 
   // REAL 2.5D keyboard movement -> canonical WorldSurface -> existing
   // Encounter Controller -> CaptureEncounterSnapshot -> packaged Combat iframe.
+  // Real encounter/combat tests, unlike the movement/jank fixture above,
+  // explicitly request the official preset defaults before entering Tester.
+  acceptEncounterPresetInitialization=true;
   const encounterUrl=new URL('/sculpt-lab.html?encounterTest=1',url).href;
   const encounterNavigation=await send('Page.navigate',{url:encounterUrl});
   if(encounterNavigation.error)throw Error('Encounter scene navigation failed');
@@ -4268,7 +4284,7 @@ try{
       dungeonGrid:returned2p5d.dungeon.sculptTerrain.width+'x'+
         returned2p5d.dungeon.sculptTerrain.height,returned:true}));
   if(legacyEncounterConsentError)throw Error(legacyEncounterConsentError);
-  console.log('Legacy encounter setup: explicitly accepted native Chromium confirmations:',legacyEncounterConsentCount);
+  console.log('Legacy encounter setup: native Chromium confirmations handled without random battles in movement fixture:',legacyEncounterConsentCount);
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
