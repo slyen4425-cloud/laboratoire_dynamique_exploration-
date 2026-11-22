@@ -140,6 +140,8 @@ jobs:
           node site/scripts/prune-pages-duplicate-previews.mjs site
           # Author ZIPs remain in the source repository; only decoded official
           # hero frames are part of the browser runtime and Pages budget.
+          # The author archive remains in source Git; Pages keeps only five tiny WebPs.
+          find site -maxdepth 1 -type f -name 'GENSRPG_Exploration_5_textures_2026-11-22.zip' -delete
           find site -maxdepth 1 -type f \( -name 'GenSRPG_heros_*.zip' -o -name 'gensrpg_monster_capture_lot_*_heros_decoupes.zip' \) -delete
           test -s site/sculpt-lab.html
           test -s site/assets/exploration/actors/official/catalog.json
