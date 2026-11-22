@@ -162,6 +162,10 @@ try{
     document.querySelector('#sculpt-family-kind').value='terrain';
     document.querySelector('#sculpt-family-chance').value='60';
     document.querySelector('#sculpt-family-create').click();
+    const pick=[...document.querySelectorAll('#sculpt-encounter-elements input[data-element-id]')];
+    if(pick.length&&!pick.some(x=>x.checked)){
+      pick[0].checked=true;pick[0].dispatchEvent(new Event('change',{bubbles:true}));
+    }
     const created=window.__sculptEncounterEditorProbe();
     const feedback=document.querySelector('#sculpt-family-create-status').textContent;
     document.querySelector('#mode-surface').click();
