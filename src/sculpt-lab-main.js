@@ -1060,8 +1060,10 @@ let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
 let sphereTexturesLoaded=0;
-const sculptGroundMaterials=Object.freeze(['grass.forest','grass.forest.alt','ground.forest_floor',
-  'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
+// Single canonical exterior selection projected from the existing paint catalog.
+const sculptGroundMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS
+  .filter(meta=>meta.kind==='zone'&&!meta.id.startsWith('floor.'))
+  .map(meta=>meta.id));
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
 const images=new Map();
