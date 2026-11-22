@@ -362,8 +362,13 @@ $('npc-merchant-configure').addEventListener('click',()=>{
   notify('Enregistre d’abord ton PNJ avant de modifier sa boutique.',true);
   return;
  }
+ // Transport only references, not the shop or the NPC draft.
+ // The Capture editor can now preselect this PNJ's existing merchant and
+ // return to this same saved definition after saving its canonical rules.
  window.parent.postMessage({
-  schema:'gensrpg.exploration.npc.merchant.configure.v1'
+  schema:'gensrpg.exploration.npc.merchant.configure.v1',
+  npcId:selected?.id??null,
+  merchantId:merchantIdDraft||null
  },window.location.origin);
 });
 $('npc-merchant-choice').addEventListener('change',()=>{
