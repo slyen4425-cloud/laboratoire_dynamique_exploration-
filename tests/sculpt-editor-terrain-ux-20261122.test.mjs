@@ -41,7 +41,7 @@ test('high grass family is created through existing World Builder commands and s
 });
 
 test('mobile editor groups controls without duplicating IDs or exposing manual family identifiers',()=>{
-  const ids=[...html.matchAll(/\\bid="([^"]+)"/g)].map(match=>match[1]);
+  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(match=>match[1]);
   for(const id of ['sculpt-settings','surface-material','surface-family',
                    'surface-base-family','sculpt-family-create','sculpt-family-template',
                    'sculpt-family-chance','sculpt-encounter-chance',
@@ -51,7 +51,7 @@ test('mobile editor groups controls without duplicating IDs or exposing manual f
   assert.ok(html.indexOf('id="sculpt-settings"')<html.indexOf('id="sculpt-canvas"'));
   assert.match(html,/<optgroup label="🌿 Herbe et forêt">/);
   assert.match(html,/<details id="sculpt-family-create-details"/);
-  assert.match(html,/body\\.sculpt-immersive #sculpt-settings/);
-  assert.match(script,/addTerrainFamilyDefinition\\(sculptWorldDraft/);
+  assert.match(html,/body\.sculpt-immersive #sculpt-settings/);
+  assert.match(script,/addTerrainFamilyDefinition\(sculptWorldDraft/);
   assert.match(script,/sculptPaintFamilyManuallyChosen/);
 });
