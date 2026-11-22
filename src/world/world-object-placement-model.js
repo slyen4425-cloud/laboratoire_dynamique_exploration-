@@ -73,6 +73,8 @@ function normalizeTransform(raw) {
         max: WORLD_OBJECT_PLACEMENT_LIMITS.maxScale
       }
     ),
+    // Legacy placements preserve planar image rotation; newly turned 2D art uses yaw.
+    ...(source.rotationAxis === 'horizontal' ? {rotationAxis: 'horizontal'} : {}),
     // Legacy placements remain unchanged; only mirrored ones set this.
     ...(source.flipX === true ? {flipX: true} : {})
   });

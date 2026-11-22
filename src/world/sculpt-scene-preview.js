@@ -1,5 +1,6 @@
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
+import {worldObjectSupportsHorizontalTurnV1} from './world-object-horizontal-turn-v1.js';
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js?rev=author-maps-three-v1';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js';
 import {createSculptSurface,normalizeSculptSurface} from './sculpt-surface-paint.js';
@@ -114,7 +115,10 @@ export function appendSculptPreviewObject(objects,{
   while(used.has('sculpt-object-'+suffix))suffix++;
   const placement=normalizeWorldObjectPlacement({
     id:'sculpt-object-'+suffix,objectDefinitionId:definitionId,
-    transform:{x,y,scaleX,scaleY,rotationDeg,...(flipX===true?{flipX:true}:{})},
+    transform:{x,y,scaleX,scaleY,rotationDeg,
+      ...(rotationDeg%360!==0&&worldObjectSupportsHorizontalTurnV1(objectDefinitionCatalogV1.get(definitionId)?.kind)?
+        {rotationAxis:'horizontal'}:{}),
+      ...(flipX===true?{flipX:true}:{})},
     overrides:{visualVariantId:validVariant(definitionId,variantId)}
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
@@ -138,7 +142,11 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
       nextTransform.scaleX=scaleX;
     if(Number.isFinite(scaleY)&&scaleY>=.25&&scaleY<=maxScale)
       nextTransform.scaleY=scaleY;
-    if(Number.isFinite(rotationDeg))nextTransform.rotationDeg=rotationDeg;
+    if(Number.isFinite(rotationDeg)){
+      nextTransform.rotationDeg=rotationDeg;
+      if(worldObjectSupportsHorizontalTurnV1(definition?.kind))
+        nextTransform.rotationAxis='horizontal';
+    }
     if(flipX===true)nextTransform.flipX=true;
     else if(flipX===false)delete nextTransform.flipX;
     const nextVariant=variantId===undefined?item.overrides.visualVariantId:
@@ -149,6 +157,7 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
        nextTransform.scaleY===item.transform.scaleY&&
        nextTransform.x===item.transform.x&&nextTransform.y===item.transform.y&&
        nextTransform.rotationDeg===item.transform.rotationDeg&&
+        nextTransform.rotationAxis===item.transform.rotationAxis&&
        (nextTransform.flipX===true)===(item.transform.flipX===true)&&
        nextVariant===item.overrides.visualVariantId&&
        worldObjectShadowSettingsEqualV1(nextShadow,item.overrides.shadow))return item;
