@@ -107,8 +107,22 @@ try {
   const playingUrl=await run("performance.getEntriesByType('resource').filter(x=>x.name.includes('/exploration-v1/')).map(x=>x.name)");
   if(!/^exploration-[1-4]$/.test(track)||!playingUrl.some(x=>x.includes('.mp3')))
     throw Error('No actual bundled Exploration MP3 loaded: '+JSON.stringify({state,playingUrl}));
-  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:rect.x,y:rect.y,button:'left',clickCount:1});
-  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:rect.x,y:rect.y,button:'left',clickCount:1});
+  // Tester changes the navigation chrome layout on mobile; never reuse the
+  // coordinates captured before entering it, as that can click empty space.
+  // The exit is still tested with a real trusted pointer gesture.
+  const stopRect=await run(`(()=>{
+    const b=document.querySelector('#navigation-toggle');
+    b.scrollIntoView({block:'center',behavior:'instant'});
+    const r=b.getBoundingClientRect();
+    const x=r.left+r.width/2,y=r.top+r.height/2;
+    return {x,y,visible:r.width>0&&r.height>0&&x>=0&&x<innerWidth&&y>=0&&y<innerHeight,
+      hit:document.elementFromPoint(x,y)?.id};
+  })()`);
+  if(!stopRect.visible||stopRect.hit!=='navigation-toggle')
+    throw Error('Tester exit button is not reachable after layout changes: '+JSON.stringify(stopRect));
+  await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:stopRect.x,y:stopRect.y});
+  await send('Input.dispatchMouseEvent',{type:'mousePressed',x:stopRect.x,y:stopRect.y,button:'left',clickCount:1});
+  await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:stopRect.x,y:stopRect.y,button:'left',clickCount:1});
   const stopped=await run("window.__sculptExplorationSoundProbe()");
   if(stopped.state!=='stopped')throw Error('Music survived edit-mode return: '+JSON.stringify(stopped));
   console.log('GREEN real MP3 audible timeline after trusted Tester click',JSON.stringify({state,stopped}));
