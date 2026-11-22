@@ -88,7 +88,7 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
   );
   assert.equal(registry.resolve('ground.sea')?.kind, 'surface');
   assert.equal(registry.resolve('ground.road')?.kind, 'surface');
-  assert.equal(registry.list().length, 22);
+  assert.equal(registry.list().length, 27);
 });
 
 test('unknown material ids never silently fall back', () => {
