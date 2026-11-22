@@ -130,10 +130,15 @@ test('V11 visual rounding is separate from height data and preserves original 2D
  assert.doesNotMatch(source.slice(source.indexOf('export function drawSculptTerrain')),/visualSmoothness|roundedHill/);
  assert.doesNotMatch(source,/WorldDocument|collisionWorld|isBlocked/);
  const page=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
- for(const marker of ['data-mode="plateau"','id="level-up"','id="level-down"',
+ for(const marker of ['data-mode="plateau"','id="quick-level-plus"','id="quick-level-minus"',
    'id="target"','id="edge"']){
    assert.ok(page.includes(marker),marker);
  }
+ assert.doesNotMatch(page,/id="level-(up|down)"/,
+   'The modern editor has just one pair of +/- buttons, in its quickbar');
+ const frozenV80=readFileSync(new URL('../sculpt-lab-v80.html',import.meta.url),'utf8');
+ for(const marker of ['id="level-up"','id="level-down"','id="target"'])
+   assert.ok(frozenV80.includes(marker),'V80 compatibility: '+marker);
  assert.doesNotMatch(page,/data-mode="smooth"|data-mode="cliff-round"|id="visual-smooth"/);
 });
 
