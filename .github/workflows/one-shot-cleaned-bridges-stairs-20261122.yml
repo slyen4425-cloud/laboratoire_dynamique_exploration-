@@ -1,0 +1,36 @@
+name: One-shot replace cleaned bridges and stairs 2026-11-22
+on:
+  push:
+    branches:
+      - fix/replace-cleaned-bridges-stairs-20261122
+    paths:
+      - .github/workflows/one-shot-cleaned-bridges-stairs-20261122.yml
+permissions:
+  contents: write
+jobs:
+  apply-user-approved-visuals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Replace canonical visual files and manifests
+        run: python3 scripts/apply-uploaded-bridges-stairs-20261122.py
+      - name: Verify bridge hashes and changed code
+        run: |
+          python3 scripts/update-bridge-manifest-v74.py
+          npm run check
+      - name: Verify regression tests
+        run: npm test
+      - name: Remove staged uploads and commit replacement
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -- ponts_nettoyes_labo_exploration_2026-11-22.zip escalier_terre_bois_2_profils_valides.zip stairs_earth_log_path_2p5d_front_01.webp stairs_earth_log_path_2p5d_oblique_01.webp
+          git add assets/exploration/objects/bridges assets/exploration/objects/stairs src/objects/object-definition-catalog.js src/assets/world-object-asset-adapter.js src/sculpt-lab-main.js tests/exploration-stairs-2p5d-v1.test.js tests/sculpt-bridge-source-webps-v74.test.js docs/checkpoints/EXPLORATION_USER_CLEANED_BRIDGES_STAIRS_20261122.md
+          git diff --cached --check
+          git commit -m 'fix(exploration): replace 8 bridges and 3 stairs, add profile A as side alternate'
+          git push origin HEAD:fix/replace-cleaned-bridges-stairs-20261122
