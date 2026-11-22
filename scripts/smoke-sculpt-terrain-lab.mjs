@@ -596,13 +596,22 @@ try{
   // Now return RIGHT along the same physically traversed corridor.
   // Going further right than the former x≈204 edge would correctly collide.
   await sleep(140); // let touch release and old pointer capture settle
+  // A touch-emulated browser can momentarily drop keyboard focus. Require
+  // actual WALK on the native actor before simulating a stalled main thread,
+  // otherwise zero motion tests input focus rather than frame-time integration.
+  await run('(()=>{window.focus();return true;})()');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(35);
+  await sleep(90);
   const preJank=await run('window.__sculptNavProbe()');
+  if(preJank.actorMotion!=='walk'||preJank.player.x<=afterStick.player.x)
+    throw Error('V21 jank prerequisite: real native keyboard walk must be active after touch emulation: '+
+      JSON.stringify({afterStick,preJank}));
   await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
     return true;})()`);
-  await sleep(60);
+  // Keep the same real key held for more than one RAF after the freeze;
+  // a 190 ms freeze must not be mistaken for a key-up on a slow mobile CPU.
+  await sleep(180);
   await send('Input.dispatchKeyEvent',
     {type:'keyUp',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   const postJank=await run('window.__sculptNavProbe()');
