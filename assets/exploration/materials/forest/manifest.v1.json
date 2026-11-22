@@ -158,6 +158,51 @@
       "height": 128,
       "assetId": "decal.forest.roots.01",
       "role": "decal"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/terrain_haute_herbe_01.webp",
+      "sha256": "9a127bde4f600d1fbb77fc8cb1a03f7bc05d569576805e98ad461bb59627a49b",
+      "bytes": 8520,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.grass.forest.tall.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/terrain_herbe_fleurie_01.webp",
+      "sha256": "6cef9ed6c7e12b67f1e9d2cb1ab2ba7d3f13908ef6e111a32797462ae92bfff0",
+      "bytes": 9316,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.grass.forest.flowers.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/terrain_neige_rocheuse_01.webp",
+      "sha256": "2e336b9446c335b0cf5f1913b45dbae5a137cb691ab77bd2ff7dbc57337cda35",
+      "bytes": 8552,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.snow.rocky.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/terrain_sol_terre_01.webp",
+      "sha256": "e3d1958b076497b6b56b29a582792ad583a42d94cff7d2206efae5af691f1440",
+      "bytes": 4416,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.dirt.textured.01",
+      "role": "surface-base"
+    },
+    {
+      "path": "assets/exploration/materials/forest/surfaces/terrain_sol_volcanique_01.webp",
+      "sha256": "d14a157801e96c4a0e7121cb044799c1bfe17ea15125aa9e63029f417faf2cbc",
+      "bytes": 4506,
+      "width": 128,
+      "height": 128,
+      "assetId": "texture.ground.volcanic.rocky.01",
+      "role": "surface-base"
     }
   ]
 }
