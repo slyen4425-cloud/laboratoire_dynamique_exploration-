@@ -48,6 +48,16 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git rm -- ponts_nettoyes_labo_exploration_2026-11-22.zip escalier_terre_bois_2_profils_valides.zip stairs_earth_log_path_2p5d_front_01.webp stairs_earth_log_path_2p5d_oblique_01.webp
           git add assets/exploration/objects/bridges assets/exploration/objects/stairs src/objects/object-definition-catalog.js src/assets/world-object-asset-adapter.js src/sculpt-lab-main.js tests/exploration-stairs-2p5d-v1.test.js tests/sculpt-bridge-source-webps-v74.test.js tests/exploration-bridges-2p5d-v1.test.js tests/sculpt-stairs-palette-v76-r15.test.js docs/checkpoints/EXPLORATION_USER_CLEANED_BRIDGES_STAIRS_20261122.md
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("src/assets/world-object-asset-adapter.js")
+          s=p.read_text()
+          old="  }), \n  'object.stairs.earth_log_path_2p5d.side_alt.01'"
+          new="  }),\n  'object.stairs.earth_log_path_2p5d.side_alt.01'"
+          assert s.count(old)==1
+          p.write_text(s.replace(old,new))
+          PY
+          git add src/assets/world-object-asset-adapter.js
           git diff --cached --check
           git commit -m 'fix(exploration): replace 8 bridges and 3 stairs, add profile A as side alternate'
           git push origin HEAD:fix/replace-cleaned-bridges-stairs-20261122
