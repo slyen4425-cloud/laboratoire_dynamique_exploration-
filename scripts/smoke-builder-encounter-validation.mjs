@@ -130,6 +130,60 @@ try{
   if(authored.disabled.allowedInArea!==false||authored.enabled.allowedInArea!==true||
      authored.enabled.chance!==67||authored.enabled.enabledElementIds.length===0||!authored.closed)
     throw Error('Sculpt real encounter authoring failed '+JSON.stringify(authored));
+  // One real Atelier overlay must stay reachable in phone landscape, no clone.
+  await send('Emulation.setDeviceMetricsOverride',{width:844,height:390,
+    deviceScaleFactor:1,mobile:true,screenOrientation:{type:'landscapePrimary',angle:90}});
+  const layout=await run(`(()=>{
+    const panel=document.querySelector('#sculpt-settings');
+    const toggle=document.querySelector('#sculpt-settings-toggle');
+    const initiallyHidden=getComputedStyle(panel).display==='none';
+    toggle.click();
+    const rect=panel.getBoundingClientRect();
+    const result={initiallyHidden,open:panel.open,viewport:[innerWidth,innerHeight],
+      rect:{left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom},
+      quickPlus:document.querySelectorAll('#quick-level-plus').length,
+      oldPlus:document.querySelectorAll('#level-up').length,
+      baseMaterial:document.querySelectorAll('#material').length,
+      scrollable:panel.scrollHeight>panel.clientHeight?getComputedStyle(panel).overflowY==='auto':true};
+    toggle.click();
+    return {...result,closed:!panel.open};
+  })()`);
+  await send('Emulation.clearDeviceMetricsOverride');
+  if(!layout.initiallyHidden||!layout.open||!layout.closed||
+      layout.rect.left<0||layout.rect.top<0||
+      layout.rect.right>layout.viewport[0]+1||layout.rect.bottom>layout.viewport[1]+1||
+      layout.quickPlus!==1||layout.oldPlus!==0||layout.baseMaterial!==1||!layout.scrollable)
+    throw Error('Sculpt single Atelier overflows phone-landscape or duplicates controls: '+
+      JSON.stringify(layout));
+  // Arbitrarily named WorldDocument family, not a hard-coded 'Haute herbe'.
+  const custom=await run(`(()=>{
+    document.querySelector('#mode-encounters').click();
+    document.querySelector('#sculpt-family-name').value='Marais libre';
+    document.querySelector('#sculpt-family-kind').value='terrain';
+    document.querySelector('#sculpt-family-chance').value='60';
+    document.querySelector('#sculpt-family-create').click();
+    const created=window.__sculptEncounterEditorProbe();
+    const feedback=document.querySelector('#sculpt-family-create-status').textContent;
+    document.querySelector('#mode-surface').click();
+    const family=document.querySelector('#surface-family');
+    const selectedOnCreate=family.value;
+    const texture=document.querySelector('#surface-material');
+    texture.value='grass.forest.alt';
+    texture.dispatchEvent(new Event('change',{bubbles:true}));
+    const selectedAfterTexture=family.value;
+    const names=[...document.querySelector('#sculpt-encounter-family').options]
+      .filter(option=>option.value===created.familyId).map(option=>option.text);
+    return {created,feedback,selectedOnCreate,selectedAfterTexture,
+      texture:texture.value,names};
+  })()`);
+  if(!custom.created?.familyId||custom.created.chance!==60||
+      !custom.feedback.includes('Marais libre')||
+      custom.selectedOnCreate!==custom.created.familyId||
+      custom.selectedAfterTexture!==custom.created.familyId||
+      custom.texture!=='grass.forest.alt'||custom.names[0]!=='Marais libre')
+    throw Error('Custom terrain family cannot coexist with independently chosen texture: '+
+      JSON.stringify(custom));
+
   // Save through the real WorldArea transition, not direct state mutation.
   await run("document.querySelector('#world-area-return').click();'saved-through-WorldArea'");
   let returned;
@@ -152,6 +206,14 @@ try{
   const savedArea=returned.world.areas.find(a=>a.id===authored.enabled.areaId);
   const savedFamily=returned.world.encounterConfig.families
     .find(f=>f.terrainFamilyId===authored.enabled.familyId);
+  const savedCustom=returned.world.terrainFamilies
+    .find(f=>f.id===custom.created.familyId);
+  const savedCustomProfile=returned.world.encounterConfig.families
+    .find(f=>f.terrainFamilyId===custom.created.familyId);
+  if(savedCustom?.label!=='Marais libre'||savedCustom?.paintKind!=='terrain'||
+      savedCustomProfile?.encounterChancePercent!==60)
+    throw Error('Custom family lost during native World Builder save: '+JSON.stringify({
+      savedCustom,savedCustomProfile,custom}));
   if(!savedArea||savedArea.encounters?.randomEnabled!==true||
      savedFamily?.encounterChancePercent!==67||
      returned.probe.source!=='WorldDocument')
