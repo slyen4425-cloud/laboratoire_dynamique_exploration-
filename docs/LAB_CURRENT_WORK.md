@@ -1,3 +1,9 @@
+## 2026-11-22 — PNJ marchand : configurer la boutique Capture depuis l’éditeur PNJ (DRAFT, non GREEN)
+- Base `main@abe51d7f0634684d29772e0730719b2eb347fa98`, checkpoint `checkpoint/exploration-npc-shop-start-20261122` ; branche `work/exploration-npc-shop-delegated-20261122`, PR #518.
+- Périmètre autorisé : `npc-editor.html`, `src/actors/npc-editor-v1.js`, test de délégation. Propriétaire : Exploration pour la présentation du PNJ et la référence `merchantId` uniquement ; AdventureRules/AdventureSession Capture restent maîtres des offres, stocks, taux, inventaire, commerce et sauvegardes.
+- Modification : bouton marchand délégué au Shell Capture same-origin, refuse de quitter un formulaire PNJ non enregistré. Pas de système économique, boucle, duplicat ou jeu supplémentaire.
+- Tests : `tests/npc-merchant-configuration-delegation-20261122.test.mjs`, sentinelles existantes NPC/World Builder, tests navigateurs Android paysage/PC; coordination propriétaire Capture PR #595, issue principale GenSRPG #594. CI Exploration réussite au SHA de préparation, mais pas de GREEN/publication avant raccord PWA et test réel.
+
 ## 2026-11-19 — Retour auteur : échec Save WorldArea + teinte artificielle en hauteur (C1 correctif isolé)
 - Signal réel : capture 19:25, après PR #502 pourtant GREEN, routes/sols de relief toujours décolorés, et « Enregistrement bloqué · WorldArea invalide : portal-invalid-or-duplicate » en quittant l'éditeur ; perte d'une heure de dessin. Ne pas décrire cela comme corrigé par l'ancienne livraison.
 - START Exploration officiel `main@0128e69c290b43014a5a899804c588d805e2b4b0`, checkpoint `checkpoint/gensrpg-before-world-save-textures-20261119`, branche unique `work/gensrpg-world-save-textures-20261119`. Gel des autres agents, Capture/PWA, Combat/Donjon, assets, WorldDocument persistant, Portals/Spawns existants et service worker.
