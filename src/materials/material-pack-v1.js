@@ -45,26 +45,6 @@ export const materialPackV1 = Object.freeze({
         decalOpacity: 0.36
       })
     }),
-    // Expose the already-shipped grass variant as an explicit brush option.
-    // Both images retain the same forest encounter family.
-    Object.freeze({
-      id: 'grass.forest.alt',
-      kind: 'surface',
-      terrainFamilyId: 'forest',
-      label: 'Herbe cartoon · variante 2',
-      assets: Object.freeze({
-        base: 'texture.grass.forest.base.02',
-        variants: Object.freeze([]),
-        edge: null,
-        decals: Object.freeze([])
-      }),
-      render: Object.freeze({
-        baseColor: '#536247',
-        variationColors: Object.freeze(['rgba(111,92,57,0.12)','rgba(70,90,48,0.14)']),
-        detailSpacing: 260, decalSpacing: 0, decalDensity: 0,
-        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
-      })
-    }),
     Object.freeze({
       id: 'ground.dirt',
       kind: 'surface',
@@ -167,6 +147,26 @@ export const materialPackV1 = Object.freeze({
         decalMinSize: 0,
         decalMaxSize: 0,
         decalOpacity: 0
+      })
+    }),
+    // Expose the already-shipped grass variant as an explicit brush option.
+    // Both images retain the same forest encounter family.
+    Object.freeze({
+      id: 'grass.forest.alt',
+      kind: 'surface',
+      terrainFamilyId: 'forest',
+      label: 'Herbe cartoon · variante 2',
+      assets: Object.freeze({
+        base: 'texture.grass.forest.base.02',
+        variants: Object.freeze([]),
+        edge: null,
+        decals: Object.freeze([])
+      }),
+      render: Object.freeze({
+        baseColor: '#536247',
+        variationColors: Object.freeze(['rgba(111,92,57,0.12)','rgba(70,90,48,0.14)']),
+        detailSpacing: 260, decalSpacing: 0, decalDensity: 0,
+        decalMinSize: 0, decalMaxSize: 0, decalOpacity: 0
       })
     }),
     Object.freeze({
