@@ -1199,3 +1199,11 @@
 - CI Node + vrais tests Chromium, dont lecture réelle d'un MP3 sur clic Tester, passage Combat retour, World Builder et sauvegardes.
 - Assemblage Pages + 4 SHA256 MP3 + vérification HTTP + preuve V80 identique.
 - Checkpoint final GREEN avec SHA et runs ; pas de déclaration GREEN sans preuve.
+
+
+## 2026-11-22 — Sculpt 2,5D : ergonomie des textures et familles (branche isolée)
+- Branche : `feat/sculpt-editor-terrain-palette-20261122` depuis `main` ; **pas de fusion tant que les gates ne sont pas validés**.
+- Référence détaillée : [SCULPT_TERRAIN_PALETTE_20261122.md](plans/SCULPT_TERRAIN_PALETTE_20261122.md).
+- Autorités réutilisées : `WorldDocument.terrainFamilies`, `WorldDocument.encounterConfig`, `WorldSurface`, `MaterialPack` ; zéro nouveau stockage ou gestionnaire de rencontres.
+- Tests : unité/contrat + CI, navigateur smartphone et PC ; vieux V80, géométrie, collisions, monde et PWA protégés.
+- Statut : implémentation en PR, checkpoint GREEN non acquis ; aucun déploiement revendiqué.
