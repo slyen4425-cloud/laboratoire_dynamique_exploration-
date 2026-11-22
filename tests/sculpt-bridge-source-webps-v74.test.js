@@ -62,7 +62,7 @@ test('V74 Sculpt loads original corrected sources once and preserves historic br
  assert.match(main,/resolved\.path\.includes\('_2p5d_'\)/);
  assert.match(main,/if\(resolved\.kind==='bridge-visual'&&!sourceCleaned2p5d\)/);
  assert.match(main,/prepareSculptBridgeImage\(picture\)/);
- assert.match(main,/resolved\.path\+'\?source-clean-v74'/);
+ assert.match(main,/resolved\.path\+'\?source-clean-v75'/);
  assert.match(page,/vertical-v73-assets-v74/);
  // No asset-derived gameplay is permitted.
  assert.doesNotMatch(main,/naturalWidth.*bridgeTraversalRect/);

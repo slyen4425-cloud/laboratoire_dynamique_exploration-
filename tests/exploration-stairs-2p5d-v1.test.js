@@ -11,9 +11,9 @@ const families = ["stone_rustic","stone_temple","wood_rustic","stone_ruins_moss"
 const views = ['front','oblique','side'];
 
 test('ten new staircase styles have three native catalog variants without replacing legacy stairs', () => {
-  assert.equal(manifest.files.length,33);
-  assert.equal(added.length,30);
-  assert.equal(new Set(added.map(x=>x.assetId)).size,30);
+  assert.equal(manifest.files.length,34);
+  assert.equal(added.length,31);
+  assert.equal(new Set(added.map(x=>x.assetId)).size,31);
   for (const family of families) {
     const id = 'objectdef.stairs.'+family+'_2p5d.01';
     const def = objectDefinitionCatalogV1.require(id);
@@ -21,8 +21,8 @@ test('ten new staircase styles have three native catalog variants without replac
     assert.equal(def.library.categoryId,'stairs');
     assert.equal(def.library.folderId,'stairs/general');
     assert.equal(def.visual.defaultVariantId,'front');
-    assert.deepEqual(def.visual.variants.map(v=>v.id),views);
-    for(const view of views) {
+    assert.deepEqual(def.visual.variants.map(v=>v.id),family==='earth_log_path'?[...views,'side_alt']:views);
+    for(const view of (family==='earth_log_path'?[...views,'side_alt']:views)) {
       const assetId='object.stairs.'+family+'_2p5d.'+view+'.01';
       assert.equal(def.visual.variants.find(x=>x.id===view).assetId,assetId);
       const entry=added.find(x=>x.assetId===assetId);
@@ -34,7 +34,7 @@ test('ten new staircase styles have three native catalog variants without replac
   for (const old of ['objectdef.stairs.stone.simple.01','objectdef.stairs.wood.porch.01','objectdef.stairs.stone.grand.01']) assert.ok(objectDefinitionCatalogV1.get(old));
 });
 
-test('the 30 committed WebP binaries match SHA-256, length and RIFF structure', async () => {
+test('the 31 committed WebP binaries match SHA-256, length and RIFF structure', async () => {
   for (const entry of added) {
     const bytes=await readFile(new URL('../'+entry.path,import.meta.url));
     assert.equal(bytes.length,entry.bytes,entry.path);
