@@ -125,7 +125,7 @@ import {createExplorationPeerVisualProjectionV1,EXPLORATION_PEER_SNAPSHOT_EVENT_
 } from './play/exploration-peer-visual-projection-v1.js';
 import {listAvailableSculptMapPresets,builtinSculptMapPresets} from './builder/sculpt-builtin-map-presets.js?rev=author-maps-three-v1';
 import {renderSculptMapPresetChoicesV1} from './builder/sculpt-map-preset-choices-ui-v1.js?rev=library-ux-20261118';
-import {createWorldBuilderDraft,connectWorldAreas,ensureWorldPortalIndependentArrivalV1,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
+import {createWorldBuilderDraft,addTerrainFamilyDefinition,updateTerrainFamilyElementChance,connectWorldAreas,ensureWorldPortalIndependentArrivalV1,initializeWorldPresetEncounters,validateWorldBuilderDraft} from './builder/world-builder-draft.js?rev=preset-travel-encounters-v2';
 import {worldInteriorFloors,worldInteriorFloorPortals,worldInteriorHouseExit,
   addWorldInteriorFloor,changeWorldInteriorConnector,changeWorldInteriorDoor}
   from './builder/sculpt-world-interior-floors-v1.js?rev=restore-world-interior-tools-20261115';
@@ -254,11 +254,28 @@ const surfaceBaseFamilySelect=$('surface-base-family');
 const surfacePaintFamilySelect=$('surface-family');
 if(Boolean(surfaceBaseFamilySelect)!==Boolean(surfacePaintFamilySelect))
   throw Error('Incomplete terrain family palette in sculpt editor HTML');
+// In World Builder, the canonical WorldDocument defines custom families.
+// Standalone Sculpt / V80 continue to use the historical defaults.
+const sculptTerrainFamilies=()=>sculptWorldDraft?.terrainFamilies?.length
+  ?sculptWorldDraft.terrainFamilies:terrainFamilyRegistry.list();
+let sculptPaintFamilyManuallyChosen=false;
+function refreshSculptTerrainFamilySelectors(){
+  if(!surfaceBaseFamilySelect)return;
+  const families=sculptTerrainFamilies();
+  const ids=new Set(families.map(f=>f.id));
+  const preferredPaint=surfacePaintFamilySelect.value;
+  for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect]){
+    const desired=selector===surfaceBaseFamilySelect
+      ?surface.baseTerrainFamilyId:preferredPaint;
+    selector.replaceChildren(...families.map(f=>new Option(f.label,f.id)));
+    selector.value=ids.has(desired)?desired:
+      (ids.has(surface.baseTerrainFamilyId)?surface.baseTerrainFamilyId:families[0]?.id??'');
+  }
+}
 if(surfaceBaseFamilySelect){
-  for(const selector of [surfaceBaseFamilySelect,surfacePaintFamilySelect])
-    selector.replaceChildren(...terrainFamilyRegistry.list().map(f=>new Option(f.label,f.id)));
-  surfaceBaseFamilySelect.value=surface.baseTerrainFamilyId;
+  refreshSculptTerrainFamilySelectors();
   surfacePaintFamilySelect.value=sculptEncounterFamilyForMaterial($('surface-material').value)??surface.baseTerrainFamilyId;
+  surfacePaintFamilySelect.addEventListener('change',()=>{sculptPaintFamilyManuallyChosen=true;});
 }
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
 const surfacePaintImages=new Map();
@@ -424,15 +441,30 @@ function refreshSculptEncounterAuthoringStatus(){
 }
 function refreshSculptEncounterEditor(){
   if(!sculptEncounterEditor)return;
-  const families=terrainFamilyRegistry.list();
+  const families=sculptTerrainFamilies();
   const ids=new Set(families.map(x=>x.id));
   if(!ids.has(selectedSculptEncounterFamilyId))
     selectedSculptEncounterFamilyId=ids.has(surface.baseTerrainFamilyId)
       ?surface.baseTerrainFamilyId:families[0]?.id??'';
   const select=$('sculpt-encounter-family');
-  if(select.options.length!==families.length)
+  // Labels can change in the official World Builder; do not rely only on length.
+  if(select.options.length!==families.length||
+      [...select.options].some((option,i)=>option.value!==families[i].id||option.text!==families[i].label))
     select.replaceChildren(...families.map(x=>new Option(x.label,x.id)));
   select.value=selectedSculptEncounterFamilyId;
+  const familyTemplate=$('sculpt-family-template');
+  if(familyTemplate){
+    const before=familyTemplate.value||'forest';
+    familyTemplate.replaceChildren(...families.map(x=>new Option(x.label,x.id)));
+    familyTemplate.value=ids.has(before)?before:(ids.has('forest')?'forest':families[0]?.id??'');
+    const createButton=$('sculpt-family-create');
+    if(createButton)createButton.disabled=!sculptWorldDraft||!sculptWorldAreaMounted;
+    $('sculpt-family-create-status').textContent=!sculptWorldDraft
+      ?'Crée ou ouvre une carte dans World Builder pour enregistrer une nouvelle famille.'
+      :!sculptWorldAreaMounted
+        ?'Aucune carte 2,5D chargée : création indisponible.'
+        :'Les familles appartiennent au monde actuel, pas à une image.';
+  }
   const enabled=sculptEncounterAreaEnabled();
   $('sculpt-encounter-area-enabled').checked=enabled;
   $('sculpt-encounter-area-status').textContent=
@@ -474,7 +506,7 @@ function refreshSculptEncounterEditor(){
         {encounterConfig:sculptEncounterConfig},
         selectedSculptEncounterFamilyId,element.id,input.checked
       );
-      sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig);
+      sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig,sculptTerrainFamilies().map(f=>f.id));
       refreshSculptEncounterAuthoringStatus();
     });
     line.append(input,name);container.append(line);
@@ -500,6 +532,46 @@ function setSculptEncounterEditorOpen(on){
   if(on)refreshSculptEncounterEditor();
 }
 if(sculptEncounterEditor){
+  $('sculpt-family-create')?.addEventListener('click',()=>{
+    if(!sculptWorldDraft||!sculptWorldAreaMounted){
+      status('Ouvre d’abord une carte 2,5D dans le World Builder.');return;
+    }
+    const name=$('sculpt-family-name').value.trim();
+    const feedback=$('sculpt-family-create-status');
+    if(!name){feedback.textContent='Indique un nom de famille.';return;}
+    if(sculptTerrainFamilies().some(f=>f.label.toLocaleLowerCase()===name.toLocaleLowerCase())){
+      feedback.textContent='Cette famille existe déjà. Sélectionne-la dans la liste.';return;
+    }
+    if(sculptTerrainFamilies().length>=64){
+      feedback.textContent='Limite de 64 familles dans ce monde.';return;
+    }
+    const oldIds=new Set(sculptTerrainFamilies().map(f=>f.id));
+    const sourceId=$('sculpt-family-template').value;
+    const source=sculptEncounterConfig.families.find(f=>f.terrainFamilyId===sourceId);
+    const chance=Math.max(0,Math.min(100,Number($('sculpt-family-chance').value)||0));
+    let next=addTerrainFamilyDefinition(sculptWorldDraft,{label:name,paintKind:'terrain'});
+    const created=next.terrainFamilies.find(f=>!oldIds.has(f.id));
+    if(!created){feedback.textContent='Création impossible, aucune famille ajoutée.';return;}
+    // Reuse the canonical Builder commands: no parallel encounter table.
+    for(const element of source?.elementChances??[])
+      next=updateTerrainFamilyElementChance(next,created.id,element.elementId,element.chancePercent);
+    next=updateTerrainFamilyEncounterProfile(next,created.id,{
+      encounterChancePercent:source?.elementChances?.length?chance:0
+    });
+    sculptWorldDraft=next;
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(
+      next.encounterConfig,next.terrainFamilies.map(f=>f.id));
+    selectedSculptEncounterFamilyId=created.id;
+    refreshSculptTerrainFamilySelectors();
+    if(surfacePaintFamilySelect){
+      surfacePaintFamilySelect.value=created.id;
+      sculptPaintFamilyManuallyChosen=true;
+    }
+    refreshSculptEncounterEditor();
+    $('sculpt-family-name').value='';
+    feedback.textContent='Famille « '+created.label+' » ajoutée. Peins-la depuis Textures.';
+    status('Famille '+created.label+' ajoutée au World Builder · configure les rencontres puis enregistre le monde.');
+  });
   $('mode-encounters').addEventListener('click',
     ()=>setSculptEncounterEditorOpen(sculptEncounterEditor.hidden));
   $('sculpt-encounter-close').addEventListener('click',
@@ -517,7 +589,7 @@ if(sculptEncounterEditor){
       {encounterConfig:sculptEncounterConfig},selectedSculptEncounterFamilyId,
       {encounterChancePercent:chance}
     );
-    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig);
+    sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(updated.encounterConfig,sculptTerrainFamilies().map(f=>f.id));
     $('sculpt-encounter-chance-value').textContent=Math.round(chance)+' %';
     refreshSculptEncounterAuthoringStatus();
   });
@@ -3730,11 +3802,14 @@ surfaceBaseFamilySelect?.addEventListener('change',()=>{
     baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
 });
 $('surface-material').addEventListener('change',()=>{
-  // Authoring convenience, not a second runtime encounter rule: the selected
-  // texture picks the semantic family that is written into the one WorldSurface.
-  // The author can still override "Famille de terrain peinte" deliberately.
+  // Suggest a family only before the author deliberately selects one.
+  // Example: painting another grass texture must NOT erase "Haute herbe".
   const family=sculptEncounterFamilyForMaterial($('surface-material').value);
-  if(family&&surfacePaintFamilySelect)surfacePaintFamilySelect.value=family;
+  if(!sculptPaintFamilyManuallyChosen&&family&&surfacePaintFamilySelect)
+    surfacePaintFamilySelect.value=family;
+});
+$('surface-configure-encounters')?.addEventListener('click',()=>{
+  setSculptEncounterEditorOpen(true);
 });
 $('surface-align-families')?.addEventListener('click',()=>{
   // Legacy authored maps are never rewritten at import. The user chooses an
@@ -6152,6 +6227,8 @@ function mountWorldSculptArea(areaId,validatedScene=null){
   sculptWorldAreaMounted=true;
   sculptExteriorEncounters=area.encounters;
   sculptEncounterConfig=sculptWorldDraft.encounterConfig;
+  sculptPaintFamilyManuallyChosen=false;
+  refreshSculptTerrainFamilySelectors();
   sculptEncounterAreaCache=null;
   if(area.kind==='exterior'){
     if([...$('material').options].some(o=>o.value===area.surface.baseMaterialId))
