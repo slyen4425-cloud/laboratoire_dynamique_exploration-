@@ -3903,7 +3903,13 @@ const npcWorkshop=$('actor-npc-workshop');
 const npcWorkshopPending=new Map();
 function openNpcWorkshop(id=null){
  npcWorkshopPending.clear();
- npcWorkshopFrame.src='./npc-editor.html'+(id?'?edit='+encodeURIComponent(id):'');
+ const url=new URL('./npc-editor.html',window.location.href);
+ if(id)url.searchParams.set('edit',id);
+ // The same selected universe follows the native Sculpt → NPC → Capture
+ // chain, never falling back silently to the legacy global shop catalog.
+ const universe=new URLSearchParams(window.location.search).get('universe');
+ if(universe)url.searchParams.set('universe',universe);
+ npcWorkshopFrame.src=url.href;
  if(!npcWorkshop.open)npcWorkshop.showModal();
 }
 function closeNpcWorkshop(){

@@ -5,20 +5,27 @@ const html=readFileSync(new URL('../npc-editor.html',import.meta.url),'utf8');
 const js=readFileSync(new URL('../src/actors/npc-editor-v1.js',import.meta.url),'utf8');
 const npc=readFileSync(new URL('../src/actors/user-npc-definition-v1.js',import.meta.url),'utf8');
 
-test('NPC merchant presents a direct configuration action but never saves merchandise',()=>{
- assert.match(html,/id="npc-merchant-configure"/);
- assert.match(js,/gensrpg\.exploration\.npc\.merchant\.configure\.v1/);
- assert.match(js,/if\(dirty\)/);
- assert.match(js,/window\.parent\.postMessage/);
- assert.match(js,/window\.location\.origin/);
- assert.match(js,/merchantIdDraft/);
+test('merchant is configured INSIDE the existing NPC form with the single Capture editor',()=>{
+ for(const id of ['npc-merchant-config','npc-merchant-configure','npc-merchant-inline',
+  'npc-merchant-frame','npc-merchant-close'])
+  assert.equal(html.split('id="'+id+'"').length-1,1,id);
+ assert.match(js,/new URL\('\.\.\/\.\.\/assets\/gensrpg\/capture-v2\/adventure\.html',window\.location\.href\)/);
+ assert.match(js,/url\.searchParams\.set\('editor','merchant'\)/);
+ assert.match(js,/url\.searchParams\.set\('embed','npc'\)/);
+ assert.doesNotMatch(js,/schema:'gensrpg\.exploration\.npc\.merchant\.configure\.v1'/);
  assert.doesNotMatch(npc,/merchantOffers|purchasePrice|resalePercent|merchantStock/);
 });
 
-test('configuration request sends ONLY the saved NPC identity and linked merchant reference',()=>{
- assert.match(js,/npcId:selected\?\.id\?\?null/);
- assert.match(js,/merchantId:merchantIdDraft\|\|null/);
- assert.match(js,/if\(dirty\)/);
- assert.doesNotMatch(js,/merchantOffers\s*:/);
- assert.doesNotMatch(js,/merchantStocks\s*:/);
+test('Capture save links only merchantId to the saved NPC with nonce/origin/source guards',()=>{
+ assert.match(js,/inlineMerchantNonce=crypto\.randomUUID\(\)/);
+ assert.match(js,/event\.origin!==window\.location\.origin/);
+ assert.match(js,/event\.source===\$\('npc-merchant-frame'\)\.contentWindow/);
+ assert.match(js,/data\.nonce!==inlineMerchantNonce/);
+ assert.match(js,/data\.npcId!==selected\.id/);
+ assert.match(js,/gensrpg\.capture\.v2\.npc\.merchant\.saved\.v1/);
+ assert.match(js,/const existing=await store\.get\(npcId\)/);
+ assert.match(js,/npc:\{\.\.\.existing\.npc,merchantId:id\}/);
+ assert.match(js,/await store\.put\(updated\)/);
+ assert.match(js,/check\?\.npc\?\.merchantId!==id/);
+ assert.doesNotMatch(js,/merchantOffers\s*:|merchantStocks\s*:|pricePerItem\s*:/);
 });
