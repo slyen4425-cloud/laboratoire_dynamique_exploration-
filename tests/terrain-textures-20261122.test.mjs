@@ -42,3 +42,12 @@ test('all five approved textures have native material IDs, real verified WebPs, 
     assert.equal(custom.zones[0].terrainFamilyId,'user-family-test');
   }
 });
+
+test('historical volcanic-ash base remains selectable after adding rocky volcanic ground',()=>{
+  const historical=materialPackV1.materials.find(m=>m.id==='ground.volcanic_ash_lava');
+  assert.ok(historical);
+  assert.ok(resolveMaterialAsset(historical.assets.base));
+  assert.ok(base.includes('value="ground.volcanic_ash_lava"'));
+  const script=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+  assert.match(script,/const sculptGroundMaterials=Object.freeze\(registry\.list\(\)/);
+});
