@@ -22,6 +22,7 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
     fallbackMethod: 'passes'
   });
   assert.equal(registry.resolve('grass.forest')?.kind, 'surface');
+  assert.equal(registry.resolve('grass.forest.alt')?.kind, 'surface');
   assert.equal(registry.resolve('road.dirt')?.kind, 'path');
   assert.equal(registry.resolve('water.forest_stream')?.kind, 'water');
   assert.equal(registry.resolve('floor.wood.house')?.kind, 'surface');
@@ -87,7 +88,7 @@ test('Material Pack v1 exposes pilot materials plus paintable terrain surfaces',
   );
   assert.equal(registry.resolve('ground.sea')?.kind, 'surface');
   assert.equal(registry.resolve('ground.road')?.kind, 'surface');
-  assert.equal(registry.list().length, 21);
+  assert.equal(registry.list().length, 22);
 });
 
 test('unknown material ids never silently fall back', () => {
