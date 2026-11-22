@@ -1,3 +1,10 @@
+## 2026-11-22 — 5 textures de terrain : raccord du ZIP auteur (en validation)
+- Source : `GENSRPG_Exploration_5_textures_2026-11-22.zip` déposée sur `main` (Git blob `48291d3db737a75423fb257e0a6d73bfc9c681af`).
+- Branche unique : `work/exploration-5-terrain-textures-20261122`. Extraction des cinq WebP 128×128 vérifiés par SHA256 dans les assets canoniques. Aucun sprite, matériau ou ID historique n’est supprimé/remplacé.
+- Matériaux additionnels dans `materialPackV1`, Asset Adapter inchangé dans son rôle, palette Sculpt « Texture à peindre » et « Sol de base » ; World Builder utilise le registre natif. Pas de nouveau système de texture ni d’autorité de rencontres.
+- Familles sémantiques par défaut : forest, forest, snow, plain et volcano ; famille personnalisée explicitement choisie conservée. ZIP auteur gardé dans Git, exclu du site Pages pour éviter la duplication.
+- Validation requise : suite `npm test`, `npm run check`, CI SHA de PR, tests navigateur Android paysage/PC et preuve HTTPS du SHA publié. Aucun raccord automatique Combat/PWA.
+
 ## 2026-11-22 — PNJ marchand : configurer la boutique Capture depuis l’éditeur PNJ (DRAFT, non GREEN)
 - Base `main@abe51d7f0634684d29772e0730719b2eb347fa98`, checkpoint `checkpoint/exploration-npc-shop-start-20261122` ; branche `work/exploration-npc-shop-delegated-20261122`, PR #518.
 - Périmètre autorisé : `npc-editor.html`, `src/actors/npc-editor-v1.js`, test de délégation. Propriétaire : Exploration pour la présentation du PNJ et la référence `merchantId` uniquement ; AdventureRules/AdventureSession Capture restent maîtres des offres, stocks, taux, inventaire, commerce et sauvegardes.
