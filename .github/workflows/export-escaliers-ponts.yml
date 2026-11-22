@@ -1,0 +1,98 @@
+name: Export visuels escaliers et ponts
+on:
+  push:
+    branches:
+      - export/visuels-escaliers-ponts-20261122
+    paths:
+      - .github/workflows/export-escaliers-ponts.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout de la branche d'export uniquement
+        uses: actions/checkout@v4
+
+      - name: Construire et verifier le ZIP depuis les assets canoniques
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import io
+          import csv
+          import json
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_STORED
+
+          root = Path("assets/exploration/objects")
+          archive = Path("exports/GENSRPG_ESCALIERS_PONTS_VISUELS_MAIN_2026-11-22.zip")
+          archive.parent.mkdir(exist_ok=True)
+          images = []
+          metadata = []
+          rows = []
+
+          for family, expected in (("stairs", 33), ("bridges", 32)):
+              folder = root / family
+              manifest_path = folder / "manifest.v1.json"
+              hashes_path = folder / "SHA256SUMS.txt"
+              manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+              declared = {item["path"]: item for item in manifest["files"]}
+              actual = sorted(folder.glob("*.webp"))
+              assert len(actual) == expected, f"{family}: {len(actual)} images, {expected} expected"
+              assert {p.as_posix() for p in actual} == set(declared), f"Manifest mismatch for {family}"
+              metadata.extend([manifest_path, hashes_path])
+              for p in actual:
+                  data = p.read_bytes()
+                  assert data[:4] == b"RIFF" and data[8:12] == b"WEBP", f"Bad WebP: {p}"
+                  entry = declared[p.as_posix()]
+                  assert len(data) == entry["bytes"], f"Size mismatch: {p}"
+                  actual_sha = hashlib.sha256(data).hexdigest()
+                  rows.append([entry["assetId"], p.as_posix(), entry.get("view", ""), len(data), actual_sha, entry.get("sha256", ""), "OK" if actual_sha == entry.get("sha256") else "MISMATCH"])
+                  images.append(p)
+
+          csv_buffer = io.StringIO()
+          writer = csv.writer(csv_buffer, delimiter=";")
+          writer.writerow(["assetId", "path", "view", "bytes", "sha256_actuel", "sha256_manifeste", "comparaison"])
+          writer.writerows(rows)
+          readme = (
+              "GENSRPG - LABO EXPLORATION - EXPORT VISUELS ESCALIERS ET PONTS\n\n"
+              "Export de la branche principale, version de travail 2026-11-22.\n"
+              "33 escaliers + 32 ponts = 65 images WebP RGBA, non retouchees.\n"
+              "Les chemins et noms sont preserves pour les remplacements futurs.\n"
+              "Copie miroir v81 omise pour eviter les doublons.\n"
+              "Les manifestes et controles SHA256 originaux sont inclus.\n"
+              "Ne pas utiliser cette archive comme une seconde bibliotheque d'autorite.\n"
+          )
+
+          with ZipFile(archive, "w", compression=ZIP_STORED, allowZip64=True) as z:
+              for p in images + metadata:
+                  z.write(p, p.as_posix())
+              z.writestr("INVENTAIRE.csv", csv_buffer.getvalue())
+              z.writestr("LISEZ_MOI.txt", readme)
+          with ZipFile(archive) as z:
+              bad = z.testzip()
+              assert bad is None, f"Corrupted ZIP entry: {bad}"
+              assert len(z.namelist()) == 71, len(z.namelist())
+          print(f"ZIP OK: {archive} ({archive.stat().st_size} bytes), {len(images)} visuels")
+          print(f"SHA256: {hashlib.sha256(archive.read_bytes()).hexdigest()}")
+          PY
+
+      - name: Sauvegarder un artefact de telechargement
+        uses: actions/upload-artifact@v4
+        with:
+          name: GENSRPG_ESCALIERS_PONTS_VISUELS_2026-11-22
+          path: exports/GENSRPG_ESCALIERS_PONTS_VISUELS_MAIN_2026-11-22.zip
+          compression-level: 0
+
+      - name: Publier uniquement sur la branche d'export
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add exports/GENSRPG_ESCALIERS_PONTS_VISUELS_MAIN_2026-11-22.zip
+          git commit -m "chore(export): package canonical stairs and bridge assets (65 webp)" || exit 0
+          git push origin HEAD:export/visuels-escaliers-ponts-20261122
