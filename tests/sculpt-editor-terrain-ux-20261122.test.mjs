@@ -45,15 +45,23 @@ test('mobile editor groups controls without duplicating IDs or exposing manual f
   for(const id of ['sculpt-settings','surface-material','surface-family',
                    'surface-base-family','sculpt-family-create','sculpt-family-template',
                    'sculpt-family-chance','sculpt-encounter-chance',
-                   'scene-export','json','sculpt-canvas']){
+                   'scene-export','json','sculpt-canvas','material','brush-shape','precision-mode','scenery-fringe-toggle','sculpt-family-kind']){
     assert.equal(ids.filter(value=>value===id).length,1,id);
   }
   assert.ok(html.indexOf('id="sculpt-canvas"')<html.indexOf('id="sculpt-settings"'));
   assert.match(html,/id="sculpt-settings-toggle"/);
+  assert.match(html,/#sculpt-settings:not\(\[open\]\)\{display:none!important\}/);
   assert.match(script,/sculptSettingsToggle\.addEventListener\('click'/);
   assert.match(html,/<optgroup label="🌿 Herbe et forêt">/);
   assert.match(html,/<details id="sculpt-family-create-details"/);
   assert.match(html,/body\.sculpt-immersive #sculpt-settings/);
   assert.match(script,/addTerrainFamilyDefinition\(sculptWorldDraft/);
   assert.match(script,/sculptPaintFamilyManuallyChosen/);
+});
+
+test('custom family type and sole base material control are saved canonically',()=>{
+  assert.match(html,/id="sculpt-family-name"[^>]+placeholder="Ex\. Marais/);
+  for(const kind of ['terrain','route','river'])assert.match(html,new RegExp('<option value="'+kind+'">'));
+  assert.match(script,/surfaceCommit\(normalizeSculptSurface\(\{\.\.\.surface,baseMaterialId:next\}\)\)/);
+  assert.equal([...html.matchAll(/id="material"/g)].length,1);
 });

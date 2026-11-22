@@ -973,6 +973,22 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
  #sculpt-settings[open]{width:min(325px,72vw);max-height:78dvh}
  body.sculpt-immersive #sculpt-settings[open]{width:min(320px,72vw);max-height:75dvh}
 }
+
+/* Single access to the atelier; the closed duplicate under the canvas disappears. */
+#sculpt-settings:not([open]){display:none!important}
+.editor-switch #sculpt-settings-toggle{order:-9;position:sticky;left:48px;z-index:17;flex:0 0 auto;min-width:43px;white-space:nowrap;background:#214b53;border-color:#8bc7bd}
+body.sculpt-immersive .editor-switch #sculpt-settings-toggle{flex:0 0 43px;font-size:0!important}
+body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"⚙";font-size:1.13rem}
+#sculpt-settings .sculpt-tool-group-content label{min-width:0;max-width:100%}
+#sculpt-settings .sculpt-tool-group-content select{max-width:100%}
+#surface-palette .surface-settings-body #material{width:100%;min-width:0}
+#scenery-fringe-panel:not([hidden]){display:flex!important;flex-wrap:wrap}
+@media(max-width:600px){
+ #surface-palette{width:min(184px,49vw);max-height:64dvh;padding:6px}
+ #surface-palette .surface-settings-body{padding:6px;gap:6px}
+ #surface-palette .surface-settings-group>summary{padding:7px}
+ #sculpt-encounter-editor{width:min(245px,58vw);max-height:70dvh}
+}
 </style>
 <script>
  // Play-mode cover is activated before module imports and before the first
@@ -1045,20 +1061,6 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
 <button type="button" id="radius-minus" aria-label="Réduire la taille du pinceau">−</button>
 <span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="16" value="3" step="0.5"></span>
 <button type="button" id="radius-plus" aria-label="Agrandir le pinceau">+</button></div>
-<label class="control brush-shape-control" for="brush-shape">Forme
-<select id="brush-shape" aria-label="Forme du pinceau terre et eau">
-<option value="circle">◯ Rond</option>
-<option value="square">▦ Carré plein</option>
-<option value="cross">✚ Croix</option>
-</select></label>
-<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
-  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
-    <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
-  <label class="control" for="sphere-wall-material">Flancs
-    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
-  <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
-</div>
-<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
 <div id="ramp-guide" role="status" aria-live="polite" hidden>
@@ -1176,11 +1178,7 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
 </section>
 </section>
 <div id="brush-info" role="status" aria-live="polite">Touchez le terrain : le pinceau dessine son empreinte exacte.</div>
-<label id="scenery-fringe-panel" hidden style="gap:.55rem;align-items:center;padding:.42rem .7rem;flex-wrap:wrap">
-  <input type="checkbox" id="scenery-fringe-toggle" aria-label="Sculpter et décorer les huit cases au-delà de la zone jouable">
-  <strong>Décor hors zone jouable</strong>
-  <small>8 cases de décor visibles et sculptables en haut et en bas de la carte · Terre, Eau, Textures et Objets dans les outils habituels. <strong style="color:#ffe39c">trait jaune : limite jouable</strong> (uniquement pendant ce mode) ; le héros ne peut pas sortir de la carte.</small>
-</label>
+
 <div class="canvas-wrap"><canvas id="sculpt-canvas" aria-label="Terrain sculptable, peindre avec doigt ou souris"></canvas>
 <section id="world-area-unavailable" role="alert" aria-live="assertive" hidden>
  <div class="unavailable-card">
@@ -1314,14 +1312,15 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
  </label>
  <output id="sculpt-encounter-family-hint" aria-live="polite"></output>
  <details id="sculpt-family-create-details" class="surface-settings-group">
-  <summary>＋ Créer une famille de terrain</summary>
+  <summary>＋ Créer une famille personnalisée</summary>
   <div class="surface-settings-body">
-   <label>Nom <input id="sculpt-family-name" type="text" maxlength="55" placeholder="Ex. Haute herbe"></label>
+   <label>Nom <input id="sculpt-family-name" type="text" maxlength="55" placeholder="Ex. Marais, Ruines, Haute herbe…"></label>
+   <label>Type de famille <select id="sculpt-family-kind" aria-label="Type de terrain de cette famille"><option value="terrain">Sol / zone</option><option value="route">Route / chemin</option><option value="river">Eau / rivière</option></select></label>
    <label>Reprendre les éléments de <select id="sculpt-family-template" aria-label="Famille dont reprendre les éléments"></select></label>
    <label>Chance de rencontre (%) <input id="sculpt-family-chance" type="number" min="0" max="100" step="1" value="50"></label>
    <button id="sculpt-family-create" type="button">＋ Ajouter au monde</button>
    <output id="sculpt-family-create-status" role="status" aria-live="polite"></output>
-   <small>La nouvelle famille est ajoutée au WorldDocument existant et peut être peinte avec n’importe quelle texture. Sans saisie d’identifiant technique.</small>
+   <small>Nomme librement ta famille : marais, grotte, haute herbe… Elle est ajoutée au monde existant sans ID technique. Les familles Eau utilisent les rivières du World Builder.</small>
   </div>
  </details>
  <label>Chance de rencontre
@@ -1386,6 +1385,14 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
   <div class="surface-settings-body">
    <label id="world-interior-floor-base-row" hidden>Sol de cette pièce
     <select id="world-interior-floor-base" aria-label="Sol de base de la WorldArea intérieure"></select>
+   </label>
+   <label>Texture du sol de base
+    <select id="material"><option value="grass.forest">Herbe · classique</option>
+<option value="grass.forest.alt">Herbe · variante 2</option>
+<option value="ground.forest_floor">Sol de forêt</option>
+<option value="ground.mountain_rock">Roche de montagne</option>
+<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
+<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select>
    </label>
    <label>Famille du sol de base
     <select id="surface-base-family" aria-label="Famille de terrain du sol de base"></select>
@@ -1780,6 +1787,10 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
 <input id="target" type="range" min="0" max="16" value="3" step="1" aria-label="Niveau exact 0 à 16">
 <button id="level-up" aria-label="Augmenter la hauteur cible">+</button>
 </div>
+<details class="surface-settings-group">
+ <summary>⚠ Réinitialiser le terrain</summary>
+ <div class="surface-settings-body"><button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button></div>
+</details>
 </section>
  </div>
 </details>
@@ -1802,27 +1813,36 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
  <summary>🖌 Précision du pinceau <small>Force et douceur</small></summary>
  <div class="sculpt-tool-group-content">
 <section class="controls" aria-label="Paramètres communs des pinceaux">
+<label class="control brush-shape-control" for="brush-shape">Forme
+<select id="brush-shape" aria-label="Forme du pinceau terre et eau">
+<option value="circle">◯ Rond</option>
+<option value="square">▦ Carré plein</option>
+<option value="cross">✚ Croix</option>
+</select></label>
+<div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
+  <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
+    <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
+  <label class="control" for="sphere-wall-material">Flancs
+    <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
+  <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
+</div>
+<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
+
 
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
 <label class="control">Bord doux <b id="edge-value">0 %</b>
 <input id="edge" type="range" min="0" max="100" value="0" step="10"></label>
 
 
-<button id="reset">Exemple (relief seul)</button><button id="flat">Sol plat (efface l’eau)</button>
+
 </section>
  </div>
 </details>
 <details class="sculpt-tool-group">
- <summary>🎨 Matériaux et caméra <small>Sol, roche et affichage</small></summary>
+ <summary>🖥 Caméra, roche et affichage <small>Flancs, zoom et aperçu</small></summary>
  <div class="sculpt-tool-group-content">
 <section class="controls">
-<span data-panel="ground"><label class="control">Sol réel
-<select id="material"><option value="grass.forest">Herbe · classique</option>
-<option value="grass.forest.alt">Herbe · variante 2</option>
-<option value="ground.forest_floor">Sol de forêt</option>
-<option value="ground.mountain_rock">Roche de montagne</option>
-<option value="ground.snow">Neige</option><option value="ground.sand">Sable</option>
-<option value="ground.volcanic_ash_lava">Cendre volcanique</option></select></label></span>
+
 <span data-panel="ground"><label class="control">Roche
 <select id="rock"><option value="warm">Grès brun</option><option value="slate">Gris bleu</option>
 <option value="sandstone">Sable ocre</option><option value="dark">Roche sombre</option>
@@ -1848,6 +1868,14 @@ body.navigation-testing #sculpt-settings-toggle{display:none!important}
 <label class="control checkbox-control" for="preview-cursor"><input id="preview-cursor" type="checkbox" checked> Voir le pinceau</label>
 </section>
  </div>
+</details>
+<details class="sculpt-tool-group">
+ <summary>🌳 Bordures décoratives <small>Zone hors jeu</small></summary>
+ <div class="sculpt-tool-group-content"><label id="scenery-fringe-panel" hidden style="gap:.55rem;align-items:center;padding:.42rem .7rem;flex-wrap:wrap">
+  <input type="checkbox" id="scenery-fringe-toggle" aria-label="Sculpter et décorer les huit cases au-delà de la zone jouable">
+  <strong>Décor hors zone jouable</strong>
+  <small>8 cases de décor visibles et sculptables en haut et en bas de la carte · Terre, Eau, Textures et Objets dans les outils habituels. <strong style="color:#ffe39c">trait jaune : limite jouable</strong> (uniquement pendant ce mode) ; le héros ne peut pas sortir de la carte.</small>
+</label></div>
 </details>
 <details class="sculpt-tool-group">
  <summary>💾 Sauvegarde et fichiers <small>Scène, hauteurs et JSON</small></summary>

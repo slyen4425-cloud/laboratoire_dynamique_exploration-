@@ -536,6 +536,7 @@ function refreshSculptEncounterEditor(){
 }
 function setSculptEncounterEditorOpen(on){
   if(!sculptEncounterEditor)return;
+  if(on&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(on&&sculptPendingEncounter)return;
   if(on){
     if(navigationTesting)setNavigationTesting(false);
@@ -566,7 +567,7 @@ if(sculptEncounterEditor){
     const sourceId=$('sculpt-family-template').value;
     const source=sculptEncounterConfig.families.find(f=>f.terrainFamilyId===sourceId);
     const chance=Math.max(0,Math.min(100,Number($('sculpt-family-chance').value)||0));
-    let next=addTerrainFamilyDefinition(sculptWorldDraft,{label:name,paintKind:'terrain'});
+    let next=addTerrainFamilyDefinition(sculptWorldDraft,{label:name,paintKind:$('sculpt-family-kind').value});
     const created=next.terrainFamilies.find(f=>!oldIds.has(f.id));
     if(!created){feedback.textContent='Création impossible, aucune famille ajoutée.';return;}
     // Reuse the canonical Builder commands: no parallel encounter table.
@@ -586,7 +587,7 @@ if(sculptEncounterEditor){
     }
     refreshSculptEncounterEditor();
     $('sculpt-family-name').value='';
-    feedback.textContent='Famille « '+created.label+' » ajoutée. Peins-la depuis Textures.';
+    feedback.textContent='Famille « '+created.label+' » ajoutée. Configure ses rencontres puis utilise-la sur les zones adaptées.';
     status('Famille '+created.label+' ajoutée au World Builder · configure les rencontres puis enregistre le monde.');
   });
   $('mode-encounters').addEventListener('click',
@@ -1048,7 +1049,7 @@ let waterMaterialRevision=0,groundMaterialRevision=0;
 // V76 R5: source material artwork from the existing Material Registry.
 const sphereWallImages={grass:null,earth:null};
 let sphereTexturesLoaded=0;
-const sculptGroundMaterials=Object.freeze(['grass.forest','ground.forest_floor',
+const sculptGroundMaterials=Object.freeze(['grass.forest','grass.forest.alt','ground.forest_floor',
   'ground.mountain_rock','ground.snow','ground.sand','ground.volcanic_ash_lava']);
 const sculptWaterMaterials=Object.freeze(['water.clear_blue','water.turquoise',
   'water.forest_stream','water.swamp']);
@@ -1063,7 +1064,7 @@ const worldInteriorFloorBase=$('world-interior-floor-base');
 if(worldInteriorFloorBase)worldInteriorFloorBase.replaceChildren(...[...$('interior-floor-base').options]
   .map(option=>option.cloneNode(true)));
 const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
-  $('interior-floor-base').value:$('material').value;
+  $('interior-floor-base').value:surface.baseMaterialId;
 function imageFor(materialId,kind='surface'){
   const material=registry.require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
@@ -3792,6 +3793,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
@@ -4561,6 +4563,7 @@ $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatu
 requestNpcMerchantCatalog();
 requestNpcRewardCatalog();
 function setObjectEditing(active){
+  if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
@@ -4939,7 +4942,12 @@ $('camera-view').addEventListener('change',()=>{
     ?'Vue trois-quarts pilote : caméra inclinée ; les hauteurs, collisions et coups de pinceau restent identiques.'
     :'Vue précédente restaurée : aucun changement des données de terrain.');
 });
-$('material').addEventListener('change',setTheme);
+$('material').addEventListener('change',()=>{
+  const next=$('material').value;
+  if(!themes.includes(next))return;
+  surfaceCommit(normalizeSculptSurface({...surface,baseMaterialId:next}));
+  setTheme();
+});
 $('water-material').addEventListener('change',setWaterMaterial);
 $('rock').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
 $('rock-moss').addEventListener('change',()=>{navTerrainCache=null;scheduleDraw();});
@@ -5307,6 +5315,9 @@ function mountSculptArea(snapshot){
   if(ribbonTextures.road)ribbonTextures.road.visible=false;
   updateHistoryButtons();updateObjectCount();updateActorCount();
   updateSurfaceCount();loadSurfacePaintAssets();syncObjectSelectedControls();
+  if(!activeInteriorId&&!sculptWorldCurrentInterior()&&
+      [...$('material').options].some(option=>option.value===surface.baseMaterialId))
+    $('material').value=surface.baseMaterialId;
   if(activeInteriorId||sculptWorldCurrentInterior()){
     const base=interiorFloorMaterials.includes(surface.baseMaterialId)?
       surface.baseMaterialId:'floor.wood.house';

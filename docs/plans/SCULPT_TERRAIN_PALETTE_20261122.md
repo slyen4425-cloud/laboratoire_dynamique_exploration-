@@ -36,3 +36,10 @@ Propriétaire : éditeur Sculpt 2,5D et commandes existantes de World Builder.
 ## État / hors périmètre
 - Branche et PR pour tests ; **pas GREEN ni publication déclarée avant CI + navigateur + HTTPS**.
 - Les textures florales devront être créées/importées comme assets distincts dans un chantier visuel ultérieur ; l'éditeur expose maintenant le modèle des variantes existantes.
+
+## Reprise du 22 novembre — précision de la demande
+- Les familles sont **librement nommables**, pas un modèle « Haute herbe ». Le sélecteur propose Sol/zone, Route/chemin et Eau/rivière dans le WorldDocument canonique.
+- Les volets existants sont conservés : les contrôles de forme et précision sont rangés dans l’Atelier ; la bordure décorative et les commandes de réinitialisation y trouvent un emplacement logique.
+- L’Atelier fermé ne crée plus de bloc supplémentaire sous la carte. Un seul bouton dans la barre principale l’ouvre dans le viewport.
+- Le matériau de base appartient au seul `WorldSurface.baseMaterialId`, réglé sous Textures > Sol de base.
+- La palette de textures retrouve sa largeur mobile compacte d’origine.
