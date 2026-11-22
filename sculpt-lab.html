@@ -1061,6 +1061,12 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <button type="button" id="radius-minus" aria-label="Réduire la taille du pinceau">−</button>
 <span class="control"><label for="radius">Taille <b id="radius-value">3</b></label><input id="radius" type="range" min="0.5" max="16" value="3" step="0.5"></span>
 <button type="button" id="radius-plus" aria-label="Agrandir le pinceau">+</button></div>
+<label class="control brush-shape-control" for="brush-shape">Forme
+<select id="brush-shape" aria-label="Forme du pinceau terre et eau">
+<option value="circle">◯ Rond</option>
+<option value="square">▦ Carré plein</option>
+<option value="cross">✚ Croix</option>
+</select></label>
 <div id="sphere-profile-wrap" hidden aria-label="Profil et matière des reliefs sphériques">
   <label class="control" for="sphere-summit-ratio">Largeur du sommet <b id="sphere-summit-ratio-value">0 %</b>
     <input id="sphere-summit-ratio" type="range" min="0" max="100" step="5" value="0" aria-label="Rayon du sommet plat en pourcentage du rayon du relief"></label>
@@ -1068,6 +1074,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <select id="sphere-wall-material" aria-label="Texture des flancs"><option value="rock">🪨 Roche</option><option value="grass">🌿 Herbe</option><option value="earth">🟤 Terre</option></select></label>
   <small>0 % : sphère arrondie · 50–95 % : pente conique · 100 % : colonne ronde à parois verticales. S’applique aux prochains reliefs.</small>
 </div>
+<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
 <button id="undo" type="button" disabled>↶ Annuler</button>
 <button id="redo" type="button" disabled>↷ Rétablir</button>
 <div id="ramp-guide" role="status" aria-live="polite" hidden>
@@ -1820,14 +1827,9 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  <summary>🖌 Précision du pinceau <small>Force et douceur</small></summary>
  <div class="sculpt-tool-group-content">
 <section class="controls" aria-label="Paramètres communs des pinceaux">
-<label class="control brush-shape-control" for="brush-shape">Forme
-<select id="brush-shape" aria-label="Forme du pinceau terre et eau">
-<option value="circle">◯ Rond</option>
-<option value="square">▦ Carré plein</option>
-<option value="cross">✚ Croix</option>
-</select></label>
 
-<label class="control precision-toggle" for="precision-mode"><input type="checkbox" id="precision-mode"> Placement précis</label>
+
+
 
 
 <span class="control"><label for="strength">Force <b id="strength-value">1</b></label><input id="strength" type="range" min="1" max="3" value="1"></span>
