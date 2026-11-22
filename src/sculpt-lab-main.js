@@ -567,7 +567,12 @@ if(sculptEncounterEditor){
     const sourceId=$('sculpt-family-template').value;
     const source=sculptEncounterConfig.families.find(f=>f.terrainFamilyId===sourceId);
     const chance=Math.max(0,Math.min(100,Number($('sculpt-family-chance').value)||0));
-    let next=addTerrainFamilyDefinition(sculptWorldDraft,{label:name,paintKind:$('sculpt-family-kind').value});
+    // The encounter pane may contain unsaved edits to existing families.
+    // Apply the Builder command to the current canonical encounter draft,
+    // never overwrite those edits with sculptWorldDraft's older snapshot.
+    let next=addTerrainFamilyDefinition({
+      ...sculptWorldDraft,encounterConfig:sculptEncounterConfig
+    },{label:name,paintKind:$('sculpt-family-kind').value});
     const created=next.terrainFamilies.find(f=>!oldIds.has(f.id));
     if(!created){feedback.textContent='Création impossible, aucune famille ajoutée.';return;}
     // Reuse the canonical Builder commands: no parallel encounter table.
