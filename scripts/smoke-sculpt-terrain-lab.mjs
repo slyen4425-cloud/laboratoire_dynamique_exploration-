@@ -137,8 +137,12 @@ try{
   // The real Tester asks for explicit consent before initializing its
   // canonical EncounterConfig. Without handling that native confirmation,
   // awaited Runtime.evaluate remains blocked and the browser gate hangs.
-  // Only this exact legacy-encounter consent is accepted automatically by
-  // this TEST; other confirmations remain under their own explicit gates.
+  // This test intentionally keeps the initial movement-only WorldDocument
+  // at 0% encounters. An automatic "accept" here enables random battles and
+  // makes Android jank assertions fail when a legitimate encounter pauses Play.
+  // The dedicated later encounter test explicitly opts in to preset chances.
+  // No gameplay code or author's saved world is modified.
+  let acceptEncounterPresetInitialization=false;
   let legacyEncounterConsentCount=0;
   let legacyEncounterConsentError=null;
   socket.addEventListener('message',event=>{
@@ -148,9 +152,9 @@ try{
        !packet.params?.message?.startsWith('Ce monde ne peut déclencher aucune rencontre (0 % sur tous les terrains).'))
       return;
     legacyEncounterConsentCount++;
-    void send('Page.handleJavaScriptDialog',{accept:true})
+    void send('Page.handleJavaScriptDialog',{accept:acceptEncounterPresetInitialization})
       .then(reply=>{
-        if(reply.error)legacyEncounterConsentError='CDP refused legacy encounter consent: '+JSON.stringify(reply.error);
+        if(reply.error)legacyEncounterConsentError='CDP rejected legacy encounter choice: '+JSON.stringify(reply.error);
       })
       .catch(error=>{legacyEncounterConsentError='CDP legacy encounter consent: '+error.message;});
   });
@@ -3381,6 +3385,9 @@ try{
 
   // REAL 2.5D keyboard movement -> canonical WorldSurface -> existing
   // Encounter Controller -> CaptureEncounterSnapshot -> packaged Combat iframe.
+  // Real encounter/combat tests, unlike the movement/jank fixture above,
+  // explicitly request the official preset defaults before entering Tester.
+  acceptEncounterPresetInitialization=true;
   const encounterUrl=new URL('/sculpt-lab.html?encounterTest=1',url).href;
   const encounterNavigation=await send('Page.navigate',{url:encounterUrl});
   if(encounterNavigation.error)throw Error('Encounter scene navigation failed');
@@ -4277,7 +4284,7 @@ try{
       dungeonGrid:returned2p5d.dungeon.sculptTerrain.width+'x'+
         returned2p5d.dungeon.sculptTerrain.height,returned:true}));
   if(legacyEncounterConsentError)throw Error(legacyEncounterConsentError);
-  console.log('Legacy encounter setup: explicitly accepted native Chromium confirmations:',legacyEncounterConsentCount);
+  console.log('Legacy encounter setup: native Chromium confirmations handled without random battles in movement fixture:',legacyEncounterConsentCount);
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,
