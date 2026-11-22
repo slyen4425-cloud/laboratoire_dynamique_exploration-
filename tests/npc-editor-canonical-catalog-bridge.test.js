@@ -37,7 +37,9 @@ test('dedicated NPC editor choices are read only from official Combat/Capture pr
  assert.match(js,/gensrpg\.capture\.v2\.npc\.merchant\.catalog\.response\.v1/);
  assert.match(js,/gensrpg\.exploration\.npc\.reward\.catalog\.request\.v1/);
  assert.match(js,/gensrpg\.capture\.v2\.npc\.reward\.catalog\.response\.v1/);
- assert.match(js,/event\.origin!==window\.location\.origin\|\|event\.source!==window\.parent/);
+ assert.match(js,/event\.origin!==window\.location\.origin/);
+ assert.match(js,/event\.source!==window\.parent/);
+ assert.match(js,/event\.source===\$\('npc-merchant-frame'\)\.contentWindow/);
  assert.match(js,/data\.requestId===merchantRequestId/);
  assert.match(js,/data\.requestId===rewardRequestId/);
  assert.match(js,/trainerRoster:trainerRosterDraft\.map/);
