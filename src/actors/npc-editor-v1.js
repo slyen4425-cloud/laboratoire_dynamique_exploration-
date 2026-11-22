@@ -351,6 +351,21 @@ $('npc-creature-add').addEventListener('click',()=>{
  trainerRosterDraft.push({creatureId,level});
  renderTrainerRows();markDirty();
 });
+// Only the parent Capture Shell can open its native merchant editor.
+ // Exploration never edits/duplicates AdventureRules or the merchant stock.
+$('npc-merchant-configure').addEventListener('click',()=>{
+ if(window.parent===window){
+  notify('Ouvre cet éditeur depuis Monster InvoC pour configurer la boutique.',true);
+  return;
+ }
+ if(dirty){
+  notify('Enregistre d’abord ton PNJ avant de modifier sa boutique.',true);
+  return;
+ }
+ window.parent.postMessage({
+  schema:'gensrpg.exploration.npc.merchant.configure.v1'
+ },window.location.origin);
+});
 $('npc-merchant-choice').addEventListener('change',()=>{
  merchantIdDraft=$('npc-merchant-choice').value;markDirty();
 });
