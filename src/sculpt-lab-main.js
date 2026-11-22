@@ -4991,8 +4991,10 @@ function changeTarget(level){
     selectedMode==='sphere-hill'?'Hauteur sphérique : +'+value+' niveaux':
       'Hauteur plateau : niveau '+value+' (bord '+$('edge').value+' %)');scheduleDraw();}
 $('target').addEventListener('input',()=>changeTarget($('target').value));
-$('level-down').addEventListener('click',()=>changeTarget(Number($('target').value)-1));
-$('level-up').addEventListener('click',()=>changeTarget(Number($('target').value)+1));
+// Frozen V80 retains its historical buttons; the main editor uses the
+// quickbar +/- pair and this single exact-value slider instead.
+$('level-down')?.addEventListener('click',()=>changeTarget(Number($('target').value)-1));
+$('level-up')?.addEventListener('click',()=>changeTarget(Number($('target').value)+1));
 
 // Point projection/inverse is already owned by Camera: snap only the
 // authoring input. The snapped endpoints are stored by the ONE WorldArea model.
