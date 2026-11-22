@@ -573,8 +573,10 @@ if(sculptEncounterEditor){
     // Reuse the canonical Builder commands: no parallel encounter table.
     for(const element of source?.elementChances??[])
       next=updateTerrainFamilyElementChance(next,created.id,element.elementId,element.chancePercent);
+    // Preserve the entered percentage. Without elements, the existing
+    // validator asks for a selection instead of silently setting it to 0.
     next=updateTerrainFamilyEncounterProfile(next,created.id,{
-      encounterChancePercent:source?.elementChances?.length?chance:0
+      encounterChancePercent:chance
     });
     sculptWorldDraft=next;
     sculptEncounterConfig=normalizeTerrainFamilyEncounterConfig(
@@ -587,7 +589,10 @@ if(sculptEncounterEditor){
     }
     refreshSculptEncounterEditor();
     $('sculpt-family-name').value='';
-    feedback.textContent='Famille « '+created.label+' » ajoutée. Configure ses rencontres puis utilise-la sur les zones adaptées.';
+    feedback.textContent='Famille « '+created.label+' » ajoutée.'+
+      (source?.elementChances?.some(e=>e.chancePercent>0)
+        ?' Éléments du modèle repris.':' Choisis au moins un élément pour activer les rencontres.')+
+      ' Elle est disponible dans le monde actuel.';
     status('Famille '+created.label+' ajoutée au World Builder · configure les rencontres puis enregistre le monde.');
   });
   $('mode-encounters').addEventListener('click',
