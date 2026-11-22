@@ -1,0 +1,50 @@
+name: Materialize five verified terrain texture WebPs
+on:
+  push:
+    branches: [work/exploration-5-terrain-textures-20261122]
+    paths:
+      - .github/workflows/materialize-terrain-variants-20261122.yml
+permissions:
+  contents: write
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/exploration-5-terrain-textures-20261122
+          persist-credentials: true
+      - name: Extract only the author-approved WebP 128 textures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, zipfile
+          from pathlib import Path
+          source=Path('GENSRPG_Exploration_5_textures_2026-11-22.zip')
+          assert source.is_file(),'ZIP source absent'
+          expected={"terrain_haute_herbe_01.webp":"9a127bde4f600d1fbb77fc8cb1a03f7bc05d569576805e98ad461bb59627a49b","terrain_herbe_fleurie_01.webp":"6cef9ed6c7e12b67f1e9d2cb1ab2ba7d3f13908ef6e111a32797462ae92bfff0","terrain_neige_rocheuse_01.webp":"2e336b9446c335b0cf5f1913b45dbae5a137cb691ab77bd2ff7dbc57337cda35","terrain_sol_terre_01.webp":"e3d1958b076497b6b56b29a582792ad583a42d94cff7d2206efae5af691f1440","terrain_sol_volcanique_01.webp":"d14a157801e96c4a0e7121cb044799c1bfe17ea15125aa9e63029f417faf2cbc"}
+          folder=Path('assets/exploration/materials/forest/surfaces')
+          folder.mkdir(parents=True,exist_ok=True)
+          with zipfile.ZipFile(source) as archive:
+              for name,sha in expected.items():
+                  binary=archive.read('textures_webp_128/'+name)
+                  assert binary[:4]==b'RIFF' and binary[8:12]==b'WEBP',name
+                  assert hashlib.sha256(binary).hexdigest()==sha,name
+                  path=folder/name
+                  if path.exists(): assert path.read_bytes()==binary,name
+                  else: path.write_bytes(binary)
+                  print(name,len(binary),'bytes, SHA256 correct')
+          PY
+      - name: Commit only five canonical WebP assets to the work branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'gensrpg-terrain-assets[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/exploration/materials/forest/surfaces/terrain_*.webp
+          if ! git diff --cached --quiet; then
+            git commit -m 'assets(exploration): matérialiser les cinq textures de sol'
+            git push origin HEAD:work/exploration-5-terrain-textures-20261122
+          fi
