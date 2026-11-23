@@ -29,9 +29,11 @@ test('Passages switches to a separate palette and never accidentally places an o
  assert.match(script,/function setObjectEditing\(active,\{waypoints=false\}=\{\}\)/);
  assert.match(script,/waypointsEditing=objectEditing&&waypoints===true;/);
  assert.match(script,/\$\('object-palette'\)\.hidden=!objectEditing\|\|waypointsEditing;/);
- assert.match(script,/\$\('waypoints-palette'\)\.hidden=!waypointsEditing;/);
+ assert.match(script,/const waypointPalette=\$\('waypoints-palette'\);/);
+ assert.match(script,/if\(waypointPalette\)waypointPalette\.hidden=!waypointsEditing;/);
  assert.match(script,/\$\('mode-objects'\)\.addEventListener\('click',\(\)=>setObjectEditing\(!objectEditing\|\|waypointsEditing\)\)/);
- assert.match(script,/\$\('mode-waypoints'\)\.addEventListener\('click',\(\)=>\{/);
+ assert.match(script,/\$\('mode-waypoints'\)\?\.addEventListener\('click',\(\)=>\{/);
+ assert.match(script,/\$\('mode-waypoints'\)\?\.setAttribute\('aria-pressed'/);
  assert.match(script,/setObjectEditing\(!waypointsEditing,\{waypoints:true\}\)/);
  assert.match(script,/if\(waypointsEditing&&!sculptWorldPortalPlacement\)\{[\s\S]*?Placer le repère sur la carte/);
  assert.match(script,/function applyObjectAtCell\(cell\)\{\s*if\(!objectEditing\|\|waypointsEditing\)return;/);
