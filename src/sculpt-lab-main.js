@@ -28,7 +28,7 @@ import {normalizeSculptBorderPreview,resolveSculptBorderBiome,
 } from './render/sculpt-border-scenery-v1.js';
 import {stepMovement} from './core/movement.js?rev=bridge-grade-v69-deck-v70-rails-v71-north-r2-sphere-v76-stairs-v78-ramp-v77';
 import {SCULPT_NAVIGATION_PROBE_DEFAULTS,sculptNavigationSample,sculptNavigationBlockDetail,sculptSphereProjectionBlock,sculptBridgeDeckAt,sculptBridgeDeckHeight} from './core/sculpt-navigation-collision.js?rev=sculpt-stairs-dynamic-height-v78-ramp-v77';
-import {sculptStairHeightAt} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
+import {sculptStairHeightAt,sculptStairCorridor} from './core/sculpt-stair-traversal.js?rev=natural-ramp-v77';
 import {sculptRampVisualMesh} from './render/sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 import {normalizeWorldArea} from './world/world-area-model.js?rev=interior-r3c-wall-materials';
 import {INTERIOR_DOOR_ASSETS,INTERIOR_CONNECTOR_ASSETS} from './world/interior-material-catalog.js';
@@ -223,6 +223,7 @@ let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
 let objectEditing=false,waypointsEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+let stairTraceMode=false,stairTraceOwnerId=null,stairTraceStart=null,stairTraceGesture=null;
  // A standalone Sculpt preview can export the same official profile format;
  // the WorldBuilder path instead edits its ONE canonical world record.
  let sculptStandaloneShadowProfiles=Object.freeze([]);
@@ -1560,6 +1561,25 @@ function draw(){
     ctx.restore();
   }
   drawSculptWorldPortalMarkers();
+  // Foot/summit preview is editor-only, on top of the same selected Stair.
+  if(stairTraceMode&&stairTraceOwnerId===objectSelectedId){
+    const fromCell=stairTraceGesture?.foot??stairTraceStart;
+    const toCell=stairTraceGesture?.last??hoverCell;
+    if(fromCell&&toCell){
+      const point=cell=>{
+        const p=rampPointFromCell(cell),level=sculptHeightAt(terrain,cell.x,cell.y);
+        return {x:p.x,y:p.y-level*SCULPT_TILE.rise};
+      };
+      const a=point(fromCell),b=point(toCell);
+      ctx.save();ctx.strokeStyle='#8dffbe';ctx.lineWidth=Math.max(2,3/zoom);
+      ctx.setLineDash([8,5]);ctx.beginPath();ctx.moveTo(a.x,a.y);
+      ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);
+      for(const [p,colour] of [[a,'#ffdb96'],[b,'#86ffd4']]){
+        ctx.fillStyle=colour;ctx.beginPath();ctx.arc(p.x,p.y,6/zoom,0,Math.PI*2);ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
   // Both slope authoring entries use the same preview, mesh and Collision World
   // corridor. Navigation "Autoriser" is a REAL gesture, not a UI-only switch.
   const navAllowPreview=navigationMaskEditing==='allow';
@@ -2144,6 +2164,14 @@ function begin(event){
       [{x:cell.x+.5,y:cell.y+.5}]);
     updateNavigationZoneCount();scheduleDraw();return;
   }
+  if(stairTraceMode){
+    const cell=screenToCell(event);
+    if(!cell)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    stairTraceGesture={pointerId:event.pointerId,
+      foot:stairTraceStart??cell,last:cell};
+    hoverCell=cell;scheduleDraw();return;
+  }
   if(waypointsEditing&&sculptWorldDraft&&!sculptWorldPortalPlacement){
     const point=screenToWorldPoint(event),marker=pickedVisibleWaypoint(point);
     if(marker){
@@ -2286,6 +2314,12 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(stairTraceGesture){
+    if(event.pointerId!==stairTraceGesture.pointerId)return;
+    const cell=screenToCell(event);
+    if(cell){stairTraceGesture.last=cell;hoverCell=cell;scheduleDraw();}
+    return;
+  }
   if(navMaskGesture){
     if(event.pointerId!==navMaskGesture.pointerId)return;
     const cell=screenToCell(event);
@@ -2518,6 +2552,51 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(stairTraceGesture){
+    const gesture=stairTraceGesture;
+    if(event.pointerId!==gesture.pointerId)return;
+    stairTraceGesture=null;
+    if(event.type==='pointercancel'||event.type==='lostpointercapture'){
+      status('Tracé de l’escalier annulé');scheduleDraw();return;
+    }
+    const end=screenToCell(event)??gesture.last;
+    const foot=gesture.foot;
+    if(foot.x===end.x&&foot.y===end.y){
+      stairTraceStart=foot;
+      status('Pied choisi : touche ou glisse jusqu’au sommet de cet escalier.');
+      scheduleDraw();return;
+    }
+    const selected=placedObjects.find(o=>o.id===stairTraceOwnerId);
+    if(!selected||objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind!=='stairs'){
+      stairTraceMode=false;stairTraceStart=null;status('Sélectionne un escalier valide.');return;
+    }
+    const from=rampPointFromCell(foot),to=rampPointFromCell(end);
+    const level=c=>sculptHeightAt(terrain,c.x,c.y);
+    const low=level(foot)<level(end)?from:to;
+    const high=level(foot)<level(end)?to:from;
+    const width=Math.max(12,Math.min(448,
+      (objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.baseSize?.width??210)*
+      selected.transform.scaleX*.68));
+    const traversal={
+      footOffsetX:low.x-selected.transform.x,footOffsetY:low.y-selected.transform.y,
+      headOffsetX:high.x-selected.transform.x,headOffsetY:high.y-selected.transform.y,width
+    };
+    const next=updateSculptPreviewObject(placedObjects,selected.id,
+      {stairTraversal:traversal});
+    const resolved=resolveWorldObjectPlacements(next,objectDefinitionCatalogV1)
+      .find(o=>o.id===selected.id);
+    const corridor=resolved&&sculptStairCorridor(terrain,resolved);
+    if(!corridor||level(foot)===level(end)||next===placedObjects){
+      stairTraceStart=foot;
+      $('object-stair-path-status').textContent='Passage refusé : pied et sommet doivent être sur deux sols secs, reliés par une montée réaliste.';
+      status($('object-stair-path-status').textContent);
+    }else if(objectCommit(next)){
+      stairTraceMode=false;stairTraceStart=null;
+      syncObjectSelectedControls();
+      status('Escalier ajusté : passage physique enregistré sur le même objet · Annuler disponible.');
+    }
+    scheduleDraw();return;
+  }
   if(navMaskGesture){
     if(event.pointerId!==navMaskGesture.pointerId)return;
     const gesture=navMaskGesture;navMaskGesture=null;
@@ -3886,6 +3965,18 @@ function refreshSelectedObjectShadowControlsV1(selected){
 function syncObjectSelectedControls(){
   const selected=placedObjects.find(o=>o.id===objectSelectedId);
   refreshSelectedObjectShadowControlsV1(selected);
+  const stairSelected=!!selected&&
+    objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind==='stairs';
+  if(stairTraceMode&&(!stairSelected||stairTraceOwnerId!==objectSelectedId)){
+    stairTraceMode=false;stairTraceStart=null;stairTraceGesture=null;
+  }
+  $('object-stair-path').hidden=!stairSelected;
+  if(stairSelected){
+    $('object-stair-trace').textContent=stairTraceMode
+      ?'✕ Annuler le tracé en cours':'✏️ Tracer pied → sommet sur la carte';
+    $('object-stair-path-status').textContent=selected.overrides.stairTraversal
+      ?'Passage ajusté sur cet escalier.':'Passage automatique du visuel actif.';
+  }
   const selectedDef=selected?objectDefinitionCatalogV1.get(selected.objectDefinitionId):null;
   const buildingSelected=!!selected&&selectedDef?.kind==='building'&&!activeInteriorId;
   $('object-open-interior').hidden=!buildingSelected;
@@ -4800,6 +4891,9 @@ function setObjectEditing(active,{waypoints=false}={}){
     fringeEditing=false;fringeGesture=null;
   }
   if(!waypointsEditing)sculptWorldPortalPlacement=null;
+  if(!objectEditing||waypointsEditing){
+    stairTraceMode=false;stairTraceStart=null;stairTraceGesture=null;
+  }
   if(!objectEditing){
     closeNpcAuthoringDialog();
     actorSubmode=false;$('object-controls').hidden=false;$('actor-controls').hidden=true;
@@ -4936,6 +5030,27 @@ $('object-shadow-profile-redo').addEventListener('click',()=>{
  status('Ombres de ce modèle : réglage réappliqué.');
 });
 }
+$('object-stair-trace')?.addEventListener('click',()=>{
+  const selected=placedObjects.find(o=>o.id===objectSelectedId);
+  if(!selected||objectDefinitionCatalogV1.get(selected.objectDefinitionId)?.kind!=='stairs')return;
+  stairTraceMode=!stairTraceMode;
+  stairTraceOwnerId=stairTraceMode?selected.id:null;
+  stairTraceStart=null;stairTraceGesture=null;
+  syncObjectSelectedControls();
+  status(stairTraceMode?'Escalier : touche le pied puis le sommet, ou glisse du pied au sommet.':
+    'Modification du trajet annulée.');
+  scheduleDraw();
+});
+$('object-stair-reset')?.addEventListener('click',()=>{
+  const selected=placedObjects.find(o=>o.id===objectSelectedId);
+  if(!selected||!selected.overrides.stairTraversal)return;
+  stairTraceMode=false;stairTraceStart=null;stairTraceGesture=null;
+  const next=updateSculptPreviewObject(placedObjects,selected.id,{stairTraversal:null});
+  if(objectCommit(next)){
+    syncObjectSelectedControls();
+    status('Passage automatique restauré sur cet escalier · Annuler disponible.');
+  }
+});
 $('object-action').addEventListener('change',()=>{
   if($('object-action').value!=='select'){objectSelectedId=null;syncObjectSelectedControls();scheduleDraw();}
 });
