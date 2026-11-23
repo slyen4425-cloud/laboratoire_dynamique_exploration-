@@ -283,7 +283,10 @@ export function resolveWorldObjectPlacement(
     collision:
       definition.collision ?? null,
     // Display-only override travels with the one authoritative placement.
-    ...(placement.overrides?.shadow ? {shadow:placement.overrides.shadow} : {})
+    ...(placement.overrides?.shadow ? {shadow:placement.overrides.shadow} : {}),
+    // The physical stair corridor belongs to this SAME object placement.
+    ...(definition.kind==='stairs'&&placement.overrides?.stairTraversal
+      ?{stairTraversal:placement.overrides.stairTraversal}:{})
   };
 
   if (definition.kind === 'bridge') {
