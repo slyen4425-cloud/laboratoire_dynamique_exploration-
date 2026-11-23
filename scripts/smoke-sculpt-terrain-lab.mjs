@@ -603,11 +603,17 @@ try{
   // A touch-emulated browser can momentarily drop keyboard focus. Require
   // actual WALK on the native actor before simulating a stalled main thread,
   // otherwise zero motion tests input focus rather than frame-time integration.
-  await run('(()=>{window.focus();return true;})()');
+  await send('Page.bringToFront');
+  await run('(()=>{window.focus();return document.hasFocus();})()');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(90);
-  const preJank=await run('window.__sculptNavProbe()');
+  // Wait for TWO real animation frames rather than race against a fixed 90ms
+  // wall-clock delay while Android/touch focus is being restored.
+  const preJank=await run(`(async()=>{
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    return window.__sculptNavProbe();
+  })()`);
   if(preJank.actorMotion!=='walk'||preJank.player.x<=afterStick.player.x)
     throw Error('V21 jank prerequisite: real native keyboard walk must be active after touch emulation: '+
       JSON.stringify({afterStick,preJank}));
@@ -3860,7 +3866,7 @@ try{
       const cam=window.__sculptLabProbe(),rect=canvas.getBoundingClientRect();
       const pitch=cam.liveCameraPitch,
         shear=probe.areaKind==='interior'?0:cam.cameraView==='classic'?0:-.1;
-      const x=spawn.x+12,y=spawn.y;
+      const x=spawn.x+12,y=spawn.y; // Existing real authoring tap, inside hitbox
       const screenX=rect.left+cam.cameraPan.x+x*cam.zoom;
       const col=Math.floor(x/28),row=Math.floor(y/21);
       let touch=null;
@@ -3900,6 +3906,48 @@ try{
         JSON.stringify({prep,placed,distance}));
     return {gate:prep.gate,spawn:prep.spawn,portal:placed.portal};
   };
+  // The native authoring tap places the exit beside the existing Spawn.
+  // Walk AWAY from that exact Portal, then re-enter with actual key events:
+  // no synthetic UI click and no mutation of the movement state.
+  const walkThroughPortal=async (targetAreaId,description,portalId)=>{
+    const state=()=>run("(()=>({world:window.__sculptWorldProbe?.(),nav:window.__sculptNavProbe?.()}))()");
+    const point=await state();
+    const gate=point.world?.outgoing?.find(p=>p.id===portalId)?.trigger;
+    if(!gate||gate.kind!=='point')throw Error('Missing real Portal: '+portalId);
+    const distance=nav=>Math.hypot(nav.player.x-gate.x,nav.player.y-gate.y);
+    const keyEvent=async (key,type)=>send('Input.dispatchKeyEvent',{
+      type,key,code:key==='a'?'KeyA':'KeyD',
+      windowsVirtualKeyCode:key==='a'?65:68,
+      nativeVirtualKeyCode:key==='a'?65:68
+    });
+    let leave=point;
+    if(distance(point.nav)<gate.radius+9){
+      await keyEvent('a','keyDown');
+      try{
+        for(let i=0;i<75;i++){
+          await sleep(85);
+          leave=await state();
+          if(distance(leave.nav)>gate.radius+9)break;
+        }
+      }finally{await keyEvent('a','keyUp');}
+    }
+    if(distance(leave.nav)<=gate.radius+9)
+      throw Error(description+' could not leave the real Portal trigger: '+JSON.stringify(leave));
+    await keyEvent('d','keyDown');
+    let reached=null,last=null;
+    try{
+      for(let i=0;i<125;i++){
+        await sleep(90);
+        last=await state();
+        if(last?.world?.areaId===targetAreaId&&last?.nav?.enabled){
+          reached=last;break;
+        }
+      }
+    }finally{await keyEvent('d','keyUp');}
+    if(!reached)throw Error(description+' did not auto-cross by native movement: '+
+      JSON.stringify({gate,leave,last}));
+    return reached;
+  };
   const stagedWorldPortal=await placePortalAtSpawnViaObjects('grotte-du-nord');
   const placedWorldPortal=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
@@ -3907,55 +3955,24 @@ try{
       inspectorHidden:getComputedStyle(document.querySelector('#world-area-portal-panel')).display==='none'};
   })()`);
   if(!placedWorldPortal.inspectorHidden||!placedWorldPortal.nav.enabled||
-     !placedWorldPortal.sculpt.traverseVisible)
-    throw Error('Host 2.5D Portal not reachable after Objets touch: '+
+      placedWorldPortal.sculpt.traverseVisible)
+    throw Error('Automatic host Portal must not show an Enter action: '+
       JSON.stringify({stagedWorldPortal,placedWorldPortal}));
-  // Real mobile CSS layout: previously the button was in normal document
-  // flow, so the code saw it but the user never saw/could touch it.
-  const visibleTraverse=await run(`(()=>{
-    const button=document.querySelector('#world-portal-traverse');
-    const canvas=document.querySelector('.canvas-wrap');
-    const rect=button.getBoundingClientRect(),bounds=canvas.getBoundingClientRect();
-    return {position:getComputedStyle(button).position,
-      display:getComputedStyle(button).display,disabled:button.disabled,
-      label:button.textContent,
-      rect:{x:rect.x,y:rect.y,w:rect.width,h:rect.height},
-      canvas:{x:bounds.x,y:bounds.y,w:bounds.width,h:bounds.height}};
-  })()`);
-  if(visibleTraverse.position!=='absolute'||visibleTraverse.display==='none'||
-     visibleTraverse.disabled||visibleTraverse.rect.w<80||
-     visibleTraverse.rect.x<visibleTraverse.canvas.x||
-     visibleTraverse.rect.y<visibleTraverse.canvas.y||
-     visibleTraverse.rect.x+visibleTraverse.rect.w>
-       visibleTraverse.canvas.x+visibleTraverse.canvas.w+2||
-     visibleTraverse.rect.y+visibleTraverse.rect.h>
-       visibleTraverse.canvas.y+visibleTraverse.canvas.h+2)
-    throw Error('Mobile Portal action not physically visible within canvas: '+
-      JSON.stringify(visibleTraverse));
-  const enteredDungeon=await run(`(()=>{
-    document.querySelector('#world-portal-traverse').click();
-    return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
-  })()`);
-  if(enteredDungeon.sculpt.areaId!=='grotte-du-nord'||
-     enteredDungeon.sculpt.siteKind!=='dungeon'||
-     enteredDungeon.sculpt.terrainWidth!==18||
-     enteredDungeon.nav.player===null)
-    throw Error('Canonical Portal did not load live 2.5D dungeon Area: '+
-      JSON.stringify(enteredDungeon));
+  const enteredDungeon=await walkThroughPortal('grotte-du-nord','Host to dungeon',stagedWorldPortal.portal.id);
+  if(enteredDungeon.world.siteKind!=='dungeon'||
+     enteredDungeon.world.terrainWidth!==18||!enteredDungeon.nav.player)
+    throw Error('Canonical automatic Portal did not mount dungeon: '+JSON.stringify(enteredDungeon));
   const stagedDungeonReturn=await placePortalAtSpawnViaObjects('area-principale');
   const placedDungeonReturn=await run(`(()=>{
     document.querySelector('#navigation-toggle').click();
     return {sculpt:window.__sculptWorldProbe(),nav:window.__sculptNavProbe()};
   })()`);
-  if(!placedDungeonReturn.nav.enabled||!placedDungeonReturn.sculpt.traverseVisible)
-    throw Error('Dungeon return Portal not reachable after Objets touch: '+
+  if(!placedDungeonReturn.nav.enabled||placedDungeonReturn.sculpt.traverseVisible)
+    throw Error('Dungeon return auto Portal should not need Enter: '+
       JSON.stringify({stagedDungeonReturn,placedDungeonReturn}));
-  const backOutside=await run(`(()=>{
-    document.querySelector('#world-portal-traverse').click();
-    return window.__sculptWorldProbe();
-  })()`);
-  if(backOutside.areaId!=='area-principale')
-    throw Error('Dungeon -> host Portal transition failed: '+JSON.stringify(backOutside));
+  const backOutside=await walkThroughPortal('area-principale','Dungeon to host',stagedDungeonReturn.portal.id);
+  if(backOutside.world.areaId!=='area-principale')
+    throw Error('Dungeon -> host auto Portal failed: '+JSON.stringify(backOutside));
   await run("document.querySelector('#world-area-return').click();true");
   let returned2p5d=null;
   for(let i=0;i<90;i++){

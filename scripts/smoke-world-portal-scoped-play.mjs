@@ -103,23 +103,31 @@ try{
  // the unchanged Portal traversal and persistence assertions.
  await waitFor("(()=>location.pathname==='/sculpt-lab.html'&&document.readyState==='complete'&&document.baseURI.startsWith("+JSON.stringify(origin)+"))()",'same-origin native Explorer page');
 
- const fixture=await evaluate("(async()=>{\n const {createBlankWorldBuilderDraft,addWorldArea,connectWorldAreas,updateSpawn}\n  =await import('/src/builder/world-builder-draft.js');\n const {saveWorldAssemblerDraft}=await import('/src/builder/world-assembler-handoff.js');\n const {createNewExplorationPlay}=await import('/src/play/exploration-play-session.js');\n let world=createBlankWorldBuilderDraft({id:'native-linked-play',width:36*28,height:24*21});\n world=addWorldArea(world,{name:'Deuxième zone',kind:'exterior',width:36*28,height:24*21});\n const from=world.initialAreaId,to=world.areas[1].id;\n world=connectWorldAreas(world,{sourceAreaId:from,targetAreaId:to,returnPortal:true});\n const forward=world.portals.find(p=>p.sourceAreaId===from);\n const reverse=world.portals.find(p=>p.sourceAreaId===to);\n world=updateSpawn(world,from,world.initialSpawnId,{x:forward.trigger.x,y:forward.trigger.y});\n world=updateSpawn(world,to,forward.targetSpawnId,{x:reverse.trigger.x,y:reverse.trigger.y});\n saveWorldAssemblerDraft(localStorage,world);\n const sessionId='native-portal-'+crypto.randomUUID();\n const initial=createNewExplorationPlay(localStorage,world,{sessionId});\n return {sessionId,from,to,initial,portals:world.portals.length};\n})()");
+ const fixture=await evaluate("(async()=>{\n const {createBlankWorldBuilderDraft,addWorldArea,connectWorldAreas,updateSpawn}\n  =await import('/src/builder/world-builder-draft.js');\n const {saveWorldAssemblerDraft}=await import('/src/builder/world-assembler-handoff.js');\n const {createNewExplorationPlay}=await import('/src/play/exploration-play-session.js');\n let world=createBlankWorldBuilderDraft({id:'native-linked-play',width:36*28,height:24*21});\n world=addWorldArea(world,{name:'Deuxième zone',kind:'exterior',width:36*28,height:24*21});\n const from=world.initialAreaId,to=world.areas[1].id;\n world=connectWorldAreas(world,{sourceAreaId:from,targetAreaId:to,returnPortal:true});\n const forward=world.portals.find(p=>p.sourceAreaId===from);\n const reverse=world.portals.find(p=>p.sourceAreaId===to);\n world=updateSpawn(world,from,world.initialSpawnId,{x:forward.trigger.x-forward.trigger.radius-25,y:forward.trigger.y});\n world=updateSpawn(world,to,forward.targetSpawnId,{x:reverse.trigger.x-reverse.trigger.radius-25,y:reverse.trigger.y});\n saveWorldAssemblerDraft(localStorage,world);\n const sessionId='native-portal-'+crypto.randomUUID();\n const initial=createNewExplorationPlay(localStorage,world,{sessionId});\n return {sessionId,from,to,initial,portals:world.portals.length};\n})()");
  if(fixture.portals!==2||fixture.initial.currentAreaId!==fixture.from)
   throw Error('Invalid official linked WorldDocument '+JSON.stringify(fixture));
  await send('Page.navigate',{url:origin+'/sculpt-lab.html?play=1&adventureSession='+fixture.sessionId});
  const ready=await waitFor("(()=>{const p=window.__sculptPlayProbe?.();return p?.active&&p?.playing?p:document.body.classList.contains('sculpt-play-unavailable')?{error:document.getElementById('play-start-error-message')?.textContent}:null})()", 'scoped native Jouer');
  if(ready.error||ready.areaId!==fixture.from)throw Error('Play start invalid '+JSON.stringify(ready));
- // A human cannot click through the loading cover. The smoke must obey
- // that same visible readiness before attempting an immediate return Portal.
- const portalReady=()=> "(()=>{const b=document.querySelector('#world-portal-traverse');const cover=document.querySelector('#play-area-loading');return b&&!b.hidden&&!b.disabled&&b.textContent.includes('Entrer')&&(!cover||cover.hidden)})()";
- await waitFor(portalReady(),'official clickable Portal at first position');
- await evaluate("document.querySelector('#world-portal-traverse').click()");
+ // The hero starts OUTSIDE both Portal hitboxes. Walk across the actual
+ // Collision World via Chromium key events: no synthetic click on an Enter UI.
+ const coverReady=()=> "(()=>{const cover=document.querySelector('#play-area-loading');return !cover||cover.hidden})()";
+ await waitFor(coverReady(),'native Portal loading cover cleared');
  const arrived=areaId=>"(()=>{const p=window.__sculptPlayProbe?.();const saved=JSON.parse(localStorage.getItem('gensrpg.exploration.play.navigation.v1:'+"
   +JSON.stringify(fixture.sessionId)+")||'null');return p?.areaId==="+JSON.stringify(areaId)+"&&saved?.currentAreaId===p.areaId?{probe:p,saved}:null})()";
- const crossed=await waitFor(arrived(fixture.to),'real Portal destination and saved checkpoint');
- await waitFor(portalReady(),'real return Portal after landing');
- await evaluate("document.querySelector('#world-portal-traverse').click()");
- const back=await waitFor(arrived(fixture.from),'return Portal source and saved checkpoint');
+ async function walkTo(areaId){
+  await evaluate("document.activeElement?.blur()");
+  const key={key:'d',code:'KeyD',windowsVirtualKeyCode:68,nativeVirtualKeyCode:68};
+  await send('Input.dispatchKeyEvent',{...key,type:'keyDown'});
+  try{
+   return await waitFor(arrived(areaId),'automatic Portal crossing and real persisted Spawn');
+  }finally{
+   await send('Input.dispatchKeyEvent',{...key,type:'keyUp'});
+  }
+ }
+ const crossed=await walkTo(fixture.to);
+ await waitFor(coverReady(),'native return Portal scene ready');
+ const back=await walkTo(fixture.from);
  if(back.saved.worldId!==fixture.initial.worldId||back.saved.sessionId!==fixture.sessionId)
   throw Error('Portal traveled outside the official player session');
  if(exceptions.some(x=>/ReferenceError|TypeError|is not defined/.test(x)))

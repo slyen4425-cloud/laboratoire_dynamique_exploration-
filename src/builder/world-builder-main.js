@@ -407,7 +407,13 @@ async function rebuildWorldObjectPipeline() {
 }
 
 await rebuildWorldObjectPipeline();
-const portalRenderer = createPortalRenderer();
+const portalRenderer = createPortalRenderer({
+  resolveTexture:materialId=>{
+    const material=materialRegistry?.resolve(materialId);
+    return material?.kind==='surface'&&material.assets?.base
+      ?textureLoader?.get(material.assets.base)??null:null;
+  }
+});
 
 const captureActorDefinitionProvider =
   await createCaptureActorPreviewProviderV1();
@@ -3327,7 +3333,8 @@ function refreshPortalControls() {
     'portal-target-spawn',
     'portal-visible',
     'portal-marker',
-    'portal-label'
+    'portal-label',
+    'portal-texture'
   ]) {
     $(id).disabled = disabled;
   }
@@ -3385,6 +3392,13 @@ function refreshPortalControls() {
   $('portal-visible').checked = portal.visual?.visible === true;
   $('portal-marker').value = portal.visual?.marker ?? 'portal';
   $('portal-label').value = portal.visual?.label ?? '';
+  const officialTextures=materialPackV1.materials.filter(m=>
+    m.kind==='surface'&&m.assets?.base);
+  const texture=$('portal-texture'),previous=portal.visual?.textureMaterialId;
+  texture.replaceChildren(...officialTextures.map(m=>new Option(m.label,m.id)));
+  if(officialTextures.some(m=>m.id===previous))texture.value=previous;
+  $('portal-texture-row').hidden=$('portal-marker').value!=='texture';
+  texture.disabled=disabled||$('portal-marker').value!=='texture';
 }
 
 
@@ -4664,6 +4678,8 @@ function applyPortalInputs() {
       nextPortal.visual ??= {};
       nextPortal.visual.visible = $('portal-visible').checked;
       nextPortal.visual.marker = $('portal-marker').value;
+      nextPortal.visual.textureMaterialId = $('portal-marker').value==='texture'
+        ?$('portal-texture').value:null;
       nextPortal.visual.label =
         $('portal-label').value.trim() || null;
     }
@@ -6231,6 +6247,7 @@ for (const id of [
   'portal-target-spawn',
   'portal-visible',
   'portal-marker',
+  'portal-texture',
   'portal-label'
 ]) {
   $(id).addEventListener('change', applyPortalInputs);

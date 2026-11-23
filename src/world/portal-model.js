@@ -30,7 +30,9 @@ function normalizePortalVisual(raw) {
   const marker =
     visual.marker === 'exit' ||
     visual.marker === 'entry' ||
-    visual.marker === 'portal'
+    visual.marker === 'portal' ||
+    visual.marker === 'shadow' ||
+    visual.marker === 'texture'
       ? visual.marker
       : 'portal';
 
@@ -38,6 +40,10 @@ function normalizePortalVisual(raw) {
     visible: visual.visible === true,
     marker,
     label: normalizedString(visual.label),
+    // Optional native surface texture ID, never a URL or an asset copy.
+    ...(normalizedString(visual.textureMaterialId)?{
+      textureMaterialId:normalizedString(visual.textureMaterialId)
+    }:{}),
     // Optional presentation parameter owned by Portal, never by the renderer.
     // Absent on legacy Portals so existing worlds keep their original schema.
     ...(validInteriorDoorAsset(visual.assetId)||validInteriorConnectorAsset(visual.assetId)
@@ -200,4 +206,17 @@ export function applyPortalTransition(
     y: targetPoint.y,
     viaPortalId: portal.id
   });
+}
+
+// Gameplay-only edge detector: crossing the real Portal trigger starts travel.
+// A Spawn inside the reverse Portal is NOT a fresh entry until the hero exits
+// its hitbox and walks into it again. No timer, alternate physics or new XY.
+export function findPortalEnteredDuringMove(worldDocument,currentAreaId,previousPoint,nextPoint){
+  if(!previousPoint||!nextPoint||
+     !Number.isFinite(previousPoint.x)||!Number.isFinite(previousPoint.y)||
+     Math.hypot(nextPoint.x-previousPoint.x,nextPoint.y-previousPoint.y)<.001)return null;
+  const entered=findTriggeredPortal(worldDocument,currentAreaId,nextPoint);
+  if(!entered)return null;
+  const alreadyInside=findTriggeredPortal(worldDocument,currentAreaId,previousPoint);
+  return alreadyInside?.id===entered.id?null:entered;
 }
