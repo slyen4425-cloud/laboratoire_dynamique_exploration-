@@ -604,7 +604,20 @@ try{
   // actual WALK on the native actor before simulating a stalled main thread,
   // otherwise zero motion tests input focus rather than frame-time integration.
   await send('Page.bringToFront');
-  await run('(()=>{window.focus();return document.hasFocus();})()');
+  // Touch emulation may leave a SELECT/INPUT focused. The native navigation
+  // key handler deliberately ignores editable fields: focus the real Canvas,
+  // not just window.focus(), before proving keyboard movement. This fixes
+  // the actual event target, never relaxes travel distance or jank thresholds.
+  const postTouchFocus=await run(`(()=>{
+    window.focus();
+    const before=document.activeElement?.tagName??null;
+    document.activeElement?.blur?.();
+    const canvas=document.querySelector('#sculpt-canvas');
+    canvas.tabIndex=0;canvas.focus({preventScroll:true});
+    return {before,active:document.activeElement?.id??null,focused:document.hasFocus()};
+  })()`);
+  if(!postTouchFocus.focused||postTouchFocus.active!=='sculpt-canvas')
+    throw Error('Touch→keyboard focus was not restored to the native canvas: '+JSON.stringify(postTouchFocus));
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   // Real Chromium can resume keyboard focus a few RAFs AFTER the touch
