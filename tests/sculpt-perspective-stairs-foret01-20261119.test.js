@@ -37,7 +37,10 @@ test('Foret_01 perspectives incl. cleaned side_alt have physical foot/head match
     assert.equal(corridor.topLevel,8);
     assert.ok(Math.abs(corridor.head.x-STAIR.x-art.dx)<1e-5);
     assert.ok(Math.abs(corridor.head.y-STAIR.y-art.dy)<1e-5);
-    assert.ok(corridor.ux<0&&corridor.uy<0,'both variants climb towards image upper-left');
+    assert.ok(corridor.uy<0,'all views must climb uphill');
+    if(variant==='side_alt')assert.ok(corridor.ux>0,
+      'new Profil A bitmap steps rise LEFT → RIGHT, not the old side corridor');
+    else assert.ok(corridor.ux<0,'historical side/oblique keep original geometry');
     assert.ok(corridor.length>100&&corridor.width>20);
   }
   // Already-validated front contract must not be silently relaxed.
@@ -61,7 +64,10 @@ test('mirror + rotation affect side, side_alt and oblique direction; front stays
     const plain=object(variant,{rotationDeg:0});
     const mirrored=object(variant,{rotationDeg:0,flipX:true});
     const a=sculptStairArtFrame(plain),b=sculptStairArtFrame(mirrored);
-    assert.ok(a.dx<0&&b.dx>0);
+    if(variant==='side_alt')assert.ok(a.dx>0&&b.dx<0,
+      'Profil A mirrors its observed left-to-right ascent');
+    else assert.ok(a.dx<0&&b.dx>0,
+      'legacy profiles retain the original orientation');
     assert.ok(Math.abs(a.dy-b.dy)<1e-8);
     assert.ok(Math.abs(a.length-b.length)<1e-8);
   }
@@ -90,4 +96,37 @@ test('the user can climb and descend all perspective stairs without disabling ne
     assert.ok(player.y>corridor.foot.y-10,variant+' hero must descend');
     assert.equal(player.sculptStairId,null);
   }
+});
+
+// The cleaned artwork is the source of truth for the variant's step direction.
+// Using a generic side corridor would move the player against visible stairs.
+test('cleaned Profil A and legacy side have different ascents without changing asset IDs',()=>{
+  const a=object('side_alt',{rotationDeg:0}),b=object('side',{rotationDeg:0});
+  const al=sculptStairArtFrame(a),bl=sculptStairArtFrame(b);
+  assert.equal(a.objectDefinitionId,b.objectDefinitionId);
+  assert.equal(a.visual.variantId,'side_alt');
+  assert.equal(b.visual.variantId,'side');
+  assert.ok(al.dx>0&&al.dy<0,'Profil A: foot lower-left, landing upper-right');
+  assert.ok(bl.dx<0&&bl.dy<0,'historical side: no silent saved-map movement rewrite');
+  const flipped=sculptStairArtFrame(object('side_alt',{rotationDeg:0,flipX:true}));
+  assert.ok(flipped.dx<0&&flipped.dy<0);
+  assert.ok(Math.abs(al.length-flipped.length)<1e-8);
+});
+
+test('Profil A does not invent an underwater landing or a 14-level shortcut',()=>{
+  const stair=object('side_alt');
+  const corridor=sculptStairCorridor(terrain,stair);
+  assert.ok(corridor);
+  const tipX=corridor.head.x+corridor.ux*5;
+  const tipY=corridor.head.y+corridor.uy*5;
+  const c=Math.floor(tipX/CW),r=Math.floor(tipY/CH);
+  const waterLevels=Array(W*H).fill(-1);
+  waterLevels[r*W+c]=12;
+  const flooded=createSculptTerrain({width:W,height:H,levels,waterLevels});
+  assert.equal(sculptStairCorridor(flooded,stair),null,
+    'a painted stair must never be treated as a bridge over deep water');
+  const tooHigh=createSculptTerrain({width:W,height:H,
+    levels:levels.map((n,i)=>Math.floor(i/W)<40?16:2)});
+  assert.equal(sculptStairCorridor(tooHigh,stair),null,
+    'a short model does not bypass the real terrain rise cap');
 });
