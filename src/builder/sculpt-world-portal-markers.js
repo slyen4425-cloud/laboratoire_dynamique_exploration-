@@ -5,7 +5,7 @@ const areaFor=(doc,id)=>doc.areas.find(area=>area.id===id);
 const nameFor=area=>area?.label??area?.id??'autre zone';
 
 export function markersForSculptWorldArea(document,areaId,{
-  testing=false,selectedPortalId=null
+  testing=false,selectedPortalId=null,showHidden=false
 }={}){
   if(!document||!Array.isArray(document.areas))return Object.freeze([]);
   const area=areaFor(document,areaId);
@@ -13,13 +13,17 @@ export function markersForSculptWorldArea(document,areaId,{
   const markers=[],incoming=new Map();
   for(const portal of document.portals??[]){
     if(portal.enabled!==true)continue;
-    if(portal.sourceAreaId===areaId&&portal.visual?.visible===true&&
+    if(portal.sourceAreaId===areaId&&
+       (portal.visual?.visible===true||(!testing&&showHidden))&&
        portal.trigger?.kind==='point'&&finitePoint(portal.trigger)){
       const destination=areaFor(document,portal.targetAreaId);
       const customized=portal.visual.label?.trim();
       markers.push({
         kind:'exit',portalId:portal.id,x:portal.trigger.x,y:portal.trigger.y,
         radius:portal.trigger.radius,
+        visibleInPlay:portal.visual?.visible===true,
+        appearance:portal.visual?.marker??'portal',
+        textureMaterialId:portal.visual?.textureMaterialId??null,
         // Existing links store the destination ID as a legacy visual label.
         // Present its human name until an actually custom label is supplied.
         label:customized&&customized!==portal.targetAreaId
@@ -58,7 +62,7 @@ export function markersForSculptWorldArea(document,areaId,{
 // that render the rings; it never creates or repositions a marker by itself.
 export function pickSculptWorldEditorMarkerV1(document,areaId,point,{radius=33}={}){
  if(!finitePoint(point)||!Number.isFinite(radius)||radius<=0)return null;
- const candidates=markersForSculptWorldArea(document,areaId,{testing:false});
+ const candidates=markersForSculptWorldArea(document,areaId,{testing:false,showHidden:true});
  const scored=candidates.map(marker=>({
    marker,distance:Math.hypot(point.x-marker.x,point.y-marker.y)
  })).filter(item=>item.distance<=Math.max(radius,item.marker.radius));
