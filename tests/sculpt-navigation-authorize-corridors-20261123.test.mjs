@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSculptTerrain,appendSculptNavigationAllowedCorridor,
-  applySculptNavigationBlockStroke,serializeSculptTerrain,importSculptTerrain,
+  removeSculptNavigationAllowedCorridorAt,applySculptNavigationBlockStroke,
+  serializeSculptTerrain,importSculptTerrain,
   sculptTerrainRampProjections} from '../src/world/sculpt-height-model.js';
 import {sculptNavigationRoute} from '../src/core/sculpt-navigation-collision.js';
 import {stepMovement} from '../src/core/movement.js';
@@ -33,6 +34,8 @@ test('Autoriser draws a true canonical terrain ramp: traversable ascent and desc
  assert.ok(p.y>=8*CH,'raw cliff still blocked');
  const granted=route(source);
  assert.equal(granted.ramps.length,1);
+ assert.equal(granted.ramps[0].navigationOnly,true,'no extra decorative slope');
+ assert.equal(sculptTerrainRampProjections(granted)[0].navigationOnly,true);
  assert.equal(granted.navigationAllowedCells,undefined,'no second permission mask');
  assert.equal(serializeSculptTerrain(source),before,'original immutable');
  const walker=actor();walk(walker,granted,-1);
@@ -61,6 +64,21 @@ test('Autoriser supports reverse drawing and clears no-go paint only along the i
   'other restricted paths remain blocked');
  const p=actor();walk(p,next,-1);
  assert.ok(p.y<8*CH,'clearance and native ramp work together');
+});
+
+test('Normal removes ONLY authored invisible corridors and leaves historic visible slopes alone',()=>{
+ const source=terrace(),granted=route(source),at=pt(8,9);
+ const restored=removeSculptNavigationAllowedCorridorAt(granted,at.x,at.y);
+ assert.deepEqual(restored.ramps,[]);
+ assert.equal(removeSculptNavigationAllowedCorridorAt(source,at.x,at.y),source);
+ assert.equal(removeSculptNavigationAllowedCorridorAt(granted,pt(1,9).x,pt(1,9).y),granted);
+ const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ const editor=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const renderer=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
+ assert.match(editor,/removeSculptNavigationAllowedCorridorAt\(next,/);
+ assert.match(editor,/if\(!ramp.navigationOnly\)continue/);
+ assert.match(renderer,/if\(ramp.navigationOnly\)continue/);
+ assert.match(html,/Normal · restaurer le passage naturel/);
 });
 
 test('Autoriser rejects invalid or unsafe paths without silently changing water or height rules',()=>{
