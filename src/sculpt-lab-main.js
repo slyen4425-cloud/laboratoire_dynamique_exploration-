@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
+import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -1542,6 +1542,21 @@ function draw(){
       ctx.fillRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
       ctx.strokeRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
     }
+    // Physical-only permission is outlined ONLY in the editor. The normal
+    // renderer deliberately omits navigationOnly ramps in play.
+    for(const ramp of sculptTerrainRampProjections(terrain)){
+      if(!ramp.navigationOnly)continue;
+      const mesh=sculptRampVisualMesh(terrain,ramp,{
+        cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height,
+        rise:SCULPT_TILE.rise,view:null,segments:12});
+      if(!mesh?.valid||mesh.samples.length<2)continue;
+      ctx.beginPath();
+      ctx.moveTo(mesh.samples[0].left.x,mesh.samples[0].left.y);
+      for(const sample of mesh.samples.slice(1))ctx.lineTo(sample.left.x,sample.left.y);
+      for(const sample of [...mesh.samples].reverse())ctx.lineTo(sample.right.x,sample.right.y);
+      ctx.closePath();ctx.fillStyle='rgba(63,219,143,.26)';ctx.fill();
+      ctx.strokeStyle='rgba(132,255,199,.8)';ctx.lineWidth=1.5;ctx.stroke();
+    }
     ctx.restore();
   }
   drawSculptWorldPortalMarkers();
@@ -1822,8 +1837,20 @@ const rampWidth=()=>Number($('radius').value)*SCULPT_TILE.width;
 function updateNavigationZoneCount(){
   const output=$('nav-zone-count');if(!output)return;
   const count=terrain.navigationBlockedCells?.length??0;
-  const routes=terrain.ramps?.length??0;
-  output.textContent=count+' cases interdites · '+routes+' corridors de pente enregistrés';
+  const routes=(terrain.ramps??[]).filter(r=>r.navigationOnly===true).length;
+  output.textContent=count+' cases interdites · '+routes+' passages autorisés';
+}
+// One brush engine for No-go / Restore. Normal also removes an authored
+// invisible permission by the existing native ramp hit test, never a
+// separate decorative ramp or legacy WorldObject.
+function applyNavigationZoneStroke(base,points){
+  const action=navigationMaskEditing;
+  let next=applySculptNavigationBlockStroke(base,{
+    points,radius:Number($('radius').value),shape:$('brush-shape').value,action});
+  if(action==='normal')for(const point of points)
+    next=removeSculptNavigationAllowedCorridorAt(next,
+      point.x*SCULPT_TILE.width,point.y*SCULPT_TILE.height);
+  return next;
 }
 function setNavigationMaskEditing(action=null){
   const next=['block','normal','allow'].includes(action)?action:null;
@@ -2113,9 +2140,8 @@ function begin(event){
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
     navMaskGesture={pointerId:event.pointerId,before:terrain,last:cell,
       origin:navigationMaskEditing==='allow'?(navAllowStart??cell):cell};
-    if(navigationMaskEditing!=='allow')terrain=applySculptNavigationBlockStroke(terrain,{
-      points:[{x:cell.x+.5,y:cell.y+.5}],radius:Number($('radius').value),
-      shape:$('brush-shape').value,action:navigationMaskEditing});
+    if(navigationMaskEditing!=='allow')terrain=applyNavigationZoneStroke(terrain,
+      [{x:cell.x+.5,y:cell.y+.5}]);
     updateNavigationZoneCount();scheduleDraw();return;
   }
   if(waypointsEditing&&sculptWorldDraft&&!sculptWorldPortalPlacement){
@@ -2275,9 +2301,7 @@ function stroke(event){
       x:Math.round(prev.x+(cell.x-prev.x)*i/count)+.5,
       y:Math.round(prev.y+(cell.y-prev.y)*i/count)+.5
     });
-    terrain=applySculptNavigationBlockStroke(terrain,{points,
-      radius:Number($('radius').value),shape:$('brush-shape').value,
-      action:navigationMaskEditing});
+    terrain=applyNavigationZoneStroke(terrain,points);
     navMaskGesture.last=cell;hoverCell=cell;
     updateNavigationZoneCount();scheduleDraw();return;
   }
