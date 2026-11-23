@@ -83,6 +83,7 @@ import {SCULPT_OBJECT_LIMIT,sculptObjectCanOccupyCell,listSculptPlaceableDefinit
 import {createSculptSurface,normalizeSculptSurface,appendSculptSurfaceStroke,removeSculptSurfaceAt,
   SCULPT_SURFACE_MATERIALS,sculptEncounterFamilyForMaterial,alignSculptSurfaceEncounterFamilies} from './world/sculpt-surface-paint.js';
 import {terrainFamilyRegistry} from './world/terrain-family-registry.js';
+import {drawSquareSurfaceStrokePath} from './world/surface-brush-geometry.js';
 
 import {createCaptureCreatureCatalogProvider} from './capture/capture-creature-catalog-provider.js';
 import {
@@ -1505,20 +1506,23 @@ function draw(){
     if(points.length){
       const width=Number($('surface-width').value)*SCULPT_TILE.width;
       ctx.save();ctx.lineJoin='round';ctx.lineCap='round';
-      ctx.globalAlpha=.42;ctx.strokeStyle=$('surface-material').value==='road.dirt'?'#d1a772':'#adedd1';
-      ctx.lineWidth=width;
-      ctx.beginPath();
-      for(let i=0;i<points.length;i++){
-        const p=points[i];
-        const level=sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
-          Math.floor(p.y/SCULPT_TILE.height));
-        const yy=p.y-level*SCULPT_TILE.rise;
-        if(!i)ctx.moveTo(p.x,yy);else ctx.lineTo(p.x,yy);
+      ctx.globalAlpha=.42;
+      const paintPreviewColor=$('surface-material').value==='road.dirt'?'#d1a772':'#adedd1';
+      const projected=points.map(p=>({
+        x:p.x,y:p.y-sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
+          Math.floor(p.y/SCULPT_TILE.height))*SCULPT_TILE.rise
+      }));
+      if(projected.length===1)projected.push({x:projected[0].x+.001,y:projected[0].y+.001});
+      if(($('surface-brush-shape')?.value??'round')==='square'){
+        ctx.fillStyle=paintPreviewColor;
+        if(drawSquareSurfaceStrokePath(ctx,projected,width))ctx.fill();
+      }else{
+        ctx.strokeStyle=paintPreviewColor;ctx.lineWidth=width;
+        ctx.beginPath();ctx.moveTo(projected[0].x,projected[0].y);
+        for(let i=1;i<projected.length;i++)ctx.lineTo(projected[i].x,projected[i].y);
+        ctx.stroke();
       }
-      if(points.length===1){const p=points[0];ctx.lineTo(p.x+.001,
-        p.y-sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
-          Math.floor(p.y/SCULPT_TILE.height))*SCULPT_TILE.rise);}
-      ctx.stroke();ctx.restore();
+      ctx.restore();
     }
   }
   drawSculptWorldPortalMarkers();
@@ -1724,7 +1728,8 @@ function commitFringeSurface(points,erase=false){
  const next=paintSculptDecorativeFringeSurfaceV1(before,decorativeFringeArea(),{
    points,materialId:$('surface-material').value,
    terrainFamilyId:surfacePaintFamilySelect?.value,
-   width:Number($('surface-width').value)*SCULPT_TILE.width,erase
+   width:Number($('surface-width').value)*SCULPT_TILE.width,
+   brushShape:($('surface-brush-shape')?.value??'round'),erase
  });
  decorativeFringe=next;fringeRasterCache.clear();loadSurfacePaintAssets();
  if(recordDecorativeFringe(before))
@@ -2493,7 +2498,8 @@ function stop(event){
     const changed=appendSculptSurfaceStroke(surface,{
       materialId:$('surface-material').value,
       terrainFamilyId:surfacePaintFamilySelect?.value,points:surfaceStrokePoints,
-      width:Number($('surface-width').value)*SCULPT_TILE.width
+      width:Number($('surface-width').value)*SCULPT_TILE.width,
+      brushShape:($('surface-brush-shape')?.value??'round')
     });
     surfaceStrokePoints=[];
     surfaceCommit(changed);return;
@@ -3865,6 +3871,7 @@ surfaceBaseFamilySelect?.addEventListener('change',()=>{
   surfaceCommit(normalizeSculptSurface({...surface,
     baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
 });
+$('surface-brush-shape')?.addEventListener('change',scheduleDraw);
 $('surface-material').addEventListener('change',()=>{
   // Suggest a family only before the author deliberately selects one.
   // Example: painting another grass texture must NOT erase "Haute herbe".

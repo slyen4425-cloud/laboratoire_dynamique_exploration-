@@ -12,6 +12,7 @@ import {
   traversalRulePackV1
 } from './traversal-rule-pack-v1.js?rev=surface-traversal-replay-v1';
 import { defaultTerrainFamilyTraversalModes } from '../world/terrain-family-registry.js?rev=terrain-family-speed-editor-v1';
+import {squareSurfaceStrokeContainsPoint} from '../world/surface-brush-geometry.js';
 
 const VALID_MODES = Object.freeze(['ground', 'swim', 'fly']);
 
@@ -184,6 +185,9 @@ export function surfaceFeatureContainsPoint(
       ? padding
       : 0;
 
+  if(feature.brushShape === 'square')
+    return squareSurfaceStrokeContainsPoint(feature.points,x,y,
+      feature.width/2+safePadding);
   return (
     pointToPathDistance(
       { x, y },

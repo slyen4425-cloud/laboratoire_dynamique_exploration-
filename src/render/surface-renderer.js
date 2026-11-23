@@ -2,6 +2,7 @@ import {
   buildRibbonSegments,
   ribbonTextureSlices
 } from './path-ribbon.js';
+import {drawSquareSurfaceStrokePath} from '../world/surface-brush-geometry.js';
 import {
   linearFeatherMaskPlan,
   surfaceFeatherMaskPlan,
@@ -46,6 +47,11 @@ function smoothPath(ctx, points, camera) {
 }
 
 function strokePath(ctx, item, camera, width, strokeStyle, alpha = 1) {
+  if(item.brushShape==='square'){
+    ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle=strokeStyle;
+    if(drawSquareSurfaceStrokePath(ctx,item.points,width,-camera.x,-camera.y))ctx.fill();
+    ctx.restore();return;
+  }
   ctx.save();
   ctx.beginPath();
   smoothPath(ctx, item.points, camera);
@@ -126,6 +132,9 @@ function strokeMaskPath(
   width,
   alpha = 1
 ) {
+  if(item.brushShape==='square'){
+    strokePath(ctx,item,camera,width,'#ffffff',alpha);return;
+  }
   ctx.save();
   ctx.beginPath();
   smoothPath(ctx, item.points, camera);
@@ -341,6 +350,9 @@ function drawTexturedRibbon(
   ribbonWidth,
   opacity = 1
 ) {
+  // A diagonal image ribbon would paint outside the square WorldSurface mask.
+  // Square roads reuse the existing path's patterned center and edge colors.
+  if(item.brushShape==='square')return false;
   if (!image || !Number.isFinite(ribbonWidth) || ribbonWidth <= 0) {
     return false;
   }

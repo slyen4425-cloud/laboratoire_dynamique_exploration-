@@ -3,6 +3,7 @@
 // collisions, saved strokes or a second terrain-family authority.
 import {createSculptSurface,appendSculptSurfaceStroke,SCULPT_SURFACE_MATERIALS}
   from '../world/sculpt-surface-paint.js';
+import {squareSurfaceStrokeContainsPoint} from '../world/surface-brush-geometry.js';
 
 const valid=new Set(SCULPT_SURFACE_MATERIALS.filter(m=>m.kind==='zone').map(m=>m.id));
 const familyMaterial=Object.freeze({
@@ -22,7 +23,9 @@ function edgeMaterial(surface,x,y){
   for(const zone of surface?.zones??[]){
     if(!valid.has(zone.materialId)||!Array.isArray(zone.points))continue;
     const radius=Math.max(0,Number(zone.width)||0)/2+6;
-    if(zone.points.some((p,i)=>i>0&&distanceSegment(x,y,zone.points[i-1],p)<=radius))
+    if(zone.brushShape==='square'
+      ?squareSurfaceStrokeContainsPoint(zone.points,x,y,radius)
+      :zone.points.some((p,i)=>i>0&&distanceSegment(x,y,zone.points[i-1],p)<=radius))
       material=zone.materialId;
   }
   return material;
