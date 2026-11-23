@@ -927,8 +927,12 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   // now follows a continuous elevation mesh from the two real bank levels.
   // No object draw path, duplicated collision or billboard scale.
   let terrainRampCount=0;
-  for(const ramp of sculptTerrainRampProjections(terrain))
+  for(const ramp of sculptTerrainRampProjections(terrain)){
+    // Navigation-only permission corridors are physical but invisible in play.
+    // Their collision corridor is still provided by the SAME ramp projection.
+    if(ramp.navigationOnly)continue;
     if(drawSculptRamp(ctx,ramp,terrain,{
       tileWidth:w,tileHeight:h,rise,texture,baseColor}))terrainRampCount++;
+  }
   return {faceCount:faces.length,faceRuns,outerCliffRuns:outerSouthRuns.length,waterCells,roadCells,paintedCells,sphereCount,terrainRampCount,worldWidth:totalWidth,worldHeight:totalHeight};
 }

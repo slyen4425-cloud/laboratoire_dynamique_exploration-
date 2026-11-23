@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
+import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -215,7 +215,7 @@ let interiorConnectorMode=false,interiorConnectorGesture=null,interiorConnectorP
 const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
 // Editor-only state: mask remains saved on the ONE SculptTerrain, never in this UI.
-let navigationMaskEditing=null,navMaskGesture=null;
+let navigationMaskEditing=null,navMaskGesture=null,navAllowStart=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let spherePreviewDismissed=false;
@@ -1542,23 +1542,47 @@ function draw(){
       ctx.fillRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
       ctx.strokeRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
     }
+    // Physical-only permission is outlined ONLY in the editor. The normal
+    // renderer deliberately omits navigationOnly ramps in play.
+    for(const ramp of sculptTerrainRampProjections(terrain)){
+      if(!ramp.navigationOnly)continue;
+      const mesh=sculptRampVisualMesh(terrain,ramp,{
+        cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height,
+        rise:SCULPT_TILE.rise,view:null,segments:12});
+      if(!mesh?.valid||mesh.samples.length<2)continue;
+      ctx.beginPath();
+      ctx.moveTo(mesh.samples[0].left.x,mesh.samples[0].left.y);
+      for(const sample of mesh.samples.slice(1))ctx.lineTo(sample.left.x,sample.left.y);
+      for(const sample of [...mesh.samples].reverse())ctx.lineTo(sample.right.x,sample.right.y);
+      ctx.closePath();ctx.fillStyle='rgba(63,219,143,.26)';ctx.fill();
+      ctx.strokeStyle='rgba(132,255,199,.8)';ctx.lineWidth=1.5;ctx.stroke();
+    }
     ctx.restore();
   }
   drawSculptWorldPortalMarkers();
-  // Preview the authored ground ramp from its real endpoints, not an
-  // artificial object silhouette. The committed terrain is drawn in the
-  // terrain-only raster with the same surface texture.
-  const rampA=rampStart??rampGesture?.origin;
-  const rampB=rampEnd??(rampA&&hoverCell?rampPointFromCell(hoverCell):null);
+  // Both slope authoring entries use the same preview, mesh and Collision World
+  // corridor. Navigation "Autoriser" is a REAL gesture, not a UI-only switch.
+  const navAllowPreview=navigationMaskEditing==='allow';
+  const navFromCell=navMaskGesture?.origin??navAllowStart;
+  const navToCell=navMaskGesture?.last??hoverCell;
+  const rampA=navAllowPreview&&navFromCell?rampPointFromCell(navFromCell):
+    rampStart??rampGesture?.origin;
+  const rampB=navAllowPreview&&navToCell?rampPointFromCell(navToCell):
+    rampEnd??(rampA&&hoverCell?rampPointFromCell(hoverCell):null);
   let rampPreviewValid=null;
-  if(!navigationTesting&&rampToolActive()&&rampA&&rampB){
-    const candidate=appendSculptTerrainRamp(terrain,{
-      x:rampA.x,y:rampA.y,endX:rampB.x,endY:rampB.y,width:rampWidth()});
-    rampPreviewValid=candidate!==terrain;
+  if(!navigationTesting&&(rampToolActive()||navAllowPreview)&&rampA&&rampB){
     const level=p=>sculptHeightAt(terrain,Math.floor(p.x/SCULPT_TILE.width),
       Math.floor(p.y/SCULPT_TILE.height));
-    const foot={x:rampA.x,y:rampA.y-level(rampA)*SCULPT_TILE.rise};
-    const head={x:rampB.x,y:rampB.y-level(rampB)*SCULPT_TILE.rise};
+    const reversed=navAllowPreview&&level(rampA)>level(rampB);
+    const from=reversed?rampB:rampA,to=reversed?rampA:rampB;
+    // The same native preview geometry handles the existing Ramp and the
+    // Navigation Autoriser gesture; the latter commits through the checked
+    // wrapper which can also restore its own overlapping no-go cells.
+    const candidate=appendSculptTerrainRamp(terrain,{
+      x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
+    rampPreviewValid=candidate!==terrain;
+    const foot={x:from.x,y:from.y-level(from)*SCULPT_TILE.rise};
+    const head={x:to.x,y:to.y-level(to)*SCULPT_TILE.rise};
     ctx.save();
     if(rampPreviewValid){
       const projected=sculptTerrainRampProjections(candidate).at(-1);
@@ -1813,10 +1837,23 @@ const rampWidth=()=>Number($('radius').value)*SCULPT_TILE.width;
 function updateNavigationZoneCount(){
   const output=$('nav-zone-count');if(!output)return;
   const count=terrain.navigationBlockedCells?.length??0;
-  output.textContent=count?count+' cases interdites · sauvegardées avec le terrain':'Aucune case interdite';
+  const routes=(terrain.ramps??[]).filter(r=>r.navigationOnly===true).length;
+  output.textContent=count+' cases interdites · '+routes+' passages autorisés';
+}
+// One brush engine for No-go / Restore. Normal also removes an authored
+// invisible permission by the existing native ramp hit test, never a
+// separate decorative ramp or legacy WorldObject.
+function applyNavigationZoneStroke(base,points){
+  const action=navigationMaskEditing;
+  let next=applySculptNavigationBlockStroke(base,{
+    points,radius:Number($('radius').value),shape:$('brush-shape').value,action});
+  if(action==='normal')for(const point of points)
+    next=removeSculptNavigationAllowedCorridorAt(next,
+      point.x*SCULPT_TILE.width,point.y*SCULPT_TILE.height);
+  return next;
 }
 function setNavigationMaskEditing(action=null){
-  const next=['block','normal'].includes(action)?action:null;
+  const next=['block','normal','allow'].includes(action)?action:null;
   if(next){
     if(navigationTesting)setNavigationTesting(false);
     if(objectEditing)setObjectEditing(false);
@@ -1826,22 +1863,25 @@ function setNavigationMaskEditing(action=null){
     fringeEditing=false;
     if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
   }
-  navigationMaskEditing=next;navMaskGesture=null;
+  navigationMaskEditing=next;navMaskGesture=null;navAllowStart=null;
   $('nav-zone-block')?.classList.toggle('active',next==='block');
+  $('nav-zone-allow')?.classList.toggle('active',next==='allow');
   $('nav-zone-normal')?.classList.toggle('active',next==='normal');
   if($('nav-zone-stop'))$('nav-zone-stop').disabled=!next;
   $('active-tool-label').textContent=next
-    ?(next==='block'?'Navigation · interdire':'Navigation · restaurer')
+    ?(next==='block'?'Navigation · interdire':next==='allow'?'Navigation · autoriser':'Navigation · restaurer')
     :editorKind+' · '+selectedMode;
   document.body.classList.toggle('navigation-mask-editing',!!next);
   if(next){
     if(sculptSettingsPanel)sculptSettingsPanel.open=false;
-    status(next==='block'?'Navigation : peins en rouge les zones interdites (Undo disponible).':
-      'Navigation : repasse en mode Normal sur les zones interdites pour les effacer.');
+    status(next==='block'?'Navigation : peins les zones interdites en rouge.':
+      next==='allow'?'Navigation : trace du pied au sommet (glisser ou toucher deux points) pour autoriser une pente réelle.':
+      'Navigation : peins en mode Normal pour retirer les interdictions.');
   }
   updateNavigationZoneCount();updatePrecisionActions();scheduleDraw();
 }
 $('nav-zone-block')?.addEventListener('click',()=>setNavigationMaskEditing('block'));
+$('nav-zone-allow')?.addEventListener('click',()=>setNavigationMaskEditing('allow'));
 $('nav-zone-normal')?.addEventListener('click',()=>setNavigationMaskEditing('normal'));
 $('nav-zone-stop')?.addEventListener('click',()=>setNavigationMaskEditing(null));
 $('nav-zone-allow-ramp')?.addEventListener('click',()=>{
@@ -2098,10 +2138,10 @@ function begin(event){
   if(navigationMaskEditing){
     const cell=screenToCell(event);if(!cell)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
-    navMaskGesture={pointerId:event.pointerId,before:terrain,last:cell};
-    terrain=applySculptNavigationBlockStroke(terrain,{
-      points:[{x:cell.x+.5,y:cell.y+.5}],radius:Number($('radius').value),
-      shape:$('brush-shape').value,action:navigationMaskEditing});
+    navMaskGesture={pointerId:event.pointerId,before:terrain,last:cell,
+      origin:navigationMaskEditing==='allow'?(navAllowStart??cell):cell};
+    if(navigationMaskEditing!=='allow')terrain=applyNavigationZoneStroke(terrain,
+      [{x:cell.x+.5,y:cell.y+.5}]);
     updateNavigationZoneCount();scheduleDraw();return;
   }
   if(waypointsEditing&&sculptWorldDraft&&!sculptWorldPortalPlacement){
@@ -2251,6 +2291,9 @@ function stroke(event){
     const cell=screenToCell(event);
     if(!cell)return;
     const prev=navMaskGesture.last;
+    if(navigationMaskEditing==='allow'){
+      navMaskGesture.last=cell;hoverCell=cell;scheduleDraw();return;
+    }
     const count=Math.max(Math.abs(cell.x-prev.x),Math.abs(cell.y-prev.y));
     if(count===0)return;
     const points=[];
@@ -2258,9 +2301,7 @@ function stroke(event){
       x:Math.round(prev.x+(cell.x-prev.x)*i/count)+.5,
       y:Math.round(prev.y+(cell.y-prev.y)*i/count)+.5
     });
-    terrain=applySculptNavigationBlockStroke(terrain,{points,
-      radius:Number($('radius').value),shape:$('brush-shape').value,
-      action:navigationMaskEditing});
+    terrain=applyNavigationZoneStroke(terrain,points);
     navMaskGesture.last=cell;hoverCell=cell;
     updateNavigationZoneCount();scheduleDraw();return;
   }
@@ -2480,6 +2521,30 @@ function stop(event){
   if(navMaskGesture){
     if(event.pointerId!==navMaskGesture.pointerId)return;
     const gesture=navMaskGesture;navMaskGesture=null;
+    if(navigationMaskEditing==='allow'){
+      if(event.type==='pointercancel'||event.type==='lostpointercapture'){
+        status('Tracé de passage annulé.');scheduleDraw();return;
+      }
+      const endCell=screenToCell(event)??gesture.last;
+      const startCell=gesture.origin;
+      if(startCell.x===endCell.x&&startCell.y===endCell.y){
+        navAllowStart=startCell;
+        status('Pied du passage choisi · touche le sommet ou glisse jusqu’au point opposé.');
+      }else{
+        const from=rampPointFromCell(startCell),to=rampPointFromCell(endCell);
+        const next=appendSculptNavigationAllowedCorridor(terrain,{
+          x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
+        if(next===terrain){
+          navAllowStart=startCell;
+          status('Passage refusé : trace entre deux niveaux secs, avec pente et longueur réalistes. Pas de traversée d’eau sans support.');
+        }else{
+          const before=terrain;terrain=next;navAllowStart=null;
+          commitUndo(before);updateNavigationZoneCount();
+          status('Passage autorisé : corridor natif enregistré · Annuler/Rétablir et Tester disponibles.');
+        }
+      }
+      scheduleDraw();return;
+    }
     if(event.type==='pointercancel'||event.type==='lostpointercapture')
       terrain=gesture.before;
     else commitUndo(gesture.before);

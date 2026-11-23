@@ -3031,7 +3031,8 @@ try{
       y:rect.top+probe.cameraPan.y+((row+.5)*21-level*18)*probe.zoom});
     const foot=screen(8,13,2),head=screen(8,7,5);
     const dragFoot=screen(11,13,2),dragHead=screen(11,7,5);
-    return {foot,head,dragFoot,dragHead,probe,
+    const allowFoot=screen(5,13,2),allowHead=screen(5,7,5);
+    return {foot,head,dragFoot,dragHead,allowFoot,allowHead,probe,
       atFoot:document.elementFromPoint(foot.x,foot.y)?.id,
       atHead:document.elementFromPoint(head.x,head.y)?.id};
   })()`);
@@ -3089,6 +3090,33 @@ try{
     throw Error('R3 Change foot must clear only pending point: '+
       JSON.stringify({pending:rampR3Pending,cancelled:rampR3Cancelled}));
   console.log('R3 GREEN real Chromium slope two-tap, drag, precision bypass, live preview, Undo/Redo, cancel');
+  // #530 Authorize MUST be a third native gesture in the SAME Navigation panel,
+  // not just a button redirect to terrain-ramp. The identical two-bank
+  // renderer and Collision World terrain corridor are persisted by this gesture.
+  const allowSetup=await run(`(()=>{
+    document.querySelector('#nav-zone-allow').click();
+    return {selected:document.querySelector('#nav-zone-allow').classList.contains('active'),
+      label:document.querySelector('#active-tool-label').textContent,
+      count:window.__sculptLabProbe().terrainRampCount};
+  })()`);
+  if(!allowSetup.selected||!allowSetup.label.includes('autoriser')||allowSetup.count!==2)
+    throw Error('Native navigation allow mode not active: '+JSON.stringify(allowSetup));
+  await r3Click(rampR3Setup.allowFoot);
+  const allowPending=await run("document.querySelector('#notice').textContent");
+  if(!allowPending.includes('Pied du passage'))
+    throw Error('Navigation allow first real mouse tap not recorded: '+allowPending);
+  await r3Click(rampR3Setup.allowHead);
+  const allowPainted=await run('window.__sculptLabProbe()');
+  if(allowPainted.terrainRampCount!==3)
+    throw Error('Navigation allow gesture did not create a physical terrain corridor: '+JSON.stringify(allowPainted));
+  await run("document.querySelector('#undo').click()");
+  const allowUndo=await run('window.__sculptLabProbe().terrainRampCount');
+  await run("document.querySelector('#redo').click()");
+  const allowRedo=await run('window.__sculptLabProbe().terrainRampCount');
+  if(allowUndo!==2||allowRedo!==3)
+    throw Error('Navigation allow native Undo/Redo failed: '+JSON.stringify({allowUndo,allowRedo}));
+  await run("document.querySelector('#nav-zone-stop').click()");
+  console.log('Navigation Autoriser GREEN real Chromium corridor two-tap, native storage, Undo/Redo.');
   // V79 real Chromium: import a house, select its existing WorldObject,
   // open an independent sculptable WorldArea, change camera, leave, export
   // and import. This catches UI/boot contracts that unit tests cannot.

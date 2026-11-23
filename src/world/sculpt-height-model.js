@@ -91,7 +91,8 @@ const validTerrainRamp=(r,w,h)=>r&&typeof r.id==='string'&&
   /^sculpt-ramp-[1-9][0-9]*$/.test(r.id)&&
   [r.x,r.y,r.length,r.width,r.rotationDeg].every(Number.isFinite)&&
   r.length>=21&&r.length<=1400&&r.width>=12&&r.width<=448&&
-  r.x>=0&&r.y>=0&&r.x<w*28&&r.y<h*21;
+  r.x>=0&&r.y>=0&&r.x<w*28&&r.y<h*21&&
+  (r.navigationOnly===undefined||r.navigationOnly===true);
 const rampFloor=(terrain,x,y)=>{
   const c=Math.floor(x/28),row=Math.floor(y/21);
   if(c<0||row<0||c>=terrain.width||row>=terrain.height||
@@ -100,7 +101,7 @@ const rampFloor=(terrain,x,y)=>{
 };
 export function sculptTerrainRampProjections(terrain){
   return Object.freeze((terrain?.ramps??[]).map(r=>Object.freeze({
-    id:r.id,kind:'ramp',
+    id:r.id,kind:'ramp',...(r.navigationOnly===true?{navigationOnly:true}:{}),
     // Reuse the EXACT incline corridor consumed by Collision World and stairs.
     // Authoring owns only the terrain shape, not an object definition.
     transform:Object.freeze({x:r.x,y:r.y,scaleX:1,scaleY:1,rotationDeg:r.rotationDeg}),
@@ -121,6 +122,43 @@ export function appendSculptTerrainRamp(terrain,{x,y,endX,endY,width=84}={}){
     rotationDeg:Math.atan2(dx,-dy)*180/Math.PI});
   return Object.freeze({...terrain,ramps:Object.freeze([...(terrain.ramps??[]),ramp])});
 }
+// The Navigation "Autoriser" gesture is a direct authoring entry point for
+// the ONE terrain ramp/corridor contract, not a permissive flag on painted land.
+// The same real dry-bank, rise and width checks still run in the ramp builder.
+// A deliberate author grant also clears any no-go paint intersecting THAT
+// corridor; other forbidden cells and every old map remain untouched.
+export function appendSculptNavigationAllowedCorridor(terrain,{
+  x,y,endX,endY,width=84
+}={}){
+  if(!terrain||[x,y,endX,endY,width].some(v=>!Number.isFinite(v)))return terrain;
+  const floorAt=(px,py)=>rampFloor(terrain,px,py);
+  const start=floorAt(x,y),end=floorAt(endX,endY);
+  if(start===null||end===null||start===end)return terrain;
+  const foot=start<end?{x,y}:{x:endX,y:endY};
+  const head=start<end?{x:endX,y:endY}:{x,y};
+  const next=appendSculptTerrainRamp(terrain,{
+    x:foot.x,y:foot.y,endX:head.x,endY:head.y,width});
+  if(next===terrain)return terrain;
+  // Metadata only: the same SculptTerrain.ramps and canonical stair corridor
+  // are used for collision. Navigation permissions do NOT paint a decorative
+  // slope on top of the author's stair / bridge artwork.
+  const tagged=Object.freeze({...next,ramps:Object.freeze(
+    next.ramps.map((r,i)=>i===next.ramps.length-1
+      ?Object.freeze({...r,navigationOnly:true}):r))});
+  if(!terrain.navigationBlockedCells?.length)return tagged;
+  // Reuse the SAME brush footprint: only cells of the newly authored incline
+  // can be unblocked. Do not alter heights, water, textures or remote slopes.
+  const distance=Math.hypot(head.x-foot.x,head.y-foot.y);
+  const segments=Math.max(1,Math.ceil(distance/7));
+  const points=Array.from({length:segments+1},(_,i)=>{
+    const t=i/segments;
+    return {x:(foot.x+(head.x-foot.x)*t)/28,
+      y:(foot.y+(head.y-foot.y)*t)/21};
+  });
+  return applySculptNavigationBlockStroke(tagged,{
+    points,radius:Math.max(.5,width/56),shape:'circle',action:'normal'});
+}
+
 export function removeSculptTerrainRampAt(terrain,x,y){
   if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return terrain;
   let match=null,best=Infinity;
@@ -134,6 +172,21 @@ export function removeSculptTerrainRampAt(terrain,x,y){
   }
   return match?Object.freeze({...terrain,ramps:Object.freeze(terrain.ramps.filter(r=>r!==match))}):terrain;
 }
+// Restore natural navigation without touching old sculpted ramps or their
+// art: reuse the SAME ramp hit test, restricted to explicitly authored
+// navigation-only ramps. Their native IDs cannot be accidentally duplicated.
+export function removeSculptNavigationAllowedCorridorAt(terrain,x,y){
+  if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return terrain;
+  const owned=(terrain.ramps??[]).filter(r=>r.navigationOnly===true);
+  if(!owned.length)return terrain;
+  const subset=Object.freeze({...terrain,ramps:Object.freeze(owned)});
+  const updated=removeSculptTerrainRampAt(subset,x,y);
+  if(updated===subset)return terrain;
+  const retained=new Set(updated.ramps.map(r=>r.id));
+  return Object.freeze({...terrain,ramps:Object.freeze(
+    terrain.ramps.filter(r=>r.navigationOnly!==true||retained.has(r.id)))});
+}
+
 export function sculptHeightAt(terrain,x,y){
   if(!terrain||x<0||y<0||x>=terrain.width||y>=terrain.height)return 0;
   return terrain.levels[y*terrain.width+x];
