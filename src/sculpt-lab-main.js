@@ -5926,6 +5926,19 @@ function syncObjectWaypoints(){
   if(markers.some(marker=>waypointKey(marker)===old))selected.value=old;
   selectedWaypointKey=selected.value||null;
   const current=markers.find(marker=>waypointKey(marker)===selectedWaypointKey);
+  const appearancePanel=$('object-waypoint-appearance');
+  appearancePanel.hidden=current?.kind!=='exit';
+  if(current?.kind==='exit'){
+    const portal=sculptWorldDraft.portals.find(p=>p.id===current.portalId);
+    const mode=portal?.visual?.visible!==true?'hidden':
+      portal.visual.marker==='shadow'?'shadow':
+      portal.visual.marker==='texture'?'texture':'ring';
+    $('object-waypoint-marker-mode').value=mode;
+    $('object-waypoint-marker-texture-row').hidden=mode!=='texture';
+    const texture=$('object-waypoint-marker-texture');
+    const preferred=portal?.visual?.textureMaterialId;
+    if([...texture.options].some(o=>o.value===preferred))texture.value=preferred;
+  }
   if(current?.kind==='exit')$('world-area-portal-select').value=current.portalId;
   else if(current?.spawnId)$('world-area-spawn-select').value=current.spawnId;
   const targetSelect=$('object-waypoint-target'),former=targetSelect.value;
@@ -6871,6 +6884,29 @@ function installSculptWorldAreaEditing(){
       event.preventDefault();
       saveAndReturnWorldArea();
     });
+  // Texture choices come from the ONE official material registry. No URLs
+  // entered by hand and no duplicate asset library inside the portal tool.
+  const textures=registry.list().filter(m=>m.kind==='surface'&&m.assets?.base&&
+    resolveMaterialAsset(m.assets.base));
+  $('object-waypoint-marker-texture').replaceChildren(...textures.map(m=>new Option(m.label,m.id)));
+  $('object-waypoint-marker-mode').addEventListener('change',()=>{
+    $('object-waypoint-marker-texture-row').hidden=
+      $('object-waypoint-marker-mode').value!=='texture';
+  });
+  $('object-waypoint-marker-save').addEventListener('click',()=>{
+    if(!selectedWaypointKey?.startsWith('portal:'))return;
+    try{
+      const mode=$('object-waypoint-marker-mode').value;
+      sculptWorldDraft=setSculptWorldPortalAppearance(sculptWorldDraft,
+        selectedWaypointKey.slice(7),{
+          mode,textureMaterialId:$('object-waypoint-marker-texture').value
+        });
+      refreshSculptWorldPanel();scheduleDraw();
+      sculptWorldStatus('Apparence enregistrée : '+(mode==='hidden'?'invisible en jeu':
+        mode==='shadow'?'ombre noire':mode==='texture'?'texture du catalogue':'cercle classique')+
+        '. Le passage automatique reste actif.');
+    }catch(error){sculptWorldStatus(error.message,true);}
+  });
   $('object-waypoint-select').addEventListener('change',()=>{
     selectedWaypointKey=$('object-waypoint-select').value;
     syncObjectWaypoints();scheduleDraw();
