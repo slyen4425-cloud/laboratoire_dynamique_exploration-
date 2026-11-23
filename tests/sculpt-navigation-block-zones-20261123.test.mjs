@@ -36,8 +36,8 @@ test('original terrain brush shape paints and restores navigation cells, without
  assert.equal(cleared.navigationBlockedCells,undefined);
  assert.equal(serializeSculptTerrain(cleared),serializeSculptTerrain(terrain));
  assert.equal(mark(terrain,'normal'),terrain);
- const round=sculptBrushFootprint(terrain,{points:[{x:7.5,y:6.5}],radius:1.6,shape:'circle'});
- const square=sculptBrushFootprint(terrain,{points:[{x:7.5,y:6.5}],radius:1.6,shape:'square'});
+ const round=sculptBrushFootprint(terrain,{points:[{x:7.5,y:6.5}],radius:1.2,shape:'circle'});
+ const square=sculptBrushFootprint(terrain,{points:[{x:7.5,y:6.5}],radius:1.2,shape:'square'});
  assert.ok(square.length>round.length,'square brush must include corners absent in round');
 });
 
@@ -60,8 +60,9 @@ test('same Collision World swept route stops ground NPC and hero at actor radius
  for(let i=0;i<25;i++)stepMovement(world,moving,{x:1,y:0},.08,
    {maxSpeed:90},undefined,nav(blocked));
  assert.ok(moving.x<6*CW-3,'native movement must not cross the forbidden zone');
+ const cleared=mark(blocked,'normal');
  for(let i=0;i<25;i++)stepMovement(world,moving,{x:1,y:0},.08,
-   {maxSpeed:90},undefined,nav(mark(blocked,'normal')));
+   {maxSpeed:90},undefined,nav(cleared));
  assert.ok(moving.x>7*CW,'removing the mask restores the original route');
 });
 
