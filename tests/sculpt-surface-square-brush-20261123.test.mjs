@@ -80,6 +80,7 @@ test('UI, renderer, 2D painter and navigation use the same square surface contra
  const editor=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const painter=readFileSync(new URL('../src/render/sculpt-height-renderer.js',import.meta.url),'utf8');
  const flat=readFileSync(new URL('../src/render/surface-renderer.js',import.meta.url),'utf8');
+ const fringe=readFileSync(new URL('../src/world/sculpt-decorative-fringe-v1.js',import.meta.url),'utf8');
  assert.equal((html.match(/id="surface-brush-shape"/g)??[]).length,1);
  assert.match(html,/<option value="round">◯ Rond<\/option>/);
  assert.match(html,/<option value="square">▦ Carré plein<\/option>/);
@@ -88,4 +89,6 @@ test('UI, renderer, 2D painter and navigation use the same square surface contra
  assert.match(painter,/drawSquareSurfaceStrokePath\(ctx,feature\.points,feature\.width/);
  assert.match(flat,/drawSquareSurfaceStrokePath\(ctx,item\.points,width/);
  assert.match(flat,/if\(item\.brushShape==='square'\)/);
+ assert.match(fringe,/points,materialId,terrainFamilyId=null,width=28,brushShape='round',erase=false/);
+ assert.match(fringe,/materialId,terrainFamilyId,points:item\.points,width,brushShape/);
 });
