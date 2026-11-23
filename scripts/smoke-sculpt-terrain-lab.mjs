@@ -607,15 +607,23 @@ try{
   await run('(()=>{window.focus();return document.hasFocus();})()');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  // Wait for TWO real animation frames rather than race against a fixed 90ms
-  // wall-clock delay while Android/touch focus is being restored.
+  // Real Chromium can resume keyboard focus a few RAFs AFTER the touch
+  // emulation stops. Prove actual walking (and >=8 world units of travel),
+  // not merely keyDown/focus or a two-frame animation-state race.
+  // Bound at 12 RAFs and NEVER relax the subsequent 190ms jank assertion.
   const preJank=await run(`(async()=>{
-    await new Promise(resolve=>requestAnimationFrame(resolve));
-    await new Promise(resolve=>requestAnimationFrame(resolve));
-    return window.__sculptNavProbe();
+    let actual=window.__sculptNavProbe();
+    for(let frame=0;frame<12;frame++){
+      await new Promise(resolve=>requestAnimationFrame(resolve));
+      actual=window.__sculptNavProbe();
+      if(actual.actorMotion==='walk'&&actual.player.x>=${afterStick.player.x}+8&&
+         !actual.blocked)return actual;
+    }
+    return actual;
   })()`);
-  if(preJank.actorMotion!=='walk'||preJank.player.x<=afterStick.player.x)
-    throw Error('V21 jank prerequisite: real native keyboard walk must be active after touch emulation: '+
+  if(preJank.actorMotion!=='walk'||preJank.player.x<afterStick.player.x+8||
+     preJank.blocked)
+    throw Error('V21 jank prerequisite: native keyboard walk must move 8+ units after touch emulation: '+
       JSON.stringify({afterStick,preJank}));
   await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
     return true;})()`);
