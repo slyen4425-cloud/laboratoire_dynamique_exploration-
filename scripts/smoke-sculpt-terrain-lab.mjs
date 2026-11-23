@@ -603,11 +603,17 @@ try{
   // A touch-emulated browser can momentarily drop keyboard focus. Require
   // actual WALK on the native actor before simulating a stalled main thread,
   // otherwise zero motion tests input focus rather than frame-time integration.
-  await run('(()=>{window.focus();return true;})()');
+  await send('Page.bringToFront');
+  await run('(()=>{window.focus();return document.hasFocus();})()');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  await sleep(90);
-  const preJank=await run('window.__sculptNavProbe()');
+  // Wait for TWO real animation frames rather than race against a fixed 90ms
+  // wall-clock delay while Android/touch focus is being restored.
+  const preJank=await run(`(async()=>{
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    return window.__sculptNavProbe();
+  })()`);
   if(preJank.actorMotion!=='walk'||preJank.player.x<=afterStick.player.x)
     throw Error('V21 jank prerequisite: real native keyboard walk must be active after touch emulation: '+
       JSON.stringify({afterStick,preJank}));
