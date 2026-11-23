@@ -121,6 +121,37 @@ export function appendSculptTerrainRamp(terrain,{x,y,endX,endY,width=84}={}){
     rotationDeg:Math.atan2(dx,-dy)*180/Math.PI});
   return Object.freeze({...terrain,ramps:Object.freeze([...(terrain.ramps??[]),ramp])});
 }
+// The Navigation "Autoriser" gesture is a direct authoring entry point for
+// the ONE terrain ramp/corridor contract, not a permissive flag on painted land.
+// The same real dry-bank, rise and width checks still run in the ramp builder.
+// A deliberate author grant also clears any no-go paint intersecting THAT
+// corridor; other forbidden cells and every old map remain untouched.
+export function appendSculptNavigationAllowedCorridor(terrain,{
+  x,y,endX,endY,width=84
+}={}){
+  if(!terrain||[x,y,endX,endY,width].some(v=>!Number.isFinite(v)))return terrain;
+  const floorAt=(px,py)=>rampFloor(terrain,px,py);
+  const start=floorAt(x,y),end=floorAt(endX,endY);
+  if(start===null||end===null||start===end)return terrain;
+  const foot=start<end?{x,y}:{x:endX,y:endY};
+  const head=start<end?{x:endX,y:endY}:{x,y};
+  const next=appendSculptTerrainRamp(terrain,{
+    x:foot.x,y:foot.y,endX:head.x,endY:head.y,width});
+  if(next===terrain)return terrain;
+  if(!terrain.navigationBlockedCells?.length)return next;
+  // Reuse the SAME brush footprint: only cells of the newly authored incline
+  // can be unblocked. Do not alter heights, water, textures or remote slopes.
+  const distance=Math.hypot(head.x-foot.x,head.y-foot.y);
+  const segments=Math.max(1,Math.ceil(distance/7));
+  const points=Array.from({length:segments+1},(_,i)=>{
+    const t=i/segments;
+    return {x:(foot.x+(head.x-foot.x)*t)/28,
+      y:(foot.y+(head.y-foot.y)*t)/21};
+  });
+  return applySculptNavigationBlockStroke(next,{
+    points,radius:Math.max(.5,width/56),shape:'circle',action:'normal'});
+}
+
 export function removeSculptTerrainRampAt(terrain,x,y){
   if(!terrain||!Number.isFinite(x)||!Number.isFinite(y))return terrain;
   let match=null,best=Infinity;
