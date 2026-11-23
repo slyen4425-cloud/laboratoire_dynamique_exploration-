@@ -84,7 +84,8 @@ test('one existing waypoint UI exposes visibility and official material selectio
    assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1);
  }
  assert.match(script,/findPortalEnteredDuringMove\(sculptWorldDraft,sculptWorldAreaId/);
- assert.match(script,/if\(autoReady\)void traverseSculptWorldPortal\(\)/);
+ assert.match(script,/if\(autoReady\)queueMicrotask\(\(\)=>\{/);
+  assert.match(script,/void traverseSculptWorldPortal\(\)/);
  assert.match(script,/if\(sculptPortalLoading\)/);
  assert.match(script,/setSculptWorldPortalAppearance\(sculptWorldDraft/);
  assert.match(script,/showHidden:!navigationTesting/);
