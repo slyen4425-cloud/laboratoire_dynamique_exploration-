@@ -15,7 +15,12 @@ const readLevel=(terrain,x,y,w,h)=>{
 // by Collision World AND the image renderer; the front V78 axis is untouched.
 const stairArtLandmarks=Object.freeze({
   oblique:Object.freeze({footX:.72,footY:.92,headX:.48,headY:.13}),
-  side:Object.freeze({footX:.78,footY:.85,headX:.16,headY:.13})
+  side:Object.freeze({footX:.78,footY:.85,headX:.16,headY:.13}),
+  // 2026-11-22 cleaned Profil A ascends LEFT -> RIGHT in the bitmap.
+  // Its new native asset ID has its own authored geometry; never silently
+  // repurpose the frozen legacy 'side' mapping used by saved maps.
+  // Ratios describe the observed foot tread and upper landing in the WebP.
+  side_alt:Object.freeze({footX:.12,footY:.74,headX:.87,headY:.28})
 });
 export function sculptStairArtFrame(stair){
   const art=stair?.kind==='stairs'?stairArtLandmarks[stair.visual?.variantId]:null;
