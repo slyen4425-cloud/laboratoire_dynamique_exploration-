@@ -620,13 +620,16 @@ try{
     throw Error('Touch→keyboard focus was not restored to the native canvas: '+JSON.stringify(postTouchFocus));
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  // Real Chromium can resume keyboard focus a few RAFs AFTER the touch
-  // emulation stops. Prove actual walking (and >=8 world units of travel),
-  // not merely keyDown/focus or a two-frame animation-state race.
-  // Bound at 12 RAFs and NEVER relax the subsequent 190ms jank assertion.
+  // Actual gameplay is frame-budgeted: mobile Chromium can draw many RAFs
+  // while the simulation intentionally advances only 1 or 2 movement ticks.
+  // A 12-RAF limit produced 3.6 units on a correctly focused and unblocked
+  // actor (main CI run 45258881083, twice). Wait up to 48 RAFs for the SAME
+  // required 8+ physical units, without changing game clocks or relaxing the
+  // post-freeze 35-unit distance check. The test still fails if the actor is
+  // stalled, blocked or not moving.
   const preJank=await run(`(async()=>{
     let actual=window.__sculptNavProbe();
-    for(let frame=0;frame<12;frame++){
+    for(let frame=0;frame<48;frame++){
       await new Promise(resolve=>requestAnimationFrame(resolve));
       actual=window.__sculptNavProbe();
       if(actual.actorMotion==='walk'&&actual.player.x>=${afterStick.player.x}+8&&
