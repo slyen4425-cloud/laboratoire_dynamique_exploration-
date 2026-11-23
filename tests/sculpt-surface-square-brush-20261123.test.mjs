@@ -41,7 +41,7 @@ test('square paint stroke really sweeps square geometry along segments including
  const points=[{x:20,y:20},{x:80,y:80}];
  assert.equal(squareSurfaceStrokeContainsPoint(points,20,29,10),true);
  assert.equal(squareSurfaceStrokeContainsPoint(points,45,45,10),true);
- assert.equal(squareSurfaceStrokeContainsPoint(points,45,56,10),false);
+ assert.equal(squareSurfaceStrokeContainsPoint(points,45,66,10),false);
  const polygon=squareSurfaceStrokePolygon(points[0],points[1],10);
  assert.equal(Math.min(...polygon.map(p=>p.x)),10);
  assert.equal(Math.max(...polygon.map(p=>p.x)),90);
