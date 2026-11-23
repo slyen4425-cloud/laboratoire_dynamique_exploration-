@@ -4619,7 +4619,8 @@ function setObjectEditing(active){
   if(objectEditing&&!navigationTesting){
     // A standalone editor cannot author Portals: explain the required World Builder handoff.
     syncObjectWaypoints();
-    if(!$('object-waypoints-panel').hidden)$('object-waypoints-panel').open=true;
+    const waypointPanel=$('object-waypoints-panel');
+    if(waypointPanel&&!waypointPanel.hidden)waypointPanel.open=true;
   }
   $('mode-waypoints')?.setAttribute('aria-expanded',String(objectEditing&&
     !$('object-waypoints-panel').hidden&&$('object-waypoints-panel').open));
