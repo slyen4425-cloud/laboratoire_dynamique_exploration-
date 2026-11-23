@@ -26,8 +26,8 @@ function context(stair){return {sculptNavigation:{terrain,
   stairs:[stair],bridges:[],projectionRise:18,cellWidth:CW,cellHeight:CH,
   maxStepUp:0,maxStepDown:0}};}
 
-test('Foret_01 perspective stair variants have valid physical foot/head and shared art direction',()=>{
-  for(const variant of ['oblique','side']){
+test('Foret_01 perspectives incl. cleaned side_alt have physical foot/head matching authored art',()=>{
+  for(const variant of ['oblique','side','side_alt']){
     const stair=object(variant);
     const art=sculptStairArtFrame(stair);
     const corridor=sculptStairCorridor(terrain,stair);
@@ -45,7 +45,7 @@ test('Foret_01 perspective stair variants have valid physical foot/head and shar
 });
 
 test('perspective views keep artwork proportions instead of stretching image by 6*18 on corridor activation',()=>{
-  for(const variant of ['oblique','side']){
+  for(const variant of ['oblique','side','side_alt']){
     const stair=object(variant),rect=sculptObjectVisualRect(stair,terrain);
     assert.equal(rect.width,210*STAIR.scaleX);
     assert.equal(rect.height,190*STAIR.scaleY);
@@ -56,8 +56,8 @@ test('perspective views keep artwork proportions instead of stretching image by 
   assert.equal(sculptObjectVisualRect(object('front'),terrain).stairArtVariant,undefined);
 });
 
-test('mirror + rotation affect side/oblique physical direction, front remains north-oriented',()=>{
-  for(const variant of ['oblique','side']){
+test('mirror + rotation affect side, side_alt and oblique direction; front stays historical',()=>{
+  for(const variant of ['oblique','side','side_alt']){
     const plain=object(variant,{rotationDeg:0});
     const mirrored=object(variant,{rotationDeg:0,flipX:true});
     const a=sculptStairArtFrame(plain),b=sculptStairArtFrame(mirrored);
@@ -70,8 +70,8 @@ test('mirror + rotation affect side/oblique physical direction, front remains no
   assert.equal(front,null);
 });
 
-test('the user can climb and descend each diagonal staircase without disabling nearby cliffs',()=>{
-  for(const variant of ['oblique','side']){
+test('the user can climb and descend all perspective stairs without disabling nearby cliffs',()=>{
+  for(const variant of ['oblique','side','side_alt']){
     const stair=object(variant),corridor=sculptStairCorridor(terrain,stair);
     const ctx=context(stair);
     const player=actor(corridor.foot.x-corridor.ux*9,
