@@ -1528,6 +1528,22 @@ function draw(){
       ctx.restore();
     }
   }
+  // Navigation overlay exists ONLY in edit mode. Underlying terrain/texture
+  // and runtime view stay unchanged; red means Collision World says no-go.
+  if(!navigationTesting&&(navigationMaskEditing||$('navigation-zones-tools').open)){
+    ctx.save();
+    ctx.fillStyle='rgba(232,62,77,.40)';
+    ctx.strokeStyle='rgba(255,205,169,.83)';
+    ctx.lineWidth=1/Math.max(.32,zoom);
+    for(const index of terrain.navigationBlockedCells??[]){
+      const col=index%terrain.width,row=Math.floor(index/terrain.width);
+      const x=col*SCULPT_TILE.width,y=row*SCULPT_TILE.height-
+        sculptHeightAt(terrain,col,row)*SCULPT_TILE.rise;
+      ctx.fillRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
+      ctx.strokeRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
+    }
+    ctx.restore();
+  }
   drawSculptWorldPortalMarkers();
   // Preview the authored ground ramp from its real endpoints, not an
   // artificial object silhouette. The committed terrain is drawn in the
@@ -2046,6 +2062,7 @@ function commitUndo(previous){
   redoHistory=[];updateHistoryButtons();
 }
 function updateHistoryButtons(){
+  updateNavigationZoneCount();
   const past=fringeEditing?fringeHistory:history;
   const future=fringeEditing?fringeRedo:redoHistory;
   $('undo').disabled=past.length===0;
@@ -2078,6 +2095,15 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(navigationMaskEditing){
+    const cell=screenToCell(event);if(!cell)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    navMaskGesture={pointerId:event.pointerId,before:terrain,last:cell};
+    terrain=applySculptNavigationBlockStroke(terrain,{
+      points:[{x:cell.x+.5,y:cell.y+.5}],radius:Number($('radius').value),
+      shape:$('brush-shape').value,action:navigationMaskEditing});
+    updateNavigationZoneCount();scheduleDraw();return;
+  }
   if(waypointsEditing&&sculptWorldDraft&&!sculptWorldPortalPlacement){
     const point=screenToWorldPoint(event),marker=pickedVisibleWaypoint(point);
     if(marker){
@@ -2220,6 +2246,24 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(navMaskGesture){
+    if(event.pointerId!==navMaskGesture.pointerId)return;
+    const cell=screenToCell(event);
+    if(!cell)return;
+    const prev=navMaskGesture.last;
+    const count=Math.max(Math.abs(cell.x-prev.x),Math.abs(cell.y-prev.y));
+    if(count===0)return;
+    const points=[];
+    for(let i=1;i<=count;i++)points.push({
+      x:Math.round(prev.x+(cell.x-prev.x)*i/count)+.5,
+      y:Math.round(prev.y+(cell.y-prev.y)*i/count)+.5
+    });
+    terrain=applySculptNavigationBlockStroke(terrain,{points,
+      radius:Number($('radius').value),shape:$('brush-shape').value,
+      action:navigationMaskEditing});
+    navMaskGesture.last=cell;hoverCell=cell;
+    updateNavigationZoneCount();scheduleDraw();return;
+  }
   if(waypointDrag){
     if(event.pointerId!==waypointDrag.pointerId)return;
     const world=screenToWorldPoint(event),drag=waypointDrag;
@@ -2433,6 +2477,17 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(navMaskGesture){
+    if(event.pointerId!==navMaskGesture.pointerId)return;
+    const gesture=navMaskGesture;navMaskGesture=null;
+    if(event.type==='pointercancel'||event.type==='lostpointercapture')
+      terrain=gesture.before;
+    else commitUndo(gesture.before);
+    updateNavigationZoneCount();scheduleDraw();
+    status(event.type==='pointercancel'?'Peinture navigation annulée.':
+      'Zone de navigation modifiée · Annuler/Rétablir disponibles · Tester pour vérifier.');
+    return;
+  }
   if(waypointDrag){
     if(event.pointerId!==waypointDrag.pointerId)return;
     const drag=waypointDrag;waypointDrag=null;
