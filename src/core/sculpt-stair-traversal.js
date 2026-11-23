@@ -15,13 +15,16 @@ const readLevel=(terrain,x,y,w,h)=>{
 // by Collision World AND the image renderer; the front V78 axis is untouched.
 const stairArtLandmarks=Object.freeze({
   oblique:Object.freeze({footX:.72,footY:.92,headX:.48,headY:.13}),
-  side:Object.freeze({footX:.78,footY:.85,headX:.16,headY:.13})
+  side:Object.freeze({footX:.78,footY:.85,headX:.16,headY:.13}),
+  // The cleaned 'Profil A' bitmap rises from LOWER LEFT to UPPER RIGHT,
+  // unlike the previous side profile. Keep the original side geometry and
+  // WorldObject IDs untouched; this named variant owns its physical axis.
+  side_alt:Object.freeze({footX:.12,footY:.74,headX:.87,headY:.28})
 });
 export function sculptStairArtFrame(stair){
-  // The cleaned 2.5D 'side_alt' artwork is another profile of the SAME
-  // authored side staircase. Preserve its variant ID; inherit the established
-  // side foot/head profile rather than silently falling back to a north-facing
-  // corridor that does not follow the visible stairs.
+  // New cleaned assets have distinct authored step directions. Prefer
+  // the exact visual variant; the historical side axis stays unchanged.
+  // Unknown side_* variants retain the existing guarded legacy fallback.
   const variant=stair?.visual?.variantId;
   const art=stair?.kind==='stairs'
     ?(stairArtLandmarks[variant]??(typeof variant==='string'&&
