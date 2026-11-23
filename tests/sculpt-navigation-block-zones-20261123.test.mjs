@@ -93,12 +93,12 @@ test('Navigation → Zones de passage shows only one tool and uses existing brus
  assert.match(script,/commitUndo\(gesture.before\)/);
  assert.match(script,/selectMode\('terrain-ramp'\)/);
  assert.match(script,/if\(reason.kind==='navigation-block'\)/);
- assert.match(script,/navigationMaskEditing\\|\\|\\$\\('navigation-zones-tools'\\)\\?\\.open/);
+ assert.match(script,/navigationMaskEditing\|\|\$\('navigation-zones-tools'\)\?\.open/);
  // Frozen V80 intentionally has NONE of these controls, yet loads the same
  // shared runtime source. No eager .addEventListener or paint overlay crash.
  for(const id of ['nav-zone-block','nav-zone-normal','nav-zone-stop','nav-zone-allow-ramp'])
    assert.ok(script.includes("$('"+id+"')?.addEventListener"),id+' needs optional hookup');
- assert.match(script,/\\$\\('nav-zone-block'\\)\\?\\.classList/);
- assert.match(script,/\\$\\('nav-zone-normal'\\)\\?\\.classList/);
- assert.match(script,/if\\(\\$\\('nav-zone-stop'\\)\\)\\$\\('nav-zone-stop'\\)\\.disabled/);
+ assert.match(script,/\$\('nav-zone-block'\)\?\.classList/);
+ assert.match(script,/\$\('nav-zone-normal'\)\?\.classList/);
+ assert.match(script,/if\(\$\('nav-zone-stop'\)\)\$\('nav-zone-stop'\)\.disabled/);
 });
