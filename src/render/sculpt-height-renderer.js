@@ -1,6 +1,7 @@
 // Sculpt lab only. 2.5D projection of a canonical experimental height grid.
 // Faces are emitted only where neighboring height levels differ; no placed rock assets.
 import {sculptHeightAt,sculptFaces,sculptBrushFootprint,applySculptStroke,applySculptWaterStroke,sculptWaterAt} from '../world/sculpt-height-model.js?rev=sphere-frustum-v76-r9';
+import {drawSquareSurfaceStrokePath} from '../world/surface-brush-geometry.js';
 import {paintSculptRockDetails} from './sculpt-rock-detail.js';
 import {drawSculptCliffAtlas,cliffAtlasTheme} from './sculpt-cliff-atlas.js?rev=cliff-depth-v48';
 import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
@@ -559,6 +560,13 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);
       if(!pattern||feature.points.length<2)continue;
+      if(feature.brushShape==='square'){
+        // Join strips and the visible material use the same authored shape.
+        if(drawSquareSurfaceStrokePath(ctx,feature.points,feature.width,0,-level*rise)){
+          ctx.globalAlpha=1;ctx.fillStyle=pattern;ctx.fill();
+        }
+        continue;
+      }
       ctx.beginPath();
       ctx.moveTo(feature.points[0].x,feature.points[0].y-level*rise);
       for(let i=1;i<feature.points.length;i++)
@@ -572,6 +580,16 @@ function sculptPaintByCell(ctx,terrain,tile,surface,paintImages){
     for(const feature of items){
       const pattern=patterns.get(feature.materialId);
       if(!pattern||feature.points.length<2)continue;
+      if(feature.brushShape==='square'){
+        ctx.fillStyle=pattern;
+        if(drawSquareSurfaceStrokePath(ctx,feature.points,feature.width+6,0,-level*rise)){
+          ctx.globalAlpha=.20;ctx.fill();
+        }
+        if(drawSquareSurfaceStrokePath(ctx,feature.points,feature.width,0,-level*rise)){
+          ctx.globalAlpha=.95;ctx.fill();
+        }
+        continue;
+      }
       ctx.beginPath();
       ctx.moveTo(feature.points[0].x,feature.points[0].y-level*rise);
       for(let i=1;i<feature.points.length;i++)
