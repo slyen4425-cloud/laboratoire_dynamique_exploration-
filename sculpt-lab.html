@@ -1452,6 +1452,23 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
    <button id="object-waypoint-create-button" type="button">Créer la sortie et le retour</button>
   </details>
   <button id="object-waypoint-destination" type="button">↪ Modifier l’arrivée sur la carte cible</button>
+   <details id="object-waypoint-appearance" hidden>
+    <summary>🎨 Apparence de cette sortie</summary>
+    <small>Le passage se déclenche automatiquement au contact, même si son repère est invisible.</small>
+    <label>Affichage en jeu
+     <select id="object-waypoint-marker-mode" aria-label="Apparence du passage">
+      <option value="ring">Cercle de passage (classique)</option>
+      <option value="hidden">Invisible en jeu</option>
+      <option value="shadow">Ombre noire de passage</option>
+      <option value="texture">Texture du catalogue</option>
+     </select>
+    </label>
+    <label id="object-waypoint-marker-texture-row" hidden>Texture à afficher
+     <select id="object-waypoint-marker-texture" aria-label="Texture visuelle du passage"></select>
+    </label>
+    <button id="object-waypoint-marker-save" type="button">✓ Enregistrer l'apparence</button>
+    <small>La zone de déclenchement et l'arrivée ne changent pas. En édition, un repère invisible reste sélectionnable.</small>
+   </details>
   <details id="object-waypoint-arrivals">
    <summary>🔵 Arrivées depuis les autres cartes</summary>
    <small>Chaque chemin a sa propre arrivée. Choisis la carte d’origine puis place le point directement sur ce terrain. Les passages déjà enregistrés ne sont pas déplacés automatiquement.</small>
