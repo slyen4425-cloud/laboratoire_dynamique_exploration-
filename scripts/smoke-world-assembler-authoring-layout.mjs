@@ -217,7 +217,19 @@ try{
     JSON.stringify({dragged:dragged.point,afterReload:{x:recovered.left,y:recovered.top},
       portals:recovered.portalCount}));
 }finally{
-  if(socket){try{socket.close();}catch{}}
+  // The fully isolated Chromium profile is kept mutable by browser helpers.
+  // Shut down via CDP FIRST so they flush storage before the process-group
+  // fallback. A SIGKILL-only shutdown can race rmdir(Default) after all
+  // successful smoke assertions and turn a GREEN test into ENOTEMPTY.
+  if(socket){
+    if(socket.readyState===WebSocket.OPEN){
+      try{
+        socket.send(JSON.stringify({id:2147483000,method:'Browser.close'}));
+        await sleep(750);
+      }catch{ /* Browser.close is best effort; process-group gate below */ }
+    }
+    try{socket.close();}catch{}
+  }
   // Browser-profile files can still be written after kill() returns.
   // Wait for the real Chromium exit before deleting its isolated directory;
   // never mask actual browser assertions with a racing ENOTEMPTY cleanup.

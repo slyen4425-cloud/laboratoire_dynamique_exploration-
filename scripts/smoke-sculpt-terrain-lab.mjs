@@ -604,7 +604,20 @@ try{
   // actual WALK on the native actor before simulating a stalled main thread,
   // otherwise zero motion tests input focus rather than frame-time integration.
   await send('Page.bringToFront');
-  await run('(()=>{window.focus();return document.hasFocus();})()');
+  // Touch emulation may leave a SELECT/INPUT focused. The native navigation
+  // key handler deliberately ignores editable fields: focus the real Canvas,
+  // not just window.focus(), before proving keyboard movement. This fixes
+  // the actual event target, never relaxes travel distance or jank thresholds.
+  const postTouchFocus=await run(`(()=>{
+    window.focus();
+    const before=document.activeElement?.tagName??null;
+    document.activeElement?.blur?.();
+    const canvas=document.querySelector('#sculpt-canvas');
+    canvas.tabIndex=0;canvas.focus({preventScroll:true});
+    return {before,active:document.activeElement?.id??null,focused:document.hasFocus()};
+  })()`);
+  if(!postTouchFocus.focused||postTouchFocus.active!=='sculpt-canvas')
+    throw Error('Touch→keyboard focus was not restored to the native canvas: '+JSON.stringify(postTouchFocus));
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
   // Real Chromium can resume keyboard focus a few RAFs AFTER the touch
@@ -1483,6 +1496,43 @@ try{
   if((await run('window.__sculptSurfaceProbe().zones'))!==2)
     throw Error('Square TEXTURE redo must restore the authored zone');
   console.log('Square TEXTURE brush real Chromium paint/Undo/Redo:',JSON.stringify(squarePaint));
+  // #530 REAL Chromium: mouse paint a no-go zone using the actual Canvas;
+  // the result is serialized into the ONE SculptTerrain of the same scene.
+  const navSetup=await run(`(()=>{
+    document.querySelector('#mode-surface').click();
+    const radius=document.querySelector('#radius');
+    radius.value='0.5';radius.dispatchEvent(new Event('input',{bubbles:true}));
+    document.querySelector('#brush-shape').value='square';
+    document.querySelector('#nav-zone-block').click();
+    return {enabled:!document.querySelector('#nav-zone-stop').disabled,
+      label:document.querySelector('#active-tool-label').textContent};
+  })()`);
+  if(!navSetup.enabled||!navSetup.label.includes('Navigation'))
+    throw Error('No-go navigation painter unavailable: '+JSON.stringify(navSetup));
+  await paintSurface(v27Ready.zone,v27Ready.zone);
+  const navSaved=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    return {ids:scene.terrain.navigationBlockedCells??[],
+      format:scene.terrain.schemaVersion,zones:scene.surface.zones.length};
+  })()`);
+  if(navSaved.ids.length<1||navSaved.format!==1||navSaved.zones!==2)
+    throw Error('Real navigation mask touch did not persist in canonical terrain: '+JSON.stringify(navSaved));
+  await run("document.querySelector('#undo').click()");
+  const navUndo=await run(`(()=>{document.querySelector('#scene-export').click();
+    return JSON.parse(document.querySelector('#json').value).terrain.navigationBlockedCells?.length??0})()`);
+  if(navUndo!==0)throw Error('Navigation zone Undo did not restore source terrain');
+  await run("document.querySelector('#redo').click()");
+  const navRedo=await run(`(()=>{document.querySelector('#scene-export').click();
+    return JSON.parse(document.querySelector('#json').value).terrain.navigationBlockedCells?.length??0})()`);
+  if(navRedo!==navSaved.ids.length)throw Error('Navigation zone Redo failed');
+  await run("document.querySelector('#nav-zone-normal').click()");
+  await paintSurface(v27Ready.zone,v27Ready.zone);
+  const navClear=await run(`(()=>{document.querySelector('#scene-export').click();
+    return JSON.parse(document.querySelector('#json').value).terrain.navigationBlockedCells?.length??0})()`);
+  if(navClear!==0)throw Error('Normal action failed to restore original navigation');
+  await run("document.querySelector('#nav-zone-stop').click()");
+  console.log('Navigation no-go native canvas paint/Undo/Redo/clear:',JSON.stringify(navSaved));
   const v27Clean=await run(`(()=>{
     document.querySelector('#new-map-toggle').click();
     const c=document.querySelector('#new-map-confirm');

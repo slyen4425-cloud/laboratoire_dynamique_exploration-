@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
+import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -214,6 +214,8 @@ let interiorWallHistory=[],interiorWallRedo=[];
 let interiorConnectorMode=false,interiorConnectorGesture=null,interiorConnectorPreview=null;
 const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
+// Editor-only state: mask remains saved on the ONE SculptTerrain, never in this UI.
+let navigationMaskEditing=null,navMaskGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let spherePreviewDismissed=false;
@@ -537,6 +539,7 @@ function refreshSculptEncounterEditor(){
   refreshSculptEncounterAuthoringStatus();
 }
 function setSculptEncounterEditorOpen(on){
+  if(on&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(!sculptEncounterEditor)return;
   if(on&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(on&&sculptPendingEncounter)return;
@@ -1525,6 +1528,22 @@ function draw(){
       ctx.restore();
     }
   }
+  // Navigation overlay exists ONLY in edit mode. Underlying terrain/texture
+  // and runtime view stay unchanged; red means Collision World says no-go.
+  if(!navigationTesting&&(navigationMaskEditing||$('navigation-zones-tools')?.open)){
+    ctx.save();
+    ctx.fillStyle='rgba(232,62,77,.40)';
+    ctx.strokeStyle='rgba(255,205,169,.83)';
+    ctx.lineWidth=1/Math.max(.32,zoom);
+    for(const index of terrain.navigationBlockedCells??[]){
+      const col=index%terrain.width,row=Math.floor(index/terrain.width);
+      const x=col*SCULPT_TILE.width,y=row*SCULPT_TILE.height-
+        sculptHeightAt(terrain,col,row)*SCULPT_TILE.rise;
+      ctx.fillRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
+      ctx.strokeRect(x+1,y+1,SCULPT_TILE.width-2,SCULPT_TILE.height-2);
+    }
+    ctx.restore();
+  }
   drawSculptWorldPortalMarkers();
   // Preview the authored ground ramp from its real endpoints, not an
   // artificial object silhouette. The committed terrain is drawn in the
@@ -1791,6 +1810,47 @@ const rampToolActive=()=>selectedMode==='terrain-ramp';
 const rampPointFromCell=cell=>({x:(cell.x+.5)*SCULPT_TILE.width,
   y:(cell.y+.5)*SCULPT_TILE.height});
 const rampWidth=()=>Number($('radius').value)*SCULPT_TILE.width;
+function updateNavigationZoneCount(){
+  const output=$('nav-zone-count');if(!output)return;
+  const count=terrain.navigationBlockedCells?.length??0;
+  output.textContent=count?count+' cases interdites · sauvegardées avec le terrain':'Aucune case interdite';
+}
+function setNavigationMaskEditing(action=null){
+  const next=['block','normal'].includes(action)?action:null;
+  if(next){
+    if(navigationTesting)setNavigationTesting(false);
+    if(objectEditing)setObjectEditing(false);
+    if(surfaceEditing)setSurfaceEditing(false);
+    if(sculptEncounterEditor&&!sculptEncounterEditor.hidden)setSculptEncounterEditorOpen(false);
+    if(editorKind!=='ground')setEditorKind('ground');
+    fringeEditing=false;
+    if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
+  }
+  navigationMaskEditing=next;navMaskGesture=null;
+  $('nav-zone-block')?.classList.toggle('active',next==='block');
+  $('nav-zone-normal')?.classList.toggle('active',next==='normal');
+  if($('nav-zone-stop'))$('nav-zone-stop').disabled=!next;
+  $('active-tool-label').textContent=next
+    ?(next==='block'?'Navigation · interdire':'Navigation · restaurer')
+    :editorKind+' · '+selectedMode;
+  document.body.classList.toggle('navigation-mask-editing',!!next);
+  if(next){
+    if(sculptSettingsPanel)sculptSettingsPanel.open=false;
+    status(next==='block'?'Navigation : peins en rouge les zones interdites (Undo disponible).':
+      'Navigation : repasse en mode Normal sur les zones interdites pour les effacer.');
+  }
+  updateNavigationZoneCount();updatePrecisionActions();scheduleDraw();
+}
+$('nav-zone-block')?.addEventListener('click',()=>setNavigationMaskEditing('block'));
+$('nav-zone-normal')?.addEventListener('click',()=>setNavigationMaskEditing('normal'));
+$('nav-zone-stop')?.addEventListener('click',()=>setNavigationMaskEditing(null));
+$('nav-zone-allow-ramp')?.addEventListener('click',()=>{
+  setNavigationMaskEditing(null);
+  setEditorKind('ground');
+  selectMode('terrain-ramp'); // EXISTING slope corridor and Collision World owner.
+  if(sculptSettingsPanel)sculptSettingsPanel.open=false;
+  status('Autoriser un dénivelé : trace du pied sec au sommet sec avec la pente native.');
+});
 function updateRampGuide(message=null){
   const active=rampToolActive();
   $('ramp-guide').hidden=!active;
@@ -1819,7 +1879,7 @@ function commitTerrainRamp(from,to){
 }
 
 function updatePrecisionActions(){
-  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&
+  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&!navigationMaskEditing&&
     !selectedMode.startsWith('terrain-ramp')&&$('precision-mode').checked;
   $('precision-actions').hidden=!enabled;
   const hasTarget=enabled&&!!precisionCell;
@@ -1830,6 +1890,7 @@ function updatePrecisionActions(){
 }
 function setEditorKind(kind){
   if(kind!=='ground'&&kind!=='water')return;
+  if(navigationMaskEditing)setNavigationMaskEditing(null);
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
   editorKind=kind;
@@ -1948,6 +2009,7 @@ function adjustBrushSize(delta){
   input.dispatchEvent(new Event('input',{bubbles:true}));
 }
 function selectMode(mode){
+  if(navigationMaskEditing)setNavigationMaskEditing(null);
   if(interiorWallMode)setInteriorWallMode(null);
   if(interiorDoorMoving)setInteriorDoorMoving(false);
   const nextKind=mode.startsWith('water-')?'water':'ground';
@@ -2000,6 +2062,7 @@ function commitUndo(previous){
   redoHistory=[];updateHistoryButtons();
 }
 function updateHistoryButtons(){
+  updateNavigationZoneCount();
   const past=fringeEditing?fringeHistory:history;
   const future=fringeEditing?fringeRedo:redoHistory;
   $('undo').disabled=past.length===0;
@@ -2032,6 +2095,15 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(navigationMaskEditing){
+    const cell=screenToCell(event);if(!cell)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    navMaskGesture={pointerId:event.pointerId,before:terrain,last:cell};
+    terrain=applySculptNavigationBlockStroke(terrain,{
+      points:[{x:cell.x+.5,y:cell.y+.5}],radius:Number($('radius').value),
+      shape:$('brush-shape').value,action:navigationMaskEditing});
+    updateNavigationZoneCount();scheduleDraw();return;
+  }
   if(waypointsEditing&&sculptWorldDraft&&!sculptWorldPortalPlacement){
     const point=screenToWorldPoint(event),marker=pickedVisibleWaypoint(point);
     if(marker){
@@ -2174,6 +2246,24 @@ function begin(event){
 }
 function stroke(event){
   if(navigationTesting)return;
+  if(navMaskGesture){
+    if(event.pointerId!==navMaskGesture.pointerId)return;
+    const cell=screenToCell(event);
+    if(!cell)return;
+    const prev=navMaskGesture.last;
+    const count=Math.max(Math.abs(cell.x-prev.x),Math.abs(cell.y-prev.y));
+    if(count===0)return;
+    const points=[];
+    for(let i=1;i<=count;i++)points.push({
+      x:Math.round(prev.x+(cell.x-prev.x)*i/count)+.5,
+      y:Math.round(prev.y+(cell.y-prev.y)*i/count)+.5
+    });
+    terrain=applySculptNavigationBlockStroke(terrain,{points,
+      radius:Number($('radius').value),shape:$('brush-shape').value,
+      action:navigationMaskEditing});
+    navMaskGesture.last=cell;hoverCell=cell;
+    updateNavigationZoneCount();scheduleDraw();return;
+  }
   if(waypointDrag){
     if(event.pointerId!==waypointDrag.pointerId)return;
     const world=screenToWorldPoint(event),drag=waypointDrag;
@@ -2387,6 +2477,17 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(navMaskGesture){
+    if(event.pointerId!==navMaskGesture.pointerId)return;
+    const gesture=navMaskGesture;navMaskGesture=null;
+    if(event.type==='pointercancel'||event.type==='lostpointercapture')
+      terrain=gesture.before;
+    else commitUndo(gesture.before);
+    updateNavigationZoneCount();scheduleDraw();
+    status(event.type==='pointercancel'?'Peinture navigation annulée.':
+      'Zone de navigation modifiée · Annuler/Rétablir disponibles · Tester pour vérifier.');
+    return;
+  }
   if(waypointDrag){
     if(event.pointerId!==waypointDrag.pointerId)return;
     const drag=waypointDrag;waypointDrag=null;
@@ -2595,6 +2696,7 @@ function navigationContext(){
 // World; never guess physics from rounded visual cliff pixels.
 function navigationBlockMessage(reason){
   if(!reason)return 'obstacle, bâtiment ou bord de la carte';
+  if(reason.kind==='navigation-block')return 'zone de navigation interdite (retour dans Navigation → Zones de passage)';
   if(reason.kind==='bounds')return 'limite de la carte';
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
   if(reason.kind==='sphere-wall'||reason.kind==='sphere-projection')
@@ -3204,6 +3306,7 @@ function navigationTick(time){
 }
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
+  if(on&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(on)setSculptEncounterEditorOpen(false);
   // Old world saves predate encounter profiles. The user must explicitly
   // approve initializing them; intentional 0% gameplay is never overwritten.
@@ -3844,6 +3947,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
@@ -4615,6 +4719,7 @@ $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatu
 requestNpcMerchantCatalog();
 requestNpcRewardCatalog();
 function setObjectEditing(active,{waypoints=false}={}){
+  if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);

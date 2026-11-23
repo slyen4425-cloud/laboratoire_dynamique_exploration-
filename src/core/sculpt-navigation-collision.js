@@ -15,6 +15,28 @@ export const SCULPT_NAVIGATION_PROBE_DEFAULTS=Object.freeze({
   cellWidth:28,cellHeight:21,projectionRise:18,maxStepUp:0,maxStepDown:0
 });
 const finitePositive=(n,f)=>Number.isFinite(n)&&n>0?n:f;
+// Read-only index over SculptTerrain's optional authored navigation mask.
+// The SAME swept Collision World route remains the sole movement authority.
+const manualBlockIndex=new WeakMap();
+function navigationBlockAt(terrain,x,y,radius,cellWidth,cellHeight){
+  const ids=terrain?.navigationBlockedCells;
+  if(!ids?.length)return null;
+  let cells=manualBlockIndex.get(terrain);
+  if(!cells){cells=new Set(ids);manualBlockIndex.set(terrain,cells);}
+  const w=finitePositive(cellWidth,28),h=finitePositive(cellHeight,21),r=Math.max(0,radius);
+  const left=Math.max(0,Math.floor((x-r)/w));
+  const right=Math.min(terrain.width-1,Math.floor((x+r)/w));
+  const top=Math.max(0,Math.floor((y-r)/h));
+  const bottom=Math.min(terrain.height-1,Math.floor((y+r)/h));
+  for(let row=top;row<=bottom;row++)for(let col=left;col<=right;col++){
+    if(!cells.has(row*terrain.width+col))continue;
+    const dx=Math.max(col*w-x,0,x-(col+1)*w);
+    const dy=Math.max(row*h-y,0,y-(row+1)*h);
+    if(dx*dx+dy*dy>r*r+1e-8)continue;
+    return {col,row,distance:Math.hypot(x-(col+.5)*w,y-(row+.5)*h)};
+  }
+  return null;
+}
 
 export function sculptNavigationSample(terrain,x,y,{
   cellWidth=SCULPT_NAVIGATION_PROBE_DEFAULTS.cellWidth,
@@ -361,6 +383,20 @@ export function sculptNavigationRoute({
     const t=step/stride,x=entity.x+dx*t,y=entity.y+dy*t;
     const sample=sculptNavigationSample(terrain,x,y,options);
     if(!sample)return reject(Object.freeze({kind:'bounds'}));
+    // Authored forbidden cells stop ground and swimming actors before even
+    // considering stairs/bridges/water. Flying retains its native exception.
+    // A stranded legacy actor may move OUT of its existing single blocked
+    // cell but cannot enter another; no spawn/save position gets rewritten.
+    if(!flying){
+      const blocked=navigationBlockAt(terrain,x,y,radius,cellWidth,cellHeight);
+      if(blocked){
+        const originBlock=navigationBlockAt(terrain,previousX,previousY,radius,cellWidth,cellHeight);
+        const retreating=originBlock&&originBlock.col===blocked.col&&
+          originBlock.row===blocked.row&&blocked.distance>originBlock.distance+1e-6;
+        if(!retreating)return reject(Object.freeze({kind:'navigation-block',
+          col:blocked.col,row:blocked.row}));
+      }
+    }
     const candidate=bridgeCarrierAt(bridges,x,y,radius);
     const stepX=x-previousX,stepY=y-previousY;
     let stairStep=false,stairExit=false;

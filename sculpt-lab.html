@@ -214,6 +214,9 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
   width:min(235px,calc(100vw - 16px));max-height:70%;overflow:auto;
   display:grid;gap:6px;padding:9px;background:rgba(19,43,52,.96);
   border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
+#navigation-zones-tools button{min-height:38px;text-align:left}
+#navigation-zones-tools button.active{border-color:#ffe2a6;background:#6b323d;color:#fff}
+#nav-zone-count{color:#ffdba8;font-size:.78rem;font-weight:700}
 #object-palette[hidden],#waypoints-palette[hidden]{display:none!important}
 #sphere-profile-wrap[hidden]{display:none!important}
 #sphere-profile-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
@@ -1871,6 +1874,18 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <label class="control">Niveau d’eau <b id="water-target-value">3</b>
 <input id="water-target" type="range" min="0" max="10" step="1" value="3"></label>
 </section>
+ </div>
+</details>
+<details class="sculpt-tool-group" id="navigation-zones-tools">
+ <summary>🧭 Navigation · Zones de passage <small>Bloquer ou restaurer</small></summary>
+ <div class="sculpt-tool-group-content">
+  <small>Peins les cases qui doivent être interdites au héros et aux PNJ. Le pinceau reprend la taille et la forme Terre/Eau, sans toucher au terrain ni aux textures.</small>
+  <button id="nav-zone-block" type="button">⛔ Peindre une zone interdite</button>
+  <button id="nav-zone-normal" type="button">↶ Restaurer le passage naturel</button>
+  <button id="nav-zone-allow-ramp" type="button">↗ Autoriser entre hauteurs · Pente existante</button>
+  <button id="nav-zone-stop" type="button" disabled>✓ Terminer l'édition navigation</button>
+  <output id="nav-zone-count" role="status" aria-live="polite">Aucune case interdite</output>
+  <small>La pente entre hauteurs utilise le moteur officiel de relief. Pour traverser de l'eau profonde, il faut toujours un vrai support (pont/gué) : peindre « autoriser » ne crée pas une plateforme invisible.</small>
  </div>
 </details>
 <details class="sculpt-tool-group">

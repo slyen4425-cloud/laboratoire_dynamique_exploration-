@@ -69,15 +69,21 @@ export function removeSculptSphereAt(terrain,x,y){
 
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
 const int=(v,f)=>Number.isInteger(v)?v:f;
-export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null,ramps=null}={}){
+export function createSculptTerrain({width=36,height=24,levels=null,waterLevels=null,roundness=null,spheres=null,ramps=null,navigationBlockedCells=null}={}){
   const w=clamp(int(width,36),8,80),h=clamp(int(height,24),8,64);
   const data=Array.from({length:w*h},(_,i)=>clamp(int(levels?.[i],2),0,16));
   const water=Array.from({length:w*h},(_,i)=>clamp(int(waterLevels?.[i],-1),-1,10));
   const contours=Array.from({length:w*h},(_,i)=>clamp(int(roundness?.[i],95),0,150));
+  // Optional canonical terrain mask. Existing documents without zones keep
+  // their exact save shape; collision remains the only movement authority.
+  const blocks=Array.isArray(navigationBlockedCells)
+    ?[...new Set(navigationBlockedCells.filter(i=>Number.isInteger(i)&&i>=0&&i<w*h))].sort((a,b)=>a-b)
+    :[];
   return Object.freeze({schemaVersion:SCULPT_SCHEMA_VERSION,width:w,height:h,
     levels:Object.freeze(data),waterLevels:Object.freeze(water),roundness:Object.freeze(contours),
     spheres:Object.freeze((Array.isArray(spheres)?spheres:[]).map(f=>Object.freeze({...f}))),
-    ramps:Object.freeze((Array.isArray(ramps)?ramps:[]).map(f=>Object.freeze({...f})))});
+    ramps:Object.freeze((Array.isArray(ramps)?ramps:[]).map(f=>Object.freeze({...f}))),
+    ...(blocks.length?{navigationBlockedCells:Object.freeze(blocks)}:{})});
 }
 // Native terrain incline, not a placed WorldObject. Kept alongside spheres
 // in the sculpt height model, so Undo and Export heights share one authority.
@@ -175,6 +181,28 @@ export function sculptBrushFootprint(terrain,{points=[],radius=3,edgeSoftness=0,
   for(let i=0;i<weights.length;i++)if(weights[i]>0)visible.push(Object.freeze({x:i%terrain.width,y:Math.floor(i/terrain.width),weight:weights[i]}));
   return Object.freeze(visible);
 }
+// Paint blocked-navigation cells using the EXISTING Sculpt brush footprint.
+// This is authored SculptTerrain data, not a second collision layer or owner.
+export function applySculptNavigationBlockStroke(terrain,{
+  points=[],radius=3,shape='circle',action='block'
+}={}){
+  if(!terrain||!['block','normal'].includes(action)||!Array.isArray(points)||!points.length)return terrain;
+  const footprint=sculptBrushFootprint(terrain,{points,radius,shape,
+    allowUnderwaterTerrainEdit:true});
+  if(!footprint.length)return terrain;
+  const old=terrain.navigationBlockedCells??[];
+  const next=new Set(old);
+  for(const cell of footprint){
+    const id=cell.y*terrain.width+cell.x;
+    if(action==='block')next.add(id);else next.delete(id);
+  }
+  const sorted=[...next].sort((a,b)=>a-b);
+  if(sorted.length===old.length&&sorted.every((v,i)=>v===old[i]))return terrain;
+  const {navigationBlockedCells:unused,...retained}=terrain;
+  return Object.freeze({...retained,...(sorted.length
+    ?{navigationBlockedCells:Object.freeze(sorted)}:{})});
+}
+
 export function applySculptStroke(terrain,{
   points=[],radius=3,strength=1,mode='raise',target=null,edgeSoftness=0,rockRoundness=null,
   allowUnderwaterTerrainEdit=false,shape='circle'
@@ -324,7 +352,9 @@ export function serializeSculptTerrain(terrain){
   return JSON.stringify({schemaVersion:1,width:terrain.width,height:terrain.height,
     levels:[...terrain.levels],waterLevels:[...terrain.waterLevels],roundness:[...terrain.roundness],
     spheres:(terrain.spheres??[]).map(f=>({...f})),
-    ramps:(terrain.ramps??[]).map(f=>({...f}))});
+    ramps:(terrain.ramps??[]).map(f=>({...f})),
+    ...(terrain.navigationBlockedCells?.length
+      ?{navigationBlockedCells:[...terrain.navigationBlockedCells]}:{})});
 }
 export function importSculptTerrain(serialized){
   const input=typeof serialized==='string'?JSON.parse(serialized):serialized;
@@ -346,7 +376,12 @@ export function importSculptTerrain(serialized){
      (input.ramps!==undefined&&(!Array.isArray(input.ramps)||
        input.ramps.length>SCULPT_TERRAIN_RAMP_LIMIT||
        !input.ramps.every(f=>validTerrainRamp(f,input.width,input.height))||
-       new Set(input.ramps.map(f=>f.id)).size!==input.ramps.length)))
+       new Set(input.ramps.map(f=>f.id)).size!==input.ramps.length))||
+      (input.navigationBlockedCells!==undefined&&
+        (!Array.isArray(input.navigationBlockedCells)||
+         input.navigationBlockedCells.length>input.width*input.height||
+         input.navigationBlockedCells.some(i=>!Number.isInteger(i)||i<0||i>=input.width*input.height)||
+         new Set(input.navigationBlockedCells).size!==input.navigationBlockedCells.length)))
     throw new Error('Carte sculptable invalide (schemaVersion 1)');
   return createSculptTerrain(input);
 }
