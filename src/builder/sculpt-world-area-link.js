@@ -9,6 +9,8 @@ import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from '../wor
 import {updatePortal,updateSpawn,addSpawn,createWorldBuilderDraft,
   createBuildingInteriorLink,validateWorldBuilderDraft} from './world-builder-draft.js';
 import {resolveWorldAreaSpawnPoint} from '../world/world-area-model.js';
+import {materialPackV1} from '../materials/material-pack-v1.js';
+import {resolveMaterialAsset} from '../assets/material-asset-adapter.js';
 
 export const SCULPT_WORLD_TILE=Object.freeze({width:28,height:21});
 export const SCULPT_WORLD_LIMIT=Object.freeze({width:80,height:64});
@@ -95,6 +97,28 @@ export function placeSculptWorldPortal(draft,portalId,{x,y}={}){
   });
   const checked=validateWorldBuilderDraft(next);
   if(!checked.valid)throw Error('Position de Portal invalide : '+checked.errors.join(', '));
+  return createWorldBuilderDraft(checked.document);
+}
+// The visual and collision remain owned by the SAME Portal in WorldDocument.
+// Invisible in gameplay still leaves the authored exit selectable in the editor.
+export function setSculptWorldPortalAppearance(draft,portalId,{mode='ring',textureMaterialId=null}={}){
+  const portal=draft?.portals?.find(p=>p.id===portalId);
+  if(!portal)throw Error('Passage inconnu');
+  if(!['ring','hidden','shadow','texture'].includes(mode))
+    throw Error('Aspect de passage inconnu');
+  if(mode==='texture'){
+    const material=materialPackV1.materials.find(m=>
+      m.id===textureMaterialId&&m.kind==='surface'&&
+      m.assets?.base&&resolveMaterialAsset(m.assets.base));
+    if(!material)throw Error('Texture officielle indisponible');
+  }
+  const next=updatePortal(draft,portalId,p=>{
+    p.visual={...p.visual,visible:mode!=='hidden',
+      marker:mode==='shadow'?'shadow':mode==='texture'?'texture':'portal',
+      textureMaterialId:mode==='texture'?textureMaterialId:null};
+  });
+  const checked=validateWorldBuilderDraft(next);
+  if(!checked.valid)throw Error('Aspect de passage invalide : '+checked.errors.join(', '));
   return createWorldBuilderDraft(checked.document);
 }
 // The user-facing marker name is the existing Portal.visual.label field.
