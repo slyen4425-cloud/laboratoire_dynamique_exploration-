@@ -1530,7 +1530,7 @@ function draw(){
   }
   // Navigation overlay exists ONLY in edit mode. Underlying terrain/texture
   // and runtime view stay unchanged; red means Collision World says no-go.
-  if(!navigationTesting&&(navigationMaskEditing||$('navigation-zones-tools').open)){
+  if(!navigationTesting&&(navigationMaskEditing||$('navigation-zones-tools')?.open)){
     ctx.save();
     ctx.fillStyle='rgba(232,62,77,.40)';
     ctx.strokeStyle='rgba(255,205,169,.83)';
@@ -1827,9 +1827,9 @@ function setNavigationMaskEditing(action=null){
     if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
   }
   navigationMaskEditing=next;navMaskGesture=null;
-  $('nav-zone-block').classList.toggle('active',next==='block');
-  $('nav-zone-normal').classList.toggle('active',next==='normal');
-  $('nav-zone-stop').disabled=!next;
+  $('nav-zone-block')?.classList.toggle('active',next==='block');
+  $('nav-zone-normal')?.classList.toggle('active',next==='normal');
+  if($('nav-zone-stop'))$('nav-zone-stop').disabled=!next;
   $('active-tool-label').textContent=next
     ?(next==='block'?'Navigation · interdire':'Navigation · restaurer')
     :editorKind+' · '+selectedMode;
@@ -1841,10 +1841,10 @@ function setNavigationMaskEditing(action=null){
   }
   updateNavigationZoneCount();updatePrecisionActions();scheduleDraw();
 }
-$('nav-zone-block').addEventListener('click',()=>setNavigationMaskEditing('block'));
-$('nav-zone-normal').addEventListener('click',()=>setNavigationMaskEditing('normal'));
-$('nav-zone-stop').addEventListener('click',()=>setNavigationMaskEditing(null));
-$('nav-zone-allow-ramp').addEventListener('click',()=>{
+$('nav-zone-block')?.addEventListener('click',()=>setNavigationMaskEditing('block'));
+$('nav-zone-normal')?.addEventListener('click',()=>setNavigationMaskEditing('normal'));
+$('nav-zone-stop')?.addEventListener('click',()=>setNavigationMaskEditing(null));
+$('nav-zone-allow-ramp')?.addEventListener('click',()=>{
   setNavigationMaskEditing(null);
   setEditorKind('ground');
   selectMode('terrain-ramp'); // EXISTING slope corridor and Collision World owner.
