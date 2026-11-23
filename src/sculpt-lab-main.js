@@ -219,7 +219,7 @@ let spherePreviewDismissed=false;
 let editorKind='ground',lastGroundMode='dig',lastWaterMode='water-fill';
 let precisionCell=null,precisionDragging=false;
 let nativeFullscreenEntered=false;
-let objectEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
+let objectEditing=false,waypointsEditing=false,placedObjects=Object.freeze([]),objectHistory=[],objectRedo=[];
  // A standalone Sculpt preview can export the same official profile format;
  // the WorldBuilder path instead edits its ONE canonical world record.
  let sculptStandaloneShadowProfiles=Object.freeze([]);
@@ -2027,7 +2027,7 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
-  if(objectEditing&&!actorSubmode&&sculptWorldDraft&&!sculptWorldPortalPlacement){
+  if(waypointsEditing&&sculptWorldDraft&&!sculptWorldPortalPlacement){
     const point=screenToWorldPoint(event),marker=pickedVisibleWaypoint(point);
     if(marker){
       event.preventDefault();canvas.setPointerCapture(event.pointerId);
@@ -2042,6 +2042,10 @@ function begin(event){
         client:{x:event.clientX,y:event.clientY},moved:false};
       scheduleDraw();return;
     }
+  }
+  // Selecting a blank cell in Passages never paints terrain or spawns an Object.
+  if(waypointsEditing&&!sculptWorldPortalPlacement){
+    status('Choisis un repère ou utilise « Placer le repère sur la carte ».');return;
   }
   if(fringeEditing){
     const cell=screenToDecorativeFringeCell(event);
@@ -4603,36 +4607,45 @@ loadNpcOfficialCreatureChoices();
 $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatureChoices();});
 requestNpcMerchantCatalog();
 requestNpcRewardCatalog();
-function setObjectEditing(active){
+function setObjectEditing(active,{waypoints=false}={}){
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
   if(active&&interiorWallMode)setInteriorWallMode(null);
   if(active&&surfaceEditing)setSurfaceEditing(false);
   objectEditing=!!active;
+  waypointsEditing=objectEditing&&waypoints===true;
+  if(waypointsEditing){
+    // The entire existing waypoint inspector is now a separate tab, not an Objets child.
+    closeNpcAuthoringDialog();
+    actorSubmode=false;$('object-controls').hidden=false;$('actor-controls').hidden=true;
+    if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
+    fringeEditing=false;fringeGesture=null;
+  }
+  if(!waypointsEditing)sculptWorldPortalPlacement=null;
   if(!objectEditing){
     closeNpcAuthoringDialog();
     actorSubmode=false;$('object-controls').hidden=false;$('actor-controls').hidden=true;
   }
   document.body.classList.toggle('object-editing',objectEditing);
-  $('object-palette').hidden=!objectEditing;
-  if(objectEditing&&!navigationTesting){
-    // A standalone editor cannot author Portals: explain the required World Builder handoff.
+  $('object-palette').hidden=!objectEditing||waypointsEditing;
+  $('waypoints-palette').hidden=!waypointsEditing;
+  if(waypointsEditing&&!navigationTesting){
     syncObjectWaypoints();
-    const waypointPanel=$('object-waypoints-panel');
-    if(waypointPanel&&!waypointPanel.hidden)waypointPanel.open=true;
+    if(!$('object-waypoints-panel').hidden)$('object-waypoints-panel').open=true;
   }
-  $('mode-waypoints')?.setAttribute('aria-expanded',String(objectEditing&&
-    !$('object-waypoints-panel').hidden&&$('object-waypoints-panel').open));
-  $('mode-objects').classList.toggle('active',objectEditing);
-  $('mode-objects').setAttribute('aria-pressed',String(objectEditing));
+  $('mode-waypoints').classList.toggle('active',waypointsEditing);
+  $('mode-waypoints').setAttribute('aria-pressed',String(waypointsEditing));
+  $('mode-objects').classList.toggle('active',objectEditing&&!waypointsEditing);
+  $('mode-objects').setAttribute('aria-pressed',String(objectEditing&&!waypointsEditing));
   if(objectEditing){
     for(const domain of ['ground','water']){
       $('mode-'+domain).classList.remove('active');
       $('mode-'+domain).setAttribute('aria-pressed','false');
     }
-    $('active-tool-label').textContent='Objets · toucher pour placer ou supprimer';
-    status('Choisis une catégorie : Escaliers ou Pentes (herbe, terre, roche), puis touche la carte.');
+    $('active-tool-label').textContent=waypointsEditing?'Passages · départs et arrivées':'Objets · toucher pour placer ou supprimer';
+    status(waypointsEditing?'Passages : choisis un départ, une sortie ou une arrivée à positionner sur la carte.':
+      'Choisis une catégorie : Escaliers ou Pentes (herbe, terre, roche), puis touche la carte.');
   }else{
     for(const domain of ['ground','water']){
       const active=editorKind===domain;
@@ -4644,7 +4657,7 @@ function setObjectEditing(active){
   updatePrecisionActions();scheduleDraw();
 }
 function applyObjectAtCell(cell){
-  if(!objectEditing)return;
+  if(!objectEditing||waypointsEditing)return;
   const x=(cell.x+.5)*SCULPT_TILE.width,y=(cell.y+.5)*SCULPT_TILE.height;
   if($('object-action').value==='select'){
     const found=findSculptPreviewObjectNear(placedObjects,x,y);
@@ -4866,25 +4879,16 @@ $('scenery-fringe-toggle')?.addEventListener('change',()=>{
 });
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
-$('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing));
-$('mode-waypoints')?.addEventListener('click',()=>{
+$('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing||waypointsEditing));
+$('mode-waypoints').addEventListener('click',()=>{
   if(navigationTesting){status('Quitte Tester pour placer les départs et passages.');return;}
-  // Shortcut only: reuse Objets and its one WorldDocument-backed waypoint inspector.
-  // Do not revive the coordinate-heavy legacy portal overlay or fork saved state.
-  if(actorSubmode){closeNpcAuthoringDialog();actorSubmode=false;}
-  $('object-controls').hidden=false;$('actor-controls').hidden=true;
-  setObjectEditing(true);
-  const available=!!sculptWorldDraft&&sculptWorldAreaMounted;
-  if(available){
+  // This selects a distinct palette. All controls are MOVED, and still own
+  // the same WorldDocument-backed Portal/Spawn references; no clone or overlay.
+  setObjectEditing(!waypointsEditing,{waypoints:true});
+  if(waypointsEditing&&sculptWorldDraft&&sculptWorldAreaMounted){
     $('object-waypoints-panel').open=true;
-    $('object-palette').scrollTop=0;
-    $('mode-waypoints')?.setAttribute('aria-expanded','true');
-    status('📍 Passages : sélectionne un repère, déplace-le sur la carte ou règle son apparence.');
-  }else status('Pour placer des passages entre cartes, ouvre cette carte depuis le World Builder.');
-});
-$('object-waypoints-panel')?.addEventListener('toggle',()=>{
-  $('mode-waypoints')?.setAttribute('aria-expanded',String(objectEditing&&
-    !$('object-waypoints-panel').hidden&&$('object-waypoints-panel').open));
+    $('waypoints-palette').scrollTop=0;
+  }
 });
 $('mode-surface').addEventListener('click',()=>setSurfaceEditing(!surfaceEditing));
 $('fullscreen-toggle').addEventListener('click',toggleImmersive);
@@ -5947,7 +5951,7 @@ function syncObjectWaypoints(){
   panel.hidden=!available;
   const standaloneHint=$('object-waypoints-unavailable');
   if(standaloneHint)standaloneHint.hidden=available||navigationTesting;
-  $('mode-waypoints')?.setAttribute('aria-expanded',String(available&&objectEditing&&panel.open));
+  // No extra marker inspector: the same WorldDocument selector is rendered in this tab.
   if(!available)return;
   const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{testing:false,showHidden:true});
   const selected=$('object-waypoint-select'),old=selectedWaypointKey??selected.value;
