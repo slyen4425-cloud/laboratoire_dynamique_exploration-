@@ -2,7 +2,7 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
+import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
 import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -214,6 +214,8 @@ let interiorWallHistory=[],interiorWallRedo=[];
 let interiorConnectorMode=false,interiorConnectorGesture=null,interiorConnectorPreview=null;
 const SCULPT_INTERIOR_TEMPLATE_STORAGE='gensrpg-exploration-sculpt-room-templates-v1';
 let rampStart=null,rampEnd=null,rampGesture=null;
+// Editor-only state: mask remains saved on the ONE SculptTerrain, never in this UI.
+let navigationMaskEditing=null,navMaskGesture=null;
 let lastCell='',strokePoints=[],history=[],redoHistory=[],currentTexture=null,zoom=1,pan={x:0,y:0};
 let hoverCell=null,previewSummary=null,lastRenderStats=null;
 let spherePreviewDismissed=false;
@@ -537,6 +539,7 @@ function refreshSculptEncounterEditor(){
   refreshSculptEncounterAuthoringStatus();
 }
 function setSculptEncounterEditorOpen(on){
+  if(on&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(!sculptEncounterEditor)return;
   if(on&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(on&&sculptPendingEncounter)return;
@@ -1791,6 +1794,47 @@ const rampToolActive=()=>selectedMode==='terrain-ramp';
 const rampPointFromCell=cell=>({x:(cell.x+.5)*SCULPT_TILE.width,
   y:(cell.y+.5)*SCULPT_TILE.height});
 const rampWidth=()=>Number($('radius').value)*SCULPT_TILE.width;
+function updateNavigationZoneCount(){
+  const output=$('nav-zone-count');if(!output)return;
+  const count=terrain.navigationBlockedCells?.length??0;
+  output.textContent=count?count+' cases interdites · sauvegardées avec le terrain':'Aucune case interdite';
+}
+function setNavigationMaskEditing(action=null){
+  const next=['block','normal'].includes(action)?action:null;
+  if(next){
+    if(navigationTesting)setNavigationTesting(false);
+    if(objectEditing)setObjectEditing(false);
+    if(surfaceEditing)setSurfaceEditing(false);
+    if(sculptEncounterEditor&&!sculptEncounterEditor.hidden)setSculptEncounterEditorOpen(false);
+    if(editorKind!=='ground')setEditorKind('ground');
+    fringeEditing=false;
+    if($('scenery-fringe-toggle'))$('scenery-fringe-toggle').checked=false;
+  }
+  navigationMaskEditing=next;navMaskGesture=null;
+  $('nav-zone-block').classList.toggle('active',next==='block');
+  $('nav-zone-normal').classList.toggle('active',next==='normal');
+  $('nav-zone-stop').disabled=!next;
+  $('active-tool-label').textContent=next
+    ?(next==='block'?'Navigation · interdire':'Navigation · restaurer')
+    :editorKind+' · '+selectedMode;
+  document.body.classList.toggle('navigation-mask-editing',!!next);
+  if(next){
+    if(sculptSettingsPanel)sculptSettingsPanel.open=false;
+    status(next==='block'?'Navigation : peins en rouge les zones interdites (Undo disponible).':
+      'Navigation : repasse en mode Normal sur les zones interdites pour les effacer.');
+  }
+  updateNavigationZoneCount();updatePrecisionActions();scheduleDraw();
+}
+$('nav-zone-block').addEventListener('click',()=>setNavigationMaskEditing('block'));
+$('nav-zone-normal').addEventListener('click',()=>setNavigationMaskEditing('normal'));
+$('nav-zone-stop').addEventListener('click',()=>setNavigationMaskEditing(null));
+$('nav-zone-allow-ramp').addEventListener('click',()=>{
+  setNavigationMaskEditing(null);
+  setEditorKind('ground');
+  selectMode('terrain-ramp'); // EXISTING slope corridor and Collision World owner.
+  if(sculptSettingsPanel)sculptSettingsPanel.open=false;
+  status('Autoriser un dénivelé : trace du pied sec au sommet sec avec la pente native.');
+});
 function updateRampGuide(message=null){
   const active=rampToolActive();
   $('ramp-guide').hidden=!active;
@@ -1819,7 +1863,7 @@ function commitTerrainRamp(from,to){
 }
 
 function updatePrecisionActions(){
-  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&
+  const enabled=!navigationTesting&&!objectEditing&&!surfaceEditing&&!navigationMaskEditing&&
     !selectedMode.startsWith('terrain-ramp')&&$('precision-mode').checked;
   $('precision-actions').hidden=!enabled;
   const hasTarget=enabled&&!!precisionCell;
@@ -1830,6 +1874,7 @@ function updatePrecisionActions(){
 }
 function setEditorKind(kind){
   if(kind!=='ground'&&kind!=='water')return;
+  if(navigationMaskEditing)setNavigationMaskEditing(null);
   if(objectEditing)setObjectEditing(false);
   if(surfaceEditing)setSurfaceEditing(false);
   editorKind=kind;
@@ -1948,6 +1993,7 @@ function adjustBrushSize(delta){
   input.dispatchEvent(new Event('input',{bubbles:true}));
 }
 function selectMode(mode){
+  if(navigationMaskEditing)setNavigationMaskEditing(null);
   if(interiorWallMode)setInteriorWallMode(null);
   if(interiorDoorMoving)setInteriorDoorMoving(false);
   const nextKind=mode.startsWith('water-')?'water':'ground';
@@ -2595,6 +2641,7 @@ function navigationContext(){
 // World; never guess physics from rounded visual cliff pixels.
 function navigationBlockMessage(reason){
   if(!reason)return 'obstacle, bâtiment ou bord de la carte';
+  if(reason.kind==='navigation-block')return 'zone de navigation interdite (retour dans Navigation → Zones de passage)';
   if(reason.kind==='bounds')return 'limite de la carte';
   if(reason.kind==='water')return 'eau profonde (nage nécessaire)';
   if(reason.kind==='sphere-wall'||reason.kind==='sphere-projection')
@@ -3204,6 +3251,7 @@ function navigationTick(time){
 }
 function setNavigationTesting(on){
   if(on===navigationTesting)return;
+  if(on&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(on)setSculptEncounterEditorOpen(false);
   // Old world saves predate encounter profiles. The user must explicitly
   // approve initializing them; intentional 0% gameplay is never overwritten.
@@ -3844,6 +3892,7 @@ function surfaceCommit(next){
   return true;
 }
 function setSurfaceEditing(active){
+  if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
@@ -4615,6 +4664,7 @@ $('npc-catalog-retry')?.addEventListener('click',()=>{void loadNpcOfficialCreatu
 requestNpcMerchantCatalog();
 requestNpcRewardCatalog();
 function setObjectEditing(active,{waypoints=false}={}){
+  if(active&&navigationMaskEditing)setNavigationMaskEditing(null);
   if(active&&sculptSettingsPanel)sculptSettingsPanel.open=false;
   if(active&&interiorConnectorMode)setInteriorConnectorMode(false);
   if(active&&interiorDoorMoving)setInteriorDoorMoving(false);
