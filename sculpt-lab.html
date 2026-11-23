@@ -210,11 +210,11 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 }
 
 /* V20 object palette: visual catalog lives in the existing native object registry. */
-#object-palette{position:absolute;z-index:12;right:8px;top:8px;
+#object-palette,#waypoints-palette{position:absolute;z-index:12;right:8px;top:8px;
   width:min(235px,calc(100vw - 16px));max-height:70%;overflow:auto;
   display:grid;gap:6px;padding:9px;background:rgba(19,43,52,.96);
   border:1px solid #62a5a2;border-radius:11px;box-shadow:0 5px 19px #0009;font-size:.78rem}
-#object-palette[hidden]{display:none!important}
+#object-palette[hidden],#waypoints-palette[hidden]{display:none!important}
 #sphere-profile-wrap[hidden]{display:none!important}
 #sphere-profile-wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:center;border:1px solid #3d7771;border-radius:10px;padding:7px}
 #sphere-profile-wrap .control{display:grid;grid-template-columns:1fr;gap:5px;min-width:0}
@@ -222,13 +222,19 @@ body.sculpt-immersive #navigation-stick{bottom:calc(env(safe-area-inset-bottom,0
 .sculpt-quickbar #sphere-profile-wrap{grid-column:1/-1;min-width:0}
 #sphere-profile-wrap small{color:#adcac1;font-size:.69rem;line-height:1.3}
 body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset 0 0 0 1px #477d76}
-#object-palette label{display:grid;gap:2px}
+#object-palette label,#waypoints-palette label{display:grid;gap:2px}
 #object-variant-wrap[hidden],#object-scale-wrap[hidden],#object-bridge-length-wrap[hidden],#object-bridge-width-wrap[hidden]{display:none!important}
-#object-palette select,#object-palette input[type=range]{width:100%}
-#object-palette select{padding:7px;min-height:36px}
+#object-palette select,#object-palette input[type=range],#waypoints-palette select{width:100%}
+#object-palette select,#waypoints-palette select{padding:7px;min-height:36px}
 #object-palette input[type=range]{accent-color:#7ee0c5}
 #object-count{color:#a7f3db}
 
+/* The one canonical WorldDocument waypoint inspector has moved out of Objets. */
+#waypoints-palette details{border:1px solid #4c817a;border-radius:8px;padding:6px}
+#waypoints-palette summary{cursor:pointer;min-height:34px;font-weight:750}
+#waypoints-palette button{min-height:36px;width:100%;margin:4px 0}
+#waypoints-palette small{display:block;line-height:1.4;color:#b5d6d0}
+#waypoints-palette strong{font-size:.9rem}
 /* Compact native shadow settings, collapsed by default and touch-friendly. */
 #object-shadow-details{border:1px solid #4f8980;border-radius:9px;
  background:#173840ab;padding:5px 7px;min-width:0}
@@ -244,14 +250,14 @@ body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset
 
 .object-actions{display:flex;gap:5px}
 .object-actions button{flex:1;min-width:0;padding:6px}
-body.sculpt-immersive #object-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
+body.sculpt-immersive #object-palette,body.sculpt-immersive #waypoints-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
  right:calc(env(safe-area-inset-right,0px) + 6px);max-height:65dvh}
 body.object-editing .sculpt-quickbar{opacity:.45;pointer-events:none}
 body.sculpt-immersive.object-editing .sculpt-quickbar{display:none}
 body.object-editing .canvas-wrap .precision-actions{display:none!important}
 @media(max-width:600px){
-  #object-palette{width:min(180px,48vw);padding:5px;top:6px;right:5px}
-  body.sculpt-immersive #object-palette{max-height:63dvh}
+  #object-palette,#waypoints-palette{width:min(180px,48vw);padding:5px;top:6px;right:5px}
+  body.sculpt-immersive #object-palette,body.sculpt-immersive #waypoints-palette{max-height:63dvh}
   .editor-switch #mode-objects{font-size:.77rem;padding:4px;min-width:0}
   body.sculpt-immersive .editor-switch{width:min(365px,calc(100vw - 12px))}
 }
@@ -1047,7 +1053,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
-<button type="button" id="mode-waypoints" aria-controls="object-waypoints-panel" aria-expanded="false" title="Placer les départs, entrées et sorties sur la carte">📍 Passages</button>
+<button type="button" id="mode-waypoints" aria-controls="waypoints-palette" aria-pressed="false" title="Placer les départs, entrées et sorties sur la carte">📍 Passages</button>
 <button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
 <button type="button" id="mode-encounters" aria-pressed="false" aria-controls="sculpt-encounter-editor">🐾 Rencontres</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
@@ -1443,9 +1449,8 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  </details>
  <output id="surface-count">Aucune zone peinte</output>
 </section>
-<section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
- <div id="object-controls">
- <strong>🌳 Objets et repères de carte</strong>
+<section id="waypoints-palette" aria-label="Passages, départs, entrées et sorties" hidden>
+ <strong>📍 Passages · Départ · Entrées · Sorties</strong>
  <p id="object-waypoints-unavailable" role="status" hidden>Pour placer des départs, entrées et sorties entre cartes, ouvre ta carte depuis le <a href="./world-assembler.html">🌍 World Builder</a>. Une scène isolée ne possède pas de passages de monde.</p>
  <details id="object-waypoints-panel" hidden>
   <summary>📍 Départ · Entrées · Sorties</summary>
@@ -1488,6 +1493,10 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
   </details>
   <small id="object-waypoint-feedback" role="status" aria-live="polite"></small>
  </details>
+</section>
+<section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
+ <div id="object-controls">
+ <strong>🌳 Objets et acteurs de carte</strong>
  <button type="button" id="actor-open">👥 Acteurs de map</button>
  <label>Catégorie
   <select id="object-category" aria-label="Catégorie d’objets">
