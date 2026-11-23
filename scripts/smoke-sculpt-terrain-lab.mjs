@@ -607,15 +607,23 @@ try{
   await run('(()=>{window.focus();return document.hasFocus();})()');
   await send('Input.dispatchKeyEvent',
     {type:'keyDown',key:'d',code:'KeyD',windowsVirtualKeyCode:68});
-  // Wait for TWO real animation frames rather than race against a fixed 90ms
-  // wall-clock delay while Android/touch focus is being restored.
+  // Real Chromium can resume keyboard focus a few RAFs AFTER the touch
+  // emulation stops. Prove actual walking (and >=8 world units of travel),
+  // not merely keyDown/focus or a two-frame animation-state race.
+  // Bound at 12 RAFs and NEVER relax the subsequent 190ms jank assertion.
   const preJank=await run(`(async()=>{
-    await new Promise(resolve=>requestAnimationFrame(resolve));
-    await new Promise(resolve=>requestAnimationFrame(resolve));
-    return window.__sculptNavProbe();
+    let actual=window.__sculptNavProbe();
+    for(let frame=0;frame<12;frame++){
+      await new Promise(resolve=>requestAnimationFrame(resolve));
+      actual=window.__sculptNavProbe();
+      if(actual.actorMotion==='walk'&&actual.player.x>=${afterStick.player.x}+8&&
+         !actual.blocked)return actual;
+    }
+    return actual;
   })()`);
-  if(preJank.actorMotion!=='walk'||preJank.player.x<=afterStick.player.x)
-    throw Error('V21 jank prerequisite: real native keyboard walk must be active after touch emulation: '+
+  if(preJank.actorMotion!=='walk'||preJank.player.x<afterStick.player.x+8||
+     preJank.blocked)
+    throw Error('V21 jank prerequisite: native keyboard walk must move 8+ units after touch emulation: '+
       JSON.stringify({afterStick,preJank}));
   await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
     return true;})()`);
@@ -3747,23 +3755,25 @@ try{
      uxFullscreen.paletteHeight>47)
     throw Error('WorldArea fullscreen cannot reveal whole 2.5D map: '+
       JSON.stringify(uxFullscreen));
-  // The point editor now belongs to Objets, never to a floating Portal
-  // badge. Verify its ACTUAL touch path on a 960x540 mobile viewport.
-  const objectModePoint=await run(`(()=>{
-    const button=document.querySelector('#mode-objects'),r=button.getBoundingClientRect();
+  // The one Portal/Spawn inspector is MOVED into the independent Passages tab.
+  // Verify its REAL touch access on a 960x540 landscape viewport, without clones.
+  const passagesModePoint=await run(`(()=>{
+    const button=document.querySelector('#mode-waypoints'),r=button.getBoundingClientRect();
     const x=r.left+r.width/2,y=r.top+r.height/2;
     const hit=document.elementFromPoint(x,y);
     return {x,y,hittable:hit===button||button.contains(hit)};
   })()`);
-  if(!objectModePoint.hittable)
-    throw Error('Objets tab must be touchable in fullscreen: '+JSON.stringify(objectModePoint));
+  if(!passagesModePoint.hittable)
+    throw Error('Passages tab must be touchable in fullscreen: '+JSON.stringify(passagesModePoint));
   await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
-    {x:objectModePoint.x,y:objectModePoint.y,id:32,radiusX:5,radiusY:5,force:1}
+    {x:passagesModePoint.x,y:passagesModePoint.y,id:32,radiusX:5,radiusY:5,force:1}
   ]});
   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await sleep(120);
   const uxOpened=await run(`(()=>{
     const panel=document.querySelector('#object-waypoints-panel');
+    const dedicated=document.querySelector('#waypoints-palette');
+    const objects=document.querySelector('#object-palette');
     const select=document.querySelector('#object-waypoint-select');
     const rect=panel.getBoundingClientRect(),full=document.querySelector('#fullscreen-toggle');
     const f=full.getBoundingClientRect(),hit=document.elementFromPoint(f.left+f.width/2,f.top+f.height/2);
@@ -3772,14 +3782,19 @@ try{
     return {open:panel.open,hidden:panel.hidden,
       width:rect.width,height:rect.height,
       count:select.options.length,
+      moved:dedicated.contains(panel)&&!objects.contains(panel),
+      oneInspector:document.querySelectorAll('#object-waypoints-panel').length===1,
+      dedicatedVisible:getComputedStyle(dedicated).display!=='none',
+      objectsHidden:getComputedStyle(objects).display==='none',
       inspectorHidden:getComputedStyle(inspector).display==='none',
       presetsKept:presets.parentElement.id==='object-controls',
       fullscreenStillHit:hit===full||full.contains(hit)};
   })()`);
   if(!uxOpened.open||uxOpened.hidden||uxOpened.width<=100||
-     uxOpened.count===0||!uxOpened.inspectorHidden||
+     uxOpened.count===0||!uxOpened.moved||!uxOpened.oneInspector||
+     !uxOpened.dedicatedVisible||!uxOpened.objectsHidden||!uxOpened.inspectorHidden||
      !uxOpened.presetsKept||!uxOpened.fullscreenStillHit)
-    throw Error('Objets waypoint editor is missing or obscures fullscreen: '+
+    throw Error('Passages editor is not uniquely accessible or obscures fullscreen: '+
       JSON.stringify(uxOpened));
   const placePoint=await run(`(()=>{
     const gate=window.__sculptWorldProbe().outgoing.find(p=>p.trigger.kind==='point');
@@ -3803,7 +3818,7 @@ try{
   await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   const uxPlacement=await run("window.__sculptWorldProbe()");
   if(uxPlacement.placementMode!=='portal')
-    throw Error('Objets waypoint touch did not enable canonical Portal placement: '+
+    throw Error('Passages waypoint touch did not enable canonical Portal placement: '+
       JSON.stringify(uxPlacement));
   // Same button cancels without creating any duplicate Portal/Spawn.
   await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[
