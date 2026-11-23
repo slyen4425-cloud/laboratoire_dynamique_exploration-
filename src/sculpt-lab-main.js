@@ -1513,7 +1513,7 @@ function draw(){
           Math.floor(p.y/SCULPT_TILE.height))*SCULPT_TILE.rise
       }));
       if(projected.length===1)projected.push({x:projected[0].x+.001,y:projected[0].y+.001});
-      if($('surface-brush-shape').value==='square'){
+      if(($('surface-brush-shape')?.value??'round')==='square'){
         ctx.fillStyle=paintPreviewColor;
         if(drawSquareSurfaceStrokePath(ctx,projected,width))ctx.fill();
       }else{
@@ -1729,7 +1729,7 @@ function commitFringeSurface(points,erase=false){
    points,materialId:$('surface-material').value,
    terrainFamilyId:surfacePaintFamilySelect?.value,
    width:Number($('surface-width').value)*SCULPT_TILE.width,
-   brushShape:$('surface-brush-shape').value,erase
+   brushShape:($('surface-brush-shape')?.value??'round'),erase
  });
  decorativeFringe=next;fringeRasterCache.clear();loadSurfacePaintAssets();
  if(recordDecorativeFringe(before))
@@ -2499,7 +2499,7 @@ function stop(event){
       materialId:$('surface-material').value,
       terrainFamilyId:surfacePaintFamilySelect?.value,points:surfaceStrokePoints,
       width:Number($('surface-width').value)*SCULPT_TILE.width,
-      brushShape:$('surface-brush-shape').value
+      brushShape:($('surface-brush-shape')?.value??'round')
     });
     surfaceStrokePoints=[];
     surfaceCommit(changed);return;
@@ -3871,7 +3871,7 @@ surfaceBaseFamilySelect?.addEventListener('change',()=>{
   surfaceCommit(normalizeSculptSurface({...surface,
     baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
 });
-$('surface-brush-shape').addEventListener('change',scheduleDraw);
+$('surface-brush-shape')?.addEventListener('change',scheduleDraw);
 $('surface-material').addEventListener('change',()=>{
   // Suggest a family only before the author deliberately selects one.
   // Example: painting another grass texture must NOT erase "Haute herbe".
