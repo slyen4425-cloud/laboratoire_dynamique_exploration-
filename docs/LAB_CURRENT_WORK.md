@@ -1,3 +1,12 @@
+## 2026-11-23 — Transition automatique et habillage des passages World Builder (C2, en validation)
+- Base officielle Exploration `main@1b69d62a88e77c545ab9a476a6a2b7f81ad4dd90`, branche unique `work/exploration-auto-portals-markers-20261123`. Aucun dépôt Capture/Combat/PWA modifié.
+- Cause : la collision et `findTriggeredPortal` existent déjà, mais le Tester/Jouer 2,5D dépendait encore de l'action « Entrer ». Le rendu Sculpt dessine des cercles jaune/bleu sans respecter d'apparence choisie.
+- Correction : déclenchement uniquement en entrant dans le vrai disque de collision, depuis les positions mouvement avant/après, sans nouvelle physique ni timer. Le Spawn situé dans le disque du Portal inverse ne crée pas de rebond automatique. La destination reste soumise au validateur natif avant le chargement ; la réparation des cartes anciennes reste explicite.
+- Visuel canonique dans `Portal.visual` : cercle historique, invisible en jeu, ombre noire en dégradé, texture **du registre de matériaux officiel**. Dans Objets > Départ/Entrées/Sorties, un repère masqué reste sélectionnable et repositionnable en édition. Les anciennes cartes conservent leurs modes et IDs.
+- World Builder classique utilise la même donnée et le même Material Texture Loader. L'import d'image libre est hors de ce premier lot : seules les textures déjà enregistrées sont proposées, pas de chemins externes, URL ou base64 dans WorldDocument.
+- Aucun changement de coordonnées de Portal/Spawn, aucun système d'assets doublé, aucune suppression d'assets, de presets ou de sauvegardes.
+- Gates : `npm test`, `npm run check`, navigateur Chromium réel mobile/PC sur la PR, tests de parcours aller-retour au SPAWN cible, budget Pages <900 Mio, publication HTTPS du SHA exact avant GREEN. Intégration PWA distincte et postérieure à certification.
+
 ## 2026-11-22 — 5 textures de terrain : raccord du ZIP auteur (en validation)
 - Source : `GENSRPG_Exploration_5_textures_2026-11-22.zip` déposée sur `main` (Git blob `48291d3db737a75423fb257e0a6d73bfc9c681af`).
 - Branche unique : `work/exploration-5-terrain-textures-20261122`. Extraction des cinq WebP 128×128 vérifiés par SHA256 dans les assets canoniques. Aucun sprite, matériau ou ID historique n’est supprimé/remplacé.
