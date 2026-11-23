@@ -1,6 +1,7 @@
 // The sculpt preview stores standard WorldSurface v3 routes/zones directly.
 // This editor adapter does not create a second route model or WorldDocument.
 import {normalizeWorldSurface} from './surface-model.js';
+import {normalizeSurfaceBrushShape,squareSurfaceStrokeContainsPoint} from './surface-brush-geometry.js';
 
 export const SCULPT_SURFACE_MATERIALS=Object.freeze([
   Object.freeze({id:'road.dirt',defaultTerrainFamilyId:'road',kind:'route',label:'Route de terre',assetKind:'path'}),
@@ -60,6 +61,7 @@ export function normalizeSculptSurface(raw={}){
   for(const item of [...routes,...zones]){
     const meta=lookup.get(item?.materialId);
     if(!meta || (routes.includes(item)?meta.kind!=='route':meta.kind!=='zone') ||
+      (item.brushShape!==undefined&&!['round','square'].includes(item.brushShape)) ||
       !Number.isFinite(item.width)||item.width<6||item.width>480 ||
       !Array.isArray(item.points)||item.points.length<2||item.points.length>512||
       cleanPoints(item.points).length!==item.points.length)
@@ -70,7 +72,7 @@ export function normalizeSculptSurface(raw={}){
     baseTraversalRuleId:source.baseTraversalRuleId,routes,zones,rivers:[]});
 }
 export function appendSculptSurfaceStroke(raw,{
-  materialId,terrainFamilyId=null,points=[],width=50
+  materialId,terrainFamilyId=null,points=[],width=50,brushShape='round'
 }={}){
   const surface=normalizeSculptSurface(raw);
   const meta=lookup.get(materialId);
@@ -84,6 +86,7 @@ export function appendSculptSurfaceStroke(raw,{
   const feature={
     id:'sculpt-surface-'+serial,points:pts,
     materialId,width:Math.max(6,Math.min(480,Number(width)||50)),
+    ...(normalizeSurfaceBrushShape(brushShape)==='square'?{brushShape:'square'}:{}),
     // The final authored WorldSurface family remains the sole gameplay owner.
     // New strokes default to the selected built-in terrain material's family;
     // an explicit override remains possible for custom encounter biomes.
@@ -106,7 +109,9 @@ export function removeSculptSurfaceAt(raw,point){
   let found=null;
   for(const kind of ['zones','routes']){
     for(const feature of surface[kind]){
-      if(feature.points.some((p,i)=>i>0&&distanceToSegment(point,feature.points[i-1],p)<=feature.width/2+7))
+      if(feature.brushShape==='square'
+        ?squareSurfaceStrokeContainsPoint(feature.points,point.x,point.y,feature.width/2+7)
+        :feature.points.some((p,i)=>i>0&&distanceToSegment(point,feature.points[i-1],p)<=feature.width/2+7))
         found={kind,id:feature.id};
     }
   }
