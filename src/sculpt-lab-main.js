@@ -1728,7 +1728,8 @@ function commitFringeSurface(points,erase=false){
  const next=paintSculptDecorativeFringeSurfaceV1(before,decorativeFringeArea(),{
    points,materialId:$('surface-material').value,
    terrainFamilyId:surfacePaintFamilySelect?.value,
-   width:Number($('surface-width').value)*SCULPT_TILE.width,erase
+   width:Number($('surface-width').value)*SCULPT_TILE.width,
+   brushShape:$('surface-brush-shape').value,erase
  });
  decorativeFringe=next;fringeRasterCache.clear();loadSurfacePaintAssets();
  if(recordDecorativeFringe(before))
