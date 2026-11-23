@@ -52,17 +52,25 @@ export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={
     !stair.transform||!stair.baseSize)return null;
   const t=stair.transform,w=Number(cellWidth)||28,h=Number(cellHeight)||21;
   const artFrame=sculptStairArtFrame(stair);
-  const length=artFrame?.length??stair.baseSize.height*t.scaleY;
-  const width=stair.baseSize.width*t.scaleX*.68;
-  if(!(length>=h*1.2&&width>0))return null;
+  // Authored corrections live ON the stair placement. No secondary ramp,
+  // ID or collision override is made: the native route consumes this corridor.
+  const custom=stair.kind==='stairs'?stair.overrides?.stairTraversal:null;
+  const authoredFoot=custom?{x:t.x+custom.footOffsetX,y:t.y+custom.footOffsetY}:null;
+  const authoredHead=custom?{x:t.x+custom.headOffsetX,y:t.y+custom.headOffsetY}:null;
+  const length=custom?Math.hypot(authoredHead.x-authoredFoot.x,
+    authoredHead.y-authoredFoot.y):artFrame?.length??stair.baseSize.height*t.scaleY;
+  const width=custom?.width??stair.baseSize.width*t.scaleX*.68;
+  if(!(length>=h*1.2&&length<=1400&&width>=12&&width<=448))return null;
   // Face uses the historical up-axis. Side and oblique art use the real
   // painted step direction, including user rotation/mirror, not an assumed
   // north-facing vector unrelated to the visible steps.
   const angle=(t.rotationDeg||0)*Math.PI/180;
-  const ux=artFrame?artFrame.dx/length:Math.sin(angle);
-  const uy=artFrame?artFrame.dy/length:-Math.cos(angle);
-  const foot={x:t.x,y:t.y};
-  const head={x:foot.x+ux*length,y:foot.y+uy*length};
+  const ux=custom?(authoredHead.x-authoredFoot.x)/length:
+    artFrame?artFrame.dx/length:Math.sin(angle);
+  const uy=custom?(authoredHead.y-authoredFoot.y)/length:
+    artFrame?artFrame.dy/length:-Math.cos(angle);
+  const foot=authoredFoot??{x:t.x,y:t.y};
+  const head=authoredHead??{x:foot.x+ux*length,y:foot.y+uy*length};
   const endProbe=Math.max(3,Math.min(7,h*.24));
   const bottomLevel=readLevel(terrain,foot.x-ux*endProbe,foot.y-uy*endProbe,w,h);
   const topLevel=readLevel(terrain,head.x+ux*endProbe,head.y+uy*endProbe,w,h);
@@ -72,7 +80,8 @@ export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={
   // The painted perspective stair's footprint is shorter than its authored
   // vertical run. Do not force oversized artwork merely to reach the next
   // full-height cell. Front and ordinary ramp V78 behaviour stays unchanged.
-  const supportedRise=Math.max(1,artFrame?
+  const supportedRise=Math.max(1,custom?
+    Math.floor(length/Math.max(w,h)):artFrame?
     Math.ceil(artFrame.authorHeight/Math.max(w,h)):
     Math.floor(length/Math.max(w,h)));
   if(topLevel-bottomLevel>supportedRise)return null;
