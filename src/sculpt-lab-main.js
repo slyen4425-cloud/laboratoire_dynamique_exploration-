@@ -107,12 +107,12 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
 import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
-import {findTriggeredPortal,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
+import {findTriggeredPortal,findPortalEnteredDuringMove,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset,
   deleteSculptMapPreset,clearPersonalSculptMapPresets} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
 import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecovery,
-  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,
+  placeSculptWorldPortal,placeSculptWorldSpawn,setSculptWorldPortalLabel,setSculptWorldPortalAppearance,
   ensureFreeWorldInitialSpawnV1,linkSculptWorldBuildingInteriorV1} from './builder/sculpt-world-area-link.js';
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1,describeWorldAreaIncomingPortalsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
@@ -3057,6 +3057,13 @@ function navigationInput(){
 }
 function navigationTick(time){
   if(!navigationTesting)return;
+  // One native Portal transition owns the area while its assets load.
+  if(sculptPortalLoading){
+    navPreviousTime=time;
+    if(navActor)navActor.moving=false;
+    navFrame=requestAnimationFrame(navigationTick);
+    return;
+  }
   if(npcDialogueOpen){
     navPreviousTime=time;
     if(navActor)navActor.moving=false;
@@ -3128,9 +3135,16 @@ function navigationTick(time){
       if(sculptPlayActive&&moved>.001&&time-playLastCheckpointAt>(playOptions?.sessionId?120:1500)){
         persistPlayNavigationCheckpoint();playLastCheckpointAt=time;
       }
-      // Trigger only from canonical post-collision hero coordinates.
-      // No dice roll from materials, pixels, or pre-collision input.
-      if(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY}))sculptEncounterStep();
+      // Cross the canonical hitbox AFTER Collision World has moved the hero.
+      // Spawning inside a reverse Portal never counts as a new crossing.
+      const entered=sculptWorldDraft&&navActor.moving
+        ?findPortalEnteredDuringMove(sculptWorldDraft,sculptWorldAreaId,
+          {x:previousX,y:previousY},navActor):null;
+      const target=entered&&sculptWorldDraft.areas.find(a=>a.id===entered.targetAreaId);
+      const autoReady=target&&sculptPortalPreviewReadiness(target,sculptWorldDraft).ok;
+      if(autoReady)void traverseSculptWorldPortal();
+      else if(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY}))
+        sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
     }else if(navActor.moving){
@@ -3259,7 +3273,7 @@ function setNavigationTesting(on){
     if(!testerHandoffRecovered)sculptEncounterStep(); // seed only after recovery
     navPreviousTime=null;navFrame=requestAnimationFrame(navigationTick);
     status(sculptWorldDraft
-      ?'Test de navigation : approche du cercle SORTIE puis appuie sur « 🚪 Entrer » pour changer de zone.'
+      ?'Test de navigation : marche dans une zone SORTIE pour rejoindre automatiquement la carte liée.'
       :'Test de navigation : joystick à maintenir · vitesse réglable dans la palette de droite.');
   }else{
     if($('scenery-fringe-panel'))$('scenery-fringe-panel').hidden=
@@ -6181,17 +6195,16 @@ function updateSculptWorldPortalAction(){
       }
       return;
     }
-    button.textContent='🚪 Entrer : '+(target?.label??target?.id??'autre zone');
-    button.title='Passage à portée : toucher pour charger la zone suivante';
+    button.hidden=true; // Real crossing enters on contact; no second click.
+    return;
   }else{
     const nearest=exits.map(p=>{
       const point=resolvePortalTriggerPoint(sculptWorldDraft.areas,p);
       return point?{p,distance:Math.max(0,Math.hypot(
         navActor.x-point.x,navActor.y-point.y)-point.radius)}:null;
     }).filter(Boolean).sort((a,b)=>a.distance-b.distance)[0];
-    button.textContent=nearest?'🚪 Sortie · encore '+Math.ceil(nearest.distance)+' unités'
-      :'🚪 Passage indisponible';
-    button.title='Rejoins le cercle jaune SORTIE avec le héros';
+    button.hidden=true;
+    button.title='Marche dans la zone de sortie pour changer de carte';
   }
 }
 function drawSculptWorldPortalMarkers(){
@@ -6361,8 +6374,8 @@ async function traverseSculptWorldPortal(){
   }
   const overlay=sculptPlayActive?$('play-area-loading'):null;
   let crossfade=null;
+  sculptPortalLoading=true;
   if(overlay){
-    sculptPortalLoading=true;
     overlay.hidden=false;
     reportScopedPlayZoneLoadingV1(true);
     const sceneArt=zoneLoadingArtCycle.next();
@@ -6457,8 +6470,8 @@ async function traverseSculptWorldPortal(){
       crossfade?.dispose();
       overlay.hidden=true;
       reportScopedPlayZoneLoadingV1(false);
-      sculptPortalLoading=false;
     }
+    sculptPortalLoading=false;
   }
 }
 function persistPlayNavigationCheckpoint(){
