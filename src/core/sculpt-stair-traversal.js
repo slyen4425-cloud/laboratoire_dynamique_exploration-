@@ -54,7 +54,7 @@ export function sculptStairCorridor(terrain,stair,{cellWidth=28,cellHeight=21}={
   const artFrame=sculptStairArtFrame(stair);
   // Authored corrections live ON the stair placement. No secondary ramp,
   // ID or collision override is made: the native route consumes this corridor.
-  const custom=stair.kind==='stairs'?stair.overrides?.stairTraversal:null;
+  const custom=stair.kind==='stairs'?stair.stairTraversal:null;
   const authoredFoot=custom?{x:t.x+custom.footOffsetX,y:t.y+custom.footOffsetY}:null;
   const authoredHead=custom?{x:t.x+custom.headOffsetX,y:t.y+custom.headOffsetY}:null;
   const length=custom?Math.hypot(authoredHead.x-authoredFoot.x,
