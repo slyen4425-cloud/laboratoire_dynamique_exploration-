@@ -96,7 +96,19 @@ function normalizeIds(raw) {
   return Object.freeze(ids);
 }
 
-function normalizeOverrides(raw) {
+// Optional physical foot -> summit line belongs to the placed Stair WorldObject.
+// Keep legacy WorldDocuments byte-for-byte compatible when not authored.
+function normalizeStairTraversal(raw){
+  if(!raw||typeof raw!=='object'||Array.isArray(raw))return null;
+  const keys=['footOffsetX','footOffsetY','headOffsetX','headOffsetY','width'];
+  if(keys.some(k=>!Number.isFinite(raw[k])))return null;
+  const distance=Math.hypot(raw.headOffsetX-raw.footOffsetX,
+    raw.headOffsetY-raw.footOffsetY);
+  if(distance<25||distance>1400||raw.width<12||raw.width>448||
+    keys.slice(0,4).some(k=>Math.abs(raw[k])>2000))return null;
+  return Object.freeze(Object.fromEntries(keys.map(k=>[k,raw[k]])));
+}
+function normalizeOverrides(raw,kind) {
   const source =
     raw && typeof raw === 'object'
       ? raw
@@ -115,7 +127,9 @@ function normalizeOverrides(raw) {
     ...(combatArenaId ? {combatArenaId} : {}),
     // Absent by default: older WorldDocuments keep their exact save shape.
     ...(normalizeWorldObjectShadowSettingsV1(source.shadow)
-      ? {shadow:normalizeWorldObjectShadowSettingsV1(source.shadow)} : {})
+      ? {shadow:normalizeWorldObjectShadowSettingsV1(source.shadow)} : {}),
+    ...(kind==='stairs'&&normalizeStairTraversal(source.stairTraversal)
+      ? {stairTraversal:normalizeStairTraversal(source.stairTraversal)} : {})
   });
 }
 
@@ -154,7 +168,8 @@ export function normalizeWorldObjectPlacement(
     transform:
       normalizeTransform(raw.transform),
     overrides:
-      normalizeOverrides(raw.overrides)
+      normalizeOverrides(raw.overrides,
+        (catalog??objectDefinitionCatalogV1)?.get(objectDefinitionId)?.kind)
   });
 }
 
