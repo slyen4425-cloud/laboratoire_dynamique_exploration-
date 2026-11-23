@@ -115,7 +115,7 @@ export function placeSculptDecorativeFringeObjectV1(raw,area,placement){
 // These are the existing SculptSurface/WorldSurface brush features, scoped to
 // the 8x8 outside-the-map raster; NEVER part of the playable WorldArea.surface.
 export function paintSculptDecorativeFringeSurfaceV1(raw,area,{
- points,materialId,terrainFamilyId=null,width=28,erase=false
+ points,materialId,terrainFamilyId=null,width=28,brushShape='round',erase=false
 }={}){
  if(!Array.isArray(points)||!points.length||points.length>512||
     points.some(p=>!Number.isFinite(p?.x)||!Number.isFinite(p?.y)||
@@ -140,7 +140,7 @@ export function paintSculptDecorativeFringeSurfaceV1(raw,area,{
    if(erase){
      for(const point of item.points)surface=removeSculptSurfaceAt(surface,point);
    }else surface=appendSculptSurfaceStroke(surface,{
-     materialId,terrainFamilyId,points:item.points,width
+     materialId,terrainFamilyId,points:item.points,width,brushShape
    });
    chunks[index]={...former,surface};
  }
