@@ -3142,7 +3142,14 @@ function navigationTick(time){
           {x:previousX,y:previousY},navActor):null;
       const target=entered&&sculptWorldDraft.areas.find(a=>a.id===entered.targetAreaId);
       const autoReady=target&&sculptPortalPreviewReadiness(target,sculptWorldDraft).ok;
-      if(autoReady)void traverseSculptWorldPortal();
+      if(autoReady)queueMicrotask(()=>{
+        // Complete the current RAF before replacing its Area/Actor. Otherwise
+        // an immediate (Tester) transition can schedule two navigation loops.
+        if(navigationTesting&&!sculptPortalLoading&&
+           sculptWorldAreaId===entered.sourceAreaId&&
+           sculptWorldPortalAtHero()?.id===entered.id)
+          void traverseSculptWorldPortal();
+      });
       else if(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY}))
         sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
@@ -6225,11 +6232,6 @@ function updateSculptWorldPortalAction(){
     button.hidden=true; // Real crossing enters on contact; no second click.
     return;
   }else{
-    const nearest=exits.map(p=>{
-      const point=resolvePortalTriggerPoint(sculptWorldDraft.areas,p);
-      return point?{p,distance:Math.max(0,Math.hypot(
-        navActor.x-point.x,navActor.y-point.y)-point.radius)}:null;
-    }).filter(Boolean).sort((a,b)=>a.distance-b.distance)[0];
     button.hidden=true;
     button.title='Marche dans la zone de sortie pour changer de carte';
   }
