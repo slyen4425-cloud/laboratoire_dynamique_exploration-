@@ -1560,11 +1560,11 @@ function draw(){
       Math.floor(p.y/SCULPT_TILE.height));
     const reversed=navAllowPreview&&level(rampA)>level(rampB);
     const from=reversed?rampB:rampA,to=reversed?rampA:rampB;
-    const candidate=navAllowPreview
-      ?appendSculptNavigationAllowedCorridor(terrain,{
-        x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()})
-      :appendSculptTerrainRamp(terrain,{
-        x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
+    // The same native preview geometry handles the existing Ramp and the
+    // Navigation Autoriser gesture; the latter commits through the checked
+    // wrapper which can also restore its own overlapping no-go cells.
+    const candidate=appendSculptTerrainRamp(terrain,{
+      x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
     rampPreviewValid=candidate!==terrain;
     const foot={x:from.x,y:from.y-level(from)*SCULPT_TILE.rise};
     const head={x:to.x,y:to.y-level(to)*SCULPT_TILE.rise};
