@@ -79,5 +79,7 @@ test('2.5D editor offers an actual arrival marker and editable Portal label inst
   assert.match(main,/setSculptWorldPortalLabel\(/);
   assert.match(main,/SORTIE|sortie/);
   assert.match(main,/ARRIVÉE|arrivée/);
-  assert.match(main,/approche.*Entrer|rejoins.*Entrer/i);
+  // Passage piloté par le héros après Collision World, sans clic sur Entrer.
+  assert.match(main,/findPortalEnteredDuringMove\(sculptWorldDraft,sculptWorldAreaId/);
+  assert.match(main,/if\(autoReady\)void traverseSculptWorldPortal\(\)/);
 });
