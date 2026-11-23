@@ -754,6 +754,12 @@ body.world-area-editing header p{font-size:.68rem}
 body.world-area-editing .editor-switch{
  overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
 }
+/* Raccourci vers le panneau Objets existant : un seul Portal/Spawn owner. */
+body.world-area-editing .editor-switch #mode-waypoints{
+ order:-9;position:sticky;left:44px;z-index:15;
+ flex:0 0 auto;min-width:90px;min-height:38px;
+ font-size:.76rem;padding:4px 7px;background:#245262;
+}
 body.world-area-editing .editor-switch #fullscreen-toggle{
  order:-10;position:sticky;left:0;z-index:16;
  flex:0 0 43px;min-width:43px;max-width:43px;
@@ -1041,6 +1047,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <button type="button" id="mode-ground" class="active" aria-pressed="true">⛰ Terre</button>
 <button type="button" id="mode-water" aria-pressed="false">💧 Eau</button>
 <button type="button" id="mode-objects" aria-pressed="false">🌳 Objets</button>
+<button type="button" id="mode-waypoints" aria-controls="object-waypoints-panel" aria-expanded="false" title="Placer les départs, entrées et sorties sur la carte">📍 Passages</button>
 <button type="button" id="mode-surface" aria-pressed="false">🎨 Textures</button>
 <button type="button" id="mode-encounters" aria-pressed="false" aria-controls="sculpt-encounter-editor">🐾 Rencontres</button>
 <button type="button" id="navigation-toggle" aria-pressed="false">🚶 Tester</button>
@@ -1439,6 +1446,7 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <section id="object-palette" aria-label="Placer les objets et acteurs sur le relief" hidden>
  <div id="object-controls">
  <strong>🌳 Objets et repères de carte</strong>
+ <p id="object-waypoints-unavailable" role="status" hidden>Pour placer des départs, entrées et sorties entre cartes, ouvre ta carte depuis le <a href="./world-assembler.html">🌍 World Builder</a>. Une scène isolée ne possède pas de passages de monde.</p>
  <details id="object-waypoints-panel" hidden>
   <summary>📍 Départ · Entrées · Sorties</summary>
   <small>Choisis un repère ou touche son cercle sur la carte, puis glisse-le comme un objet. Aucune coordonnée à saisir.</small>
