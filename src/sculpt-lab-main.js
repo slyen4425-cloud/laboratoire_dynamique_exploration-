@@ -5899,7 +5899,7 @@ function pickedVisibleWaypoint(point){
   if(!sculptWorldDraft||!Number.isFinite(point?.x)||!Number.isFinite(point?.y))return null;
   let winner=null,nearest=Infinity;
   for(const marker of markersForSculptWorldArea(sculptWorldDraft,
-    sculptWorldAreaId,{testing:false})){
+    sculptWorldAreaId,{testing:false,showHidden:true})){
     const level=sculptHeightAt(terrain,Math.floor(marker.x/SCULPT_TILE.width),
       Math.floor(marker.y/SCULPT_TILE.height));
     const distance=Math.hypot(point.x-marker.x,
@@ -5916,7 +5916,7 @@ function syncObjectWaypoints(){
   const available=!!sculptWorldDraft&&sculptWorldAreaMounted&&!navigationTesting;
   panel.hidden=!available;
   if(!available)return;
-  const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{testing:false});
+  const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{testing:false,showHidden:true});
   const selected=$('object-waypoint-select'),old=selectedWaypointKey??selected.value;
   selected.replaceChildren(...markers.map(marker=>{
     const label=marker.kind==='exit'?'🟡 Sortie vers '+marker.label:
@@ -6152,6 +6152,20 @@ function applySculptWorldPointerPlacement(point){
   }catch(error){sculptWorldStatus(error.message,true);}
   refreshSculptWorldPanel();
 }
+// Reuse the official Material Registry image resolver: this map holds only
+// resolved Canvas images, never asset URLs or a second texture collection.
+const sculptPortalMarkerPictures=new Map();
+function sculptPortalMarkerTexture(materialId){
+  const material=registry.resolve(materialId);
+  if(material?.kind!=='surface'||!material.assets?.base)return null;
+  if(!sculptPortalMarkerPictures.has(materialId)){
+    sculptPortalMarkerPictures.set(materialId,null);
+    imageFor(materialId).then(image=>{
+      if(image){sculptPortalMarkerPictures.set(materialId,image);scheduleDraw();}
+    }).catch(()=>{});
+  }
+  return sculptPortalMarkerPictures.get(materialId);
+}
 // Only the Portal HUD preview is cached. The actual traversal still validates
 // the destination independently, so no stale readiness can permit entry.
 const sculptPortalPreviewReadiness=createSculptPlaySceneReadinessCacheV1(sculptWorldAreaScene);
@@ -6212,7 +6226,7 @@ function drawSculptWorldPortalMarkers(){
   // Markers are a read-only projection of the same Portal.trigger / Spawn
   // coordinates used by findTriggeredPortal and applyPortalTransition.
   const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{
-    testing:navigationTesting,selectedPortalId:currentWorldPortal()?.id
+    testing:navigationTesting,showHidden:!navigationTesting,selectedPortalId:currentWorldPortal()?.id
   });
   if(!markers.length)return;
   ctx.save();
@@ -6228,17 +6242,37 @@ function drawSculptWorldPortalMarkers(){
       Math.floor(y/SCULPT_TILE.height));
     const viewY=y-level*SCULPT_TILE.rise;
     const exit=marker.kind==='exit',arrival=marker.kind==='arrival'&&!marker.isInitial;
-    const color=exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
-    const title=exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
+    const color=exit&&!marker.visibleInPlay?'#93a2ae':exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
+    const title=exit&&!marker.visibleInPlay?'SORTIE MASQUÉE → ':exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
     const name=(marker.label??'').slice(0,35);
     const caption=title+name;
+    // Authoring still shows the real hitbox; Jouer only shows the chosen art.
+    if(exit&&marker.visibleInPlay&&['shadow','texture'].includes(marker.appearance)){
+      let image=null;
+      if(marker.appearance==='texture'&&marker.textureMaterialId)
+        image=sculptPortalMarkerTexture(marker.textureMaterialId);
+      if(image){
+        ctx.drawImage(image,x-radius,viewY-radius,radius*2,radius*2);
+      }else{
+        ctx.save();
+        const gradient=ctx.createRadialGradient(x,viewY,1,x,viewY,Math.max(2,radius));
+        gradient.addColorStop(0,'rgba(0,0,0,.94)');
+        gradient.addColorStop(.55,'rgba(6,4,10,.78)');
+        gradient.addColorStop(1,'rgba(8,6,10,0)');
+        ctx.fillStyle=gradient;ctx.beginPath();
+        ctx.ellipse(x,viewY,radius,Math.max(7,radius*.65),0,0,Math.PI*2);
+        ctx.fill();ctx.restore();
+      }
+      if(navigationTesting)continue;
+    }
     // This ring is EXACTLY the real Portal trigger radius, not an enlarged
     // fake interaction zone. A separate fixed-screen-size label stays legible.
     ctx.beginPath();ctx.arc(x,viewY,radius,0,Math.PI*2);
     ctx.fillStyle=exit?'rgba(255,215,122,.20)':arrival
       ?'rgba(113,212,255,.20)':'rgba(219,167,255,.20)';
     ctx.strokeStyle=color;ctx.lineWidth=(selected?3.6:2.6)/Math.max(zoom,.3);
-    ctx.fill();ctx.stroke();
+    if(exit&&!marker.visibleInPlay)ctx.setLineDash([6,4]);
+    ctx.fill();ctx.stroke();ctx.setLineDash([]);
     if(selected){
       ctx.beginPath();ctx.arc(x,viewY,radius+4/Math.max(zoom,.3),0,Math.PI*2);
       ctx.strokeStyle='#f1fff7';ctx.lineWidth=1.3/Math.max(zoom,.3);ctx.stroke();
