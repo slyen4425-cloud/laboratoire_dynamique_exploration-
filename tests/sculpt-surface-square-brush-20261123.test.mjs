@@ -84,7 +84,8 @@ test('UI, renderer, 2D painter and navigation use the same square surface contra
  assert.equal((html.match(/id="surface-brush-shape"/g)??[]).length,1);
  assert.match(html,/<option value="round">◯ Rond<\/option>/);
  assert.match(html,/<option value="square">▦ Carré plein<\/option>/);
- assert.match(editor,/brushShape:\$\('surface-brush-shape'\)\.value/);
+ assert.match(editor,/brushShape:\(\$\('surface-brush-shape'\)\?\.value\?\?'round'\)/);
+ assert.match(editor,/\$\('surface-brush-shape'\)\?\.addEventListener/);
  assert.match(editor,/drawSquareSurfaceStrokePath\(ctx,projected,width\)/);
  assert.match(painter,/drawSquareSurfaceStrokePath\(ctx,feature\.points,feature\.width/);
  assert.match(flat,/drawSquareSurfaceStrokePath\(ctx,item\.points,width/);
