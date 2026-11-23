@@ -251,6 +251,12 @@ body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset
 #object-shadow-reset{width:100%;min-height:36px;border:1px solid #7bbbaa;
  border-radius:7px;background:#204a48;color:#e4fff3}
 
+#object-stair-path[hidden]{display:none!important}
+#object-stair-path{border:1px solid #559e88;border-radius:9px;padding:7px}
+#object-stair-path summary{font-size:.8rem;font-weight:750;cursor:pointer;min-height:34px}
+#object-stair-path small{display:block;color:#c9eee3;line-height:1.45;margin:6px 0}
+#object-stair-path button{min-height:36px;width:100%;margin:3px 0}
+#object-stair-path-status{display:block;font-size:.72rem;color:#a1f5ce}
 .object-actions{display:flex;gap:5px}
 .object-actions button{flex:1;min-width:0;padding:6px}
 body.sculpt-immersive #object-palette,body.sculpt-immersive #waypoints-palette{top:calc(env(safe-area-inset-top,0px) + 53px);
@@ -1542,6 +1548,13 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
   <button type="button" id="object-turn-right">↷ 45°</button>
  </div>
  <output id="object-selected">Aucun objet sélectionné</output>
+ <details id="object-stair-path" hidden>
+  <summary>🪜 Passage de l’escalier · ajuster pied / sommet</summary>
+  <small>Trace le chemin physique sur la carte. Le tracé appartient à l’escalier sélectionné, sans autre objet ni autorisation globale. Les deux points doivent être sur sol sec, à deux hauteurs différentes.</small>
+  <button type="button" id="object-stair-trace">✏️ Tracer pied → sommet sur la carte</button>
+  <button type="button" id="object-stair-reset">↶ Revenir au passage automatique</button>
+  <output id="object-stair-path-status" role="status" aria-live="polite"></output>
+ </details>
  <details id="object-shadow-details" hidden>
   <summary>🌘 Ombre <small id="object-shadow-summary">Auto</small></summary>
   <label>Portée
