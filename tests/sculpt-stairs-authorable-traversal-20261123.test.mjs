@@ -16,7 +16,7 @@ const terrain=(water=false)=>createSculptTerrain({
   width:W,height:H,
   levels:Array.from({length:W*H},(_,i)=>Math.floor(i/W)<8?5:2),
   waterLevels:water?Array.from({length:W*H},(_,i)=>
-    Math.floor(i/W)===9&&i%W===8?6:-1):null
+    Math.floor(i/W)===12&&i%W===8?6:-1):null
 });
 const id='objectdef.stairs.earth_log_path_2p5d.01';
 const foot=pt(8,12),head=pt(8,3);
