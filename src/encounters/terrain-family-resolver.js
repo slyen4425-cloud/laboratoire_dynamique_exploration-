@@ -1,6 +1,7 @@
 import {
   pointToPathDistance
 } from '../core/geometry.js?rev=surface-traversal-replay-v1';
+import {squareSurfaceStrokeContainsPoint} from '../world/surface-brush-geometry.js';
 
 function contains(feature, x, y) {
   if (
@@ -13,6 +14,8 @@ function contains(feature, x, y) {
     return false;
   }
 
+  if(feature.brushShape === 'square')
+    return squareSurfaceStrokeContainsPoint(feature.points,x,y,feature.width/2);
   return (
     pointToPathDistance(
       { x, y },
