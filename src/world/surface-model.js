@@ -91,7 +91,9 @@ function normalizeStrokeItem(
         item.materialId,
         defaultMaterialId
       ),
-    points: Object.freeze(points)
+    points: Object.freeze(points),
+    // Absent on every legacy round stroke; only square needs persistence.
+    ...(item.brushShape === 'square' ? { brushShape: 'square' } : {})
   };
 
   if (includeTraversalRule) {
