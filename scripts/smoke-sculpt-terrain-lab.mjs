@@ -1451,6 +1451,38 @@ try{
      v27Reload.baseTerrainFamilyId!=='mountain'||
      v27Reload.features[1].terrainFamilyId!=='snow')
     throw Error('V27 imported WorldSurface routes/zones lost: '+JSON.stringify(v27Reload));
+  // #526 REAL Chromium: use the actual TEXTURE select and mouse pointer.
+  // One square tap creates exactly one normal WorldSurface zone; never a copy
+  // of the terrain painter, never a second encounter or collision authority.
+  const textureShape=await run(`(()=>{
+    const control=document.querySelector('#surface-brush-shape');
+    if(!control)throw Error('Square texture brush control missing');
+    control.value='square';control.dispatchEvent(new Event('change',{bubbles:true}));
+    document.querySelector('#surface-material').value='ground.snow';
+    document.querySelector('#surface-family').value='snow';
+    return {value:control.value,palette:!document.querySelector('#surface-palette').hidden};
+  })()`);
+  if(textureShape.value!=='square'||!textureShape.palette)
+    throw Error('Square TEXTURE brush is not selectable: '+JSON.stringify(textureShape));
+  await paintSurface(v27Ready.zone,v27Ready.zone);
+  const squarePaint=await run(`(()=>{
+    document.querySelector('#scene-export').click();
+    const scene=JSON.parse(document.querySelector('#json').value);
+    const zone=scene.surface.zones.at(-1);
+    return {zones:scene.surface.zones.length,shape:zone?.brushShape,
+      material:zone?.materialId,points:zone?.points.length,
+      painted:window.__sculptLabProbe().paintedCells};
+  })()`);
+  if(squarePaint.zones!==2||squarePaint.shape!=='square'||
+     squarePaint.material!=='ground.snow'||squarePaint.points<2||squarePaint.painted<1)
+    throw Error('Square TEXTURE real pointer / WorldSurface / visible material: '+JSON.stringify(squarePaint));
+  await run("document.querySelector('#surface-undo').click()");
+  if((await run('window.__sculptSurfaceProbe().zones'))!==1)
+    throw Error('Square TEXTURE undo must remove only the last square zone');
+  await run("document.querySelector('#surface-redo').click()");
+  if((await run('window.__sculptSurfaceProbe().zones'))!==2)
+    throw Error('Square TEXTURE redo must restore the authored zone');
+  console.log('Square TEXTURE brush real Chromium paint/Undo/Redo:',JSON.stringify(squarePaint));
   const v27Clean=await run(`(()=>{
     document.querySelector('#new-map-toggle').click();
     const c=document.querySelector('#new-map-confirm');
