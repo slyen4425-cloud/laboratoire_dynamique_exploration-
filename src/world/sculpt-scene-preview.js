@@ -119,7 +119,7 @@ export function appendSculptPreviewObject(objects,{
   },list.length,objectDefinitionCatalogV1);
   return Object.freeze([...list,placement]);
 }
-export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX}={}){
+export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotationDeg,variantId,x,y,shadow,flipX,stairTraversal}={}){
   const items=normalizeSculptPreviewObjects(objects);
   if(!items.some(o=>o.id===id))return items;
   return Object.freeze(items.map((item,i)=>{
@@ -145,15 +145,21 @@ export function updateSculptPreviewObject(objects,id,{scale,scaleX,scaleY,rotati
       validVariant(item.objectDefinitionId,variantId);
     const nextShadow=shadow===undefined?item.overrides.shadow??null:
       normalizeWorldObjectShadowSettingsV1(shadow);
+    // The authored path follows this WorldObject when the stair is moved;
+    // it is an offset from the original object's anchor, not a second ramp.
+    const nextStairTraversal=stairTraversal===undefined
+      ?item.overrides.stairTraversal??null:stairTraversal;
     if(nextTransform.scaleX===item.transform.scaleX&&
        nextTransform.scaleY===item.transform.scaleY&&
        nextTransform.x===item.transform.x&&nextTransform.y===item.transform.y&&
        nextTransform.rotationDeg===item.transform.rotationDeg&&
        (nextTransform.flipX===true)===(item.transform.flipX===true)&&
        nextVariant===item.overrides.visualVariantId&&
-       worldObjectShadowSettingsEqualV1(nextShadow,item.overrides.shadow))return item;
+       worldObjectShadowSettingsEqualV1(nextShadow,item.overrides.shadow)&&
+       JSON.stringify(nextStairTraversal)===JSON.stringify(item.overrides.stairTraversal??null))return item;
     return normalizeWorldObjectPlacement({...item,transform:nextTransform,
-      overrides:{...item.overrides,visualVariantId:nextVariant,shadow:nextShadow}},
+      overrides:{...item.overrides,visualVariantId:nextVariant,shadow:nextShadow,
+        stairTraversal:nextStairTraversal}},
       i,objectDefinitionCatalogV1);
   }));
 }
