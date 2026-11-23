@@ -4629,13 +4629,15 @@ function setObjectEditing(active,{waypoints=false}={}){
   }
   document.body.classList.toggle('object-editing',objectEditing);
   $('object-palette').hidden=!objectEditing||waypointsEditing;
-  $('waypoints-palette').hidden=!waypointsEditing;
+  // Frozen V80 and older standalone DOMs do not contain this new palette.
+  const waypointPalette=$('waypoints-palette');
+  if(waypointPalette)waypointPalette.hidden=!waypointsEditing;
   if(waypointsEditing&&!navigationTesting){
     syncObjectWaypoints();
     if(!$('object-waypoints-panel').hidden)$('object-waypoints-panel').open=true;
   }
-  $('mode-waypoints').classList.toggle('active',waypointsEditing);
-  $('mode-waypoints').setAttribute('aria-pressed',String(waypointsEditing));
+  $('mode-waypoints')?.classList.toggle('active',waypointsEditing);
+  $('mode-waypoints')?.setAttribute('aria-pressed',String(waypointsEditing));
   $('mode-objects').classList.toggle('active',objectEditing&&!waypointsEditing);
   $('mode-objects').setAttribute('aria-pressed',String(objectEditing&&!waypointsEditing));
   if(objectEditing){
@@ -4880,7 +4882,7 @@ $('scenery-fringe-toggle')?.addEventListener('change',()=>{
 $('mode-ground').addEventListener('click',()=>setEditorKind('ground'));
 $('mode-water').addEventListener('click',()=>setEditorKind('water'));
 $('mode-objects').addEventListener('click',()=>setObjectEditing(!objectEditing||waypointsEditing));
-$('mode-waypoints').addEventListener('click',()=>{
+$('mode-waypoints')?.addEventListener('click',()=>{
   if(navigationTesting){status('Quitte Tester pour placer les départs et passages.');return;}
   // This selects a distinct palette. All controls are MOVED, and still own
   // the same WorldDocument-backed Portal/Spawn references; no clone or overlay.
