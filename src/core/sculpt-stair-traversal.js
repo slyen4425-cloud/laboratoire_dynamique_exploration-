@@ -18,7 +18,14 @@ const stairArtLandmarks=Object.freeze({
   side:Object.freeze({footX:.78,footY:.85,headX:.16,headY:.13})
 });
 export function sculptStairArtFrame(stair){
-  const art=stair?.kind==='stairs'?stairArtLandmarks[stair.visual?.variantId]:null;
+  // The cleaned 2.5D 'side_alt' artwork is another profile of the SAME
+  // authored side staircase. Preserve its variant ID; inherit the established
+  // side foot/head profile rather than silently falling back to a north-facing
+  // corridor that does not follow the visible stairs.
+  const variant=stair?.visual?.variantId;
+  const art=stair?.kind==='stairs'
+    ?(stairArtLandmarks[variant]??(typeof variant==='string'&&
+      variant.startsWith('side_')?stairArtLandmarks.side:null)):null;
   if(!art||!stair.transform||!stair.baseSize)return null;
   const t=stair.transform;
   const width=stair.baseSize.width*t.scaleX;
