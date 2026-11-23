@@ -762,7 +762,8 @@ body.world-area-editing .editor-switch{
 }
 /* Raccourci vers le panneau Objets existant : un seul Portal/Spawn owner. */
 body.world-area-editing .editor-switch #mode-waypoints{
- order:-9;position:sticky;left:44px;z-index:15;
+ /* Stay after settings in its own sticky slot; no overlapping tap targets. */
+ order:-8;position:sticky;left:94px;z-index:15;
  flex:0 0 auto;min-width:90px;min-height:38px;
  font-size:.76rem;padding:4px 7px;background:#245262;
 }
