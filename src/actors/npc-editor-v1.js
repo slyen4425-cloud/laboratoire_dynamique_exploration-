@@ -118,10 +118,10 @@ async function loadNpcCombatCatalog(){
   combatTemplates=new Map();
   if(status)status.textContent='Catalogue Combat indisponible : '+error.message+
    ' · les réglages précédents restent conservés.';
- }finally{combatCatalogLoading=false;renderTrainerRows();}
+ }finally{combatCatalogLoading=false;renderTrainerRows();renderWildChoices();}
 }
 function editNpcCombatInstance(index,changes){
- const slot=trainerRosterDraft[index];
+ const slot=index===null?wildCreatureDraft:trainerRosterDraft[index];
  if(!slot)return;
  const old=slot.npcInstance??{schema:'capture-npc-opponent-instance-v1'};
  const raw={...old,...changes};
@@ -131,7 +131,8 @@ function editNpcCombatInstance(index,changes){
  const edited={...slot};
  if(Object.keys(raw).length===1)delete edited.npcInstance;
  else edited.npcInstance=normalizeNpcCombatInstanceTransportV1(raw);
- trainerRosterDraft=trainerRosterDraft.map((row,i)=>i===index?edited:row);
+ if(index===null)wildCreatureDraft=edited;
+ else trainerRosterDraft=trainerRosterDraft.map((row,i)=>i===index?edited:row);
  markDirty();
 }
 function renderNpcCombatInstanceEditor(index,slot){
@@ -170,7 +171,8 @@ function renderNpcCombatInstanceEditor(index,slot){
   input.setAttribute('aria-label','Bonus '+stat.label+' pour '+template.name);
   input.value=String(slot.npcInstance?.statAllocations?.[stat.id]??0);
   input.addEventListener('change',()=>{
-   const previous=trainerRosterDraft[index]?.npcInstance?.statAllocations??{};
+   const current=index===null?wildCreatureDraft:trainerRosterDraft[index];
+   const previous=current?.npcInstance?.statAllocations??{};
    const bonus={...previous};
    if(!Number.isSafeInteger(Number(input.value))||Number(input.value)<0||
       Number(input.value)>100000){notify('Bonus invalide : '+stat.label,true);return;}
@@ -268,6 +270,9 @@ function renderWildChoices(){
   empty:'Choisir une créature officielle…',selectedId:wildCreatureDraft?.creatureId??'',
   missingLabel:'Espèce précédemment liée — indisponible'
  });
+ const panel=$('npc-wild-instance');
+ panel.replaceChildren();
+ if(wildCreatureDraft)panel.append(renderNpcCombatInstanceEditor(null,wildCreatureDraft));
 }
 function loadGameplayFields(record){
  closeInlineMerchantEditor();
@@ -424,8 +429,10 @@ $('npc-merchant-choice').addEventListener('change',()=>{
 });
 $('npc-wild-choice').addEventListener('change',()=>{
  const id=$('npc-wild-choice').value;
- wildCreatureDraft=id?{creatureId:id,level:number('npc-wild-level')}:null;
- markDirty();
+ if(!id)wildCreatureDraft=null;
+ else if(wildCreatureDraft?.creatureId!==id)
+  wildCreatureDraft={creatureId:id,level:number('npc-wild-level')};
+ renderWildChoices();markDirty();
 });
 $('npc-wild-level').addEventListener('change',()=>{
  if(wildCreatureDraft)wildCreatureDraft.level=number('npc-wild-level');

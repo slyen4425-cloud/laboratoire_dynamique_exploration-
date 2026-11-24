@@ -95,3 +95,25 @@ test('le bridge conserve l instance du premier adversaire en Tester ET en Aventu
  assert.match(editor,/renderNpcCombatInstanceEditor\(index,slot\)/);
  assert.match(editor,/trainerRoster:trainerRosterDraft\.map/);
 });
+
+test('une créature sauvage personnalisée conserve les mêmes overrides Combat après export et import',async()=>{
+ const definition=createUserNpcDefinitionV1({id:ID,name:'Gorille sauvage',base:basic(),
+  role:'wild',npc:{wildCreature:roster[0]}});
+ assert.deepEqual(definition.npc.wildCreature,roster[0]);
+ const imported=importUserNpcBundleV1(await exportUserNpcBundleV1(definition),{
+  mintId:()=> 'npc.user.00000000-0000-4000-8000-000000000047'
+ });
+ assert.deepEqual(imported.npc.wildCreature,roster[0]);
+ const legacy=createUserNpcDefinitionV1({id:ID,name:'Sauvage historique',base:basic(),
+  role:'wild',npc:{wildCreature:{creatureId:'crea-loup',level:12}}});
+ assert.deepEqual(legacy.npc.wildCreature,{creatureId:'crea-loup',level:12});
+});
+test('le rôle sauvage utilise le formulaire Combat existant et conserve uniquement les overrides de la même espèce',()=>{
+ const html=readFileSync(new URL('../npc-editor.html',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('../src/actors/npc-editor-v1.js',import.meta.url),'utf8');
+ const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.ok(html.includes('id="npc-wild-instance"'));
+ assert.ok(ui.includes('renderNpcCombatInstanceEditor(null,wildCreatureDraft)'));
+ assert.ok(ui.includes('if(index===null)wildCreatureDraft=edited'));
+ assert.ok(sculpt.includes('current?.wildCreature?.creatureId===chosenWild?current.wildCreature:{}'));
+});

@@ -4559,7 +4559,9 @@ function npcSettingsFromControls(){
     ...(trainerEngagement?{trainerEngagement}:{}),
     ...(kind==='trainer'?{allowFlee:$('npc-trainer-allow-flee')?.checked!==false}:
       current&&Object.hasOwn(current,'allowFlee')?{allowFlee:current.allowFlee}:{}),
-    ...(chosenWild?{wildCreature:{creatureId:chosenWild,
+    ...(chosenWild?{wildCreature:{
+      ...(current?.wildCreature?.creatureId===chosenWild?current.wildCreature:{}),
+      creatureId:chosenWild,
       level:Number($('npc-wild-level')?.value??current?.wildCreature?.level??10)}}:{})
   };
 }
