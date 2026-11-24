@@ -4658,40 +4658,6 @@ function npcRoleEditorRefresh(){
     $('npc-wild-level').value=String(wild?.level??10);
   }
 }
-async function loadNpcOfficialCreatureChoices(){
-  if(!$('npc-team-creature')||npcCatalogLoading)return;
-  npcCatalogLoading=true;
-  if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=true;
-  $('npc-catalog-status').textContent='Chargement du bestiaire officiel Combat…';
-  npcRoleEditorRefresh();
-  try{
-    // Read CURRENT published Combat transfers; no fallback IDs or cloned bestiary.
-    const source=await loadCaptureShowcaseEncounterSourceV1();
-    if(!Array.isArray(source.creatures)||!source.creatures.length)
-      throw new Error('aucune créature publiée dans la source officielle');
-    npcOfficialCreatures=source.creatures;
-    for(const id of ['npc-team-creature','npc-wild-creature']){
-      const select=$(id),selected=select.value;
-      select.replaceChildren(new Option('Choisir une créature publiée…',''),
-        ...npcOfficialCreatures.map(creature=>new Option(
-          creature.name+' · '+creature.elements.join(' / '),creature.id)));
-      if(npcOfficialCreatures.some(creature=>creature.id===selected))select.value=selected;
-    }
-    $('npc-catalog-status').textContent=npcOfficialCreatures.length+
-      ' créature(s) du bestiaire officiel Combat disponibles.';
-  }catch(error){
-    npcOfficialCreatures=Object.freeze([]);
-    for(const id of ['npc-team-creature','npc-wild-creature']){
-      $(id)?.replaceChildren(new Option('Bestiaire indisponible — réessayer',''));
-    }
-    $('npc-catalog-status').textContent='Bestiaire officiel indisponible : '+
-      error.message+'. Réessaie avec le bouton ci-dessous ; aucun catalogue de secours.';
-  }finally{
-    npcCatalogLoading=false;
-    if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=false;
-    npcRoleEditorRefresh();
-  }
-}
 function effectiveNpcMovement(actor){
   return actor?.npc?.movement??actor?.movementOverride??
     captureActorProvider?.resolveDefinition(actor?.actorDefinitionId)?.npc?.movement;
@@ -4790,6 +4756,40 @@ $('actor-route-inherit')?.addEventListener('click',()=>{
   const actor=npcSelectedActor();
   if(actor?.movementOverride)actorCommit(updateSculptPreviewActor(placedActors,actor.id,{movementOverride:null}));
 });
+async function loadNpcOfficialCreatureChoices(){
+  if(!$('npc-team-creature')||npcCatalogLoading)return;
+  npcCatalogLoading=true;
+  if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=true;
+  $('npc-catalog-status').textContent='Chargement du bestiaire officiel Combat…';
+  npcRoleEditorRefresh();
+  try{
+    // Read CURRENT published Combat transfers; no fallback IDs or cloned bestiary.
+    const source=await loadCaptureShowcaseEncounterSourceV1();
+    if(!Array.isArray(source.creatures)||!source.creatures.length)
+      throw new Error('aucune créature publiée dans la source officielle');
+    npcOfficialCreatures=source.creatures;
+    for(const id of ['npc-team-creature','npc-wild-creature']){
+      const select=$(id),selected=select.value;
+      select.replaceChildren(new Option('Choisir une créature publiée…',''),
+        ...npcOfficialCreatures.map(creature=>new Option(
+          creature.name+' · '+creature.elements.join(' / '),creature.id)));
+      if(npcOfficialCreatures.some(creature=>creature.id===selected))select.value=selected;
+    }
+    $('npc-catalog-status').textContent=npcOfficialCreatures.length+
+      ' créature(s) du bestiaire officiel Combat disponibles.';
+  }catch(error){
+    npcOfficialCreatures=Object.freeze([]);
+    for(const id of ['npc-team-creature','npc-wild-creature']){
+      $(id)?.replaceChildren(new Option('Bestiaire indisponible — réessayer',''));
+    }
+    $('npc-catalog-status').textContent='Bestiaire officiel indisponible : '+
+      error.message+'. Réessaie avec le bouton ci-dessous ; aucun catalogue de secours.';
+  }finally{
+    npcCatalogLoading=false;
+    if($('npc-catalog-retry'))$('npc-catalog-retry').disabled=false;
+    npcRoleEditorRefresh();
+  }
+}
 function syncActorSelectedControls(){
   const selected=npcSelectedActor();
   syncNpcRoute(selected);

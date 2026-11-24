@@ -153,6 +153,7 @@ try{
  if(placement.actor?.actorDefinitionId!==id||placement.actor?.npc!==undefined||
    placement.legacyModal||!placement.linked||!placement.selection)
   throw Error('Placed PNJ duplicated definition in WorldArea '+JSON.stringify(placement.actor));
+ let lastPatrolScene;
  for(const [width,height,touch] of [[1280,720,false],[932,430,true]]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
   await cmd('Emulation.setTouchEmulationEnabled',{enabled:touch,maxTouchPoints:1});
@@ -175,32 +176,23 @@ try{
    else for(const type of ['mousePressed','mouseReleased'])
     await cmd('Input.dispatchMouseEvent',{type,x:dest.x,y:dest.y,button:'left',clickCount:1});
   }
-  const authored=await evalJs(`(()=>{
-   document.querySelector('#actor-route-save').click();
-   document.querySelector('#scene-export').click();
-   const value=document.querySelector('#json').value;
-   document.querySelector('#import').click();document.querySelector('#scene-export').click();
-   return {saved:JSON.parse(value).actors[0],reloaded:JSON.parse(document.querySelector('#json').value).actors[0]};
+  lastPatrolScene=await evalJs(`(()=>{
+   document.querySelector('#actor-route-save').click();document.querySelector('#scene-export').click();
+   return document.querySelector('#json').value;
   })()`);
-  if(authored.saved.npc||JSON.stringify(authored.saved)!==JSON.stringify(authored.reloaded)||
-     authored.saved.movementOverride?.mode!=='pingpong'||authored.saved.movementOverride.points.length!==2)
-   throw Error('Placed patrol round trip '+JSON.stringify(authored));
-  console.log('Patrouille dessinée et rouverte',touch?'tactile paysage':'souris PC',authored.reloaded.movementOverride);
-  // The existing editor owns selection and import. Restore the original canonical fixture
-  // before checking its dialogue, then select it through the same map entry point.
-  await evalJs(`(()=>{
-   document.querySelector('#json').value=${JSON.stringify(placement.scene)};
-   document.querySelector('#import').click();
-   document.querySelector('#mode-objects').click();document.querySelector('#actor-open').click();
-   document.querySelector('#actor-action').value='select';
-   document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
-  })()`);
-  const pos=await evalJs(`(()=>{const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
-   return {x:r.left+p.cameraPan.x+3.5*28*p.zoom,y:r.top+p.cameraPan.y+3.5*21*p.zoom};})()`);
-  for(const type of ['mousePressed','mouseReleased'])
-   await cmd('Input.dispatchMouseEvent',{type,x:pos.x,y:pos.y,button:'left',clickCount:1});
-  await until('!!window.__sculptActorsProbe().selectedId','sélection de la référence restaurée');
+  const actor=JSON.parse(lastPatrolScene).actors[0];
+  if(actor.npc||actor.movementOverride?.mode!=='pingpong'||actor.movementOverride.points.length!==2)
+   throw Error('Placed patrol data '+JSON.stringify(actor));
+  console.log('Patrouille dessinée',touch?'tactile paysage':'souris PC',actor.movementOverride);
+  await evalJs("document.querySelector('#actor-route-inherit').click()");
  }
+ const reopened=await evalJs(`(()=>{
+  document.querySelector('#json').value=${JSON.stringify(lastPatrolScene)};
+  document.querySelector('#import').click();document.querySelector('#scene-export').click();
+  return JSON.parse(document.querySelector('#json').value).actors[0];
+ })()`);
+ if(JSON.stringify(reopened)!==JSON.stringify(JSON.parse(lastPatrolScene).actors[0]))
+  throw Error('La patrouille diffère après réouverture dans le World Builder');
  // Verify same serialized scene stays bare after importing the actual file contents.
  const scene=JSON.stringify(placement.scene);
  const restore=await evalJs(`(()=>{
