@@ -1,3 +1,8 @@
+## 2026-11-24 — #529 · Comportement des créatures sauvages placées (C2)
+- START `bdac9bade51cb908fe0e7a5fc8d06ac3f2a8d874` ; checkpoint `checkpoint/exploration-start-wild-behavior-529-2026-11-24` ; branche `work/exploration-wild-behavior-529-20261124`. #547 GREEN CI 45484426362 / Pages 45484426128, HTTPS ; transport Capture #646 séparé en cours.
+- Comportement facultatif dans le contrat PNJ existant, ancien sauvage pacifique par défaut. Réutiliser le runtime de déplacement placé et le raccord `npc-wild`, sans modifier SpawnZone aléatoire ni Core Combat/Capture. Détection, contact, poursuite, désengagement, retour et cooldown sur la même boucle native ; aucune seconde position persistée. UI dans les réglages existants, sans dupliquer l’autorité de définition.
+- Tests : compatibilité anciens fichiers, comportement de proximité, collision, retour, absence de relance et contrôle navigateur. Queue : anciennes exécutions PWA/Combat d'autres SHA relevées, aucune annulée ; CI checkpoint et Capture #646 protégées. Aucun GREEN avant exact CI/Pages.
+
 ## 2026-11-24 — #527 · Raccord natif des créatures sauvages placées (C2)
 - START `bd808c05400c6f9e54480e1f2aa0d8e385a26e51` ; checkpoint `checkpoint/exploration-start-wild-encounter-527-2026-11-24` ; branche `work/exploration-wild-encounter-527-20261124`. Jalon édition #546 GREEN (CI 45481920998, Pages 45481919949, HTTPS).
 - Réutiliser EncounterController, snapshot/handoff v1, constructeur de combat officiel et interaction de proximité ; source distincte `npc-wild`, un seul adversaire, aucune victoire de dresseur. Stats/compétences restent Combat, loot/XP Capture. Préserver anciennes rencontres et portails, aucune nouvelle sauvegarde ni moteur.
