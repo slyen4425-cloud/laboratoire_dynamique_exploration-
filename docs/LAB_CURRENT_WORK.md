@@ -1,3 +1,8 @@
+## 2026-11-24 — Marchand sans boutique associée (C1, en validation)
+- START `main@35dbe475e53abcc7ba8f4c5ee3be972390232584`, checkpoint `checkpoint/exploration-start-merchant-missing-reference-20261124`, branche `fix/exploration-merchant-missing-reference-20261124`. Suite du ticket Capture #629, complément distinct de Capture #639.
+- Exploration possède uniquement proximité, PNJ et référence. Le test de proximité existant excluait un marchand sans dialogue ni merchantId, donc aucune interaction. L'UI native affiche le message de liaison à réparer dans le dialogue original; pas de boutique, pas de requête ni de mutation de règles. Les marchands liés et autres PNJ gardent le chemin existant.
+- Test unitaire écrit avant correctif, test navigateur existant étendu au changement de définition dans la bibliothèque canonique, sans modifier le placement. RED non exécuté séparément. Gates npm test/check, Chromium et Pages exact SHA. Aucun changement Combat, PWA, assets, collisions, sauvegardes. Ne pas annoncer réparation du parcours utilisateur complet avant raccord Capture et validation réelle.
+
 ## 2026-11-23 — Transition automatique et habillage des passages World Builder (C2, en validation)
 - Base officielle Exploration `main@1b69d62a88e77c545ab9a476a6a2b7f81ad4dd90`, branche unique `work/exploration-auto-portals-markers-20261123`. Aucun dépôt Capture/Combat/PWA modifié.
 - Cause : la collision et `findTriggeredPortal` existent déjà, mais le Tester/Jouer 2,5D dépendait encore de l'action « Entrer ». Le rendu Sculpt dessine des cercles jaune/bleu sans respecter d'apparence choisie.
