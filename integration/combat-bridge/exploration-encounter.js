@@ -307,7 +307,7 @@ async function launch() {
     encounterSessionId===undefined?{cache:'force-cache'}:templateRequest.init);
   const [testerParty,nativeSkillCatalog,showcaseStats,showcaseProgression,baseFighterRules,
     assetCatalog,...profilesAndBundle] = await Promise.all([
-    encounterSessionId===undefined?readJson('./party.preview.v1.json'):null,
+    encounterSessionId===undefined&&universeId===null?readJson('./party.preview.v1.json'):null,
     readJson(resource('data/combat/skills/catalog.v1.json')),
     universeId===null?readJson(resource('data/capture/monster-capture-stat-registry.v1.json')):null,
     universeId===null?readJson(resource('data/capture/monster-capture-progression-rules.v1.json')):null,
@@ -325,9 +325,14 @@ async function launch() {
   const progressionRules=universeId===null?showcaseProgression:authorBundle.progressionRules;
   const adventureParty=encounterSessionId===undefined?undefined:
     await readAdventureCombatParty(handoff,authorBundle,universeId);
-  const party=adventureParty
-    ?{id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId}
-    :testerParty;
+  let party=testerParty;
+  if(adventureParty){
+    party={id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId};
+  }else if(universeId!==null){
+    const fighter=authorBundle.creatureTransfers.find(record=>record.loadout.slots.some(slot=>slot.skillId));
+    if(!fighter)throw new Error('Équipe au moins une compétence sur une espèce de cet univers pour tester le combat.');
+    party={id:handoff.snapshot.player.partyRef,activeCreatureId:fighter.draft.id};
+  }
   const trainerPreview=!adventureParty&&handoff.snapshot.source==='npc-trainer';
   const creatureTransfers=authorBundle.creatureTransfers;
   const skillTransfers=authorBundle.skillTransfers;

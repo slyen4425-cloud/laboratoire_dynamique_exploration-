@@ -28,6 +28,7 @@ export async function createUniverseEncounterBrowserFixture(snapshot){
   schema:'capture-database-v1',version:1,metadata:{},statRegistry,progressionRules,
   creatures:[{draft,statValues,loadout}],
   skills:release.skillTransfers.map(item=>item.draft).filter(skill=>draft.skillIds.includes(skill.id))});
+ const testerSeed='for(const [k,v] of '+JSON.stringify([...items])+')localStorage.setItem(k,v);';
  const world=createBlankWorldBuilderDraft({id:'world-'+randomUUID(),width:1008,height:504});
  saveWorldAssemblerDraft(createExplorationUniverseWorkspaceStorageV1(local,universeId),world);
  const scope={sessionId,worldId:world.id,combatSha:release.engineSha,version:1};
@@ -46,5 +47,5 @@ export async function createUniverseEncounterBrowserFixture(snapshot){
   return 'for(const [k,v] of '+JSON.stringify([...items])+')localStorage.setItem(k,v);'+
          'for(const [k,v] of '+JSON.stringify([...session])+')sessionStorage.setItem(k,v);';
  }
- return {sessionId,speciesId,name,expectedHp,browserSeed};
+ return {universeId,sessionId,speciesId,name,expectedHp,browserSeed,testerSeed};
 }
