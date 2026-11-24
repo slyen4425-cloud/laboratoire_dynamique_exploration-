@@ -3235,6 +3235,9 @@ $('npc-talk')?.addEventListener('click',()=>{
     requestNpcMerchantShop(npc);return;
   }
   npcDialogueLines=npc.npc.dialogue.split(/\r?\n/).map(t=>t.trim()).filter(Boolean);
+  // Missing links are a visible local interaction error, never a fallback shop.
+  if(npc.npc.kind==='merchant'&&!canShop)
+    npcDialogueLines.unshift('Aucune boutique associée à ce marchand. Associe une boutique dans l’éditeur PNJ et enregistre la liaison.');
   if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
