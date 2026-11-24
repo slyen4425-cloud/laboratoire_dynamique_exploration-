@@ -95,3 +95,44 @@ test('Sculpt reuses its existing renderer, navigation clock, trainer gate and un
   assert.match(html,/value="wander">Errance active en Tester \/ Jouer/);
   assert.equal((html.match(/id="actor-npc-settings"/g)||[]).length,1);
 });
+
+test('the collision footprint is independent of the authored wander radius',()=>{
+ const actor=npc('sculpt-actor-1','wander',22,21,170);
+ const runtime=createNpcWanderRuntimeV1({move:stepMovement});
+ const narrow={width:84,height:70,objects:[],obstacles:[],walls:[]};
+ runtime.reset([actor]);let farthest=0;
+ for(let i=0;i<450;i++){
+  runtime.step({actors:[actor],elapsedSeconds:.1,world:narrow});
+  const [s]=runtime.snapshot();farthest=Math.max(farthest,Math.hypot(s.x-22,s.y-21));
+ }
+ assert.ok(farthest>6,'an actor can walk on a map narrower than its wander radius');
+});
+test('once, loop and ping-pong follow authored segments through official movement without moving the placement',()=>{
+ for(const mode of ['once','loop','pingpong']){
+  const movement={mode,speed:40,waitSeconds:.2,points:[{x:40,y:0},{x:40,y:40}]};
+  const actor={...npc('sculpt-actor-route','static',150,100),
+   npc:normalizeMapActorNpcSettingsV1({kind:'dialogue',movement})};
+  const before=JSON.stringify(actor);const runtime=createNpcWanderRuntimeV1({move:stepMovement});
+  runtime.reset([actor]);const targetChanges=[];let previous;
+  for(let i=0;i<240;i++){
+   runtime.step({actors:[actor],world,elapsedSeconds:.1});
+   const [s]=runtime.snapshot();
+   if(previous)assert.ok(Math.hypot(s.x-previous.x,s.y-previous.y)<=4.01);
+   if(s.waypoint!==previous?.waypoint)targetChanges.push(s.waypoint);
+   previous=s;
+  }
+  assert.equal(JSON.stringify(actor),before);
+  if(mode==='once'){assert.equal(previous.complete,true);assert.ok(Math.hypot(previous.x-190,previous.y-140)<=3);}
+  if(mode==='loop')assert.deepEqual(targetChanges.slice(0,5),[1,2,0,1,2]);
+  if(mode==='pingpong')assert.deepEqual(targetChanges.slice(0,5),[1,2,1,0,1]);
+ }
+});
+test('a blocked authored segment never jumps to its destination or persists transient positions',()=>{
+ const movement={mode:'once',points:[{x:70,y:0}]};
+ const actor={...npc('sculpt-actor-route'),npc:normalizeMapActorNpcSettingsV1({kind:'dialogue',movement})};
+ const runtime=createNpcWanderRuntimeV1({move(){}});runtime.reset([actor]);
+ for(let i=0;i<70;i++)runtime.step({actors:[actor],world,elapsedSeconds:.1});
+ assert.deepEqual([runtime.snapshot()[0].x,runtime.snapshot()[0].y],[actor.x,actor.y]);
+ assert.equal(runtime.snapshot()[0].complete,false);
+ assert.ok(runtime.snapshot()[0].blocked>0);
+});

@@ -1,4 +1,4 @@
-import {normalizeMapActorNpcSettingsV1} from './map-actor-npc-settings-v1.js';
+import {normalizeMapActorNpcSettingsV1,normalizeNpcMovementV1} from './map-actor-npc-settings-v1.js';
 
 export const WORLD_ACTOR_PLACEMENT_SCHEMA_VERSION = 1;
 
@@ -51,6 +51,10 @@ export function normalizeWorldActorPlacement(
       ? { visualScale: raw.visualScale } : {}),
     ...(raw.visualView === 'front' || raw.visualView === 'back'
       ? { visualView: raw.visualView } : {}),
+    // A shared NPC keeps its role and visuals in the reusable definition.
+    // Only a movement override for THIS placement is stored with the map.
+    ...(raw.npc==null&&raw.movementOverride!=null?
+      {movementOverride:normalizeNpcMovementV1(raw.movementOverride)}:{}),
     // Instance-scoped interaction settings only. No Capture visual/stat copy.
     ...(raw.npc===undefined||raw.npc===null
       ? {} : {npc:normalizeMapActorNpcSettingsV1(raw.npc)})

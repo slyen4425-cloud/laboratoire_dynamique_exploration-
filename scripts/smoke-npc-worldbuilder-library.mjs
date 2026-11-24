@@ -153,6 +153,54 @@ try{
  if(placement.actor?.actorDefinitionId!==id||placement.actor?.npc!==undefined||
    placement.legacyModal||!placement.linked||!placement.selection)
   throw Error('Placed PNJ duplicated definition in WorldArea '+JSON.stringify(placement.actor));
+ for(const [width,height,touch] of [[1280,720,false],[932,430,true]]){
+  await cmd('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
+  await cmd('Emulation.setTouchEmulationEnabled',{enabled:touch,maxTouchPoints:1});
+  await evalJs(`(()=>{
+   const panel=document.querySelector('#actor-route-panel');if(panel.hidden)throw Error('Route unavailable');
+   panel.open=true;const mode=document.querySelector('#actor-npc-movement');
+   mode.value='pingpong';mode.dispatchEvent(new Event('change',{bubbles:true}));
+   document.querySelector('#actor-route-draw').click();
+   document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
+  })()`);
+  for(const col of [5,6]){
+   const dest=await evalJs(`(()=>{
+    const p=window.__sculptLabProbe(),rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+    const x=rect.left+p.cameraPan.x+(${col}+.5)*28*p.zoom,y=rect.top+p.cameraPan.y+3.5*21*p.zoom;
+    return {x,y,hit:document.elementFromPoint(x,y)?.id};
+   })()`);
+   if(dest.hit!=='sculpt-canvas')throw Error('Patrol point obscured '+JSON.stringify(dest));
+   if(touch){await cmd('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:dest.x,y:dest.y}]});
+    await cmd('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
+   else for(const type of ['mousePressed','mouseReleased'])
+    await cmd('Input.dispatchMouseEvent',{type,x:dest.x,y:dest.y,button:'left',clickCount:1});
+  }
+  const authored=await evalJs(`(()=>{
+   document.querySelector('#actor-route-save').click();
+   document.querySelector('#scene-export').click();
+   const value=document.querySelector('#json').value;
+   document.querySelector('#import').click();document.querySelector('#scene-export').click();
+   return {saved:JSON.parse(value).actors[0],reloaded:JSON.parse(document.querySelector('#json').value).actors[0]};
+  })()`);
+  if(authored.saved.npc||JSON.stringify(authored.saved)!==JSON.stringify(authored.reloaded)||
+     authored.saved.movementOverride?.mode!=='pingpong'||authored.saved.movementOverride.points.length!==2)
+   throw Error('Placed patrol round trip '+JSON.stringify(authored));
+  console.log('Patrouille dessinée et rouverte',touch?'tactile paysage':'souris PC',authored.reloaded.movementOverride);
+  // The existing editor owns selection and import. Restore the original canonical fixture
+  // before checking its dialogue, then select it through the same map entry point.
+  await evalJs(`(()=>{
+   document.querySelector('#json').value=${JSON.stringify(placement.scene)};
+   document.querySelector('#import').click();
+   document.querySelector('#mode-objects').click();document.querySelector('#actor-open').click();
+   document.querySelector('#actor-action').value='select';
+   document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
+  })()`);
+  const pos=await evalJs(`(()=>{const p=window.__sculptLabProbe(),r=document.querySelector('#sculpt-canvas').getBoundingClientRect();
+   return {x:r.left+p.cameraPan.x+3.5*28*p.zoom,y:r.top+p.cameraPan.y+3.5*21*p.zoom};})()`);
+  for(const type of ['mousePressed','mouseReleased'])
+   await cmd('Input.dispatchMouseEvent',{type,x:pos.x,y:pos.y,button:'left',clickCount:1});
+  await until('!!window.__sculptActorsProbe().selectedId','sélection de la référence restaurée');
+ }
  // Verify same serialized scene stays bare after importing the actual file contents.
  const scene=JSON.stringify(placement.scene);
  const restore=await evalJs(`(()=>{

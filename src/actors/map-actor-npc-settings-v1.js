@@ -53,18 +53,38 @@ function line(value,max,label){
     throw new RangeError(label+' must contain at most '+max+' characters');
   return value.trim();
 }
+export const NPC_PATROL_MODES_V1=Object.freeze(['once','loop','pingpong']);
+export function normalizeNpcMovementV1(raw={}){
+  const mode=raw?.mode??'static';
+  const speed=raw?.speed??38,waitSeconds=raw?.waitSeconds??.6;
+  if(!Number.isFinite(speed)||speed<1||speed>200||
+     !Number.isFinite(waitSeconds)||waitSeconds<0||waitSeconds>60)
+    throw new RangeError('Vitesse ou attente du trajet hors limites');
+  if(mode==='static'||mode==='wander'){
+    const radius=raw?.radius??90;
+    if(!Number.isFinite(radius)||radius<16||radius>600)
+      throw new RangeError('NPC wander radius must be 16–600 world units');
+    return Object.freeze({mode,radius,
+      ...(raw?.speed!==undefined?{speed}:{}),...(raw?.waitSeconds!==undefined?{waitSeconds}:{})});
+  }
+  if(!NPC_PATROL_MODES_V1.includes(mode)||!Array.isArray(raw.points)||
+     raw.points.length<1||raw.points.length>128)
+    throw new RangeError('Un trajet doit compter entre 1 et 128 points après le départ');
+  const points=raw.points.map(point=>{
+    if(!Number.isFinite(point?.x)||!Number.isFinite(point?.y)||
+       Math.abs(point.x)>100000||Math.abs(point.y)>100000)
+      throw new RangeError('Point du trajet hors limites');
+    return Object.freeze({x:point.x,y:point.y});
+  });
+  return Object.freeze({mode,speed,waitSeconds,points:Object.freeze(points)});
+}
 export function normalizeMapActorNpcSettingsV1(raw){
   if(raw===undefined||raw===null)return null;
   if(!raw||typeof raw!=='object'||Array.isArray(raw))
     throw new TypeError('NPC settings must be an object');
   if(!MAP_ACTOR_NPC_KINDS.includes(raw.kind))
     throw new RangeError('Unknown NPC kind');
-  const mode=raw.movement?.mode??'static';
-  if(mode!=='static'&&mode!=='wander')
-    throw new RangeError('NPC movement mode must be static or wander');
-  const radius=raw.movement?.radius??90;
-  if(!Number.isFinite(radius)||radius<16||radius>600)
-    throw new RangeError('NPC wander radius must be 16–600 world units');
+  const movement=normalizeNpcMovementV1(raw.movement);
   const hasAllowFlee=Object.hasOwn(raw,'allowFlee');
   if(hasAllowFlee&&typeof raw.allowFlee!=='boolean')
     throw new TypeError('NPC allowFlee must be a boolean');
@@ -74,7 +94,7 @@ export function normalizeMapActorNpcSettingsV1(raw){
   return Object.freeze({
     schema:MAP_ACTOR_NPC_SCHEMA_V1,version:1,kind:raw.kind,
     name:line(raw.name,80,'NPC name'),
-    movement:Object.freeze({mode,radius}),
+    movement,
     // Line breaks separate text screens; HTML is never interpreted.
     dialogue:line(raw.dialogue,2000,'NPC dialogue'),
     questId:line(raw.questId,120,'Quest reference'),
