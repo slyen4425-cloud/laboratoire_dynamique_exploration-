@@ -1,6 +1,6 @@
 import {normalizeWorldEncounterStatProfileV1} from './wild-stat-profile-contract-v1.js';
 import {normalizeCombatArenaIdsV1} from '../world/world-combat-arena-v1.js';
-import {normalizeNpcTrainerRosterV1,normalizeNpcTrainerRewardV1} from '../actors/map-actor-npc-settings-v1.js';
+import {normalizeCreatureSlot,normalizeNpcTrainerRosterV1,normalizeNpcTrainerRewardV1} from '../actors/map-actor-npc-settings-v1.js';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_SCHEMA =
   'capture-encounter-snapshot-v1';
 export const CAPTURE_ENCOUNTER_SNAPSHOT_VERSION = 1;
@@ -26,6 +26,9 @@ export function createCaptureEncounterSnapshot(raw = {}) {
     'playerPartyRef'
   );
   const trainerActorId = source==='npc-trainer' ? requiredText(raw.trainerActorId,'trainerActorId') : null;
+  const wildActorId=source==='npc-wild'?requiredText(raw.wildActorId,'wildActorId'):null;
+  if(wildActorId&&(!Array.isArray(raw.opponents)||raw.opponents.length!==1))
+    throw new RangeError('Placed wild encounter needs exactly one opponent');
   if(raw.fleeAllowed!==undefined&&(!trainerActorId||typeof raw.fleeAllowed!=='boolean'))
     throw new TypeError('Only a trainer may define boolean fleeAllowed');
   const rulesetId = requiredText(
@@ -54,7 +57,8 @@ export function createCaptureEncounterSnapshot(raw = {}) {
      (!Number.isSafeInteger(raw.opponentLevel)||
       raw.opponentLevel<1||raw.opponentLevel>9999))
     throw new RangeError('Encounter opponentLevel must be a positive integer');
-  const opponents = trainerActorId ? normalizeNpcTrainerRosterV1(raw.opponents) : Object.freeze([
+  const opponents = trainerActorId ? normalizeNpcTrainerRosterV1(raw.opponents) : wildActorId
+    ? Object.freeze([normalizeCreatureSlot(raw.opponents[0],'Wild creature')]) : Object.freeze([
     Object.freeze({
       creatureId:requiredText(raw.opponentCreatureId,'opponentCreatureId'),
       ...(raw.opponentLevel===undefined?{}:{level:raw.opponentLevel})
@@ -81,6 +85,7 @@ export function createCaptureEncounterSnapshot(raw = {}) {
       terrainFamilyId,
       elementId,
       ...(trainerActorId ? {trainerActorId} : {}),
+      ...(wildActorId ? {wildActorId} : {}),
       ...(trainerActorId&&raw.fleeAllowed!==undefined?{fleeAllowed:raw.fleeAllowed}:{}),
       ...(trainerActorId&&raw.trainerReward!==undefined?
         {trainerReward:normalizeNpcTrainerRewardV1(raw.trainerReward)}:{}),

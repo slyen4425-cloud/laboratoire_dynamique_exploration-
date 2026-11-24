@@ -141,3 +141,27 @@ assert.throws(()=>officialAdventureCombatRequestV1(oldRequest,{
  sessionId:'test-session',loadId:'../escape'
 }),/boot UUID/);
 console.log('GREEN: nested official Combat bridge cache-isolation request from the SAME already-staged native file');
+
+// Placed wild actor: the same real Combat constructor consumes the normalized
+// immutable handoff in both Tester and Aventure, not a synthetic fighter.
+const {createCaptureEncounterSnapshot}=await import('../src/encounters/capture-encounter-contract.js');
+const {createCombatHandoffEnvelope}=await import('../src/encounters/combat-handoff-store.js');
+for(const scopedParty of [null,adventureParty]){
+ const p=scopedParty?inputs.party:party;
+ const make=(npcInstance)=>createCombatHandoffEnvelope({snapshot:createCaptureEncounterSnapshot({
+  encounterId:'wild-smoke',returnToken:'wild-return',source:'npc-wild',wildActorId:'placed-wild-1',
+  playerPartyRef:p.id,opponents:[{creatureId:speciesId,level:20,...(npcInstance?{npcInstance}:{})}],
+  rulesetId:'capture.standard.1v1',areaId:'forest',terrainFamilyId:'forest',elementId:'nature'
+ }),returnState:{areaId:'forest',x:20,y:20,returnUrl:'https://example.test/play'}}).snapshot;
+ const build=snapshot=>buildExplorationNativeCombatSourceV1({...inputs,snapshot,party:p,
+  ...(scopedParty?{adventureParty:scopedParty}:{})});
+ const baseline=build(make());
+ const selectedSkill=baseline.skillIdsByActor['opponent-1'][0];
+ const custom=build(make({schema:'capture-npc-opponent-instance-v1',displayName:'Sauvage personnalisé',
+  statAllocations:{health:7},skillIds:[selectedSkill]}));
+ assert.deepEqual(custom.skillIdsByActor['opponent-1'],[selectedSkill]);
+ assert.ok(custom.fighters.find(f=>f.id==='opponent-1').maxHp>baseline.fighters.find(f=>f.id==='opponent-1').maxHp);
+ assert.ok(Object.values(custom.displayNamesByRosterMember['opponent-1']).includes('Sauvage personnalisé'));
+ assert.equal(custom.battleFormat.actors.length,2);
+ console.log('GREEN placed wild native '+(scopedParty?'Aventure':'Tester'));
+}

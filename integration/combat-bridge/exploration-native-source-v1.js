@@ -24,6 +24,7 @@ export function buildExplorationNativeCombatSourceV1({
   previewLevel = 20, arenaId = 'forest'
 }) {
   const trainer=snapshot?.source==='npc-trainer';
+  const placedWild=snapshot?.source==='npc-wild';
   if(snapshot?.schema!=='capture-encounter-snapshot-v1'||snapshot.version!==1||
      !Array.isArray(snapshot.opponents)||snapshot.opponents.length<1||
      snapshot.opponents.length>(trainer?6:1))
@@ -39,12 +40,12 @@ export function buildExplorationNativeCombatSourceV1({
   const rivals=snapshot.opponents.map(member=>{
     const speciesId=required(member?.creatureId,'opponent.creatureId');
     const level=member.level;
-    if((trainer||level!==undefined)&&(!Number.isSafeInteger(level)||level<1||level>9999))
+    if((trainer||placedWild||level!==undefined)&&(!Number.isSafeInteger(level)||level<1||level>9999))
       throw new RangeError('Encounter opponent.level must be a valid authored WorldArea level');
     // Original source NPC schema was already validated before handoff.
     // Forward only the optional instance contract; Combat owns all effects.
     return {speciesId,level,
-      ...(trainer&&member.npcInstance?{npcInstance:member.npcInstance}:{})};
+      ...((trainer||placedWild)&&member.npcInstance?{npcInstance:member.npcInstance}:{})};
   });
   const [{speciesId:enemyId,level:authoredEnemyLevel},...opponentReserve]=rivals;
   const participants=new Set([playerId,...rivals.map(member=>member.speciesId)]);
@@ -111,7 +112,7 @@ export function buildExplorationNativeCombatSourceV1({
     statRegistry,progressionRules,skillSpeedMultiplier:0.5
   };
   const sourceCreatureIds=Object.freeze({player:playerId,opponent:enemyId});
-  if(trainer&&!scoped){
+  if((trainer||placedWild)&&!scoped){
     const source=buildCaptureEncounterCombatSourceV1({
       ...options,wildStatProfile:snapshot.rules?.wildStatProfile??{},
       local:{speciesId:playerId,level:previewLevel,instanceId:party.id},

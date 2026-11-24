@@ -347,7 +347,7 @@ async function launch() {
     if(!fighter)throw new Error('Équipe au moins une compétence sur une espèce de cet univers pour tester le combat.');
     party={id:handoff.snapshot.player.partyRef,activeCreatureId:fighter.draft.id};
   }
-  const trainerPreview=!adventureParty&&handoff.snapshot.source==='npc-trainer';
+  const placedEncounterPreview=!adventureParty&&['npc-trainer','npc-wild'].includes(handoff.snapshot.source);
   const creatureTransfers=authorBundle.creatureTransfers;
   const skillTransfers=authorBundle.skillTransfers;
   const {terrainFamilyId, combatArenaIds} = handoff.snapshot.context;
@@ -409,12 +409,12 @@ async function launch() {
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
     onBattleOutcome:playOfficialCombatResultSoundtrack,
-    ...(adventureParty||trainerPreview?{embeddedBattle:{initialHpByActor:Object.fromEntries(
+    ...(adventureParty||placedEncounterPreview?{embeddedBattle:{initialHpByActor:Object.fromEntries(
       nativeCombatSource.fighters.map(fighter=>[fighter.id,
         adventureParty&&fighter.id==='local-1'?initialAdventureHp:fighter.maxHp]))}}:{}),
     presentationAssets:nativePresentationAssets
   });
-  if(adventureParty||trainerPreview){
+  if(adventureParty||placedEncounterPreview){
     const fleeAllowed=handoff.snapshot.context?.fleeAllowed!==false;
     fleeButton.hidden=!fleeAllowed;
     if(fleeAllowed)fleeButton.addEventListener('click',()=>mountedCombat.flee(),{once:true});

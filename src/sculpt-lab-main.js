@@ -727,7 +727,7 @@ function presentSculptEncounter(snapshot,recovered=false){
   $('sculpt-encounter-summary').textContent=trainerId
     ?(placedActors.find(actor=>actor.id===trainerId)?.npc?.name||'Dresseur')+
       ' · '+snapshot.opponents.length+' créature(s)'
-    :(creature?.name??creatureId)+' · '+snapshot.context.terrainFamilyId+
+    :(snapshot.opponents[0]?.npcInstance?.displayName??creature?.name??creatureId)+' · '+snapshot.context.terrainFamilyId+
       ' · élément '+snapshot.context.elementId;
   if($('sculpt-encounter-wild-hint'))$('sculpt-encounter-wild-hint').hidden=Boolean(trainerId);
   sculptEncounterDialog.hidden=false;
@@ -3152,6 +3152,33 @@ function sculptTrainerChallengeNotice(actor){
 function canChallengeSculptTrainer(actor){
   return actor.npc?.kind==='trainer'&&!sculptTrainerChallengeNotice(actor);
 }
+function canChallengeSculptWild(actor){
+  return actor?.npc?.kind==='wild'&&!!actor.npc.wildCreature&&
+    (!sculptPlayRequested||scopedEncounter?.armed&&scopedEncounter.party.active.hp>0)&&
+    (sculptCombatSessionId===undefined||scopedEncounter?.armed)&&
+    !!sculptEncounterCatalog?.resolveCreature(actor.npc.wildCreature.creatureId);
+}
+function startSculptPlacedEncounter(snapshot){
+  if(!sculptEncounterController?.restore(snapshot.encounterId))return false;
+  presentSculptEncounter(snapshot);
+  launchSculptEncounter();
+  return true;
+}
+function startSculptWildBattle(actor){
+  if(!navigationTesting||sculptPendingEncounter||sculptPortalLoading||!navActor||!canChallengeSculptWild(actor))return false;
+  const area=navigationEncounterArea();
+  const opponent=actor.npc.wildCreature;
+  const creature=sculptEncounterCatalog.resolveCreature(opponent.creatureId);
+  const terrain=resolveTerrainFamilyAtPoint(area.surface,navActor.x,navActor.y);
+  const snapshot=createCaptureEncounterSnapshot({
+    ...newSculptEncounterIds(),source:'npc-wild',wildActorId:actor.id,opponents:[opponent],
+    playerPartyRef:scopedEncounter?.party.partyRef??sculptPreviewPartyRef,areaId:area.id,
+    terrainFamilyId:terrain.terrainFamilyId??area.surface.baseTerrainFamilyId,
+    elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
+    combatArenaIds:sculptBattleArenaIds(area)
+  });
+  return startSculptPlacedEncounter(snapshot);
+}
 function startSculptTrainerBattle(actor){
   if(sculptPendingEncounter||sculptPortalLoading||!navActor||!canChallengeSculptTrainer(actor))return false;
   const area=navigationEncounterArea();
@@ -3167,10 +3194,7 @@ function startSculptTrainerBattle(actor){
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
     combatArenaIds:sculptBattleArenaIds(area)
   });
-  if(!sculptEncounterController.restore(snapshot.encounterId))return false;
-  presentSculptEncounter(snapshot);
-  launchSculptEncounter();
-  return true;
+  return startSculptPlacedEncounter(snapshot);
 }
 function startNearbyAggressiveTrainer(previous){
   if(sculptPortalLoading)return false;
@@ -3182,7 +3206,7 @@ function startNearbyAggressiveTrainer(previous){
 }
 function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
-    ?nearestDialogNpcV1(gameplayPlacedActors(),navActor,undefined,canChallengeSculptTrainer):null;
+    ?nearestDialogNpcV1(gameplayPlacedActors(),navActor,undefined,canChallengeSculptTrainer,canChallengeSculptWild):null;
 }
 // Scoped player greeting. Official Navigation is the ONLY position authority.
 // This is a cosmetic interaction, not a duel, reward or world-state mutation.
@@ -3243,10 +3267,10 @@ function updateNpcInteraction(){
   const npc=nearbyNpcForDialogue();
   $('npc-talk').hidden=!npc||npcDialogueOpen;
   if(npc){
-    const challenge=canChallengeSculptTrainer(npc)&&!npc.npc.dialogue;
+    const challenge=(canChallengeSculptTrainer(npc)&&!npc.npc.dialogue)||canChallengeSculptWild(npc);
     $('npc-talk').textContent=(challenge?'⚔ ':npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
       (npc.npc.name||(challenge?'Défier':'Parler'));
-    $('npc-talk').setAttribute('aria-label',challenge?'Défier '+(npc.npc.name||'le dresseur'):'Parler au PNJ proche');
+    $('npc-talk').setAttribute('aria-label',challenge?'Défier '+(npc.npc.name||'la créature'):'Parler au PNJ proche');
     placeNpcScreenUi(npc,$('npc-talk'));
   }
 }
@@ -3264,6 +3288,7 @@ function requestNpcMerchantShop(actor){
 }
 $('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
+  if(canChallengeSculptWild(npc)){startSculptWildBattle(npc);return;}
   const canShop=npc.npc.kind==='merchant'&&!!npc.npc.merchantId;
   const trainer=npc.npc.kind==='trainer';
   npcDialogueTrainerNotice=trainer?sculptTrainerChallengeNotice(npc):'';
