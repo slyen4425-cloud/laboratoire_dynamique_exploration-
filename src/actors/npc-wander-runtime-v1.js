@@ -3,6 +3,7 @@
 // Every accepted step is delegated to the same core Movement/Collision World
 // that moves the hero. No independent map coordinates, collision or save.
 import {NPC_PATROL_MODES_V1} from './map-actor-npc-settings-v1.js';
+import {sculptNavigationFrameSteps} from '../core/sculpt-navigation-frame-clock.js';
 const WANDER_SPEED=38;
 const WANDER_RADIUS=5;
 const AVOID_HERO_DISTANCE=24;
@@ -104,9 +105,13 @@ export function createNpcWanderRuntimeV1({move}={}){
       }
       const x=state.x,y=state.y;
       const bridgeId=state.sculptBridgeId,stairId=state.sculptStairId;
-      move(world,state,{x:dx,y:dy},
-        Math.min(dt,remaining/state.speed),{maxSpeed:state.speed},
-        undefined,collisionContext);
+      const travelTime=Math.min(dt,remaining/state.speed);
+      const direction={x:dx,y:dy},config={maxSpeed:state.speed};
+      for(const stepTime of sculptNavigationFrameSteps(travelTime*1000)){
+        const startX=state.x,startY=state.y;
+        move(world,state,direction,stepTime,config,undefined,collisionContext);
+        if(state.x===startX&&state.y===startY)break;
+      }
       const distanceFromAnchor=Math.hypot(state.x-state.anchorX,state.y-state.anchorY);
       const overlapsHero=player&&Math.hypot(player.x-state.x,player.y-state.y)<AVOID_HERO_DISTANCE;
       if((!state.route&&distanceFromAnchor>state.leash+.001)||overlapsHero){

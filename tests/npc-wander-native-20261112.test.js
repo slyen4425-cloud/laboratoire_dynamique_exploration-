@@ -136,3 +136,15 @@ test('a blocked authored segment never jumps to its destination or persists tran
  assert.equal(runtime.snapshot()[0].complete,false);
  assert.ok(runtime.snapshot()[0].blocked>0);
 });
+test('a fast patrol cannot cross a thin wall during a long frame',()=>{
+ const movement={mode:'once',speed:200,waitSeconds:0,points:[{x:80,y:0}]};
+ const actor={...npc('sculpt-actor-fast','static',100,100),
+   npc:normalizeMapActorNpcSettingsV1({kind:'dialogue',movement})};
+ const barrier={x:111,y:0,w:2,h:300};
+ const runtime=createNpcWanderRuntimeV1({move:stepMovement});
+ const map={...world,obstacles:[barrier]};
+ for(let i=0;i<20;i++)runtime.step({actors:[actor],world:map,elapsedSeconds:.1});
+ const [state]=runtime.snapshot();
+ assert.ok(state.x>actor.x&&state.x<=barrier.x-5,'the NPC stops against the near side of the wall');
+ assert.equal(state.complete,false);
+});

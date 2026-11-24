@@ -157,31 +157,49 @@ try{
  for(const [width,height,touch] of [[1280,720,false],[932,430,true]]){
   await cmd('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
   await cmd('Emulation.setTouchEmulationEnabled',{enabled:touch,maxTouchPoints:1});
-  await evalJs(`(()=>{
+  await evalJs(`(async()=>{
    const panel=document.querySelector('#actor-route-panel');if(panel.hidden)throw Error('Route unavailable');
    panel.open=true;const mode=document.querySelector('#actor-npc-movement');
    mode.value='pingpong';mode.dispatchEvent(new Event('change',{bubbles:true}));
    document.querySelector('#actor-route-draw').click();
    document.querySelector('#sculpt-canvas').scrollIntoView({block:'center',behavior:'instant'});
+   await new Promise(ok=>requestAnimationFrame(()=>requestAnimationFrame(ok)));
   })()`);
-  for(const col of [5,6]){
+  const expected=[];
+  for(let index=0;index<2;index++){
    const dest=await evalJs(`(()=>{
-    const p=window.__sculptLabProbe(),rect=document.querySelector('#sculpt-canvas').getBoundingClientRect();
-    const x=rect.left+p.cameraPan.x+(${col}+.5)*28*p.zoom,y=rect.top+p.cameraPan.y+3.5*21*p.zoom;
-    return {x,y,hit:document.elementFromPoint(x,y)?.id};
+    const canvas=document.querySelector('#sculpt-canvas'),rect=canvas.getBoundingClientRect();
+    const previous=${JSON.stringify(expected)},actor=${JSON.stringify(placement.actor)};
+    for(let y=Math.max(12,rect.top+12);y<Math.min(innerHeight,rect.bottom)-12;y+=24){
+     for(let x=Math.max(12,rect.left+12);x<Math.min(innerWidth,rect.right)-12;x+=32){
+      if(document.elementFromPoint(x,y)!==canvas)continue;
+      const cell=window.__sculptLabProbe({x,y}).probedCell;
+      if(!cell)continue;
+      const offset={x:(cell.x+.5)*28-actor.x,y:(cell.y+.5)*21-actor.y};
+      if(Math.hypot(offset.x,offset.y)>32&&previous.every(p=>Math.hypot(p.x-offset.x,p.y-offset.y)>48))
+       return {x,y,offset};
+     }
+    }
    })()`);
-   if(dest.hit!=='sculpt-canvas')throw Error('Patrol point obscured '+JSON.stringify(dest));
+   if(!dest)throw Error('No distinct visible patrol cell at '+width+'×'+height);
    if(touch){await cmd('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:dest.x,y:dest.y}]});
     await cmd('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}
-   else for(const type of ['mousePressed','mouseReleased'])
-    await cmd('Input.dispatchMouseEvent',{type,x:dest.x,y:dest.y,button:'left',clickCount:1});
+   else{
+    await cmd('Input.dispatchMouseEvent',{type:'mouseMoved',x:dest.x,y:dest.y});
+    await cmd('Input.dispatchMouseEvent',{type:'mousePressed',x:dest.x,y:dest.y,button:'left',buttons:1,clickCount:1});
+    await cmd('Input.dispatchMouseEvent',{type:'mouseReleased',x:dest.x,y:dest.y,button:'left',buttons:0,clickCount:1});
+   }
+   expected.push(dest.offset);
+   const count=await evalJs("document.querySelector('#actor-route-count').textContent");
+   if(parseInt(count,10)!==expected.length)throw Error('Patrol input '+JSON.stringify({touch,dest,count,expected}));
   }
   lastPatrolScene=await evalJs(`(()=>{
    document.querySelector('#actor-route-save').click();document.querySelector('#scene-export').click();
    return document.querySelector('#json').value;
   })()`);
   const actor=JSON.parse(lastPatrolScene).actors[0];
-  if(actor.npc||actor.movementOverride?.mode!=='pingpong'||actor.movementOverride.points.length!==2)
+  if(actor.npc||actor.movementOverride?.mode!=='pingpong'||
+    JSON.stringify(actor.movementOverride.points)!==JSON.stringify(expected))
    throw Error('Placed patrol data '+JSON.stringify(actor));
   console.log('Patrouille dessinée',touch?'tactile paysage':'souris PC',actor.movementOverride);
   await evalJs("document.querySelector('#actor-route-inherit').click()");
