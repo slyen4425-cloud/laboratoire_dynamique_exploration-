@@ -63,7 +63,9 @@ test('sculpt UI and placement path use NPC library, preserve historical author d
  assert.match(js,/npcFrameReferences\(record\)/);
  assert.match(js,/npc:linkedNpc\?null:npcSettingsFromControls\(\)/);
  assert.match(js,/if\(!linkedNpc\)\{/);
- assert.match(js,/actors:npcActorsWithDefinitions\(\),elapsedSeconds:npcWanderElapsed/);
+ assert.match(js,/const actors=npcActorsWithDefinitions\(\);\s*const actorById=new Map\(actors\.map/);
+ assert.match(js,/npcWanderRuntime\.step\(\{\s*actors,elapsedSeconds:npcWanderElapsed/);
+ assert.match(js,/canEngageWild:id=>canChallengeSculptWild\(actorById\.get\(id\)\)/);
  assert.match(js,/resolvePlacedNpcDefinitionsV1\(placedActors,/);
  assert.match(js,/if\(found&&!found\.actorDefinitionId\.startsWith\('npc\.user\.'\)\)/);
  assert.doesNotMatch(js,/npcPlacementDb|createNpcCollisionWorld|createNpcCombatEngine/);
