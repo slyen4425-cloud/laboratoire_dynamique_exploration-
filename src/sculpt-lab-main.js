@@ -50,7 +50,7 @@ import {resolveMapActorAsset,createMapActorAssetResolver} from './assets/map-act
 import {createImageAssetLoader} from './assets/image-asset-loader.js';
 import {createCaptureActorPreviewProviderV1} from './capture/capture-actor-preview-loader-v1.js';
 import {createPlacedMapActorView} from './actors/placed-map-actor-view.js';
-import {nearestAggressiveTrainerV1,nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1} from './actors/map-actor-npc-settings-v1.js?rev=trainer-test-paths-v1';
+import {nearestAggressiveTrainerV1,nearestDialogNpcV1,NPC_TRAINER_ROSTER_LIMIT_V1,NPC_PATROL_MODES_V1,normalizeNpcMovementV1} from './actors/map-actor-npc-settings-v1.js?rev=trainer-test-paths-v1';
 import {createNpcWanderRuntimeV1} from './actors/npc-wander-runtime-v1.js';
 import {loadCaptureShowcaseEncounterSourceV1} from './capture/capture-showcase-encounter-source-v1.js';
 import {createMapActorVisualPreparer} from './assets/map-actor-visual-preparer.js';
@@ -240,7 +240,7 @@ function gameplayPlacedActors(){
   const actors=npcActorsWithDefinitions();
   return navigationTesting?npcWanderRuntime.project(actors):actors;
 }
-let actorSelectedId=null;
+let actorSelectedId=null,npcRouteDraft=null,npcRouteGesture=null;
 let captureActorProvider=null,captureActorRenderer=null,captureActorImageLoader=null;
 let captureActorPreparer=null,npcMediaResolver=null;
 const authoredNpcStore=createUserNpcStoreV1();
@@ -1501,6 +1501,7 @@ function draw(){
   // Keep the original object/actor Y-order above it (before PR #468).
   // No later cliff-mask replay may cut a tree, building or the hero.
   drawEditorPlayableLimit();
+  if(!navigationTesting&&objectEditing&&actorSubmode&&npcRouteDraft)drawNpcRoute();
   // A temporary stroke preview is visual only; WorldSurface is committed on
   // pointerup. No hidden draft geometry is persisted by the renderer.
   if(surfaceEditing){
@@ -2166,6 +2167,15 @@ function redo(){
 function begin(event){
   if(navigationTesting)return;
   if(event.button!==undefined&&event.button!==0)return;
+  if(npcRouteDraft?.drawing&&actorSubmode&&objectEditing){
+    const point=npcRoutePoint(event);if(!point||npcRouteGesture)return;
+    event.preventDefault();canvas.setPointerCapture(event.pointerId);
+    const index=npcRouteHit(point);
+    npcRouteGesture={id:event.pointerId,index,last:point};
+    if(index>=0)npcRouteDraft.selected=index;
+    else npcRouteAdd(point);
+    refreshNpcRouteTools();scheduleDraw();return;
+  }
   if(navigationMaskEditing){
     const cell=screenToCell(event);if(!cell)return;
     event.preventDefault();canvas.setPointerCapture(event.pointerId);
@@ -2324,6 +2334,16 @@ function begin(event){
   stroke(event);
 }
 function stroke(event){
+  if(npcRouteGesture?.id===event.pointerId){
+    const point=npcRoutePoint(event);
+    if(point&&
+       (point.x!==npcRouteGesture.last.x||point.y!==npcRouteGesture.last.y)){
+      if(npcRouteGesture.index>=0)npcRouteDraft.points[npcRouteGesture.index]=point;
+      else npcRouteAdd(point);
+      npcRouteGesture.last=point;refreshNpcRouteTools();scheduleDraw();
+    }
+    return;
+  }
   if(navigationTesting)return;
   if(stairTraceGesture){
     if(event.pointerId!==stairTraceGesture.pointerId)return;
@@ -2563,6 +2583,10 @@ function stroke(event){
   scheduleDraw();
 }
 function stop(event){
+  if(npcRouteGesture?.id===event.pointerId){
+    npcRouteGesture=null;if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
+    return;
+  }
   if(stairTraceGesture){
     const gesture=stairTraceGesture;
     if(event.pointerId!==gesture.pointerId)return;
@@ -3370,7 +3394,7 @@ function navigationTick(time){
           updateNpcInteraction();scheduleDraw();
           // A mobile aggressive trainer may enter the hero's radius even
           // while the hero is standing still. Use the EXISTING trainer gate.
-          const mobile=gameplayPlacedActors().filter(a=>a.npc?.movement?.mode==='wander');
+          const mobile=gameplayPlacedActors().filter(a=>a.npc&&a.npc.movement.mode!=='static');
           const near=nearestAggressiveTrainerV1(
             mobile,null,navActor,canChallengeSculptTrainer);
           if(near&&near.id!==npcWanderAggressiveNearId&&
@@ -4525,8 +4549,7 @@ function npcSettingsFromControls(){
   const chosenWild=$('npc-wild-creature')?.value||current?.wildCreature?.creatureId;
   return {
     kind,name:$('actor-npc-name').value,
-    movement:{mode:$('actor-npc-movement').value,
-      radius:Number($('actor-npc-radius').value)},
+    movement:current?.movement??{mode:'static',radius:90},
     dialogue:$('actor-npc-dialogue').value,
     questId:current?.questId??'',
     trainerTeamId:current?.trainerTeamId??'',
@@ -4635,6 +4658,104 @@ function npcRoleEditorRefresh(){
     $('npc-wild-level').value=String(wild?.level??10);
   }
 }
+function effectiveNpcMovement(actor){
+  return actor?.npc?.movement??actor?.movementOverride??
+    captureActorProvider?.resolveDefinition(actor?.actorDefinitionId)?.npc?.movement;
+}
+function syncNpcRoute(actor){
+  const panel=$('actor-route-panel');if(!panel)return;
+  const movement=actor&&effectiveNpcMovement(actor);
+  panel.hidden=!movement;
+  npcRouteGesture=null;npcRouteDraft=null;
+  if(!movement)return;
+  npcRouteDraft={actorId:actor.id,points:(movement.points??[]).map(p=>({...p})),
+    selected:-1,drawing:false};
+  $('actor-npc-movement').value=movement.mode;
+  $('actor-npc-radius').value=String(movement.radius??90);
+  $('actor-route-speed').value=String(movement.speed??38);
+  $('actor-route-wait').value=String(movement.waitSeconds??.6);
+  $('actor-route-inherit').hidden=!actor.movementOverride;
+  refreshNpcRouteTools();
+}
+function refreshNpcRouteTools(){
+  if(!npcRouteDraft)return;
+  const mode=$('actor-npc-movement').value,path=NPC_PATROL_MODES_V1.includes(mode);
+  $('actor-route-tools').hidden=!path;
+  $('actor-route-radius').hidden=mode!=='wander';
+  $('actor-route-speed-row').hidden=$('actor-route-wait-row').hidden=mode==='static';
+  if(!path){npcRouteDraft.drawing=false;npcRouteGesture=null;}
+  $('actor-route-draw').textContent=npcRouteDraft.drawing?'Terminer le dessin':'Dessiner sur la carte';
+  $('actor-route-remove').disabled=npcRouteDraft.selected<0;
+  $('actor-route-count').textContent=npcRouteDraft.points.length+' point(s) après le départ'+
+    (npcRouteDraft.selected>=0?' · point '+(npcRouteDraft.selected+1)+' sélectionné':'');
+  scheduleDraw();
+}
+function npcRoutePoint(event){
+  const actor=npcSelectedActor(),cell=screenToCell(event);
+  if(!actor||actor.id!==npcRouteDraft?.actorId||!cell)return null;
+  return {x:(cell.x+.5)*SCULPT_TILE.width-actor.x,y:(cell.y+.5)*SCULPT_TILE.height-actor.y};
+}
+function npcRouteHit(point){
+  return npcRouteDraft.points.findIndex(p=>p.x===point.x&&p.y===point.y);
+}
+function npcRouteAdd(point){
+  if(!point.x&&!point.y)return;
+  const points=npcRouteDraft.points,last=points.at(-1);
+  if(points.length>=128||last?.x===point.x&&last?.y===point.y)return;
+  points.push(point);npcRouteDraft.selected=points.length-1;
+}
+function drawNpcRoute(){
+  const actor=npcSelectedActor();
+  if(!actor||!$('actor-route-panel')?.open||!NPC_PATROL_MODES_V1.includes($('actor-npc-movement').value))return;
+  const path=[{x:0,y:0},...npcRouteDraft.points].map(p=>{
+    const x=actor.x+p.x,y=actor.y+p.y;
+    return {x,y:y-sculptHeightAt(terrain,Math.floor(x/SCULPT_TILE.width),
+      Math.floor(y/SCULPT_TILE.height))*SCULPT_TILE.rise};
+  });
+  ctx.save();ctx.lineWidth=2;ctx.strokeStyle='#fff1a7';ctx.beginPath();
+  ctx.moveTo(path[0].x,path[0].y);
+  for(const p of path.slice(1))ctx.lineTo(p.x,p.y);
+  if($('actor-npc-movement').value==='loop')ctx.closePath();
+  ctx.stroke();
+  path.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);
+    ctx.fillStyle=i===0?'#62df99':i===npcRouteDraft.selected+1?'#ff953d':'#fff1a7';ctx.fill();});
+  ctx.restore();
+}
+function saveNpcRoute(){
+  const actor=npcSelectedActor();
+  if(!actor||actor.id!==npcRouteDraft?.actorId)return false;
+  const mode=$('actor-npc-movement').value;
+  try{
+    const movement=normalizeNpcMovementV1(mode==='static'?{mode}:{
+      mode,radius:$('actor-npc-radius').valueAsNumber,
+      speed:$('actor-route-speed').valueAsNumber,waitSeconds:$('actor-route-wait').valueAsNumber,
+      points:npcRouteDraft.points});
+    const patch=actor.npc?{npc:{...actor.npc,movement}}:{movementOverride:movement};
+    actorCommit(updateSculptPreviewActor(placedActors,actor.id,patch));
+    syncNpcRoute(npcSelectedActor());status('Déplacement enregistré pour cet acteur.');return true;
+  }catch(error){status(error.message);return false;}
+}
+$('actor-route-panel')?.addEventListener('toggle',()=>{
+  if(!$('actor-route-panel').open&&npcRouteDraft){npcRouteDraft.drawing=false;npcRouteGesture=null;refreshNpcRouteTools();}
+  scheduleDraw();
+});
+$('actor-npc-movement')?.addEventListener('change',refreshNpcRouteTools);
+$('actor-route-draw')?.addEventListener('click',()=>{
+  if(!npcRouteDraft)return;
+  npcRouteDraft.drawing=!npcRouteDraft.drawing;refreshNpcRouteTools();
+  if(npcRouteDraft.drawing)status('Touche ou trace le trajet sur la carte. Fais glisser un point pour le déplacer.');
+});
+$('actor-route-remove')?.addEventListener('click',()=>{
+  if(!npcRouteDraft||npcRouteDraft.selected<0)return;
+  npcRouteDraft.points.splice(npcRouteDraft.selected,1);npcRouteDraft.selected=-1;refreshNpcRouteTools();
+});
+$('actor-route-save')?.addEventListener('click',saveNpcRoute);
+$('actor-route-preview')?.addEventListener('click',()=>{if(saveNpcRoute())$('navigation-toggle').click();});
+$('actor-route-cancel')?.addEventListener('click',()=>syncNpcRoute(npcSelectedActor()));
+$('actor-route-inherit')?.addEventListener('click',()=>{
+  const actor=npcSelectedActor();
+  if(actor?.movementOverride)actorCommit(updateSculptPreviewActor(placedActors,actor.id,{movementOverride:null}));
+});
 async function loadNpcOfficialCreatureChoices(){
   if(!$('npc-team-creature')||npcCatalogLoading)return;
   npcCatalogLoading=true;
@@ -4671,6 +4792,7 @@ async function loadNpcOfficialCreatureChoices(){
 }
 function syncActorSelectedControls(){
   const selected=npcSelectedActor();
+  syncNpcRoute(selected);
   $('actor-selected').textContent=selected?
     'PNJ sélectionné : '+(selected.npc?.name||
       captureActorProvider?.resolveDefinition(selected.actorDefinitionId)?.displayName||
@@ -4690,8 +4812,6 @@ function syncActorSelectedControls(){
   if($('actor-npc-kind')){
     $('actor-npc-kind').value=npc?.kind??'dialogue';
     $('actor-npc-name').value=npc?.name??'';
-    $('actor-npc-movement').value=npc?.movement.mode??'static';
-    $('actor-npc-radius').value=String(npc?.movement.radius??90);
     $('actor-npc-dialogue').value=npc?.dialogue??'';
   }
   $('actor-definition').value=selected.actorDefinitionId;
@@ -4724,7 +4844,7 @@ function actorCommit(next){
 }
 function setActorSubmode(active){
   actorSubmode=!!active;
-  if(!actorSubmode){closeNpcAuthoringDialog();actorSelectedId=null;}
+  if(!actorSubmode){closeNpcAuthoringDialog();actorSelectedId=null;syncNpcRoute(null);}
   $('object-controls').hidden=actorSubmode;
   $('actor-controls').hidden=!actorSubmode;
   $('active-tool-label').textContent=actorSubmode?'Objets · Acteurs Capture':'Objets · toucher pour placer ou supprimer';
@@ -4797,8 +4917,7 @@ $('npc-merchant-picker')?.addEventListener('change',()=>{
 $('npc-merchant-clear')?.addEventListener('click',()=>{
   npcApplyAuthoringPatch({merchantId:''});
 });
-for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-movement',
-  'actor-npc-radius','actor-npc-dialogue','npc-trainer-engagement','npc-trainer-allow-flee','npc-wild-creature','npc-wild-level']){
+for(const id of ['actor-npc-kind','actor-npc-name','actor-npc-dialogue','npc-trainer-engagement','npc-trainer-allow-flee','npc-wild-creature','npc-wild-level']){
   $(id)?.addEventListener('change',()=>{
     try{editSelectedActor({npc:npcSettingsFromControls()});}
     catch(error){status('Fiche PNJ non enregistrée : '+error.message);}

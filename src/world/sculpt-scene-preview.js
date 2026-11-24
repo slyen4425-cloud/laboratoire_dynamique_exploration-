@@ -226,7 +226,7 @@ export function findSculptPreviewActorNear(raw,x,y,threshold=28){
   return best;
 }
 export function updateSculptPreviewActor(raw,id,{
-  facingX,visualScale,visualView,npc
+  facingX,visualScale,visualView,npc,movementOverride
 }={}){
   const actors=normalizeSculptPreviewActors(raw);
   if(!actors.some(actor=>actor.id===id))return actors;
@@ -237,7 +237,8 @@ export function updateSculptPreviewActor(raw,id,{
       facingX:facingX===undefined?actor.facingX:facingX,
       visualScale:visualScale===undefined?(actor.visualScale??1):visualScale,
       visualView:visualView===undefined?(actor.visualView??'front'):visualView,
-      ...(npc===undefined?{}:{npc})
+      ...(npc===undefined?{}:{npc}),
+      ...(movementOverride===undefined?{}:{movementOverride})
     },index);
     return JSON.stringify(next)===JSON.stringify(actor)?actor:next;
   }));

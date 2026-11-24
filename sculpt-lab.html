@@ -1635,6 +1635,25 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <input id="actor-scale" type="range" min="25" max="200" step="5" value="100" aria-label="Taille visuelle de l'acteur en pourcentage">
   </label>
   <output id="actor-selected">Aucun acteur sélectionné</output>
+  <details id="actor-route-panel" hidden>
+   <summary>Trajet de cet acteur</summary>
+   <label>Déplacement <select id="actor-npc-movement">
+    <option value="static">Immobile</option><option value="wander">Errance active en Tester / Jouer</option>
+    <option value="pingpong">Aller-retour</option><option value="loop">Boucle</option><option value="once">Trajet unique</option>
+   </select></label>
+   <label id="actor-route-radius">Rayon d'errance <input id="actor-npc-radius" type="number" min="16" max="600" value="90"></label>
+   <label id="actor-route-speed-row">Vitesse (unités/s) <input id="actor-route-speed" type="number" min="1" max="200" value="38"></label>
+   <label id="actor-route-wait-row">Pause à chaque point (s) <input id="actor-route-wait" type="number" min="0" max="60" step=".1" value=".6"></label>
+   <div id="actor-route-tools" hidden>
+    <button type="button" id="actor-route-draw">Dessiner sur la carte</button>
+    <button type="button" id="actor-route-remove" disabled>Retirer le point sélectionné</button>
+    <output id="actor-route-count" aria-live="polite"></output>
+   </div>
+   <button type="button" id="actor-route-save">Enregistrer le déplacement</button>
+   <button type="button" id="actor-route-preview">Tester le trajet</button>
+   <button type="button" id="actor-route-cancel">Annuler les modifications</button>
+   <button type="button" id="actor-route-inherit" hidden>Reprendre le déplacement de la fiche partagée</button>
+  </details>
   <button type="button" id="npc-authoring-open" disabled>⚙ Configurer ce PNJ historique (instance)</button>
   <a id="actor-npc-edit-definition" href="./npc-editor.html" target="_blank" rel="noopener" hidden>✎ Modifier la définition partagée dans l’éditeur de PNJ</a>
   <dialog id="npc-authoring-dialog" aria-label="Configuration du PNJ">
@@ -1650,10 +1669,6 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
      <option value="merchant">Marchand</option>
    </select></label>
    <label>Nom affiché <input id="actor-npc-name" type="text" maxlength="80" placeholder="Ex. Gardien de la forêt"></label>
-   <label>Comportement <select id="actor-npc-movement">
-     <option value="static">Statique</option><option value="wander">Errance active en Tester / Jouer</option>
-   </select></label>
-   <label>Rayon d'errance <input id="actor-npc-radius" type="number" min="16" max="600" value="90"></label>
    <label>Dialogue (une ligne par écran) <textarea id="actor-npc-dialogue" rows="3" maxlength="2000" placeholder="Bonjour, voyageur !"></textarea></label>
    <section id="npc-trainer-editor" hidden aria-label="Composition du dresseur">
     <strong>⚔ Équipe du dresseur</strong>

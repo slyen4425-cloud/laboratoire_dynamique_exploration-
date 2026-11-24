@@ -210,6 +210,9 @@ export function resolvePlacedNpcDefinitionsV1(placements,resolveDefinition){
  return Object.freeze(placements.map(actor=>{
   if(actor.npc!=null)return actor;
   const def=resolveDefinition(actor.actorDefinitionId);
-  return def?.schema===USER_NPC_SCHEMA_V1?Object.freeze({...actor,npc:def.npc}):actor;
+  if(def?.schema!==USER_NPC_SCHEMA_V1)return actor;
+  const npc=actor.movementOverride
+   ?Object.freeze({...def.npc,movement:actor.movementOverride}):def.npc;
+  return Object.freeze({...actor,npc});
  }));
 }
