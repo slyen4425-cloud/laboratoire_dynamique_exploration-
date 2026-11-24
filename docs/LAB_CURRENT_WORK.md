@@ -1,3 +1,8 @@
+## 2026-11-24 — #527/#528 · Fuite sauvage et patrouille native (complément)
+- START `52c0736f16b4bf75209a3839255135786719188c`, checkpoint `checkpoint/exploration-start-wild-flight-patrol-2026-11-24`, branche `work/exploration-wild-flight-patrol-527-20261124`. #548 GREEN CI 45491305221 / Pages 45491305075. Capture #648 transport du SHA précédent en cours ; ne pas le modifier. Pas de nouveau ticket concurrent.
+- Compléter le critère fuite de #527 avec une politique `flee` additive dans l'unique contrat sauvage et la même boucle Movement/Collision World ; bornée au territoire, retour facultatif, jamais de combat automatique. Test des trajets des sauvages, pause, terrain bloqué et absence de téléportation. Anciennes données inchangées. Aucun nouveau moteur, store ou média.
+- CI/Chromium et preuve HTTPS avant GREEN. Validation physique auteur différée à sa demande.
+
 ## 2026-11-24 — #529 · Comportement des créatures sauvages placées (C2)
 - START `bdac9bade51cb908fe0e7a5fc8d06ac3f2a8d874` ; checkpoint `checkpoint/exploration-start-wild-behavior-529-2026-11-24` ; branche `work/exploration-wild-behavior-529-20261124`. #547 GREEN CI 45484426362 / Pages 45484426128, HTTPS ; transport Capture #646 séparé en cours.
 - Comportement facultatif dans le contrat PNJ existant, ancien sauvage pacifique par défaut. Réutiliser le runtime de déplacement placé et le raccord `npc-wild`, sans modifier SpawnZone aléatoire ni Core Combat/Capture. Détection, contact, poursuite, désengagement, retour et cooldown sur la même boucle native ; aucune seconde position persistée. UI dans les réglages existants, sans dupliquer l’autorité de définition.
