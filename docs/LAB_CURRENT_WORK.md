@@ -1,3 +1,6 @@
+## 2026-11-24 — Valider le mouvement sur le parcours de publication
+Base `b61ad0308a5eacce4c2ee5f95a428b930b676e45`, checkpoint `checkpoint/exploration-start-navigation-smoke-encounters-20261124`. Le run 45433309432 a relevé 3,65 unités avant retour à l’arrêt lors du test clavier qui suit le toucher. Ce scénario charge le vrai catalogue dans le site assemblé. Le test désactive les rencontres aléatoires de sa zone via le volet auteur puis rétablit son état. Les distances de 8, 20 et 35 unités, le gel de 190 ms et les tests de combat restent exigés. Aucun changement du moteur.
+
 ## 2026-11-24 — #530 · Support explicite pour franchir l’eau
 Départ `d55dd4d4f565baefc66bc5ccbde2f10e501f67fe`, checkpoint `checkpoint/exploration-start-water-passage-530-20261124`, branche `work/exploration-water-passage-530-20261124`. Le même outil Navigation doit accepter une passerelle entre deux berges sèches. SculptTerrain possède les deux points, Collision World possède le déplacement sur le tablier natif. Vérifier les bords, les ancrages, le trajet retour, la restauration, l'import/export et les anciens corridors.
 
