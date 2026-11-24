@@ -37,7 +37,13 @@ const server = createServer(async(req,res)=>{
       const origin='http://127.0.0.1:'+server.address().port;
       const projectTester=requestUrl.searchParams.has('projectTester');
       const opponentId=requestUrl.searchParams.get('opponent') || snapshot.opponents[0].creatureId;
-      const encounterSnapshot={...snapshot,opponents:[{creatureId:opponentId}]};
+      const placedWild=requestUrl.searchParams.has('placedWild');
+      const encounterSnapshot=placedWild?{...snapshot,source:'npc-wild',
+        context:{...snapshot.context,wildActorId:'placed-wild-smoke'},
+        opponents:[{creatureId:opponentId,level:20,npcInstance:{
+          schema:'capture-npc-opponent-instance-v1',displayName:'Sauvage Chromium',
+          statAllocations:{health:7}
+        }}]}:{...snapshot,opponents:[{creatureId:opponentId}]};
       const envelope={version:1,snapshot:encounterSnapshot,
         returnState:{areaId:'forest-exterior',x:62,y:18,
           returnUrl:origin+'/index.html?combatReturn=1'+(projectTester?'&universe='+universeFixture.universeId:'')},result:null};
@@ -254,7 +260,8 @@ try {
   // case: Noctigriffe has no authored model and must remain playable by fallback.
   for (const [opponentId,opponentName,query=''] of [['crea_nat_1','Grainou'],['crea_ombre_2','Noctigriffe'],
     [universeFixture.speciesId,universeFixture.name,'&adventureSession='+universeFixture.sessionId],
-    [universeFixture.speciesId,universeFixture.name,'&projectTester=1']]) {
+    [universeFixture.speciesId,universeFixture.name,'&projectTester=1'],
+    ['crea_mossback','Sauvage Chromium','&placedWild=1']]) {
   const url=baseUrl+'?opponent='+opponentId+query;
   const dom=await dumpDom(url);
   const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
