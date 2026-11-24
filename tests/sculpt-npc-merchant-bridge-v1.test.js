@@ -10,7 +10,7 @@ const npc=(kind,merchantId,dialogue='')=>({kind,name:'Marchand',
 const actor=(id,x,settings)=>normalizeWorldActorPlacement({
  id,actorDefinitionId:'exploration:npc:generic-v1',x,y:10,npc:settings
 });
-test('merchant with a canonical reference is interactable inside native proximity, even without dialogue',()=>{
+test('native merchant proximity: linked shops and explicit missing-reference dialogue',()=>{
  const placed=[actor('far',200,npc('merchant','merchant-old')),
   actor('near',30,npc('merchant','merchant-a')),
   actor('no-shop',9,npc('merchant',''))];
@@ -18,7 +18,14 @@ test('merchant with a canonical reference is interactable inside native proximit
  assert.equal(nearestDialogNpcV1(placed,{x:500,y:500},65),null);
  assert.equal(nearestDialogNpcV1([actor('dialogue',10,npc('dialogue','','Bonjour'))],{x:10,y:10})?.id,
   'dialogue','original dialogue interaction remains functional');
- assert.equal(nearestDialogNpcV1([actor('empty',10,npc('merchant',''))],{x:10,y:10}),null);
+ // A missing reference must no longer make the merchant silently inert.
+ // Proximity selects the NPC, but the dialogue cannot trade without a link.
+ const empty=actor('empty',10,npc('merchant',''));
+ const silent=actor('silent',10,npc('dialogue',''));
+ assert.equal(nearestDialogNpcV1([silent,empty],{x:10,y:10}),empty);
+ assert.equal(empty.npc.merchantId,'');
+ assert.equal(nearestDialogNpcV1([empty],{x:500,y:500}),null);
+ assert.equal(nearestDialogNpcV1([silent],{x:10,y:10}),null);
 });
 test('authored merchant link survives native actor normalization without a second shop',()=>{
  const item=actor('shop',42,npc('merchant','merchant-abc'));
