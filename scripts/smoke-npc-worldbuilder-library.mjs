@@ -177,6 +177,29 @@ try{
  if(!talk.caption.includes('Messager de la forêt')||
     talk.spoken!=='Bienvenue dans la clairière !')
   throw Error('Linked PNJ did not talk through canonical dialogue '+JSON.stringify(talk));
+ // Change the same saved definition in the authoritative library, not the placement.
+ await evalJs("document.querySelector('#navigation-toggle').click()");
+ await evalJs(`(async()=>{
+  const {createUserNpcDefinitionV1}=await import('./src/actors/user-npc-definition-v1.js');
+  const {createUserNpcStoreV1}=await import('./src/storage/user-npc-store-v1.js');
+  const store=createUserNpcStoreV1(),previous=await store.get('${id}');
+  const base=previous.assets.find(asset=>asset.id===previous.id+'.base');
+  await store.put(createUserNpcDefinitionV1({id:previous.id,name:'Marchand sans boutique',
+   role:'merchant',base,createdAt:previous.createdAt,npc:{merchantId:''}}));
+  document.querySelector('#actor-npc-library-reload').click();
+ })()`);
+ await until(`Array.from(document.querySelector('#actor-definition').options).some(o=>o.value==='${id}'&&o.textContent.includes('Marchand sans boutique'))`,'updated merchant definition loaded');
+ await evalJs("document.querySelector('#navigation-toggle').click()");
+ await until("!document.querySelector('#npc-talk').hidden && document.querySelector('#npc-talk').textContent.includes('Marchand sans boutique')",'unlinked merchant visible through native proximity');
+ const missing=await evalJs(`(()=>{
+  document.querySelector('#npc-talk').click();
+  const result={text:document.querySelector('#npc-dialogue-text').textContent,
+   tradeHidden:document.querySelector('#npc-dialogue-trade').hidden};
+  document.querySelector('#npc-dialogue-close').click();
+  return result;
+ })()`);
+ if(!missing.text.includes('Aucune boutique associée')||!missing.tradeHidden)
+  throw Error('Unlinked merchant did not show the native repair message '+JSON.stringify(missing));
  // Screenshot is captured from the REAL Chromium page, never rendered by a mock.
  await mkdir('artifacts',{recursive:true});
  const shot=await cmd('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
