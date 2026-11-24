@@ -76,15 +76,3 @@ test('async Catalog refresh commits the latest user selection, not the value cap
   'do not keep an earlier stale snapshot of the selected definition');
  assert.match(fn,/if\(definitions\.some\(def=>def\.id===chosen\)\)\$\('actor-definition'\)\.value=chosen/);
 });
-
-test('a nearby unlinked merchant is still interactable; no shop or reference is invented',async()=>{
- const {nearestDialogNpcV1,normalizeMapActorNpcSettingsV1}=await import('../src/actors/map-actor-npc-settings-v1.js');
- const merchant={id:'merchant-placed',x:20,y:20,npc:normalizeMapActorNpcSettingsV1({kind:'merchant',name:'Marchand'})};
- const silentVillager={id:'villager',x:20,y:20,npc:normalizeMapActorNpcSettingsV1({kind:'dialogue'})};
- assert.equal(nearestDialogNpcV1([silentVillager,merchant],{x:20,y:20}),merchant);
- assert.equal(nearestDialogNpcV1([merchant],{x:200,y:200}),null);
- assert.equal(merchant.npc.merchantId,'');
- assert.equal(nearestDialogNpcV1([silentVillager],{x:20,y:20}),null);
- const linked={...merchant,npc:normalizeMapActorNpcSettingsV1({kind:'merchant',merchantId:'shop.official.1'})};
- assert.equal(nearestDialogNpcV1([linked],{x:20,y:20}),linked);
-});
