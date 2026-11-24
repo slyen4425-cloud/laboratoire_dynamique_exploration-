@@ -109,13 +109,17 @@ export function createNpcWanderRuntimeV1({move}={}){
           state.chasing=true;
       }
       if(policy?.mode==='flee'){
-        if(state.fleeing&&(!player||heroDistance>policy.disengageRadius||heroHomeDistance>policy.disengageRadius)){
+        if(state.fleeing&&(!player||heroHomeDistance>policy.disengageRadius||
+          (heroDistance>policy.disengageRadius&&heroHomeDistance>policy.detectionRadius))){
           state.fleeing=false;state.returning=policy.returnHome;
         }
         if(player&&heroDistance<=policy.detectionRadius&&heroHomeDistance<=policy.disengageRadius){
           state.fleeing=true;state.returning=false;
         }
       }
+      // Hold a safe distance while the threat remains near the home anchor;
+      // do not oscillate between fleeing and returning every frame.
+      if(state.fleeing&&heroDistance>=policy.disengageRadius){updated ||=oldMoving;continue;}
       const special=state.chasing||state.fleeing||state.returning;
       if(!special&&(state.done||state.movement.mode==='static')){updated ||=oldMoving;continue;}
       if(!special&&state.pause>0){
