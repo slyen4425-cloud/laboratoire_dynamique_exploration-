@@ -81,5 +81,5 @@ test('frozen Tester previews never import the scoped Adventure readers during mo
   assert.doesNotMatch(bridge,new RegExp("from\\s*['\"][^'\"]*"+filename+"['\"]"));
   assert.match(bridge,new RegExp("import\\(['\"][^'\"]*"+filename+"['\"]\\)"));
  }
- assert.match(bridge,/encounterSessionId===undefined\?undefined:\s*await readAdventureCombatParty\(handoff,authorBundle\)/);
+ assert.match(bridge,/encounterSessionId===undefined\?undefined:\s*await readAdventureCombatParty\(handoff,authorBundle,universeId\)/);
 });

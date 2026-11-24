@@ -6,7 +6,7 @@ import { createCapturePreviewDisplayModeV1 } from '../../src/ui/capture-preview-
 import { adaptCaptureExportToNativeVisualSourceV1 } from '../../src/adapters/input/capture/capture-export-to-native-visual-source-v1.js';
 import { createGlobalPresentationAssetResolverV1 } from '../../src/assets/global-presentation-asset-resolver-v1.js';
 import { createCaptureSkillPresentationAssetsV2 } from '../../src/adapters/renderer/capture-skill-presentation-assets-v2.js';
-import {normalizeCaptureAuthorEncounterBundleV1} from '../../../src/capture/capture-showcase-encounter-source-v1.js';
+import * as encounterSources from '../../../src/capture/capture-showcase-encounter-source-v1.js';
 import { demoPresentationAssets } from './demo-assets.js';
 import { privateAudioRuntimeAssetV1 } from '../../src/assets/private-audio-runtime-library-v1.js';
 import { soundtrackRuntimeAssetV1 } from '../../src/assets/soundtrack-runtime-library-v1.js';
@@ -123,9 +123,23 @@ const assetCatalogUrl = new URL('../../../capture-assets/data/assets/catalog/glo
 const assetBase = new URL('../../../capture-assets/assets/library/',import.meta.url);
 const assetUrlForFile = file => new URL(file,assetBase).href;
 function presentationAssetsForSource(source, assetCatalog) {
-  const resolveAsset=createGlobalPresentationAssetResolverV1({
-    assetCatalog,assetUrlForFile
-  });
+  const resolveFile=createGlobalPresentationAssetResolverV1({assetCatalog,assetUrlForFile});
+  // Combat describes the timing and frames of manifest-backed effects. Serve
+  // those same frames from the certified media packaged alongside this game.
+  const sequences=new Set(assetCatalog.assets.filter(entry=>entry.resource?.manifest).map(entry=>entry.id));
+  const ownerBase=assetCatalog.storage.rawBaseUrl;
+  function stagedUrl(url){
+    if(!url.startsWith(ownerBase))throw new Error('Séquence hors du catalogue officiel : '+url);
+    return assetUrlForFile(url.slice(ownerBase.length));
+  }
+  function resolveAsset(id){
+    const file=resolveFile(id);
+    if(file||!sequences.has(id))return file;
+    const sequence=demoPresentationAssets.asset(id);
+    if(!sequence)return null;
+    if(sequence.frames)return {...sequence,frames:sequence.frames.map(stagedUrl)};
+    return sequence.url?{...sequence,url:stagedUrl(sequence.url)}:null;
+  }
   const native=createCaptureSkillPresentationAssetsV2({
     skillPresentations:source.skillPresentations??{},
     assetForId:resolveAsset,
@@ -266,7 +280,7 @@ function completeBattle(outcome) {
     window.location.assign(destination.href);
   }
 }
-async function readAdventureCombatParty(handoff,bundle){
+async function readAdventureCombatParty(handoff,bundle,universeId){
   // Historical Tester previews package this bridge over older Exploration.
   // Load the scoped readers only when the launched battle belongs to Aventure.
   const [{readWorldAssemblerDraft},{readScopedAdventurePublishedEncountersV1},
@@ -275,7 +289,13 @@ async function readAdventureCombatParty(handoff,bundle){
     import('../../../src/encounters/adventure-published-encounters-v1.js'),
     import('../../../src/encounters/adventure-playing-party-v1.js')
   ]);
-  const world=readWorldAssemblerDraft(window.localStorage);
+  let worldStorage=window.localStorage;
+  if(universeId!==null){
+    const {createExplorationUniverseWorkspaceStorageV1}=await import(
+      '../../../src/storage/exploration-universe-workspace-storage-v1.js');
+    worldStorage=createExplorationUniverseWorkspaceStorageV1(worldStorage,universeId);
+  }
+  const world=readWorldAssemblerDraft(worldStorage);
   if(!world)throw new Error('Le monde de la partie Aventure est absent');
   const context={
     storage:window.sessionStorage,sessionId:encounterSessionId,worldId:world.id,
@@ -292,18 +312,19 @@ async function readAdventureCombatParty(handoff,bundle){
 async function launch() {
   const handoff=readCombatHandoff(handoffStorage, handoffScope);
   if(!handoff||handoff.result)throw new Error('EncounterSnapshot v1 absent ou déjà terminé');
+  const universeId=new URL(handoff.returnState.returnUrl,document.URL).searchParams.get('universe');
   // Start downloading the official HUD immediately; independent source data
   // resolves concurrently. Only one build-produced bundle supplies every
   // approved creature/skill, never 70+ independent cold-start requests.
   const templateRequest=scopedRequest('./capture-editor-v2.html');
   const templateResponse=fetch(templateRequest.url,
     encounterSessionId===undefined?{cache:'force-cache'}:templateRequest.init);
-  const [testerParty,nativeSkillCatalog,statRegistry,progressionRules,baseFighterRules,
+  const [testerParty,nativeSkillCatalog,showcaseStats,showcaseProgression,baseFighterRules,
     assetCatalog,...profilesAndBundle] = await Promise.all([
-    encounterSessionId===undefined?readJson('./party.preview.v1.json'):null,
+    encounterSessionId===undefined&&universeId===null?readJson('./party.preview.v1.json'):null,
     readJson(resource('data/combat/skills/catalog.v1.json')),
-    readJson(resource('data/capture/monster-capture-stat-registry.v1.json')),
-    readJson(resource('data/capture/monster-capture-progression-rules.v1.json')),
+    universeId===null?readJson(resource('data/capture/monster-capture-stat-registry.v1.json')):null,
+    universeId===null?readJson(resource('data/capture/monster-capture-progression-rules.v1.json')):null,
     readJson(resource('data/combat/fighters/maraileron.combat.json')),
     readJson(assetCatalogUrl),
     ...['biped','flying','massive','quadruped','serpentine'].map(id=>
@@ -311,12 +332,21 @@ async function launch() {
     readJson(resource('data/capture/showcase/encounter-bundle.v1.json'))
   ]);
   const profiles=profilesAndBundle.slice(0,5);
-  const authorBundle=normalizeCaptureAuthorEncounterBundleV1(profilesAndBundle[5]);
+  const authorBundle=universeId===null
+    ?encounterSources.normalizeCaptureAuthorEncounterBundleV1(profilesAndBundle[5])
+    :await encounterSources.selectCaptureEncounterBundleV1(profilesAndBundle[5],universeId);
+  const statRegistry=universeId===null?showcaseStats:authorBundle.statRegistry;
+  const progressionRules=universeId===null?showcaseProgression:authorBundle.progressionRules;
   const adventureParty=encounterSessionId===undefined?undefined:
-    await readAdventureCombatParty(handoff,authorBundle);
-  const party=adventureParty
-    ?{id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId}
-    :testerParty;
+    await readAdventureCombatParty(handoff,authorBundle,universeId);
+  let party=testerParty;
+  if(adventureParty){
+    party={id:adventureParty.partyRef,activeCreatureId:adventureParty.active.speciesId};
+  }else if(universeId!==null){
+    const fighter=authorBundle.creatureTransfers.find(record=>record.loadout.slots.some(slot=>slot.skillId));
+    if(!fighter)throw new Error('Équipe au moins une compétence sur une espèce de cet univers pour tester le combat.');
+    party={id:handoff.snapshot.player.partyRef,activeCreatureId:fighter.draft.id};
+  }
   const trainerPreview=!adventureParty&&handoff.snapshot.source==='npc-trainer';
   const creatureTransfers=authorBundle.creatureTransfers;
   const skillTransfers=authorBundle.skillTransfers;

@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, extname, sep } from 'node:path';
+import {createUniverseEncounterBrowserFixture} from './universe-encounter-browser-fixture.mjs';
 
 const root = process.cwd();
 const route = '/combat-preview/examples/dom-demo/exploration-encounter.html';
@@ -24,6 +25,7 @@ const snapshot = {
   returnToken:'return-smoke-1'
 };
 
+const universeFixture=await createUniverseEncounterBrowserFixture(snapshot);
 const server = createServer(async(req,res)=>{
   try {
     const requestUrl=new URL(req.url,'http://localhost');
@@ -33,12 +35,16 @@ const server = createServer(async(req,res)=>{
     let content=await readFile(path);
     if(pathname===route){
       const origin='http://127.0.0.1:'+server.address().port;
+      const projectTester=requestUrl.searchParams.has('projectTester');
       const opponentId=requestUrl.searchParams.get('opponent') || snapshot.opponents[0].creatureId;
       const encounterSnapshot={...snapshot,opponents:[{creatureId:opponentId}]};
       const envelope={version:1,snapshot:encounterSnapshot,
         returnState:{areaId:'forest-exterior',x:62,y:18,
-          returnUrl:origin+'/index.html?combatReturn=1'},result:null};
+          returnUrl:origin+'/index.html?combatReturn=1'+(projectTester?'&universe='+universeFixture.universeId:'')},result:null};
       const probe='<script>'+
+        (projectTester?universeFixture.testerSeed:'')+
+        (requestUrl.searchParams.get('adventureSession')===universeFixture.sessionId?
+          universeFixture.browserSeed(origin):'')+
         'sessionStorage.setItem("gensrpg.capture.combat-handoff.v1",'+
         JSON.stringify(JSON.stringify(envelope))+');'+
         'window.addEventListener("error",e=>document.documentElement.dataset.encounterBootstrapError=e.message);'+
@@ -246,8 +252,10 @@ try {
   const baseUrl='http://127.0.0.1:'+server.address().port+route;
   // Keep the original encounter sentinel and add the creator's second-battle
   // case: Noctigriffe has no authored model and must remain playable by fallback.
-  for (const [opponentId,opponentName] of [['crea_nat_1','Grainou'],['crea_ombre_2','Noctigriffe']]) {
-  const url=baseUrl+'?opponent='+opponentId;
+  for (const [opponentId,opponentName,query=''] of [['crea_nat_1','Grainou'],['crea_ombre_2','Noctigriffe'],
+    [universeFixture.speciesId,universeFixture.name,'&adventureSession='+universeFixture.sessionId],
+    [universeFixture.speciesId,universeFixture.name,'&projectTester=1']]) {
+  const url=baseUrl+'?opponent='+opponentId+query;
   const dom=await dumpDom(url);
   const status=dom.match(/<p[^>]*data-bridge-status[^>]*>([\s\S]*?)<\/p>/i)?.[1]?.replace(/<[^>]*>/g,'').trim()??'missing';
   const jsError=dom.match(/data-encounter-bootstrap-error="([^"]+)"/)?.[1]??'';
@@ -263,6 +271,10 @@ try {
   if(skillCount<1)throw Error('No real Capture combat skill rendered');
   if(!dom.includes('data-combat-hp-value="opponent-1"'))throw Error('Encounter enemy HUD absent');
   if(!dom.includes(opponentName))throw Error('Encounter does not show real selected creature '+opponentName);
+  if(query.startsWith('&adventureSession=')){
+    const hp=dom.match(/data-combat-hp-value="local-1"[^>]*>([^<]*)</)?.[1]??'';
+    if(!hp.includes('/ '+universeFixture.expectedHp+' PV'))throw Error('PV du projet absents du HUD : '+hp);
+  }
   if(layoutProof!=='OK')throw Error('Native Capture Editor landscape UI is wrong: '+layoutProof);
   if(skillProof!=='OK')throw Error('Real Encounter ability cannot be used: '+skillProof);
   if(fullscreenProof!=='OK')throw Error('Encounter has no usable Android fullscreen control: '+fullscreenProof);

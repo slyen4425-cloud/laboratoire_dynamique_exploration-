@@ -107,6 +107,15 @@ export function readExplorationPlay(storage,rawWorld,options){
   return Object.freeze({...value,...position});
 }
 
+// A named universe can own a session created before checkpoints were scoped.
+// Verify the original session and world before adopting its exact position.
+export function adoptLegacyUniversePlayCheckpointV1(storage,legacyStorage,world,sessionId){
+  const key=explorationPlayNavigationKey(sessionId);
+  if(storage===legacyStorage||storage.getItem(key)!==null)return;
+  const saved=readExplorationPlay(legacyStorage,world,{sessionId});
+  if(saved)storage.setItem(key,JSON.stringify(saved));
+}
+
 // The play runtime uses one pre-validated document for its entire lifetime.
 // Rehashing a large WorldDocument on each movement paint causes PC microstutter;
 // this checkpoint writer validates the WorldDocument ONCE on creation, then

@@ -1,3 +1,6 @@
+## 2026-11-24 — #385 Combat · Catalogue utilisé par les rencontres d’un univers
+Départ `860df6c8a9cf853b7570f0e44b11990c5b2f4a7e`, checkpoint `checkpoint/exploration-start-universe-encounters-385-20261124`. L’exploration et le combat lancé depuis la carte doivent lire le même catalogue du projet Combat. Vérifier les statistiques, le monde et la reprise de session ainsi que le parcours vitrine existant.
+
 ## 2026-11-24 — #528 · Déplacements des acteurs de carte
 Checkpoint `checkpoint/exploration-start-npc-patrol-528-20261124`, base `1ef71e18d2244e96a752f0266f1ed6b429a76c3a`, CI 45435313260. Le volet Trajet du PNJ sélectionné sauvegarde des points relatifs au placement. La fiche partagée reste propriétaire du PNJ. Les modes boucle, aller-retour et trajet unique passent par le mouvement natif. Le rayon de la zone d’errance est indépendant du rayon physique. Vérifier dessin à la souris et au doigt, import/export, pause et retour au comportement partagé.
 

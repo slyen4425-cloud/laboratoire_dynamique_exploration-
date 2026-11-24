@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createBlankWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {
-  EXPLORATION_PLAY_NAV_KEY,createNewExplorationPlay,
+  EXPLORATION_PLAY_NAV_KEY,createNewExplorationPlay,adoptLegacyUniversePlayCheckpointV1,
   readExplorationPlay,saveExplorationPlayPosition,
   createExplorationPlayProgressWriter,explorationPlayNavigationKey,playWorldFingerprint
 } from '../src/play/exploration-play-session.js';
@@ -32,6 +32,21 @@ test('Continue resumes exact real-world coordinates and refuses invalid destinat
  assert.deepEqual([readExplorationPlay(s,doc).x,readExplorationPlay(s,doc).y],[300,200]);
  assert.throws(()=>saveExplorationPlayPosition(s,doc,{currentAreaId:'fantom',x:300,y:200}),/WorldArea/);
  assert.throws(()=>saveExplorationPlayPosition(s,doc,{currentAreaId:doc.initialAreaId,x:-10,y:1}),/position/i);
+});
+
+test('a pre-existing universe game keeps its position and a second launch keeps newer progress',()=>{
+ const legacy=store(),scoped=store(),doc=world(),scope={sessionId:'session-legacy'};
+ createNewExplorationPlay(legacy,doc,scope);
+ const point={currentAreaId:doc.initialAreaId,x:300,y:200};
+ const previous=saveExplorationPlayPosition(legacy,doc,point,scope);
+ assert.throws(()=>adoptLegacyUniversePlayCheckpointV1(scoped,legacy,{...doc,id:'other-world'},scope.sessionId));
+ assert.equal(scoped.getItem(explorationPlayNavigationKey(scope.sessionId)),null);
+ adoptLegacyUniversePlayCheckpointV1(scoped,legacy,doc,scope.sessionId);
+ assert.deepEqual(readExplorationPlay(scoped,doc,scope),previous);
+ saveExplorationPlayPosition(scoped,doc,{...point,x:400},scope);
+ adoptLegacyUniversePlayCheckpointV1(scoped,legacy,doc,scope.sessionId);
+ assert.equal(readExplorationPlay(scoped,doc,scope).x,400);
+ assert.deepEqual(readExplorationPlay(legacy,doc,scope),previous);
 });
 
 test('No invisible demo world, no import of wrong save, no partial overwrite on invalid world',()=>{
