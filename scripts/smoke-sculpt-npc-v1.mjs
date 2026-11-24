@@ -304,6 +304,32 @@ try{
   document.querySelector('#navigation-toggle').click();
  })()`);
 
+ // Aggressive wild uses native contact and cannot immediately relaunch after flee.
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#scene-export').click();
+  const scene=JSON.parse(document.querySelector('#json').value);
+  scene.actors[0].npc={kind:'wild',name:'Sauvage agressif',movement:{mode:'static',radius:90},
+   wildCreature:{creatureId:'crea_mossback',level:20},
+   wildBehavior:{mode:'aggressive',detectionRadius:100,disengageRadius:180,returnHome:true,cooldownSeconds:5}};
+  document.querySelector('#json').value=JSON.stringify(scene);
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+ await waitForNativeDuel('aggressive placed wild detects player without click');
+ await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
+ await until("!document.querySelector('.combat-overlay__frame')",'return from aggressive wild');
+ const cooldown=await run("window.__sculptNpcWanderProbe().runtime[0]");
+ if(!(cooldown.cooldown>0))throw Error('Wild cooldown not retained on return');
+ await new Promise(resolve=>setTimeout(resolve,800));
+ if(await run("Boolean(document.querySelector('.combat-overlay__frame'))"))throw Error('Wild battle relaunched during cooldown');
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#json').value=${JSON.stringify(configured.offerScene)};
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+
  // Validate a WALKING NPC in the actual 2.5D editor/Tester. Never
  // persist its runtime x/y: returning to editor must restore the anchor.
  const roamingAuthored=await run(`(()=>{

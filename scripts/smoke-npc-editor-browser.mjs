@@ -164,6 +164,11 @@ try{
    const checks=[...document.querySelectorAll('#npc-wild-instance .npc-combat-skills input')];
    if(checks.length>1){checks.at(-1).checked=false;checks.at(-1).dispatchEvent(new Event('change',{bubbles:true}));}
    const wanted=[...document.querySelectorAll('#npc-wild-instance .npc-combat-skills input:checked')].map(el=>el.value);
+   change($('#npc-wild-behavior select'),'aggressive');
+   const behaviorInputs=[...document.querySelectorAll('#npc-wild-behavior input[type=number]')];
+   change(behaviorInputs[0],'85');change(behaviorInputs[1],'150');change(behaviorInputs[2],'12');
+   $('#npc-wild-behavior input[type=checkbox]').checked=false;
+   $('#npc-wild-behavior input[type=checkbox]').dispatchEvent(new Event('change',{bubbles:true}));
    $('#npc-save').click();
    const {createUserNpcStoreV1}=await import('./src/storage/user-npc-store-v1.js');
    const store=createUserNpcStoreV1();
@@ -173,6 +178,9 @@ try{
     if(saved?.npc?.wildCreature?.npcInstance?.displayName==='Sauvage CI'&&!$('#npc-save').disabled)break;
     await delay(120);
    }
+   const behavior=saved?.npc?.wildBehavior;
+   if(behavior?.mode!=='aggressive'||behavior.detectionRadius!==85||behavior.disengageRadius!==150||behavior.cooldownSeconds!==12||behavior.returnHome!==false)
+    throw Error('Comportement sauvage non enregistré : '+JSON.stringify(behavior));
    const slot=saved?.npc?.wildCreature;
    if(slot?.creatureId!==species||slot?.npcInstance?.displayName!=='Sauvage CI'||
       !Object.values(slot.npcInstance.statAllocations??{}).includes(7)||
@@ -186,6 +194,9 @@ try{
    try{
     restored=await evaluate(`document.querySelector('#npc-wild-choice')?.value===${JSON.stringify(wild.species)}&&
       document.querySelector('#npc-wild-instance input[type=text]')?.value==='Sauvage CI'&&
+      document.querySelector('#npc-wild-behavior select')?.value==='aggressive'&&
+      [...document.querySelectorAll('#npc-wild-behavior input[type=number]')].map(el=>el.value).join(',')==='85,150,12'&&
+      document.querySelector('#npc-wild-behavior input[type=checkbox]')?.checked===false&&
       [...document.querySelectorAll('#npc-wild-instance .npc-combat-stats input')].some(el=>el.getAttribute('aria-label')===${JSON.stringify(wild.statLabel)}&&el.value==='7')`);
    }catch{}
    if(restored)break;

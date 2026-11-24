@@ -78,6 +78,21 @@ export function normalizeNpcMovementV1(raw={}){
   });
   return Object.freeze({mode,speed,waitSeconds,points:Object.freeze(points)});
 }
+export const NPC_WILD_CONTACT_RANGE_V1=24;
+export const NPC_WILD_BEHAVIOR_DEFAULTS_V1=Object.freeze({
+  mode:'pacific',detectionRadius:100,disengageRadius:180,returnHome:true,cooldownSeconds:8
+});
+export function normalizeNpcWildBehaviorV1(raw={}){
+  const value={...NPC_WILD_BEHAVIOR_DEFAULTS_V1,...raw};
+  if(!['pacific','contact','aggressive'].includes(value.mode)||
+     !Number.isFinite(value.detectionRadius)||value.detectionRadius<24||value.detectionRadius>600||
+     !Number.isFinite(value.disengageRadius)||value.disengageRadius<value.detectionRadius||value.disengageRadius>1200||
+     typeof value.returnHome!=='boolean'||!Number.isFinite(value.cooldownSeconds)||
+     value.cooldownSeconds<0||value.cooldownSeconds>300)
+    throw new RangeError('Comportement sauvage : distances ou délai hors limites');
+  return Object.freeze({mode:value.mode,detectionRadius:value.detectionRadius,
+    disengageRadius:value.disengageRadius,returnHome:value.returnHome,cooldownSeconds:value.cooldownSeconds});
+}
 export function normalizeMapActorNpcSettingsV1(raw){
   if(raw===undefined||raw===null)return null;
   if(!raw||typeof raw!=='object'||Array.isArray(raw))
@@ -108,6 +123,7 @@ export function normalizeMapActorNpcSettingsV1(raw){
     ...(hasAllowFlee?{allowFlee:raw.allowFlee}:{}),
     ...(Object.hasOwn(raw,'trainerReward')?
       {trainerReward:normalizeNpcTrainerRewardV1(raw.trainerReward)}:{}),
+    ...(raw.wildBehavior!=null?{wildBehavior:normalizeNpcWildBehaviorV1(raw.wildBehavior)}:{}),
     ...(raw.wildCreature!=null?
       {wildCreature:normalizeCreatureSlot(raw.wildCreature,'Wild creature')}:{})
   });

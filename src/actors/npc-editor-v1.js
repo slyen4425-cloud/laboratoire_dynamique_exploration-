@@ -14,7 +14,9 @@ import {normalizeNpcCombatInstanceTransportV1} from './npc-combat-instance-trans
 import {projectNpcCombatAuthoringCatalogV1} from './npc-combat-authoring-catalog-v1.js';
 import {NPC_TRAINER_ROSTER_LIMIT_V1} from './map-actor-npc-settings-v1.js';
 
+import {mountNpcWildBehaviorControlsV1} from './npc-wild-behavior-controls-v1.js';
 const $=id=>document.getElementById(id),store=createUserNpcStoreV1();
+const wildBehaviorControls=mountNpcWildBehaviorControlsV1($('npc-wild-behavior'),markDirty);
 const canvas=$('npc-canvas'),ctx=canvas.getContext('2d');
 let selected=null,preview=null,epoch=0,disposed=false;
 let previewMoving=false,previewDirection='S',busy=false,dirty=false;
@@ -282,6 +284,7 @@ function loadGameplayFields(record){
  wildCreatureDraft=record?.npc?.wildCreature?{...record.npc.wildCreature}:null;
  $('npc-reward-currency').value=String(record?.npc?.trainerReward?.currency??0);
  $('npc-wild-level').value=String(wildCreatureDraft?.level??10);
+ wildBehaviorControls.set(record?.npc?.wildBehavior);
  renderCreatureChoices();renderRewardChoices();roleSections();
 }
 async function loadCreatureCatalog(){
@@ -552,6 +555,7 @@ async function draftFromForm({newId=false}={}){
       items:rewardItemsDraft.map(item=>({...item}))}
   }:{}),
   ...(role==='merchant'?{merchantId:merchantIdDraft}:{}),
+  ...(role==='wild'?{wildBehavior:wildBehaviorControls.read()}:{}),
   ...(role==='wild'&&wildCreatureDraft?{wildCreature:{...wildCreatureDraft}}:{})
  };
  const shadow={...(prev?.shadow??{}),enabled:$('npc-shadow').value==='yes'};

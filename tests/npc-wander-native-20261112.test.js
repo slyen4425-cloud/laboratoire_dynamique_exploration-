@@ -148,3 +148,34 @@ test('a fast patrol cannot cross a thin wall during a long frame',()=>{
  assert.ok(state.x>actor.x&&state.x<=barrier.x-5,'the NPC stops against the near side of the wall');
  assert.equal(state.complete,false);
 });
+
+function wildActor(mode,overrides={}){
+ const actor=npc('wild-test','static',150,100);
+ return {...actor,npc:normalizeMapActorNpcSettingsV1({kind:'wild',movement:{mode:'static',radius:90},
+  wildCreature:{creatureId:'crea-loup',level:10},wildBehavior:{mode,...overrides}})};
+}
+test('wild aggression follows native movement, respects territory, cooldown and exit latch',()=>{
+ const actor=wildActor('aggressive',{detectionRadius:100,disengageRadius:160,cooldownSeconds:1});
+ const runtime=createNpcWanderRuntimeV1({move:stepMovement});runtime.reset([actor]);
+ const player={x:220,y:100};
+ for(let i=0;i<40;i++)runtime.step({actors:[actor],world,player,elapsedSeconds:.1});
+ assert.ok(runtime.project([actor])[0].x>actor.x);
+ assert.equal(runtime.nearestWildContact({actors:[actor],world,player})?.id,actor.id);
+ runtime.markWildEncounter(actor.id);
+ for(let i=0;i<20;i++)runtime.step({actors:[actor],world,player,elapsedSeconds:.1});
+ assert.equal(runtime.nearestWildContact({actors:[actor],world,player}),null);
+ for(let i=0;i<100;i++)runtime.step({actors:[actor],world,player:{x:400,y:100},elapsedSeconds:.1});
+ assert.ok(Math.abs(runtime.project([actor])[0].x-actor.x)<=3);
+ assert.equal(runtime.wildReady(actor.id),true);
+ assert.equal(actor.x,150);
+});
+test('pacific never auto-engages, contact respects wall and old actor data',()=>{
+ for(const mode of ['pacific','contact']){
+  const actor=wildActor(mode);const runtime=createNpcWanderRuntimeV1({move:stepMovement});runtime.reset([actor]);
+  const player={x:170,y:100};
+  assert.equal(runtime.nearestWildContact({actors:[actor],world,player})?.id,mode==='contact'?actor.id:undefined);
+  const wall={...world,obstacles:[{x:158,y:0,w:2,h:300}]};
+  assert.equal(runtime.nearestWildContact({actors:[actor],world:wall,player}),null);
+ }
+ assert.throws(()=>wildActor('aggressive',{detectionRadius:200,disengageRadius:100}));
+});
