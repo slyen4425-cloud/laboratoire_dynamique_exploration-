@@ -503,8 +503,13 @@ try{
     document.querySelector('#flat').click();
     document.querySelector('#export').click();
     const json=document.querySelector('#json').value;
+    const encounterControl=document.querySelector('#sculpt-encounter-area-enabled');
+    const restoreEncounters=window.__sculptEncounterEditorProbe().allowedInArea;
+    encounterControl.checked=false;
+    encounterControl.dispatchEvent(new Event('change',{bubbles:true}));
+    if(window.__sculptEncounterEditorProbe().allowedInArea)throw Error('Movement fixture still allows random encounters');
     document.querySelector('#navigation-toggle').click();
-    return {before:window.__sculptNavProbe(),json,
+    return {before:window.__sculptNavProbe(),json,restoreEncounters,
       hudVisible:!document.querySelector('#navigation-hud').hidden,
       stickVisible:!document.querySelector('#navigation-stick').hidden};
   })()`);
@@ -641,7 +646,7 @@ try{
   if(preJank.actorMotion!=='walk'||preJank.player.x<afterStick.player.x+8||
      preJank.blocked)
     throw Error('V21 jank prerequisite: native keyboard walk must move 8+ units after touch emulation: '+
-      JSON.stringify({afterStick,preJank}));
+      JSON.stringify({afterStick,preJank,encounter:await run('window.__sculptEncounterProbe()'),focus:await run('document.activeElement?.id')}));
   await run(`(()=>{const end=performance.now()+190;while(performance.now()<end){}
     return true;})()`);
   // Keep the same real key held for more than one RAF after the freeze;
@@ -695,6 +700,9 @@ try{
     const flying=window.__sculptNavProbe().player.locomotion.includes('fly');
     document.querySelector('#navigation-toggle').click();
     document.querySelector('#export').click();
+    const encounterControl=document.querySelector('#sculpt-encounter-area-enabled');
+    encounterControl.checked=${navStart.restoreEncounters};
+    encounterControl.dispatchEvent(new Event('change',{bubbles:true}));
     return {swimmable,flying,
       json:document.querySelector('#json').value,
       after:window.__sculptNavProbe(),
