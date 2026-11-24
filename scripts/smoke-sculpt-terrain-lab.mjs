@@ -5,6 +5,7 @@ import { resolve, extname, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
+import {checkSculptWaterPassage} from './check-sculpt-water-passage.mjs';
 
 const root = process.cwd();
 const mime = {'.html':'text/html','.js':'text/javascript','.css':'text/css','.json':'application/json',
@@ -4430,6 +4431,7 @@ try{
         returned2p5d.dungeon.sculptTerrain.height,returned:true}));
   if(legacyEncounterConsentError)throw Error(legacyEncounterConsentError);
   console.log('Legacy encounter setup: native Chromium confirmations handled without random battles in movement fixture:',legacyEncounterConsentCount);
+  await checkSculptWaterPassage({send,run,sleep,url});
   console.log('GREEN: sculpt lab Chromium',JSON.stringify({
     initialFaces:boot.faceCount,initialLevels:boot.levelSpread,canvas:pixelInfo,
     flatFaces:flat.faceCount,afterRealMouseStroke:raised.faceCount,

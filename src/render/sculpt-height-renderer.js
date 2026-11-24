@@ -8,7 +8,8 @@ import {sculptCliffHDLayers} from './sculpt-cliff-hd.js';
 import {sculptAltitudeVisualState} from './sculpt-altitude-visual.js?rev=hero-depth-v76-r13';
 import {sculptRoundedHillRegions,sculptHillRegionOutline,sculptClipRoundedHill} from './sculpt-hill-region-contour.js?rev=sculpt-whole-hill-v61';
 import {drawSculptSphereMeshes} from './sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
-import {sculptTerrainRampProjections} from '../world/sculpt-height-model.js';
+import {bridgeTraversalRect} from "../world/world-object-model.js";
+import {sculptNavigationWaterSupports,sculptTerrainRampProjections} from '../world/sculpt-height-model.js';
 import {drawSculptRamp} from './sculpt-ramp-renderer.js?rev=terrain-native-v77-r2';
 export const SCULPT_TILE=Object.freeze({width:28,height:21,rise:18});
 export const SCULPT_ROCK_PALETTES=Object.freeze({
@@ -816,6 +817,26 @@ export function sculptCliffOcclusionRectsV1(terrain,tile=SCULPT_TILE,{
       width:(run.end-run.start)*w,height:run.level*rise}));
   return Object.freeze(rects);
 }
+export function drawSculptWaterSupport(ctx,bridge,rise,outline=false){
+  const deck=bridgeTraversalRect(bridge);
+  if(!deck)return;
+  ctx.save();
+  ctx.translate(deck.x,deck.y-bridge.level*rise);
+  ctx.rotate(deck.rotation);
+  ctx.fillStyle=outline?'rgba(54,211,209,.33)':'#967546';
+  ctx.strokeStyle=outline?'#a5ffef':'#4c3b2b';
+  ctx.fillRect(-deck.length/2,-deck.width/2,deck.length,deck.width);
+  ctx.strokeRect(-deck.length/2,-deck.width/2,deck.length,deck.width);
+  if(!outline){
+    ctx.beginPath();
+    for(let x=-deck.length/2+12;x<deck.length/2;x+=12){
+      ctx.moveTo(x,-deck.width/2);ctx.lineTo(x,deck.width/2);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
@@ -926,6 +947,9 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   // Native ground relief: the same grassy surface material as the terrain,
   // now follows a continuous elevation mesh from the two real bank levels.
   // No object draw path, duplicated collision or billboard scale.
+  for(const bridge of sculptNavigationWaterSupports(terrain)){
+    if(bridge.visibleInPlay)drawSculptWaterSupport(ctx,bridge,rise);
+  }
   let terrainRampCount=0;
   for(const ramp of sculptTerrainRampProjections(terrain)){
     // Navigation-only permission corridors are physical but invisible in play.

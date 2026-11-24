@@ -2,8 +2,8 @@
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
-import {SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
+import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115';
+import {drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
 import {resolveSculptCliffHDUrl,sculptCliffHDReady} from './render/sculpt-cliff-hd.js';
@@ -1545,6 +1545,7 @@ function draw(){
     }
     // Physical-only permission is outlined ONLY in the editor. The normal
     // renderer deliberately omits navigationOnly ramps in play.
+    for(const bridge of sculptNavigationWaterSupports(terrain))drawSculptWaterSupport(ctx,bridge,SCULPT_TILE.rise,true);
     for(const ramp of sculptTerrainRampProjections(terrain)){
       if(!ramp.navigationOnly)continue;
       const mesh=sculptRampVisualMesh(terrain,ramp,{
@@ -1598,13 +1599,18 @@ function draw(){
     // The same native preview geometry handles the existing Ramp and the
     // Navigation Autoriser gesture; the latter commits through the checked
     // wrapper which can also restore its own overlapping no-go cells.
-    const candidate=appendSculptTerrainRamp(terrain,{
-      x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
+    const geometry={x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()};
+    const waterPreview=navAllowPreview&&navigationSupport()==='footbridge';
+    const candidate=navAllowPreview
+      ?appendSculptNavigationAllowedCorridor(terrain,{...geometry,support:navigationSupport()})
+      :appendSculptTerrainRamp(terrain,geometry);
     rampPreviewValid=candidate!==terrain;
     const foot={x:from.x,y:from.y-level(from)*SCULPT_TILE.rise};
     const head={x:to.x,y:to.y-level(to)*SCULPT_TILE.rise};
     ctx.save();
-    if(rampPreviewValid){
+    if(rampPreviewValid&&waterPreview){
+      drawSculptWaterSupport(ctx,sculptNavigationWaterSupports(candidate).at(-1),SCULPT_TILE.rise,true);
+    }else if(rampPreviewValid){
       const projected=sculptTerrainRampProjections(candidate).at(-1);
       const mesh=sculptRampVisualMesh(candidate,projected,{
         cellWidth:SCULPT_TILE.width,cellHeight:SCULPT_TILE.height,
@@ -1854,6 +1860,11 @@ const rampToolActive=()=>selectedMode==='terrain-ramp';
 const rampPointFromCell=cell=>({x:(cell.x+.5)*SCULPT_TILE.width,
   y:(cell.y+.5)*SCULPT_TILE.height});
 const rampWidth=()=>Number($('radius').value)*SCULPT_TILE.width;
+const navigationSupport=()=>$('nav-zone-support')?.value==='footbridge'?'footbridge':undefined;
+$('nav-zone-support')?.addEventListener('change',()=>{
+  $('nav-zone-visibility').hidden=navigationSupport()!=='footbridge';
+  navAllowStart=null;navMaskGesture=null;scheduleDraw();
+});
 function updateNavigationZoneCount(){
   const output=$('nav-zone-count');if(!output)return;
   const count=terrain.navigationBlockedCells?.length??0;
@@ -1895,7 +1906,7 @@ function setNavigationMaskEditing(action=null){
   if(next){
     if(sculptSettingsPanel)sculptSettingsPanel.open=false;
     status(next==='block'?'Navigation : peins les zones interdites en rouge.':
-      next==='allow'?'Navigation : trace du pied au sommet (glisser ou toucher deux points) pour autoriser une pente réelle.':
+      next==='allow'?(navigationSupport()?'Passerelle : trace entre deux berges sèches de même altitude.':'Pente : trace du pied au sommet ou touche les deux extrémités.'):
       'Navigation : peins en mode Normal pour retirer les interdictions.');
   }
   updateNavigationZoneCount();updatePrecisionActions();scheduleDraw();
@@ -2608,14 +2619,15 @@ function stop(event){
       const startCell=gesture.origin;
       if(startCell.x===endCell.x&&startCell.y===endCell.y){
         navAllowStart=startCell;
-        status('Pied du passage choisi · touche le sommet ou glisse jusqu’au point opposé.');
+        status(navigationSupport()?'Première berge choisie · touche la berge opposée.':'Pied du passage choisi · touche le sommet ou glisse jusqu’au point opposé.');
       }else{
         const from=rampPointFromCell(startCell),to=rampPointFromCell(endCell);
         const next=appendSculptNavigationAllowedCorridor(terrain,{
-          x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth()});
+          x:from.x,y:from.y,endX:to.x,endY:to.y,width:rampWidth(),support:navigationSupport(),
+          visibleInPlay:$('nav-zone-visible')?.checked===true});
         if(next===terrain){
           navAllowStart=startCell;
-          status('Passage refusé : trace entre deux niveaux secs, avec pente et longueur réalistes. Pas de traversée d’eau sans support.');
+          status(navigationSupport()?'Passerelle refusée. Choisis deux berges sèches, assez larges et de même altitude, avec de l’eau entre elles.':'Passage refusé. Choisis deux niveaux secs ou sélectionne le type Passerelle pour franchir l’eau.');
         }else{
           const before=terrain;terrain=next;navAllowStart=null;
           commitUndo(before);updateNavigationZoneCount();
@@ -2799,7 +2811,7 @@ function navigationMaxStep(){
   // old 1-3 level HUD toggle bypassed the authored-height access design.
   return SCULPT_NAVIGATION_PROBE_DEFAULTS.maxStepUp;
 }
-let navBridgePlacements=null,navBridgeProjection=null,navStairProjection=null;
+let navBridgeTerrain=null,navBridgePlacements=null,navBridgeProjection=null,navStairProjection=null;
 // Heightfield ramps are immutable until the terrain identity changes. Never
 // allocate their projections in each 60 Hz movement/collision tick.
 let navRampTerrain=null,navRampProjections=null;
@@ -2811,10 +2823,11 @@ function resolvedSculptTerrainRamps(){
   return navRampProjections;
 }
 function resolvedSculptBridges(){
-  if(navBridgePlacements!==placedObjects){
+  if(navBridgePlacements!==placedObjects||navBridgeTerrain!==terrain){
+    navBridgeTerrain=terrain;
     navBridgePlacements=placedObjects;
     navBridgeProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
-      .filter(o=>o.kind==='bridge');
+      .filter(o=>o.kind==='bridge').concat(sculptNavigationWaterSupports(terrain));
     navStairProjection=resolveWorldObjectPlacements(placedObjects,sculptPreviewCollisionCatalog)
       .filter(o=>o.kind==='stairs'||o.kind==='ramp');
   }
@@ -2925,7 +2938,7 @@ function drawNavigationBridgeCorridors(){
 function drawNavigationActor(){
   if(!navActor)return;
   const deckBridge=activeSculptBridge();
-  const visualRect=deckBridge?sculptObjectVisualRect(deckBridge,terrain,{
+  const visualRect=deckBridge&&!deckBridge.navigationOnly?sculptObjectVisualRect(deckBridge,terrain,{
     tileWidth:SCULPT_TILE.width,tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise}):null;
   // First project the world elevation like any ground point; then lift
   // the actor feet in SCREEN units. Bridge artwork is not pitch-scaled, so
@@ -3725,6 +3738,7 @@ function drawPlacedActors(maxY=Infinity,minY=-Infinity){
       actors:renderActors,timeSeconds:navVisualTime});
 }
 function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrain,decorative=false}={}){
+  if(object?.navigationOnly)return;
   // V77: the ramp is terrain, not a bitmap billboard. Draw its quad in the
   // shared world projection, including its genuine rise from foot to head.
   if(object.kind==='ramp'){

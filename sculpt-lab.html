@@ -1894,12 +1894,17 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  <div class="sculpt-tool-group-content">
   <small>Interdire : peindre les zones infranchissables. Autoriser : glisser du pied au sommet (ou toucher deux points) pour tracer un corridor franchissable, largeur réglée par le même pinceau. Normal : rétablir le comportement naturel en effaçant interdictions et passages autorisés, sans toucher au sol ni aux textures.</small>
   <button id="nav-zone-block" type="button">⛔ Interdire · peindre une zone</button>
-  <button id="nav-zone-allow" type="button">✅ Autoriser · tracer un passage pied → sommet</button>
+  <label>Type de passage <select id="nav-zone-support">
+    <option value="slope">Pente entre deux niveaux</option>
+    <option value="footbridge">Passerelle au-dessus de l’eau</option>
+  </select></label>
+  <label id="nav-zone-visibility" hidden><input type="checkbox" id="nav-zone-visible"> Afficher le tablier en jeu</label>
+  <button id="nav-zone-allow" type="button">✅ Autoriser · tracer un passage</button>
   <button id="nav-zone-normal" type="button">↶ Normal · restaurer le passage naturel</button>
   <button id="nav-zone-allow-ramp" type="button">↗ Réglages avancés · pente native</button>
   <button id="nav-zone-stop" type="button" disabled>✓ Terminer l'édition navigation</button>
   <output id="nav-zone-count" role="status" aria-live="polite">Aucune case interdite</output>
-  <small>Le mode Autoriser crée un vrai corridor de pente dans le terrain, avec deux ancrages secs validés et une montée physiquement possible. Il ne traverse ni eau ni mur sans support ; une passerelle ou un gué exige un passage dédié sécurisé.</small>
+  <small>Le mode Autoriser crée un vrai corridor de pente dans le terrain, avec deux ancrages secs validés et une montée physiquement possible. Il ne traverse ni eau ni mur sans support ; pour une passerelle, choisis deux berges sèches de même altitude.</small>
  </div>
 </details>
 <details class="sculpt-tool-group">
