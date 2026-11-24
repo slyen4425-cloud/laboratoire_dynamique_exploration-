@@ -108,7 +108,7 @@ export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V
     const {npc}=actor;
     const canChallenge=npc.kind==='trainer'&&canChallengeTrainer?.(actor);
     if(canChallenge&&npc.trainerEngagement==='aggressive')continue;
-    if(!npc.dialogue&&!(npc.kind==='merchant'&&npc.merchantId)&&!canChallenge)continue;
+    if(!npc.dialogue&&npc.kind!=='merchant'&&!canChallenge)continue;
     closest=actor;distance=d;
   }
   return closest;
