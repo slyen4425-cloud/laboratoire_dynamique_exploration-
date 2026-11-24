@@ -330,6 +330,33 @@ try{
   document.querySelector('#navigation-toggle').click();
  })()`);
 
+ // Same placed actor and real Tester: the fearful creature moves away
+ // rather than opening a combat, without changing its saved anchor.
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#scene-export').click();
+  const scene=JSON.parse(document.querySelector('#json').value);
+  scene.actors[0].npc={kind:'wild',name:'Sauvage craintif',movement:{mode:'static',radius:90},
+   wildCreature:{creatureId:'crea_mossback',level:20},
+   wildBehavior:{mode:'flee',detectionRadius:100,disengageRadius:180,returnHome:true,cooldownSeconds:5}};
+  document.querySelector('#json').value=JSON.stringify(scene);
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+ const escaping=await until(`(()=>{
+  const a=window.__sculptNpcWanderProbe?.().runtime?.[0];
+  return a?.fleeing&&Math.hypot(a.x-a.anchorX,a.y-a.anchorY)>3?a:null;
+ })()`,'fearful wild retreats in the native Tester');
+ if(Math.hypot(escaping.x-escaping.anchorX,escaping.y-escaping.anchorY)>180.001||
+    await run("Boolean(document.querySelector('.combat-overlay__frame'))"))
+  throw Error('Fearful wild escaped its territory or automatically attacked');
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#json').value=${JSON.stringify(configured.offerScene)};
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+
  // Validate a WALKING NPC in the actual 2.5D editor/Tester. Never
  // persist its runtime x/y: returning to editor must restore the anchor.
  const roamingAuthored=await run(`(()=>{
