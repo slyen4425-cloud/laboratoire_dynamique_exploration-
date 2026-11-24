@@ -25,7 +25,7 @@ test('R3 slopes use a two-tap or single-drag map gesture, bypassing only precisi
   assert.doesNotMatch(main,/rampPrecisionStart/);
 });
 test('R3 preview uses the authored native ramp mesh, never a new saved layer or pseudo-object',()=>{
-  assert.match(main,/const candidate=appendSculptTerrainRamp\(terrain,\{/);
+  assert.match(main,/const candidate=navAllowPreview[\s\S]*?appendSculptNavigationAllowedCorridor\(terrain,[\s\S]*?:appendSculptTerrainRamp\(terrain,geometry\)/);
   assert.match(main,/const mesh=sculptRampVisualMesh\(candidate,projected,\{/);
   assert.match(main,/sculptTerrainRampProjections\(candidate\)\.at\(-1\)/);
   assert.match(main,/rampPreviewValid=candidate!==terrain/);

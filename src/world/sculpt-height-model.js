@@ -92,7 +92,9 @@ const validTerrainRamp=(r,w,h)=>r&&typeof r.id==='string'&&
   [r.x,r.y,r.length,r.width,r.rotationDeg].every(Number.isFinite)&&
   r.length>=21&&r.length<=1400&&r.width>=12&&r.width<=448&&
   r.x>=0&&r.y>=0&&r.x<w*28&&r.y<h*21&&
-  (r.navigationOnly===undefined||r.navigationOnly===true);
+  (r.navigationOnly===undefined||r.navigationOnly===true)&&
+  (r.support===undefined||(r.navigationOnly===true&&r.support==='footbridge'))&&
+  (r.visibleInPlay===undefined||(r.support==='footbridge'&&typeof r.visibleInPlay==='boolean'));
 const rampFloor=(terrain,x,y)=>{
   const c=Math.floor(x/28),row=Math.floor(y/21);
   if(c<0||row<0||c>=terrain.width||row>=terrain.height||
@@ -100,7 +102,7 @@ const rampFloor=(terrain,x,y)=>{
   return sculptHeightAt(terrain,c,row);
 };
 export function sculptTerrainRampProjections(terrain){
-  return Object.freeze((terrain?.ramps??[]).map(r=>Object.freeze({
+  return Object.freeze((terrain?.ramps??[]).filter(r=>!r.support).map(r=>Object.freeze({
     id:r.id,kind:'ramp',...(r.navigationOnly===true?{navigationOnly:true}:{}),
     // Reuse the EXACT incline corridor consumed by Collision World and stairs.
     // Authoring owns only the terrain shape, not an object definition.
@@ -116,11 +118,53 @@ export function appendSculptTerrainRamp(terrain,{x,y,endX,endY,width=84}={}){
   const bottom=rampFloor(terrain,x,y),top=rampFloor(terrain,endX,endY);
   if(bottom===null||top===null||top<=bottom||
      top-bottom>Math.max(1,Math.floor(length/28)))return terrain;
-  const idSet=new Set((terrain.ramps??[]).map(r=>r.id));
-  let n=1;while(idSet.has('sculpt-ramp-'+n))n++;
-  const ramp=Object.freeze({id:'sculpt-ramp-'+n,x,y,length,width,
-    rotationDeg:Math.atan2(dx,-dy)*180/Math.PI});
-  return Object.freeze({...terrain,ramps:Object.freeze([...(terrain.ramps??[]),ramp])});
+  return appendTerrainCorridor(terrain,{x,y,length,width,rotationDeg:Math.atan2(dx,-dy)*180/Math.PI});
+}
+function appendTerrainCorridor(terrain,geometry){
+  const ids=new Set((terrain.ramps??[]).map(r=>r.id));
+  let index=1;
+  while(ids.has('sculpt-ramp-'+index))index++;
+  const entry=Object.freeze({id:'sculpt-ramp-'+index,...geometry});
+  return Object.freeze({...terrain,ramps:Object.freeze([...(terrain.ramps??[]),entry])});
+}
+// A level deck has two full-width, dry banks. Recheck them whenever the
+// immutable terrain changes, including after a flood or an imported map.
+function waterSupportGeometry(terrain,ramp){
+  const angle=(ramp.rotationDeg-90)*Math.PI/180,ux=Math.cos(angle),uy=Math.sin(angle);
+  const endX=ramp.x+ux*ramp.length,endY=ramp.y+uy*ramp.length;
+  const level=rampFloor(terrain,ramp.x,ramp.y);
+  if(level===null||rampFloor(terrain,endX,endY)!==level)return null;
+  const crossSteps=Math.max(2,Math.ceil(ramp.width/14));
+  for(let j=0;j<=crossSteps;j++){
+    const side=(j/crossSteps-.5)*ramp.width;
+    if(rampFloor(terrain,ramp.x-uy*side,ramp.y+ux*side)!==level||
+       rampFloor(terrain,endX-uy*side,endY+ux*side)!==level)return null;
+  }
+  const steps=Math.ceil(ramp.length/7);
+  let overWater=false;
+  for(let i=1;i<steps;i++){
+    const x=ramp.x+ux*ramp.length*i/steps,y=ramp.y+uy*ramp.length*i/steps;
+    const col=Math.floor(x/28),row=Math.floor(y/21);
+    if(sculptHeightAt(terrain,col,row)>level||sculptSphereAt(terrain,x,y,0))return null;
+    if(sculptWaterAt(terrain,col,row)>0)overWater=true;
+  }
+  if(!overWater)return null;
+  return Object.freeze({id:ramp.id,kind:'bridge',navigationOnly:true,
+    visibleInPlay:ramp.visibleInPlay===true,level,
+    transform:Object.freeze({x:(ramp.x+endX)/2,y:(ramp.y+endY)/2,
+      rotationDeg:ramp.rotationDeg-90,scaleX:1,scaleY:1}),
+    baseSize:Object.freeze({length:ramp.length,width:ramp.width}),
+    traversal:Object.freeze({enabled:true,lengthRatio:1,widthRatio:1})});
+}
+const supportedDecks=new WeakMap();
+export function sculptNavigationWaterSupports(terrain){
+  let decks=supportedDecks.get(terrain);
+  if(!decks){
+    decks=Object.freeze((terrain.ramps??[]).filter(r=>r.support==='footbridge')
+      .map(r=>waterSupportGeometry(terrain,r)).filter(Boolean));
+    supportedDecks.set(terrain,decks);
+  }
+  return decks;
 }
 // The Navigation "Autoriser" gesture is a direct authoring entry point for
 // the ONE terrain ramp/corridor contract, not a permissive flag on painted land.
@@ -128,23 +172,31 @@ export function appendSculptTerrainRamp(terrain,{x,y,endX,endY,width=84}={}){
 // A deliberate author grant also clears any no-go paint intersecting THAT
 // corridor; other forbidden cells and every old map remain untouched.
 export function appendSculptNavigationAllowedCorridor(terrain,{
-  x,y,endX,endY,width=84
+  x,y,endX,endY,width=84,support,visibleInPlay=false
 }={}){
   if(!terrain||[x,y,endX,endY,width].some(v=>!Number.isFinite(v)))return terrain;
   const floorAt=(px,py)=>rampFloor(terrain,px,py);
   const start=floorAt(x,y),end=floorAt(endX,endY);
-  if(start===null||end===null||start===end)return terrain;
-  const foot=start<end?{x,y}:{x:endX,y:endY};
-  const head=start<end?{x:endX,y:endY}:{x,y};
-  const next=appendSculptTerrainRamp(terrain,{
-    x:foot.x,y:foot.y,endX:head.x,endY:head.y,width});
-  if(next===terrain)return terrain;
-  // Metadata only: the same SculptTerrain.ramps and canonical stair corridor
-  // are used for collision. Navigation permissions do NOT paint a decorative
-  // slope on top of the author's stair / bridge artwork.
-  const tagged=Object.freeze({...next,ramps:Object.freeze(
-    next.ramps.map((r,i)=>i===next.ramps.length-1
-      ?Object.freeze({...r,navigationOnly:true}):r))});
+  if(start===null||end===null)return terrain;
+  const foot=start<=end?{x,y}:{x:endX,y:endY};
+  const head=start<=end?{x:endX,y:endY}:{x,y};
+  const dx=head.x-foot.x,dy=head.y-foot.y,length=Math.hypot(dx,dy);
+  let tagged;
+  if(support==='footbridge'){
+    const geometry={x:foot.x,y:foot.y,width,length,rotationDeg:Math.atan2(dx,-dy)*180/Math.PI,
+      navigationOnly:true,support,...(visibleInPlay?{visibleInPlay:true}:{})};
+    if((terrain.ramps?.length??0)>=SCULPT_TERRAIN_RAMP_LIMIT||length<21||length>1400||
+       width<12||width>448||!waterSupportGeometry(terrain,geometry))return terrain;
+    tagged=appendTerrainCorridor(terrain,geometry);
+  }else{
+    if(support!==undefined||start===end)return terrain;
+    for(let i=1,steps=Math.ceil(length/7);i<steps;i++)
+      if(sculptWaterAt(terrain,Math.floor((foot.x+dx*i/steps)/28),Math.floor((foot.y+dy*i/steps)/21))>0)return terrain;
+    const next=appendSculptTerrainRamp(terrain,{x:foot.x,y:foot.y,endX:head.x,endY:head.y,width});
+    if(next===terrain)return terrain;
+    tagged=Object.freeze({...next,ramps:Object.freeze(next.ramps.map((r,i)=>
+      i===next.ramps.length-1?Object.freeze({...r,navigationOnly:true}):r))});
+  }
   if(!terrain.navigationBlockedCells?.length)return tagged;
   // Reuse the SAME brush footprint: only cells of the newly authored incline
   // can be unblocked. Do not alter heights, water, textures or remote slopes.

@@ -1,3 +1,6 @@
+## 2026-11-24 — #530 · Support explicite pour franchir l’eau
+Départ `d55dd4d4f565baefc66bc5ccbde2f10e501f67fe`, checkpoint `checkpoint/exploration-start-water-passage-530-20261124`, branche `work/exploration-water-passage-530-20261124`. Le même outil Navigation doit accepter une passerelle entre deux berges sèches. SculptTerrain possède les deux points, Collision World possède le déplacement sur le tablier natif. Vérifier les bords, les ancrages, le trajet retour, la restauration, l'import/export et les anciens corridors.
+
 ## 2026-11-24 — Marchand sans boutique associée (C1, en validation)
 - START `main@35dbe475e53abcc7ba8f4c5ee3be972390232584`, checkpoint `checkpoint/exploration-start-merchant-missing-reference-20261124`, branche `fix/exploration-merchant-missing-reference-20261124`. Suite du ticket Capture #629, complément distinct de Capture #639.
 - Exploration possède uniquement proximité, PNJ et référence. Le test de proximité existant excluait un marchand sans dialogue ni merchantId, donc aucune interaction. L'UI native affiche le message de liaison à réparer dans le dialogue original; pas de boutique, pas de requête ni de mutation de règles. Les marchands liés et autres PNJ gardent le chemin existant.
