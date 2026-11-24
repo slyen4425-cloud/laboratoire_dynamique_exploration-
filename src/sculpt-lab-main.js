@@ -1,3 +1,4 @@
+import {mountNpcWildBehaviorControlsV1} from './actors/npc-wild-behavior-controls-v1.js';
 // Self-contained optional heightfield experiment. Never changes the live 2D Builder.
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
@@ -3155,7 +3156,11 @@ function canChallengeSculptTrainer(actor){
 function canChallengeSculptWild(actor){
   return actor?.npc?.kind==='wild'&&!!actor.npc.wildCreature&&
     (sculptCombatSessionId===undefined||scopedEncounter?.armed&&scopedEncounter.party.active.hp>0)&&
+    npcWanderRuntime.wildReady(actor.id)&&
     !!sculptEncounterCatalog?.resolveCreature(actor.npc.wildCreature.creatureId);
+}
+function canManuallyChallengeSculptWild(actor){
+  return actor?.npc?.wildBehavior?.mode!=='aggressive'&&canChallengeSculptWild(actor);
 }
 function startSculptPlacedEncounter(snapshot){
   if(!sculptEncounterController?.restore(snapshot.encounterId))return false;
@@ -3176,7 +3181,15 @@ function startSculptWildBattle(actor){
     elementId:creature.elements[0]??'neutral',rulesetId:'capture.standard.1v1',
     combatArenaIds:sculptBattleArenaIds(area)
   });
-  return startSculptPlacedEncounter(snapshot);
+  if(!startSculptPlacedEncounter(snapshot))return false;
+  npcWanderRuntime.markWildEncounter(actor.id);
+  return true;
+}
+function startNearbyWildContact(){
+  if(sculptPendingEncounter||sculptPortalLoading||!navActor)return false;
+  const actor=npcWanderRuntime.nearestWildContact({actors:npcActorsWithDefinitions(),player:navActor,
+    world:navigationWorld(),collisionContext:navigationContext(),canEngage:canChallengeSculptWild});
+  return !!actor&&startSculptWildBattle(actor);
 }
 function startSculptTrainerBattle(actor){
   if(sculptPendingEncounter||sculptPortalLoading||!navActor||!canChallengeSculptTrainer(actor))return false;
@@ -3205,7 +3218,7 @@ function startNearbyAggressiveTrainer(previous){
 }
 function nearbyNpcForDialogue(){
   return navigationTesting&&!sculptPendingEncounter&&navActor
-    ?nearestDialogNpcV1(gameplayPlacedActors(),navActor,undefined,canChallengeSculptTrainer,canChallengeSculptWild):null;
+    ?nearestDialogNpcV1(gameplayPlacedActors(),navActor,undefined,canChallengeSculptTrainer,canManuallyChallengeSculptWild):null;
 }
 // Scoped player greeting. Official Navigation is the ONLY position authority.
 // This is a cosmetic interaction, not a duel, reward or world-state mutation.
@@ -3266,7 +3279,7 @@ function updateNpcInteraction(){
   const npc=nearbyNpcForDialogue();
   $('npc-talk').hidden=!npc||npcDialogueOpen;
   if(npc){
-    const challenge=(canChallengeSculptTrainer(npc)&&!npc.npc.dialogue)||canChallengeSculptWild(npc);
+    const challenge=(canChallengeSculptTrainer(npc)&&!npc.npc.dialogue)||canManuallyChallengeSculptWild(npc);
     $('npc-talk').textContent=(challenge?'⚔ ':npc.npc.kind==='merchant'?'🛒 ':'💬 ')+
       (npc.npc.name||(challenge?'Défier':'Parler'));
     $('npc-talk').setAttribute('aria-label',challenge?'Défier '+(npc.npc.name||'la créature'):'Parler au PNJ proche');
@@ -3287,7 +3300,7 @@ function requestNpcMerchantShop(actor){
 }
 $('npc-talk')?.addEventListener('click',()=>{
   const npc=nearbyNpcForDialogue();if(!npc)return;
-  if(canChallengeSculptWild(npc)){startSculptWildBattle(npc);return;}
+  if(canManuallyChallengeSculptWild(npc)){startSculptWildBattle(npc);return;}
   const canShop=npc.npc.kind==='merchant'&&!!npc.npc.merchantId;
   const trainer=npc.npc.kind==='trainer';
   npcDialogueTrainerNotice=trainer?sculptTrainerChallengeNotice(npc):'';
@@ -3411,7 +3424,8 @@ function navigationTick(time){
       if(npcWanderElapsed>=.085){
         const npcChanged=npcWanderRuntime.step({
           actors:npcActorsWithDefinitions(),elapsedSeconds:npcWanderElapsed,
-          world:navigationWorld(),collisionContext:navigationContext(),player:navActor
+          world:navigationWorld(),collisionContext:navigationContext(),player:navActor,
+          canEngageWild:id=>canChallengeSculptWild(npcActorsWithDefinitions().find(actor=>actor.id===id))
         });
         npcWanderElapsed=0;
         if(npcChanged){
@@ -3470,7 +3484,7 @@ function navigationTick(time){
            sculptWorldPortalAtHero()?.id===entered.id)
           void traverseSculptWorldPortal();
       });
-      else if(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY}))
+      else if(!startNearbyWildContact()&&(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY})))
         sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
@@ -3481,6 +3495,7 @@ function navigationTick(time){
        playLastCheckpointAt=time;
       scheduleDraw();
     }
+    if(!navActor.moving&&!sculptPendingEncounter)startNearbyWildContact();
     const previousVisualLevel=navVisualLevel;
     navVisualLevel=sculptVisualHeightStep(navVisualLevel,navHeight(),elapsed);
     // Smooth only the pictured elevation and vertical follow, never collision.
@@ -4562,6 +4577,11 @@ window.addEventListener('message',event=>{
     npcDialogueOpen=false;updateNpcInteraction();
   }
 });
+const wildBehaviorControls=mountNpcWildBehaviorControlsV1($('npc-wild-behavior'),()=>{
+  const actor=npcSelectedActor();
+  if(actor?.actorDefinitionId.startsWith('npc.user.'))return;
+  npcApplyAuthoringPatch({wildBehavior:wildBehaviorControls.read()});
+});
 function npcSettingsFromControls(){
   // Old V80 has no NPC editor. Legacy external references are preserved in
   // exported WorldArea.actors, but never shown as editable technical IDs.
@@ -4583,6 +4603,8 @@ function npcSettingsFromControls(){
     ...(trainerEngagement?{trainerEngagement}:{}),
     ...(kind==='trainer'?{allowFlee:$('npc-trainer-allow-flee')?.checked!==false}:
       current&&Object.hasOwn(current,'allowFlee')?{allowFlee:current.allowFlee}:{}),
+    ...(kind==='wild'&&wildBehaviorControls?{wildBehavior:wildBehaviorControls.read()}:
+      current?.wildBehavior?{wildBehavior:current.wildBehavior}:{}),
     ...(chosenWild?{wildCreature:{
       ...(current?.wildCreature?.creatureId===chosenWild?current.wildCreature:{}),
       creatureId:chosenWild,
@@ -4682,6 +4704,7 @@ function npcRoleEditorRefresh(){
     if(wild)$('npc-wild-creature').value=wild.creatureId;
     else $('npc-wild-creature').value='';
     $('npc-wild-level').value=String(wild?.level??10);
+    wildBehaviorControls?.set(npc?.wildBehavior);
   }
 }
 function effectiveNpcMovement(actor){

@@ -2,7 +2,7 @@
 // WorldArea.actors[] is author-owned and never updated by this runtime.
 // Every accepted step is delegated to the same core Movement/Collision World
 // that moves the hero. No independent map coordinates, collision or save.
-import {NPC_PATROL_MODES_V1} from './map-actor-npc-settings-v1.js';
+import {NPC_PATROL_MODES_V1,NPC_WILD_CONTACT_RANGE_V1,normalizeNpcWildBehaviorV1} from './map-actor-npc-settings-v1.js';
 import {sculptNavigationFrameSteps} from '../core/sculpt-navigation-frame-clock.js';
 const WANDER_SPEED=38;
 const WANDER_RADIUS=5;
@@ -11,6 +11,8 @@ const TAU=Math.PI*2;
 const finite=n=>typeof n==='number'&&Number.isFinite(n);
 const walking=actor=>finite(actor?.x)&&finite(actor?.y)&&
   (actor.npc?.movement?.mode==='wander'||NPC_PATROL_MODES_V1.includes(actor.npc?.movement?.mode));
+const wild=actor=>actor?.npc?.kind==='wild'&&!!actor.npc.wildCreature;
+const tracked=actor=>walking(actor)||wild(actor)&&finite(actor.x)&&finite(actor.y);
 function hashWord(value){
   let result=2166136261;
   for(const ch of String(value)){result=Math.imul(result^ch.charCodeAt(0),16777619);}
@@ -42,6 +44,8 @@ function reachDestination(state){
 function newState(actor){
   const movement=actor.npc.movement;
   return {id:actor.id,anchorX:actor.x,anchorY:actor.y,movement,
+    wildBehavior:wild(actor)?normalizeNpcWildBehaviorV1(actor.npc.wildBehavior):null,
+    cooldown:0,awaitLeave:false,chasing:false,returning:false,
     route:movement.points?[{x:0,y:0},...movement.points]:null,index:1,direction:1,done:false,
     speed:movement.speed??WANDER_SPEED,leash:movement.radius,
     radius:WANDER_RADIUS,x:actor.x,y:actor.y,
@@ -56,12 +60,13 @@ export function createNpcWanderRuntimeV1({move}={}){
   function sync(actors){
     const alive=new Set();
     for(const actor of Array.isArray(actors)?actors:[]){
-      if(!walking(actor))continue;
+      if(!tracked(actor))continue;
       alive.add(actor.id);
       const old=entries.get(actor.id);
       if(!old||old.anchorX!==actor.x||old.anchorY!==actor.y||
           (old.movement!==actor.npc.movement&&
-           JSON.stringify(old.movement)!==JSON.stringify(actor.npc.movement)))
+           JSON.stringify(old.movement)!==JSON.stringify(actor.npc.movement))||
+          JSON.stringify(old.wildBehavior)!==JSON.stringify(wild(actor)?normalizeNpcWildBehaviorV1(actor.npc.wildBehavior):null))
         entries.set(actor.id,newState(actor));
     }
     for(const id of entries.keys())if(!alive.has(id))entries.delete(id);
@@ -78,7 +83,7 @@ export function createNpcWanderRuntimeV1({move}={}){
     });
   }
   function step({actors=[],elapsedSeconds=0,world,collisionContext={},player=null,
-    paused=false}={}){
+    paused=false,canEngageWild=()=>true}={}){
     sync(actors);
     if(paused||!world||!finite(elapsedSeconds)||elapsedSeconds<=0)return false;
     // A slow phone never makes an NPC teleport to catch up missed frames.
@@ -87,25 +92,45 @@ export function createNpcWanderRuntimeV1({move}={}){
     for(const state of entries.values()){
       const oldMoving=state.moving;
       state.moving=false;
-      if(state.done)continue;
-      if(state.pause>0){
+      const policy=state.wildBehavior;
+      const previousReady=state.cooldown<=0&&!state.awaitLeave;
+      state.cooldown=Math.max(0,state.cooldown-dt);
+      const heroDistance=player?Math.hypot(player.x-state.x,player.y-state.y):Infinity;
+      const heroHomeDistance=player?Math.hypot(player.x-state.anchorX,player.y-state.anchorY):Infinity;
+      if(state.awaitLeave&&heroDistance>(policy?.mode==='aggressive'?policy.detectionRadius:NPC_WILD_CONTACT_RANGE_V1))
+        state.awaitLeave=false;
+      updated ||=previousReady!==(state.cooldown<=0&&!state.awaitLeave);
+      if(policy?.mode==='aggressive'){
+        const allowed=player&&canEngageWild(state.id)&&state.cooldown<=0&&!state.awaitLeave;
+        if(state.chasing&&(!allowed||heroHomeDistance>policy.disengageRadius||heroDistance>policy.disengageRadius)){
+          state.chasing=false;state.returning=policy.returnHome;
+        }
+        if(!state.chasing&&!state.returning&&allowed&&heroDistance<=policy.detectionRadius&&heroHomeDistance<=policy.disengageRadius)
+          state.chasing=true;
+      }
+      const special=state.chasing||state.returning;
+      if(!special&&(state.done||state.movement.mode==='static')){updated ||=oldMoving;continue;}
+      if(!special&&state.pause>0){
         state.pause=Math.max(0,state.pause-dt);
         updated ||=oldMoving;
         continue;
       }
-      if(player&&Math.hypot(player.x-state.x,player.y-state.y)<AVOID_HERO_DISTANCE){
+      if(!special&&player&&heroDistance<AVOID_HERO_DISTANCE){
         state.pause=.18;updated ||=oldMoving;continue;
       }
-      if(!state.goal)nextDestination(state);
-      const dx=state.goal.x-state.x,dy=state.goal.y-state.y;
+      if(!special&&!state.goal)nextDestination(state);
+      const goal=state.chasing?player:state.returning?{x:state.anchorX,y:state.anchorY}:state.goal;
+      const dx=goal.x-state.x,dy=goal.y-state.y;
       const remaining=Math.hypot(dx,dy);
-      if(remaining<=3){
-        reachDestination(state);
+      const stopDistance=state.chasing?NPC_WILD_CONTACT_RANGE_V1-1:3;
+      if(remaining<=stopDistance){
+        if(state.returning){state.returning=false;state.goal=null;}
+        else if(!state.chasing)reachDestination(state);
         updated ||=oldMoving;continue;
       }
       const x=state.x,y=state.y;
       const bridgeId=state.sculptBridgeId,stairId=state.sculptStairId;
-      const travelTime=Math.min(dt,remaining/state.speed);
+      const travelTime=Math.min(dt,(state.chasing?remaining-stopDistance:remaining)/state.speed);
       const direction={x:dx,y:dy},config={maxSpeed:state.speed};
       for(const stepTime of sculptNavigationFrameSteps(travelTime*1000)){
         const startX=state.x,startY=state.y;
@@ -114,7 +139,8 @@ export function createNpcWanderRuntimeV1({move}={}){
       }
       const distanceFromAnchor=Math.hypot(state.x-state.anchorX,state.y-state.anchorY);
       const overlapsHero=player&&Math.hypot(player.x-state.x,player.y-state.y)<AVOID_HERO_DISTANCE;
-      if((!state.route&&distanceFromAnchor>state.leash+.001)||overlapsHero){
+      if((state.chasing&&distanceFromAnchor>policy.disengageRadius+.001)||
+         (!special&&!state.route&&distanceFromAnchor>state.leash+.001)||(!state.chasing&&overlapsHero)){
         state.x=x;state.y=y;
         state.sculptBridgeId=bridgeId;state.sculptStairId=stairId;
       }
@@ -122,27 +148,56 @@ export function createNpcWanderRuntimeV1({move}={}){
       if(progress<.05){
         // Retry the authored segment if a wall blocks it. Random wandering
         // may choose another direction within its leash.
-        if(!state.route)state.goal=null;
+        if(!special&&!state.route)state.goal=null;
         state.pause=.22;state.blocked++;
       }else{
         state.facingX=state.x<x?-1:state.x>x?1:state.facingX;
         state.moving=true;state.blocked=0;
-        if(Math.hypot(state.goal.x-state.x,state.goal.y-state.y)<3){
-          reachDestination(state);
-        }
+        if(!special&&Math.hypot(goal.x-state.x,goal.y-state.y)<3)reachDestination(state);
       }
       updated ||=progress>.05||oldMoving!==state.moving;
     }
     return updated;
+  }
+  function wildReady(id){
+    const state=entries.get(id);
+    return !state?.wildBehavior||state.cooldown<=0&&!state.awaitLeave;
+  }
+  function markWildEncounter(id){
+    const state=entries.get(id);
+    if(!state?.wildBehavior)return;
+    state.cooldown=state.wildBehavior.cooldownSeconds;
+    state.awaitLeave=state.wildBehavior.mode!=='pacific';
+    if(state.chasing){state.chasing=false;state.returning=state.wildBehavior.returnHome;}
+  }
+  function nearestWildContact({actors,player,world,collisionContext,canEngage=()=>true}){
+    if(!player||!world)return null;
+    let nearest=null,best=Infinity;
+    for(const actor of project(actors)){
+      const state=entries.get(actor.id),policy=state?.wildBehavior;
+      if(!policy||policy.mode==='pacific'||!wildReady(actor.id)||!canEngage(actor))continue;
+      const distance=Math.hypot(actor.x-player.x,actor.y-player.y);
+      if(distance>NPC_WILD_CONTACT_RANGE_V1||distance>=best)continue;
+      // Use the same official movement/collision on a disposable probe to
+      // reject contact through a wall or cliff, without changing real XY.
+      const probe={...state};
+      const count=Math.max(1,Math.ceil(distance/3));
+      for(let i=0;i<count;i++)move(world,probe,{x:player.x-probe.x,y:player.y-probe.y},
+        distance/count/38,{maxSpeed:38},undefined,collisionContext);
+      if(Math.hypot(probe.x-player.x,probe.y-player.y)>4)continue;
+      nearest=actor;best=distance;
+    }
+    return nearest;
   }
   function snapshot(){
     return Object.freeze([...entries.values()].map(s=>Object.freeze({
       id:s.id,anchorX:s.anchorX,anchorY:s.anchorY,x:s.x,y:s.y,
       radius:s.leash,moving:s.moving,facingX:s.facingX,
       ...(s.route?{waypoint:s.index,complete:s.done}:{}),
+      ...(s.wildBehavior?{chasing:s.chasing,returning:s.returning,cooldown:s.cooldown,awaitLeave:s.awaitLeave}:{}),
       blocked:s.blocked
     })));
   }
-  return Object.freeze({reset,project,step,snapshot,
+  return Object.freeze({reset,project,step,snapshot,wildReady,markWildEncounter,nearestWildContact,
     get count(){return entries.size}});
 }
