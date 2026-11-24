@@ -3419,15 +3419,18 @@ function navigationTick(time){
     navVisualTime+=Math.min(250,elapsed)/1000;
     // Reuse the hero's existing RAF and Movement/Collision World. Only the
     // transient projection moves; no interval, second physics or saved XY.
+    let npcStepped=false;
     if(npcWanderRuntime.count){
       npcWanderElapsed+=Math.min(250,elapsed)/1000;
       if(npcWanderElapsed>=.085){
+        const actors=npcActorsWithDefinitions();
+        const actorById=new Map(actors.map(actor=>[actor.id,actor]));
         const npcChanged=npcWanderRuntime.step({
-          actors:npcActorsWithDefinitions(),elapsedSeconds:npcWanderElapsed,
+          actors,elapsedSeconds:npcWanderElapsed,
           world:navigationWorld(),collisionContext:navigationContext(),player:navActor,
-          canEngageWild:id=>canChallengeSculptWild(npcActorsWithDefinitions().find(actor=>actor.id===id))
+          canEngageWild:id=>canChallengeSculptWild(actorById.get(id))
         });
-        npcWanderElapsed=0;
+        npcWanderElapsed=0;npcStepped=true;
         if(npcChanged){
           updateNpcInteraction();scheduleDraw();
           // A mobile aggressive trainer may enter the hero's radius even
@@ -3484,7 +3487,7 @@ function navigationTick(time){
            sculptWorldPortalAtHero()?.id===entered.id)
           void traverseSculptWorldPortal();
       });
-      else if(!startNearbyWildContact()&&(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY})))
+      else if(!(npcStepped&&startNearbyWildContact())&&(!navActor.moving||!startNearbyAggressiveTrainer({x:previousX,y:previousY})))
         sculptEncounterStep();
       // Camera tracks x/y and the smoothed altitude after the movement loop.
       updateNavigationInfo();
@@ -3495,7 +3498,7 @@ function navigationTick(time){
        playLastCheckpointAt=time;
       scheduleDraw();
     }
-    if(!navActor.moving&&!sculptPendingEncounter)startNearbyWildContact();
+    if(npcStepped&&!navActor.moving&&!sculptPendingEncounter)startNearbyWildContact();
     const previousVisualLevel=navVisualLevel;
     navVisualLevel=sculptVisualHeightStep(navVisualLevel,navHeight(),elapsed);
     // Smooth only the pictured elevation and vertical follow, never collision.
@@ -4580,7 +4583,8 @@ window.addEventListener('message',event=>{
 const wildBehaviorControls=mountNpcWildBehaviorControlsV1($('npc-wild-behavior'),()=>{
   const actor=npcSelectedActor();
   if(actor?.actorDefinitionId.startsWith('npc.user.'))return;
-  npcApplyAuthoringPatch({wildBehavior:wildBehaviorControls.read()});
+  try{npcApplyAuthoringPatch({wildBehavior:wildBehaviorControls.read()});}
+  catch(error){status('Comportement non enregistré : '+error.message);wildBehaviorControls.set(actor?.npc?.wildBehavior);}
 });
 function npcSettingsFromControls(){
   // Old V80 has no NPC editor. Legacy external references are preserved in

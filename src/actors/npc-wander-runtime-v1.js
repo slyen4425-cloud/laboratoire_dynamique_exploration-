@@ -173,9 +173,11 @@ export function createNpcWanderRuntimeV1({move}={}){
   function nearestWildContact({actors,player,world,collisionContext,canEngage=()=>true}){
     if(!player||!world)return null;
     let nearest=null,best=Infinity;
-    for(const actor of project(actors)){
-      const state=entries.get(actor.id),policy=state?.wildBehavior;
-      if(!policy||policy.mode==='pacific'||!wildReady(actor.id)||!canEngage(actor))continue;
+    for(const source of actors){
+      const state=entries.get(source.id),policy=state?.wildBehavior;
+      if(!policy)continue;
+      const actor={...source,x:state.x,y:state.y};
+      if(policy.mode==='pacific'||!wildReady(actor.id)||!canEngage(actor)||state.returning)continue;
       const distance=Math.hypot(actor.x-player.x,actor.y-player.y);
       if(distance>NPC_WILD_CONTACT_RANGE_V1||distance>=best)continue;
       // Use the same official movement/collision on a disposable probe to
