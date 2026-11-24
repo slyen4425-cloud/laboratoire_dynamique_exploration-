@@ -7,7 +7,7 @@ export const MAP_ACTOR_NPC_KINDS=Object.freeze([
 ]);
 export const NPC_TRAINER_ROSTER_LIMIT_V1=6;
 const NPC_INTERACTION_RANGE_V1=65;
-function normalizeCreatureSlot(raw,label){
+export function normalizeCreatureSlot(raw,label){
   if(!raw||typeof raw!=='object'||Array.isArray(raw)||
      typeof raw.creatureId!=='string'||!/^[A-Za-z0-9][A-Za-z0-9_:.-]{0,129}$/.test(raw.creatureId))
     throw new TypeError(label+' needs a valid canonical Capture creature reference');
@@ -118,7 +118,7 @@ function isMapPosition(position){
 function mapDistance(a,b){
   return Math.hypot(a.x-b.x,a.y-b.y);
 }
-export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V1,canChallengeTrainer){
+export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V1,canChallengeTrainer,canChallengeWild){
   if(!Array.isArray(actors)||!isMapPosition(position))return null;
   let closest=null,distance=Infinity;
   for(const actor of actors){
@@ -128,7 +128,8 @@ export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V
     const {npc}=actor;
     const canChallenge=npc.kind==='trainer'&&canChallengeTrainer?.(actor);
     if(canChallenge&&npc.trainerEngagement==='aggressive')continue;
-    if(!npc.dialogue&&npc.kind!=='merchant'&&!canChallenge)continue;
+    const canWild=npc.kind==='wild'&&canChallengeWild?.(actor);
+    if(!npc.dialogue&&npc.kind!=='merchant'&&!canChallenge&&!canWild)continue;
     closest=actor;distance=d;
   }
   return closest;

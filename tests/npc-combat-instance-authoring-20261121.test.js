@@ -117,3 +117,17 @@ test('le rôle sauvage utilise le formulaire Combat existant et conserve uniquem
  assert.ok(ui.includes('if(index===null)wildCreatureDraft=edited'));
  assert.ok(sculpt.includes('current?.wildCreature?.creatureId===chosenWild?current.wildCreature:{}'));
 });
+
+test('une rencontre sauvage placée conserve exactement son instance jusqu’au handoff, sans autorité de dresseur',()=>{
+ const input={encounterId:'wild-1',returnToken:'wild-return-1',source:'npc-wild',
+  wildActorId:'actor-wild-1',playerPartyRef:'adventure-party:party1',opponents:roster,
+  rulesetId:'capture.standard.1v1',areaId:'forest',terrainFamilyId:'grass',elementId:'fire'};
+ const snapshot=createCaptureEncounterSnapshot(input);
+ const handoff=createCombatHandoffEnvelope({snapshot,returnState:{areaId:'forest',x:50,y:60,returnUrl:'https://example.test/adventure'}});
+ assert.deepEqual(handoff.snapshot,snapshot);
+ assert.deepEqual(handoff.snapshot.opponents[0].npcInstance,instance);
+ assert.equal(handoff.snapshot.context.wildActorId,'actor-wild-1');
+ assert.equal(handoff.snapshot.context.trainerActorId,undefined);
+ assert.throws(()=>createCaptureEncounterSnapshot({...input,opponents:[...roster,...roster]}));
+ assert.throws(()=>createCaptureEncounterSnapshot({...input,wildActorId:undefined}));
+});

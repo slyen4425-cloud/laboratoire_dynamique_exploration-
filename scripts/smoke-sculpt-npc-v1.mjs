@@ -270,6 +270,40 @@ try{
  await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
  await until("!document.querySelector('.combat-overlay__frame')",'Tester exploration after flee');
 
+ // Placed wild encounter through the real scene import, proximity button,
+ // controller, immutable handoff and native battle. Then restore the trainer.
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#scene-export').click();
+  const scene=JSON.parse(document.querySelector('#json').value);
+  scene.actors[0].npc={kind:'wild',name:'Sauvage de carte',movement:{mode:'static',radius:90},
+   wildCreature:{creatureId:'crea_mossback',level:20,npcInstance:{
+    schema:'capture-npc-opponent-instance-v1',displayName:'Sauvage de carte',statAllocations:{health:7}}}};
+  document.querySelector('#json').value=JSON.stringify(scene);
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+ await until("!document.querySelector('#npc-talk').hidden && document.querySelector('#npc-talk').textContent.includes('Sauvage de carte')",'placed wild proximity action');
+ await run("document.querySelector('#npc-talk').click()");
+ await waitForNativeDuel('native placed wild Tester fight');
+ const wildJournal=await run(`(async()=>{
+  const {readCombatHandoff}=await import('./src/encounters/combat-handoff-store.js');
+  return readCombatHandoff(sessionStorage)?.snapshot;
+ })()`);
+ if(wildJournal?.source!=='npc-wild'||wildJournal.context.trainerActorId||
+    wildJournal.opponents.length!==1||wildJournal.opponents[0].level!==20||
+    wildJournal.opponents[0].npcInstance?.statAllocations?.health!==7||
+    !wildJournal.context.wildActorId)
+  throw Error('Placed wild encounter lost its native contract '+JSON.stringify(wildJournal));
+ await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
+ await until("!document.querySelector('.combat-overlay__frame')",'Tester exploration after wild flee');
+ await run(`(()=>{
+  document.querySelector('#navigation-toggle').click();
+  document.querySelector('#json').value=${JSON.stringify(configured.offerScene)};
+  document.querySelector('#import').click();
+  document.querySelector('#navigation-toggle').click();
+ })()`);
+
  // Validate a WALKING NPC in the actual 2.5D editor/Tester. Never
  // persist its runtime x/y: returning to editor must restore the anchor.
  const roamingAuthored=await run(`(()=>{
@@ -316,6 +350,9 @@ try{
   const area=world.areas.find(entry=>entry.id===world.initialAreaId);
   const spawn=area.spawns.find(entry=>entry.id===world.initialSpawnId);
   area.actors.push({...${JSON.stringify(configured.actor)},x:spawn.x+20,y:spawn.y});
+  area.actors.push({...${JSON.stringify(configured.actor)},id:'wild-play-smoke',x:spawn.x+30,y:spawn.y,
+   npc:{kind:'wild',name:'Sauvage Jouer',movement:{mode:'static',radius:90},
+    wildCreature:{creatureId:'crea_mossback',level:20,npcInstance:{schema:'capture-npc-opponent-instance-v1',displayName:'Sauvage Jouer',statAllocations:{health:7}}}}});
   saveWorldAssemblerDraft(localStorage,world);
  })()`);
  await command('Page.navigate',{url:new URL('/world-assembler.html',url).href});
@@ -333,7 +370,12 @@ try{
   throw Error('Aggressive trainer opened dialogue before battle');
  await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
  await until("!document.querySelector('.combat-overlay__frame') && window.__sculptPlayProbe().active",'saved world after native trainer fight');
- console.log('Native dresseur duels validated from Tester and World Builder play');
+ await until("!document.querySelector('#npc-talk').hidden && document.querySelector('#npc-talk').textContent.includes('Sauvage Jouer')",'placed wild in standalone Jouer');
+ await run("document.querySelector('#npc-talk').click()");
+ await waitForNativeDuel('native placed wild in standalone Jouer');
+ await run(combatDoc+".querySelector('[data-encounter-flee]').click()");
+ await until("!document.querySelector('.combat-overlay__frame') && window.__sculptPlayProbe().active",'saved world after native wild fight');
+ console.log('Native dresseur and wild battles validated from Tester and World Builder play');
 
  await command('Page.navigate',{url:new URL('/sculpt-lab-v80.html',url).href});
  await until("typeof window.__sculptLabProbe==='function' && document.querySelector('#sculpt-canvas')?.width>0",'frozen V80 startup');
