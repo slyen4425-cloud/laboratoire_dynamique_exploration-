@@ -50,8 +50,17 @@ export function normalizeCaptureAuthorEncounterBundleV1(raw) {
     throw new RangeError('Official Combat encounter bundle contains duplicate IDs');
   return raw;
 }
+export async function selectCaptureEncounterBundleV1(raw,universeId,storage){
+  const release=normalizeCaptureAuthorEncounterBundleV1(raw);
+  if(universeId===null)return release;
+  const {readCaptureUniverseEncounterSourceV1}=await import(
+    '../../combat-preview/src/adapters/input/capture/capture-universe-encounter-source-v1.js');
+  const project=readCaptureUniverseEncounterSourceV1({universeId,storage:storage??globalThis.localStorage});
+  return Object.freeze({...release,...project});
+}
 export async function loadCaptureAuthorEncounterBundleV1({
-  fetchImpl=globalThis.fetch,releaseLoadId=null
+  fetchImpl=globalThis.fetch,releaseLoadId=null,
+  universeId=new URLSearchParams(globalThis.location?.search).get('universe'),storage
 }={}) {
   if(typeof fetchImpl!=='function')throw new TypeError('fetchImpl required');
   const url=new URL('../../combat-preview/data/capture/showcase/encounter-bundle.v1.json',import.meta.url);
@@ -64,7 +73,7 @@ export async function loadCaptureAuthorEncounterBundleV1({
   }
   const response=await fetchImpl(url,{cache:releaseLoadId===null?'force-cache':'no-store'});
   if(!response.ok)throw new Error('Official Combat encounter bundle unavailable: HTTP '+response.status);
-  return normalizeCaptureAuthorEncounterBundleV1(await response.json());
+  return selectCaptureEncounterBundleV1(await response.json(),universeId,storage);
 }
 export async function loadCaptureShowcaseEncounterSourceV1(options={}) {
   const bundle=await loadCaptureAuthorEncounterBundleV1(options);
