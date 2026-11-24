@@ -3154,8 +3154,7 @@ function canChallengeSculptTrainer(actor){
 }
 function canChallengeSculptWild(actor){
   return actor?.npc?.kind==='wild'&&!!actor.npc.wildCreature&&
-    (!sculptPlayRequested||scopedEncounter?.armed&&scopedEncounter.party.active.hp>0)&&
-    (sculptCombatSessionId===undefined||scopedEncounter?.armed)&&
+    (sculptCombatSessionId===undefined||scopedEncounter?.armed&&scopedEncounter.party.active.hp>0)&&
     !!sculptEncounterCatalog?.resolveCreature(actor.npc.wildCreature.creatureId);
 }
 function startSculptPlacedEncounter(snapshot){
