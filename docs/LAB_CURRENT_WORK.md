@@ -1,3 +1,8 @@
+## 2026-11-24 — #527 · Créature sauvage : premier lot, édition de l’instance Combat (C2, NON GREEN)
+- START `46e2e1e11cfd841232998d452dbf4f235f2b482c` ; checkpoint `checkpoint/exploration-start-wild-instance-527-2026-11-24` ; branche `work/exploration-wild-instance-527-20261124`. Base CI 45466487382, Pages 45466487438 ; publication PWA #645 GREEN (4f0ff386, 45473989957, 45474749499).
+- Périmètre : réutiliser le formulaire d’instance Combat déjà utilisé pour les dresseurs dans le rôle sauvage, conserver les overrides pour la même espèce lors d’une édition World Builder. Le contrat `normalizeNpcCombatInstanceTransportV1` et le catalogue Combat restent les seules autorités ; aucun calcul de stats ni copie d’espèce. Ne pas réutiliser des overrides d’une autre espèce.
+- Tests : sauvegarde/export/import PNJ sauvage, conservation au placement et lors d’une édition, non-régression dresseur, navigateur PC/mobile. Pas de changement du runtime de rencontre, de collision, des patrouilles ou de Capture dans ce lot. #527 reste ouvert : lancement natif de rencontre sauvage et #529 (agressivité) seront traités après validation de ce lot. Aucun déploiement avant CI et revue.
+
 ## 2026-11-24 — #385 Combat · Catalogue utilisé par les rencontres d’un univers
 Départ `860df6c8a9cf853b7570f0e44b11990c5b2f4a7e`, checkpoint `checkpoint/exploration-start-universe-encounters-385-20261124`. L’exploration et le combat lancé depuis la carte doivent lire le même catalogue du projet Combat. Vérifier les statistiques, le monde et la reprise de session ainsi que le parcours vitrine existant.
 

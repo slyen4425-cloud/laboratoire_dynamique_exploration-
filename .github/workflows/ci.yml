@@ -88,6 +88,10 @@ jobs:
         run: node scripts/smoke-exploration-music-playback.mjs
       - name: Real Chromium Encounter startup smoke
         run: node scripts/smoke-modern-combat-preview.mjs
+      - name: Real Chromium official catalog — wild NPC instance authoring and save/reopen
+        env:
+          NPC_WILD_AUTHORING: '1'
+        run: node scripts/smoke-npc-editor-browser.mjs
 
   native-https-pixels:
     # Only GitHub Pages validates live HTTPS. This job paints the exact
