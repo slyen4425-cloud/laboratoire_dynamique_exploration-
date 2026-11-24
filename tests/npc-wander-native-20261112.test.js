@@ -179,3 +179,41 @@ test('pacific never auto-engages, contact respects wall and old actor data',()=>
  }
  assert.throws(()=>wildActor('aggressive',{detectionRadius:200,disengageRadius:100}));
 });
+
+test('fearful wild escapes nearby player, never auto-engages, stays inside territory and returns when safe',()=>{
+ const actor=wildActor('flee',{detectionRadius:60,disengageRadius:110,returnHome:true});
+ const runtime=createNpcWanderRuntimeV1({move:stepMovement});runtime.reset([actor]);
+ const player={x:140,y:100};const before=JSON.stringify(actor);
+ for(let i=0;i<90;i++){
+  runtime.step({actors:[actor],world,player,elapsedSeconds:.1});
+  const [s]=runtime.snapshot();assert.ok(Math.hypot(s.x-actor.x,s.y-actor.y)<=110.001);
+  assert.equal(runtime.nearestWildContact({actors:[actor],world,player}),null);
+ }
+ assert.ok(runtime.snapshot()[0].x>actor.x+60);assert.equal(runtime.snapshot()[0].fleeing,true);
+ for(let i=0;i<100;i++)runtime.step({actors:[actor],world,player:{x:20,y:100},elapsedSeconds:.1});
+ assert.ok(Math.abs(runtime.snapshot()[0].x-actor.x)<=3);
+ assert.equal(runtime.snapshot()[0].fleeing,false);assert.equal(JSON.stringify(actor),before);
+});
+test('fearful wild cannot cross a wall and can escape from initial contact',()=>{
+ const actor=wildActor('flee');const runtime=createNpcWanderRuntimeV1({move:stepMovement});
+ const map={...world,obstacles:[{x:168,y:0,w:2,h:300}]};
+ runtime.reset([actor]);
+ for(let i=0;i<60;i++)runtime.step({actors:[actor],world:map,player:{x:145,y:100},elapsedSeconds:.1});
+ assert.ok(runtime.snapshot()[0].x>actor.x&&runtime.snapshot()[0].x<=163);
+ assert.equal(runtime.nearestWildContact({actors:[actor],world:map,player:{x:145,y:100}}),null);
+});
+test('wild creatures use the same native route modes, speed, waiting and pause as dialogue NPCs',()=>{
+ const movement={mode:'pingpong',speed:40,waitSeconds:.7,points:[{x:40,y:0},{x:40,y:40}]};
+ const a=wildActor('pacific');const actor={...a,npc:normalizeMapActorNpcSettingsV1({...a.npc,movement})};
+ const runtime=createNpcWanderRuntimeV1({move:stepMovement});runtime.reset([actor]);
+ const original=JSON.stringify(actor);let changes=[],previous;
+ for(let i=0;i<200;i++){
+  runtime.step({actors:[actor],world,elapsedSeconds:.1});const [s]=runtime.snapshot();
+  if(s.waypoint!==previous?.waypoint)changes.push(s.waypoint);
+  if(previous)assert.ok(Math.hypot(s.x-previous.x,s.y-previous.y)<=4.01);
+  previous=s;
+ }
+ assert.deepEqual(changes.slice(0,5),[1,2,1,0,1]);
+ for(let i=0;i<20;i++)runtime.step({actors:[actor],world,elapsedSeconds:.1,paused:true});
+ assert.deepEqual(runtime.snapshot()[0],previous);assert.equal(JSON.stringify(actor),original);
+});

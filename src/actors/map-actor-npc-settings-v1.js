@@ -84,7 +84,7 @@ export const NPC_WILD_BEHAVIOR_DEFAULTS_V1=Object.freeze({
 });
 export function normalizeNpcWildBehaviorV1(raw={}){
   const value={...NPC_WILD_BEHAVIOR_DEFAULTS_V1,...raw};
-  if(!['pacific','contact','aggressive'].includes(value.mode)||
+  if(!['pacific','contact','aggressive','flee'].includes(value.mode)||
      !Number.isFinite(value.detectionRadius)||value.detectionRadius<24||value.detectionRadius>600||
      !Number.isFinite(value.disengageRadius)||value.disengageRadius<value.detectionRadius||value.disengageRadius>1200||
      typeof value.returnHome!=='boolean'||!Number.isFinite(value.cooldownSeconds)||

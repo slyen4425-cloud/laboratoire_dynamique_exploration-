@@ -45,7 +45,7 @@ function newState(actor){
   const movement=actor.npc.movement;
   return {id:actor.id,anchorX:actor.x,anchorY:actor.y,movement,
     wildBehavior:wild(actor)?normalizeNpcWildBehaviorV1(actor.npc.wildBehavior):null,
-    cooldown:0,awaitLeave:false,chasing:false,returning:false,
+    cooldown:0,awaitLeave:false,chasing:false,fleeing:false,returning:false,
     route:movement.points?[{x:0,y:0},...movement.points]:null,index:1,direction:1,done:false,
     speed:movement.speed??WANDER_SPEED,leash:movement.radius,
     radius:WANDER_RADIUS,x:actor.x,y:actor.y,
@@ -108,7 +108,15 @@ export function createNpcWanderRuntimeV1({move}={}){
         if(!state.chasing&&!state.returning&&allowed&&heroDistance<=policy.detectionRadius&&heroHomeDistance<=policy.disengageRadius)
           state.chasing=true;
       }
-      const special=state.chasing||state.returning;
+      if(policy?.mode==='flee'){
+        if(state.fleeing&&(!player||heroDistance>policy.disengageRadius||heroHomeDistance>policy.disengageRadius)){
+          state.fleeing=false;state.returning=policy.returnHome;
+        }
+        if(player&&heroDistance<=policy.detectionRadius&&heroHomeDistance<=policy.disengageRadius){
+          state.fleeing=true;state.returning=false;
+        }
+      }
+      const special=state.chasing||state.fleeing||state.returning;
       if(!special&&(state.done||state.movement.mode==='static')){updated ||=oldMoving;continue;}
       if(!special&&state.pause>0){
         state.pause=Math.max(0,state.pause-dt);
@@ -119,7 +127,15 @@ export function createNpcWanderRuntimeV1({move}={}){
         state.pause=.18;updated ||=oldMoving;continue;
       }
       if(!special&&!state.goal)nextDestination(state);
-      const goal=state.chasing?player:state.returning?{x:state.anchorX,y:state.anchorY}:state.goal;
+      // Escape uses the same native movement step and the same territory.
+      // At coincident positions choose the actor's existing facing, not a teleport.
+      const awayX=state.fleeing?(state.x-player.x||(!heroDistance?state.facingX:0)):0;
+      const awayY=state.fleeing?state.y-player.y:0;
+      const awayLength=Math.hypot(awayX,awayY)||1;
+      const goal=state.chasing?player:state.fleeing?{
+        x:state.x+awayX/awayLength*policy.disengageRadius,
+        y:state.y+awayY/awayLength*policy.disengageRadius
+      }:state.returning?{x:state.anchorX,y:state.anchorY}:state.goal;
       const dx=goal.x-state.x,dy=goal.y-state.y;
       const remaining=Math.hypot(dx,dy);
       const stopDistance=state.chasing?NPC_WILD_CONTACT_RANGE_V1-1:3;
@@ -139,8 +155,10 @@ export function createNpcWanderRuntimeV1({move}={}){
       }
       const distanceFromAnchor=Math.hypot(state.x-state.anchorX,state.y-state.anchorY);
       const overlapsHero=player&&Math.hypot(player.x-state.x,player.y-state.y)<AVOID_HERO_DISTANCE;
-      if((state.chasing&&distanceFromAnchor>policy.disengageRadius+.001)||
-         (!special&&!state.route&&distanceFromAnchor>state.leash+.001)||(!state.chasing&&overlapsHero)){
+      const distanceAfter=player?Math.hypot(player.x-state.x,player.y-state.y):Infinity;
+      if(((state.chasing||state.fleeing)&&distanceFromAnchor>policy.disengageRadius+.001)||
+         (!special&&!state.route&&distanceFromAnchor>state.leash+.001)||
+         (!state.chasing&&overlapsHero&&(!state.fleeing||distanceAfter<=heroDistance))){
         state.x=x;state.y=y;
         state.sculptBridgeId=bridgeId;state.sculptStairId=stairId;
       }
@@ -177,7 +195,7 @@ export function createNpcWanderRuntimeV1({move}={}){
       const state=entries.get(source.id),policy=state?.wildBehavior;
       if(!policy)continue;
       const actor={...source,x:state.x,y:state.y};
-      if(policy.mode==='pacific'||!wildReady(actor.id)||!canEngage(actor)||state.returning)continue;
+      if(!['contact','aggressive'].includes(policy.mode)||!wildReady(actor.id)||!canEngage(actor)||state.returning)continue;
       const distance=Math.hypot(actor.x-player.x,actor.y-player.y);
       if(distance>NPC_WILD_CONTACT_RANGE_V1||distance>=best)continue;
       // Use the same official movement/collision on a disposable probe to
@@ -196,7 +214,7 @@ export function createNpcWanderRuntimeV1({move}={}){
       id:s.id,anchorX:s.anchorX,anchorY:s.anchorY,x:s.x,y:s.y,
       radius:s.leash,moving:s.moving,facingX:s.facingX,
       ...(s.route?{waypoint:s.index,complete:s.done}:{}),
-      ...(s.wildBehavior?{chasing:s.chasing,returning:s.returning,cooldown:s.cooldown,awaitLeave:s.awaitLeave}:{}),
+      ...(s.wildBehavior?{chasing:s.chasing,fleeing:s.fleeing,returning:s.returning,cooldown:s.cooldown,awaitLeave:s.awaitLeave}:{}),
       blocked:s.blocked
     })));
   }
