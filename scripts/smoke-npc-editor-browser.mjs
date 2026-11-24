@@ -137,6 +137,62 @@ try{
  const reuse=await evaluate("(async()=>{\n  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));\n  const details=document.querySelector('#npc-visual-library');\n  if(!details)throw Error('Galerie de visuels introuvable');\n  details.open=true;\n  document.querySelector('[data-npc-visual-tab=\"npc\"]').click();\n  let choose=null;\n  for(let i=0;i<90;i++){\n   choose=[...document.querySelectorAll('#npc-visual-cards .npc-visual-card')]\n    .find(card=>card.querySelector('strong')?.textContent==='PNJ navigateur CI')\n    ?.querySelector('button');\n   if(choose)break;\n   await delay(120);\n  }\n  if(!choose)throw Error('Modèle PNJ absent de la bibliothèque : '+\n   document.querySelector('#npc-visual-library-status').textContent);\n  document.querySelector('#npc-new').click();\n  for(let i=0;i<50;i++){\n   if(!document.querySelector('#npc-name').value)break;\n   await delay(100);\n  }\n  choose.click();\n  let selected=false;\n  for(let i=0;i<50;i++){\n   if(document.querySelector('#npc-visual-library-status').textContent.includes('Visuel chargé')){\n    selected=true;break;\n   }\n   await delay(140);\n  }\n  if(!selected)throw Error('Sélection du visuel PNJ échouée : '+\n   document.querySelector('#npc-visual-library-status').textContent);\n  document.querySelector('#npc-name').value='Gardien personnalisé';\n  document.querySelector('#npc-save').click();\n  for(let i=0;i<90;i++){\n   const options=[...document.querySelector('#npc-saved').options];\n   if(options.some(o=>o.textContent.includes('Gardien personnalisé'))&&\n      document.querySelector('#npc-status').textContent.includes('enregistré'))\n     break;\n   await delay(120);\n  }\n  const options=[...document.querySelector('#npc-saved').options];\n  const original=options.find(o=>o.textContent.includes('PNJ navigateur CI'));\n  const copy=options.find(o=>o.textContent.includes('Gardien personnalisé'));\n  if(!original||!copy||original.value===copy.value)\n   throw Error('Le visuel réutilisé a modifié ou remplacé la fiche source');\n  return {original:original.value,copy:copy.value,count:options.length};\n})()");
  if(!reuse?.copy||reuse.original!==created.id)
   throw Error('Reprise et renommage d’un visuel existant invalides : '+JSON.stringify(reuse));
+ if(process.env.NPC_WILD_AUTHORING==='1'){
+  // The integration job stages the actual official Combat bundle. Exercise
+  // the shared form through its public controls; no mock or seeded stats.
+  const wild=await evaluate(`(async()=>{
+   const delay=ms=>new Promise(ok=>setTimeout(ok,ms));
+   const $=s=>document.querySelector(s);
+   const change=(el,value)=>{el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));};
+   change($('#npc-role'),'wild');
+   $('#npc-wild-config').open=true;
+   let selected=false;
+   for(let attempt=0;attempt<90&&!selected;attempt++){
+    for(const option of [...$('#npc-wild-choice').options].filter(o=>o.value)){
+     change($('#npc-wild-choice'),option.value);
+     if($('#npc-wild-instance .npc-combat-stats input')&&
+        $('#npc-wild-instance .npc-combat-skills input')){selected=true;break;}
+    }
+    if(!selected)await delay(150);
+   }
+   if(!selected)throw Error('Le catalogue Combat réel ne fournit pas de formulaire sauvage');
+   const species=$('#npc-wild-choice').value;
+   $('#npc-wild-instance details').open=true;
+   change($('#npc-wild-instance input[type=text]'),'Sauvage CI');
+   const stat=$('#npc-wild-instance .npc-combat-stats input');
+   change(stat,'7');
+   const checks=[...document.querySelectorAll('#npc-wild-instance .npc-combat-skills input')];
+   if(checks.length>1){checks.at(-1).checked=false;checks.at(-1).dispatchEvent(new Event('change',{bubbles:true}));}
+   const wanted=[...document.querySelectorAll('#npc-wild-instance .npc-combat-skills input:checked')].map(el=>el.value);
+   $('#npc-save').click();
+   const {createUserNpcStoreV1}=await import('./src/storage/user-npc-store-v1.js');
+   const store=createUserNpcStoreV1();
+   let saved=null;
+   for(let attempt=0;attempt<90;attempt++){
+    saved=await store.get(${JSON.stringify(reuse.copy)});
+    if(saved?.npc?.wildCreature?.npcInstance?.displayName==='Sauvage CI'&&!$('#npc-save').disabled)break;
+    await delay(120);
+   }
+   const slot=saved?.npc?.wildCreature;
+   if(slot?.creatureId!==species||slot?.npcInstance?.displayName!=='Sauvage CI'||
+      !Object.values(slot.npcInstance.statAllocations??{}).includes(7)||
+      (checks.length>1&&JSON.stringify(slot.npcInstance.skillIds)!==JSON.stringify(wanted)))
+    throw Error('Overrides sauvages non enregistrés : '+JSON.stringify(slot));
+   return {species,statLabel:stat.getAttribute('aria-label')};
+  })()`);
+  await evaluate(`location.search='?edit='+encodeURIComponent(${JSON.stringify(reuse.copy)});true`);
+  let restored=false;
+  for(let attempt=0;attempt<90;attempt++){
+   try{
+    restored=await evaluate(`document.querySelector('#npc-wild-choice')?.value===${JSON.stringify(wild.species)}&&
+      document.querySelector('#npc-wild-instance input[type=text]')?.value==='Sauvage CI'&&
+      [...document.querySelectorAll('#npc-wild-instance .npc-combat-stats input')].some(el=>el.getAttribute('aria-label')===${JSON.stringify(wild.statLabel)}&&el.value==='7')`);
+   }catch{}
+   if(restored)break;
+   await sleep(150);
+  }
+  if(!restored)throw Error('Les réglages sauvages ne survivent pas à la réouverture du vrai éditeur');
+ }
  // Screenshot is captured from the REAL Chromium page, never rendered by a mock.
  await mkdir('artifacts',{recursive:true});
  const shot=await new Promise((done,fail)=>{
