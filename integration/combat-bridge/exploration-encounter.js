@@ -123,9 +123,23 @@ const assetCatalogUrl = new URL('../../../capture-assets/data/assets/catalog/glo
 const assetBase = new URL('../../../capture-assets/assets/library/',import.meta.url);
 const assetUrlForFile = file => new URL(file,assetBase).href;
 function presentationAssetsForSource(source, assetCatalog) {
-  const resolveAsset=createGlobalPresentationAssetResolverV1({
-    assetCatalog,assetUrlForFile
-  });
+  const resolveFile=createGlobalPresentationAssetResolverV1({assetCatalog,assetUrlForFile});
+  // Combat describes the timing and frames of manifest-backed effects. Serve
+  // those same frames from the certified media packaged alongside this game.
+  const sequences=new Set(assetCatalog.assets.filter(entry=>entry.resource?.manifest).map(entry=>entry.id));
+  const ownerBase=assetCatalog.storage.rawBaseUrl;
+  function stagedUrl(url){
+    if(!url.startsWith(ownerBase))throw new Error('Séquence hors du catalogue officiel : '+url);
+    return assetUrlForFile(url.slice(ownerBase.length));
+  }
+  function resolveAsset(id){
+    const file=resolveFile(id);
+    if(file||!sequences.has(id))return file;
+    const sequence=demoPresentationAssets.asset(id);
+    if(!sequence)return null;
+    if(sequence.frames)return {...sequence,frames:sequence.frames.map(stagedUrl)};
+    return sequence.url?{...sequence,url:stagedUrl(sequence.url)}:null;
+  }
   const native=createCaptureSkillPresentationAssetsV2({
     skillPresentations:source.skillPresentations??{},
     assetForId:resolveAsset,
