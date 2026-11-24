@@ -1,3 +1,8 @@
+## 2026-11-24 — #527 · Raccord natif des créatures sauvages placées (C2)
+- START `bd808c05400c6f9e54480e1f2aa0d8e385a26e51` ; checkpoint `checkpoint/exploration-start-wild-encounter-527-2026-11-24` ; branche `work/exploration-wild-encounter-527-20261124`. Jalon édition #546 GREEN (CI 45481920998, Pages 45481919949, HTTPS).
+- Réutiliser EncounterController, snapshot/handoff v1, constructeur de combat officiel et interaction de proximité ; source distincte `npc-wild`, un seul adversaire, aucune victoire de dresseur. Stats/compétences restent Combat, loot/XP Capture. Préserver anciennes rencontres et portails, aucune nouvelle sauvegarde ni moteur.
+- Tests : source -> snapshot -> handoff -> Combat natif Tester et Aventure, garde de déclenchement unique, anciennes rencontres, Chromium et provenance Pages. Le comportement configuré #529 dépend de ce raccord et reste à développer après certification.
+
 ## 2026-11-24 — #527 · Créature sauvage : premier lot, édition de l’instance Combat (C2, NON GREEN)
 - START `46e2e1e11cfd841232998d452dbf4f235f2b482c` ; checkpoint `checkpoint/exploration-start-wild-instance-527-2026-11-24` ; branche `work/exploration-wild-instance-527-20261124`. Base CI 45466487382, Pages 45466487438 ; publication PWA #645 GREEN (4f0ff386, 45473989957, 45474749499).
 - Périmètre : réutiliser le formulaire d’instance Combat déjà utilisé pour les dresseurs dans le rôle sauvage, conserver les overrides pour la même espèce lors d’une édition World Builder. Le contrat `normalizeNpcCombatInstanceTransportV1` et le catalogue Combat restent les seules autorités ; aucun calcul de stats ni copie d’espèce. Ne pas réutiliser des overrides d’une autre espèce.
