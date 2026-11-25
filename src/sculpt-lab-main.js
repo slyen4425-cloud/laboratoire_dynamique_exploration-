@@ -4011,7 +4011,8 @@ function readSelectedObjectShadowControlsV1(){
   heightPct:Number($('object-shadow-height').value),
   offsetXPct:Number($('object-shadow-x').value),
   offsetYPct:Number($('object-shadow-y').value),
-  opacityPct:Number($('object-shadow-opacity').value)
+  opacityPct:Number($('object-shadow-opacity').value),
+  rotationDeg:Number($('object-shadow-rotation').value)
  });
 }
 function refreshSelectedObjectShadowControlsV1(selected){
@@ -4041,11 +4042,11 @@ function refreshSelectedObjectShadowControlsV1(selected){
  $('object-shadow-mode').value=shadow?'custom':'auto';
  for(const [control,key] of [
   ['width','widthPct'],['height','heightPct'],['x','offsetXPct'],
-  ['y','offsetYPct'],['opacity','opacityPct']
+  ['y','offsetYPct'],['opacity','opacityPct'],['rotation','rotationDeg']
  ]){
   const input=$('object-shadow-'+control);
-  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]);
-  $('object-shadow-'+control+'-value').textContent=input.value+' %';
+  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]??0);
+  $('object-shadow-'+control+'-value').textContent=input.value+(control==='rotation'?'°':' %');
  }
  $('object-shadow-fields').hidden=!shadow;
  $('object-shadow-summary').textContent=(model?'Modèle · ':'')+(shadow?'Personnalisée':(!model&&modelValue?'Héritée du modèle':'Auto'));
@@ -5200,10 +5201,10 @@ $('object-shadow-mode').addEventListener('change',()=>{
  $('object-shadow-summary').textContent=$('object-shadow-mode').value==='custom'?'Personnalisée':'Auto';
  applySelectedShadowControl();
 });
-for(const id of ['width','height','x','y','opacity']){
+for(const id of ['width','height','x','y','opacity','rotation']){
  const input=$('object-shadow-'+id);
  input.addEventListener('input',()=>{
-  $('object-shadow-'+id+'-value').textContent=input.value+' %';
+  $('object-shadow-'+id+'-value').textContent=input.value+(id==='rotation'?'°':' %');
   scheduleDraw();
  });
  input.addEventListener('change',applySelectedShadowControl);
