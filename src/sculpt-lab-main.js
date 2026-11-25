@@ -1432,7 +1432,7 @@ function draw(){
         worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point')):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??(worldExit?resolvePortalWaypoint(sculptWorldDraft,worldExit):null),
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??(worldExit?{kind:'point',...resolvePortalWaypoint(sculptWorldDraft,worldExit)}:null),
       stairPortals:interiorConnectorPortals()
         .map(p=>interiorConnectorPreview?.id===p.id?
           {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { createPortalRenderer } from '../src/render/portal-renderer.js';
 import { demoWorldDocument } from '../src/world/demo-world.js';
+import {resolvePortalWaypoint,findTriggeredPortal} from '../src/world/portal-model.js';
 
 function fakeContext() {
   const calls = [];
@@ -39,9 +40,12 @@ test('Portal renderer displays the exact active Portal trigger position', () => 
     currentAreaId: 'house-interior-01'
   });
 
+  const portal=demoWorldDocument.portals.find(p=>p.sourceAreaId==='house-interior-01');
+  const point=resolvePortalWaypoint(demoWorldDocument,portal);
+  assert.equal(findTriggeredPortal(demoWorldDocument,portal.sourceAreaId,point)?.id,portal.id);
   assert.deepEqual(
     ctx.calls.find((call) => call[0] === 'translate'),
-    ['translate', 260, 110]
+    ['translate', point.x-100, point.y-400]
   );
   assert.deepEqual(
     ctx.calls.find((call) => call[0] === 'arc'),
