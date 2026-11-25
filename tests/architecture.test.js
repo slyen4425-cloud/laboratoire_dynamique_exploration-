@@ -348,7 +348,7 @@ test('architecture sentinel: Portal marker position comes from Portal Model reso
     'utf8'
   );
 
-  assert.equal(renderer.includes('resolvePortalTriggerPoint'), true);
+  assert.equal(renderer.includes('resolvePortalWaypoint'), true);
 });
 
 

@@ -119,11 +119,27 @@ const server = createServer(async(req,res)=>{
             const c = controls.getBoundingClientRect();
             const project=new URL(location.href).searchParams;
             const configured=project.has('adventureSession')||project.has('projectTester');
-            const projected=local.dataset.hudBox==='local-status'&&getComputedStyle(local).position==='absolute'&&Number.isFinite(parseFloat(local.style.left))&&Number.isFinite(parseFloat(local.style.top));
+            // Combat main #396 projects the saved legacy offsets through
+            // its new rectangle owner, not CSS translate. Verify the native
+            // node and its actual measured position, without dropping the
+            // requirement for a saved layout or skill slots.
+            const translated=local.style.translate!==''&&local.style.translate!=='none';
+            const box=local.dataset.hudBox==='local-status';
+            const parent=local.offsetParent;
+            const p=parent?.getBoundingClientRect();
+            const left=parseFloat(local.style.left),top=parseFloat(local.style.top);
+            const width=parseFloat(local.style.width),height=parseFloat(local.style.height);
+            const positioned=box&&p&&getComputedStyle(local).position==='absolute'&&
+              [left,top,width,height].every(Number.isFinite)&&
+              Math.abs(h.left-(p.left+parent.clientLeft-parent.scrollLeft+left))<2&&
+              Math.abs(h.top-(p.top+parent.clientTop-parent.scrollTop+top))<2&&
+              Math.abs(h.width-width)<2&&Math.abs(h.height-height)<2&&
+              h.left>=r.left-1&&h.top>=r.top-1&&h.right<=r.right+1&&h.bottom<=r.bottom+1;
+            const moved=translated||positioned;
             const slot=!!document.querySelector('[data-combat-hud-skill-role^="skill-slot-"]');
             document.documentElement.dataset.nativeAuthoredHudProof=configured
-              ?(projected&&slot?'OK':'layout-or-slot-missing:'+local.dataset.hudBox+':'+local.style.left+':'+local.style.top+':'+slot)
-              :(!projected?'OK':'unexpected-authored-box');
+              ?(moved&&slot?'OK':'layout-or-slot-missing:'+local.style.translate+':'+box+':'+positioned+':'+slot)
+              :(!translated&&!box?'OK':'unexpected-layout');
             const ok = getComputedStyle(stage).position === 'fixed' &&
               getComputedStyle(banner).display === 'none' &&
               r.width > 500 && r.height > 260 &&

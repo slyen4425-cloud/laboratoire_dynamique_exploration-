@@ -1,5 +1,5 @@
 import {
-  resolvePortalTriggerPoint
+  resolvePortalWaypoint
 } from '../world/portal-model.js?rev=worldarea-portal-v1-exit-marker';
 
 function drawExitMarker(ctx, point, visual, camera) {
@@ -80,10 +80,7 @@ export function createPortalRenderer({resolveTexture=null}={}) {
           continue;
         }
 
-        const point = resolvePortalTriggerPoint(
-          worldDocument.areas,
-          portal
-        );
+        const point = resolvePortalWaypoint(worldDocument,portal);
         if (!point) continue;
 
         if(portal.visual.marker==='shadow'||portal.visual.marker==='texture'){

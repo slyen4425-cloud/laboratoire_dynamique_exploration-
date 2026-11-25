@@ -5,6 +5,7 @@ import {addWorldArea,addSpawn,connectWorldAreas,updatePortal,
   from './world-builder-draft.js';
 import {validInteriorConnectorAsset,validInteriorDoorAsset}
   from '../world/interior-material-catalog.js';
+import {buildingDoorCounterpart} from '../world/portal-model.js';
 import {circleFitsWorldAreaBoundary}
   from '../world/world-area-geometry.js';
 export const WORLD_INTERIOR_MAX_FLOORS=4;
@@ -120,7 +121,10 @@ export function changeWorldInteriorDoor(world,areaId,{x,y,assetId,scale}={}){
  if(assetId!==undefined&&!validInteriorDoorAsset(assetId))
    throw Error('Visuel de porte invalide');
  return validate(updatePortal(world,portal.id,p=>{
-   p.trigger={...p.trigger,x:xSafe,y:ySafe};
+   if((Number.isFinite(x)||Number.isFinite(y))&&buildingDoorCounterpart(world,portal)){
+     p.sharedDoorPoint=true;
+     p.trigger={...p.trigger,x:xSafe,y:ySafe};
+   }
    p.visual={...p.visual,
      ...(assetId!==undefined?{assetId}:{}),
      ...(Number.isFinite(scale)?{scale}: {})};

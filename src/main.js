@@ -74,7 +74,7 @@ import {
 } from './world/world-document-model.js?rev=terrain-family-palette-editable-v2&speed=terrain-family-speed-editor-v1';
 import {
   applyPortalTransition,
-  findTriggeredPortal
+  findTriggeredPortal,findPortalEnteredDuringMove,isManualBuildingPortal
 } from './world/portal-model.js?rev=builder-dynamic-return-v1';
 import {
   createWorldEventController
@@ -758,7 +758,10 @@ function refreshInteractionAvailability() {
         entity: player
       });
 
-  worldInteract.hidden = !intent;
+  const portal=findTriggeredPortal(activeWorldDocument,player.currentAreaId,player);
+  const door=isManualBuildingPortal(activeWorldDocument,portal);
+  worldInteract.hidden = !intent&&!door;
+  worldInteract.textContent=intent?'Interagir':door?'Franchir la porte':'Interagir';
   return intent;
 }
 
@@ -777,9 +780,9 @@ function triggerWorldInteraction() {
       entity: player
     });
 
-  return showWorldEventIntent(
-    intent
-  );
+  if(intent)return showWorldEventIntent(intent);
+  const portal=findTriggeredPortal(activeWorldDocument,player.currentAreaId,player);
+  return isManualBuildingPortal(activeWorldDocument,portal)?applyTriggeredPortal(portal):false;
 }
 
 function resize() {
@@ -828,13 +831,7 @@ function updateCamera() {
   );
 }
 
-function applyTriggeredPortal() {
-  const portal = findTriggeredPortal(
-    activeWorldDocument,
-    player.currentAreaId,
-    player
-  );
-
+function applyTriggeredPortal(portal) {
   if (!portal) return false;
 
   const next = applyPortalTransition(
@@ -873,6 +870,7 @@ function update(dt) {
     player.facingX = input.x < 0 ? -1 : 1;
   }
 
+  const previousPoint={x:player.x,y:player.y};
   stepMovement(
     area,
     player,
@@ -886,7 +884,8 @@ function update(dt) {
     }
   );
 
-  applyTriggeredPortal();
+  applyTriggeredPortal(findPortalEnteredDuringMove(activeWorldDocument,
+    player.currentAreaId,previousPoint,player));
 
   const worldEventIntent =
     worldEventController.step({
