@@ -55,6 +55,8 @@ export function normalizeWorldTriggerGeometry(raw) {
       kind: 'object-anchor',
       objectId,
       anchorId,
+      ...(Number.isFinite(raw.doorPoint?.x)&&Number.isFinite(raw.doorPoint?.y)
+        ?{doorPoint:Object.freeze({x:raw.doorPoint.x,y:raw.doorPoint.y})}:{}),
       radius: finiteNumber(raw.radius, 32, {
         min: 4,
         max: 240
@@ -97,8 +99,8 @@ export function resolveWorldTriggerPoint(area, trigger) {
     if (!anchor) return null;
 
     return Object.freeze({
-      x: anchor.x,
-      y: anchor.y,
+      x: trigger.doorPoint?.x??anchor.x,
+      y: trigger.doorPoint?.y??anchor.y,
       radius: trigger.radius
     });
   }

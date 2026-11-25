@@ -1,3 +1,8 @@
+## 2026-11-25 — Porte de bâtiment : passage manuel et repère partagé (C2, NON GREEN)
+- START `46654efe2b7d084d8ae891362e5d4e2999c3ab8c` (raccord #550 fusionné, CI/Pages du main en validation), branche `work/exploration-building-door-waypoints-20261125`. Lot préparé sans fusion avant certification du précédent. Préserver toutes les références Portal, Spawn, bâtiment et WorldArea, ainsi que les étages.
+- Le couple est retrouvé via l'ancre bâtiment existante et le Spawn de retour ancré. Une seule position par côté : arrivée historique sûre par défaut, ou le Portal.trigger lorsque l'auteur le déplace. Le Spawn historique est conservé pour compatibilité ; le franchissement du couple utilise la position du repère, pas une seconde position active. Les passages inter-cartes gardent le déclenchement sur contact; portes extérieur/intérieur sur clic à proximité.
+- Réutilisation de Passages : un repère par côté, déplacement, rayon, cercle/ombre/texture/invisible. Tests de l'aller-retour, anciens mondes, marqueurs, pas d'auto-entrée, export/import ; contrôle Chromium PC/mobile et CI/Pages exact SHA avant GREEN. Pas de PWA/Capture/Combat ni d'asset modifié. Aucun run annulé.
+
 ## 2026-11-25 — #386 · Transport du HUD de l'univers vers le combat natif
 - START Exploration `52c0736f16b4bf75209a3839255135786719188c`, checkpoint `checkpoint/exploration-start-combat-hud-386-20261125`. #548 GREEN CI 45491305221 / Pages 45491305075. #549 en attente à la demande auteur, exclue du lot.
 - Combat #391 fusionné `45e8ccd7a8002ff10ab06d6ed63157cbe56d90d4`, PR CI 45546879226 / 45546873264 et revue Codex OK; Pages 45547415427 réussi, CI main 45547416368 encore en cours. Pas de fusion Exploration tant que Combat exact non certifié.

@@ -79,6 +79,7 @@ export function normalizePortal(raw, index = 0) {
     trigger,
     targetAreaId,
     targetSpawnId,
+    ...(raw.sharedDoorPoint===true?{sharedDoorPoint:true}:{}),
     visual: normalizePortalVisual(raw.visual)
   });
 }
@@ -134,10 +135,48 @@ export function portalReferencesAreValid(areas, portal) {
   );
 }
 
+// Identify the original door pair by its existing building anchor and the
+// reverse Spawn anchor, not by a generated ID or a parallel door registry.
+export function buildingDoorCounterpart(world,portal){
+  if(!world||!portal)return null;
+  const area=id=>findWorldArea(world.areas,id);
+  const source=area(portal.sourceAreaId),target=area(portal.targetAreaId);
+  if(!source||!target||source.kind===target.kind)return null;
+  const reverse=(world.portals??[]).filter(p=>p.sourceAreaId===portal.targetAreaId&&
+    p.targetAreaId===portal.sourceAreaId&&p.enabled!==false);
+  const matches=(entry,exit)=>{
+    if(entry.trigger?.kind!=='object-anchor'||exit.trigger?.kind!=='point')return false;
+    const spawn=findWorldAreaSpawn(area(exit.targetAreaId),exit.targetSpawnId);
+    return spawn?.anchor?.kind==='building-door'&&
+      spawn.anchor.objectId===entry.trigger.objectId&&
+      spawn.anchor.anchorId===entry.trigger.anchorId;
+  };
+  const candidates=reverse.filter(p=>source.kind==='exterior'?matches(portal,p):matches(p,portal));
+  return candidates.length===1?candidates[0]:null;
+}
+export function isManualBuildingPortal(world,portal){
+  const source=findWorldArea(world?.areas??[],portal?.sourceAreaId);
+  const target=findWorldArea(world?.areas??[],portal?.targetAreaId);
+  return !!source&&!!target&&source.kind!==target.kind&&
+    (source.kind==='interior'||target.kind==='interior');
+}
+// A shared door uses its one explicitly placed Portal.trigger for both
+// directions. Until edited, the safe historical arrival Spawn is the common
+// point; its old doorway anchor and legacy Spawn IDs stay intact.
+export function resolvePortalWaypoint(world,portal){
+  const point=resolvePortalTriggerPoint(world.areas,portal);
+  const reverse=buildingDoorCounterpart(world,portal);
+  if(!point||!reverse||portal.sharedDoorPoint)return point;
+  const source=findWorldArea(world.areas,portal.sourceAreaId);
+  const arrival=resolveWorldAreaSpawnPoint(source,reverse.targetSpawnId);
+  return arrival?Object.freeze({x:arrival.x,y:arrival.y,radius:point.radius}):point;
+}
+
 export function findTriggeredPortal(
   worldDocument,
   currentAreaId,
-  entity
+  entity,
+  {automaticOnly=false}={}
 ) {
   if (
     !worldDocument ||
@@ -152,15 +191,13 @@ export function findTriggeredPortal(
   for (const portal of worldDocument.portals) {
     if (
       portal.enabled !== true ||
-      portal.sourceAreaId !== currentAreaId
+      portal.sourceAreaId !== currentAreaId ||
+      (automaticOnly&&isManualBuildingPortal(worldDocument,portal))
     ) {
       continue;
     }
 
-    const point = resolvePortalTriggerPoint(
-      worldDocument.areas,
-      portal
-    );
+    const point = resolvePortalWaypoint(worldDocument,portal);
     if (!point) continue;
 
     if (worldTriggerContainsPoint(entity, point)) {
@@ -193,10 +230,9 @@ export function applyPortalTransition(
     targetArea,
     portal.targetSpawnId
   );
-  const targetPoint = resolveWorldAreaSpawnPoint(
-    targetArea,
-    portal.targetSpawnId
-  );
+  const reverse=buildingDoorCounterpart(worldDocument,portal);
+  const targetPoint=reverse?resolvePortalWaypoint(worldDocument,reverse):
+    resolveWorldAreaSpawnPoint(targetArea,portal.targetSpawnId);
 
   if (!targetArea || !targetSpawn || !targetPoint) return null;
 
@@ -215,8 +251,8 @@ export function findPortalEnteredDuringMove(worldDocument,currentAreaId,previous
   if(!previousPoint||!nextPoint||
      !Number.isFinite(previousPoint.x)||!Number.isFinite(previousPoint.y)||
      Math.hypot(nextPoint.x-previousPoint.x,nextPoint.y-previousPoint.y)<.001)return null;
-  const entered=findTriggeredPortal(worldDocument,currentAreaId,nextPoint);
+  const entered=findTriggeredPortal(worldDocument,currentAreaId,nextPoint,{automaticOnly:true});
   if(!entered)return null;
-  const alreadyInside=findTriggeredPortal(worldDocument,currentAreaId,previousPoint);
+  const alreadyInside=findTriggeredPortal(worldDocument,currentAreaId,previousPoint,{automaticOnly:true});
   return alreadyInside?.id===entered.id?null:entered;
 }
