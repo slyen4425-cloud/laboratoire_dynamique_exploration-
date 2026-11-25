@@ -58,7 +58,7 @@ export function sculptGroundReliefLighting(terrain,col,row){
     contactShadows:Object.freeze(contactShadows),
     exposedEdges:Object.freeze(exposedEdges)});
 }
-function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
+function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h,ambientOcclusionPct=null}){
   const info=sculptGroundReliefLighting(terrain,col,row);
   // The elevation tint is available as read-only metadata, but deliberately
   // NOT re-painted in 28x21 translucent rectangles on the final texture.
@@ -74,11 +74,13 @@ function drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h}){
     const grad=horizontal
       ?ctx.createLinearGradient(start,0,start+band,0)
       :ctx.createLinearGradient(0,top,0,top+band);
-    const dark='rgba(16,31,34,'+opacity+')';
+    const dark=ambientOcclusionPct===null?'rgba(16,31,34,'+opacity+')':
+      'rgba(0,0,0,'+(ambientOcclusionPct/100)+')';
+    const clear=ambientOcclusionPct===null?'rgba(16,31,34,0)':'rgba(0,0,0,0)';
     if(side==='north'||side==='west'){
-      grad.addColorStop(0,dark);grad.addColorStop(1,'rgba(16,31,34,0)');
+      grad.addColorStop(0,dark);grad.addColorStop(1,clear);
     }else{
-      grad.addColorStop(0,'rgba(16,31,34,0)');grad.addColorStop(1,dark);
+      grad.addColorStop(0,clear);grad.addColorStop(1,dark);
     }
     ctx.fillStyle=grad;
     if(horizontal)ctx.fillRect(start,y,band,h);
@@ -841,7 +843,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
   rockPalette='warm',cliffAtlas=null,cliffHD=null,cliffMoss=false,
   sphereWallImages=null,
   overlays={},paintSurface=null,paintImages=null,tile=SCULPT_TILE,
-  drawOuterSouthRim=true}={}){
+  drawOuterSouthRim=true,ambientOcclusionPct=null}={}){
   if(!terrain||!ctx)return {faceCount:0};
   const {width:w,height:h,rise}=tile;
   const colors=SCULPT_ROCK_PALETTES[rockPalette]??SCULPT_ROCK_PALETTES.warm;
@@ -900,7 +902,7 @@ export function drawSculptTerrain(ctx,{terrain,material,texture=null,
       }
       if(drawRibbonCell(ctx,{kind:'road',col,row,x,y,w,h,overlay:overlays.road}))roadCells++;
       paintedCells+=drawPaint(col,row,level,x,y);
-      drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h});
+      drawSculptGroundReliefLighting(ctx,{terrain,col,row,x,y,w,h,ambientOcclusionPct});
       const side=east.get(idx);
       if(side){
         rockFace(ctx,{...sculptEastSeamBounds(tile,col,row,side.upper,side.lower),
