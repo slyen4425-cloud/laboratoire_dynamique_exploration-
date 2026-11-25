@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createWorldBuilderDraft,addWorldObject,createBuildingInteriorLink,validateWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument} from '../src/builder/world-builder-draft.js';
+import {updatePortal,createWorldBuilderDraft,addWorldObject,createBuildingInteriorLink,validateWorldBuilderDraft,serializeWorldBuilderDraft,importWorldBuilderDocument} from '../src/builder/world-builder-draft.js';
 import {demoWorldDocument} from '../src/world/demo-world.js';
 import {buildingDoorCounterpart,findPortalEnteredDuringMove,findTriggeredPortal,applyPortalTransition,resolvePortalWaypoint} from '../src/world/portal-model.js';
 import {placeSculptWorldPortal,setSculptWorldPortalAppearance} from '../src/builder/sculpt-world-area-link.js';
@@ -54,4 +54,18 @@ test('2D runtime requires a door click and auto travel uses entry edge',async()=
  const {d,entry,exit}=fixture();
  const arrival=applyPortalTransition(d,{currentAreaId:entry.sourceAreaId},entry);
  assert.equal(findPortalEnteredDuringMove(d,exit.sourceAreaId,arrival,arrival),null);
+});
+
+test('legacy World Builder updatePortal moves the real shared door, not its old arrival',async()=>{
+ let {d,entry,exit}=fixture();
+ d=updatePortal(d,exit.id,p=>{p.trigger={...p.trigger,x:200,y:200};});
+ const changed=d.portals.find(p=>p.id===exit.id);
+ assert.equal(changed.sharedDoorPoint,true);
+ assert.equal(findTriggeredPortal(d,changed.sourceAreaId,{x:200,y:200})?.id,changed.id);
+ const arrival=applyPortalTransition(d,{currentAreaId:entry.sourceAreaId},entry);
+ assert.equal(arrival.x,200);assert.equal(arrival.y,200);
+ const {readFile}=await import('node:fs/promises');
+ const editor=await readFile(new URL('../src/builder/world-builder-main.js',import.meta.url),'utf8');
+ assert.match(editor,/resolvePortalWaypoint\(document, portal\)/);
+ assert.match(editor,/event\?\.target\?\.id==='portal-point-x'/);
 });

@@ -22,10 +22,10 @@ let selected=null,preview=null,epoch=0,disposed=false;
 let previewMoving=false,previewDirection='S',busy=false,dirty=false;
 let chosenLibraryImage=null;
 let portraitUrl=null,galleryUrls=[];
-let officialCreatures=Object.freeze([]),merchantChoices=Object.freeze([]),rewardChoices=Object.freeze([]);
+let officialCreatures=Object.freeze([]),rewardChoices=Object.freeze([]);
 let trainerRosterDraft=[],rewardItemsDraft=[],merchantIdDraft='',wildCreatureDraft=null;
-let merchantRequestId=null,rewardRequestId=null,npcCatalogLoading=false;
-let inlineMerchantNonce=null;
+let rewardRequestId=null,npcCatalogLoading=false;
+let inlineMerchantNonce=null,inlineMerchantId=null;
 let combatTemplates=new Map(),combatCatalogLoading=false;
 const angles={E:0,SE:Math.PI/4,S:Math.PI/2,SW:3*Math.PI/4,
  W:Math.PI,NW:-3*Math.PI/4,N:-Math.PI/2,NE:-Math.PI/4};
@@ -84,7 +84,7 @@ function roleSections(){
  $('npc-merchant-config').hidden=role!=='merchant';
  $('npc-wild-config').hidden=role!=='wild';
  if(trainer)renderTrainerRows();
- if(role==='merchant')renderMerchantChoices();
+ if(role==='merchant')renderMerchantStatus();
  if(role==='wild')renderWildChoices();
 }
 function creatureName(id){
@@ -261,11 +261,9 @@ function renderRewardChoices(){
  }
  if(!rewardItemsDraft.length)panel.textContent='Aucun objet en récompense.';
 }
-function renderMerchantChoices(){
- officialSelect($('npc-merchant-choice'),merchantChoices,{
-  empty:'Aucune boutique associée',selectedId:merchantIdDraft,
-  missingLabel:'Boutique précédemment liée — indisponible'
- });
+function renderMerchantStatus(){
+ $('npc-merchant-status').textContent=merchantIdDraft?
+  'Configure les objets et les tarifs de ce PNJ ici.':'Aucun article configuré : ouvre les réglages de ce PNJ.';
 }
 function renderWildChoices(){
  officialSelect($('npc-wild-choice'),officialCreatures,{
@@ -307,25 +305,21 @@ async function loadCreatureCatalog(){
  }
 }
 function closeInlineMerchantEditor(){
- inlineMerchantNonce=null;
+ inlineMerchantNonce=null;inlineMerchantId=null;
  const holder=$('npc-merchant-inline'),frame=$('npc-merchant-frame');
  holder.hidden=true;
  if(frame.getAttribute('src'))frame.src='about:blank';
 }
 function requestNativeCatalog(kind){
- const tag=kind==='merchant'?'npc-merchant-status':'npc-reward-status';
+ if(kind!=='reward')return;
+ const tag='npc-reward-status';
  if(window.parent===window){
   $(tag).textContent='Catalogue officiel disponible uniquement via la fenêtre Monster Capture (pas de catalogue parallèle).';
   return;
  }
- const requestId=crypto.randomUUID();
- const isShop=kind==='merchant';
- if(isShop)merchantRequestId=requestId;else rewardRequestId=requestId;
+ const requestId=crypto.randomUUID();rewardRequestId=requestId;
  $(tag).textContent='Interrogation du catalogue officiel Monster Capture…';
- window.parent.postMessage({
-  schema:isShop?'gensrpg.exploration.npc.merchant.catalog.request.v1':
-   'gensrpg.exploration.npc.reward.catalog.request.v1',requestId
- },window.location.origin);
+ window.parent.postMessage({schema:'gensrpg.exploration.npc.reward.catalog.request.v1',requestId},window.location.origin);
 }
 window.addEventListener('message',event=>{
  if(event.origin!==window.location.origin)return;
@@ -336,7 +330,7 @@ window.addEventListener('message',event=>{
   if(data?.schema!=='gensrpg.capture.v2.npc.merchant.saved.v1'||
      !inlineMerchantNonce||data.nonce!==inlineMerchantNonce||
      !selected||data.npcId!==selected.id||
-     typeof data.merchantId!=='string'||
+     data.merchantId!==inlineMerchantId||typeof data.merchantId!=='string'||
      !/^[a-z0-9][a-z0-9_:.-]{0,129}$/i.test(data.merchantId))return;
   // Link ONLY the stable reference after Capture has saved its canonical
   // merchant. Never create another store, catalog, item or exchange rule.
@@ -358,25 +352,12 @@ window.addEventListener('message',event=>{
    if(check?.npc?.merchantId!==id)
     throw new Error('Boutique enregistrée, mais liaison PNJ non vérifiable.');
    await refresh(npcId);
-   requestNativeCatalog('merchant');
-   notify('Boutique enregistrée et liée au PNJ '+updated.name+'.');
+   renderMerchantStatus();
+   notify('Articles et tarifs enregistrés pour '+updated.name+'.');
   });
   return;
  }
  if(event.source!==window.parent)return;
- if(data?.schema==='gensrpg.capture.v2.npc.merchant.catalog.response.v1'&&
-   data.requestId===merchantRequestId){
-  merchantRequestId=null;
-  merchantChoices=Object.freeze(Array.isArray(data.merchants)?
-   data.merchants.filter(shop=>typeof shop?.id==='string'&&
-    /^[a-z0-9][a-z0-9_:.-]{0,119}$/i.test(shop.id)&&
-    typeof shop.name==='string'&&shop.name.length>0&&shop.name.length<=80)
-    .map(x=>({id:x.id,name:x.name})):[]);
-  $('npc-merchant-status').textContent=data.error?
-   'Boutiques indisponibles : '+String(data.error).slice(0,120):
-   merchantChoices.length+' boutiques officielles disponibles.';
-  renderMerchantChoices();
- }
  if(data?.schema==='gensrpg.capture.v2.npc.reward.catalog.response.v1'&&
     data.requestId===rewardRequestId){
   rewardRequestId=null;
@@ -419,17 +400,15 @@ $('npc-merchant-configure').addEventListener('click',()=>{
  url.searchParams.set('npcBridgeNonce',inlineMerchantNonce);
  url.searchParams.set('npcId',selected.id);
  url.searchParams.set('npcName',$('npc-name').value.trim().slice(0,80));
- if(merchantIdDraft)url.searchParams.set('merchantId',merchantIdDraft);
+ inlineMerchantId=merchantIdDraft||'merchant-'+selected.id;
+ url.searchParams.set('merchantId',inlineMerchantId);
  $('npc-merchant-frame').src=url.href;
  $('npc-merchant-inline').hidden=false;
  $('npc-merchant-inline-status').textContent=
-  'Choisis les objets proposés et les tarifs. Enregistrer la boutique lie automatiquement ce PNJ.';
+  'Choisis les objets proposés et les tarifs. Enregistre directement ce PNJ.';
  $('npc-merchant-config').open=true;
 });
 $('npc-merchant-close').addEventListener('click',closeInlineMerchantEditor);
-$('npc-merchant-choice').addEventListener('change',()=>{
- merchantIdDraft=$('npc-merchant-choice').value;markDirty();
-});
 $('npc-wild-choice').addEventListener('change',()=>{
  const id=$('npc-wild-choice').value;
  if(!id)wildCreatureDraft=null;
@@ -451,7 +430,7 @@ $('npc-reward-add').addEventListener('click',()=>{
  renderRewardChoices();markDirty();
 });
 $('npc-reward-reload').addEventListener('click',()=>requestNativeCatalog('reward'));
-$('npc-merchant-reload').addEventListener('click',()=>requestNativeCatalog('merchant'));
+
 
 function clearInputs(){
  chosenLibraryImage=null;
@@ -716,5 +695,4 @@ window.addEventListener('pagehide',()=>{
 run(()=>refresh(new URLSearchParams(window.location.search).get('edit')));
 void loadCreatureCatalog();
 void loadNpcCombatCatalog();
-requestNativeCatalog('merchant');
 requestNativeCatalog('reward');

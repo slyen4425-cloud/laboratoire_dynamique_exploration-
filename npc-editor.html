@@ -105,18 +105,16 @@ details{border:1px solid #466c62;padding:10px;border-radius:9px}
 </div><div id="npc-reward-rows" aria-live="polite"></div>
 </details>
 <details id="npc-merchant-config" class="wide" hidden>
-<summary>🛒 Boutique officielle</summary>
-<p class="hint">Associe une boutique existante de Monster Capture, sans la recopier.</p>
-<label>Marchand <select id="npc-merchant-choice"><option value="">Catalogue non chargé</option></select></label>
-<output id="npc-merchant-status" class="npc-catalog-status" role="status">Boutiques officielles disponibles depuis Monster Capture.</output>
-<button type="button" id="npc-merchant-reload">↻ Actualiser les boutiques</button>
+<summary>🛒 Marchand · objets et tarifs</summary>
+<p class="hint">Configure directement les articles de ce PNJ, sans créer ni associer une boutique séparée.</p>
+<output id="npc-merchant-status" class="npc-catalog-status" role="status">Ouvre les réglages du marchand.</output>
 <button type="button" id="npc-merchant-configure">Configurer les objets vendus et les prix de ce PNJ</button>
 <div id="npc-merchant-inline" hidden aria-label="Configuration de la boutique du PNJ">
  <output id="npc-merchant-inline-status" role="status" aria-live="polite">Boutique liée à ce PNJ.</output>
  <iframe id="npc-merchant-frame" title="Objets proposés, prix de vente et rachat du marchand" referrerpolicy="same-origin"></iframe>
  <button type="button" id="npc-merchant-close">Fermer les réglages de boutique</button>
 </div>
-<p class="hint">Configure directement le marchand ici. Les objets, les pourcentages et l’inventaire restent enregistrés une seule fois dans Monster Capture ; ce PNJ conserve uniquement la référence de sa boutique.</p>
+<p class="hint">Les objets proviennent de la bibliothèque officielle. Les tarifs et les stocks appartiennent aux règles Capture ; ce PNJ conserve automatiquement sa référence.</p>
 </details>
 <details id="npc-wild-config" class="wide" hidden>
 <summary>🐾 Créature errante officielle</summary>
