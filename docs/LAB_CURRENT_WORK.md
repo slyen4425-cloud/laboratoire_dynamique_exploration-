@@ -1301,3 +1301,8 @@ Départ `d55dd4d4f565baefc66bc5ccbde2f10e501f67fe`, checkpoint `checkpoint/explo
 - Autorités réutilisées : `WorldDocument.terrainFamilies`, `WorldDocument.encounterConfig`, `WorldSurface`, `MaterialPack` ; zéro nouveau stockage ou gestionnaire de rencontres.
 - Tests : unité/contrat + CI, navigateur smartphone et PC ; vieux V80, géométrie, collisions, monde et PWA protégés.
 - Statut : implémentation en PR, checkpoint GREEN non acquis ; aucun déploiement revendiqué.
+
+## 2026-11-25 — Charte graphique Genesis Fantasy Diorama 2.5D V1.0 (documentation, NON GREEN)
+- START main `e272279c560be19f32d8475b5dd78195ee6c7786`, checkpoint `checkpoint/exploration-start-graphic-charter-v1-20261125`, branche `work/exploration-graphic-charter-v1-20261125`.
+- Validation auteur : intégrer la charte graphique V1.0 à `docs/LAB_CHARTE.md`, sans le prompt de génération. Périmètre documentaire exclusivement, propriété Exploration ; aucun asset, ID, registre, moteur, contrat, sauvegarde, workflow ou autre dépôt modifié.
+- Contrôles : préservation intégrale de la charte précédente, six liens vers les références visuelles canoniques vérifiés, diff documentaire, CI du SHA exact avant fusion et checkpoint GREEN selon la charte. Aucun changement fonctionnel nécessitant une nouvelle preview spécifique.

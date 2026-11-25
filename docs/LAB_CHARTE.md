@@ -61,3 +61,131 @@ Cette règle s'applique à **chaque chantier**, aux trois dépôts GenSrpg, Labo
 6. **Reprise** : inscrire dans le journal de chantier les ID des runs suspects, le motif de tri, l'action entreprise ou sa limite d'autorisation, le SHA protégé et le dernier statut connu. Toute nouvelle équipe ou conversation doit poursuivre le diagnostic à partir de ces preuves et non relancer aveuglément plusieurs workflows en parallèle.
 
 Ces règles ne dispensent jamais des tests, checkpoints, revues et validations fonctionnelles déjà exigés par la présente charte.
+
+## 6. Charte de création graphique — Genesis Fantasy Diorama 2.5D V1.0 (25 novembre 2026)
+
+Direction artistique validée par l'auteur pour les nouvelles créations et remplacements d'assets du Labo Exploration. Cette charte ne déclenche aucune suppression ni refonte automatique des assets existants et ne modifie pas les contrats du moteur. Les exceptions existantes et les formats natifs propres à chaque famille restent préservés.
+
+### 6.1 Direction artistique
+
+Univers fantastique semi-cartoon, semi-réaliste stylisé, mêlant peinture numérique et apparence de modélisation 3D sculptée.
+
+Chaque élément doit évoquer une miniature de grande qualité appartenant à un monde de RPG fantastique vivant, chaleureux et immersif.
+
+Le rendu doit être détaillé, mais rester parfaitement lisible à petite échelle sur smartphone.
+
+### 6.2 Perspective et caméra
+
+- Projection orthographique 2.5D.
+- Vue plongeante modérée, cible artistique comprise entre 30 et 45 degrés au-dessus de l'horizontale.
+- Faces supérieures et verticales visibles.
+- Verticales droites.
+- Absence de déformation grand-angle.
+- Pas de perspective photographique.
+- Orientation adaptée au moteur Exploration, et non à une grille isométrique imposée.
+- Les variantes de face, de dos, de profil et de trois quarts doivent représenter exactement le même modèle.
+
+### 6.3 Formes et proportions
+
+- Volumes généreux et bien définis.
+- Proportions légèrement exagérées.
+- Angles adoucis et surfaces sculptées.
+- Silhouettes immédiatement reconnaissables.
+- Détails hiérarchisés : grandes formes, détails intermédiaires, puis détails fins.
+- Aucun contour noir épais.
+- Aucun rendu géométrique low-poly apparent.
+
+### 6.4 Matériaux
+
+- **Bois :** chaleureux, brun doré, veinures stylisées, épaisseur visible et irrégularités naturelles.
+- **Pierre :** blocs massifs, surfaces sculptées, angles légèrement usés, fissures discrètes.
+- **Métal :** reflets contrôlés, volume perceptible, finition non photographique.
+- **Végétation :** feuillage organisé en masses, couleurs nuancées, racines et troncs expressifs.
+- **Neige :** épaisse, douce, légèrement bleutée dans les creux.
+- **Eau :** colorée, limpide ou trouble selon le biome, reflets stylisés et mouvements organiques.
+
+### 6.5 Éclairage
+
+- Lumière diffuse, douce et légèrement chaude.
+- Éclairage supérieur gauche comme orientation de référence artistique.
+- Ombres internes légèrement froides.
+- Occlusion ambiante discrète entre les volumes.
+- Reflets doux, sans brillance plastique excessive.
+- Les ombres portées sur le terrain sont exclusivement gérées par le moteur.
+- Ne pas intégrer de longue ombre extérieure au sprite.
+
+### 6.6 Couleurs
+
+- Couleurs riches mais contrôlées.
+- Contraste lisible sans noirs bouchés.
+- Lumières chaudes et ombres froides.
+- Palette cohérente avec le biome.
+- Couleurs lumineuses réservées aux éléments magiques, cristaux, lave, fenêtres et objets remarquables.
+
+### 6.7 Contraintes des sprites
+
+- Un objet isolé par image statique.
+- Fond réellement transparent.
+- Aucun décor extérieur inutile.
+- Aucun texte, cadre, socle artificiel ou filigrane.
+- Aucun halo blanc ou résidu de détourage.
+- Aucun élément coupé.
+- Point d'ancrage cohérent avec le contact réel au sol.
+- Conservation des proportions entre les orientations.
+- Les ponts et escaliers doivent présenter des surfaces praticables clairement identifiables.
+
+### 6.8 Textures de terrain
+
+- Format carré.
+- Résolution native de référence : 128 × 128 pixels.
+- Texture répétable sans raccord visible.
+- Vue du dessus.
+- Absence d'ombre directionnelle forte.
+- Répartition organique des détails.
+- Aucun motif répétitif trop identifiable.
+- Densité graphique adaptée aux textures existantes.
+
+### 6.9 Formats techniques
+
+- PNG transparent pour les fichiers sources.
+- WebP avec transparence pour les assets intégrés au laboratoire.
+- 384 × 384 pixels comme référence pour les objets standards.
+- 512 × 512 pixels pour les grandes structures ou objets détaillés, selon les besoins.
+- Respect des formats d'animation propres à chaque famille existante.
+- Conservation des identifiants canoniques lors d'un remplacement.
+
+Ces résolutions sont des références de création, non une obligation de redimensionnement des fichiers historiques ni une modification des formats acceptés par le moteur.
+
+### 6.10 Styles interdits
+
+- Pixel art.
+- Photoréalisme.
+- Low-poly brut.
+- Dessin vectoriel plat.
+- Cartoon aux contours noirs épais.
+- Style plastique brillant.
+- Perspective isométrique stricte systématique.
+- Ombres portées intégrées.
+- Bruit photographique.
+- Fond opaque ou faux fond transparent.
+
+### 6.11 Validation
+
+Chaque nouvel asset doit être comparé aux modèles de référence du Labo Exploration et testé à sa taille réelle d'affichage.
+
+La validation doit contrôler la perspective, les proportions, la transparence, le point d'ancrage, la cohérence des matériaux, la lisibilité et l'intégration dans une carte existante.
+
+Aucun nouveau style graphique concurrent ne doit être introduit sans validation préalable.
+
+### 6.12 Références visuelles canoniques
+
+Les références ci-dessous sont les assets existants du laboratoire, à consulter dans leur emplacement canonique, sans les dupliquer :
+
+- [Maison bleue 2.5D — volumes, perspective, matériaux](../assets/exploration/objects/buildings/building_house_blue_cottage_2p5d_front_01.webp).
+- [Arbre feuillu — silhouette, feuillage, couleurs](../assets/exploration/objects/trees/tree_forest_broadleaf_01.webp).
+- [Rocher moussu — stylisation des matériaux](../assets/exploration/objects/rocks/rock_moss_layered_stack_01.webp).
+- [Arène Nature — identité fantastique](../assets/exploration/objects/buildings/arenas/arene_nature_2p5d.webp).
+- [Pont rustique — traitement du bois](../assets/exploration/objects/bridges/bridge_wood_rustic_2p5d_horizontal_01.webp).
+- [Herbe de forêt — finition picturale du terrain](../assets/exploration/materials/forest/surfaces/grass_forest_base_01.webp).
+
+La palette des biomes est guidée par le [registre canonique des matériaux](../src/materials/material-pack-v1.js) ; les valeurs de rendu restent sous l'autorité du registre, pas de cette charte.
