@@ -1707,12 +1707,14 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <small>Les réglages sont sauvegardés dans la fiche. Les créatures de la bibliothèque se modifient dans leur fiche d’origine.</small>
    </section>
    <section id="npc-merchant-editor" hidden aria-label="Boutique du PNJ">
-    <strong>🛒 Marchand associé</strong>
-    <p>Choisis une boutique créée dans Monster Capture. Aucun identifiant à saisir.</p>
-    <label>Boutique <select id="npc-merchant-picker"><option value="">Chargement des marchands…</option></select></label>
-    <button type="button" id="npc-merchant-reload">Actualiser les marchands</button>
-    <button type="button" id="npc-merchant-clear">Retirer l'association</button>
-    <small id="npc-merchant-status">Marchands fournis par Monster Capture lorsque l'éditeur est ouvert dans GenSRPG.</small>
+    <strong>🛒 Marchand · objets et tarifs</strong>
+    <p>Configure les articles de ce PNJ depuis la bibliothèque d’objets, sans association de boutique séparée.</p>
+    <button type="button" id="npc-merchant-configure">Configurer les articles, tarifs et stocks</button>
+    <small id="npc-merchant-status" role="status" aria-live="polite">Ouvre les réglages du PNJ.</small>
+    <div id="npc-merchant-inline" hidden>
+      <iframe id="npc-merchant-frame" title="Objets et tarifs de ce PNJ" referrerpolicy="same-origin" style="width:100%;height: min(60dvh,640px);min-height:250px;border:0"></iframe>
+      <button type="button" id="npc-merchant-close">Fermer les réglages</button>
+    </div>
    </section>
    <p id="npc-role-pending" hidden>Les éditeurs de quêtes et de boutiques de GenSRPG ne sont pas encore raccordés. Les anciennes liaisons éventuelles sont conservées dans la sauvegarde, sans saisie d'identifiant technique.</p>
    <small id="npc-catalog-status" role="status" aria-live="polite">Chargement des créatures publiées depuis le catalogue officiel Combat…</small>

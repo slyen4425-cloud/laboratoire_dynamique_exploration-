@@ -29,18 +29,19 @@ test('dedicated NPC editor choices are read only from official Combat/Capture pr
  const js=await readFile(new URL('../src/actors/npc-editor-v1.js',import.meta.url),'utf8');
  const html=await readFile(new URL('../npc-editor.html',import.meta.url),'utf8');
  for(const id of ['npc-trainer-config','npc-trainer-rows','npc-wild-choice',
-  'npc-reward-choice','npc-reward-rows','npc-merchant-choice']){
+  'npc-reward-choice','npc-reward-rows','npc-merchant-configure']){
   assert.equal((html.match(new RegExp('id="'+id+'"','g'))??[]).length,1,id);
  }
  assert.match(js,/loadCaptureShowcaseEncounterSourceV1\(\)/);
- assert.match(js,/gensrpg\.exploration\.npc\.merchant\.catalog\.request\.v1/);
- assert.match(js,/gensrpg\.capture\.v2\.npc\.merchant\.catalog\.response\.v1/);
+ assert.doesNotMatch(html,/id="npc-merchant-choice"/);
+ assert.doesNotMatch(js,/merchant\.catalog\.request/);
+ assert.match(js,/inlineMerchantId=merchantIdDraft\|\|'merchant-'\+selected\.id/);
  assert.match(js,/gensrpg\.exploration\.npc\.reward\.catalog\.request\.v1/);
  assert.match(js,/gensrpg\.capture\.v2\.npc\.reward\.catalog\.response\.v1/);
  assert.match(js,/event\.origin!==window\.location\.origin/);
  assert.match(js,/event\.source!==window\.parent/);
  assert.match(js,/event\.source===\$\('npc-merchant-frame'\)\.contentWindow/);
- assert.match(js,/data\.requestId===merchantRequestId/);
+ assert.match(js,/data\.merchantId!==inlineMerchantId/);
  assert.match(js,/data\.requestId===rewardRequestId/);
  assert.match(js,/trainerRoster:trainerRosterDraft\.map/);
  assert.match(js,/merchantId:merchantIdDraft/);
