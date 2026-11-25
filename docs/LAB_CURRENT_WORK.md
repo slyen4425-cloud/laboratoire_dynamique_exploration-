@@ -1,3 +1,11 @@
+## 2026-11-25 — Compatibilité marchand
+- Aligner la normalisation des références PNJ sur la limite canonique Capture de 130 caractères (#654). Test de conservation du placement. Aucun ID réécrit.
+
+## 2026-11-25 — C2 : configuration marchand directe, pas de liste de boutiques
+- START 46654efe2b7d084d8ae891362e5d4e2999c3ab8c, checkpoint `checkpoint/exploration-start-npc-merchant-single-form-20261125`, branche `work/exploration-npc-merchant-single-form-20261125`. Capture #654 en parallèle chez son propriétaire. #551 indépendant non fusionné, ne pas le réintroduire.
+- Retirer les sélecteurs de boutique concurrents dans la fiche carte et la bibliothèque PNJ. Ouvrir le même formulaire Capture dans chaque contexte; lier par référence automatiquement, conserver l'ancien ID si existant, réserver le nouvel ID de placement via le générateur existant. Réutilisables: la fiche définition reste propriétaire, la carte référence la définition, pas de duplication de données.
+- Gardes source/origine/nonce/PNJ/carte; aucune copie d'articles/prix/stocks, aucune modification gameplay, inventaire, images, sauvegardes historiques. Tests sentinelles adaptés au parcours direct sans relâcher les invariants, CI + réel navigateur Capture puis publication source et PWA après certification.
+
 ## 2026-11-25 — #386 · Transport du HUD de l'univers vers le combat natif
 - START Exploration `52c0736f16b4bf75209a3839255135786719188c`, checkpoint `checkpoint/exploration-start-combat-hud-386-20261125`. #548 GREEN CI 45491305221 / Pages 45491305075. #549 en attente à la demande auteur, exclue du lot.
 - Combat #391 fusionné `45e8ccd7a8002ff10ab06d6ed63157cbe56d90d4`, PR CI 45546879226 / 45546873264 et revue Codex OK; Pages 45547415427 réussi, CI main 45547416368 encore en cours. Pas de fusion Exploration tant que Combat exact non certifié.

@@ -114,7 +114,7 @@ export function normalizeMapActorNpcSettingsV1(raw){
     dialogue:line(raw.dialogue,2000,'NPC dialogue'),
     questId:line(raw.questId,120,'Quest reference'),
     trainerTeamId:line(raw.trainerTeamId,120,'Trainer team reference'),
-    merchantId:line(raw.merchantId,120,'Merchant reference'),
+    merchantId:line(raw.merchantId,130,'Merchant reference'),
     // NPC-specific scenario composition, not a new reusable Combat/GenSRPG
     // team library. The canonical Combat bestiary owns all creature data.
     ...(Object.hasOwn(raw,'trainerRoster')?
