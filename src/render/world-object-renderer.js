@@ -47,7 +47,12 @@ export function drawWorldObjectContactShadowV1(ctx,args){
    const srcWidth=mask.right-mask.left,srcHeight=mask.bottom-mask.top;
    ctx.save();
    ctx.translate(projection.x,projection.footY);
-   ctx.transform(projection.scaleX,0,projection.shear,projection.flatten,0,0);
+   // Rotate the single projected mask about its existing ground anchor.
+   const theta=degreesToRadians(projection.rotationDeg??0);
+   const cos=Math.cos(theta),sin=Math.sin(theta);
+   ctx.transform(projection.scaleX*cos,projection.scaleX*sin,
+    projection.shear*cos-projection.flatten*sin,
+    projection.shear*sin+projection.flatten*cos,0,0);
    ctx.globalAlpha=projection.opacity;
    ctx.drawImage(mask.canvas,mask.left,mask.top,srcWidth,srcHeight,
     width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
@@ -60,7 +65,8 @@ export function drawWorldObjectContactShadowV1(ctx,args){
  // never stack a second oval/decal over a successful real silhouette.
  if(typeof ctx?.ellipse!=='function')return false;
  ctx.save();ctx.beginPath();
- ctx.ellipse(contact.x,contact.y,contact.radiusX,contact.radiusY,0,0,Math.PI*2);
+ ctx.ellipse(contact.x,contact.y,contact.radiusX,contact.radiusY,
+  degreesToRadians(normalizeWorldObjectShadowSettingsV1(args?.shadow)?.rotationDeg??0),0,Math.PI*2);
  ctx.fillStyle='rgba(0,0,0,'+contact.opacity+')';
  ctx.fill();ctx.restore();
  return true;
@@ -77,6 +83,7 @@ export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1
   scaleX:settings.widthPct/100,
   opacity:settings.opacityPct/100,
   shear:-.48,
+  ...(settings.rotationDeg?{rotationDeg:settings.rotationDeg}:{}),
   flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)*
     settings.heightPct/100
  });
