@@ -459,8 +459,12 @@ body.interior-wall-authoring .sculpt-quickbar>.quick-tool-label,
 body.interior-wall-authoring .sculpt-quickbar>.quick-size,
 body.interior-wall-authoring .sculpt-quickbar>.quick-level{display:none!important}
 body.sculpt-immersive .interior-wall-tools{grid-column:1/-1}
-@media(max-width:600px){#navigation-area-door.in-game-door-action{min-width:144px;min-height:50px;
- top:62%;left:50%;right:auto;bottom:auto;padding:8px 12px;font-size:.88rem}}
+@media(max-width:600px){
+ #navigation-area-door.in-game-door-action,
+ body.sculpt-immersive #navigation-area-door.in-game-door-action{
+  min-width:144px;min-height:50px;top:43%;left:50%;right:auto;bottom:auto;
+  padding:8px 12px;font-size:.88rem}
+}
 /* V79 R3A2: interior construction tools stay compact and finger-friendly. */
 .interior-door-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%}
 .interior-door-tools strong{width:100%;font-size:.82rem}
@@ -722,7 +726,9 @@ body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([o
 
 #sculpt-map-preset-import{max-width:100%}
 @media(max-width:720px){
- #world-portal-traverse.in-game-door-action{max-width:84%;font-size:.78rem;min-height:48px}
+ #world-portal-traverse.in-game-door-action{
+  top:43%;left:50%;right:auto;bottom:auto;
+  max-width:84%;font-size:.78rem;min-height:48px}
  #sculpt-map-preset-panel{width:min(205px,calc(100% - 16px))}
 }
 /* The header intentionally disappears in immersive test. This independently
