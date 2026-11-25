@@ -64,10 +64,11 @@ test('Dialogue trigger chooses only nearest valid authored NPC and respects rang
  assert.equal(nearestDialogNpcV1(actors,{x:37,y:20})?.id,'two');
  assert.equal(nearestDialogNpcV1(actors,{x:900,y:900}),null);
 });
-test('a trainer with no dialogue is reachable only while the Adventure can challenge them',()=>{
+test('a trainer with no dialogue remains reachable to explain why Adventure cannot challenge them',()=>{
  const trainer=normalizeWorldActorPlacement({id:'trainer',actorDefinitionId:'actor.1',x:20,y:20,
   npc:settings({kind:'trainer',dialogue:'',trainerRoster:[{creatureId:'crea_nat_1',level:2}]})});
- assert.equal(nearestDialogNpcV1([null,trainer],{x:23,y:20}),null);
+ assert.equal(nearestDialogNpcV1([null,trainer],{x:23,y:20}),trainer,
+  'blocked challenge must show the existing reason rather than a silent click');
  assert.equal(nearestDialogNpcV1([trainer],{x:23,y:20},undefined,()=>true)?.id,'trainer');
  assert.equal(nearestDialogNpcV1([trainer],{x:250,y:20},undefined,()=>true),null);
 });

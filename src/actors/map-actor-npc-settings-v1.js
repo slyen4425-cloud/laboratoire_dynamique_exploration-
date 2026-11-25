@@ -145,7 +145,10 @@ export function nearestDialogNpcV1(actors,position,range=NPC_INTERACTION_RANGE_V
     const canChallenge=npc.kind==='trainer'&&canChallengeTrainer?.(actor);
     if(canChallenge&&npc.trainerEngagement==='aggressive')continue;
     const canWild=npc.kind==='wild'&&canChallengeWild?.(actor);
-    if(!npc.dialogue&&npc.kind!=='merchant'&&!canChallenge&&!canWild)continue;
+    // A disabled or misconfigured trainer must remain interactable so the
+    // existing dialogue can explain WHY a duel cannot start (missing roster,
+    // defeated trainer, KO party, or inactive Adventure session).
+    if(!npc.dialogue&&npc.kind!=='merchant'&&npc.kind!=='trainer'&&!canChallenge&&!canWild)continue;
     closest=actor;distance=d;
   }
   return closest;

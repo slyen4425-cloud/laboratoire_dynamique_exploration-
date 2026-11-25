@@ -60,9 +60,11 @@ export function readScopedAdventurePlayingPartyV1({
  const hasHpPolicy=Object.hasOwn(value,'combatHpMultiplier');
  const hasReserve=Object.hasOwn(value,'reserve');
  const hasTrainerVictories=Object.hasOwn(value,'trainerVictories');
+ const hasWildVictories=Object.hasOwn(value,'wildVictories');
  exactFields(value,['schema','version','sessionId','worldId','combatSha','partyRef','active',
   ...(hasReserve?['reserve']:[]),...(hasHpPolicy?['combatHpMultiplier']:[]),
-  ...(hasTrainerVictories?['trainerVictories']:[])],
+  ...(hasTrainerVictories?['trainerVictories']:[]),
+  ...(hasWildVictories?['wildVictories']:[])],
   'Adventure playing party');
  // Legacy games without the field still use 100% HP; never infer game
  // rules from an author's species, level, or the standalone Tester.
@@ -115,11 +117,30 @@ export function readScopedAdventurePlayingPartyV1({
    return Object.freeze({areaId:entry.areaId,actorId:entry.actorId});
   }));
  }
+ let wildVictories;
+ if(hasWildVictories){
+  if(!Array.isArray(value.wildVictories))throw new TypeError('Adventure wild victories must be an array');
+  const keys=new Set();
+  wildVictories=Object.freeze(value.wildVictories.map(raw=>{
+   const entry=exactFields(raw,['areaId','actorId'],'Adventure wild victory');
+   // WorldArea/placed NPC IDs are nonempty text, not the stricter species/instance IDs.
+   // Keep parity with trainer victories, including historical imported names.
+   if(typeof entry.areaId!=='string'||!entry.areaId.trim()||
+      typeof entry.actorId!=='string'||!entry.actorId.trim())
+    throw new TypeError('Adventure wild victory requires an area and actor');
+   const areaId=entry.areaId.trim(),actorId=entry.actorId.trim();
+   const key=JSON.stringify([areaId,actorId]);
+   if(keys.has(key))throw new RangeError('Duplicate Adventure wild victory');
+   keys.add(key);
+   return Object.freeze({areaId,actorId});
+  }));
+ }
  return Object.freeze({
   schema:ADVENTURE_PLAYING_PARTY_SCHEMA_V1,version:1,
   sessionId,worldId,combatSha:value.combatSha,partyRef:value.partyRef,
   active,...(hasReserve?{reserve:Object.freeze(reserveMembers)}:{}),
   ...(hasTrainerVictories?{trainerVictories}:{}),
+  ...(hasWildVictories?{wildVictories}:{}),
   combatHpMultiplier
  });
 }

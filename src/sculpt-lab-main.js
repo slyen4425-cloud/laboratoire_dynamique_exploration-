@@ -1,4 +1,5 @@
 import {mountNpcWildBehaviorControlsV1} from './actors/npc-wild-behavior-controls-v1.js';
+import {projectDefeatedPlacedWildV1} from './actors/npc-wild-defeat-projection-v1.js';
 // Self-contained optional heightfield experiment. Never changes the live 2D Builder.
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
@@ -237,8 +238,13 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
 let npcWanderElapsed=0,npcWanderAggressiveNearId=null;
 function npcActorsWithDefinitions(){
-  return resolvePlacedNpcDefinitionsV1(placedActors,
+  const authored=resolvePlacedNpcDefinitionsV1(placedActors,
     captureActorProvider?.resolveDefinition??(()=>null));
+  // Victory is a Capture-owned receipt; hide only defeated wild actors in
+  // this authenticated game/area, never in the author's editable WorldArea.
+  return projectDefeatedPlacedWildV1(authored,
+    scopedEncounter?.party?.wildVictories??[],
+    activeInteriorId??sculptWorldAreaId);
 }
 function gameplayPlacedActors(){
   const actors=npcActorsWithDefinitions();
@@ -3372,6 +3378,10 @@ $('npc-talk')?.addEventListener('click',()=>{
   // Missing links are a visible local interaction error, never a fallback shop.
   if(npc.npc.kind==='merchant'&&!canShop)
     npcDialogueLines.unshift('Aucune boutique associée à ce marchand : ouvre sa fiche PNJ, configure ses articles et enregistre. Aucune association séparée nécessaire.');
+  // Do not silently drop the click when this NPC used to offer a duel but
+  // its roster/session/victory conditions now prevent combat.
+  if(trainer&&!canChallenge&&!npcDialogueLines.length)
+    npcDialogueLines.push('Combat indisponible pour ce dresseur.');
   if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
