@@ -9,6 +9,11 @@ const CATEGORIES = Object.freeze([
 ]);
 
 const FOLDERS = Object.freeze([
+  Object.freeze({"id": "decor/fences", "categoryId": "decor", "label": "Clôtures / barrières", "defaultKind": "decor"}),
+  Object.freeze({"id": "decor/storage", "categoryId": "decor", "label": "Caisses / tonneaux / stockage", "defaultKind": "decor"}),
+  Object.freeze({"id": "decor/furniture", "categoryId": "decor", "label": "Mobilier intérieur", "defaultKind": "decor"}),
+  Object.freeze({"id": "decor/shops", "categoryId": "decor", "label": "Boutiques / boulangeries", "defaultKind": "decor"}),
+  Object.freeze({"id": "decor/health", "categoryId": "decor", "label": "Pharmacie / soins", "defaultKind": "decor"}),
   Object.freeze({ id: 'buildings/utility/wind', categoryId: 'buildings', label: 'Moulins / éoliennes animés', defaultKind: 'building' }),
   Object.freeze({ id: 'buildings/arenas/elemental', categoryId: 'buildings', label: 'Arènes élémentaires · Monster Capture', defaultKind: 'building' }),
   Object.freeze({ id: 'buildings/houses/temperate', categoryId: 'buildings', label: 'Maisons · Tempéré', defaultKind: 'building' }),
