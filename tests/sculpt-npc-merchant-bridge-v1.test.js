@@ -69,3 +69,16 @@ test('the last merchant dialogue line leads to the same scoped shop request, not
  assert.match(main,/offersTrade\?'🛒 Commercer':'Terminer'/);
  assert.match(main,/const trainer=npcDialogueTrainer,merchant=npcDialogueMerchant;\s*closeNpcDialogue\(\);\s*if\(trainer\)startSculptTrainerBattle\(trainer\);\s*else if\(merchant\)requestNpcMerchantShop\(merchant\)/);
 });
+
+test('Tester requests the same Capture shop UI in a temporary iframe, not a real adventure session',async()=>{
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ const html=await readFile(new URL('../sculpt-lab.html',import.meta.url),'utf8');
+ assert.ok(main.includes("if(!adventureSessionId){\n    openEditorMerchantTest(actor);"));
+ assert.ok(main.includes("url.searchParams.set('merchantTest',actor.npc.merchantId)"));
+ assert.ok(main.includes("url.searchParams.set('merchantTestNonce',editorMerchantTestNonce)"));
+ assert.ok(main.includes("event.source!==frame?.contentWindow"));
+ assert.ok(main.includes("event.data.nonce!==editorMerchantTestNonce"));
+ assert.ok(main.includes("npcDialogueOpen=false;updateNpcInteraction()"));
+ assert.equal(html.split('id="npc-merchant-test-frame"').length-1,1);
+ assert.doesNotMatch(main,/merchantTestStock|merchantTestInventory/);
+});

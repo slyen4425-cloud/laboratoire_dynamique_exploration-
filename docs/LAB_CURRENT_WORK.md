@@ -1,3 +1,10 @@
+## 2026-11-25 — Publication #551/#554 : compatibilité gate HUD Combat main (NON GREEN)
+- #551 fusionnée main e272279c560be19f32d8475b5dd78195ee6c7786. Runs 45621439981/45621439830 et #554 45621540376/45621540356 échouent tous au même smoke HUD : `layout-or-slot-missing:none:true`. Le checkout Combat live est désormais b4488fccae19dc6e8c921f700c2338a4a3be225a (#396) et son propriétaire convertit les anciens offsets en rectangles absolus, sans translate. Vérifier dans le navigateur le même noeud natif, marqueur de rectangle, coordonnées/dimensions réellement mesurées et bornes de l'arène; conserver le contrôle des compétences et de la disposition historique non modifiée. Aucun changement de moteur HUD ni gate désactivée. Refaire la CI/revue exacte de #554; certifier le main cumulatif avant raccord Capture #661.
+
+## 2026-11-25 — Marchand dans Tester (C2, NON GREEN)
+- START 55aac7cef63134e6f92355bf530c8967d08d0d10, checkpoint `checkpoint/exploration-start-merchant-editor-test-20261125`, branche dédiée `work/exploration-merchant-editor-test-20261125`. Ne pas mélanger #551 portes.
+- Le mode Tester n'a pas d'AdventureSession. Héberger l'unique commerce Capture en iframe corrélé par nonce et origine, dans le même univers ; simulation et transactions dans le propriétaire Capture #661, aucun inventaire ni stock Exploration. Mode partie inchangé. Test de contrat puis CI/preview et test navigateur Capture avant repin PWA.
+
 ## 2026-11-25 — Reprise #551 après marchand #552 (NON GREEN)
 - Main marchand afdd45a4ab4065c0921b160a38a948ca3663e62f, CI 45569743090 et Pages HTTPS 45569743151 SUCCESS. Réconciliation des deux fichiers Sculpt par hunks exacts du lot porte sur main, aucun retour arrière marchand. Revue #551 : raccorder le World Builder historique au même endpoint ; updatePortal marque les déplacements réels, contrôles/rendu lisent resolvePortalWaypoint, changements visuels conservent la géométrie. Test du placement et de l'aller-retour. Nouveau SHA à certifier avant fusion.
 
