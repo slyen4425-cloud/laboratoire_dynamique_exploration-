@@ -119,11 +119,11 @@ const server = createServer(async(req,res)=>{
             const c = controls.getBoundingClientRect();
             const project=new URL(location.href).searchParams;
             const configured=project.has('adventureSession')||project.has('projectTester');
-            const moved=local.style.translate!==''&&local.style.translate!=='none';
+            const projected=local.dataset.hudBox==='local-status'&&getComputedStyle(local).position==='absolute'&&Number.isFinite(parseFloat(local.style.left))&&Number.isFinite(parseFloat(local.style.top));
             const slot=!!document.querySelector('[data-combat-hud-skill-role^="skill-slot-"]');
             document.documentElement.dataset.nativeAuthoredHudProof=configured
-              ?(moved&&slot?'OK':'layout-or-slot-missing:'+local.style.translate+':'+slot)
-              :(!moved?'OK':'unexpected-layout');
+              ?(projected&&slot?'OK':'layout-or-slot-missing:'+local.dataset.hudBox+':'+local.style.left+':'+local.style.top+':'+slot)
+              :(!projected?'OK':'unexpected-authored-box');
             const ok = getComputedStyle(stage).position === 'fixed' &&
               getComputedStyle(banner).display === 'none' &&
               r.width > 500 && r.height > 260 &&
