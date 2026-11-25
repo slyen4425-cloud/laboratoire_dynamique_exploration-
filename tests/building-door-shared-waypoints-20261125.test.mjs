@@ -69,3 +69,17 @@ test('legacy World Builder updatePortal moves the real shared door, not its old 
  assert.match(editor,/resolvePortalWaypoint\(document, portal\)/);
  assert.match(editor,/event\?\.target\?\.id==='portal-point-x'/);
 });
+
+test('Sculpt coordinate fields and destination editing use the effective door endpoint',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const source=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.ok(source.includes("const waypoint=portalIsFree?resolvePortalWaypoint(sculptWorldDraft,portal):null"));
+ assert.ok(source.includes("url.searchParams.set('arrivalPortalId',reverse.id)"));
+ assert.ok(source.includes("selectedWaypointKey='portal:'+arrivalPortal.id"));
+ assert.ok(source.includes("point.x===existingPoint.x&&point.y===existingPoint.y"));
+ const {d,entry,exit}=fixture();
+ const edited=placeSculptWorldPortal(d,exit.id,{x:200,y:200});
+ const paired=buildingDoorCounterpart(edited,edited.portals.find(p=>p.id===entry.id));
+ const moved=placeSculptWorldPortal(edited,paired.id,{x:300,y:300});
+ assert.equal(applyPortalTransition(moved,{currentAreaId:entry.sourceAreaId},entry).x,300);
+});

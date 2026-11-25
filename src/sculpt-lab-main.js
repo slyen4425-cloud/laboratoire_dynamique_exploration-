@@ -3317,7 +3317,6 @@ $('npc-talk')?.addEventListener('click',()=>{
   if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
-  if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
   npcDialogueIndex=0;npcDialogueOpen=true;npcDialogueAnchor=npc;
   $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
   renderNpcDialogueStep();
@@ -3340,7 +3339,11 @@ function renderNpcDialogueStep(){
     notice.textContent=offersDuel?'Ce dresseur te propose un duel.':npcDialogueTrainerNotice;
     notice.hidden=hasNextLine||!notice.textContent;
   }
-  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':'Terminer';
+  const offersTrade=!hasNextLine&&npcDialogueMerchant!==null;
+  // The last line leads to the existing merchant request, not a dead end.
+  // Keep the shortcut during multi-line dialogue, never duplicate it at the end.
+  $('npc-dialogue-trade').hidden=!npcDialogueMerchant||offersTrade;
+  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':offersTrade?'🛒 Commercer':'Terminer';
   $('npc-dialogue-close').textContent=offersDuel?'Refuser':'Fermer';
   if(npcDialogueOpen&&!$('npc-dialogue-overlay').hidden)
     requestAnimationFrame(placeActiveNpcDialog);
@@ -3349,9 +3352,10 @@ $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
   npcDialogueIndex+=1;
   if(npcDialogueIndex>=npcDialogueLines.length){
-    const trainer=npcDialogueTrainer;
+    const trainer=npcDialogueTrainer,merchant=npcDialogueMerchant;
     closeNpcDialogue();
     if(trainer)startSculptTrainerBattle(trainer);
+    else if(merchant)requestNpcMerchantShop(merchant);
     updateNpcInteraction();
     return;
   }
@@ -6565,10 +6569,9 @@ function refreshSculptWorldPanel(){
       (portalIsFree?' · position libre':' · passage attaché à une porte')
     :'Aucun passage ici. Choisis une carte de destination, puis place la sortie sur le terrain.';
   $('world-area-edit-destination').disabled=!destination;
-  $('world-area-portal-x').value=portal?.trigger.kind==='point'?
-    String(Math.round(portal.trigger.x)):'';
-  $('world-area-portal-y').value=portal?.trigger.kind==='point'?
-    String(Math.round(portal.trigger.y)):'';
+  const waypoint=portalIsFree?resolvePortalWaypoint(sculptWorldDraft,portal):null;
+  $('world-area-portal-x').value=waypoint?String(waypoint.x):'';
+  $('world-area-portal-y').value=waypoint?String(waypoint.y):'';
   $('world-area-portal-label').value=portal?.visual?.label??'';
   const spawnOptions=describeWorldAreaSpawnsForEditorV1(sculptWorldDraft,sculptWorldAreaId);
   const selector=$('world-area-spawn-select'),selected=selector.value;
@@ -6621,6 +6624,8 @@ function commitSculptWorldPortal(point){
   if(!portal)throw Error('Aucun passage à placer dans cette zone');
   if(portal.trigger.kind!=='point'&&!buildingDoorCounterpart(sculptWorldDraft,portal))
     throw Error('Ce passage est ancré à une porte : modifie son bâtiment propriétaire');
+  const existingPoint=resolvePortalWaypoint(sculptWorldDraft,portal);
+  if(existingPoint&&point.x===existingPoint.x&&point.y===existingPoint.y)return;
   const position=validSculptWorldAuthoringPoint(point);
   sculptWorldDraft=placeSculptWorldPortal(sculptWorldDraft,portal.id,position);
   refreshSculptWorldPanel();
@@ -7561,9 +7566,12 @@ function installSculptWorldAreaEditing(){
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
-      // Read-only editor focus: the real destination remains the existing
-      // Portal.targetSpawnId in the document du monde, not a new arrival marker.
-      url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
+      // Editor focus only: the paired door is the effective arrival owner.
+      const reverse=buildingDoorCounterpart(sculptWorldDraft,portal);
+      url.searchParams.delete('arrivalPortalId');
+      url.searchParams.delete('arrivalSpawnId');
+      if(reverse)url.searchParams.set('arrivalPortalId',reverse.id);
+      else url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
       window.location.assign(url.href);
     }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
   });
@@ -7609,9 +7617,18 @@ function installSculptWorldAreaEditing(){
   },{once:true});
   try{
     mountWorldSculptArea(transfer.areaId);
-    const arrivalId=new URL(window.location.href).searchParams.get('arrivalSpawnId');
+    const arrivalParams=new URL(window.location.href).searchParams;
+    const arrivalId=arrivalParams.get('arrivalSpawnId');
+    const arrivalPortal=worldOutboundPortals().find(p=>p.id===arrivalParams.get('arrivalPortalId')&&buildingDoorCounterpart(sculptWorldDraft,p));
     const selectedArrival=sculptWorldArea().spawns.find(p=>p.id===arrivalId);
-    if(selectedArrival&&!selectedArrival.anchor){
+    if(arrivalPortal){
+      $('world-area-portal-select').value=arrivalPortal.id;
+      selectedWaypointKey='portal:'+arrivalPortal.id;
+      sculptWorldPortalPlacement='portal';
+      $('world-area-portal-panel').open=false;
+      refreshSculptWorldPanel();
+      sculptWorldStatus('Touche le terrain pour déplacer le repère partagé de la porte (entrée et sortie).');
+    }else if(selectedArrival&&!selectedArrival.anchor){
       $('world-area-spawn-select').value=selectedArrival.id;
       sculptWorldPortalPlacement='spawn';
       $('world-area-portal-panel').open=false;
