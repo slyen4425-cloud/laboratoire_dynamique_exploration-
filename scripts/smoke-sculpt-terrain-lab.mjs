@@ -3810,7 +3810,7 @@ try{
   // 2.5D World Builder contract: an actual dungeon placed IN a host Area,
   // its entry placed on SculptTerrain, then real Portal -> WorldArea ->
   // Spawn traversal while Tester is running. Restore unchanged whole world.
-  const authoredDungeon=await run(`(()=>{
+  const authoredDungeon=await run(`(async()=>{
     document.querySelector('.world-node[data-area-id="area-principale"]').click();
     document.querySelector('#area-name').value='Grotte du nord';
     document.querySelector('#area-kind').value='dungeon';
@@ -3818,7 +3818,7 @@ try{
     document.querySelector('#area-add-form').requestSubmit();
     const result=window.__worldAssemblerProbe();
     const dungeonId=result.areaIds.at(-1);
-    const saved=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const saved=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const dungeon=saved.areas.find(a=>a.id===dungeonId);
     return {...result,dungeonId,siteKind:dungeon?.siteKind,
       host: saved.portals.find(p=>p.targetAreaId===dungeonId)?.sourceAreaId,
@@ -4125,10 +4125,10 @@ try{
   let returned2p5d=null;
   for(let i=0;i<90;i++){
     await sleep(110);
-    try{returned2p5d=await run(`(()=>{
+    try{returned2p5d=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();
       if(!probe)return null;
-      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       return {...probe,dungeon:doc.areas.find(a=>a.id==='grotte-du-nord'),
         exterior:doc.areas.find(a=>a.id==='area-principale')};
     })()`);}catch{}
@@ -4213,9 +4213,9 @@ try{
   let unifiedBack=null;
   for(let i=0;i<90;i++){
     await sleep(110);
-    try{unifiedBack=await run(`(()=>{
+    try{unifiedBack=await run(`(async()=>{
       const probe=window.__worldAssemblerProbe?.();if(!probe)return null;
-      const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       return {...probe,created:doc.areas.find(a=>a.label==='Grande clairière')};
     })()`);}catch{}
     if(unifiedBack)break;
@@ -4229,12 +4229,12 @@ try{
   // Keep a real legacy document byte-compatible, reject accidental editing,
   // then enter the old URL to verify the tactile return after refresh.
   const legacyId=unifiedBack.selectedAreaId;
-  const legacySaved=await run(`(()=>{
+  const legacySaved=await run(`(async()=>{
     const key='gensrpg.world-assembler.document.v1';
-    const draft=JSON.parse(localStorage.getItem(key));
+    const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const target=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     target.width=2400;target.height=1600;delete target.sculptTerrain;
-    localStorage.setItem(key,JSON.stringify(draft));
+    (await import('./src/builder/world-assembler-handoff.js')).saveWorldAssemblerDraft(localStorage,draft);
     return {id:target.id,width:target.width,height:target.height};
   })()`);
   if(legacySaved.width!==2400||legacySaved.height!==1600)
@@ -4275,10 +4275,10 @@ try{
   let compatibleMap=null;
   for(let i=0;i<100;i++){
     await sleep(100);
-    try{compatibleMap=await run(`(()=>{
+    try{compatibleMap=await run(`(async()=>{
       const probe=window.__sculptWorldProbe?.();
       if(!probe)return null;
-      const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       const legacy=world.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {probe,legacyWidth:legacy?.width,legacyHeight:legacy?.height,
         initialAreaId:world.initialAreaId,path:location.pathname};
@@ -4326,9 +4326,9 @@ try{
   let legacyReturn=null;
   for(let i=0;i<90;i++){
     await sleep(110);
-    try{legacyReturn=await run(`(()=>{
+    try{legacyReturn=await run(`(async()=>{
       const p=window.__worldAssemblerProbe?.();if(!p)return null;
-      const draft=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+      const draft=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
       const area=draft.areas.find(a=>a.id===${JSON.stringify(legacyId)});
       return {selected:p.selectedAreaId,area,portalCount:p.portalCount};
     })()`);}catch{}
@@ -4359,8 +4359,8 @@ try{
     JSON.stringify(accepted));
   await repairClick;
   socket.removeEventListener('message',observeRepairDialog);
-  const repairedRoute=await run(`(()=>{
-    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+  const repairedRoute=await run(`(async()=>{
+    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const legacy=doc.areas.find(a=>a.id===${JSON.stringify(legacyId)});
     const first=doc.areas.find(a=>a.id===doc.initialAreaId);
     const outgoing=doc.portals.filter(p=>p.sourceAreaId===doc.initialAreaId);
@@ -4380,14 +4380,14 @@ try{
     JSON.stringify(repairedRoute));
   // V82: test native prefab building interiors through the REAL World Builder
   // and its real Map panel in landscape Chromium, not just serialized data.
-  const prefabHouse=await run(`(()=>{
+  const prefabHouse=await run(`(async()=>{
     const gallery=document.querySelector('#world-map-preset-gallery');
     const card=gallery?.querySelector('.map-preset-card[data-preset-id="map-preset-109"]');
     if(!card)return {error:'official preset gallery card missing'};
     document.querySelector('.world-preset-details').open=true;
     card.closest('.map-preset-shelf').open=true;card.click();
     document.querySelector('#world-map-preset-create').click();
-    const doc=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1'));
+    const doc=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const outside=doc?.areas.find(a=>a.label==='Forêt 1 · projet');
     const door=doc?.portals.find(p=>p.sourceAreaId===outside?.id&&
       p.trigger?.kind==='object-anchor');
