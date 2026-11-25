@@ -1,3 +1,6 @@
+## 2026-11-25 — Compatibilité marchand
+- Aligner la normalisation des références PNJ sur la limite canonique Capture de 130 caractères (#654). Test de conservation du placement. Aucun ID réécrit.
+
 ## 2026-11-25 — C2 : configuration marchand directe, pas de liste de boutiques
 - START 46654efe2b7d084d8ae891362e5d4e2999c3ab8c, checkpoint `checkpoint/exploration-start-npc-merchant-single-form-20261125`, branche `work/exploration-npc-merchant-single-form-20261125`. Capture #654 en parallèle chez son propriétaire. #551 indépendant non fusionné, ne pas le réintroduire.
 - Retirer les sélecteurs de boutique concurrents dans la fiche carte et la bibliothèque PNJ. Ouvrir le même formulaire Capture dans chaque contexte; lier par référence automatiquement, conserver l'ancien ID si existant, réserver le nouvel ID de placement via le générateur existant. Réutilisables: la fiche définition reste propriétaire, la carte référence la définition, pas de duplication de données.

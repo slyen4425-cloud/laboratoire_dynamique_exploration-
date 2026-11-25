@@ -54,3 +54,9 @@ test('Explorer links Capture merchants only by names and scoped messages',async(
  assert.match(main,/npcId:actor\.id,npcName:actor\.npc\.name/);
  assert.doesNotMatch(main,/localStorage\.setItem\(.*merchant/i);
 });
+
+test('canonical merchant references up to 130 characters survive placement',()=>{
+ const id='merchant-'+'n'.repeat(121);
+ assert.equal(id.length,130);
+ assert.equal(actor('long-shop',42,npc('merchant',id)).npc.merchantId,id);
+});
