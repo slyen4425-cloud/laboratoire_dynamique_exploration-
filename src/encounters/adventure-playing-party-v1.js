@@ -123,7 +123,12 @@ export function readScopedAdventurePlayingPartyV1({
   const keys=new Set();
   wildVictories=Object.freeze(value.wildVictories.map(raw=>{
    const entry=exactFields(raw,['areaId','actorId'],'Adventure wild victory');
-   const areaId=safeId(entry.areaId,'wild victory area'),actorId=safeId(entry.actorId,'wild victory actor');
+   // WorldArea/placed NPC IDs are nonempty text, not the stricter species/instance IDs.
+   // Keep parity with trainer victories, including historical imported names.
+   if(typeof entry.areaId!=='string'||!entry.areaId.trim()||
+      typeof entry.actorId!=='string'||!entry.actorId.trim())
+    throw new TypeError('Adventure wild victory requires an area and actor');
+   const areaId=entry.areaId.trim(),actorId=entry.actorId.trim();
    const key=JSON.stringify([areaId,actorId]);
    if(keys.has(key))throw new RangeError('Duplicate Adventure wild victory');
    keys.add(key);
