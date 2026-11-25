@@ -85,7 +85,7 @@ function drawWorldObjectAmbientContactV1(ctx,args,contact){
  ctx.save();ctx.translate(contact.x,contact.y);ctx.scale(rx,ry);
  const g=ctx.createRadialGradient(0,0,0,0,0,1);
  g.addColorStop(0,'rgba(0,0,0,'+alpha+')');g.addColorStop(1,'rgba(0,0,0,0)');
- ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();
+ ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,1,0,Math.PI*2);ctx.fill();ctx.restore();
 }
 export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1,shadow=null,lighting=null}={}){
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return null;
