@@ -25,7 +25,10 @@ export async function createUniverseEncounterBrowserFixture(snapshot){
  const local={getItem:key=>items.get(key)??null,setItem:(key,value)=>items.set(key,value),
   get length(){return items.size;},key:i=>[...items.keys()][i]??null};
  createCaptureUniverseDatabaseStoreV1({storage:local}).create(universeId,{
-  schema:'capture-database-v1',version:1,metadata:{},statRegistry,progressionRules,
+  schema:'capture-database-v1',version:1,metadata:{combatHudLayoutV1:{schema:'capture-hud-layout-v1',profiles:{
+   'desktop-1v1':{'local-status':{dx:1,dy:-1,scale:100}},
+   'touch-1v1':{'local-status':{dx:1,dy:-1,scale:100}}
+  }}},statRegistry,progressionRules,
   creatures:[{draft,statValues,loadout}],
   skills:release.skillTransfers.map(item=>item.draft).filter(skill=>draft.skillIds.includes(skill.id))});
  const testerSeed='for(const [k,v] of '+JSON.stringify([...items])+')localStorage.setItem(k,v);';
