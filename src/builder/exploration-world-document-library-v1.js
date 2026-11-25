@@ -150,7 +150,9 @@ export function createExplorationWorldDocumentLibraryV1({storage}={}){
   if(current){
    const original=serializeWorldBuilderDraft(current);
    const registered=storage.getItem(slotKey(current.id));
-   if(registered!==original)
+   // Compare canonical bytes, not the optional compact Web Storage envelope.
+   // Otherwise a perfectly saved world appears unsaved after compression.
+   if(registered===null||decodeWorldDocumentStorageV1(registered)!==original)
     throw new Error('Enregistre d’abord le monde actif dans la bibliothèque pour conserver ses modifications');
   }
   // Reuse the SAME official handoff used by the World Builder and native
