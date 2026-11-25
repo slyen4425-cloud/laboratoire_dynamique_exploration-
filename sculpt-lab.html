@@ -441,14 +441,16 @@ body.terrain-ramp-authoring .precision-toggle{display:none!important}
 body.sculpt-immersive #ramp-guide{grid-column:1/-1;font-size:.72rem}
 /* Door interaction belongs to the PLAYFIELD, not the editor's options HUD. */
 #navigation-area-door.in-game-door-action{position:absolute;z-index:19;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
-  right:calc(env(safe-area-inset-right,0px) + 16px);
+  /* In Tester the hero is camera-centered: keep the interaction directly
+     below the hero, rather than in the distant bottom-right control corner. */
+  top:62%;left:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);
+  max-width:min(280px,84%);text-align:center;
   min-height:54px;min-width:174px;padding:10px 16px;
   border:2px solid #ecc58c;border-radius:14px;
   background:rgba(52,34,22,.95);color:#fff5df;font-size:1rem;font-weight:850;
   box-shadow:0 5px 22px #000a;touch-action:manipulation}
 #navigation-area-door[hidden]{display:none!important}
-body.sculpt-immersive #navigation-area-door{bottom:calc(env(safe-area-inset-bottom,0px) + 20px)}
+body.sculpt-immersive #navigation-area-door.in-game-door-action{top:62%;left:50%;right:auto;bottom:auto}
 .interior-wall-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
 .interior-wall-tools strong{flex:1 1 100%}
 .interior-wall-tools button{flex:1 1 100px}
@@ -457,8 +459,12 @@ body.interior-wall-authoring .sculpt-quickbar>.quick-tool-label,
 body.interior-wall-authoring .sculpt-quickbar>.quick-size,
 body.interior-wall-authoring .sculpt-quickbar>.quick-level{display:none!important}
 body.sculpt-immersive .interior-wall-tools{grid-column:1/-1}
-@media(max-width:600px){#navigation-area-door.in-game-door-action{min-width:144px;min-height:50px;
- right:8px;bottom:12px;padding:8px;font-size:.88rem}}
+@media(max-width:600px){
+ #navigation-area-door.in-game-door-action,
+ body.sculpt-immersive #navigation-area-door.in-game-door-action{
+  min-width:144px;min-height:50px;top:43%;left:50%;right:auto;bottom:auto;
+  padding:8px 12px;font-size:.88rem}
+}
 /* V79 R3A2: interior construction tools stay compact and finger-friendly. */
 .interior-door-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;width:100%}
 .interior-door-tools strong{width:100%;font-size:.82rem}
@@ -619,15 +625,15 @@ body.world-area-editing .world-area-portal-panel:not([open]){
 .world-area-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 #world-area-portal-status{color:#b2ece2;line-height:1.4;font-size:.7rem}
 #world-portal-traverse{
- z-index:22;right:7px;left:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 77px);
- width:auto;max-width:220px;
+ z-index:22;top:62%;left:50%;right:auto;bottom:auto;
+ transform:translate(-50%,-50%);width:auto;max-width:min(280px,84%);
 }
 /* Traversal action must be on the 2.5D playfield, not in document flow.
    Reuse the original interior door styling without adding an alternate hitbox. */
 #world-portal-traverse.in-game-door-action{
- position:absolute;z-index:22;right:calc(env(safe-area-inset-right,0px) + 9px);
- bottom:calc(env(safe-area-inset-bottom,0px) + 77px);
- min-height:48px;max-width:min(220px,48vw);padding:8px 11px;
+ position:absolute;z-index:22;top:62%;left:50%;right:auto;bottom:auto;
+ transform:translate(-50%,-50%);text-align:center;
+ min-height:48px;max-width:min(280px,84%);padding:8px 11px;
  border:2px solid #ecc58c;border-radius:12px;
  background:#352719f5;color:#fff5df;font-weight:800;font-size:.78rem;
  touch-action:manipulation;box-shadow:0 5px 20px #000a;
@@ -720,7 +726,9 @@ body.world-area-editing #world-area-portal-panel #sculpt-map-preset-panel:not([o
 
 #sculpt-map-preset-import{max-width:100%}
 @media(max-width:720px){
- #world-portal-traverse.in-game-door-action{max-width:48vw;font-size:.71rem;min-height:44px}
+ #world-portal-traverse.in-game-door-action{
+  top:43%;left:50%;right:auto;bottom:auto;
+  max-width:84%;font-size:.78rem;min-height:48px}
  #sculpt-map-preset-panel{width:min(205px,calc(100% - 16px))}
 }
 /* The header intentionally disappears in immersive test. This independently
