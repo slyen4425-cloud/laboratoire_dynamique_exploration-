@@ -2,10 +2,10 @@ name: Import unique des décors Genesis 20261125
 on:
   push:
     branches: [work/exploration-decor-assets-20261125]
-    paths: ['.github/workflows/import-genesis-decor-20261125.yml']
+    paths: ['.github/workflows/import-genesis-decor-20261125.yml', 'scripts/import-genesis-decor-20261125.py']
   pull_request:
     types: [synchronize]
-    paths: ['.github/workflows/import-genesis-decor-20261125.yml']
+    paths: ['.github/workflows/import-genesis-decor-20261125.yml', 'scripts/import-genesis-decor-20261125.py']
 concurrency:
   group: genesis-decor-import-20261125
   cancel-in-progress: false
