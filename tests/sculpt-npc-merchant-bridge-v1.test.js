@@ -60,3 +60,12 @@ test('canonical merchant references up to 130 characters survive placement',()=>
  assert.equal(id.length,130);
  assert.equal(actor('long-shop',42,npc('merchant',id)).npc.merchantId,id);
 });
+
+
+test('the last merchant dialogue line leads to the same scoped shop request, not a silent close',async()=>{
+ const main=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(main,/const offersTrade=!hasNextLine&&npcDialogueMerchant!==null/);
+ assert.match(main,/\$\('npc-dialogue-trade'\)\.hidden=!npcDialogueMerchant\|\|offersTrade/);
+ assert.match(main,/offersTrade\?'🛒 Commercer':'Terminer'/);
+ assert.match(main,/const trainer=npcDialogueTrainer,merchant=npcDialogueMerchant;\s*closeNpcDialogue\(\);\s*if\(trainer\)startSculptTrainerBattle\(trainer\);\s*else if\(merchant\)requestNpcMerchantShop\(merchant\)/);
+});

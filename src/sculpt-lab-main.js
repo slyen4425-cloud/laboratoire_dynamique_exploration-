@@ -3315,7 +3315,6 @@ $('npc-talk')?.addEventListener('click',()=>{
   if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
-  if($('npc-dialogue-trade'))$('npc-dialogue-trade').hidden=!canShop;
   npcDialogueIndex=0;npcDialogueOpen=true;npcDialogueAnchor=npc;
   $('npc-dialogue-speaker').textContent=npc.npc.name||'Personnage';
   renderNpcDialogueStep();
@@ -3338,7 +3337,11 @@ function renderNpcDialogueStep(){
     notice.textContent=offersDuel?'Ce dresseur te propose un duel.':npcDialogueTrainerNotice;
     notice.hidden=hasNextLine||!notice.textContent;
   }
-  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':'Terminer';
+  const offersTrade=!hasNextLine&&npcDialogueMerchant!==null;
+  // The last line leads to the existing merchant request, not a dead end.
+  // Keep the shortcut during multi-line dialogue, never duplicate it at the end.
+  $('npc-dialogue-trade').hidden=!npcDialogueMerchant||offersTrade;
+  $('npc-dialogue-next').textContent=hasNextLine?'Suivant':offersDuel?'Accepter le duel':offersTrade?'🛒 Commercer':'Terminer';
   $('npc-dialogue-close').textContent=offersDuel?'Refuser':'Fermer';
   if(npcDialogueOpen&&!$('npc-dialogue-overlay').hidden)
     requestAnimationFrame(placeActiveNpcDialog);
@@ -3347,9 +3350,10 @@ $('npc-dialogue-next')?.addEventListener('click',()=>{
   if(!npcDialogueOpen)return;
   npcDialogueIndex+=1;
   if(npcDialogueIndex>=npcDialogueLines.length){
-    const trainer=npcDialogueTrainer;
+    const trainer=npcDialogueTrainer,merchant=npcDialogueMerchant;
     closeNpcDialogue();
     if(trainer)startSculptTrainerBattle(trainer);
+    else if(merchant)requestNpcMerchantShop(merchant);
     updateNpcInteraction();
     return;
   }
