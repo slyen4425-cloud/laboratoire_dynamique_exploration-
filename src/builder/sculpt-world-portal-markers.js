@@ -1,5 +1,6 @@
 // Read-only presentation of the canonical WorldDocument v3.
 // Markers never own positions or alter Portal.trigger, Spawn or collision.
+import {buildingDoorCounterpart,resolvePortalWaypoint} from '../world/portal-model.js';
 const finitePoint=point=>Number.isFinite(point?.x)&&Number.isFinite(point?.y);
 const areaFor=(doc,id)=>doc.areas.find(area=>area.id===id);
 const nameFor=area=>area?.label??area?.id??'autre zone';
@@ -13,14 +14,16 @@ export function markersForSculptWorldArea(document,areaId,{
   const markers=[],incoming=new Map();
   for(const portal of document.portals??[]){
     if(portal.enabled!==true)continue;
+    const door=buildingDoorCounterpart(document,portal);
+    const point=portal.sourceAreaId===areaId&&(door||portal.trigger?.kind==='point')
+      ?resolvePortalWaypoint(document,portal):null;
     if(portal.sourceAreaId===areaId&&
-       (portal.visual?.visible===true||(!testing&&showHidden))&&
-       portal.trigger?.kind==='point'&&finitePoint(portal.trigger)){
+       (portal.visual?.visible===true||(!testing&&showHidden))&&finitePoint(point)){
       const destination=areaFor(document,portal.targetAreaId);
       const customized=portal.visual.label?.trim();
       markers.push({
-        kind:'exit',portalId:portal.id,x:portal.trigger.x,y:portal.trigger.y,
-        radius:portal.trigger.radius,
+        kind:'exit',portalId:portal.id,x:point.x,y:point.y,
+        radius:point.radius,door:!!door,
         visibleInPlay:portal.visual?.visible===true,
         appearance:portal.visual?.marker??'portal',
         textureMaterialId:portal.visual?.textureMaterialId??null,
@@ -33,6 +36,7 @@ export function markersForSculptWorldArea(document,areaId,{
     }
     if(!testing&&portal.targetAreaId===areaId){
       const spawn=area.spawns?.find(s=>s.id===portal.targetSpawnId);
+      if(door&&!(area.id===document.initialAreaId&&spawn?.id===document.initialSpawnId))continue;
       if(!finitePoint(spawn)||incoming.has(spawn.id))continue;
       const isInitial=area.id===document.initialAreaId&&
         spawn.id===document.initialSpawnId;

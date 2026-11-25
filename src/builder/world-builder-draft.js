@@ -1,3 +1,4 @@
+import {buildingDoorCounterpart} from '../world/portal-model.js';
 import {normalizeWorldEncounterStatProfileV1} from '../encounters/wild-stat-profile-contract-v1.js';
 import {normalizeCombatArenaIdV1} from '../world/world-combat-arena-v1.js';
 import {
@@ -1753,7 +1754,13 @@ export function updatePortal(
   const portal = next.portals?.find((item) => item.id === portalId);
 
   if (portal && typeof patcher === 'function') {
+    const previous=portal.trigger?{...portal.trigger}:null;
     patcher(portal);
+    // A direct coordinate edit in either native editor changes the same
+    // shared endpoint, never a separate arrival or a replacement ID.
+    if(previous?.kind==='point'&&portal.trigger?.kind==='point'&&
+       (previous.x!==portal.trigger.x||previous.y!==portal.trigger.y)&&
+       buildingDoorCounterpart(next,portal))portal.sharedDoorPoint=true;
   }
 
   return next;

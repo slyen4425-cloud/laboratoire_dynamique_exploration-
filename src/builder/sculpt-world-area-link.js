@@ -9,6 +9,7 @@ import {normalizeSculptPreviewObjects,normalizeSculptPreviewActors} from '../wor
 import {updatePortal,updateSpawn,addSpawn,createWorldBuilderDraft,
   createBuildingInteriorLink,validateWorldBuilderDraft} from './world-builder-draft.js';
 import {resolveWorldAreaSpawnPoint} from '../world/world-area-model.js';
+import {buildingDoorCounterpart} from '../world/portal-model.js';
 import {materialPackV1} from '../materials/material-pack-v1.js';
 import {resolveMaterialAsset} from '../assets/material-asset-adapter.js';
 
@@ -89,11 +90,16 @@ function inBounds(area,x,y){
 }
 export function placeSculptWorldPortal(draft,portalId,{x,y}={}){
   const portal=draft?.portals?.find(p=>p.id===portalId);
-  if(!portal||portal.trigger?.kind!=='point')
+  const paired=portal&&buildingDoorCounterpart(draft,portal);
+  if(!portal||(portal.trigger?.kind!=='point'&&!paired))
     throw Error('Portal absent ou ancré à un objet (placement direct non autorisé)');
   const area=areaById(draft,portal.sourceAreaId);inBounds(area,x,y);
   const next=updatePortal(draft,portalId,p=>{
-    p.trigger={...p.trigger,kind:'point',x,y};
+    if(paired){
+      p.sharedDoorPoint=true;
+      p.trigger=p.trigger.kind==='object-anchor'?{...p.trigger,doorPoint:{x,y}}:
+        {...p.trigger,x,y};
+    }else p.trigger={...p.trigger,kind:'point',x,y};
   });
   const checked=validateWorldBuilderDraft(next);
   if(!checked.valid)throw Error('Position de Portal invalide : '+checked.errors.join(', '));
@@ -101,7 +107,7 @@ export function placeSculptWorldPortal(draft,portalId,{x,y}={}){
 }
 // The visual and collision remain owned by the SAME Portal in WorldDocument.
 // Invisible in gameplay still leaves the authored exit selectable in the editor.
-export function setSculptWorldPortalAppearance(draft,portalId,{mode='ring',textureMaterialId=null}={}){
+export function setSculptWorldPortalAppearance(draft,portalId,{mode='ring',textureMaterialId=null,radius}={}){
   const portal=draft?.portals?.find(p=>p.id===portalId);
   if(!portal)throw Error('Passage inconnu');
   if(!['ring','hidden','shadow','texture'].includes(mode))
@@ -112,7 +118,10 @@ export function setSculptWorldPortalAppearance(draft,portalId,{mode='ring',textu
       m.assets?.base&&resolveMaterialAsset(m.assets.base));
     if(!material)throw Error('Texture officielle indisponible');
   }
+  if(radius!==undefined&&(!Number.isFinite(radius)||radius<4||radius>240))
+    throw Error('Rayon invalide (4 à 240)');
   const next=updatePortal(draft,portalId,p=>{
+    if(radius!==undefined)p.trigger={...p.trigger,radius};
     p.visual={...p.visual,visible:mode!=='hidden',
       marker:mode==='shadow'?'shadow':mode==='texture'?'texture':'portal',
       textureMaterialId:mode==='texture'?textureMaterialId:null};

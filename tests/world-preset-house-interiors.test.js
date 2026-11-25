@@ -5,7 +5,7 @@ import {builtinSculptMapPresets} from '../src/builder/sculpt-builtin-map-presets
 import {createBlankWorldBuilderDraft,serializeWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
 import {createWorldAreaFromSculptMapPreset} from '../src/builder/sculpt-map-preset-library.js';
 import {sculptWorldAreaScene} from '../src/builder/sculpt-world-area-link.js';
-import {resolvePortalTriggerPoint,findTriggeredPortal,applyPortalTransition} from '../src/world/portal-model.js';
+import {resolvePortalTriggerPoint,resolvePortalWaypoint,findTriggeredPortal,applyPortalTransition,findPortalEnteredDuringMove} from '../src/world/portal-model.js';
 const src=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
 test('all existing prefab houses create usable 2.5D WorldArea interiors and canonical anchored return Portals',()=>{
@@ -23,7 +23,7 @@ test('all existing prefab houses create usable 2.5D WorldArea interiors and cano
     houses++;
     const entry=entered.find(p=>p.trigger.objectId===b.id);
     assert.ok(entry,'house must have anchored door');
-    const point=resolvePortalTriggerPoint(doc.areas,entry);
+    const point=resolvePortalWaypoint(doc,entry);
     assert.ok(point,'building door anchor must resolve');
     const inside=doc.areas.find(a=>a.id===entry.targetAreaId);
     assert.equal(inside.kind,'interior');
@@ -36,11 +36,13 @@ test('all existing prefab houses create usable 2.5D WorldArea interiors and cano
     assert.equal(gate?.id,entry.id);
     const arrival=applyPortalTransition(doc,{currentAreaId:outside.id,x:point.x,y:point.y},entry);
     assert.equal(arrival.currentAreaId,inside.id);
+    assert.equal(findPortalEnteredDuringMove(doc,outside.id,{x:point.x+point.radius+10,y:point.y},point),null);
     const exit=doc.portals.find(p=>p.sourceAreaId===inside.id&&p.targetAreaId===outside.id);
     assert.ok(exit,'house return door must be present');
     assert.ok(resolvePortalTriggerPoint(doc.areas,exit));
     const outsideAgain=applyPortalTransition(doc,{currentAreaId:inside.id,x:exit.trigger.x,y:exit.trigger.y},exit);
     assert.equal(outsideAgain.currentAreaId,outside.id);
+    assert.deepEqual({x:outsideAgain.x,y:outsideAgain.y},{x:point.x,y:point.y});
     assert.ok(serializeWorldBuilderDraft(doc).length>1000);
   }
  }
