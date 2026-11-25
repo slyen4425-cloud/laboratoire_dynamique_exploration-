@@ -2,6 +2,7 @@
 // Geometry for door anchors is resolved ONLY by world-area-model; neither
 // this menu nor Sculpt may invent a free coordinate for a building-linked Spawn.
 import {resolveWorldAreaSpawnPoint} from '../world/world-area-model.js';
+import {buildingDoorCounterpart} from '../world/portal-model.js';
 export function describeWorldAreaSpawnsForEditorV1(document,areaId){
  const area=document?.areas?.find(item=>item.id===areaId);
  if(!area)return Object.freeze([]);
@@ -24,7 +25,7 @@ export function describeWorldAreaIncomingPortalsForEditorV1(document,areaId){
  if(!area)return Object.freeze([]);
  const incoming=(document.portals??[]).filter(portal=>
   portal.targetAreaId===areaId&&portal.enabled!==false);
- return Object.freeze(incoming.map(portal=>{
+ return Object.freeze(incoming.filter(portal=>!buildingDoorCounterpart(document,portal)).map(portal=>{
   const spawn=area.spawns?.find(item=>item.id===portal.targetSpawnId);
   const source=document.areas.find(item=>item.id===portal.sourceAreaId);
   const same=incoming.filter(other=>other.targetSpawnId===portal.targetSpawnId);

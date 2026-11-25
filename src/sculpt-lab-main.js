@@ -109,7 +109,7 @@ import {resolveExplorationCombatReturn} from './encounters/combat-return.js';
 import {createImmersiveEncounterHostV1} from './encounters/immersive-encounter-host-v1.js';
 import {createCaptureCombatWarmupV1} from './encounters/capture-combat-warmup-v1.js';
 import {createExplorationSoundtrackV1} from './audio/exploration-soundtrack-v1.js?rev=mobile-real-play-r2';
-import {findTriggeredPortal,findPortalEnteredDuringMove,applyPortalTransition,resolvePortalTriggerPoint} from './world/portal-model.js';
+import {findTriggeredPortal,findPortalEnteredDuringMove,applyPortalTransition,resolvePortalTriggerPoint,buildingDoorCounterpart,isManualBuildingPortal,resolvePortalWaypoint} from './world/portal-model.js';
 import {createSculptMapPreset,saveSculptMapPreset,readSculptMapPresets,
   addImportedSculptMapPreset,importSculptMapPreset,
   deleteSculptMapPreset,clearPersonalSculptMapPresets} from './builder/sculpt-map-preset-library.js?rev=author-maps-three-v1';
@@ -1427,10 +1427,12 @@ function draw(){
     if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
     const interior=sculptInteriors.find(e=>e.area.id===activeInteriorId);
     const worldExit=sculptWorldCurrentInterior()?
-      worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point'):null;
+      (worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId)?.rootAreaId===sculptWorldAreaId
+        ?worldInteriorHouseExit(sculptWorldDraft,sculptWorldAreaId).exit:
+        worldOutboundPortals().find(p=>p.visual?.marker==='exit'&&p.trigger?.kind==='point')):null;
     drawSculptInteriorWalls(ctx,terrain,{tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
-      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??worldExit?.trigger,
+      doorway:interiorDoorPreview??sculptInteriors.find(e=>e.area.id===activeInteriorId&&e.floorIndex===0)?.exitPortal.trigger??(worldExit?{kind:'point',...resolvePortalWaypoint(sculptWorldDraft,worldExit)}:null),
       stairPortals:interiorConnectorPortals()
         .map(p=>interiorConnectorPreview?.id===p.id?
           {...p,trigger:{...p.trigger,...interiorConnectorPreview}}:p),
@@ -2201,7 +2203,7 @@ function begin(event){
       selectedWaypointKey=waypointKey(marker);
       syncObjectWaypoints();
       const anchor=marker.kind==='exit'
-        ?sculptWorldDraft.portals.find(p=>p.id===marker.portalId)?.trigger?.kind!=='point'
+        ?!marker.door&&sculptWorldDraft.portals.find(p=>p.id===marker.portalId)?.trigger?.kind!=='point'
         :!!sculptWorldArea()?.spawns.find(p=>p.id===marker.spawnId)?.anchor;
       if(anchor){sculptWorldStatus('Ce point appartient à une porte : déplace le bâtiment ou sa porte.');return;}
       waypointDrag={pointerId:event.pointerId,key:selectedWaypointKey,
@@ -6451,7 +6453,7 @@ function syncObjectWaypoints(){
   const markers=markersForSculptWorldArea(sculptWorldDraft,sculptWorldAreaId,{testing:false,showHidden:true});
   const selected=$('object-waypoint-select'),old=selectedWaypointKey??selected.value;
   selected.replaceChildren(...markers.map(marker=>{
-    const label=marker.kind==='exit'?'🟡 Sortie vers '+marker.label:
+    const label=marker.kind==='exit'?(marker.door?'🚪 Entrée / sortie · ':'🟡 Sortie vers ')+marker.label:
       marker.isInitial?'🟣 Départ du monde':'🔵 Arrivée depuis '+marker.label;
     return new Option(label,waypointKey(marker));
   }));
@@ -6466,6 +6468,7 @@ function syncObjectWaypoints(){
       portal.visual.marker==='shadow'?'shadow':
       portal.visual.marker==='texture'?'texture':'ring';
     $('object-waypoint-marker-mode').value=mode;
+    $('object-waypoint-marker-radius').value=String(portal.trigger.radius);
     $('object-waypoint-marker-texture-row').hidden=mode!=='texture';
     const texture=$('object-waypoint-marker-texture');
     const preferred=portal?.visual?.textureMaterialId;
@@ -6484,7 +6487,7 @@ function syncObjectWaypoints(){
       ?'✕ Annuler le placement':'📍 Placer le repère sur la carte';
   $('object-waypoint-place').disabled=!current||
     (current.kind==='exit'
-      ?sculptWorldDraft.portals.find(p=>p.id===current.portalId)?.trigger?.kind!=='point'
+      ?!current.door&&sculptWorldDraft.portals.find(p=>p.id===current.portalId)?.trigger?.kind!=='point'
       :!!sculptWorldArea()?.spawns.find(p=>p.id===current.spawnId)?.anchor);
   $('object-waypoint-destination').disabled=current?.kind!=='exit';
   // Every incoming Portal is selectable, even when historical maps reused
@@ -6552,7 +6555,7 @@ function refreshSculptWorldPanel(){
   }));
   if(choices.some(p=>p.id===previous))portalSelect.value=previous;
   const portal=currentWorldPortal(),hasPortal=!!portal;
-  const portalIsFree=hasPortal&&portal.trigger.kind==='point';
+  const portalIsFree=hasPortal&&(portal.trigger.kind==='point'||!!buildingDoorCounterpart(sculptWorldDraft,portal));
   for(const id of ['world-area-portal-place','world-area-portal-save',
     'world-area-portal-x','world-area-portal-y'])$(id).disabled=!portalIsFree;
   for(const id of ['world-area-portal-label','world-area-portal-label-save'])
@@ -6566,10 +6569,9 @@ function refreshSculptWorldPanel(){
       (portalIsFree?' · position libre':' · passage attaché à une porte')
     :'Aucun passage ici. Choisis une carte de destination, puis place la sortie sur le terrain.';
   $('world-area-edit-destination').disabled=!destination;
-  $('world-area-portal-x').value=portal?.trigger.kind==='point'?
-    String(Math.round(portal.trigger.x)):'';
-  $('world-area-portal-y').value=portal?.trigger.kind==='point'?
-    String(Math.round(portal.trigger.y)):'';
+  const waypoint=portalIsFree?resolvePortalWaypoint(sculptWorldDraft,portal):null;
+  $('world-area-portal-x').value=waypoint?String(waypoint.x):'';
+  $('world-area-portal-y').value=waypoint?String(waypoint.y):'';
   $('world-area-portal-label').value=portal?.visual?.label??'';
   const spawnOptions=describeWorldAreaSpawnsForEditorV1(sculptWorldDraft,sculptWorldAreaId);
   const selector=$('world-area-spawn-select'),selected=selector.value;
@@ -6620,13 +6622,15 @@ function validSculptWorldAuthoringPoint(point){
 function commitSculptWorldPortal(point){
   const portal=currentWorldPortal();
   if(!portal)throw Error('Aucun passage à placer dans cette zone');
-  if(portal.trigger.kind!=='point')
+  if(portal.trigger.kind!=='point'&&!buildingDoorCounterpart(sculptWorldDraft,portal))
     throw Error('Ce passage est ancré à une porte : modifie son bâtiment propriétaire');
+  const existingPoint=resolvePortalWaypoint(sculptWorldDraft,portal);
+  if(existingPoint&&point.x===existingPoint.x&&point.y===existingPoint.y)return;
   const position=validSculptWorldAuthoringPoint(point);
   sculptWorldDraft=placeSculptWorldPortal(sculptWorldDraft,portal.id,position);
   refreshSculptWorldPanel();
   sculptWorldStatus('Sortie enregistrée à X '+position.x+', Y '+position.y+
-    ' · destination et arrivée inchangées.');
+    (buildingDoorCounterpart(sculptWorldDraft,portal)?' · même point pour le retour.':' · destination et arrivée inchangées.'));
 }
 function commitSculptWorldSpawn(point){
   const spawn=selectedWorldSpawn();
@@ -6754,7 +6758,11 @@ function updateSculptWorldPortalAction(){
       }
       return;
     }
-    button.hidden=true; // Real crossing enters on contact; no second click.
+    if(isManualBuildingPortal(sculptWorldDraft,portal)){
+      button.hidden=false;button.disabled=false;
+      button.textContent=target.kind==='interior'?'🚪 Entrer':'🚪 Sortir';
+      button.title='Clique pour franchir cette porte';
+    }else button.hidden=true; // Inter-map crossing remains automatic.
     return;
   }else{
     button.hidden=true;
@@ -6783,7 +6791,7 @@ function drawSculptWorldPortalMarkers(){
     const viewY=y-level*SCULPT_TILE.rise;
     const exit=marker.kind==='exit',arrival=marker.kind==='arrival'&&!marker.isInitial;
     const color=exit&&!marker.visibleInPlay?'#93a2ae':exit?'#ffd77a':arrival?'#71d4ff':'#dba7ff';
-    const title=exit&&!marker.visibleInPlay?'SORTIE MASQUÉE → ':exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
+    const title=marker.door?'PORTE · ':exit&&!marker.visibleInPlay?'SORTIE MASQUÉE → ':exit?'SORTIE → ':arrival?'ARRIVÉE ← ':'DÉPART · ';
     const name=(marker.label??'').slice(0,35);
     const caption=title+name;
     // Authoring still shows the real hitbox; Jouer only shows the chosen art.
@@ -7426,12 +7434,14 @@ function installSculptWorldAreaEditing(){
       const mode=$('object-waypoint-marker-mode').value;
       sculptWorldDraft=setSculptWorldPortalAppearance(sculptWorldDraft,
         selectedWaypointKey.slice(7),{
-          mode,textureMaterialId:$('object-waypoint-marker-texture').value
+          mode,textureMaterialId:$('object-waypoint-marker-texture').value,
+          radius:Number($('object-waypoint-marker-radius').value)
         });
       refreshSculptWorldPanel();scheduleDraw();
       sculptWorldStatus('Apparence enregistrée : '+(mode==='hidden'?'invisible en jeu':
         mode==='shadow'?'ombre noire':mode==='texture'?'texture du catalogue':'cercle classique')+
-        '. Le passage automatique reste actif.');
+        (isManualBuildingPortal(sculptWorldDraft,sculptWorldDraft.portals.find(p=>p.id===selectedWaypointKey.slice(7)))
+          ?'. Passage manuel à proximité.':'. Le passage automatique reste actif.'));
     }catch(error){sculptWorldStatus(error.message,true);}
   });
   $('object-waypoint-select').addEventListener('change',()=>{
@@ -7556,9 +7566,12 @@ function installSculptWorldAreaEditing(){
       const url=new URL(window.location.href);
       url.searchParams.set('worldAssembler','1');
       url.searchParams.set('areaId',target);
-      // Read-only editor focus: the real destination remains the existing
-      // Portal.targetSpawnId in the document du monde, not a new arrival marker.
-      url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
+      // Editor focus only: the paired door is the effective arrival owner.
+      const reverse=buildingDoorCounterpart(sculptWorldDraft,portal);
+      url.searchParams.delete('arrivalPortalId');
+      url.searchParams.delete('arrivalSpawnId');
+      if(reverse)url.searchParams.set('arrivalPortalId',reverse.id);
+      else url.searchParams.set('arrivalSpawnId',portal.targetSpawnId);
       window.location.assign(url.href);
     }catch(error){sculptWorldStatus('Zone cible : '+error.message,true);}
   });
@@ -7604,9 +7617,18 @@ function installSculptWorldAreaEditing(){
   },{once:true});
   try{
     mountWorldSculptArea(transfer.areaId);
-    const arrivalId=new URL(window.location.href).searchParams.get('arrivalSpawnId');
+    const arrivalParams=new URL(window.location.href).searchParams;
+    const arrivalId=arrivalParams.get('arrivalSpawnId');
+    const arrivalPortal=worldOutboundPortals().find(p=>p.id===arrivalParams.get('arrivalPortalId')&&buildingDoorCounterpart(sculptWorldDraft,p));
     const selectedArrival=sculptWorldArea().spawns.find(p=>p.id===arrivalId);
-    if(selectedArrival&&!selectedArrival.anchor){
+    if(arrivalPortal){
+      $('world-area-portal-select').value=arrivalPortal.id;
+      selectedWaypointKey='portal:'+arrivalPortal.id;
+      sculptWorldPortalPlacement='portal';
+      $('world-area-portal-panel').open=false;
+      refreshSculptWorldPanel();
+      sculptWorldStatus('Touche le terrain pour déplacer le repère partagé de la porte (entrée et sortie).');
+    }else if(selectedArrival&&!selectedArrival.anchor){
       $('world-area-spawn-select').value=selectedArrival.id;
       sculptWorldPortalPlacement='spawn';
       $('world-area-portal-panel').open=false;
