@@ -241,7 +241,7 @@ body.sculpt-immersive #sphere-profile-wrap{background:#193b43eb;box-shadow:inset
 /* Compact native shadow settings, collapsed by default and touch-friendly. */
 #object-shadow-details{border:1px solid #4f8980;border-radius:9px;
  background:#173840ab;padding:5px 7px;min-width:0}
-#object-shadow-details[hidden],#object-shadow-fields[hidden]{display:none!important}
+#object-shadow-details[hidden],#object-shadow-fields[hidden],#world-light-fields[hidden]{display:none!important}
 #object-shadow-details summary{cursor:pointer;min-height:34px;display:flex;
  align-items:center;gap:5px;font-weight:750;touch-action:manipulation}
 #object-shadow-details summary::marker{color:#92e7ce}
@@ -1580,6 +1580,8 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
     <input id="object-shadow-x" type="range" min="-60" max="60" step="2" value="0"></label>
    <label>Décalage vertical <output id="object-shadow-y-value">0 %</output>
     <input id="object-shadow-y" type="range" min="-60" max="60" step="2" value="0"></label>
+   <label>Rotation de l’ombre <output id="object-shadow-rotation-value">0°</output>
+    <input id="object-shadow-rotation" type="range" min="0" max="360" step="5" value="0"><small>0° = direction héritée (d’origine sans éclairage global)</small></label>
    <label>Opacité <output id="object-shadow-opacity-value">25 %</output>
     <input id="object-shadow-opacity" type="range" min="5" max="65" step="5" value="25"></label>
   </div>
@@ -1974,6 +1976,29 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 </section>
  </div>
 </details>
+<details class="sculpt-tool-group" id="world-lighting-panel">
+ <summary>☀ Éclairage et ambiance <small>Réglages du monde</small></summary>
+ <div class="sculpt-tool-group-content">
+  <label><input type="checkbox" id="world-light-enabled"> Activer l’éclairage personnalisé</label>
+  <div id="world-light-fields" class="sculpt-tool-group-content" hidden>
+   <small>Direction commune : 0° droite, 90° bas. Les exceptions d’objets et de modèles restent prioritaires.</small>
+   <label class="control">Orientation globale <output id="world-light-directionDeg-value">45°</output><input id="world-light-directionDeg" type="range" min="0" max="359" value="45"></label>
+<label class="control">Opacité des ombres <output id="world-light-shadowOpacityPct-value">35%</output><input id="world-light-shadowOpacityPct" type="range" min="0" max="65" value="35"></label>
+<label class="control">Aplatissement <output id="world-light-flattenPct-value">40%</output><input id="world-light-flattenPct" type="range" min="15" max="100" value="40"></label>
+   <label>Couleur des ombres <input id="world-light-shadowColor" type="color" value="#1a1b3a"></label>
+   <label class="control">Occlusion ambiante <output id="world-light-ambientOcclusionPct-value">25%</output><input id="world-light-ambientOcclusionPct" type="range" min="0" max="50" value="25"></label>
+<label class="control">Lumière chaude <output id="world-light-warmthPct-value">8%</output><input id="world-light-warmthPct" type="range" min="0" max="30" value="8"></label>
+   <label>Teinte lumineuse <input id="world-light-warmColor" type="color" value="#ffdc9b"></label>
+   <label><input type="checkbox" id="world-light-cloudsEnabled"> Ombres de nuages animées (extérieur)</label>
+   <label class="control">Opacité des nuages <output id="world-light-cloudOpacityPct-value">10%</output><input id="world-light-cloudOpacityPct" type="range" min="0" max="25" value="10"></label>
+<label class="control">Vitesse des nuages <output id="world-light-cloudSpeed-value">12</output><input id="world-light-cloudSpeed" type="range" min="0" max="60" value="12"></label>
+<label class="control">Taille des nuages <output id="world-light-cloudSize-value">500</output><input id="world-light-cloudSize" type="range" min="150" max="1200" value="500"></label>
+<label class="control">Direction des nuages <output id="world-light-cloudDirectionDeg-value">45°</output><input id="world-light-cloudDirectionDeg" type="range" min="0" max="359" value="45"></label>
+  </div>
+  <button type="button" id="world-light-reset">Restaurer le rendu d’origine</button>
+  <small>Enregistré avec le monde par la commande habituelle. Aperçu direct dans l’éditeur et Tester.</small>
+ </div>
+</details>
 <details class="sculpt-tool-group">
  <summary>🌳 Bordures décoratives <small>Zone hors jeu</small></summary>
  <div class="sculpt-tool-group-content"><label id="scenery-fringe-panel" hidden style="gap:.55rem;align-items:center;padding:.42rem .7rem;flex-wrap:wrap">
@@ -2000,6 +2025,6 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
 <footer><span id="notice" role="status">Choisissez un pinceau et peignez sur le terrain.</span><span id="stats"></span></footer>
 
 </main>
-<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118"></script>
+<script type="module" src="./src/sculpt-lab-main.js?rev=sculpt-bridge-deck-anchor-v67-mask-v68-grade-v69-deck-v70-rails-v71-directions-v72-vertical-v73-assets-v74-waterfalls-v3-cliff-lock-v75-north-r2-sphere-v76-volume-r2-plateau-textures-r3-smooth-r4-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-stairs-visible-r15-stairs-dynamic-v78-stairs-depth-perspective-r2-natural-ramp-v77-ground-sculpt-v77-r2-touch-ux-r3-interior-v79-r2-interior-r3e-polygon-camera-balance-no-stair-arrow-encounter-editor-v1-world-portal-v1-compact-ux-v1-markers-v2-map-presets-v3-house-interiors-v1-test-hud-edge-gates-v1-legacy-return-v1-playable-routes-v1-preset-travel-encounters-v2-exploration-mobile-real-play-r2-navigation-raf-pacing-v1-author-maps-three-v1-npc-visual-v2-npc-catalog-retry-v1-combat-arena-v1-trainer-encounters-v1-trainer-engagement-v1-trainer-test-paths-v1-relief-16-dense-forest-depth-20261115-shadow-model-profiles-world-interior-tools-20261115-hero-cliff-mixed-depth-c3-20261116-library-ux-20261118-world-lighting-20261125"></script>
 </body>
 </html>

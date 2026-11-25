@@ -1,0 +1,115 @@
+import test from 'node:test';
+import {readFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {normalizeWorldLightingV1,worldShadowLocalRotationV1} from '../src/world/world-lighting-v1.js';
+import {normalizeWorldDocument} from '../src/world/world-document-model.js';
+import {createWorldBuilderDraft} from '../src/builder/world-builder-draft.js';
+import {worldObjectShadowProjectionV1} from '../src/render/world-object-renderer.js';
+import {drawSculptWarmLightV1,drawSculptWorldCloudShadowsV1,sculptCloudWorldViewportV1} from '../src/render/sculpt-world-lighting-v1.js';
+import {sculptCameraGameView,sculptCameraProject} from '../src/render/sculpt-camera-projection.js';
+test('lighting is opt-in; canonical world document and draft preserve it',()=>{
+ const legacy=normalizeWorldDocument({});
+ assert.equal(Object.hasOwn(legacy,'lighting'),false);
+ const l=normalizeWorldLightingV1({enabled:true,directionDeg:-90,shadowColor:'bad',shadowOpacityPct:120,cloudsEnabled:true});
+ assert.equal(l.directionDeg,270);assert.equal(l.shadowColor,'#1a1b3a');
+ assert.equal(l.shadowOpacityPct,65);assert.equal(l.cloudsEnabled,true);
+ const world=normalizeWorldDocument({...legacy,lighting:l});
+ assert.deepEqual(createWorldBuilderDraft(JSON.parse(JSON.stringify(world))).lighting,l);
+ assert.equal(Object.hasOwn(normalizeWorldDocument({...world,lighting:{enabled:false}}),'lighting'),false);
+});
+test('global direction survives local rotation and mirroring',()=>{
+ for(const direction of [0,45,90,180,270])for(const a of [0,.5,Math.PI/2])for(const mirror of [false,true]){
+  const flatten=.4,shear=-.48,theta=worldShadowLocalRotationV1(direction,a,mirror,flatten,shear);
+  const x=-shear*Math.cos(theta)+flatten*Math.sin(theta),y=-shear*Math.sin(theta)-flatten*Math.cos(theta);
+  const m=mirror?-1:1,wx=m*x*Math.cos(a)-y*Math.sin(a),wy=m*x*Math.sin(a)+y*Math.cos(a);
+  const target=direction*Math.PI/180;
+  assert.ok(Math.abs(Math.atan2(wy,wx)-target)<1e-9||Math.abs(Math.sin(Math.atan2(wy,wx)-target))<1e-9&&Math.cos(Math.atan2(wy,wx)-target)>.99);
+ }
+});
+test('global projection settings, explicit opacity exception and old maps',()=>{
+ const args={width:100,height:200};
+ const legacy=worldObjectShadowProjectionV1(args);
+ const lighting=normalizeWorldLightingV1({enabled:true});
+ const modern=worldObjectShadowProjectionV1({...args,lighting});
+ assert.equal(legacy.opacity,.25);assert.equal(legacy.flatten,.38);
+ assert.equal(modern.opacity,.35);assert.equal(modern.flatten,.4);
+ assert.equal(modern.footY,legacy.footY);
+ assert.equal(worldObjectShadowProjectionV1({...args,lighting,shadow:{mode:'custom',opacityPct:15}}).opacity,.15);
+});
+test('disabled effects do not draw or require a DOM',()=>{
+ assert.equal(drawSculptWarmLightV1(null,{lighting:null}),false);
+ assert.equal(drawSculptWorldCloudShadowsV1(null,{lighting:null}),0);
+});
+test('warm light restores existing canvas transform',()=>{
+ const calls=[];
+ const ctx={save(){calls.push('save')},restore(){calls.push('restore')},setTransform(...v){calls.push(v)},fillRect(...v){calls.push(v)}};
+ assert.equal(drawSculptWarmLightV1(ctx,{lighting:normalizeWorldLightingV1({enabled:true}),width:400,height:200,dpr:2}),true);
+ assert.deepEqual(calls,['save',[2,0,0,2,0,0],[0,0,400,200],'restore']);
+});
+
+test('standalone scene export and import retain opt-in lighting without changing legacy scene shape',async()=>{
+ const {createBlankSculptPreviewScene,serializeSculptPreviewScene,importSculptPreviewScene}=await import('../src/world/sculpt-scene-preview.js');
+ const scene=createBlankSculptPreviewScene({width:36,height:24});
+ const l=normalizeWorldLightingV1({enabled:true,cloudsEnabled:true,directionDeg:120});
+ const legacy=serializeSculptPreviewScene(scene.terrain,scene.objects,scene.surface,scene.actors);
+ const modern=serializeSculptPreviewScene(scene.terrain,scene.objects,scene.surface,scene.actors,null,[],l);
+ assert.equal(Object.hasOwn(JSON.parse(legacy),'lighting'),false);
+ assert.deepEqual(importSculptPreviewScene(modern).lighting,l);
+});
+test('cloud mask is cached, world-anchored and moves without generating a new canvas',()=>{
+ const previous=globalThis.document;
+ let allocations=0;
+ const gradient={addColorStop(){}};
+ const maskCtx={save(){},restore(){},translate(){},scale(){},createRadialGradient(){return gradient},fillRect(){}};
+ globalThis.document={createElement(){allocations++;return {getContext(){return maskCtx}}}};
+ try{
+  const draws=[];
+  const ctx={save(){},restore(){},beginPath(){},rect(){},clip(){},drawImage(_mask,...v){draws.push(v)}};
+  const lighting=normalizeWorldLightingV1({enabled:true,cloudsEnabled:true,cloudSpeed:20,cloudDirectionDeg:0});
+  const args={lighting,width:1008,height:504,viewport:{minX:0,maxX:700,minY:0,maxY:450}};
+  const n=drawSculptWorldCloudShadowsV1(ctx,{...args,timeSeconds:0});
+  assert.ok(n>0&&n<100);
+  const first=draws.splice(0);
+  assert.ok(drawSculptWorldCloudShadowsV1(ctx,{...args,timeSeconds:1})>0);
+  assert.notDeepEqual(draws,first);assert.equal(allocations,1);
+ }finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
+});
+
+test('cloud bounds invert the authoritative 35 degree camera before world culling',()=>{
+ const view=sculptCameraGameView(35),hero={x:2000,y:2000};
+ const projected=sculptCameraProject(view,hero.x,hero.y);
+ const viewport={minX:projected.x-160,maxX:projected.x+160,
+  minY:projected.y-150,maxY:projected.y+150};
+ const bounds=sculptCloudWorldViewportV1(viewport,view);
+ assert.ok(bounds.minX<=hero.x&&bounds.maxX>=hero.x);
+ assert.ok(bounds.minY<=hero.y&&bounds.maxY>=hero.y);
+ assert.ok(!(viewport.minY<=hero.y&&viewport.maxY>=hero.y),
+  'raw projected viewport would incorrectly cull clouds near the hero');
+ assert.deepEqual(sculptCloudWorldViewportV1(viewport,sculptCameraGameView(90)),
+  {minX:viewport.minX,maxX:viewport.maxX,minY:viewport.minY,maxY:viewport.maxY});
+});
+test('standalone map presets retain opt-in lighting on create, import and local save',async()=>{
+ const {createBlankSculptPreviewScene}=await import('../src/world/sculpt-scene-preview.js');
+ const {createSculptMapPreset,importSculptMapPreset,saveSculptMapPreset,readSculptMapPresets}=
+  await import('../src/builder/sculpt-map-preset-library.js');
+ const scene=createBlankSculptPreviewScene({width:36,height:24});
+ const lighting=normalizeWorldLightingV1({enabled:true,cloudsEnabled:true,directionDeg:135});
+ const authored={...scene,lighting};
+ const preset=createSculptMapPreset(authored,{name:'Carte lumineuse'});
+ assert.deepEqual(preset.scene.lighting,lighting);
+ assert.deepEqual(importSculptMapPreset(JSON.stringify(preset)).scene.lighting,lighting);
+ const entries=new Map(),storage={
+  getItem:key=>entries.get(key)??null,setItem:(key,value)=>entries.set(key,value),
+  removeItem:key=>entries.delete(key)
+ };
+ saveSculptMapPreset(storage,authored,'Carte lumineuse');
+ assert.deepEqual(readSculptMapPresets(storage)[0].scene.lighting,lighting);
+ assert.equal(Object.hasOwn(createSculptMapPreset(scene,{name:'Ancienne carte'}).scene,'lighting'),false);
+});
+test('interior area changes preserve shared standalone lighting, explicit scene loads restore it',async()=>{
+ const code=await readFile(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(code,/function mountSculptArea\(snapshot,\{preserveSharedLighting=false\}=\{\}\)/);
+ assert.match(code,/!preserveSharedLighting&&\(!activeInteriorId\|\|snapshot\.lighting!==undefined\)/);
+ assert.match(code,/mountSculptArea\(outsideAreaSnapshot,\{preserveSharedLighting:true\}\)/);
+ assert.match(code,/mountSculptArea\(entry,\{preserveSharedLighting:true\}\)/);
+});

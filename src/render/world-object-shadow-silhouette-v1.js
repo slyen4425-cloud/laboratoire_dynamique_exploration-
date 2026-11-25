@@ -3,10 +3,11 @@
 import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterfalls-v3';
 const shadowSilhouettes=new WeakMap();
 
-export function worldObjectShadowMaskV1(image,asset){
+export function worldObjectShadowMaskV1(image,asset,color='#081116'){
  if(!image||typeof image!=='object')return null;
  const doc=image.ownerDocument??globalThis.document;
- if(shadowSilhouettes.has(image))return shadowSilhouettes.get(image);
+ const cached=shadowSilhouettes.get(image);
+ if(cached?.color===color)return cached.mask;
  if(typeof doc?.createElement!=='function')return null;
  const frame=asset?.animation;
  const srcW=Number.isFinite(frame?.frameWidth)?frame.frameWidth:(image.naturalWidth??image.width);
@@ -30,11 +31,11 @@ export function worldObjectShadowMaskV1(image,asset){
   }
   if(right<left)return null;
   c.globalCompositeOperation='source-in';
-  c.fillStyle='#081116';c.fillRect(0,0,w,h);
+  c.fillStyle=color;c.fillRect(0,0,w,h);
   c.globalCompositeOperation='source-over';
   const base=Object.freeze({canvas,w,h,left,top,right:1+right,bottom:1+bottom,
    bottomColumns:Object.freeze(bottomColumns)});
-  shadowSilhouettes.set(image,base);
+  shadowSilhouettes.set(image,{color,mask:base});
   return base;
  }catch{return null;}
 }

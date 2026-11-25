@@ -67,6 +67,8 @@ import {readScopedAdventureHeroSelectionV1,readScopedAdventureHeroDisplayNameV1}
 import {resolveWorldObjectAsset} from './assets/world-object-asset-adapter.js?rev=waterfalls-v3';
 import {drawWorldObjectSprite} from './render/world-object-frame-selector.js?rev=waterfalls-v3';
 import {drawWorldObjectContactShadowV1} from './render/world-object-renderer.js';
+import {normalizeWorldLightingV1,WORLD_LIGHTING_DEFAULT_V1} from './world/world-lighting-v1.js';
+import {drawSculptWarmLightV1,drawSculptWorldCloudShadowsV1} from './render/sculpt-world-lighting-v1.js';
 import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,normalizeWorldObjectShadowProfilesV1,worldObjectShadowProfileForAssetV1,setWorldObjectShadowProfileV1} from './world/world-object-shadow-settings-v1.js?rev=shadow-model-profiles-20261115';
 import {createSculptPlayObjectDrawCacheV1} from './render/sculpt-play-object-draw-cache-v1.js';
 import {prepareSculptBridgeImage} from './assets/sculpt-bridge-alpha.js?rev=sculpt-bridge-foot-clean-v58';
@@ -228,6 +230,7 @@ let stairTraceMode=false,stairTraceOwnerId=null,stairTraceStart=null,stairTraceG
  // A standalone Sculpt preview can export the same official profile format;
  // the WorldBuilder path instead edits its ONE canonical world record.
  let sculptStandaloneShadowProfiles=Object.freeze([]);
+ let sculptStandaloneLighting=null,sculptLightingPreview=undefined;
  let shadowProfileHistory=[],shadowProfileRedo=[];
 let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=[];
 // A single transient runtime projection; WorldArea.actors is never advanced by gameplay.
@@ -940,7 +943,7 @@ function navigationCameraZoom(){return Math.max(1,Math.min(2.4,Number($('navigat
    camera and height data retain their existing owners and update separately. */
 function navigationBackground(){
   const rockPalette=$('rock').value,materialId=displayedBaseMaterialId();
-  const signature=[rockPalette,materialId,
+  const signature=[rockPalette,materialId,currentSculptLighting()?.ambientOcclusionPct??'legacy',
     cliffAtlasReady,cliffHDLoaded,!!$('rock-moss')?.checked,
      sphereTexturesLoaded,
     ribbonTextures.water?.visible,ribbonTextures.road?.visible,
@@ -967,6 +970,7 @@ function navigationBackground(){
     overlays:ribbonTextures,
      sphereWallImages,
     paintSurface:surface,paintImages:surfacePaintImages,
+    ambientOcclusionPct:currentSculptLighting()?.ambientOcclusionPct??null,
     drawOuterSouthRim:false});
   // Pre-#468 paint order: cache one native terrain raster, then draw
   // objects/actors normally. Never build an extra cliff alpha overlay.
@@ -1390,6 +1394,7 @@ function draw(){
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
       sphereWallImages,overlays:ribbonTextures,paintSurface:surface,paintImages:surfacePaintImages,
+      ambientOcclusionPct:currentSculptLighting()?.ambientOcclusionPct??null,
       drawOuterSouthRim:false});
   }
   lastRenderStats=result;
@@ -1500,6 +1505,16 @@ function draw(){
   // WorldArea. Composite it after hero/objects so trees do not sink behind
   // the playable scene. No saved Y position, mask or collision is changed.
   drawDecorativeFringeObjects('front');
+  const lighting=currentSculptLighting();
+  if(lighting){
+    if(!activeInteriorId&&!sculptWorldCurrentInterior()){
+      ctx.save();if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
+      drawSculptWorldCloudShadowsV1(ctx,{lighting,width:terrain.width*SCULPT_TILE.width,
+        height:terrain.height*SCULPT_TILE.height,timeSeconds:performance.now()/1000,viewport:previewObjectViewport,camera:view});
+      ctx.restore();
+    }
+    drawSculptWarmLightV1(ctx,{lighting,width,height,dpr});
+  }
   // Author-approved rollback: the terrain has already been fully painted.
   // Keep the original object/actor Y-order above it (before PR #468).
   // No later cliff-mask replay may cut a tree, building or the hero.
@@ -1699,13 +1714,15 @@ function draw(){
 // The existing Sculpt renderer remains the sole drawing path.
 let waterfallPumpHandle=0,waterfallLastPaintMs=0;
 function waterfallPresent(){return placedObjects.some(o=>Boolean(resolveWorldObjectAsset(o.visual?.assetId)?.animation));}
+function animatedSceneryPresent(){const l=currentSculptLighting();return waterfallPresent()||
+  !!(l?.cloudsEnabled&&l.cloudOpacityPct&&l.cloudSpeed&&!activeInteriorId&&!sculptWorldCurrentInterior());}
 function pumpWaterfallFrame(now){
-  if(!waterfallPresent()){waterfallPumpHandle=0;return;}
+  if(!animatedSceneryPresent()){waterfallPumpHandle=0;return;}
   if(now-waterfallLastPaintMs>=83){waterfallLastPaintMs=now;if(!navigationTesting)scheduleDraw();}
   waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function ensureWaterfallPump(){
-  if(!waterfallPumpHandle&&waterfallPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
+  if(!waterfallPumpHandle&&animatedSceneryPresent())waterfallPumpHandle=requestAnimationFrame(pumpWaterfallFrame);
 }
 function scheduleDraw(){
   if(!sculptBootReady)return; // The single boot boundary, not a retry loop.
@@ -3932,9 +3949,10 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
   if(!foregroundRailOnly)drawWorldObjectContactShadowV1(ctx,{
     kind:object.kind,width,height,footOffset:artShift,
     pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
+    lighting:currentSculptLighting(),objectAngle:rect.angle,flipX:object.transform?.flipX===true,
     shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
       ($('object-shadow-scope').value==='object'?
-        readSelectedObjectShadowControlsV1():sharedShadow):sharedShadow
+        (readSelectedObjectShadowControlsV1()??modelShadow):sharedShadow):sharedShadow
   });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
@@ -4009,6 +4027,44 @@ function refreshObjectVariants(preferred=null){
     $('object-variant').value=wanted;
   }
 }
+function currentSculptLighting(){
+ return sculptLightingPreview!==undefined?sculptLightingPreview:
+  (sculptWorldDraft?sculptWorldDraft.lighting??null:sculptStandaloneLighting);
+}
+const lightingFieldNames=Object.keys(WORLD_LIGHTING_DEFAULT_V1);
+function syncSculptLightingControls(){
+ if(!$('world-light-enabled'))return;
+ const l=currentSculptLighting(),values=l??WORLD_LIGHTING_DEFAULT_V1;
+ $('world-light-enabled').checked=!!l;$('world-light-fields').hidden=!l;
+ for(const name of lightingFieldNames){const input=$('world-light-'+name);
+  if(input.type==='checkbox')input.checked=values[name];else input.value=String(values[name]);
+  const output=$('world-light-'+name+'-value');if(output)output.textContent=input.value+(name.endsWith('Deg')?'°':name.endsWith('Pct')?' %':'');
+ }
+}
+function readSculptLightingControls(){
+ const raw={enabled:$('world-light-enabled').checked};
+ for(const name of lightingFieldNames){const input=$('world-light-'+name);
+  raw[name]=input.type==='checkbox'?input.checked:input.type==='range'?Number(input.value):input.value;
+  const output=$('world-light-'+name+'-value');if(output)output.textContent=input.value+(name.endsWith('Deg')?'°':name.endsWith('Pct')?' %':'');
+ }
+ return normalizeWorldLightingV1(raw);
+}
+function commitSculptLighting(next){
+ if(sculptPlayActive)return;
+ sculptLightingPreview=undefined;
+ if(sculptWorldDraft)sculptWorldDraft=createWorldBuilderDraft({...sculptWorldDraft,lighting:next});
+ else sculptStandaloneLighting=next;
+ syncSculptLightingControls();scheduleDraw();
+}
+if($('world-light-enabled')){
+ $('world-light-enabled').addEventListener('change',()=>commitSculptLighting(readSculptLightingControls()));
+ for(const name of lightingFieldNames){const input=$('world-light-'+name);
+  input.addEventListener('input',()=>{if(sculptPlayActive)return;sculptLightingPreview=readSculptLightingControls();scheduleDraw();});
+  input.addEventListener('change',()=>commitSculptLighting(readSculptLightingControls()));
+ }
+ $('world-light-reset').addEventListener('click',()=>commitSculptLighting(null));
+ syncSculptLightingControls();
+}
 function currentWorldShadowProfiles(){
  return sculptWorldDraft?(sculptWorldDraft.objectShadowProfiles??[]):sculptStandaloneShadowProfiles;
 }
@@ -4054,7 +4110,8 @@ function readSelectedObjectShadowControlsV1(){
   heightPct:Number($('object-shadow-height').value),
   offsetXPct:Number($('object-shadow-x').value),
   offsetYPct:Number($('object-shadow-y').value),
-  opacityPct:Number($('object-shadow-opacity').value)
+  opacityPct:Number($('object-shadow-opacity').value),
+  rotationDeg:Number($('object-shadow-rotation').value)
  });
 }
 function refreshSelectedObjectShadowControlsV1(selected){
@@ -4084,11 +4141,11 @@ function refreshSelectedObjectShadowControlsV1(selected){
  $('object-shadow-mode').value=shadow?'custom':'auto';
  for(const [control,key] of [
   ['width','widthPct'],['height','heightPct'],['x','offsetXPct'],
-  ['y','offsetYPct'],['opacity','opacityPct']
+  ['y','offsetYPct'],['opacity','opacityPct'],['rotation','rotationDeg']
  ]){
   const input=$('object-shadow-'+control);
-  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]);
-  $('object-shadow-'+control+'-value').textContent=input.value+' %';
+  input.value=String((shadow??(!model?modelValue:null)??WORLD_OBJECT_SHADOW_DEFAULT_V1)[key]??0);
+  $('object-shadow-'+control+'-value').textContent=input.value+(control==='rotation'?'°':' %');
  }
  $('object-shadow-fields').hidden=!shadow;
  $('object-shadow-summary').textContent=(model?'Modèle · ':'')+(shadow?'Personnalisée':(!model&&modelValue?'Héritée du modèle':'Auto'));
@@ -5243,10 +5300,10 @@ $('object-shadow-mode').addEventListener('change',()=>{
  $('object-shadow-summary').textContent=$('object-shadow-mode').value==='custom'?'Personnalisée':'Auto';
  applySelectedShadowControl();
 });
-for(const id of ['width','height','x','y','opacity']){
+for(const id of ['width','height','x','y','opacity','rotation']){
  const input=$('object-shadow-'+id);
  input.addEventListener('input',()=>{
-  $('object-shadow-'+id+'-value').textContent=input.value+' %';
+  $('object-shadow-'+id+'-value').textContent=input.value+(id==='rotation'?'°':' %');
   scheduleDraw();
  });
  input.addEventListener('change',applySelectedShadowControl);
@@ -5894,9 +5951,10 @@ function captureSculptArea(){
   return {terrain,objects:placedObjects,actors:placedActors,surface,
     ...(!sculptWorldDraft&&sculptStandaloneShadowProfiles.length
       ?{objectShadowProfiles:sculptStandaloneShadowProfiles}:{}),
+    ...(!sculptWorldDraft&&sculptStandaloneLighting?{lighting:sculptStandaloneLighting}:{}),
     ...(decorativeFringe?{decorativeFringe}:{})};
 }
-function mountSculptArea(snapshot){
+function mountSculptArea(snapshot,{preserveSharedLighting=false}={}){
   // One read-only presentation label; WorldArea/WorldSurface remains sole
   // source of the loaded map and gameplay settings.
   if($('sculpt-map-preset-loaded'))
@@ -5909,7 +5967,11 @@ function mountSculptArea(snapshot){
   if(!sculptWorldDraft&&(!activeInteriorId||snapshot.objectShadowProfiles!==undefined))
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
       snapshot.objectShadowProfiles);
-  if(!sculptWorldDraft){shadowProfileHistory=[];shadowProfileRedo=[];}
+  if(!sculptWorldDraft){shadowProfileHistory=[];shadowProfileRedo=[];
+    if(!preserveSharedLighting&&(!activeInteriorId||snapshot.lighting!==undefined))
+      sculptStandaloneLighting=normalizeWorldLightingV1(snapshot.lighting);
+  }
+  sculptLightingPreview=undefined;syncSculptLightingControls();
   decorativeFringe=snapshot.decorativeFringe??null;
   fringeEditing=false;fringeGesture=null;fringeHistory=[];fringeRedo=[];
   fringeRasterCache.clear();
@@ -6047,13 +6109,13 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   }
   if(nextAreaId===SCULPT_EXTERIOR_AREA_ID){
     if(!outsideAreaSnapshot)throw Error('Extérieur non chargé');
-    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot);
+    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot,{preserveSharedLighting:true});
     outsideAreaSnapshot=null;
   }else{
     const entry=sculptInteriors.find(e=>e.area.id===nextAreaId);
     if(!entry)throw Error('Intérieur introuvable');
     activeInteriorId=entry.area.id;
-    mountSculptArea(entry);
+    mountSculptArea(entry,{preserveSharedLighting:true});
   }
   updateSculptAreaControls();refreshSculptEncounterEditor();fit();
   if(wasTesting){
@@ -6324,7 +6386,7 @@ $('scene-export').addEventListener('click',()=>{
       outdoors.objects,outdoors.surface,outdoors.actors,{
         encounterConfig:sculptEncounterConfig,
         exteriorEncounters:sculptExteriorEncounters
-      },currentWorldShadowProfiles()));
+      },currentWorldShadowProfiles(),currentSculptLighting()));
   }catch(error){
     status('Export bloqué : '+error.message);
     return;
@@ -6358,6 +6420,7 @@ $('import').addEventListener('click',()=>{
   placedObjects=imported.objects;objectHistory=[];objectRedo=[];objectSelectedId=null;
   if(!sculptWorldDraft){
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(imported.objectShadowProfiles);
+    sculptStandaloneLighting=normalizeWorldLightingV1(imported.lighting);sculptLightingPreview=undefined;syncSculptLightingControls();
     shadowProfileHistory=[];shadowProfileRedo=[];
   }
   updateObjectCount();syncObjectSelectedControls();

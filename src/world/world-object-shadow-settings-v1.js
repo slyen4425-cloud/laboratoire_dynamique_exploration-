@@ -18,12 +18,19 @@ export function normalizeWorldObjectShadowSettingsV1(raw){
   next[name]=Number.isFinite(value)?Math.max(min,Math.min(max,Math.round(value))):
    WORLD_OBJECT_SHADOW_DEFAULT_V1[name];
  }
+ // Missing or zero rotation preserves historical serialized settings and rendering.
+ const degrees=Number(raw.rotationDeg);
+ if(Number.isFinite(degrees)){
+  const rotationDeg=((Math.round(degrees)%360)+360)%360;
+  if(rotationDeg)next.rotationDeg=rotationDeg;
+ }
  return Object.freeze(next);
 }
 export function worldObjectShadowSettingsEqualV1(a,b){
  const lhs=normalizeWorldObjectShadowSettingsV1(a),rhs=normalizeWorldObjectShadowSettingsV1(b);
  if(!lhs||!rhs)return lhs===rhs;
- return Object.keys(WORLD_OBJECT_SHADOW_DEFAULT_V1).every(key=>lhs[key]===rhs[key]);
+ return Object.keys(WORLD_OBJECT_SHADOW_DEFAULT_V1).every(key=>lhs[key]===rhs[key])&&
+  (lhs.rotationDeg??0)===(rhs.rotationDeg??0);
 }
 
 
