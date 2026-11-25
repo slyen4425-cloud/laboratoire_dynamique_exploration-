@@ -29,7 +29,7 @@ export function importSculptMapPreset(raw){
   const validated=importSculptPreviewScene(value.scene);
   const scene=JSON.parse(serializeSculptPreviewScene(validated.terrain,
     validated.objects,validated.surface,validated.actors,null,
-    validated.objectShadowProfiles??[]));
+    validated.objectShadowProfiles??[],validated.lighting??null));
   // The optional authored outside ring belongs to the SAME future WorldArea.
   // Validate it against the actual native terrain dimensions; never persist
   // a separate visual catalog or silently drop the creator's painted border.
@@ -44,7 +44,7 @@ export function importSculptMapPreset(raw){
 export function createSculptMapPreset(scene,{name='Ma carte',id='map-preset-1'}={}){
   const source=JSON.parse(serializeSculptPreviewScene(
     scene?.terrain,scene?.objects??[],scene?.surface,scene?.actors??[],null,
-    scene?.objectShadowProfiles??[]));
+    scene?.objectShadowProfiles??[],scene?.lighting??null));
   if(scene?.decorativeFringe!=null)source.decorativeFringe=scene.decorativeFringe;
   return importSculptMapPreset({kind:SCULPT_MAP_PRESET_KIND,version:1,
     id,name:nameOf(name),scene:source});

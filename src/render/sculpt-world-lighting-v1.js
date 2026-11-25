@@ -1,3 +1,4 @@
+import {sculptCameraUnproject} from './sculpt-camera-projection.js';
 // One cached cloud mask; only compositing runs on the native frame.
 let cloudMask=null;
 function getCloudMask(){
@@ -13,15 +14,31 @@ function getCloudMask(){
  }
  return cloudMask=canvas;
 }
-export function drawSculptWorldCloudShadowsV1(ctx,{lighting,width,height,timeSeconds=0,viewport}){
+// Viewport coordinates have had pan/zoom removed, but still carry the native
+// camera pitch and shear. Reuse Camera's exact inverse for world-space culling.
+export function sculptCloudWorldViewportV1(viewport,camera){
+ if(!viewport||!camera)return viewport??null;
+ const corners=[
+  sculptCameraUnproject(camera,viewport.minX,viewport.minY),
+  sculptCameraUnproject(camera,viewport.minX,viewport.maxY),
+  sculptCameraUnproject(camera,viewport.maxX,viewport.minY),
+  sculptCameraUnproject(camera,viewport.maxX,viewport.maxY)
+ ];
+ return Object.freeze({minX:Math.min(...corners.map(p=>p.x)),
+  maxX:Math.max(...corners.map(p=>p.x)),
+  minY:Math.min(...corners.map(p=>p.y)),
+  maxY:Math.max(...corners.map(p=>p.y))});
+}
+export function drawSculptWorldCloudShadowsV1(ctx,{lighting,width,height,timeSeconds=0,viewport,camera}){
  if(!lighting?.cloudsEnabled||!lighting.cloudOpacityPct)return 0;
  const mask=getCloudMask();if(!mask)return 0;
  const size=lighting.cloudSize,step=size*1.75,angle=lighting.cloudDirectionDeg*Math.PI/180;
  const dx=timeSeconds*lighting.cloudSpeed*Math.cos(angle),dy=timeSeconds*lighting.cloudSpeed*Math.sin(angle);
  const mod=x=>((x%step)+step)%step;
- // Draw only visible clouds, with a world-anchored repeat pattern.
- const minX=Math.max(-size,viewport?.minX??0)-size,minY=Math.max(-size,viewport?.minY??0)-size;
- const maxX=Math.min(width+size,viewport?.maxX??width)+size,maxY=Math.min(height+size,viewport?.maxY??height)+size;
+ // Draw only visible clouds in WORLD space after camera unprojection.
+ const worldViewport=sculptCloudWorldViewportV1(viewport,camera);
+ const minX=Math.max(-size,worldViewport?.minX??0)-size,minY=Math.max(-size,worldViewport?.minY??0)-size;
+ const maxX=Math.min(width+size,worldViewport?.maxX??width)+size,maxY=Math.min(height+size,worldViewport?.maxY??height)+size;
  const ox=mod(dx),oy=mod(dy);
  ctx.save();ctx.beginPath();ctx.rect(0,0,width,height);ctx.clip();ctx.globalAlpha=lighting.cloudOpacityPct/100;
  let count=0;

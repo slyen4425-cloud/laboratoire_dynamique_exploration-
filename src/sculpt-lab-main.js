@@ -1510,7 +1510,7 @@ function draw(){
     if(!activeInteriorId&&!sculptWorldCurrentInterior()){
       ctx.save();if(navigationTesting)ctx.transform(1,view.shear,0,view.pitch,0,0);
       drawSculptWorldCloudShadowsV1(ctx,{lighting,width:terrain.width*SCULPT_TILE.width,
-        height:terrain.height*SCULPT_TILE.height,timeSeconds:performance.now()/1000,viewport:previewObjectViewport});
+        height:terrain.height*SCULPT_TILE.height,timeSeconds:performance.now()/1000,viewport:previewObjectViewport,camera:view});
       ctx.restore();
     }
     drawSculptWarmLightV1(ctx,{lighting,width,height,dpr});
@@ -5954,7 +5954,7 @@ function captureSculptArea(){
     ...(!sculptWorldDraft&&sculptStandaloneLighting?{lighting:sculptStandaloneLighting}:{}),
     ...(decorativeFringe?{decorativeFringe}:{})};
 }
-function mountSculptArea(snapshot){
+function mountSculptArea(snapshot,{preserveSharedLighting=false}={}){
   // One read-only presentation label; WorldArea/WorldSurface remains sole
   // source of the loaded map and gameplay settings.
   if($('sculpt-map-preset-loaded'))
@@ -5968,7 +5968,8 @@ function mountSculptArea(snapshot){
     sculptStandaloneShadowProfiles=normalizeWorldObjectShadowProfilesV1(
       snapshot.objectShadowProfiles);
   if(!sculptWorldDraft){shadowProfileHistory=[];shadowProfileRedo=[];
-    if(!activeInteriorId||snapshot.lighting!==undefined)sculptStandaloneLighting=normalizeWorldLightingV1(snapshot.lighting);
+    if(!preserveSharedLighting&&(!activeInteriorId||snapshot.lighting!==undefined))
+      sculptStandaloneLighting=normalizeWorldLightingV1(snapshot.lighting);
   }
   sculptLightingPreview=undefined;syncSculptLightingControls();
   decorativeFringe=snapshot.decorativeFringe??null;
@@ -6108,13 +6109,13 @@ function changeSculptArea(nextAreaId,{spawn=null}={}){
   }
   if(nextAreaId===SCULPT_EXTERIOR_AREA_ID){
     if(!outsideAreaSnapshot)throw Error('Extérieur non chargé');
-    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot);
+    activeInteriorId=null;mountSculptArea(outsideAreaSnapshot,{preserveSharedLighting:true});
     outsideAreaSnapshot=null;
   }else{
     const entry=sculptInteriors.find(e=>e.area.id===nextAreaId);
     if(!entry)throw Error('Intérieur introuvable');
     activeInteriorId=entry.area.id;
-    mountSculptArea(entry);
+    mountSculptArea(entry,{preserveSharedLighting:true});
   }
   updateSculptAreaControls();refreshSculptEncounterEditor();fit();
   if(wasTesting){
