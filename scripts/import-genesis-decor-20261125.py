@@ -26,6 +26,7 @@ assert len(source)==77 and len(list(ROOT.glob('GENSRPG_Explo_20261125_*.zip')))=
 # component bounding box or None, obstacle or not.
 rows=[]
 def add(n,slug,label,folder,size=100,box=None,solid=True):
+    assert isinstance(folder,str) and '/' in folder and isinstance(size,int), (n,slug,folder,size)
     rows.append((n,slug,label,folder,size,box,solid))
 F='decor/fences'; S='decor/storage'; B='vegetation/bushes'; G='vegetation/flowers-grass'
 M='decor/furniture'; T='decor/shops'; P='decor/health'
@@ -41,7 +42,7 @@ for n,slug,label,size in [
     add(n,slug,label,F,size)
 # 003: two essentially repeated front views + two end views retained as sources.
 # The top-down rail is a distinct usable view.
-add(3,'farm_rail_top','Clôture de ferme · dessus',150,(107,496,1340,644))
+add(3,'farm_rail_top','Clôture de ferme · dessus',F,150,(107,496,1340,644))
 for n,slug,label,size in [
  (57,'crate_moss','Caisse en bois · mousse',65),(58,'crate_open','Caisse ouverte',65),
  (59,'crate_reinforced','Caisse renforcée',70),(68,'barrel_small','Petit tonneau',60),
