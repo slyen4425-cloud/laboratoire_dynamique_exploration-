@@ -3445,14 +3445,16 @@ function navigationTick(time){
       }
     }
     if(elapsed>0&&Math.hypot(intent.x,intent.y)>.13){
-      navInputElapsedMs+=elapsed;
       const previousX=navActor.x,previousY=navActor.y;
       const world=navigationWorld(),context=navigationContext();
       // Critical V21: retain elapsed time during dropped frames, but apply
       // movement with short steps so Collision World still stops cliffs/water.
-      for(const dt of sculptNavigationFrameSteps(elapsed))
+      // Measure the actual capped simulation steps, not discarded RAF time.
+      for(const dt of sculptNavigationFrameSteps(elapsed)){
+        navInputElapsedMs+=dt*1000;
         stepMovement(world,navActor,intent,dt,
           {maxSpeed:navSpeed()*intent.speedMultiplier},undefined,context);
+      }
       const moved=Math.hypot(navActor.x-previousX,navActor.y-previousY);
       navMetricDistance+=moved;
       navBlocked=moved<.001;
