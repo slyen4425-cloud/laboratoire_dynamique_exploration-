@@ -3378,6 +3378,10 @@ $('npc-talk')?.addEventListener('click',()=>{
   // Missing links are a visible local interaction error, never a fallback shop.
   if(npc.npc.kind==='merchant'&&!canShop)
     npcDialogueLines.unshift('Aucune boutique associée à ce marchand : ouvre sa fiche PNJ, configure ses articles et enregistre. Aucune association séparée nécessaire.');
+  // Do not silently drop the click when this NPC used to offer a duel but
+  // its roster/session/victory conditions now prevent combat.
+  if(trainer&&!canChallenge&&!npcDialogueLines.length)
+    npcDialogueLines.push('Combat indisponible pour ce dresseur.');
   if(!npcDialogueLines.length&&!canChallenge)return;
   npcDialogueMerchant=canShop?npc:null;
   npcDialogueTrainer=canChallenge?npc:null;
