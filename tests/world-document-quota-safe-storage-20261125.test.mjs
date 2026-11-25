@@ -22,7 +22,8 @@ function store(quota=Infinity){
   setItem(key,value){
    value=String(value);
    const used=[...data.entries()].reduce((total,[k,v])=>total+
-    (k===key?value.length:v.length),data.has(key)?0:key.length+value.length);
+    k.length+(k===key?value.length:v.length),0)+
+    (data.has(key)?0:key.length+value.length);
    if(used>quota)throw Object.assign(new Error('Storage quota'),{name:'QuotaExceededError',code:22});
    data.set(key,value);
   },
