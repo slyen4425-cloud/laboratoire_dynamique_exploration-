@@ -33,7 +33,7 @@ function store(quota=Infinity){
  };
 }
 function hugeWorld(){
- const width=160,height=160,world=createBlankWorldBuilderDraft({
+ const width=80,height=64,world=createBlankWorldBuilderDraft({
   id:'Monde_alpha',width:width*28,height:height*21
  });
  return {...world,areas:world.areas.map((area,i)=>i===0?{
