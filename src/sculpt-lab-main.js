@@ -3891,7 +3891,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
     pitch:navigationTesting?cameraView().pitch:1,image:art,asset:waterfallArt,
     shadow:objectEditing&&objectSelectedId===object.id&&$('object-shadow-details')?
       ($('object-shadow-scope').value==='object'?
-        readSelectedObjectShadowControlsV1():sharedShadow):sharedShadow
+        (readSelectedObjectShadowControlsV1()??modelShadow):sharedShadow):sharedShadow
   });
   // Artwork's wooden deck is aligned to the canonical corridor center.
   // All camera pitches project that same WorldObject point.
