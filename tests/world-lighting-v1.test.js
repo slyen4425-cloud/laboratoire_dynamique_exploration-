@@ -44,3 +44,31 @@ test('warm light restores existing canvas transform',()=>{
  assert.equal(drawSculptWarmLightV1(ctx,{lighting:normalizeWorldLightingV1({enabled:true}),width:400,height:200,dpr:2}),true);
  assert.deepEqual(calls,['save',[2,0,0,2,0,0],[0,0,400,200],'restore']);
 });
+
+test('standalone scene export and import retain opt-in lighting without changing legacy scene shape',async()=>{
+ const {createBlankSculptPreviewScene,serializeSculptPreviewScene,importSculptPreviewScene}=await import('../src/world/sculpt-scene-preview.js');
+ const scene=createBlankSculptPreviewScene({width:36,height:24});
+ const l=normalizeWorldLightingV1({enabled:true,cloudsEnabled:true,directionDeg:120});
+ const legacy=serializeSculptPreviewScene(scene.terrain,scene.objects,scene.surface,scene.actors);
+ const modern=serializeSculptPreviewScene(scene.terrain,scene.objects,scene.surface,scene.actors,null,[],l);
+ assert.equal(Object.hasOwn(JSON.parse(legacy),'lighting'),false);
+ assert.deepEqual(importSculptPreviewScene(modern).lighting,l);
+});
+test('cloud mask is cached, world-anchored and moves without generating a new canvas',()=>{
+ const previous=globalThis.document;
+ let allocations=0;
+ const gradient={addColorStop(){}};
+ const maskCtx={save(){},restore(){},translate(){},scale(){},createRadialGradient(){return gradient},fillRect(){}};
+ globalThis.document={createElement(){allocations++;return {getContext(){return maskCtx}}}};
+ try{
+  const draws=[];
+  const ctx={save(){},restore(){},beginPath(){},rect(){},clip(){},drawImage(_mask,...v){draws.push(v)}};
+  const lighting=normalizeWorldLightingV1({enabled:true,cloudsEnabled:true,cloudSpeed:20,cloudDirectionDeg:0});
+  const args={lighting,width:1008,height:504,viewport:{minX:0,maxX:700,minY:0,maxY:450}};
+  const n=drawSculptWorldCloudShadowsV1(ctx,{...args,timeSeconds:0});
+  assert.ok(n>0&&n<100);
+  const first=draws.splice(0);
+  assert.ok(drawSculptWorldCloudShadowsV1(ctx,{...args,timeSeconds:1})>0);
+  assert.notDeepEqual(draws,first);assert.equal(allocations,1);
+ }finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
+});
