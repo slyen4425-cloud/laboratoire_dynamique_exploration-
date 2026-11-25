@@ -13,6 +13,7 @@ import {drawWorldObjectSprite} from './world-object-frame-selector.js?rev=waterf
 import {worldObjectShadowMaskV1} from './world-object-shadow-silhouette-v1.js';
 import {normalizeWorldObjectShadowSettingsV1,WORLD_OBJECT_SHADOW_DEFAULT_V1,worldObjectShadowProfileForAssetV1} from '../world/world-object-shadow-settings-v1.js';
 
+import {worldShadowLocalRotationV1} from '../world/world-lighting-v1.js';
 function degreesToRadians(value) {
   return Number.isFinite(value) ? value * Math.PI / 180 : 0;
 }
@@ -38,7 +39,7 @@ export function drawWorldObjectContactShadowV1(ctx,args){
  const contact=worldObjectContactShadowV1(args);
  if(!contact)return false;
  if(args?.image){
-  const mask=worldObjectShadowMaskV1(args.image,args.asset);
+  const mask=worldObjectShadowMaskV1(args.image,args.asset,args.lighting?.shadowColor);
   const projection=worldObjectShadowProjectionV1(args);
   if(mask&&projection&&typeof ctx?.transform==='function'){
    const {width,height}=args;
@@ -48,7 +49,9 @@ export function drawWorldObjectContactShadowV1(ctx,args){
    ctx.save();
    ctx.translate(projection.x,projection.footY);
    // Rotate the single projected mask about its existing ground anchor.
-   const theta=degreesToRadians(projection.rotationDeg??0);
+   const theta=args.lighting&&projection.rotationDeg===undefined?
+    worldShadowLocalRotationV1(args.lighting.directionDeg,args.objectAngle,args.flipX,projection.flatten,projection.shear):
+    degreesToRadians(projection.rotationDeg??0);
    const cos=Math.cos(theta),sin=Math.sin(theta);
    ctx.transform(projection.scaleX*cos,projection.scaleX*sin,
     projection.shear*cos-projection.flatten*sin,
@@ -58,6 +61,7 @@ export function drawWorldObjectContactShadowV1(ctx,args){
     width*(mask.left/mask.w-.5),-height*(srcHeight/mask.h),
     width*(srcWidth/mask.w),height*(srcHeight/mask.h));
    ctx.restore();
+   drawWorldObjectAmbientContactV1(ctx,args,contact);
    return true;
   }
  }
@@ -74,17 +78,26 @@ export function drawWorldObjectContactShadowV1(ctx,args){
 // Derived display-only alpha mask, cached per official image. Generating a
 // dark silhouette once prevents a new per-frame filter or decal authority.
 // In particular a tree projects its actual canopy and trunk, not an oval.
-export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1,shadow=null}={}){
+function drawWorldObjectAmbientContactV1(ctx,args,contact){
+ const alpha=(args.lighting?.ambientOcclusionPct??0)/100;
+ if(!alpha||typeof ctx.createRadialGradient!=='function')return;
+ const rx=Math.max(3,contact.radiusX*.72),ry=Math.max(2,contact.radiusY*.8);
+ ctx.save();ctx.translate(contact.x,contact.y);ctx.scale(rx,ry);
+ const g=ctx.createRadialGradient(0,0,0,0,0,1);
+ g.addColorStop(0,'rgba(0,0,0,'+alpha+')');g.addColorStop(1,'rgba(0,0,0,0)');
+ ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();
+}
+export function worldObjectShadowProjectionV1({width,height,footOffset=0,pitch=1,shadow=null,lighting=null}={}){
  if(!Number.isFinite(width)||width<=0||!Number.isFinite(height)||height<=0)return null;
  const settings=normalizeWorldObjectShadowSettingsV1(shadow)??WORLD_OBJECT_SHADOW_DEFAULT_V1;
  return Object.freeze({
   x:width*settings.offsetXPct/100,
   footY:footOffset+1+height*settings.offsetYPct/100,
   scaleX:settings.widthPct/100,
-  opacity:settings.opacityPct/100,
+  opacity:(shadow?settings.opacityPct:(lighting?.shadowOpacityPct??settings.opacityPct))/100,
   shear:-.48,
   ...(settings.rotationDeg?{rotationDeg:settings.rotationDeg}:{}),
-  flatten:.38*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)*
+  flatten:(lighting?lighting.flattenPct/100:.38)*(Number.isFinite(pitch)?Math.max(.45,Math.min(1,pitch)):1)*
     settings.heightPct/100
  });
 }
@@ -183,7 +196,7 @@ function drawStaticImage(
   image,
   asset,
   timeSeconds = 0,
-  objectShadowProfiles = []
+  objectShadowProfiles = [], lighting = null
 ) {
   const rect =
     worldObjectVisualRect(object);
@@ -246,7 +259,7 @@ function drawStaticImage(
   );
   // One canvas transform mirrors both the silhouette shadow and the sprite.
   if(object.transform?.flipX === true) ctx.scale(-1, 1);
-  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow??worldObjectShadowProfileForAssetV1(objectShadowProfiles,object.visual?.assetId)});
+  drawWorldObjectContactShadowV1(ctx,{kind:object.kind,width:renderWidth,height:renderHeight,footOffset:renderHeight/2,image,asset,shadow:object.shadow??worldObjectShadowProfileForAssetV1(objectShadowProfiles,object.visual?.assetId),lighting,objectAngle:rect.rotation+degreesToRadians(asset.render.rotationOffsetDeg),flipX:object.transform?.flipX===true});
   drawWorldObjectSprite(ctx, image, asset,
     {x: -renderWidth / 2, y: -renderHeight / 2,
       width: renderWidth, height: renderHeight}, timeSeconds);
@@ -260,7 +273,7 @@ export function createWorldObjectRenderer({
     objectDefinitionCatalogV1
 } = {}) {
   return Object.freeze({
-    draw(ctx, { camera, viewport, objects, timeSeconds = 0, objectShadowProfiles = [] }) {
+    draw(ctx, { camera, viewport, objects, timeSeconds = 0, objectShadowProfiles = [], lighting = null }) {
       for (
         const object of
           resolveWorldObjectPlacements(
@@ -299,7 +312,7 @@ export function createWorldObjectRenderer({
           visual.image,
           visual.asset,
           timeSeconds,
-          objectShadowProfiles
+          objectShadowProfiles, lighting
         );
       }
     }
