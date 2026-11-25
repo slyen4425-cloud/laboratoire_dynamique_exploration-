@@ -41,8 +41,11 @@ test('strict session-scoped projection rejects forged or duplicate defeated acto
  assert.deepEqual(read().wildVictories,victories);
  storage.setItem(key,JSON.stringify({...sample(),wildVictories:[...victories,...victories]}));
  assert.throws(read,/Duplicate/);
- storage.setItem(key,JSON.stringify({...sample(),wildVictories:[{areaId:area,actorId:'../invalid'}]}));
- assert.throws(read,/wild victory actor/);
+ storage.setItem(key,JSON.stringify({...sample(),wildVictories:[{areaId:area,actorId:''}]}));
+ assert.throws(read,/wild victory requires an area and actor/);
+ storage.setItem(key,JSON.stringify({...sample(),wildVictories:[{areaId:'Forêt des Érables',actorId:'Monstre errant n°1'}]}));
+ assert.deepEqual(read().wildVictories,[{areaId:'Forêt des Érables',actorId:'Monstre errant n°1'}],
+  'historical imported WorldArea labels, Unicode and spaces remain valid');
 });
 test('the same projection feeds drawn actors, dialog selection, wild contact and combat checks',()=>{
  const sculpt=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
