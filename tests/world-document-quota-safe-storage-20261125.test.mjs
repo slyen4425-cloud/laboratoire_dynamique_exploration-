@@ -86,6 +86,10 @@ test('quota failure only compacts the SAME existing archive; no world or asset i
   world.areas[0].sculptTerrain.levels);
  const library=createExplorationWorldDocumentLibraryV1({storage});
  assert.equal(library.load(world.id).id,world.id);
+ // A compressed archived document is still equal to the unsaved editor draft
+ // and must allow opening that same official WorldDocument.
+ assert.doesNotThrow(()=>library.activate(world.id));
+ assert.equal(readWorldAssemblerDraft(storage).id,world.id);
 });
 test('unrecoverable quota or corrupt archive never wipes the previous valid active draft',()=>{
  const world=hugeWorld(),raw=serializeWorldBuilderDraft(world);
