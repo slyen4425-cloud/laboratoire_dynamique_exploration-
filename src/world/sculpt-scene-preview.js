@@ -1,3 +1,4 @@
+import {normalizeWorldLightingV1} from './world-lighting-v1.js';
 // Prototype-only composition of a canonical sculpt heightfield with standard
 // WorldObject placements. It is NOT a WorldDocument nor a runtime save.
 import {createSculptTerrain,importSculptTerrain,serializeSculptTerrain,sculptWaterAt,appendSculptTerrainRamp} from './sculpt-height-model.js?rev=author-maps-three-v1';
@@ -248,13 +249,14 @@ export function removeSculptPreviewActorAt(raw,x,y,threshold=24){
   const found=findSculptPreviewActorNear(actors,x,y,threshold);
   return found?Object.freeze(actors.filter(a=>a.id!==found.id)):actors;
 }
-export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null,objectShadowProfiles=[]){
+export function serializeSculptPreviewScene(terrain,objects=[],surface=createSculptSurface(),actors=[],encounterSettings=null,objectShadowProfiles=[],lighting=null){
   const paint=normalizeSculptSurface(surface);
   const settings=encounterSettings===null?null:sculptEncounterSceneSettings(encounterSettings);
   return JSON.stringify({kind:SCULPT_SCENE_PREVIEW_KIND,
     sceneVersion:SCULPT_SCENE_PREVIEW_VERSION,
     terrain:JSON.parse(serializeSculptTerrain(terrain)),
     objects:normalizeSculptPreviewObjects(objects),
+    ...(normalizeWorldLightingV1(lighting)?{lighting:normalizeWorldLightingV1(lighting)}:{}),
     ...(normalizeWorldObjectShadowProfilesV1(objectShadowProfiles).length?
       {objectShadowProfiles:normalizeWorldObjectShadowProfilesV1(objectShadowProfiles)}:{}),
     ...(paint.routes.length||paint.zones.length||
@@ -311,6 +313,7 @@ export function importSculptPreviewScene(raw){
   }
   const settings=sculptEncounterSceneSettings(source);
   return Object.freeze({terrain,objects:Object.freeze(migrated),actors,surface,
+    ...(normalizeWorldLightingV1(source.lighting)?{lighting:normalizeWorldLightingV1(source.lighting)}:{}),
     ...(source.objectShadowProfiles?.length?{objectShadowProfiles:normalizeWorldObjectShadowProfilesV1(source.objectShadowProfiles)}:{}),
     ...settings,isScene:true});
 }
