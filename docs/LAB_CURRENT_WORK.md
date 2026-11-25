@@ -1,3 +1,7 @@
+## 2026-11-25 — Marchand : dernier dialogue ouvre le commerce existant (NON GREEN)
+- START afdd45a4ab4065c0921b160a38a948ca3663e62f, checkpoint `checkpoint/exploration-start-merchant-dialogue-trade-20261125`, branche `work/exploration-merchant-dialogue-trade-20261125`. #552 main CI 45569743090 / Pages 45569743151 SUCCESS. #551 portes et #549 hors périmètre.
+- Le bouton Terminer d'un dialogue marchand pouvait fermer le dialogue sans ouvrir l'échange. À la dernière ligne, le bouton principal devient Commercer et appelle l'unique requestNpcMerchantShop, après fermeture du dialogue. Le raccourci n'est présent que pendant les lignes intermédiaires, Fermer reste une annulation. Marchand silencieux, dresseurs et dialogues ordinaires conservés. Aucune modification de PNJ enregistré, liaison, stockage, moteur, stock, prix ou transport. Test de contrat et navigateur Capture avec vrai PNJ parlant requis avant publication PWA. Correction visuelle des stocks côté propriétaire Capture dans #657.
+
 ## 2026-11-25 — Compatibilité marchand
 - Aligner la normalisation des références PNJ sur la limite canonique Capture de 130 caractères (#654). Test de conservation du placement. Aucun ID réécrit.
 
