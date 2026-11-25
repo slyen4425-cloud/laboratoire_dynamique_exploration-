@@ -3286,10 +3286,51 @@ function updateNpcInteraction(){
     placeNpcScreenUi(npc,$('npc-talk'));
   }
 }
+// Editor Tester has no AdventureSession. Capture renders and owns its
+// temporary transaction state; Exploration only hosts the scoped iframe.
+let editorMerchantTestNonce=null;
+function openEditorMerchantTest(actor){
+  const dialog=$('npc-merchant-test-dialog'),frame=$('npc-merchant-test-frame');
+  let owner=null;
+  try{owner=window.parent!==window?window.parent.GensCaptureV2?.status?.().view:null;}catch{}
+  if(!navigationTesting||sculptPlayRequested||!dialog||!frame||
+     !['builder','world'].includes(owner)){
+    status('Pour tester le commerce, ouvre le World Builder depuis Monster Capture.');
+    return;
+  }
+  if(dialog.open)return;
+  const url=new URL('../../assets/gensrpg/capture-v2/adventure.html',window.location.href);
+  if(url.origin!==window.location.origin)return;
+  const universe=new URLSearchParams(window.location.search).get('universe');
+  if(universe)url.searchParams.set('universe',universe);
+  editorMerchantTestNonce=crypto.randomUUID();
+  url.searchParams.set('merchantTest',actor.npc.merchantId);
+  url.searchParams.set('merchantTestNonce',editorMerchantTestNonce);
+  frame.src=url.href;
+  npcDialogueOpen=true;dialog.showModal();updateNpcInteraction();
+}
+$('npc-merchant-test-close')?.addEventListener('click',()=>$('npc-merchant-test-dialog').close());
+$('npc-merchant-test-dialog')?.addEventListener('close',()=>{
+  editorMerchantTestNonce=null;
+  $('npc-merchant-test-frame').removeAttribute('src');
+  npcDialogueOpen=false;updateNpcInteraction();
+});
+window.addEventListener('message',event=>{
+  const frame=$('npc-merchant-test-frame'),dialog=$('npc-merchant-test-dialog');
+  if(!dialog?.open||event.origin!==window.location.origin||
+     event.source!==frame?.contentWindow||!editorMerchantTestNonce||
+     event.data?.schema!=='gensrpg.capture.v2.npc.merchant.test.closed.v1'||
+     event.data.nonce!==editorMerchantTestNonce)return;
+  dialog.close();
+});
 function requestNpcMerchantShop(actor){
   if(!actor?.npc?.merchantId)return;
-  if(!adventureSessionId||window.parent===window){
-    status('Cette boutique est utilisable depuis une partie Monster Capture.');
+  if(!adventureSessionId){
+    openEditorMerchantTest(actor);
+    return;
+  }
+  if(window.parent===window){
+    status('Ouvre cette partie depuis Monster Capture.');
     return;
   }
   window.parent.postMessage({

@@ -2,6 +2,10 @@
 - START afdd45a4ab4065c0921b160a38a948ca3663e62f, checkpoint `checkpoint/exploration-start-merchant-dialogue-trade-20261125`, branche `work/exploration-merchant-dialogue-trade-20261125`. #552 main CI 45569743090 / Pages 45569743151 SUCCESS. #551 portes et #549 hors périmètre.
 - Le bouton Terminer d'un dialogue marchand pouvait fermer le dialogue sans ouvrir l'échange. À la dernière ligne, le bouton principal devient Commercer et appelle l'unique requestNpcMerchantShop, après fermeture du dialogue. Le raccourci n'est présent que pendant les lignes intermédiaires, Fermer reste une annulation. Marchand silencieux, dresseurs et dialogues ordinaires conservés. Aucune modification de PNJ enregistré, liaison, stockage, moteur, stock, prix ou transport. Test de contrat et navigateur Capture avec vrai PNJ parlant requis avant publication PWA. Correction visuelle des stocks côté propriétaire Capture dans #657.
 
+## 2026-11-25 — Marchand dans Tester (C2, NON GREEN)
+- START 55aac7cef63134e6f92355bf530c8967d08d0d10, checkpoint `checkpoint/exploration-start-merchant-editor-test-20261125`, branche dédiée `work/exploration-merchant-editor-test-20261125`. Ne pas mélanger #551 portes.
+- Le mode Tester n'a pas d'AdventureSession. Héberger l'unique commerce Capture en iframe corrélé par nonce et origine, dans le même univers ; simulation et transactions dans le propriétaire Capture #661, aucun inventaire ni stock Exploration. Mode partie inchangé. Test de contrat puis CI/preview et test navigateur Capture avant repin PWA.
+
 ## 2026-11-25 — Compatibilité marchand
 - Aligner la normalisation des références PNJ sur la limite canonique Capture de 130 caractères (#654). Test de conservation du placement. Aucun ID réécrit.
 
