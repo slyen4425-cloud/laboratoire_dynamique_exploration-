@@ -1,4 +1,5 @@
 import {mountNpcWildBehaviorControlsV1} from './actors/npc-wild-behavior-controls-v1.js';
+import {projectDefeatedPlacedWildV1} from './actors/npc-wild-defeat-projection-v1.js';
 // Self-contained optional heightfield experiment. Never changes the live 2D Builder.
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
@@ -237,8 +238,13 @@ let actorSubmode=false,placedActors=Object.freeze([]),actorHistory=[],actorRedo=
 const npcWanderRuntime=createNpcWanderRuntimeV1({move:stepMovement});
 let npcWanderElapsed=0,npcWanderAggressiveNearId=null;
 function npcActorsWithDefinitions(){
-  return resolvePlacedNpcDefinitionsV1(placedActors,
+  const authored=resolvePlacedNpcDefinitionsV1(placedActors,
     captureActorProvider?.resolveDefinition??(()=>null));
+  // Victory is a Capture-owned receipt; hide only defeated wild actors in
+  // this authenticated game/area, never in the author's editable WorldArea.
+  return projectDefeatedPlacedWildV1(authored,
+    scopedEncounter?.party?.wildVictories??[],
+    activeInteriorId??sculptWorldAreaId);
 }
 function gameplayPlacedActors(){
   const actors=npcActorsWithDefinitions();
