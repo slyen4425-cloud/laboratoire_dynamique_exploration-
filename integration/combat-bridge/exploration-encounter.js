@@ -408,6 +408,7 @@ async function launch() {
   mountedVisuals=await mountCombatDemo({root,nativeVisualSource});
   mountedCombat=await mountCoop2v2Test({
     root,visuals:mountedVisuals,nativeCombatSource,
+    hudLayout:authorBundle.hudLayout,
     onBattleOutcome:playOfficialCombatResultSoundtrack,
     ...(adventureParty||placedEncounterPreview?{embeddedBattle:{initialHpByActor:Object.fromEntries(
       nativeCombatSource.fighters.map(fighter=>[fighter.id,
