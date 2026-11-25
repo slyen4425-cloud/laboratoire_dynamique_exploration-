@@ -1850,6 +1850,13 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"âš
     </div>
   </div>
 </section>
+<dialog id="npc-merchant-test-dialog" aria-label="Test du commerce" style="width:min(850px,calc(100vw - 16px));max-width:95vw;max-height:96dvh;padding:6px;box-sizing:border-box;background:#152d38;color:#f5f9f8;border:1px solid #86c8bd;border-radius:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <strong>Commerce Â· simulation sans sauvegarde</strong>
+    <button type="button" id="npc-merchant-test-close">Fermer le test</button>
+  </div>
+  <iframe id="npc-merchant-test-frame" title="Commerce officiel Monster Capture en mode Tester" style="width:100%;height:min(75dvh,600px);border:0;display:block" referrerpolicy="same-origin"></iframe>
+</dialog>
 <div id="navigation-stick" role="group" aria-label="Joystick tactile de navigation" hidden>
   <div id="navigation-knob" aria-hidden="true"></div>
 </div>
