@@ -114,8 +114,8 @@ try{
   await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:x+90,y:y+52,button:'left',buttons:1});
   await send('Input.dispatchMouseEvent',{type:'mouseReleased',x:x+90,y:y+52,button:'left',clickCount:1});
   await sleep(350);
-  const dragged=await run(`(()=>{
-    const world=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+  const dragged=await run(`(async()=>{
+    const world=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const node=document.querySelector('.world-node[data-area-id="area-principale"]');
     const point=world?.authoringLayout?.positions?.['area-principale'];
     const before=window.__worldAssemblerProbe();
@@ -145,11 +145,11 @@ try{
      recovered.top!==dragged.point.y||recovered.portalCount!==2)
     throw Error('Saved WorldDocument layout not restored after reload '+JSON.stringify(recovered));
   // The exact same WorldArea node now opens the SINGLE native modal.
-  const edited=await run(`(()=>{
+  const edited=await run(`(async()=>{
     const card=document.querySelector('.world-node[data-area-id="area-principale"]');
     card.click();
     const dialog=document.querySelector('#area-details-dialog');
-    const loaded=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const loaded=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const terrainBefore=JSON.stringify(loaded?.encounterConfig??null);
     const oneId=id=>document.querySelectorAll('#'+id).length===1;
     const oneForm=oneId('world-area-encounter-levels')&&oneId('connect-form')&&
@@ -157,7 +157,7 @@ try{
     document.querySelector('#area-encounter-min-level').value='4';
     document.querySelector('#area-encounter-max-level').value='17';
     document.querySelector('#world-area-encounter-levels').requestSubmit();
-    const updated=JSON.parse(localStorage.getItem('gensrpg.world-assembler.document.v1')||'null');
+    const updated=(await import('./src/builder/world-assembler-handoff.js')).readWorldAssemblerDraft(localStorage);
     const area=updated?.areas?.find(a=>a.id==='area-principale');
     return {open:dialog.open,oneForm,
       panelCount:document.querySelectorAll('.inspector').length,
