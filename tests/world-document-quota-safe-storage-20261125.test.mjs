@@ -94,9 +94,10 @@ test('unrecoverable quota or corrupt archive never wipes the previous valid acti
  saveWorldAssemblerDraft(storage,old);
  const previous=storage.getItem(WORLD_ASSEMBLER_DRAFT_KEY);
  storage.setItem(EXPLORATION_WORLD_LIBRARY_SLOT_V1+encodeURIComponent(world.id),'not-json');
- const frozen=store(previous.length+100);
+ const corruptSlot=EXPLORATION_WORLD_LIBRARY_SLOT_V1+encodeURIComponent(world.id);
+ const frozen=store(previous.length+WORLD_ASSEMBLER_DRAFT_KEY.length+corruptSlot.length+100);
  frozen.setItem(WORLD_ASSEMBLER_DRAFT_KEY,previous);
- frozen.setItem(EXPLORATION_WORLD_LIBRARY_SLOT_V1+encodeURIComponent(world.id),'not-json');
+ frozen.setItem(corruptSlot,'not-json');
  assert.throws(()=>saveWorldAssemblerDraft(frozen,world));
  assert.equal(frozen.getItem(WORLD_ASSEMBLER_DRAFT_KEY),previous);
  assert.equal(readWorldAssemblerDraft(frozen).id,'old-world');
