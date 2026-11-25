@@ -155,10 +155,7 @@ export function buildingDoorCounterpart(world,portal){
   return candidates.length===1?candidates[0]:null;
 }
 export function isManualBuildingPortal(world,portal){
-  const source=findWorldArea(world?.areas??[],portal?.sourceAreaId);
-  const target=findWorldArea(world?.areas??[],portal?.targetAreaId);
-  return !!source&&!!target&&source.kind!==target.kind&&
-    (source.kind==='interior'||target.kind==='interior');
+  return !!buildingDoorCounterpart(world,portal);
 }
 // A shared door uses its one explicitly placed Portal.trigger for both
 // directions. Until edited, the safe historical arrival Spawn is the common
@@ -166,7 +163,9 @@ export function isManualBuildingPortal(world,portal){
 export function resolvePortalWaypoint(world,portal){
   const point=resolvePortalTriggerPoint(world.areas,portal);
   const reverse=buildingDoorCounterpart(world,portal);
-  if(!point||!reverse||portal.sharedDoorPoint)return point;
+  // Standalone legacy Sculpt scenes have no WorldDocument initial Area.
+  // Their separately authored entrance/exit geometry remains compatible.
+  if(!point||!reverse||portal.sharedDoorPoint||!world.initialAreaId)return point;
   const source=findWorldArea(world.areas,portal.sourceAreaId);
   const arrival=resolveWorldAreaSpawnPoint(source,reverse.targetSpawnId);
   return arrival?Object.freeze({x:arrival.x,y:arrival.y,radius:point.radius}):point;
@@ -231,7 +230,7 @@ export function applyPortalTransition(
     portal.targetSpawnId
   );
   const reverse=buildingDoorCounterpart(worldDocument,portal);
-  const targetPoint=reverse?resolvePortalWaypoint(worldDocument,reverse):
+  const targetPoint=reverse&&worldDocument.initialAreaId?resolvePortalWaypoint(worldDocument,reverse):
     resolveWorldAreaSpawnPoint(targetArea,portal.targetSpawnId);
 
   if (!targetArea || !targetSpawn || !targetPoint) return null;

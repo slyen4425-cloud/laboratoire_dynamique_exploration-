@@ -45,3 +45,13 @@ test('move each shared endpoint without replacing ids, anchor or spawn; hidden/r
  assert.equal(markersForSculptWorldArea(d,e.sourceAreaId,{testing:true}).some(m=>m.portalId===e.id),false);
  assert.equal(markersForSculptWorldArea(d,e.sourceAreaId,{showHidden:true}).some(m=>m.portalId===e.id),true);
 });
+
+test('2D runtime requires a door click and auto travel uses entry edge',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
+ assert.match(source,/applyTriggeredPortal\(findPortalEnteredDuringMove/);
+ assert.match(source,/isManualBuildingPortal\(activeWorldDocument,portal\)\?applyTriggeredPortal\(portal\)/);
+ const {d,entry,exit}=fixture();
+ const arrival=applyPortalTransition(d,{currentAreaId:entry.sourceAreaId},entry);
+ assert.equal(findPortalEnteredDuringMove(d,exit.sourceAreaId,arrival,arrival),null);
+});
