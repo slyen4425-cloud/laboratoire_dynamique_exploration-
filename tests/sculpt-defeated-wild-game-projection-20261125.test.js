@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {nearestDialogNpcV1} from '../src/actors/map-actor-npc-settings-v1.js';
 import {projectDefeatedPlacedWildV1} from '../src/actors/npc-wild-defeat-projection-v1.js';
 import {readScopedAdventurePlayingPartyV1,adventurePlayingPartyStorageKeyV1,
  ADVENTURE_PLAYING_PARTY_SCHEMA_V1} from '../src/encounters/adventure-playing-party-v1.js';
@@ -48,4 +49,15 @@ test('the same projection feeds drawn actors, dialog selection, wild contact and
  assert.match(sculpt,/function npcActorsWithDefinitions\(\)[\s\S]*?projectDefeatedPlacedWildV1\(authored,/);
  assert.match(sculpt,/function gameplayPlacedActors\(\)[\s\S]*?npcActorsWithDefinitions\(\)/);
  assert.match(sculpt,/nearestWildContact\(\{actors:npcActorsWithDefinitions\(\)/);
+});
+
+test('trainer with temporarily blocked challenge remains clickable and exposes the canonical reason',()=>{
+ const gorice={id:'gorice-trainer',x:40,y:40,npc:{
+  kind:'trainer',dialogue:'',trainerRoster:[],trainerEngagement:'aggressive'
+ }};
+ const shown=nearestDialogNpcV1([gorice],{x:42,y:42},65,()=>false);
+ assert.equal(shown,gorice,'missing roster or locked save must not make a trainer silent');
+ const scout=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
+ assert.match(scout,/npcDialogueTrainerNotice=trainer\?sculptTrainerChallengeNotice/);
+ assert.match(scout,/if\(trainer&&!canChallenge&&!npcDialogueLines\.length\)/);
 });
