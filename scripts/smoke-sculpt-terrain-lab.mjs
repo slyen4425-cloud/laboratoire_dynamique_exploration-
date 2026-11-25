@@ -2633,12 +2633,24 @@ try{
       document.activeElement?.blur?.();
       return window.__sculptNavProbe().player;
     })()`);
-    const inputTimeBefore=await run('window.__sculptNavProbe().inputElapsedMs');
-    await run(`window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));true`);
-    await sleep(135);
-    await run(`window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));true`);
-    const current=await run(`window.__sculptNavProbe().player`);
-    const inputTimeAfter=await run('window.__sculptNavProbe().inputElapsedMs');
+    // Keep the press and release inside the browser so a slow CDP round trip
+    // cannot send the hero into the map edge. Stop after >=80ms of actual
+    // movement simulation; a single capped frame can overshoot by <=250ms.
+    const {current,inputTimeBefore,inputTimeAfter}=await run(`(async()=>{
+      const before=window.__sculptNavProbe().inputElapsedMs;
+      window.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowUp',bubbles:true}));
+      try{
+        const deadline=performance.now()+5000;
+        while(window.__sculptNavProbe().inputElapsedMs-before<80){
+          if(performance.now()>deadline)throw Error('V66 movement simulation did not advance');
+          await new Promise(ok=>requestAnimationFrame(ok));
+        }
+      }finally{
+        window.dispatchEvent(new KeyboardEvent('keyup',{key:'ArrowUp',bubbles:true}));
+      }
+      const after=window.__sculptNavProbe();
+      return {current:after.player,inputTimeBefore:before,inputTimeAfter:after.inputElapsedMs};
+    })()`);
     const projection=await run(`(async()=>{
       const p=await import('./src/render/sculpt-camera-projection.js');
       const view=p.sculptCameraGameView(${angle});
@@ -2654,9 +2666,8 @@ try{
     if(consumedMs<30||projection.dy>-1||Math.abs(projection.dx)>Math.abs(projection.dy)*.1)
       throw Error('V66 actual key travel not screen-aligned or RAF input absent: '+JSON.stringify(v));
   }
-  // Compare pixel speeds per *actual movement RAF time*. Wall-clock sleep is
-  // not a simulation clock: on busy GitHub runners the browser can process
-  // 2 frames for one camera and 8 for the next during the same 135ms sleep.
+  // Compare pixel speeds per *actual capped movement simulation time*.
+  // Wall-clock sleep and discarded RAF time are not simulation clocks.
   // This keeps the original real keyboard->Collision World gate intact,
   // without relaxing the speed regression tolerance to conceal a failure.
   if(Math.abs(v66Results[0].projectedSpeed/v66Results[1].projectedSpeed-1)>.25)
