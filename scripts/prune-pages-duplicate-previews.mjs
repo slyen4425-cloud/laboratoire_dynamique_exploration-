@@ -29,7 +29,7 @@ function bytes(path){
   if(!existsSync(path))return 0;
   return Number(execFileSync('du',['-sb','--',path],{encoding:'utf8'}).trim().split(/\s+/)[0]);
 }
-buildLivingWaterAtlases(root);
+if(existsSync(join(root,'Genesis_textures_animees_eau_lave.zip'))||existsSync(join(root,'src/render/animated-surface-sprites-v1.js')))buildLivingWaterAtlases(root);
 const before=bytes(root);
 for(const old of ['v81','docs','tests','.github','.git','node_modules']){
   const target=join(root,old);
