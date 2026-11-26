@@ -233,7 +233,10 @@ const registry=createMaterialRegistry(materialPackV1);
 let sculptGraphics=null;
 const activeSculptObjectCatalog=()=>sculptGraphics?.catalog??objectDefinitionCatalogV1;
 const activeSculptCollisionCatalog=()=>sculptGraphics?.collisionCatalog??sculptPreviewCollisionCatalog;
-const sculptGraphicContext=()=>({catalog:activeSculptObjectCatalog(),materialRegistry:sculptGraphics?.materialRegistry??registry});
+const activeSculptMaterialRegistry=()=>sculptGraphics?.materialRegistry??registry;
+const sculptGraphicContext=()=>({catalog:activeSculptObjectCatalog(),materialRegistry:activeSculptMaterialRegistry()});
+const sculptMaterialAsset=id=>sculptGraphics?.resolveMaterialAsset(id)??resolveMaterialAsset(id);
+const sculptMaterialAnimation=id=>{const m=activeSculptMaterialRegistry().resolve(id);return sculptMaterialAsset(m?.assets?.base??m?.assets?.center)?.animation??null;};
 const sculptObjectAsset=id=>sculptGraphics?.resolveObjectAsset(id)??resolveWorldObjectAsset(id);
 // Until the shared world archive/transport owners accept local references,
 // do not expose placements that the world storage cannot save.
@@ -342,7 +345,7 @@ function refreshSculptTerrainFamilySelectors(){
 }
 if(surfaceBaseFamilySelect){
   refreshSculptTerrainFamilySelectors();
-  surfacePaintFamilySelect.value=sculptEncounterFamilyForMaterial($('surface-material').value)??surface.baseTerrainFamilyId;
+  surfacePaintFamilySelect.value=sculptEncounterFamilyForMaterial($('surface-material').value,activeSculptMaterialRegistry())??surface.baseTerrainFamilyId;
   surfacePaintFamilySelect.addEventListener('change',()=>{sculptPaintFamilyManuallyChosen=true;});
 }
 let surfaceStrokePoints=[],surfaceLastCell='',surfaceHistory=[],surfaceRedo=[];
@@ -1006,7 +1009,7 @@ function navigationBackground(){
   const imageContext=raster.getContext('2d',{alpha:true});
   imageContext.scale(scale,scale);
   imageContext.translate(paddingX,paddingY);
-  const material=registry.require(materialId,'surface');
+  const material=activeSculptMaterialRegistry().require(materialId,'surface');
   const waterMask=livingWaterControls&&ribbonTextures.water?.living&&ribbonTextures.water.visible&&terrainHasWater(terrain)?document.createElement('canvas'):null;
   if(waterMask){waterMask.width=Math.ceil(raster.width/scale);waterMask.height=Math.ceil(raster.height/scale);}
   const waterMaskContext=waterMask?.getContext('2d');
@@ -1157,7 +1160,19 @@ const terrainHasWater=(()=>{let last=null,wet=false;return t=>{
  if(last!==t){last=t;wet=t.waterLevels.some((v,i)=>v>t.levels[i]);}return wet;
 };})();
 const images=new Map();
-const themes=sculptGroundMaterials;
+const themes=[...sculptGroundMaterials];
+function personalStaticSurfaceChoices(){return (sculptGraphics?.personalSurfaceChoices??[]).filter(m=>!sculptMaterialAnimation(m.id));}
+function refreshPersonalTextureOptions(){
+  const choices=localGraphicPlacementEnabled()?personalStaticSurfaceChoices():[];
+  themes.splice(0,themes.length,...sculptGroundMaterials,...choices.filter(m=>m.assetKind==='surface').map(m=>m.id));
+  for(const [id,items] of [['material',choices.filter(m=>m.assetKind==='surface')],['surface-material',choices]]){
+    const select=$(id),old=select.value;
+    select.querySelector('[data-personal-textures]')?.remove();
+    if(items.length){const group=document.createElement('optgroup');group.label='Mes textures';group.dataset.personalTextures='';
+      group.append(...items.map(m=>new Option(m.label,m.id)));select.append(group);}
+    if([...select.options].some(o=>o.value===old))select.value=old;
+  }
+}
 const interiorFloorMaterials=Object.freeze(SCULPT_SURFACE_MATERIALS.filter(meta=>
   meta.id.startsWith('floor.')).map(meta=>meta.id));
 const sculptWorldCurrentInterior=()=>sculptWorldDraft?.areas.find(a=>a.id===sculptWorldAreaId)?.kind==='interior';
@@ -1169,9 +1184,9 @@ if(worldInteriorFloorBase)worldInteriorFloorBase.replaceChildren(...[...$('inter
 const displayedBaseMaterialId=()=>activeInteriorId||sculptWorldCurrentInterior()?
   $('interior-floor-base').value:surface.baseMaterialId;
 function imageFor(materialId,kind='surface'){
-  const material=registry.require(materialId,kind);
+  const material=activeSculptMaterialRegistry().require(materialId,kind);
   const id=kind==='surface' ? material.assets?.base : material.assets?.center;
-  const path=resolveMaterialAsset(id)?.path;
+  const path=sculptMaterialAsset(id)?.path;
   if(!path)return Promise.resolve(null);
   if(images.has(id))return images.get(id);
   const promise=new Promise(resolve=>{
@@ -1335,7 +1350,7 @@ function decorativeFringeRaster(chunk){
   context.setTransform(scale,0,0,scale,0,0);
   context.translate(paddingX,paddingY);
   drawSculptTerrain(context,{terrain:chunk.terrain,
-    material:registry.require(displayedBaseMaterialId(),'surface'),
+    material:activeSculptMaterialRegistry().require(displayedBaseMaterialId(),'surface'),
     texture:currentTexture,rockPalette:$('rock').value,
     cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
     cliffMoss:$('rock-moss')?.checked,
@@ -1476,7 +1491,7 @@ function draw(){
     if(navigationTesting)ctx.restore();
     result=snapshot.result;
   }else{
-    const material=registry.require(displayedBaseMaterialId(),'surface');
+    const material=activeSculptMaterialRegistry().require(displayedBaseMaterialId(),'surface');
     result=drawSculptTerrain(ctx,{terrain,material,texture:currentTexture,
       rockPalette:$('rock').value,cliffAtlas:cliffAtlasImage,cliffHD:cliffHDImage,
       cliffMoss:$('rock-moss')?.checked,
@@ -1905,6 +1920,7 @@ function appendFringeSurfacePoint(cell){
  gesture.last=key;
 }
 function commitFringeSurface(points,erase=false){
+ if(!erase&&$('surface-material').value.startsWith('user.material.')){status('Texture personnelle : peinture de la carte principale uniquement pour le moment.');return;}
  const before=decorativeFringe;
  const next=paintSculptDecorativeFringeSurfaceV1(before,decorativeFringeArea(),{
    points,materialId:$('surface-material').value,
@@ -2415,9 +2431,12 @@ function begin(event){
     return;
   }
   if(surfaceEditing){
+    if($('surface-action').value!=='erase'&&$('surface-material').value.startsWith('user.material.')&&!localGraphicPlacementEnabled()){
+      status('Texture personnelle : carte principale autonome uniquement pour le moment.');return;
+    }
     const point={x:(cell.x+.5)*SCULPT_TILE.width,y:(cell.y+.5)*SCULPT_TILE.height};
     if($('surface-action').value==='erase'){
-      surfaceCommit(removeSculptSurfaceAt(surface,point));return;
+      surfaceCommit(removeSculptSurfaceAt(surface,point,activeSculptMaterialRegistry()));return;
     }
     surfaceDrawing=true;surfaceLastCell=cell.x+','+cell.y;surfaceStrokePoints=[point];
     return;
@@ -2895,7 +2914,7 @@ function stop(event){
       terrainFamilyId:surfacePaintFamilySelect?.value,points:surfaceStrokePoints,
       width:Number($('surface-width').value)*SCULPT_TILE.width,
       brushShape:($('surface-brush-shape')?.value??'round')
-    });
+    },activeSculptMaterialRegistry());
     surfaceStrokePoints=[];
     surfaceCommit(changed);return;
   }
@@ -3976,7 +3995,7 @@ function drawPreviewObject(object,{foregroundRailOnly=false,visualTerrain=terrai
       view:navigationTesting?cameraView():null,tileWidth:SCULPT_TILE.width,
       tileHeight:SCULPT_TILE.height,rise:SCULPT_TILE.rise,
       texture:currentTexture,
-      baseColor:registry.require(displayedBaseMaterialId(),'surface')?.render?.baseColor??'#677955'
+      baseColor:activeSculptMaterialRegistry().require(displayedBaseMaterialId(),'surface')?.render?.baseColor??'#677955'
     });
     return;
   }
@@ -4363,7 +4382,7 @@ function loadSurfacePaintAssets(){
   if(edgeMaterials[surface.baseTerrainFamilyId])
     used.add(edgeMaterials[surface.baseTerrainFamilyId]);
   const pending=[];
-  for(const meta of SCULPT_SURFACE_MATERIALS){
+  for(const meta of [...SCULPT_SURFACE_MATERIALS,...personalStaticSurfaceChoices()]){
     if(!used.has(meta.id)||surfacePaintImages.has(meta.id))continue;
     pending.push(imageFor(meta.id,meta.assetKind).then(texture=>{
       if(!texture)return;
@@ -4419,13 +4438,13 @@ function setSurfaceEditing(active){
 }
 surfaceBaseFamilySelect?.addEventListener('change',()=>{
   surfaceCommit(normalizeSculptSurface({...surface,
-    baseTerrainFamilyId:surfaceBaseFamilySelect.value}));
+    baseTerrainFamilyId:surfaceBaseFamilySelect.value},activeSculptMaterialRegistry()));
 });
 $('surface-brush-shape')?.addEventListener('change',scheduleDraw);
 $('surface-material').addEventListener('change',()=>{
   // Suggest a family only before the author deliberately selects one.
   // Example: painting another grass texture must NOT erase "Haute herbe".
-  const family=sculptEncounterFamilyForMaterial($('surface-material').value);
+  const family=sculptEncounterFamilyForMaterial($('surface-material').value,activeSculptMaterialRegistry());
   if(!sculptPaintFamilyManuallyChosen&&family&&surfacePaintFamilySelect)
     surfacePaintFamilySelect.value=family;
 });
@@ -4435,7 +4454,7 @@ $('surface-configure-encounters')?.addEventListener('click',()=>{
 $('surface-align-families')?.addEventListener('click',()=>{
   // Legacy authored maps are never rewritten at import. The user chooses an
   // undoable migration if visual snow/road and encounter family disagree.
-  const aligned=alignSculptSurfaceEncounterFamilies(surface);
+  const aligned=alignSculptSurfaceEncounterFamilies(surface,activeSculptMaterialRegistry());
   if(surfaceCommit(aligned))
     status('Familles de rencontres alignées sur les textures · ↶ Texture pour annuler');
   else status('Les familles de rencontres correspondent déjà aux textures connues');
@@ -5498,12 +5517,18 @@ function refreshLocalSculptGraphics(){
     if(refs.some(o=>o.objectDefinitionId?.startsWith('user.objectdef.')&&!next.catalog.get(o.objectDefinitionId))){
       next.dispose();throw Error('Une ressource personnelle utilisée a disparu. La carte reste ouverte sans modification.');
     }
+    const usedSurfaces=[surface,...surfaceHistory,...surfaceRedo,outsideAreaSnapshot?.surface,...sculptInteriors.map(i=>i.surface)].filter(Boolean);
+    const materialIds=usedSurfaces.flatMap(s=>[s.baseMaterialId,...s.routes.map(r=>r.materialId),...s.zones.map(z=>z.materialId)]);
+    if(materialIds.some(id=>id?.startsWith('user.material.')&&!next.materialRegistry.resolve(id))){next.dispose();throw Error('Texture personnelle utilisée manquante ; carte conservée.');}
     sculptGraphics=next;
     availableObjects.splice(0,availableObjects.length,...listSculptPlaceableDefinitions(activeSculptObjectCatalog()).filter(o=>
       !o.id.startsWith('user.objectdef.')||localGraphicPlacementEnabled()));
     for(const id of objectImages.keys())if(id.startsWith('user.object.asset.'))objectImages.delete(id);
     sculptPlayObjectDrawCache.invalidate();navBridgePlacements=null;navStairProjection=null;
-    previous?.dispose();refreshObjectOptions();objectLibraryPicker?.render();scheduleDraw();
+    for(const id of images.keys())if(id.startsWith('user.texture.'))images.delete(id);
+    for(const id of surfacePaintImages.keys())if(id.startsWith('user.material.'))surfacePaintImages.delete(id);
+    previous?.dispose();refreshObjectOptions();objectLibraryPicker?.render();refreshPersonalTextureOptions();
+    await Promise.all([loadSurfacePaintAssets(),setTheme()]);navTerrainCache=null;scheduleDraw();
   };
   graphicCatalogReload=graphicCatalogReload.catch(()=>{}).then(run);return graphicCatalogReload;
 }
@@ -5751,7 +5776,8 @@ $('camera-view').addEventListener('change',()=>{
 $('material').addEventListener('change',()=>{
   const next=$('material').value;
   if(!themes.includes(next))return;
-  surfaceCommit(normalizeSculptSurface({...surface,baseMaterialId:next}));
+  if(next.startsWith('user.material.')&&!localGraphicPlacementEnabled())return;
+  surfaceCommit(normalizeSculptSurface({...surface,baseMaterialId:next},activeSculptMaterialRegistry()));
   setTheme();
 });
 $('water-material').addEventListener('change',setWaterMaterial);
@@ -6158,6 +6184,7 @@ function updateSculptAreaControls(){
   const entry=sculptInteriors.find(e=>e.area.id===activeInteriorId);
   const worldInterior=!entry&&sculptWorldCurrentInterior();
   const inInterior=!!entry||worldInterior;
+  refreshPersonalTextureOptions();
   $('interior-area-bar').hidden=!inInterior;
   if(interiorToolsToggle)interiorToolsToggle.hidden=!inInterior;
   if(!inInterior)setInteriorInspectorOpen(false);
@@ -6563,6 +6590,8 @@ $('export').addEventListener('click',()=>{
 });
 $('import').addEventListener('click',()=>{
  try{const imported=importSculptPreviewScene($('json').value,sculptGraphicContext());
+  if([imported.surface.baseMaterialId,...imported.surface.routes.map(r=>r.materialId),...imported.surface.zones.map(z=>z.materialId)].some(id=>sculptMaterialAnimation(id)))
+    throw Error('Texture personnelle animée : raccordement du rendu en cours, scène non modifiée.');
   const raw=JSON.parse($('json').value);
   const nextInteriors=importSculptInteriors(raw.interiors??[],imported.objects);
   const incomingTemplates=normalizeSculptInteriorTemplates(raw.interiorTemplates??[]);
