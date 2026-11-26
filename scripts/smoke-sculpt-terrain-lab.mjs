@@ -288,6 +288,27 @@ try{
     probe:window.__sculptLabProbe(),json:document.querySelector('#json').value};})()`);
   if(waterRedo.json!==afterWater.json||waterRedo.probe.redoCount!==0)
     throw Error('V13 redo did not reconstruct exact water stroke: '+JSON.stringify(waterRedo.probe));
+  // Author asset gate: actual browser decoding, not just a foam pixel change.
+  const authorAtlases=await run(`(async()=>{
+    const m=await import('./src/render/animated-surface-sprites-v1.js');
+    const ids=['water.clear_blue','water.turquoise','water.forest_stream','water.swamp','water.lava'];
+    const result=[];
+    for(const id of ids){
+      const image=await m.loadAnimatedSurfaceAtlas(id);
+      if(!image)throw Error('Missing authored surface atlas: '+id);
+      const read=frame=>{const c=m.animatedSurfaceSprite(id,frame);return c.getContext('2d').getImageData(0,0,c.width,c.height).data;};
+      const a=read(0),b=read(4),w=m.SURFACE_TILE.width,h=m.SURFACE_TILE.height;
+      let motion=0,seam=0;
+      for(let i=0;i<a.length;i+=4)if(a[i]!==b[i]||a[i+1]!==b[i+1]||a[i+2]!==b[i+2])motion++;
+      for(let y=0;y<h;y++)for(let c=0;c<3;c++)seam=Math.max(seam,Math.abs(a[(y*w)*4+c]-a[(y*w+w-1)*4+c]));
+      for(let x=0;x<w;x++)for(let c=0;c<3;c++)seam=Math.max(seam,Math.abs(a[x*4+c]-a[((h-1)*w+x)*4+c]));
+      result.push({id,w:image.naturalWidth,h:image.naturalHeight,motion,seam});
+    }
+    return result;
+  })()`);
+  if(authorAtlases.length!==5||authorAtlases.some(a=>a.w!==504||a.h!==378||a.motion<100||a.seam>1))
+    throw Error('Authored water/lava sprite decode, motion or tile edge regression: '+JSON.stringify(authorAtlases));
+  console.log('Real Chromium five approved water/lava atlases:',JSON.stringify(authorAtlases));
   // Living water: a real mouse stroke changes only the painted material.
   // Pixel motion is measured at a stationary camera and no pointer movement.
   const livingBefore=await run(`(async()=>{
