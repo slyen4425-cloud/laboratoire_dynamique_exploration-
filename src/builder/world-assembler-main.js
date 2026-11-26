@@ -335,7 +335,7 @@ export async function installWorldAssembler({owner=null,store=null}={}){
     requestedInteriorHostId=null;
     byId('area-creation-details').open=false;
   });
-  async function apply(command,success,{internal=false}={}){
+  async function apply(command,success,{internal=false,onAccepted=null}={}){
     if(transitionBusy&&!internal){status('Une transition de monde est en cours.',true);return false;}
     try{
       const next=command();
@@ -343,6 +343,9 @@ export async function installWorldAssembler({owner=null,store=null}={}){
       serializeWorldBuilderDraft(next);
       draft=next;
       if(!draft.areas.some(a=>a.id===selectedId))selectedId=draft.initialAreaId;
+      // Selection/form changes belong to the validated in-memory command,
+      // not to the later storage acknowledgement. Navigation still awaits it.
+      if(onAccepted)onAccepted();
       const pending=persist();render();
       const persisted=await pending;
       if(persisted&&autosaveAvailable)status(success);
@@ -789,7 +792,7 @@ export async function installWorldAssembler({owner=null,store=null}={}){
         hostAreaId=null;
         asNewStart=true;
       }
-      const ok=await apply(()=>{
+      await apply(()=>{
         let next=createWorldAreaFromSculptMapPreset(draft,preset,{
           name,kind,hostAreaId
         });
@@ -799,11 +802,8 @@ export async function installWorldAssembler({owner=null,store=null}={}){
       },asNewStart?'Préset créé comme départ 2,5D · ancienne zone préservée.'
         :kind==='dungeon'
         ?'Donjon créé depuis le préset avec passages aller-retour.'
-        :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.');
-      if(ok){
-        selectedId=draft.areas.find(a=>!before.has(a.id)&&a.kind!=='interior')?.id??selectedId;
-        render();
-      }
+        :'Zone créée et reliée à la zone sélectionnée · passages aller-retour aux bords.',
+        {onAccepted:()=>{selectedId=draft.areas.find(a=>!before.has(a.id)&&a.kind!=='interior')?.id??selectedId;}});
     }catch(error){status(error.message,true);}
   });
   on(byId('world-playable-route'),'click',async()=>{
@@ -815,10 +815,9 @@ export async function installWorldAssembler({owner=null,store=null}={}){
     const ok=await apply(()=>{
       result=makePlayableZoneRoute(draft,{selectedAreaId:selectedId,initializeEncounters:true});
       return result.document;
-    },'Parcours jouable créé : deux zones compatibles et Portals aller-retour.');
-    if(ok&&result){
-      selectedId=result.sourceAreaId;
-      render();
+    },'Parcours jouable créé : deux zones compatibles et Portals aller-retour.',
+      {onAccepted:()=>{selectedId=result.sourceAreaId;}});
+    if(ok&&result&&autosaveAvailable){
       status('✓ Parcours actif entre '+pretty(result.sourceAreaId)+' et '+
         pretty(result.targetAreaId)+'. Zone de départ sélectionnée. '+
         (result.retargetedPortalId?'Ancienne sortie réparée. ':'')+
@@ -838,7 +837,7 @@ export async function installWorldAssembler({owner=null,store=null}={}){
     const kind=byId('area-kind').value;
     const hostId=requestedInteriorHostId??selectedId;
     const shouldLinkInterior=kind==='interior'&&requestedInteriorHostId===hostId;
-    const ok=await apply(()=>{
+    await apply(()=>{
       let next=addWorldArea(draft,{name,kind,
         ...worldAreaSizeFromTiles({width:byId('area-width').value,
           height:byId('area-height').value})});
@@ -851,11 +850,12 @@ export async function installWorldAssembler({owner=null,store=null}={}){
       return next;
     },(kind==='dungeon'||shouldLinkInterior)
         ?'Instance créée dans cette Area · Portals aller/retour ajoutés.'
-        :'Nouvelle WorldArea ajoutée au monde.');
-    if(ok){requestedInteriorHostId=null;
+        :'Nouvelle WorldArea ajoutée au monde.',{onAccepted:()=>{
+      requestedInteriorHostId=null;
       selectedId=draft.areas.find(x=>!before.has(x.id))?.id??selectedId;
       byId('area-add-form').reset();areaSizeTouched=false;
-      byId('area-creation-details').open=false;render();}
+      byId('area-creation-details').open=false;
+    }});
   });
   on(byId('area-kind'),'change',()=>{
     const kind=byId('area-kind').value;
@@ -1006,8 +1006,8 @@ export async function installWorldAssembler({owner=null,store=null}={}){
     try{
       if(worldProjects)throw new Error('Importe une carte via la fonction de copie validée du projet, sans écraser la carte courante');
       const imported=importWorldBuilderDocument(await file.text());
-      await apply(()=>imported,'Monde importé et validé. Les passages et zones sont conservés.');
-      selectedId=draft.initialAreaId;render();
+      await apply(()=>imported,'Monde importé et validé. Les passages et zones sont conservés.',
+        {onAccepted:()=>{selectedId=draft.initialAreaId;}});
     }catch(error){status('Import refusé : '+error.message,true);}
     finally{input.value='';}
   });

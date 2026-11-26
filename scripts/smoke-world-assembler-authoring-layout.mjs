@@ -91,7 +91,7 @@ try{
     throw Error('World Builder map cards not connected to real WorldArea create action '+JSON.stringify(mapCardSelection));
   await run("document.querySelector('#area-name').value='Zone annexe';document.querySelector('#area-add-form').requestSubmit()");
   for(let i=0;i<100;i++){
-    if(await run("window.__worldAssemblerProbe()?.saved&&window.__worldAssemblerProbe()?.areaIds.length===2"))break;
+    if(await run("window.__worldAssemblerProbe()?.saved&&window.__worldAssemblerProbe()?.areaIds.length===2&&window.__worldAssemblerProbe()?.selectedAreaId===window.__worldAssemblerProbe()?.areaIds[1]"))break;
     if(i===99)throw Error('WorldArea creation did not commit');await sleep(100);
   }
   await run(`(()=>{
@@ -142,12 +142,14 @@ try{
   await send('Page.reload',{ignoreCache:true});
   let recovered=null;
   for(let i=0;i<100;i++){
-    recovered=await run(`(()=>{
+    try{recovered=await run(`(()=>{
       const p=window.__worldAssemblerProbe?.();
       const node=document.querySelector('.world-node[data-area-id="area-principale"]');
       return !window.__beforeWorldLayoutReload&&p&&node&&p.saved?{...p,left:parseInt(node.style.left,10),
         top:parseInt(node.style.top,10)}:null;
-    })()`);
+    })()`);}catch(error){
+      if(!/context|navigation|destroyed|Cannot find/i.test(error.message))throw error;
+    }
     if(recovered)break;await sleep(200);
   }
   if(!recovered||recovered.left!==dragged.point.x||
