@@ -13,7 +13,8 @@ const SCOPED=/^gensrpg\.exploration\.universe\.workspace\.v1:unv_[a-z0-9-]{8,80}
 
 const LIBRARY_INDEX='gensrpg.exploration.world-library.index.v1';
 const PROJECT_INDEX='gensrpg.exploration.universe-worlds.index.v1';
-const isMetadata=key=>key===LIBRARY_INDEX||key===PROJECT_INDEX;
+const CUTOVER='gensrpg.exploration.world-document.cutover.v1';
+const isMetadata=key=>key===LIBRARY_INDEX||key===PROJECT_INDEX||key===CUTOVER;
 const isDocumentKey=key=>typeof key==='string'&&(key===DRAFT||SCOPED.test(key)||key.startsWith(ARCHIVE));
 function checkedKey(key){
  if(!isDocumentKey(key)&&!isMetadata(key))
@@ -26,6 +27,18 @@ function checkedKey(key){
 }
 function checkedBytes(key,raw){
  checkedKey(key);
+ if(key===CUTOVER){
+  const marker=JSON.parse(raw);
+  if(marker?.schemaVersion!==1||!Array.isArray(marker.entries))throw Error('Marqueur de migration illisible');
+  let previous=null;
+  const entries=marker.entries.map(entry=>{
+   if((!isDocumentKey(entry.key)&&entry.key!==LIBRARY_INDEX&&entry.key!==PROJECT_INDEX)||
+      !/^[0-9a-f]{64}$/.test(entry.sha256)||previous!==null&&previous.localeCompare(entry.key)>=0)
+    throw Error('Inventaire de migration illisible');
+   previous=entry.key;return {key:checkedKey(entry.key),sha256:entry.sha256};
+  });
+  return JSON.stringify({schemaVersion:1,entries});
+ }
  if(isMetadata(key)){
   const validator=key===LIBRARY_INDEX?validateExplorationWorldLibraryIndexV1:validateExplorationUniverseWorldIndexV1;
   return JSON.stringify(validator(JSON.parse(raw)));
@@ -220,8 +233,46 @@ export function createWorldDocumentIndexedDbStoreV1({indexedDBFactory=globalThis
   }
   return entries.sort((a,b)=>a.key.localeCompare(b.key));
  }
+ async function sourceMarker(entries){
+  if(!globalThis.crypto?.subtle)throw Error('Contexte sécurisé requis pour la migration WorldDocument');
+  const encoder=new TextEncoder();
+  const fingerprints=await Promise.all(entries.map(async entry=>({key:entry.key,
+   sha256:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(entry.raw))),b=>b.toString(16).padStart(2,'0')).join('')})));
+  return checkedBytes(CUTOVER,JSON.stringify({schemaVersion:1,entries:fingerprints}));
+ }
+ async function readCutover(){
+  return transaction('readonly',(store,done,fail)=>{
+   const request=store.get(CUTOVER);
+   request.onsuccess=()=>{try{done(checkedRow(CUTOVER,request.result)?.serialized??null);}catch(error){fail(error);}};
+  });
+ }
+ async function verifyOwnerCutover(storage){
+  const marker=await readCutover();
+  if(marker===null)throw Error('Migration WorldDocument non confirmée');
+  const actual=await sourceMarker(ownerSnapshot(storage));
+  if(marker!==actual)throw Error('Stockage historique modifié après migration : versions conservées, accès bloqué');
+  return true;
+ }
  return Object.freeze({
-  executeCommand,
+  executeCommand,verifyOwnerCutover,
+  // Atomic one-time migration plus a fingerprint of retained source bytes.
+  // Reopening after editing the durable copy does NOT replay old documents.
+  // An old tab that writes legacy bytes is detected, never silently imported.
+  async prepareOwnerCutover(storage){
+   const before=ownerSnapshot(storage),marker=await sourceMarker(before);
+   await executeCommand(view=>{
+    const existing=view.getItem(CUTOVER);
+    if(existing!==null){if(existing!==marker)throw Error('Conflit de migration : versions conservées');return;}
+    for(const entry of before){
+     const value=view.getItem(entry.key);
+     if(value!==null&&value!==entry.serialized)throw Error('Conflit de migration : versions conservées');
+     if(value===null)view.setItem(entry.key,entry.serialized);
+    }
+    view.setItem(CUTOVER,marker);
+   });
+   await verifyOwnerCutover(storage);
+   return Object.freeze({count:before.length,sourceUnchanged:true});
+  },
   async migrateOwnerFromStorage(storage){
    const before=ownerSnapshot(storage);
    await executeCommand(view=>{

@@ -568,16 +568,15 @@ try{
   if(!sculptReady)throw Error('Actual durable Sculpt did not mount');
   const authored=await run(`(()=>{
     document.querySelector('#mode-encounters').click();
-    const slider=document.querySelector('#sculpt-encounter-chance');
-    slider.value='67';slider.dispatchEvent(new Event('input',{bubbles:true}));
+    // This smoke tests storage, not Combat catalogue availability (covered
+    // by its own full Encounter browser gate). Flip the native area rule,
+    // which has an independent canonical WorldDocument field.
+    const before=window.__sculptEncounterEditorProbe();
     const toggle=document.querySelector('#sculpt-encounter-area-enabled');
-    toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));
-    const elements=[...document.querySelectorAll('#sculpt-encounter-elements input[data-element-id]')];
-    if(!elements.length)throw Error('Encounter element catalogue unavailable');
-    if(!elements.some(e=>e.checked)){elements[0].checked=true;elements[0].dispatchEvent(new Event('change',{bubbles:true}));}
-    return window.__sculptEncounterEditorProbe();
+    toggle.checked=!before.allowedInArea;toggle.dispatchEvent(new Event('change',{bubbles:true}));
+    return {before:before.allowedInArea,after:window.__sculptEncounterEditorProbe().allowedInArea};
   })()`);
-  if(authored.chance!==67)throw Error('Actual durable Sculpt encounter change failed '+JSON.stringify(authored));
+  if(typeof authored.after!=='boolean'||authored.after===authored.before)throw Error('Actual durable Sculpt area rule change failed '+JSON.stringify(authored));
   let autosaved=false;
   for(let i=0;i<180;i++){
     try{autosaved=await run("document.querySelector('#world-storage-status').textContent.includes('Carte sauvegardée')");}catch{}
@@ -588,10 +587,10 @@ try{
     const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
     const store=createWorldDocumentIndexedDbStoreV1();
     const row=await store.read('gensrpg.exploration.universe.workspace.v1:unv_transaction-test-2:gensrpg.world-assembler.document.v1');
-    const profile=row.document.encounterConfig.families.find(f=>f.terrainFamilyId===${JSON.stringify(authored.familyId)});
-    return {chance:profile?.encounterChancePercent,revision:row.revision,noLegacy:localStorage.getItem(row.key)===null};
+    const area=row.document.areas.find(a=>a.id===${JSON.stringify(sculptArea)});
+    return {allowed:area?.encounters?.randomEnabled,revision:row.revision,noLegacy:localStorage.getItem(row.key)===null};
   })()`);
-  if(sculptSaved.chance!==67||!sculptSaved.noLegacy)throw Error('Actual durable Sculpt autosave bytes differ '+JSON.stringify(sculptSaved));
+  if(sculptSaved.allowed!==authored.after||!sculptSaved.noLegacy)throw Error('Actual durable Sculpt autosave bytes differ '+JSON.stringify(sculptSaved));
   await run("document.querySelector('#world-area-return').click()");
   let returned=false;
   for(let i=0;i<140;i++){
@@ -600,6 +599,31 @@ try{
   }
   if(!returned)throw Error('Actual durable Sculpt -> World Builder return failed');
   console.log('GREEN actual Sculpt on IndexedDB: revision handoff, authoring, autosave, exact readback, return to World Builder');
+  // Verify the cutover fence in actual IndexedDB, independently of existing
+  // profile keys, after the native editing proof. Source is never removed.
+  const cutover=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createBlankWorldBuilderDraft,createWorldBuilderDraft,serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const store=createWorldDocumentIndexedDbStoreV1();
+    const key='gensrpg.exploration.universe.workspace.v1:unv_cutover-test-1:gensrpg.world-assembler.document.v1';
+    const first=createBlankWorldBuilderDraft({id:'cutover-legacy'});
+    const raw=serializeWorldBuilderDraft(first),map=new Map([[key,raw]]);
+    const source={get length(){return map.size;},key:i=>[...map.keys()][i]??null,getItem:k=>map.get(k)??null};
+    await store.prepareOwnerCutover(source);
+    const row=await store.read(key),next=createWorldBuilderDraft({...first,areas:first.areas.map(a=>({...a,label:'Après migration'}))});
+    await store.commit([{key,expectedRevision:row.revision,document:next}]);
+    await createWorldDocumentIndexedDbStoreV1().prepareOwnerCutover(source);
+    const current=await store.read(key);
+    const unchanged=map.get(key)===raw,notReplayed=serializeWorldBuilderDraft(current.document)===serializeWorldBuilderDraft(next);
+    map.set(key,serializeWorldBuilderDraft(createWorldBuilderDraft({...first,areas:first.areas.map(a=>({...a,label:'Ancien onglet'}))})));
+    let blocked=false;
+    try{await store.verifyOwnerCutover(source);}catch(error){blocked=/modifié après migration/.test(error.message);}
+    const preserved=serializeWorldBuilderDraft((await store.read(key)).document)===serializeWorldBuilderDraft(next);
+    return {unchanged,notReplayed,blocked,preserved};
+  })()`);
+  if(Object.values(cutover).some(v=>v!==true))throw Error('Native IndexedDB cutover fence failed '+JSON.stringify(cutover));
+  console.log('GREEN IndexedDB cutover: atomic source fingerprint, reopen without replay, late legacy writer blocked, both copies preserved');
+
 
 
 }finally{
