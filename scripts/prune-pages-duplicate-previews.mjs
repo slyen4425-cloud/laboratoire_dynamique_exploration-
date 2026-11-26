@@ -4,6 +4,7 @@
 import {statSync,existsSync,readFileSync,rmSync,mkdirSync,writeFileSync,readdirSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {execFileSync} from 'node:child_process';
+import {buildLivingWaterAtlases} from './build-living-water-atlases.mjs';
 
 export const UNUSED=undefined;
 const BUDGET_BYTES=900*1024*1024;
@@ -28,6 +29,7 @@ function bytes(path){
   if(!existsSync(path))return 0;
   return Number(execFileSync('du',['-sb','--',path],{encoding:'utf8'}).trim().split(/\s+/)[0]);
 }
+buildLivingWaterAtlases(root);
 const before=bytes(root);
 for(const old of ['v81','docs','tests','.github','.git','node_modules']){
   const target=join(root,old);
