@@ -29,6 +29,24 @@ export function prepareLegacyWorldDocumentV1(key,raw){
  if(typeof raw!=='string')throw new TypeError('Sauvegarde historique requise');
  return Object.freeze({key:checkedKey(key),serialized:checkedBytes(key,decodeWorldDocumentStorageV1(raw))});
 }
+// Snapshot only the existing WorldDocument keys, not gameplay saves, media,
+ // presets, indexes or unrelated universes. Capture the raw bytes before
+ // writing IndexedDB; never erase the legacy values here.
+export function snapshotLegacyWorldDocumentsV1(storage){
+ if(!storage||typeof storage.getItem!=='function'||typeof storage.key!=='function'||
+    !Number.isSafeInteger(storage.length))throw new TypeError('Stockage historique requis');
+ const entries=[];
+ for(let i=0;i<storage.length;i++){
+  const key=storage.key(i);
+  if(typeof key!=='string'||!(key===DRAFT||SCOPED.test(key)||key.startsWith(ARCHIVE)))continue;
+  const raw=storage.getItem(key);
+  prepareLegacyWorldDocumentV1(key,raw);
+  entries.push(Object.freeze({key,raw}));
+ }
+ if(new Set(entries.map(e=>e.key)).size!==entries.length)
+  throw new Error('Stockage historique modifié pendant l’inventaire');
+ return Object.freeze(entries.sort((a,b)=>a.key.localeCompare(b.key)));
+}
 function checkedRow(key,row){
  if(row===undefined)return null;
  if(!row||row.key!==key||!Number.isSafeInteger(row.revision)||row.revision<1||
@@ -135,6 +153,32 @@ export function createWorldDocumentIndexedDbStoreV1({indexedDBFactory=globalThis
     const req=store.get(key);
     req.onsuccess=()=>{try{done(publicRow(checkedRow(key,req.result)));}catch(error){fail(error);}};
    });
+  },
+  async inventory(){
+   // Metadata only: do not allocate all maps in the UI just to list them.
+   return transaction('readonly',(store,done,fail)=>{
+    const rows=[],request=store.openCursor();
+    request.onsuccess=()=>{
+     try{
+      const cursor=request.result;
+      if(!cursor){done(Object.freeze(rows));return;}
+      const row=checkedRow(checkedKey(cursor.key),cursor.value);
+      const document=importWorldBuilderDocument(row.serialized);
+      rows.push(Object.freeze({key:row.key,revision:row.revision,id:document.id,areaCount:document.areas.length}));
+      cursor.continue();
+     }catch(error){fail(error);}
+    };
+   });
+  },
+  async migrateFromStorage(storage){
+   const before=snapshotLegacyWorldDocumentsV1(storage);
+   if(!before.length)return Object.freeze({count:0,sourceUnchanged:true});
+   await batch(before.map(e=>prepareLegacyWorldDocumentV1(e.key,e.raw)),true);
+   const after=snapshotLegacyWorldDocumentsV1(storage);
+   // A changing legacy writer blocks cutover. Both copies are preserved,
+   // and the caller MUST NOT activate until the old writer is fenced.
+   const sourceUnchanged=after.length===before.length&&after.every((e,i)=>e.key===before[i].key&&e.raw===before[i].raw);
+   return Object.freeze({count:before.length,sourceUnchanged});
   },
   async commit(entries){
    if(!Array.isArray(entries))throw new TypeError('Lot requis');

@@ -260,6 +260,30 @@ try{
   if(durableReload?.revision!==2||durableReload.label!=='Zone IndexedDB vérifiée'||!durableReload.previous)
     throw Error('Real IndexedDB did not survive page reload '+JSON.stringify(durableReload));
   console.log('GREEN real IndexedDB: transaction, migration, stale writer, rollback, isolation and reload');
+
+  // One valid WorldDocument at native maximum map dimensions, larger than
+  // the historical Web Storage budget. It must not need localStorage at all.
+  const large=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createBlankWorldBuilderDraft,serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const {createSculptTerrain}=await import('./src/world/sculpt-height-model.js');
+    const base=createBlankWorldBuilderDraft({id:'world-idb-capacity-test',width:80*28,height:64*21});
+    const terrain=createSculptTerrain({width:80,height:64,levels:Array.from({length:80*64},(_,i)=>i%17)});
+    const world={...base,areas:Array.from({length:64},(_,i)=>({...base.areas[0],id:i===0?base.initialAreaId:'area-capacity-'+i,label:'Zone '+i,sculptTerrain:terrain}))};
+    const bytes=serializeWorldBuilderDraft(world);
+    const key='gensrpg.exploration.world-library.document.v1:'+world.id;
+    const store=createWorldDocumentIndexedDbStoreV1();
+    const [saved]=await store.commit([{key,document:world,expectedRevision:null}]);
+    const reopened=await store.read(key);
+    const items=await store.inventory();
+    return {length:bytes.length,areas:reopened.document.areas.length,revision:saved.revision,
+      identical:serializeWorldBuilderDraft(reopened.document)===bytes,
+      inventoried:items.some(x=>x.key===key&&x.areaCount===64),noLegacyCopy:localStorage.getItem(key)===null};
+  })()`);
+  if(large.length<=5*1024*1024||large.areas!==64||large.revision!==1||
+     !large.identical||!large.inventoried||!large.noLegacyCopy)
+    throw Error('Large WorldDocument capacity regression '+JSON.stringify(large));
+  console.log('GREEN real IndexedDB: 64 native maps, '+large.length+' serialized characters, exact readback');
 }finally{
   // The fully isolated Chromium profile is kept mutable by browser helpers.
   // Shut down via CDP FIRST so they flush storage before the process-group
