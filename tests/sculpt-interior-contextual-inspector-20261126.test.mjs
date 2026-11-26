@@ -11,6 +11,17 @@ test('contextual interior controls remain single and outside terrain quickbar',(
   assert.equal(html.split('id="'+id+'"').length,2,id);
   assert.ok(html.indexOf('id="'+id+'"')>=bar,id);
  }
- assert.match(js,/interiorToolsToggle.hidden=!inInterior/);
+ assert.match(js,/if\(interiorToolsToggle\)interiorToolsToggle.hidden=!inInterior/);
  assert.match(js,/if\(!inInterior\)setInteriorInspectorOpen\(false\)/);
+});
+
+test('legacy markup remains supported and advanced picker is not duplicated',()=>{
+ const legacy=readFileSync(new URL('../sculpt-lab-v80.html',import.meta.url),'utf8');
+ assert.doesNotMatch(legacy,/id="interior-tools-toggle"/);
+ assert.match(js,/if\(!interiorToolsToggle\|\|!interiorToolsDetails\)return/);
+ assert.match(html,/#sculpt-settings #ground-tools>button\[data-mode\],\s*#sculpt-settings #water-tools>button\[data-mode\]\{display:none!important\}/);
+ assert.match(js,/document.querySelectorAll\('\[data-mode\]'\)/);
+ assert.match(html,/id="quick-tool"/);
+ assert.match(html,/id="target"/);
+ assert.match(html,/id="water-target"/);
 });

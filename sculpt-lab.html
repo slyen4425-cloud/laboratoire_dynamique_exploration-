@@ -1020,6 +1020,12 @@ body.sculpt-immersive .editor-switch #sculpt-settings-toggle::before{content:"�
  #sculpt-encounter-editor{width:min(245px,58vw);max-height:70dvh}
 }
 
+/* The quickbar is the sole visible terrain/water mode picker. Existing
+   data-mode buttons remain the option registry read by syncQuickToolbar;
+   the frozen V80 HTML is unchanged. Reset and precise levels stay in Atelier. */
+#sculpt-settings #ground-tools>button[data-mode],
+#sculpt-settings #water-tools>button[data-mode]{display:none!important}
+#sculpt-settings .sculpt-tool-group:has(> .sculpt-tool-group-content > .tool-panel[hidden]){display:none}
 /* Interior is an independent, contextual inspector, not a terrain quickbar.
    One scroll container, no cloned commands. */
 #interior-tools-toggle[hidden]{display:none!important}
@@ -1909,7 +1915,7 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
 <details id="sculpt-settings"><summary>⚙ Atelier · Réglages et outils avancés</summary>
 <div class="settings-interior">
 <details class="sculpt-tool-group" open>
- <summary>⛰ Sculpter le relief <small>Creuser, monter, pentes</small></summary>
+ <summary>⛰ Relief <small>Niveau exact et réinitialisation</small></summary>
  <div class="sculpt-tool-group-content">
  <section id="ground-tools" class="controls tool-panel" aria-label="Outils de sculpture du terrain">
 <button data-mode="dig" aria-pressed="true">Creuser −</button>
@@ -1935,7 +1941,7 @@ body.world-area-unavailable #interior-area-bar{display:none!important}
  </div>
 </details>
 <details class="sculpt-tool-group">
- <summary>💧 Sculpter l’eau <small>Niveau et débit</small></summary>
+ <summary>💧 Eau <small>Niveau exact</small></summary>
  <div class="sculpt-tool-group-content">
 <section id="water-tools" class="controls water-authoring tool-panel" aria-label="Eau volumique sculptable" hidden>
 <strong>💧 Sculpter l’eau</strong>

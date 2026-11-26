@@ -3204,6 +3204,9 @@ try{
   const v79R2=await run(`(()=>{
     const roomBar=document.querySelector('#interior-area-bar');
     const quick=document.querySelector('.sculpt-quickbar');
+    const interiorTab=document.querySelector('#interior-tools-toggle');
+    const details=document.querySelector('#interior-controls-details');
+    if(!details.open)interiorTab.click();
     const floor=document.querySelector('#interior-floor-base');
     floor.value='floor.tile.light';floor.dispatchEvent(new Event('change',{bubbles:true}));
     const original=window.__sculptLabProbe().interiorFloorId;
@@ -3219,9 +3222,12 @@ try{
       document.querySelector('#fullscreen-toggle').click();
     const floatingInfo={immersive:document.body.classList.contains('sculpt-immersive'),
       insideQuickbar:quick.contains(roomBar),position:getComputedStyle(roomBar).position,
-      panelVisible:!roomBar.hidden,quickDisplay:getComputedStyle(quick).display};
-    const floating=floatingInfo.immersive&&floatingInfo.insideQuickbar&&
-      floatingInfo.position==='static'&&floatingInfo.panelVisible;
+      panelVisible:!roomBar.hidden&&getComputedStyle(roomBar).display!=='none',
+      tabVisible:!interiorTab.hidden&&interiorTab.getClientRects().length>0,
+      expanded:interiorTab.getAttribute('aria-expanded')==='true',
+      quickDisplay:getComputedStyle(quick).display};
+    const floating=floatingInfo.immersive&&!floatingInfo.insideQuickbar&&
+      floatingInfo.position==='fixed'&&floatingInfo.panelVisible&&floatingInfo.tabVisible&&floatingInfo.expanded;
     if(document.body.classList.contains('sculpt-immersive'))
       document.querySelector('#fullscreen-toggle').click();
     document.querySelector('#scene-export').click();
