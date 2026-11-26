@@ -4,8 +4,9 @@ import {projectDefeatedPlacedWildV1} from './actors/npc-wild-defeat-projection-v
 import {createMaterialRegistry} from './materials/material-registry.js';
 import {materialPackV1} from './materials/material-pack-v1.js';
 import {resolveMaterialAsset} from './assets/material-asset-adapter.js';
-import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-v1';
-import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-v1';
+import {sculptNavigationWaterSupports,SCULPT_TERRAIN_MAX_LEVEL,createSculptTerrain,sculptDemo,applySculptStroke,applySculptWaterStroke,setSculptWaterAnimation,applySculptNavigationBlockStroke,appendSculptNavigationAllowedCorridor,removeSculptNavigationAllowedCorridorAt,sculptWaterAt,serializeSculptTerrain,importSculptTerrain,sculptHeightAt,sculptFaces,appendSculptSphere,removeSculptSphereAt,sculptSphereAt,sculptSphereDisplacementAt,sculptTerrainRampProjections,appendSculptTerrainRamp,removeSculptTerrainRampAt} from './world/sculpt-height-model.js?rev=terrain-sixteen-author-maps-three-v1-repaired-20261115-living-water-author-atlas-v1';
+import {drawSculptLivingWaterLayer,drawSculptWaterSupport,SCULPT_TILE,drawSculptTerrain,drawSculptBrushPreview,SCULPT_PREVIEW_RIBBONS} from './render/sculpt-height-renderer.js?rev=sculpt-whole-hill-v61-sphere-v76-volume-r2-frustum-r9-depth-r11-altitude-r12-grass-corners-hero-r13-square-corners-r14-cliff-occlusion-20261115-living-water-author-atlas-v1';
+import {loadAnimatedSurfaceAtlas} from './render/animated-surface-sprites-v1.js';
 import {SCULPT_WATER_MATERIAL_IDS,DEFAULT_SCULPT_WATER_MATERIAL} from './world/sculpt-water-materials-v1.js';
 import {drawSculptSphereCursor} from './render/sculpt-sphere-mesh.js?rev=real-spherical-v76-volume-r2-frustum-r9-depth-r11-altitude-r12';
 import {resolveSculptCliffAtlasUrl} from './render/sculpt-cliff-atlas.js';
@@ -1154,11 +1155,11 @@ async function loadSphereWallImages(){
 }
 async function setWaterMaterial(){
   if(livingWaterControls){
-    if(ribbonTextures.water?.living){status('Texture du pinceau d’eau : '+$('water-material').selectedOptions[0]?.textContent);return;}
+    if(ribbonTextures.water?.living){const id=$('water-material').value;status('Texture du pinceau d’eau : '+$('water-material').selectedOptions[0]?.textContent);await loadAnimatedSurfaceAtlas(id);waterLayerKey='';scheduleDraw();return;}
     const materials=new Map(sculptWaterMaterials.map(id=>[id,{material:registry.require(id,'water'),texture:null}]));
     const previous=ribbonTextures.water;
     ribbonTextures.water={...materials.get(DEFAULT_SCULPT_WATER_MATERIAL),visible:previous?.visible??$('show-water').checked,living:true,materials};
-    await Promise.all(sculptWaterMaterials.map(async id=>{materials.get(id).texture=await imageFor(id,'water');}));
+    await Promise.all([loadAnimatedSurfaceAtlas(DEFAULT_SCULPT_WATER_MATERIAL),...sculptWaterMaterials.map(async id=>{materials.get(id).texture=await imageFor(id,'water');})]);
     navTerrainCache=null;scheduleDraw();return;
   }
   const id=$('water-material').value;
