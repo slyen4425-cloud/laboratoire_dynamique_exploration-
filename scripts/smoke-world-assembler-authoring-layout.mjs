@@ -359,20 +359,22 @@ try{
   // This is UI/handle persistence/native-file readback proof, NOT a claim
   // about a physical PC picker; the Node test separately exercises disk I/O.
   await send('Page.addScriptToEvaluateOnNewDocument',{source:`
-    window.showDirectoryPicker=async()=>navigator.storage.getDirectory();
+    Object.defineProperty(window,'showDirectoryPicker',{configurable:true,writable:true,value:async()=>navigator.storage.getDirectory()});
+    window.__worldBackupTestPicker=true;
     if(typeof FileSystemHandle.prototype.queryPermission!=='function')
       FileSystemHandle.prototype.queryPermission=async()=> 'granted';
     if(typeof FileSystemHandle.prototype.requestPermission!=='function')
       FileSystemHandle.prototype.requestPermission=async()=> 'granted';
   `});
-  await send('Page.reload',{ignoreCache:true});
+  await send('Page.enable');
+  await send('Page.navigate',{url:pageUrl+'?backupSmoke=1'});
   let backupReady=false;
   for(let i=0;i<80;i++){
-    try{backupReady=await run("typeof window.__worldAssemblerProbe==='function' && !document.querySelector('#world-external-backup-folder').disabled");}
+    try{backupReady=await run("window.__worldBackupTestPicker===true && typeof window.__worldAssemblerProbe==='function' && !document.querySelector('#world-external-backup-folder').disabled");}
     catch{}if(backupReady)break;await sleep(150);
   }
   if(!backupReady)throw Error('External backup editor UI not mounted');
-  await run("document.querySelector('#world-external-backup-folder').click()");
+  await run("Object.defineProperty(window,'showDirectoryPicker',{configurable:true,writable:true,value:async()=>navigator.storage.getDirectory()}); document.querySelector('#world-external-backup-folder').click()");
   let externalStatus='';
   for(let i=0;i<80;i++){
     externalStatus=await run("document.querySelector('#world-external-backup-status').textContent");
