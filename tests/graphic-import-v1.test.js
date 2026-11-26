@@ -28,3 +28,27 @@ test('mismatched image sizes fail before a record is returned',async()=>{
  await assert.rejects(prepareGraphicImport({files:[a,b],mode:'frames'},{decode,makeCanvas:()=>({getContext:()=>({drawImage(){}})})}),/mêmes dimensions/);
  assert.equal(closed,2);
 });
+
+import {createUserWorldObjectRecord,objectDefinitionFromUserRecord} from '../src/objects/user-object-library.js';
+import {createUserMaterialRecord} from '../src/materials/user-material-library.js';
+import {createUserWorldObjectAssetResolver} from '../src/assets/user-world-object-asset-resolver.js';
+import {createUserMaterialAssetResolver} from '../src/assets/user-material-asset-resolver.js';
+import {worldObjectAnimationFrame} from '../src/render/world-object-frame-selector.js';
+test('existing asset stores accept the same validated atlas descriptor without changing static IDs or placement geometry',()=>{
+ const blob=png(),animation=graphicAnimationFromGrid({width:128,height:64,columns:4,rows:2,fps:8});
+ const common={idToken:'test',label:'Animated',mimeType:'image/png',width:128,height:64,bytes:blob.size,blob,animation};
+ const obj=createUserWorldObjectRecord({...common,kind:'decor',categoryId:'decor',folderId:'decor/general'});
+ const mat=createUserMaterialRecord({...common,kind:'water'});
+ assert.equal(obj.definitionId,'user.objectdef.decor.test');assert.equal(mat.id,'user.material.water.test');
+ assert.equal(objectDefinitionFromUserRecord(obj).baseSize.width,220);
+ assert.equal(objectDefinitionFromUserRecord(obj).baseSize.height,220);
+ const urlApi={createObjectURL:()=> 'blob:test',revokeObjectURL:()=>{}};
+ const a=createUserWorldObjectAssetResolver([obj],{urlApi}),b=createUserMaterialAssetResolver([mat],{urlApi});
+ assert.deepEqual(a.resolve(obj.assetId).animation,animation);
+ assert.deepEqual(b.resolve(mat.assetId).animation,animation);
+ assert.equal(worldObjectAnimationFrame(a.resolve(obj.assetId),0.5).index,4);
+ a.dispose();b.dispose();
+ const still=createUserWorldObjectRecord({...common,animation:null,kind:'decor',categoryId:'decor',folderId:'decor/general'});
+ assert.equal(still.animation,undefined);assert.equal(still.definitionId,obj.definitionId);
+ assert.throws(()=>createUserMaterialRecord({...common,width:129,kind:'water'}),/invalide/);
+});

@@ -1,3 +1,4 @@
+import {normalizeGraphicAnimation} from './graphic-animation-v1.js';
 export function createUserMaterialAssetResolver(
   records,
   {
@@ -43,6 +44,7 @@ export function createUserMaterialAssetResolver(
         id: record.assetId,
         kind: 'texture',
         path,
+        ...(record.animation?{animation:normalizeGraphicAnimation(record.animation,record.width,record.height)}:{}),
         provenance: 'user-local'
       })
     );

@@ -1,3 +1,4 @@
+import {normalizeGraphicAnimation} from '../assets/graphic-animation-v1.js';
 import {
   categoryIdFromFolderId,
   resolveObjectLibraryCategory
@@ -153,6 +154,7 @@ export function createUserWorldObjectRecord({
   bytes,
   sourceName,
   blob,
+  animation=null,
   createdAt
 } = {}) {
   const token = safeToken(idToken);
@@ -191,7 +193,8 @@ export function createUserWorldObjectRecord({
     throw new Error('User object Blob is required');
   }
 
-  const baseSize = logicalBaseSize(width, height);
+  const descriptor=normalizeGraphicAnimation(animation,Number(width),Number(height));
+  const baseSize = logicalBaseSize(descriptor?.frameWidth??width, descriptor?.frameHeight??height);
 
   return Object.freeze({
     schemaVersion: USER_WORLD_OBJECT_SCHEMA_VERSION,
@@ -213,6 +216,7 @@ export function createUserWorldObjectRecord({
     height: Number(height),
     bytes: Number(bytes),
     baseSize,
+    ...(descriptor?{animation:descriptor}:{}),
     sourceName: safe(sourceName) || 'object',
     provenance: 'user-local',
     createdAt: safe(createdAt) || new Date().toISOString(),
