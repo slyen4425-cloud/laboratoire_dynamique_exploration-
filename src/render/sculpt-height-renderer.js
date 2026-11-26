@@ -377,6 +377,19 @@ function drawSculptShoreFoam(ctx,{terrain,col,row,x,y,w,h,rim,timeSeconds=null,f
     const px=a[0]+(c[0]-a[0])*dotT,py=a[1]+(c[1]-a[1])*dotT;
     ctx.moveTo(px,py);ctx.lineTo(px+d[0]*1.6,py+d[1]*1.6);
     ctx.globalAlpha=Math.min(1,(.45+pulse*.13)*gain);ctx.lineWidth=1;ctx.stroke();
+    // More flecks only at an actual elevated dry bank / cliff, not on every tile.
+    if(timeSeconds!==null){
+      const dx=edge==='east'?1:edge==='west'?-1:0,dy=edge==='south'?1:edge==='north'?-1:0;
+      const surface=terrain.waterLevels[row*terrain.width+col];
+      if(sculptHeightAt(terrain,col+dx,row+dy)>surface){
+        for(let i=0;i<2;i++){
+          const t=.25+.25*i+.08*Math.sin(timeSeconds*1.8+phase*6+i);
+          const fx=a[0]+(c[0]-a[0])*t+d[0]*(3.2+i),fy=a[1]+(c[1]-a[1])*t+d[1]*(3.2+i);
+          ctx.fillStyle='#ffffff';ctx.globalAlpha=Math.min(1,(.25+.20*(.5+.5*Math.sin(timeSeconds*2.8+phase*6+i)))*gain);
+          ctx.beginPath();ctx.arc(fx,fy,.55+.18*i,0,Math.PI*2);ctx.fill();
+        }
+      }
+    }
   }
   ctx.restore();
 }
