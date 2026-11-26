@@ -462,6 +462,51 @@ try{
   })()`);
   if(kept.count!==1||!kept.disabled)throw Error('Disable erased backup or left active '+JSON.stringify(kept));
   console.log('GREEN actual World Builder backup controls: native file readback and disable preserves file (OPFS test only)');
+  // Bind the actual editor to the IndexedDB owner in this isolated Chromium
+  // profile, without adding a public feature flag or enabling mixed writers.
+  await run(`(async()=>{
+    const src=document.querySelector('script[type=module][src*="world-assembler-main"]').src;
+    const module=await import(src);
+    module.app.dispose();
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createWorldDocumentTransactionalOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
+    const store=createWorldDocumentIndexedDbStoreV1();
+    const owner=createWorldDocumentTransactionalOwnerV1({store});
+    history.replaceState(null,'','?universe=unv_transaction-test-2');
+    window.__isolatedDurableEditor=await module.installWorldAssembler({owner,store});
+    document.querySelector('#area-name').value='Zone IndexedDB réelle';
+    document.querySelector('#area-add-form').requestSubmit();
+  })()`);
+  let durableReady=false;
+  for(let i=0;i<120;i++){
+    durableReady=await run("window.__worldAssemblerProbe?.().saved===true && window.__worldAssemblerProbe?.().areaIds.length===2");
+    if(durableReady)break;await sleep(150);
+  }
+  if(!durableReady)throw Error('Actual World Builder did not acknowledge IndexedDB save');
+  await run("document.querySelector('#world-library-save').click()");
+  let archivedStatus='';
+  for(let i=0;i<120;i++){
+    archivedStatus=await run("document.querySelector('#world-library-status').textContent");
+    if(archivedStatus.includes('enregistré dans Mes mondes')||archivedStatus.includes('non confirmée'))break;
+    await sleep(150);
+  }
+  if(!archivedStatus.includes('enregistré dans Mes mondes'))throw Error('Actual IndexedDB editor archive failed: '+archivedStatus);
+  const durableUi=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createWorldDocumentTransactionalOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
+    const store=createWorldDocumentIndexedDbStoreV1(),owner=createWorldDocumentTransactionalOwnerV1({store});
+    const universe='unv_transaction-test-2';
+    const proof=await owner.run(({projects,readDraft})=>{
+      const draft=readDraft(universe);
+      return {active:draft.areas.some(a=>a.label==='Zone IndexedDB réelle'),
+        archived:projects.load(universe,draft.id).areas.some(a=>a.label==='Zone IndexedDB réelle')};
+    });
+    window.__isolatedDurableEditor.dispose();
+    return {...proof,noLegacy:localStorage.getItem('gensrpg.exploration.universe.workspace.v1:'+universe+':gensrpg.world-assembler.document.v1')===null};
+  })()`);
+  if(Object.values(durableUi).some(v=>v!==true))throw Error('Actual IndexedDB editor readback failed '+JSON.stringify(durableUi));
+  console.log('GREEN actual World Builder bound to IndexedDB: add map, archive and readback without Web Storage copy');
+
 }finally{
   // The fully isolated Chromium profile is kept mutable by browser helpers.
   // Shut down via CDP FIRST so they flush storage before the process-group

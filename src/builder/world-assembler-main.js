@@ -1060,11 +1060,17 @@ export async function installWorldAssembler({owner=null,store=null}={}){
     selectedEventCount:(draft.events??[]).filter(e=>e.sourceAreaId===selectedId).length,
     saved:autosaveAvailable,source:'WorldDocument'
   });
+  // Closing the editor while an asynchronous write is pending must not silently
+  // lose the in-memory authoring document. A browser can still force-close;
+  // the last confirmed IndexedDB revision and external copies remain intact.
+  on(window,'beforeunload',event=>{
+    if(!autosaveAvailable){event.preventDefault();event.returnValue='';}
+  });
   return {dispose(){
     externalBackup.dispose();
     for(const cleanup of listenerCleanups)cleanup();
     delete window.__worldAssemblerProbe;
   }};
 }
-const app=await installWorldAssembler();
+export const app=await installWorldAssembler();
 window.addEventListener('pagehide',()=>app.dispose(),{once:true});
