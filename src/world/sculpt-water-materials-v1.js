@@ -1,6 +1,6 @@
 // Visual-only references to existing Material Registry IDs. Compact contiguous
 // runs keep large painted maps small; no separate persistence or water geometry.
-export const SCULPT_WATER_MATERIAL_IDS=Object.freeze(['water.clear_blue','water.turquoise','water.forest_stream','water.swamp']);
+export const SCULPT_WATER_MATERIAL_IDS=Object.freeze(['water.clear_blue','water.turquoise','water.forest_stream','water.swamp','water.lava']);
 export const DEFAULT_SCULPT_WATER_MATERIAL=SCULPT_WATER_MATERIAL_IDS[0];
 const valid=new Set(SCULPT_WATER_MATERIAL_IDS);
 export const isSculptWaterMaterial=id=>valid.has(id);
