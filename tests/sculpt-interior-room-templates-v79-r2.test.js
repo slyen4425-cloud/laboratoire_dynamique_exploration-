@@ -78,13 +78,17 @@ test('V79 R2 rejects bad and duplicate templates and never imports foreign area/
  assert.throws(()=>normalizeSculptInteriorTemplates(null),/invalide/);
 });
 
-test('V79 R2 keeps full-screen exit, texture choice and templates inside the sole floating quickbar',()=>{
+test('V79 R2 preserves full-screen exit, texture choice and templates in the dedicated contextual inspector',()=>{
  const html=readFileSync(new URL('../sculpt-lab.html',import.meta.url),'utf8');
  const main=readFileSync(new URL('../src/sculpt-lab-main.js',import.meta.url),'utf8');
  const quickbar=html.indexOf('class="sculpt-quickbar"');
  const room=html.indexOf('id="interior-area-bar"');
- const canvas=html.indexOf('id="brush-info"');
- assert.ok(quickbar>=0&&room>quickbar&&canvas>room);
+ const brush=html.indexOf('id="brush-info"');
+ const canvas=html.indexOf('id="sculpt-canvas"');
+ const tab=html.indexOf('id="interior-tools-toggle"');
+ assert.ok(tab>=0&&tab<quickbar&&quickbar<brush&&brush<room&&room<canvas);
+ assert.match(html,/id="interior-tools-toggle" hidden aria-expanded="false" aria-controls="interior-controls-details"/);
+ assert.match(main,/interiorToolsToggle\.hidden=!inInterior/);
  for(const id of ['interior-area-return','interior-floor-base','interior-template-name',
    'interior-template-save','interior-template-select','interior-template-apply'])
    assert.match(html,new RegExp('id="'+id+'"'));
