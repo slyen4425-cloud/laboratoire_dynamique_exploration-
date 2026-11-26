@@ -29,6 +29,8 @@ import {exportWorldAreaAsMapPresetV1} from './world-assembler-map-preset-export-
 import {SCULPT_INTERIOR_SIZE} from '../world/sculpt-interior-area-link.js';
 import {objectDefinitionCatalogV1} from '../objects/object-definition-catalog.js?rev=collision-boundary-worldobject-obstacles-v1';
 
+import {installWorldExternalBackupPanelV1} from '../storage/world-document-external-backup-panel-v1.js';
+
 const byId=id=>document.getElementById(id);
 const pretty=id=>String(id??'').replace(/[-_]+/g,' ').replace(/\b\p{L}/gu,c=>c.toUpperCase());
 const kindIcon=area=>area.siteKind==='dungeon'?'🗝':area.kind==='interior'?'🏠':'🌲';
@@ -146,6 +148,7 @@ function installWorldAssembler(){
       createBlankWorldBuilderDraft({id:'nouveau-monde',width:36*28,height:24*21}));
   if(worldProjects&&!allowed.some(w=>w.id===draft.id))
     throw new Error('WorldDocument étranger à cet univers : aucune ouverture');
+  const externalBackup=installWorldExternalBackupPanelV1({root:window,captureDocument:()=>draft});
   let selectedId=transfer?.areaId??draft.initialAreaId;
   let autosaveAvailable=true;
   let linksShown=true;
@@ -1036,6 +1039,7 @@ function installWorldAssembler(){
     saved:autosaveAvailable,source:'WorldDocument'
   });
   return {dispose(){
+    externalBackup.dispose();
     for(const cleanup of listenerCleanups)cleanup();
     delete window.__worldAssemblerProbe;
   }};

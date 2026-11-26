@@ -122,6 +122,7 @@ import {sculptWorldAreaScene,saveSculptWorldArea,snapshotSculptWorldAreaForRecov
 import {markersForSculptWorldArea,pickSculptWorldEditorMarkerV1} from './builder/sculpt-world-portal-markers.js';
 import {describeWorldAreaSpawnsForEditorV1,describeWorldAreaIncomingPortalsForEditorV1} from './builder/sculpt-world-spawn-controls-v1.js';
 import {readWorldAssemblerHandoff,saveWorldAssemblerHandoff,readWorldAssemblerDraft,saveWorldAssemblerDraft} from './builder/world-assembler-handoff.js';
+import {installWorldExternalBackupPanelV1} from './storage/world-document-external-backup-panel-v1.js';
 import {readExplorationPlay,createExplorationPlayProgressWriter} from './play/exploration-play-session.js';
 import {emitExplorationPlayNavigationCommittedV1
 } from './play/exploration-play-events-v1.js';
@@ -6953,7 +6954,7 @@ function drawSculptWorldPortalMarkers(){
   }
   ctx.restore();
 }
-function commitCurrentSculptWorldArea(){
+function snapshotCurrentSculptWorldArea(){
   if(!sculptWorldDraft||!sculptWorldAreaId)return null;
   if(!sculptWorldAreaMounted)throw Error('Zone 2,5D non chargée : aucune scène démo ne doit remplacer la WorldArea');
   // Scene-saving validates the WorldDocument before it returns. Always feed
@@ -6966,10 +6967,14 @@ function commitCurrentSculptWorldArea(){
   const areas=updated.areas.map(a=>a.id===sculptWorldAreaId
     ?{...a,encounters:sculptExteriorEncounters}:a);
   // One EncounterConfig on the whole document, same Builder commands.
-  sculptWorldDraft=createWorldBuilderDraft({
+  return createWorldBuilderDraft({
     ...updated,areas,encounterConfig:sculptEncounterConfig
   });
-  return sculptWorldDraft;
+}
+function commitCurrentSculptWorldArea(){
+  const snapshot=snapshotCurrentSculptWorldArea();
+  if(snapshot)sculptWorldDraft=snapshot;
+  return snapshot;
 }
 function mountWorldSculptArea(areaId,validatedScene=null){
   sculptWorldAreaMounted=false;
@@ -7450,6 +7455,12 @@ function installSculptWorldAreaEditing(){
     return;
   }
   sculptWorldDraft=transfer.document;sculptWorldAreaId=transfer.areaId;
+  const externalBackup=installWorldExternalBackupPanelV1({root:window,captureDocument:()=>{
+    // Never snapshot live play/navigation or a failed mount as authored data.
+    if(!sculptWorldAreaMounted||sculptPlayRequested||navigationTesting)return null;
+    return snapshotCurrentSculptWorldArea();
+  }});
+  window.addEventListener('pagehide',()=>externalBackup.dispose(),{once:true});
   $('world-area-portal-panel').hidden=false;
   $('new-map-toggle').disabled=false; // dimensions locked inside confirmation, scene reset allowed
   $('import').disabled=true; // standalone Sculpt scene cannot replace a world document
