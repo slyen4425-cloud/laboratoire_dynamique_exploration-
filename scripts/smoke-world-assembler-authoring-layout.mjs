@@ -379,6 +379,35 @@ try{
   })()`);
   if(Object.values(ownerProof).some(v=>v!==true))throw Error('Transactional native owner failed '+JSON.stringify(ownerProof));
   console.log('GREEN IndexedDB native owner: atomic universe/archive/draft commands, rollback and conflict');
+  const handoffProof=await run(`(async()=>{
+    const {createWorldDocumentIndexedDbStoreV1}=await import('./src/storage/world-document-indexeddb-store-v1.js');
+    const {createWorldDocumentTransactionalOwnerV1}=await import('./src/storage/world-document-transactional-owner-v1.js');
+    const {createWorldAuthoringAccessV1}=await import('./src/storage/world-document-authoring-access-v1.js');
+    const {serializeWorldBuilderDraft}=await import('./src/builder/world-builder-draft.js');
+    const store=createWorldDocumentIndexedDbStoreV1(),owner=createWorldDocumentTransactionalOwnerV1({store});
+    const universeId='unv_transaction-test-2';
+    const access=createWorldAuthoringAccessV1({storage:localStorage,sessionStorage,universeId,owner,store});
+    const initial=await access.readDraft();
+    const changed={...initial,areas:initial.areas.map(a=>({...a,label:'Référence de transfert'}))};
+    await access.saveDraft(changed,initial);
+    await access.writeHandoff(changed,changed.initialAreaId);
+    const key='gensrpg.exploration.universe.workspace.v1:'+universeId+':gensrpg.world-assembler.handoff.v1';
+    const raw=sessionStorage.getItem(key);
+    const reference=JSON.parse(raw);
+    const restored=await access.readHandoff();
+    const consumed=sessionStorage.getItem(key)===null;
+    await access.writeHandoff(changed,changed.initialAreaId);
+    const latest={...changed,areas:changed.areas.map(a=>({...a,label:'Nouvelle révision'}))};
+    await access.saveDraft(latest,changed);
+    let stale=false;
+    try{await access.readHandoff();}catch(e){stale=/périmé/.test(e.message);}
+    const preserved=sessionStorage.getItem(key)!==null;
+    return {small:raw.length<512&&reference.schemaVersion===2&&!reference.document,
+      same:serializeWorldBuilderDraft(restored.document)===serializeWorldBuilderDraft(changed),
+      consumed,stale,preserved,noLegacy:localStorage.getItem('gensrpg.exploration.universe.workspace.v1:'+universeId+':gensrpg.world-assembler.document.v1')===null};
+  })()`);
+  if(Object.values(handoffProof).some(v=>v!==true))throw Error('IndexedDB reference handoff failed '+JSON.stringify(handoffProof));
+  console.log('GREEN IndexedDB reference handoff: exact revision, no session map copy and stale reference preserved');
   // Exercise the real World Builder controls in Chromium. Headless cannot
   // authorize a physical OS folder interactively: use an actual structured-
   // cloneable origin-private directory handle ONLY in this isolated test.
